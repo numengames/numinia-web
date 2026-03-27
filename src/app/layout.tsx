@@ -8,8 +8,8 @@ import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
 export const metadata: Metadata = {
   metadataBase: new URL('https://opensource3dassets.com'),
   title: {
-    default: 'Open Source 3D Assets - Free GLB Models for Games, VR & 3D Projects',
-    template: '%s | Open Source 3D Assets',
+    default: 'Numinia Open Source 3D Assets - Free GLB Models for Games, VR & 3D Projects',
+    template: '%s | Numinia Open Source 3D Assets',
   },
   description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed open-source 3D models and environments. No attribution required.',
   keywords: [
@@ -38,14 +38,14 @@ export const metadata: Metadata = {
     url: 'https://opensource3dassets.com',
     title: 'Open Source 3D Assets - Free GLB Models',
     description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed.',
-    siteName: 'Open Source 3D Assets',
+    siteName: 'Numinia Open Source 3D Assets',
   },
   
   twitter: {
     card: 'summary_large_image',
-    site: '@toxsam',
-    creator: '@toxsam',
-    title: 'Open Source 3D Assets - Free GLB Models',
+    site: '@numinia_xyz',
+    creator: '@numinia_xyz',
+    title: 'Numinia Open Source 3D Assets - Free GLB Models',
     description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed.',
   },
   
