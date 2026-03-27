@@ -96,7 +96,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               </li>
               <li>
                 <a 
-                  href="https://github.com/ToxSam/os3a-gallery"
+                  href="https://github.com/PabloFMM/numinia-digital-goods"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
@@ -106,7 +106,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               </li>
               <li>
                 <a 
-                  href="https://github.com/ToxSam/open-source-3D-assets"
+                  href="https://github.com/PabloFMM/numinia-digital-goods"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
@@ -125,17 +125,17 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
             <ul className="space-y-3">
               <li>
                 <a 
-                  href="https://toxsam.com"
+                  href="https://numen.games/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
                 >
-                  ToxSam.com
+                  Numen.Games
                 </a>
               </li>
               <li>
                 <a 
-                  href="https://twitter.com/toxsam"
+                  href="https://x.com/numinia_xyz"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
@@ -145,7 +145,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               </li>
               <li>
                 <a 
-                  href="https://github.com/ToxSam/os3a-gallery"
+                  href="https://github.com/PabloFMM/numinia-digital-goods"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
@@ -161,15 +161,15 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
         <div className="pt-8 border-t border-gray-300 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-small text-gray-500 dark:text-gray-400">
-              © {currentYear} ToxSam. All avatars CC0.
+              © {currentYear} Thanks ToxSam. All Numinia Digital Good are CC0.
             </p>
             <div className="flex items-center gap-4">
               <a 
-                href="https://toxsam.com"
+                href="https://numen.games/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"
-                aria-label="ToxSam website"
+                aria-label="Numen Games website"
               >
                 <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -177,7 +177,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
                 </svg>
               </a>
               <a 
-                href="https://twitter.com/toxsam"
+                href="https://x.com/numinia_xyz"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"
@@ -188,7 +188,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
                 </svg>
               </a>
               <a 
-                href="https://github.com/ToxSam/os3a-gallery"
+                href="https://github.com/PabloFMM/numinia-digital-goods"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"
