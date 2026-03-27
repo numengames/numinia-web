@@ -1,16 +1,16 @@
-# OpenSource3DAssets.com
+# Numinia Digital Goods
 
 > 🇯🇵 **日本語版はこちら / [Japanese version available here](README.ja.md)**
 
 The central registry for discovering free and open source 3D assets
 
-🌐 [opensource3dassets.com](https://opensource3dassets.com)
+🌐 [Numinia Digital Goods.com](https://Numinia Digital Goods.com)
 
 A curated directory that makes it easy to find GLB 3D assets you can actually use - CC0 public domain models, props, environments, and structures with clear licensing.
 
 ## What is this?
 
-OpenSource3DAssets.com is a discovery platform for high-quality, freely available 3D assets suitable for games, VR experiences, 3D projects, and more.
+Numinia Digital Goods.com is a discovery platform for high-quality, freely available 3D assets suitable for games, VR experiences, 3D projects, and more.
 
 We showcase assets from talented creators:
 
@@ -98,10 +98,10 @@ data/
 
 ```bash
 # Clone the repository
-git clone https://github.com/ToxSam/os3a-gallery.git
+git clone https://github.com/ToxSam/Numinia Digital Goods-gallery.git
 
 # Install dependencies
-cd os3a-gallery
+cd Numinia Digital Goods-gallery
 npm install
 
 # Run development server
@@ -144,7 +144,7 @@ We welcome contributions! Here's how you can help:
 1. **Add Your Assets**: Submit a PR to the [data repository](https://github.com/ToxSam/open-source-3D-assets)
 2. **Improve the Gallery**: Fix bugs, add features, improve UI/UX
 3. **Translate**: Help translate the site into more languages
-4. **Report Issues**: Found a bug? [Open an issue](https://github.com/ToxSam/os3a-gallery/issues)
+4. **Report Issues**: Found a bug? [Open an issue](https://github.com/ToxSam/Numinia Digital Goods-gallery/issues)
 
 ## License
 
@@ -161,9 +161,9 @@ The 3D assets themselves have their own licenses (mostly CC0) - check each colle
 
 ## Links
 
-- 🌐 Website: [opensource3dassets.com](https://opensource3dassets.com)
-- 📊 Data Repository: [github.com/ToxSam/open-source-3D-assets](https://github.com/ToxSam/open-source-3D-assets)
-- 🐦 Twitter: [@toxsam](https://twitter.com/toxsam)
+- 🌐 Website: [Numinia Digital Goods.com](https://Numinia Digital Goods.com)
+- 📊 Data Repository: [github.com/PabloFMM/numinia-digital-goods-data](https://github.com/PabloFMM/numinia-digital-goods-data)
+- 🐦 Twitter: [@toxsam](https://twitter.com/numinia)
 - 💬 Discord: [Join our community](#)
 
 ## Roadmap
