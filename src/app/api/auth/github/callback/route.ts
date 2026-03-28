@@ -126,21 +126,22 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Set a cookie with the user's ID and other necessary info
+        // Set a cookie with the user's ID and other necessary info
     // Note: In a production app, you'd use a proper JWT or signed cookie
-    cookies().set({
+    const cookieStore = await cookies();
+    cookieStore.set({
       name: 'session',
       value: JSON.stringify({
         userId: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role
+        username: user.login,
+        role: user.role || 'creator',
+        avatarUrl: user.avatar_url,
       }),
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 1 week
-      path: '/'
+      maxAge: 60 * 60 * 24 * 7, // 7 días
+      path: '/',
     });
     
     // Redirect to the dashboard or home page
