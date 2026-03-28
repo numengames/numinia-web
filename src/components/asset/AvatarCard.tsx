@@ -32,25 +32,22 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({
     onSelect(avatar.id);
   };
 
-  // Placeholder de alta calidad (puedes cambiarlo por tus propias miniaturas después)
+  // High-quality placeholder (you can replace later with real PNG thumbnails)
   const thumbnailSrc = avatar.thumbnailUrl || 'https://picsum.photos/id/1015/400/400';
 
   return (
     <Card
-      className={`cursor-pointer hover:border-gray-900 transition-all overflow-hidden
+      className={`cursor-pointer hover:border-primary-500 transition-all overflow-hidden
         ${isActive ? 'border-black shadow-md' : 'border-gray-200'}`}
       onClick={() => onClick(avatar)}
     >
       <CardContent className="flex items-center p-3 gap-3">
         {/* Checkbox */}
         <div onClick={handleCheckboxClick} className="flex-shrink-0">
-          <Checkbox
-            checked={isSelected}
-            className="h-4 w-4"
-          />
+          <Checkbox checked={isSelected} className="h-4 w-4" />
         </div>
 
-        {/* Thumbnail con mejor proporción y borde redondeado */}
+        {/* Thumbnail */}
         <div className="h-14 w-14 sm:h-16 sm:w-16 relative flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
           <img
             src={thumbnailSrc}
@@ -59,7 +56,7 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({
           />
         </div>
 
-        {/* Información del asset */}
+        {/* Asset info */}
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-sm text-gray-900 truncate">
             {avatar.name}
