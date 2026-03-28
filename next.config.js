@@ -2,10 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Next.js 15 recommended settings
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  // Next.js 16+ (ya no va dentro de experimental)
+  serverExternalPackages: ['@prisma/client'],
 
   images: {
     remotePatterns: [
