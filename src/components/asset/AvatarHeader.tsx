@@ -23,7 +23,6 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
 
   // Navigation links
   const navigationLinks = [
-    { href: `/${locale}`, label: 'Home' },
     { href: `/${locale}/gallery`, label: t('header.navigation.avatars') as string },
     { href: `/${locale}/finder`, label: t('header.navigation.finder') as string },
     { href: `/${locale}/glbinspector`, label: t('header.navigation.viewer') as string },
@@ -34,7 +33,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
   return (
     <header className="w-full bg-cream/90 dark:bg-cream-dark/90 backdrop-blur-md border-b border-gray-300/50 dark:border-gray-700/50 fixed top-0 left-0 right-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-        <div className="flex items-center justify-between h-20 md:h-24">
+        <div className="flex items-center justify-between h-24 md:h-28">
           {/* Logo/Brand - Numinia */}
           <Link 
             href={`/${locale}`} 
@@ -43,13 +42,13 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
             <img 
               src="/logo-numinia.svg" 
               alt="Numinia Digital Goods" 
-              className="h-14 md:h-18 w-auto flex-shrink-0"
+              className="h-14 md:h-16 w-auto flex-shrink-0 mr-12 md:mr-16"
             />
           </Link>
 
           {/* Desktop Navigation - Right Side */}
           {!isMobile && (
-            <div className="flex items-center gap-16">
+            <div className="flex items-center gap-24">
               <nav className="flex items-center gap-8">
                 {navigationLinks.map((link) => {
                   const isActive = pathname === link.href || pathname?.startsWith(link.href + '/');
@@ -75,7 +74,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
               {/* Social Links & Actions */}
               <div className="flex items-center gap-4">
                 <a 
-                  href="https://toxsam.com"
+                  href="https://numen.games"
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"
@@ -98,7 +97,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
                   </svg>
                 </a>
                 <a 
-                  href="https://github.com/ToxSam/os3a-gallery"
+                  href="https://github.com/PabloFMM/numinia-digital-goods"
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"
