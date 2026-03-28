@@ -58,15 +58,17 @@ function getModelFilenameForFormat(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     // Get request body for format preference
     const { format } = await request.json().catch(() => ({}));
     
     // Get avatar details from GitHub storage
     const avatars = await getAvatars();
-    const avatar = avatars.find((a: Avatar) => a.id === params.id);
+    const avatar = avatars.find((a: Avatar) => a.id === id);
 
     if (!avatar) {
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
