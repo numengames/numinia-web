@@ -5,10 +5,12 @@ import { NextRequest } from 'next/server';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
-    const avatarId = params.id;
+    const avatarId = id;   // ← ahora usa la variable correcta
     
     // Verify authentication using session cookie
     const sessionCookie = req.cookies.get('session');
@@ -31,7 +33,7 @@ export async function PATCH(
     const avatars = await getAvatars();
     
     // Find the specific avatar by ID
-    const avatarIndex = avatars.findIndex((a: Avatar) => a.id === params.id);
+    const avatarIndex = avatars.findIndex((a: Avatar) => a.id === id);
     
     if (avatarIndex === -1) {
       return NextResponse.json(
