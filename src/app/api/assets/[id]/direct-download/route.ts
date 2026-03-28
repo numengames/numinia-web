@@ -104,7 +104,7 @@ export async function GET(
 
     if (!avatar) {
       // Log for debugging - this helps identify if avatar IDs don't match
-      console.error(`Avatar not found. ID: "${params.id}", Total avatars: ${avatars.length}`);
+      console.error(`Avatar not found. ID: "${id}", Total avatars: ${avatars.length}`);
       // Log first few avatar IDs for debugging
       if (avatars.length > 0) {
         console.error('Sample avatar IDs:', avatars.slice(0, 3).map(a => a.id));
