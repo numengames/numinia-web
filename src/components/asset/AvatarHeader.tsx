@@ -34,7 +34,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
   return (
     <header className="w-full bg-cream/90 dark:bg-cream-dark/90 backdrop-blur-md border-b border-gray-300/50 dark:border-gray-700/50 fixed top-0 left-0 right-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20 md:h-24">
           {/* Logo/Brand - Numinia */}
           <Link 
             href={`/${locale}`} 
@@ -43,13 +43,13 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
             <img 
               src="/logo-numinia.svg" 
               alt="Numinia Digital Goods" 
-              className="h-12 md:h-14 w-auto"
+              className="h-14 md:h-18 w-auto flex-shrink-0"
             />
           </Link>
 
           {/* Desktop Navigation - Right Side */}
           {!isMobile && (
-            <div className="flex items-center gap-12">
+            <div className="flex items-center gap-16">
               <nav className="flex items-center gap-8">
                 {navigationLinks.map((link) => {
                   const isActive = pathname === link.href || pathname?.startsWith(link.href + '/');
