@@ -89,8 +89,9 @@ function normalizeIPFSUrl(url: string): string {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Get format from query parameter
     const searchParams = request.nextUrl.searchParams;
@@ -99,7 +100,7 @@ export async function GET(
     // Next.js automatically decodes URL parameters, so params.id is already decoded
     // Get avatar details from GitHub storage
     const avatars = await getAvatars();
-    const avatar = avatars.find((a: Avatar) => a.id === params.id);
+    const avatar = avatars.find((a: Avatar) => a.id === id);
 
     if (!avatar) {
       // Log for debugging - this helps identify if avatar IDs don't match
