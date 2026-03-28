@@ -45,7 +45,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
             <img
               src="/logo-numinia.svg"
               alt="Numinia Digital Goods"
-              className="h-6 md:h-8 w-auto"
+              className="h-3 md:h-4 w-auto"
             />
           </Link>
 
