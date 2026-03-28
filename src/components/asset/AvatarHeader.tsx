@@ -154,7 +154,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
 
               <div className="pt-4 border-t border-gray-300 dark:border-gray-700">
                 <a 
-                  href="https://toxsam.com"
+                  href="https://numen.games/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
