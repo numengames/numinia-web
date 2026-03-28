@@ -1,32 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
-  // Remove the old i18n config
-  // i18n: {
-  //   locales: ['en', 'ja'],
-  //   defaultLocale: 'en',
-  //   domains: [
-  //     {
-  //       domain: 'opensourceavatars.com',
-  //       defaultLocale: 'ja',
-  //       locales: ['ja'],
-  //     },
-  //     {
-  //       domain: 'opensourceavatars.com',
-  //       defaultLocale: 'en',
-  //       locales: ['en'],
-  //     },
-  //   ],
-  // },
 
-  // Add middleware configuration for i18n
+  // Next.js 15 recommended settings
   experimental: {
-    // Keep existing experimental configs
     serverComponentsExternalPackages: ['@prisma/client'],
   },
 
-  // Rest of your existing config...
   images: {
     remotePatterns: [
       {
@@ -36,55 +16,33 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'assetsdev.opensourceavatars.com',
-      }
-    ],
-    unoptimized: process.env.NODE_ENV === 'development'
-  },
-  output: 'standalone',
-  
-  // Note: Docs folder is copied to standalone build via scripts/copy-docs.js
-  // This ensures all markdown files are available at runtime
-  
-  // Configure dynamic route handling
-  async rewrites() {
-    return [
+      },
       {
-        source: '/api/:path*',
-        destination: '/api/:path*'
-      }
-    ]
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
+    ],
+    unoptimized: process.env.NODE_ENV === 'development',
   },
-  
+
+  output: 'standalone',
+
   async headers() {
     return [
       {
-        // Security headers for all pages
         source: '/:path*',
         headers: [
           {
             key: 'Content-Security-Policy',
             value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' blob: https://*.ipfs.io https://dweb.link https://*.dweb.link https://gateway.pinata.cloud https://*.arweave.net https://arweave.net https://raw.githubusercontent.com https://api.github.com https://*.githubusercontent.com https://assets.opensourceavatars.com; frame-ancestors 'self';"
           },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'geolocation=(), microphone=(), camera=()'
-          }
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'geolocation=(), microphone=(), camera=()' },
         ],
       },
       {
-        // CORS headers for API routes (keep existing)
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
@@ -94,7 +52,7 @@ const nextConfig = {
         ],
       },
     ];
-  }
+  },
 };
 
 module.exports = nextConfig;
