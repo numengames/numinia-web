@@ -26,10 +26,11 @@ const s3Client = new S3Client({
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const avatarId = params.id;
+    const avatarId = id;
     
     // Verify authentication using session cookie
     const sessionCookie = req.cookies.get('session');
