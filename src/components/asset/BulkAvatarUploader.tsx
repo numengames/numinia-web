@@ -1,11 +1,11 @@
+  "use client";
+
 type UploadStatus = {
     id: string;
     status: string;
     progress: number;
     error?: string | null; // error is optional and can be null
   };
-  
-  "use client";
   
   import React, { useState, useCallback } from "react";
   import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
