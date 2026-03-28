@@ -1,30 +1,24 @@
-# Robots.txt for OpenSourceAvatars.com
+# Robots.txt for Numinia Digital Goods (numinia.store)
 # Optimized for SEO - allowing all major search engines
 
 User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://opensourceavatars.com/sitemap.xml
+Sitemap: https://numinia.store/sitemap.xml
 
-# Block admin and API routes
+# Block admin and API routes (seguridad)
 Disallow: /admin
 Disallow: /api/
 
-# Block upload directories
+# Block upload directories (por si algún día usas uploads)
 Disallow: /uploads/
 
-# Allow crawling of avatar pages
-Allow: /en/avatars/
-Allow: /ja/avatars/
+# Allow crawling of the main gallery pages
 Allow: /en/gallery
-Allow: /ja/gallery
-Allow: /en/resources
-Allow: /ja/resources
-Allow: /en/about
-Allow: /ja/about
-Allow: /en/vrminspector
-Allow: /ja/vrminspector
+Allow: /en
+Allow: /ja/gallery     # si en el futuro añades japonés
+Allow: /ja
 
-# Crawl delay (optional, can be removed if not needed)
+# Crawl delay (opcional, puedes dejarlo comentado)
 # Crawl-delay: 1
