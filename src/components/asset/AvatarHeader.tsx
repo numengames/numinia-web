@@ -43,13 +43,13 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
             <img 
               src="/logo-numinia.svg" 
               alt="Numinia Digital Goods" 
-              className="h-8 md:h-9 w-auto"
+              className="h-12 md:h-14 w-auto"
             />
           </Link>
 
           {/* Desktop Navigation - Right Side */}
           {!isMobile && (
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-12">
               <nav className="flex items-center gap-8">
                 {navigationLinks.map((link) => {
                   const isActive = pathname === link.href || pathname?.startsWith(link.href + '/');
