@@ -35,9 +35,8 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
         
         {/* HEADER BAR */}
-        <div className="flex items-center justify-between h-24 md:h-28">
-          
-          {/* Logo Numinia */}
+        <div className="flex items-center justify-between h-20 md:h-24">
+          {/* Logo/Brand - Numinia */}
           <Link
             href={`/${locale}`}
             className="flex-shrink-0"
@@ -45,13 +44,13 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
             <img
               src="/logo-numinia.svg"
               alt="Numinia Digital Goods"
-              className="h-14 md:h-16 w-auto"
+              className="h-10 md:h-12 w-auto"
             />
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Right Side */}
           {!isMobile && (
-            <div className="flex items-center gap-24">
+            <div className="flex items-center gap-20">
               <nav className="flex items-center gap-10">
                 {navigationLinks.map((link) => {
                   const isActive = pathname === link.href || pathname?.startsWith(link.href + '/');
@@ -70,6 +69,31 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
                   );
                 })}
               </nav>
+
+              {/* Separator */}
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-700" />
+
+              {/* Social Links & Actions */}
+              <div className="flex items-center gap-4">
+                {/* ... (mantén aquí los iconos de ToxSam, Twitter, GitHub, ThemeToggle y LanguageSelector tal como los tienes) */}
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Menu Button */}
+          {isMobile && (
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          )}
+        </div>
 
               {/* Separator */}
               <div className="w-px h-4 bg-gray-300 dark:bg-gray-700" />
