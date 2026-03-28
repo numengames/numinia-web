@@ -14,8 +14,8 @@ export interface UserSession {
  * Get the current user's session from the cookie
  * @returns The user session or null if not logged in
  */
-export function getUserSession(): UserSession | null {
-  const cookieStore = cookies();
+export async function getUserSession(): Promise<UserSession | null> {
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('session');
   
   if (!sessionCookie) {
@@ -35,8 +35,9 @@ export function getUserSession(): UserSession | null {
  * Check if the current user is authenticated
  * @returns True if the user is logged in, false otherwise
  */
-export function isAuthenticated(): boolean {
-  return getUserSession() !== null;
+export async function isAuthenticated(): Promise<boolean> {
+  const session = await getUserSession();
+  return session !== null;
 }
 
 /**
@@ -44,8 +45,8 @@ export function isAuthenticated(): boolean {
  * @param role The role to check for
  * @returns True if the user has the role, false otherwise
  */
-export function hasRole(role: string): boolean {
-  const session = getUserSession();
+export async function hasRole(role: string): Promise<boolean> {
+  const session = await getUserSession();
   return session !== null && session.role === role;
 }
 
@@ -53,7 +54,7 @@ export function hasRole(role: string): boolean {
  * Check if the current user is an admin
  * @returns True if the user is an admin, false otherwise
  */
-export function isAdmin(): boolean {
+export async function isAdmin(): Promise<boolean> {
   return hasRole('admin');
 }
 
@@ -61,8 +62,8 @@ export function isAdmin(): boolean {
  * Get the current user's ID
  * @returns The user ID or null if not logged in
  */
-export function getUserId(): string | null {
-  const session = getUserSession();
+export async function getUserId(): Promise<string | null> {
+  const session = await getUserSession();
   return session ? session.userId : null;
 }
 
@@ -72,7 +73,8 @@ export function getUserId(): string | null {
  */
 export async function logout() {
   'use server';
-  cookies().delete('session');
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
 }
 
 export default {
@@ -82,4 +84,4 @@ export default {
   isAdmin,
   getUserId,
   logout
-}; 
+};
