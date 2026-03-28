@@ -11,8 +11,9 @@ export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   try {
-    // Get the session cookie
-    const sessionCookie = cookies().get('session');
+    // Get the session cookie (Next.js 16 requiere await)
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
 
     if (!sessionCookie) {
       return NextResponse.json({ user: null }, { status: 200 });
@@ -39,4 +40,4 @@ export async function GET(req: NextRequest) {
     console.error('Session API error:', error);
     return NextResponse.json({ user: null }, { status: 500 });
   }
-} 
+}
