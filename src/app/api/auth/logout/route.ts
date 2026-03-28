@@ -4,17 +4,21 @@ import { cookies } from 'next/headers';
 export async function POST() {
   try {
     // Clear the session cookie
-    cookies().delete('session');
+    const cookieStore = await cookies();
+    cookieStore.delete('session');
     
     return NextResponse.json({ 
       success: true,
-      message: 'Logged out successfully' 
+      message: 'Sesión cerrada correctamente'
     });
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json({ 
-      success: false,
-      error: 'Failed to log out' 
-    }, { status: 500 });
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to logout'
+      },
+      { status: 500 }
+    );
   }
-} 
+}
