@@ -22,9 +22,11 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
           {/* Brand */}
           <div className="col-span-1">
             <Link href={`/${locale}`} className="inline-block mb-4">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                OS3A
-              </h3>
+              <img 
+                src="/logo-numinia.svg" 
+                alt="Numinia Digital Goods" 
+                className="h-9 w-auto"
+              />
             </Link>
             <p className="text-small text-gray-500 dark:text-gray-400 leading-relaxed">
               The home of truly free glb assets and tools.
