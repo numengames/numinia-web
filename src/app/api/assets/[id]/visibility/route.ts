@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getAvatars, saveAvatars, GithubAvatar as Avatar } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
+import { getAdminSession } from '@/lib/auth/getSession';
 
 export async function PATCH(
   req: NextRequest,
@@ -10,23 +11,9 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    const avatarId = id;   // ← ahora usa la variable correcta
-    
-    // Verify authentication using session cookie
-    const sessionCookie = req.cookies.get('session');
-    if (!sessionCookie) {
-      return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid session format' }, { status: 401 });
-    }
-
-    if (!sessionData.userId || !['admin', 'creator'].includes(sessionData.role)) {
-      return NextResponse.json({ error: 'Unauthorized - Insufficient permissions' }, { status: 403 });
+    const session = getAdminSession(req);
+    if (!session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // Get all avatars from GitHub storage

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
+import { getAdminSession } from '@/lib/auth/getSession';
 import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
@@ -25,18 +26,8 @@ export async function GET(req: NextRequest) {
     
     console.log('Search params:', { search, assetName, projectIds });
 
-    // Check if user is authenticated and has admin/creator role
-    let isAdmin = false;
-    const sessionCookie = req.cookies.get('session');
-    
-    if (sessionCookie) {
-      try {
-        const sessionData = JSON.parse(sessionCookie.value);
-        isAdmin = ['admin', 'creator'].includes(sessionData.role);
-      } catch (error) {
-        console.error('Failed to parse session cookie:', error);
-      }
-    }
+    // Check if user is authenticated (wallet or GitHub OAuth)
+    const { isAdmin } = getAdminSession(req);
 
     // Fetch avatars and projects from GitHub storage
     // If projectIds is provided, only fetch avatars from those projects
@@ -153,21 +144,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify authentication using session cookie instead of Bearer token
-    const sessionCookie = req.cookies.get('session');
-    if (!sessionCookie) {
-      return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
-    }
-
-    let sessionData;
-    try {
-      sessionData = JSON.parse(sessionCookie.value);
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid session format' }, { status: 401 });
-    }
-
-    if (!sessionData.userId || !['admin', 'creator'].includes(sessionData.role)) {
-      return NextResponse.json({ error: 'Unauthorized - Insufficient permissions' }, { status: 403 });
+    const session = getAdminSession(req);
+    if (!session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // Parse the request body
