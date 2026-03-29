@@ -30,7 +30,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Dummy values so the build doesn't fail on missing NEXT_PUBLIC vars
+          # Dummy values so the build doesn't fail on missing vars
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
           NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE: https://example.com
           NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE: https://example.com
           GITHUB_REPO_OWNER: ci
