@@ -779,6 +779,11 @@ export default function AvatarListView({
                             src={avatar.thumbnailUrl}
                             alt={avatar.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const el = e.currentTarget;
+                              if (el.src.includes('/placeholder.png')) return;
+                              el.src = '/placeholder.png';
+                            }}
                           />
                         </div>
                       ) : (

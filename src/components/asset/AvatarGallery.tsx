@@ -510,6 +510,11 @@ export const AvatarGallery: React.FC = () => {
                           alt={formatName(avatar.name)}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          onError={(e) => {
+                            const el = e.currentTarget;
+                            if (el.src.includes('/placeholder.png')) return;
+                            el.src = '/placeholder.png';
+                          }}
                         />
                       </div>
                       

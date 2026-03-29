@@ -727,6 +727,11 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
                                 alt={a.name}
                                 className="w-full h-full object-cover"
                                 loading="lazy"
+                                onError={(e) => {
+                                  const el = e.currentTarget;
+                                  if (el.src.includes('/placeholder.png')) return;
+                                  el.src = '/placeholder.png';
+                                }}
                               />
                             </div>
                             <span className="mt-2 text-sm font-medium text-gray-900 truncate w-full text-center">
@@ -828,6 +833,11 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
               className={`rounded-lg object-contain shadow-sm border border-gray-200 dark:border-gray-700 ${
                 isMobile ? 'max-h-32 w-auto' : 'max-w-full max-h-60'
               }`}
+              onError={(e) => {
+                const el = e.currentTarget;
+                if (el.src.includes('/placeholder.png')) return;
+                el.src = '/placeholder.png';
+              }}
             />
           </div>
           

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
+import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 
 // Define interfaces
 interface DownloadCounts {
@@ -75,7 +76,10 @@ function isIPFSUrl(url: string): boolean {
 
 // Helper to check if a URL is a GitHub raw URL
 function isGitHubRawUrl(url: string): boolean {
-  return url.includes('raw.githubusercontent.com') || (url.includes('github.com') && url.includes('/raw/'));
+  return (
+    url.includes('raw.githubusercontent.com') ||
+    (url.includes('github.com') && url.includes('/raw/'))
+  );
 }
 
 // Helper to normalize IPFS URLs (convert ipfs:// to https://dweb.link/ipfs/)
@@ -139,13 +143,16 @@ export async function GET(
         actualFormat = 'default'; // Reset to default format
       }
     } else {
-      // Use the default model file URL
       modelUrl = avatar.modelFileUrl;
     }
     
     if (!modelUrl) {
       return NextResponse.json({ error: 'Could not determine model URL' }, { status: 400 });
     }
+
+    modelUrl =
+      resolveAvatarAssetUrl(normalizeIPFSUrl(modelUrl), 'model') ||
+      normalizeIPFSUrl(modelUrl);
     
     // Normalize IPFS URLs if needed
     const normalizedUrl = normalizeIPFSUrl(modelUrl);

@@ -1,0 +1,105 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchData, updateData } from '@/lib/github-storage';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const GITHUB_OWNER = process.env.GITHUB_REPO_OWNER || 'ToxSam';
+const GITHUB_REPO = process.env.GITHUB_REPO_NAME || 'open-source-3D-assets';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const API_BASE = 'https://api.github.com';
+const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+
+export async function POST(req: NextRequest) {
+  if (!GITHUB_TOKEN) {
+    return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
+  }
+
+  const { imageData, avatarId } = await req.json();
+  if (!imageData || !avatarId) {
+    return NextResponse.json({ error: 'imageData and avatarId required' }, { status: 400 });
+  }
+
+  // Strip data URL prefix (data:image/png;base64,...)
+  const base64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+  const filePath = `thumbnails/${avatarId}.png`;
+  const thumbnailUrl = `${RAW_BASE}/${filePath}`;
+
+  // Get existing file SHA (needed for update)
+  let fileSha: string | undefined;
+  try {
+    const res = await fetch(
+      `${API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
+      { headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      fileSha = data.sha;
+    }
+  } catch {}
+
+  // Upload image to GitHub
+  const uploadRes = await fetch(
+    `${API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: `thumbnail: add ${avatarId}`,
+        content: base64,
+        ...(fileSha ? { sha: fileSha } : {}),
+        branch: GITHUB_BRANCH,
+      }),
+    }
+  );
+
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json();
+    return NextResponse.json({ error: 'Failed to upload image', details: err }, { status: 500 });
+  }
+
+  // Update the avatar's JSON file to set the new thumbnail URL
+  try {
+    const projects = await fetchData('data/projects.json');
+    if (Array.isArray(projects)) {
+      for (const project of projects) {
+        const avatarFile = project.asset_data_file || project.assetDataFile || project.avatar_data_file;
+        if (!avatarFile) continue;
+
+        let avatarPath: string;
+        if (avatarFile.startsWith('data/')) avatarPath = avatarFile;
+        else if (avatarFile.startsWith('assets/') || avatarFile.startsWith('avatars/')) avatarPath = `data/${avatarFile}`;
+        else avatarPath = `data/assets/${avatarFile}`;
+
+        const avatars = await fetchData(avatarPath);
+        if (!Array.isArray(avatars)) continue;
+
+        const idx = avatars.findIndex((a: any) => a.id === avatarId);
+        if (idx === -1) continue;
+
+        // Update whichever field exists (snake_case or camelCase)
+        if ('thumbnail_url' in avatars[idx]) avatars[idx].thumbnail_url = thumbnailUrl;
+        if ('thumbnailUrl' in avatars[idx]) avatars[idx].thumbnailUrl = thumbnailUrl;
+        if (!('thumbnail_url' in avatars[idx]) && !('thumbnailUrl' in avatars[idx])) {
+          avatars[idx].thumbnail_url = thumbnailUrl;
+        }
+
+        await updateData(avatarPath, avatars, `thumbnail: update ${avatarId}`);
+        break;
+      }
+    }
+  } catch (err) {
+    // Image uploaded OK but metadata update failed — still return the URL
+    return NextResponse.json({
+      thumbnailUrl,
+      warning: 'Imagen subida pero no se pudo actualizar el JSON',
+    });
+  }
+
+  return NextResponse.json({ thumbnailUrl });
+}

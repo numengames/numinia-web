@@ -444,6 +444,11 @@ export default function BatchDownloadManager({
                                   src={avatar.thumbnailUrl}
                                   alt={avatar.name}
                                   className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700"
+                                  onError={(e) => {
+                                    const el = e.currentTarget;
+                                    if (el.src.includes('/placeholder.png')) return;
+                                    el.src = '/placeholder.png';
+                                  }}
                                 />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-700">
@@ -699,6 +704,11 @@ export default function BatchDownloadManager({
                               src={avatar.thumbnailUrl}
                               alt={avatar.name}
                               className="w-10 h-10 rounded object-cover flex-shrink-0"
+                              onError={(e) => {
+                                const el = e.currentTarget;
+                                if (el.src.includes('/placeholder.png')) return;
+                                el.src = '/placeholder.png';
+                              }}
                             />
                           )}
                           <span className="text-sm text-gray-900 dark:text-gray-100 truncate flex-1">

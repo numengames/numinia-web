@@ -2,6 +2,8 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { loadMixamoAnimation } from './utils/animationLoader';
@@ -9,9 +11,10 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { SkeletonHelper } from 'three';
 import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Camera } from 'lucide-react';
+import { getExtensionFromUrl } from '@/lib/urlUtils';
 
-export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, showInfoPanel = true, onToggleInfoPanel, hideControls = false, cameraDistanceMultiplier = 0.85 }) => {
+export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, showInfoPanel = true, onToggleInfoPanel, hideControls = false, cameraDistanceMultiplier = 0.85, captureRef = null }) => {
   const { t } = useI18n();
   const canvasRef = useRef(null);
   const rendererRef = useRef(null);
@@ -559,7 +562,8 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       const renderer = new THREE.WebGLRenderer({
         canvas,
         alpha: true,
-        antialias: true
+        antialias: true,
+        preserveDrawingBuffer: true
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
@@ -1562,6 +1566,25 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
     animateReset();
   };
 
+  // Capture current frame as PNG — returns data URL, or triggers download if no captureRef
+  const captureScreenshot = () => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return null;
+    rendererRef.current.render(sceneRef.current, cameraRef.current);
+    const dataUrl = rendererRef.current.domElement.toDataURL('image/png');
+    if (!captureRef) {
+      // Standalone mode: just download
+      const link = document.createElement('a');
+      const assetName = url ? url.split('/').pop()?.replace(/\.[^.]+$/, '') || 'thumbnail' : 'thumbnail';
+      link.download = `${assetName}_thumbnail.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+    return dataUrl;
+  };
+
+  // Expose capture function to parent via captureRef
+  if (captureRef) captureRef.current = captureScreenshot;
+
   // Available animations list - only from GLB embedded animations
   const availableAnimations = useMemo(() => {
     // Only show animations if the GLB has embedded animations
@@ -1711,9 +1734,22 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       mixerRef.current = null;
     }
     
-    // Load new model
-        const loader = new GLTFLoader();
-        loader.register((parser) => new VRMLoaderPlugin(parser));
+    // Load new model (Draco / Meshopt for compressed glTF; crossOrigin for embedded textures)
+    (async () => {
+      try {
+        await MeshoptDecoder.ready;
+      } catch (e) {
+        console.warn('MeshoptDecoder.ready:', e);
+      }
+      if (!isActive) return;
+
+      const loader = new GLTFLoader();
+      loader.setCrossOrigin('anonymous');
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+      loader.setDRACOLoader(dracoLoader);
+      loader.setMeshoptDecoder(MeshoptDecoder);
+      loader.register((parser) => new VRMLoaderPlugin(parser));
 
     try {
         loader.load(
@@ -1726,7 +1762,7 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
           
             // Detect if this is a VRM file or regular GLB
             const isVRM = !!vrm;
-            const fileExtension = processedUrl.toLowerCase().split('?')[0].split('.').pop();
+            const fileExtension = getExtensionFromUrl(processedUrl);
             
             if (isVRM) {
               console.log('VRM model loaded successfully');
@@ -2047,6 +2083,7 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       setShowLoadingBar(false);
       setIsLoading(false);
     }
+    })();
     
     return () => {
       isActive = false;
@@ -2250,6 +2287,21 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
               </div>
             </div>
             
+            {/* Screenshot / capture thumbnail button */}
+            <div className="relative group">
+              <button
+                onClick={captureScreenshot}
+                className="px-4 py-2 rounded transition-all flex items-center gap-2 bg-transparent text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <Camera className="h-4 w-4" />
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                <div className="bg-gray-900 dark:bg-gray-800 text-white text-xs py-1 px-3 rounded whitespace-nowrap shadow-lg">
+                  Capturar thumbnail
+                </div>
+              </div>
+            </div>
+
             {/* Animation panel toggle button - only show if GLB has animations */}
             {glbAnimations.length > 0 && (
               <div className="relative group">
