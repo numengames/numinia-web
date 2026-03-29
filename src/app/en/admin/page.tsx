@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AvatarAdminDashboard from '@/components/AvatarAdminDashboard';
 import { WalletConnect } from '@/components/admin/WalletConnect';
+import { AssetUpload } from '@/components/admin/AssetUpload';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -66,6 +67,9 @@ export default function AdminPage() {
         <Button onClick={handleSignOut} variant="destructive">
           Sign Out
         </Button>
+      </div>
+      <div className="max-w-7xl mx-auto p-6">
+        <AssetUpload onUploaded={() => router.refresh()} />
       </div>
       <AvatarAdminDashboard />
     </div>
