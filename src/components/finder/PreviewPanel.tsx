@@ -4,14 +4,30 @@ import React, { useState, useEffect, useMemo, memo, useRef, useCallback } from '
 import { Download, File, Image as ImageIcon, FileIcon, FileText, Layers, Box } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { Avatar, Project } from '@/types/avatar';
-import { VRMViewer } from '@/components/VRMViewer/VRMViewer';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import { getAvailableFileTypes, getAllAvatarFiles } from './utils/fileTypes';
 import { FileTypeInfo } from './utils/fileTypes';
 import { downloadAvatar } from '@/lib/download-utils';
-import TextureRenderer from '@/components/VRMViewer/TextureRenderer';
+
+const VRMViewer = dynamic(
+  () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-gray-100 dark:bg-gray-800 animate-pulse flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Loading viewer...</p>
+      </div>
+    ),
+  }
+);
+
+const TextureRenderer = dynamic(
+  () => import('@/components/VRMViewer/TextureRenderer'),
+  { ssr: false }
+);
 import ImageLightbox from './ImageLightbox';
 import * as THREE from 'three';
 import { getExtensionFromUrl } from '@/lib/urlUtils';

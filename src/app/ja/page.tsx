@@ -3,7 +3,11 @@
 
 import React, { useEffect, useState } from "react";
 import { AvatarHeader } from '@/components/asset/AvatarHeader';
-import { HomeVRMViewer } from '@/components/VRMViewer/HomeVRMViewer';
+import dynamic from 'next/dynamic';
+const HomeVRMViewer = dynamic(
+  () => import('@/components/VRMViewer/HomeVRMViewer').then((mod) => mod.HomeVRMViewer),
+  { ssr: false, loading: () => null }
+);
 import { Footer } from '@/components/Footer';
 import { useI18n } from '@/lib/i18n';
 import { Download, Palette, Search, Code, Box, GitBranch, Boxes, Microscope, ArrowRight } from "lucide-react";
