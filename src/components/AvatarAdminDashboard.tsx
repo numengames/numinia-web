@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -32,85 +32,100 @@ export default function AvatarAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Track which assets have an operation in progress
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
-  const fetchAvatars = async () => {
+  const markBusy = useCallback((id: string) => {
+    setBusyIds(prev => new Set(prev).add(id));
+  }, []);
+
+  const unmarkBusy = useCallback((id: string) => {
+    setBusyIds(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const fetchAvatars = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/assets', {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' },
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch avatars: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       if (data && Array.isArray(data.avatars)) {
         setAvatars(data.avatars);
       } else {
         throw new Error('Invalid data format');
       }
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch avatars');
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch avatars');
       setAvatars([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAvatars();
-  }, []);
+  }, [fetchAvatars]);
 
   const handleDelete = async (avatarId: string) => {
-    if (!confirm('Are you sure you want to delete this avatar?')) return;
-    
+    if (!confirm('Are you sure you want to delete this asset? This cannot be undone.')) return;
+
+    markBusy(avatarId);
     try {
-      const response = await fetch(`/api/assets/${avatarId}`, {
-        method: 'DELETE'
-      });
-  
+      const response = await fetch(`/api/assets/${avatarId}`, { method: 'DELETE' });
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to delete avatar' }));
-        throw new Error(errorData.error || 'Failed to delete avatar');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to delete' }));
+        throw new Error(errorData.error || 'Failed to delete');
       }
-  
-      // Refresh avatars list
-      fetchAvatars();
-    } catch (error) {
-      console.error('Failed to delete avatar:', error);
-      // Show error to user (you can use your toast/alert system)
-      alert(error instanceof Error ? error.message : 'Failed to delete avatar');
+
+      // Remove from local state immediately (no need to refetch)
+      setAvatars(prev => prev.filter(a => a.id !== avatarId));
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete');
+    } finally {
+      unmarkBusy(avatarId);
     }
   };
 
   const toggleVisibility = async (avatarId: string) => {
+    markBusy(avatarId);
+    setError(null);
+
     try {
-      setError(null);
-      
       const response = await fetch(`/api/assets/${avatarId}/visibility`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to update visibility' }));
+        const errorData = await response.json().catch(() => ({ error: 'Failed to update' }));
         throw new Error(errorData.error || 'Failed to update visibility');
       }
 
-      await fetchAvatars();
-    } catch (error) {
-      console.error('Visibility toggle error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update visibility');
+      // Toggle in local state immediately
+      setAvatars(prev =>
+        prev.map(a => a.id === avatarId ? { ...a, isPublic: !a.isPublic } : a)
+      );
+    } catch (err) {
+      console.error('Visibility error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update visibility');
+    } finally {
+      unmarkBusy(avatarId);
     }
   };
 
@@ -121,23 +136,21 @@ export default function AvatarAdminDashboard() {
   return (
     <div className="min-h-screen bg-cream p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
+          <span className="text-sm text-gray-500">{avatars.length} assets</span>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
         )}
 
-        {/* Search */}
         <Card className="overflow-hidden">
           <CardContent className="p-4">
             <Input
-              placeholder="Search avatars..."
+              placeholder="Search assets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md border-gray-200"
@@ -145,74 +158,85 @@ export default function AvatarAdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Asset List */}
         <Card className="overflow-hidden">
           <CardHeader className="px-6">
             <CardTitle>Assets</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {isLoading ? (
-              <div className="text-center py-4">Loading assets...</div>
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading assets...</span>
+              </div>
             ) : filteredAvatars.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 {searchQuery ? 'No assets found matching your search.' : 'No assets available.'}
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredAvatars.map(avatar => (
-                  <Card key={avatar.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={avatar.thumbnailUrl || '/api/placeholder/100/100'}
-                          alt={avatar.name}
-                          className="w-24 h-24 rounded-lg object-cover bg-gray-100"
-                        />
-                        <div className="flex-1">
-                          <div className="flex justify-between">
-                            <div>
-                              <h3 className="font-medium text-lg text-gray-900">{avatar.name}</h3>
-                              <p className="text-gray-500">{avatar.project}</p>
+                {filteredAvatars.map(avatar => {
+                  const isBusy = busyIds.has(avatar.id);
+                  return (
+                    <Card key={avatar.id} className={`overflow-hidden transition-opacity ${isBusy ? 'opacity-50' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          {avatar.thumbnailUrl ? (
+                            <img
+                              src={avatar.thumbnailUrl}
+                              alt={avatar.name}
+                              className="w-24 h-24 rounded-lg object-cover bg-gray-100"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                              No image
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => toggleVisibility(avatar.id)}
-                                title={avatar.isPublic ? 'Make private' : 'Make public'}
-                              >
-                                {avatar.isPublic ? (
-                                  <EyeOff className="h-4 w-4" />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex justify-between">
+                              <div>
+                                <h3 className="font-medium text-lg text-gray-900">{avatar.name}</h3>
+                                <p className="text-gray-500 text-sm">{avatar.description}</p>
+                              </div>
+                              <div className="flex gap-2 items-start">
+                                {isBusy ? (
+                                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                                 ) : (
-                                  <Eye className="h-4 w-4" />
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleVisibility(avatar.id)}
+                                      title={avatar.isPublic ? 'Hide from gallery' : 'Show in gallery'}
+                                    >
+                                      {avatar.isPublic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDelete(avatar.id)}
+                                      title="Delete asset"
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
                                 )}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDelete(avatar.id)}
-                                title="Delete avatar"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              </div>
                             </div>
-                          </div>
-                          <p className="text-gray-600 mt-2">{avatar.description}</p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="secondary">{avatar.format}</Badge>
-                            <Badge variant="secondary">{avatar.polygonCount.toLocaleString()} polys</Badge>
-                            <Badge variant="secondary">{avatar.materialCount} materials</Badge>
-                            {!avatar.isPublic && (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                Hidden
-                              </Badge>
-                            )}
+                            <div className="flex gap-2 mt-2">
+                              <Badge variant="secondary">{avatar.format}</Badge>
+                              {!avatar.isPublic && (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                  Hidden
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
