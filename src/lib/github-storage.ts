@@ -599,6 +599,66 @@ async function getDownloadCounts(): Promise<DownloadCounts> {
   }
 }
 
+// Resolves the file path for a project's asset_data_file.
+// Mirrors the path normalization logic in getAvatars().
+function resolveAssetFilePath(assetDataFile: string): string {
+  if (assetDataFile.startsWith('data/assets/') || assetDataFile.startsWith('data/avatars/')) {
+    return assetDataFile;
+  }
+  if (assetDataFile.startsWith('assets/') || assetDataFile.startsWith('avatars/')) {
+    return `data/${assetDataFile}`;
+  }
+  return `data/assets/${assetDataFile}`;
+}
+
+// Finds which source file an avatar lives in (by project_id), reads it,
+// applies a transform, and writes it back. This is needed because getAvatars()
+// reads from per-project files but saveAvatars() writes to data/avatars.json
+// which is never read when multi-file structure exists.
+async function modifyAvatarInSource(
+  avatarId: string,
+  transform: (avatars: Record<string, unknown>[]) => Record<string, unknown>[]
+): Promise<boolean> {
+  const projects = await fetchData<Record<string, unknown>[]>(DATA_PATHS.projects);
+
+  for (const project of projects) {
+    const assetFile = (project.asset_data_file || project.assetDataFile ||
+                       project.avatar_data_file || project.avatarDataFile) as string | undefined;
+    if (!assetFile) continue;
+
+    const filePath = resolveAssetFilePath(assetFile);
+    const avatars = await fetchData<Record<string, unknown>[]>(filePath);
+
+    if (!Array.isArray(avatars)) continue;
+
+    const index = avatars.findIndex(a => a.id === avatarId);
+    if (index === -1) continue;
+
+    const updated = transform(avatars);
+    await updateData(filePath, updated, `Update avatar ${avatarId}`);
+    return true;
+  }
+
+  return false;
+}
+
+// Updates specific fields of an avatar in its source file.
+async function updateAvatarInSource(
+  avatarId: string,
+  updates: Record<string, unknown>
+): Promise<boolean> {
+  return modifyAvatarInSource(avatarId, (avatars) =>
+    avatars.map(a => a.id === avatarId ? { ...a, ...updates, updated_at: new Date().toISOString() } : a)
+  );
+}
+
+// Removes an avatar from its source file.
+async function deleteAvatarFromSource(avatarId: string): Promise<boolean> {
+  return modifyAvatarInSource(avatarId, (avatars) =>
+    avatars.filter(a => a.id !== avatarId)
+  );
+}
+
 // Explicitly export all functions at the end
 export {
   fetchData,
@@ -618,5 +678,7 @@ export {
   saveAvatarTags,
   findById,
   saveDownloadCounts,
-  getDownloadCounts
+  getDownloadCounts,
+  updateAvatarInSource,
+  deleteAvatarFromSource,
 }; 

@@ -1,12 +1,12 @@
 // src/app/api/assets/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { 
-  getAvatars, 
-  saveAvatars, 
-  getAvatarTags, 
-  saveAvatarTags, 
-  getDownloads, 
+import {
+  getAvatars,
+  deleteAvatarFromSource,
+  getAvatarTags,
+  saveAvatarTags,
+  getDownloads,
   saveDownloads,
   GithubAvatar as Avatar,
   GithubAvatarTag as AvatarTag,
@@ -93,11 +93,8 @@ export async function DELETE(
       }
     }
 
-    // Remove the avatar from the avatars array
-    avatars.splice(avatarIndex, 1);
-    
-    // Save the updated avatars array
-    await saveAvatars(avatars);
+    // Remove the avatar from its source file
+    await deleteAvatarFromSource(avatarId);
     
     // Also clean up any avatar tags and download records
     
