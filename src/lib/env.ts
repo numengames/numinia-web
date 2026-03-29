@@ -16,9 +16,10 @@ const serverSchema = z.object({
   GITHUB_REPO_NAME:  z.string().min(1, 'GITHUB_REPO_NAME is required'),
   GITHUB_BRANCH:     z.string().default('main'),
   GITHUB_TOKEN:      z.string().min(1, 'GITHUB_TOKEN is required'),
-  // GitHub OAuth
-  GITHUB_CLIENT_ID:     z.string().min(1, 'GITHUB_CLIENT_ID is required'),
-  GITHUB_CLIENT_SECRET: z.string().min(1, 'GITHUB_CLIENT_SECRET is required'),
+  // GitHub OAuth — optional: only needed for login, not for reading the gallery.
+  // Auth routes validate these at request time and return 503 if missing.
+  GITHUB_CLIENT_ID:     z.string().default(''),
+  GITHUB_CLIENT_SECRET: z.string().default(''),
   GITHUB_REDIRECT_URI:  z.string().default('http://localhost:3000/api/auth/github/callback'),
   // Cloudflare R2 (optional — upload features degrade gracefully without it)
   R2_ACCOUNT_ID:        z.string().default(''),
@@ -45,8 +46,8 @@ const skipValidation = isBuildPhase || process.env.SKIP_ENV_VALIDATION === '1';
 if (typeof window === 'undefined' && !skipValidation) {
   const result = serverSchema.safeParse(process.env);
   if (!result.success) {
-    const errors = Object.entries(result.error.flatten().fieldErrors)
-      .map(([key, msgs]) => `  ${key}: ${msgs?.join(', ')}`)
+    const errors = result.error.issues
+      .map(issue => `  ${issue.path.join('.')}: ${issue.message}`)
       .join('\n');
     throw new Error(`\n❌ Invalid environment variables:\n${errors}\n`);
   }
