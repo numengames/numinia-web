@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { SiweMessage } from 'siwe';
+import { getAddress } from 'viem';
 import { Button } from '@/components/ui/button';
 
 type WalletSession = {
@@ -39,7 +40,8 @@ export function WalletConnect({ onAuthenticated }: WalletConnectProps) {
         return;
       }
 
-      const address = accounts[0];
+      // Convert to EIP-55 checksum format — SIWE rejects lowercase addresses
+      const address = getAddress(accounts[0]);
 
       // Get chain ID
       const chainId: string = await window.ethereum.request({
