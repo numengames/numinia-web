@@ -50,10 +50,12 @@
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-html": "^16.0.1",
+    "siwe": "^3.0.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.162.0",
     "uuid": "^11.1.0",
+    "viem": "^2.47.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {

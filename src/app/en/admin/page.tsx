@@ -1,40 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AvatarAdminDashboard from '@/components/AvatarAdminDashboard';
+import { WalletConnect } from '@/components/admin/WalletConnect';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
+type AdminSession = {
+  authenticated: boolean;
+  address?: string;
+  role?: string;
+};
+
 export default function AdminPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<AdminSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Simplified admin page that doesn't check auth
-  // We'll rely on the API calls to check auth
+  // Check if we already have an active admin session
+  useEffect(() => {
+    fetch('/api/auth/wallet/session')
+      .then(res => res.json())
+      .then(data => setSession(data))
+      .catch(() => setSession({ authenticated: false }))
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  const handleSignOut = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Use the logout API endpoint
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to sign out');
-      }
-      
-      router.replace('/');
-      router.refresh(); // Force a refresh to clear state
-    } catch (error) {
-      console.error('Sign out error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleSignOut = useCallback(async () => {
+    await fetch('/api/auth/wallet/session', { method: 'DELETE' });
+    setSession({ authenticated: false });
+    router.refresh();
+  }, [router]);
 
   if (isLoading) {
     return (
@@ -44,16 +41,29 @@ export default function AdminPage() {
     );
   }
 
+  // Not authenticated — show wallet connect
+  if (!session?.authenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Numinia Admin</h1>
+          <p className="text-sm text-gray-500">
+            Connect your Ethereum wallet to access the admin panel.
+          </p>
+        </div>
+        <WalletConnect onAuthenticated={setSession} />
+      </div>
+    );
+  }
+
+  // Authenticated — show admin dashboard
   return (
     <div>
       <div className="p-4 flex justify-between items-center bg-cream border-b">
         <div className="text-sm text-gray-600">
-          Admin Dashboard
+          Admin — {session.address?.slice(0, 6)}...{session.address?.slice(-4)}
         </div>
-        <Button 
-          onClick={handleSignOut}
-          variant="destructive"
-        >
+        <Button onClick={handleSignOut} variant="destructive">
           Sign Out
         </Button>
       </div>
