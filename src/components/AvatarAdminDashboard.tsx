@@ -33,9 +33,16 @@ export default function AvatarAdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  // Inline editing state: avatarId → current edit value
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [formatFilter, setFormatFilter] = useState<string | null>(null);
+  // Toast-style status message
+  const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showStatus = useCallback((text: string, type: 'success' | 'error') => {
+    setStatusMessage({ text, type });
+    setTimeout(() => setStatusMessage(null), 3000);
+  }, []);
 
   const markBusy = useCallback((id: string) => {
     setBusyIds(prev => new Set(prev).add(id));
@@ -94,11 +101,11 @@ export default function AvatarAdminDashboard() {
         throw new Error(errorData.error || 'Failed to delete');
       }
 
-      // Remove from local state immediately (no need to refetch)
       setAvatars(prev => prev.filter(a => a.id !== avatarId));
+      showStatus('Asset deleted', 'success');
     } catch (err) {
       console.error('Delete error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete');
+      showStatus(err instanceof Error ? err.message : 'Failed to delete', 'error');
     } finally {
       unmarkBusy(avatarId);
     }
@@ -119,13 +126,13 @@ export default function AvatarAdminDashboard() {
         throw new Error(errorData.error || 'Failed to update visibility');
       }
 
-      // Toggle in local state immediately
       setAvatars(prev =>
         prev.map(a => a.id === avatarId ? { ...a, isPublic: !a.isPublic } : a)
       );
+      showStatus('Visibility updated', 'success');
     } catch (err) {
       console.error('Visibility error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update visibility');
+      showStatus(err instanceof Error ? err.message : 'Failed to update visibility', 'error');
     } finally {
       unmarkBusy(avatarId);
     }
@@ -161,16 +168,22 @@ export default function AvatarAdminDashboard() {
         prev.map(a => a.id === avatarId ? { ...a, name: trimmed } : a)
       );
       setEditingId(null);
+      showStatus(`Renamed to "${trimmed}"`, 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to rename');
+      showStatus(err instanceof Error ? err.message : 'Failed to rename', 'error');
     } finally {
       unmarkBusy(avatarId);
     }
   };
 
-  const filteredAvatars = avatars.filter(avatar =>
-    avatar.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get unique formats for filter buttons
+  const formats = Array.from(new Set(avatars.map(a => a.format?.toUpperCase()).filter(Boolean))).sort();
+
+  const filteredAvatars = avatars.filter(avatar => {
+    const matchesSearch = avatar.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFormat = !formatFilter || avatar.format?.toUpperCase() === formatFilter;
+    return matchesSearch && matchesFormat;
+  });
 
   return (
     <div className="min-h-screen bg-cream p-6">
@@ -180,6 +193,17 @@ export default function AvatarAdminDashboard() {
           <span className="text-sm text-gray-500">{avatars.length} assets</span>
         </div>
 
+        {/* Status toast */}
+        {statusMessage && (
+          <div className={`px-4 py-3 rounded text-sm font-medium transition-all ${
+            statusMessage.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-700'
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}>
+            {statusMessage.text}
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
@@ -187,13 +211,36 @@ export default function AvatarAdminDashboard() {
         )}
 
         <Card className="overflow-hidden">
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-3">
             <Input
               placeholder="Search assets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md border-gray-200"
             />
+            {/* Format filter buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={formatFilter === null ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFormatFilter(null)}
+              >
+                All ({avatars.length})
+              </Button>
+              {formats.map(fmt => {
+                const count = avatars.filter(a => a.format?.toUpperCase() === fmt).length;
+                return (
+                  <Button
+                    key={fmt}
+                    variant={formatFilter === fmt ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFormatFilter(formatFilter === fmt ? null : fmt)}
+                  >
+                    {fmt} ({count})
+                  </Button>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 
