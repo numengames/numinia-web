@@ -35,9 +35,14 @@ const clientSchema = z.object({
   NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE:        z.string().default(''),
 });
 
-// Validate server vars at module load — only on the server.
-// Throws immediately with a clear list of missing/invalid vars.
-if (typeof window === 'undefined') {
+// Validate server vars at module load — only on the server, only at runtime.
+// Skipped during `next build` (NEXT_PHASE=phase-production-build) because secrets
+// aren't available in Vercel's build environment, only at request time.
+// Also skippable with SKIP_ENV_VALIDATION=1 for local scripts / CI.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const skipValidation = isBuildPhase || process.env.SKIP_ENV_VALIDATION === '1';
+
+if (typeof window === 'undefined' && !skipValidation) {
   const result = serverSchema.safeParse(process.env);
   if (!result.success) {
     const errors = Object.entries(result.error.flatten().fieldErrors)
