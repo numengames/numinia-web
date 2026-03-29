@@ -11,10 +11,8 @@
  */
 
 import { resolveAvatarFieldsFromRaw, resolveAlternateModelsMetadata } from '@/lib/assetUrls';
-
-// Load environment variables from .env and .env.local files
-require('dotenv').config();
-require('dotenv').config({ path: '.env.local' });
+import { env } from '@/lib/env';
+// Next.js loads .env / .env.local automatically — no dotenv.config() needed.
 
 // Type definitions using camelCase (for application code)
 export type GithubUser = {
@@ -81,11 +79,11 @@ export type GithubTag = {
   updatedAt: string;
 };
 
-// Configuration
-const GITHUB_OWNER = process.env.GITHUB_REPO_OWNER || 'ToxSam';
-const GITHUB_REPO = process.env.GITHUB_REPO_NAME || 'open-source-3D-assets';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Personal access token with repo scope
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+// Configuration — sourced from env.ts (validated at startup, never falls back to ToxSam)
+const GITHUB_OWNER  = env.github.repoOwner;
+const GITHUB_REPO   = env.github.repoName;
+const GITHUB_TOKEN  = env.github.token;
+const GITHUB_BRANCH = env.github.branch;
 
 // File paths in the repository
 const DATA_PATHS = {
@@ -106,7 +104,10 @@ const RAW_CONTENT_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GI
  * @param path Path to the JSON file in the repository
  * @returns The parsed JSON data
  */
-async function fetchData(path: string) {
+// T is the expected shape of the JSON — callers decide the type.
+// Using a generic instead of `any` means TypeScript checks the usage,
+// but we still trust the GitHub API to return what we expect (no runtime Zod parsing).
+async function fetchData<T = unknown>(path: string): Promise<T> {
   try {
     const url = `${RAW_CONTENT_BASE}/${path}?timestamp=${Date.now()}`;
     console.log(`Fetching from: ${url}`);
@@ -119,10 +120,12 @@ async function fetchData(path: string) {
     if (!response.ok) {
       if (response.status === 404) {
         console.warn(`  ✗ File not found (404): ${path}`);
-        // File doesn't exist yet, return empty array or object
-        return (path.includes('users') || path.includes('projects') || 
-               path.includes('avatars') || path.includes('tags') || 
-               path.includes('downloads')) ? [] : {};
+        // File doesn't exist yet — return a sensible empty default.
+        // `as T` is intentional: callers always expect array types for these paths.
+        const isEmpty = path.includes('users') || path.includes('projects') ||
+                        path.includes('avatars') || path.includes('tags') ||
+                        path.includes('downloads');
+        return (isEmpty ? [] : {}) as T;
       }
       console.error(`  ✗ HTTP Error ${response.status}: ${response.statusText} for ${path}`);
       throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
@@ -230,7 +233,7 @@ async function saveData(
 
 // Users
 async function getUsers() {
-  const rawUsers = await fetchData(DATA_PATHS.users);
+  const rawUsers = await fetchData<Record<string, unknown>[]>(DATA_PATHS.users);
   
   // Convert snake_case to camelCase for compatibility and sanitize sensitive fields
   return rawUsers.map((user: any) => ({
@@ -259,7 +262,7 @@ async function saveUsers(users: any[]) {
 
 // Projects
 async function getProjects() {
-  const rawProjects = await fetchData(DATA_PATHS.projects);
+  const rawProjects = await fetchData<Record<string, unknown>[]>(DATA_PATHS.projects);
   
   // Convert snake_case to camelCase for compatibility
   return rawProjects.map((project: any) => ({
@@ -299,7 +302,7 @@ async function getAvatars(projectIds?: string[]) {
   try {
     // First, try the new multi-file structure from open-source-3D-assets
     // Fetch projects to see which asset files to load
-    const projects = await fetchData(DATA_PATHS.projects);
+    const projects = await fetchData<Record<string, unknown>[]>(DATA_PATHS.projects);
     
     if (Array.isArray(projects) && projects.length > 0) {
       // Check if any project has asset_data_file field (new structure)
@@ -359,7 +362,7 @@ async function getAvatars(projectIds?: string[]) {
               
               console.log(`Fetching avatars from: ${avatarPath} for project: ${project.name || projectId}`);
               
-              const projectAvatars = await fetchData(avatarPath);
+              const projectAvatars = await fetchData<Record<string, unknown>[]>(avatarPath);
               
               // Debug: log what we actually got
               console.log(`  Response type: ${typeof projectAvatars}, isArray: ${Array.isArray(projectAvatars)}`);
@@ -421,7 +424,7 @@ async function getAvatars(projectIds?: string[]) {
     // Fallback: If no avatars were loaded from project files, try the old single-file structure
     if (allAvatars.length === 0) {
       console.log('Falling back to single-file avatar structure (data/avatars.json)');
-      const rawAvatars = await fetchData(DATA_PATHS.avatars);
+      const rawAvatars = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatars);
       if (Array.isArray(rawAvatars)) {
         allAvatars = rawAvatars;
       }
@@ -430,7 +433,7 @@ async function getAvatars(projectIds?: string[]) {
     console.error('Error in getAvatars, trying fallback:', error);
     // Final fallback: try the old single-file structure
     try {
-      const rawAvatars = await fetchData(DATA_PATHS.avatars);
+      const rawAvatars = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatars);
       if (Array.isArray(rawAvatars)) {
         allAvatars = rawAvatars;
       }
@@ -493,7 +496,7 @@ async function saveAvatars(avatars: any[]) {
 
 // Tags
 async function getTags() {
-  const rawTags = await fetchData(DATA_PATHS.tags);
+  const rawTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.tags);
   
   // Convert snake_case to camelCase for compatibility
   return rawTags.map((tag: any) => ({
@@ -517,7 +520,7 @@ async function saveTags(tags: any[]) {
 
 // Downloads
 async function getDownloads() {
-  const rawDownloads = await fetchData(DATA_PATHS.downloads);
+  const rawDownloads = await fetchData<Record<string, unknown>[]>(DATA_PATHS.downloads);
   
   // Convert snake_case to camelCase for compatibility
   return rawDownloads.map((download: any) => ({
@@ -549,7 +552,7 @@ async function saveDownloads(downloads: any[]) {
 
 // Avatar Tags
 async function getAvatarTags() {
-  const rawAvatarTags = await fetchData(DATA_PATHS.avatarTags);
+  const rawAvatarTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatarTags);
   
   // Convert snake_case to camelCase for compatibility
   return rawAvatarTags.map((avatarTag: any) => ({
@@ -585,9 +588,11 @@ async function saveDownloadCounts(downloadCounts: any): Promise<void> {
   console.log('Download counts saved successfully');
 }
 
-async function getDownloadCounts(): Promise<any> {
+type DownloadCounts = { counts: Record<string, number> };
+
+async function getDownloadCounts(): Promise<DownloadCounts> {
   try {
-    const data = await fetchData('download-counts.json');
+    const data = await fetchData<DownloadCounts>('download-counts.json');
     return data || { counts: {} };
   } catch (error) {
     console.error('Error fetching download counts:', error);

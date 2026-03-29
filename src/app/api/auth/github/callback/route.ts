@@ -134,9 +134,10 @@ export async function GET(request: NextRequest) {
     } else {
       // Update the user's last login time
       user.updatedAt = new Date().toISOString();
-      
-      // Update the user in the database
-      const userIndex = users.findIndex((u: GithubUser) => u.id === user.id);
+
+      // Capture id before the findIndex callback to preserve TypeScript's type narrowing
+      const userId = user.id;
+      const userIndex = users.findIndex((u: GithubUser) => u.id === userId);
       if (userIndex !== -1) {
         users[userIndex] = user;
         await saveUsers(users);
