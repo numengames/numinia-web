@@ -3,6 +3,27 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import React from 'react';
 
+// Static imports — Turbopack cannot reliably bundle dynamic template-literal imports
+// (import(`../locales/${locale}/file.json`)) because the locale is a runtime variable.
+// Using static imports guarantees all translation files are included in the bundle.
+import enCommon    from '../locales/en/common.json';
+import enHeader    from '../locales/en/header.json';
+import enAvatar    from '../locales/en/avatar.json';
+import enAbout     from '../locales/en/about.json';
+import enResources from '../locales/en/resources.json';
+import enVrmviewer from '../locales/en/vrmviewer.json';
+import enHome      from '../locales/en/home.json';
+import enFinder    from '../locales/en/finder.json';
+
+import jaCommon    from '../locales/ja/common.json';
+import jaHeader    from '../locales/ja/header.json';
+import jaAvatar    from '../locales/ja/avatar.json';
+import jaAbout     from '../locales/ja/about.json';
+import jaResources from '../locales/ja/resources.json';
+import jaVrmviewer from '../locales/ja/vrmviewer.json';
+import jaHome      from '../locales/ja/home.json';
+import jaFinder    from '../locales/ja/finder.json';
+
 // Define available locales
 export const locales = ['en', 'ja'] as const;
 export type Locale = typeof locales[number];
@@ -11,7 +32,7 @@ export type Locale = typeof locales[number];
 type TranslationKey = string;
 
 // Type for translation values
-type TranslationValue = string | string[] | Record<string, any>;
+type TranslationValue = string | string[] | Record<string, unknown>;
 
 // Context type
 type I18nContextType = {
@@ -24,42 +45,29 @@ type I18nContextType = {
 // Create context
 export const I18nContext = createContext<I18nContextType | null>(null);
 
-// Translation cache
+// All translations bundled statically — no async loading needed.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const translations: Record<Locale, Record<string, any>> = {
-  en: {},
-  ja: {},
-};
-
-// Load translations
-const loadTranslations = async (locale: Locale) => {
-  if (Object.keys(translations[locale]).length > 0) return;
-  
-  try {
-    const [common, header, avatar, about, resources, vrmviewer, home, finder] = await Promise.all([
-      import(`../locales/${locale}/common.json`),
-      import(`../locales/${locale}/header.json`),
-      import(`../locales/${locale}/avatar.json`),
-      import(`../locales/${locale}/about.json`),
-      import(`../locales/${locale}/resources.json`),
-      import(`../locales/${locale}/vrmviewer.json`),
-      import(`../locales/${locale}/home.json`),
-      import(`../locales/${locale}/finder.json`)
-    ]);
-
-    translations[locale] = {
-      ...translations[locale],
-      common: common.default,
-      header: header.default,
-      avatar: avatar.default,
-      about: about.default,
-      resources: resources.default,
-      vrmviewer: vrmviewer.default,
-      home: home.default,
-      finder: finder.default
-    };
-  } catch (error) {
-    console.error(`Error loading translations for ${locale}:`, error);
-  }
+  en: {
+    common: enCommon,
+    header: enHeader,
+    avatar: enAvatar,
+    about: enAbout,
+    resources: enResources,
+    vrmviewer: enVrmviewer,
+    home: enHome,
+    finder: enFinder,
+  },
+  ja: {
+    common: jaCommon,
+    header: jaHeader,
+    avatar: jaAvatar,
+    about: jaAbout,
+    resources: jaResources,
+    vrmviewer: jaVrmviewer,
+    home: jaHome,
+    finder: jaFinder,
+  },
 };
 
 // Provider props type
@@ -69,37 +77,34 @@ type I18nProviderProps = {
 };
 
 // Provider component
-export const I18nProvider: React.FC<I18nProviderProps> = ({ 
-  children, 
-  defaultLocale = 'en' 
+export const I18nProvider: React.FC<I18nProviderProps> = ({
+  children,
+  defaultLocale = 'en',
 }) => {
+  // Translations are bundled statically — locale switching is synchronous.
+  // On the server defaultLocale is used directly (no localStorage).
   const [locale, setLocaleState] = useState<Locale>(() => {
     if (typeof window === 'undefined') return defaultLocale;
-    return (localStorage.getItem('preferred-locale') as Locale) || defaultLocale;
+    const stored = localStorage.getItem('preferred-locale') as Locale | null;
+    return stored && locales.includes(stored) ? stored : defaultLocale;
   });
-  const [isLoading, setIsLoading] = useState(true);
 
-  const setLocale = useCallback(async (newLocale: Locale) => {
-    setIsLoading(true);
-    await loadTranslations(newLocale);
+  const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferred-locale', newLocale);
     }
-    setIsLoading(false);
   }, []);
 
   const t = useCallback((key: TranslationKey, options?: { returnObjects?: boolean }): string | string[] => {
-    if (isLoading) return key;
-    
     const [namespace, ...keys] = key.split('.');
     let current: TranslationValue = translations[locale]?.[namespace];
-    
+
     if (!current) {
       console.warn(`Translation namespace not found: ${namespace}`);
       return key;
     }
-    
+
     for (const k of keys) {
       if (typeof current !== 'object' || Array.isArray(current)) {
         console.warn(`Translation key not found: ${key}`);
@@ -111,36 +116,26 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
         return key;
       }
     }
-    
+
     if (options?.returnObjects && Array.isArray(current)) {
       return current;
     }
-    
+
     if (typeof current === 'string') {
       return current;
     }
-    
+
     if (Array.isArray(current)) {
       console.warn(`Translation value is an array but returnObjects is not set: ${key}`);
       return key;
     }
-    
+
     console.warn(`Translation value is not a string or array: ${key}`);
     return key;
-  }, [locale, isLoading]);
-
-  // Load initial translations
-  React.useEffect(() => {
-    const initTranslations = async () => {
-      setIsLoading(true);
-      await loadTranslations(locale);
-      setIsLoading(false);
-    };
-    initTranslations();
   }, [locale]);
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t, isLoading }}>
+    <I18nContext.Provider value={{ locale, setLocale, t, isLoading: false }}>
       {children}
     </I18nContext.Provider>
   );
