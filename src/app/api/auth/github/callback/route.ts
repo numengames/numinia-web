@@ -24,12 +24,28 @@ export const runtime = 'nodejs';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Extract the code from the URL
+    // Extract the code and state from the URL
     const searchParams = request.nextUrl.searchParams;
     const code = searchParams.get('code');
-    
+    const stateParam = searchParams.get('state');
+
     if (!code) {
       return NextResponse.redirect(new URL('/login?error=no_code', request.url));
+    }
+
+    // Validate CSRF state against the httpOnly cookie set at OAuth initiation
+    const oauthStateCookie = request.cookies.get('oauth_state');
+    if (!oauthStateCookie || !stateParam) {
+      return NextResponse.redirect(new URL('/login?error=invalid_state', request.url));
+    }
+    let oauthState: { csrf: string; redirectTo: string };
+    try {
+      oauthState = JSON.parse(oauthStateCookie.value);
+    } catch {
+      return NextResponse.redirect(new URL('/login?error=invalid_state', request.url));
+    }
+    if (oauthState.csrf !== stateParam) {
+      return NextResponse.redirect(new URL('/login?error=csrf_mismatch', request.url));
     }
     
     // Exchange the code for an access token
@@ -127,26 +143,26 @@ export async function GET(request: NextRequest) {
       }
     }
     
-        // Set a cookie with the user's ID and other necessary info
-    // Note: In a production app, you'd use a proper JWT or signed cookie
+        // Set session cookie and clear the oauth_state CSRF cookie
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'session',
       value: JSON.stringify({
         userId: user.id,
-        username: user.login,
+        username: user.username,
         role: user.role || 'creator',
-        avatarUrl: user.avatar_url,
       }),
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
-    
-    // Redirect to the dashboard or home page
-    return NextResponse.redirect(new URL('/', request.url));
+    cookieStore.delete('oauth_state');
+
+    // Redirect to the original destination (validated, stored in CSRF cookie)
+    const redirectTo = oauthState.redirectTo || '/';
+    return NextResponse.redirect(new URL(redirectTo, request.url));
   } catch (error) {
     console.error('Auth callback error:', error);
     return NextResponse.redirect(new URL('/login?error=unknown', request.url));

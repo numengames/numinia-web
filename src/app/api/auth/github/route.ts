@@ -20,16 +20,28 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const redirectTo = searchParams.get('redirect_to') || '/';
-    
+
+    // Generate a cryptographically random CSRF token
+    const csrfToken = crypto.randomUUID();
+
     // Build the GitHub authorization URL
     const authUrl = new URL('https://github.com/login/oauth/authorize');
     authUrl.searchParams.set('client_id', GITHUB_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', GITHUB_REDIRECT_URI);
     authUrl.searchParams.set('scope', 'user:email read:user');
-    authUrl.searchParams.set('state', redirectTo); // We'll use state to remember where to redirect after login
-    
-    // Redirect to GitHub for authorization
-    return NextResponse.redirect(authUrl);
+    authUrl.searchParams.set('state', csrfToken);
+
+    // Store CSRF token + redirect destination in a short-lived httpOnly cookie
+    const response = NextResponse.redirect(authUrl);
+    response.cookies.set('oauth_state', JSON.stringify({ csrf: csrfToken, redirectTo }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     console.error('Auth initiation error:', error);
     return NextResponse.redirect(new URL('/login?error=initiation_failed', request.url));
