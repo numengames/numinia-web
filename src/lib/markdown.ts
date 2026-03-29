@@ -52,17 +52,18 @@ export function fileExists(filePath: string): boolean {
  * Get the project root directory, handling both development and standalone builds
  */
 export function getProjectRoot(): string {
-  const cwd = process.cwd();
-  
+  // turbopackIgnore tells Turbopack not to trace the whole project from cwd
+  const cwd = /*turbopackIgnore: true*/ process.cwd();
+
   // In standalone builds, process.cwd() is typically .next/standalone
   // The docs folder should be at .next/standalone/docs (copied by our script)
   // In development, docs is at the project root
-  
+
   // Try multiple possible locations for the docs folder
   const possiblePaths = [
-    { docsPath: path.join(cwd, 'docs'), root: cwd }, // Standard location (development or standalone with our script)
-    { docsPath: path.join(cwd, '..', 'docs'), root: path.join(cwd, '..') }, // If we're in .next/standalone/node_modules or similar
-    { docsPath: path.join(cwd, '..', '..', 'docs'), root: path.join(cwd, '..', '..') }, // If we're deeper in the structure
+    { docsPath: path.join(cwd, 'docs'), root: cwd },
+    { docsPath: path.join(cwd, '..', 'docs'), root: path.join(cwd, '..') },
+    { docsPath: path.join(cwd, '..', '..', 'docs'), root: path.join(cwd, '..', '..') },
   ];
   
   // Find the first path that exists and has the expected structure
