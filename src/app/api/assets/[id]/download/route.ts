@@ -17,7 +17,7 @@ interface AvatarMetadata {
     voxel_fbx?: string;
     [key: string]: string | undefined;
   };
-  [key: string]: any;
+  number?: string;
 }
 
 interface Avatar {
@@ -25,7 +25,6 @@ interface Avatar {
   name: string;
   modelFileUrl: string | null;
   metadata: AvatarMetadata;
-  [key: string]: any;
 }
 
 // Helper function to get model filename for a specific format

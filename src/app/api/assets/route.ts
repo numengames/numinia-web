@@ -100,10 +100,15 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    type PublicProject = {
+      id: string; name: string; description?: string; isPublic: boolean;
+      license: string; createdAt: string; updatedAt: string; avatarCount: number;
+    };
+
     // Prepare projects data for frontend
     const publicProjects = projects
       .filter((project: GithubProject) => project.isPublic)
-      .map((project: GithubProject) => ({
+      .map((project: GithubProject): PublicProject => ({
         id: project.id,
         name: project.name,
         description: project.description,
@@ -111,17 +116,17 @@ export async function GET(req: NextRequest) {
         license: project.license || 'CC0', // Include license, default to CC0
         createdAt: project.createdAt,
         updatedAt: project.updatedAt,
-        avatarCount: transformedAvatars.filter((a: any) => a.projectId === project.id).length
+        avatarCount: transformedAvatars.filter((a) => a.projectId === project.id).length
       }))
-      .sort((a: any, b: any) => a.name.localeCompare(b.name)); // Sort by name (R1, R2, R3)
+      .sort((a: PublicProject, b: PublicProject) => a.name.localeCompare(b.name));
 
     // Debug: Log project ID distribution
-    const projectIdCounts = transformedAvatars.reduce((acc: Record<string, number>, avatar: any) => {
+    const projectIdCounts = transformedAvatars.reduce((acc: Record<string, number>, avatar) => {
       acc[avatar.projectId] = (acc[avatar.projectId] || 0) + 1;
       return acc;
     }, {});
     console.log('Avatar counts by project:', projectIdCounts);
-    console.log('Available project IDs:', publicProjects.map((p: any) => ({ id: p.id, name: p.name, count: p.avatarCount })));
+    console.log('Available project IDs:', publicProjects.map((p: PublicProject) => ({ id: p.id, name: p.name, count: p.avatarCount })));
 
     return NextResponse.json({ 
       avatars: transformedAvatars,

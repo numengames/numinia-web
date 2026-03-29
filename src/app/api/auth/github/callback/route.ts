@@ -87,7 +87,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Find the primary email
-    const primaryEmail = emailData.find((email: any) => email.primary)?.email || emailData[0]?.email;
+    interface GitHubEmail { primary: boolean; verified: boolean; email: string; }
+    const primaryEmail = (emailData as GitHubEmail[]).find((email) => email.primary)?.email || emailData[0]?.email;
     
     if (!primaryEmail) {
       return NextResponse.redirect(new URL('/login?error=no_email', request.url));
