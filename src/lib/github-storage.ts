@@ -51,7 +51,7 @@ export type GithubAvatar = {
   materialCount?: number;
   isPublic: boolean;
   isDraft: boolean;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 };
@@ -148,8 +148,8 @@ async function fetchData<T = unknown>(path: string): Promise<T> {
  * @returns Success status
  */
 async function updateData(
-  path: string, 
-  data: any, 
+  path: string,
+  data: unknown,
   commitMessage: string = `Update ${path}`
 ) {
   if (!GITHUB_TOKEN) {
@@ -223,7 +223,7 @@ async function updateData(
  */
 async function saveData(
   path: string,
-  data: any,
+  data: unknown,
   commitMessage: string = `Update ${path}`
 ) {
   return updateData(path, data, commitMessage);
@@ -247,9 +247,9 @@ async function getUsers() {
   }));
 }
 
-async function saveUsers(users: any[]) {
+async function saveUsers(users: GithubUser[]) {
   // Convert camelCase to snake_case and sanitize sensitive fields
-  const snakeCaseUsers = users.map((user: any) => ({
+  const snakeCaseUsers = users.map((user) => ({
     id: user.id,
     username: user.username,
     email: '[email protected]', // Always sanitize email when saving
@@ -279,7 +279,7 @@ async function getProjects() {
   }));
 }
 
-async function saveProjects(projects: any[]) {
+async function saveProjects(projects: GithubProject[]) {
   // Convert camelCase to snake_case
   const snakeCaseProjects = projects.map(project => ({
     id: project.id,
@@ -289,8 +289,7 @@ async function saveProjects(projects: any[]) {
     is_public: project.isPublic,
     created_at: project.createdAt,
     updated_at: project.updatedAt,
-    // Preserve asset_data_file field if it exists
-    asset_data_file: project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile
+    asset_data_file: project.asset_data_file
   }));
   return updateData(DATA_PATHS.projects, snakeCaseProjects, 'Update projects data');
 }
@@ -473,7 +472,7 @@ async function getAvatars(projectIds?: string[]) {
   return convertedAvatars;
 }
 
-async function saveAvatars(avatars: any[]) {
+async function saveAvatars(avatars: GithubAvatar[]) {
   // Convert camelCase to snake_case
   const snakeCaseAvatars = avatars.map(avatar => ({
     id: avatar.id,
@@ -507,7 +506,7 @@ async function getTags() {
   }));
 }
 
-async function saveTags(tags: any[]) {
+async function saveTags(tags: GithubTag[]) {
   // Convert camelCase to snake_case
   const snakeCaseTags = tags.map(tag => ({
     id: tag.id,
@@ -535,7 +534,7 @@ async function getDownloads() {
   }));
 }
 
-async function saveDownloads(downloads: any[]) {
+async function saveDownloads(downloads: GithubDownload[]) {
   // Convert camelCase to snake_case
   const snakeCaseDownloads = downloads.map(download => ({
     id: download.id,
@@ -561,7 +560,7 @@ async function getAvatarTags() {
   }));
 }
 
-async function saveAvatarTags(avatarTags: any[]) {
+async function saveAvatarTags(avatarTags: GithubAvatarTag[]) {
   // Convert camelCase to snake_case
   const snakeCaseAvatarTags = avatarTags.map(avatarTag => ({
     avatar_id: avatarTag.avatarId,
@@ -578,17 +577,17 @@ async function saveAvatarTags(avatarTags: any[]) {
  * @param id ID to find
  * @returns The found item or undefined
  */
-function findById(items: any[], id: string) {
-  return items.find((item: any) => item.id === id);
-}
-
-// Function to save download counts (privacy-friendly approach)
-async function saveDownloadCounts(downloadCounts: any): Promise<void> {
-  await saveData('download-counts.json', downloadCounts);
-  console.log('Download counts saved successfully');
+function findById<T extends { id: string }>(items: T[], id: string): T | undefined {
+  return items.find((item) => item.id === id);
 }
 
 type DownloadCounts = { counts: Record<string, number> };
+
+// Function to save download counts (privacy-friendly approach)
+async function saveDownloadCounts(downloadCounts: DownloadCounts): Promise<void> {
+  await saveData('download-counts.json', downloadCounts);
+  console.log('Download counts saved successfully');
+}
 
 async function getDownloadCounts(): Promise<DownloadCounts> {
   try {
