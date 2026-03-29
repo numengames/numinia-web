@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  compiler: {
+    // Remove all console.* calls in production (keeps console.error for critical errors)
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
+  },
+
   // Next.js 16+ (ya no va dentro de experimental)
   serverExternalPackages: ['@prisma/client'],
 

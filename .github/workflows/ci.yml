@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values so the build doesn't fail on missing NEXT_PUBLIC vars
+          NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE: https://example.com
+          NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE: https://example.com
+          GITHUB_REPO_OWNER: ci
+          GITHUB_REPO_NAME: ci
+          GITHUB_TOKEN: ci
+          GITHUB_CLIENT_ID: ci
+          GITHUB_CLIENT_SECRET: ci
+          GITHUB_ID: ci
+          GITHUB_SECRET: ci

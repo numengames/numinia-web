@@ -1,3 +1,3 @@
 import { VRMViewer } from './VRMViewer';
 
-export default VRMViewer; 
+export default VRMViewer;
