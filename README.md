@@ -4,7 +4,7 @@
 
 The central registry for discovering free and open source 3D assets
 
-🌐 [Numinia Digital Goods.com](https://Numinia Digital Goods.com)
+🌐 [numinia.store.com](https://numinia.store)
 
 A curated directory that makes it easy to find GLB 3D assets you can actually use - CC0 public domain models, props, environments, and structures with clear licensing.
 
