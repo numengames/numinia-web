@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   // Strip data URL prefix (data:image/png;base64,...)
   const base64 = imageData.replace(/^data:image\/\w+;base64,/, '');
-  const filePath = `thumbnails/${avatarId}.png`;
+  const filePath = `content/thumbnails/${avatarId}.png`;
   const thumbnailUrl = `${RAW_BASE}/${filePath}`;
 
   // Get existing file SHA (needed for update)
