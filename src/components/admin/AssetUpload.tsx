@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 
-const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg';
+const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm';
+// Vercel serverless body limit is 4.5MB. Base64 adds ~33% overhead.
+const MAX_FILE_SIZE_MB = 3.5;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 type UploadState = 'idle' | 'selected' | 'uploading' | 'done' | 'error';
 
@@ -21,8 +24,12 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback((f: File) => {
+    if (f.size > MAX_FILE_SIZE) {
+      setError(`File too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Max ${MAX_FILE_SIZE_MB} MB. For larger files, upload directly to the data repo.`);
+      setState('error');
+      return;
+    }
     setFile(f);
-    // Auto-fill name from filename (without extension)
     setName(f.name.replace(/\.[^.]+$/, ''));
     setState('selected');
     setError('');

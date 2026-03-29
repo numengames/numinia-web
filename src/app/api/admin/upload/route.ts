@@ -6,24 +6,26 @@ import { fetchData, updateData } from '@/lib/github-storage';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg'];
+const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm'];
 
-// Detect asset format from filename
+// Map extension → format label
 function getFormat(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase() ?? '';
-  if (ext === 'vrm') return 'VRM';
-  if (ext === 'glb') return 'GLB';
-  if (ext === 'hyp') return 'HYP';
-  if (ext === 'mp3' || ext === 'ogg') return ext.toUpperCase();
   return ext.toUpperCase();
 }
 
-// Determine which project an asset belongs to based on format
-function getProjectForFormat(format: string): { projectId: string; assetFile: string } {
-  if (format === 'VRM') {
-    return { projectId: 'numinia-avatars', assetFile: 'data/avatars/numinia-avatars.json' };
+// Map format → content folder + JSON catalog file
+function getContentPath(format: string): { folder: string; catalogFile: string; projectId: string } {
+  switch (format) {
+    case 'VRM':  return { folder: 'content/avatars',  catalogFile: 'data/avatars.json',  projectId: 'numinia-avatars' };
+    case 'GLB':  return { folder: 'content/models',   catalogFile: 'data/models.json',   projectId: 'numinia-assets' };
+    case 'HYP':  return { folder: 'content/worlds',   catalogFile: 'data/worlds.json',   projectId: 'numinia-worlds' };
+    case 'MP3':
+    case 'OGG':  return { folder: 'content/audio',    catalogFile: 'data/audio.json',    projectId: 'numinia-audio' };
+    case 'MP4':
+    case 'WEBM': return { folder: 'content/video',    catalogFile: 'data/video.json',    projectId: 'numinia-video' };
+    default:     return { folder: 'content/other',    catalogFile: 'data/other.json',    projectId: 'numinia-other' };
   }
-  return { projectId: 'numinia-assets', assetFile: 'data/assets/numinia-assets.json' };
 }
 
 // Slug from filename: "My File (v2).glb" → "my-file-v2"
@@ -76,7 +78,8 @@ export async function POST(req: NextRequest) {
     // Step 1: Upload binary to data repo
     const fileBuffer = await file.arrayBuffer();
     const base64Content = Buffer.from(fileBuffer).toString('base64');
-    const repoFilePath = `uploads/${assetId}.${ext}`;
+    const { folder } = getContentPath(format);
+    const repoFilePath = `${folder}/${assetId}.${ext}`;
 
     // Check if file already exists (get SHA for update)
     let fileSha: string | undefined;
@@ -119,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Add entry to the correct project JSON file
     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${repoFilePath}`;
-    const { projectId, assetFile } = getProjectForFormat(format);
+    const { projectId, catalogFile } = getContentPath(format);
     const now = new Date().toISOString();
 
     const newEntry: Record<string, unknown> = {
@@ -137,11 +140,11 @@ export async function POST(req: NextRequest) {
       metadata: {},
     };
 
-    const existingAssets = await fetchData<Record<string, unknown>[]>(assetFile);
+    const existingAssets = await fetchData<Record<string, unknown>[]>(catalogFile);
     const assets = Array.isArray(existingAssets) ? existingAssets : [];
     assets.push(newEntry);
 
-    await updateData(assetFile, assets, `asset: add ${displayName}`);
+    await updateData(catalogFile, assets, `asset: add ${displayName}`);
 
     return NextResponse.json({
       success: true,
