@@ -10,6 +10,8 @@
  * - Conversion happens in this module (the API layer)
  */
 
+import { resolveAvatarFieldsFromRaw, resolveAlternateModelsMetadata } from '@/lib/assetUrls';
+
 // Load environment variables from .env and .env.local files
 require('dotenv').config();
 require('dotenv').config({ path: '.env.local' });
@@ -44,8 +46,8 @@ export type GithubAvatar = {
   name: string;
   projectId: string;
   description?: string;
-  thumbnailUrl?: string;
-  modelFileUrl?: string;
+  thumbnailUrl?: string | null;
+  modelFileUrl?: string | null;
   polygonCount?: number;
   format: string;
   materialCount?: number;
@@ -438,24 +440,31 @@ async function getAvatars(projectIds?: string[]) {
     }
   }
   
-  // Convert snake_case to camelCase for compatibility
-  const convertedAvatars = allAvatars.map((avatar: any) => ({
-    id: avatar.id,
-    name: avatar.name,
-    projectId: avatar.project_id,
-    description: avatar.description,
-    thumbnailUrl: avatar.thumbnail_url,
-    modelFileUrl: avatar.model_file_url,
-    polygonCount: avatar.polygon_count,
-    format: avatar.format,
-    materialCount: avatar.material_count,
-    // Default isPublic to true if not specified (for backward compatibility)
-    isPublic: avatar.is_public !== false,
-    isDraft: avatar.is_draft === true,
-    createdAt: avatar.created_at,
-    updatedAt: avatar.updated_at,
-    metadata: avatar.metadata || {}
-  }));
+  // Convert snake_case to camelCase for compatibility; normalize GitHub / Arweave URLs
+  // Support both snake_case (storage convention) and camelCase (mixed legacy data)
+  const convertedAvatars = allAvatars.map((avatar: any) => {
+    const resolved = resolveAvatarFieldsFromRaw({
+      thumbnail_url: avatar.thumbnail_url ?? avatar.thumbnailUrl,
+      model_file_url: avatar.model_file_url ?? avatar.modelFileUrl,
+    });
+    return {
+      id: avatar.id,
+      name: avatar.name,
+      projectId: avatar.project_id ?? avatar.projectId,
+      description: avatar.description,
+      thumbnailUrl: resolved.thumbnailUrl,
+      modelFileUrl: resolved.modelFileUrl,
+      polygonCount: avatar.polygon_count ?? avatar.polygonCount,
+      format: avatar.format,
+      materialCount: avatar.material_count ?? avatar.materialCount,
+      // Default isPublic to true if not specified (for backward compatibility)
+      isPublic: (avatar.is_public ?? avatar.isPublic) !== false,
+      isDraft: (avatar.is_draft ?? avatar.isDraft) === true,
+      createdAt: avatar.created_at ?? avatar.createdAt,
+      updatedAt: avatar.updated_at ?? avatar.updatedAt,
+      metadata: resolveAlternateModelsMetadata(avatar.metadata || {}),
+    };
+  });
   
   console.log(`✓ Converted ${convertedAvatars.length} avatars to camelCase format`);
   return convertedAvatars;

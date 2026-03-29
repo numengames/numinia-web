@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo, useRef, useCallback } from 'react';
 import { Download, File, Image as ImageIcon, FileIcon, FileText, Layers, Box } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { Avatar, Project } from '@/types/avatar';
@@ -14,6 +14,7 @@ import { downloadAvatar } from '@/lib/download-utils';
 import TextureRenderer from '@/components/VRMViewer/TextureRenderer';
 import ImageLightbox from './ImageLightbox';
 import * as THREE from 'three';
+import { getExtensionFromUrl } from '@/lib/urlUtils';
 
 interface PreviewPanelProps {
   avatar: Avatar | null;
@@ -347,6 +348,29 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
     return getTranslationString(t(key));
   };
   
+  const captureRef = useRef<(() => string | null) | null>(null);
+  const [thumbnailUpload, setThumbnailUpload] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
+
+  const handleCaptureThumbnail = useCallback(async () => {
+    if (!avatar || !captureRef.current) return;
+    const dataUrl = captureRef.current();
+    if (!dataUrl) return;
+    setThumbnailUpload('uploading');
+    try {
+      const res = await fetch('/api/admin/upload-thumbnail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData: dataUrl, avatarId: avatar.id }),
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      setThumbnailUpload('done');
+      setTimeout(() => setThumbnailUpload('idle'), 3000);
+    } catch {
+      setThumbnailUpload('error');
+      setTimeout(() => setThumbnailUpload('idle'), 3000);
+    }
+  }, [avatar]);
+
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [imageFileSize, setImageFileSize] = useState<number | null>(null);
   const [imageFormat, setImageFormat] = useState<string | null>(null); // Detected format from Content-Type
@@ -699,9 +723,9 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
         if (filenameExt === 'vrm') return true;
       }
       
-      // Check URL extension (for IPFS and other URLs with extensions)
+      // Check URL extension (pathname-based; avoids ?query breaking split('.').pop())
       if (file.url) {
-        const urlExt = file.url.split('.').pop()?.toLowerCase() || null;
+        const urlExt = getExtensionFromUrl(file.url);
         if (urlExt === 'fbx' || urlExt === 'glb' || urlExt === 'gltf') {
           return false; // Explicitly not VRM
         }
@@ -780,7 +804,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
       
       // Check URL extension
       if (file.url) {
-        const urlExt = file.url.split('.').pop()?.toLowerCase() || null;
+        const urlExt = getExtensionFromUrl(file.url);
         if (urlExt === 'vrm' || urlExt === 'fbx' || urlExt === 'glb' || urlExt === 'gltf') {
           return true;
         }
@@ -1213,11 +1237,11 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
       ) : (
         <>
           {/* Preview Area - Fixed 1:1 aspect ratio with proper overflow handling - Only show on model tab */}
-          <div className="flex-none bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 min-w-0" style={{ aspectRatio: '1 / 1', minHeight: '180px', maxHeight: '250px', width: '100%' }}>
+          <div className="flex-none bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 min-w-0 relative" style={{ aspectRatio: '1 / 1', minHeight: '180px', maxHeight: '250px', width: '100%' }}>
             {previewFile && previewFile.category === 'model' && previewFile.url ? (
               // Show 3D viewer for all model files (VRM, FBX, GLB) using the optimized VRMViewer
               // Use key prop to prevent reload when URL hasn't changed
-              <VRMViewer 
+              <VRMViewer
                 key={previewFile.url}
                 url={previewFile.url}
                 backgroundGLB={null}
@@ -1227,6 +1251,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 onToggleInfoPanel={() => {}}
                 hideControls={true}
                 cameraDistanceMultiplier={0.6}
+                captureRef={captureRef}
               />
             ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
               // Show image for thumbnail and texture files
@@ -1235,6 +1260,11 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                   src={previewFile.url} 
                   alt={previewFile.label}
                   className="max-w-full max-h-full object-contain rounded cursor-pointer hover:opacity-90 transition-opacity"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (el.src.includes('/placeholder.png')) return;
+                    el.src = '/placeholder.png';
+                  }}
                   onClick={() => {
                     if (!previewFile.url) return;
                     setLightboxImage({
@@ -1251,7 +1281,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
             ) : (
               // Default: show 3D viewer with main model (without controls/panels)
               avatar?.modelFileUrl ? (
-                <VRMViewer 
+                <VRMViewer
                   key={avatar.modelFileUrl}
                   url={avatar.modelFileUrl}
                   backgroundGLB={null}
@@ -1261,8 +1291,37 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                   onToggleInfoPanel={() => {}}
                   hideControls={true}
                   cameraDistanceMultiplier={0.6}
+                  captureRef={captureRef}
                 />
               ) : null
+            )}
+            {/* Thumbnail capture button — only shown when a 3D model is visible */}
+            {avatar?.modelFileUrl && (
+              <button
+                onClick={handleCaptureThumbnail}
+                disabled={thumbnailUpload === 'uploading'}
+                className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-2 py-1 text-xs rounded-md bg-black/60 text-white hover:bg-black/80 transition-all disabled:opacity-50"
+                title="Capturar y guardar como thumbnail"
+              >
+                {thumbnailUpload === 'uploading' && (
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                )}
+                {thumbnailUpload === 'done' && '✓'}
+                {thumbnailUpload === 'error' && '✗'}
+                {thumbnailUpload === 'idle' && (
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                )}
+                {thumbnailUpload === 'idle' && 'Thumbnail'}
+                {thumbnailUpload === 'uploading' && 'Subiendo...'}
+                {thumbnailUpload === 'done' && 'Guardado'}
+                {thumbnailUpload === 'error' && 'Error'}
+              </button>
             )}
           </div>
 
@@ -1562,6 +1621,11 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                                 src={texture.url}
                                 alt={texture.label}
                                 className="w-full aspect-square object-cover rounded mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                                onError={(e) => {
+                                  const el = e.currentTarget;
+                                  if (el.src.includes('/placeholder.png')) return;
+                                  el.src = '/placeholder.png';
+                                }}
                                 onClick={() => {
                                   setLightboxImage({
                                     url: texture.url!,

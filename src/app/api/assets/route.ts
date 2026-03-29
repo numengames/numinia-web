@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getArweaveTxId } from '@/lib/arweaveMapping';
-import { getArweaveUrl } from '@/lib/arweave';
 import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -81,21 +79,9 @@ export async function GET(req: NextRequest) {
     });
 
     const transformedAvatars = sortedAvatars.map((avatar: GithubAvatar) => {
-      // Get Arweave transaction IDs if available
-      const modelFilename = avatar.modelFileUrl?.split('/').pop() || '';
-      const thumbnailFilename = avatar.thumbnailUrl?.split('/').pop() || '';
-      
-      // Check if we have a mapping for this avatar in Arweave
-      const modelTxId = getArweaveTxId(modelFilename, 'model');
-      const thumbnailTxId = getArweaveTxId(thumbnailFilename, 'thumbnail');
-      
-      // Use Arweave URLs if available, otherwise fall back to the stored URLs
-      const modelFileUrl = modelTxId ? getArweaveUrl(modelTxId) : avatar.modelFileUrl;
-      const thumbnailUrl = thumbnailTxId ? getArweaveUrl(thumbnailTxId) : avatar.thumbnailUrl;
-      
-      // Get project name
+      // getAvatars() already resolves GitHub blob URLs, relative paths, and Arweave mappings
       const project = projectMap.get(avatar.projectId);
-      
+
       return {
         id: avatar.id,
         name: avatar.name,
@@ -103,8 +89,8 @@ export async function GET(req: NextRequest) {
         projectId: avatar.projectId, // Include projectId for filtering
         description: avatar.description || '',
         createdAt: avatar.createdAt,
-        thumbnailUrl: thumbnailUrl,
-        modelFileUrl: modelFileUrl,
+        thumbnailUrl: avatar.thumbnailUrl,
+        modelFileUrl: avatar.modelFileUrl,
         polygonCount: avatar.polygonCount || 0,
         format: avatar.format,
         materialCount: avatar.materialCount || 0,

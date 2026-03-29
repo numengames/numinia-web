@@ -1,6 +1,7 @@
 import { Avatar } from '@/types/avatar';
 import { getArweaveTxId } from '@/lib/arweaveMapping';
 import { getArweaveUrl } from '@/lib/arweave-client';
+import { getExtensionFromUrl, basenameFromUrl } from '@/lib/urlUtils';
 
 export interface FileTypeInfo {
   id: string;
@@ -12,10 +13,14 @@ export interface FileTypeInfo {
 }
 
 /**
- * Get file extension from URL or filename
+ * Get file extension from URL or filename (handles query strings; URLs use pathname)
  */
 function getFileExtension(urlOrFilename: string): string {
-  const match = urlOrFilename.match(/\.([^.]+)$/);
+  if (/^https?:\/\//i.test(urlOrFilename)) {
+    return getExtensionFromUrl(urlOrFilename);
+  }
+  const noQ = urlOrFilename.split(/[?#]/)[0] ?? '';
+  const match = noQ.match(/\.([^.]+)$/);
   return match ? match[1].toLowerCase() : '';
 }
 
@@ -108,7 +113,7 @@ export function getAllAvatarFiles(avatar: Avatar): FileTypeInfo[] {
   // Default model - try to find matching filename from ardriveFiles
   // Check if it's GLB based on format or URL extension
   if (avatar.modelFileUrl) {
-    let displayFilename = avatar.modelFileUrl.split('/').pop() || 'model.vrm';
+    let displayFilename = basenameFromUrl(avatar.modelFileUrl) || 'model.vrm';
     const urlExt = getFileExtension(avatar.modelFileUrl);
     const isGlb = avatar.format?.toUpperCase() === 'GLB' || urlExt === 'glb';
     

@@ -1,8 +1,7 @@
 ///src/app/api/assets/[id]/download/route.ts
 import { NextResponse } from 'next/server';
-import { getArweaveTxId } from '@/lib/arweaveMapping';
-import { getArweaveUrl } from '@/lib/arweave';
 import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
+import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 
 // Define interfaces to fix type issues
 interface DownloadCounts {
@@ -102,21 +101,16 @@ export async function POST(
           }, { status: 400 });
         }
       } else {
-        // Use the default model file URL
-        modelFilename = avatar.modelFileUrl.split('/').pop() || '';
+        // Full URL (already resolved in getAvatars); do not use basename-only — that breaks Arweave URLs
+        modelFilename = avatar.modelFileUrl;
       }
       
       if (!modelFilename) {
         return NextResponse.json({ error: 'Could not determine model filename' }, { status: 400 });
       }
-      
-      // Check if we have a mapping for this avatar in Arweave
-      const modelTxId = getArweaveTxId(modelFilename, 'model');
-      
-      // Get the appropriate URL (Arweave or fallback to original)
-      const downloadUrl = modelTxId 
-        ? getArweaveUrl(modelTxId) 
-        : avatar.modelFileUrl;
+
+      const downloadUrl =
+        resolveAvatarAssetUrl(modelFilename, 'model') || avatar.modelFileUrl;
 
       // Record the download count (privacy-friendly approach)
       try {
@@ -141,7 +135,7 @@ export async function POST(
 
       return NextResponse.json({ 
         downloadUrl, 
-        storageType: modelTxId ? 'arweave' : 's3',
+        storageType: downloadUrl.includes('arweave.net') ? 'arweave' : 's3',
         format: actualFormat,
         avatarName: avatar.name || avatar.metadata?.number || 'avatar'
       });

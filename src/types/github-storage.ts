@@ -34,8 +34,8 @@ export interface GithubAvatar extends BaseEntity {
   name: string;
   projectId: string;
   description?: string;
-  thumbnailUrl?: string;
-  modelFileUrl?: string;
+  thumbnailUrl?: string | null;
+  modelFileUrl?: string | null;
   polygonCount?: number;
   format: string;
   materialCount?: number;

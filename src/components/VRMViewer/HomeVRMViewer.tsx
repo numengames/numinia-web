@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { Avatar } from '@/types/avatar';
 import { loadMixamoAnimation } from './utils/animationLoader';
@@ -83,7 +85,7 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
             antialias: true,
             alpha: true,
             powerPreference: 'high-performance',
-            failIfMajorPerformanceCaveat: true
+            failIfMajorPerformanceCaveat: false
           });
         } catch (error) {
           console.error('Failed to create WebGL renderer:', error);
@@ -152,8 +154,18 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
         rimLight.position.set(0, 1, -2);
         scene.add(rimLight);
 
-        // Load VRM
+        try {
+          await MeshoptDecoder.ready;
+        } catch (e) {
+          console.warn('MeshoptDecoder.ready:', e);
+        }
+
         const loader = new GLTFLoader();
+        loader.setCrossOrigin('anonymous');
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        loader.setDRACOLoader(dracoLoader);
+        loader.setMeshoptDecoder(MeshoptDecoder);
         loader.register((parser: any) => new VRMLoaderPlugin(parser));
 
         // Raycaster setup
