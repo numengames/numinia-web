@@ -1,4 +1,5 @@
 // src/app/api/assets/[id]/visibility/route.ts
+// Handles both visibility toggle and name/description updates.
 import { NextResponse } from 'next/server';
 import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
@@ -16,7 +17,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all avatars to find the current state
     const avatars = await getAvatars();
     const avatar = avatars.find((a: Avatar) => a.id === id);
 
@@ -24,21 +24,45 @@ export async function PATCH(
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
     }
 
-    // Toggle visibility and save to the correct source file
-    const newIsPublic = !avatar.isPublic;
-    const saved = await updateAvatarInSource(id, {
-      is_public: newIsPublic,
-    });
+    // Parse body — may contain { name } for rename, or be empty for visibility toggle
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch {
+      // empty body = visibility toggle
+    }
+
+    const updates: Record<string, unknown> = {};
+
+    if (typeof body.name === 'string' && body.name.trim()) {
+      updates.name = body.name.trim();
+    }
+
+    if (typeof body.description === 'string') {
+      updates.description = body.description.trim();
+    }
+
+    // If no explicit field updates, toggle visibility
+    if (Object.keys(updates).length === 0) {
+      updates.is_public = !avatar.isPublic;
+    }
+
+    const saved = await updateAvatarInSource(id, updates);
 
     if (!saved) {
       return NextResponse.json({ error: 'Avatar not found in source files' }, { status: 404 });
     }
 
-    return NextResponse.json({ ...avatar, isPublic: newIsPublic });
+    return NextResponse.json({
+      ...avatar,
+      ...(updates.name ? { name: updates.name } : {}),
+      ...(updates.description !== undefined ? { description: updates.description } : {}),
+      ...(updates.is_public !== undefined ? { isPublic: updates.is_public } : {}),
+    });
   } catch (error) {
-    console.error('Error toggling avatar visibility:', error);
+    console.error('Error updating avatar:', error);
     return NextResponse.json(
-      { error: 'Failed to toggle visibility' },
+      { error: 'Failed to update avatar' },
       { status: 500 }
     );
   }

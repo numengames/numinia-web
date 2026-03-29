@@ -16,6 +16,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const [description, setDescription] = useState('');
   const [state, setState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
+  const [uploadedName, setUploadedName] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -80,12 +81,9 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
         throw new Error(data.error || 'Upload failed');
       }
 
+      setUploadedName(data.asset?.name ?? name);
       setState('done');
-      // Refresh the asset list after a short delay
-      setTimeout(() => {
-        onUploaded();
-        reset();
-      }, 1500);
+      onUploaded();
     } catch (err) {
       setState('error');
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -198,8 +196,11 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
           <div className="flex flex-col items-center gap-3 py-6">
             <Check className="h-8 w-8 text-green-500" />
             <p className="text-sm text-green-600 font-medium">
-              Uploaded successfully
+              &quot;{uploadedName}&quot; uploaded successfully
             </p>
+            <Button variant="outline" size="sm" onClick={reset}>
+              Upload another
+            </Button>
           </div>
         )}
       </CardContent>

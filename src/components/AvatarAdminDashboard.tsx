@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Trash2, Eye, EyeOff, Loader2, Pencil, Check, X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -32,8 +32,10 @@ export default function AvatarAdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Track which assets have an operation in progress
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  // Inline editing state: avatarId → current edit value
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const markBusy = useCallback((id: string) => {
     setBusyIds(prev => new Set(prev).add(id));
@@ -129,6 +131,43 @@ export default function AvatarAdminDashboard() {
     }
   };
 
+  const startEditing = (avatar: Avatar) => {
+    setEditingId(avatar.id);
+    setEditValue(avatar.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const saveName = async (avatarId: string) => {
+    const trimmed = editValue.trim();
+    if (!trimmed) return;
+
+    markBusy(avatarId);
+    try {
+      const response = await fetch(`/api/assets/${avatarId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rename');
+      }
+
+      setAvatars(prev =>
+        prev.map(a => a.id === avatarId ? { ...a, name: trimmed } : a)
+      );
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename');
+    } finally {
+      unmarkBusy(avatarId);
+    }
+  };
+
   const filteredAvatars = avatars.filter(avatar =>
     avatar.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -193,11 +232,38 @@ export default function AvatarAdminDashboard() {
                           )}
                           <div className="flex-1">
                             <div className="flex justify-between">
-                              <div>
-                                <h3 className="font-medium text-lg text-gray-900">{avatar.name}</h3>
+                              <div className="flex-1 min-w-0">
+                                {editingId === avatar.id ? (
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      value={editValue}
+                                      onChange={e => setEditValue(e.target.value)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') saveName(avatar.id);
+                                        if (e.key === 'Escape') cancelEditing();
+                                      }}
+                                      className="h-8 text-lg font-medium"
+                                      autoFocus
+                                    />
+                                    <Button variant="ghost" size="sm" onClick={() => saveName(avatar.id)} disabled={isBusy}>
+                                      <Check className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" onClick={cancelEditing}>
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <h3
+                                    className="font-medium text-lg text-gray-900 cursor-pointer hover:text-gray-600"
+                                    onClick={() => startEditing(avatar)}
+                                    title="Click to rename"
+                                  >
+                                    {avatar.name} <Pencil className="h-3 w-3 inline text-gray-400" />
+                                  </h3>
+                                )}
                                 <p className="text-gray-500 text-sm">{avatar.description}</p>
                               </div>
-                              <div className="flex gap-2 items-start">
+                              <div className="flex gap-2 items-start ml-2">
                                 {isBusy ? (
                                   <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                                 ) : (
