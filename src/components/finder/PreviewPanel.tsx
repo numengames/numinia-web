@@ -1251,7 +1251,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 onToggleInfoPanel={() => {}}
                 hideControls={true}
                 cameraDistanceMultiplier={0.6}
-                captureRef={captureRef}
+                captureRef={captureRef as any}
               />
             ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
               // Show image for thumbnail and texture files
@@ -1291,7 +1291,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                   onToggleInfoPanel={() => {}}
                   hideControls={true}
                   cameraDistanceMultiplier={0.6}
-                  captureRef={captureRef}
+                  captureRef={captureRef as any}
                 />
               ) : null
             )}
