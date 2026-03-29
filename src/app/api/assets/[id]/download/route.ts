@@ -1,23 +1,10 @@
-///src/app/api/assets/[id]/download/route.ts
 import { NextResponse } from 'next/server';
 import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
+import { AvatarMetadata, getModelFilenameForFormat } from '@/lib/download-utils';
 
-// Define interfaces to fix type issues
 interface DownloadCounts {
   counts: Record<string, number>;
-}
-
-interface AvatarMetadata {
-  alternateModels?: {
-    voxel?: string;
-    voxel_vrm?: string;
-    fbx?: string;
-    'voxel-fbx'?: string;
-    voxel_fbx?: string;
-    [key: string]: string | undefined;
-  };
-  number?: string;
 }
 
 interface Avatar {
@@ -25,33 +12,6 @@ interface Avatar {
   name: string;
   modelFileUrl: string | null;
   metadata: AvatarMetadata;
-}
-
-// Helper function to get model filename for a specific format
-function getModelFilenameForFormat(
-  avatar: Avatar,
-  format: string | null
-): string | null {
-  if (!format || !avatar.metadata?.alternateModels) {
-    return null;
-  }
-  
-  const alternateModels = avatar.metadata.alternateModels;
-  
-  // Find the appropriate key based on the format
-  if (format === 'fbx') {
-    return alternateModels['fbx'] || null;
-  }
-  
-  if (format === 'voxel') {
-    return alternateModels['voxel_vrm'] || null;
-  }
-  
-  if (format === 'voxel-fbx' || format === 'voxel_fbx') {
-    return alternateModels['voxel_fbx'] || alternateModels['voxel-fbx'] || null;
-  }
-  
-  return null;
 }
 
 export async function POST(
@@ -83,7 +43,7 @@ export async function POST(
       // Check if a specific format was requested and if alternate models exist
       if (format && avatar.metadata?.alternateModels) {
         // Get model filename using our helper function
-        const formatFilename = getModelFilenameForFormat(avatar, format);
+        const formatFilename = getModelFilenameForFormat(avatar.metadata, format);
         
         console.log('Download format requested:', format);
         console.log('Available alternate models:', JSON.stringify(avatar.metadata.alternateModels, null, 2));

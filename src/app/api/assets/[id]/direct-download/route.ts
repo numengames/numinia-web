@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
+import {
+  AvatarMetadata,
+  getModelFilenameForFormat,
+  getFileExtension,
+  isIPFSUrl,
+  isGitHubRawUrl,
+  normalizeIPFSUrl,
+} from '@/lib/download-utils';
 
-// Define interfaces
 interface DownloadCounts {
   counts: Record<string, number>;
-}
-
-interface AvatarMetadata {
-  alternateModels?: {
-    voxel?: string;
-    voxel_vrm?: string;
-    fbx?: string;
-    glb?: string;
-    'voxel-fbx'?: string;
-    voxel_fbx?: string;
-    [key: string]: string | undefined;
-  };
-  number?: string;
 }
 
 interface Avatar {
@@ -25,70 +19,6 @@ interface Avatar {
   name: string;
   modelFileUrl: string | null;
   metadata: AvatarMetadata;
-}
-
-// Helper function to get model filename for a specific format
-function getModelFilenameForFormat(
-  avatar: Avatar,
-  format: string | null
-): string | null {
-  if (!format || !avatar.metadata?.alternateModels) {
-    return null;
-  }
-  
-  const alternateModels = avatar.metadata.alternateModels;
-  
-  // Find the appropriate key based on the format
-  if (format === 'fbx') {
-    return alternateModels['fbx'] || null;
-  }
-  
-  if (format === 'glb') {
-    return alternateModels['glb'] || null;
-  }
-  
-  if (format === 'voxel') {
-    return alternateModels['voxel_vrm'] || null;
-  }
-  
-  if (format === 'voxel-fbx' || format === 'voxel_fbx') {
-    return alternateModels['voxel_fbx'] || alternateModels['voxel-fbx'] || null;
-  }
-  
-  return null;
-}
-
-// Helper to get file extension based on format
-function getFileExtension(format: string): string {
-  if (format === 'fbx' || format === 'voxel-fbx' || format === 'voxel_fbx') {
-    return '.fbx';
-  }
-  if (format === 'glb') {
-    return '.glb';
-  }
-  return '.vrm'; // Default to VRM for any other format
-}
-
-// Helper to check if a URL is an IPFS URL
-function isIPFSUrl(url: string): boolean {
-  return url.includes('ipfs') || url.includes('dweb.link') || url.startsWith('ipfs://');
-}
-
-// Helper to check if a URL is a GitHub raw URL
-function isGitHubRawUrl(url: string): boolean {
-  return (
-    url.includes('raw.githubusercontent.com') ||
-    (url.includes('github.com') && url.includes('/raw/'))
-  );
-}
-
-// Helper to normalize IPFS URLs (convert ipfs:// to https://dweb.link/ipfs/)
-function normalizeIPFSUrl(url: string): string {
-  if (url.startsWith('ipfs://')) {
-    const ipfsHash = url.replace('ipfs://', '').replace('ipfs/', '');
-    return `https://dweb.link/ipfs/${ipfsHash}`;
-  }
-  return url;
 }
 
 export async function GET(
@@ -126,7 +56,7 @@ export async function GET(
     // Check if a specific format was requested and if alternate models exist
     if (format && avatar.metadata?.alternateModels) {
       // Get model filename using our helper function
-      const formatFilename = getModelFilenameForFormat(avatar, format);
+      const formatFilename = getModelFilenameForFormat(avatar.metadata, format);
       
       console.log('Download format requested:', format);
       console.log('Available alternate models:', JSON.stringify(avatar.metadata.alternateModels, null, 2));

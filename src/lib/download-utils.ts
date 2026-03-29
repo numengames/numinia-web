@@ -30,12 +30,44 @@ export function normalizeIPFSUrl(url: string): string {
   return url;
 }
 
-// Helper to get file extension based on format
-function getFileExtension(format: string): string {
-  if (format === 'fbx' || format === 'voxel-fbx' || format === 'voxel_fbx') {
-    return '.fbx';
+/** Shape of the metadata fields used by the download routes. */
+export interface AvatarMetadata {
+  alternateModels?: {
+    voxel?: string;
+    voxel_vrm?: string;
+    fbx?: string;
+    glb?: string;
+    'voxel-fbx'?: string;
+    voxel_fbx?: string;
+    [key: string]: string | undefined;
+  };
+  number?: string;
+}
+
+/** Map a model format identifier to its file extension (including dot). */
+export function getFileExtension(format: string): string {
+  if (format === 'fbx' || format === 'voxel-fbx' || format === 'voxel_fbx') return '.fbx';
+  if (format === 'glb') return '.glb';
+  return '.vrm';
+}
+
+/**
+ * Look up the model filename for a given format in the avatar's alternateModels.
+ * Returns null if the format is not found or alternateModels is missing.
+ */
+export function getModelFilenameForFormat(
+  metadata: AvatarMetadata,
+  format: string | null,
+): string | null {
+  if (!format || !metadata.alternateModels) return null;
+  const { alternateModels } = metadata;
+  if (format === 'fbx') return alternateModels.fbx ?? null;
+  if (format === 'glb') return alternateModels.glb ?? null;
+  if (format === 'voxel') return alternateModels.voxel_vrm ?? null;
+  if (format === 'voxel-fbx' || format === 'voxel_fbx') {
+    return alternateModels.voxel_fbx ?? alternateModels['voxel-fbx'] ?? null;
   }
-  return '.vrm'; // Default to VRM for any other format
+  return null;
 }
 
 // Helper to get model URL for a specific format
