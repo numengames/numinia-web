@@ -1,17 +1,27 @@
-// src/components/VRMViewer/hooks/useSceneSetup.js
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-export function useSceneSetup(canvas, renderer, scene, camera) {
+// Explicit return type: TypeScript knows exactly what this hook gives back.
+// Without it, callers would have to hover over the function to discover the shape.
+type UseSceneSetupReturn = {
+  isInitialized: boolean;
+  controls: OrbitControls | null; // null until the effect runs
+};
+
+export function useSceneSetup(
+  canvas: HTMLCanvasElement | null,
+  renderer: THREE.WebGLRenderer | null,
+  scene: THREE.Scene | null,
+  camera: THREE.Camera | null,
+): UseSceneSetupReturn {
   const [isInitialized, setIsInitialized] = useState(false);
-  const controlsRef = useRef(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     if (!canvas || !renderer || !scene || !camera) return;
 
     try {
-      // Setup controls
       const controls = new OrbitControls(camera, canvas);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
@@ -21,12 +31,11 @@ export function useSceneSetup(canvas, renderer, scene, camera) {
       controls.enablePan = false;
       controlsRef.current = controls;
 
-      // Add floor
       const floorGeometry = new THREE.PlaneGeometry(10, 10);
       const floorMaterial = new THREE.MeshStandardMaterial({
         color: 0x6816cc,
         metalness: 0.5,
-        roughness: 0.5
+        roughness: 0.5,
       });
       const floor = new THREE.Mesh(floorGeometry, floorMaterial);
       floor.rotation.x = -Math.PI / 2;
@@ -38,7 +47,8 @@ export function useSceneSetup(canvas, renderer, scene, camera) {
       return () => {
         controls.dispose();
         floor.geometry.dispose();
-        floor.material.dispose();
+        // cast needed: floor.material could be Material | Material[], we know it's MeshStandardMaterial
+        (floor.material as THREE.MeshStandardMaterial).dispose();
         scene.remove(floor);
       };
     } catch (error) {
@@ -49,6 +59,6 @@ export function useSceneSetup(canvas, renderer, scene, camera) {
 
   return {
     isInitialized,
-    controls: controlsRef.current
+    controls: controlsRef.current,
   };
 }

@@ -1,10 +1,23 @@
-// src/components/VRMViewer/hooks/useAnimationLoop.js
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import type { VRM } from '@pixiv/three-vrm';
 
-export function useAnimationLoop(isInitialized, vrm, mixer, renderer, scene, camera, controls) {
+// "type" imports: we only need these for the compiler, not at runtime.
+// They get stripped from the final JS bundle — zero cost.
+
+export function useAnimationLoop(
+  isInitialized: boolean,
+  vrm: VRM | null,
+  mixer: THREE.AnimationMixer | null,
+  renderer: THREE.WebGLRenderer | null,
+  scene: THREE.Scene | null,
+  camera: THREE.Camera | null,
+  controls: OrbitControls | null,
+): void {
   const clockRef = useRef(new THREE.Clock());
-  const animationFrameRef = useRef();
+  // number | undefined: the ID returned by requestAnimationFrame
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isInitialized || !renderer || !scene || !camera) return;

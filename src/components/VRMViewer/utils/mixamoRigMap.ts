@@ -1,5 +1,9 @@
-// src/components/VRMViewer/utils/mixamoRigMap.js
-export const mixamoVRMRigMap = {
+import type { VRMHumanBoneName } from '@pixiv/three-vrm';
+
+// Mapping from Mixamo bone names to VRM humanoid bone names.
+// Record<string, VRMHumanBoneName>: keys are Mixamo names (arbitrary strings),
+// values must be valid VRM bone names (enforced by the VRMHumanBoneName enum).
+export const mixamoVRMRigMap: Record<string, VRMHumanBoneName> = {
     mixamorigHips: 'hips',
     mixamorigSpine: 'spine',
     mixamorigSpine1: 'chest',
