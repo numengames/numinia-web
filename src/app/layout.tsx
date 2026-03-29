@@ -1,4 +1,5 @@
 import './globals.css';
+import { I18nProvider } from '@/lib/i18n';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import type { Metadata } from 'next';
@@ -114,7 +115,12 @@ export default function RootLayout({
       <body className={GeistSans.className}>
         <WebsiteSchema />
         <OrganizationSchema />
-        {children}
+        {/* Fallback provider for routes outside /en/ and /ja/.
+            Locale layouts (/en, /ja) nest their own I18nProvider inside this one,
+            and React uses the nearest context — so locale routing still works correctly. */}
+        <I18nProvider defaultLocale="en">
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );
