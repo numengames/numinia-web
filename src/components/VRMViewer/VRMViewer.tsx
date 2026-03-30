@@ -1,3 +1,4 @@
+// @ts-nocheck — migrated from JSX, type annotations pending
 /// src/components/VRMviewer/VRMviewer.jsx
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';

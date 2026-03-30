@@ -1,3 +1,4 @@
+// @ts-nocheck — migrated from JSX, type annotations pending
               <div className="min-h-full flex flex-col">
                 <div className="flex-1">
                   {/* Hero Section */}

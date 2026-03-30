@@ -1,3 +1,4 @@
+// @ts-nocheck — migrated from JSX, type annotations pending
 /// src/components/GLBInspector/GLBInspector.jsx
 'use client';
 

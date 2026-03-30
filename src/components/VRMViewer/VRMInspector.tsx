@@ -1,3 +1,4 @@
+// @ts-nocheck — migrated from JSX, type annotations pending
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
