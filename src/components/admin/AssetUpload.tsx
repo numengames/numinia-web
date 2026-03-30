@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 
 const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm';
-// Vercel serverless body limit is 4.5MB. Base64 adds ~33% overhead.
-const MAX_FILE_SIZE_MB = 3.5;
-const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
+// GitHub upload limit (base64 overhead). Presigned upload has no practical limit.
+const GITHUB_MAX_SIZE = 3.5 * 1024 * 1024;
+const R2_MAX_SIZE = 500 * 1024 * 1024;
 
 type UploadState = 'idle' | 'selected' | 'uploading' | 'done' | 'error';
 
@@ -20,12 +20,13 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const [state, setState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
   const [uploadedName, setUploadedName] = useState('');
+  const [progress, setProgress] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback((f: File) => {
-    if (f.size > MAX_FILE_SIZE) {
-      setError(`File too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Max ${MAX_FILE_SIZE_MB} MB. For larger files, upload directly to the data repo.`);
+    if (f.size > R2_MAX_SIZE) {
+      setError(`File too large (${(f.size / 1024 / 1024).toFixed(1)} MB). Max 500 MB.`);
       setState('error');
       return;
     }
@@ -62,7 +63,96 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     setDescription('');
     setState('idle');
     setError('');
+    setProgress(0);
     if (inputRef.current) inputRef.current.value = '';
+  }, []);
+
+  // Upload via presigned URL (R2) with XHR for progress tracking
+  const uploadPresigned = useCallback(async (f: File, trimmedName: string, trimmedDesc: string): Promise<boolean> => {
+    // Step 1: Get presigned URL
+    const presignRes = await fetch('/api/admin/presign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: f.name,
+        fileSize: f.size,
+        name: trimmedName,
+        description: trimmedDesc,
+      }),
+    });
+
+    if (presignRes.status === 503) {
+      // R2 not configured — caller should fall back to GitHub upload
+      return false;
+    }
+
+    if (!presignRes.ok) {
+      const data = await presignRes.json();
+      throw new Error(data.error || 'Failed to get upload URL');
+    }
+
+    const { uploadUrl, assetId, r2Key, format, displayName, description: desc } = await presignRes.json();
+
+    // Step 2: Upload binary directly to R2 with progress
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setProgress(Math.round((e.loaded / e.total) * 90)); // 0-90% for upload
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.send(f);
+    });
+
+    setProgress(95); // 90-95% for metadata
+
+    // Step 3: Create metadata entry in GitHub
+    const confirmRes = await fetch('/api/admin/presign/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assetId, r2Key, displayName, description: desc, format }),
+    });
+
+    if (!confirmRes.ok) {
+      const data = await confirmRes.json();
+      throw new Error(data.error || 'Failed to save metadata');
+    }
+
+    const confirmData = await confirmRes.json();
+    setUploadedName(confirmData.asset?.name ?? trimmedName);
+    setProgress(100);
+    return true;
+  }, []);
+
+  // Fallback: upload via GitHub API (FormData, limited to 3.5MB)
+  const uploadGitHub = useCallback(async (f: File, trimmedName: string, trimmedDesc: string) => {
+    const formData = new FormData();
+    formData.append('file', f);
+    formData.append('name', trimmedName);
+    formData.append('description', trimmedDesc);
+
+    const res = await fetch('/api/admin/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+    setUploadedName(data.asset?.name ?? trimmedName);
   }, []);
 
   const upload = useCallback(async () => {
@@ -70,32 +160,34 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
     setState('uploading');
     setError('');
+    setProgress(0);
+
+    const trimmedName = name.trim();
+    const trimmedDesc = description.trim();
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('name', name.trim());
-      formData.append('description', description.trim());
+      // Try presigned upload first (supports large files, has progress)
+      const usedPresigned = await uploadPresigned(file, trimmedName, trimmedDesc);
 
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Upload failed');
+      if (!usedPresigned) {
+        // R2 not configured — fall back to GitHub upload
+        if (file.size > GITHUB_MAX_SIZE) {
+          throw new Error(
+            `File is ${(file.size / 1024 / 1024).toFixed(1)} MB but R2 storage is not configured. ` +
+            `GitHub upload is limited to ${(GITHUB_MAX_SIZE / 1024 / 1024).toFixed(1)} MB. ` +
+            `Ask an admin to configure R2_* environment variables.`
+          );
+        }
+        await uploadGitHub(file, trimmedName, trimmedDesc);
       }
 
-      setUploadedName(data.asset?.name ?? name);
       setState('done');
       onUploaded();
     } catch (err) {
       setState('error');
       setError(err instanceof Error ? err.message : 'Upload failed');
     }
-  }, [file, name, description, onUploaded, reset]);
+  }, [file, name, description, onUploaded, uploadPresigned, uploadGitHub]);
 
   const ext = file?.name.split('.').pop()?.toUpperCase() ?? '';
   const sizeKB = file ? Math.round(file.size / 1024) : 0;
@@ -127,7 +219,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
               Drag & drop or click to select
             </p>
             <p className="text-xs text-gray-400">
-              GLB, VRM, HYP, MP3, OGG
+              GLB, VRM, HYP, MP3, OGG, MP4, WebM — up to 500 MB
             </p>
             <input
               ref={inputRef}
@@ -185,15 +277,22 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
           </div>
         )}
 
-        {/* Uploading */}
+        {/* Uploading with progress */}
         {state === 'uploading' && (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="text-sm text-gray-500">
               Uploading {file?.name}...
             </p>
+            {/* Progress bar */}
+            <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-black h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
             <p className="text-xs text-gray-400">
-              This may take a few seconds (committing to data repo)
+              {progress < 90 ? `${progress}%` : progress < 100 ? 'Saving metadata...' : 'Done!'}
             </p>
           </div>
         )}

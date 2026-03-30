@@ -1,0 +1,86 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSession } from '@/lib/auth/getSession';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
+import { generateAssetId } from '@/lib/asset-id';
+import { getContentPath } from '@/lib/content-paths';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm'];
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
+const PRESIGN_EXPIRY = 3600; // 1 hour
+
+const CONTENT_TYPES: Record<string, string> = {
+  glb: 'model/gltf-binary',
+  vrm: 'application/octet-stream',
+  hyp: 'application/octet-stream',
+  mp3: 'audio/mpeg',
+  ogg: 'audio/ogg',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+};
+
+// Generates a presigned PUT URL for direct-to-R2 upload.
+// Client uploads the binary directly to R2, bypassing Vercel's body limit.
+export async function POST(req: NextRequest) {
+  const session = getAdminSession(req);
+  if (!session.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!isR2Configured()) {
+    return NextResponse.json({ error: 'R2 storage not configured' }, { status: 503 });
+  }
+
+  try {
+    const { fileName, fileSize, name, description } = await req.json();
+
+    const ext = fileName?.split('.').pop()?.toLowerCase() ?? '';
+    if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+      return NextResponse.json(
+        { error: `Unsupported format: .${ext}` },
+        { status: 400 }
+      );
+    }
+
+    if (fileSize > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large (max 500MB)' }, { status: 400 });
+    }
+
+    const format = ext.toUpperCase();
+    const assetId = generateAssetId(name || fileName, ext);
+    const { folder } = getContentPath(format);
+    const r2Key = `${folder}/${assetId}.${ext}`;
+    const contentType = CONTENT_TYPES[ext] ?? 'application/octet-stream';
+
+    const command = new PutObjectCommand({
+      Bucket: getR2BucketName(),
+      Key: r2Key,
+      ContentType: contentType,
+      ContentLength: fileSize,
+    });
+
+    const uploadUrl = await getSignedUrl(getR2Client(), command, {
+      expiresIn: PRESIGN_EXPIRY,
+    });
+
+    return NextResponse.json({
+      uploadUrl,
+      assetId,
+      r2Key,
+      format,
+      contentType,
+      displayName: name || fileName.replace(/\.[^.]+$/, ''),
+      description: description || '',
+    });
+  } catch (error) {
+    console.error('Presign error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to generate upload URL' },
+      { status: 500 }
+    );
+  }
+}

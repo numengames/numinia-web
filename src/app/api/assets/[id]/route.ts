@@ -1,6 +1,6 @@
 // src/app/api/assets/[id]/route.ts
 import { NextResponse } from 'next/server';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import {
   getAvatars,
   deleteAvatarFromSource,
@@ -14,16 +14,7 @@ import {
 } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
-
-// Initialize the S3 client for R2
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || ''
-  }
-});
+import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
 
 export async function DELETE(
   req: NextRequest,
@@ -50,45 +41,27 @@ export async function DELETE(
     
     const avatar = avatars[avatarIndex];
 
-    // Delete files from R2 if they exist
-    if (avatar.thumbnailUrl || avatar.modelFileUrl) {
-      const deletePromises = [];
+    // Delete files from R2 if configured and URLs exist
+    if (isR2Configured() && (avatar.thumbnailUrl || avatar.modelFileUrl)) {
+      const s3 = getR2Client();
+      const bucket = getR2BucketName();
+      const deletePromises: Promise<unknown>[] = [];
 
       if (avatar.thumbnailUrl) {
-        const thumbnailKey = getKeyFromUrl(avatar.thumbnailUrl);
-        if (thumbnailKey) {
-          deletePromises.push(
-            s3Client.send(
-              new DeleteObjectCommand({
-                Bucket: process.env.R2_BUCKET_NAME!,
-                Key: thumbnailKey
-              })
-            )
-          );
-        }
+        const key = getKeyFromUrl(avatar.thumbnailUrl);
+        if (key) deletePromises.push(s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })));
       }
 
       if (avatar.modelFileUrl) {
-        const modelKey = getKeyFromUrl(avatar.modelFileUrl);
-        if (modelKey) {
-          deletePromises.push(
-            s3Client.send(
-              new DeleteObjectCommand({
-                Bucket: process.env.R2_BUCKET_NAME!,
-                Key: modelKey
-              })
-            )
-          );
-        }
+        const key = getKeyFromUrl(avatar.modelFileUrl);
+        if (key) deletePromises.push(s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })));
       }
 
-      // Delete all files in parallel
       if (deletePromises.length > 0) {
         try {
           await Promise.all(deletePromises);
         } catch (r2Error) {
-          console.error('Failed to delete some files from R2:', r2Error);
-          // Continue with database deletion even if R2 deletion fails
+          console.error('Failed to delete from R2:', r2Error);
         }
       }
     }
