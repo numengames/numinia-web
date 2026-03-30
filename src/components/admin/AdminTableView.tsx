@@ -207,7 +207,11 @@ export default function AdminTableView({
             const status = getStatusLabel(avatar);
 
             return (
-              <TableRow key={avatar.id}>
+              <TableRow
+                key={avatar.id}
+                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                onClick={() => onSelectAsset?.(avatar)}
+              >
                 {/* Thumbnail */}
                 <TableCell>
                   {avatar.thumbnailUrl ? (
@@ -225,12 +229,9 @@ export default function AdminTableView({
 
                 {/* Name */}
                 <TableCell>
-                  <button
-                    className="font-semibold text-gray-900 hover:text-gray-600 text-left"
-                    onClick={() => onSelectAsset?.(avatar)}
-                  >
+                  <span className="font-semibold text-gray-900">
                     {avatar.name}
-                  </button>
+                  </span>
                   <code className="block text-[10px] text-gray-400 font-mono truncate max-w-[180px]">
                     {avatar.id}
                   </code>

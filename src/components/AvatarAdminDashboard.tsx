@@ -218,9 +218,8 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
   });
 
   return (
-    <div className="min-h-screen bg-cream flex">
-      {/* Main content */}
-      <div className={`flex-1 p-6 transition-all ${selectedAsset ? 'max-w-[calc(100%-400px)]' : ''}`}>
+    <div className="min-h-screen bg-cream relative">
+      <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
@@ -427,15 +426,25 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
       </div>
       </div>
 
-      {/* Detail panel — slides in from right */}
+      {/* Floating detail panel */}
       {selectedAsset && (
-        <AssetDetailPanel
-          avatar={selectedAsset}
-          onClose={() => setSelectedAsset(null)}
-          onSave={saveAsset}
-          onDelete={(id) => { handleDelete(id); setSelectedAsset(null); }}
-          onToggleVisibility={toggleVisibility}
-        />
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/20 z-40"
+            onClick={() => setSelectedAsset(null)}
+          />
+          {/* Panel */}
+          <div className="fixed top-0 right-0 h-full z-50 shadow-2xl animate-in slide-in-from-right duration-200">
+            <AssetDetailPanel
+              avatar={selectedAsset}
+              onClose={() => setSelectedAsset(null)}
+              onSave={saveAsset}
+              onDelete={(id) => { handleDelete(id); setSelectedAsset(null); }}
+              onToggleVisibility={toggleVisibility}
+            />
+          </div>
+        </>
       )}
     </div>
   );
