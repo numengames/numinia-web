@@ -76,11 +76,10 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Admin routes — wallet or OAuth session required
-  // The /en/admin page handles its own auth gate (WalletConnect),
-  // so we only block unauthenticated access to /admin without locale prefix.
-  if (pathname.match(/^\/[a-z]{2}\/admin/) && !isAdmin) {
-    // Let the page handle auth — it shows WalletConnect if not authenticated
+  // L.A.P. and admin routes — let the page handle its own auth gate
+  // (shows LoginModal/WalletConnect if not authenticated)
+  if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAdmin) {
+    // Page handles auth display
   }
 
   return res;
