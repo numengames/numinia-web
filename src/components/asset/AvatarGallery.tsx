@@ -69,6 +69,8 @@ export const AvatarGallery: React.FC = () => {
   const [currentAvatar, setCurrentAvatar] = useState<Avatar | null>(null);
   const [vrmMetadata, setVrmMetadata] = useState<Record<string, any> | null>(null);
   const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
   const [showAvatarsList, setShowAvatarsList] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(280); // Default width in pixels
@@ -234,13 +236,41 @@ export const AvatarGallery: React.FC = () => {
       }
     }
 
+    // Tags filter — applies on top of everything
+    if (selectedTags.size > 0) {
+      result = result.filter(avatar =>
+        (avatar.tags || []).some(t => selectedTags.has(t))
+      );
+    }
+
     return result;
-  }, [avatars, selectedProjectIds, searchQuery, featuredAvatarNames, showFavoritesOnly, isFavorite]);
+  }, [avatars, selectedProjectIds, searchQuery, featuredAvatarNames, showFavoritesOnly, isFavorite, selectedTags]);
+
+  // Compute all unique tags with counts (from full avatar list)
+  const allGalleryTags = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    for (const a of avatars) {
+      for (const t of a.tags || []) {
+        tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+      }
+    }
+    return Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1]); // sort by count desc
+  }, [avatars]);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  };
 
   // Reset displayed count when filters change
   useEffect(() => {
     setDisplayedCount(ITEMS_PER_BATCH);
-  }, [searchQuery, selectedProjectIds]);
+  }, [searchQuery, selectedProjectIds, selectedTags]);
 
   // Avatars to actually display (sliced from filtered list)
   const displayedAvatars = useMemo(() => {
@@ -514,6 +544,37 @@ export const AvatarGallery: React.FC = () => {
                 </div>
               </div>
 
+              {/* Tags filter */}
+              {allGalleryTags.length > 0 && (
+                <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700">
+                  <button
+                    onClick={() => setTagsExpanded(!tagsExpanded)}
+                    className="w-full flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  >
+                    <span>Tags</span>
+                    {tagsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </button>
+
+                  {tagsExpanded && (
+                    <div className="mt-2 flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                      {allGalleryTags.map(([tag, count]) => (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
+                            selectedTags.has(tag)
+                              ? 'bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700 dark:text-violet-400'
+                              : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+                          }`}
+                        >
+                          {tag} <span className="text-gray-400">{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Random Asset + Favorites buttons */}
               <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700 flex gap-2">
                 <Button
@@ -602,6 +663,13 @@ export const AvatarGallery: React.FC = () => {
                         <p className="text-xs truncate text-gray-500 dark:text-gray-400">
                           {avatar.project}
                         </p>
+                        {avatar.tags && avatar.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-0.5 mt-1">
+                            {avatar.tags.slice(0, 3).map(tag => (
+                              <span key={tag} className="text-[8px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded px-1 py-px">{tag}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

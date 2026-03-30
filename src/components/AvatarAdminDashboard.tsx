@@ -26,6 +26,7 @@ interface Avatar {
   status?: string;
   version?: string;
   file_size_bytes?: number;
+  tags?: string[];
 }
 
 export default function AvatarAdminDashboard() {
@@ -38,6 +39,7 @@ export default function AvatarAdminDashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [formatFilter, setFormatFilter] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('admin-view-mode') as 'gallery' | 'table') || 'table';
@@ -208,13 +210,15 @@ export default function AvatarAdminDashboard() {
     }
   };
 
-  // Get unique formats for filter buttons
+  // Get unique formats and tags for filter buttons
   const formats = Array.from(new Set(avatars.map(a => a.format?.toUpperCase()).filter(Boolean))).sort();
+  const allTags = Array.from(new Set(avatars.flatMap(a => a.tags || []))).sort();
 
   const filteredAvatars = avatars.filter(avatar => {
     const matchesSearch = avatar.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFormat = !formatFilter || avatar.format?.toUpperCase() === formatFilter;
-    return matchesSearch && matchesFormat;
+    const matchesTags = !tagFilter || (avatar.tags || []).includes(tagFilter);
+    return matchesSearch && matchesFormat && matchesTags;
   });
 
   return (
@@ -267,6 +271,26 @@ export default function AvatarAdminDashboard() {
                 </Button>
               );
             })}
+
+            {/* Tag filters */}
+            {allTags.length > 0 && (
+              <>
+                <div className="h-5 w-px bg-gray-200 dark:bg-gray-700" />
+                {allTags.slice(0, 8).map(tag => {
+                  const count = avatars.filter(a => (a.tags || []).includes(tag)).length;
+                  return (
+                    <button key={tag} onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                      className={`h-6 px-2 text-[10px] rounded-full border transition-colors ${
+                        tagFilter === tag
+                          ? 'bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700 dark:text-violet-400'
+                          : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+                      }`}>
+                      {tag} ({count})
+                    </button>
+                  );
+                })}
+              </>
+            )}
 
             {/* Spacer */}
             <div className="flex-1" />

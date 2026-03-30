@@ -30,6 +30,7 @@ interface Avatar {
   status?: string;
   version?: string;
   file_size_bytes?: number;
+  tags?: string[];
 }
 
 type SortKey =
@@ -167,6 +168,7 @@ export default function AdminTableView({
           >
             Format <SortIcon column="format" />
           </TableHead>
+          <TableHead>Tags</TableHead>
           <TableHead
             className="cursor-pointer select-none"
             onClick={() => handleSort("file_size_bytes")}
@@ -242,6 +244,15 @@ export default function AdminTableView({
                   <Badge variant="secondary" className="text-xs">
                     {avatar.format?.toUpperCase() || "\u2014"}
                   </Badge>
+                </TableCell>
+
+                {/* Tags */}
+                <TableCell>
+                  <div className="flex flex-wrap gap-0.5">
+                    {(avatar.tags || []).slice(0, 3).map((tag: string) => (
+                      <span key={tag} className="text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 rounded px-1 py-px">{tag}</span>
+                    ))}
+                  </div>
                 </TableCell>
 
                 {/* Size */}

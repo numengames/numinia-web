@@ -40,6 +40,7 @@ export interface Asset {
   isPublic: boolean;
   isDraft: boolean;
   metadata: Record<string, any>;
+  tags?: string[];
 }
 
 // Legacy alias for backward compatibility
