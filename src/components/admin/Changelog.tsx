@@ -16,16 +16,43 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
-  { text: 'User login flow (wallet + email)', status: 'planned' },
-  { text: 'User profile page (OpenSea style)', status: 'planned' },
-  { text: 'NFT ownership verification (Base chain)', status: 'planned' },
-  { text: 'Digital Goods / Loot section (NFT management)', status: 'planned' },
-  { text: 'IPFS / Arweave permanent storage layer', status: 'research' },
-  { text: 'Animation & emote catalog structure', status: 'research' },
-  { text: '3D printing section (STL viewer)', status: 'research' },
+  { text: 'Gallery UX redesign (layout, filters, search)', status: 'planned' },
+  { text: 'Finder UX improvements', status: 'planned' },
+  { text: 'Resources pages content (File Over App docs)', status: 'planned' },
+  { text: 'Upload Mixamo GLB animations to R2 (replace legacy FBX)', status: 'planned' },
+  { text: 'Multi-language legal pages (ja)', status: 'planned' },
+  { text: 'On-chain NFT ownership display in user profile', status: 'research' },
+  { text: 'Arweave bulk archive for existing assets', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.9.0',
+    date: '2026-03-31',
+    time: '22:30',
+    items: [
+      { text: 'User login flow (wallet + GitHub, any user)', type: 'new' },
+      { text: 'User profile page (/en/profile)', type: 'new' },
+      { text: 'NFT ownership check API (Base chain RPC)', type: 'new' },
+      { text: 'Digital Goods admin section (collections, unlinked assets)', type: 'new' },
+      { text: 'STL 3D printing viewer + upload support', type: 'new' },
+      { text: 'Hyperfy .hyp metadata panel (toggleable)', type: 'new' },
+      { text: 'IPFS pin + Arweave archive endpoints', type: 'new' },
+      { text: 'Tags system for assets (animation, emote, etc.)', type: 'new' },
+      { text: 'Legal pages (Terms, Privacy, Cookies) + consent banner', type: 'new' },
+      { text: '6 Mixamo animations activated (was 1)', type: 'new' },
+      { text: 'JPG/PNG image preview in gallery, finder, admin', type: 'fix' },
+      { text: 'Markdown XSS vulnerability fixed (sanitize: true)', type: 'fix' },
+      { text: '138 tests across 15 files (was 63)', type: 'improvement' },
+      { text: '0 process.env bypasses (all through env.ts Zod)', type: 'improvement' },
+      { text: '208 console.log removed from 3D viewers', type: 'fix' },
+      { text: 'Optimistic locking on GitHub writes (retry on 409)', type: 'fix' },
+      { text: 'All ToxSam branding replaced (app + docs + footer + seo)', type: 'fix' },
+      { text: 'Favicon unified with numen.games (Khepri icon)', type: 'improvement' },
+      { text: '22 Resources pages rewritten with Numinia content', type: 'improvement' },
+      { text: 'SECURITY.md + CONTRIBUTING.md + Dependabot', type: 'new' },
+    ],
+  },
   {
     version: '0.8.0',
     date: '2026-03-31',
