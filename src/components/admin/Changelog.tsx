@@ -220,7 +220,7 @@ export function Changelog() {
                 <Badge variant="secondary" className="bg-green-100 text-green-700 text-[9px]">Latest</Badge>
               )}
             </div>
-            <span className="text-xs text-gray-400">{entry.date} &middot; {entry.time}</span>
+            <span className="text-xs text-gray-400">{entry.date} &middot; {entry.time} <span title="Coordinated Universal Time" className="cursor-help">UTC</span></span>
           </div>
 
           {/* Card body */}
