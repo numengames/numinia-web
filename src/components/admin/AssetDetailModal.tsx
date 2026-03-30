@@ -56,6 +56,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
+  const [thumbSaved, setThumbSaved] = useState(false);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -71,6 +72,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
     setCreator(avatar.creator || '');
     setLicense(avatar.license || 'CC0');
     setSaved(false);
+    setThumbSaved(false);
     setThumbnailPreview(null);
     setPosition({ x: 0, y: 0 });
   }, [avatar.id, avatar.name, avatar.description, avatar.creator, avatar.license]);
@@ -135,8 +137,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   // Capture the 3D viewer canvas as thumbnail
   const captureViewerThumbnail = useCallback(async () => {
     setIsUploadingThumb(true);
+    setThumbSaved(false);
     try {
-      // Find the canvas inside the preview container
       const container = previewContainerRef.current;
       if (!container) throw new Error('No preview container');
       const canvas = container.querySelector('canvas');
@@ -152,6 +154,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
       setThumbnailPreview(data.thumbnailUrl || dataUrl);
+      setThumbSaved(true);
+      setTimeout(() => setThumbSaved(false), 2500);
     } catch {
       // silently fail
     } finally {
@@ -223,11 +227,21 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
             {/* Thumbnail capture (3D) or upload (non-3D) */}
             <button
               onClick={is3D ? captureViewerThumbnail : () => thumbInputRef.current?.click()}
-              className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-md px-2.5 py-1 text-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              disabled={isUploadingThumb}
+              className={`absolute bottom-2 right-2 rounded-md px-2.5 py-1.5 text-xs flex items-center gap-1.5 transition-all ${
+                thumbSaved
+                  ? 'bg-green-500 text-white opacity-100'
+                  : 'bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100'
+              } disabled:opacity-70`}
               title={is3D ? 'Capture current view as thumbnail' : 'Upload thumbnail image'}
             >
-              {isUploadingThumb ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
-              {is3D ? 'Capture' : 'Thumbnail'}
+              {isUploadingThumb ? (
+                <><Loader2 className="h-3 w-3 animate-spin" /> Saving...</>
+              ) : thumbSaved ? (
+                <>✓ Saved!</>
+              ) : (
+                <><Camera className="h-3 w-3" /> Thumbnail</>
+              )}
             </button>
             <input ref={thumbInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleThumbnailUpload(f); }} />
