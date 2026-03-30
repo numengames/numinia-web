@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     // Create a new avatar object
     const now = new Date().toISOString();
     const newAvatar: GithubAvatar = {
-      id: generateAssetId(avatarData.name, avatarData.format || 'vrm'),
+      id: generateAssetId(),
       name: avatarData.name,
       projectId: avatarData.projectId,
       description: avatarData.description ?? '',

@@ -1,108 +1,121 @@
 import { describe, it, expect } from 'vitest';
 import {
   generateAssetId,
-  parseAssetId,
+  formatCanonical,
+  extractUUID,
   isNuminiaId,
-  slugify,
-  extensionToTypeCode,
+  createAssetMetadata,
 } from '@/lib/asset-id';
 
-describe('slugify', () => {
-  it('converts to lowercase with hyphens', () => {
-    expect(slugify('Avatar Arla')).toBe('avatar-arla');
-  });
-
-  it('removes file extension', () => {
-    expect(slugify('Crystal Sword.glb')).toBe('crystal-sword');
-  });
-
-  it('handles special characters', () => {
-    expect(slugify('Model (v2) [final]!')).toBe('model-v2-final');
-  });
-
-  it('truncates at maxLen', () => {
-    const long = 'a-very-long-name-that-exceeds-the-maximum-length-limit';
-    expect(slugify(long, 16).length).toBeLessThanOrEqual(16);
-  });
-
-  it('strips leading/trailing hyphens', () => {
-    expect(slugify('---test---')).toBe('test');
-  });
-});
-
-describe('extensionToTypeCode', () => {
-  it('maps vrm to vrm', () => expect(extensionToTypeCode('vrm')).toBe('vrm'));
-  it('maps glb to glb', () => expect(extensionToTypeCode('glb')).toBe('glb'));
-  it('maps gltf to glb', () => expect(extensionToTypeCode('gltf')).toBe('glb'));
-  it('maps hyp to hyp', () => expect(extensionToTypeCode('hyp')).toBe('hyp'));
-  it('maps mp3 to mp3', () => expect(extensionToTypeCode('mp3')).toBe('mp3'));
-  it('maps ogg to ogg', () => expect(extensionToTypeCode('ogg')).toBe('ogg'));
-  it('maps mp4 to mp4', () => expect(extensionToTypeCode('mp4')).toBe('mp4'));
-  it('maps webm to webm', () => expect(extensionToTypeCode('webm')).toBe('webm'));
-  it('maps png to img', () => expect(extensionToTypeCode('png')).toBe('img'));
-  it('maps jpg to img', () => expect(extensionToTypeCode('jpg')).toBe('img'));
-  it('defaults unknown to glb', () => expect(extensionToTypeCode('xyz')).toBe('glb'));
-  it('is case insensitive', () => expect(extensionToTypeCode('VRM')).toBe('vrm'));
-});
-
 describe('generateAssetId', () => {
-  it('follows ndg-{type}-{slug}-{timestamp} format', () => {
-    const id = generateAssetId('Avatar Arla', 'vrm');
-    expect(id).toMatch(/^ndg-vrm-avatar-arla-[a-z0-9]+$/);
+  it('returns ndg- prefixed UUID v7', () => {
+    const id = generateAssetId();
+    expect(id).toMatch(/^ndg-[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
-  it('uses correct type code for each extension', () => {
-    expect(generateAssetId('Test', 'glb')).toMatch(/^ndg-glb-/);
-    expect(generateAssetId('Test', 'hyp')).toMatch(/^ndg-hyp-/);
-    expect(generateAssetId('Test', 'mp3')).toMatch(/^ndg-mp3-/);
-  });
-
-  it('handles filenames with extensions', () => {
-    const id = generateAssetId('Sword.glb', 'glb');
-    expect(id).toMatch(/^ndg-glb-sword-[a-z0-9]+$/);
-  });
-
-  it('produces different IDs for sequential calls', async () => {
-    const id1 = generateAssetId('Test', 'vrm');
+  it('produces different IDs on sequential calls', async () => {
+    const id1 = generateAssetId();
     await new Promise(r => setTimeout(r, 2));
-    const id2 = generateAssetId('Test', 'vrm');
+    const id2 = generateAssetId();
     expect(id1).not.toBe(id2);
   });
+
+  it('IDs are chronologically sortable', async () => {
+    const id1 = generateAssetId();
+    await new Promise(r => setTimeout(r, 5));
+    const id2 = generateAssetId();
+    // UUID v7 sorts chronologically by string comparison
+    expect(id1 < id2).toBe(true);
+  });
+
+  it('generates monotonically within same ms', () => {
+    const ids = Array.from({ length: 100 }, () => generateAssetId());
+    const sorted = [...ids].sort();
+    expect(ids).toEqual(sorted);
+  });
 });
 
-describe('parseAssetId', () => {
-  it('parses a valid ndg ID', () => {
-    const result = parseAssetId('ndg-vrm-avatar-arla-mncdhz3l');
-    expect(result).toEqual({
-      namespace: 'ndg',
-      type: 'vrm',
-      slug: 'avatar-arla',
-      timestamp: 'mncdhz3l',
-    });
+describe('extractUUID', () => {
+  it('strips ndg- prefix', () => {
+    const uuid = '019078e5-5a4c-7b00-8000-1a2b3c4d5e6f';
+    expect(extractUUID(`ndg-${uuid}`)).toBe(uuid);
   });
 
-  it('returns null for non-ndg IDs', () => {
-    expect(parseAssetId('starter-avatar-01')).toBeNull();
-    expect(parseAssetId('550e8400-e29b-41d4-a716-446655440000')).toBeNull();
-    expect(parseAssetId('')).toBeNull();
+  it('returns input unchanged for non-ndg IDs', () => {
+    expect(extractUUID('starter-avatar-01')).toBe('starter-avatar-01');
+    expect(extractUUID('some-old-id')).toBe('some-old-id');
+  });
+});
+
+describe('formatCanonical', () => {
+  it('builds canonical format', () => {
+    const id = 'ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f';
+    const canonical = formatCanonical(id, 'VRM', '0.1.0');
+    expect(canonical).toBe('ndg:vrm:019078e5-5a4c-7b00-8000-1a2b3c4d5e6f:v0.1.0');
   });
 
-  it('parses IDs with multi-segment slugs', () => {
-    const result = parseAssetId('ndg-glb-crystal-chaos-sword-m3n8kz3');
-    expect(result?.slug).toBe('crystal-chaos-sword');
-    expect(result?.type).toBe('glb');
+  it('lowercases type', () => {
+    const id = 'ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f';
+    expect(formatCanonical(id, 'GLB', '1.0.0')).toContain(':glb:');
   });
 });
 
 describe('isNuminiaId', () => {
-  it('returns true for valid ndg IDs', () => {
-    expect(isNuminiaId('ndg-vrm-avatar-arla-mncdhz3l')).toBe(true);
-    expect(isNuminiaId('ndg-glb-sword-m3n8kz3')).toBe(true);
+  it('returns true for valid ndg UUID v7 IDs', () => {
+    const id = generateAssetId();
+    expect(isNuminiaId(id)).toBe(true);
   });
 
-  it('returns false for legacy IDs', () => {
+  it('returns false for old-format IDs', () => {
     expect(isNuminiaId('starter-avatar-01')).toBe(false);
+    expect(isNuminiaId('ndg-vrm-avatar-arla-mncdhz3l')).toBe(false);
     expect(isNuminiaId('550e8400-e29b-41d4-a716-446655440000')).toBe(false);
-    expect(isNuminiaId('avatar-arla-mncdhz3l')).toBe(false);
+    expect(isNuminiaId('')).toBe(false);
+  });
+});
+
+describe('createAssetMetadata', () => {
+  it('creates a complete metadata object', () => {
+    const id = generateAssetId();
+    const meta = createAssetMetadata(
+      id,
+      'Crystal Sword',
+      'glb',
+      'A crystal sword',
+      'https://example.com/sword.glb',
+      'numinia-assets',
+    );
+
+    expect(meta.id).toBe(id);
+    expect(meta.name).toBe('Crystal Sword');
+    expect(meta.type).toBe('glb');
+    expect(meta.version).toBe('0.1.0');
+    expect(meta.status).toBe('active');
+    expect(meta.license).toBe('CC0');
+    expect(meta.canonical).toContain('ndg:glb:');
+    expect(meta.canonical).toContain(':v0.1.0');
+    expect(meta.previous_version).toBeNull();
+    expect(meta.is_public).toBe(true);
+    expect(meta.is_draft).toBe(false);
+  });
+
+  it('has NFT fields defaulted to unminted', () => {
+    const meta = createAssetMetadata(generateAssetId(), 'Test', 'vrm', '', '', '');
+    const nft = meta.nft as Record<string, unknown>;
+    expect(nft.mint_status).toBe('unminted');
+    expect(nft.chain_id).toBeNull();
+    expect(nft.contract).toBeNull();
+    expect(nft.token_id).toBeNull();
+  });
+
+  it('has storage fields', () => {
+    const meta = createAssetMetadata(
+      generateAssetId(), 'Test', 'vrm', '',
+      'https://raw.githubusercontent.com/test/file.vrm', '',
+    );
+    const storage = meta.storage as Record<string, unknown>;
+    expect(storage.github_raw).toBe('https://raw.githubusercontent.com/test/file.vrm');
+    expect(storage.ipfs_cid).toBeNull();
+    expect(storage.arweave_tx).toBeNull();
   });
 });

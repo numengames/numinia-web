@@ -3,6 +3,7 @@ import { getAdminSession } from '@/lib/auth/getSession';
 import { fetchData, updateData } from '@/lib/github-storage';
 import { getR2PublicUrl } from '@/lib/r2-client';
 import { getContentPath } from '@/lib/content-paths';
+import { createAssetMetadata } from '@/lib/asset-id';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -24,22 +25,15 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = `${getR2PublicUrl()}/${r2Key}`;
     const { catalogFile, projectId } = getContentPath(format);
-    const now = new Date().toISOString();
 
-    const newEntry: Record<string, unknown> = {
-      id: assetId,
-      name: displayName,
-      project_id: projectId,
-      description: description || `${format} asset uploaded via Numinia Admin`,
-      model_file_url: publicUrl,
-      thumbnail_url: null,
-      format,
-      is_public: true,
-      is_draft: false,
-      created_at: now,
-      updated_at: now,
-      metadata: {},
-    };
+    const newEntry = createAssetMetadata(
+      assetId,
+      displayName,
+      format.toLowerCase(),
+      description || `${format} asset uploaded via Numinia Admin`,
+      publicUrl,
+      projectId,
+    );
 
     const existingAssets = await fetchData<Record<string, unknown>[]>(catalogFile);
     const assets = Array.isArray(existingAssets) ? existingAssets : [];

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     const format = ext.toUpperCase();
-    const assetId = generateAssetId(name || fileName, ext);
+    const assetId = generateAssetId();
     const { folder } = getContentPath(format);
     const r2Key = `${folder}/${assetId}.${ext}`;
     const contentType = CONTENT_TYPES[ext] ?? 'application/octet-stream';

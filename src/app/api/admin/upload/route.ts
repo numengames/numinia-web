@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { env } from '@/lib/env';
 import { fetchData, updateData } from '@/lib/github-storage';
-import { generateAssetId } from '@/lib/asset-id';
+import { generateAssetId, createAssetMetadata } from '@/lib/asset-id';
 import { getContentPath, getFormat } from '@/lib/content-paths';
 
 export const dynamic = 'force-dynamic';
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const format = getFormat(file.name);
-    const assetId = generateAssetId(name || file.name, ext);
+    const assetId = generateAssetId();
     const displayName = name || file.name.replace(/\.[^.]+$/, '');
 
     // Step 1: Upload binary to data repo
@@ -95,22 +95,15 @@ export async function POST(req: NextRequest) {
     // Step 2: Add entry to the correct project JSON file
     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${repoFilePath}`;
     const { projectId, catalogFile } = getContentPath(format);
-    const now = new Date().toISOString();
 
-    const newEntry: Record<string, unknown> = {
-      id: assetId,
-      name: displayName,
-      project_id: projectId,
-      description: description || `${format} asset uploaded via Numinia Admin`,
-      model_file_url: rawUrl,
-      thumbnail_url: null,
-      format,
-      is_public: true,
-      is_draft: false,
-      created_at: now,
-      updated_at: now,
-      metadata: {},
-    };
+    const newEntry = createAssetMetadata(
+      assetId,
+      displayName,
+      format.toLowerCase(),
+      description || `${format} asset uploaded via Numinia Admin`,
+      rawUrl,
+      projectId,
+    );
 
     const existingAssets = await fetchData<Record<string, unknown>[]>(catalogFile);
     const assets = Array.isArray(existingAssets) ? existingAssets : [];

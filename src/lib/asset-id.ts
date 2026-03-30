@@ -1,86 +1,114 @@
 /**
  * Numinia Digital Goods — Asset ID System
+ * Specification v1.0 — 2026-03-30
  *
- * Format: ndg-{type}-{slug}-{timestamp}
+ * Format: ndg-{uuid-v7}
+ * Example: ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f
  *
- * - ndg        — namespace (Numinia Digital Goods)
- * - {type}     — asset type code (vrm, glb, hyp, mp3, etc.)
- * - {slug}     — slugified name, max 32 chars
- * - {timestamp} — Date.now() in base36, 8 chars
+ * Based on RFC 9562 (UUID v7):
+ * - 122 bits of entropy — collision impossible at any scale including IoT
+ * - Timestamp-sortable — first 48 bits are Unix ms
+ * - Monotonic within same ms — uuidv7 library auto-increments
+ * - Native DB support — Postgres, MySQL 8+, MongoDB
+ * - Universal library support — JS, Python, Rust, Go, C#, Java
  *
- * Example: ndg-vrm-avatar-arla-mncdhz3l
+ * The ndg- prefix identifies provenance (Numinia Digital Goods protocol).
+ * Like ERC is from Ethereum but used everywhere.
  *
- * Properties:
- * - Globally unique (timestamp + slug)
- * - URL-safe (lowercase alphanumeric + hyphens)
- * - Human-readable (slug tells you what it is)
- * - Type-encoded (format without metadata lookup)
- * - Sortable by creation time (base36 preserves order)
- * - Cross-platform (ndg- prefix identifies provenance)
+ * See ID_SYSTEM.md for the full specification with decision rationale.
  */
 
-/** Valid asset type codes */
-export const ASSET_TYPE_CODES = ['vrm', 'glb', 'hyp', 'mp3', 'ogg', 'mp4', 'webm', 'img'] as const;
-export type AssetTypeCode = typeof ASSET_TYPE_CODES[number];
+import { uuidv7 } from 'uuidv7';
 
-/** Map file extensions to asset type codes */
-const EXT_TO_TYPE: Record<string, AssetTypeCode> = {
-  vrm: 'vrm',
-  glb: 'glb',
-  gltf: 'glb',
-  hyp: 'hyp',
-  mp3: 'mp3',
-  ogg: 'ogg',
-  mp4: 'mp4',
-  webm: 'webm',
-  png: 'img',
-  jpg: 'img',
-  jpeg: 'img',
-  webp: 'img',
-  gif: 'img',
-};
-
-/** Slugify a name: lowercase, alphanumeric + hyphens, max length */
-export function slugify(name: string, maxLen = 32): string {
-  return name
-    .replace(/\.[^.]+$/, '') // remove file extension
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, maxLen);
+/**
+ * Generate a new Numinia asset ID.
+ * Returns `ndg-{uuid-v7}` — globally unique, timestamp-sortable.
+ * Can be generated offline, without coordination, at any scale.
+ */
+export function generateAssetId(): string {
+  return `ndg-${uuidv7()}`;
 }
 
-/** Resolve file extension to AssetTypeCode */
-export function extensionToTypeCode(ext: string): AssetTypeCode {
-  return EXT_TO_TYPE[ext.toLowerCase()] ?? 'glb';
+/**
+ * Build the canonical form of an asset ID.
+ * Used in NFT tokenURIs, IPFS metadata, and formal exports.
+ * Format: ndg:{type}:{uuid}:v{version}
+ *
+ * Example: ndg:vrm:019078e5-5a4c-7b00-8000-1a2b3c4d5e6f:v0.1.0
+ */
+export function formatCanonical(id: string, type: string, version: string): string {
+  const uuid = extractUUID(id);
+  return `ndg:${type.toLowerCase()}:${uuid}:v${version}`;
 }
 
-/** Generate a unique Numinia asset ID */
-export function generateAssetId(name: string, extension: string): string {
-  const type = extensionToTypeCode(extension);
-  const slug = slugify(name);
-  const ts = Date.now().toString(36);
-  return `ndg-${type}-${slug}-${ts}`;
+/**
+ * Extract the raw UUID from an ndg ID.
+ * ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f → 019078e5-5a4c-7b00-8000-1a2b3c4d5e6f
+ * Returns the input unchanged if it's not an ndg ID.
+ */
+export function extractUUID(id: string): string {
+  if (id.startsWith('ndg-')) {
+    return id.slice(4);
+  }
+  return id;
 }
 
-/** Parse a Numinia asset ID into its components. Returns null for non-ndg IDs. */
-export function parseAssetId(id: string): {
-  namespace: string;
-  type: string;
-  slug: string;
-  timestamp: string;
-} | null {
-  const match = id.match(/^ndg-([a-z0-9]+)-(.+)-([a-z0-9]{7,9})$/);
-  if (!match) return null;
-  return {
-    namespace: 'ndg',
-    type: match[1],
-    slug: match[2],
-    timestamp: match[3],
-  };
-}
-
-/** Check whether an ID follows the ndg format */
+/**
+ * Check whether an ID follows the ndg UUID v7 format.
+ * Validates: ndg- prefix + valid UUID structure (8-4-4-4-12 hex).
+ */
 export function isNuminiaId(id: string): boolean {
-  return /^ndg-[a-z0-9]+-[a-z0-9-]+-[a-z0-9]{7,9}$/.test(id);
+  return /^ndg-[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
+}
+
+/**
+ * Create the default metadata fields for a new asset.
+ * Used by upload routes to build the initial JSON entry.
+ */
+export function createAssetMetadata(
+  id: string,
+  name: string,
+  type: string,
+  description: string,
+  modelFileUrl: string,
+  projectId: string,
+): Record<string, unknown> {
+  const now = new Date().toISOString();
+  return {
+    id,
+    canonical: formatCanonical(id, type, '0.1.0'),
+    name,
+    type: type.toLowerCase(),
+    version: '0.1.0',
+    previous_version: null,
+    status: 'active',
+    status_reason: null,
+    license: 'CC0',
+    creator: null,
+    description,
+    model_file_url: modelFileUrl,
+    thumbnail_url: null,
+    format: type.toUpperCase(),
+    project_id: projectId,
+    nft: {
+      type: 'standard',
+      mint_status: 'unminted',
+      chain_id: null,
+      contract: null,
+      token_id: null,
+      owner: null,
+      mint_tx: null,
+    },
+    storage: {
+      r2: modelFileUrl.includes('r2.') ? modelFileUrl : null,
+      ipfs_cid: null,
+      arweave_tx: null,
+      github_raw: modelFileUrl.includes('raw.githubusercontent') ? modelFileUrl : null,
+    },
+    is_public: true,
+    is_draft: false,
+    created_at: now,
+    updated_at: now,
+    metadata: {},
+  };
 }
