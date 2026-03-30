@@ -17,6 +17,10 @@ export function getContentPath(format: string): {
     case 'OGG':  return { folder: 'content/audio',    catalogFile: 'data/audio/numinia-audio.json',     projectId: 'numinia-audio' };
     case 'MP4':
     case 'WEBM': return { folder: 'content/video',    catalogFile: 'data/video/numinia-video.json',     projectId: 'numinia-video' };
+    case 'JPG':
+    case 'JPEG':
+    case 'PNG':
+    case 'WEBP': return { folder: 'content/images',   catalogFile: 'data/images/numinia-images.json',   projectId: 'numinia-images' };
     default:     return { folder: 'content/other',    catalogFile: 'data/assets/numinia-assets.json',   projectId: 'numinia-assets' };
   }
 }

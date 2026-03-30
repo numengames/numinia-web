@@ -9,7 +9,7 @@ import { getContentPath } from '@/lib/content-paths';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm'];
+const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'webp'];
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
 const PRESIGN_EXPIRY = 3600; // 1 hour
 

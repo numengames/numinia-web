@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm';
+const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm,.jpg,.jpeg,.png,.webp';
 const GITHUB_MAX_SIZE = 3.5 * 1024 * 1024;
 const R2_MAX_SIZE = 500 * 1024 * 1024;
 
