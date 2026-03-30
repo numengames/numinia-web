@@ -11,19 +11,16 @@ export const DEFAULT_ENVIRONMENT = 'https://assets.opensourceavatars.com/environ
 
 // Available Mixamo animations
 // When GLB versions are uploaded to R2, change URLs from LEGACY to R2
+// When R2 GLB versions are uploaded, swap ANIMATION_BASE_LEGACY → ANIMATION_BASE_R2
+// and change .fbx → .glb for each entry.
 export const ANIMATIONS = [
   { name: 'T-Pose (Default)', url: '' },
   { name: 'Warrior Idle', url: `${ANIMATION_BASE_LEGACY}/Warrior%20Idle.fbx` },
-  // Add more animations here after uploading GLB files to R2:
-  // { name: 'Bored', url: `${ANIMATION_BASE_R2}/Bored.glb` },
-  // { name: 'Fight Idle', url: `${ANIMATION_BASE_R2}/Fight%20Idle.glb` },
-  // { name: 'Looking Around', url: `${ANIMATION_BASE_R2}/Looking%20Around.glb` },
-  // { name: 'Magic Spell Casting', url: `${ANIMATION_BASE_R2}/Magic%20Spell%20Casting.glb` },
-  // { name: 'Jumping Rope', url: `${ANIMATION_BASE_R2}/Jumping%20Rope.glb` },
-  // { name: 'Cross Jumps', url: `${ANIMATION_BASE_R2}/Cross%20Jumps.glb` },
-  // { name: 'Offensive Idle', url: `${ANIMATION_BASE_R2}/Offensive%20Idle.glb` },
-  // { name: 'Standing Magic Attack', url: `${ANIMATION_BASE_R2}/Standing%20Magic%20Attack.glb` },
-  // { name: 'Texting While Standing', url: `${ANIMATION_BASE_R2}/Texting%20While%20Standing.glb` },
+  { name: 'Bored', url: `${ANIMATION_BASE_LEGACY}/Bored.fbx` },
+  { name: 'Fight Idle', url: `${ANIMATION_BASE_LEGACY}/Fight%20Idle.fbx` },
+  { name: 'Looking Around', url: `${ANIMATION_BASE_LEGACY}/Looking%20Around.fbx` },
+  { name: 'Offensive Idle', url: `${ANIMATION_BASE_LEGACY}/Offensive%20Idle.fbx` },
+  { name: 'Texting While Standing', url: `${ANIMATION_BASE_LEGACY}/Texting%20While%20Standing.fbx` },
 ] as const;
 
 // Pick a random animation for initial load (excluding T-Pose)

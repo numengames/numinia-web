@@ -8,6 +8,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { loadMixamoAnimation } from './utils/animationLoader';
+import { ANIMATIONS, DEFAULT_ANIMATION } from './constants/defaults';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { SkeletonHelper } from 'three';
 import { useI18n } from '@/lib/i18n';
@@ -1566,11 +1567,7 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   if (captureRef) captureRef.current = captureScreenshot;
 
   // Available animations list - GLB embedded + Mixamo FBX for VRM
-  const MIXAMO_BASE = 'https://assets.opensourceavatars.com/animations';
-  const MIXAMO_ANIMATIONS = [
-    { name: 'T-Pose (Default)', url: '' },
-    { name: 'Warrior Idle', url: `${MIXAMO_BASE}/Warrior%20Idle.fbx` },
-  ];
+  const MIXAMO_ANIMATIONS = ANIMATIONS;
 
   const isVRM = url && /\.vrm$/i.test(url);
 
@@ -2036,7 +2033,7 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
             } else if (vrm && /\.vrm$/i.test(processedUrl)) {
               // VRM file — auto-play Warrior Idle
               try {
-                const idleUrl = `${MIXAMO_BASE}/Warrior%20Idle.fbx`;
+                const idleUrl = DEFAULT_ANIMATION;
                 const clip = await loadMixamoAnimation(idleUrl, vrm);
                 mixerRef.current = new THREE.AnimationMixer(vrm.scene);
                 const action = mixerRef.current.clipAction(clip);
