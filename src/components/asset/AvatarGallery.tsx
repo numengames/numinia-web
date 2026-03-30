@@ -404,9 +404,14 @@ export const AvatarGallery: React.FC = () => {
               className="border-r border-gray-300 dark:border-gray-700 overflow-hidden flex flex-col bg-cream dark:bg-gray-900 relative"
               style={{ width: `${sidebarWidth}px`, minWidth: '200px', maxWidth: '600px' }}
             >
+              {/* Logo */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <img src="/logo-numinia.svg" alt="Numinia" className="h-5 w-auto" />
+              </div>
+
               {/* Search and Controls Container */}
               <div className="p-3 flex-none border-b border-gray-300 dark:border-gray-700 space-y-3">
-                {/* Search Bar - Moved to Top */}
+                {/* Search Bar */}
                 <div className="relative">
                   <Input
                     type="text"
