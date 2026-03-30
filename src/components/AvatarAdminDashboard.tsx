@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, Eye, EyeOff, Loader2, Pencil, Check, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import AdminTableView from '@/components/admin/AdminTableView';
-import { AssetDetailPanel } from '@/components/admin/AssetDetailPanel';
+import { AssetDetailModal } from '@/components/admin/AssetDetailModal';
 import {
   Card,
   CardContent,
@@ -227,10 +227,7 @@ export default function AvatarAdminDashboard() {
     <div className="min-h-screen bg-cream relative">
       <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
-          <span className="text-sm text-gray-500">{avatars.length} assets</span>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Assets</h1>
 
         {/* Status toast */}
         {statusMessage && (
@@ -276,6 +273,7 @@ export default function AvatarAdminDashboard() {
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
                 </button>
               </div>
+              <span className="text-xs text-gray-400 mr-1">{filteredAvatars.length} assets</span>
               <Button
                 variant={formatFilter === null ? 'default' : 'outline'}
                 size="sm"
@@ -372,23 +370,13 @@ export default function AvatarAdminDashboard() {
 
       {/* Floating detail panel */}
       {selectedAsset && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/20 z-40"
-            onClick={() => setSelectedAsset(null)}
-          />
-          {/* Panel */}
-          <div className="fixed top-0 right-0 h-full z-50 shadow-2xl animate-in slide-in-from-right duration-200">
-            <AssetDetailPanel
-              avatar={selectedAsset}
-              onClose={() => setSelectedAsset(null)}
-              onSave={saveAsset}
-              onDelete={(id) => { handleDelete(id); setSelectedAsset(null); }}
-              onToggleVisibility={toggleVisibility}
-            />
-          </div>
-        </>
+        <AssetDetailModal
+          avatar={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          onSave={saveAsset}
+          onDelete={(id: string) => { handleDelete(id); setSelectedAsset(null); }}
+          onToggleVisibility={toggleVisibility}
+        />
       )}
     </div>
   );
