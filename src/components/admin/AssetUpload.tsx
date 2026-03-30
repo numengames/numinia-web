@@ -33,6 +33,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const [phase, setPhase] = useState<UploadPhase>('connecting');
   const [activeLayer, setActiveLayer] = useState<UploadLayer>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
+  const resultRef = useRef<UploadResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -148,12 +149,14 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     const confirmData = await confirmRes.json();
     setProgress(100);
     setPhase('done');
-    setResult({
+    const r2Result = {
       name: confirmData.asset?.name ?? trimmedName,
       id: assetId,
-      layer: 'r2',
+      layer: 'r2' as const,
       url: confirmData.asset?.url ?? '',
-    });
+    };
+    setResult(r2Result);
+    resultRef.current = r2Result;
     return true;
   }, []);
 
@@ -176,12 +179,14 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
     setProgress(100);
     setPhase('done');
-    setResult({
+    const ghResult = {
       name: data.asset?.name ?? trimmedName,
       id: data.asset?.id ?? '',
-      layer: 'github',
+      layer: 'github' as const,
       url: data.asset?.url ?? '',
-    });
+    };
+    setResult(ghResult);
+    resultRef.current = ghResult;
   }, []);
 
   const upload = useCallback(async () => {
@@ -212,10 +217,13 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
       setState('done');
 
       // Auto-generate thumbnail for 3D models (VRM/GLB)
-      if (result && result.url && /\.(vrm|glb|gltf)$/i.test(file.name)) {
-        setPhase('metadata'); // reuse phase for "generating thumbnail"
+      // NOTE: `result` state is not yet updated (React batches setState).
+      // Read the upload result from the DOM-independent ref pattern instead.
+      const currentResult = resultRef.current;
+      if (currentResult && currentResult.url && /\.(vrm|glb|gltf)$/i.test(file.name)) {
+        setPhase('metadata');
         try {
-          await autoGenerateAndUploadThumbnail(result.id, result.url);
+          await autoGenerateAndUploadThumbnail(currentResult.id, currentResult.url);
         } catch {
           // Thumbnail failed silently — not critical
         }
