@@ -47,11 +47,13 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
     >
       {/* Logo */}
       <div className="p-4 flex items-center justify-between">
-        {!collapsed && (
-          <img src="/logo-numinia.svg" alt="Numinia" className="h-5 w-auto" />
-        )}
-        {collapsed && (
-          <img src="/logo-numinia.svg" alt="Numinia" className="h-5 w-5 object-contain object-left" />
+        {!collapsed ? (
+          <div className="flex items-center gap-2">
+            <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px]" />
+            <img src="/logo-numinia.svg" alt="Numinia" className="h-4 w-auto" />
+          </div>
+        ) : (
+          <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px]" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
