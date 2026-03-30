@@ -91,28 +91,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Google Search Console Verification */}
         <meta name="google-site-verification" content="t4Qn-su363dOXOqODpU2eZWgSmBhbU1QgatUeWuiHgA" />
-        
-        {/* Theme initialization script to prevent flash */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const theme = localStorage.getItem('theme');
-                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const shouldBeDark = theme === 'dark' || (!theme && systemPrefersDark);
-                if (shouldBeDark) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              } catch (e) {}
-            `,
-          }}
-        />
       </head>
       <body className={GeistSans.className}>
+        {/* Theme init — runs immediately but after body open, not blocking head parsing */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme'),d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);d?document.documentElement.classList.add('dark'):document.documentElement.classList.remove('dark')}catch(e){}`,
+          }}
+        />
         <WebsiteSchema />
         <OrganizationSchema />
         {/* Fallback provider for routes outside /en/ and /ja/.
