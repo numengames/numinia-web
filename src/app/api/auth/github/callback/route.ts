@@ -3,11 +3,7 @@ import { getUsers, saveUsers } from '@/lib/github-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { GithubUser } from '@/types/github-storage';
 import { cookies } from 'next/headers';
-
-// GitHub OAuth configuration
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:3000/api/auth/github/callback';
+import { env } from '@/lib/env';
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -56,10 +52,10 @@ export async function GET(request: NextRequest) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        client_id: GITHUB_CLIENT_ID,
-        client_secret: GITHUB_CLIENT_SECRET,
+        client_id: env.github.clientId,
+        client_secret: env.github.clientSecret,
         code,
-        redirect_uri: GITHUB_REDIRECT_URI
+        redirect_uri: env.github.redirectUri
       })
     });
     
@@ -154,7 +150,7 @@ export async function GET(request: NextRequest) {
         role: user.role || 'creator',
       }),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.isProd,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',

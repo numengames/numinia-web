@@ -21,6 +21,8 @@ const serverSchema = z.object({
   GITHUB_CLIENT_ID:     z.string().default(''),
   GITHUB_CLIENT_SECRET: z.string().default(''),
   GITHUB_REDIRECT_URI:  z.string().default('http://localhost:3000/api/auth/github/callback'),
+  // Admin wallet allowlist (comma-separated ETH addresses)
+  ADMIN_WALLET_ADDRESSES: z.string().default(''),
   // Cloudflare R2 (optional — upload features degrade gracefully without it)
   R2_ACCOUNT_ID:        z.string().default(''),
   R2_ACCESS_KEY_ID:     z.string().default(''),
@@ -81,6 +83,8 @@ export const env = {
     bucketName:      process.env.R2_BUCKET_NAME       ?? '',
     publicUrl:       process.env.R2_PUBLIC_URL         ?? '',
   },
+  adminWalletAddresses: (process.env.ADMIN_WALLET_ADDRESSES ?? '')
+    .split(',').map(a => a.trim().toLowerCase()).filter(Boolean),
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',
   isProd:  process.env.NODE_ENV === 'production',

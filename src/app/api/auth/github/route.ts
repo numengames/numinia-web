@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// GitHub OAuth configuration
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:3000/api/auth/github/callback';
+import { env } from '@/lib/env';
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -26,8 +23,8 @@ export async function GET(request: NextRequest) {
 
     // Build the GitHub authorization URL
     const authUrl = new URL('https://github.com/login/oauth/authorize');
-    authUrl.searchParams.set('client_id', GITHUB_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', GITHUB_REDIRECT_URI);
+    authUrl.searchParams.set('client_id', env.github.clientId);
+    authUrl.searchParams.set('redirect_uri', env.github.redirectUri);
     authUrl.searchParams.set('scope', 'user:email read:user');
     authUrl.searchParams.set('state', csrfToken);
 
@@ -35,7 +32,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(authUrl);
     response.cookies.set('oauth_state', JSON.stringify({ csrf: csrfToken, redirectTo }), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.isProd,
       sameSite: 'lax',
       maxAge: 60 * 10, // 10 minutes
       path: '/',

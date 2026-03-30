@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 // Mock getAdminSession
 const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
 vi.mock('@/lib/auth/getSession', () => ({
-  getAdminSession: (...args: unknown[]) => mockIsAdmin(...args),
+  getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
 }));
 
 // Mock github-storage
@@ -16,7 +16,7 @@ const mockUpdate = vi.fn(() => Promise.resolve(true));
 
 vi.mock('@/lib/github-storage', () => ({
   getAvatars: vi.fn(() => Promise.resolve([...mockAvatars])),
-  updateAvatarInSource: (...args: unknown[]) => mockUpdate(...args),
+  updateAvatarInSource: (...args: Parameters<typeof mockUpdate>) => mockUpdate(...args),
 }));
 
 import { PATCH } from '@/app/api/assets/[id]/visibility/route';

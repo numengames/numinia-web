@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SiweMessage } from 'siwe';
 import { cookies } from 'next/headers';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-// Comma-separated list of Ethereum addresses allowed to access admin.
-// Stored in env var so it can be updated without code changes.
-const ADMIN_ADDRESSES = (process.env.ADMIN_WALLET_ADDRESSES ?? '')
-  .split(',')
-  .map(a => a.trim().toLowerCase())
-  .filter(Boolean);
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +33,7 @@ export async function POST(request: NextRequest) {
     // Check if the address is in the admin allowlist
     const address = siweMessage.address.toLowerCase();
 
-    if (ADMIN_ADDRESSES.length > 0 && !ADMIN_ADDRESSES.includes(address)) {
+    if (env.adminWalletAddresses.length > 0 && !env.adminWalletAddresses.includes(address)) {
       return NextResponse.json({ error: 'Address not authorized' }, { status: 403 });
     }
 
@@ -52,7 +46,7 @@ export async function POST(request: NextRequest) {
         authenticatedAt: new Date().toISOString(),
       }),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: env.isProd,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24, // 24 hours
       path: '/',
