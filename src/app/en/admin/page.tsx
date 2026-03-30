@@ -7,7 +7,7 @@ import { WalletConnect } from '@/components/admin/WalletConnect';
 import { AssetUpload } from '@/components/admin/AssetUpload';
 import { Changelog } from '@/components/admin/Changelog';
 import { Button } from '@/components/ui/button';
-import { Loader2, LayoutGrid, Table2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 type AdminSession = {
   authenticated: boolean;
@@ -15,17 +15,9 @@ type AdminSession = {
   role?: string;
 };
 
-type ViewMode = 'gallery' | 'table';
-
 export default function AdminPage() {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('admin-view-mode') as ViewMode) || 'gallery';
-    }
-    return 'gallery';
-  });
   const router = useRouter();
 
   useEffect(() => {
@@ -42,10 +34,6 @@ export default function AdminPage() {
     router.refresh();
   }, [router]);
 
-  const switchView = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    localStorage.setItem('admin-view-mode', mode);
-  }, []);
 
   if (isLoading) {
     return (
@@ -82,23 +70,6 @@ export default function AdminPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex border rounded-md overflow-hidden">
-            <button
-              onClick={() => switchView('gallery')}
-              className={`p-1.5 ${viewMode === 'gallery' ? 'bg-black text-white' : 'bg-white text-gray-500 hover:text-gray-900'}`}
-              title="Gallery view"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => switchView('table')}
-              className={`p-1.5 ${viewMode === 'table' ? 'bg-black text-white' : 'bg-white text-gray-500 hover:text-gray-900'}`}
-              title="Table view"
-            >
-              <Table2 className="h-4 w-4" />
-            </button>
-          </div>
           <Button onClick={handleSignOut} variant="destructive" size="sm">
             Sign Out
           </Button>
@@ -117,12 +88,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Asset list — gallery or table */}
-      {viewMode === 'gallery' ? (
-        <AvatarAdminDashboard />
-      ) : (
-        <AvatarAdminDashboard viewMode="table" />
-      )}
+      <AvatarAdminDashboard />
     </div>
   );
 }

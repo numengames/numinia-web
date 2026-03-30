@@ -34,7 +34,7 @@ interface Avatar {
   file_size_bytes?: number;
 }
 
-export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMode?: 'gallery' | 'table' }) {
+export default function AvatarAdminDashboard() {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +44,12 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [formatFilter, setFormatFilter] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'gallery' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('admin-view-mode') as 'gallery' | 'table') || 'table';
+    }
+    return 'table';
+  });
   // Toast-style status message
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -251,8 +257,25 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md border-gray-200"
             />
-            {/* Format filter buttons */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Filters + view toggle */}
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* View toggle */}
+              <div className="flex border rounded-md overflow-hidden mr-2">
+                <button
+                  onClick={() => { setViewMode('gallery'); localStorage.setItem('admin-view-mode', 'gallery'); }}
+                  className={`p-1.5 transition-colors ${viewMode === 'gallery' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                  title="Gallery view"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+                </button>
+                <button
+                  onClick={() => { setViewMode('table'); localStorage.setItem('admin-view-mode', 'table'); }}
+                  className={`p-1.5 transition-colors ${viewMode === 'table' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                  title="Table view"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+                </button>
+              </div>
               <Button
                 variant={formatFilter === null ? 'default' : 'outline'}
                 size="sm"
