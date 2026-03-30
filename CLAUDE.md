@@ -133,30 +133,42 @@ See `.env.example`. Validated by Zod at runtime (skipped during `next build`).
 
 ---
 
-## Current status (2026-03-30)
+## Current status (2026-03-31)
 
 ### What's done
 - ✅ OAuth CSRF fixed (crypto.randomUUID + httpOnly cookie)
 - ✅ CORS conflict resolved (removed `*` from middleware)
 - ✅ Branding: all ToxSam/opensource3dassets/opensourceavatars → Numinia
 - ✅ i18n: static imports, correct provider nesting
-- ✅ Env: Zod validation, build-phase skip
-- ✅ Admin: SIWE wallet auth, upload, hide/show, delete, rename
-- ✅ Data repo: organized content/ folder structure
-- ✅ console.log: 0 remaining in TS/TSX (82 removed)
-- ✅ Tests: 50 passing (auth, env, route protection)
+- ✅ Env: Zod validation, build-phase skip, 0 direct process.env bypasses
+- ✅ Admin: SIWE wallet auth, Claude-style sidebar, draggable modal, stats, settings
+- ✅ Data repo: organized content/ folder structure, orphaned files cleaned
+- ✅ console.log: 1 remaining (text only), 208 removed from 3D viewers
+- ✅ Tests: 137 passing across 15 files (API routes, auth, libs, hooks)
 - ✅ .env.local removed from git tracking
 - ✅ All admin API routes protected with getAdminSession()
+- ✅ R2 presigned upload (500MB limit), GitHub fallback
+- ✅ UUID v7 asset ID system (RFC 9562)
+- ✅ Favorites system (heart button, localStorage)
+- ✅ NFT fields in admin modal (chain, contract, tokenId, type, OpenSea link)
+- ✅ Hyperfy .hyp preview (GLB extraction from binary)
+- ✅ Auto-thumbnail generation (Three.js offscreen canvas)
+- ✅ Mobile responsive admin sidebar
+- ✅ Actions menu on gallery cards (download, copy link, share)
+- ✅ 0 JSX files remaining (all migrated to TSX)
+- ✅ 1 `any` type remaining (VRMLoaderPlugin parser callback)
 
 ### What's remaining
 | Task | Impact | Effort |
 |---|---|---|
-| 44 `any` types in 18 files | Medium | 1-2h |
-| 5 JSX files → TSX migration | Low | 2h |
-| PreviewPanel.tsx split (1943 lines) | High | 4-6h |
-| Presigned URL upload (bypass 3.5MB limit) | High | 2h |
-| GitHub API cache (ISR) | Medium | 1h |
-| More test coverage (components, 3D) | Medium | 4h |
+| User login flow (wallet + email) | High | 4h |
+| User profile page (OpenSea style) | High | 3h |
+| NFT ownership check (Base chain) | High | 2h |
+| Digital Goods / Loot section (admin) | High | 3h |
+| IPFS/Arweave storage layer | High | 4h |
+| Optimistic locking (GitHub API writes) | Medium | 1h |
+| Animation/Emote catalog structure | Medium | 2h |
+| 5 @ts-nocheck files (3D viewers, 8K lines) | Low | 6h |
 
 ---
 
@@ -174,7 +186,10 @@ See `.env.example`. Validated by Zod at runtime (skipped during `next build`).
 | `src/app/api/auth/wallet/verify/route.ts` | SIWE signature verification |
 | `src/components/admin/WalletConnect.tsx` | MetaMask connection flow |
 | `src/components/AvatarAdminDashboard.tsx` | Admin CRUD UI |
-| `src/components/finder/PreviewPanel.tsx` | Main viewer (1943 lines — handle with care) |
+| `src/components/finder/PreviewPanel.tsx` | Main viewer (940 lines, media viewer extracted) |
+| `src/lib/utils/hypParser.ts` | Hyperfy .hyp binary parser (GLB extraction) |
+| `src/lib/hooks/useFavorites.ts` | Favorites system (localStorage) |
+| `src/components/asset/AssetActions.tsx` | Three-dot actions menu on gallery cards |
 
 ---
 

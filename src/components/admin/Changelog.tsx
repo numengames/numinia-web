@@ -19,11 +19,10 @@ const INCOMING: IncomingItem[] = [
   { text: 'User login flow (wallet + email)', status: 'planned' },
   { text: 'User profile page (OpenSea style)', status: 'planned' },
   { text: 'NFT ownership verification (Base chain)', status: 'planned' },
-  { text: 'Actions menu on asset cards (download, share, copy link)', status: 'planned' },
+  { text: 'Digital Goods / Loot section (NFT management)', status: 'planned' },
   { text: 'IPFS / Arweave permanent storage layer', status: 'research' },
   { text: 'Animation & emote catalog structure', status: 'research' },
   { text: '3D printing section (STL viewer)', status: 'research' },
-  { text: 'Hyperfy .hyp app preview', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [

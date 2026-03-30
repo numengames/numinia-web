@@ -28,7 +28,7 @@ export default async function ResourcesPage() {
         <AvatarHeader 
           title="Open Source 3D Assets"
           description="A registry of CC0 and open source 3D assets (GLB)"
-          socialLink="https://x.com/toxsam"
+          socialLink="https://x.com/numinia_store"
         />
 
         <DocLayout breadcrumbItems={[

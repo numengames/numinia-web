@@ -150,7 +150,7 @@ export default function AvatarDetailPage() {
         <AvatarHeader 
           title="Open Source Avatars"
           description="Avatar not found"
-          socialLink="https://x.com/toxsam"
+          socialLink="https://x.com/numinia_store"
         />
         <main className="flex-1 flex items-center justify-center" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>
           <div className="text-center">
@@ -184,7 +184,7 @@ export default function AvatarDetailPage() {
       <AvatarHeader 
         title={avatar.name}
         description={avatar.description || `Free 3D VRM Avatar - ${avatar.project}`}
-        socialLink="https://x.com/toxsam"
+        socialLink="https://x.com/numinia_store"
       />
 
       <main className="flex-1 section-padding" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>

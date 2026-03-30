@@ -75,7 +75,7 @@ export default function Home() {
       <AvatarHeader 
         title={title} 
         description={description}
-        socialLink="https://x.com/toxsam"
+        socialLink="https://x.com/numinia_store"
       />
       
       {/* Hero Section with Large Avatar Display */}
@@ -174,7 +174,7 @@ export default function Home() {
               </p>
               
               <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-                {t('home.about.github_description')} <a href="https://github.com/toxsam/open-source-3D-assets" className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-300 underline">{t('home.about.github_link')}</a> {t('home.about.github_description_2')}
+                {t('home.about.github_description')} <a href="https://github.com/PabloFMM/numinia-digital-goods" className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-300 underline">{t('home.about.github_link')}</a> {t('home.about.github_description_2')}
               </p>
             </div>
           </div>

@@ -322,7 +322,7 @@ export async function GET(request: NextRequest) {
               color: '#666',
             }}
           >
-            numinia.store · @toxsam
+            numinia.store · @numinia_store
           </div>
         </div>
       ),
