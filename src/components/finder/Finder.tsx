@@ -377,21 +377,37 @@ export default function Finder() {
               // Find and load avatar from URL
               const avatar = data.avatars.find((a: Avatar) => createSlug(a.name) === avatarSlug);
               if (avatar) {
-                // Select the collection that contains this avatar so it's visible in the list
-                const avatarCollection = grouped.find((c) => 
+                const avatarCollection = grouped.find((c) =>
                   c.projects.some((p) => p.id === avatar.projectId)
                 );
                 if (avatarCollection) {
                   setSelectedCollectionIds(new Set([avatarCollection.id]));
                 }
-                
+
                 setPreviewAvatar(avatar);
-                // Auto-select the main model file when avatar is loaded from URL
                 if (avatar.modelFileUrl) {
                   const files = getAllAvatarFiles(avatar);
                   const mainModel = files.find((f: FileTypeInfo) => f.id === 'vrm_main') || files.find((f: FileTypeInfo) => f.category === 'model');
                   setSelectedFile(mainModel || null);
                 }
+              }
+            } else {
+              // No avatar in URL — select a random one so the finder isn't empty
+              const randomIndex = Math.floor(Math.random() * data.avatars.length);
+              const randomAvatar = data.avatars[randomIndex];
+
+              const avatarCollection = grouped.find((c) =>
+                c.projects.some((p: Project) => p.id === randomAvatar.projectId)
+              );
+              if (avatarCollection) {
+                setSelectedCollectionIds(new Set([avatarCollection.id]));
+              }
+
+              setPreviewAvatar(randomAvatar);
+              if (randomAvatar.modelFileUrl) {
+                const files = getAllAvatarFiles(randomAvatar);
+                const mainModel = files.find((f: FileTypeInfo) => f.id === 'vrm_main') || files.find((f: FileTypeInfo) => f.category === 'model');
+                setSelectedFile(mainModel || null);
               }
             }
           }
