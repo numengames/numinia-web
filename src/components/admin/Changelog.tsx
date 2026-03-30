@@ -16,16 +16,39 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
-  { text: 'Character Sheet — editable markdown ficha, profile pic, PDF export', status: 'in-progress' },
   { text: 'Character Sheet — dice rolls (D6 pool) in web', status: 'planned' },
+  { text: 'Portals — Hyperfy world management + launcher', status: 'planned' },
+  { text: 'Loot — on-chain NFT display in profile', status: 'planned' },
   { text: 'Archive UX redesign (layout, filters, search)', status: 'planned' },
-  { text: 'Finder UX improvements', status: 'planned' },
-  { text: 'Upload Mixamo GLB animations to R2 (replace legacy FBX)', status: 'planned' },
-  { text: 'On-chain NFT ownership display in user profile', status: 'research' },
+  { text: 'CSP hardening — remove unsafe-eval (Three.js dependency)', status: 'research' },
   { text: 'Arweave bulk archive for existing assets', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.10.0',
+    date: '2026-03-31',
+    time: '01:30',
+    items: [
+      { text: 'Character Sheet — editable RPG ficha stored as markdown (File Over App)', type: 'new' },
+      { text: 'Character Sheet — profile picture, view/edit modes, export MD + PDF', type: 'new' },
+      { text: '.hyp viewer rewrite — Files/Script/Props tabs (madjin-style)', type: 'new' },
+      { text: 'ImageViewer — zoom, pan, fullscreen, download controls', type: 'new' },
+      { text: 'Tags filter in gallery sidebar + admin dashboard', type: 'new' },
+      { text: 'Tags display on gallery mini-cards + admin table', type: 'new' },
+      { text: 'L.A.P. — admin renamed, new /LAP route + header nav', type: 'new' },
+      { text: 'Archive — gallery renamed to /archive + header nav', type: 'new' },
+      { text: 'Portals section placeholder (Hyperfy worlds)', type: 'new' },
+      { text: 'Loot section (renamed from Digital Goods)', type: 'improvement' },
+      { text: 'Sidebar reorganized: Character → Portals → Loot → Assets → Archive', type: 'improvement' },
+      { text: 'Upload merged into Assets view (inline panel)', type: 'improvement' },
+      { text: 'Tags not persisting after save — fixed schema + API response', type: 'fix' },
+      { text: 'Auto-thumbnail not triggering — fixed stale state + proxy allowlist', type: 'fix' },
+      { text: 'Audio/video autoplay removed', type: 'fix' },
+      { text: '22 Resources pages rewritten with Numinia content', type: 'improvement' },
+      { text: 'Favicon unified with numen.games (Khepri)', type: 'improvement' },
+    ],
+  },
   {
     version: '0.9.0',
     date: '2026-03-31',
