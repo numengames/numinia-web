@@ -330,19 +330,51 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
     return avatar.modelFileUrl;
   }, [avatar.modelFileUrl, avatar.metadata?.alternateModels, selectedFormat, availableFormats]);
 
+  // Detect media type from URL extension
+  const isVideoUrl = /\.(mp4|webm)$/i.test(displayModelUrl);
+  const isAudioUrl = /\.(mp3|ogg)$/i.test(displayModelUrl);
+  const isMediaFile = isVideoUrl || isAudioUrl;
+
   return (
     <div className="w-full h-full relative">
-      <VRMViewer
-        url={displayModelUrl}
-        backgroundGLB={null}
-        onMetadataLoad={onMetadataLoad}
-        onTexturesLoad={() => {}}
-        showInfoPanel={showInfoPanel}
-        onToggleInfoPanel={toggleInfoPanel}
-      />
+      {isVideoUrl ? (
+        <div className="w-full h-full flex items-center justify-center bg-black">
+          <video
+            key={displayModelUrl}
+            src={displayModelUrl}
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      ) : isAudioUrl ? (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
+          <div className="text-6xl">🎵</div>
+          <p className="text-sm text-gray-500">{avatar.name}</p>
+          <audio
+            key={displayModelUrl}
+            src={displayModelUrl}
+            controls
+            autoPlay
+            className="w-full max-w-sm"
+          />
+        </div>
+      ) : (
+        <VRMViewer
+          url={displayModelUrl}
+          backgroundGLB={null}
+          onMetadataLoad={onMetadataLoad}
+          onTexturesLoad={() => {}}
+          showInfoPanel={showInfoPanel}
+          onToggleInfoPanel={toggleInfoPanel}
+        />
+      )}
       
-      {/* Mobile Touch Controls */}
-      {isMobile && (
+      {/* Mobile Touch Controls — only for 3D models */}
+      {isMobile && !isMediaFile && (
         <>
           {/* Main controls expandable */}
           {showTouchControls ? (
