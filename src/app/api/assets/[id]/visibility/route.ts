@@ -56,6 +56,9 @@ export async function PATCH(
     if (body.nft && typeof body.nft === 'object') {
       updates.nft = body.nft;
     }
+    if (Array.isArray(body.tags)) {
+      updates.tags = body.tags;
+    }
 
     // If no explicit field updates, toggle visibility
     if (Object.keys(updates).length === 0) {

@@ -30,6 +30,7 @@ interface Avatar {
   nft?: Record<string, unknown>;
   license?: string;
   creator?: string;
+  tags?: string[];
 }
 
 interface AssetDetailModalProps {
@@ -55,6 +56,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const [description, setDescription] = useState(avatar.description || '');
   const [creator, setCreator] = useState(avatar.creator || '');
   const [license, setLicense] = useState(avatar.license || 'CC0');
+  const [tags, setTags] = useState<string[]>(avatar.tags || []);
+  const [tagInput, setTagInput] = useState('');
   const [nftChain, setNftChain] = useState<string>((avatar.nft as Record<string, string> | undefined)?.chain || '');
   const [nftContract, setNftContract] = useState<string>((avatar.nft as Record<string, string> | undefined)?.contract || '');
   const [nftTokenId, setNftTokenId] = useState<string>((avatar.nft as Record<string, string> | undefined)?.token_id || '');
@@ -78,6 +81,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
     setDescription(avatar.description || '');
     setCreator(avatar.creator || '');
     setLicense(avatar.license || 'CC0');
+    setTags(avatar.tags || []);
+    setTagInput('');
     setNftChain(nftData?.chain || '');
     setNftContract(nftData?.contract || '');
     setNftTokenId(nftData?.token_id || '');
@@ -116,7 +121,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
     setIsSaving(true);
     setSaved(false);
     try {
-      const updates: Record<string, unknown> = { name, description, creator, license };
+      const updates: Record<string, unknown> = { name, description, creator, license, tags };
       // Include NFT data if any field is filled
       if (nftContract || nftChain || nftTokenId) {
         updates.nft = {
@@ -301,6 +306,42 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
                 <div className="relative">
                   <User className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
                   <Input value={creator} onChange={e => setCreator(e.target.value)} className="h-9 pl-8 bg-white dark:bg-gray-900" placeholder="Name" />
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-1.5">Tags</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {tags.map(tag => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                    {tag}
+                    <button onClick={() => setTags(tags.filter(t => t !== tag))} className="text-gray-400 hover:text-red-500 ml-0.5">&times;</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <Input
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && tagInput.trim()) {
+                      e.preventDefault();
+                      const newTag = tagInput.trim().toLowerCase();
+                      if (!tags.includes(newTag)) setTags([...tags, newTag]);
+                      setTagInput('');
+                    }
+                  }}
+                  className="h-8 text-xs bg-white dark:bg-gray-900 flex-1"
+                  placeholder="animation, emote, idle..."
+                />
+                <div className="flex gap-1 shrink-0">
+                  {['animation', 'emote', 'idle', 'combat', 'social'].filter(t => !tags.includes(t)).slice(0, 3).map(t => (
+                    <button key={t} onClick={() => setTags([...tags, t])} className="px-1.5 py-0.5 text-[9px] rounded bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                      +{t}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

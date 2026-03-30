@@ -88,6 +88,7 @@ export function createAssetMetadata(
   options?: {
     fileSizeBytes?: number;
     fileHash?: string;
+    tags?: string[];
   },
 ): Record<string, unknown> {
   const now = new Date().toISOString();
@@ -126,6 +127,7 @@ export function createAssetMetadata(
       arweave_tx: null,
       github_raw: modelFileUrl.includes('raw.githubusercontent') ? modelFileUrl : null,
     },
+    tags: options?.tags ?? [],
     is_public: true,
     is_draft: false,
     created_at: now,

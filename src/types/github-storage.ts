@@ -53,6 +53,7 @@ export interface GithubAvatar extends BaseEntity {
   content_type?: string;
   license?: string;
   creator?: string;
+  tags?: string[];
 }
 
 // Tag model

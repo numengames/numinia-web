@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
         nft: avatar.nft,
         license: avatar.license,
         creator: avatar.creator,
+        tags: avatar.tags || [],
       };
     });
 
