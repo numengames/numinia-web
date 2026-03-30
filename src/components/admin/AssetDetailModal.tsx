@@ -195,7 +195,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const isAudio = /\.(mp3|ogg)$/i.test(url);
   const isHyp = /\.hyp$/i.test(url);
   const isStl = /\.stl$/i.test(url);
-  const is3D = !isVideo && !isAudio && !isHyp && !isStl && !!url && /\.(vrm|glb|gltf|fbx)$/i.test(url);
+  const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+  const is3D = !isVideo && !isAudio && !isHyp && !isStl && !isImage && !!url && /\.(vrm|glb|gltf|fbx)$/i.test(url);
   const nft = avatar.nft as Record<string, unknown> | undefined;
   const storage = avatar.storage;
   const displayThumb = thumbnailPreview || avatar.thumbnailUrl;
@@ -249,6 +250,10 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
               <HypViewer key={url} url={url} name={avatar.name} />
             ) : isStl ? (
               <STLViewer key={url} url={url} name={avatar.name} />
+            ) : isImage ? (
+              <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
+                <img src={url} alt={avatar.name} className="max-w-full max-h-full object-contain rounded" />
+              </div>
             ) : is3D ? (
               <VRMViewer key={url} url={url} backgroundGLB={null} onMetadataLoad={() => {}} onTexturesLoad={() => {}} showInfoPanel={false} onToggleInfoPanel={() => {}} hideControls={true} cameraDistanceMultiplier={0.6} />
             ) : displayThumb ? (

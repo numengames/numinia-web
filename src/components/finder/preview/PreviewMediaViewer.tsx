@@ -80,8 +80,15 @@ function renderMedia(
   if (/\.(mp3|ogg)$/i.test(url)) return <AudioPlayer url={url} label={label} />;
   if (/\.hyp$/i.test(url)) return <HypViewer key={url} url={url} name={label} />;
   if (/\.stl$/i.test(url)) return <STLViewer key={url} url={url} name={label} />;
+  if (/\.(jpg|jpeg|png|webp|gif)$/i.test(url)) {
+    return (
+      <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
+        <img src={url} alt={label} className="max-w-full max-h-full object-contain rounded" onError={(e) => { const el = e.currentTarget; if (!el.src.includes('/placeholder.png')) el.src = '/placeholder.png'; }} />
+      </div>
+    );
+  }
 
-  if (category === 'model' || (!category && !/\.(jpg|jpeg|png|webp|gif)$/i.test(url))) {
+  if (category === 'model') {
     return (
       <VRMViewer
         key={url}

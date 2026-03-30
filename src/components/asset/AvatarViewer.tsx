@@ -337,6 +337,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const isAudioUrl = /\.(mp3|ogg)$/i.test(displayModelUrl);
   const isHypUrl = /\.hyp$/i.test(displayModelUrl);
   const isStlUrl = /\.stl$/i.test(displayModelUrl);
+  const isImageUrl = /\.(jpg|jpeg|png|webp|gif)$/i.test(displayModelUrl);
   const isMediaFile = isVideoUrl || isAudioUrl;
 
   return (
@@ -370,6 +371,19 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
         <HypViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
       ) : isStlUrl ? (
         <STLViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
+      ) : isImageUrl ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+          <img
+            key={displayModelUrl}
+            src={displayModelUrl}
+            alt={avatar.name}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onError={(e) => {
+              const el = e.currentTarget;
+              if (!el.src.includes('/placeholder.png')) el.src = '/placeholder.png';
+            }}
+          />
+        </div>
       ) : (
         <VRMViewer
           url={displayModelUrl}
