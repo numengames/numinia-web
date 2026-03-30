@@ -58,40 +58,32 @@ export function middleware(request: NextRequest) {
     res.headers.set('Access-Control-Max-Age', '3600');
   }
 
-  // Check for session cookie
-  const sessionCookie = request.cookies.get('session');
-  let sessionData = null;
-  
-  try {
+  // Check for session — wallet auth (admin_session) or GitHub OAuth (session)
+  let isAdmin = false;
+
+  const walletCookie = request.cookies.get('admin_session');
+  if (walletCookie) {
+    try {
+      const data = JSON.parse(walletCookie.value);
+      if (data.role === 'admin') isAdmin = true;
+    } catch {}
+  }
+
+  if (!isAdmin) {
+    const sessionCookie = request.cookies.get('session');
     if (sessionCookie) {
-      sessionData = JSON.parse(sessionCookie.value);
-    }
-  } catch (error) {
-    console.error('Failed to parse session cookie:', error);
-  }
-  
-  // Protected routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    if (!sessionData) {
-      // No session cookie, redirect to login
-      return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
-    }
-    
-    // Check if user has admin role
-    if (sessionData.role !== 'admin' && sessionData.role !== 'creator') {
-      // User doesn't have admin role, redirect to home
-      return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
+      try {
+        const data = JSON.parse(sessionCookie.value);
+        if (['admin', 'creator'].includes(data.role)) isAdmin = true;
+      } catch {}
     }
   }
-  
-  // Auth routes
-  if (request.nextUrl.pathname === '/login' && sessionData) {
-    // Already logged in, redirect to appropriate page
-    if (sessionData.role === 'admin' || sessionData.role === 'creator') {
-      return NextResponse.redirect(new URL(`/${currentLocale}/admin`, request.url));
-    } else {
-      return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
-    }
+
+  // Admin routes — wallet or OAuth session required
+  // The /en/admin page handles its own auth gate (WalletConnect),
+  // so we only block unauthenticated access to /admin without locale prefix.
+  if (pathname.match(/^\/[a-z]{2}\/admin/) && !isAdmin) {
+    // Let the page handle auth — it shows WalletConnect if not authenticated
   }
 
   return res;

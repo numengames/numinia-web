@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
-export const alt = 'Open Source Avatars - Free 3D VRM Avatars';
+export const alt = 'Numinia Digital Goods - Free CC0 3D Assets';
 export const size = {
   width: 1200,
   height: 630,
