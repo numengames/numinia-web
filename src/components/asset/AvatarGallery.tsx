@@ -405,9 +405,8 @@ export const AvatarGallery: React.FC = () => {
               style={{ width: `${sidebarWidth}px`, minWidth: '200px', maxWidth: '600px' }}
             >
               {/* Logo */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px]" />
-                <img src="/logo-numinia.svg" alt="Numinia" className="h-4 w-auto" />
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5" />
               </div>
 
               {/* Search and Controls Container */}
