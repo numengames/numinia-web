@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { AvatarHeader } from '@/components/asset/AvatarHeader';
 import dynamic from 'next/dynamic';
 const HomeVRMViewer = dynamic(
@@ -13,29 +13,48 @@ import { useI18n } from '@/lib/i18n';
 import { Download, Palette, Search, Code, Box, GitBranch, Boxes, Microscope, ArrowRight } from "lucide-react";
 import { Avatar } from '@/types/avatar';
 
-// Hero asset to display on home page - Venus_01_Floating from pm-chromatic-chaos
 const HERO_ASSET_NAME = 'Venus_01_Floating';
 
 export default function Home() {
   const { t } = useI18n();
   const [heroAsset, setHeroAsset] = useState<Avatar | null>(null);
-  
+  const [heroVisible, setHeroVisible] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
+
   const title = String(t('home.title'));
   const description = String(t('home.description'));
 
-  // Fetch hero asset from registry (Venus_01_ Floating) - works like other viewers on the site
+  // Defer hero 3D model load — only fetch when hero section is visible
+  // This prevents the VRM fetch from blocking LCP (the hero text)
   useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHeroVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' } // Start loading 200px before visible
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!heroVisible) return;
+
     const fetchHeroAsset = async () => {
       try {
-        // Try to fetch the specific hero asset by name
         const response = await fetch(`/api/assets?assetName=${encodeURIComponent(HERO_ASSET_NAME)}`);
         const data = await response.json();
-        
+
         if (data.avatars && data.avatars.length > 0) {
-          // Use first match (exact or partial by name)
           setHeroAsset(data.avatars[0]);
         } else {
-          // Fallback: fetch any asset for display
           const fallbackResponse = await fetch('/api/assets');
           const fallbackData = await fallbackResponse.json();
           if (fallbackData.avatars && fallbackData.avatars.length > 0) {
@@ -49,7 +68,7 @@ export default function Home() {
     };
 
     fetchHeroAsset();
-  }, []);
+  }, [heroVisible]);
 
   return (
     <main className="min-h-screen bg-cream dark:bg-cream-dark transition-colors">
@@ -60,7 +79,7 @@ export default function Home() {
       />
       
       {/* Hero Section with Large Avatar Display */}
-      <section className="relative overflow-hidden bg-cream dark:bg-cream-dark min-h-[600px] lg:min-h-0" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>
+      <section ref={heroRef} className="relative overflow-hidden bg-cream dark:bg-cream-dark min-h-[600px] lg:min-h-0" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>
         {/* 3D Viewer - behind text on mobile, positioned absolutely */}
         <div 
           className="absolute inset-0 pointer-events-none z-0 lg:hidden"
@@ -84,10 +103,12 @@ export default function Home() {
               maxHeight: '100vh'
             }}
           >
-            <HomeVRMViewer 
-              className="w-full h-full blur-sm opacity-50"
-              avatar={heroAsset}
-            />
+            {heroVisible && (
+              <HomeVRMViewer
+                className="w-full h-full blur-sm opacity-50"
+                avatar={heroAsset}
+              />
+            )}
           </div>
         </div>
         
@@ -120,10 +141,12 @@ export default function Home() {
             </div>
             {/* 3D Viewer - normal on desktop */}
             <div className="flex-1 w-full lg:w-auto hidden lg:block">
-              <HomeVRMViewer 
-                className="w-full aspect-square max-w-2xl mx-auto"
-                avatar={heroAsset}
-              />
+              {heroVisible && (
+                <HomeVRMViewer
+                  className="w-full aspect-square max-w-2xl mx-auto"
+                  avatar={heroAsset}
+                />
+              )}
             </div>
           </div>
         </div>
