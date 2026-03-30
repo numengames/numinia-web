@@ -4,6 +4,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import type { Metadata } from 'next';
 import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
+import { CookieConsent } from '@/components/CookieConsent';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://numinia.store'),
@@ -107,6 +108,7 @@ export default function RootLayout({
             and React uses the nearest context — so locale routing still works correctly. */}
         <I18nProvider defaultLocale="en">
           {children}
+          <CookieConsent />
         </I18nProvider>
       </body>
     </html>

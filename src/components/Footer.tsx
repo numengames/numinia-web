@@ -162,9 +162,16 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-gray-300 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-small text-gray-500 dark:text-gray-400">
-              © {currentYear} Numinia Digital Goods. All assets are CC0.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+              <p className="text-small text-gray-500 dark:text-gray-400">
+                © {currentYear} Numinia Digital Goods. All assets are CC0.
+              </p>
+              <div className="flex items-center gap-3 text-small">
+                <Link href="/en/legal/privacy" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Privacy</Link>
+                <Link href="/en/legal/terms" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Terms</Link>
+                <Link href="/en/legal/cookies" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Cookies</Link>
+              </div>
+            </div>
             <div className="flex items-center gap-4">
               <a 
                 href="https://numen.games/"
