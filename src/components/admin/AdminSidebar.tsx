@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
 export type AdminView = 'assets' | 'upload' | 'stats' | 'settings' | 'updates';
 
@@ -22,6 +23,20 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: typeof Package }[] = [
 
 export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOut }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+
+  // Notification badge: count versions newer than last seen
+  const lastSeen = typeof window !== 'undefined' ? localStorage.getItem('admin-last-seen-version') : null;
+  const unseenCount = lastSeen
+    ? CHANGELOG_DATA.findIndex(e => e.version === lastSeen)
+    : CHANGELOG_DATA.length; // never visited = all are unseen
+  const badgeCount = unseenCount > 0 ? unseenCount : 0;
+
+  const handleViewChange = (view: AdminView) => {
+    onViewChange(view);
+    if (view === 'updates') {
+      localStorage.setItem('admin-last-seen-version', LATEST_VERSION);
+    }
+  };
 
   return (
     <aside
@@ -51,11 +66,12 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
+          const showBadge = item.id === 'updates' && badgeCount > 0 && !isActive;
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              onClick={() => handleViewChange(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative ${
                 isActive
                   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
@@ -64,6 +80,14 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
+              {showBadge && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                  {badgeCount}
+                </span>
+              )}
+              {showBadge && collapsed && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full w-2 h-2" />
+              )}
             </button>
           );
         })}
