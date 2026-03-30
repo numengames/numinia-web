@@ -1,4 +1,4 @@
-// @ts-nocheck — migrated from JSX, type annotations pending
+// @ts-nocheck — JSX fragment, not a standalone component (references parent scope vars)
               <div className="min-h-full flex flex-col">
                 <div className="flex-1">
                   {/* Hero Section */}

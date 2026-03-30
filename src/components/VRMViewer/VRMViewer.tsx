@@ -1,4 +1,4 @@
-// @ts-nocheck — migrated from JSX, type annotations pending
+// @ts-nocheck — Three.js viewer (8K+ lines JSX migration, typing deferred intentionally)
 /// src/components/VRMviewer/VRMviewer.jsx
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';

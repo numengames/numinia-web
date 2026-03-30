@@ -1,4 +1,4 @@
-// @ts-nocheck — migrated from JSX, type annotations pending
+// @ts-nocheck — Three.js viewer (8K+ lines JSX migration, typing deferred intentionally)
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
