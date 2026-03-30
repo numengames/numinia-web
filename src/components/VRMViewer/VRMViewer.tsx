@@ -2318,20 +2318,7 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
               </div>
             </div>
             
-            {/* Screenshot / capture thumbnail button */}
-            <div className="relative group">
-              <button
-                onClick={captureScreenshot}
-                className="px-4 py-2 rounded transition-all flex items-center gap-2 bg-transparent text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <Camera className="h-4 w-4" />
-              </button>
-              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                <div className="bg-gray-900 dark:bg-gray-800 text-white text-xs py-1 px-3 rounded whitespace-nowrap shadow-lg">
-                  Capturar thumbnail
-                </div>
-              </div>
-            </div>
+            {/* Thumbnail capture removed from public view — available in admin only */}
 
             {/* Animation panel toggle button - show for GLB with anims or VRM */}
             {availableAnimations.length > 0 && (

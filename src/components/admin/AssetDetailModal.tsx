@@ -58,6 +58,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Drag state
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -131,6 +132,33 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
     }
   }, [avatar.id]);
 
+  // Capture the 3D viewer canvas as thumbnail
+  const captureViewerThumbnail = useCallback(async () => {
+    setIsUploadingThumb(true);
+    try {
+      // Find the canvas inside the preview container
+      const container = previewContainerRef.current;
+      if (!container) throw new Error('No preview container');
+      const canvas = container.querySelector('canvas');
+      if (!canvas) throw new Error('No canvas found');
+
+      const dataUrl = canvas.toDataURL('image/png');
+
+      const res = await fetch('/api/admin/upload-thumbnail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData: dataUrl, avatarId: avatar.id }),
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      setThumbnailPreview(data.thumbnailUrl || dataUrl);
+    } catch {
+      // silently fail
+    } finally {
+      setIsUploadingThumb(false);
+    }
+  }, [avatar.id]);
+
   const url = avatar.modelFileUrl || '';
   const isVideo = /\.(mp4|webm)$/i.test(url);
   const isAudio = /\.(mp3|ogg)$/i.test(url);
@@ -171,7 +199,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto">
           {/* Preview — wider in modal */}
-          <div className={`bg-gray-100 dark:bg-gray-900 relative mx-5 rounded-lg overflow-hidden ${isVideo ? 'aspect-video' : 'aspect-[4/3]'} group`}>
+          <div ref={previewContainerRef} className={`bg-gray-100 dark:bg-gray-900 relative mx-5 rounded-lg overflow-hidden ${isVideo ? 'aspect-video' : 'aspect-[4/3]'} group`}>
             {isVideo ? (
               <video key={url} src={url} controls autoPlay muted loop playsInline className="w-full h-full object-contain" />
             ) : isAudio ? (
@@ -192,12 +220,14 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
               <div className="w-full h-full flex items-center justify-center text-gray-400">No preview</div>
             )}
 
-            {/* Thumbnail upload */}
-            <button onClick={() => thumbInputRef.current?.click()}
+            {/* Thumbnail capture (3D) or upload (non-3D) */}
+            <button
+              onClick={is3D ? captureViewerThumbnail : () => thumbInputRef.current?.click()}
               className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-md px-2.5 py-1 text-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Change thumbnail">
+              title={is3D ? 'Capture current view as thumbnail' : 'Upload thumbnail image'}
+            >
               {isUploadingThumb ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
-              Thumbnail
+              {is3D ? 'Capture' : 'Thumbnail'}
             </button>
             <input ref={thumbInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleThumbnailUpload(f); }} />

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { autoGenerateAndUploadThumbnail } from '@/lib/utils/autoThumbnail';
 
 const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm,.jpg,.jpeg,.png,.webp';
 const GITHUB_MAX_SIZE = 3.5 * 1024 * 1024;
@@ -209,6 +210,17 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
       }
 
       setState('done');
+
+      // Auto-generate thumbnail for 3D models (VRM/GLB)
+      if (result && result.url && /\.(vrm|glb|gltf)$/i.test(file.name)) {
+        setPhase('metadata'); // reuse phase for "generating thumbnail"
+        try {
+          await autoGenerateAndUploadThumbnail(result.id, result.url);
+        } catch {
+          // Thumbnail failed silently — not critical
+        }
+      }
+
       onUploaded();
     } catch (err) {
       setState('error');

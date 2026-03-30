@@ -469,34 +469,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 )
               ) : null
             )}
-            {/* Thumbnail capture button — only shown when a 3D model is visible */}
-            {avatar?.modelFileUrl && (
-              <button
-                onClick={handleCaptureThumbnail}
-                disabled={thumbnailUpload === 'uploading'}
-                className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 px-2 py-1 text-xs rounded-md bg-black/60 text-white hover:bg-black/80 transition-all disabled:opacity-50"
-                title="Capturar y guardar como thumbnail"
-              >
-                {thumbnailUpload === 'uploading' && (
-                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                )}
-                {thumbnailUpload === 'done' && '✓'}
-                {thumbnailUpload === 'error' && '✗'}
-                {thumbnailUpload === 'idle' && (
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                )}
-                {thumbnailUpload === 'idle' && 'Thumbnail'}
-                {thumbnailUpload === 'uploading' && 'Subiendo...'}
-                {thumbnailUpload === 'done' && 'Guardado'}
-                {thumbnailUpload === 'error' && 'Error'}
-              </button>
-            )}
+            {/* Thumbnail capture removed — available in admin panel only */}
           </div>
 
           {/* Scrollable Info Section */}
