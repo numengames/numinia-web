@@ -1,17 +1,26 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { Upload, X, Loader2, Check } from 'lucide-react';
+import { Upload, X, Loader2, Check, Cloud, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const ACCEPTED = '.glb,.vrm,.hyp,.mp3,.ogg,.mp4,.webm';
-// GitHub upload limit (base64 overhead). Presigned upload has no practical limit.
 const GITHUB_MAX_SIZE = 3.5 * 1024 * 1024;
 const R2_MAX_SIZE = 500 * 1024 * 1024;
 
 type UploadState = 'idle' | 'selected' | 'uploading' | 'done' | 'error';
+type UploadLayer = 'r2' | 'github' | null;
+type UploadPhase = 'connecting' | 'uploading' | 'metadata' | 'done';
+
+type UploadResult = {
+  name: string;
+  id: string;
+  layer: UploadLayer;
+  url: string;
+};
 
 export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const [file, setFile] = useState<File | null>(null);
@@ -19,8 +28,10 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
   const [description, setDescription] = useState('');
   const [state, setState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
-  const [uploadedName, setUploadedName] = useState('');
   const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<UploadPhase>('connecting');
+  const [activeLayer, setActiveLayer] = useState<UploadLayer>(null);
+  const [result, setResult] = useState<UploadResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,12 +75,16 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     setState('idle');
     setError('');
     setProgress(0);
+    setPhase('connecting');
+    setActiveLayer(null);
+    setResult(null);
     if (inputRef.current) inputRef.current.value = '';
   }, []);
 
-  // Upload via presigned URL (R2) with XHR for progress tracking
   const uploadPresigned = useCallback(async (f: File, trimmedName: string, trimmedDesc: string): Promise<boolean> => {
-    // Step 1: Get presigned URL
+    setPhase('connecting');
+    setActiveLayer('r2');
+
     const presignRes = await fetch('/api/admin/presign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -82,7 +97,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     });
 
     if (presignRes.status === 503) {
-      // R2 not configured — caller should fall back to GitHub upload
+      setActiveLayer(null);
       return false;
     }
 
@@ -93,7 +108,8 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
     const { uploadUrl, assetId, r2Key, format, displayName, description: desc } = await presignRes.json();
 
-    // Step 2: Upload binary directly to R2 with progress
+    setPhase('uploading');
+
     await new Promise<void>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('PUT', uploadUrl);
@@ -101,25 +117,22 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
-          setProgress(Math.round((e.loaded / e.total) * 90)); // 0-90% for upload
+          setProgress(Math.round((e.loaded / e.total) * 85));
         }
       };
 
       xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(`Upload failed: ${xhr.status}`));
-        }
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error(`Upload failed: ${xhr.status}`));
       };
 
       xhr.onerror = () => reject(new Error('Upload failed'));
       xhr.send(f);
     });
 
-    setProgress(95); // 90-95% for metadata
+    setProgress(90);
+    setPhase('metadata');
 
-    // Step 3: Create metadata entry in GitHub
     const confirmRes = await fetch('/api/admin/presign/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -132,13 +145,21 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     }
 
     const confirmData = await confirmRes.json();
-    setUploadedName(confirmData.asset?.name ?? trimmedName);
     setProgress(100);
+    setPhase('done');
+    setResult({
+      name: confirmData.asset?.name ?? trimmedName,
+      id: assetId,
+      layer: 'r2',
+      url: confirmData.asset?.url ?? '',
+    });
     return true;
   }, []);
 
-  // Fallback: upload via GitHub API (FormData, limited to 3.5MB)
   const uploadGitHub = useCallback(async (f: File, trimmedName: string, trimmedDesc: string) => {
+    setPhase('uploading');
+    setActiveLayer('github');
+
     const formData = new FormData();
     formData.append('file', f);
     formData.append('name', trimmedName);
@@ -152,7 +173,14 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-    setUploadedName(data.asset?.name ?? trimmedName);
+    setProgress(100);
+    setPhase('done');
+    setResult({
+      name: data.asset?.name ?? trimmedName,
+      id: data.asset?.id ?? '',
+      layer: 'github',
+      url: data.asset?.url ?? '',
+    });
   }, []);
 
   const upload = useCallback(async () => {
@@ -161,21 +189,20 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     setState('uploading');
     setError('');
     setProgress(0);
+    setPhase('connecting');
+    setActiveLayer(null);
 
     const trimmedName = name.trim();
     const trimmedDesc = description.trim();
 
     try {
-      // Try presigned upload first (supports large files, has progress)
       const usedPresigned = await uploadPresigned(file, trimmedName, trimmedDesc);
 
       if (!usedPresigned) {
-        // R2 not configured — fall back to GitHub upload
         if (file.size > GITHUB_MAX_SIZE) {
           throw new Error(
             `File is ${(file.size / 1024 / 1024).toFixed(1)} MB but R2 storage is not configured. ` +
-            `GitHub upload is limited to ${(GITHUB_MAX_SIZE / 1024 / 1024).toFixed(1)} MB. ` +
-            `Ask an admin to configure R2_* environment variables.`
+            `GitHub upload is limited to ${(GITHUB_MAX_SIZE / 1024 / 1024).toFixed(1)} MB.`
           );
         }
         await uploadGitHub(file, trimmedName, trimmedDesc);
@@ -277,13 +304,35 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
           </div>
         )}
 
-        {/* Uploading with progress */}
+        {/* Uploading with layer feedback */}
         {state === 'uploading' && (
           <div className="flex flex-col items-center gap-3 py-6">
             <Loader2 className="h-8 w-8 animate-spin" />
+
+            {/* Layer indicator */}
+            <div className="flex items-center gap-2">
+              {activeLayer === 'r2' && (
+                <Badge variant="secondary" className="gap-1 bg-orange-100 text-orange-700">
+                  <Cloud className="h-3 w-3" /> R2 CDN
+                </Badge>
+              )}
+              {activeLayer === 'github' && (
+                <Badge variant="secondary" className="gap-1">
+                  <Github className="h-3 w-3" /> GitHub
+                </Badge>
+              )}
+              {!activeLayer && (
+                <span className="text-xs text-gray-400">Connecting...</span>
+              )}
+            </div>
+
+            {/* Phase text */}
             <p className="text-sm text-gray-500">
-              Uploading {file?.name}...
+              {phase === 'connecting' && 'Preparing upload...'}
+              {phase === 'uploading' && `Uploading ${file?.name}...`}
+              {phase === 'metadata' && 'Saving metadata to registry...'}
             </p>
+
             {/* Progress bar */}
             <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
               <div
@@ -291,19 +340,53 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400">
-              {progress < 90 ? `${progress}%` : progress < 100 ? 'Saving metadata...' : 'Done!'}
-            </p>
+            <p className="text-xs text-gray-400">{progress}%</p>
           </div>
         )}
 
-        {/* Done */}
-        {state === 'done' && (
+        {/* Done with result info */}
+        {state === 'done' && result && (
           <div className="flex flex-col items-center gap-3 py-6">
             <Check className="h-8 w-8 text-green-500" />
             <p className="text-sm text-green-600 font-medium">
-              &quot;{uploadedName}&quot; uploaded successfully
+              &quot;{result.name}&quot; uploaded successfully
             </p>
+
+            {/* Storage info */}
+            <div className="bg-gray-50 rounded-lg p-3 w-full max-w-sm space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Storage</span>
+                {result.layer === 'r2' ? (
+                  <Badge variant="secondary" className="gap-1 bg-orange-100 text-orange-700 text-[10px]">
+                    <Cloud className="h-3 w-3" /> R2 CDN
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1 text-[10px]">
+                    <Github className="h-3 w-3" /> GitHub
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Asset ID</span>
+                <code className="text-[10px] bg-gray-200 px-1.5 py-0.5 rounded font-mono max-w-[200px] truncate">
+                  {result.id}
+                </code>
+              </div>
+              {result.url && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500">URL</span>
+                  <a
+                    href={result.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-700 text-[10px] truncate max-w-[200px]"
+                  >
+                    Open file
+                  </a>
+                </div>
+              )}
+            </div>
+
             <Button variant="outline" size="sm" onClick={reset}>
               Upload another
             </Button>

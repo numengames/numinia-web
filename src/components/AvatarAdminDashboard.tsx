@@ -25,6 +25,11 @@ interface Avatar {
   materialCount: number;
   isPublic: boolean;
   isDraft: boolean;
+  // New schema fields (may be absent on legacy assets)
+  storage?: { r2?: string; ipfs_cid?: string; arweave_tx?: string; github_raw?: string };
+  status?: string;
+  version?: string;
+  file_size_bytes?: number;
 }
 
 export default function AvatarAdminDashboard() {
@@ -336,14 +341,42 @@ export default function AvatarAdminDashboard() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex flex-wrap gap-1.5 mt-2">
                               <Badge variant="secondary">{avatar.format}</Badge>
+                              {avatar.version && (
+                                <Badge variant="secondary" className="text-[10px]">v{avatar.version}</Badge>
+                              )}
                               {!avatar.isPublic && (
                                 <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
                                   Hidden
                                 </Badge>
                               )}
+                              {/* Storage layer badges */}
+                              {avatar.storage?.r2 && (
+                                <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px]">R2</Badge>
+                              )}
+                              {avatar.storage?.ipfs_cid && (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px]">IPFS</Badge>
+                              )}
+                              {avatar.storage?.arweave_tx && (
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">Arweave</Badge>
+                              )}
+                              {avatar.storage?.github_raw && (
+                                <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px]">GitHub</Badge>
+                              )}
+                              {!avatar.storage && avatar.modelFileUrl?.includes('raw.githubusercontent') && (
+                                <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px]">GitHub</Badge>
+                              )}
+                              {avatar.file_size_bytes && (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {(avatar.file_size_bytes / 1024 / 1024).toFixed(1)} MB
+                                </Badge>
+                              )}
                             </div>
+                            {/* Asset ID */}
+                            <code className="text-[10px] text-gray-400 font-mono mt-1 block truncate">
+                              {avatar.id}
+                            </code>
                           </div>
                         </div>
                       </CardContent>
