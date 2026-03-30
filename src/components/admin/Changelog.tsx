@@ -6,13 +6,44 @@ import { Badge } from '@/components/ui/badge';
 type ChangelogEntry = {
   version: string;
   date: string;
+  time: string;
   items: { text: string; type: 'new' | 'fix' | 'improvement' }[];
 };
 
+type IncomingItem = {
+  text: string;
+  status: 'planned' | 'in-progress' | 'research';
+};
+
+const INCOMING: IncomingItem[] = [
+  { text: 'User login flow (wallet + email)', status: 'planned' },
+  { text: 'User profile page (OpenSea style)', status: 'planned' },
+  { text: 'NFT ownership verification (Base chain)', status: 'planned' },
+  { text: 'Actions menu on asset cards (download, share, copy link)', status: 'planned' },
+  { text: 'IPFS / Arweave permanent storage layer', status: 'research' },
+  { text: 'Animation & emote catalog structure', status: 'research' },
+  { text: '3D printing section (STL viewer)', status: 'research' },
+  { text: 'Hyperfy .hyp app preview', status: 'research' },
+];
+
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.8.0',
+    date: '2026-03-31',
+    time: '19:30',
+    items: [
+      { text: 'Favorites system (heart button on gallery cards)', type: 'new' },
+      { text: 'Favorites filter toggle with counter', type: 'new' },
+      { text: 'NFT fields in admin modal (chain, contract, token ID, type)', type: 'new' },
+      { text: 'OpenSea link auto-generated from NFT data', type: 'new' },
+      { text: 'Mobile responsive sidebar (hamburger menu + backdrop)', type: 'new' },
+      { text: 'Unified wallet login design (gallery = admin)', type: 'improvement' },
+    ],
+  },
   {
     version: '0.7.0',
     date: '2026-03-31',
+    time: '14:00',
     items: [
       { text: 'Claude-style admin sidebar with 5 sections', type: 'new' },
       { text: 'Centered draggable modal for asset detail', type: 'new' },
@@ -27,6 +58,7 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.6.0',
     date: '2026-03-30',
+    time: '22:00',
     items: [
       { text: 'Mixamo animations for VRM avatars (auto-play on load)', type: 'new' },
       { text: 'Floating detail panel with 3D/audio/video preview', type: 'new' },
@@ -41,6 +73,7 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.5.0',
     date: '2026-03-30',
+    time: '18:00',
     items: [
       { text: 'Audio player with waveform visualizer', type: 'new' },
       { text: 'Video player in gallery and finder', type: 'new' },
@@ -55,6 +88,7 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.4.0',
     date: '2026-03-30',
+    time: '14:00',
     items: [
       { text: 'R2 cloud storage (up to 500MB)', type: 'new' },
       { text: 'UUID v7 asset ID system (RFC 9562)', type: 'new' },
@@ -66,16 +100,18 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.3.0',
     date: '2026-03-30',
+    time: '11:00',
     items: [
-      { text: 'PreviewPanel split (1943→1025 lines)', type: 'improvement' },
-      { text: '44→1 any types eliminated', type: 'improvement' },
-      { text: '5 JSX→TSX migrated', type: 'improvement' },
+      { text: 'PreviewPanel split (1943\u21921025 lines)', type: 'improvement' },
+      { text: '44\u21921 any types eliminated', type: 'improvement' },
+      { text: '5 JSX\u2192TSX migrated', type: 'improvement' },
       { text: 'GitHub API in-memory cache', type: 'improvement' },
     ],
   },
   {
     version: '0.2.0',
     date: '2026-03-30',
+    time: '08:00',
     items: [
       { text: '82 console.log removed', type: 'fix' },
       { text: '50 tests added', type: 'new' },
@@ -86,6 +122,7 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '0.1.0',
     date: '2026-03-29',
+    time: '20:00',
     items: [
       { text: 'SIWE wallet auth for admin', type: 'new' },
       { text: 'Asset upload (drag & drop)', type: 'new' },
@@ -102,6 +139,12 @@ const TYPE_BADGE = {
   improvement: { label: 'UPD', className: 'bg-blue-100 text-blue-700' },
 };
 
+const STATUS_BADGE = {
+  'planned': { label: 'PLANNED', className: 'bg-purple-100 text-purple-700' },
+  'in-progress': { label: 'IN PROGRESS', className: 'bg-yellow-100 text-yellow-800' },
+  'research': { label: 'RESEARCH', className: 'bg-gray-100 text-gray-600' },
+};
+
 // Export for notification badge
 export const LATEST_VERSION = CHANGELOG[0].version;
 export const CHANGELOG_DATA = CHANGELOG;
@@ -112,6 +155,32 @@ export function Changelog() {
 
   return (
     <div className="space-y-4">
+      {/* Incoming — roadmap card */}
+      <div className="rounded-lg border border-dashed border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20 overflow-hidden">
+        <div className="px-4 py-3 border-b border-purple-200 dark:border-purple-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold font-mono text-purple-800 dark:text-purple-300">Incoming</span>
+            <Badge variant="secondary" className="bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200 text-[9px]">Roadmap</Badge>
+          </div>
+        </div>
+        <div className="px-4 py-3">
+          <ul className="space-y-1.5">
+            {INCOMING.map((item, i) => {
+              const badge = STATUS_BADGE[item.status];
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 shrink-0 mt-0.5 ${badge.className}`}>
+                    {badge.label}
+                  </Badge>
+                  <span className="text-gray-600 dark:text-gray-400">{item.text}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+
+      {/* Released versions */}
       {visible.map((entry) => (
         <div
           key={entry.version}
@@ -125,7 +194,7 @@ export function Changelog() {
                 <Badge variant="secondary" className="bg-green-100 text-green-700 text-[9px]">Latest</Badge>
               )}
             </div>
-            <span className="text-xs text-gray-400">{entry.date}</span>
+            <span className="text-xs text-gray-400">{entry.date} &middot; {entry.time}</span>
           </div>
 
           {/* Card body */}
