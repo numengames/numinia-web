@@ -2,15 +2,15 @@
   "id": "numinia-digital-goods",
   "name": "Numinia Digital Goods",
   "short_name": "Numinia",
-  "description": "Galería open source de avatares VRM y modelos 3D GLB. Listos para VR, metaverso, juegos y creación. Todo 100% CC0 y gratuito.",
-  "lang": "es",
+  "description": "Open registry of CC0 digital assets: 3D models, avatars, worlds, audio, video. Free for games, VR, and metaverse projects.",
+  "lang": "en",
   "start_url": "/en/gallery",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0f0a1f",
-  "theme_color": "#8b00ff",
-  "categories": ["entertainment", "art", "design", "productivity"],
+  "background_color": "#EBE7E0",
+  "theme_color": "#EBE7E0",
+  "categories": ["entertainment", "art", "design"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -29,20 +29,6 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/favicon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Abrir Galería",
-      "url": "/en/gallery",
-      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
     }
   ]
 }
