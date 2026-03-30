@@ -7,6 +7,7 @@ import { WalletConnect } from '@/components/admin/WalletConnect';
 import { AssetUpload } from '@/components/admin/AssetUpload';
 import { Changelog } from '@/components/admin/Changelog';
 import { AdminSidebar, type AdminView } from '@/components/admin/AdminSidebar';
+import { DigitalGoods } from '@/components/admin/DigitalGoods';
 import { Loader2 } from 'lucide-react';
 
 type AdminSession = {
@@ -82,24 +83,7 @@ export default function AdminPage() {
         )}
 
         {activeView === 'digital-goods' && (
-          <div className="max-w-3xl mx-auto p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Digital Goods</h1>
-            <p className="text-sm text-gray-500 mb-6">Curate NFTs and collectibles that are part of the Numinia ecosystem.</p>
-
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center">
-              <div className="text-4xl mb-3">💎</div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Coming Soon</h2>
-              <p className="text-sm text-gray-500 max-w-md mx-auto">
-                This section will allow admins to link NFT contracts (ERC-721/1155),
-                manage allowlists, and curate digital collectibles for the Numinia ecosystem.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 justify-center">
-                <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded">ERC-1155 on Base</span>
-                <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded">Stamps Collection</span>
-                <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded">Loot System</span>
-              </div>
-            </div>
-          </div>
+          <DigitalGoods />
         )}
 
         {activeView === 'stats' && (

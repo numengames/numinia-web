@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import { getAvailableFileTypes, getAllAvatarFiles } from './utils/fileTypes';
-import { downloadAvatar } from '@/lib/download-utils';
+import { handleFileDownload, handleTextureDownload as downloadTexture } from './preview/download-handlers';
 import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 
@@ -83,97 +83,11 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
   const thumbnailFiles = allFiles.filter((ft) => ft.category === 'thumbnail');
   const textureFiles = allFiles.filter((ft) => ft.category === 'texture');
 
-  const handleDownload = async () => {
-    try {
-      // For model files (VRM, FBX, GLB), route through server-side API to preserve user gesture chain
-      // This prevents Chrome security warnings
-      if (selectedFile && selectedFile.category === 'model' && avatar) {
-        // Determine format based on file ID
-        let format: string | null = null;
-        const fileId = selectedFile.id;
-        if (fileId === 'voxel_fbx' || fileId === 'voxel-fbx') {
-          format = 'voxel-fbx';
-        } else if (fileId === 'voxel_vrm' || fileId === 'voxel') {
-          format = 'voxel';
-        } else if (fileId === 'fbx') {
-          format = 'fbx';
-        } else if (fileId === 'glb') {
-          format = 'glb';
-        }
-        // For vrm_main and other VRM files, format is null (default)
+  const handleDownload = () => handleFileDownload({
+    avatar, selectedFile, correctedFilename, imageFormat, getExtensionFromFormat,
+  });
 
-        // Use server-side API to preserve user gesture chain
-        downloadAvatar(avatar, format);
-      } else if (selectedFile && selectedFile.url) {
-        // For thumbnails and textures, use direct download (small files, less critical)
-        // But we still need to preserve user gesture chain
-        // Create link immediately without async fetch to preserve gesture
-        const link = document.createElement('a');
-        link.href = selectedFile.url;
-
-        // Determine filename - prefer correctedFilename (with detected extension), then selectedFile.filename, fallback to extracting from URL or avatar name
-        let filename = correctedFilename || selectedFile.filename;
-        if (!filename && selectedFile.url) {
-          // Try to extract from URL
-          const urlParts = selectedFile.url.split('/');
-          const urlFilename = urlParts[urlParts.length - 1];
-          // Check if URL filename has an extension
-          if (urlFilename.includes('.') && !urlFilename.includes('?')) {
-            filename = urlFilename.split('?')[0]; // Remove query params
-          } else {
-            // Fallback: use avatar name with extension from detected format, label, or URL
-            const extension = imageFormat ? getExtensionFromFormat(imageFormat) :
-                             (selectedFile.url ? selectedFile.url.split('.').pop()?.split('?')[0] : null) ||
-                             selectedFile.label.split('.').pop()?.toLowerCase() ||
-                             'bin';
-            filename = `${avatar?.name || 'file'}.${extension}`;
-          }
-        }
-
-        // Ensure filename is defined
-        if (!filename) {
-          filename = selectedFile.filename || selectedFile.label || 'file';
-        }
-
-        link.download = filename;
-        link.style.display = 'none';
-        link.setAttribute('rel', 'noopener noreferrer'); // Security best practice
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        // Default: download avatar
-        downloadAvatar(avatar, null);
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-    }
-  };
-
-  const handleTextureDownload = async (texture: FileTypeInfo) => {
-    if (!texture.url) return;
-    try {
-      // Fetch as blob to ensure proper download
-      const response = await fetch(texture.url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
-      }
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = texture.filename || `${texture.label}.${texture.url ? texture.url.split('.').pop() : 'png'}`;
-      link.style.display = 'none';
-      link.setAttribute('rel', 'noopener noreferrer'); // Security best practice
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      // Revoke URL after a short delay to ensure download starts
-      setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 100);
-    } catch (error) {
-      console.error('Texture download error:', error);
-    }
-  };
+  const handleTextureDownload = (texture: FileTypeInfo) => downloadTexture(texture);
 
   // Helper functions for texture info (similar to VRMInspector)
   const getImageFormat = (texture: THREE.Texture): string => {
