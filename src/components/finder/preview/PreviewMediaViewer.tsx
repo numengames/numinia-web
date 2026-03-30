@@ -57,7 +57,7 @@ function AudioWaveform({ label }: { label: string }) {
 function VideoPlayer({ url }: { url: string }) {
   return (
     <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-900 to-black rounded-lg">
-      <video key={url} src={url} controls autoPlay muted loop playsInline className="max-w-full max-h-full object-contain rounded" />
+      <video key={url} src={url} controls muted loop playsInline className="max-w-full max-h-full object-contain rounded" />
     </div>
   );
 }
@@ -66,7 +66,7 @@ function AudioPlayer({ url, label }: { url: string; label: string }) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4">
       <AudioWaveform label={label} />
-      <audio key={url} src={url} controls autoPlay className="w-full max-w-[220px]" />
+      <audio key={url} src={url} controls className="w-full max-w-[220px]" />
     </div>
   );
 }

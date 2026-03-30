@@ -236,7 +236,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
           {/* Preview — wider in modal */}
           <div ref={previewContainerRef} className={`bg-gray-100 dark:bg-gray-900 relative mx-5 rounded-lg overflow-hidden ${isVideo ? 'aspect-video' : 'aspect-[4/3]'} group`}>
             {isVideo ? (
-              <video key={url} src={url} controls autoPlay muted loop playsInline className="w-full h-full object-contain" />
+              <video key={url} src={url} controls muted loop playsInline className="w-full h-full object-contain" />
             ) : isAudio ? (
               <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-6">
                 <div className="flex items-end gap-[2px] h-16">
@@ -245,7 +245,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
                       style={{ height: `${14 + Math.sin(i * 0.5) * 24 + Math.random() * 20}px`, animationDelay: `${i * 0.05}s`, animationDuration: `${0.8 + Math.random() * 0.4}s` }} />
                   ))}
                 </div>
-                <audio key={url} src={url} controls autoPlay className="w-full max-w-sm" />
+                <audio key={url} src={url} controls className="w-full max-w-sm" />
               </div>
             ) : isHyp ? (
               <HypViewer key={url} url={url} name={avatar.name} />

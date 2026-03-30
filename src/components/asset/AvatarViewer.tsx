@@ -349,7 +349,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
             key={displayModelUrl}
             src={displayModelUrl}
             controls
-            autoPlay
+           
             muted
             loop
             playsInline
@@ -364,7 +364,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
             key={displayModelUrl}
             src={displayModelUrl}
             controls
-            autoPlay
+           
             className="w-full max-w-sm"
           />
         </div>
