@@ -83,22 +83,21 @@ export function ImageViewer({ url, name }: ImageViewerProps) {
         />
       </div>
 
-      {/* Controls */}
-      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-lg p-1">
-        <button onClick={zoomIn} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Zoom in">
+      {/* Controls — matches 3D viewer toolbar style */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-cream dark:bg-cream-dark border border-gray-200 dark:border-gray-700 rounded-xl p-1 shadow-sm">
+        <button onClick={zoomIn} className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors" title="Zoom in">
           <ZoomIn className="h-4 w-4" />
         </button>
-        <button onClick={zoomOut} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Zoom out">
+        <button onClick={zoomOut} className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors" title="Zoom out">
           <ZoomOut className="h-4 w-4" />
         </button>
-        <button onClick={resetView} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Reset view">
+        <button onClick={resetView} className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors" title="Reset view">
           <RotateCcw className="h-4 w-4" />
         </button>
-        <div className="w-px h-4 bg-white/20" />
-        <button onClick={toggleFullscreen} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Fullscreen">
+        <button onClick={toggleFullscreen} className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors" title="Fullscreen">
           <Maximize2 className="h-4 w-4" />
         </button>
-        <button onClick={handleDownload} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Download">
+        <button onClick={handleDownload} className="p-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors" title="Download">
           <Download className="h-4 w-4" />
         </button>
       </div>
