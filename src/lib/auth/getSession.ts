@@ -52,3 +52,44 @@ export function getAdminSession(req: NextRequest): AdminSession {
 
   return { isAdmin: false, role: 'anonymous' };
 }
+
+// User session type — for any authenticated user (admin or regular)
+export type UserSession = {
+  authenticated: boolean;
+  address?: string;
+  userId?: string;
+  username?: string;
+  role: string;
+};
+
+// Checks for any authenticated user (wallet user_session or GitHub session)
+export function getUserSession(req: NextRequest): UserSession {
+  // Check wallet user_session
+  const walletCookie = req.cookies.get('user_session');
+  if (walletCookie) {
+    try {
+      const data = JSON.parse(walletCookie.value);
+      return {
+        authenticated: true,
+        address: data.address,
+        role: data.role || 'user',
+      };
+    } catch { /* invalid */ }
+  }
+
+  // Fall back to GitHub OAuth session
+  const sessionCookie = req.cookies.get('session');
+  if (sessionCookie) {
+    try {
+      const data = JSON.parse(sessionCookie.value);
+      return {
+        authenticated: true,
+        userId: data.userId,
+        username: data.username,
+        role: data.role || 'user',
+      };
+    } catch { /* invalid */ }
+  }
+
+  return { authenticated: false, role: 'anonymous' };
+}

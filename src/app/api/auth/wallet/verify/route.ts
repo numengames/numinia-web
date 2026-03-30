@@ -30,19 +30,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid nonce' }, { status: 401 });
     }
 
-    // Check if the address is in the admin allowlist
+    // Determine role: admin if in whitelist, user otherwise
     const address = siweMessage.address.toLowerCase();
+    const isAdmin = env.adminWalletAddresses.length > 0 && env.adminWalletAddresses.includes(address);
+    const role = isAdmin ? 'admin' : 'user';
 
-    if (env.adminWalletAddresses.length > 0 && !env.adminWalletAddresses.includes(address)) {
-      return NextResponse.json({ error: 'Address not authorized' }, { status: 403 });
+    // Create session — admin gets admin_session cookie, all users get user_session
+    if (isAdmin) {
+      cookieStore.set({
+        name: 'admin_session',
+        value: JSON.stringify({
+          address: siweMessage.address,
+          role: 'admin',
+          authenticatedAt: new Date().toISOString(),
+        }),
+        httpOnly: true,
+        secure: env.isProd,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
     }
 
-    // Create admin session
+    // All wallets (admin + user) get a user_session cookie
     cookieStore.set({
-      name: 'admin_session',
+      name: 'user_session',
       value: JSON.stringify({
-        address: siweMessage.address, // preserve original checksum case
-        role: 'admin',
+        address: siweMessage.address,
+        role,
         authenticatedAt: new Date().toISOString(),
       }),
       httpOnly: true,
@@ -58,6 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       address: siweMessage.address,
+      role,
     });
   } catch (error) {
     console.error('SIWE verify error:', error);

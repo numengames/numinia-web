@@ -19,6 +19,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import { CrescentSpinner } from '@/components/ui/crescent-spinner';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import { AssetActions } from './AssetActions';
+import { LoginModal } from '@/components/auth/LoginModal';
 
 // Utility function to format camelCase or PascalCase names with spaces
 const formatName = (name: string): string => {
@@ -41,45 +42,27 @@ export const AvatarGallery: React.FC = () => {
   const { toggleFavorite, isFavorite, count: favCount } = useFavorites();
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  // Wallet session (admin only)
+  // User session (wallet or GitHub)
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [userRole, setUserRole] = useState<string>('anonymous');
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/wallet/session')
       .then(res => res.json())
-      .then(data => { if (data.authenticated) setWalletAddress(data.address); })
+      .then(data => {
+        if (data.authenticated) {
+          setWalletAddress(data.address);
+          setUserRole(data.role || 'user');
+        }
+      })
       .catch(() => {});
   }, []);
-
-  const connectWallet = async () => {
-    if (!window.ethereum) { alert('Install MetaMask'); return; }
-    setIsConnecting(true);
-    try {
-      const { SiweMessage } = await import('siwe');
-      const { getAddress } = await import('viem');
-      const accounts: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const address = getAddress(accounts[0]);
-      const chainId: string = await window.ethereum.request({ method: 'eth_chainId' });
-      const nonceRes = await fetch('/api/auth/wallet/nonce');
-      const { nonce } = await nonceRes.json();
-      const siweMessage = new SiweMessage({
-        domain: window.location.host, address, statement: 'Sign in to Numinia',
-        uri: window.location.origin, version: '1', chainId: parseInt(chainId, 16), nonce,
-      });
-      const messageToSign = siweMessage.prepareMessage();
-      const signature: string = await window.ethereum.request({ method: 'personal_sign', params: [messageToSign, address] });
-      const verifyRes = await fetch('/api/auth/wallet/verify', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageToSign, signature }),
-      });
-      if (verifyRes.ok) { const data = await verifyRes.json(); setWalletAddress(data.address); }
-    } catch { /* user rejected or error */ } finally { setIsConnecting(false); }
-  };
 
   const disconnectWallet = async () => {
     await fetch('/api/auth/wallet/session', { method: 'DELETE' });
     setWalletAddress(null);
+    setUserRole('anonymous');
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
@@ -660,12 +643,17 @@ export const AvatarGallery: React.FC = () => {
                 )}
               </div>
 
-              {/* Wallet — bottom of sidebar */}
+              {/* User session — bottom of sidebar */}
               <div className="p-3 border-t border-gray-200 dark:border-gray-800 mt-auto shrink-0">
                 {walletAddress ? (
                   <>
-                    <div className="text-[11px] text-gray-400 font-mono mb-2 truncate px-1">
-                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    <div className="flex items-center gap-1.5 mb-2 px-1">
+                      <div className="text-[11px] text-gray-400 font-mono truncate">
+                        {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                      </div>
+                      {userRole === 'admin' && (
+                        <span className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 px-1.5 py-0.5 rounded-full font-medium">admin</span>
+                      )}
                     </div>
                     <button
                       onClick={disconnectWallet}
@@ -678,12 +666,11 @@ export const AvatarGallery: React.FC = () => {
                   </>
                 ) : (
                   <button
-                    onClick={connectWallet}
-                    disabled={isConnecting}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white transition-colors disabled:opacity-50"
+                    onClick={() => setShowLoginModal(true)}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
                   >
                     <LogIn className="h-4 w-4 shrink-0" />
-                    <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
+                    <span>Sign In</span>
                   </button>
                 )}
               </div>
@@ -783,6 +770,16 @@ export const AvatarGallery: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Login modal */}
+      <LoginModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onAuthenticated={(session) => {
+          if (session.address) setWalletAddress(session.address);
+          setUserRole(session.role);
+        }}
+      />
     </div>
   );
 };
