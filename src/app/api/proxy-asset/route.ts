@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     // Only allow proxying from certain domains for security
     const allowedDomains = [
-      'assets.opensourceavatars.com',
-      'assetsdev.opensourceavatars.com',
+      'assets.numinia.store',
+      'assetsdev.numinia.store',
       'arweave.net'
     ];
 

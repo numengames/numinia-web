@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '300+ Free GLB Assets Gallery | Open Source Avatars',
     description: 'Browse and download 300+ free, high-quality 3D GLB assets for VR, gaming, VTubing, and metaverse. All CC0 licensed.',
-    url: 'https://opensourceavatars.com/en/gallery',
+    url: 'https://numinia.store/en/gallery',
     type: 'website',
     images: [
       {

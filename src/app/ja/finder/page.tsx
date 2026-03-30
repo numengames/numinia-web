@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'アセットファインダー - 一括ダウンロード | Open Source Avatars',
     description: '複数の3Dアセットを一度に閲覧・ダウンロード。VRM、GLB、FBXなどの3Dアセットフォーマットを一括ダウンロードするファイルファインダーインターフェース。',
-    url: 'https://opensourceavatars.com/ja/finder',
+    url: 'https://numinia.store/ja/finder',
     type: 'website',
     images: [
       {

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '300種類以上の無料GLBアセットギャラリー | Open Source Avatars',
     description: 'VR、ゲーム、VTuber、メタバース向けの300種類以上の無料・高品質3D GLBアセットを閲覧・ダウンロード。すべてCC0ライセンス。',
-    url: 'https://opensourceavatars.com/ja/gallery',
+    url: 'https://numinia.store/ja/gallery',
     type: 'website',
     images: [
       {

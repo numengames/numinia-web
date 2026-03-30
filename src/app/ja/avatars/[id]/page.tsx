@@ -84,12 +84,12 @@ export default function AvatarDetailPage() {
           updateMetaTag('description', pageDescription);
           updateMetaTag('og:title', pageTitle);
           updateMetaTag('og:description', pageDescription);
-          updateMetaTag('og:image', `https://opensourceavatars.com${ogImageUrl}`);
+          updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
           updateMetaTag('og:url', window.location.href);
           updateMetaTag('twitter:card', 'summary_large_image');
           updateMetaTag('twitter:title', pageTitle);
           updateMetaTag('twitter:description', pageDescription);
-          updateMetaTag('twitter:image', `https://opensourceavatars.com${ogImageUrl}`);
+          updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
         }
       } catch (err) {
         console.error('Error fetching avatar:', err);
@@ -175,9 +175,9 @@ export default function AvatarDetailPage() {
       <AvatarProductSchema avatar={avatar} locale="ja" />
       <BreadcrumbSchema
         items={[
-          { name: 'ホーム', url: 'https://opensourceavatars.com/ja' },
-          { name: 'ギャラリー', url: 'https://opensourceavatars.com/ja/gallery' },
-          { name: avatar.name, url: `https://opensourceavatars.com/ja/avatars/${avatar.id}` },
+          { name: 'ホーム', url: 'https://numinia.store/ja' },
+          { name: 'ギャラリー', url: 'https://numinia.store/ja/gallery' },
+          { name: avatar.name, url: `https://numinia.store/ja/avatars/${avatar.id}` },
         ]}
       />
       

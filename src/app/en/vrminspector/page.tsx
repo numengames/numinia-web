@@ -42,12 +42,12 @@ export default function VRMInspectorPage() {
     updateMetaTag('description', description);
     updateMetaTag('og:title', 'VRM Inspector - Analyze & Preview VRM Avatars');
     updateMetaTag('og:description', description);
-    updateMetaTag('og:image', `https://opensourceavatars.com${ogImageUrl}`);
+    updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
     updateMetaTag('og:url', window.location.href);
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', 'VRM Inspector - Analyze & Preview VRM Avatars');
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `https://opensourceavatars.com${ogImageUrl}`);
+    updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
   }, []);
 
   if (isMobile) {

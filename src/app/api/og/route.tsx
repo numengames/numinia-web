@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
                   color: '#666',
                 }}
               >
-                opensourceavatars.com
+                numinia.store
               </div>
             </div>
           </div>
@@ -322,7 +322,7 @@ export async function GET(request: NextRequest) {
               color: '#666',
             }}
           >
-            opensourceavatars.com · @toxsam
+            numinia.store · @toxsam
           </div>
         </div>
       ),

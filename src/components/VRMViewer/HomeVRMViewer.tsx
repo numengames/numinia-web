@@ -310,7 +310,7 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
           try {
             console.log('Loading Mixamo animation for VRM...');
             clip = await loadMixamoAnimation(
-              'https://assets.opensourceavatars.com/animations/Warrior%20Idle.fbx',
+              'https://assets.numinia.store/animations/Warrior%20Idle.fbx',
               vrm
             );
           } catch (animError) {

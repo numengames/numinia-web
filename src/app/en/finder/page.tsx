@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Asset Finder - Batch Download | Open Source Avatars',
     description: 'Browse and download multiple assets at once. File finder interface for batch downloading VRM, GLB, FBX, and other 3D asset formats.',
-    url: 'https://opensourceavatars.com/en/finder',
+    url: 'https://numinia.store/en/finder',
     type: 'website',
     images: [
       {

@@ -67,7 +67,7 @@ export function shouldUseArweaveMappingForUrl(url: string | undefined | null): b
 
   if (lower.includes('arweave.net')) return false;
   if (lower.includes('cc0-models-polygonal-mind')) return false;
-  if (lower.includes('assets.opensourceavatars.com')) return false;
+  if (lower.includes('assets.numinia.store')) return false;
   if (lower.startsWith('ipfs://') || lower.includes('dweb.link')) return false;
 
   if (lower.includes('raw.githubusercontent.com')) {

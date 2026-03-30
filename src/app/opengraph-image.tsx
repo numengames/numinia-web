@@ -158,7 +158,7 @@ export default async function Image() {
             color: '#666',
           }}
         >
-          opensourceavatars.com · @toxsam
+          numinia.store
         </div>
       </div>
     ),
