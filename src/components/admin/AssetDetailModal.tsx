@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 import { HypViewer } from '@/components/asset/HypViewer';
 import { STLViewer } from '@/components/asset/STLViewer';
+import { ImageViewer } from '@/components/asset/ImageViewer';
 
 const VRMViewer = dynamic(
   () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
@@ -251,9 +252,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
             ) : isStl ? (
               <STLViewer key={url} url={url} name={avatar.name} />
             ) : isImage ? (
-              <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
-                <img src={url} alt={avatar.name} className="max-w-full max-h-full object-contain rounded" />
-              </div>
+              <ImageViewer key={url} url={url} name={avatar.name} />
             ) : is3D ? (
               <VRMViewer key={url} url={url} backgroundGLB={null} onMetadataLoad={() => {}} onTexturesLoad={() => {}} showInfoPanel={false} onToggleInfoPanel={() => {}} hideControls={true} cameraDistanceMultiplier={0.6} />
             ) : displayThumb ? (

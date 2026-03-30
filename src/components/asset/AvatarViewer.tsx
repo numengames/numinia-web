@@ -11,6 +11,7 @@ import { Maximize2, Minimize2, Info, Eye, EyeOff, DownloadCloud, X, Menu, Search
 import { setupMobileGestureHelp } from '@/lib/utils';
 import { HypViewer } from './HypViewer';
 import { STLViewer } from './STLViewer';
+import { ImageViewer } from './ImageViewer';
 
 const VRMViewer = dynamic(() => import('@/components/VRMViewer/VRMViewer').then(mod => mod.VRMViewer), { 
   ssr: false,
@@ -372,18 +373,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
       ) : isStlUrl ? (
         <STLViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
       ) : isImageUrl ? (
-        <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-          <img
-            key={displayModelUrl}
-            src={displayModelUrl}
-            alt={avatar.name}
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onError={(e) => {
-              const el = e.currentTarget;
-              if (!el.src.includes('/placeholder.png')) el.src = '/placeholder.png';
-            }}
-          />
-        </div>
+        <ImageViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
       ) : (
         <VRMViewer
           url={displayModelUrl}
