@@ -65,6 +65,19 @@ export function isNuminiaId(id: string): boolean {
  * Create the default metadata fields for a new asset.
  * Used by upload routes to build the initial JSON entry.
  */
+/** MIME type mapping for asset formats */
+const FORMAT_TO_MIME: Record<string, string> = {
+  vrm: 'model/gltf-binary',
+  glb: 'model/gltf-binary',
+  hyp: 'application/octet-stream',
+  mp3: 'audio/mpeg',
+  ogg: 'audio/ogg',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+};
+
 export function createAssetMetadata(
   id: string,
   name: string,
@@ -72,13 +85,18 @@ export function createAssetMetadata(
   description: string,
   modelFileUrl: string,
   projectId: string,
+  options?: {
+    fileSizeBytes?: number;
+    fileHash?: string;
+  },
 ): Record<string, unknown> {
   const now = new Date().toISOString();
+  const typeLower = type.toLowerCase();
   return {
     id,
-    canonical: formatCanonical(id, type, '0.1.0'),
+    canonical: formatCanonical(id, typeLower, '0.1.0'),
     name,
-    type: type.toLowerCase(),
+    type: typeLower,
     version: '0.1.0',
     previous_version: null,
     status: 'active',
@@ -89,6 +107,9 @@ export function createAssetMetadata(
     model_file_url: modelFileUrl,
     thumbnail_url: null,
     format: type.toUpperCase(),
+    content_type: FORMAT_TO_MIME[typeLower] ?? 'application/octet-stream',
+    file_size_bytes: options?.fileSizeBytes ?? null,
+    file_hash: options?.fileHash ?? null,
     project_id: projectId,
     nft: {
       type: 'standard',

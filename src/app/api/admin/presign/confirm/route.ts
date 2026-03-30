@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { assetId, r2Key, displayName, description, format } = await req.json();
+    const { assetId, r2Key, displayName, description, format, fileSize, fileHash } = await req.json();
 
     if (!assetId || !r2Key || !displayName || !format) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       description || `${format} asset uploaded via Numinia Admin`,
       publicUrl,
       projectId,
+      { fileSizeBytes: fileSize, fileHash },
     );
 
     const existingAssets = await fetchData<Record<string, unknown>[]>(catalogFile);

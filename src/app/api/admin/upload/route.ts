@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
     // Step 1: Upload binary to data repo
     const fileBuffer = await file.arrayBuffer();
     const base64Content = Buffer.from(fileBuffer).toString('base64');
+
+    // Compute SHA-256 hash for integrity verification + deduplication
+    const { createHash } = await import('crypto');
+    const fileHash = `sha256:${createHash('sha256').update(Buffer.from(fileBuffer)).digest('hex')}`;
     const { folder } = getContentPath(format);
     const repoFilePath = `${folder}/${assetId}.${ext}`;
 
@@ -103,6 +107,7 @@ export async function POST(req: NextRequest) {
       description || `${format} asset uploaded via Numinia Admin`,
       rawUrl,
       projectId,
+      { fileSizeBytes: file.size, fileHash },
     );
 
     const existingAssets = await fetchData<Record<string, unknown>[]>(catalogFile);

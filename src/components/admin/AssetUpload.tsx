@@ -123,7 +123,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     const confirmRes = await fetch('/api/admin/presign/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assetId, r2Key, displayName, description: desc, format }),
+      body: JSON.stringify({ assetId, r2Key, displayName, description: desc, format, fileSize: f.size }),
     });
 
     if (!confirmRes.ok) {
