@@ -82,13 +82,17 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeView === 'archive' && (
-          <div className="max-w-3xl mx-auto p-6 text-center space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Archive</h1>
-            <p className="text-sm text-gray-500">Browse the full asset archive.</p>
-            <a href="/en/archive" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors">
-              Open Archive
-            </a>
+        {activeView === 'character' && (
+          <div className="max-w-3xl mx-auto p-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Character Sheet</h1>
+            <p className="text-sm text-gray-500 mb-6">Your avatar, inventory, and identity in the Numinia universe.</p>
+            <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 p-8 text-center">
+              <div className="text-4xl mb-3">🧙</div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Coming Soon</h2>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
+                Your character profile: equipped avatar, collected loot, achievements, and on-chain identity.
+              </p>
+            </div>
           </div>
         )}
 
@@ -100,13 +104,13 @@ export default function AdminPage() {
               <div className="text-4xl mb-3">🌀</div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Coming Soon</h2>
               <p className="text-sm text-gray-500 max-w-md mx-auto">
-                This section will allow managing Hyperfy portals, linking worlds to the platform, and curating interactive experiences.
+                Manage Hyperfy portals, link worlds, and curate interactive experiences.
               </p>
             </div>
           </div>
         )}
 
-        {activeView === 'digital-goods' && (
+        {activeView === 'loot' && (
           <DigitalGoods />
         )}
 

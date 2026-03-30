@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Diamond, Globe } from 'lucide-react';
+import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
-export type AdminView = 'assets' | 'upload' | 'archive' | 'portals' | 'digital-goods' | 'stats' | 'settings' | 'updates';
+export type AdminView = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'stats' | 'settings' | 'updates';
 
 interface AdminSidebarProps {
   activeView: AdminView;
@@ -13,12 +13,18 @@ interface AdminSidebarProps {
   onSignOut: () => void;
 }
 
-const NAV_ITEMS: { id: AdminView; label: string; icon: typeof Package }[] = [
+type NavItem = { id: AdminView | 'archive'; label: string; icon: typeof Package; href?: string };
+
+const MAIN_NAV: NavItem[] = [
   { id: 'assets', label: 'Assets', icon: Package },
   { id: 'upload', label: 'Upload', icon: Upload },
-  { id: 'archive', label: 'Archive', icon: Package },
+  { id: 'character', label: 'Character', icon: User },
   { id: 'portals', label: 'Portals', icon: Globe },
-  { id: 'digital-goods', label: 'Digital Goods', icon: Diamond },
+  { id: 'loot', label: 'Loot', icon: Swords },
+  { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
+];
+
+const BOTTOM_NAV: NavItem[] = [
   { id: 'stats', label: 'Stats', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'updates', label: 'Updates', icon: Bell },
@@ -87,16 +93,28 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
         </button>
       </div>
 
-      {/* Navigation */}
+      {/* Main navigation */}
       <nav className="flex-1 px-2 py-2 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
+        {MAIN_NAV.map((item) => {
           const Icon = item.icon;
+          if (item.href) {
+            return (
+              <a
+                key={item.id}
+                href={item.href}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </a>
+            );
+          }
           const isActive = activeView === item.id;
-          const showBadge = item.id === 'updates' && badgeCount > 0 && !isActive;
           return (
             <button
               key={item.id}
-              onClick={() => handleViewChange(item.id)}
+              onClick={() => handleViewChange(item.id as AdminView)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative ${
                 isActive
                   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
@@ -106,34 +124,59 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
-              {showBadge && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
-                  {badgeCount}
-                </span>
-              )}
-              {showBadge && collapsed && (
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full w-2 h-2" />
-              )}
             </button>
           );
         })}
       </nav>
 
-      {/* Wallet / Sign out */}
-      <div className="p-3 border-t border-gray-200 dark:border-gray-800">
-        {walletAddress && !collapsed && (
-          <div className="text-[11px] text-gray-400 font-mono mb-2 truncate px-1">
-            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-          </div>
-        )}
-        <button
-          onClick={onSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-          title="Sign out"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
-        </button>
+      {/* Bottom nav + wallet */}
+      <div className="border-t border-gray-200 dark:border-gray-800">
+        <nav className="px-2 py-2 space-y-0.5">
+          {BOTTOM_NAV.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeView === item.id;
+            const showBadge = item.id === 'updates' && badgeCount > 0 && !isActive;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleViewChange(item.id as AdminView)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative ${
+                  isActive
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+                {showBadge && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    {badgeCount}
+                  </span>
+                )}
+                {showBadge && collapsed && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full w-2 h-2" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="p-3 border-t border-gray-200 dark:border-gray-800">
+          {walletAddress && !collapsed && (
+            <div className="text-[11px] text-gray-400 font-mono mb-2 truncate px-1">
+              {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            </div>
+          )}
+          <button
+            onClick={onSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Sign Out</span>}
+          </button>
+        </div>
       </div>
     </aside>
     </>

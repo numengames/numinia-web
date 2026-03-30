@@ -82,7 +82,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeView === 'digital-goods' && (
+        {activeView === 'loot' && (
           <DigitalGoods />
         )}
 
