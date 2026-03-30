@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import { AssetUpload } from '@/components/admin/AssetUpload';
 import AdminTableView from '@/components/admin/AdminTableView';
 import { AssetDetailModal } from '@/components/admin/AssetDetailModal';
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ export default function AvatarAdminDashboard() {
   const [editValue, setEditValue] = useState('');
   const [formatFilter, setFormatFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('admin-view-mode') as 'gallery' | 'table') || 'table';
@@ -295,6 +297,16 @@ export default function AvatarAdminDashboard() {
             {/* Spacer */}
             <div className="flex-1" />
 
+            {/* Upload toggle */}
+            <Button
+              variant={showUpload ? 'default' : 'outline'}
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => setShowUpload(!showUpload)}
+            >
+              <Plus className="h-3 w-3" /> Upload
+            </Button>
+
             {/* Count */}
             <span className="text-xs text-gray-400">{filteredAvatars.length} assets</span>
 
@@ -317,6 +329,13 @@ export default function AvatarAdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Upload panel (inline) */}
+        {showUpload && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 mb-4">
+            <AssetUpload onUploaded={() => { setShowUpload(false); window.location.reload(); }} />
+          </div>
+        )}
 
         {/* Asset content */}
         <div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User } from 'lucide-react';
+import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
 export type AdminView = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'stats' | 'settings' | 'updates';
@@ -20,7 +20,6 @@ const MAIN_NAV: NavItem[] = [
   { id: 'portals', label: 'Portals', icon: Globe },
   { id: 'loot', label: 'Loot', icon: Swords },
   { id: 'assets', label: 'Assets', icon: Package },
-  { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
 ];
 
