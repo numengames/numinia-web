@@ -79,8 +79,8 @@ export function generateSEOMetadata({
     // Twitter Card
     twitter: {
       card: 'summary_large_image',
-      site: '@toxsam',
-      creator: '@toxsam',
+      site: '@numinia_store',
+      creator: '@numinia_store',
       title: fullTitle,
       description,
       images: imageUrls,

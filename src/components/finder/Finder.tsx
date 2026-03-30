@@ -651,7 +651,7 @@ export default function Finder() {
           <AvatarHeader 
             title={t('finder.title') as string}
             description={t('finder.description') as string}
-            socialLink="https://x.com/toxsam"
+            socialLink="https://x.com/numinia_store"
           />
         </div>
         
@@ -676,7 +676,7 @@ export default function Finder() {
           <AvatarHeader 
             title={t('finder.title') as string}
             description={t('finder.description') as string}
-            socialLink="https://x.com/toxsam"
+            socialLink="https://x.com/numinia_store"
           />
         </div>
         
@@ -699,7 +699,7 @@ export default function Finder() {
           <AvatarHeader 
             title={t('finder.title') as string}
             description={t('finder.description') as string}
-            socialLink="https://x.com/toxsam"
+            socialLink="https://x.com/numinia_store"
             showWarningButton={true}
           />
         </div>
@@ -727,7 +727,7 @@ export default function Finder() {
         <AvatarHeader 
           title={t('finder.title') as string}
           description={t('finder.description') as string}
-          socialLink="https://x.com/toxsam"
+          socialLink="https://x.com/numinia_store"
         />
       </div>
 

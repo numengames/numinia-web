@@ -108,7 +108,7 @@ export function AboutPageContent() {
       <AvatarHeader
         title="Open Source 3D Assets"
         description="Free CC0 GLB models - props, environments, and structures"
-        socialLink="https://x.com/toxsam"
+        socialLink="https://x.com/numinia_store"
       />
 
       <main className="flex-1 pb-20 md:pb-32" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>

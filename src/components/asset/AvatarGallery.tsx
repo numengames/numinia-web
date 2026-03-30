@@ -394,7 +394,7 @@ export const AvatarGallery: React.FC = () => {
           <AvatarHeader 
             title="Open Source Avatars"
             description="A collection of CC0 assets"
-            socialLink="https://x.com/toxsam"
+            socialLink="https://x.com/numinia_store"
           />
         </div>
         
@@ -418,7 +418,7 @@ export const AvatarGallery: React.FC = () => {
           <AvatarHeader 
             title="Open Source Avatars"
             description="A collection of CC0 assets"
-            socialLink="https://x.com/toxsam"
+            socialLink="https://x.com/numinia_store"
           />
         </div>
         
@@ -451,7 +451,7 @@ export const AvatarGallery: React.FC = () => {
         <AvatarHeader 
           title="Open Source Avatars"
           description="A collection of CC0 and open source assets by Numinia"
-          socialLink="https://x.com/toxsam"
+          socialLink="https://x.com/numinia_store"
         />
       </div>
   

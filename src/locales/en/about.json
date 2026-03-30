@@ -1,9 +1,9 @@
 {
-  "title": "About OpenSource3DAssets.com",
+  "title": "About Numinia Digital Goods",
   "whatWeDo": {
     "title": "What We Do",
-    "description1": "OpenSource3DAssets.com is a registry that helps you discover quality 3D assets with clear licensing.",
-    "description2": "We showcase open source 3D models from talented creators - props, environments, structures, and more. All assets use the GLB format, making them compatible with major game engines and 3D software. No more hunting through scattered repositories. We collect the metadata and links so you can focus on creating."
+    "description1": "Numinia Digital Goods is an open registry for CC0 digital assets — 3D models, avatars, worlds, audio, and video.",
+    "description2": "We curate assets from talented creators and the open source community. All assets use open formats (GLB, VRM, HYP), making them compatible with game engines, VR platforms, and the metaverse. No hunting through scattered repos — browse, preview, and download in one place."
   },
   "howItWorks": {
     "title": "How It Works",
@@ -99,6 +99,6 @@
     "website": "Website",
     "websiteUrl": "https://numinia.store",
     "twitter": "Twitter",
-    "twitterUrl": "https://twitter.com/numinia_xyz"
+    "twitterUrl": "https://x.com/numinia_store"
   }
 }

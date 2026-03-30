@@ -33,11 +33,12 @@ content/
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16, App Router, React 18 |
-| Styling | Tailwind CSS + shadcn/ui |
-| 3D | Three.js + @pixiv/three-vrm |
+| Framework | Next.js 16, App Router, React 18, TypeScript |
+| Styling | Tailwind CSS 3 + shadcn/ui |
+| 3D | Three.js + @pixiv/three-vrm + STL viewer |
 | Auth | SIWE (Sign-In with Ethereum) for admin, GitHub OAuth for users |
 | Storage | GitHub (metadata), Cloudflare R2 (CDN), Arweave (permanent) |
+| Tests | Vitest 4 + React Testing Library (138 tests) |
 | Deploy | Vercel |
 
 ## Getting started
@@ -58,9 +59,11 @@ Visit `http://localhost:3000`
 Go to `/en/admin` and connect with MetaMask. Only ETH addresses in `ADMIN_WALLET_ADDRESSES` env var can access.
 
 Features:
-- Upload assets (GLB, VRM, HYP, MP3, OGG, MP4, WebM)
-- Hide/show assets from the gallery
-- Rename and delete assets
+- Upload assets (GLB, VRM, HYP, STL, MP3, OGG, MP4, WebM, JPG, PNG)
+- Hide/show, rename, delete assets
+- NFT fields (chain, contract, token ID, type)
+- Auto-thumbnail generation from 3D models
+- Stats dashboard, notification badges, changelog
 - All changes commit directly to the data repo
 
 ## Contributing
@@ -83,4 +86,5 @@ Code: MIT. Assets: CC0 (check each asset's license).
 
 - [numinia.store](https://numinia.store)
 - [Data repo](https://github.com/PabloFMM/numinia-digital-goods-data)
-- [@numinia_xyz](https://twitter.com/numinia_xyz)
+- [@numinia_store](https://x.com/numinia_store)
+- [Numen Games](https://numen.games)
