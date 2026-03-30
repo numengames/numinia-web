@@ -1586,12 +1586,20 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   // Expose capture function to parent via captureRef
   if (captureRef) captureRef.current = captureScreenshot;
 
-  // Available animations list - only from GLB embedded animations
+  // Available animations list - GLB embedded + Mixamo FBX for VRM
+  const MIXAMO_BASE = 'https://assets.opensourceavatars.com/animations';
+  const MIXAMO_ANIMATIONS = [
+    { name: 'T-Pose (Default)', url: '' },
+    { name: 'Warrior Idle', url: `${MIXAMO_BASE}/Warrior%20Idle.fbx` },
+  ];
+
+  const isVRM = url && /\.vrm$/i.test(url);
+
   const availableAnimations = useMemo(() => {
-    // Only show animations if the GLB has embedded animations
+    // GLB with embedded animations
     if (glbAnimations.length > 0) {
       return [
-        { name: 'None (Stop)', clip: null, isGlb: true }, // Default/reset option
+        { name: 'None (Stop)', clip: null, isGlb: true },
         ...glbAnimations.map((clip, index) => ({
           name: clip.name || `Animation ${index + 1}`,
           clip: clip,
@@ -1599,20 +1607,26 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         }))
       ];
     }
-    
-    // No animations available
-    return [];
-  }, [glbAnimations]);
 
-  // Load and play animation - GLB embedded animations only
-  const loadAnimation = async (animationData) => {
-    if (!modelSceneRef.current) {
-      console.warn('No model loaded');
-      return;
+    // VRM files get Mixamo animations
+    if (isVRM) {
+      return MIXAMO_ANIMATIONS.map(a => ({
+        name: a.name,
+        clip: null,
+        isGlb: false,
+        mixamoUrl: a.url,
+      }));
     }
 
-    // If no animation (stop), just stop all animations
-    if (!animationData.clip) {
+    return [];
+  }, [glbAnimations, isVRM]);
+
+  // Load and play animation — supports GLB clips and Mixamo FBX URLs
+  const loadAnimation = async (animationData) => {
+    if (!modelSceneRef.current) return;
+
+    // T-Pose / Stop
+    if (!animationData.clip && !animationData.mixamoUrl) {
       stopAnimation();
       return;
     }
@@ -1620,27 +1634,31 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
     setIsLoadingAnimation(true);
 
     try {
-      // Play GLB embedded animation
-      console.log('Playing GLB animation:', animationData.name);
-      const clip = animationData.clip;
-      
-      // Create or update the animation mixer
       if (!mixerRef.current) {
         mixerRef.current = new THREE.AnimationMixer(modelSceneRef.current);
       } else {
-        // Stop all current animations
         mixerRef.current.stopAllAction();
       }
-      
-      // Play the animation
-      const action = mixerRef.current.clipAction(clip);
-      action.reset();
-      action.play();
-      
+
+      let clip;
+
+      if (animationData.isGlb && animationData.clip) {
+        // GLB embedded animation
+        clip = animationData.clip;
+      } else if (animationData.mixamoUrl && vrmRef.current) {
+        // Mixamo FBX animation for VRM
+        clip = await loadMixamoAnimation(animationData.mixamoUrl, vrmRef.current);
+      }
+
+      if (clip) {
+        const action = mixerRef.current.clipAction(clip);
+        action.reset();
+        action.play();
+      }
+
       setCurrentAnimation(animationData.name);
       setIsLoadingAnimation(false);
-      
-      // Close animation panel on mobile after selecting an animation
+
       if (window.innerWidth < 768) {
         setShowAnimationPanel(false);
       }
@@ -2038,9 +2056,9 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
               onTexturesLoad(textures);
             }
 
-            // Auto-play first animation if GLB has embedded animations
+            // Auto-play animation
             if (gltf.animations && gltf.animations.length > 0) {
-              console.log('Auto-playing first GLB animation');
+              // GLB with embedded animations — play first one
               try {
                 mixerRef.current = new THREE.AnimationMixer(modelScene);
                 const action = mixerRef.current.clipAction(gltf.animations[0]);
@@ -2048,6 +2066,18 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
                 setCurrentAnimation(gltf.animations[0].name || 'Animation 1');
               } catch (error) {
                 console.error('Error auto-playing GLB animation:', error);
+              }
+            } else if (vrm && /\.vrm$/i.test(processedUrl)) {
+              // VRM file — auto-play Warrior Idle
+              try {
+                const idleUrl = `${MIXAMO_BASE}/Warrior%20Idle.fbx`;
+                const clip = await loadMixamoAnimation(idleUrl, vrm);
+                mixerRef.current = new THREE.AnimationMixer(vrm.scene);
+                const action = mixerRef.current.clipAction(clip);
+                action.play();
+                setCurrentAnimation('Warrior Idle');
+              } catch (error) {
+                // Animation failed — VRM stays in T-Pose, which is fine
               }
             }
 
@@ -2303,8 +2333,8 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
               </div>
             </div>
 
-            {/* Animation panel toggle button - only show if GLB has animations */}
-            {glbAnimations.length > 0 && (
+            {/* Animation panel toggle button - show for GLB with anims or VRM */}
+            {availableAnimations.length > 0 && (
               <div className="relative group">
                 <button
                   onClick={() => setShowAnimationPanel(!showAnimationPanel)}
@@ -2340,9 +2370,8 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         </div>
       )}
       
-      {/* Animation Panel - positioned on the right, similar to avatar info panel */}
-      {/* Only show if GLB has embedded animations */}
-      {showAnimationPanel && glbAnimations.length > 0 && (
+      {/* Animation Panel - positioned on the right */}
+      {showAnimationPanel && availableAnimations.length > 0 && (
         <div 
           className={`absolute z-10 bg-cream/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 overflow-y-auto rounded-lg ${
             window.innerWidth >= 768 
