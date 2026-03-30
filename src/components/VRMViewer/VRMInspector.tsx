@@ -79,12 +79,10 @@ const renderLinkableText = (text) => {
 
 // Helper to get license type name
 const getLicenseTypeName = (licenseType, licenseName) => {
-  console.log('🔍 DEBUG - getLicenseTypeName called with:', licenseType, 'type:', typeof licenseType, 'licenseName:', licenseName);
   
   // IMPORTANT: If licenseName is provided, use it directly - this ensures we show exactly what's in the VRM file
   if (licenseName && typeof licenseName === 'string' && licenseName.trim() !== '') {
     const cleanName = licenseName.trim();
-    console.log('🔍 DEBUG - Using provided licenseName directly:', cleanName);
     
     // Format: Replace underscores with spaces and capitalize correctly
     if (cleanName.includes('_')) {
@@ -100,11 +98,9 @@ const getLicenseTypeName = (licenseType, licenseName) => {
   }
   
   // Only fall back to numeric mapping if no licenseName is provided
-  console.log('🔍 DEBUG - No license name provided, falling back to numeric mapping');
   
   // Convert to number if it's a string containing only digits
   if (typeof licenseType === 'string' && /^\d+$/.test(licenseType)) {
-    console.log('🔍 DEBUG - Converting string licenseType to number');
     licenseType = parseInt(licenseType, 10);
   }
   
@@ -122,33 +118,27 @@ const getLicenseTypeName = (licenseType, licenseName) => {
   };
   
   const result = licenseTypes[licenseType] || 'Unknown';
-  console.log('🔍 DEBUG - Resolved license type from numeric value:', result);
   
   return result;
 };
 
 // Helper to get allowed user name
 const getAllowedUserName = (allowedUser) => {
-  console.log('🔍 DEBUG - getAllowedUserName called with:', allowedUser, 'type:', typeof allowedUser);
   
   // Convert to number if it's a string containing only digits
   if (typeof allowedUser === 'string' && /^\d+$/.test(allowedUser)) {
-    console.log('🔍 DEBUG - Converting string allowedUser to number');
     allowedUser = parseInt(allowedUser, 10);
   }
   
   // Check if it's a string matching the values
   if (typeof allowedUser === 'string') {
     if (allowedUser.toLowerCase() === 'everyone') {
-      console.log('🔍 DEBUG - String match: Everyone');
       return 'Everyone';
     } else if (allowedUser.toLowerCase().includes('explicit') || 
                allowedUser.toLowerCase().includes('contact')) {
-      console.log('🔍 DEBUG - String match: Explicit User');
       return 'Explicit User';
     } else if (allowedUser.toLowerCase().includes('author') || 
                allowedUser.toLowerCase().includes('only')) {
-      console.log('🔍 DEBUG - String match: Only Author');
       return 'Only Author';
     }
   }
@@ -160,41 +150,33 @@ const getAllowedUserName = (allowedUser) => {
   };
   
   const result = allowedUsers[allowedUser] || 'Unknown';
-  console.log('🔍 DEBUG - Resolved allowed user:', result);
   return result;
 };
 
 // Helper to get usage permission name
 const getUsageName = (usage) => {
-  console.log('🔍 DEBUG - getUsageName called with:', usage, 'type:', typeof usage);
   
   // For VRM 0.x format:
   // 0 = Disallow, 1 = Allow
   if (usage === 0 || usage === '0') {
-    console.log('🔍 DEBUG - Usage is 0, returning "Disallow"');
     return 'Disallow';
   } else if (usage === 1 || usage === '1') {
-    console.log('🔍 DEBUG - Usage is 1, returning "Allow"');
     return 'Allow';
   } else if (typeof usage === 'string') {
     // Handle string values (case insensitive)
     const value = usage.toLowerCase().trim();
-    console.log('🔍 DEBUG - Usage is string, lowercase value:', value);
     if (value === 'allow' || value === 'allowed' || value === 'yes' || value === 'true') {
       return 'Allow';
     } else {
       return 'Disallow';
     }
   } else if (usage === true) {
-    console.log('🔍 DEBUG - Usage is true boolean, returning "Allow"');
     return 'Allow';
   } else if (usage === false) {
-    console.log('🔍 DEBUG - Usage is false boolean, returning "Disallow"');
     return 'Disallow';
   }
   
   // Default fallback
-  console.log('🔍 DEBUG - Unknown usage value type:', typeof usage, 'value:', usage, 'defaulting to "Disallow"');
   return 'Disallow'; // Default to disallow for safety
 };
 
@@ -689,27 +671,14 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
   // Helper function to extract VRM metadata from the raw GLTF
   const extractVRMMetadata = (gltf) => {
     try {
-      console.log('Extracting VRM metadata with direct access to GLTF structure');
       
       // Special direct handling for VRM 0.x
       // This is the most reliable way to get VRM 0.x metadata
       if (gltf.parser && gltf.parser.json && gltf.parser.json.extensions && gltf.parser.json.extensions.VRM) {
-        console.log('Direct VRM 0.x extension detected');
         const vrm0Data = gltf.parser.json.extensions.VRM;
         
-        console.log('VRM 0.x raw data:', vrm0Data);
         
         if (vrm0Data.meta) {
-          console.log('Using direct VRM 0.x metadata');
-          // Log the license properties specifically for debugging
-          console.log('VRM 0.x license fields:', {
-            licenseType: vrm0Data.meta.licenseType,
-            licenseName: vrm0Data.meta.licenseName,
-            allowedUserName: vrm0Data.meta.allowedUserName,
-            violentUssageName: vrm0Data.meta.violentUssageName,
-            sexualUssageName: vrm0Data.meta.sexualUssageName,
-            commercialUssageName: vrm0Data.meta.commercialUssageName
-          });
           return { metadata: vrm0Data.meta, vrmVersion: 'VRM 0.x' };
         }
       }
@@ -723,7 +692,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       let isVRM0 = false;
       if (gltf.parser && gltf.parser.json && gltf.parser.json.extensions && gltf.parser.json.extensions.VRM) {
         isVRM0 = true;
-        console.log('VRM 0.x extension detected');
         vrmVersion = 'VRM 0.x';
       }
       
@@ -731,7 +699,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       if (vrm && vrm.meta && vrm.meta.metaVersion === 0) {
         isVRM0 = true;
         vrmVersion = 'VRM 0.x';
-        console.log('VRM 0.x metaVersion detected');
       }
       
       if (vrm) {
@@ -756,13 +723,11 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           if (gltf.parser.json.extensions.VRM) {
             metadata = gltf.parser.json.extensions.VRM.meta;
             vrmVersion = 'VRM 0.x';
-            console.log('Detected VRM 0.x metadata from GLTF extensions');
           }
           // Check for VRMC_vrm extension (VRM 1.0)
           else if (gltf.parser.json.extensions.VRMC_vrm) {
             metadata = gltf.parser.json.extensions.VRMC_vrm.meta;
             vrmVersion = 'VRM 1.0';
-            console.log('Detected VRM 1.0 metadata from GLTF extensions');
           }
         }
       }
@@ -783,7 +748,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       
       // Attempt to find additional license information if not present in metadata
       if (metadata && (!metadata.licenseType && !metadata.licenseName && !metadata.license)) {
-        console.log('Looking for additional license information');
         
         // Try to extract license information from VRM 0.x structure
         if (gltf.parser && gltf.parser.json && gltf.parser.json.extensions && gltf.parser.json.extensions.VRM) {
@@ -855,11 +819,8 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       // VRM 0.x always has a metaVersion=0, make sure we detect it
       if (metadata && metadata.metaVersion === 0) {
         vrmVersion = 'VRM 0.x';
-        console.log('Setting version to VRM 0.x due to metaVersion=0');
       }
       
-      console.log('Extracted metadata:', metadata);
-      console.log('Detected VRM version:', vrmVersion);
       
       // Return whatever we found
       return { metadata, vrmVersion };
@@ -871,7 +832,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
 
   // Helper function to create a clean metadata object
   const createCleanMetadataObject = (rawMeta, version) => {
-    console.log('Creating clean metadata object with:', rawMeta, 'Version:', version);
     
     if (!rawMeta) {
       return {
@@ -911,14 +871,11 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
     // Handle license type field mapping
     if (version && version.includes('0.x')) {
       // VRM 0.x license handling
-      console.log('Handling VRM 0.x license fields');
-      console.log('Raw license type:', rawMeta.licenseType, typeof rawMeta.licenseType);
       
       // License Type mapping
       if (rawMeta.licenseType !== undefined) {
         // If it's already a number, use it directly
         if (typeof rawMeta.licenseType === 'number') {
-          console.log('Using numeric license type directly:', rawMeta.licenseType);
           cleanMeta.licenseType = rawMeta.licenseType;
         } 
         // If it's a string, try to convert it to a number
@@ -945,23 +902,18 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           
           // Try to find a match in the map
           const licenseKey = rawMeta.licenseType.toLowerCase().trim();
-          console.log('Looking up string license type:', licenseKey);
           if (licenseMap[licenseKey] !== undefined) {
             cleanMeta.licenseType = licenseMap[licenseKey];
-            console.log('Mapped string license to:', cleanMeta.licenseType);
           } else {
             // Default to "Redistribution Prohibited" if we can't determine
-            console.log('Could not map license string, defaulting to 0');
             cleanMeta.licenseType = 0;
           }
         } else {
           // Default to "Redistribution Prohibited" if not a number or string
-          console.log('License type is neither number nor string, defaulting to 0');
           cleanMeta.licenseType = 0;
         }
       } else {
         // Default to "Redistribution Prohibited"
-        console.log('No license type found, defaulting to 0');
         cleanMeta.licenseType = 0;
       }
       
@@ -1088,7 +1040,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       cleanMeta.otherLicenseUrl = rawMeta.otherLicenseUrl || '';
       } else {
       // VRM 1.0+ license handling
-      console.log('Handling VRM 1.0+ license fields');
       
       // In VRM 1.0, licenseName is used instead of licenseType
       if (rawMeta.licenseName) {
@@ -1166,7 +1117,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
     if (cleanMeta.sexualUsageName === undefined) cleanMeta.sexualUsageName = 0;
     if (cleanMeta.commercialUsageName === undefined) cleanMeta.commercialUsageName = 0;
     
-    console.log('Final clean metadata object:', cleanMeta);
     return cleanMeta;
   };
 
@@ -1197,14 +1147,12 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           arrayBuffer,
           '',
           (gltf) => {
-            console.log('VRM loaded:', gltf);
             
             try {
               // Extract metadata using our helper function
               const { metadata: rawMetadata, vrmVersion } = extractVRMMetadata(gltf);
               
               if (rawMetadata) {
-                console.log('VRM metadata found:', rawMetadata, 'Version:', vrmVersion);
                 
                 // Extract thumbnail if available (async function)
                 const extractThumbnail = async () => {
@@ -1213,29 +1161,18 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                     // Get VRM instance first
                     const vrm = gltf.userData.vrm;
                     
-                    console.log('🔍 DEBUG - Raw metadata texture field:', rawMetadata.texture, 'type:', typeof rawMetadata.texture);
-                    console.log('🔍 DEBUG - Raw metadata thumbnailImage field:', rawMetadata.thumbnailImage);
-                    console.log('🔍 DEBUG - VRM instance:', vrm);
-                    console.log('🔍 DEBUG - VRM meta object:', vrm?.meta);
-                    console.log('🔍 DEBUG - GLTF parser available:', !!gltf.parser);
-                    console.log('🔍 DEBUG - GLTF textures array:', gltf.textures?.length);
-                    console.log('🔍 DEBUG - GLTF parser json textures:', gltf.parser?.json?.textures?.length);
-                    console.log('🔍 DEBUG - GLTF parser json images:', gltf.parser?.json?.images?.length);
                     
                     // First, check if VRM library has already processed the thumbnail
                     if (vrm && vrm.meta && vrm.meta.texture && vrm.meta.texture instanceof THREE.Texture) {
                       thumbnail = vrm.meta.texture;
-                      console.log('🔍 DEBUG - Found thumbnail directly in vrm.meta.texture:', thumbnail);
                       return thumbnail;
                     }
                     
                     if (rawMetadata.texture !== undefined && rawMetadata.texture !== null && !thumbnail) {
                     const textureIndex = typeof rawMetadata.texture === 'number' ? rawMetadata.texture : rawMetadata.texture;
-                    console.log('🔍 DEBUG - Processing texture index:', textureIndex);
                     
                     // If it's already a THREE.Texture, use it directly
                     if (textureIndex instanceof THREE.Texture) {
-                      console.log('🔍 DEBUG - Texture index is already a THREE.Texture');
                       thumbnail = textureIndex;
                     } else if (typeof textureIndex === 'number') {
                       // Try multiple methods to get the texture
@@ -1243,7 +1180,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                       // Method 1: Try to find in gltf.textures array first (most direct)
                       if (!thumbnail && gltf.textures && Array.isArray(gltf.textures) && gltf.textures[textureIndex]) {
                         thumbnail = gltf.textures[textureIndex];
-                        console.log('🔍 DEBUG - Got thumbnail from gltf.textures array:', thumbnail);
                       }
                       
                       // Method 2: Use GLTF parser's getDependency if available (it's async!)
@@ -1254,10 +1190,8 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                           if (textureResult && typeof textureResult.then === 'function') {
                             // It's async - await it
                             thumbnail = await textureResult;
-                            console.log('🔍 DEBUG - Got thumbnail via getDependency (async):', thumbnail);
                           } else {
                             thumbnail = textureResult;
-                            console.log('🔍 DEBUG - Got thumbnail via getDependency (sync):', thumbnail);
                           }
                         } catch (err) {
                           console.warn('🔍 DEBUG - getDependency failed:', err);
@@ -1270,12 +1204,10 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                         if (textures[textureIndex]) {
                           const textureInfo = textures[textureIndex];
                           const imageIndex = textureInfo.source;
-                          console.log('🔍 DEBUG - Texture info from JSON:', textureInfo, 'imageIndex:', imageIndex);
                           
                           // Try to get the image first
                           if (gltf.parser.json.images && gltf.parser.json.images[imageIndex]) {
                             const imageData = gltf.parser.json.images[imageIndex];
-                            console.log('🔍 DEBUG - Image data from JSON:', imageData);
                             
                             // Try to get the actual image element from various sources
                             let image = null;
@@ -1283,14 +1215,12 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                             // Check parser cache
                             if (gltf.parser.cache && gltf.parser.cache.images && gltf.parser.cache.images[imageIndex]) {
                               image = gltf.parser.cache.images[imageIndex];
-                              console.log('🔍 DEBUG - Found image in parser cache:', image);
                             }
                             
                             // Try getDependency for image
                             if (!image && typeof gltf.parser.getDependency === 'function') {
                               try {
                                 image = gltf.parser.getDependency('image', imageIndex);
-                                console.log('🔍 DEBUG - Got image via getDependency:', image);
                               } catch (err) {
                                 console.warn('🔍 DEBUG - getDependency failed for image:', err);
                               }
@@ -1307,10 +1237,8 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                       // Check various ways the image index might be stored
                                       if (texture.userData && texture.userData.gltfImageIndex === imageIndex) {
                                         image = texture.image;
-                                        console.log('🔍 DEBUG - Found image from scene texture:', image);
                                       } else if (texture.image && texture.image.userData && texture.image.userData.gltfImageIndex === imageIndex) {
                                         image = texture.image;
-                                        console.log('🔍 DEBUG - Found image from scene texture image userData:', image);
                                       }
                                     }
                                   });
@@ -1327,7 +1255,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                   materials.forEach(material => {
                                     if (material && material.map && material.map.image === image) {
                                       thumbnail = material.map;
-                                      console.log('🔍 DEBUG - Found existing texture using this image:', thumbnail);
                                     }
                                   });
                                 }
@@ -1338,7 +1265,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                 thumbnail = new THREE.Texture(image);
                                 thumbnail.flipY = false;
                                 thumbnail.needsUpdate = true;
-                                console.log('🔍 DEBUG - Created new texture from image:', thumbnail);
                               }
                             } else if (!image && imageData.uri) {
                               // Last resort: try to load from URI if it's a data URI or external URL
@@ -1348,7 +1274,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                 const newThumbnail = new THREE.Texture(imageElement);
                                 newThumbnail.flipY = false;
                                 newThumbnail.needsUpdate = true;
-                                console.log('🔍 DEBUG - Created texture from loaded image element:', newThumbnail);
                                 rawMetadata.thumbnail = newThumbnail;
                                 setVrmMetadata(prev => prev ? { ...prev, thumbnail: newThumbnail } : prev);
                               };
@@ -1364,7 +1289,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                   } else if (rawMetadata.thumbnailImage !== undefined && rawMetadata.thumbnailImage !== null) {
                     // VRM 1.0: thumbnailImage is an index into the GLTF images array
                     const thumbnailImageIndex = rawMetadata.thumbnailImage;
-                    console.log('🔍 DEBUG - Processing thumbnailImage index:', thumbnailImageIndex);
                     
                     if (typeof thumbnailImageIndex === 'number' && gltf.parser) {
                       try {
@@ -1376,7 +1300,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                             if (imageResult && typeof imageResult.then === 'function') {
                               // It's async - await it
                               imageResult.then((image) => {
-                                console.log('🔍 DEBUG - Got thumbnail image via getDependency (async):', image);
                                 
                                 if (image) {
                                   // Check if there's already a texture using this image
@@ -1388,7 +1311,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                       if (textureResult && typeof textureResult.then === 'function') {
                                         textureResult.then((texture) => {
                                           thumbnail = texture;
-                                          console.log('🔍 DEBUG - Got thumbnail texture from image index (async):', thumbnail);
                                           // Update the metadata with the thumbnail
                                           if (thumbnail) {
                                             rawMetadata.thumbnail = thumbnail;
@@ -1397,7 +1319,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                         });
                                       } else {
                                         thumbnail = textureResult;
-                                        console.log('🔍 DEBUG - Got thumbnail texture from image index (sync):', thumbnail);
                                       }
                                     } catch (err) {
                                       console.warn('Failed to get texture from image index, creating new texture:', err);
@@ -1420,7 +1341,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                               });
                             } else {
                               const image = imageResult;
-                              console.log('🔍 DEBUG - Got thumbnail image via getDependency (sync):', image);
                               
                               if (image) {
                                 // Check if there's already a texture using this image
@@ -1432,13 +1352,11 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                     if (textureResult && typeof textureResult.then === 'function') {
                                       textureResult.then((texture) => {
                                         thumbnail = texture;
-                                        console.log('🔍 DEBUG - Got thumbnail texture from image index (async):', thumbnail);
                                         rawMetadata.thumbnail = thumbnail;
                                         setVrmMetadata(prev => prev ? { ...prev, thumbnail } : prev);
                                       });
                                     } else {
                                       thumbnail = textureResult;
-                                      console.log('🔍 DEBUG - Got thumbnail texture from image index (sync):', thumbnail);
                                     }
                                   } catch (err) {
                                     console.warn('Failed to get texture from image index, creating new texture:', err);
@@ -1459,7 +1377,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                         // Method 2: Try parser cache
                         if (!thumbnail && gltf.parser.cache && gltf.parser.cache.images && gltf.parser.cache.images[thumbnailImageIndex]) {
                           const image = gltf.parser.cache.images[thumbnailImageIndex];
-                          console.log('🔍 DEBUG - Found image in parser cache:', image);
                           thumbnail = new THREE.Texture(image);
                           thumbnail.needsUpdate = true;
                         }
@@ -1474,7 +1391,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                                   const texture = material.map;
                                   if (texture.userData && texture.userData.gltfImageIndex === thumbnailImageIndex) {
                                     thumbnail = texture;
-                                    console.log('🔍 DEBUG - Found thumbnail texture in scene:', thumbnail);
                                   }
                                 }
                               });
@@ -1487,7 +1403,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                     }
                   }
                   
-                      console.log('🔍 DEBUG - Final thumbnail result:', thumbnail);
                       return thumbnail;
                     } catch (error) {
                       console.warn('Error extracting thumbnail:', error);
@@ -1499,7 +1414,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                   extractThumbnail().then((extractedThumbnail) => {
                     if (extractedThumbnail) {
                       rawMetadata.thumbnail = extractedThumbnail;
-                      console.log('🔍 DEBUG - Thumbnail extracted successfully, updating state');
                       // Update state if metadata was already set
                       setVrmMetadata(prev => {
                         if (prev) {
@@ -1508,7 +1422,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                         return prev;
                       });
                     } else {
-                      console.log('🔍 DEBUG - No thumbnail found');
                     }
                   }).catch((err) => {
                     console.error('🔍 DEBUG - Error in thumbnail extraction:', err);
@@ -1522,12 +1435,9 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                 setVrmVersion(vrmVersion);
                 
                 // Log all properties for debugging
-                console.log('Original VRM meta properties:');
                 for (const key in rawMetadata) {
-                  console.log(`${key}: ${typeof rawMetadata[key] === 'object' ? JSON.stringify(rawMetadata[key]) : rawMetadata[key]}`);
                 }
               } else {
-                console.log('No VRM metadata found - this might be a plain GLB/GLTF file');
                 // Set basic info for non-VRM files
                 setVrmMetadata({ title: file.name, isGLB: true });
                 setVrmVersion('GLB/GLTF');
@@ -1542,7 +1452,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
               const uniqueMaterials = new Set();
               const uniqueTextures = new Set();
 
-              console.log('Traversing scene to extract data...');
               
               // Function to count bones recursively
               const countBonesRecursively = (node) => {
@@ -1564,7 +1473,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
               
               // Get the humanoid bones directly if available
               if (vrm && vrm.humanoid) {
-                console.log('VRM has humanoid:', vrm.humanoid);
                 
                 // Check if it's a structure with humanBones property
                 if (vrm.humanoid.humanBones) {
@@ -1603,32 +1511,26 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                   }).length;
                 }
                 
-                console.log(`Found ${boneCount} bones from humanoid`);
               }
               
               // If no humanoid bones, try to count manually
               if (boneCount === 0) {
                 boneCount = countBonesRecursively(gltf.scene);
-                console.log(`Found ${boneCount} bones from scene traversal`);
               }
               
               // Process meshes and materials
               gltf.scene.traverse((node) => {
                 // Count vertices and triangles
                 if (node.isMesh) {
-                  console.log('Found mesh:', node.name);
                   const geometry = node.geometry;
                   if (geometry) {
                     if (geometry.attributes.position) {
                       vertexCount += geometry.attributes.position.count;
-                      console.log(`Added ${geometry.attributes.position.count} vertices, total: ${vertexCount}`);
                     }
                     if (geometry.index) {
                       triangleCount += geometry.index.count / 3;
-                      console.log(`Added ${geometry.index.count / 3} triangles, total: ${triangleCount}`);
                     } else if (geometry.attributes.position) {
                       triangleCount += geometry.attributes.position.count / 3;
-                      console.log(`Added ${geometry.attributes.position.count / 3} triangles, total: ${triangleCount}`);
                     }
                   }
 
@@ -1639,7 +1541,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                       uniqueMaterials.add(material.uuid);
                       materialCount++;
                       
-                      console.log('Processing material:', material.name || 'unnamed');
                       
                       // Check all possible texture properties
                       const textureProperties = [
@@ -1653,7 +1554,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                           if (!uniqueTextures.has(material[prop].uuid)) {
                             uniqueTextures.add(material[prop].uuid);
                             
-                            console.log(`Found texture (${prop}):`, material[prop].name || prop);
                             
                             // Generate a meaningful name for the texture
                             const textureName = material[prop].name || 
@@ -1720,7 +1620,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
                 }
               });
               
-              console.log(`Extracted ${extractedTextures.length} textures`);
               
               setTextures(extractedTextures);
               setModelStats(prev => ({
@@ -1746,7 +1645,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           },
           (progress) => {
             const percent = Math.round((progress.loaded / progress.total) * 100);
-            console.log('Loading progress:', percent + '%');
             setLoadingProgress(percent);
           },
           (error) => {
@@ -1770,7 +1668,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       const expressionsList = [];
 
       if (vrm && vrm.expressionManager) {
-        console.log('Extracting expressions from VRM');
         const expressions = vrm.expressionManager.expressions;
         if (expressions) {
           const entries = typeof expressions.forEach === 'function'
@@ -1809,7 +1706,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           });
         });
         if (expressionsList.length) {
-          console.log('Extracted blendshapes from GLB:', expressionsList.length);
         }
       }
 
@@ -1890,10 +1786,8 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
 
   // Handle metadata received from VRMViewer
   const onMetadataLoad = (data) => {
-    console.log('🔍 DEBUG - onMetadataLoad called with data:', data);
     
     if (!data) {
-      console.log('🔍 DEBUG - No metadata received, returning early');
       return;
     }
 
@@ -1905,7 +1799,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
     setExpressions([]);
 
     if (data.vrm) {
-      console.log('🔍 DEBUG - Storing VRM reference');
       // Extract VRM expressions after a short delay to ensure VRM is fully initialized
       setTimeout(() => {
         if (data.vrm) {
@@ -1914,7 +1807,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
       }, 100);
     } else if (data.gltf && data.gltf.scene) {
       // Plain GLB: extract morph targets / blendshapes (keyshapes)
-      console.log('🔍 DEBUG - Storing GLTF reference, extracting blendshapes');
       extractExpressions(null, data.gltf);
     }
 
@@ -1928,13 +1820,11 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
     }));
     
     // Set VRM version from metadata
-    console.log('🔍 DEBUG - Setting VRM version from metadata:', data.vrmVersion);
     setVrmVersion(data.vrmVersion || 'Unknown');
     
     // Process VRM metadata if available
     if (data.rawMetadata) {
       try {
-        console.log('Processing raw metadata from VRMViewer:', data.rawMetadata);
         
       // Create clean metadata object
         const cleanedMetadata = createCleanMetadataObject(data.rawMetadata, data.vrmVersion);
@@ -1952,7 +1842,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
         
           // Handle license info - prioritize licenseName when available
           if (data.licenseName) {
-            console.log('🔍 DEBUG - Using provided licenseName:', data.licenseName);
             cleanedMetadata.licenseName = data.licenseName;
           }
           
@@ -1961,7 +1850,6 @@ const VRMInspector = React.memo(({ glbOnly = false }) => {
           }
           
           // Debug log the cleaned metadata before setting it
-          console.log('Final cleaned metadata:', cleanedMetadata);
         
         setVrmMetadata(cleanedMetadata);
         }

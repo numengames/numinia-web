@@ -67,12 +67,10 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   useEffect(() => {
       if (!url) return;
       
-    console.log('Processing URL:', url);
     setIsLoading(true);
       
       // For direct Arweave URLs, use them directly
       if (url.includes('arweave.net')) {
-        console.log('Direct Arweave URL detected, using as is');
         setProcessedUrl(url);
         return;
       }
@@ -90,7 +88,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       .then(response => response.json())
       .then(data => {
             if (data.url) {
-          console.log('Voxel URL resolved:', data.url);
               setProcessedUrl(data.url);
             } else {
               console.error('No URL in response:', data);
@@ -103,7 +100,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       });
       } else {
       // Regular URL
-        console.log('Using original URL:', url);
         setProcessedUrl(url);
       }
   }, [url]);
@@ -157,25 +153,21 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
     const handleToggleWireframe = () => {
       // Call toggleWireframeMode to toggle state
       toggleWireframeMode();
-      console.log('Wireframe mode toggled to:', !wireframeMode);
     };
 
     const handleToggleSkeleton = () => {
       // Call toggleSkeletonMode to toggle state
       toggleSkeletonMode();
-      console.log('Skeleton mode toggled to:', !skeletonMode);
     };
 
     const handleToggleRuler = () => {
       // Call toggleRulerMode to toggle state
       toggleRulerMode();
-      console.log('Ruler mode toggled to:', !showRuler);
     };
 
     const handleToggleAnimationPanel = () => {
       // Toggle animation panel state
       setShowAnimationPanel(prev => !prev);
-      console.log('Animation panel toggled to:', !showAnimationPanel);
     };
 
     window.addEventListener('reset-camera', handleResetCamera);
@@ -388,7 +380,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         return licenseTypes[licenseType] || undefined;
       }
       
-      console.log(`Extracted ${isVRM ? 'VRM' : 'GLB'} metadata:`, metadata);
       setMetadata(metadata);
       return metadata;
     } catch (err) {
@@ -427,7 +418,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
           format: 'GLB'
         };
         
-        console.log('Returning fallback metadata:', fallbackMetadata);
         setMetadata(fallbackMetadata);
         return fallbackMetadata;
       } catch (fallbackErr) {
@@ -448,7 +438,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       }
       
       const modelType = vrm ? 'VRM' : 'GLB';
-      console.log(`Starting texture extraction from ${modelType} model`);
       
       const extractedTextures = [];
       const uniqueTextures = new Set();
@@ -542,7 +531,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         }
       });
       
-      console.log(`Texture extraction summary - Meshes: ${meshCount}, Materials: ${materialCount}, Unique textures found: ${extractedTextures.length}`);
       return extractedTextures;
     } catch (err) {
       console.error('Error extracting textures:', err);
@@ -554,7 +542,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   useEffect(() => {
     if (!canvasRef.current) return;
   
-    console.log('Initializing 3D scene');
     let isActive = true;
     const canvas = canvasRef.current;
   
@@ -1386,7 +1373,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
     
     if (!sceneRef.current || !targetScene) return;
     
-    console.log('Creating skeleton with PARENTED shapes (works for VRM and GLB)');
     
     // Get model scene - could be VRM or regular GLTF
     const scene = targetScene;
@@ -1418,7 +1404,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         }
       });
       
-      console.log(`Found ${bones.length} bones`);
       
       // Materials
       const sphereMaterial = new THREE.MeshBasicMaterial({
@@ -1478,7 +1463,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
         });
       });
       
-      console.log(`Attached ${boneMarkersRef.current.length} spheres and ${boneConnectionsRef.current.length} cones to bones`);
     } catch (err) {
       console.error('Error creating skeleton visualization:', err);
     }
@@ -1493,10 +1477,8 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
 
   // Toggle skeleton view mode
   const toggleSkeletonMode = () => {
-    console.log('Toggle skeleton called, current mode:', skeletonMode);
     const newSkeletonMode = !skeletonMode;
     setSkeletonMode(newSkeletonMode);
-    console.log('New skeleton mode:', newSkeletonMode);
     
     // Update skeleton helper visibility
     if (skeletonHelperRef.current) {
@@ -1517,10 +1499,8 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
 
   // Toggle ruler visibility mode
   const toggleRulerMode = () => {
-    console.log('Toggle ruler called, current mode:', showRuler);
     const newShowRuler = !showRuler;
     setShowRuler(newShowRuler);
-    console.log('New ruler mode:', newShowRuler);
     
     // Update ruler visibility
     if (heightMeterRef.current) {
@@ -1535,7 +1515,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       return;
     }
     
-    console.log('Resetting camera to initial view');
     
     // Smoothly animate to initial position
     const startPos = cameraRef.current.position.clone();
@@ -1684,13 +1663,11 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   useEffect(() => {
     // Don't try to load if we don't have a URL or scene isn't ready
     if (!processedUrl || !sceneRef.current) {
-      console.log('Cannot load model: missing URL or scene not initialized');
       return;
     }
     
     // Prevent reloading if the URL hasn't actually changed
     if (prevProcessedUrlRef.current === processedUrl) {
-      console.log('Skipping reload - URL has not changed:', processedUrl);
       return;
     }
     
@@ -1718,12 +1695,10 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
       setShowLoadingBar(true);
     }, 2000);
     
-    console.log('Loading VRM from URL:', processedUrl);
     let isActive = true;
     
     // Cleanup previous model (VRM or GLB)
     if (modelSceneRef.current && sceneRef.current) {
-      console.log('Removing previous model from scene');
       sceneRef.current.remove(modelSceneRef.current);
       
       // Dispose of previous model
@@ -1776,7 +1751,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
           async (gltf) => {
             if (!isActive) return;
 
-          console.log('GLTF loaded, checking for VRM data');
             const vrm = gltf.userData.vrm;
           
             // Detect if this is a VRM file or regular GLB
@@ -1784,17 +1758,13 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
             const fileExtension = getExtensionFromUrl(processedUrl);
             
             if (isVRM) {
-              console.log('VRM model loaded successfully');
             } else {
-              console.log('GLB/GLTF model loaded (non-VRM)');
             }
             
             // Extract animations from the GLB/GLTF file
             if (gltf.animations && gltf.animations.length > 0) {
-              console.log(`Found ${gltf.animations.length} animations in GLB:`, gltf.animations.map(a => a.name));
               setGlbAnimations(gltf.animations);
             } else {
-              console.log('No animations found in GLB');
               setGlbAnimations([]);
             }
           
@@ -1915,7 +1885,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
               cameraRef.current.far = Math.max(100, controlsRef.current.maxDistance * 3);
               cameraRef.current.updateProjectionMatrix();
               
-              console.log(`Model dimensions: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}, Camera distance: ${finalDistance.toFixed(2)}, Range: ${controlsRef.current.minDistance.toFixed(2)}-${controlsRef.current.maxDistance.toFixed(2)}, Clipping: ${cameraRef.current.near.toFixed(2)}-${cameraRef.current.far.toFixed(2)}`);
               
               if (isFirstLoad) {
                 // First load: Set position with initial angle (right and up)
@@ -1940,7 +1909,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
                 
                 setIsFirstLoad(false);
                 
-                console.log(`First load - camera positioned at distance: ${finalDistance.toFixed(2)}`);
               } else {
                 // Subsequent loads: Only adjust distance, keep current angle
                 // Get current camera direction (normalized)
@@ -1984,7 +1952,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
                 
                 animateCamera();
                 
-                console.log(`Reframing - maintaining angle, adjusting distance from ${currentDistance.toFixed(2)} to ${finalDistance.toFixed(2)}`);
               }
             }
             
@@ -2050,7 +2017,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
             
             // Extract and share textures (works for both VRM and GLB)
             const textures = extractTextures(vrm, gltf);
-            console.log(`Texture extraction complete: found ${textures.length} textures`);
             // Always call the callback, even with empty array, so UI knows extraction completed
             if (typeof onTexturesLoad === 'function') {
               onTexturesLoad(textures);
@@ -2091,7 +2057,6 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
           (progress) => {
           const percentage = progress.total ? Math.round((progress.loaded / progress.total) * 100) : 0;
           setLoadingProgress(percentage);
-          console.log(`Loading progress: ${percentage}%`);
           },
           (error) => {
           console.error('Error loading VRM model:', error);
@@ -2128,16 +2093,13 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   useEffect(() => {
     if (loadingIndicatorRef.current) {
       loadingIndicatorRef.current.visible = isLoading;
-      console.log('Loading state changed:', isLoading);
     }
   }, [isLoading]);
 
   // Toggle wireframe mode function
   const toggleWireframeMode = () => {
-    console.log('Toggle wireframe called, current mode:', wireframeMode);
     const newWireframeMode = !wireframeMode;
     setWireframeMode(newWireframeMode);
-    console.log('New wireframe mode:', newWireframeMode);
     
     // Use modelSceneRef instead of vrmRef to support both VRM and GLB
     if (!modelSceneRef.current) return;

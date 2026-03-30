@@ -48,13 +48,11 @@ export const GLBInspector = () => {
 
   // Handle metadata load from VRMViewer
   const handleMetadataLoad = useCallback((data) => {
-    console.log('GLB metadata loaded:', data);
     setMetadata(data);
   }, []);
 
   // Handle textures load from VRMViewer
   const handleTexturesLoad = useCallback((textureData) => {
-    console.log('GLB textures loaded:', textureData);
     setTextures(textureData || []);
   }, []);
 

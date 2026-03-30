@@ -61,7 +61,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    console.log('Initializing 3D scene');
     let isActive = true;
     const canvas = canvasRef.current;
     let resizeObserver = null;
@@ -923,7 +922,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
     
     // FIXED: Check for repeated loading of the same URL using the ref properly
     if (prevUrlRef.current === url) {
-      console.log('🔍 DEBUG - Preventing reload of the same URL:', url);
       return;
     }
     
@@ -931,7 +929,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
     prevUrlRef.current = url;
     
     // Show loading indicator
-    console.log('🔍 DEBUG - Loading process starting with URL:', url);
     loadingIndicatorRef.current.visible = true;
     setIsLoading(true);
     setError(null);
@@ -939,7 +936,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
     
     // Clean up previous model (VRM or plain GLB)
     if (vrmRef.current) {
-      console.log('🔍 DEBUG - Cleaning up previous VRM model');
       if (vrmRef.current.expressionManager) {
         Object.values(vrmRef.current.expressionManager.expressions || {}).forEach(expression => {
           if (expression && typeof expression.applyWeight === 'function') {
@@ -959,7 +955,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       vrmRef.current = null;
       modelSceneRef.current = null;
     } else if (modelSceneRef.current) {
-      console.log('🔍 DEBUG - Cleaning up previous GLB model');
       sceneRef.current.remove(modelSceneRef.current);
       modelSceneRef.current.traverse((node) => {
         if (node.geometry) node.geometry.dispose();
@@ -985,22 +980,18 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       return new VRMLoaderPlugin(parser);
     });
     
-    console.log('🔍 DEBUG - GLTFLoader created, about to load VRM');
     
     // Load the VRM
     loader.load(
       url,
       async (gltf) => {
-        console.log('🔍 DEBUG - GLTF loaded successfully, processing data');
         try {
           // Get VRM instance from userData
           const vrm = gltf.userData.vrm;
           
-          console.log('🔍 DEBUG - VRM data from GLTF:', vrm ? 'Found' : 'Not found');
           
           if (!vrm) {
             // Plain GLB/GLTF: display the model without VRM-specific features
-            console.log('Plain GLB/GLTF detected, displaying model');
             if (gltf.animations && gltf.animations.length > 0) {
               setGlbAnimations(gltf.animations);
             } else {
@@ -1114,7 +1105,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
           vrm.updateExpression = updateExpression;
           originalMaterialsRef.current.clear();
           if (vrm.expressionManager) {
-            console.log('🔍 DEBUG - Initializing expression manager');
             if (typeof vrm.expressionManager.setup === 'function') {
               vrm.expressionManager.setup();
             }
@@ -1135,12 +1125,9 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
           }
 
           // Extract and send metadata (async)
-          console.log('🔍 DEBUG - Extracting VRM metadata');
           extractVRMMetadata(vrm, gltf).then((metadata) => {
-            console.log('🔍 DEBUG - Extracted metadata:', metadata);
             
             if (metadata && onMetadataLoad) {
-              console.log('🔍 DEBUG - Calling onMetadataLoad with metadata and VRM instance');
               onMetadataLoad({
                 ...metadata,
                 vrm,
@@ -1232,7 +1219,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
           
           // Add VRM to scene
           sceneRef.current.add(vrm.scene);
-          console.log('🔍 DEBUG - VRM added to scene');
           
           // Setup skeleton helper if needed
           if (skeletonMode) {
@@ -1277,7 +1263,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
               initialCameraTargetRef.current = initialTarget.clone();
               setIsFirstLoad(false);
               
-              console.log(`First load - camera positioned at distance: ${finalDistance.toFixed(2)}`);
             } else {
               // Subsequent loads: Only adjust distance, keep current angle
               // Get current camera direction (normalized)
@@ -1321,7 +1306,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
               
               animateCamera();
               
-              console.log(`Reframing - maintaining angle, adjusting distance from ${currentDistance.toFixed(2)} to ${finalDistance.toFixed(2)}`);
             }
           }
           
@@ -1347,7 +1331,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       },
       (progress) => {
         const percent = Math.floor((progress.loaded / progress.total) * 100);
-        console.log(`Loading VRM: ${percent}%`);
       },
       (error) => {
         console.error('Error loading VRM:', error);
@@ -1363,7 +1346,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
     
     // Safety net: force hide loading indicator after 30 seconds no matter what
     const safetyTimeout = setTimeout(() => {
-      console.log('🔍 DEBUG - Safety timeout reached, forcing loading indicator off');
       if (loadingIndicatorRef.current) {
         loadingIndicatorRef.current.visible = false;
       }
@@ -1381,10 +1363,8 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       
       // Handle skeleton helper visibility (works for both VRM and GLB)
       if (skeletonMode && !skeletonHelperRef.current) {
-        console.log('🔍 DEBUG - Creating skeleton in useEffect');
         createSkeletonVisualization(modelSceneRef.current);
       } else if (!skeletonMode && skeletonHelperRef.current) {
-        console.log('🔍 DEBUG - Removing skeleton in useEffect');
         sceneRef.current.remove(skeletonHelperRef.current);
         skeletonHelperRef.current = null;
         
@@ -1416,7 +1396,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
   // Extract VRM metadata - specialized for Inspector
   const extractVRMMetadata = async (vrm, gltf) => {
     try {
-      console.log('🔍 DEBUG - Extracting metadata from VRM');
       
       // Get raw metadata from VRM instance
       const rawMetadata = vrm.meta;
@@ -1425,7 +1404,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       let gltfRawMetadata = null;
       if (gltf.parser?.json?.extensions?.VRM?.meta) {
         gltfRawMetadata = gltf.parser.json.extensions.VRM.meta;
-        console.log('🔍 DEBUG - Found metadata in GLTF JSON:', gltfRawMetadata);
       }
       
       // Use GLTF JSON metadata if available (it has the texture index), otherwise use VRM meta
@@ -1459,7 +1437,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       // Calculate avatar height using bounding box
       const bbox = new THREE.Box3().setFromObject(vrm.scene);
       avatarHeight = bbox.max.y - bbox.min.y;
-      console.log('🔍 DEBUG - Calculated avatar height:', avatarHeight.toFixed(2), 'units');
       
       vrm.scene.traverse((obj) => {
         if (obj.isMesh) {
@@ -1486,29 +1463,18 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       // Extract thumbnail if available
       let thumbnail = null;
       try {
-        console.log('🔍 DEBUG - Metadata source texture field:', metadataSource.texture, 'type:', typeof metadataSource.texture);
-        console.log('🔍 DEBUG - Metadata source thumbnailImage field:', metadataSource.thumbnailImage);
-        console.log('🔍 DEBUG - VRM instance:', vrm);
-        console.log('🔍 DEBUG - VRM meta object:', vrm.meta);
-        console.log('🔍 DEBUG - GLTF parser available:', !!gltf.parser);
-        console.log('🔍 DEBUG - GLTF textures array:', gltf.textures?.length);
-        console.log('🔍 DEBUG - GLTF parser json textures:', gltf.parser?.json?.textures?.length);
-        console.log('🔍 DEBUG - GLTF parser json images:', gltf.parser?.json?.images?.length);
         
         // First, check if VRM library has already processed the thumbnail
         if (vrm.meta && vrm.meta.texture && vrm.meta.texture instanceof THREE.Texture) {
           thumbnail = vrm.meta.texture;
-          console.log('🔍 DEBUG - Found thumbnail directly in vrm.meta.texture:', thumbnail);
         }
         
         // VRM 0.x: thumbnail is stored in meta.texture as a texture index
         if (metadataSource.texture !== undefined && metadataSource.texture !== null && !thumbnail) {
           const textureIndex = typeof metadataSource.texture === 'number' ? metadataSource.texture : metadataSource.texture;
-          console.log('🔍 DEBUG - Processing texture index:', textureIndex);
           
           // If it's already a THREE.Texture, use it directly
           if (textureIndex instanceof THREE.Texture) {
-            console.log('🔍 DEBUG - Texture index is already a THREE.Texture');
             thumbnail = textureIndex;
           } else if (typeof textureIndex === 'number') {
             // Try multiple methods to get the texture
@@ -1520,10 +1486,8 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                 // Check if it's a promise
                 if (texturePromise && typeof texturePromise.then === 'function') {
                   // It's async, we'll handle it below
-                  console.log('🔍 DEBUG - getDependency returned a Promise, will await it');
                 } else {
                   thumbnail = texturePromise;
-                  console.log('🔍 DEBUG - Got thumbnail via getDependency (sync):', thumbnail);
                 }
               } catch (err) {
                 console.warn('🔍 DEBUG - getDependency failed:', err);
@@ -1533,7 +1497,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
             // Method 2: Try to find in gltf.textures array
             if (!thumbnail && gltf.textures && Array.isArray(gltf.textures) && gltf.textures[textureIndex]) {
               thumbnail = gltf.textures[textureIndex];
-              console.log('🔍 DEBUG - Got thumbnail from gltf.textures array:', thumbnail);
             }
             
             // Method 3: Access through GLTF JSON structure and load the texture explicitly
@@ -1542,12 +1505,10 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
               if (textures[textureIndex]) {
                 const textureInfo = textures[textureIndex];
                 const imageIndex = textureInfo.source;
-                console.log('🔍 DEBUG - Texture info from JSON:', textureInfo, 'imageIndex:', imageIndex);
                 
                 // Try to get the image first
                 if (gltf.parser.json.images && gltf.parser.json.images[imageIndex]) {
                   const imageData = gltf.parser.json.images[imageIndex];
-                  console.log('🔍 DEBUG - Image data from JSON:', imageData);
                   
                   // Try to get the actual image element from various sources
                   let image = null;
@@ -1555,14 +1516,12 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                   // Check parser cache
                   if (gltf.parser.cache && gltf.parser.cache.images && gltf.parser.cache.images[imageIndex]) {
                     image = gltf.parser.cache.images[imageIndex];
-                    console.log('🔍 DEBUG - Found image in parser cache:', image);
                   }
                   
                   // Try getDependency for image
                   if (!image && typeof gltf.parser.getDependency === 'function') {
                     try {
                       image = gltf.parser.getDependency('image', imageIndex);
-                      console.log('🔍 DEBUG - Got image via getDependency:', image);
                     } catch (err) {
                       console.warn('🔍 DEBUG - getDependency failed for image:', err);
                     }
@@ -1579,10 +1538,8 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                             // Check various ways the image index might be stored
                             if (texture.userData && texture.userData.gltfImageIndex === imageIndex) {
                               image = texture.image;
-                              console.log('🔍 DEBUG - Found image from scene texture:', image);
                             } else if (texture.image && texture.image.userData && texture.image.userData.gltfImageIndex === imageIndex) {
                               image = texture.image;
-                              console.log('🔍 DEBUG - Found image from scene texture image userData:', image);
                             }
                           }
                         });
@@ -1599,7 +1556,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                                   materials.forEach(material => {
                                     if (material && material.map && material.map.image === image) {
                                       thumbnail = material.map;
-                                      console.log('🔍 DEBUG - Found existing texture using this image:', thumbnail);
                                     }
                                   });
                                 }
@@ -1612,7 +1568,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                                 // Set proper texture settings
                                 thumbnail.flipY = false;
                                 thumbnail.format = THREE.RGBAFormat;
-                                console.log('🔍 DEBUG - Created new texture from image:', thumbnail);
                               }
                             } else {
                               // Last resort: try to load the image directly from the buffer
@@ -1627,7 +1582,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                                   texture.flipY = false;
                                   texture.needsUpdate = true;
                                   thumbnail = texture;
-                                  console.log('🔍 DEBUG - Created texture from loaded image element:', thumbnail);
                                   // Update metadata
                                   if (onMetadataLoad) {
                                     const currentMetadata = {
@@ -1649,7 +1603,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                                 imageElement.src = imageInfo.uri;
                               } else if (imageInfo && imageInfo.bufferView !== undefined) {
                                 // Image is in binary buffer - need to extract it
-                                console.log('🔍 DEBUG - Image is in bufferView, would need to extract from binary');
                               }
                             }
                 }
@@ -1659,7 +1612,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
         } else if (metadataSource.thumbnailImage !== undefined && metadataSource.thumbnailImage !== null) {
           // VRM 1.0: thumbnailImage is an index into the GLTF images array
           const thumbnailImageIndex = rawMetadata.thumbnailImage;
-          console.log('🔍 DEBUG - Processing thumbnailImage index:', thumbnailImageIndex);
           
           if (typeof thumbnailImageIndex === 'number' && gltf.parser) {
             try {
@@ -1667,7 +1619,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
               if (typeof gltf.parser.getDependency === 'function') {
                 try {
                   const image = gltf.parser.getDependency('image', thumbnailImageIndex);
-                  console.log('🔍 DEBUG - Got thumbnail image via getDependency:', image);
                   
                   if (image) {
                     // Check if there's already a texture using this image
@@ -1676,7 +1627,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                     if (textureIndex !== -1) {
                       try {
                         thumbnail = gltf.parser.getDependency('texture', textureIndex);
-                        console.log('🔍 DEBUG - Got thumbnail texture from image index:', thumbnail);
                       } catch (err) {
                         console.warn('Failed to get texture from image index, creating new texture:', err);
                         // Create a new texture from the image
@@ -1697,7 +1647,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
               // Method 2: Try parser cache
               if (!thumbnail && gltf.parser.cache && gltf.parser.cache.images && gltf.parser.cache.images[thumbnailImageIndex]) {
                 const image = gltf.parser.cache.images[thumbnailImageIndex];
-                console.log('🔍 DEBUG - Found image in parser cache:', image);
                 thumbnail = new THREE.Texture(image);
                 thumbnail.needsUpdate = true;
               }
@@ -1712,7 +1661,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
                         const texture = material.map;
                         if (texture.userData && texture.userData.gltfImageIndex === thumbnailImageIndex) {
                           thumbnail = texture;
-                          console.log('🔍 DEBUG - Found thumbnail texture in scene:', thumbnail);
                         }
                       }
                     });
@@ -1725,16 +1673,13 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
           }
         }
         
-        console.log('🔍 DEBUG - Final thumbnail result:', thumbnail);
       } catch (error) {
         console.warn('Error extracting thumbnail:', error);
       }
       
       // If we have a pending promise from getDependency, await it
       if (thumbnail && typeof thumbnail.then === 'function') {
-        console.log('🔍 DEBUG - Awaiting thumbnail promise...');
         thumbnail = await thumbnail;
-        console.log('🔍 DEBUG - Got thumbnail from promise:', thumbnail);
       }
       
       // Create metadata object to return
@@ -1749,7 +1694,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
         gltf // Pass the GLTF instance
       };
       
-      console.log('🔍 DEBUG - Extracted metadata:', metadata);
       return metadata;
     } catch (err) {
       console.error('Error extracting VRM metadata:', err);
@@ -1759,10 +1703,8 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
 
   // Toggle wireframe mode - use modelSceneRef to support both VRM and GLB (match gallery VRMViewer)
   const toggleWireframeMode = () => {
-    console.log('Toggle wireframe called, current mode:', wireframeMode);
     const newMode = !wireframeMode;
     setWireframeMode(newMode);
-    console.log('New wireframe mode:', newMode);
     
     if (!modelSceneRef.current) return;
     
@@ -1806,7 +1748,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
       });
       
       if (newMode && modelSceneRef.current && !skeletonHelperRef.current) {
-        console.log('🔍 DEBUG - Creating skeleton in toggleSkeletonMode');
         createSkeletonVisualization(modelSceneRef.current);
       } else if (!newMode && skeletonHelperRef.current && sceneRef.current) {
         sceneRef.current.remove(skeletonHelperRef.current);
@@ -1867,7 +1808,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
     
     const scene = targetScene;
     
-    console.log('Creating skeleton with PARENTED shapes (works for VRM and GLB)');
     
     try {
       const helper = new THREE.SkeletonHelper(scene);
@@ -1890,7 +1830,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
         }
       });
       
-      console.log(`Found ${bones.length} bones`);
       
       // Materials
       const sphereMaterial = new THREE.MeshBasicMaterial({
@@ -1950,7 +1889,6 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
         });
       });
       
-      console.log(`Attached ${boneMarkersRef.current.length} spheres and ${boneConnectionsRef.current.length} cones to bones`);
     } catch (err) {
       console.error('Error creating skeleton visualization:', err);
     }
@@ -1971,10 +1909,8 @@ export const VRMInspectorViewer = ({ url, onMetadataLoad }) => {
 
   // Toggle ruler visibility mode
   const toggleRulerMode = () => {
-    console.log('Toggle ruler called, current mode:', showRuler);
     const newShowRuler = !showRuler;
     setShowRuler(newShowRuler);
-    console.log('New ruler mode:', newShowRuler);
     
     // Update ruler visibility
     if (heightMeterRef.current) {
