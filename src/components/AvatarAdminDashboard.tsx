@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Eye, EyeOff, Loader2, Pencil, Check, X } from 'lucide-react';
 import AdminTableView from '@/components/admin/AdminTableView';
+import { AssetDetailPanel } from '@/components/admin/AssetDetailPanel';
 import {
   Card,
   CardContent,
@@ -38,6 +39,7 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<Avatar | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -144,6 +146,30 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
     }
   };
 
+  const saveAsset = async (avatarId: string, updates: Record<string, unknown>) => {
+    markBusy(avatarId);
+    try {
+      const response = await fetch(`/api/assets/${avatarId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to save');
+      setAvatars(prev =>
+        prev.map(a => a.id === avatarId ? { ...a, ...updates } as Avatar : a)
+      );
+      // Update selected asset too
+      setSelectedAsset(prev =>
+        prev && prev.id === avatarId ? { ...prev, ...updates } as Avatar : prev
+      );
+      showStatus('Saved', 'success');
+    } catch (err) {
+      showStatus(err instanceof Error ? err.message : 'Failed to save', 'error');
+    } finally {
+      unmarkBusy(avatarId);
+    }
+  };
+
   const startEditing = (avatar: Avatar) => {
     setEditingId(avatar.id);
     setEditValue(avatar.name);
@@ -192,7 +218,9 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
   });
 
   return (
-    <div className="min-h-screen bg-cream p-6">
+    <div className="min-h-screen bg-cream flex">
+      {/* Main content */}
+      <div className={`flex-1 p-6 transition-all ${selectedAsset ? 'max-w-[calc(100%-400px)]' : ''}`}>
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Asset Management</h1>
@@ -266,6 +294,7 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
                 busyIds={busyIds}
                 onToggleVisibility={toggleVisibility}
                 onDelete={handleDelete}
+                onSelectAsset={setSelectedAsset}
               />
             ) : filteredAvatars.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
@@ -396,6 +425,18 @@ export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMod
           </CardContent>
         </Card>
       </div>
+      </div>
+
+      {/* Detail panel — slides in from right */}
+      {selectedAsset && (
+        <AssetDetailPanel
+          avatar={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          onSave={saveAsset}
+          onDelete={(id) => { handleDelete(id); setSelectedAsset(null); }}
+          onToggleVisibility={toggleVisibility}
+        />
+      )}
     </div>
   );
 }
