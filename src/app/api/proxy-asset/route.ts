@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
       'assets.numinia.store',
       'assetsdev.numinia.store',
       'assets.opensourceavatars.com',
-      'arweave.net'
+      'arweave.net',
+      'r2.dev',
+      'r2.cloudflarestorage.com',
+      'raw.githubusercontent.com',
     ];
 
     const urlObj = new URL(url);
