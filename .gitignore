@@ -67,6 +67,7 @@ src/app/test/
 
 # Utility scripts that may contain sensitive information
 /scripts/*.js
+!/scripts/copy-docs.js
 /src/scripts/*.ts
 /src/scripts/*.js
 
