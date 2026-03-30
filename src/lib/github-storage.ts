@@ -185,6 +185,8 @@ async function fetchData<T = unknown>(path: string): Promise<T> {
  * @param commitMessage Commit message for the update
  * @returns Success status
  */
+const MAX_RETRIES = 3;
+
 async function updateData(
   path: string,
   data: unknown,
@@ -194,64 +196,74 @@ async function updateData(
     throw new Error('GitHub token is not configured. Set GITHUB_TOKEN environment variable.');
   }
 
-  try {
-    // First, get the current file (if it exists) to get its SHA
-    let fileSha: string | undefined;
-    
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const fileResponse = await fetch(
+      // Get current file SHA (optimistic lock token)
+      let fileSha: string | undefined;
+
+      try {
+        const fileResponse = await fetch(
+          `${API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
+          {
+            headers: {
+              'Authorization': `token ${GITHUB_TOKEN}`,
+              'Accept': 'application/vnd.github.v3+json',
+            },
+          }
+        );
+
+        if (fileResponse.ok) {
+          const fileData = await fileResponse.json();
+          fileSha = fileData.sha;
+        }
+      } catch {
+        // File might not exist yet, which is fine
+      }
+
+      const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
+
+      const updateResponse = await fetch(
         `${API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
         {
+          method: 'PUT',
           headers: {
             'Authorization': `token ${GITHUB_TOKEN}`,
             'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            message: commitMessage,
+            content,
+            sha: fileSha,
+            branch: GITHUB_BRANCH,
+          }),
         }
       );
-      
-      if (fileResponse.ok) {
-        const fileData = await fileResponse.json();
-        fileSha = fileData.sha;
+
+      if (updateResponse.status === 409 && attempt < MAX_RETRIES - 1) {
+        // Conflict: file was modified by another request. Retry with fresh SHA.
+        dataCache.clear();
+        continue;
       }
+
+      if (!updateResponse.ok) {
+        const error = await updateResponse.json();
+        throw new Error(`GitHub API error (${updateResponse.status}): ${JSON.stringify(error)}`);
+      }
+
+      // Invalidate ALL cache after write — other reads (projects.json, etc.)
+      // may depend on the changed data. Conservative but safe.
+      dataCache.clear();
+      return true;
     } catch (error) {
-      // File might not exist yet, which is fine
-    }
-    
-    // Prepare the update content
-    const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
-    
-    // Create or update the file
-    const updateResponse = await fetch(
-      `${API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: commitMessage,
-          content,
-          sha: fileSha,
-          branch: GITHUB_BRANCH,
-        }),
+      if (attempt === MAX_RETRIES - 1) {
+        console.error(`Error updating data in GitHub: ${path}`, error);
+        throw error;
       }
-    );
-    
-    if (!updateResponse.ok) {
-      const error = await updateResponse.json();
-      throw new Error(`GitHub API error: ${JSON.stringify(error)}`);
     }
-    
-    // Invalidate ALL cache after write — other reads (projects.json, etc.)
-    // may depend on the changed data. Conservative but safe.
-    dataCache.clear();
-    return true;
-  } catch (error) {
-    console.error(`Error updating data in GitHub: ${path}`, error);
-    throw error;
   }
+
+  return false;
 }
 
 /**
