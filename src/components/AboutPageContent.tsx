@@ -87,16 +87,16 @@ export function AboutPageContent() {
     };
 
     const description = 'Discover 991+ free CC0 3D assets in GLB format. Props, environments, and structures from Polygonal Mind and more. Use in Blender, Unity, Unreal, Three.js.';
-    const ogImageUrl = '/api/og?type=default&title=About Open Source 3D Assets&description=Free CC0 GLB 3D Models';
+    const ogImageUrl = '/api/og?type=default&title=About Numinia Digital Goods&description=Free CC0 3D Models';
     updateMetaTag('description', description);
-    updateMetaTag('og:title', 'About - Open Source 3D Assets');
+    updateMetaTag('og:title', 'About - Numinia Digital Goods');
     updateMetaTag('og:description', description);
-    updateMetaTag('og:image', `https://opensource3dassets.com${ogImageUrl}`);
+    updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
     updateMetaTag('og:url', typeof window !== 'undefined' ? window.location.href : '');
     updateMetaTag('twitter:card', 'summary_large_image');
-    updateMetaTag('twitter:title', 'About - Open Source 3D Assets');
+    updateMetaTag('twitter:title', 'About - Numinia Digital Goods');
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `https://opensource3dassets.com${ogImageUrl}`);
+    updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
   }, []);
 
   const howItWorksSteps = t('about.howItWorks.steps', { returnObjects: true });
@@ -243,7 +243,7 @@ export function AboutPageContent() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center gap-2"
-                    aria-label="ToxSam website"
+                    aria-label="Numinia website"
                   >
                     <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 
-const GITHUB_OWNER = process.env.GITHUB_REPO_OWNER || 'ToxSam';
-const GITHUB_REPO = process.env.GITHUB_REPO_NAME || 'open-source-3D-assets';
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+const GITHUB_OWNER = env.github.repoOwner;
+const GITHUB_REPO = env.github.repoName;
+const GITHUB_BRANCH = env.github.branch;
 const RAW_CONTENT_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
 
 interface Project {

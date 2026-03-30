@@ -6,10 +6,10 @@ import type { Metadata } from 'next';
 import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://opensource3dassets.com'),
+  metadataBase: new URL('https://numinia.store'),
   title: {
-    default: 'Numinia Open Source 3D Assets - Free GLB Models for Games, VR & 3D Projects',
-    template: '%s | Numinia Open Source 3D Assets',
+    default: 'Numinia Digital Goods - Free CC0 3D Assets for Games, VR & 3D Projects',
+    template: '%s | Numinia Digital Goods',
   },
   description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed open-source 3D models and environments. No attribution required.',
   keywords: [
@@ -27,18 +27,18 @@ export const metadata: Metadata = {
     '3Dモデル',
     'オープンソース3Dアセット',
   ],
-  authors: [{ name: 'ToxSam', url: 'https://toxsam.com' }],
-  creator: 'ToxSam',
-  publisher: 'Open Source 3D Assets',
-  applicationName: 'Open Source 3D Assets',
+  authors: [{ name: 'Numinia', url: 'https://numinia.store' }],
+  creator: 'Numinia',
+  publisher: 'Numinia Digital Goods',
+  applicationName: 'Numinia Digital Goods',
   
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://opensource3dassets.com',
-    title: 'Open Source 3D Assets - Free GLB Models',
-    description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed.',
-    siteName: 'Numinia Open Source 3D Assets',
+    url: 'https://numinia.store',
+    title: 'Numinia Digital Goods - Free CC0 3D Assets',
+    description: 'Download free, high-quality 3D assets for games, VR, and 3D projects. CC0 licensed.',
+    siteName: 'Numinia Digital Goods',
   },
   
   twitter: {

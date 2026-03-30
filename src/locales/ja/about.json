@@ -81,24 +81,24 @@
           "安定したホスティング（GitHub、IPFS、Arweaveなど）"
         ]
       },
-      "submitVia": "提出方法：[GitHub Discussions](https://github.com/ToxSam/open-source-3D-assets/discussions)"
+      "submitVia": "提出方法：[GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions)"
     },
     "contributeCode": {
       "title": "コードを貢献",
       "description": "バグを見つけましたか？機能を追加したいですか？",
-      "link": "Issueを開く → [GitHub Issues](https://github.com/ToxSam/os3a-gallery/issues)"
+      "link": "Issueを開く → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
     },
     "giveFeedback": {
       "title": "フィードバックを提供",
       "description": "改善のアイデアがありますか？お知らせください！",
-      "link": "フィードバックを共有 → [GitHub Issues](https://github.com/ToxSam/os3a-gallery/issues)"
+      "link": "フィードバックを共有 → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
     }
   },
   "connect": {
     "title": "接続",
     "website": "ウェブサイト",
-    "websiteUrl": "https://toxsam.com",
+    "websiteUrl": "https://numinia.store",
     "twitter": "Twitter",
-    "twitterUrl": "https://twitter.com/toxsam"
+    "twitterUrl": "https://twitter.com/numinia_xyz"
   }
 }

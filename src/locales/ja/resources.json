@@ -7,8 +7,8 @@
       "title": "Polygonal Mindコレクション（CC0）",
       "name": "17のテーマコレクション – 991以上の無料3Dアセット",
       "license": "ライセンス：CC0（パブリックドメイン）– 自由に使用可能、帰属表示不要",
-      "storage": "ストレージ：GitHub（open-source-3D-assets）",
-      "batchDownload": "ソース：open-source-3D-assetsリポジトリ",
+      "storage": "ストレージ：GitHub（numinia-digital-goods-data）",
+      "batchDownload": "ソース：numinia-digital-goods-dataリポジトリ",
       "includes": "含まれるもの：GLBファイル、小物、環境、構造物"
     },
     "community": {
@@ -79,7 +79,7 @@
         "オープンソースコンテンツの保存に最適"
       ]
     },
-    "note": "一部のアセットソースはArDriveやIPFSで永続保存している場合があります。メインのレジストリはopen-source-3D-assetsのGitHubリポジトリです。"
+    "note": "一部のアセットソースはArDriveやIPFSで永続保存している場合があります。メインのレジストリはnuminia-digital-goods-dataのGitHubリポジトリです。"
   },
   "philosophy": {
     "title": "オープンソースの理念",
@@ -99,8 +99,8 @@
     "questions": "ライセンスについて質問がありますか？各アセットページのコレクション詳細を確認してください。",
     "building": "何かを作成していますか？JSONデータは無料で使用できます – 独自のアセットブラウザを構築してください！",
     "contribute": "貢献したいですか？GitHubでコレクションを提出してください。",
-    "contributeLink": "https://github.com/ToxSam/open-source-3D-assets",
-    "contact": "連絡先：@ToxSam",
-    "contactLink": "https://x.com/toxsam"
+    "contributeLink": "https://github.com/PabloFMM/numinia-digital-goods-data",
+    "contact": "連絡先：@numinia_xyz",
+    "contactLink": "https://x.com/numinia_xyz"
   }
 }

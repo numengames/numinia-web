@@ -11,9 +11,9 @@ export function WebsiteSchema({ locale = 'en' }: WebsiteSchemaProps) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Open Source 3D Assets',
-    alternateName: locale === 'ja' ? 'オープンソース3Dアセット' : 'OS3A',
-    url: `https://opensource3dassets.com/${locale}`,
+    name: 'Numinia Digital Goods',
+    alternateName: locale === 'ja' ? 'ヌミニア・デジタルグッズ' : 'Numinia',
+    url: `https://numinia.store/${locale}`,
     description:
       locale === 'en'
         ? 'Download 991+ free, high-quality 3D GLB assets for games, VR, 3D projects. CC0 licensed open-source models, props, and environments for any project.'
@@ -22,7 +22,7 @@ export function WebsiteSchema({ locale = 'en' }: WebsiteSchemaProps) {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `https://opensource3dassets.com/${locale}/gallery?search={search_term_string}`,
+        urlTemplate: `https://numinia.store/${locale}/gallery?search={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },
@@ -44,22 +44,22 @@ export function OrganizationSchema({ locale = 'en' }: OrganizationSchemaProps) {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Open Source 3D Assets',
-    url: 'https://opensource3dassets.com',
-    logo: 'https://opensource3dassets.com/logo.png',
+    name: 'Numinia Digital Goods',
+    url: 'https://numinia.store',
+    logo: 'https://numinia.store/logo.png',
     description:
       locale === 'en'
         ? 'A platform dedicated to providing high-quality, freely available 3D assets for creators, developers, and users worldwide.'
         : '世界中のクリエイター、開発者、ユーザーに高品質で自由に利用できる3Dアセットを提供することに特化したプラットフォーム。',
     founder: {
-      '@type': 'Person',
-      name: 'ToxSam',
-      url: 'https://toxsam.com',
+      '@type': 'Organization',
+      name: 'Numen Games',
+      url: 'https://numen.games',
     },
     sameAs: [
-      'https://twitter.com/toxsam',
-      'https://github.com/ToxSam/open-source-3D-assets',
-      'https://github.com/ToxSam/os3a-gallery',
+      'https://twitter.com/numinia_xyz',
+      'https://github.com/PabloFMM/numinia-digital-goods',
+      'https://github.com/PabloFMM/numinia-digital-goods-data',
     ],
   };
 
@@ -90,15 +90,15 @@ export function AvatarProductSchema({ avatar, locale = 'en' }: AvatarProductSche
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'DigitalDocument',
-    '@id': `https://opensource3dassets.com/${locale}/assets/${avatar.id}`,
+    '@id': `https://numinia.store/${locale}/assets/${avatar.id}`,
     name: avatar.name,
     description:
       avatar.description ||
       (locale === 'en'
         ? `Free ${avatar.format.toUpperCase()} 3D asset from the ${avatar.project} collection. Perfect for games, VR, and 3D projects.`
         : `${avatar.project}コレクションの無料${avatar.format.toUpperCase()} 3Dアセット。ゲーム、VR、3Dプロジェクト用に最適。`),
-    image: avatar.thumbnailUrl || 'https://opensource3dassets.com/og-image.png',
-    url: `https://opensource3dassets.com/${locale}/assets/${avatar.id}`,
+    image: avatar.thumbnailUrl || 'https://numinia.store/og-image.png',
+    url: `https://numinia.store/${locale}/assets/${avatar.id}`,
     dateCreated: avatar.createdAt,
     encodingFormat: avatar.format === 'vrm' ? 'model/gltf-binary' : 'model/fbx',
     fileFormat: avatar.format.toUpperCase(),
@@ -116,8 +116,8 @@ export function AvatarProductSchema({ avatar, locale = 'en' }: AvatarProductSche
     isAccessibleForFree: true,
     creator: {
       '@type': 'Organization',
-      name: 'Open Source 3D Assets',
-      url: 'https://opensource3dassets.com',
+      name: 'Numinia Digital Goods',
+      url: 'https://numinia.store',
     },
     offers: {
       '@type': 'Offer',
@@ -126,7 +126,7 @@ export function AvatarProductSchema({ avatar, locale = 'en' }: AvatarProductSche
       availability: 'https://schema.org/InStock',
       seller: {
         '@type': 'Organization',
-        name: 'Open Source 3D Assets',
+        name: 'Numinia Digital Goods',
       },
     },
     additionalProperty: [
@@ -200,7 +200,7 @@ export function CollectionPageSchema({ totalItems, locale = 'en' }: CollectionPa
       locale === 'en'
         ? `Browse our collection of ${totalItems}+ free, open-source 3D GLB assets`
         : `${totalItems}以上の無料オープンソース3D GLBアセットのコレクションを閲覧`,
-    url: `https://opensource3dassets.com/${locale}/gallery`,
+    url: `https://numinia.store/${locale}/gallery`,
     numberOfItems: totalItems,
     about: {
       '@type': 'Thing',

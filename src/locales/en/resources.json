@@ -7,8 +7,8 @@
       "title": "Polygonal Mind Collections (CC0)",
       "name": "17 themed collections – 991+ free 3D assets",
       "license": "License: CC0 (Public Domain) – use however you want, no attribution needed",
-      "storage": "Storage: GitHub (open-source-3D-assets)",
-      "batchDownload": "Source: open-source-3D-assets repository",
+      "storage": "Storage: GitHub (numinia-digital-goods-data)",
+      "batchDownload": "Source: numinia-digital-goods-data repository",
       "includes": "Includes: GLB files, props, environments, structures"
     },
     "community": {
@@ -79,7 +79,7 @@
         "Perfect for preserving open source content"
       ]
     },
-    "note": "Some asset sources may use ArDrive or IPFS for permanent storage. Our main registry is the open-source-3D-assets GitHub repository."
+    "note": "Some asset sources may use ArDrive or IPFS for permanent storage. Our main registry is the numinia-digital-goods-data GitHub repository."
   },
   "philosophy": {
     "title": "Open Source Philosophy",
@@ -99,8 +99,8 @@
     "questions": "Questions about licenses? Check the collection details on each asset page.",
     "building": "Building something? Our JSON data is free to use – build your own asset browser!",
     "contribute": "Want to contribute? Submit your collection via GitHub.",
-    "contributeLink": "https://github.com/ToxSam/open-source-3D-assets",
-    "contact": "Contact: @ToxSam",
-    "contactLink": "https://x.com/toxsam"
+    "contributeLink": "https://github.com/PabloFMM/numinia-digital-goods-data",
+    "contact": "Contact: @numinia_xyz",
+    "contactLink": "https://x.com/numinia_xyz"
   }
 }

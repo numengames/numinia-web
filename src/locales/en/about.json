@@ -81,24 +81,24 @@
           "Stable hosting (GitHub, IPFS, Arweave, etc.)"
         ]
       },
-      "submitVia": "Submit via [GitHub Discussions](https://github.com/ToxSam/open-source-3D-assets/discussions)"
+      "submitVia": "Submit via [GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions)"
     },
     "contributeCode": {
       "title": "Contribute Code",
       "description": "Found a bug? Want to add a feature?",
-      "link": "Open an issue → [GitHub Issues](https://github.com/ToxSam/os3a-gallery/issues)"
+      "link": "Open an issue → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
     },
     "giveFeedback": {
       "title": "Give Feedback",
       "description": "Have ideas for improvement? Let us know!",
-      "link": "Share feedback → [GitHub Issues](https://github.com/ToxSam/os3a-gallery/issues)"
+      "link": "Share feedback → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
     }
   },
   "connect": {
     "title": "Connect",
     "website": "Website",
-    "websiteUrl": "https://toxsam.com",
+    "websiteUrl": "https://numinia.store",
     "twitter": "Twitter",
-    "twitterUrl": "https://twitter.com/toxsam"
+    "twitterUrl": "https://twitter.com/numinia_xyz"
   }
 }

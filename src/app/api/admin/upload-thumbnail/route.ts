@@ -4,10 +4,12 @@ import { fetchData, updateData } from '@/lib/github-storage';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const GITHUB_OWNER = process.env.GITHUB_REPO_OWNER || 'ToxSam';
-const GITHUB_REPO = process.env.GITHUB_REPO_NAME || 'open-source-3D-assets';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || 'main';
+import { env } from '@/lib/env';
+
+const GITHUB_OWNER = env.github.repoOwner;
+const GITHUB_REPO = env.github.repoName;
+const GITHUB_TOKEN = env.github.token;
+const GITHUB_BRANCH = env.github.branch;
 const API_BASE = 'https://api.github.com';
 const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
 
