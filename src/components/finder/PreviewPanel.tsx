@@ -1,16 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, memo, useRef, useCallback } from 'react';
-import { Download, File, Image as ImageIcon, FileIcon, FileText, Layers, Box } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
-import { Avatar, Project } from '@/types/avatar';
-import dynamic from 'next/dynamic';
+import React, { memo } from 'react';
+import { Download, Image as ImageIcon, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionItem } from '@/components/ui/accordion';
 import { getAvailableFileTypes, getAllAvatarFiles } from './utils/fileTypes';
-import { FileTypeInfo } from './utils/fileTypes';
 import { downloadAvatar } from '@/lib/download-utils';
+import dynamic from 'next/dynamic';
+import * as THREE from 'three';
+
+import type { PreviewPanelProps, FileTypeInfo } from './preview/types';
+import {
+  formatFileSize,
+  formatFileSizeInMB,
+  getDownloadButtonText,
+  extractFormat,
+  getFileFormat,
+  getLicenseTypeName,
+  renderLinkableText,
+  getAllowedUserName,
+  getUsageName,
+} from './preview/preview-helpers';
+import {
+  getTextureImageUrl,
+  downloadExtractedTexture,
+} from './preview/texture-helpers';
+import { usePreviewState } from './preview/usePreviewState';
+
+import ImageLightbox from './ImageLightbox';
 
 const VRMViewer = dynamic(
   () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
@@ -28,839 +46,35 @@ const TextureRenderer = dynamic(
   () => import('@/components/VRMViewer/TextureRenderer'),
   { ssr: false }
 );
-import ImageLightbox from './ImageLightbox';
-import * as THREE from 'three';
-import { getExtensionFromUrl } from '@/lib/urlUtils';
-
-interface PreviewPanelProps {
-  avatar: Avatar | null;
-  selectedFile: FileTypeInfo | null;
-  projects: Project[];
-}
-
-// Helper function to format file size
-const formatFileSize = (bytes: number | null | undefined, t?: (key: string) => string): string => {
-  if (!bytes || bytes === 0) return t ? t('finder.common.unknown') : 'Unknown';
-  
-  const k = 1024;
-  const sizes = [
-    t ? t('finder.fileSizeUnits.bytes') : 'Bytes',
-    t ? t('finder.fileSizeUnits.kb') : 'KB',
-    t ? t('finder.fileSizeUnits.mb') : 'MB',
-    t ? t('finder.fileSizeUnits.gb') : 'GB'
-  ];
-  
-  // Calculate the appropriate unit index
-  let i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  // Ensure we use at least KB for files >= 1024 bytes
-  if (bytes >= k && i < 1) i = 1;
-  // Ensure we use at least MB for files >= 1 MB
-  if (bytes >= k * k && i < 2) i = 2;
-  // Ensure we use at least GB for files >= 1 GB
-  if (bytes >= k * k * k && i < 3) i = 3;
-  
-  // Clamp to valid array index
-  i = Math.min(i, sizes.length - 1);
-  i = Math.max(i, 0);
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-// Helper function to format file size in MB (for model files - always shows in MB even if < 1 MB)
-const formatFileSizeInMB = (bytes: number | null | undefined, t?: (key: string) => string): string => {
-  if (!bytes || bytes === 0) return t ? t('finder.common.unknown') : 'Unknown';
-  
-  const k = 1024;
-  const mbUnit = t ? t('finder.fileSizeUnits.mb') : 'MB';
-  const gbUnit = t ? t('finder.fileSizeUnits.gb') : 'GB';
-  
-  // If file is >= 1 GB, show in GB
-  if (bytes >= k * k * k) {
-    const gb = bytes / (k * k * k);
-    return parseFloat(gb.toFixed(2)) + ' ' + gbUnit;
-  }
-  
-  // Otherwise, always show in MB (even if < 1 MB, e.g., "0.5 MB")
-  const mb = bytes / (k * k);
-  return parseFloat(mb.toFixed(2)) + ' ' + mbUnit;
-};
-
-// Helper to get download button text
-const getDownloadButtonText = (selectedFile: FileTypeInfo | null, avatar: Avatar | null, t?: (key: string) => string): string => {
-  if (!avatar) return t ? t('finder.common.download') : 'Download';
-  if (selectedFile) {
-    return `${t ? t('finder.common.download') : 'Download'} ${selectedFile.label}`;
-  }
-  return t ? t('finder.common.downloadAllFiles') : 'Download All Files';
-};
-
-// Helper to extract just the format from labels like "Thumbnail: PNG" -> "PNG"
-const extractFormat = (label: string): string => {
-  // If label contains a colon, take the part after it
-  const colonIndex = label.indexOf(':');
-  if (colonIndex !== -1) {
-    return label.substring(colonIndex + 1).trim();
-  }
-  return label;
-};
-
-// Helper to get file format from file info
-const getFileFormat = (file: FileTypeInfo | null): string => {
-  if (!file) return 'Unknown';
-  
-  // First, try to get format from label (most reliable)
-  if (file.label) {
-    const format = extractFormat(file.label);
-    // If format looks valid (not the full label), return it
-    if (format && format.length <= 10 && !format.includes(' ')) {
-      return format;
-    }
-    // Check if label contains format info
-    const labelLower = file.label.toLowerCase();
-    if (labelLower.includes('vrm')) return 'VRM';
-    if (labelLower.includes('fbx')) return 'FBX';
-    if (labelLower.includes('glb')) return 'GLB';
-    if (labelLower.includes('gltf')) return 'GLTF';
-  }
-  
-  // Check file ID
-  if (file.id) {
-    const fileId = file.id.toLowerCase();
-    if (fileId === 'vrm' || fileId === 'vrm_main' || fileId === 'voxel_vrm') return 'VRM';
-    if (fileId === 'fbx' || fileId === 'voxel_fbx') return 'FBX';
-    if (fileId === 'glb') return 'GLB';
-  }
-  
-  // Check filename extension
-  if (file.filename) {
-    const ext = file.filename.split('.').pop()?.toLowerCase();
-    if (ext) {
-      const extMap: Record<string, string> = {
-        'vrm': 'VRM',
-        'fbx': 'FBX',
-        'glb': 'GLB',
-        'gltf': 'GLTF',
-      };
-      if (extMap[ext]) return extMap[ext];
-      return ext.toUpperCase();
-    }
-  }
-  
-  // Check URL extension as last resort
-  if (file.url) {
-    const urlExt = file.url.split('.').pop()?.toLowerCase() || null;
-    if (urlExt && urlExt.length <= 5) {
-      const extMap: Record<string, string> = {
-        'vrm': 'VRM',
-        'fbx': 'FBX',
-        'glb': 'GLB',
-        'gltf': 'GLTF',
-      };
-      if (extMap[urlExt]) return extMap[urlExt];
-    }
-  }
-  
-  return 'Unknown';
-};
-
-// Helper to check if a string is a URL (IPFS, HTTP, HTTPS)
-const isUrl = (str: string): boolean => {
-  if (!str || typeof str !== 'string') return false;
-  const trimmed = str.trim();
-  return trimmed.startsWith('http://') || 
-         trimmed.startsWith('https://') || 
-         trimmed.startsWith('ipfs://') ||
-         trimmed.startsWith('ar://') ||
-         /^[a-zA-Z0-9]{46}$/.test(trimmed); // Arweave transaction ID
-};
-
-// Helper to get license type name
-const getLicenseTypeName = (licenseType: string | number | null | undefined, licenseName?: string, otherPermissions?: string, t?: (key: string) => string): string => {
-  // If there's an IPFS/URL link in otherPermissions, it's likely "Other"
-  if (otherPermissions && isUrl(otherPermissions)) {
-    return t ? t('finder.licenseTypes.other') : 'Other';
-  }
-  
-  // IMPORTANT: If licenseName is provided, use it directly
-  if (licenseName && typeof licenseName === 'string' && licenseName.trim() !== '') {
-    const cleanName = licenseName.trim();
-    // Format: Replace underscores with spaces and capitalize correctly
-    if (cleanName.includes('_')) {
-      // Special case for common Creative Commons formats
-      if (cleanName.startsWith('CC_')) {
-        return cleanName.replace(/_/g, ' ');
-      }
-      // For other underscore formats, just replace underscores
-      return cleanName.replace(/_/g, ' ');
-    }
-    return cleanName;
-  }
-  
-  // Only fall back to numeric mapping if no licenseName is provided
-  // Convert to number if it's a string containing only digits
-  if (typeof licenseType === 'string' && /^\d+$/.test(licenseType)) {
-    licenseType = parseInt(licenseType, 10);
-  }
-  
-  // Standard VRM license mapping as per the spec
-  const licenseTypes: Record<number, string> = {
-    0: t ? t('finder.licenseTypes.redistributionProhibited') : 'Redistribution Prohibited',
-    1: t ? t('finder.licenseTypes.cc0') : 'CC0',
-    2: t ? t('finder.licenseTypes.ccBy') : 'CC BY',
-    3: t ? t('finder.licenseTypes.ccByNc') : 'CC BY NC',
-    4: t ? t('finder.licenseTypes.ccBySa') : 'CC BY SA',
-    5: t ? t('finder.licenseTypes.ccByNcSa') : 'CC BY NC SA',
-    6: t ? t('finder.licenseTypes.ccByNd') : 'CC BY ND',
-    7: t ? t('finder.licenseTypes.ccByNcNd') : 'CC BY NC ND',
-    8: t ? t('finder.licenseTypes.other') : 'Other'
-  };
-  
-  return licenseTypes[licenseType as number] || (t ? t('finder.common.unknown') : 'Unknown');
-};
-
-// Helper to extract URLs from text and make them clickable
-const renderLinkableText = (text: string): React.ReactNode => {
-  if (!text) return text;
-  
-  // Check if the entire text is a URL
-  if (isUrl(text)) {
-    const url = text.trim();
-    const displayUrl = url.length > 50 ? `${url.substring(0, 47)}...` : url;
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 dark:text-blue-400 hover:underline break-all"
-      >
-        {displayUrl}
-      </a>
-    );
-  }
-  
-  // Check if text contains URLs
-  const urlRegex = /(https?:\/\/[^\s]+|ipfs:\/\/[^\s]+|ar:\/\/[^\s]+)/gi;
-  const parts = text.split(urlRegex);
-  
-  return parts.map((part, index) => {
-    if (isUrl(part)) {
-      const displayUrl = part.length > 50 ? `${part.substring(0, 47)}...` : part;
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline break-all"
-        >
-          {displayUrl}
-        </a>
-      );
-    }
-    return <span key={index}>{part}</span>;
-  });
-};
-
-// Helper to get allowed user name
-const getAllowedUserName = (allowedUser: string | number | null | undefined, t?: (key: string) => string): string => {
-  // Convert to number if it's a string containing only digits
-  if (typeof allowedUser === 'string' && /^\d+$/.test(allowedUser)) {
-    allowedUser = parseInt(allowedUser, 10);
-  }
-  
-  // Check if it's a string matching the values
-  if (typeof allowedUser === 'string') {
-    if (allowedUser.toLowerCase() === 'everyone') {
-      return t ? t('finder.permissions.everyone') : 'Everyone';
-    } else if (allowedUser.toLowerCase().includes('explicit') || 
-               allowedUser.toLowerCase().includes('contact')) {
-      return t ? t('finder.permissions.explicitUser') : 'Explicit User';
-    } else if (allowedUser.toLowerCase().includes('author') || 
-               allowedUser.toLowerCase().includes('only')) {
-      return t ? t('finder.permissions.onlyAuthor') : 'Only Author';
-    }
-  }
-  
-  const allowedUsers: Record<number, string> = {
-    0: t ? t('finder.permissions.onlyAuthor') : 'Only Author',
-    1: t ? t('finder.permissions.everyone') : 'Everyone',
-    2: t ? t('finder.permissions.explicitUser') : 'Explicit User'
-  };
-  
-  return allowedUsers[allowedUser as number] || (t ? t('finder.common.unknown') : 'Unknown');
-};
-
-// Helper to get usage permission name
-const getUsageName = (usage: string | number | boolean | null | undefined, t?: (key: string) => string): string => {
-  // For VRM 0.x format: 0 = Disallow, 1 = Allow
-  if (usage === 0 || usage === '0') {
-    return t ? t('finder.usage.disallow') : 'Disallow';
-  } else if (usage === 1 || usage === '1') {
-    return t ? t('finder.usage.allow') : 'Allow';
-  } else if (typeof usage === 'string') {
-    // Handle string values (case insensitive)
-    const value = usage.toLowerCase().trim();
-    if (value === 'allow' || value === 'allowed' || value === 'yes' || value === 'true') {
-      return t ? t('finder.usage.allow') : 'Allow';
-    } else {
-      return t ? t('finder.usage.disallow') : 'Disallow';
-    }
-  } else if (usage === true) {
-    return t ? t('finder.usage.allow') : 'Allow';
-  } else if (usage === false) {
-    return t ? t('finder.usage.disallow') : 'Disallow';
-  }
-  
-  // Default fallback
-  return t ? t('finder.usage.disallow') : 'Disallow';
-};
-
-interface VRMMetadata {
-  title?: string;
-  author?: string;
-  version?: string;
-  contactInformation?: string;
-  reference?: string;
-  licenseType?: number;
-  licenseName?: string;
-  allowedUserName?: number;
-  commercialUsageName?: number;
-  violentUsageName?: number;
-  sexualUsageName?: number;
-  otherPermissions?: string;
-}
-
-interface ModelStats {
-  fileSize: string;
-  format: string;
-  height: number;
-  vertices: number;
-  triangles: number;
-  materials: number;
-  textures: number;
-  bones: number;
-}
-
-interface ExtractedTexture {
-  name: string;
-  type: string;
-  mapType: string;
-  texture: THREE.Texture;
-  material: string;
-  fileSize: string;
-}
 
 function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
-  const { t } = useI18n();
-  
-  // Helper function to ensure translation result is a string
-  const getTranslationString = (value: string | string[]): string => {
-    return Array.isArray(value) ? value[0] : value;
-  };
-  
-  // Wrapper function to convert t() to the signature expected by helper functions
-  const tString = (key: string): string => {
-    return getTranslationString(t(key));
-  };
-  
-  const captureRef = useRef<(() => string | null) | null>(null);
-  const [thumbnailUpload, setThumbnailUpload] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
-
-  const handleCaptureThumbnail = useCallback(async () => {
-    if (!avatar || !captureRef.current) return;
-    const dataUrl = captureRef.current();
-    if (!dataUrl) return;
-    setThumbnailUpload('uploading');
-    try {
-      const res = await fetch('/api/admin/upload-thumbnail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageData: dataUrl, avatarId: avatar.id }),
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      setThumbnailUpload('done');
-      setTimeout(() => setThumbnailUpload('idle'), 3000);
-    } catch {
-      setThumbnailUpload('error');
-      setTimeout(() => setThumbnailUpload('idle'), 3000);
-    }
-  }, [avatar]);
-
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const [imageFileSize, setImageFileSize] = useState<number | null>(null);
-  const [imageFormat, setImageFormat] = useState<string | null>(null); // Detected format from Content-Type
-  const [correctedFilename, setCorrectedFilename] = useState<string | null>(null); // Filename with correct extension
-  const [modelFileSize, setModelFileSize] = useState<number | null>(null);
-  const [vrmMetadata, setVrmMetadata] = useState<VRMMetadata | null>(null);
-  const [vrmVersion, setVrmVersion] = useState<string | null>(null);
-  const [modelStats, setModelStats] = useState<ModelStats>({
-    fileSize: t('finder.common.unknown') as string,
-    format: t('finder.common.unknown') as string,
-    height: 0,
-    vertices: 0,
-    triangles: 0,
-    materials: 0,
-    textures: 0,
-    bones: 0,
-  });
-  const [activeTab, setActiveTab] = useState<'model' | 'textures'>('model');
-  const [extractedTextures, setExtractedTextures] = useState<ExtractedTexture[]>([]);
-  const [lightboxImage, setLightboxImage] = useState<{
-    url: string;
-    alt: string;
-    filename?: string;
-    downloadHandler?: () => void;
-  } | null>(null);
-
-  // Helper to map Content-Type to image format
-  const getImageFormatFromContentType = (contentType: string | null): string | null => {
-    if (!contentType) return null;
-    
-    const contentTypeLower = contentType.toLowerCase();
-    const formatMap: Record<string, string> = {
-      'image/png': 'PNG',
-      'image/jpeg': 'JPEG',
-      'image/jpg': 'JPEG',
-      'image/gif': 'GIF',
-      'image/webp': 'WEBP',
-      'image/svg+xml': 'SVG',
-      'image/bmp': 'BMP',
-      'image/tiff': 'TIFF',
-      'image/x-icon': 'ICO',
-    };
-    
-    // Check exact match first
-    if (formatMap[contentTypeLower]) {
-      return formatMap[contentTypeLower];
-    }
-    
-    // Check if it starts with image/
-    if (contentTypeLower.startsWith('image/')) {
-      const format = contentTypeLower.split('/')[1].split(';')[0].toUpperCase();
-      return format;
-    }
-    
-    return null;
-  };
-
-  // Helper to get file extension from format
-  const getExtensionFromFormat = (format: string): string => {
-    const extMap: Record<string, string> = {
-      'PNG': 'png',
-      'JPEG': 'jpg',
-      'GIF': 'gif',
-      'WEBP': 'webp',
-      'SVG': 'svg',
-      'BMP': 'bmp',
-      'TIFF': 'tiff',
-      'ICO': 'ico',
-    };
-    return extMap[format.toUpperCase()] || 'png';
-  };
-
-  // Load image dimensions, file size, and format when image file is selected
-  useEffect(() => {
-    if (selectedFile && (selectedFile.category === 'thumbnail' || selectedFile.category === 'texture') && selectedFile.url) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-      };
-      
-      img.onerror = () => {
-        setImageDimensions(null);
-      };
-      
-      img.src = selectedFile.url;
-
-      // Fetch file size and Content-Type
-      fetch(selectedFile.url, { method: 'HEAD' })
-        .then((response) => {
-          // Get Content-Type to determine actual format
-          const contentType = response.headers.get('content-type');
-          const detectedFormat = getImageFormatFromContentType(contentType);
-          
-          if (detectedFormat) {
-            setImageFormat(detectedFormat);
-            
-            // Update filename with correct extension if missing
-            const currentFilename = selectedFile.filename || (selectedFile.url ? selectedFile.url.split('/').pop() : null) || 'image';
-            const hasExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|tiff|ico)$/i.test(currentFilename);
-            
-            if (!hasExtension) {
-              const extension = getExtensionFromFormat(detectedFormat);
-              const baseName = currentFilename.split('.')[0] || currentFilename;
-              setCorrectedFilename(`${baseName}.${extension}`);
-            } else {
-              setCorrectedFilename(null); // Filename already has extension
-            }
-          } else {
-            setImageFormat(null);
-            setCorrectedFilename(null);
-          }
-          
-          // Get file size
-          const contentLength = response.headers.get('content-length');
-          if (contentLength) {
-            setImageFileSize(parseInt(contentLength, 10));
-          }
-        })
-        .catch(() => {
-          // If HEAD fails, try to get size and type from the loaded image/blob
-          if (!selectedFile.url) return;
-          
-          let detectedFormatFromResponse: string | null = null;
-          
-          fetch(selectedFile.url)
-            .then((response) => {
-              // Try to get Content-Type from response
-              const contentType = response.headers.get('content-type');
-              detectedFormatFromResponse = getImageFormatFromContentType(contentType);
-              
-              if (detectedFormatFromResponse) {
-                setImageFormat(detectedFormatFromResponse);
-                
-                // Update filename with correct extension if missing
-                const currentFilename = selectedFile.filename || (selectedFile.url ? selectedFile.url.split('/').pop() : null) || 'image';
-                const hasExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|tiff|ico)$/i.test(currentFilename);
-                
-                if (!hasExtension) {
-                  const extension = getExtensionFromFormat(detectedFormatFromResponse);
-                  const baseName = currentFilename.split('.')[0] || currentFilename;
-                  setCorrectedFilename(`${baseName}.${extension}`);
-                } else {
-                  setCorrectedFilename(null);
-                }
-              } else {
-                setImageFormat(null);
-                setCorrectedFilename(null);
-              }
-              
-              return response.blob();
-            })
-            .then((blob) => {
-              setImageFileSize(blob.size);
-              
-              // If we didn't get format from headers, try from blob type
-              if (!detectedFormatFromResponse && blob.type) {
-                const detectedFormat = getImageFormatFromContentType(blob.type);
-                if (detectedFormat) {
-                  setImageFormat(detectedFormat);
-                  
-                  const currentFilename = selectedFile.filename || (selectedFile.url ? selectedFile.url.split('/').pop() : null) || 'image';
-                  const hasExtension = /\.(png|jpg|jpeg|gif|webp|svg|bmp|tiff|ico)$/i.test(currentFilename);
-                  
-                  if (!hasExtension) {
-                    const extension = getExtensionFromFormat(detectedFormat);
-                    const baseName = currentFilename.split('.')[0] || currentFilename;
-                    setCorrectedFilename(`${baseName}.${extension}`);
-                  } else {
-                    setCorrectedFilename(null);
-                  }
-                }
-              }
-            })
-            .catch(() => {
-              setImageFileSize(null);
-              setImageFormat(null);
-              setCorrectedFilename(null);
-            });
-        });
-    } else {
-      setImageDimensions(null);
-      setImageFileSize(null);
-      setImageFormat(null);
-      setCorrectedFilename(null);
-    }
-  }, [selectedFile]);
-
-  // Load file size for GLB/FBX model files
-  useEffect(() => {
-    if (selectedFile && selectedFile.category === 'model' && selectedFile.url) {
-      const fileFormat = getFileFormat(selectedFile);
-      // Only fetch file size for GLB/FBX files (not VRM, as VRM file size comes from metadata)
-      if (fileFormat === 'FBX' || fileFormat === 'GLB' || fileFormat === 'GLTF') {
-        // Fetch file size
-        fetch(selectedFile.url, { method: 'HEAD' })
-          .then((response) => {
-            const contentLength = response.headers.get('content-length');
-            if (contentLength) {
-              setModelFileSize(parseInt(contentLength, 10));
-            } else {
-              // If HEAD doesn't provide content-length, try fetching as blob
-              if (!selectedFile.url) return;
-              fetch(selectedFile.url)
-                .then((response) => response.blob())
-                .then((blob) => {
-                  setModelFileSize(blob.size);
-                })
-                .catch(() => {
-                  setModelFileSize(null);
-                });
-            }
-          })
-          .catch(() => {
-            // If HEAD fails, try to get size from fetching the blob
-            if (!selectedFile.url) return;
-            fetch(selectedFile.url)
-              .then((response) => response.blob())
-              .then((blob) => {
-                setModelFileSize(blob.size);
-              })
-              .catch(() => {
-                setModelFileSize(null);
-              });
-          });
-      } else {
-        setModelFileSize(null);
-      }
-    } else {
-      setModelFileSize(null);
-    }
-  }, [selectedFile]);
-
-  // Handle metadata load from VRMViewer
-  const handleMetadataLoad = useMemo(() => {
-    return (data: Record<string, unknown> | null) => {
-      if (!data) return;
-      
-      // Update model stats
-      // Cast data properties for model stats — values come from VRM parser
-      const d = data as Record<string, string | number | boolean | null | undefined | Record<string, unknown>>;
-      setModelStats(prev => ({
-        ...prev,
-        triangles: (d.triangleCount as number) || 0,
-        materials: (d.materialCount as number) || 0,
-        format: (d.format as string) || (t('finder.common.unknown') as string),
-        height: (d.avatarHeight as number) || 0,
-        fileSize: (d.fileSize as string) || (t('finder.common.unknown') as string),
-        vertices: (d.vertexCount as number) || 0,
-        textures: (d.textureCount as number) || 0,
-        bones: (d.boneCount as number) || 0,
-      }));
-
-      // Set VRM version
-      setVrmVersion((d.vrmVersion as string) || (t('finder.common.unknown') as string));
-
-      // Process VRM metadata if available
-      if (d.rawMetadata) {
-        try {
-          const rawMeta = d.rawMetadata as Record<string, unknown>;
-          const authors = rawMeta.authors as string[] | undefined;
-          const cleanedMetadata: VRMMetadata = {
-            title: (rawMeta.title as string) || (t('finder.common.unknown') as string),
-            version: (d.version as string) || (rawMeta.version as string) || (rawMeta.specVersion as string) || (t('finder.common.unknown') as string),
-            author: (rawMeta.author as string) || authors?.[0] || (t('finder.common.unknown') as string),
-            contactInformation: (d.contactInformation as string) || (rawMeta.contactInformation as string) || '',
-            reference: (d.reference as string) || (rawMeta.reference as string) || '',
-            licenseType: rawMeta.licenseType as number | undefined,
-            licenseName: (d.licenseName as string) || (rawMeta.licenseName as string) || '',
-            allowedUserName: rawMeta.allowedUserName as number | undefined,
-            commercialUsageName: (rawMeta.commercialUsageName || rawMeta.commercialUssageName) as number | undefined,
-            violentUsageName: (rawMeta.violentUsageName || rawMeta.violentUssageName) as number | undefined,
-            sexualUsageName: (rawMeta.sexualUsageName || rawMeta.sexualUssageName) as number | undefined,
-            otherPermissions: (rawMeta.otherPermissionUrl as string) || (rawMeta.otherPermissions as string) || '',
-          };
-          
-          setVrmMetadata(cleanedMetadata);
-        } catch (error) {
-          console.error('Error processing metadata:', error);
-        }
-      }
-    };
-  }, []);
-
-  // Handle textures load from VRMViewer
-  const handleTexturesLoad = useMemo(() => {
-    return (textures: ExtractedTexture[]) => {
-      setExtractedTextures(textures);
-    };
-  }, []);
-
-  // Reset metadata when avatar or selected file changes
-  useEffect(() => {
-    setVrmMetadata(null);
-    setVrmVersion(null);
-    setExtractedTextures([]);
-    setModelFileSize(null); // Reset model file size
-    setModelStats({
-      fileSize: t('finder.common.unknown') as string,
-      format: t('finder.common.unknown') as string,
-      height: 0,
-      vertices: 0,
-      triangles: 0,
-      materials: 0,
-      textures: 0,
-      bones: 0,
-    });
-  }, [avatar?.id, selectedFile?.id]);
-
-  // Determine which file to preview - memoized to prevent unnecessary VRMViewer reloads
-  // Must be called before any early returns to follow Rules of Hooks
-  const previewFile = useMemo(() => {
-    if (selectedFile) {
-      return selectedFile;
-    }
-    if (avatar?.modelFileUrl) {
-      return {
-        id: 'vrm_main',
-        label: 'VRM',
-        url: avatar.modelFileUrl,
-        isVoxel: false,
-        category: 'model' as const,
-      };
-    }
-    return null;
-  }, [selectedFile, avatar?.modelFileUrl]);
-
-  // Check if we're viewing a 3D model file (VRM or GLB) - must be before early returns to follow Rules of Hooks
-  // Show tabs for VRM files only (GLB files can display textures but don't have VRM-specific metadata)
-  const isVRMFile = useMemo(() => {
-    // Helper to check if a file is VRM
-    const checkIsVRM = (file: { id?: string; filename?: string; url?: string | null; label?: string } | null): boolean => {
-      if (!file) return false;
-      
-      // First, check file ID (most reliable indicator)
-      if (file.id) {
-        const fileId = file.id.toLowerCase();
-        if (fileId === 'fbx' || fileId === 'voxel_fbx' || fileId === 'glb') {
-          return false; // Explicitly not VRM
-        }
-        if (fileId === 'vrm' || fileId === 'vrm_main' || fileId === 'voxel_vrm') {
-          return true;
-        }
-      }
-      
-      // Check filename (most reliable for Arweave files)
-      if (file.filename) {
-        const filenameExt = file.filename.split('.').pop()?.toLowerCase();
-        if (filenameExt === 'fbx' || filenameExt === 'glb' || filenameExt === 'gltf') {
-          return false; // Explicitly not VRM
-        }
-        if (filenameExt === 'vrm') return true;
-      }
-      
-      // Check URL extension (pathname-based; avoids ?query breaking split('.').pop())
-      if (file.url) {
-        const urlExt = getExtensionFromUrl(file.url);
-        if (urlExt === 'fbx' || urlExt === 'glb' || urlExt === 'gltf') {
-          return false; // Explicitly not VRM
-        }
-        if (urlExt === 'vrm') return true;
-      }
-      
-      // Check label (fallback - should contain format info)
-      if (file.label) {
-        const labelLower = file.label.toLowerCase();
-        if (labelLower.includes('fbx') || labelLower.includes('glb') || labelLower.includes('gltf')) {
-          return false; // Explicitly not VRM
-        }
-        if (labelLower.includes('vrm')) {
-          return true;
-        }
-      }
-      
-      // If no extension in URL (Arweave), only assume VRM if we have no indication it's FBX/GLB
-      if (file.url && (file.url.includes('arweave.net') || !file.url.includes('.'))) {
-        // Only assume VRM if filename doesn't indicate otherwise
-        if (file.filename) {
-          const filenameExt = file.filename.split('.').pop()?.toLowerCase();
-          if (filenameExt && filenameExt !== 'vrm' && filenameExt.length <= 5) {
-            return false; // Has a non-VRM extension
-          }
-        }
-        // If we can't determine from filename, check label
-        if (file.label && !file.label.toLowerCase().includes('vrm')) {
-          return false; // Label doesn't mention VRM
-        }
-        return true; // Arweave URL without clear indication, assume VRM
-      }
-      
-      return false;
-    };
-    
-    // If a specific file is selected, check if it's a VRM model
-    if (previewFile) {
-      // Only show tabs for model files, not for thumbnails or textures
-      if (previewFile.category === 'model' && previewFile.url) {
-        return checkIsVRM(previewFile);
-      }
-      // If it's a thumbnail or texture, don't show tabs
-      return false;
-    }
-    // If no specific file is selected, check if the default model is VRM
-    if (avatar?.modelFileUrl) {
-      return checkIsVRM({ url: avatar.modelFileUrl });
-    }
-    return false;
-  }, [previewFile, avatar?.modelFileUrl]);
-
-  // Check if we're viewing any 3D model file (VRM, GLB, or FBX) for texture extraction
-  // GLB files can have texture extraction even though they don't have VRM-specific metadata
-  const isModelFile = useMemo(() => {
-    // Helper to check if a file is a 3D model
-    const checkIsModel = (file: { id?: string; filename?: string; url?: string | null; label?: string } | null): boolean => {
-      if (!file) return false;
-      
-      // Check file ID
-      if (file.id) {
-        const fileId = file.id.toLowerCase();
-        if (fileId === 'vrm' || fileId === 'vrm_main' || fileId === 'voxel_vrm' || 
-            fileId === 'fbx' || fileId === 'voxel_fbx' || fileId === 'glb') {
-          return true;
-        }
-      }
-      
-      // Check filename
-      if (file.filename) {
-        const filenameExt = file.filename.split('.').pop()?.toLowerCase();
-        if (filenameExt === 'vrm' || filenameExt === 'fbx' || filenameExt === 'glb' || filenameExt === 'gltf') {
-          return true;
-        }
-      }
-      
-      // Check URL extension
-      if (file.url) {
-        const urlExt = getExtensionFromUrl(file.url);
-        if (urlExt === 'vrm' || urlExt === 'fbx' || urlExt === 'glb' || urlExt === 'gltf') {
-          return true;
-        }
-      }
-      
-      // Check label
-      if (file.label) {
-        const labelLower = file.label.toLowerCase();
-        if (labelLower.includes('vrm') || labelLower.includes('fbx') || 
-            labelLower.includes('glb') || labelLower.includes('gltf')) {
-          return true;
-        }
-      }
-      
-      return false;
-    };
-    
-    // Check if the preview file is a 3D model
-    if (previewFile && previewFile.category === 'model' && previewFile.url) {
-      return checkIsModel(previewFile);
-    }
-    
-    // Check if the default model is a 3D model
-    if (avatar?.modelFileUrl) {
-      return checkIsModel({ url: avatar.modelFileUrl });
-    }
-    
-    return false;
-  }, [previewFile, avatar?.modelFileUrl]);
-
-  // Handle tab selection based on file type (must be after isVRMFile and isModelFile are defined)
-  useEffect(() => {
-    // Default to model tab for all 3D model files (VRM, GLB, FBX)
-    if (isModelFile) {
-      setActiveTab('model');
-    }
-  }, [isModelFile]);
+  const {
+    t,
+    tString,
+    getTranslationString,
+    captureRef,
+    thumbnailUpload,
+    handleCaptureThumbnail,
+    imageDimensions,
+    imageFileSize,
+    imageFormat,
+    correctedFilename,
+    modelFileSize,
+    vrmMetadata,
+    vrmVersion,
+    modelStats,
+    activeTab,
+    setActiveTab,
+    extractedTextures,
+    lightboxImage,
+    setLightboxImage,
+    getExtensionFromFormat,
+    handleMetadataLoad,
+    handleTexturesLoad,
+    previewFile,
+    isVRMFile,
+    isModelFile,
+  } = usePreviewState(avatar, selectedFile);
 
   if (!avatar) {
     return (
@@ -897,7 +111,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
           format = 'glb';
         }
         // For vrm_main and other VRM files, format is null (default)
-        
+
         // Use server-side API to preserve user gesture chain
         downloadAvatar(avatar, format);
       } else if (selectedFile && selectedFile.url) {
@@ -906,7 +120,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
         // Create link immediately without async fetch to preserve gesture
         const link = document.createElement('a');
         link.href = selectedFile.url;
-        
+
         // Determine filename - prefer correctedFilename (with detected extension), then selectedFile.filename, fallback to extracting from URL or avatar name
         let filename = correctedFilename || selectedFile.filename;
         if (!filename && selectedFile.url) {
@@ -919,18 +133,18 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
           } else {
             // Fallback: use avatar name with extension from detected format, label, or URL
             const extension = imageFormat ? getExtensionFromFormat(imageFormat) :
-                             (selectedFile.url ? selectedFile.url.split('.').pop()?.split('?')[0] : null) || 
-                             selectedFile.label.split('.').pop()?.toLowerCase() || 
+                             (selectedFile.url ? selectedFile.url.split('.').pop()?.split('?')[0] : null) ||
+                             selectedFile.label.split('.').pop()?.toLowerCase() ||
                              'bin';
             filename = `${avatar?.name || 'file'}.${extension}`;
           }
         }
-        
+
         // Ensure filename is defined
         if (!filename) {
           filename = selectedFile.filename || selectedFile.label || 'file';
         }
-        
+
         link.download = filename;
         link.style.display = 'none';
         link.setAttribute('rel', 'noopener noreferrer'); // Security best practice
@@ -968,141 +182,6 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
       setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 100);
     } catch (error) {
       console.error('Texture download error:', error);
-    }
-  };
-
-  // Helper function to get image URL from texture (for lightbox)
-  const getTextureImageUrl = (texture: ExtractedTexture): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      try {
-        // If the texture image is already an HTMLImageElement with a src, use it
-        if (texture.texture.image instanceof HTMLImageElement && texture.texture.image.src) {
-          resolve(texture.texture.image.src);
-          return;
-        }
-
-        // Otherwise, convert to data URL
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        if (!ctx || !texture.texture.image) {
-          reject(new Error('Cannot get texture image: missing context or image'));
-          return;
-        }
-        
-        canvas.width = texture.texture.image.width;
-        canvas.height = texture.texture.image.height;
-        
-        if (texture.texture.image instanceof HTMLImageElement) {
-          ctx.drawImage(texture.texture.image, 0, 0);
-          resolve(canvas.toDataURL('image/png', 0.95));
-        } else if (texture.texture.image instanceof HTMLCanvasElement) {
-          ctx.drawImage(texture.texture.image, 0, 0);
-          resolve(canvas.toDataURL('image/png', 0.95));
-        } else {
-          // Use WebGL renderer for other types
-          const tempScene = new THREE.Scene();
-          const tempCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-          const tempRenderer = new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true
-          });
-          tempRenderer.setSize(texture.texture.image.width, texture.texture.image.height);
-          
-          const tempMaterial = new THREE.MeshBasicMaterial({
-            map: texture.texture,
-            side: THREE.DoubleSide
-          });
-          const tempGeometry = new THREE.PlaneGeometry(2, 2);
-          const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
-          tempScene.add(tempMesh);
-          
-          tempRenderer.render(tempScene, tempCamera);
-          ctx.drawImage(tempRenderer.domElement, 0, 0);
-          
-          tempGeometry.dispose();
-          tempMaterial.dispose();
-          tempRenderer.dispose();
-          
-          resolve(canvas.toDataURL('image/png', 0.95));
-        }
-      } catch (error) {
-        reject(error);
-      }
-    });
-  };
-
-  // Helper function to download extracted texture as image (from VRM)
-  const downloadExtractedTexture = (texture: ExtractedTexture) => {
-    // Create a canvas to render the texture
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx || !texture.texture.image) {
-      console.error('Cannot download texture: missing context or image');
-      return;
-    }
-    
-    // Set canvas dimensions to match the texture
-    canvas.width = texture.texture.image.width;
-    canvas.height = texture.texture.image.height;
-    
-    // If it's a normal HTML image, we can draw it directly
-    if (texture.texture.image instanceof HTMLImageElement) {
-      ctx.drawImage(texture.texture.image, 0, 0);
-    } 
-    // If it's a canvas (which might be the case for some textures), we can use the canvas directly
-    else if (texture.texture.image instanceof HTMLCanvasElement) {
-      ctx.drawImage(texture.texture.image, 0, 0);
-    }
-    // For other types of images (like ImageBitmap or OffscreenCanvas)
-    else {
-      // Create a temporary renderer to render the texture to canvas
-      // Don't specify canvas in WebGLRenderer - it will create its own
-      const tempScene = new THREE.Scene();
-      const tempCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-      
-      const tempRenderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: true
-      });
-      tempRenderer.setSize(texture.texture.image.width, texture.texture.image.height);
-      
-      // Create a plane with the texture
-      const tempMaterial = new THREE.MeshBasicMaterial({
-        map: texture.texture,
-        side: THREE.DoubleSide
-      });
-      const tempGeometry = new THREE.PlaneGeometry(2, 2);
-      const tempMesh = new THREE.Mesh(tempGeometry, tempMaterial);
-      tempScene.add(tempMesh);
-      
-      // Render to the renderer's canvas
-      tempRenderer.render(tempScene, tempCamera);
-      
-      // Draw the renderer's canvas to our download canvas
-      ctx.drawImage(tempRenderer.domElement, 0, 0);
-      
-      // Clean up
-      tempGeometry.dispose();
-      tempMaterial.dispose();
-      tempRenderer.dispose();
-    }
-    
-    // Convert to data URL and download
-    try {
-      const mimeType = 'image/png';
-      const dataURL = canvas.toDataURL(mimeType, 0.95);
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = `${texture.name || 'texture'}.png`;
-      link.style.display = 'none';
-      link.setAttribute('rel', 'noopener noreferrer'); // Security best practice
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error creating download link:', error);
     }
   };
 
@@ -1187,11 +266,11 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
               extractedTextures.map((texture, index) => {
                 const tex = texture.texture;
                 const dimensions = tex.image ? `${tex.image.width} × ${tex.image.height}` : (t('finder.common.unknown') as string);
-                
+
                 return (
                   <div key={index} className="bg-cream dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
                     {/* Texture Preview - Fixed height container for uniform display */}
-                    <div 
+                    <div
                       className="w-full h-[240px] relative bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-center p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       onClick={async () => {
                         try {
@@ -1207,18 +286,18 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                         }
                       }}
                     >
-                      <TextureRenderer 
-                        texture={tex} 
+                      <TextureRenderer
+                        texture={tex}
                         size={220}
                       />
                     </div>
-                    
+
                     {/* Texture Info */}
                     <div className="p-3">
                       <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2 truncate" title={texture.name}>
                         {texture.name}
                       </h3>
-                      
+
                       <div className="space-y-1 text-xs min-w-0 max-w-full w-full">
                         <div className="flex gap-x-3 items-start min-w-0 max-w-full w-full">
                           <span className="text-gray-500 dark:text-gray-400 flex-shrink-0 whitespace-nowrap">{t('vrmviewer.texture.dimensions')}:</span>
@@ -1233,7 +312,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                           <span className="text-gray-900 dark:text-gray-100 break-words min-w-0 flex-1 text-right max-w-full">{texture.type}</span>
                         </div>
                       </div>
-                      
+
                       {/* Download Button */}
                       <button
                         onClick={() => downloadExtractedTexture(texture)}
@@ -1275,8 +354,8 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
             ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
               // Show image for thumbnail and texture files
               <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
-                <img 
-                  src={previewFile.url} 
+                <img
+                  src={previewFile.url}
                   alt={previewFile.label}
                   className="max-w-full max-h-full object-contain rounded cursor-pointer hover:opacity-90 transition-opacity"
                   onError={(e) => {
@@ -1459,12 +538,12 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                       <div className="flex gap-x-3 items-start min-w-0">
                         <span className="text-gray-500 dark:text-gray-400 flex-shrink-0 whitespace-nowrap">Format:</span>
                         <span className="text-gray-900 dark:text-gray-100 break-words min-w-0 flex-1 text-right max-w-full">
-                          {avatar?.modelFileUrl ? getFileFormat({ 
-                            id: 'vrm_main', 
-                            label: 'VRM', 
-                            url: avatar.modelFileUrl, 
-                            isVoxel: false, 
-                            category: 'model' 
+                          {avatar?.modelFileUrl ? getFileFormat({
+                            id: 'vrm_main',
+                            label: 'VRM',
+                            url: avatar.modelFileUrl,
+                            isVoxel: false,
+                            category: 'model'
                           }) : 'Unknown'}
                         </span>
                       </div>
@@ -1745,7 +824,7 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                     {(() => {
                       const fileFormat = getFileFormat(selectedFile);
                       const isGLBOrFBX = fileFormat === 'FBX' || fileFormat === 'GLB' || fileFormat === 'GLTF';
-                      
+
                       if (isGLBOrFBX && modelFileSize !== null) {
                         return (
                           <div className="flex gap-x-3 items-start min-w-0">
@@ -1929,18 +1008,18 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
 export default memo(PreviewPanel, (prevProps, nextProps) => {
   // Return true if props are equal (should NOT re-render)
   // Return false if props are different (should re-render)
-  
+
   // Check avatar
   if (prevProps.avatar?.id !== nextProps.avatar?.id) return false;
   if (prevProps.avatar?.modelFileUrl !== nextProps.avatar?.modelFileUrl) return false;
-  
+
   // Check selectedFile
   if (prevProps.selectedFile?.id !== nextProps.selectedFile?.id) return false;
   if (prevProps.selectedFile?.url !== nextProps.selectedFile?.url) return false;
-  
+
   // Check projects array length (shallow check - if length changes, re-render)
   if (prevProps.projects.length !== nextProps.projects.length) return false;
-  
+
   // Props are equal, don't re-render
   return true;
 });
