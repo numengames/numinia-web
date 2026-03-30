@@ -163,7 +163,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
         <div className="pt-8 border-t border-gray-300 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-small text-gray-500 dark:text-gray-400">
-              © {currentYear} Thanks ToxSam. All Numinia Digital Good are CC0.
+              © {currentYear} Numinia Digital Goods. All assets are CC0.
             </p>
             <div className="flex items-center gap-4">
               <a 

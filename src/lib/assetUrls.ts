@@ -15,7 +15,7 @@ const DEFAULT_POLYGON_RAW_BASE =
 
 const OPEN_SOURCE_RAW_BASE =
   process.env.NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE ||
-  'https://raw.githubusercontent.com/ToxSam/open-source-3D-assets/main';
+  'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main';
 
 /**
  * Convert https://github.com/{owner}/{repo}/blob/{branch}/path/to/file → raw.githubusercontent.com equivalent

@@ -305,7 +305,7 @@ export default function AvatarDetailPage() {
                 <p>作成日: {new Date(avatar.createdAt).toLocaleDateString('ja-JP')}</p>
                 <p className="mt-2">
                   <a 
-                    href="https://github.com/ToxSam/open-source-3D-assets" 
+                    href="https://github.com/PabloFMM/numinia-digital-goods-data" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-300 underline"

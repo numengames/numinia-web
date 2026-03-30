@@ -394,7 +394,7 @@ export const AvatarGallery: React.FC = () => {
       <div className="flex-none">
         <AvatarHeader 
           title="Open Source Avatars"
-          description="A collection of CC0 and open source assets created by ToxSam"
+          description="A collection of CC0 and open source assets by Numinia"
           socialLink="https://x.com/toxsam"
         />
       </div>

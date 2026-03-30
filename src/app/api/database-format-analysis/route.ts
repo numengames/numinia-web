@@ -33,7 +33,7 @@ async function getAvatarsFromFile(): Promise<Avatar[]> {
     // If that fails, try to fetch from GitHub API as fallback
     console.log('Local avatars.json not found, fetching from GitHub API...');
     const response = await fetch(
-      'https://raw.githubusercontent.com/ToxSam/open-source-3D-assets/main/data/projects.json',
+      'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/projects.json',
       { cache: 'no-store' }
     );
     

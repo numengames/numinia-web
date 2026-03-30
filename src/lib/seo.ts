@@ -10,7 +10,7 @@ interface MetadataParams {
   keywords?: string[];
 }
 
-const baseUrl = 'https://opensource3dassets.com';
+const baseUrl = 'https://numinia.store';
 
 const defaultKeywords = [
   'free 3D assets',
@@ -56,8 +56,8 @@ export function generateSEOMetadata({
     title: fullTitle,
     description,
     keywords: allKeywords,
-    authors: [{ name: 'ToxSam', url: 'https://toxsam.com' }],
-    creator: 'ToxSam',
+    authors: [{ name: 'Numinia', url: 'https://numinia.store' }],
+    creator: 'Numinia',
     publisher: 'Open Source 3D Assets',
     
     // Open Graph

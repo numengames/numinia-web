@@ -42,12 +42,12 @@ export default function VRMInspectorPage() {
     updateMetaTag('description', description);
     updateMetaTag('og:title', 'GLB Inspector - Analyze & Preview GLB 3D Models | Open Source 3D Assets');
     updateMetaTag('og:description', description);
-    updateMetaTag('og:image', `https://opensource3dassets.com${ogImageUrl}`);
+    updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
     updateMetaTag('og:url', window.location.href);
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', 'GLB Inspector - Analyze & Preview GLB 3D Models | Open Source 3D Assets');
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `https://opensource3dassets.com${ogImageUrl}`);
+    updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
   }, []);
 
   if (isMobile) {
@@ -58,7 +58,7 @@ export default function VRMInspectorPage() {
           <AvatarHeader 
             title={t('vrmviewer.mobile.intro.title') as string}
             description={t('vrmviewer.description') as string}
-            socialLink="https://github.com/ToxSam/os3a-gallery"
+            socialLink="https://github.com/PabloFMM/numinia-digital-goods"
             showWarningButton={true}
           />
         </div>

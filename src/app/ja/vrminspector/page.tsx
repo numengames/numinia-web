@@ -25,7 +25,7 @@ export default function VRMInspectorPage() {
           <AvatarHeader 
             title={t('vrmviewer.mobile.intro.title') as string}
             description={t('vrmviewer.description') as string}
-            socialLink="https://github.com/ToxSam/os3a-gallery"
+            socialLink="https://github.com/PabloFMM/numinia-digital-goods"
             showWarningButton={true}
           />
         </div>
