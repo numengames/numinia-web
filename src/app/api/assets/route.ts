@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { getAdminSession } from '@/lib/auth/getSession';
-import { v4 as uuidv4 } from 'uuid';
+import { generateAssetId } from '@/lib/asset-id';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     // Create a new avatar object
     const now = new Date().toISOString();
     const newAvatar: GithubAvatar = {
-      id: uuidv4(),
+      id: generateAssetId(avatarData.name, avatarData.format || 'vrm'),
       name: avatarData.name,
       projectId: avatarData.projectId,
       description: avatarData.description ?? '',

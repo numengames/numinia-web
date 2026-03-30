@@ -2,40 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { env } from '@/lib/env';
 import { fetchData, updateData } from '@/lib/github-storage';
+import { generateAssetId } from '@/lib/asset-id';
+import { getContentPath, getFormat } from '@/lib/content-paths';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm'];
-
-// Map extension → format label
-function getFormat(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
-  return ext.toUpperCase();
-}
-
-// Map format → content folder + JSON catalog file
-function getContentPath(format: string): { folder: string; catalogFile: string; projectId: string } {
-  switch (format) {
-    case 'VRM':  return { folder: 'content/avatars',  catalogFile: 'data/avatars/numinia-avatars.json',  projectId: 'numinia-avatars' };
-    case 'GLB':  return { folder: 'content/models',   catalogFile: 'data/assets/numinia-assets.json',   projectId: 'numinia-assets' };
-    case 'HYP':  return { folder: 'content/worlds',   catalogFile: 'data/worlds/numinia-worlds.json',   projectId: 'numinia-worlds' };
-    case 'MP3':
-    case 'OGG':  return { folder: 'content/audio',    catalogFile: 'data/audio/numinia-audio.json',     projectId: 'numinia-audio' };
-    case 'MP4':
-    case 'WEBM': return { folder: 'content/video',    catalogFile: 'data/video/numinia-video.json',     projectId: 'numinia-video' };
-    default:     return { folder: 'content/other',    catalogFile: 'data/assets/numinia-assets.json',   projectId: 'numinia-assets' };
-  }
-}
-
-// Slug from filename: "My File (v2).glb" → "my-file-v2"
-function slugify(filename: string): string {
-  const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
-  return nameWithoutExt
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 
 export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
@@ -71,8 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const format = getFormat(file.name);
-    const slug = slugify(name || file.name);
-    const assetId = `${slug}-${Date.now().toString(36)}`;
+    const assetId = generateAssetId(name || file.name, ext);
     const displayName = name || file.name.replace(/\.[^.]+$/, '');
 
     // Step 1: Upload binary to data repo
