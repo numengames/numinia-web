@@ -323,123 +323,44 @@ export default function AvatarAdminDashboard() {
                 {searchQuery ? 'No assets found matching your search.' : 'No assets available.'}
               </div>
             ) : (
-              <div className="space-y-4">
+              /* Mini-card grid — compact gallery view */
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {filteredAvatars.map(avatar => {
                   const isBusy = busyIds.has(avatar.id);
                   return (
-                    <Card key={avatar.id} className={`overflow-hidden transition-opacity ${isBusy ? 'opacity-50' : ''}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          {avatar.thumbnailUrl ? (
-                            <img
-                              src={avatar.thumbnailUrl}
-                              alt={avatar.name}
-                              className="w-24 h-24 rounded-lg object-cover bg-gray-100"
-                            />
-                          ) : (
-                            <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
-                              No image
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <div className="flex justify-between">
-                              <div className="flex-1 min-w-0">
-                                {editingId === avatar.id ? (
-                                  <div className="flex items-center gap-2">
-                                    <Input
-                                      value={editValue}
-                                      onChange={e => setEditValue(e.target.value)}
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter') saveName(avatar.id);
-                                        if (e.key === 'Escape') cancelEditing();
-                                      }}
-                                      className="h-8 text-lg font-medium"
-                                      autoFocus
-                                    />
-                                    <Button variant="ghost" size="sm" onClick={() => saveName(avatar.id)} disabled={isBusy}>
-                                      <Check className="h-4 w-4 text-green-600" />
-                                    </Button>
-                                    <Button variant="ghost" size="sm" onClick={cancelEditing}>
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <h3
-                                    className="font-medium text-lg text-gray-900 cursor-pointer hover:text-gray-600"
-                                    onClick={() => startEditing(avatar)}
-                                    title="Click to rename"
-                                  >
-                                    {avatar.name} <Pencil className="h-3 w-3 inline text-gray-400" />
-                                  </h3>
-                                )}
-                                <p className="text-gray-500 text-sm">{avatar.description}</p>
-                              </div>
-                              <div className="flex gap-2 items-start ml-2">
-                                {isBusy ? (
-                                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                                ) : (
-                                  <>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => toggleVisibility(avatar.id)}
-                                      title={avatar.isPublic ? 'Hide from gallery' : 'Show in gallery'}
-                                    >
-                                      {avatar.isPublic ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleDelete(avatar.id)}
-                                      title="Delete asset"
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              <Badge variant="secondary">{avatar.format}</Badge>
-                              {avatar.version && (
-                                <Badge variant="secondary" className="text-[10px]">v{avatar.version}</Badge>
-                              )}
-                              {!avatar.isPublic && (
-                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                  Hidden
-                                </Badge>
-                              )}
-                              {/* Storage layer badges */}
-                              {avatar.storage?.r2 && (
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px]">R2</Badge>
-                              )}
-                              {avatar.storage?.ipfs_cid && (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px]">IPFS</Badge>
-                              )}
-                              {avatar.storage?.arweave_tx && (
-                                <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">Arweave</Badge>
-                              )}
-                              {avatar.storage?.github_raw && (
-                                <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px]">GitHub</Badge>
-                              )}
-                              {!avatar.storage && avatar.modelFileUrl?.includes('raw.githubusercontent') && (
-                                <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px]">GitHub</Badge>
-                              )}
-                              {avatar.file_size_bytes && (
-                                <Badge variant="secondary" className="text-[10px]">
-                                  {(avatar.file_size_bytes / 1024 / 1024).toFixed(1)} MB
-                                </Badge>
-                              )}
-                            </div>
-                            {/* Asset ID */}
-                            <code className="text-[10px] text-gray-400 font-mono mt-1 block truncate">
-                              {avatar.id}
-                            </code>
+                    <div
+                      key={avatar.id}
+                      onClick={() => setSelectedAsset(avatar)}
+                      className={`group cursor-pointer rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden hover:shadow-md hover:border-gray-300 transition-all ${isBusy ? 'opacity-50' : ''}`}
+                    >
+                      {/* Thumbnail */}
+                      <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
+                        {avatar.thumbnailUrl ? (
+                          <img src={avatar.thumbnailUrl} alt={avatar.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                            <Badge variant="secondary" className="text-[10px]">{avatar.format}</Badge>
                           </div>
+                        )}
+                        {/* Storage badge overlay */}
+                        {avatar.storage?.r2 && (
+                          <Badge variant="secondary" className="absolute top-1.5 right-1.5 bg-orange-100/90 text-orange-700 text-[8px] px-1" title="R2 CDN">R2</Badge>
+                        )}
+                        {!avatar.isPublic && (
+                          <Badge variant="secondary" className="absolute top-1.5 left-1.5 bg-yellow-100/90 text-yellow-800 text-[8px] px-1">Hidden</Badge>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="p-2">
+                        <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{avatar.name}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Badge variant="secondary" className="text-[8px] px-1 py-0">{avatar.format}</Badge>
+                          {avatar.file_size_bytes && (
+                            <span className="text-[9px] text-gray-400">{(avatar.file_size_bytes / 1024 / 1024).toFixed(1)}MB</span>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
