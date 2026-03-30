@@ -3,9 +3,14 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import type { VRM } from '@pixiv/three-vrm';
 import { mixamoVRMRigMap } from './mixamoRigMap';
 
-// Fetches an animation file, using a local proxy on localhost to avoid CORS
+// Fetches an animation file via proxy to avoid CORS issues.
+// External servers (like assets.opensourceavatars.com) don't set
+// Access-Control-Allow-Origin, so direct fetch fails in production.
 async function fetchViaProxy(url: string): Promise<Blob> {
-  if (window.location.hostname === 'localhost') {
+  // Always use proxy for external URLs to avoid CORS
+  const isExternal = !url.startsWith('/') && !url.includes(window.location.hostname);
+
+  if (isExternal) {
     try {
       const proxyUrl = `/api/proxy-asset?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
@@ -14,7 +19,7 @@ async function fetchViaProxy(url: string): Promise<Blob> {
       }
       return response.blob();
     } catch (error) {
-      console.error('Proxy fetch failed, falling back to direct fetch:', error);
+      // Fall through to direct fetch as last resort
     }
   }
 

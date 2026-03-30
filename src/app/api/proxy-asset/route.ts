@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const allowedDomains = [
       'assets.numinia.store',
       'assetsdev.numinia.store',
+      'assets.opensourceavatars.com',
       'arweave.net'
     ];
 
