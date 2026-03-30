@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Diamond } from 'lucide-react';
+import { Package, Upload, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Diamond, Globe } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
-export type AdminView = 'assets' | 'upload' | 'digital-goods' | 'stats' | 'settings' | 'updates';
+export type AdminView = 'assets' | 'upload' | 'archive' | 'portals' | 'digital-goods' | 'stats' | 'settings' | 'updates';
 
 interface AdminSidebarProps {
   activeView: AdminView;
@@ -16,6 +16,8 @@ interface AdminSidebarProps {
 const NAV_ITEMS: { id: AdminView; label: string; icon: typeof Package }[] = [
   { id: 'assets', label: 'Assets', icon: Package },
   { id: 'upload', label: 'Upload', icon: Upload },
+  { id: 'archive', label: 'Archive', icon: Package },
+  { id: 'portals', label: 'Portals', icon: Globe },
   { id: 'digital-goods', label: 'Digital Goods', icon: Diamond },
   { id: 'stats', label: 'Stats', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
