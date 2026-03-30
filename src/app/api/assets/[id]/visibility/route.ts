@@ -80,6 +80,7 @@ export async function PATCH(
       ...(updates.status !== undefined ? { status: updates.status } : {}),
       ...(updates.version !== undefined ? { version: updates.version } : {}),
       ...(updates.nft !== undefined ? { nft: updates.nft } : {}),
+      ...(updates.tags !== undefined ? { tags: updates.tags } : {}),
       ...(updates.is_public !== undefined ? { isPublic: updates.is_public } : {}),
     });
   } catch (error) {

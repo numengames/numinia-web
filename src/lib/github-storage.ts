@@ -485,6 +485,7 @@ async function getAvatars(projectIds?: string[]) {
       content_type: avatar.content_type as string | undefined,
       license: (avatar.license as string) || 'CC0',
       creator: avatar.creator as string | undefined,
+      tags: (avatar.tags as string[]) || [],
     };
   });
   

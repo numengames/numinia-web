@@ -100,6 +100,7 @@ export const RawAvatarSchema = z.object({
   file_hash: optStr,
   nft: NftSchema,
   storage: StorageSchema,
+  tags: z.array(z.string()).optional().default([]),
 }).passthrough();
 
 /** Raw tag from data repo */
