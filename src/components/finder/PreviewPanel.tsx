@@ -336,9 +336,46 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
         <>
           {/* Preview Area - Fixed 1:1 aspect ratio with proper overflow handling - Only show on model tab */}
           <div className="flex-none bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 min-w-0 relative" style={{ aspectRatio: '1 / 1', minHeight: '180px', maxHeight: '250px', width: '100%' }}>
-            {previewFile && previewFile.category === 'model' && previewFile.url ? (
-              // Show 3D viewer for all model files (VRM, FBX, GLB) using the optimized VRMViewer
-              // Use key prop to prevent reload when URL hasn't changed
+            {/* Media players — check BEFORE 3D model to prevent VRMViewer loading audio/video */}
+            {previewFile?.url && /\.(mp4|webm)$/i.test(previewFile.url) ? (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-900 to-black rounded-lg">
+                <video
+                  key={previewFile.url}
+                  src={previewFile.url}
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="max-w-full max-h-full object-contain rounded"
+                />
+              </div>
+            ) : previewFile?.url && /\.(mp3|ogg)$/i.test(previewFile.url) ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4">
+                {/* Audio waveform visual */}
+                <div className="flex items-end gap-[2px] h-12">
+                  {Array.from({ length: 32 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
+                      style={{
+                        height: `${12 + Math.sin(i * 0.5) * 20 + Math.random() * 16}px`,
+                        animationDelay: `${i * 0.05}s`,
+                        animationDuration: `${0.8 + Math.random() * 0.4}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{previewFile.label || avatar?.name}</p>
+                <audio
+                  key={previewFile.url}
+                  src={previewFile.url}
+                  controls
+                  autoPlay
+                  className="w-full max-w-[220px]"
+                />
+              </div>
+            ) : previewFile && previewFile.category === 'model' && previewFile.url ? (
               <VRMViewer
                 key={previewFile.url}
                 url={previewFile.url}
@@ -351,32 +388,6 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 cameraDistanceMultiplier={0.6}
                 captureRef={captureRef as any}
               />
-            ) : previewFile && previewFile.url && /\.(mp4|webm)$/i.test(previewFile.url) ? (
-              // Video player for MP4/WebM
-              <div className="w-full h-full flex items-center justify-center bg-black">
-                <video
-                  key={previewFile.url}
-                  src={previewFile.url}
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
-            ) : previewFile && previewFile.url && /\.(mp3|ogg)$/i.test(previewFile.url) ? (
-              // Audio player for MP3/OGG
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800 p-4">
-                <div className="text-4xl">🎵</div>
-                <p className="text-sm text-gray-500">{previewFile.label}</p>
-                <audio
-                  key={previewFile.url}
-                  src={previewFile.url}
-                  controls
-                  className="w-full max-w-xs"
-                />
-              </div>
             ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
               // Show image for thumbnail and texture files
               <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
@@ -405,8 +416,8 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
             ) : (
               // Default: show 3D viewer or video with main model
               avatar?.modelFileUrl ? (
-                /\.(mp4|webm|ogg)$/i.test(avatar.modelFileUrl) ? (
-                  <div className="w-full h-full flex items-center justify-center bg-black">
+                /\.(mp4|webm)$/i.test(avatar.modelFileUrl) ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-900 to-black rounded-lg">
                     <video
                       key={avatar.modelFileUrl}
                       src={avatar.modelFileUrl}
@@ -415,7 +426,31 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                       muted
                       loop
                       playsInline
-                      className="max-w-full max-h-full object-contain"
+                      className="max-w-full max-h-full object-contain rounded"
+                    />
+                  </div>
+                ) : /\.(mp3|ogg)$/i.test(avatar.modelFileUrl) ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4">
+                    <div className="flex items-end gap-[2px] h-12">
+                      {Array.from({ length: 32 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
+                          style={{
+                            height: `${12 + Math.sin(i * 0.5) * 20 + Math.random() * 16}px`,
+                            animationDelay: `${i * 0.05}s`,
+                            animationDuration: `${0.8 + Math.random() * 0.4}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{avatar.name}</p>
+                    <audio
+                      key={avatar.modelFileUrl}
+                      src={avatar.modelFileUrl}
+                      controls
+                      autoPlay
+                      className="w-full max-w-[220px]"
                     />
                   </div>
                 ) : (

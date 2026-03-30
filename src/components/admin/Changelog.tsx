@@ -13,6 +13,21 @@ type ChangelogEntry = {
 // Changelog entries — add new versions at the top
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.0',
+    date: '2026-03-30',
+    items: [
+      { text: 'Audio player with waveform visualizer (MP3/OGG)', type: 'new' },
+      { text: 'Video player in gallery and finder (MP4/WebM)', type: 'new' },
+      { text: 'Admin table view with sortable columns', type: 'new' },
+      { text: 'Gallery/Table view toggle (persisted)', type: 'new' },
+      { text: 'Storage layer badges on asset cards (R2, GH, IPFS, AR)', type: 'new' },
+      { text: 'Upload feedback: shows active layer + asset ID', type: 'improvement' },
+      { text: 'Finder auto-selects random asset on load', type: 'improvement' },
+      { text: 'Audio/Video/Worlds now visible in gallery sidebar', type: 'fix' },
+      { text: 'PageSpeed: deferred hero VRM load (LCP fix)', type: 'improvement' },
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-03-30',
     items: [
