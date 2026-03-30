@@ -83,7 +83,16 @@ export async function GET(req: NextRequest) {
         materialCount: avatar.materialCount || 0,
         isPublic: avatar.isPublic,
         isDraft: avatar.isDraft,
-        metadata: avatar.metadata || {}
+        metadata: avatar.metadata || {},
+        // v1 schema fields for admin
+        storage: avatar.storage,
+        status: avatar.status,
+        version: avatar.version,
+        file_size_bytes: avatar.file_size_bytes,
+        canonical: avatar.canonical,
+        nft: avatar.nft,
+        license: avatar.license,
+        creator: avatar.creator,
       };
     });
 

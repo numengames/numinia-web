@@ -41,8 +41,18 @@ export interface GithubAvatar extends BaseEntity {
   materialCount?: number;
   isPublic: boolean;
   isDraft: boolean;
-  metadata: Record<string, any>;
-  // Tags are handled through the AvatarTag relationship
+  metadata: Record<string, unknown>;
+  // v1 schema fields
+  storage?: { r2?: string; ipfs_cid?: string; arweave_tx?: string; github_raw?: string };
+  status?: string;
+  version?: string;
+  file_size_bytes?: number;
+  file_hash?: string;
+  canonical?: string;
+  nft?: Record<string, unknown>;
+  content_type?: string;
+  license?: string;
+  creator?: string;
 }
 
 // Tag model

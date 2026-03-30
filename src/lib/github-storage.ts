@@ -84,6 +84,17 @@ export type GithubAvatar = {
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  // v1 schema fields
+  storage?: { r2?: string; ipfs_cid?: string; arweave_tx?: string; github_raw?: string };
+  status?: string;
+  version?: string;
+  file_size_bytes?: number;
+  file_hash?: string;
+  canonical?: string;
+  nft?: Record<string, unknown>;
+  content_type?: string;
+  license?: string;
+  creator?: string;
 };
 
 export type GithubAvatarTag = {
@@ -450,6 +461,17 @@ async function getAvatars(projectIds?: string[]) {
       createdAt: (avatar.created_at ?? avatar.createdAt) as string,
       updatedAt: (avatar.updated_at ?? avatar.updatedAt) as string,
       metadata: resolveAlternateModelsMetadata((avatar.metadata || {}) as Record<string, unknown>),
+      // v1 schema fields — passed through for admin dashboard
+      storage: avatar.storage as { r2?: string; ipfs_cid?: string; arweave_tx?: string; github_raw?: string } | undefined,
+      status: (avatar.status as string) || 'active',
+      version: avatar.version as string | undefined,
+      file_size_bytes: avatar.file_size_bytes as number | undefined,
+      file_hash: avatar.file_hash as string | undefined,
+      canonical: avatar.canonical as string | undefined,
+      nft: avatar.nft as Record<string, unknown> | undefined,
+      content_type: avatar.content_type as string | undefined,
+      license: (avatar.license as string) || 'CC0',
+      creator: avatar.creator as string | undefined,
     };
   });
   
