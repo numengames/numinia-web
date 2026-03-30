@@ -126,7 +126,6 @@ export default function AvatarDetailPage() {
       try {
         await navigator.share({ title: avatar?.name, text, url });
       } catch (err) {
-        console.log('Share cancelled');
       }
     } else {
       navigator.clipboard.writeText(url);

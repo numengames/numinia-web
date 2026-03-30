@@ -11,11 +11,9 @@ export async function POST(request: Request) {
     }
     
     // Log the requested filename for debugging
-    console.log('Resolving voxel URL for filename:', filename);
     
     // If the input is already an Arweave URL, return it directly
     if (filename.includes('arweave.net')) {
-      console.log('Input is already an Arweave URL, returning it directly');
       return NextResponse.json({ url: filename });
     }
     
@@ -28,24 +26,20 @@ export async function POST(request: Request) {
       filename.replace(/-/g, '_')     // Replace hyphens with underscores
     ];
     
-    console.log('Trying filename variations:', variations);
     
     // Try each variation
     for (const variant of variations) {
       if (!variant) continue;
       
-      console.log('Checking variant:', variant);
       const txId = getArweaveTxId(variant, 'model');
       
       if (txId) {
         const url = getArweaveUrl(txId);
-        console.log('Found URL with variant:', variant, 'URL:', url);
         return NextResponse.json({ url });
       }
     }
       
     // If none of the variations work, return an error
-    console.log('No Arweave txId found for any filename variation');
     return NextResponse.json({ 
       error: 'No Arweave transaction ID found for the provided filename',
       url: null,

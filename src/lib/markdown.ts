@@ -77,10 +77,6 @@ export function getProjectRoot(): string {
           const enPath = path.join(docsPath, 'en');
           const jaPath = path.join(docsPath, 'ja');
           if (fileExists(enPath) || fileExists(jaPath)) {
-            // Log for debugging in production
-            if (process.env.NODE_ENV === 'production') {
-              console.log(`[getProjectRoot] Found docs at: ${docsPath}, using root: ${root}`);
-            }
             return root;
           }
         }

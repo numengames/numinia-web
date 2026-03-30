@@ -28,12 +28,9 @@ const getAvailableFormats = (avatar: AvatarViewerProps['avatar']) => {
     const alternateModels = avatar.metadata.alternateModels;
     
     // Log model information for debugging
-    console.log('Avatar name:', avatar.name);
-    console.log('Alternate models structure:', JSON.stringify(alternateModels, null, 2));
     
     // Find all keys that might be relevant
     const allKeys = Object.keys(alternateModels);
-    console.log('Available keys:', allKeys);
     
     // Standard format detection for all models
     
@@ -42,20 +39,17 @@ const getAvailableFormats = (avatar: AvatarViewerProps['avatar']) => {
     
     // Check for FBX (standard model)
     if (allKeys.includes('fbx') && alternateModels['fbx']) {
-      console.log(`Found FBX model with key: fbx`);
       formats.push({ id: 'fbx', label: 'FBX', isVoxel: false });
     }
     
     // Check for Voxel VRM
     if (allKeys.includes('voxel_vrm') && alternateModels['voxel_vrm']) {
-      console.log(`Found Voxel VRM with key: voxel_vrm`);
       formats.push({ id: 'voxel', label: 'Voxel VRM', isVoxel: true });
     }
     
     // Check for Voxel FBX
     if ((allKeys.includes('voxel_fbx') && alternateModels['voxel_fbx']) || 
         (allKeys.includes('voxel-fbx') && alternateModels['voxel-fbx'])) {
-      console.log(`Found Voxel FBX with key: voxel_fbx or voxel-fbx`);
       formats.push({ id: 'voxel-fbx', label: 'Voxel FBX', isVoxel: true });
     }
   } else {
@@ -83,7 +77,6 @@ const getModelFilenameForFormat = (
     
     // If it's already an Arweave URL, return it as is
     if (value && typeof value === 'string' && value.includes('arweave.net')) {
-      console.log(`Found direct Arweave URL for FBX format: ${value}`);
       return value;
     }
     return value;
@@ -95,7 +88,6 @@ const getModelFilenameForFormat = (
     
     // If it's already an Arweave URL, return it as is
     if (value && typeof value === 'string' && value.includes('arweave.net')) {
-      console.log(`Found direct Arweave URL for Voxel VRM format: ${value}`);
       return value;
     }
     return value;
@@ -106,7 +98,6 @@ const getModelFilenameForFormat = (
     
     // If it's already an Arweave URL, return it as is
     if (value && typeof value === 'string' && value.includes('arweave.net')) {
-      console.log(`Found direct Arweave URL for Voxel FBX format: ${value}`);
       return value;
     }
     return value;
@@ -264,7 +255,6 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const toggleWireframeMode = () => {
     const newMode = !wireframeMode;
     setWireframeMode(newMode);
-    console.log("Toggling wireframe mode to:", newMode);
     
     // Dispatch custom event to notify VRMViewer
     window.dispatchEvent(new CustomEvent('toggle-wireframe'));
@@ -274,7 +264,6 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const toggleSkeletonMode = () => {
     const newMode = !skeletonMode;
     setSkeletonMode(newMode);
-    console.log("Toggling skeleton mode to:", newMode);
     
     // Dispatch custom event to notify VRMViewer
     window.dispatchEvent(new CustomEvent('toggle-skeleton'));
@@ -284,7 +273,6 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const toggleRulerMode = () => {
     const newMode = !rulerMode;
     setRulerMode(newMode);
-    console.log("Toggling ruler mode to:", newMode);
     
     // Dispatch custom event to notify VRMViewer
     window.dispatchEvent(new CustomEvent('toggle-ruler'));
@@ -294,7 +282,6 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const toggleAnimationPanel = () => {
     const newMode = !showAnimationPanel;
     setShowAnimationPanel(newMode);
-    console.log("Toggling animation panel to:", newMode);
     
     // Dispatch custom event to notify VRMViewer
     window.dispatchEvent(new CustomEvent('toggle-animation-panel'));
@@ -304,7 +291,6 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const toggleInfoPanel = () => {
     const newMode = !showInfoPanel;
     setShowInfoPanel(newMode);
-    console.log("Toggling info panel to:", newMode);
   };
   
   // Memoize availableFormats to prevent unnecessary recalculations
@@ -326,21 +312,17 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
     if (selectedFormatDetails?.isVoxel) {
       // Get the filename using our helper function
       const voxelFilename = getModelFilenameForFormat(avatar, 'voxel');
-      console.log('Voxel filename for display:', voxelFilename);
       
       // If we have a filename for the voxel VRM
       if (voxelFilename && typeof voxelFilename === 'string') {
         // If it's already an Arweave URL, use it directly
         if (voxelFilename.includes('arweave.net')) {
-          console.log('Direct Arweave URL found for voxel, using it:', voxelFilename);
           return voxelFilename;
         }
         
         // Otherwise use our special protocol to signal that this needs to be resolved
-        console.log('Using voxel:// protocol with filename:', voxelFilename);
         return `voxel://${voxelFilename}`;
       } else {
-        console.log('No voxel filename found, using default modelFileUrl');
       }
     }
     

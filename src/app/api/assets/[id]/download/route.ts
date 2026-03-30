@@ -45,9 +45,6 @@ export async function POST(
         // Get model filename using our helper function
         const formatFilename = getModelFilenameForFormat(avatar.metadata, format);
         
-        console.log('Download format requested:', format);
-        console.log('Available alternate models:', JSON.stringify(avatar.metadata.alternateModels, null, 2));
-        console.log('Format filename found:', formatFilename);
         
         if (formatFilename) {
           modelFilename = formatFilename;

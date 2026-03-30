@@ -392,7 +392,6 @@ export default function Finder() {
                   const mainModel = files.find((f: FileTypeInfo) => f.id === 'vrm_main') || files.find((f: FileTypeInfo) => f.category === 'model');
                   setSelectedFile(mainModel || null);
                 }
-                console.log(`Loaded avatar from URL: ${avatar.name}`);
               }
             }
           }

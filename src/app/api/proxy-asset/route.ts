@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch the asset
-    console.log('Proxying asset from:', url);
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'OSA-Asset-Proxy',

@@ -110,7 +110,6 @@ const RAW_CONTENT_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GI
 async function fetchData<T = unknown>(path: string): Promise<T> {
   try {
     const url = `${RAW_CONTENT_BASE}/${path}?timestamp=${Date.now()}`;
-    console.log(`Fetching from: ${url}`);
     const response = await fetch(url, {
       headers: {
         'Cache-Control': 'no-cache',
@@ -132,7 +131,6 @@ async function fetchData<T = unknown>(path: string): Promise<T> {
     }
     
     const data = await response.json();
-    console.log(`  ✓ Successfully fetched ${path} (response size: ${JSON.stringify(data).length} chars)`);
     return data;
   } catch (error) {
     console.error(`  ✗ Error fetching data from GitHub: ${path}`, error);
@@ -177,7 +175,6 @@ async function updateData(
       }
     } catch (error) {
       // File might not exist yet, which is fine
-      console.log(`File does not exist yet: ${path}`);
     }
     
     // Prepare the update content
@@ -308,7 +305,6 @@ async function getAvatars(projectIds?: string[]) {
       const hasAssetDataFiles = projects.some((p: any) => p.asset_data_file || p.assetDataFile || p.avatar_data_file || p.avatarDataFile);
       
       if (hasAssetDataFiles) {
-        console.log('Using new multi-file asset structure from projects.json');
         
         // Fetch assets from each project's asset file
         const avatarPromises = projects
@@ -323,13 +319,6 @@ async function getAvatars(projectIds?: string[]) {
               if (!projectIds.includes(project.id)) {
                 return false; // Skip projects not in the filter list
               }
-            }
-            
-            if (!hasAvatarFile) {
-              console.log(`Skipping project ${project.name || project.id}: no asset_data_file`);
-            }
-            if (!isPublic) {
-              console.log(`Skipping project ${project.name || project.id}: not public`);
             }
             
             return hasAvatarFile && isPublic;
@@ -358,36 +347,11 @@ async function getAvatars(projectIds?: string[]) {
                 // Just filename, add data/assets/ prefix (new structure)
                 avatarPath = `data/assets/${avatarFile}`;
               }
-              
-              console.log(`Fetching avatars from: ${avatarPath} for project: ${project.name || projectId}`);
-              
               const projectAvatars = await fetchData<Record<string, unknown>[]>(avatarPath);
-              
-              // Debug: log what we actually got
-              console.log(`  Response type: ${typeof projectAvatars}, isArray: ${Array.isArray(projectAvatars)}`);
-              if (!Array.isArray(projectAvatars)) {
-                console.log(`  Response content (first 200 chars):`, JSON.stringify(projectAvatars).substring(0, 200));
-              }
-              
+
               if (Array.isArray(projectAvatars)) {
-                console.log(`  ✓ Loaded ${projectAvatars.length} avatars from ${avatarFile}`);
                 
-                if (projectAvatars.length > 0) {
-                  // Check project_id distribution in the file
-                  const projectIdDistribution = projectAvatars.reduce((acc: Record<string, number>, avatar: any) => {
-                    const pid = avatar.project_id || 'undefined';
-                    acc[pid] = (acc[pid] || 0) + 1;
-                    return acc;
-                  }, {});
-                  console.log(`  Project ID distribution in ${avatarFile}:`, projectIdDistribution);
-                  
-                  // Log first avatar as sample
-                  console.log(`  Sample avatar (first one):`, {
-                    id: projectAvatars[0].id,
-                    name: projectAvatars[0].name,
-                    project_id: projectAvatars[0].project_id
-                  });
-                } else {
+                if (projectAvatars.length === 0) {
                   console.warn(`  ⚠ File ${avatarFile} exists but is empty (0 avatars)`);
                 }
                 
@@ -413,7 +377,6 @@ async function getAvatars(projectIds?: string[]) {
         const avatarArrays = await Promise.all(avatarPromises);
         allAvatars = avatarArrays.flat();
         
-        console.log(`✓ Loaded ${allAvatars.length} assets from ${avatarPromises.length} project files`);
         if (allAvatars.length === 0) {
           console.warn('⚠ No assets loaded! Check project files and asset_data_file paths.');
         }
@@ -422,7 +385,6 @@ async function getAvatars(projectIds?: string[]) {
     
     // Fallback: If no avatars were loaded from project files, try the old single-file structure
     if (allAvatars.length === 0) {
-      console.log('Falling back to single-file avatar structure (data/avatars.json)');
       const rawAvatars = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatars);
       if (Array.isArray(rawAvatars)) {
         allAvatars = rawAvatars;
@@ -468,7 +430,6 @@ async function getAvatars(projectIds?: string[]) {
     };
   });
   
-  console.log(`✓ Converted ${convertedAvatars.length} avatars to camelCase format`);
   return convertedAvatars;
 }
 
@@ -586,7 +547,6 @@ type DownloadCounts = { counts: Record<string, number> };
 // Function to save download counts (privacy-friendly approach)
 async function saveDownloadCounts(downloadCounts: DownloadCounts): Promise<void> {
   await saveData('download-counts.json', downloadCounts);
-  console.log('Download counts saved successfully');
 }
 
 async function getDownloadCounts(): Promise<DownloadCounts> {

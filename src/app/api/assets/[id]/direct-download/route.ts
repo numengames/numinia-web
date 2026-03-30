@@ -58,9 +58,6 @@ export async function GET(
       // Get model filename using our helper function
       const formatFilename = getModelFilenameForFormat(avatar.metadata, format);
       
-      console.log('Download format requested:', format);
-      console.log('Available alternate models:', JSON.stringify(avatar.metadata.alternateModels, null, 2));
-      console.log('Format filename found:', formatFilename);
       
       if (formatFilename) {
         // Normalize IPFS URLs in alternate models too
@@ -112,7 +109,6 @@ export async function GET(
       filename = `${cleanName}${voxelPart}${extension}`;
     }
     
-    console.log(`Downloading ${filename} from ${normalizedUrl}${isIPFS ? ' (IPFS)' : isGitHub ? ' (GitHub)' : ''}`);
     
     try {
       // Fetch the file directly
@@ -150,7 +146,6 @@ export async function GET(
           // Try alternative IPFS gateway if dweb.link fails
           if (normalizedUrl.includes('dweb.link')) {
             const alternativeUrl = normalizedUrl.replace('dweb.link', 'ipfs.io');
-            console.log(`Retrying with alternative IPFS gateway: ${alternativeUrl}`);
             try {
               // Create new fetch options for retry
               const retryFetchOptions: RequestInit = {

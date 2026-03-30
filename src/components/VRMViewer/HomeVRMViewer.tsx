@@ -181,7 +181,6 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
               if (progress.total) {
                 const percentage = Math.round((progress.loaded / progress.total) * 100);
                 setLoadingProgress(percentage);
-                console.log(`Loading progress: ${percentage}%`);
               }
             },
             reject
@@ -191,7 +190,6 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
         const vrm = gltf.userData.vrm;
         const isVRM = !!vrm;
         
-        console.log(isVRM ? 'VRM model loaded' : 'GLB/GLTF model loaded (non-VRM)');
 
         // VRM-specific processing only for VRM files
         if (vrm) {
@@ -308,7 +306,6 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
         let clip = null;
         if (vrm) {
           try {
-            console.log('Loading Mixamo animation for VRM...');
             clip = await loadMixamoAnimation(
               'https://assets.numinia.store/animations/Warrior%20Idle.fbx',
               vrm
@@ -323,7 +320,6 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
           const action = mixerRef.current.clipAction(clip);
           action.play();
           animationLoadedRef.current = true;
-          console.log('Animation started');
         }
 
         setLoadingProgress(100);

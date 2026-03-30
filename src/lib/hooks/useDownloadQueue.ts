@@ -115,7 +115,6 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
     }
 
     try {
-      console.log('Saving file to folder:', fileName, 'Folder:', handle.name);
       
       // Request permission if the method is available (for subsequent saves after page reload)
       // Permission is automatically granted on folder selection via showDirectoryPicker
@@ -129,7 +128,6 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
         } catch (permError) {
           // requestPermission might not be available or might fail
           // This is OK if permission was already granted via showDirectoryPicker
-          console.log('Permission check skipped or already granted');
         }
       }
       
@@ -141,7 +139,6 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
       await writable.write(blob);
       await writable.close();
       
-      console.log('Successfully saved file to folder:', fileName);
     } catch (error: any) {
       console.error('Error saving to folder:', error);
       
@@ -372,7 +369,6 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
         )
       );
 
-      console.log(`ZIP download complete: ${completedFetches} files, ${failedItems.length} failed`);
     } catch (error: any) {
       console.error('Error generating ZIP:', error);
       setQueue((prev) =>
@@ -404,7 +400,6 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
       // Store folder handle for use during downloads
       if (downloadOptions.folderHandle) {
         folderHandleRef.current = downloadOptions.folderHandle;
-        console.log('Folder handle stored:', downloadOptions.folderHandle.name);
       } else {
         console.warn('No folder handle provided in download options');
       }

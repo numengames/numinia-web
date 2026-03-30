@@ -239,25 +239,21 @@ export default function BatchDownloadManager({
       const handle = await (window as any).showDirectoryPicker();
       setSelectedFolder(handle);
       setFolderName(handle.name);
-      console.log('Folder selected:', handle.name);
       
       // Verify we can actually use this folder by checking permission
       try {
         if ('requestPermission' in handle && typeof (handle as any).requestPermission === 'function') {
           const permission = await (handle as any).requestPermission({ mode: 'readwrite' });
-          console.log('Folder permission:', permission);
           if (permission !== 'granted') {
             console.warn('Folder permission not granted:', permission);
           }
         }
       } catch (permError) {
-        console.log('Permission check:', permError);
         // This is OK - permission might already be granted from folder selection
       }
     } catch (error: any) {
       // User cancelled the dialog
       if (error.name === 'AbortError') {
-        console.log('User cancelled folder selection');
         return;
       }
       console.error('Error selecting folder:', error);
@@ -268,7 +264,6 @@ export default function BatchDownloadManager({
 
   const handleDownload = async () => {
     // ZIP downloads don't require folder selection - files download to default download folder
-    console.log('Starting ZIP download');
     onStartDownload({
       downloadVrms,
       downloadFbx,

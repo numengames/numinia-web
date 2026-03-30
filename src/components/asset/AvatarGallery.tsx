@@ -134,7 +134,6 @@ export const AvatarGallery: React.FC = () => {
             const avatar = apiData.avatars.find(a => createSlug(a.name) === avatarSlug);
             if (avatar) {
               setCurrentAvatar(avatar);
-              console.log(`Loaded avatar from URL: ${avatar.name}`);
             } else {
               // Avatar not found, select random one
               const randomIndex = Math.floor(Math.random() * apiData.avatars.length);
@@ -144,7 +143,6 @@ export const AvatarGallery: React.FC = () => {
             // No avatar in URL, select a random one
             const randomIndex = Math.floor(Math.random() * apiData.avatars.length);
             setCurrentAvatar(apiData.avatars[randomIndex]);
-            console.log(`Selected random avatar: ${apiData.avatars[randomIndex].name}`);
           }
         }
       } catch (err) {
@@ -237,7 +235,6 @@ export const AvatarGallery: React.FC = () => {
   };
 
   const handleMetadataLoad = useCallback((metadata: Record<string, any>) => {
-    console.log('VRM metadata loaded:', metadata);
     setVrmMetadata(metadata);
   }, []);
 

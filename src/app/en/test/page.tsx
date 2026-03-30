@@ -17,7 +17,6 @@ export default function TestPage() {
       });
 
       const data = await response.json();
-      console.log('Session data:', data);
 
       if (data.user) {
         setUserData(data.user);

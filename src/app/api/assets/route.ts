@@ -8,7 +8,6 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
-  console.log('API Route: GET /api/assets - Starting request');
   
   try {
     const searchParams = req.nextUrl.searchParams;
@@ -24,7 +23,6 @@ export async function GET(req: NextRequest) {
     // assetName takes precedence over search when both could apply
     const effectiveSearch = assetName ?? search;
     
-    console.log('Search params:', { search, assetName, projectIds });
 
     // Check if user is authenticated (wallet or GitHub OAuth)
     const { isAdmin } = getAdminSession(req);
@@ -36,7 +34,6 @@ export async function GET(req: NextRequest) {
       getProjects()
     ]);
 
-    console.log(`API: Received ${avatars.length} avatars, ${projects.length} projects`);
 
     // Filter avatars based on search criteria and visibility
     const filteredAvatars = avatars.filter((avatar: GithubAvatar) => {
@@ -61,7 +58,6 @@ export async function GET(req: NextRequest) {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    console.log(`Found ${sortedAvatars.length} avatars`);
 
     // Get project names for each avatar
     const projectMap = new Map<string, GithubProject>();
@@ -116,8 +112,6 @@ export async function GET(req: NextRequest) {
       acc[avatar.projectId] = (acc[avatar.projectId] || 0) + 1;
       return acc;
     }, {});
-    console.log('Avatar counts by project:', projectIdCounts);
-    console.log('Available project IDs:', publicProjects.map((p: PublicProject) => ({ id: p.id, name: p.name, count: p.avatarCount })));
 
     return NextResponse.json({ 
       avatars: transformedAvatars,
