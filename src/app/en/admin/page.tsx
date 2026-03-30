@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AvatarAdminDashboard from '@/components/AvatarAdminDashboard';
 import { WalletConnect } from '@/components/admin/WalletConnect';
 import { AssetUpload } from '@/components/admin/AssetUpload';
+import { Changelog } from '@/components/admin/Changelog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -19,7 +20,6 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Check if we already have an active admin session
   useEffect(() => {
     fetch('/api/auth/wallet/session')
       .then(res => res.json())
@@ -42,10 +42,10 @@ export default function AdminPage() {
     );
   }
 
-  // Not authenticated — show wallet connect
   if (!session?.authenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6">
+        <img src="/logo-numinia.svg" alt="Numinia" className="h-8 w-auto" />
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Numinia Admin</h1>
           <p className="text-sm text-gray-500">
@@ -57,20 +57,34 @@ export default function AdminPage() {
     );
   }
 
-  // Authenticated — show admin dashboard
   return (
     <div>
+      {/* Admin topbar with logo */}
       <div className="p-4 flex justify-between items-center bg-cream border-b">
-        <div className="text-sm text-gray-600">
-          Admin — {session.address?.slice(0, 6)}...{session.address?.slice(-4)}
+        <div className="flex items-center gap-3">
+          <img src="/logo-numinia.svg" alt="Numinia" className="h-5 w-auto" />
+          <span className="text-xs text-gray-400">|</span>
+          <span className="text-sm text-gray-600">
+            {session.address?.slice(0, 6)}...{session.address?.slice(-4)}
+          </span>
         </div>
-        <Button onClick={handleSignOut} variant="destructive">
+        <Button onClick={handleSignOut} variant="destructive" size="sm">
           Sign Out
         </Button>
       </div>
-      <div className="max-w-7xl mx-auto p-6">
-        <AssetUpload onUploaded={() => router.refresh()} />
+
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Upload + Changelog side by side on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <AssetUpload onUploaded={() => router.refresh()} />
+          </div>
+          <div>
+            <Changelog />
+          </div>
+        </div>
       </div>
+
       <AvatarAdminDashboard />
     </div>
   );
