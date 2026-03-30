@@ -34,12 +34,24 @@ export async function PATCH(
 
     const updates: Record<string, unknown> = {};
 
+    // Editable fields — add new fields here as needed
     if (typeof body.name === 'string' && body.name.trim()) {
       updates.name = body.name.trim();
     }
-
     if (typeof body.description === 'string') {
       updates.description = body.description.trim();
+    }
+    if (typeof body.creator === 'string') {
+      updates.creator = body.creator.trim();
+    }
+    if (typeof body.license === 'string') {
+      updates.license = body.license.trim();
+    }
+    if (typeof body.status === 'string') {
+      updates.status = body.status.trim();
+    }
+    if (typeof body.version === 'string') {
+      updates.version = body.version.trim();
     }
 
     // If no explicit field updates, toggle visibility
@@ -57,6 +69,10 @@ export async function PATCH(
       ...avatar,
       ...(updates.name ? { name: updates.name } : {}),
       ...(updates.description !== undefined ? { description: updates.description } : {}),
+      ...(updates.creator !== undefined ? { creator: updates.creator } : {}),
+      ...(updates.license !== undefined ? { license: updates.license } : {}),
+      ...(updates.status !== undefined ? { status: updates.status } : {}),
+      ...(updates.version !== undefined ? { version: updates.version } : {}),
       ...(updates.is_public !== undefined ? { isPublic: updates.is_public } : {}),
     });
   } catch (error) {
