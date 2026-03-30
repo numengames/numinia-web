@@ -4,12 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import AdminTableView from '@/components/admin/AdminTableView';
 import { AssetDetailModal } from '@/components/admin/AssetDetailModal';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -246,63 +240,62 @@ export default function AvatarAdminDashboard() {
           </div>
         )}
 
-        <Card className="overflow-hidden">
-          <CardContent className="p-4 space-y-3">
+        {/* Sticky filter bar */}
+        <div className="sticky top-0 z-20 bg-cream/95 dark:bg-cream-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 py-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search */}
             <Input
-              placeholder="Search assets..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-md border-gray-200"
+              className="w-48 h-8 text-sm bg-white dark:bg-gray-900 border-gray-200"
             />
-            {/* Filters + view toggle */}
-            <div className="flex gap-2 flex-wrap items-center">
-              {/* View toggle */}
-              <div className="flex border rounded-md overflow-hidden mr-2">
-                <button
-                  onClick={() => { setViewMode('gallery'); localStorage.setItem('admin-view-mode', 'gallery'); }}
-                  className={`p-1.5 transition-colors ${viewMode === 'gallery' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
-                  title="Gallery view"
-                >
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-                </button>
-                <button
-                  onClick={() => { setViewMode('table'); localStorage.setItem('admin-view-mode', 'table'); }}
-                  className={`p-1.5 transition-colors ${viewMode === 'table' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
-                  title="Table view"
-                >
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-                </button>
-              </div>
-              <span className="text-xs text-gray-400 mr-1">{filteredAvatars.length} assets</span>
-              <Button
-                variant={formatFilter === null ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFormatFilter(null)}
-              >
-                All ({avatars.length})
-              </Button>
-              {formats.map(fmt => {
-                const count = avatars.filter(a => a.format?.toUpperCase() === fmt).length;
-                return (
-                  <Button
-                    key={fmt}
-                    variant={formatFilter === fmt ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFormatFilter(formatFilter === fmt ? null : fmt)}
-                  >
-                    {fmt} ({count})
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="overflow-hidden">
-          <CardHeader className="px-6">
-            <CardTitle>Assets</CardTitle>
-          </CardHeader>
-          <CardContent className={viewMode === 'table' ? 'p-2' : 'p-6'}>
+            {/* Separator */}
+            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700" />
+
+            {/* Type filters */}
+            <Button variant={formatFilter === null ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => setFormatFilter(null)}>
+              All ({avatars.length})
+            </Button>
+            {formats.map(fmt => {
+              const count = avatars.filter(a => a.format?.toUpperCase() === fmt).length;
+              return (
+                <Button key={fmt} variant={formatFilter === fmt ? 'default' : 'outline'} size="sm" className="h-7 text-xs"
+                  onClick={() => setFormatFilter(formatFilter === fmt ? null : fmt)}>
+                  {fmt} ({count})
+                </Button>
+              );
+            })}
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            {/* Count */}
+            <span className="text-xs text-gray-400">{filteredAvatars.length} assets</span>
+
+            {/* View toggle */}
+            <div className="flex border rounded-md overflow-hidden">
+              <button
+                onClick={() => { setViewMode('gallery'); localStorage.setItem('admin-view-mode', 'gallery'); }}
+                className={`p-1 transition-colors ${viewMode === 'gallery' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                title="Gallery view"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+              </button>
+              <button
+                onClick={() => { setViewMode('table'); localStorage.setItem('admin-view-mode', 'table'); }}
+                className={`p-1 transition-colors ${viewMode === 'table' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                title="Table view"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Asset content */}
+        <div>
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 py-8">
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -363,8 +356,7 @@ export default function AvatarAdminDashboard() {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+        </div>
       </div>
       </div>
 
