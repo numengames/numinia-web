@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { CrescentSpinner } from '@/components/ui/crescent-spinner';
 import { useFavorites } from '@/lib/hooks/useFavorites';
+import { AssetActions } from './AssetActions';
 
 // Utility function to format camelCase or PascalCase names with spaces
 const formatName = (name: string): string => {
@@ -575,18 +576,25 @@ export const AvatarGallery: React.FC = () => {
                       `}
                       onClick={() => handleAvatarClick(avatar)}
                     >
-                      {/* Heart button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(avatar.id); }}
-                        className={`absolute top-1.5 right-1.5 z-10 p-1 rounded-full transition-all ${
-                          isFavorite(avatar.id)
-                            ? 'text-red-500 opacity-100'
-                            : 'text-white/80 opacity-0 group-hover/card:opacity-100 hover:text-red-400'
-                        }`}
-                        title={isFavorite(avatar.id) ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        <Heart className={`h-4 w-4 drop-shadow-md ${isFavorite(avatar.id) ? 'fill-current' : ''}`} />
-                      </button>
+                      {/* Card overlay actions */}
+                      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(avatar.id); }}
+                          className={`p-1 rounded-full transition-all ${
+                            isFavorite(avatar.id)
+                              ? 'text-red-500 opacity-100'
+                              : 'text-white/60 opacity-70 hover:opacity-100 hover:text-red-400'
+                          }`}
+                          title={isFavorite(avatar.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <Heart className={`h-4 w-4 drop-shadow-md ${isFavorite(avatar.id) ? 'fill-current' : ''}`} />
+                        </button>
+                        <AssetActions
+                          name={avatar.name}
+                          assetUrl={avatar.modelFileUrl}
+                          pageUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/${currentLocale}/gallery?asset=${avatar.id}`}
+                        />
+                      </div>
 
                       {/* Thumbnail */}
                       <div className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
@@ -616,6 +624,15 @@ export const AvatarGallery: React.FC = () => {
                   ))}
                 </div>
                 
+                {/* Empty state for favorites filter */}
+                {displayedAvatars.length === 0 && showFavoritesOnly && (
+                  <div className="px-3 py-8 text-center space-y-2">
+                    <Heart className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-600" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No favorites yet</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Click the heart on any asset card to add it to your favorites</p>
+                  </div>
+                )}
+
                 {/* Loading indicator when more items are available */}
                 {hasMore && (
                   <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
