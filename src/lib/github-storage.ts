@@ -14,6 +14,11 @@ import { resolveAvatarFieldsFromRaw, resolveAlternateModelsMetadata } from '@/li
 import { env } from '@/lib/env';
 // Next.js loads .env / .env.local automatically — no dotenv.config() needed.
 
+// Shorthand for raw JSON objects from GitHub. Using this instead of `any`
+// means we're explicit about the boundary: raw JSON properties are untyped,
+// but the map callbacks that convert them produce fully-typed output.
+type RawJSON = Record<string, unknown>;
+
 // Type definitions using camelCase (for application code)
 export type GithubUser = {
   id: string;
@@ -233,14 +238,14 @@ async function getUsers() {
   const rawUsers = await fetchData<Record<string, unknown>[]>(DATA_PATHS.users);
   
   // Convert snake_case to camelCase for compatibility and sanitize sensitive fields
-  return rawUsers.map((user: any) => ({
-    id: user.id,
-    username: user.username,
-    email: '[email protected]', // Always return a sanitized email
-    passwordHash: '', // Return empty string instead of undefined
-    role: user.role,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at
+  return rawUsers.map((user: RawJSON): GithubUser => ({
+    id: user.id as string,
+    username: user.username as string,
+    email: '[email protected]',
+    passwordHash: '',
+    role: user.role as string,
+    createdAt: user.created_at as string,
+    updatedAt: user.updated_at as string,
   }));
 }
 
@@ -262,17 +267,16 @@ async function getProjects() {
   const rawProjects = await fetchData<Record<string, unknown>[]>(DATA_PATHS.projects);
   
   // Convert snake_case to camelCase for compatibility
-  return rawProjects.map((project: any) => ({
-    id: project.id,
-    name: project.name,
-    creatorId: project.creator_id,
-    description: project.description,
-    isPublic: project.is_public,
-    license: project.license || 'CC0', // Default to CC0 if not specified
-    createdAt: project.created_at,
-    updatedAt: project.updated_at,
+  return rawProjects.map((project: RawJSON): GithubProject => ({
+    id: project.id as string,
+    name: project.name as string,
+    creatorId: project.creator_id as string,
+    description: project.description as string | undefined,
+    isPublic: project.is_public !== false,
+    createdAt: project.created_at as string,
+    updatedAt: project.updated_at as string,
     // Support new asset_data_file field from open-source-3D-assets structure
-    asset_data_file: project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile
+    asset_data_file: (project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile) as string | undefined
   }));
 }
 
@@ -293,7 +297,7 @@ async function saveProjects(projects: GithubProject[]) {
 
 // Avatars
 async function getAvatars(projectIds?: string[]) {
-  let allAvatars: any[] = [];
+  let allAvatars: RawJSON[] = [];
   
   try {
     // First, try the new multi-file structure from open-source-3D-assets
@@ -302,30 +306,28 @@ async function getAvatars(projectIds?: string[]) {
     
     if (Array.isArray(projects) && projects.length > 0) {
       // Check if any project has asset_data_file field (new structure)
-      const hasAssetDataFiles = projects.some((p: any) => p.asset_data_file || p.assetDataFile || p.avatar_data_file || p.avatarDataFile);
+      const hasAssetDataFiles = projects.some((p: RawJSON) => p.asset_data_file || p.assetDataFile || p.avatar_data_file || p.avatarDataFile);
       
       if (hasAssetDataFiles) {
         
         // Fetch assets from each project's asset file
         const avatarPromises = projects
-          .filter((project: any) => {
+          .filter((project: RawJSON) => {
             const avatarFile = project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile;
-            // Only filter if is_public is explicitly false, otherwise include it
-            const isPublic = project.is_public !== false; // Default to true if not specified
+            const isPublic = project.is_public !== false;
             const hasAvatarFile = !!avatarFile;
-            
-            // Filter by project IDs if provided
+
             if (projectIds && projectIds.length > 0) {
-              if (!projectIds.includes(project.id)) {
-                return false; // Skip projects not in the filter list
+              if (!projectIds.includes(project.id as string)) {
+                return false;
               }
             }
-            
+
             return hasAvatarFile && isPublic;
           })
-          .map(async (project: any) => {
-            const avatarFile = project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile;
-            const projectId = project.id;
+          .map(async (project: RawJSON) => {
+            const avatarFile = String(project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile);
+            const projectId = project.id as string;
             
             try {
               // Normalize the asset file path
@@ -358,7 +360,7 @@ async function getAvatars(projectIds?: string[]) {
                 // Ensure all avatars have the correct project_id
                 // Use the project_id from the file if it exists, otherwise use the project.id
                 // This handles cases where avatar files have their own project_id values
-                return projectAvatars.map((avatar: any) => ({
+                return projectAvatars.map((avatar: RawJSON) => ({
                   ...avatar,
                   // Keep the original project_id from the file, but ensure it's set
                   project_id: avatar.project_id || projectId
@@ -406,27 +408,26 @@ async function getAvatars(projectIds?: string[]) {
   
   // Convert snake_case to camelCase for compatibility; normalize GitHub / Arweave URLs
   // Support both snake_case (storage convention) and camelCase (mixed legacy data)
-  const convertedAvatars = allAvatars.map((avatar: any) => {
+  const convertedAvatars = allAvatars.map((avatar: RawJSON) => {
     const resolved = resolveAvatarFieldsFromRaw({
-      thumbnail_url: avatar.thumbnail_url ?? avatar.thumbnailUrl,
-      model_file_url: avatar.model_file_url ?? avatar.modelFileUrl,
+      thumbnail_url: (avatar.thumbnail_url ?? avatar.thumbnailUrl) as string | undefined,
+      model_file_url: (avatar.model_file_url ?? avatar.modelFileUrl) as string | undefined,
     });
     return {
-      id: avatar.id,
-      name: avatar.name,
-      projectId: avatar.project_id ?? avatar.projectId,
-      description: avatar.description,
+      id: avatar.id as string,
+      name: avatar.name as string,
+      projectId: (avatar.project_id ?? avatar.projectId) as string,
+      description: avatar.description as string | undefined,
       thumbnailUrl: resolved.thumbnailUrl,
       modelFileUrl: resolved.modelFileUrl,
-      polygonCount: avatar.polygon_count ?? avatar.polygonCount,
-      format: avatar.format,
-      materialCount: avatar.material_count ?? avatar.materialCount,
-      // Default isPublic to true if not specified (for backward compatibility)
+      polygonCount: (avatar.polygon_count ?? avatar.polygonCount) as number | undefined,
+      format: avatar.format as string,
+      materialCount: (avatar.material_count ?? avatar.materialCount) as number | undefined,
       isPublic: (avatar.is_public ?? avatar.isPublic) !== false,
       isDraft: (avatar.is_draft ?? avatar.isDraft) === true,
-      createdAt: avatar.created_at ?? avatar.createdAt,
-      updatedAt: avatar.updated_at ?? avatar.updatedAt,
-      metadata: resolveAlternateModelsMetadata(avatar.metadata || {}),
+      createdAt: (avatar.created_at ?? avatar.createdAt) as string,
+      updatedAt: (avatar.updated_at ?? avatar.updatedAt) as string,
+      metadata: resolveAlternateModelsMetadata((avatar.metadata || {}) as Record<string, unknown>),
     };
   });
   
@@ -459,11 +460,11 @@ async function getTags() {
   const rawTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.tags);
   
   // Convert snake_case to camelCase for compatibility
-  return rawTags.map((tag: any) => ({
-    id: tag.id,
-    name: tag.name,
-    createdAt: tag.created_at,
-    updatedAt: tag.updated_at
+  return rawTags.map((tag: RawJSON): GithubTag => ({
+    id: tag.id as string,
+    name: tag.name as string,
+    createdAt: tag.created_at as string,
+    updatedAt: tag.updated_at as string,
   }));
 }
 
@@ -483,15 +484,15 @@ async function getDownloads() {
   const rawDownloads = await fetchData<Record<string, unknown>[]>(DATA_PATHS.downloads);
   
   // Convert snake_case to camelCase for compatibility
-  return rawDownloads.map((download: any) => ({
-    id: download.id,
-    avatarId: download.avatar_id,
-    userId: download.user_id,
-    downloadedAt: download.downloaded_at,
-    ipAddress: download.ip_address,
-    userAgent: download.user_agent,
-    createdAt: download.created_at,
-    updatedAt: download.updated_at
+  return rawDownloads.map((download: RawJSON): GithubDownload => ({
+    id: download.id as string,
+    avatarId: download.avatar_id as string,
+    userId: download.user_id as string | undefined,
+    downloadedAt: download.downloaded_at as string,
+    ipAddress: download.ip_address as string | undefined,
+    userAgent: download.user_agent as string | undefined,
+    createdAt: download.created_at as string,
+    updatedAt: download.updated_at as string,
   }));
 }
 
@@ -515,9 +516,9 @@ async function getAvatarTags() {
   const rawAvatarTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatarTags);
   
   // Convert snake_case to camelCase for compatibility
-  return rawAvatarTags.map((avatarTag: any) => ({
-    avatarId: avatarTag.avatar_id,
-    tagId: avatarTag.tag_id
+  return rawAvatarTags.map((avatarTag: RawJSON): GithubAvatarTag => ({
+    avatarId: avatarTag.avatar_id as string,
+    tagId: avatarTag.tag_id as string,
   }));
 }
 

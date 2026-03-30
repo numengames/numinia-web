@@ -12,20 +12,20 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 // Create a stub adapter that doesn't actually use Prisma
 const stubAdapter = {
-  createUser: async (data: any) => ({ id: 'stub-id', ...data }),
+  createUser: async (data: unknown) => ({ id: 'stub-id', ...data }),
   getUser: async (id: string) => null,
   getUserByEmail: async (email: string) => null,
-  getUserByAccount: async (data: any) => null,
-  updateUser: async (data: any) => data,
+  getUserByAccount: async (data: unknown) => null,
+  updateUser: async (data: unknown) => data,
   deleteUser: async (id: string) => null,
-  linkAccount: async (data: any) => data,
-  unlinkAccount: async (data: any) => null,
+  linkAccount: async (data: unknown) => data,
+  unlinkAccount: async (data: unknown) => null,
   getSessionAndUser: async (sessionToken: string) => null,
-  createSession: async (data: any) => data,
-  updateSession: async (data: any) => data,
+  createSession: async (data: unknown) => data,
+  updateSession: async (data: unknown) => data,
   deleteSession: async (sessionToken: string) => null,
-  createVerificationToken: async (data: any) => data,
-  useVerificationToken: async (data: any) => null,
+  createVerificationToken: async (data: unknown) => data,
+  useVerificationToken: async (data: unknown) => null,
 };
 
 // Auth.js configuration

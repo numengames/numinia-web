@@ -93,18 +93,18 @@ export async function GET(
       const urlFilename = normalizedUrl.split('/').pop() || '';
       const urlExt = urlFilename.split('.').pop()?.toLowerCase();
       if (urlExt && ['vrm', 'fbx', 'glb', 'gltf'].includes(urlExt)) {
-        const cleanName = (avatar.name || avatar.metadata?.number || 'avatar').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const cleanName = (avatar.name || String(avatar.metadata?.number || avatar.name || 'avatar')).replace(/[^a-zA-Z0-9_-]/g, '_');
         filename = `${cleanName}.${urlExt}`;
       } else {
         // Fallback to format-based extension
         const extension = getFileExtension(actualFormat);
-        const cleanName = (avatar.name || avatar.metadata?.number || 'avatar').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const cleanName = (avatar.name || String(avatar.metadata?.number || avatar.name || 'avatar')).replace(/[^a-zA-Z0-9_-]/g, '_');
         const voxelPart = actualFormat && (actualFormat.includes('voxel') || actualFormat === 'voxel') ? '_voxel' : '';
         filename = `${cleanName}${voxelPart}${extension}`;
       }
     } else {
       const extension = getFileExtension(actualFormat);
-      const cleanName = (avatar.name || avatar.metadata?.number || 'avatar').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanName = (avatar.name || String(avatar.metadata?.number || avatar.name || 'avatar')).replace(/[^a-zA-Z0-9_-]/g, '_');
       const voxelPart = actualFormat && (actualFormat.includes('voxel') || actualFormat === 'voxel') ? '_voxel' : '';
       filename = `${cleanName}${voxelPart}${extension}`;
     }

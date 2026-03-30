@@ -176,7 +176,7 @@ const isUrl = (str: string): boolean => {
 };
 
 // Helper to get license type name
-const getLicenseTypeName = (licenseType: any, licenseName?: string, otherPermissions?: string, t?: (key: string) => string): string => {
+const getLicenseTypeName = (licenseType: string | number | null | undefined, licenseName?: string, otherPermissions?: string, t?: (key: string) => string): string => {
   // If there's an IPFS/URL link in otherPermissions, it's likely "Other"
   if (otherPermissions && isUrl(otherPermissions)) {
     return t ? t('finder.licenseTypes.other') : 'Other';
@@ -263,7 +263,7 @@ const renderLinkableText = (text: string): React.ReactNode => {
 };
 
 // Helper to get allowed user name
-const getAllowedUserName = (allowedUser: any, t?: (key: string) => string): string => {
+const getAllowedUserName = (allowedUser: string | number | null | undefined, t?: (key: string) => string): string => {
   // Convert to number if it's a string containing only digits
   if (typeof allowedUser === 'string' && /^\d+$/.test(allowedUser)) {
     allowedUser = parseInt(allowedUser, 10);
@@ -292,7 +292,7 @@ const getAllowedUserName = (allowedUser: any, t?: (key: string) => string): stri
 };
 
 // Helper to get usage permission name
-const getUsageName = (usage: any, t?: (key: string) => string): string => {
+const getUsageName = (usage: string | number | boolean | null | undefined, t?: (key: string) => string): string => {
   // For VRM 0.x format: 0 = Disallow, 1 = Allow
   if (usage === 0 || usage === '0') {
     return t ? t('finder.usage.disallow') : 'Disallow';
@@ -623,42 +623,45 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
 
   // Handle metadata load from VRMViewer
   const handleMetadataLoad = useMemo(() => {
-    return (data: any) => {
+    return (data: Record<string, unknown> | null) => {
       if (!data) return;
       
       // Update model stats
+      // Cast data properties for model stats — values come from VRM parser
+      const d = data as Record<string, string | number | boolean | null | undefined | Record<string, unknown>>;
       setModelStats(prev => ({
         ...prev,
-        triangles: data.triangleCount || 0,
-        materials: data.materialCount || 0,
-        format: data.format || (t('finder.common.unknown') as string),
-        height: data.avatarHeight || 0,
-        fileSize: data.fileSize || (t('finder.common.unknown') as string),
-        vertices: data.vertexCount || 0,
-        textures: data.textureCount || 0,
-        bones: data.boneCount || 0,
+        triangles: (d.triangleCount as number) || 0,
+        materials: (d.materialCount as number) || 0,
+        format: (d.format as string) || (t('finder.common.unknown') as string),
+        height: (d.avatarHeight as number) || 0,
+        fileSize: (d.fileSize as string) || (t('finder.common.unknown') as string),
+        vertices: (d.vertexCount as number) || 0,
+        textures: (d.textureCount as number) || 0,
+        bones: (d.boneCount as number) || 0,
       }));
-      
+
       // Set VRM version
-      setVrmVersion(data.vrmVersion || (t('finder.common.unknown') as string));
-      
+      setVrmVersion((d.vrmVersion as string) || (t('finder.common.unknown') as string));
+
       // Process VRM metadata if available
-      if (data.rawMetadata) {
+      if (d.rawMetadata) {
         try {
-          const rawMeta = data.rawMetadata;
+          const rawMeta = d.rawMetadata as Record<string, unknown>;
+          const authors = rawMeta.authors as string[] | undefined;
           const cleanedMetadata: VRMMetadata = {
-            title: rawMeta.title || (t('finder.common.unknown') as string),
-            version: data.version || rawMeta.version || rawMeta.specVersion || (t('finder.common.unknown') as string),
-            author: rawMeta.author || rawMeta.authors?.[0] || (t('finder.common.unknown') as string),
-            contactInformation: data.contactInformation || rawMeta.contactInformation || '',
-            reference: data.reference || rawMeta.reference || '',
-            licenseType: rawMeta.licenseType,
-            licenseName: data.licenseName || rawMeta.licenseName || '',
-            allowedUserName: rawMeta.allowedUserName,
-            commercialUsageName: rawMeta.commercialUsageName || rawMeta.commercialUssageName,
-            violentUsageName: rawMeta.violentUsageName || rawMeta.violentUssageName,
-            sexualUsageName: rawMeta.sexualUsageName || rawMeta.sexualUssageName,
-            otherPermissions: rawMeta.otherPermissionUrl || rawMeta.otherPermissions || '',
+            title: (rawMeta.title as string) || (t('finder.common.unknown') as string),
+            version: (d.version as string) || (rawMeta.version as string) || (rawMeta.specVersion as string) || (t('finder.common.unknown') as string),
+            author: (rawMeta.author as string) || authors?.[0] || (t('finder.common.unknown') as string),
+            contactInformation: (d.contactInformation as string) || (rawMeta.contactInformation as string) || '',
+            reference: (d.reference as string) || (rawMeta.reference as string) || '',
+            licenseType: rawMeta.licenseType as number | undefined,
+            licenseName: (d.licenseName as string) || (rawMeta.licenseName as string) || '',
+            allowedUserName: rawMeta.allowedUserName as number | undefined,
+            commercialUsageName: (rawMeta.commercialUsageName || rawMeta.commercialUssageName) as number | undefined,
+            violentUsageName: (rawMeta.violentUsageName || rawMeta.violentUssageName) as number | undefined,
+            sexualUsageName: (rawMeta.sexualUsageName || rawMeta.sexualUssageName) as number | undefined,
+            otherPermissions: (rawMeta.otherPermissionUrl as string) || (rawMeta.otherPermissions as string) || '',
           };
           
           setVrmMetadata(cleanedMetadata);

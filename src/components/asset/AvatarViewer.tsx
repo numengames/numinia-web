@@ -1,7 +1,7 @@
 /// src/components/avatar/AvatarViewer.tsx
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { AvatarViewerProps } from '@/types/avatar';
+import { AvatarViewerProps, Project } from '@/types/avatar';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -114,11 +114,11 @@ const formatName = (name: string): string => {
 
 // Update the AvatarViewerProps interface in this file only (temporary fix)
 interface ExtendedAvatarViewerProps extends AvatarViewerProps {
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
   onDownload?: (id: string, format?: string | null) => void;
   avatars?: AvatarViewerProps['avatar'][];
   onAvatarSelect?: (avatar: AvatarViewerProps['avatar']) => void;
-  projects?: any[]; // Added projects
+  projects?: Project[]; // Added projects
   selectedProjectIds?: Set<string>; // Changed to Set
   onProjectToggle?: (projectId: string) => void; // Changed to toggle
 }
@@ -841,12 +841,12 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
               
               <span className="text-gray-500 dark:text-gray-400">{t('avatar.details.materials')}:</span>
               <span className="text-gray-900 dark:text-gray-100">
-                {metadata?.materialCount ?? "Unknown"}
+                {String(metadata?.materialCount ?? "Unknown")}
               </span>
               
               <span className="text-gray-500 dark:text-gray-400">File Size:</span>
               <span className="text-gray-900 dark:text-gray-100">
-                {metadata?.fileSize || "Loading..."}
+                {String(metadata?.fileSize || "Loading...")}
               </span>
             </div>
             
@@ -864,10 +864,10 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
                 })()}
               </span>
               
-              {metadata?.author && (
+              {!!metadata?.author && (
                 <>
                   <span className="text-gray-500 dark:text-gray-400">{t('avatar.details.author')}:</span>
-                  <span className="text-gray-900 dark:text-gray-100">{metadata.author}</span>
+                  <span className="text-gray-900 dark:text-gray-100">{String(metadata.author)}</span>
                 </>
               )}
             </div>
@@ -877,20 +877,20 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
               <>
                 <div className="font-medium text-gray-900 dark:text-gray-100 mt-3">{t('avatar.vrm.title')}</div>
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                  {metadata.vrmVersion && (
+                  {!!metadata.vrmVersion && (
                     <>
                       <span className="text-gray-500 dark:text-gray-400">{t('avatar.vrm.version')}:</span>
-                      <span className="text-gray-900 dark:text-gray-100">{metadata.vrmVersion}</span>
+                      <span className="text-gray-900 dark:text-gray-100">{String(metadata.vrmVersion)}</span>
                     </>
                   )}
                   
-                  {metadata.allowedUserName && (
+                  {!!metadata.allowedUserName && (
                     <>
                       <span className="text-gray-500 dark:text-gray-400">{t('avatar.vrm.allowedUsers')}:</span>
                       <span className="text-gray-900 dark:text-gray-100">
-                        {metadata.allowedUserName === 'Everyone' 
+                        {metadata.allowedUserName === 'Everyone'
                           ? t('avatar.vrm.everyone')
-                          : metadata.allowedUserName}
+                          : String(metadata.allowedUserName)}
                       </span>
                     </>
                   )}

@@ -139,11 +139,11 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
       await writable.write(blob);
       await writable.close();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving to folder:', error);
-      
+
       // If it's a permission error, don't fall back - throw to show error
-      if (error.name === 'NotAllowedError' || error.name === 'SecurityError' || error.message?.includes('Permission')) {
+      if (error instanceof Error && (error.name === 'NotAllowedError' || error.name === 'SecurityError' || error.message?.includes('Permission'))) {
         console.error('Permission denied for folder access. User may need to re-select folder.');
         throw new Error('Permission denied. Please re-select the download folder.');
       }
@@ -220,7 +220,7 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
       }
       const blob = await response.blob();
       return { blob, item };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (retryCount < MAX_RETRIES) {
         const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -369,7 +369,7 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
         )
       );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating ZIP:', error);
       setQueue((prev) =>
         prev.map((q) =>
@@ -377,7 +377,7 @@ export function useDownloadQueue(): UseDownloadQueueReturn {
             ? {
                 ...q,
                 status: 'failed' as const,
-                error: error.message || 'Failed to create ZIP file',
+                error: error instanceof Error ? error.message : 'Failed to create ZIP file',
               }
             : q
         )

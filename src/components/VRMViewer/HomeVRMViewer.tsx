@@ -166,6 +166,7 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
         loader.setDRACOLoader(dracoLoader);
         loader.setMeshoptDecoder(MeshoptDecoder);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         loader.register((parser: any) => new VRMLoaderPlugin(parser));
 
         // Raycaster setup
@@ -431,13 +432,14 @@ export const HomeVRMViewer: React.FC<HomeVRMViewerProps> = ({ className, avatar:
           VRMUtils.deepDispose(vrmRef.current.scene);
         } else {
           // For non-VRM models, dispose manually
-          modelSceneRef.current.traverse((obj: any) => {
-            if (obj.geometry) obj.geometry.dispose();
-            if (obj.material) {
-              if (Array.isArray(obj.material)) {
-                obj.material.forEach((m: THREE.Material) => m.dispose());
+          modelSceneRef.current.traverse((obj) => {
+            const mesh = obj as THREE.Mesh;
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) {
+              if (Array.isArray(mesh.material)) {
+                (mesh.material as THREE.Material[]).forEach(m => m.dispose());
               } else {
-                obj.material.dispose();
+                (mesh.material as THREE.Material).dispose();
               }
             }
           });

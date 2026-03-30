@@ -8,9 +8,9 @@ interface Avatar {
   name: string;
   metadata: {
     alternateModels?: Record<string, string>;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Mark route as dynamic since it uses no-store fetch

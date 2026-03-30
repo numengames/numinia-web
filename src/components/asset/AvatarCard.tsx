@@ -17,7 +17,7 @@ interface AvatarCardProps {
   isSelected: boolean;
   isActive: boolean;
   onSelect: (id: string) => void;
-  onClick: (avatar: any) => void;
+  onClick: (avatar: AvatarCardProps['avatar']) => void;
 }
 
 export const AvatarCard: React.FC<AvatarCardProps> = ({

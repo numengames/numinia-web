@@ -26,7 +26,7 @@ interface Avatar {
   materialCount: number;
   isPublic: boolean;
   createdAt: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export default function AvatarDetailPage() {

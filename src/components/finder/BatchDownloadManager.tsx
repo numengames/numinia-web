@@ -251,13 +251,13 @@ export default function BatchDownloadManager({
       } catch (permError) {
         // This is OK - permission might already be granted from folder selection
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // User cancelled the dialog
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
       console.error('Error selecting folder:', error);
-      alert(t('finder.batchDownload.folderSelectionError') || `Error selecting folder: ${error.message || 'Unknown error'}`);
+      alert(t('finder.batchDownload.folderSelectionError') || `Error selecting folder: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

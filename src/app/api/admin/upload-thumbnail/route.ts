@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         const avatars = await fetchData(avatarPath);
         if (!Array.isArray(avatars)) continue;
 
-        const idx = avatars.findIndex((a: any) => a.id === avatarId);
+        const idx = avatars.findIndex((a: Record<string, unknown>) => a.id === avatarId);
         if (idx === -1) continue;
 
         // Update whichever field exists (snake_case or camelCase)

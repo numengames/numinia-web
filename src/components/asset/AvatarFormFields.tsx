@@ -13,7 +13,7 @@ interface AvatarFormFieldsProps {
 }
 
 export function AvatarFormFields({ formData, uploadProgress, onChange }: AvatarFormFieldsProps) {
-  const updateField = (field: keyof AvatarFormData, value: any) => {
+  const updateField = (field: keyof AvatarFormData, value: string | number | boolean | File | null) => {
     onChange({ ...formData, [field]: value });
   };
 

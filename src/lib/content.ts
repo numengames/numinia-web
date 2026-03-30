@@ -73,7 +73,13 @@ export async function loadContent(
 /**
  * Get navigation structure from directory
  */
-export function getNavigationStructure(locale: string): any[] {
+interface NavigationItem {
+  slug: string;
+  title: string;
+  children?: NavigationItem[];
+}
+
+export function getNavigationStructure(locale: string): NavigationItem[] {
   // This will be implemented to read directory structure
   // For now, return the existing structure
   // TODO: Implement directory-based navigation
