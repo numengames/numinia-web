@@ -351,6 +351,32 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 cameraDistanceMultiplier={0.6}
                 captureRef={captureRef as any}
               />
+            ) : previewFile && previewFile.url && /\.(mp4|webm)$/i.test(previewFile.url) ? (
+              // Video player for MP4/WebM
+              <div className="w-full h-full flex items-center justify-center bg-black">
+                <video
+                  key={previewFile.url}
+                  src={previewFile.url}
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : previewFile && previewFile.url && /\.(mp3|ogg)$/i.test(previewFile.url) ? (
+              // Audio player for MP3/OGG
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800 p-4">
+                <div className="text-4xl">🎵</div>
+                <p className="text-sm text-gray-500">{previewFile.label}</p>
+                <audio
+                  key={previewFile.url}
+                  src={previewFile.url}
+                  controls
+                  className="w-full max-w-xs"
+                />
+              </div>
             ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
               // Show image for thumbnail and texture files
               <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
@@ -377,20 +403,35 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
                 />
               </div>
             ) : (
-              // Default: show 3D viewer with main model (without controls/panels)
+              // Default: show 3D viewer or video with main model
               avatar?.modelFileUrl ? (
-                <VRMViewer
-                  key={avatar.modelFileUrl}
-                  url={avatar.modelFileUrl}
-                  backgroundGLB={null}
-                  onMetadataLoad={handleMetadataLoad}
-                  onTexturesLoad={handleTexturesLoad}
-                  showInfoPanel={false}
-                  onToggleInfoPanel={() => {}}
-                  hideControls={true}
-                  cameraDistanceMultiplier={0.6}
-                  captureRef={captureRef as any}
-                />
+                /\.(mp4|webm|ogg)$/i.test(avatar.modelFileUrl) ? (
+                  <div className="w-full h-full flex items-center justify-center bg-black">
+                    <video
+                      key={avatar.modelFileUrl}
+                      src={avatar.modelFileUrl}
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <VRMViewer
+                    key={avatar.modelFileUrl}
+                    url={avatar.modelFileUrl}
+                    backgroundGLB={null}
+                    onMetadataLoad={handleMetadataLoad}
+                    onTexturesLoad={handleTexturesLoad}
+                    showInfoPanel={false}
+                    onToggleInfoPanel={() => {}}
+                    hideControls={true}
+                    cameraDistanceMultiplier={0.6}
+                    captureRef={captureRef as any}
+                  />
+                )
               ) : null
             )}
             {/* Thumbnail capture button — only shown when a 3D model is visible */}
