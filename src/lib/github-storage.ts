@@ -14,6 +14,26 @@ import { resolveAvatarFieldsFromRaw, resolveAlternateModelsMetadata } from '@/li
 import { env } from '@/lib/env';
 // Next.js loads .env / .env.local automatically — no dotenv.config() needed.
 
+// In-memory cache for GitHub API responses.
+// TTL prevents hammering raw.githubusercontent.com on every request.
+// Cache is per-serverless-instance (not shared across Vercel functions),
+// but still reduces GitHub API calls significantly within a function's lifetime.
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
+const dataCache = new Map<string, { data: unknown; expiry: number }>();
+
+function getCached<T>(key: string): T | undefined {
+  const entry = dataCache.get(key);
+  if (entry && Date.now() < entry.expiry) {
+    return entry.data as T;
+  }
+  dataCache.delete(key);
+  return undefined;
+}
+
+function setCache(key: string, data: unknown): void {
+  dataCache.set(key, { data, expiry: Date.now() + CACHE_TTL_MS });
+}
+
 // Shorthand for raw JSON objects from GitHub. Using this instead of `any`
 // means we're explicit about the boundary: raw JSON properties are untyped,
 // but the map callbacks that convert them produce fully-typed output.
@@ -113,32 +133,31 @@ const RAW_CONTENT_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GI
 // Using a generic instead of `any` means TypeScript checks the usage,
 // but we still trust the GitHub API to return what we expect (no runtime Zod parsing).
 async function fetchData<T = unknown>(path: string): Promise<T> {
+  // Check in-memory cache first
+  const cached = getCached<T>(path);
+  if (cached !== undefined) return cached;
+
   try {
     const url = `${RAW_CONTENT_BASE}/${path}?timestamp=${Date.now()}`;
     const response = await fetch(url, {
-      headers: {
-        'Cache-Control': 'no-cache',
-      },
+      headers: { 'Cache-Control': 'no-cache' },
     });
-    
+
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn(`  ✗ File not found (404): ${path}`);
-        // File doesn't exist yet — return a sensible empty default.
-        // `as T` is intentional: callers always expect array types for these paths.
         const isEmpty = path.includes('users') || path.includes('projects') ||
                         path.includes('avatars') || path.includes('tags') ||
                         path.includes('downloads');
         return (isEmpty ? [] : {}) as T;
       }
-      console.error(`  ✗ HTTP Error ${response.status}: ${response.statusText} for ${path}`);
       throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
     }
-    
+
     const data = await response.json();
+    setCache(path, data);
     return data;
   } catch (error) {
-    console.error(`  ✗ Error fetching data from GitHub: ${path}`, error);
+    console.error(`Error fetching from GitHub: ${path}`, error);
     throw error;
   }
 }
@@ -209,6 +228,8 @@ async function updateData(
       throw new Error(`GitHub API error: ${JSON.stringify(error)}`);
     }
     
+    // Invalidate cache after successful write so next read gets fresh data
+    dataCache.delete(path);
     return true;
   } catch (error) {
     console.error(`Error updating data in GitHub: ${path}`, error);
