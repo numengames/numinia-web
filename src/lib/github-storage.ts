@@ -12,6 +12,11 @@
 
 import { resolveAvatarFieldsFromRaw, resolveAlternateModelsMetadata } from '@/lib/assetUrls';
 import { env } from '@/lib/env';
+import {
+  RawUserSchema, RawProjectSchema, RawAvatarSchema,
+  RawTagSchema, RawDownloadSchema, RawAvatarTagSchema,
+  safeParseArray,
+} from '@/lib/schemas';
 // Next.js loads .env / .env.local automatically — no dotenv.config() needed.
 
 // In-memory cache for GitHub API responses.
@@ -256,17 +261,17 @@ async function saveData(
 
 // Users
 async function getUsers() {
-  const rawUsers = await fetchData<Record<string, unknown>[]>(DATA_PATHS.users);
-  
-  // Convert snake_case to camelCase for compatibility and sanitize sensitive fields
-  return rawUsers.map((user: RawJSON): GithubUser => ({
-    id: user.id as string,
-    username: user.username as string,
+  const rawData = await fetchData<unknown[]>(DATA_PATHS.users);
+  const rawUsers = safeParseArray(RawUserSchema, Array.isArray(rawData) ? rawData : [], 'getUsers');
+
+  return rawUsers.map((user): GithubUser => ({
+    id: user.id,
+    username: user.username,
     email: '[email protected]',
     passwordHash: '',
-    role: user.role as string,
-    createdAt: user.created_at as string,
-    updatedAt: user.updated_at as string,
+    role: user.role,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
   }));
 }
 
@@ -285,19 +290,18 @@ async function saveUsers(users: GithubUser[]) {
 
 // Projects
 async function getProjects() {
-  const rawProjects = await fetchData<Record<string, unknown>[]>(DATA_PATHS.projects);
-  
-  // Convert snake_case to camelCase for compatibility
-  return rawProjects.map((project: RawJSON): GithubProject => ({
-    id: project.id as string,
-    name: project.name as string,
-    creatorId: project.creator_id as string,
-    description: project.description as string | undefined,
-    isPublic: project.is_public !== false,
-    createdAt: project.created_at as string,
-    updatedAt: project.updated_at as string,
-    // Support new asset_data_file field from open-source-3D-assets structure
-    asset_data_file: (project.asset_data_file || project.assetDataFile || project.avatar_data_file || project.avatarDataFile) as string | undefined
+  const rawData = await fetchData<unknown[]>(DATA_PATHS.projects);
+  const rawProjects = safeParseArray(RawProjectSchema, Array.isArray(rawData) ? rawData : [], 'getProjects');
+
+  return rawProjects.map((project): GithubProject => ({
+    id: project.id,
+    name: project.name,
+    creatorId: project.creator_id ?? '',
+    description: project.description,
+    isPublic: project.is_public,
+    createdAt: project.created_at,
+    updatedAt: project.updated_at,
+    asset_data_file: project.asset_data_file,
   }));
 }
 
@@ -475,14 +479,14 @@ async function saveAvatars(avatars: GithubAvatar[]) {
 
 // Tags
 async function getTags() {
-  const rawTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.tags);
-  
-  // Convert snake_case to camelCase for compatibility
-  return rawTags.map((tag: RawJSON): GithubTag => ({
-    id: tag.id as string,
-    name: tag.name as string,
-    createdAt: tag.created_at as string,
-    updatedAt: tag.updated_at as string,
+  const rawData = await fetchData<unknown[]>(DATA_PATHS.tags);
+  const rawTags = safeParseArray(RawTagSchema, Array.isArray(rawData) ? rawData : [], 'getTags');
+
+  return rawTags.map((tag): GithubTag => ({
+    id: tag.id,
+    name: tag.name,
+    createdAt: tag.created_at,
+    updatedAt: tag.updated_at,
   }));
 }
 
@@ -499,18 +503,18 @@ async function saveTags(tags: GithubTag[]) {
 
 // Downloads
 async function getDownloads() {
-  const rawDownloads = await fetchData<Record<string, unknown>[]>(DATA_PATHS.downloads);
-  
-  // Convert snake_case to camelCase for compatibility
-  return rawDownloads.map((download: RawJSON): GithubDownload => ({
-    id: download.id as string,
-    avatarId: download.avatar_id as string,
-    userId: download.user_id as string | undefined,
-    downloadedAt: download.downloaded_at as string,
-    ipAddress: download.ip_address as string | undefined,
-    userAgent: download.user_agent as string | undefined,
-    createdAt: download.created_at as string,
-    updatedAt: download.updated_at as string,
+  const rawData = await fetchData<unknown[]>(DATA_PATHS.downloads);
+  const rawDownloads = safeParseArray(RawDownloadSchema, Array.isArray(rawData) ? rawData : [], 'getDownloads');
+
+  return rawDownloads.map((download): GithubDownload => ({
+    id: download.id,
+    avatarId: download.avatar_id,
+    userId: download.user_id,
+    downloadedAt: download.downloaded_at,
+    ipAddress: download.ip_address,
+    userAgent: download.user_agent,
+    createdAt: download.created_at,
+    updatedAt: download.updated_at,
   }));
 }
 
@@ -531,12 +535,12 @@ async function saveDownloads(downloads: GithubDownload[]) {
 
 // Avatar Tags
 async function getAvatarTags() {
-  const rawAvatarTags = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatarTags);
-  
-  // Convert snake_case to camelCase for compatibility
-  return rawAvatarTags.map((avatarTag: RawJSON): GithubAvatarTag => ({
-    avatarId: avatarTag.avatar_id as string,
-    tagId: avatarTag.tag_id as string,
+  const rawData = await fetchData<unknown[]>(DATA_PATHS.avatarTags);
+  const rawAvatarTags = safeParseArray(RawAvatarTagSchema, Array.isArray(rawData) ? rawData : [], 'getAvatarTags');
+
+  return rawAvatarTags.map((avatarTag): GithubAvatarTag => ({
+    avatarId: avatarTag.avatar_id,
+    tagId: avatarTag.tag_id,
   }));
 }
 
