@@ -244,8 +244,9 @@ async function updateData(
       throw new Error(`GitHub API error: ${JSON.stringify(error)}`);
     }
     
-    // Invalidate cache after successful write so next read gets fresh data
-    dataCache.delete(path);
+    // Invalidate ALL cache after write — other reads (projects.json, etc.)
+    // may depend on the changed data. Conservative but safe.
+    dataCache.clear();
     return true;
   } catch (error) {
     console.error(`Error updating data in GitHub: ${path}`, error);
