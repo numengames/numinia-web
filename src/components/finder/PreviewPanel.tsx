@@ -10,7 +10,9 @@ import { downloadAvatar } from '@/lib/download-utils';
 import dynamic from 'next/dynamic';
 import * as THREE from 'three';
 
-import type { PreviewPanelProps, FileTypeInfo } from './preview/types';
+import type { PreviewPanelProps } from './preview/types';
+import type { FileTypeInfo } from './preview/types';
+import { PreviewMediaViewer } from './preview/PreviewMediaViewer';
 import {
   formatFileSize,
   formatFileSizeInMB,
@@ -29,18 +31,6 @@ import {
 import { usePreviewState } from './preview/usePreviewState';
 
 import ImageLightbox from './ImageLightbox';
-
-const VRMViewer = dynamic(
-  () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-gray-100 dark:bg-gray-800 animate-pulse flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Loading viewer...</p>
-      </div>
-    ),
-  }
-);
 
 const TextureRenderer = dynamic(
   () => import('@/components/VRMViewer/TextureRenderer'),
@@ -334,142 +324,18 @@ function PreviewPanel({ avatar, selectedFile, projects }: PreviewPanelProps) {
         </div>
       ) : (
         <>
-          {/* Preview Area - Fixed 1:1 aspect ratio with proper overflow handling - Only show on model tab */}
+          {/* Preview Area */}
           <div className="flex-none bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 min-w-0 relative" style={{ aspectRatio: '1 / 1', minHeight: '180px', maxHeight: '250px', width: '100%' }}>
-            {/* Media players — check BEFORE 3D model to prevent VRMViewer loading audio/video */}
-            {previewFile?.url && /\.(mp4|webm)$/i.test(previewFile.url) ? (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-900 to-black rounded-lg">
-                <video
-                  key={previewFile.url}
-                  src={previewFile.url}
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="max-w-full max-h-full object-contain rounded"
-                />
-              </div>
-            ) : previewFile?.url && /\.(mp3|ogg)$/i.test(previewFile.url) ? (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4">
-                {/* Audio waveform visual */}
-                <div className="flex items-end gap-[2px] h-12">
-                  {Array.from({ length: 32 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                      style={{
-                        height: `${12 + Math.sin(i * 0.5) * 20 + Math.random() * 16}px`,
-                        animationDelay: `${i * 0.05}s`,
-                        animationDuration: `${0.8 + Math.random() * 0.4}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{previewFile.label || avatar?.name}</p>
-                <audio
-                  key={previewFile.url}
-                  src={previewFile.url}
-                  controls
-                  autoPlay
-                  className="w-full max-w-[220px]"
-                />
-              </div>
-            ) : previewFile && previewFile.category === 'model' && previewFile.url ? (
-              <VRMViewer
-                key={previewFile.url}
-                url={previewFile.url}
-                backgroundGLB={null}
-                onMetadataLoad={handleMetadataLoad}
-                onTexturesLoad={handleTexturesLoad}
-                showInfoPanel={false}
-                onToggleInfoPanel={() => {}}
-                hideControls={true}
-                cameraDistanceMultiplier={0.6}
-                captureRef={captureRef as any}
-              />
-            ) : previewFile && (previewFile.category === 'thumbnail' || previewFile.category === 'texture') && previewFile.url ? (
-              // Show image for thumbnail and texture files
-              <div className="w-full h-full flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800">
-                <img
-                  src={previewFile.url}
-                  alt={previewFile.label}
-                  className="max-w-full max-h-full object-contain rounded cursor-pointer hover:opacity-90 transition-opacity"
-                  onError={(e) => {
-                    const el = e.currentTarget;
-                    if (el.src.includes('/placeholder.png')) return;
-                    el.src = '/placeholder.png';
-                  }}
-                  onClick={() => {
-                    if (!previewFile.url) return;
-                    setLightboxImage({
-                      url: previewFile.url,
-                      alt: previewFile.label,
-                      filename: correctedFilename || previewFile.filename,
-                      downloadHandler: () => {
-                        handleDownload();
-                      },
-                    });
-                  }}
-                />
-              </div>
-            ) : (
-              // Default: show 3D viewer or video with main model
-              avatar?.modelFileUrl ? (
-                /\.(mp4|webm)$/i.test(avatar.modelFileUrl) ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-900 to-black rounded-lg">
-                    <video
-                      key={avatar.modelFileUrl}
-                      src={avatar.modelFileUrl}
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="max-w-full max-h-full object-contain rounded"
-                    />
-                  </div>
-                ) : /\.(mp3|ogg)$/i.test(avatar.modelFileUrl) ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4">
-                    <div className="flex items-end gap-[2px] h-12">
-                      {Array.from({ length: 32 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="w-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                          style={{
-                            height: `${12 + Math.sin(i * 0.5) * 20 + Math.random() * 16}px`,
-                            animationDelay: `${i * 0.05}s`,
-                            animationDuration: `${0.8 + Math.random() * 0.4}s`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{avatar.name}</p>
-                    <audio
-                      key={avatar.modelFileUrl}
-                      src={avatar.modelFileUrl}
-                      controls
-                      autoPlay
-                      className="w-full max-w-[220px]"
-                    />
-                  </div>
-                ) : (
-                  <VRMViewer
-                    key={avatar.modelFileUrl}
-                    url={avatar.modelFileUrl}
-                    backgroundGLB={null}
-                    onMetadataLoad={handleMetadataLoad}
-                    onTexturesLoad={handleTexturesLoad}
-                    showInfoPanel={false}
-                    onToggleInfoPanel={() => {}}
-                    hideControls={true}
-                    cameraDistanceMultiplier={0.6}
-                    captureRef={captureRef as any}
-                  />
-                )
-              ) : null
-            )}
-            {/* Thumbnail capture removed — available in admin panel only */}
+            <PreviewMediaViewer
+              previewFile={previewFile}
+              avatar={avatar}
+              correctedFilename={correctedFilename || ''}
+              captureRef={captureRef}
+              handleMetadataLoad={handleMetadataLoad}
+              handleTexturesLoad={handleTexturesLoad}
+              onImageClick={(url, alt, filename, downloadHandler) => setLightboxImage({ url, alt, filename, downloadHandler })}
+              onDownload={handleDownload}
+            />
           </div>
 
           {/* Scrollable Info Section */}
