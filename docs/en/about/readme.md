@@ -1,31 +1,30 @@
 ---
 title: "About"
-description: "Learn about GLB format, storage, and our open source philosophy"
+description: "About Numinia Digital Goods — philosophy, formats, and storage"
 ---
 
-# About
+# About Numinia Digital Goods
 
-Learn about the technologies and philosophy behind Open Source 3D Assets.
+Numinia Digital Goods is an open platform for CC0-licensed digital assets built by [Numen Games](https://numen.games). We believe digital goods should be free, permanent, and interoperable.
 
-## Our Mission
+## Core Principle: File Over App
 
-Open Source 3D Assets is dedicated to making it easy to discover free, high-quality 3D assets for games, VR, and creative projects. We believe in open standards, clear licensing, and community-driven content.
+The data is the product, not the app. All asset metadata lives in open JSON files on GitHub, and binaries are stored on CDN and permanent storage (Arweave). If numinia.store disappears, the files remain — fork the data, build your own viewer.
 
-## Technologies We Use
+## Supported Formats
 
-We use formats and tooling that work everywhere:
-
-- **GLB Format**: The standard 3D asset format (binary glTF) – works in Blender, Unity, Unreal, Three.js, and more
-- **GitHub**: Asset metadata and registry in the open-source-3D-assets repository
-- **Open Standards**: Open formats and standards, not proprietary solutions
-
-## Our Philosophy
-
-We're committed to open source principles. Most of the assets we list use CC0 (Public Domain) licensing, meaning you can use them however you want without attribution. Some collections use CC-BY, which requires attribution but still allows commercial use.
+| Format | Type | Use case |
+|---|---|---|
+| **GLB** | 3D Model | Props, environments, objects |
+| **VRM** | Avatar | VR-ready humanoid avatars |
+| **HYP** | Hyperfy World | Interactive 3D apps (GLB + JS) |
+| **STL** | 3D Print | Physical fabrication |
+| **MP3/OGG** | Audio | Soundscapes, music |
+| **MP4/WebM** | Video | Cinematics, demos |
 
 ## Topics
 
-- [GLB Format](/en/resources/about/glb): Learn about the 3D format we use
-- [ArDrive Storage](/en/resources/about/ardrive): Permanent decentralized storage (for some sources)
-- [Open Source Philosophy](/en/resources/about/philosophy): Why we believe in open standards
-- [License Guide](/en/resources/about/license): Understanding CC0 vs CC-BY licenses
+- [GLB Format](/en/resources/about/glb) — The universal 3D standard
+- [Arweave Storage](/en/resources/about/ardrive) — Permanent decentralized storage
+- [Open Source Philosophy](/en/resources/about/philosophy) — Why CC0 matters
+- [License Guide](/en/resources/about/license) — CC0 vs CC-BY explained

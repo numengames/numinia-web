@@ -1,30 +1,44 @@
 ---
-title: "ArDriveとは？"
-description: "ArDriveはArweave上に構築された永続的な分散型ストレージです。"
+title: "Arweave Storage"
+description: "How Numinia uses Arweave for permanent, decentralized asset storage"
 ---
 
-# ArDriveとは？
+# Arweave Storage
 
-ArDriveはArweave上に構築された永続的な分散型ストレージです。
+Numinia uses [Arweave](https://arweave.org) for permanent, decentralized storage of digital assets.
 
-## 重要な理由：
+## Why Arweave
 
-- ファイルが永続的に保存される（削除やオフライン化ができない）
-- 一度の支払い、サブスクリプション不要
-- オープンソースコンテンツの保存に最適
+- **Permanent** — files stored forever, cannot be deleted or taken offline
+- **One-time payment** — no subscriptions, no renewal fees
+- **Decentralized** — no single company controls the data
+- **Verifiable** — every file has a transaction ID that proves its existence
 
-私たちのオリジナルアバター（100Avatarsシリーズ）は、このウェブサイトに何が起こっても常に利用可能であることを保証するために、ArDriveに保存されています。
+## How It Works
 
+When an admin archives an asset, Numinia uploads the binary file to Arweave via the [ArDrive Turbo SDK](https://ardrive.io). The transaction ID is stored in the asset's `storage.arweave_tx` field.
 
+Each upload is tagged with:
+- `Content-Type` — the file's MIME type
+- `App-Name` — `Numinia-Digital-Goods`
+- `Asset-ID` — the UUID v7 identifier
+- `Asset-Name` — the human-readable name
 
----
+## Storage Layers
 
-<small>
+Arweave is one of four storage layers in Numinia:
 
-本ウェブサイトの翻訳はAIツールを使用して作成されました。
-ご不便やご迷惑をおかけした場合、深くお詫び申し上げます。
-ご理解いただき、ありがとうございます。
-問題を発見された場合は、お気軽にお問い合わせください。
-ありがとうございます。
+| Layer | Purpose | Speed | Permanence |
+|---|---|---|---|
+| Cloudflare R2 | CDN delivery | Fast | Depends on billing |
+| GitHub | Metadata + small files | Medium | Depends on repo |
+| **Arweave** | **Permanent archive** | Slow | **Forever** |
+| IPFS | Distributed access | Medium | While pinned |
 
-</small>
+## Access
+
+Any Arweave file is accessible via gateway:
+
+```
+https://arweave.net/{transaction_id}
+```

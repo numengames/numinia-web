@@ -1,27 +1,37 @@
 ---
-title: "開発者向け"
-description: "開発者向けリソース、API、ソースコードにアクセス"
+title: "For Developers"
+description: "API access, JSON database, and integration guides for Numinia Digital Goods"
 ---
 
-# 開発者向け
+# For Developers
 
-開発者向けリソースへようこそ。Open Source 3D Assets をプロジェクトに統合し、データにアクセスし、エコシステムに貢献するための情報がまとまっています。
+Build on top of Numinia's open data. All asset metadata is freely available as JSON.
 
-## 概要
+## Repositories
 
-Open Source 3D Assets は、ゲーム・VR・クリエイティブプロジェクトで使える3Dアセットコレクション（GLB形式）のレジストリを提供しています。メタデータはGitHubリポジトリからJSONで取得できます。
+| Repo | Purpose |
+|---|---|
+| [numinia-digital-goods](https://github.com/PabloFMM/numinia-digital-goods) | Next.js 16 app (code) |
+| [numinia-digital-goods-data](https://github.com/PabloFMM/numinia-digital-goods-data) | JSON metadata + asset binaries |
 
-## 利用可能なもの
+## API Endpoints
 
-- **アセットデータベース**：コレクションとアセットのメタデータ、ファイルURL、ライセンス情報のJSON
-- **ギャラリーのソースコード**：当サイト（os3a-gallery）のオープンソースコードベース
-- **ドキュメント**：統合のためのガイドと構造
+```
+GET https://numinia.store/api/assets              — All assets (filterable)
+GET https://numinia.store/api/assets?search=avatar — Search by name
+GET https://numinia.store/api/collections          — All collections
+GET https://numinia.store/api/nft/check-ownership?address=0x...&contract=0x...  — NFT check
+```
 
-## はじめに
+## Tech Stack
 
-[アセットデータベース](/ja/resources/developers/database) の構造と [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) リポジトリを確認してください。JSONデータを使って独自のブラウザやツールを構築できます。
+- **Next.js 16** (App Router, React 18, TypeScript)
+- **Three.js** + @pixiv/three-vrm (3D rendering)
+- **SIWE** (Sign-In with Ethereum) + GitHub OAuth
+- **Cloudflare R2** + Arweave + IPFS (multi-layer storage)
+- **UUID v7** (RFC 9562) asset ID system
 
-## リソース
+## Resources
 
-- [アセットデータベース](/ja/resources/developers/database)：JSON構造とGitHubリポジトリ
-- [ウェブサイトのソースコード](/ja/resources/developers/website)：ギャラリーサイト（os3a-gallery）のGitHubリポジトリ
+- [Asset Database](/ja/resources/developers/database) — JSON structure and schema
+- [Website Source Code](/ja/resources/developers/website) — App repo and how to contribute

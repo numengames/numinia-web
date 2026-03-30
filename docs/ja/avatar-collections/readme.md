@@ -1,33 +1,43 @@
 ---
-title: "アセットコレクション"
-description: "Open Source 3D Assets で利用可能な3Dアセットコレクション"
+title: "Asset Collections"
+description: "All digital asset collections available on Numinia Digital Goods"
 ---
 
-# アセットコレクション
+# Asset Collections
 
-アセットコレクションセクションへようこそ！このサイトでは、ライセンスとソースが明確な3Dアセットコレクションを紹介し、プロジェクトで無料かつ簡単に使えるようにしています。
+Numinia curates CC0 digital assets organized by type and collection.
 
-## 概要
+## Asset Types
 
-Open Source 3D Assets は、クリエイターによるキュレーションされたコレクションを掲載しています。主なソースは [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) リポジトリで、Polygonal Mind コレクションなどを含みます。
+| Type | Format | Description |
+|---|---|---|
+| 3D Models | GLB | Props, environments, objects |
+| Avatars | VRM | VR-ready humanoid characters |
+| Worlds | HYP | Hyperfy v2 interactive apps |
+| Audio | MP3/OGG | Soundscapes, music, effects |
+| Video | MP4/WebM | Cinematics, demos |
+| Images | JPG/PNG | Textures, references |
+| 3D Print | STL | Physical fabrication files |
 
-## コレクションタイプ
+## Collections
 
-- **Polygonal Mind コレクション**：17のテーマコレクション（MomusPark、Medieval Fair、Tomb Chaser、Chromatic Chaos、Crystal Crossroads など）、991以上のGLBアセット
-- **その他のクリエイター**：CC0およびオープンライセンスの3Dコレクションは随時追加される場合があります
+Assets are organized into projects (collections). Each project has its own JSON catalog in the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
-## ライセンス
+Current catalogs:
+- `numinia-assets` — GLB 3D models
+- `numinia-avatars` — VRM avatars
+- `numinia-worlds` — HYP Hyperfy worlds
+- `numinia-audio` — Audio files
+- `numinia-video` — Video files
+- `numinia-images` — Image files
+- `numinia-3dprint` — STL files
 
-ほとんどのコレクションは **CC0（パブリックドメイン）** で、帰属表示なしで自由に使用できます。一部は **CC-BY** で、帰属表示が必要ですが商用利用可能です。各コレクションの詳細でライセンスを確認してください。
+## Licensing
 
-## 形式
+All Numinia-curated assets use **CC0 (Public Domain)**. No attribution required, full commercial use. Some legacy collections may use **CC-BY** — check each asset's license field.
 
-アセットは **GLB**（バイナリglTF）で提供され、Blender、Unity、Unreal Engine、Three.jsなどで利用できます。
+## Browse & Download
 
-## コレクションの見つけ方
-
-- [アセットブラウザ](/ja/finder) でコレクション別に検索・フィルター
-- 各コレクションページでライセンス、アセット数、ダウンロード方法を表示
-- メタデータは [アセットデータベース](/ja/resources/developers/database) からJSONで取得し、自作アプリに統合可能
-
-> **注：** コレクション一覧は [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) リポジトリの `data/projects.json` で管理されています。
+- [Gallery](/ja/gallery) — Visual browser with 3D preview
+- [Finder](/ja/finder) — File-level browser with batch download
+- [API](/ja/resources/developers/database) — JSON data for programmatic access

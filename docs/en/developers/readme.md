@@ -1,27 +1,37 @@
 ---
 title: "For Developers"
-description: "Access developer resources, API documentation, and source code"
+description: "API access, JSON database, and integration guides for Numinia Digital Goods"
 ---
 
 # For Developers
 
-Welcome to the developer resources section! Here you'll find everything you need to integrate Open Source 3D Assets into your projects, access our data, and contribute to the ecosystem.
+Build on top of Numinia's open data. All asset metadata is freely available as JSON.
 
-## Overview
+## Repositories
 
-Open Source 3D Assets provides a registry of 3D asset collections (GLB format) that you can use in games, VR experiences, and creative projects. All metadata is available as JSON from our GitHub repository.
+| Repo | Purpose |
+|---|---|
+| [numinia-digital-goods](https://github.com/PabloFMM/numinia-digital-goods) | Next.js 16 app (code) |
+| [numinia-digital-goods-data](https://github.com/PabloFMM/numinia-digital-goods-data) | JSON metadata + asset binaries |
 
-## What's Available
+## API Endpoints
 
-- **Asset Database**: JSON files with collection and asset metadata, file URLs, and license info
-- **Gallery Source Code**: Open source codebase for this website (os3a-gallery)
-- **Documentation**: Guides and structure for integration
+```
+GET https://numinia.store/api/assets              — All assets (filterable)
+GET https://numinia.store/api/assets?search=avatar — Search by name
+GET https://numinia.store/api/collections          — All collections
+GET https://numinia.store/api/nft/check-ownership?address=0x...&contract=0x...  — NFT check
+```
 
-## Getting Started
+## Tech Stack
 
-Explore the [Asset Database](/en/resources/developers/database) structure and the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository. Use the JSON data to build your own browser, tooling, or integrations.
+- **Next.js 16** (App Router, React 18, TypeScript)
+- **Three.js** + @pixiv/three-vrm (3D rendering)
+- **SIWE** (Sign-In with Ethereum) + GitHub OAuth
+- **Cloudflare R2** + Arweave + IPFS (multi-layer storage)
+- **UUID v7** (RFC 9562) asset ID system
 
 ## Resources
 
-- [Asset Database](/en/resources/developers/database): JSON structure and GitHub repository
-- [Website Source Code](/en/resources/developers/website): Gallery website (os3a-gallery) GitHub repository
+- [Asset Database](/en/resources/developers/database) — JSON structure and schema
+- [Website Source Code](/en/resources/developers/website) — App repo and how to contribute

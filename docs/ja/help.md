@@ -1,22 +1,27 @@
 ---
-title: "ヘルプが必要ですか？"
-description: "ヘルプの取得、質問、またはプロジェクトへの貢献"
+title: "Help & Contact"
+description: "Get help, report issues, or contribute to Numinia Digital Goods"
 ---
 
-# ヘルプが必要ですか？
+# Help & Contact
 
-## ライセンスについての質問？
+## Questions about licenses?
 
-各アセットページのコレクション詳細を確認してください。
+Most assets are CC0 (public domain) — check the license field on each asset page. See our [License Guide](/ja/resources/about/license).
 
-## 何かを作成していますか？
+## Building something?
 
-JSONデータは無料で使用できます - 独自のアセットブラウザや連携を構築してください！
+All data is free to use. Fetch assets via API or directly from the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
-## 貢献したいですか？
+## Want to contribute?
 
-[GitHub](https://github.com/PabloFMM/numinia-digital-goods-data) でコレクションの提出や変更の提案ができます。
+- **Add assets**: Upload via [admin panel](https://numinia.store/ja/admin) or submit a PR to the data repo
+- **Improve the app**: See [CONTRIBUTING.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CONTRIBUTING.md)
+- **Report a bug**: [Open an issue](https://github.com/PabloFMM/numinia-digital-goods/issues)
+- **Security issue**: See [SECURITY.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/SECURITY.md)
 
-## お問い合わせ
+## Contact
 
-お問い合わせ：[@numinia_store](https://x.com/numinia_store)
+- X: [@numinia_store](https://x.com/numinia_store)
+- GitHub: [PabloFMM/numinia-digital-goods](https://github.com/PabloFMM/numinia-digital-goods)
+- Web: [numen.games](https://numen.games)

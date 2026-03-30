@@ -1,39 +1,40 @@
 ---
-title: "リソースとダウンロード"
-description: "Open Source 3D Assets のドキュメントへようこそ"
+title: "Resources & Downloads"
+description: "Documentation for the Numinia Digital Goods platform"
 ---
 
-# リソースとダウンロード
+# Resources & Downloads
 
-Open Source 3D Assets のドキュメントへようこそ。アセットコレクション、ライセンス、開発者向けリソースなど、必要な情報がまとまっています。
+Welcome to the Numinia Digital Goods documentation. Everything you need to browse, download, and integrate CC0 digital assets into your projects.
 
-## アセットコレクション
+## Asset Collections
 
-Polygonal Mind コレクションなど、利用可能な3Dアセットコレクションを閲覧できます。
+Browse 3D models (GLB), avatars (VRM), Hyperfy worlds (HYP), audio, video, and STL files for 3D printing.
 
-[アセットコレクションを見る →](/ja/resources/avatar-collections)
+[View Asset Collections →](/ja/resources/avatar-collections)
 
-## 開発者向け
+## For Developers
 
-API、JSONデータベース、開発者向けリソース。
+API access, JSON database structure, and how to build on Numinia data.
 
-[開発者向けリソースを見る →](/ja/resources/developers)
+[View Developer Resources →](/ja/resources/developers)
 
-## について
+## About
 
-GLB形式、ストレージ、オープンソースの理念について。
+Supported formats, decentralized storage, and licensing.
 
-[詳細を見る →](/ja/resources/about)
+[Learn More →](/ja/resources/about)
 
-## ヘルプとお問い合わせ
+## Help & Contact
 
-ヘルプ、質問、プロジェクトへの貢献。
+Get help, report issues, or contribute.
 
-[ヘルプを取得 →](/ja/resources/help)
+[Get Help →](/ja/resources/help)
 
-## クイックリンク
+## Quick Links
 
-- [アセットコレクション](/ja/resources/avatar-collections)
-- [ライセンスガイド（CC0 vs CC-BY）](/ja/resources/about/license)
-- [アセットデータベース（JSON構造）](/ja/resources/developers/database)
-- [GLB形式の説明](/ja/resources/about/glb)
+- [Asset Collections](/ja/resources/avatar-collections)
+- [License Guide (CC0 vs CC-BY)](/ja/resources/about/license)
+- [Asset Database (JSON)](/ja/resources/developers/database)
+- [GLB Format](/ja/resources/about/glb)
+- [Arweave Storage](/ja/resources/about/ardrive)

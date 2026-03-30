@@ -1,86 +1,92 @@
 ---
-title: "Asset Database (GitHub)"
-description: "Access all asset metadata as JSON files - perfect for integrating into your app or game"
+title: "Asset Database"
+description: "JSON structure and schema for the Numinia data repository"
 ---
 
-# Asset Database (GitHub)
+# Asset Database
 
-Access all asset metadata as JSON files - perfect for integrating into your app or game.
-
-[View Asset Database →](https://github.com/PabloFMM/numinia-digital-goods-data)
+All Numinia metadata is stored as JSON in the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
 ## Structure
 
 ```
-/data/
-  projects.json → All collections + license info
-  /assets/
-    pm-momuspark.json → Collection asset data
-    pm-medieval-fair.json
-    pm-tomb-chaser-1.json
-    [other collection files...]
+data/
+├── projects.json                    ← Project index
+├── assets/numinia-assets.json       ← GLB models
+├── avatars/numinia-avatars.json     ← VRM avatars
+├── worlds/numinia-worlds.json       ← HYP worlds
+├── audio/numinia-audio.json         ← Audio files
+├── video/numinia-video.json         ← Video files
+├── images/numinia-images.json       ← Images
+└── 3dprint/numinia-3dprint.json     ← STL files
+
+content/
+├── models/      ← GLB binaries
+├── avatars/     ← VRM binaries
+├── worlds/      ← HYP binaries
+├── audio/       ← MP3/OGG files
+├── video/       ← MP4/WebM files
+├── images/      ← JPG/PNG files
+├── 3dprint/     ← STL files
+└── thumbnails/  ← PNG previews
 ```
 
-## Example Project Entry
+## Asset Schema
 
-Here's an example of what a project/collection entry looks like in `projects.json`:
+Every asset entry follows this structure:
 
 ```json
 {
-  "id": "pm-momuspark",
-  "name": "MomusPark",
-  "description": "Park environment assets",
-  "asset_data_file": "assets/pm-momuspark.json",
+  "id": "ndg-019d3ded-a1dd-7e0e-aeff-cb155bdff3d8",
+  "canonical": "ndg:vrm:019d3ded-...:v0.1.0",
+  "name": "Avatar Lyra",
+  "type": "vrm",
+  "format": "VRM",
+  "version": "0.1.0",
+  "status": "active",
   "license": "CC0",
-  "source_type": "github",
-  "created_at": "2026-01-01T00:00:00.000Z",
-  "updated_at": "2026-01-01T00:00:00.000Z"
+  "creator": "PabloFMM",
+  "description": "VR-ready avatar",
+  "tags": ["avatar", "humanoid"],
+  "model_file_url": "https://pub-eda9...r2.dev/content/avatars/ndg-019d3ded-....vrm",
+  "thumbnail_url": "https://raw.githubusercontent.com/.../thumbnails/ndg-019d3ded-....png",
+  "file_size_bytes": 2608148,
+  "nft": {
+    "mint_status": "unminted",
+    "chain_id": null,
+    "contract": null,
+    "token_id": null
+  },
+  "storage": {
+    "r2": "https://...",
+    "github_raw": "https://...",
+    "ipfs_cid": null,
+    "arweave_tx": null
+  },
+  "is_public": true,
+  "created_at": "2026-03-30T...",
+  "updated_at": "2026-03-30T..."
 }
 ```
 
-### Project Field Descriptions
+## Asset ID System
 
-- **id**: Unique identifier for the collection
-- **name**: Display name of the collection
-- **description**: Short description of the collection
-- **asset_data_file**: Path to the JSON file containing individual asset data
-- **license**: License type (CC0, CC-BY, etc.)
-- **source_type**: Type of source (e.g., "github")
-- **created_at** / **updated_at**: Timestamps
+Format: `ndg-{uuid-v7}` (RFC 9562, timestamp-sortable, 122 bits entropy).
 
-## Each asset includes
+See [ID_SYSTEM.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/ID_SYSTEM.md) for the full specification.
 
-- Direct GLB download link (or model URL)
-- Preview / thumbnail images
-- Metadata (name, description, tags)
-- License information
+## Fetch Data
 
-## Example Asset Entry
-
-Here's an example of what an asset entry might look like in a collection JSON file:
-
-```json
-{
-  "id": "momuspark-bench-01",
-  "name": "Park Bench",
-  "project_id": "pm-momuspark",
-  "description": "Wooden park bench",
-  "model_file_url": "https://raw.githubusercontent.com/.../bench.glb",
-  "format": "GLB",
-  "thumbnail_url": "https://...",
-  "license": "CC0",
-  "tags": ["prop", "furniture", "outdoor"]
-}
+```javascript
+const res = await fetch(
+  'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/avatars/numinia-avatars.json'
+);
+const avatars = await res.json();
 ```
 
-### Field Descriptions
+Or via the API:
 
-- **id**: Unique identifier for the asset
-- **name**: Display name
-- **project_id**: ID of the collection this asset belongs to
-- **description**: Text description
-- **model_file_url**: Direct download URL for the GLB file
-- **format**: File format (typically "GLB")
-- **thumbnail_url**: Preview image URL
-- **license**: License (e.g., CC0)
-- **tags**: Optional tags for filtering
+```
+GET https://numinia.store/api/assets
+GET https://numinia.store/api/assets?search=avatar
+```

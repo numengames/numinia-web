@@ -1,22 +1,27 @@
 ---
-title: "Need Help?"
-description: "Get help, ask questions, or contribute to the project"
+title: "Help & Contact"
+description: "Get help, report issues, or contribute to Numinia Digital Goods"
 ---
 
-# Need Help?
+# Help & Contact
 
 ## Questions about licenses?
 
-Check the collection details on each asset page.
+Most assets are CC0 (public domain) — check the license field on each asset page. See our [License Guide](/en/resources/about/license).
 
 ## Building something?
 
-Our JSON data is free to use - build your own asset browser or integration!
+All data is free to use. Fetch assets via API or directly from the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
 ## Want to contribute?
 
-Submit your collection or suggest changes via [GitHub](https://github.com/PabloFMM/numinia-digital-goods-data).
+- **Add assets**: Upload via [admin panel](https://numinia.store/en/admin) or submit a PR to the data repo
+- **Improve the app**: See [CONTRIBUTING.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CONTRIBUTING.md)
+- **Report a bug**: [Open an issue](https://github.com/PabloFMM/numinia-digital-goods/issues)
+- **Security issue**: See [SECURITY.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/SECURITY.md)
 
 ## Contact
 
-Contact: [@numinia_store](https://x.com/numinia_store)
+- X: [@numinia_store](https://x.com/numinia_store)
+- GitHub: [PabloFMM/numinia-digital-goods](https://github.com/PabloFMM/numinia-digital-goods)
+- Web: [numen.games](https://numen.games)

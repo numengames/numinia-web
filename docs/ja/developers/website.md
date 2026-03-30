@@ -1,24 +1,28 @@
 ---
-title: "ウェブサイトソースコード"
-description: "ギャラリーウェブサイト自体もオープンソースです"
+title: "Website Source Code"
+description: "The Numinia Digital Goods platform is fully open source"
 ---
 
-# ウェブサイトソースコード
+# Website Source Code
 
-ギャラリーウェブサイト自体もオープンソースです。
+The Numinia Digital Goods platform is fully open source. Built with Next.js 16, TypeScript, Three.js, and Tailwind CSS.
 
-[ウェブサイトコードを見る →](https://github.com/PabloFMM/numinia-digital-goods)
+[View Source Code →](https://github.com/PabloFMM/numinia-digital-goods)
 
+## Quick Start
 
+```bash
+git clone https://github.com/PabloFMM/numinia-digital-goods.git
+cd numinia-digital-goods
+cp .env.example .env.local
+npm install
+npm run dev
+```
 
----
+## Contributing
 
-<small>
+See [CONTRIBUTING.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CONTRIBUTING.md) for setup instructions and code guidelines.
 
-本ウェブサイトの翻訳はAIツールを使用して作成されました。
-ご不便やご迷惑をおかけした場合、深くお詫び申し上げます。
-ご理解いただき、ありがとうございます。
-問題を発見された場合は、お気軽にお問い合わせください。
-ありがとうございます。
+## Architecture
 
-</small>
+See [CLAUDE.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CLAUDE.md) for the full architecture documentation, including File Over App philosophy, authentication flows, and storage strategy.

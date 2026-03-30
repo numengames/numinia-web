@@ -1,34 +1,45 @@
 ---
-title: "オープンソースの理念"
-description: "アバターは無料でアクセス可能であるべきだと考えています。"
+title: "Open Source Philosophy"
+description: "Why Numinia believes digital goods should be free and permanent"
 ---
 
-# オープンソースの理念
+# Open Source Philosophy
 
-アバターは無料でアクセス可能であるべきだと考えています。
+The metaverse should be built on open standards, not locked behind paywalls.
 
-そのため、私たちのオリジナルコレクションはCC0（パブリックドメイン）です：
+## File Over App
 
-- ✅ 商用プロジェクトで使用
-- ✅ 自由に修正およびリミックス
-- ✅ 帰属表示不要
-- ✅ AIモデルのトレーニング
-- ✅ ゲーム、アプリ、アートワークで使用
+Numinia follows the **File Over App** philosophy: data lives in open files (JSON, GLB, VRM), not in databases controlled by a single company. The app is a viewer — replaceable, forkable, optional. The files are the source of truth.
 
-コミュニティコレクションには独自のライセンスがあります - 各アバターで何ができるかを正確に知ることができるよう、これらを見つけやすくしています。
+## Why CC0
 
-メタバースはペイウォールの背後にロックされるのではなく、オープンスタンダード上に構築されるべきです。
+All Numinia-curated assets are CC0 (public domain). You can:
 
+- Use in commercial projects
+- Modify and remix freely
+- No attribution required
+- Train AI models
+- Use in games, apps, artwork, metaverse worlds
 
+## Decentralized Storage
 
----
+Assets are stored across multiple layers for resilience:
 
-<small>
+1. **Cloudflare R2** — Fast CDN delivery
+2. **GitHub** — Open, versionable, forkable
+3. **Arweave** — Permanent, pay-once storage
+4. **IPFS** — Distributed, censorship-resistant
 
-本ウェブサイトの翻訳はAIツールを使用して作成されました。
-ご不便やご迷惑をおかけした場合、深くお詫び申し上げます。
-ご理解いただき、ありがとうございます。
-問題を発見された場合は、お気軽にお問い合わせください。
-ありがとうございます。
+No single point of failure. If one layer goes down, others serve the content.
 
-</small>
+## Interoperability
+
+We use open formats that work everywhere:
+
+- **GLB/glTF** — Khronos Group standard (Blender, Unity, Unreal, Three.js)
+- **VRM** — Open avatar standard (VRChat, Hyperfy, Cluster, many more)
+- **HYP** — Hyperfy v2 app format (interactive 3D worlds)
+
+## Built by Numen Games
+
+Numinia Digital Goods is a project by [Numen Games](https://numen.games), building open tools for the 3D internet.

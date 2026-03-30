@@ -1,86 +1,92 @@
 ---
-title: "アセットデータベース（GitHub）"
-description: "すべてのアセットメタデータをJSONで取得 - アプリやゲームに統合するのに最適"
+title: "Asset Database"
+description: "JSON structure and schema for the Numinia data repository"
 ---
 
-# アセットデータベース（GitHub）
+# Asset Database
 
-すべてのアセットメタデータをJSONファイルで取得 - アプリやゲームに統合するのに最適です。
+All Numinia metadata is stored as JSON in the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
-[アセットデータベースを見る →](https://github.com/PabloFMM/numinia-digital-goods-data)
-
-## 構造
+## Structure
 
 ```
-/data/
-  projects.json → 全コレクション + ライセンス情報
-  /assets/
-    pm-momuspark.json → コレクションのアセットデータ
-    pm-medieval-fair.json
-    pm-tomb-chaser-1.json
-    [その他のコレクションファイル...]
+data/
+├── projects.json                    ← Project index
+├── assets/numinia-assets.json       ← GLB models
+├── avatars/numinia-avatars.json     ← VRM avatars
+├── worlds/numinia-worlds.json       ← HYP worlds
+├── audio/numinia-audio.json         ← Audio files
+├── video/numinia-video.json         ← Video files
+├── images/numinia-images.json       ← Images
+└── 3dprint/numinia-3dprint.json     ← STL files
+
+content/
+├── models/      ← GLB binaries
+├── avatars/     ← VRM binaries
+├── worlds/      ← HYP binaries
+├── audio/       ← MP3/OGG files
+├── video/       ← MP4/WebM files
+├── images/      ← JPG/PNG files
+├── 3dprint/     ← STL files
+└── thumbnails/  ← PNG previews
 ```
 
-## プロジェクトエントリの例
+## Asset Schema
 
-`projects.json` のプロジェクト/コレクションエントリの例：
+Every asset entry follows this structure:
 
 ```json
 {
-  "id": "pm-momuspark",
-  "name": "MomusPark",
-  "description": "Park environment assets",
-  "asset_data_file": "assets/pm-momuspark.json",
+  "id": "ndg-019d3ded-a1dd-7e0e-aeff-cb155bdff3d8",
+  "canonical": "ndg:vrm:019d3ded-...:v0.1.0",
+  "name": "Avatar Lyra",
+  "type": "vrm",
+  "format": "VRM",
+  "version": "0.1.0",
+  "status": "active",
   "license": "CC0",
-  "source_type": "github",
-  "created_at": "2026-01-01T00:00:00.000Z",
-  "updated_at": "2026-01-01T00:00:00.000Z"
+  "creator": "PabloFMM",
+  "description": "VR-ready avatar",
+  "tags": ["avatar", "humanoid"],
+  "model_file_url": "https://pub-eda9...r2.dev/content/avatars/ndg-019d3ded-....vrm",
+  "thumbnail_url": "https://raw.githubusercontent.com/.../thumbnails/ndg-019d3ded-....png",
+  "file_size_bytes": 2608148,
+  "nft": {
+    "mint_status": "unminted",
+    "chain_id": null,
+    "contract": null,
+    "token_id": null
+  },
+  "storage": {
+    "r2": "https://...",
+    "github_raw": "https://...",
+    "ipfs_cid": null,
+    "arweave_tx": null
+  },
+  "is_public": true,
+  "created_at": "2026-03-30T...",
+  "updated_at": "2026-03-30T..."
 }
 ```
 
-### フィールド説明
+## Asset ID System
 
-- **id**: コレクションの一意識別子
-- **name**: 表示名
-- **description**: コレクションの短い説明
-- **asset_data_file**: 個別アセットデータのJSONファイルへのパス
-- **license**: ライセンス（CC0、CC-BY など）
-- **source_type**: ソースの種類（例: "github"）
-- **created_at** / **updated_at**: タイムスタンプ
+Format: `ndg-{uuid-v7}` (RFC 9562, timestamp-sortable, 122 bits entropy).
 
-## 各アセットに含まれるもの
+See [ID_SYSTEM.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/ID_SYSTEM.md) for the full specification.
 
-- GLBの直接ダウンロードリンク（またはモデルURL）
-- プレビュー・サムネイル画像
-- メタデータ（名前、説明、タグ）
-- ライセンス情報
+## Fetch Data
 
-## アセットエントリの例
-
-コレクションJSON内のアセットエントリの例：
-
-```json
-{
-  "id": "momuspark-bench-01",
-  "name": "Park Bench",
-  "project_id": "pm-momuspark",
-  "description": "Wooden park bench",
-  "model_file_url": "https://raw.githubusercontent.com/.../bench.glb",
-  "format": "GLB",
-  "thumbnail_url": "https://...",
-  "license": "CC0",
-  "tags": ["prop", "furniture", "outdoor"]
-}
+```javascript
+const res = await fetch(
+  'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/avatars/numinia-avatars.json'
+);
+const avatars = await res.json();
 ```
 
-### フィールド説明
+Or via the API:
 
-- **id**: アセットの一意識別子
-- **name**: 表示名
-- **project_id**: 所属コレクションのID
-- **description**: 説明文
-- **model_file_url**: GLBファイルの直接ダウンロードURL
-- **format**: ファイル形式（通常 "GLB"）
-- **thumbnail_url**: プレビュー画像URL
-- **license**: ライセンス（例: CC0）
-- **tags**: フィルター用のオプションタグ
+```
+GET https://numinia.store/api/assets
+GET https://numinia.store/api/assets?search=avatar
+```

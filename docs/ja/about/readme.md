@@ -1,31 +1,30 @@
 ---
-title: "について"
-description: "GLB形式、ストレージ、オープンソースの理念について"
+title: "About"
+description: "About Numinia Digital Goods — philosophy, formats, and storage"
 ---
 
-# について
+# About Numinia Digital Goods
 
-Open Source 3D Assets の技術と理念について。
+Numinia Digital Goods is an open platform for CC0-licensed digital assets built by [Numen Games](https://numen.games). We believe digital goods should be free, permanent, and interoperable.
 
-## 私たちのミッション
+## Core Principle: File Over App
 
-Open Source 3D Assets は、ゲーム・VR・クリエイティブプロジェクト向けに、無料で高品質な3Dアセットを簡単に見つけられるようにすることを目指しています。オープンスタンダード、明確なライセンス、コミュニティ主導のコンテンツを大切にしています。
+The data is the product, not the app. All asset metadata lives in open JSON files on GitHub, and binaries are stored on CDN and permanent storage (Arweave). If numinia.store disappears, the files remain — fork the data, build your own viewer.
 
-## 使用している技術
+## Supported Formats
 
-どこでも使える形式とツールを使っています：
+| Format | Type | Use case |
+|---|---|---|
+| **GLB** | 3D Model | Props, environments, objects |
+| **VRM** | Avatar | VR-ready humanoid avatars |
+| **HYP** | Hyperfy World | Interactive 3D apps (GLB + JS) |
+| **STL** | 3D Print | Physical fabrication |
+| **MP3/OGG** | Audio | Soundscapes, music |
+| **MP4/WebM** | Video | Cinematics, demos |
 
-- **GLB形式**：標準の3Dアセット形式（バイナリglTF）– Blender、Unity、Unreal、Three.jsなどで利用可能
-- **GitHub**：open-source-3D-assets リポジトリでアセットメタデータとレジストリを公開
-- **オープンスタンダード**：独自形式ではなくオープンな形式と標準
+## Topics
 
-## 私たちの理念
-
-オープンソースの原則にコミットしています。掲載アセットの多くはCC0（パブリックドメイン）で、帰属表示なしで自由に使用できます。一部のコレクションはCC-BYで、帰属表示が必要ですが商用利用も可能です。
-
-## トピック
-
-- [GLB形式](/ja/resources/about/glb)：当サイトで扱う3D形式について
-- [ArDriveストレージ](/ja/resources/about/ardrive)：永続的な分散型ストレージ（一部ソース）
-- [オープンソースの理念](/ja/resources/about/philosophy)：オープンスタンダードを信じる理由
-- [ライセンスガイド](/ja/resources/about/license)：CC0とCC-BYの違い
+- [GLB Format](/ja/resources/about/glb) — The universal 3D standard
+- [Arweave Storage](/ja/resources/about/ardrive) — Permanent decentralized storage
+- [Open Source Philosophy](/ja/resources/about/philosophy) — Why CC0 matters
+- [License Guide](/ja/resources/about/license) — CC0 vs CC-BY explained

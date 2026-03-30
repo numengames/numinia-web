@@ -1,33 +1,43 @@
 ---
 title: "Asset Collections"
-description: "All 3D asset collections available on Open Source 3D Assets"
+description: "All digital asset collections available on Numinia Digital Goods"
 ---
 
 # Asset Collections
 
-Welcome to the Asset Collections section! This site showcases 3D asset collections with clear licenses and sources, all designed to be free and easy to use in your projects.
+Numinia curates CC0 digital assets organized by type and collection.
 
-## Overview
+## Asset Types
 
-Open Source 3D Assets features curated collections from talented creators. Our primary source is the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository, which includes Polygonal Mind collections and more.
+| Type | Format | Description |
+|---|---|---|
+| 3D Models | GLB | Props, environments, objects |
+| Avatars | VRM | VR-ready humanoid characters |
+| Worlds | HYP | Hyperfy v2 interactive apps |
+| Audio | MP3/OGG | Soundscapes, music, effects |
+| Video | MP4/WebM | Cinematics, demos |
+| Images | JPG/PNG | Textures, references |
+| 3D Print | STL | Physical fabrication files |
 
-## Collection Types
+## Collections
 
-- **Polygonal Mind Collections**: 17 themed collections (MomusPark, Medieval Fair, Tomb Chaser, Chromatic Chaos, Crystal Crossroads, and more) with 991+ GLB assets
-- **Other creators**: Additional CC0 and open-license 3D collections may be added over time
+Assets are organized into projects (collections). Each project has its own JSON catalog in the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
+
+Current catalogs:
+- `numinia-assets` — GLB 3D models
+- `numinia-avatars` — VRM avatars
+- `numinia-worlds` — HYP Hyperfy worlds
+- `numinia-audio` — Audio files
+- `numinia-video` — Video files
+- `numinia-images` — Image files
+- `numinia-3dprint` — STL files
 
 ## Licensing
 
-Most collections use **CC0 (Public Domain)** licensing, meaning you can use them however you want without attribution. Some collections may use **CC-BY**, which requires attribution but still allows commercial use. Check each collection's details for specific licensing information.
+All Numinia-curated assets use **CC0 (Public Domain)**. No attribution required, full commercial use. Some legacy collections may use **CC-BY** — check each asset's license field.
 
-## Format
+## Browse & Download
 
-Assets are provided as **GLB** (binary glTF) files, compatible with Blender, Unity, Unreal Engine, Three.js, and most 3D tools.
-
-## Finding Collections
-
-- Use the [Asset Browser](/en/finder) to search and filter by collection
-- Each collection page shows license, asset count, and download options
-- Metadata is available as JSON from the [Asset Database](/en/resources/developers/database) for integration into your own apps
-
-> **Note:** The list of collections is driven by the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository (`data/projects.json`).
+- [Gallery](/en/gallery) — Visual browser with 3D preview
+- [Finder](/en/finder) — File-level browser with batch download
+- [API](/en/resources/developers/database) — JSON data for programmatic access
