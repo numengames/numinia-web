@@ -16,18 +16,18 @@ interface AdminSidebarProps {
 type NavItem = { id: AdminView | 'archive'; label: string; icon: typeof Package; href?: string };
 
 const MAIN_NAV: NavItem[] = [
-  { id: 'assets', label: 'Assets', icon: Package },
-  { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'character', label: 'Character', icon: User },
   { id: 'portals', label: 'Portals', icon: Globe },
   { id: 'loot', label: 'Loot', icon: Swords },
+  { id: 'assets', label: 'Assets', icon: Package },
+  { id: 'upload', label: 'Upload', icon: Upload },
   { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
+  { id: 'updates', label: 'Updates', icon: Bell },
   { id: 'stats', label: 'Stats', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'updates', label: 'Updates', icon: Bell },
 ];
 
 export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOut }: AdminSidebarProps) {
