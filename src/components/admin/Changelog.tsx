@@ -16,11 +16,11 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
-  { text: 'Gallery UX redesign (layout, filters, search)', status: 'planned' },
+  { text: 'Character Sheet — editable markdown ficha, profile pic, PDF export', status: 'in-progress' },
+  { text: 'Character Sheet — dice rolls (D6 pool) in web', status: 'planned' },
+  { text: 'Archive UX redesign (layout, filters, search)', status: 'planned' },
   { text: 'Finder UX improvements', status: 'planned' },
-  { text: 'Resources pages content (File Over App docs)', status: 'planned' },
   { text: 'Upload Mixamo GLB animations to R2 (replace legacy FBX)', status: 'planned' },
-  { text: 'Multi-language legal pages (ja)', status: 'planned' },
   { text: 'On-chain NFT ownership display in user profile', status: 'research' },
   { text: 'Arweave bulk archive for existing assets', status: 'research' },
 ];
