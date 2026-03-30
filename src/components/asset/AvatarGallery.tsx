@@ -2,7 +2,7 @@
 
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Download, RefreshCw, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, Download, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, LogIn, LogOut } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,47 @@ export const AvatarGallery: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Wallet session (admin only)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/wallet/session')
+      .then(res => res.json())
+      .then(data => { if (data.authenticated) setWalletAddress(data.address); })
+      .catch(() => {});
+  }, []);
+
+  const connectWallet = async () => {
+    if (!window.ethereum) { alert('Install MetaMask'); return; }
+    setIsConnecting(true);
+    try {
+      const { SiweMessage } = await import('siwe');
+      const { getAddress } = await import('viem');
+      const accounts: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const address = getAddress(accounts[0]);
+      const chainId: string = await window.ethereum.request({ method: 'eth_chainId' });
+      const nonceRes = await fetch('/api/auth/wallet/nonce');
+      const { nonce } = await nonceRes.json();
+      const siweMessage = new SiweMessage({
+        domain: window.location.host, address, statement: 'Sign in to Numinia',
+        uri: window.location.origin, version: '1', chainId: parseInt(chainId, 16), nonce,
+      });
+      const messageToSign = siweMessage.prepareMessage();
+      const signature: string = await window.ethereum.request({ method: 'personal_sign', params: [messageToSign, address] });
+      const verifyRes = await fetch('/api/auth/wallet/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageToSign, signature }),
+      });
+      if (verifyRes.ok) { const data = await verifyRes.json(); setWalletAddress(data.address); }
+    } catch { /* user rejected or error */ } finally { setIsConnecting(false); }
+  };
+
+  const disconnectWallet = async () => {
+    await fetch('/api/auth/wallet/session', { method: 'DELETE' });
+    setWalletAddress(null);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
   const [currentAvatar, setCurrentAvatar] = useState<Avatar | null>(null);
@@ -559,8 +600,31 @@ export const AvatarGallery: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Wallet — bottom of sidebar */}
+              <div className="p-3 border-t border-gray-200 dark:border-gray-700 mt-auto shrink-0">
+                {walletAddress ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-gray-400 font-mono truncate">
+                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                    </span>
+                    <button onClick={disconnectWallet} className="text-xs text-gray-400 hover:text-red-500 transition-colors" title="Sign out">
+                      <LogOut className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={connectWallet}
+                    disabled={isConnecting}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                  </button>
+                )}
+              </div>
             </div>
-            
+
             {/* Resize Handle */}
             <div
               className="w-1 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 cursor-col-resize transition-colors flex-shrink-0 group relative"
