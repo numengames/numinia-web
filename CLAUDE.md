@@ -42,7 +42,22 @@ numinia-digital-goods-data/
 │   ├── audio/       ← .mp3, .ogg
 │   ├── video/       ← .mp4, .webm
 │   └── thumbnails/  ← .png previews
+├── data/versions/   ← version history per asset
 ```
+
+---
+
+## Asset ID System (UUID v7)
+
+**See `ID_SYSTEM.md` for the full specification.**
+
+Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
+
+- RFC 9562 standard, 122 bits entropy, zero coordination
+- `generateAssetId()` in `src/lib/asset-id.ts`
+- `createAssetMetadata()` builds complete JSON entry with version, status, nft, storage
+- `formatCanonical()` for NFT tokenURIs: `ndg:vrm:{uuid}:v0.1.0`
+- Old IDs (slug-timestamp, UUID v4) continue to work — backward compatible
 
 ---
 
