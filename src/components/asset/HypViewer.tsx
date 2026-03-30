@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { parseHypFile, revokeHypBlobUrl, type HypParseResult } from '@/lib/utils/hypParser';
+import { useState, useEffect, useCallback } from 'react';
+import { parseHypFile, revokeHypBlobUrls, type HypParseResult } from '@/lib/utils/hypParser';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Info, X } from 'lucide-react';
+import { Loader2, Copy, Check, Download, FileCode, Box, Settings } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const VRMViewer = dynamic(
@@ -16,42 +16,67 @@ interface HypViewerProps {
   name: string;
 }
 
+type HypTab = 'preview' | 'files' | 'script' | 'props';
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={copy} className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors">
+      {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+    </button>
+  );
+}
+
 export function HypViewer({ url, name }: HypViewerProps) {
   const [result, setResult] = useState<HypParseResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
+  const [tab, setTab] = useState<HypTab>('preview');
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(false);
     setResult(null);
+    setTab('preview');
 
     parseHypFile(url).then((parsed) => {
       if (cancelled) return;
       if (parsed) {
         setResult(parsed);
+        // If no model, default to files tab
+        if (!parsed.glbBlobUrl) setTab('files');
       } else {
         setError(true);
       }
       setLoading(false);
     });
 
-    return () => {
-      cancelled = true;
-      // Clean up previous blob URL
-      if (result?.glbBlobUrl) revokeHypBlobUrl(result.glbBlobUrl);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
   }, [url]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (result?.glbBlobUrl) revokeHypBlobUrl(result.glbBlobUrl);
-    };
-  }, [result?.glbBlobUrl]);
+    return () => { if (result) revokeHypBlobUrls(result); };
+  }, [result]);
+
+  const handleDownload = useCallback(() => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.hyp`;
+    a.click();
+  }, [url, name]);
 
   if (loading) {
     return (
@@ -67,113 +92,163 @@ export function HypViewer({ url, name }: HypViewerProps) {
       <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-900">
         <div className="text-4xl">📦</div>
         <p className="text-sm text-gray-500">Could not parse .hyp file</p>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">
-          Download file
-        </a>
+        <button onClick={handleDownload} className="text-xs text-blue-500 hover:underline">Download .hyp</button>
       </div>
     );
   }
 
-  const modelCount = result.header.assets.filter(a => a.type === 'model').length;
-  const scriptCount = result.header.assets.filter(a => a.type === 'script').length;
+  const modelCount = result.files.filter(f => f.asset.type === 'model').length;
+  const scriptCount = result.files.filter(f => f.asset.type === 'script').length;
+  const propsJson = JSON.stringify(result.header.blueprint, null, 2);
 
   return (
-    <div className="w-full h-full relative">
-      {/* 3D preview of extracted GLB */}
-      {result.glbBlobUrl ? (
-        <VRMViewer
-          url={result.glbBlobUrl}
-          backgroundGLB={null}
-          onMetadataLoad={() => {}}
-          onTexturesLoad={() => {}}
-          showInfoPanel={false}
-          onToggleInfoPanel={() => {}}
-          hideControls={false}
-        />
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-900">
-          <div className="text-4xl">📦</div>
-          <p className="text-sm text-gray-500">No 3D model found in .hyp</p>
+    <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Tab bar — madjin style */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-cream dark:bg-cream-dark shrink-0">
+        <div className="flex items-center gap-1">
+          {result.glbBlobUrl && (
+            <button
+              onClick={() => setTab('preview')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                tab === 'preview' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Box className="h-3 w-3 inline mr-1" />Preview
+            </button>
+          )}
+          <button
+            onClick={() => setTab('files')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              tab === 'files' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            Files ({result.files.length}) · {formatSize(result.totalSize)}
+          </button>
+          {result.scriptText && (
+            <button
+              onClick={() => setTab('script')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                tab === 'script' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <FileCode className="h-3 w-3 inline mr-1" />Script
+            </button>
+          )}
+          <button
+            onClick={() => setTab('props')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              tab === 'props' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <Settings className="h-3 w-3 inline mr-1" />Props
+          </button>
         </div>
-      )}
 
-      {/* Hyperfy info overlay */}
-      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5">
-        <Badge variant="secondary" className="bg-violet-600 text-white text-[10px] shadow-md">
-          HYP
-        </Badge>
-        {result.hasScript && (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-[10px] shadow-md">
-            Script
-          </Badge>
-        )}
-        {modelCount > 0 && (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] shadow-md">
-            {modelCount} model{modelCount > 1 ? 's' : ''}
-          </Badge>
-        )}
         <button
-          onClick={() => setShowInfo(!showInfo)}
-          className="p-1 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
-          title="App info"
+          onClick={handleDownload}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-violet-600 hover:bg-violet-700 text-white transition-colors"
         >
-          {showInfo ? <X className="h-3 w-3" /> : <Info className="h-3 w-3" />}
+          <Download className="h-3 w-3" /> .hyp
         </button>
       </div>
 
-      {/* Metadata panel */}
-      {showInfo && (
-        <div className="absolute top-2 right-2 z-10 w-56 bg-white/95 dark:bg-gray-900/95 backdrop-blur rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2 text-xs">
-          <div className="font-semibold text-gray-900 dark:text-white truncate">{result.name}</div>
-          <div className="space-y-1">
-            {result.header.assets.map((asset, i) => (
-              <div key={i} className="flex items-center justify-between text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="secondary" className={`text-[9px] px-1 py-0 ${
-                    asset.type === 'model' ? 'bg-blue-100 text-blue-700' :
-                    asset.type === 'script' ? 'bg-amber-100 text-amber-800' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {asset.type}
-                  </Badge>
-                  <span className="truncate max-w-[100px]">{asset.url}</span>
-                </div>
-                <span className="text-gray-400 shrink-0">{(asset.size / 1024).toFixed(0)}KB</span>
-              </div>
-            ))}
+      {/* Tab content */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* Preview tab — 3D viewer */}
+        {tab === 'preview' && result.glbBlobUrl && (
+          <VRMViewer
+            url={result.glbBlobUrl}
+            backgroundGLB={null}
+            onMetadataLoad={() => {}}
+            onTexturesLoad={() => {}}
+            showInfoPanel={false}
+            onToggleInfoPanel={() => {}}
+            hideControls={false}
+          />
+        )}
+
+        {/* Preview fallback — no model */}
+        {tab === 'preview' && !result.glbBlobUrl && (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+            <FileCode className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+            <p className="text-sm text-gray-500">Script-only app (no 3D model)</p>
+            <button onClick={() => setTab('script')} className="text-xs text-violet-500 hover:underline">
+              View Script
+            </button>
           </div>
-          {result.header.blueprint.props && Object.keys(result.header.blueprint.props).length > 0 && (
-            <div className="pt-1 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Props</div>
-              {Object.entries(result.header.blueprint.props).map(([key, val]) => (
-                <div key={key} className="flex justify-between text-gray-500">
-                  <span>{key}</span>
-                  <span className="text-gray-400">{String((val as Record<string, unknown>)?.type || 'unknown')}</span>
+        )}
+
+        {/* Files tab */}
+        {tab === 'files' && (
+          <div className="h-full overflow-y-auto p-3">
+            <div className="space-y-1">
+              {result.files.map((f, i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Badge variant="secondary" className={`text-[9px] shrink-0 ${
+                      f.asset.type === 'model' ? 'bg-blue-100 text-blue-700' :
+                      f.asset.type === 'script' ? 'bg-amber-100 text-amber-800' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {f.asset.type}
+                    </Badge>
+                    <span className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate">{f.asset.url}</span>
+                  </div>
+                  <span className="text-xs text-gray-400 shrink-0 ml-2">{formatSize(f.asset.size)}</span>
                 </div>
               ))}
             </div>
-          )}
-          <a
-            href="https://docs.hyperfy.xyz/"
-            target="_blank" rel="noopener noreferrer"
-            className="block text-[10px] text-violet-500 hover:text-violet-700 pt-1"
-          >
-            Hyperfy v2 Docs
-          </a>
-        </div>
-      )}
 
-      {/* Hyperfy docs link (when panel closed) */}
-      {!showInfo && (
-        <a
-          href="https://docs.hyperfy.xyz/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute bottom-3 right-3 z-10 text-[10px] text-gray-400 hover:text-violet-500 transition-colors"
-        >
-          Powered by Hyperfy v2
-        </a>
-      )}
+            {/* Blueprint info */}
+            <div className="mt-4 p-3 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-2">
+              <div className="text-xs font-medium text-gray-900 dark:text-white">{result.name}</div>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="secondary" className="bg-violet-100 text-violet-700 text-[9px]">HYP</Badge>
+                {result.hasScript && <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-[9px]">Script</Badge>}
+                {modelCount > 0 && <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[9px]">{modelCount} model{modelCount > 1 ? 's' : ''}</Badge>}
+                {result.header.blueprint.frozen && <Badge variant="secondary" className="bg-red-100 text-red-700 text-[9px]">Frozen</Badge>}
+              </div>
+              <a href="https://docs.hyperfy.xyz/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-violet-500 hover:text-violet-700">
+                Hyperfy v2 Docs
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Script tab */}
+        {tab === 'script' && result.scriptText && (
+          <div className="h-full flex flex-col">
+            <div className="flex justify-end p-2 shrink-0">
+              <CopyButton text={result.scriptText} />
+            </div>
+            <div className="flex-1 overflow-auto px-3 pb-3">
+              <pre className="text-xs font-mono text-green-400 bg-gray-950 rounded-lg p-4 overflow-x-auto whitespace-pre min-h-full">
+                {result.scriptText}
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {tab === 'script' && !result.scriptText && (
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-sm text-gray-500">No script in this app</p>
+          </div>
+        )}
+
+        {/* Props / Blueprint tab */}
+        {tab === 'props' && (
+          <div className="h-full flex flex-col">
+            <div className="flex justify-end p-2 shrink-0">
+              <CopyButton text={propsJson} />
+            </div>
+            <div className="flex-1 overflow-auto px-3 pb-3">
+              <pre className="text-xs font-mono text-blue-300 bg-gray-950 rounded-lg p-4 overflow-x-auto whitespace-pre min-h-full">
+                {propsJson}
+              </pre>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

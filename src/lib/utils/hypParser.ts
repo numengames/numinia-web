@@ -4,7 +4,7 @@
  * .hyp format: [4 bytes header size (Uint32LE)] [JSON header] [asset binaries...]
  *
  * The JSON header contains:
- * - blueprint: { name, model?, script?, props }
+ * - blueprint: { name, model?, script?, props, frozen }
  * - assets: [{ type: "model"|"avatar"|"script", url, size, mime }]
  *
  * Assets are concatenated after the header. Each asset's binary data
@@ -31,18 +31,30 @@ export interface HypHeader {
   assets: HypAsset[];
 }
 
+export interface HypExtractedFile {
+  asset: HypAsset;
+  blobUrl: string;
+  text?: string; // For scripts — decoded text content
+}
+
 export interface HypParseResult {
   header: HypHeader;
   /** Extracted GLB model as a Blob URL (if found) */
   glbBlobUrl: string | null;
+  /** Extracted script text (if found) */
+  scriptText: string | null;
+  /** All extracted files with blob URLs */
+  files: HypExtractedFile[];
   /** Whether the .hyp contains scripting */
   hasScript: boolean;
   /** App name from blueprint */
   name: string;
+  /** Total file size in bytes */
+  totalSize: number;
 }
 
 /**
- * Parse a .hyp file and extract the GLB model for preview.
+ * Parse a .hyp file and extract all assets.
  * Works client-side only (uses ArrayBuffer + Blob).
  */
 export async function parseHypFile(url: string): Promise<HypParseResult | null> {
@@ -68,24 +80,37 @@ export async function parseHypFile(url: string): Promise<HypParseResult | null> 
     const headerText = new TextDecoder().decode(headerBytes);
     const header: HypHeader = JSON.parse(headerText);
 
-    // Extract assets from the remaining bytes
+    // Extract all assets
     let offset = 4 + headerSize;
     let glbBlobUrl: string | null = null;
+    let scriptText: string | null = null;
+    const files: HypExtractedFile[] = [];
 
     for (const asset of header.assets) {
-      if (asset.type === 'model' && !glbBlobUrl) {
-        // Extract GLB binary
-        const glbData = new Uint8Array(buffer, offset, asset.size);
-        const blob = new Blob([glbData], { type: 'model/gltf-binary' });
-        glbBlobUrl = URL.createObjectURL(blob);
+      const data = new Uint8Array(buffer, offset, asset.size);
+
+      let blobUrl: string;
+      let text: string | undefined;
+
+      if (asset.type === 'script') {
+        text = new TextDecoder().decode(data);
+        blobUrl = URL.createObjectURL(new Blob([data], { type: 'application/javascript' }));
+        if (!scriptText) scriptText = text;
+      } else if (asset.type === 'model') {
+        blobUrl = URL.createObjectURL(new Blob([data], { type: 'model/gltf-binary' }));
+        if (!glbBlobUrl) glbBlobUrl = blobUrl;
+      } else {
+        blobUrl = URL.createObjectURL(new Blob([data], { type: asset.mime || 'application/octet-stream' }));
       }
+
+      files.push({ asset, blobUrl, text });
       offset += asset.size;
     }
 
     const hasScript = header.assets.some(a => a.type === 'script');
     const name = header.blueprint?.name || 'Untitled App';
 
-    return { header, glbBlobUrl, hasScript, name };
+    return { header, glbBlobUrl, scriptText, files, hasScript, name, totalSize: buffer.byteLength };
   } catch (error) {
     console.error('Failed to parse .hyp file:', error);
     return null;
@@ -93,8 +118,10 @@ export async function parseHypFile(url: string): Promise<HypParseResult | null> 
 }
 
 /**
- * Clean up blob URL created by parseHypFile.
+ * Clean up blob URLs created by parseHypFile.
  */
-export function revokeHypBlobUrl(url: string | null) {
-  if (url) URL.revokeObjectURL(url);
+export function revokeHypBlobUrls(result: HypParseResult) {
+  for (const f of result.files) {
+    URL.revokeObjectURL(f.blobUrl);
+  }
 }
