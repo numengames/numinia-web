@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminSession } from '@/lib/auth/getSession';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -48,7 +49,12 @@ async function getAvatarsFromFile(): Promise<Avatar[]> {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = getAdminSession(req);
+  if (!session.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     // Get all avatars directly from the file
     const avatars = await getAvatarsFromFile();
