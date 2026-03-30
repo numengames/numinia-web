@@ -50,13 +50,10 @@ export function middleware(request: NextRequest) {
 
   const res = NextResponse.next();
 
-  // Add CORS headers for API routes
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    res.headers.set('Access-Control-Allow-Origin', '*');
-    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.headers.set('Access-Control-Max-Age', '3600');
-  }
+  // CORS headers are set in next.config.js with the correct origin.
+  // Do NOT duplicate them here — setting Allow-Origin: * in middleware
+  // conflicts with the specific origin in next.config.js and breaks
+  // credential-based requests (cookies).
 
   // Check for session — wallet auth (admin_session) or GitHub OAuth (session)
   let isAdmin = false;

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchData, updateData } from '@/lib/github-storage';
+import { getAdminSession } from '@/lib/auth/getSession';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-import { env } from '@/lib/env';
 
 const GITHUB_OWNER = env.github.repoOwner;
 const GITHUB_REPO = env.github.repoName;
@@ -14,6 +14,11 @@ const API_BASE = 'https://api.github.com';
 const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
 
 export async function POST(req: NextRequest) {
+  const session = getAdminSession(req);
+  if (!session.isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   if (!GITHUB_TOKEN) {
     return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
   }
