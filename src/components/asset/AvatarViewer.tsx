@@ -10,6 +10,7 @@ import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { Maximize2, Minimize2, Info, Eye, EyeOff, DownloadCloud, X, Menu, Search, Dice6, ChevronDown, ChevronRight } from 'lucide-react';
 import { setupMobileGestureHelp } from '@/lib/utils';
 import { HypViewer } from './HypViewer';
+import { STLViewer } from './STLViewer';
 
 const VRMViewer = dynamic(() => import('@/components/VRMViewer/VRMViewer').then(mod => mod.VRMViewer), { 
   ssr: false,
@@ -335,6 +336,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const isVideoUrl = /\.(mp4|webm)$/i.test(displayModelUrl);
   const isAudioUrl = /\.(mp3|ogg)$/i.test(displayModelUrl);
   const isHypUrl = /\.hyp$/i.test(displayModelUrl);
+  const isStlUrl = /\.stl$/i.test(displayModelUrl);
   const isMediaFile = isVideoUrl || isAudioUrl;
 
   return (
@@ -366,6 +368,8 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
         </div>
       ) : isHypUrl ? (
         <HypViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
+      ) : isStlUrl ? (
+        <STLViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
       ) : (
         <VRMViewer
           url={displayModelUrl}

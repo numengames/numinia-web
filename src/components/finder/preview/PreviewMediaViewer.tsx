@@ -3,6 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { HypViewer } from '@/components/asset/HypViewer';
+import { STLViewer } from '@/components/asset/STLViewer';
 import type { FileTypeInfo } from './types';
 
 const VRMViewer = dynamic(
@@ -78,6 +79,7 @@ function renderMedia(
   if (/\.(mp4|webm)$/i.test(url)) return <VideoPlayer url={url} />;
   if (/\.(mp3|ogg)$/i.test(url)) return <AudioPlayer url={url} label={label} />;
   if (/\.hyp$/i.test(url)) return <HypViewer key={url} url={url} name={label} />;
+  if (/\.stl$/i.test(url)) return <STLViewer key={url} url={url} name={label} />;
 
   if (category === 'model' || (!category && !/\.(jpg|jpeg|png|webp|gif)$/i.test(url))) {
     return (

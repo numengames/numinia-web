@@ -21,6 +21,7 @@ export function getContentPath(format: string): {
     case 'JPEG':
     case 'PNG':
     case 'WEBP': return { folder: 'content/images',   catalogFile: 'data/images/numinia-images.json',   projectId: 'numinia-images' };
+    case 'STL':  return { folder: 'content/3dprint',  catalogFile: 'data/3dprint/numinia-3dprint.json', projectId: 'numinia-3dprint' };
     default:     return { folder: 'content/other',    catalogFile: 'data/assets/numinia-assets.json',   projectId: 'numinia-assets' };
   }
 }

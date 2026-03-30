@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 import { HypViewer } from '@/components/asset/HypViewer';
+import { STLViewer } from '@/components/asset/STLViewer';
 
 const VRMViewer = dynamic(
   () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
@@ -188,7 +189,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const isVideo = /\.(mp4|webm)$/i.test(url);
   const isAudio = /\.(mp3|ogg)$/i.test(url);
   const isHyp = /\.hyp$/i.test(url);
-  const is3D = !isVideo && !isAudio && !isHyp && !!url && /\.(vrm|glb|gltf|fbx)$/i.test(url);
+  const isStl = /\.stl$/i.test(url);
+  const is3D = !isVideo && !isAudio && !isHyp && !isStl && !!url && /\.(vrm|glb|gltf|fbx)$/i.test(url);
   const nft = avatar.nft as Record<string, unknown> | undefined;
   const storage = avatar.storage;
   const displayThumb = thumbnailPreview || avatar.thumbnailUrl;
@@ -240,6 +242,8 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
               </div>
             ) : isHyp ? (
               <HypViewer key={url} url={url} name={avatar.name} />
+            ) : isStl ? (
+              <STLViewer key={url} url={url} name={avatar.name} />
             ) : is3D ? (
               <VRMViewer key={url} url={url} backgroundGLB={null} onMetadataLoad={() => {}} onTexturesLoad={() => {}} showInfoPanel={false} onToggleInfoPanel={() => {}} hideControls={true} cameraDistanceMultiplier={0.6} />
             ) : displayThumb ? (

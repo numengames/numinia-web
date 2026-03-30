@@ -9,7 +9,7 @@ import { getContentPath } from '@/lib/content-paths';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'webp'];
+const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'webp', 'stl'];
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
 const PRESIGN_EXPIRY = 3600; // 1 hour
 
@@ -21,6 +21,7 @@ const CONTENT_TYPES: Record<string, string> = {
   ogg: 'audio/ogg',
   mp4: 'video/mp4',
   webm: 'video/webm',
+  stl: 'model/stl',
 };
 
 // Generates a presigned PUT URL for direct-to-R2 upload.

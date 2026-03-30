@@ -46,6 +46,13 @@ describe('getContentPath', () => {
     expect(getContentPath('hyp').folder).toBe('content/worlds');
   });
 
+  it('maps STL to 3dprint', () => {
+    const p = getContentPath('STL');
+    expect(p.folder).toBe('content/3dprint');
+    expect(p.catalogFile).toBe('data/3dprint/numinia-3dprint.json');
+    expect(p.projectId).toBe('numinia-3dprint');
+  });
+
   it('falls back to other for unknown formats', () => {
     const p = getContentPath('ZIP');
     expect(p.folder).toBe('content/other');
