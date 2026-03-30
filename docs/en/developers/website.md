@@ -7,4 +7,4 @@ description: "The gallery website itself is also open source"
 
 The gallery website itself is also open source.
 
-[View Website Code →](https://github.com/ToxSam/os3a-gallery)
+[View Website Code →](https://github.com/PabloFMM/numinia-digital-goods)

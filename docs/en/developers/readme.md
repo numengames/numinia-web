@@ -19,7 +19,7 @@ Open Source 3D Assets provides a registry of 3D asset collections (GLB format) t
 
 ## Getting Started
 
-Explore the [Asset Database](/en/resources/developers/database) structure and the [open-source-3D-assets](https://github.com/ToxSam/open-source-3D-assets) repository. Use the JSON data to build your own browser, tooling, or integrations.
+Explore the [Asset Database](/en/resources/developers/database) structure and the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository. Use the JSON data to build your own browser, tooling, or integrations.
 
 ## Resources
 

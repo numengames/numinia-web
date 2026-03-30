@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import type { GithubAvatar } from '@/types/github-storage';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const walletKeyJson = process.env.ARWEAVE_WALLET_KEY;
+  const walletKeyJson = env.arweave.walletKey;
   if (!walletKeyJson) {
     return NextResponse.json({
       error: 'Arweave wallet not configured. Set ARWEAVE_WALLET_KEY env var with JWK JSON.',

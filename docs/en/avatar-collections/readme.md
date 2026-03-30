@@ -9,7 +9,7 @@ Welcome to the Asset Collections section! This site showcases 3D asset collectio
 
 ## Overview
 
-Open Source 3D Assets features curated collections from talented creators. Our primary source is the [open-source-3D-assets](https://github.com/ToxSam/open-source-3D-assets) repository, which includes Polygonal Mind collections and more.
+Open Source 3D Assets features curated collections from talented creators. Our primary source is the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository, which includes Polygonal Mind collections and more.
 
 ## Collection Types
 
@@ -30,4 +30,4 @@ Assets are provided as **GLB** (binary glTF) files, compatible with Blender, Uni
 - Each collection page shows license, asset count, and download options
 - Metadata is available as JSON from the [Asset Database](/en/resources/developers/database) for integration into your own apps
 
-> **Note:** The list of collections is driven by the [open-source-3D-assets](https://github.com/ToxSam/open-source-3D-assets) repository (`data/projects.json`).
+> **Note:** The list of collections is driven by the [open-source-3D-assets](https://github.com/PabloFMM/numinia-digital-goods-data) repository (`data/projects.json`).

@@ -36,6 +36,9 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           {
+            // CSP: unsafe-eval required by Three.js (shader compilation, WASM).
+            // unsafe-inline required by Next.js (inline styles, Tailwind).
+            // Reviewed 2026-03-31. Remove when Three.js supports strict CSP.
             key: 'Content-Security-Policy',
             value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; media-src 'self' https://*.r2.dev https://*.r2.cloudflarestorage.com https://raw.githubusercontent.com; connect-src 'self' blob: https://*.r2.cloudflarestorage.com https://*.r2.dev https://assets.numinia.store https://assets.opensourceavatars.com https://*.ipfs.io https://dweb.link https://*.dweb.link https://gateway.pinata.cloud https://*.arweave.net https://arweave.net https://raw.githubusercontent.com https://api.github.com https://*.githubusercontent.com https://www.gstatic.com; frame-ancestors 'self';"
           },

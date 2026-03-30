@@ -137,7 +137,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               </li>
               <li>
                 <a 
-                  href="https://x.com/numinia_xyz"
+                  href="https://x.com/numinia_store"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
@@ -179,7 +179,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
                 </svg>
               </a>
               <a 
-                href="https://x.com/numinia_xyz"
+                href="https://x.com/numinia_store"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center justify-center"

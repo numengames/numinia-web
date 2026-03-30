@@ -15,8 +15,8 @@ Our JSON data is free to use - build your own asset browser or integration!
 
 ## Want to contribute?
 
-Submit your collection or suggest changes via [GitHub](https://github.com/ToxSam/open-source-3D-assets).
+Submit your collection or suggest changes via [GitHub](https://github.com/PabloFMM/numinia-digital-goods-data).
 
 ## Contact
 
-Contact: [@ToxSam](https://x.com/toxsam)
+Contact: [@numinia_store](https://x.com/numinia_store)

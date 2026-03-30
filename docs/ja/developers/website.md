@@ -7,7 +7,7 @@ description: "ギャラリーウェブサイト自体もオープンソースで
 
 ギャラリーウェブサイト自体もオープンソースです。
 
-[ウェブサイトコードを見る →](https://github.com/ToxSam/os3a-gallery)
+[ウェブサイトコードを見る →](https://github.com/PabloFMM/numinia-digital-goods)
 
 
 

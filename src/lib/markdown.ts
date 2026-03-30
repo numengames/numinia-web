@@ -22,10 +22,10 @@ export async function parseMarkdown(filePath: string): Promise<MarkdownContent> 
     const fileContents = fs.readFileSync(filePath, 'utf8');
     const { data, content } = matter(fileContents);
     
-    // Process markdown to HTML
+    // Process markdown to HTML — sanitize: true strips <script>, onclick, etc.
     const processedContent = await remark()
-      .use(remarkGfm) // GitHub Flavored Markdown support
-      .use(remarkHtml, { sanitize: false })
+      .use(remarkGfm)
+      .use(remarkHtml, { sanitize: true })
       .process(content);
     
     return {

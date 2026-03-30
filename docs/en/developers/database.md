@@ -7,7 +7,7 @@ description: "Access all asset metadata as JSON files - perfect for integrating 
 
 Access all asset metadata as JSON files - perfect for integrating into your app or game.
 
-[View Asset Database →](https://github.com/ToxSam/open-source-3D-assets)
+[View Asset Database →](https://github.com/PabloFMM/numinia-digital-goods-data)
 
 ## Structure
 

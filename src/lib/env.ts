@@ -28,6 +28,10 @@ const serverSchema = z.object({
   R2_ACCESS_KEY_ID:     z.string().default(''),
   R2_SECRET_ACCESS_KEY: z.string().default(''),
   R2_BUCKET_NAME:       z.string().default(''),
+  // Arweave + IPFS (optional — permanent storage features degrade gracefully)
+  ARWEAVE_WALLET_KEY:   z.string().default(''),
+  IPFS_PIN_API_URL:     z.string().default(''),
+  IPFS_PIN_API_KEY:     z.string().default(''),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -82,6 +86,13 @@ export const env = {
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? '',
     bucketName:      process.env.R2_BUCKET_NAME       ?? '',
     publicUrl:       process.env.R2_PUBLIC_URL         ?? '',
+  },
+  arweave: {
+    walletKey: process.env.ARWEAVE_WALLET_KEY ?? '',
+  },
+  ipfs: {
+    pinApiUrl: process.env.IPFS_PIN_API_URL ?? '',
+    pinApiKey: process.env.IPFS_PIN_API_KEY ?? '',
   },
   adminWalletAddresses: (process.env.ADMIN_WALLET_ADDRESSES ?? '')
     .split(',').map(a => a.trim().toLowerCase()).filter(Boolean),

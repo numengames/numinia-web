@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import type { GithubAvatar } from '@/types/github-storage';
+import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,8 +20,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const pinApiUrl = process.env.IPFS_PIN_API_URL;
-  const pinApiKey = process.env.IPFS_PIN_API_KEY;
+  const pinApiUrl = env.ipfs.pinApiUrl;
+  const pinApiKey = env.ipfs.pinApiKey;
 
   if (!pinApiUrl || !pinApiKey) {
     return NextResponse.json({
