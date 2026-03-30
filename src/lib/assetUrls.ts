@@ -9,6 +9,7 @@
 import { getArweaveTxId } from '@/lib/arweaveMapping';
 import { getArweaveUrl } from '@/lib/arweave';
 
+// Legacy: Polygonal Mind CC0 models hosted by ToxSam (external dataset, not ours)
 const DEFAULT_POLYGON_RAW_BASE =
   process.env.NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE ||
   'https://raw.githubusercontent.com/ToxSam/cc0-models-Polygonal-Mind/main';
