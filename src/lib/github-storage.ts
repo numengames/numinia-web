@@ -357,17 +357,14 @@ async function getAvatars(projectIds?: string[]) {
               // - With assets/ prefix: "assets/pm-momuspark.json"
               // - Full path: "data/assets/pm-momuspark.json"
               let avatarPath: string;
-              if (avatarFile.startsWith('data/assets/')) {
-                // Already has full path
+              if (avatarFile.startsWith('data/')) {
+                // Already has full data/ prefix
                 avatarPath = avatarFile;
-              } else if (avatarFile.startsWith('assets/')) {
-                // Has assets/ prefix, add data/ prefix
-                avatarPath = `data/${avatarFile}`;
-              } else if (avatarFile.startsWith('avatars/')) {
-                // Legacy avatars/ prefix, add data/ prefix
+              } else if (avatarFile.includes('/')) {
+                // Has a folder prefix (assets/, avatars/, worlds/, audio/, video/)
                 avatarPath = `data/${avatarFile}`;
               } else {
-                // Just filename, add data/assets/ prefix (new structure)
+                // Just filename, add data/assets/ prefix (legacy)
                 avatarPath = `data/assets/${avatarFile}`;
               }
               const projectAvatars = await fetchData<Record<string, unknown>[]>(avatarPath);
