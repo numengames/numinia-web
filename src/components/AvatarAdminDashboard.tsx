@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Eye, EyeOff, Loader2, Pencil, Check, X } from 'lucide-react';
+import AdminTableView from '@/components/admin/AdminTableView';
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ interface Avatar {
   file_size_bytes?: number;
 }
 
-export default function AvatarAdminDashboard() {
+export default function AvatarAdminDashboard({ viewMode = 'gallery' }: { viewMode?: 'gallery' | 'table' }) {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -253,12 +254,19 @@ export default function AvatarAdminDashboard() {
           <CardHeader className="px-6">
             <CardTitle>Assets</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className={viewMode === 'table' ? 'p-2' : 'p-6'}>
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 py-8">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading assets...</span>
               </div>
+            ) : viewMode === 'table' ? (
+              <AdminTableView
+                avatars={filteredAvatars}
+                busyIds={busyIds}
+                onToggleVisibility={toggleVisibility}
+                onDelete={handleDelete}
+              />
             ) : filteredAvatars.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 {searchQuery ? 'No assets found matching your search.' : 'No assets available.'}
