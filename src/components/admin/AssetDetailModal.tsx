@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { X, Copy, ExternalLink, Save, Trash2, Download, Eye, EyeOff, Loader2, User, Camera, GripHorizontal } from 'lucide-react';
+import { X, Copy, ExternalLink, Save, Trash2, Download, Eye, EyeOff, Loader2, User, Camera, GripHorizontal, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,10 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const [description, setDescription] = useState(avatar.description || '');
   const [creator, setCreator] = useState(avatar.creator || '');
   const [license, setLicense] = useState(avatar.license || 'CC0');
+  const [nftChain, setNftChain] = useState<string>((avatar.nft as Record<string, string> | undefined)?.chain || '');
+  const [nftContract, setNftContract] = useState<string>((avatar.nft as Record<string, string> | undefined)?.contract || '');
+  const [nftTokenId, setNftTokenId] = useState<string>((avatar.nft as Record<string, string> | undefined)?.token_id || '');
+  const [nftType, setNftType] = useState<string>((avatar.nft as Record<string, string> | undefined)?.type || 'ERC-1155');
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
@@ -67,15 +71,20 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
   const dragStart = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    const nftData = avatar.nft as Record<string, string> | undefined;
     setName(avatar.name);
     setDescription(avatar.description || '');
     setCreator(avatar.creator || '');
     setLicense(avatar.license || 'CC0');
+    setNftChain(nftData?.chain || '');
+    setNftContract(nftData?.contract || '');
+    setNftTokenId(nftData?.token_id || '');
+    setNftType(nftData?.type || 'ERC-1155');
     setSaved(false);
     setThumbSaved(false);
     setThumbnailPreview(null);
     setPosition({ x: 0, y: 0 });
-  }, [avatar.id, avatar.name, avatar.description, avatar.creator, avatar.license]);
+  }, [avatar.id, avatar.name, avatar.description, avatar.creator, avatar.license, avatar.nft]);
 
   // Escape to close
   useEffect(() => {
@@ -105,13 +114,24 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
     setIsSaving(true);
     setSaved(false);
     try {
-      await onSave(avatar.id, { name, description, creator, license });
+      const updates: Record<string, unknown> = { name, description, creator, license };
+      // Include NFT data if any field is filled
+      if (nftContract || nftChain || nftTokenId) {
+        updates.nft = {
+          chain: nftChain || undefined,
+          contract: nftContract || undefined,
+          token_id: nftTokenId || undefined,
+          type: nftType,
+          mint_status: nftContract ? 'minted' : 'unminted',
+        };
+      }
+      await onSave(avatar.id, updates);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } finally {
       setIsSaving(false);
     }
-  }, [avatar.id, name, description, creator, license, onSave]);
+  }, [avatar.id, name, description, creator, license, nftChain, nftContract, nftTokenId, nftType, onSave]);
 
   const handleThumbnailUpload = useCallback(async (file: File) => {
     setIsUploadingThumb(true);
@@ -302,16 +322,55 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
                   {!storage?.r2 && !storage?.github_raw && !storage?.ipfs_cid && !storage?.arweave_tx && <span className="text-gray-400 italic">No info</span>}
                 </div>
 
-                {/* NFT */}
-                {nft && (
-                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <h4 className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">NFT</h4>
-                    <Badge variant="secondary" className={`text-[10px] ${nft.mint_status === 'minted' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {String(nft.mint_status || 'unminted')}
-                    </Badge>
-                    {!!nft.contract && <div className="mt-1 text-[9px] font-mono text-gray-400 truncate">{String(nft.contract)}</div>}
-                  </div>
-                )}
+              </div>
+            </div>
+
+            {/* NFT section — editable */}
+            <div className="border-t border-gray-200 dark:border-gray-700" />
+            <div>
+              <h4 className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-2">NFT</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-1">Chain</label>
+                  <select value={nftChain} onChange={e => setNftChain(e.target.value)}
+                    className="w-full h-9 text-sm border border-gray-200 dark:border-gray-700 rounded-md px-3 bg-white dark:bg-gray-900">
+                    <option value="">— Select —</option>
+                    <option value="ethereum">Ethereum</option>
+                    <option value="base">Base</option>
+                    <option value="polygon">Polygon</option>
+                    <option value="arbitrum">Arbitrum</option>
+                    <option value="optimism">Optimism</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-1">Type</label>
+                  <select value={nftType} onChange={e => setNftType(e.target.value)}
+                    className="w-full h-9 text-sm border border-gray-200 dark:border-gray-700 rounded-md px-3 bg-white dark:bg-gray-900">
+                    <option value="ERC-721">ERC-721</option>
+                    <option value="ERC-1155">ERC-1155</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-1">Contract Address</label>
+                  <Input value={nftContract} onChange={e => setNftContract(e.target.value)} className="h-9 bg-white dark:bg-gray-900 font-mono text-xs" placeholder="0x..." />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block mb-1">Token ID</label>
+                  <Input value={nftTokenId} onChange={e => setNftTokenId(e.target.value)} className="h-9 bg-white dark:bg-gray-900 font-mono text-xs" placeholder="1" />
+                </div>
+                <div className="flex items-end">
+                  {nftContract && nftChain && (
+                    <a
+                      href={`https://opensea.io/assets/${nftChain === 'ethereum' ? 'ethereum' : nftChain}/${nftContract}${nftTokenId ? `/${nftTokenId}` : ''}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors h-9"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      View on OpenSea
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 

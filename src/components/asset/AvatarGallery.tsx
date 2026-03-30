@@ -2,7 +2,7 @@
 
 "use client";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Download, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, LogIn, LogOut } from 'lucide-react';
+import { Search, Download, RefreshCw, ChevronDown, ChevronRight, ChevronLeft, LogIn, LogOut, Heart } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { CrescentSpinner } from '@/components/ui/crescent-spinner';
+import { useFavorites } from '@/lib/hooks/useFavorites';
 
 // Utility function to format camelCase or PascalCase names with spaces
 const formatName = (name: string): string => {
@@ -34,6 +35,10 @@ export const AvatarGallery: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Favorites
+  const { toggleFavorite, isFavorite, count: favCount } = useFavorites();
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // Wallet session (admin only)
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -204,7 +209,19 @@ export const AvatarGallery: React.FC = () => {
   // Filtered avatars based on project selection and search
   const filteredAvatars = useMemo(() => {
     let result = avatars;
-    
+
+    // Favorites filter overrides everything
+    if (showFavoritesOnly) {
+      result = result.filter(avatar => isFavorite(avatar.id));
+      if (searchQuery) {
+        result = result.filter(avatar =>
+          avatar.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          avatar.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      return result;
+    }
+
     // If searching
     if (searchQuery) {
       // Filter by search term
@@ -212,7 +229,7 @@ export const AvatarGallery: React.FC = () => {
         avatar.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         avatar.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      
+
       // If projects are selected, filter to only those projects
       if (selectedProjectIds.size > 0) {
         result = result.filter(avatar => selectedProjectIds.has(avatar.projectId));
@@ -225,16 +242,16 @@ export const AvatarGallery: React.FC = () => {
         result = result.filter(avatar => selectedProjectIds.has(avatar.projectId));
       } else {
         // No projects selected, no search → Show Featured (default view)
-        result = result.filter(avatar => 
-          featuredAvatarNames.some(name => 
+        result = result.filter(avatar =>
+          featuredAvatarNames.some(name =>
             avatar.name.toLowerCase().replace(/\s/g, '') === name.toLowerCase()
           )
         ).slice(0, 12);
       }
     }
-    
+
     return result;
-  }, [avatars, selectedProjectIds, searchQuery, featuredAvatarNames]);
+  }, [avatars, selectedProjectIds, searchQuery, featuredAvatarNames, showFavoritesOnly, isFavorite]);
 
   // Reset displayed count when filters change
   useEffect(() => {
@@ -513,15 +530,27 @@ export const AvatarGallery: React.FC = () => {
                 </div>
               </div>
 
-              {/* Random Asset Button */}
-              <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700">
-                <Button 
-                  onClick={selectRandomAvatar} 
+              {/* Random Asset + Favorites buttons */}
+              <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700 flex gap-2">
+                <Button
+                  onClick={selectRandomAvatar}
                   variant="outline"
-                  className="w-full h-10 text-sm font-medium border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 flex items-center justify-center gap-2"
+                  className="flex-1 h-10 text-sm font-medium border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  <span>Random Asset</span>
+                  <span>Random</span>
+                </Button>
+                <Button
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  variant="outline"
+                  className={`h-10 px-3 text-sm font-medium border-gray-300 dark:border-gray-700 flex items-center justify-center gap-1.5 transition-colors ${
+                    showFavoritesOnly
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400'
+                      : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                  {favCount > 0 && <span className="text-xs">{favCount}</span>}
                 </Button>
               </div>
 
@@ -535,17 +564,30 @@ export const AvatarGallery: React.FC = () => {
                   style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}
                 >
                   {displayedAvatars.map(avatar => (
-                    <button
+                    <div
                       key={avatar.id}
                       className={`
-                        flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all
-                        ${currentAvatar?.id === avatar.id ? 
-                          'ring-2 ring-gray-900 dark:ring-gray-100' : 
+                        relative flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all group/card
+                        ${currentAvatar?.id === avatar.id ?
+                          'ring-2 ring-gray-900 dark:ring-gray-100' :
                           'hover:ring-2 hover:ring-gray-400 dark:hover:ring-gray-600'
                         }
                       `}
                       onClick={() => handleAvatarClick(avatar)}
                     >
+                      {/* Heart button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(avatar.id); }}
+                        className={`absolute top-1.5 right-1.5 z-10 p-1 rounded-full transition-all ${
+                          isFavorite(avatar.id)
+                            ? 'text-red-500 opacity-100'
+                            : 'text-white/80 opacity-0 group-hover/card:opacity-100 hover:text-red-400'
+                        }`}
+                        title={isFavorite(avatar.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Heart className={`h-4 w-4 drop-shadow-md ${isFavorite(avatar.id) ? 'fill-current' : ''}`} />
+                      </button>
+
                       {/* Thumbnail */}
                       <div className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
                         <img
@@ -570,7 +612,7 @@ export const AvatarGallery: React.FC = () => {
                           {avatar.project}
                         </p>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
                 
@@ -602,24 +644,29 @@ export const AvatarGallery: React.FC = () => {
               </div>
 
               {/* Wallet — bottom of sidebar */}
-              <div className="p-3 border-t border-gray-200 dark:border-gray-700 mt-auto shrink-0">
+              <div className="p-3 border-t border-gray-200 dark:border-gray-800 mt-auto shrink-0">
                 {walletAddress ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-gray-400 font-mono truncate">
+                  <>
+                    <div className="text-[11px] text-gray-400 font-mono mb-2 truncate px-1">
                       {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                    </span>
-                    <button onClick={disconnectWallet} className="text-xs text-gray-400 hover:text-red-500 transition-colors" title="Sign out">
-                      <LogOut className="h-3.5 w-3.5" />
+                    </div>
+                    <button
+                      onClick={disconnectWallet}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                      title="Sign out"
+                    >
+                      <LogOut className="h-4 w-4 shrink-0" />
+                      <span>Sign Out</span>
                     </button>
-                  </div>
+                  </>
                 ) : (
                   <button
                     onClick={connectWallet}
                     disabled={isConnecting}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white transition-colors disabled:opacity-50"
                   >
-                    <LogIn className="h-3.5 w-3.5" />
-                    {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                    <LogIn className="h-4 w-4 shrink-0" />
+                    <span>{isConnecting ? 'Connecting...' : 'Connect Wallet'}</span>
                   </button>
                 )}
               </div>

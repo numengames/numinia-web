@@ -53,6 +53,9 @@ export async function PATCH(
     if (typeof body.version === 'string') {
       updates.version = body.version.trim();
     }
+    if (body.nft && typeof body.nft === 'object') {
+      updates.nft = body.nft;
+    }
 
     // If no explicit field updates, toggle visibility
     if (Object.keys(updates).length === 0) {
@@ -73,6 +76,7 @@ export async function PATCH(
       ...(updates.license !== undefined ? { license: updates.license } : {}),
       ...(updates.status !== undefined ? { status: updates.status } : {}),
       ...(updates.version !== undefined ? { version: updates.version } : {}),
+      ...(updates.nft !== undefined ? { nft: updates.nft } : {}),
       ...(updates.is_public !== undefined ? { isPublic: updates.is_public } : {}),
     });
   } catch (error) {

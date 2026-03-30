@@ -23,7 +23,10 @@ const NAV_ITEMS: { id: AdminView; label: string; icon: typeof Package }[] = [
 ];
 
 export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOut }: AdminSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return window.innerWidth < 640;
+    return true;
+  });
 
   // Notification badge: count versions newer than last seen
   const lastSeen = typeof window !== 'undefined' ? localStorage.getItem('admin-last-seen-version') : null;
@@ -40,9 +43,27 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
   };
 
   return (
+    <>
+    {/* Mobile hamburger button */}
+    <button
+      onClick={() => setCollapsed(!collapsed)}
+      className="fixed top-3 left-3 z-50 p-2 bg-cream dark:bg-cream-dark border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm sm:hidden"
+      title="Menu"
+    >
+      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+    </button>
+
+    {/* Mobile overlay backdrop */}
+    {!collapsed && (
+      <div className="fixed inset-0 bg-black/30 z-30 sm:hidden" onClick={() => setCollapsed(true)} />
+    )}
+
     <aside
-      className={`h-screen sticky top-0 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-cream dark:bg-cream-dark transition-all duration-200 ${
+      className={`h-screen flex flex-col border-r border-gray-200 dark:border-gray-800 bg-cream dark:bg-cream-dark transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-56'
+      } ${
+        /* Mobile: fixed overlay when open, hidden when collapsed */
+        collapsed ? 'hidden sm:flex sm:sticky sm:top-0' : 'fixed sm:sticky sm:relative top-0 left-0 z-40 sm:z-auto'
       }`}
     >
       {/* Logo */}
@@ -113,5 +134,6 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
         </button>
       </div>
     </aside>
+    </>
   );
 }
