@@ -263,17 +263,17 @@ export default function AdminTableView({
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {avatar.storage?.r2 && (
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0">
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0" title="Stored on Cloudflare R2 CDN">
                         R2
                       </Badge>
                     )}
                     {avatar.storage?.github_raw && (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0">
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0" title="Stored on GitHub">
                         GH
                       </Badge>
                     )}
                     {!avatar.storage && avatar.modelFileUrl?.includes("raw.githubusercontent") && (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0">
+                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0" title="Stored on GitHub">
                         GH
                       </Badge>
                     )}

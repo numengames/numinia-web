@@ -91,7 +91,7 @@ export function AssetDetailPanel({ avatar, onClose, onSave, onDelete, onToggleVi
           <Badge variant="secondary" className="shrink-0 text-[10px]">{avatar.format}</Badge>
           <h3 className="font-semibold text-base truncate text-gray-900 dark:text-white">{avatar.name}</h3>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={onClose}>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0" onClick={onClose} title="Close panel">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -307,6 +307,7 @@ export function AssetDetailPanel({ avatar, onClose, onSave, onDelete, onToggleVi
               <button
                 onClick={() => copyToClipboard(avatar.id)}
                 className="w-full flex items-center justify-between px-2.5 py-1.5 bg-gray-50 dark:bg-gray-900 rounded text-[11px] font-mono text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Click to copy Asset ID"
               >
                 <span className="truncate">{avatar.id}</span>
                 <Copy className="h-3 w-3 shrink-0 ml-2" />
@@ -315,6 +316,7 @@ export function AssetDetailPanel({ avatar, onClose, onSave, onDelete, onToggleVi
                 <button
                   onClick={() => copyToClipboard(avatar.canonical!)}
                   className="w-full flex items-center justify-between px-2.5 py-1.5 bg-gray-50 dark:bg-gray-900 rounded text-[10px] font-mono text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Click to copy Canonical ID (used in NFT tokenURI)"
                 >
                   <span className="truncate">{avatar.canonical}</span>
                   <Copy className="h-3 w-3 shrink-0 ml-2" />
@@ -340,7 +342,7 @@ export function AssetDetailPanel({ avatar, onClose, onSave, onDelete, onToggleVi
         </Button>
         {avatar.modelFileUrl && (
           <a href={avatar.modelFileUrl} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="h-9"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="outline" size="sm" className="h-9" title="Download file"><Download className="h-3.5 w-3.5" /></Button>
           </a>
         )}
         <Button

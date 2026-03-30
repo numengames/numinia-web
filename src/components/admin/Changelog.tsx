@@ -13,6 +13,21 @@ type ChangelogEntry = {
 // Changelog entries — add new versions at the top
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.0',
+    date: '2026-03-30',
+    items: [
+      { text: 'Mixamo animations for VRM avatars (auto-play on load)', type: 'new' },
+      { text: 'Floating detail panel: 3D/audio/video preview + edit all fields', type: 'new' },
+      { text: 'Zod validation for all data repo JSON schemas', type: 'new' },
+      { text: 'View toggle moved next to filter buttons', type: 'improvement' },
+      { text: 'Tooltips on all admin UI elements', type: 'improvement' },
+      { text: 'Debug endpoint /api/database-format-analysis protected', type: 'fix' },
+      { text: '.env.example updated with all variables', type: 'fix' },
+      { text: 'Orphaned JSON entry cleaned from data repo', type: 'fix' },
+      { text: 'Storage/status/version/NFT fields passed to frontend', type: 'improvement' },
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-03-30',
     items: [
