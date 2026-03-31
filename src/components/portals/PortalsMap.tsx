@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 
 interface Space {
@@ -34,72 +34,31 @@ interface TooltipData {
   y: number;
 }
 
-// District visual config — positions on map (% from top-left)
 const DISTRICT_LAYOUT: Record<string, {
-  x: number; y: number; color: string; accent: string; icon: string;
+  x: number; y: number; color: string; accent: string;
   spaceOffsets: { dx: number; dy: number }[];
 }> = {
   vitruvian: {
-    x: 22, y: 18, color: '#c4922a', accent: '#e8b84a', icon: '🔥',
-    spaceOffsets: [
-      { dx: -8, dy: 12 }, { dx: 6, dy: 14 }, { dx: -4, dy: 22 }, { dx: 8, dy: 24 },
-    ],
+    x: 20, y: 18, color: '#c4922a', accent: '#e8b84a',
+    spaceOffsets: [{ dx: -12, dy: 14 }, { dx: 12, dy: 14 }, { dx: -12, dy: 26 }, { dx: 12, dy: 26 }],
   },
   sycamore: {
-    x: 76, y: 18, color: '#4a9e6e', accent: '#6bc48e', icon: '🌿',
-    spaceOffsets: [
-      { dx: -6, dy: 12 }, { dx: 6, dy: 14 }, { dx: -8, dy: 22 }, { dx: 4, dy: 24 }, { dx: 0, dy: 30 },
-    ],
+    x: 80, y: 18, color: '#4a9e6e', accent: '#6bc48e',
+    spaceOffsets: [{ dx: -12, dy: 14 }, { dx: 12, dy: 14 }, { dx: -12, dy: 26 }, { dx: 12, dy: 26 }, { dx: 0, dy: 36 }],
   },
   solomon: {
-    x: 22, y: 72, color: '#b8742a', accent: '#d4944a', icon: '⚙️',
-    spaceOffsets: [
-      { dx: -6, dy: -18 }, { dx: 6, dy: -16 }, { dx: -8, dy: -10 }, { dx: 8, dy: -8 },
-      { dx: -4, dy: -2 }, { dx: 4, dy: 4 }, { dx: 0, dy: 10 },
-    ],
+    x: 20, y: 82, color: '#b8742a', accent: '#d4944a',
+    spaceOffsets: [{ dx: -12, dy: -30 }, { dx: 12, dy: -30 }, { dx: -12, dy: -20 }, { dx: 12, dy: -20 }, { dx: -12, dy: -10 }, { dx: 12, dy: -10 }, { dx: 0, dy: -2 }],
   },
   ouroboros: {
-    x: 76, y: 72, color: '#8b5ec4', accent: '#a87ee4', icon: '🐍',
-    spaceOffsets: [
-      { dx: -6, dy: -16 }, { dx: 6, dy: -14 }, { dx: -4, dy: -6 }, { dx: 4, dy: -2 },
-    ],
+    x: 80, y: 82, color: '#8b5ec4', accent: '#a87ee4',
+    spaceOffsets: [{ dx: -12, dy: -30 }, { dx: 12, dy: -30 }, { dx: -12, dy: -18 }, { dx: 12, dy: -18 }],
   },
 };
-
-function MapPin({ x, y, active, color, size = 'md', pulsing = false }: {
-  x: number; y: number; active: boolean; color: string; size?: 'sm' | 'md' | 'lg'; pulsing?: boolean;
-}) {
-  const s = size === 'lg' ? 16 : size === 'md' ? 10 : 7;
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      {pulsing && active && (
-        <circle r={s + 6} fill={color} opacity={0.15}>
-          <animate attributeName="r" from={String(s + 4)} to={String(s + 12)} dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" from="0.2" to="0" dur="2s" repeatCount="indefinite" />
-        </circle>
-      )}
-      {active && <circle r={s + 3} fill={color} opacity={0.12} />}
-      <circle r={s} fill={active ? color : '#3a3a3a'} stroke={active ? '#fff' : '#555'} strokeWidth={size === 'lg' ? 2.5 : 1.5} />
-      {active && <circle r={s * 0.35} fill="#fff" opacity={0.8} />}
-    </g>
-  );
-}
-
-function CompassRose({ x, y }: { x: number; y: number }) {
-  return (
-    <g transform={`translate(${x}, ${y}) scale(0.6)`} opacity={0.3}>
-      <line x1="0" y1="-30" x2="0" y2="30" stroke="#8b7355" strokeWidth="1" />
-      <line x1="-30" y1="0" x2="30" y2="0" stroke="#8b7355" strokeWidth="1" />
-      <polygon points="0,-28 -4,-8 4,-8" fill="#8b7355" />
-      <text y="-32" textAnchor="middle" fill="#8b7355" fontSize="10" fontFamily="serif">N</text>
-    </g>
-  );
-}
 
 function DecoGear({ x, y, r, speed }: { x: number; y: number; r: number; speed: number }) {
   const teeth = 12;
   const inner = r * 0.7;
-  const outer = r;
   let d = '';
   for (let i = 0; i < teeth; i++) {
     const a1 = (i / teeth) * Math.PI * 2;
@@ -107,16 +66,15 @@ function DecoGear({ x, y, r, speed }: { x: number; y: number; r: number; speed: 
     const a3 = ((i + 0.5) / teeth) * Math.PI * 2;
     const a4 = ((i + 0.8) / teeth) * Math.PI * 2;
     d += `${i === 0 ? 'M' : 'L'} ${Math.cos(a1) * inner} ${Math.sin(a1) * inner} `;
-    d += `L ${Math.cos(a2) * outer} ${Math.sin(a2) * outer} `;
-    d += `L ${Math.cos(a3) * outer} ${Math.sin(a3) * outer} `;
+    d += `L ${Math.cos(a2) * r} ${Math.sin(a2) * r} `;
+    d += `L ${Math.cos(a3) * r} ${Math.sin(a3) * r} `;
     d += `L ${Math.cos(a4) * inner} ${Math.sin(a4) * inner} `;
   }
   d += 'Z';
   return (
-    <g transform={`translate(${x}, ${y})`} opacity={0.08}>
+    <g opacity={0.06}>
       <animateTransform attributeName="transform" type="rotate" from={`0 ${x} ${y}`} to={`360 ${x} ${y}`} dur={`${speed}s`} repeatCount="indefinite" />
-      <path d={d} fill="none" stroke="#8b7355" strokeWidth="1" />
-      <circle r={r * 0.25} fill="none" stroke="#8b7355" strokeWidth="0.8" />
+      <path d={d} fill="none" stroke="#8b7355" strokeWidth="1" transform={`translate(${x},${y})`} />
     </g>
   );
 }
@@ -126,6 +84,7 @@ export function PortalsMap() {
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const [hoveredSpace, setHoveredSpace] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/portals/numinia-portals.json')
@@ -135,10 +94,22 @@ export function PortalsMap() {
       .finally(() => setLoading(false));
   }, []);
 
-  const showTooltip = useCallback((e: React.MouseEvent, name: string, district: string, theme: string, url: string | null, subspaces: string[]) => {
-    const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
-    setTooltip({ name, district, theme, url, subspaces, x: rect.right + 12, y: rect.top - 10 });
-    setHoveredSpace(name);
+  const showTooltip = useCallback((e: React.MouseEvent | React.TouchEvent, space: Space, district?: District) => {
+    const target = e.currentTarget as HTMLElement | SVGElement;
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
+    if (!containerRect) return;
+
+    setTooltip({
+      name: space.name,
+      district: district?.name,
+      theme: district?.theme,
+      url: space.url,
+      subspaces: space.subspaces,
+      x: rect.right - containerRect.left + 8,
+      y: rect.top - containerRect.top,
+    });
+    setHoveredSpace(space.id);
   }, []);
 
   const hideTooltip = useCallback(() => {
@@ -146,9 +117,13 @@ export function PortalsMap() {
     setHoveredSpace(null);
   }, []);
 
+  const openPortal = useCallback((url: string | null) => {
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  }, []);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[500px]">
+      <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="w-8 h-8 border-2 border-amber-700/30 border-t-amber-600 rounded-full animate-spin" />
       </div>
     );
@@ -156,127 +131,137 @@ export function PortalsMap() {
 
   if (!data) return <div className="text-center text-gray-500 p-8">Failed to load map data</div>;
 
-  const W = 1000;
-  const H = 700;
+  const totalPortals = data.districts.reduce((n, d) => n + d.spaces.filter(s => s.url).length, 0) + 1;
+  const totalSpaces = data.districts.reduce((n, d) => n + d.spaces.length, 0) + 1;
+  const W = 1200;
+  const H = 800;
 
   return (
-    <div className="relative w-full h-full min-h-[600px] overflow-hidden select-none" style={{ background: '#1a1611' }}>
-      {/* Parchment texture overlay */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
+    <div ref={containerRef} className="relative w-full h-full min-h-[500px] overflow-hidden select-none" style={{ background: '#1a1611' }}>
+      {/* Texture + vignette */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)'/%3E%3C/svg%3E")`,
+      }} />
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at center, transparent 35%, rgba(10,8,5,0.8) 100%)',
       }} />
 
-      {/* Vignette */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse at center, transparent 40%, rgba(10,8,5,0.7) 100%)',
-      }} />
+      {/* Counters bar */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 sm:gap-6 bg-[#1e1a14]/80 backdrop-blur border border-[#3d3428] rounded-full px-4 py-1.5">
+        <div className="text-center">
+          <div className="text-sm sm:text-lg font-bold text-[#d4a44a] font-serif">{totalPortals}</div>
+          <div className="text-[8px] sm:text-[9px] text-[#6b5a3e] uppercase tracking-wider">Portals</div>
+        </div>
+        <div className="w-px h-6 bg-[#3d3428]" />
+        <div className="text-center">
+          <div className="text-sm sm:text-lg font-bold text-[#8b7a5e] font-serif">{totalSpaces}</div>
+          <div className="text-[8px] sm:text-[9px] text-[#6b5a3e] uppercase tracking-wider">Spaces</div>
+        </div>
+        <div className="w-px h-6 bg-[#3d3428]" />
+        <div className="text-center">
+          <div className="text-sm sm:text-lg font-bold text-[#8b7a5e] font-serif">4</div>
+          <div className="text-[8px] sm:text-[9px] text-[#6b5a3e] uppercase tracking-wider">Districts</div>
+        </div>
+      </div>
 
       {/* SVG Map */}
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
         <defs>
-          {/* Parchment gradient */}
           <radialGradient id="parchment" cx="50%" cy="50%" r="60%">
             <stop offset="0%" stopColor="#2a2218" />
             <stop offset="100%" stopColor="#151210" />
           </radialGradient>
-          {/* Glow filter */}
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="glow-strong">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
+          <filter id="glow"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+          <filter id="glow-lg"><feGaussianBlur stdDeviation="5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         </defs>
 
-        {/* Background */}
         <rect width={W} height={H} fill="url(#parchment)" />
 
-        {/* Grid lines — steampunk schematic */}
-        {[...Array(20)].map((_, i) => (
-          <line key={`h${i}`} x1={0} y1={i * 35} x2={W} y2={i * 35} stroke="#3d3428" strokeWidth="0.3" opacity={0.3} />
-        ))}
-        {[...Array(30)].map((_, i) => (
-          <line key={`v${i}`} x1={i * 35} y1={0} x2={i * 35} y2={H} stroke="#3d3428" strokeWidth="0.3" opacity={0.3} />
-        ))}
+        {/* Grid */}
+        {[...Array(21)].map((_, i) => <line key={`h${i}`} x1={0} y1={i * 35} x2={W} y2={i * 35} stroke="#3d3428" strokeWidth="0.3" opacity={0.25} />)}
+        {[...Array(29)].map((_, i) => <line key={`v${i}`} x1={i * 35} y1={0} x2={i * 35} y2={H} stroke="#3d3428" strokeWidth="0.3" opacity={0.25} />)}
 
-        {/* Cross axes — golden */}
-        <line x1={W / 2} y1={40} x2={W / 2} y2={H - 40} stroke="#6b5a3e" strokeWidth="0.8" opacity={0.4} strokeDasharray="8 4" />
-        <line x1={60} y1={H / 2} x2={W - 60} y2={H / 2} stroke="#6b5a3e" strokeWidth="0.8" opacity={0.4} strokeDasharray="8 4" />
+        {/* Axes */}
+        <line x1={W / 2} y1={50} x2={W / 2} y2={H - 30} stroke="#5a4a32" strokeWidth="0.8" opacity={0.3} strokeDasharray="8 4" />
+        <line x1={50} y1={H / 2} x2={W - 50} y2={H / 2} stroke="#5a4a32" strokeWidth="0.8" opacity={0.3} strokeDasharray="8 4" />
 
-        {/* Decorative gears */}
-        <DecoGear x={150} y={580} r={40} speed={60} />
-        <DecoGear x={850} y={120} r={30} speed={45} />
-        <DecoGear x={870} y={580} r={50} speed={80} />
-        <DecoGear x={130} y={130} r={25} speed={35} />
+        {/* Gears */}
+        <DecoGear x={130} y={600} r={45} speed={60} />
+        <DecoGear x={870} y={110} r={35} speed={50} />
+        <DecoGear x={880} y={610} r={50} speed={75} />
+        <DecoGear x={120} y={100} r={28} speed={40} />
 
         {/* Compass */}
-        <CompassRose x={920} y={640} />
+        <g transform="translate(930, 660) scale(0.5)" opacity={0.25}>
+          <line x1="0" y1="-30" x2="0" y2="30" stroke="#8b7355" strokeWidth="1.5" />
+          <line x1="-30" y1="0" x2="30" y2="0" stroke="#8b7355" strokeWidth="1.5" />
+          <polygon points="0,-28 -5,-8 5,-8" fill="#8b7355" />
+          <text y="-34" textAnchor="middle" fill="#8b7355" fontSize="12" fontFamily="serif">N</text>
+        </g>
 
-        {/* Connection lines from hub to districts */}
+        {/* Hub connections */}
         {data.districts.map(d => {
-          const layout = DISTRICT_LAYOUT[d.id];
-          if (!layout) return null;
-          const hx = W / 2, hy = H / 2;
-          const dx = layout.x * W / 100, dy = layout.y * H / 100;
-          return (
-            <line key={`conn-${d.id}`} x1={hx} y1={hy} x2={dx} y2={dy}
-              stroke="#5a4a32" strokeWidth="1.5" opacity={0.25} strokeDasharray="6 3" />
-          );
+          const l = DISTRICT_LAYOUT[d.id];
+          if (!l) return null;
+          return <line key={`c-${d.id}`} x1={W / 2} y1={H / 2} x2={l.x * W / 100} y2={l.y * H / 100}
+            stroke="#5a4a32" strokeWidth="1.2" opacity={0.2} strokeDasharray="6 3" />;
         })}
 
-        {/* Districts */}
+        {/* Districts + spaces */}
         {data.districts.map(district => {
-          const layout = DISTRICT_LAYOUT[district.id];
-          if (!layout) return null;
-          const cx = layout.x * W / 100;
-          const cy = layout.y * H / 100;
+          const l = DISTRICT_LAYOUT[district.id];
+          if (!l) return null;
+          const cx = l.x * W / 100;
+          const cy = l.y * H / 100;
+          const portalCount = district.spaces.filter(s => s.url).length;
 
           return (
             <g key={district.id}>
-              {/* District label */}
-              <text x={cx} y={cy - 8} textAnchor="middle" fill={layout.accent} fontSize="13" fontWeight="bold" fontFamily="serif" letterSpacing="2">
+              {/* District title */}
+              <text x={cx} y={cy - 10} textAnchor="middle" fill={l.accent} fontSize="13" fontWeight="bold" fontFamily="serif" letterSpacing="2">
                 {district.name.toUpperCase()}
               </text>
-              <text x={cx} y={cy + 6} textAnchor="middle" fill={layout.color} fontSize="8" fontFamily="serif" opacity={0.7}>
-                {district.theme}
+              <text x={cx} y={cy + 3} textAnchor="middle" fill={l.color} fontSize="8" fontFamily="serif" opacity={0.6}>
+                {district.theme} · {portalCount} portals
               </text>
 
-              {/* Space pins + connection lines */}
+              {/* Spaces */}
               {district.spaces.map((space, i) => {
-                const offset = layout.spaceOffsets[i] || { dx: 0, dy: (i + 1) * 8 };
-                const sx = cx + offset.dx * 4;
-                const sy = cy + offset.dy * 3;
-                const hasPortal = !!space.url;
-                const isHovered = hoveredSpace === space.name;
+                const off = l.spaceOffsets[i] || { dx: 0, dy: (i + 1) * 7 };
+                const sx = cx + off.dx * 4;
+                const sy = cy + off.dy * 3;
+                const active = !!space.url;
+                const hovered = hoveredSpace === space.id;
+                const pinR = hovered ? 7 : 5;
 
                 return (
                   <g key={space.id}>
-                    {/* Connection to district center */}
-                    <line x1={cx} y1={cy + 10} x2={sx} y2={sy}
-                      stroke={layout.color} strokeWidth={isHovered ? 1.5 : 0.6} opacity={isHovered ? 0.5 : 0.15} />
+                    <line x1={cx} y1={cy + 8} x2={sx} y2={sy} stroke={l.color} strokeWidth={hovered ? 1.2 : 0.5} opacity={hovered ? 0.4 : 0.12} />
 
-                    {/* Pin */}
                     <g
-                      style={{ cursor: hasPortal ? 'pointer' : 'default' }}
-                      onMouseEnter={(e) => showTooltip(e, space.name, district.name, district.theme, space.url, space.subspaces)}
+                      style={{ cursor: active ? 'pointer' : 'default' }}
+                      onMouseEnter={(e) => showTooltip(e, space, district)}
                       onMouseLeave={hideTooltip}
-                      onClick={() => hasPortal && window.open(space.url!, '_blank')}
-                      filter={isHovered ? 'url(#glow)' : undefined}
+                      onClick={() => openPortal(space.url)}
+                      onTouchStart={(e) => { showTooltip(e, space, district); if (active) openPortal(space.url); }}
+                      filter={hovered ? 'url(#glow)' : undefined}
                     >
-                      <MapPin x={sx} y={sy} active={hasPortal} color={layout.accent} pulsing={isHovered} />
+                      {/* Pulse ring */}
+                      {hovered && active && (
+                        <circle cx={sx} cy={sy} r={pinR + 6} fill={l.accent} opacity={0.15}>
+                          <animate attributeName="r" from={String(pinR + 4)} to={String(pinR + 14)} dur="1.5s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" from="0.2" to="0" dur="1.5s" repeatCount="indefinite" />
+                        </circle>
+                      )}
+                      {active && <circle cx={sx} cy={sy} r={pinR + 2} fill={l.accent} opacity={0.1} />}
+                      <circle cx={sx} cy={sy} r={pinR} fill={active ? l.accent : '#3a3a3a'} stroke={active ? '#fff' : '#555'} strokeWidth="1.5" />
+                      {active && <circle cx={sx} cy={sy} r={pinR * 0.3} fill="#fff" opacity={0.7} />}
 
-                      {/* Space label */}
-                      <text x={sx + 14} y={sy + 3} fill={isHovered ? '#e8dcc8' : (hasPortal ? '#9a8b72' : '#5a5040')}
-                        fontSize={isHovered ? '9' : '7.5'} fontFamily="serif"
-                        style={{ transition: 'all 0.2s' }}>
+                      {/* Label — below pin */}
+                      <text x={sx} y={sy + 16} textAnchor="middle"
+                        fill={hovered ? '#e8dcc8' : (active ? '#9a8b72' : '#4a4035')}
+                        fontSize={hovered ? '8.5' : '7'} fontFamily="serif"
+                        style={{ transition: 'fill 0.2s, font-size 0.2s' }}>
                         {space.name}
                       </text>
                     </g>
@@ -287,56 +272,62 @@ export function PortalsMap() {
           );
         })}
 
-        {/* Ágora Plaza — central hub */}
+        {/* Ágora Plaza */}
         <g
           style={{ cursor: 'pointer' }}
-          onClick={() => window.open(data.hub.url, '_blank')}
-          onMouseEnter={(e) => showTooltip(e, data.hub.name, '', 'The central convergence node', data.hub.url, [])}
+          onClick={() => openPortal(data.hub.url)}
+          onMouseEnter={(e) => showTooltip(e, { id: 'agora', name: data.hub.name, url: data.hub.url, subspaces: [] })}
           onMouseLeave={hideTooltip}
-          filter={hoveredSpace === data.hub.name ? 'url(#glow-strong)' : 'url(#glow)'}
+          onTouchStart={() => openPortal(data.hub.url)}
+          filter={hoveredSpace === 'agora' ? 'url(#glow-lg)' : 'url(#glow)'}
         >
-          <MapPin x={W / 2} y={H / 2} active={true} color="#d4a44a" size="lg" pulsing={hoveredSpace === data.hub.name} />
-          <text x={W / 2} y={H / 2 + 28} textAnchor="middle" fill="#d4a44a" fontSize="12" fontWeight="bold" fontFamily="serif" letterSpacing="3">
+          {hoveredSpace === 'agora' && (
+            <circle cx={W / 2} cy={H / 2} r={24} fill="#d4a44a" opacity={0.1}>
+              <animate attributeName="r" from="20" to="30" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" from="0.15" to="0" dur="2s" repeatCount="indefinite" />
+            </circle>
+          )}
+          <circle cx={W / 2} cy={H / 2} r={14} fill="#d4a44a" stroke="#fff" strokeWidth="2.5" />
+          <circle cx={W / 2} cy={H / 2} r={5} fill="#fff" opacity={0.6} />
+          <text x={W / 2} y={H / 2 + 28} textAnchor="middle" fill="#d4a44a" fontSize="11" fontWeight="bold" fontFamily="serif" letterSpacing="3">
             ÁGORA PLAZA
           </text>
         </g>
 
         {/* Title */}
-        <text x={W / 2} y={28} textAnchor="middle" fill="#8b7a5e" fontSize="10" fontFamily="serif" letterSpacing="4" opacity={0.6}>
+        <text x={W / 2} y={28} textAnchor="middle" fill="#6b5a3e" fontSize="9" fontFamily="serif" letterSpacing="5" opacity={0.5}>
           PORTALS OF NUMINIA
         </text>
 
-        {/* Border frame */}
-        <rect x={8} y={8} width={W - 16} height={H - 16} fill="none" stroke="#3d3428" strokeWidth="1" rx={4} opacity={0.4} />
-        <rect x={12} y={12} width={W - 24} height={H - 24} fill="none" stroke="#3d3428" strokeWidth="0.5" rx={3} opacity={0.2} />
+        {/* Frame */}
+        <rect x={6} y={6} width={W - 12} height={H - 12} fill="none" stroke="#3d3428" strokeWidth="1" rx={3} opacity={0.35} />
+        <rect x={10} y={10} width={W - 20} height={H - 20} fill="none" stroke="#3d3428" strokeWidth="0.4" rx={2} opacity={0.15} />
       </svg>
 
-      {/* Tooltip overlay */}
+      {/* Tooltip — positioned relative to container */}
       {tooltip && (
         <div
-          className="fixed z-50 pointer-events-none"
-          style={{ left: Math.min(tooltip.x, (typeof window !== 'undefined' ? window.innerWidth : 1000) - 300), top: Math.max(tooltip.y, 10) }}
+          className="absolute z-50 pointer-events-none transition-all duration-150"
+          style={{
+            left: Math.min(tooltip.x, (containerRef.current?.clientWidth || 800) - 240),
+            top: Math.max(tooltip.y, 50),
+          }}
         >
-          <div className="bg-[#1e1a14]/95 border border-[#4a3f2e] rounded-lg p-4 shadow-2xl backdrop-blur max-w-xs"
-            style={{ boxShadow: '0 0 20px rgba(180,140,60,0.1)' }}>
-            <div className="text-sm font-bold text-[#e8dcc8] font-serif">{tooltip.name}</div>
-            {tooltip.district && (
-              <div className="text-[10px] text-[#8b7a5e] mt-0.5">{tooltip.district}</div>
-            )}
+          <div className="bg-[#1e1a14]/95 border border-[#4a3f2e] rounded-lg p-3 sm:p-4 shadow-2xl backdrop-blur max-w-[220px] sm:max-w-xs"
+            style={{ boxShadow: '0 0 24px rgba(180,140,60,0.12)' }}>
+            <div className="text-xs sm:text-sm font-bold text-[#e8dcc8] font-serif">{tooltip.name}</div>
+            {tooltip.district && <div className="text-[9px] sm:text-[10px] text-[#6b5a3e] mt-0.5">{tooltip.district} · {tooltip.theme}</div>}
             {tooltip.url ? (
-              <div className="flex items-center gap-1 mt-2 text-xs text-[#d4a44a]">
-                <ExternalLink className="h-3 w-3" />
-                <span>Click to enter portal</span>
+              <div className="flex items-center gap-1 mt-2 text-[10px] sm:text-xs text-[#d4a44a]">
+                <ExternalLink className="h-3 w-3" /> Enter portal
               </div>
             ) : (
-              <div className="mt-2 text-xs text-[#5a5040] italic">Portal not yet active</div>
+              <div className="mt-2 text-[10px] sm:text-xs text-[#4a4035] italic">Portal coming soon</div>
             )}
             {tooltip.subspaces.length > 0 && (
               <div className="mt-2 pt-2 border-t border-[#3a3225]">
-                <div className="text-[9px] text-[#6b5a3e] uppercase tracking-wider mb-1">Contains</div>
-                {tooltip.subspaces.map(s => (
-                  <div key={s} className="text-[11px] text-[#8b7a5e]">· {s}</div>
-                ))}
+                <div className="text-[8px] sm:text-[9px] text-[#5a4a32] uppercase tracking-wider mb-1">Contains</div>
+                {tooltip.subspaces.map(s => <div key={s} className="text-[10px] sm:text-[11px] text-[#7a6b55]">· {s}</div>)}
               </div>
             )}
           </div>
@@ -344,17 +335,17 @@ export function PortalsMap() {
       )}
 
       {/* Bottom legend */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-6 text-[10px] text-[#5a5040] font-serif">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#d4a44a] border border-white/30" />
-          <span>Active Portal</span>
+      <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 sm:gap-5 text-[8px] sm:text-[10px] text-[#4a4035] font-serif">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-[#d4a44a] border border-white/30" />
+          <span>Active</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3a] border border-[#555]" />
-          <span>Coming Soon</span>
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-[#3a3a3a] border border-[#555]" />
+          <span>Soon</span>
         </div>
-        <span className="text-[#3d3428]">|</span>
-        <span>Worlds on <a href="https://oncyber.io" target="_blank" rel="noopener noreferrer" className="text-[#8b7a5e] hover:text-[#d4a44a] transition-colors">oncyber</a></span>
+        <span className="text-[#2d2820]">·</span>
+        <a href="https://oncyber.io" target="_blank" rel="noopener noreferrer" className="text-[#6b5a3e] hover:text-[#d4a44a] transition-colors">oncyber</a>
       </div>
     </div>
   );
