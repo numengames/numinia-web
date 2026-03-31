@@ -53,6 +53,104 @@ function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text);
 }
 
+function StoragePanel({ storage, assetId }: { storage: Avatar['storage']; assetId: string }) {
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ layer: string; ok: boolean; msg: string } | null>(null);
+
+  const handleSync = async (syncTo: string) => {
+    setSyncing(syncTo);
+    setSyncResult(null);
+    try {
+      const res = await fetch(`/api/admin/sync-to-${syncTo}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        body: JSON.stringify({ assetId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSyncResult({ layer: syncTo, ok: true, msg: data.already_synced ? 'Already synced' : 'Synced!' });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setSyncResult({ layer: syncTo, ok: false, msg: data.error || 'Failed' });
+      }
+    } catch {
+      setSyncResult({ layer: syncTo, ok: false, msg: 'Network error' });
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const layers = [
+    { key: 'R2', url: storage?.r2, ok: !!storage?.r2, color: 'bg-orange-500', syncTo: 'r2' },
+    { key: 'GitHub', url: storage?.github_raw, ok: !!storage?.github_raw, color: 'bg-gray-500', syncTo: 'github' },
+    { key: 'IPFS', url: storage?.ipfs_cid ? `https://ipfs.io/ipfs/${storage.ipfs_cid}` : null, ok: !!storage?.ipfs_cid, color: 'bg-blue-500', syncTo: 'ipfs' },
+    { key: 'Arweave', url: storage?.arweave_tx ? `https://arweave.net/${storage.arweave_tx}` : null, ok: !!storage?.arweave_tx, color: 'bg-green-500', syncTo: 'arweave' },
+  ];
+  const count = layers.filter(l => l.ok).length;
+
+  return (
+    <div className="space-y-2 text-xs">
+      <h4 className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Storage</h4>
+      <div className="space-y-1">
+        {layers.map(l => (
+          <div key={l.key} className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-colors ${
+            l.ok ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/30'
+          }`}>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${l.ok ? l.color : 'bg-gray-300 dark:bg-gray-700'}`} />
+              <span className={l.ok ? 'text-gray-700 dark:text-gray-300 font-medium' : 'text-gray-400'}>{l.key}</span>
+            </div>
+            {l.ok && l.url ? (
+              <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 hover:text-blue-700 hover:underline">
+                View ↗
+              </a>
+            ) : !l.ok && (l.syncTo === 'r2' || l.syncTo === 'github') ? (
+              <button
+                onClick={() => handleSync(l.syncTo)}
+                disabled={!!syncing}
+                className="text-[9px] font-medium text-violet-500 hover:text-violet-700 disabled:text-gray-400 disabled:cursor-wait flex items-center gap-1"
+              >
+                {syncing === l.syncTo ? (
+                  <><Loader2 className="h-3 w-3 animate-spin" /> Syncing...</>
+                ) : (
+                  <>Sync →</>
+                )}
+              </button>
+            ) : !l.ok ? (
+              <span className="text-[8px] text-gray-400 italic">Not configured</span>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {/* Sync result feedback */}
+      {syncResult && (
+        <div className={`text-[9px] px-2 py-1 rounded ${syncResult.ok ? 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400'}`}>
+          {syncResult.ok ? '✓' : '✗'} {syncResult.layer}: {syncResult.msg}
+        </div>
+      )}
+
+      {/* Health indicator */}
+      {count <= 1 ? (
+        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30">
+          <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+            <span className="text-red-500 text-[10px] font-bold">!</span>
+          </div>
+          <div>
+            <div className="text-[10px] font-medium text-red-600 dark:text-red-400">Single point of failure</div>
+            <div className="text-[8px] text-red-400 dark:text-red-500">Sync to more layers for redundancy</div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30">
+          <span className="text-green-500 text-[10px]">✓</span>
+          <span className="text-[9px] text-green-600 dark:text-green-400">Redundant — {count} storage layers</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVisibility }: AssetDetailModalProps) {
   const [name, setName] = useState(avatar.name);
   const [description, setDescription] = useState(avatar.description || '');
@@ -366,51 +464,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
               </div>
 
               {/* Storage — all 4 layers with status + sync */}
-              <div className="space-y-1.5 text-xs">
-                <h4 className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Storage</h4>
-                <div className="space-y-1">
-                  {[
-                    { key: 'R2', url: storage?.r2, ok: !!storage?.r2, color: 'text-orange-500', bgOk: 'bg-orange-50', label: 'Cloudflare R2 CDN', syncTo: 'r2' },
-                    { key: 'GitHub', url: storage?.github_raw, ok: !!storage?.github_raw, color: 'text-gray-600', bgOk: 'bg-gray-50', label: 'GitHub Raw', syncTo: 'github' },
-                    { key: 'IPFS', url: storage?.ipfs_cid ? `https://ipfs.io/ipfs/${storage.ipfs_cid}` : null, ok: !!storage?.ipfs_cid, color: 'text-blue-500', bgOk: 'bg-blue-50', label: 'IPFS', syncTo: 'ipfs' },
-                    { key: 'Arweave', url: storage?.arweave_tx ? `https://arweave.net/${storage.arweave_tx}` : null, ok: !!storage?.arweave_tx, color: 'text-green-500', bgOk: 'bg-green-50', label: 'Arweave', syncTo: 'arweave' },
-                  ].map(layer => (
-                    <div key={layer.key} className={`flex items-center justify-between px-2 py-1 rounded ${layer.ok ? layer.bgOk + ' dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-900'}`}>
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-sm ${layer.ok ? layer.color : 'text-gray-300 dark:text-gray-700'}`}>{layer.ok ? '●' : '○'}</span>
-                        <span className={`text-[10px] ${layer.ok ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'}`}>{layer.key}</span>
-                      </div>
-                      {layer.ok && layer.url ? (
-                        <a href={layer.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 hover:underline">View ↗</a>
-                      ) : !layer.ok && (layer.syncTo === 'r2' || layer.syncTo === 'github') ? (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const res = await fetch(`/api/admin/sync-to-${layer.syncTo}`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ assetId: avatar.id }),
-                              });
-                              if (res.ok) window.location.reload();
-                            } catch {}
-                          }}
-                          className="text-[9px] text-violet-500 hover:text-violet-700 font-medium"
-                        >
-                          Sync →
-                        </button>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-                {(() => {
-                  const count = [storage?.r2, storage?.github_raw, storage?.ipfs_cid, storage?.arweave_tx].filter(Boolean).length;
-                  return count <= 1 ? (
-                    <div className="text-[9px] text-red-400 mt-1">⚠ Single point of failure — sync to more layers</div>
-                  ) : (
-                    <div className="text-[9px] text-green-600 mt-1">✓ Redundant ({count} layers)</div>
-                  );
-                })()}
-              </div>
+              <StoragePanel storage={storage} assetId={avatar.id} />
             </div>
 
             {/* NFT section — editable */}
