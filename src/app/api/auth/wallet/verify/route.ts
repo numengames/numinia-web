@@ -29,13 +29,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No nonce cookie' }, { status: 401 });
     }
 
-    // Verify signature with domain + nonce binding
-    const expectedDomain = env.isProd ? 'numinia.store' : new URL(env.siteUrl || 'http://localhost:3000').host;
+    // Verify signature with nonce binding
+    // Domain check: accept numinia.store and www.numinia.store in prod
+    const allowedDomains = env.isProd
+      ? ['numinia.store', 'www.numinia.store']
+      : [new URL(env.siteUrl || 'http://localhost:3000').host, 'localhost:3000'];
+
     const result = await siweMessage.verify({
       signature,
-      domain: expectedDomain,
       nonce: nonceCookie.value,
     });
+
+    // Validate domain manually (verify() doesn't support multiple domains)
+    if (result.success && !allowedDomains.includes(siweMessage.domain)) {
+      return NextResponse.json({ error: 'Invalid domain' }, { status: 401 });
+    }
 
     if (!result.success) {
       return NextResponse.json({ error: 'Invalid signature or domain' }, { status: 401 });
