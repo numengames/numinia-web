@@ -95,7 +95,7 @@ export function PortalsMap() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/portals/numinia-portals.json')
+    fetch('/api/portals')
       .then(r => r.json())
       .then(setData)
       .catch(() => {})
