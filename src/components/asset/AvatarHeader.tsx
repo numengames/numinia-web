@@ -25,8 +25,6 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
     { href: `/${locale}/archive`, label: t('header.navigation.avatars') as string },
     { href: `/${locale}/finder`, label: t('header.navigation.finder') as string },
     { href: `/${locale}/glbinspector`, label: t('header.navigation.viewer') as string },
-    { href: `/${locale}/resources`, label: t('header.navigation.resources') as string },
-    { href: `/${locale}/about`, label: t('header.navigation.about') as string },
     { href: `/${locale}/LAP`, label: 'L.A.P.' },
   ];
 
