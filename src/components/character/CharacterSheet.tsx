@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Save, Download, FileText, Pencil, Eye, Loader2, Camera, X } from 'lucide-react';
+import { Save, Download, FileText, Pencil, Eye, Loader2, Camera, X, Dices, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -252,11 +252,27 @@ function StatRow({ label, value, onChange }: { label: string; value: number; onC
   );
 }
 
+function rollDiceFromStat(pool: number, statName: string) {
+  const fn = typeof window !== 'undefined' ? (window as Record<string, unknown>).__numiniaRollDice as ((pool: number, name: string) => void) | undefined : undefined;
+  if (fn) fn(pool, statName);
+}
+
 function ViewStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-1 group">
       <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-bold text-gray-900 dark:text-white">{value}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold text-gray-900 dark:text-white">{value}</span>
+        {value > 0 && (
+          <button
+            onClick={() => rollDiceFromStat(value, label)}
+            className="p-0.5 rounded text-gray-300 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-all"
+            title={`Roll ${value}D6 for ${label}`}
+          >
+            <Dices className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -271,6 +287,10 @@ export function CharacterSheet() {
   const [exists, setExists] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [imgPos, setImgPos] = useState({ x: 0, y: 0 });
+  const [imgZoom, setImgZoom] = useState(1);
+  const [draggingImg, setDraggingImg] = useState(false);
+  const imgDragStart = useRef({ x: 0, y: 0 });
 
   // Load character
   useEffect(() => {
@@ -383,27 +403,56 @@ export function CharacterSheet() {
         {/* Identity + Avatar */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 print:border print:rounded-none">
           <div className="flex gap-5">
-            {/* Profile pic */}
+            {/* Profile pic — draggable + zoomable in edit mode */}
             <div className="shrink-0">
-              <div className="relative h-24 w-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 group">
+              <div
+                className={`relative h-24 w-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 group ${editing && char.profile_image ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                onMouseDown={(e) => {
+                  if (!editing || !char.profile_image) return;
+                  setDraggingImg(true);
+                  imgDragStart.current = { x: e.clientX - imgPos.x, y: e.clientY - imgPos.y };
+                }}
+                onMouseMove={(e) => {
+                  if (!draggingImg) return;
+                  setImgPos({ x: e.clientX - imgDragStart.current.x, y: e.clientY - imgDragStart.current.y });
+                }}
+                onMouseUp={() => setDraggingImg(false)}
+                onMouseLeave={() => setDraggingImg(false)}
+                onWheel={(e) => {
+                  if (!editing || !char.profile_image) return;
+                  e.preventDefault();
+                  setImgZoom(z => Math.max(1, Math.min(3, z + (e.deltaY < 0 ? 0.1 : -0.1))));
+                }}
+              >
                 {char.profile_image ? (
-                  <img src={char.profile_image} alt={char.name} className="w-full h-full object-cover" />
+                  <img
+                    src={char.profile_image}
+                    alt={char.name}
+                    className="w-full h-full object-cover pointer-events-none"
+                    style={{ transform: `translate(${imgPos.x}px, ${imgPos.y}px) scale(${imgZoom})` }}
+                    draggable={false}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-300">
                     {char.name ? char.name[0].toUpperCase() : '?'}
                   </div>
                 )}
                 {editing && (
-                  <button
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                  >
-                    <Camera className="h-5 w-5 text-white" />
-                  </button>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity">
+                    <button onClick={() => avatarInputRef.current?.click()} className="text-white">
+                      <Camera className="h-4 w-4" />
+                    </button>
+                    {char.profile_image && (
+                      <div className="flex items-center gap-0.5">
+                        <Move className="h-3 w-3 text-white/60" />
+                        <span className="text-[8px] text-white/60">drag to move</span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <input ref={avatarInputRef} type="file" accept="image/*" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} />
+                onChange={e => { const f = e.target.files?.[0]; if (f) { handleAvatarUpload(f); setImgPos({ x: 0, y: 0 }); setImgZoom(1); } }} />
             </div>
 
             {/* Identity fields */}
