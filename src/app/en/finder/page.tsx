@@ -2,7 +2,6 @@ import React, { Suspense } from "react";
 import { SITE_URL } from '@/lib/constants';
 import Finder from "@/components/finder/Finder";
 import { LoadingScreen } from "@/components/ui/loading-screen";
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -33,9 +32,6 @@ export const metadata: Metadata = {
 const FinderPage = () => {
   return (
     <main className="min-h-screen bg-cream dark:bg-cream-dark">
-      <div className="container-custom pt-4">
-        <Breadcrumb items={[{ label: 'Finder' }]} />
-      </div>
       <Suspense fallback={<LoadingScreen />}>
         <Finder />
       </Suspense>
