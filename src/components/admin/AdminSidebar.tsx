@@ -1,19 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User, BookOpen } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
-export type AdminView = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'codex' | 'stats' | 'settings' | 'updates';
+/** The slug used in /en/LAP/{section} routes. */
+export type LAPSection = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'codex' | 'stats' | 'settings' | 'updates';
+
+// Keep the old name as alias so nothing else breaks during migration.
+export type AdminView = LAPSection;
 
 interface AdminSidebarProps {
-  activeView: AdminView;
-  onViewChange: (view: AdminView) => void;
   walletAddress?: string;
   onSignOut: () => void;
 }
 
-type NavItem = { id: AdminView | 'archive'; label: string; icon: typeof Package; href?: string };
+type NavItem = { id: LAPSection | 'archive'; label: string; icon: typeof Package; href?: string };
 
 const MAIN_NAV: NavItem[] = [
   { id: 'character', label: 'Character', icon: User },
@@ -30,7 +34,22 @@ const BOTTOM_NAV: NavItem[] = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOut }: AdminSidebarProps) {
+/** Derive the active section from the current pathname. */
+function useActiveSection(): LAPSection {
+  const pathname = usePathname();
+  // pathname = /en/LAP/codex  →  segment = "codex"
+  const segments = pathname.split('/');
+  const lapIdx = segments.findIndex((s) => s === 'LAP');
+  const section = segments[lapIdx + 1] as LAPSection | undefined;
+  return section || 'character';
+}
+
+export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
+  const activeSection = useActiveSection();
+  const pathname = usePathname();
+  // Derive locale from path (/en/LAP/… or /ja/LAP/…)
+  const locale = pathname.startsWith('/ja') ? 'ja' : 'en';
+
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 640;
     return true;
@@ -40,15 +59,11 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
   const lastSeen = typeof window !== 'undefined' ? localStorage.getItem('admin-last-seen-version') : null;
   const unseenCount = lastSeen
     ? CHANGELOG_DATA.findIndex(e => e.version === lastSeen)
-    : CHANGELOG_DATA.length; // never visited = all are unseen
+    : CHANGELOG_DATA.length;
   const badgeCount = unseenCount > 0 ? unseenCount : 0;
 
-  const handleViewChange = (view: AdminView) => {
-    onViewChange(view);
-    if (view === 'updates') {
-      localStorage.setItem('admin-last-seen-version', LATEST_VERSION);
-    }
-  };
+  /** Build the href for a LAP section */
+  const sectionHref = (id: string) => `/${locale}/LAP/${id}`;
 
   return (
     <>
@@ -70,7 +85,6 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
       className={`h-screen flex flex-col border-r border-gray-200 dark:border-gray-800 bg-cream dark:bg-cream-dark transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-56'
       } ${
-        /* Mobile: fixed overlay when open, hidden when collapsed */
         collapsed ? 'hidden sm:flex sm:sticky sm:top-0' : 'fixed sm:sticky sm:relative top-0 left-0 z-40 sm:z-auto'
       }`}
     >
@@ -97,25 +111,20 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
       <nav className="flex-1 px-2 py-2 space-y-0.5">
         {MAIN_NAV.map((item) => {
           const Icon = item.icon;
-          if (item.href) {
-            return (
-              <a
-                key={item.id}
-                href={item.href}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
-                title={collapsed ? item.label : undefined}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </a>
-            );
-          }
-          const isActive = activeView === item.id;
+          const href = item.href ?? sectionHref(item.id);
+          const isActive = item.id === activeSection;
+
           return (
-            <button
+            <Link
               key={item.id}
-              onClick={() => handleViewChange(item.id as AdminView)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative ${
+              href={href}
+              onClick={() => {
+                // Mark updates as seen
+                if (item.id === 'updates') localStorage.setItem('admin-last-seen-version', LATEST_VERSION);
+                // Collapse mobile sidebar on nav
+                if (window.innerWidth < 640) setCollapsed(true);
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 isActive
                   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
@@ -124,7 +133,7 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
             >
               <Icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
-            </button>
+            </Link>
           );
         })}
       </nav>
@@ -134,12 +143,16 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
         <nav className="px-2 py-2 space-y-0.5">
           {BOTTOM_NAV.map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.id;
+            const isActive = item.id === activeSection;
             const showBadge = item.id === 'updates' && badgeCount > 0 && !isActive;
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => handleViewChange(item.id as AdminView)}
+                href={sectionHref(item.id)}
+                onClick={() => {
+                  if (item.id === 'updates') localStorage.setItem('admin-last-seen-version', LATEST_VERSION);
+                  if (window.innerWidth < 640) setCollapsed(true);
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative ${
                   isActive
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
@@ -157,7 +170,7 @@ export function AdminSidebar({ activeView, onViewChange, walletAddress, onSignOu
                 {showBadge && collapsed && (
                   <span className="absolute -top-0.5 -right-0.5 bg-red-500 rounded-full w-2 h-2" />
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>
