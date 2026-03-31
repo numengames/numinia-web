@@ -1,18 +1,19 @@
 # CLAUDE.md — Numinia Digital Goods
 
 > Context file for AI agents (Claude, Copilot, etc.) and human developers.
-> Read this before touching any code. Updated: 2026-03-31.
+> Read this before touching any code. Updated: 2026-04-01.
 
 ---
 
 ## What this project is
 
-**Numinia Digital Goods** is a platform for CC0-licensed digital assets: 3D models (GLB), avatars (VRM), Hyperfy worlds (HYP), audio, and video. Fork of [ToxSam/os3a-gallery](https://github.com/ToxSam/os3a-gallery), rebranded and extended.
+**Numinia Digital Goods** is an open platform for CC0-licensed digital assets and an RPG metaverse hub. 3D models (GLB), avatars (VRM), Hyperfy apps (HYP), STL for 3D printing, audio, video, images. Built by [Numen Games](https://numen.games).
 
-**Core philosophy: File Over App + Decentralized**
+**Core philosophy: File Over App + Decentralized + Open Source**
 - The app is a viewer/interface, not the source of truth
-- Data lives in open files (JSON in GitHub, binaries on CDN/Arweave)
+- Data lives in open files (JSON in GitHub, binaries on CDN/Arweave/IPFS)
 - The app can be replaced; the files remain forever
+- All code is MIT, all curated assets are CC0
 
 **Live:** https://numinia.store
 
@@ -22,21 +23,23 @@
 
 ```
 numinia-digital-goods          ← THIS REPO: Next.js 16 app (code only)
-numinia-digital-goods-data     ← Data repo: JSON metadata + asset binaries
+numinia-digital-goods-data     ← Data repo: JSON metadata + asset binaries + portals + characters
 ```
 
 ### Data repo structure
 ```
 numinia-digital-goods-data/
 ├── data/
-│   ├── projects.json                    ← project index (5 categories)
+│   ├── projects.json                    ← project index
 │   ├── assets/numinia-assets.json       ← GLB catalog
 │   ├── avatars/numinia-avatars.json     ← VRM catalog
 │   ├── worlds/numinia-worlds.json       ← HYP catalog
 │   ├── audio/numinia-audio.json         ← audio catalog
 │   ├── video/numinia-video.json         ← video catalog
 │   ├── images/numinia-images.json       ← image catalog
-│   └── 3dprint/numinia-3dprint.json     ← STL catalog
+│   ├── 3dprint/numinia-3dprint.json     ← STL catalog
+│   ├── portals/numinia-portals.json     ← world map (4 districts, oncyber links)
+│   └── characters/{wallet}.md           ← per-user character sheets (markdown)
 ├── content/
 │   ├── models/      ← .glb files
 │   ├── avatars/     ← .vrm files
@@ -46,21 +49,36 @@ numinia-digital-goods-data/
 │   ├── images/      ← .jpg, .png, .webp
 │   ├── 3dprint/     ← .stl files
 │   └── thumbnails/  ← .png previews
-├── data/versions/   ← version history per asset
 ```
+
+---
+
+## Platform sections
+
+| Section | URL | Purpose |
+|---|---|---|
+| Archive | `/en/archive` | Public gallery — browse, search, filter, download assets |
+| Finder | `/en/finder` | File-level browser with batch download |
+| Inspector | `/en/glbinspector` | GLB/VRM file inspector |
+| L.A.P. | `/en/LAP` | Logged-in user panel (was "Admin") |
+
+### L.A.P. sidebar (top → bottom)
+1. **Character** — RPG character sheet (markdown, editable, PDF/MD export)
+2. **Portals** — Interactive world map (4 districts, 14 oncyber 3D worlds)
+3. **Loot** — NFT collections (ERC-721/1155, linked assets)
+4. **Assets** — Admin asset management (CRUD, tags, thumbnails)
+5. **Archive** — Link to public gallery
+6. Stats / Settings / Updates — bottom section
 
 ---
 
 ## Asset ID System (UUID v7)
 
-**See `ID_SYSTEM.md` for the full specification.**
-
 Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 
 - RFC 9562 standard, 122 bits entropy, zero coordination
 - `generateAssetId()` in `src/lib/asset-id.ts`
-- `createAssetMetadata()` builds complete JSON entry with version, status, nft, storage
-- `formatCanonical()` for NFT tokenURIs: `ndg:vrm:{uuid}:v0.1.0`
+- `createAssetMetadata()` builds complete JSON entry with version, status, nft, storage, tags
 - Old IDs (slug-timestamp, UUID v4) continue to work — backward compatible
 
 ---
@@ -69,98 +87,77 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16.2.1, App Router, React 18 |
+| Framework | Next.js 16.2.1, App Router, React 18, TypeScript |
 | Styling | Tailwind CSS 3 + shadcn/ui (copied to `src/components/ui/`) |
 | 3D | Three.js 0.162 + @pixiv/three-vrm + STL viewer |
-| Admin Auth | SIWE (Sign-In with Ethereum) via MetaMask |
-| User Auth | SIWE (any wallet) + GitHub OAuth |
+| Auth | SIWE (any wallet) + GitHub OAuth |
 | Storage | GitHub (metadata), Cloudflare R2 (CDN), Arweave + IPFS (permanent) |
-| Env | Zod validation in `src/lib/env.ts` (skips during build phase) |
+| Env | Zod validation in `src/lib/env.ts` |
 | i18n | Static imports in `src/lib/i18n.tsx` — EN + JA |
-| Tests | Vitest 4 + React Testing Library + jsdom — 138 tests |
-| CI | GitHub Actions: type-check → test → build |
+| Tests | Vitest 4 + RTL + jsdom — 138 tests |
 | Deploy | Vercel |
+| Legal | Numen Games S.L., Spanish law, GDPR compliant |
 
 ---
 
 ## Architecture decisions (do not change without discussion)
 
 ### 1. GitHub as metadata database
-`src/lib/github-storage.ts` reads/writes JSON files to `numinia-digital-goods-data` via GitHub API.
-- All env vars go through `src/lib/env.ts` — never use `process.env.X` directly
-- camelCase in TypeScript, snake_case in JSON — conversion happens in github-storage.ts
-- `updateAvatarInSource()` and `deleteAvatarFromSource()` write back to the correct per-project file
+`src/lib/github-storage.ts` — reads/writes JSON + markdown to data repo via GitHub API.
+- Optimistic locking: retries 3x on 409 Conflict
+- In-memory cache with 1min TTL, full invalidation on writes
+- All env vars through `src/lib/env.ts` — never `process.env.X` directly
 
 ### 2. Asset URL resolution chain
-`src/lib/assetUrls.ts` resolves relative paths to full URLs:
-1. Arweave TX ID mapping (legacy content via `arweaveMapping.ts`)
-2. R2 CDN URL (when configured)
-3. GitHub raw fallback (`content/{type}/{file}`)
+`src/lib/assetUrls.ts`: Arweave TX → R2 CDN → GitHub raw fallback
 
-### 3. 3D components are all lazy-loaded
-VRMViewer, GLBInspector, HomeVRMViewer → all use `next/dynamic({ ssr: false })`.
-Do NOT add static imports for 3D components in any page/layout.
+### 3. 3D components are lazy-loaded
+Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 
 ### 4. i18n uses static imports
-`src/lib/i18n.tsx` imports all 16 translation files statically (8 per locale).
-Do NOT use dynamic `import()` with template literals — Turbopack cannot bundle them.
+16 JSON files loaded statically. No dynamic `import()` with template literals.
 
-### 5. Admin auth is wallet-based (SIWE)
-- `/en/admin` shows WalletConnect gate
-- Only ETH addresses in `ADMIN_WALLET_ADDRESSES` env var can access
-- Session stored in `admin_session` httpOnly cookie (24h TTL)
-- `getAdminSession()` in `src/lib/auth/getSession.ts` checks both wallet and OAuth
-
-### 6. shadcn/ui components are copied, not installed
-Actual components are in `src/components/ui/`. Use the CLI to add new ones:
-```bash
-npx shadcn-ui@latest add [component-name]
-```
+### 5. Auth: wallet-first, any user can sign in
+- Admin wallets (whitelist) get `admin_session` cookie
+- Any wallet gets `user_session` cookie
+- `getAdminSession()` / `getUserSession()` in `src/lib/auth/getSession.ts`
 
 ---
 
 ## Environment variables
 
-See `.env.example`. Validated by Zod at runtime (skipped during `next build`).
+See `.env.example`. Validated by Zod at runtime.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `GITHUB_REPO_OWNER` | Yes | Data repo owner (`PabloFMM`) |
-| `GITHUB_REPO_NAME` | Yes | Data repo name (`numinia-digital-goods-data`) |
-| `GITHUB_TOKEN` | Yes | Read/write data repo (PAT with `repo` scope) |
-| `GITHUB_BRANCH` | No | Defaults to `main` |
-| `GITHUB_CLIENT_ID` | No | GitHub OAuth (login only, not needed for gallery) |
-| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth |
-| `ADMIN_WALLET_ADDRESSES` | No | Comma-separated ETH addresses for admin access |
-| `NEXT_PUBLIC_SITE_URL` | No | Defaults to `http://localhost:3000` |
-| `R2_*` | No | Cloudflare R2 (upload degrades gracefully) |
-| `ARWEAVE_WALLET_KEY` | No | JWK JSON for Arweave uploads via ArDrive Turbo |
-| `IPFS_PIN_API_URL` | No | IPFS pinning service URL (Pinata-compatible) |
-| `IPFS_PIN_API_KEY` | No | IPFS pinning service API key |
+| `GITHUB_REPO_OWNER` | Yes | Data repo owner |
+| `GITHUB_REPO_NAME` | Yes | Data repo name |
+| `GITHUB_TOKEN` | Yes | Read/write data repo |
+| `ADMIN_WALLET_ADDRESSES` | No | Comma-separated ETH admin addresses |
+| `R2_*` | No | Cloudflare R2 storage |
+| `ARWEAVE_WALLET_KEY` | No | Arweave uploads (JWK JSON) |
+| `IPFS_PIN_API_URL/KEY` | No | IPFS pinning (Pinata-compatible) |
 
 ---
 
-## Current status (2026-03-31)
+## Current status (v0.10.0 — 2026-04-01)
 
-### What's done
-- ✅ Security: OAuth CSRF, CORS, Zod env validation, 0 direct process.env bypasses
-- ✅ Auth: SIWE wallet (admin + user), GitHub OAuth, LoginModal, user profiles
-- ✅ Admin: Claude-style sidebar, draggable modal, stats, settings, changelog
-- ✅ Gallery: favorites (hearts), actions menu, NFT fields, Digital Goods section
-- ✅ Viewers: VRM, GLB, HYP (.hyp parser), STL (3D print), audio waveform, video
-- ✅ Storage: R2 presigned upload (500MB), Arweave archive, IPFS pin endpoints
-- ✅ Data: UUID v7 IDs, tags system, optimistic locking (retry on 409)
-- ✅ Quality: 138 tests, 1 console.log, 0 JSX, 854-line PreviewPanel
-- ✅ Docs: CLAUDE.md, SECURITY.md, CONTRIBUTING.md, Dependabot, data repo README
-- ✅ Branding: 0 ToxSam refs in app (only legacy URLs in assetUrls.ts)
-- ✅ NFT: ownership check API (Base chain RPC), contract fields in admin modal
+### Done
+- ✅ Auth: SIWE (admin + user), GitHub OAuth, LoginModal, profiles
+- ✅ L.A.P.: Character Sheet, Portals Map, Loot, Assets, Stats, Settings, Changelog
+- ✅ Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
+- ✅ Storage: R2 presigned (500MB), Arweave archive, IPFS pin
+- ✅ Data: UUID v7, tags, optimistic locking, auto-thumbnails
+- ✅ Quality: 138 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
+- ✅ Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
+- ✅ Portals: 4 districts, 14 oncyber worlds, interactive SVG map
+- ✅ Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
 
-### What's remaining
-| Task | Impact | Effort |
-|---|---|---|
-| 5 @ts-nocheck files (3D viewers, 8K lines) | Low | 6h |
-| Upload Mixamo GLB to R2 (currently FBX from legacy CDN) | Low | 1h |
-| Resources content update (docs are ToxSam-era) | Medium | 2h |
+### Remaining (low priority)
+| Task | Impact |
+|---|---|
+| 5 @ts-nocheck files (Three.js viewers, 8K lines) | Low |
+| Upload Mixamo GLB to R2 (replace legacy FBX CDN) | Low |
 
 ---
 
@@ -168,37 +165,32 @@ See `.env.example`. Validated by Zod at runtime (skipped during `next build`).
 
 | File | Purpose |
 |---|---|
-| `src/lib/github-storage.ts` | All data CRUD + per-project file write-back |
-| `src/lib/env.ts` | Zod-validated env vars (use this, never process.env) |
-| `src/lib/auth/getSession.ts` | Unified admin session check (wallet + OAuth) |
-| `src/lib/i18n.tsx` | Static translation loading (16 files) |
-| `src/lib/assetUrls.ts` | URL resolution chain |
-| `src/middleware.ts` | i18n routing + CORS |
-| `src/app/api/admin/upload/route.ts` | Asset upload (GitHub API) |
-| `src/app/api/auth/wallet/verify/route.ts` | SIWE signature verification |
-| `src/components/admin/WalletConnect.tsx` | MetaMask connection flow |
-| `src/components/admin/DigitalGoods.tsx` | NFT collections manager (admin) |
+| `src/lib/github-storage.ts` | All data CRUD + optimistic locking |
+| `src/lib/env.ts` | Zod-validated env vars |
+| `src/lib/auth/getSession.ts` | Session check (admin + user) |
+| `src/components/character/CharacterSheet.tsx` | RPG character sheet |
+| `src/components/portals/PortalsMap.tsx` | Interactive world map |
+| `src/components/asset/HypViewer.tsx` | .hyp viewer (Files/Script/Props) |
+| `src/components/asset/ImageViewer.tsx` | Image zoom/pan/fullscreen |
+| `src/components/asset/STLViewer.tsx` | STL 3D print viewer |
 | `src/components/auth/LoginModal.tsx` | User login (wallet + GitHub) |
-| `src/components/AvatarAdminDashboard.tsx` | Admin CRUD UI |
-| `src/components/finder/PreviewPanel.tsx` | Main viewer (854 lines, media viewer extracted) |
-| `src/components/asset/STLViewer.tsx` | 3D print STL viewer (Three.js) |
-| `src/components/asset/HypViewer.tsx` | Hyperfy .hyp viewer with metadata panel |
-| `src/lib/utils/hypParser.ts` | Hyperfy .hyp binary parser (GLB extraction) |
-| `src/lib/hooks/useFavorites.ts` | Favorites system (localStorage) |
-| `src/app/api/nft/check-ownership/route.ts` | NFT ownership check (Base chain RPC) |
-| `src/app/api/admin/archive/route.ts` | Arweave upload (ArDrive Turbo SDK) |
-| `src/app/api/admin/pin-ipfs/route.ts` | IPFS pin (Pinata-compatible) |
+| `src/components/admin/AdminSidebar.tsx` | L.A.P. sidebar navigation |
+| `src/app/api/characters/route.ts` | Character sheet CRUD |
+| `src/app/api/nft/check-ownership/route.ts` | NFT ownership (Base chain) |
+| `src/app/api/admin/archive/route.ts` | Arweave upload |
+| `src/lib/utils/hypParser.ts` | .hyp binary parser |
+| `src/lib/hooks/useFavorites.ts` | Favorites (localStorage) |
 
 ---
 
 ## What NOT to do
 
-- Do NOT commit `.env.local` — already happened once, was cleaned
+- Do NOT commit `.env.local`
 - Do NOT import 3D components statically — always `next/dynamic({ ssr: false })`
-- Do NOT use dynamic `import()` with template literals in i18n — Turbopack breaks
 - Do NOT use `process.env.X` directly — use `env.ts`
-- Do NOT write to `data/avatars.json` — use `updateAvatarInSource()` / `deleteAvatarFromSource()` which write to the correct per-project file
-- Do NOT add `GITHUB_REPO_OWNER=ToxSam` — that points to the original author's data
+- Do NOT write to `data/avatars.json` — use `updateAvatarInSource()`
+- Do NOT bump to v1.0.0 without explicit user approval (versioning is a business decision)
+- Do NOT delete dice files (Dice3D.tsx, DiceTapete.tsx, diceRoller.ts) — they were restored after accidental deletion
 
 ---
 
@@ -208,12 +200,9 @@ See `.env.example`. Validated by Zod at runtime (skipped during `next build`).
 git clone https://github.com/PabloFMM/numinia-digital-goods.git
 cd numinia-digital-goods
 cp .env.example .env.local
-# Fill in GITHUB_TOKEN, GITHUB_REPO_OWNER=PabloFMM, GITHUB_REPO_NAME=numinia-digital-goods-data
-
 npm install
 npm run dev          # http://localhost:3000
 npm run type-check   # TypeScript validation
 npm test             # Vitest (138 tests)
 npm run build        # Production build
 ```
-
