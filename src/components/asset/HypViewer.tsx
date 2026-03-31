@@ -102,7 +102,7 @@ export function HypViewer({ url, name }: HypViewerProps) {
   const propsJson = JSON.stringify(result.header.blueprint, null, 2);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900" role="region" aria-label={`Hyperfy app: ${name}`}>
       {/* Tab bar — madjin style */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-cream dark:bg-cream-dark shrink-0">
         <div className="flex items-center gap-1">

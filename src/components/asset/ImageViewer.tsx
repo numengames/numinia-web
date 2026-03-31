@@ -58,6 +58,8 @@ export function ImageViewer({ url, name }: ImageViewerProps) {
     <div
       ref={containerRef}
       className="w-full h-full relative bg-gray-50 dark:bg-gray-900 overflow-hidden select-none"
+      role="img"
+      aria-label={`Image: ${name}. Use scroll to zoom, drag to pan.`}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

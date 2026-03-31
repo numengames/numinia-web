@@ -169,7 +169,7 @@ export function STLViewer({ url, name }: STLViewerProps) {
   }
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" role="img" aria-label={`3D print model: ${name}`}>
       <div ref={containerRef} className="w-full h-full" />
 
       {loading && (

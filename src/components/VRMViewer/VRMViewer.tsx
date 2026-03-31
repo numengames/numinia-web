@@ -2131,10 +2131,12 @@ export const VRMViewer = ({ url, backgroundGLB, onMetadataLoad, onTexturesLoad, 
   };
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" role="region" aria-label="3D model viewer. Use mouse to orbit, scroll to zoom.">
       <div className="absolute inset-0 flex items-center justify-center">
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label="3D model render"
           className="w-full h-full"
           style={{
             display: 'block',

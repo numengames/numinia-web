@@ -342,30 +342,30 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
   const isMediaFile = isVideoUrl || isAudioUrl;
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" role="region" aria-label={`Asset viewer: ${avatar.name}`}>
       {isVideoUrl ? (
         <div className="w-full h-full flex items-center justify-center bg-black">
           <video
             key={displayModelUrl}
             src={displayModelUrl}
             controls
-           
             muted
             loop
             playsInline
             className="max-w-full max-h-full object-contain"
+            aria-label={`Video: ${avatar.name}`}
           />
         </div>
       ) : isAudioUrl ? (
         <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
-          <div className="text-6xl">🎵</div>
+          <div className="text-6xl" aria-hidden="true">🎵</div>
           <p className="text-sm text-gray-500">{avatar.name}</p>
           <audio
             key={displayModelUrl}
             src={displayModelUrl}
             controls
-           
             className="w-full max-w-sm"
+            aria-label={`Audio: ${avatar.name}`}
           />
         </div>
       ) : isHypUrl ? (
