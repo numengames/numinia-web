@@ -4,6 +4,7 @@ import { env } from '@/lib/env';
 import { fetchData, updateData } from '@/lib/github-storage';
 import { generateAssetId, createAssetMetadata } from '@/lib/asset-id';
 import { getContentPath, getFormat } from '@/lib/content-paths';
+import { uploadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest) {
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rl = uploadRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const token = env.github.token;
   const owner = env.github.repoOwner;

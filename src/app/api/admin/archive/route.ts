@@ -3,6 +3,7 @@ import { getAdminSession } from '@/lib/auth/getSession';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import type { GithubAvatar } from '@/types/github-storage';
 import { env } from '@/lib/env';
+import { archiveRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rl = archiveRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const walletKeyJson = env.arweave.walletKey;
   if (!walletKeyJson) {

@@ -3,11 +3,15 @@ import { SiweMessage } from 'siwe';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
 import { signSession } from '@/lib/session';
+import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
+  const rl = authRateLimit(getRateLimitKey(request));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } });
+
   try {
     const { message, signature } = await request.json();
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -14,6 +15,9 @@ export const runtime = 'nodejs';
  * It redirects the user to GitHub's authorization page
  */
 export async function GET(request: NextRequest) {
+  const rl = authRateLimit(getRateLimitKey(request));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const redirectTo = searchParams.get('redirect_to') || '/';

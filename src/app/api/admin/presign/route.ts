@@ -4,6 +4,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
 import { generateAssetId } from '@/lib/asset-id';
+import { presignRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { getContentPath } from '@/lib/content-paths';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,9 @@ export async function POST(req: NextRequest) {
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rl = presignRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   if (!isR2Configured()) {
     return NextResponse.json({ error: 'R2 storage not configured' }, { status: 503 });

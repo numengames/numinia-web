@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 import { GET as nonceHandler } from '@/app/api/auth/wallet/nonce/route';
 import { GET as sessionGet, DELETE as sessionDelete } from '@/app/api/auth/wallet/session/route';
 
@@ -25,7 +26,7 @@ beforeEach(() => {
 
 describe('GET /api/auth/wallet/nonce', () => {
   it('returns a nonce string', async () => {
-    const res = await nonceHandler();
+    const res = await nonceHandler(new NextRequest('http://localhost/api/auth/wallet/nonce'));
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -35,7 +36,7 @@ describe('GET /api/auth/wallet/nonce', () => {
   });
 
   it('stores nonce in cookie', async () => {
-    await nonceHandler();
+    await nonceHandler(new NextRequest('http://localhost/api/auth/wallet/nonce'));
     expect(mockCookies.has('siwe_nonce')).toBe(true);
   });
 });
