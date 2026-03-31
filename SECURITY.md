@@ -35,6 +35,21 @@ Out of scope:
 - Third-party services (Vercel, Cloudflare, GitHub)
 - The data repo content itself (CC0 public domain assets)
 
+## Token Configuration
+
+### GitHub Token (GITHUB_TOKEN)
+Use a **fine-grained personal access token**, NOT a classic token:
+1. Go to Settings → Developer settings → Fine-grained tokens
+2. Repository access: **Only select repositories** → `numinia-digital-goods-data`
+3. Permissions: **Contents** → Read and write
+4. No other permissions needed
+
+A classic token with `repo` scope gives access to ALL your repositories. A fine-grained token limits access to only the data repo.
+
+### SESSION_SECRET
+Generate with: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+Must be at least 32 characters. Used for HMAC-SHA256 cookie signing.
+
 ## Supported versions
 
 Only the latest deployed version on [numinia.store](https://numinia.store) is supported.
