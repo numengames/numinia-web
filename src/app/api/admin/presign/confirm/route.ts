@@ -27,6 +27,17 @@ export async function POST(req: NextRequest) {
     }
 
     const publicUrl = `${getR2PublicUrl()}/${r2Key}`;
+
+    // M3: Verify file actually exists in R2 before creating metadata
+    try {
+      const headRes = await fetch(publicUrl, { method: 'HEAD' });
+      if (!headRes.ok) {
+        return NextResponse.json({ error: 'File not found in R2 — upload may have failed' }, { status: 404 });
+      }
+    } catch {
+      return NextResponse.json({ error: 'Cannot verify file in R2' }, { status: 502 });
+    }
+
     const { catalogFile, projectId } = getContentPath(format);
 
     const newEntry = createAssetMetadata(
@@ -50,6 +61,17 @@ export async function POST(req: NextRequest) {
       asset: { id: assetId, name: displayName, format, url: publicUrl },
     });
   } catch (error) {
+    // M4: Attempt to clean up orphaned R2 file on metadata write failure
+    try {
+      const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+      const { getR2Client, getR2BucketName, isR2Configured } = await import('@/lib/r2-client');
+      if (isR2Configured()) {
+        const body = await req.clone().json().catch(() => null);
+        if (body?.r2Key) {
+          await getR2Client().send(new DeleteObjectCommand({ Bucket: getR2BucketName(), Key: body.r2Key }));
+        }
+      }
+    } catch { /* cleanup is best-effort */ }
     console.error('Presign confirm error:', error);
     return NextResponse.json(
       { error: 'Failed to create metadata' },
