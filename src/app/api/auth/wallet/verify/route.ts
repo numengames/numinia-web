@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SiweMessage } from 'siwe';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
+import { signSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (isAdmin) {
       cookieStore.set({
         name: 'admin_session',
-        value: JSON.stringify({
+        value: signSession({
           address: siweMessage.address,
           role: 'admin',
           authenticatedAt: new Date().toISOString(),
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     // All wallets (admin + user) get a user_session cookie
     cookieStore.set({
       name: 'user_session',
-      value: JSON.stringify({
+      value: signSession({
         address: siweMessage.address,
         role,
         authenticatedAt: new Date().toISOString(),

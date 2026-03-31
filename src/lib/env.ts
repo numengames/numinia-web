@@ -16,6 +16,8 @@ const serverSchema = z.object({
   GITHUB_REPO_NAME:  z.string().min(1, 'GITHUB_REPO_NAME is required'),
   GITHUB_BRANCH:     z.string().default('main'),
   GITHUB_TOKEN:      z.string().min(1, 'GITHUB_TOKEN is required'),
+  // Session signing (HMAC-SHA256). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  SESSION_SECRET:       z.string().min(32, 'SESSION_SECRET must be at least 32 chars').default(''),
   // GitHub OAuth — optional: only needed for login, not for reading the gallery.
   // Auth routes validate these at request time and return 503 if missing.
   GITHUB_CLIENT_ID:     z.string().default(''),
@@ -71,6 +73,7 @@ const clientEnv = clientResult.success ? clientResult.data : {
 };
 
 export const env = {
+  sessionSecret: process.env.SESSION_SECRET ?? '',
   github: {
     repoOwner:    process.env.GITHUB_REPO_OWNER    ?? '',
     repoName:     process.env.GITHUB_REPO_NAME     ?? '',

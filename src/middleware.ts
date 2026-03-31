@@ -58,10 +58,16 @@ export function middleware(request: NextRequest) {
   // Check for session — wallet auth (admin_session) or GitHub OAuth (session)
   let isAdmin = false;
 
+  // Middleware runs on Edge — can't use Node.js crypto for HMAC verification.
+  // This is a lightweight routing check only. Real auth enforcement is in API routes
+  // via verifySession() (server-side, Node.js runtime).
   const walletCookie = request.cookies.get('admin_session');
   if (walletCookie) {
     try {
-      const data = JSON.parse(walletCookie.value);
+      // Try signed format: decode base64url payload before the dot
+      const dot = walletCookie.value.indexOf('.');
+      const payload = dot > 0 ? atob(walletCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : walletCookie.value;
+      const data = JSON.parse(payload);
       if (data.role === 'admin') isAdmin = true;
     } catch {}
   }
@@ -70,7 +76,9 @@ export function middleware(request: NextRequest) {
     const sessionCookie = request.cookies.get('session');
     if (sessionCookie) {
       try {
-        const data = JSON.parse(sessionCookie.value);
+        const dot = sessionCookie.value.indexOf('.');
+        const payload = dot > 0 ? atob(sessionCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : sessionCookie.value;
+        const data = JSON.parse(payload);
         if (['admin', 'creator'].includes(data.role)) isAdmin = true;
       } catch {}
     }

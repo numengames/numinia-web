@@ -3,6 +3,7 @@ import { getUsers, saveUsers } from '@/lib/github-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { GithubUser } from '@/types/github-storage';
 import { cookies } from 'next/headers';
+import { signSession } from '@/lib/session';
 import { env } from '@/lib/env';
 
 // These export configurations tell Next.js that this is a dynamic route
@@ -144,7 +145,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'session',
-      value: JSON.stringify({
+      value: signSession({
         userId: user.id,
         username: user.username,
         role: user.role || 'creator',
