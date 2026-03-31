@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date();
   const locales = ['en', 'ja'];
 
-  const staticPages = ['', '/gallery', '/finder', '/about', '/resources', '/glbinspector'];
+  const staticPages = ['', '/archive', '/finder', '/glbinspector', '/LAP', '/legal/terms', '/legal/privacy', '/legal/cookies', '/profile'];
 
   const allRoutes: MetadataRoute.Sitemap = [];
 
@@ -18,8 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       allRoutes.push({
         url: `${baseUrl}/${locale}${page}`,
         lastModified: currentDate,
-        changeFrequency: page === '/gallery' ? 'daily' : 'weekly',
-        priority: page === '' ? 1.0 : page === '/gallery' ? 0.9 : 0.7,
+        changeFrequency: page === '/archive' ? 'daily' : 'weekly',
+        priority: page === '' ? 1.0 : page === '/archive' ? 0.9 : 0.7,
         alternates: {
           languages: {
             en: `${baseUrl}/en${page}`,

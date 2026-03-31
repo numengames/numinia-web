@@ -101,13 +101,16 @@ export default function RootLayout({
             __html: `try{var t=localStorage.getItem('theme'),d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);d?document.documentElement.classList.add('dark'):document.documentElement.classList.remove('dark')}catch(e){}`,
           }}
         />
+        {/* Skip to content — a11y */}
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-gray-900">
+          Skip to content
+        </a>
         <WebsiteSchema />
         <OrganizationSchema />
-        {/* Fallback provider for routes outside /en/ and /ja/.
-            Locale layouts (/en, /ja) nest their own I18nProvider inside this one,
-            and React uses the nearest context — so locale routing still works correctly. */}
         <I18nProvider defaultLocale="en">
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
           <CookieConsent />
         </I18nProvider>
       </body>

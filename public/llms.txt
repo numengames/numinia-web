@@ -1,0 +1,32 @@
+# Numinia Digital Goods
+> An open registry of CC0-licensed digital assets for games, VR, and the metaverse.
+
+## About
+Numinia Digital Goods is a platform by Numen Games for discovering, downloading, and managing free digital assets. All curated assets are CC0 (public domain). The platform follows a "File Over App" philosophy — data lives in open files, not databases.
+
+## Asset Types
+- 3D Models (GLB) — props, environments, objects
+- Avatars (VRM) — VR-ready humanoid characters
+- Hyperfy Worlds (HYP) — interactive 3D apps
+- 3D Print (STL) — physical fabrication files
+- Audio (MP3, OGG) — soundscapes, music
+- Video (MP4, WebM) — cinematics, demos
+- Images (JPG, PNG, WebP) — textures, references
+
+## API
+GET https://numinia.store/api/assets — All public assets (JSON)
+GET https://numinia.store/api/assets?search=avatar — Search by name
+GET https://numinia.store/api/collections — All collections
+
+## Data Repository
+https://github.com/PabloFMM/numinia-digital-goods-data
+All metadata is stored as JSON. Binaries on Cloudflare R2 CDN + GitHub.
+
+## License
+Code: MIT. Assets: CC0 (no attribution required).
+
+## Links
+- Website: https://numinia.store
+- GitHub: https://github.com/PabloFMM/numinia-digital-goods
+- X: https://x.com/numinia_store
+- Numen Games: https://numen.games

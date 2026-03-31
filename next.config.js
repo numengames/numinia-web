@@ -7,9 +7,6 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
   },
 
-  // Next.js 16+ (ya no va dentro de experimental)
-  serverExternalPackages: ['@prisma/client'],
-
   images: {
     remotePatterns: [
       {
