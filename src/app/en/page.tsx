@@ -94,14 +94,10 @@ export default function Home() {
             bottom: 0
           }}
         >
-          <div 
-            className="absolute right-0 top-1/2 -translate-y-1/2"
-            style={{ 
-              width: '600px', 
-              height: '600px',
-              maxWidth: '100vw',
-              maxHeight: '100vh'
-            }}
+          {/* Background 3D — desktop only (prevents Three.js load on mobile) */}
+          <div
+            className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block"
+            style={{ width: '600px', height: '600px', maxWidth: '100vw', maxHeight: '100vh' }}
           >
             {heroVisible && (
               <HomeVRMViewer
@@ -126,7 +122,7 @@ export default function Home() {
               </p>
               <div className="flex gap-4">
                 <a
-                  href="/en/gallery"
+                  href="/en/archive"
                   className="inline-flex items-center px-8 py-4 bg-black dark:bg-cream text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all text-lg font-medium"
                 >
                   {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />

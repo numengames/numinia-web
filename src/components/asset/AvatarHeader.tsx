@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { LanguageSelector } from '@/components/LanguageSelector';
@@ -36,10 +37,13 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
           
           {/* Logo más pequeño */}
           <Link href={`/${locale}`} className="flex-shrink-0">
-            <img
+            <Image
               src="/logo-numinia.svg"
               alt="Numinia Digital Goods"
+              width={120}
+              height={14}
               className="h-3 md:h-3.5 w-auto"
+              priority
             />
           </Link>
 
