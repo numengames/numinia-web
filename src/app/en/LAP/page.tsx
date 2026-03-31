@@ -9,6 +9,7 @@ import { Changelog } from '@/components/admin/Changelog';
 import { AdminSidebar, type AdminView } from '@/components/admin/AdminSidebar';
 import { DigitalGoods } from '@/components/admin/DigitalGoods';
 import { CharacterSheet } from '@/components/character/CharacterSheet';
+import { PortalsMap } from '@/components/portals/PortalsMap';
 import { Loader2 } from 'lucide-react';
 
 type AdminSession = {
@@ -88,16 +89,8 @@ export default function AdminPage() {
         )}
 
         {activeView === 'portals' && (
-          <div className="max-w-3xl mx-auto p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Portals</h1>
-            <p className="text-sm text-gray-500 mb-6">Hyperfy worlds and interactive experiences.</p>
-            <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 p-8 text-center">
-              <div className="text-4xl mb-3">🌀</div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Coming Soon</h2>
-              <p className="text-sm text-gray-500 max-w-md mx-auto">
-                Manage Hyperfy portals, link worlds, and curate interactive experiences.
-              </p>
-            </div>
+          <div className="bg-gray-950 min-h-[calc(100vh-4rem)] rounded-l-xl">
+            <PortalsMap />
           </div>
         )}
 

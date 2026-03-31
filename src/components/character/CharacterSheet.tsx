@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import matter from 'gray-matter';
-import { DiceTapete } from './DiceTapete';
 
 interface CharacterData {
   name: string;
@@ -252,22 +251,11 @@ function StatRow({ label, value, onChange }: { label: string; value: number; onC
   );
 }
 
-function ViewStat({ label, value, onRoll }: { label: string; value: number; onRoll?: (pool: number, name: string) => void }) {
+function ViewStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-sm text-gray-500">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-bold text-gray-900 dark:text-white">{value}</span>
-        {onRoll && value > 0 && (
-          <button
-            onClick={() => onRoll(value, label)}
-            className="p-1 rounded text-gray-400 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
-            title={`Roll ${label} (${value}d6)`}
-          >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="3" /><circle cx="8" cy="8" r="1.5" fill="currentColor" /><circle cx="16" cy="8" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><circle cx="8" cy="16" r="1.5" fill="currentColor" /><circle cx="16" cy="16" r="1.5" fill="currentColor" /></svg>
-          </button>
-        )}
-      </div>
+      <span className="text-sm font-bold text-gray-900 dark:text-white">{value}</span>
     </div>
   );
 }
@@ -281,14 +269,6 @@ export function CharacterSheet() {
   const [editing, setEditing] = useState(false);
   const [exists, setExists] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const tapeteRef = useRef<{ roll: (pool: number, statName: string) => void }>(null);
-
-  const handleRoll = useCallback((pool: number, statName: string) => {
-    // Use the global callback set by DiceTapete
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rollFn = (window as any).__numiniaRollDice as ((pool: number, name: string) => void) | undefined;
-    if (rollFn) rollFn(pool, statName);
-  }, []);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Load character
@@ -466,9 +446,6 @@ export function CharacterSheet() {
           </div>
         </div>
 
-        {/* Dice Tapete — between identity and rest of sheet */}
-        {!editing && exists && <DiceTapete />}
-
         {/* Lingüísticas */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Variaciones Lingüísticas</h3>
@@ -519,10 +496,10 @@ export function CharacterSheet() {
               </div>
             ) : (
               <div className="space-y-1">
-                <ViewStat label="Fuerza" value={char.strength} onRoll={handleRoll} />
-                <ViewStat label="Movimiento" value={char.movement} onRoll={handleRoll} />
-                <ViewStat label="Tamaño" value={char.size} onRoll={handleRoll} />
-                <ViewStat label="Constitución" value={char.constitution} onRoll={handleRoll} />
+                <ViewStat label="Fuerza" value={char.strength} />
+                <ViewStat label="Movimiento" value={char.movement} />
+                <ViewStat label="Tamaño" value={char.size} />
+                <ViewStat label="Constitución" value={char.constitution} />
               </div>
             )}
           </div>
@@ -539,10 +516,10 @@ export function CharacterSheet() {
               </div>
             ) : (
               <div className="space-y-1">
-                <ViewStat label="Inteligencia" value={char.intelligence} onRoll={handleRoll} />
-                <ViewStat label="Sabiduría" value={char.wisdom} onRoll={handleRoll} />
-                <ViewStat label="Percepción" value={char.perception} onRoll={handleRoll} />
-                <ViewStat label="Carisma" value={char.charisma} onRoll={handleRoll} />
+                <ViewStat label="Inteligencia" value={char.intelligence} />
+                <ViewStat label="Sabiduría" value={char.wisdom} />
+                <ViewStat label="Percepción" value={char.perception} />
+                <ViewStat label="Carisma" value={char.charisma} />
               </div>
             )}
           </div>
@@ -600,15 +577,15 @@ export function CharacterSheet() {
               </>
             ) : (
               <>
-                <ViewStat label="Tecnomancia" value={char.technomancy} onRoll={handleRoll} />
-                <ViewStat label="Forja Avanzada" value={char.advanced_forge} onRoll={handleRoll} />
-                <ViewStat label="Arq. Virtual" value={char.virtual_architecture} onRoll={handleRoll} />
-                <ViewStat label="Redes Defensivas" value={char.defensive_networks} onRoll={handleRoll} />
-                <ViewStat label="Cronomancia" value={char.chronomancy} onRoll={handleRoll} />
-                <ViewStat label="Criptología" value={char.cryptology} onRoll={handleRoll} />
-                <ViewStat label="Descodificación" value={char.decoding} onRoll={handleRoll} />
-                <ViewStat label="Visión Neural" value={char.neural_vision} onRoll={handleRoll} />
-                <ViewStat label="Proy. Lumínica" value={char.luminic_projection} onRoll={handleRoll} />
+                <ViewStat label="Tecnomancia" value={char.technomancy} />
+                <ViewStat label="Forja Avanzada" value={char.advanced_forge} />
+                <ViewStat label="Arq. Virtual" value={char.virtual_architecture} />
+                <ViewStat label="Redes Defensivas" value={char.defensive_networks} />
+                <ViewStat label="Cronomancia" value={char.chronomancy} />
+                <ViewStat label="Criptología" value={char.cryptology} />
+                <ViewStat label="Descodificación" value={char.decoding} />
+                <ViewStat label="Visión Neural" value={char.neural_vision} />
+                <ViewStat label="Proy. Lumínica" value={char.luminic_projection} />
               </>
             )}
           </div>
