@@ -26,18 +26,18 @@ interface Project {
 export async function GET(req: NextRequest) {
   try {
     const url = `${RAW_CONTENT_BASE}/data/projects.json?timestamp=${Date.now()}`;
-    const response = await fetch(url, {
+    const fetchRes = await fetch(url, {
       headers: {
         'Cache-Control': 'no-cache',
       },
       next: { revalidate: 3600 }, // Revalidate every hour
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch projects: ${response.status}`);
+    if (!fetchRes.ok) {
+      throw new Error(`Failed to fetch projects: ${fetchRes.status}`);
     }
 
-    const projects: Project[] = await response.json();
+    const projects: Project[] = await fetchRes.json();
 
     // Filter for community collections (NFT collections, excluding original 100avatars)
     const communityCollections = projects.filter((project) => {
@@ -53,9 +53,11 @@ export async function GET(req: NextRequest) {
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       collections: communityCollections,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    return response;
   } catch (error) {
     console.error('Error fetching community collections:', error);
     return NextResponse.json(

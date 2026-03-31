@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic';
 import { HypViewer } from '@/components/asset/HypViewer';
 import { STLViewer } from '@/components/asset/STLViewer';
 import { ImageViewer } from '@/components/asset/ImageViewer';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 const VRMViewer = dynamic(
   () => import('@/components/VRMViewer/VRMViewer').then((mod) => mod.VRMViewer),
@@ -355,7 +356,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
             ) : is3D ? (
               <VRMViewer key={url} url={url} backgroundGLB={null} onMetadataLoad={() => {}} onTexturesLoad={() => {}} showInfoPanel={false} onToggleInfoPanel={() => {}} hideControls={true} cameraDistanceMultiplier={0.6} />
             ) : displayThumb ? (
-              <img src={displayThumb} alt={avatar.name} className="w-full h-full object-contain bg-gray-50" />
+              <ThumbnailImage src={displayThumb} alt={avatar.name} className="object-contain" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">No preview</div>
             )}

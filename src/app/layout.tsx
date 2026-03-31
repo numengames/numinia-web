@@ -6,6 +6,8 @@ import { GeistMono } from 'geist/font/mono';
 import type { Metadata } from 'next';
 import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
 import { CookieConsent } from '@/components/CookieConsent';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL + ''),
@@ -114,6 +116,8 @@ export default function RootLayout({
           </main>
           <CookieConsent />
         </I18nProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

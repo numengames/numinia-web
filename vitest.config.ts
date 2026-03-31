@@ -9,6 +9,16 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     exclude: ['node_modules', '.next'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/lib/**/*.{ts,tsx}', 'src/app/api/**/*.ts'],
+      exclude: [
+        'src/__tests__/**',
+        'src/**/*.d.ts',
+      ],
+    },
   },
   resolve: {
     alias: {

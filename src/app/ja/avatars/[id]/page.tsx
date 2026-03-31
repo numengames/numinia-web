@@ -12,6 +12,7 @@ import { Download, ArrowLeft, Share2, Github, Box, Layers, Image as ImageIcon } 
 import { useI18n } from '@/lib/i18n';
 import { AvatarProductSchema, BreadcrumbSchema } from '@/components/StructuredData';
 import { downloadAvatar } from '@/lib/download-utils';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 interface Avatar {
   id: string;
@@ -189,17 +190,10 @@ export default function AvatarDetailPage() {
 
       <main className="flex-1 section-padding" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>
         <div className="container-custom">
-          {/* Breadcrumb */}
-          <div className="mb-8">
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push('/gallery')}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              ギャラリーに戻る
-            </Button>
-          </div>
+          <Breadcrumb items={[
+            { label: 'アーカイブ', href: '/ja/archive' },
+            { label: avatar.name },
+          ]} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* 3D Viewer */}

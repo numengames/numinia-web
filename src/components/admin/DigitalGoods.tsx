@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Diamond, ExternalLink, Search, Plus, Loader2 } from 'lucide-react';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 interface NftAsset {
   id: string;
@@ -141,7 +142,7 @@ export function DigitalGoods() {
                 {col.assets.map(asset => (
                   <div key={asset.id} className="flex items-center gap-2 p-2 rounded-md bg-gray-50 dark:bg-gray-800">
                     {asset.thumbnailUrl ? (
-                      <img src={asset.thumbnailUrl} alt={asset.name} className="h-10 w-10 rounded object-cover shrink-0" />
+                      <ThumbnailImage src={asset.thumbnailUrl} alt={asset.name} fill={false} width={40} height={40} className="rounded object-cover shrink-0" />
                     ) : (
                       <div className="h-10 w-10 rounded bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center">
                         <Diamond className="h-4 w-4 text-gray-400" />
@@ -189,7 +190,7 @@ export function DigitalGoods() {
             <div key={asset.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 {asset.thumbnailUrl ? (
-                  <img src={asset.thumbnailUrl} alt={asset.name} className="h-8 w-8 rounded object-cover shrink-0" />
+                  <ThumbnailImage src={asset.thumbnailUrl} alt={asset.name} fill={false} width={32} height={32} className="rounded object-cover shrink-0" />
                 ) : (
                   <div className="h-8 w-8 rounded bg-gray-100 dark:bg-gray-800 shrink-0" />
                 )}

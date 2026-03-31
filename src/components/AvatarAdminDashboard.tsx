@@ -9,6 +9,7 @@ import { AssetDetailModal } from '@/components/admin/AssetDetailModal';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 interface Avatar {
   id: string;
@@ -431,7 +432,7 @@ export default function AvatarAdminDashboard() {
                       {/* Thumbnail */}
                       <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
                         {avatar.thumbnailUrl ? (
-                          <img src={avatar.thumbnailUrl} alt={avatar.name} className="w-full h-full object-cover" />
+                          <ThumbnailImage src={avatar.thumbnailUrl} alt={avatar.name} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
                             <Badge variant="secondary" className="text-[10px]">{avatar.format}</Badge>

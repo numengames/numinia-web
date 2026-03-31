@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Heart, ExternalLink, Copy, LogOut, Loader2, Diamond } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 
 interface UserSession {
@@ -154,9 +155,9 @@ export default function ProfilePage() {
                   onClick={() => router.push(`/en/archive?asset=${asset.id}`)}
                   className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-gray-400 transition-all text-left"
                 >
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-800">
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-800 relative">
                     {asset.thumbnailUrl ? (
-                      <img src={asset.thumbnailUrl} alt={asset.name} className="w-full h-full object-cover" />
+                      <ThumbnailImage src={asset.thumbnailUrl} alt={asset.name} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-300">
                         <Heart className="h-6 w-6 fill-current text-red-300" />

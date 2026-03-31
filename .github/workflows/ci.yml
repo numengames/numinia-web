@@ -24,12 +24,14 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: License check
+        run: npx license-checker --production --failOn "GPL;LGPL;AGPL;SSPL" --excludePrivatePackages
 
       - name: Security audit
         run: npm audit --audit-level=high
-        continue-on-error: true
 
       - name: Build
         run: npm run build

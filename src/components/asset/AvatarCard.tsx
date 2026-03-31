@@ -5,6 +5,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from '@/lib/utils/formatters';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 interface AvatarCardProps {
   avatar: {
@@ -49,10 +50,10 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({
 
         {/* Thumbnail */}
         <div className="h-14 w-14 sm:h-16 sm:w-16 relative flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
-          <img
+          <ThumbnailImage
             src={thumbnailSrc}
             alt={avatar.name}
-            className="w-full h-full object-cover transition-transform hover:scale-105"
+            className="object-cover transition-transform hover:scale-105"
           />
         </div>
 

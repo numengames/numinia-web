@@ -20,6 +20,7 @@ import { CrescentSpinner } from '@/components/ui/crescent-spinner';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import { AssetActions } from './AssetActions';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 // Utility function to format camelCase or PascalCase names with spaces
 const formatName = (name: string): string => {
@@ -641,17 +642,11 @@ export const AvatarGallery: React.FC = () => {
                       </div>
 
                       {/* Thumbnail */}
-                      <div className="aspect-square w-full bg-gray-100 dark:bg-gray-800">
-                        <img
-                          src={avatar.thumbnailUrl || '/placeholder.png'}
+                      <div className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800">
+                        <ThumbnailImage
+                          src={avatar.thumbnailUrl}
                           alt={formatName(avatar.name)}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            const el = e.currentTarget;
-                            if (el.src.includes('/placeholder.png')) return;
-                            el.src = '/placeholder.png';
-                          }}
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
                       </div>
                       

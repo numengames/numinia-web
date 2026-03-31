@@ -9,18 +9,18 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'assets.opensourceavatars.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'assetsdev.opensourceavatars.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'raw.githubusercontent.com',
-      },
+      { protocol: 'https', hostname: 'assets.opensourceavatars.com' },
+      { protocol: 'https', hostname: 'assetsdev.opensourceavatars.com' },
+      { protocol: 'https', hostname: 'raw.githubusercontent.com' },
+      { protocol: 'https', hostname: 'assets.numinia.store' },
+      { protocol: 'https', hostname: '**.r2.dev' },
+      { protocol: 'https', hostname: '**.r2.cloudflarestorage.com' },
+      { protocol: 'https', hostname: 'arweave.net' },
+      { protocol: 'https', hostname: '**.arweave.net' },
+      { protocol: 'https', hostname: '**.ipfs.io' },
+      { protocol: 'https', hostname: 'dweb.link' },
+      { protocol: 'https', hostname: '**.dweb.link' },
+      { protocol: 'https', hostname: 'gateway.pinata.cloud' },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },

@@ -73,12 +73,50 @@ export default function PrivacyPage() {
             <li><strong>Vercel</strong> — hosting provider (as a processor)</li>
             <li><strong>Cloudflare</strong> — CDN and R2 storage (as a processor)</li>
           </ul>
+
+          <h2>6. International Data Transfers</h2>
           <p>
-            Where data is transferred outside the EEA, we rely on Standard Contractual Clauses
-            or adequacy decisions approved by the European Commission.
+            Your personal data may be transferred to and processed in countries outside the
+            European Economic Area (EEA). Specifically:
+          </p>
+          <table>
+            <thead>
+              <tr><th>Processor</th><th>Location</th><th>Data transferred</th><th>Safeguard (GDPR Art. 44-49)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Vercel Inc.</strong></td>
+                <td>United States</td>
+                <td>HTTP requests, session cookies, server logs</td>
+                <td>EU-US Data Privacy Framework (DPF) + Standard Contractual Clauses (SCCs)</td>
+              </tr>
+              <tr>
+                <td><strong>GitHub (Microsoft)</strong></td>
+                <td>United States</td>
+                <td>OAuth tokens, username, email, user ID; asset metadata stored in repos</td>
+                <td>EU-US Data Privacy Framework (DPF) + Standard Contractual Clauses (SCCs)</td>
+              </tr>
+              <tr>
+                <td><strong>Cloudflare Inc.</strong></td>
+                <td>United States (edge nodes globally)</td>
+                <td>HTTP requests proxied through CDN; asset binaries stored in R2 (EU region WEUR)</td>
+                <td>EU-US Data Privacy Framework (DPF) + Standard Contractual Clauses (SCCs)</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            We rely on adequacy decisions by the European Commission where available, and on
+            Standard Contractual Clauses (Commission Implementing Decision (EU) 2021/914) as a
+            supplementary safeguard. You may request a copy of the applicable SCCs by contacting{' '}
+            <a href="mailto:legal@numengames.com">legal@numengames.com</a>.
+          </p>
+          <p>
+            <strong>Cloudflare R2 storage</strong> is configured in the EU (Western Europe — WEUR region),
+            so asset binaries remain within the EEA. Only metadata and CDN-proxied HTTP traffic
+            may transit through non-EEA Cloudflare edge nodes.
           </p>
 
-          <h2>6. Your Rights (GDPR)</h2>
+          <h2>7. Your Rights (GDPR)</h2>
           <p>You have the right to:</p>
           <ul>
             <li><strong>Access</strong> — obtain a copy of your data</li>
@@ -95,25 +133,25 @@ export default function PrivacyPage() {
             Authority (<a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer">AEPD</a>).
           </p>
 
-          <h2>7. Security</h2>
+          <h2>8. Security</h2>
           <p>
             We use HTTPS, httpOnly cookies, CSRF protection, and Zod-validated environment variables.
             Authentication uses cryptographic signatures (SIWE) and OAuth with state parameter validation.
           </p>
 
-          <h2>8. Cookies</h2>
+          <h2>9. Cookies</h2>
           <p>
             See our <a href="/en/legal/cookies">Cookie Policy</a> for detailed information about
             cookies used on this Platform.
           </p>
 
-          <h2>9. Children</h2>
+          <h2>10. Children</h2>
           <p>
             The Platform is not directed at individuals under 16. We do not knowingly collect
             data from minors. Contact us if you believe we have collected such data.
           </p>
 
-          <h2>10. Contact</h2>
+          <h2>11. Contact</h2>
           <p>
             <a href="mailto:legal@numengames.com">legal@numengames.com</a>
           </p>

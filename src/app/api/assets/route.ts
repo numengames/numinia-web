@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {});
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({
       avatars: transformedAvatars,
       projects: publicProjects, // Include projects in response
       _debug: {
@@ -135,6 +135,9 @@ export async function GET(req: NextRequest) {
         projectIdCounts // Include project ID distribution for debugging
       }
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    response.headers.set('Vary', 'Cookie');
+    return response;
   } catch (error) {
     console.error('Error fetching avatars:', error);
     return NextResponse.json(

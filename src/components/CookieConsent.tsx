@@ -2,27 +2,36 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-
-const CONSENT_KEY = 'numinia-cookie-consent';
+import { CONSENT_KEY, isConsentCurrent, saveConsent } from '@/lib/consent';
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const acceptRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const consent = localStorage.getItem(CONSENT_KEY);
-    if (!consent) setVisible(true);
+    try {
+      const raw = localStorage.getItem(CONSENT_KEY);
+      if (!raw || !isConsentCurrent()) {
+        setVisible(true);
+      }
+    } catch {
+      setVisible(true);
+    }
   }, []);
 
-  // Focus the accept button when banner appears (a11y focus trap)
   useEffect(() => {
-    if (visible && buttonRef.current) {
-      buttonRef.current.focus();
+    if (visible && acceptRef.current) {
+      acceptRef.current.focus();
     }
   }, [visible]);
 
-  const accept = () => {
-    localStorage.setItem(CONSENT_KEY, 'accepted');
+  const handleAcceptAll = () => {
+    saveConsent('accepted');
+    setVisible(false);
+  };
+
+  const handleNecessaryOnly = () => {
+    saveConsent('necessary-only');
     setVisible(false);
   };
 
@@ -43,13 +52,21 @@ export function CookieConsent() {
             Cookie Policy
           </Link>
         </p>
-        <button
-          ref={buttonRef}
-          onClick={accept}
-          className="shrink-0 px-4 py-2 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:focus:ring-white"
-        >
-          Got it
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={handleNecessaryOnly}
+            className="px-4 py-2 text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+          >
+            Necessary only
+          </button>
+          <button
+            ref={acceptRef}
+            onClick={handleAcceptAll}
+            className="px-4 py-2 text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 dark:focus:ring-white"
+          >
+            Accept all
+          </button>
+        </div>
       </div>
     </div>
   );

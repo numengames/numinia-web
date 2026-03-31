@@ -12,6 +12,7 @@ import { setupMobileGestureHelp } from '@/lib/utils';
 import { HypViewer } from './HypViewer';
 import { STLViewer } from './STLViewer';
 import { ImageViewer } from './ImageViewer';
+import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 const VRMViewer = dynamic(() => import('@/components/VRMViewer/VRMViewer').then(mod => mod.VRMViewer), { 
   ssr: false,
@@ -747,17 +748,11 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
                                 : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                             }`}
                           >
-                            <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-                              <img
-                                src={a.thumbnailUrl || '/placeholder.png'}
+                            <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                              <ThumbnailImage
+                                src={a.thumbnailUrl}
                                 alt={a.name}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                                onError={(e) => {
-                                  const el = e.currentTarget;
-                                  if (el.src.includes('/placeholder.png')) return;
-                                  el.src = '/placeholder.png';
-                                }}
+                                sizes="80px"
                               />
                             </div>
                             <span className="mt-2 text-sm font-medium text-gray-900 truncate w-full text-center">
@@ -852,18 +847,14 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-300 dark:border-gray-700 pb-2 mb-2">{avatar && formatName(avatar.name)}</h2>
           
           {/* Thumbnail Image - Responsive styling for both mobile and desktop */}
-          <div className={`my-3 w-full flex justify-center ${isMobile ? 'max-h-32' : ''}`}>
-            <img
-              src={avatar.thumbnailUrl || '/placeholder.png'}
+          <div className={`relative my-3 w-full rounded-lg overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700 ${
+            isMobile ? 'h-32' : 'h-60'
+          }`}>
+            <ThumbnailImage
+              src={avatar.thumbnailUrl}
               alt={formatName(avatar.name)}
-              className={`rounded-lg object-contain shadow-sm border border-gray-200 dark:border-gray-700 ${
-                isMobile ? 'max-h-32 w-auto' : 'max-w-full max-h-60'
-              }`}
-              onError={(e) => {
-                const el = e.currentTarget;
-                if (el.src.includes('/placeholder.png')) return;
-                el.src = '/placeholder.png';
-              }}
+              className="object-contain"
+              sizes={isMobile ? '128px' : '320px'}
             />
           </div>
           

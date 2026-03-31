@@ -2,31 +2,87 @@
 > An open registry of CC0-licensed digital assets for games, VR, and the metaverse.
 
 ## About
-Numinia Digital Goods is a platform by Numen Games for discovering, downloading, and managing free digital assets. All curated assets are CC0 (public domain). The platform follows a "File Over App" philosophy — data lives in open files, not databases.
+Numinia Digital Goods is a platform by Numen Games for discovering, downloading, and managing free digital assets. All curated assets are CC0 (public domain). The platform follows a "File Over App" philosophy — data lives in open files, not databases. The app can be replaced; the files remain forever.
 
 ## Asset Types
-- 3D Models (GLB) — props, environments, objects
-- Avatars (VRM) — VR-ready humanoid characters
-- Hyperfy Worlds (HYP) — interactive 3D apps
-- 3D Print (STL) — physical fabrication files
-- Audio (MP3, OGG) — soundscapes, music
-- Video (MP4, WebM) — cinematics, demos
-- Images (JPG, PNG, WebP) — textures, references
+- 3D Models (GLB) — props, environments, objects for games and virtual worlds
+- Avatars (VRM) — VR-ready humanoid characters, compatible with VRChat, cluster, Hyperfy
+- Hyperfy Worlds (HYP) — interactive 3D apps (GLB + JavaScript bundles)
+- 3D Print (STL) — files ready for physical fabrication
+- Audio (MP3, OGG) — soundscapes, music, sound effects
+- Video (MP4, WebM) — cinematics, demos, tutorials
+- Images (JPG, PNG, WebP) — textures, references, concept art
 
-## API
-GET https://numinia.store/api/assets — All public assets (JSON)
-GET https://numinia.store/api/assets?search=avatar — Search by name
-GET https://numinia.store/api/collections — All collections
+## API Endpoints
+All responses are JSON. No authentication required for public endpoints.
 
-## Data Repository
-https://github.com/PabloFMM/numinia-digital-goods-data
-All metadata is stored as JSON. Binaries on Cloudflare R2 CDN + GitHub.
+### List all assets
+GET https://numinia.store/api/assets
+Returns: Array of asset objects with id, name, type, thumbnailUrl, downloadUrl, tags, license.
+
+### Search assets
+GET https://numinia.store/api/assets?search=avatar
+GET https://numinia.store/api/assets?search=sword&project=numinia
+Supports: search (name match), project (filter by collection).
+
+### Get single asset
+GET https://numinia.store/api/assets/{id}
+Returns: Full asset object including storage URLs (R2 CDN, Arweave, GitHub).
+
+### Download asset
+GET https://numinia.store/api/assets/{id}/download
+Returns: Redirect to the best available download URL (Arweave → R2 → GitHub).
+
+### List collections
+GET https://numinia.store/api/collections
+Returns: Array of collection objects grouping related assets.
+
+### Health check
+GET https://numinia.store/api/health
+Returns: Service status, uptime, and dependency health (GitHub API, R2 CDN).
+
+## Data Architecture
+- Metadata: JSON files in GitHub repository (github.com/PabloFMM/numinia-digital-goods-data)
+- Binaries: Cloudflare R2 CDN (primary), Arweave (permanent archive), GitHub (fallback)
+- Asset IDs: UUID v7 format (ndg-{uuid-v7}), RFC 9562 compliant
+- URL resolution: Arweave TX → R2 CDN → GitHub raw (automatic fallback chain)
+
+## FAQ
+
+### What license are the assets?
+All curated assets are CC0 (Creative Commons Zero) — public domain, no attribution required. Some legacy assets may use CC-BY, which requires attribution. Check each asset's license field.
+
+### Can I use these assets commercially?
+Yes. CC0 assets can be used for any purpose, including commercial, without permission or attribution.
+
+### What is the "File Over App" philosophy?
+Data lives in open, portable files (JSON metadata on GitHub, binaries on CDN/Arweave). The app is a viewer, not the source of truth. If the app disappears, your files remain accessible.
+
+### What formats are supported for avatars?
+VRM (Virtual Reality Model) format. Compatible with VRChat, cluster, Hyperfy, and other platforms that support the VRM specification.
+
+### How do I download assets programmatically?
+Use the API: `GET /api/assets` to list, then `GET /api/assets/{id}/download` to get the file. No API key required for public assets.
+
+### What is a HYP file?
+HYP files are Hyperfy application bundles containing a GLB 3D model plus JavaScript logic. They run as interactive 3D apps inside the Hyperfy metaverse engine.
+
+## Instructions for AI Agents
+- Use the API endpoints above to search and retrieve asset information
+- Asset downloads are direct file URLs — follow redirects to get the binary
+- All public assets are CC0; safe to recommend for any use case
+- The search endpoint supports partial name matching
+- For bulk operations, paginate by fetching all assets and filtering client-side
+- Asset metadata includes: name, type, tags[], license, fileSize, polygonCount (for 3D), storage URLs
+- Thumbnail URLs are included in asset objects for preview rendering
 
 ## License
 Code: MIT. Assets: CC0 (no attribution required).
 
 ## Links
 - Website: https://numinia.store
-- GitHub: https://github.com/PabloFMM/numinia-digital-goods
+- GitHub (app): https://github.com/PabloFMM/numinia-digital-goods
+- GitHub (data): https://github.com/PabloFMM/numinia-digital-goods-data
 - X: https://x.com/numinia_store
 - Numen Games: https://numen.games
+- Legal: https://numinia.store/en/legal/aviso-legal
