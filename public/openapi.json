@@ -1,0 +1,81 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Numinia Digital Goods API",
+    "description": "Open API for CC0-licensed digital assets (3D models, avatars, worlds, audio, video).",
+    "version": "0.10.0",
+    "license": { "name": "MIT", "url": "https://github.com/PabloFMM/numinia-digital-goods/blob/main/LICENSE" },
+    "contact": { "name": "Numinia", "url": "https://numinia.store", "email": "legal@numengames.com" }
+  },
+  "servers": [{ "url": "https://numinia.store", "description": "Production" }],
+  "paths": {
+    "/api/assets": {
+      "get": {
+        "summary": "List all public assets",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Search by name" },
+          { "name": "projectIds", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated project IDs" }
+        ],
+        "responses": {
+          "200": { "description": "Asset list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AssetListResponse" } } } }
+        }
+      }
+    },
+    "/api/collections": {
+      "get": {
+        "summary": "List all collections/projects",
+        "responses": { "200": { "description": "Collection list" } }
+      }
+    },
+    "/api/nft/check-ownership": {
+      "get": {
+        "summary": "Check NFT ownership on Base chain",
+        "parameters": [
+          { "name": "address", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "contract", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "tokenId", "in": "query", "schema": { "type": "string" } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["ERC-721", "ERC-1155"] } }
+        ],
+        "responses": { "200": { "description": "Ownership result" } }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": { "200": { "description": "Service status" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssetListResponse": {
+        "type": "object",
+        "properties": {
+          "avatars": { "type": "array", "items": { "$ref": "#/components/schemas/Asset" } },
+          "projects": { "type": "array", "items": { "$ref": "#/components/schemas/Project" } }
+        }
+      },
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "ndg-019d3ded-a1dd-7e0e-aeff-cb155bdff3d8" },
+          "name": { "type": "string" },
+          "format": { "type": "string", "enum": ["GLB", "VRM", "HYP", "STL", "MP3", "MP4", "PNG"] },
+          "modelFileUrl": { "type": "string", "nullable": true },
+          "thumbnailUrl": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "license": { "type": "string", "example": "CC0" },
+          "isPublic": { "type": "boolean" }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "license": { "type": "string" }
+        }
+      }
+    }
+  }
+}

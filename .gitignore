@@ -68,6 +68,7 @@ src/app/test/
 # Utility scripts that may contain sensitive information
 /scripts/*.js
 !/scripts/copy-docs.js
+!/scripts/backfill-hashes.js
 /src/scripts/*.ts
 /src/scripts/*.js
 
