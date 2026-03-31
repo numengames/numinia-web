@@ -10,6 +10,7 @@ import { AdminSidebar, type AdminView } from '@/components/admin/AdminSidebar';
 import { DigitalGoods } from '@/components/admin/DigitalGoods';
 import { CharacterSheet } from '@/components/character/CharacterSheet';
 import { PortalsMap } from '@/components/portals/PortalsMap';
+import { Codex } from '@/components/admin/Codex';
 import { Loader2 } from 'lucide-react';
 
 type AdminSession = {
@@ -96,6 +97,10 @@ export default function AdminPage() {
 
         {activeView === 'loot' && (
           <DigitalGoods />
+        )}
+
+        {activeView === 'codex' && (
+          <Codex />
         )}
 
         {activeView === 'stats' && (

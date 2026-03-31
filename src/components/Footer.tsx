@@ -73,14 +73,6 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               </li>
               <li>
                 <Link
-                  href={`/${locale}/codex`}
-                  className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
-                >
-                  Codex RPG
-                </Link>
-              </li>
-              <li>
-                <Link
                   href={`/${locale}/about`}
                   className="text-small text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors link-hover"
                 >

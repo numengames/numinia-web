@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User } from 'lucide-react';
+import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User, BookOpen } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
-export type AdminView = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'stats' | 'settings' | 'updates';
+export type AdminView = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'codex' | 'stats' | 'settings' | 'updates';
 
 interface AdminSidebarProps {
   activeView: AdminView;
@@ -19,6 +19,7 @@ const MAIN_NAV: NavItem[] = [
   { id: 'character', label: 'Character', icon: User },
   { id: 'portals', label: 'Portals', icon: Globe },
   { id: 'loot', label: 'Loot', icon: Swords },
+  { id: 'codex', label: 'Codex', icon: BookOpen },
   { id: 'assets', label: 'Assets', icon: Package },
   { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
 ];
