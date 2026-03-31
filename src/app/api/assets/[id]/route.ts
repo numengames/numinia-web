@@ -1,4 +1,5 @@
 // src/app/api/assets/[id]/route.ts
+import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
@@ -87,6 +88,8 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
     if (downloads.length !== updatedDownloads.length) {
       await saveDownloads(updatedDownloads);
     }
+
+    logAudit({ action: 'delete-asset', actor: session.address || 'admin', target: avatarId, metadata: { name: avatar.name } });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

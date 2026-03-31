@@ -1,4 +1,5 @@
 // src/app/api/assets/[id]/visibility/route.ts
+import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 // Handles both visibility toggle and name/description updates.
 import { NextResponse } from 'next/server';
@@ -73,6 +74,8 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
     if (!saved) {
       return NextResponse.json({ error: 'Avatar not found in source files' }, { status: 404 });
     }
+
+    logAudit({ action: 'update-asset', actor: session.address || 'admin', target: id, metadata: { fields: Object.keys(updates) } });
 
     return NextResponse.json({
       ...avatar,

@@ -98,6 +98,8 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
       },
     });
 
+    logAudit({ action: 'pin-ipfs', actor: session.address || 'admin', target: assetId, metadata: { ipfs_cid: cid } });
+
     return NextResponse.json({
       success: true,
       ipfs_cid: cid,

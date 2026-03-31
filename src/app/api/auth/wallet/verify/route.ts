@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAudit } from '@/lib/audit';
 import { SiweMessage } from 'siwe';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
@@ -91,6 +92,8 @@ export async function POST(request: NextRequest) {
       address: siweMessage.address,
       role,
     });
+
+    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, method: 'wallet' } });
   } catch (error) {
     console.error('SIWE verify error:', error);
     return NextResponse.json({ error: 'Verification failed' }, { status: 500 });

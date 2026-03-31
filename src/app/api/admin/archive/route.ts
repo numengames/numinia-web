@@ -103,6 +103,8 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
       },
     });
 
+    logAudit({ action: 'archive', actor: session.address || 'admin', target: assetId, metadata: { arweave_tx: txId } });
+
     return NextResponse.json({
       success: true,
       arweave_tx: txId,
