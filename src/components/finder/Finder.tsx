@@ -424,25 +424,36 @@ export default function Finder() {
     fetchData();
   }, [t]);
 
-  // Handle URL parameter changes (browser back/forward navigation)
+  // Handle URL parameter changes (browser back/forward navigation only)
+  // previewAvatar is intentionally excluded from deps to avoid a feedback loop:
+  // handleAvatarClick sets previewAvatar + pushes URL → this effect would re-run
+  // with stale searchParams and revert the selection back to the old avatar.
+  const previewAvatarIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    previewAvatarIdRef.current = previewAvatar?.id ?? null;
+  }, [previewAvatar]);
+
   useEffect(() => {
     // Skip if avatars haven't loaded yet or already initialized
     if (avatars.length === 0 || !avatarInitializedRef.current) return;
-    
+
     const avatarSlug = searchParams.get('avatar');
-    
+
     if (avatarSlug) {
       // Find and load avatar from URL
       const avatar = avatars.find((a: Avatar) => createSlug(a.name) === avatarSlug);
-      if (avatar && avatar.id !== previewAvatar?.id) {
+      if (avatar && avatar.id !== previewAvatarIdRef.current) {
         // Select the collection that contains this avatar so it's visible in the list
-        const avatarCollection = groupedCollections.find((c) => 
+        const avatarCollection = groupedCollections.find((c) =>
           c.projects.some((p) => p.id === avatar.projectId)
         );
-        if (avatarCollection && !selectedCollectionIds.has(avatarCollection.id)) {
-          setSelectedCollectionIds(new Set([avatarCollection.id]));
+        if (avatarCollection) {
+          setSelectedCollectionIds(prev => {
+            if (prev.has(avatarCollection.id)) return prev;
+            return new Set([avatarCollection.id]);
+          });
         }
-        
+
         setPreviewAvatar(avatar);
         // Auto-select the main model file when avatar is loaded from URL
         if (avatar.modelFileUrl) {
@@ -453,12 +464,13 @@ export default function Finder() {
       }
     } else {
       // No avatar in URL, clear preview
-      if (previewAvatar) {
+      if (previewAvatarIdRef.current) {
         setPreviewAvatar(null);
         setSelectedFile(null);
       }
     }
-  }, [searchParams, avatars, previewAvatar, groupedCollections, selectedCollectionIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, avatars, groupedCollections]);
 
   // Group projects into collections (all projects are individual)
   const groupProjectsIntoCollections = (projects: Project[]): GroupedCollection[] => {
