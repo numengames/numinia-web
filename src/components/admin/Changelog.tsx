@@ -16,15 +16,45 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
+  { text: 'Radicle.xyz — decentralized git (keep GitHub too)', status: 'research' },
+  { text: 'Payment methods — crypto + fiat for premium assets', status: 'research' },
   { text: 'Character Sheet — dice rolls (D6 pool) in web', status: 'planned' },
   { text: 'Portals — Hyperfy world management + launcher', status: 'planned' },
   { text: 'Loot — on-chain NFT display in profile', status: 'planned' },
   { text: 'Archive UX redesign (layout, filters, search)', status: 'planned' },
-  { text: 'CSP hardening — remove unsafe-eval (Three.js dependency)', status: 'research' },
-  { text: 'Arweave bulk archive for existing assets', status: 'research' },
+  { text: 'Monitoring — Sentry error tracking integration', status: 'planned' },
+  { text: 'Books/Library section — digital lore + docs', status: 'research' },
+  { text: 'Manifold integration study (license review)', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.11.0',
+    date: '2026-04-01',
+    time: '12:00',
+    items: [
+      { text: 'Security hardening: HMAC cookie signing, rate limiting, CSRF protection', type: 'new' },
+      { text: 'Security: MIME validation, URL allowlist, path traversal fix, SSRF fix', type: 'fix' },
+      { text: 'Security: 15 vulnerabilities fixed (5 critical, 6 high, 5 medium)', type: 'fix' },
+      { text: 'Storage redundancy: sync R2 ↔ GitHub with one-click buttons', type: 'new' },
+      { text: 'Bulk sync: "Sync N" button syncs all assets to missing layers', type: 'new' },
+      { text: 'Redundancy Health dashboard in Stats (progress bar + counts)', type: 'new' },
+      { text: 'SEO: sitemap updated, hreflang, canonical URLs, home page SSR', type: 'improvement' },
+      { text: 'AI SEO: llms.txt + OpenAPI docs (/openapi.json)', type: 'new' },
+      { text: 'Accessibility: aria-labels on all viewers, skip-to-content, focus trap', type: 'improvement' },
+      { text: 'Health check endpoint: GET /api/health', type: 'new' },
+      { text: 'CI: GitHub Actions pinned to SHA (supply chain security)', type: 'improvement' },
+      { text: 'Backfill hashes script (SHA-256 for all assets)', type: 'new' },
+      { text: 'Three.js skipped on mobile (saves ~2MB)', type: 'improvement' },
+      { text: 'Hardcoded "991+" counts removed (generic CC0 text)', type: 'fix' },
+      { text: 'All /gallery links migrated to /archive', type: 'fix' },
+      { text: 'Prisma dead config removed from next.config.js', type: 'fix' },
+      { text: 'Discord-style avatar crop modal (react-easy-crop)', type: 'new' },
+      { text: 'Dice roll buttons always visible on character stats', type: 'improvement' },
+      { text: 'Portals: interactive steampunk world map (4 districts, 14 portals)', type: 'new' },
+      { text: '158 tests across 18 files', type: 'improvement' },
+    ],
+  },
   {
     version: '0.10.0',
     date: '2026-03-31',

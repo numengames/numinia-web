@@ -6,6 +6,6 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '0.10.0',
+    version: '0.11.0',
   });
 }
