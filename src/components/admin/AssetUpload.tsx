@@ -217,11 +217,9 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
       setState('done');
 
-      // Auto-generate thumbnail for 3D models (VRM/GLB)
-      // NOTE: `result` state is not yet updated (React batches setState).
-      // Read the upload result from the DOM-independent ref pattern instead.
+      // Auto-generate thumbnail for all supported types (VRM, GLB, STL, HYP, images)
       const currentResult = resultRef.current;
-      if (currentResult && currentResult.url && /\.(vrm|glb|gltf)$/i.test(file.name)) {
+      if (currentResult && currentResult.url && /\.(vrm|glb|gltf|stl|hyp|jpg|jpeg|png|webp)$/i.test(file.name)) {
         setPhase('metadata');
         try {
           await autoGenerateAndUploadThumbnail(currentResult.id, currentResult.url);

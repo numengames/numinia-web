@@ -1,116 +1,198 @@
 /**
- * Auto-generates a thumbnail by rendering a 3D model in an offscreen canvas.
- * Uses Three.js + GLTFLoader to load the model, render one frame, and capture as PNG.
- * Only works for VRM/GLB/GLTF files.
+ * Auto-generates thumbnails for all supported asset types.
+ * - VRM/GLB/GLTF: Three.js offscreen render
+ * - STL: Three.js STLLoader render
+ * - HYP: extract GLB from .hyp binary, then render
+ * - JPG/PNG/WebP: resize the image itself
+ * - Audio/Video: no auto-thumbnail (returns null)
  */
 
 export async function generateThumbnail(modelUrl: string): Promise<string | null> {
-  // Only for 3D model files
-  if (!/\.(vrm|glb|gltf)$/i.test(modelUrl)) return null;
+  const ext = modelUrl.split('.').pop()?.toLowerCase() || '';
 
+  if (['vrm', 'glb', 'gltf'].includes(ext)) return generate3DThumbnail(modelUrl);
+  if (ext === 'stl') return generateSTLThumbnail(modelUrl);
+  if (ext === 'hyp') return generateHypThumbnail(modelUrl);
+  if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return generateImageThumbnail(modelUrl);
+
+  // Audio, video, and unknown formats — no auto-thumbnail
+  return null;
+}
+
+/** Fetch via proxy if external URL */
+async function fetchAsBlob(url: string): Promise<string> {
+  let fetchUrl = url;
+  if (!url.startsWith('/') && typeof window !== 'undefined' && !url.includes(window.location.hostname)) {
+    try {
+      const proxyRes = await fetch(`/api/proxy-asset?url=${encodeURIComponent(url)}`);
+      if (proxyRes.ok) {
+        const blob = await proxyRes.blob();
+        return URL.createObjectURL(blob);
+      }
+    } catch { /* use direct */ }
+  }
+  return fetchUrl;
+}
+
+/** VRM/GLB/GLTF → Three.js offscreen render */
+async function generate3DThumbnail(modelUrl: string): Promise<string | null> {
   try {
-    // Dynamic import Three.js to avoid bundling in non-3D pages
     const THREE = await import('three');
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     const { VRMLoaderPlugin, VRMUtils } = await import('@pixiv/three-vrm');
 
-    const width = 512;
-    const height = 512;
-
-    // Create offscreen renderer
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      preserveDrawingBuffer: true,
-    });
+    const width = 512, height = 512;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(1);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f0eb); // cream color matching site
+    scene.background = new THREE.Color(0xf5f0eb);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(1, 2, 3);
+    scene.add(dir);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 2, 3);
-    scene.add(directionalLight);
-
-    // Camera
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-
-    // Load model
     const loader = new GLTFLoader();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loader.register((parser: any) => new VRMLoaderPlugin(parser));
 
-    // Fetch via proxy if external URL
-    let blobUrl: string | null = null;
-    let loadUrl = modelUrl;
-
-    if (!modelUrl.startsWith('/') && typeof window !== 'undefined' && !modelUrl.includes(window.location.hostname)) {
-      try {
-        const proxyRes = await fetch(`/api/proxy-asset?url=${encodeURIComponent(modelUrl)}`);
-        if (proxyRes.ok) {
-          const blob = await proxyRes.blob();
-          blobUrl = URL.createObjectURL(blob);
-          loadUrl = blobUrl;
-        }
-      } catch {
-        // Use direct URL as fallback
-      }
-    }
-
+    const loadUrl = await fetchAsBlob(modelUrl);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gltf: any = await new Promise((resolve, reject) => {
       loader.load(loadUrl, resolve, undefined, reject);
     });
 
-    // Handle VRM
     const vrm = gltf.userData?.vrm;
-    let modelScene: InstanceType<typeof THREE.Object3D>;
-
-    if (vrm && typeof vrm === 'object' && 'scene' in vrm) {
-      VRMUtils.rotateVRM0(vrm);
-      modelScene = vrm.scene;
-    } else {
-      modelScene = gltf.scene;
-    }
+    const modelScene = vrm && typeof vrm === 'object' && 'scene' in vrm
+      ? (VRMUtils.rotateVRM0(vrm), vrm.scene)
+      : gltf.scene;
 
     scene.add(modelScene);
 
-    // Auto-fit camera to model
     const box = new THREE.Box3().setFromObject(modelScene);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const distance = maxDim * 1.8;
-
+    const distance = Math.max(size.x, size.y, size.z) * 1.8;
     camera.position.set(center.x + distance * 0.3, center.y + size.y * 0.1, center.z + distance);
     camera.lookAt(center);
 
-    // Render
     renderer.render(scene, camera);
-
-    // Capture
     const dataUrl = renderer.domElement.toDataURL('image/png');
-
-    // Cleanup
     renderer.dispose();
-    if (blobUrl) URL.revokeObjectURL(blobUrl);
-
+    if (loadUrl !== modelUrl) URL.revokeObjectURL(loadUrl);
     return dataUrl;
   } catch (error) {
-    console.error('Auto-thumbnail generation failed:', error);
+    console.error('3D thumbnail failed:', error);
+    return null;
+  }
+}
+
+/** STL → Three.js STLLoader render */
+async function generateSTLThumbnail(url: string): Promise<string | null> {
+  try {
+    const THREE = await import('three');
+    const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
+
+    const width = 512, height = 512;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(1);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f0eb);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dir1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir1.position.set(1, 2, 3);
+    scene.add(dir1);
+
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 1000);
+    const loader = new STLLoader();
+    const loadUrl = await fetchAsBlob(url);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const geometry: any = await new Promise((resolve, reject) => {
+      loader.load(loadUrl, resolve, undefined, reject);
+    });
+
+    const material = new THREE.MeshStandardMaterial({ color: 0xb0b0b0, roughness: 0.6, metalness: 0.1 });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const box = new THREE.Box3().setFromObject(mesh);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    mesh.position.sub(center);
+    camera.position.set(maxDim, maxDim * 0.8, maxDim * 2);
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+    const dataUrl = renderer.domElement.toDataURL('image/png');
+    renderer.dispose();
+    geometry.dispose();
+    material.dispose();
+    if (loadUrl !== url) URL.revokeObjectURL(loadUrl);
+    return dataUrl;
+  } catch (error) {
+    console.error('STL thumbnail failed:', error);
+    return null;
+  }
+}
+
+/** HYP → extract GLB from .hyp binary, then render as 3D */
+async function generateHypThumbnail(url: string): Promise<string | null> {
+  try {
+    const { parseHypFile, revokeHypBlobUrls } = await import('./hypParser');
+    const result = await parseHypFile(url);
+    if (!result || !result.glbBlobUrl) return null;
+
+    const thumbnail = await generate3DThumbnail(result.glbBlobUrl);
+    revokeHypBlobUrls(result);
+    return thumbnail;
+  } catch (error) {
+    console.error('HYP thumbnail failed:', error);
+    return null;
+  }
+}
+
+/** Image → resize to 512x512 thumbnail */
+async function generateImageThumbnail(url: string): Promise<string | null> {
+  try {
+    const loadUrl = await fetchAsBlob(url);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = loadUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+
+    // Center-crop to square
+    const srcSize = Math.min(img.width, img.height);
+    const srcX = (img.width - srcSize) / 2;
+    const srcY = (img.height - srcSize) / 2;
+    ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, 512, 512);
+
+    const dataUrl = canvas.toDataURL('image/png');
+    if (loadUrl !== url) URL.revokeObjectURL(loadUrl);
+    return dataUrl;
+  } catch (error) {
+    console.error('Image thumbnail failed:', error);
     return null;
   }
 }
 
 /**
  * Generate and upload thumbnail for an asset.
- * Returns the thumbnail URL or null if failed.
  */
 export async function autoGenerateAndUploadThumbnail(
   assetId: string,
