@@ -83,3 +83,21 @@ export function verifySession<T = Record<string, unknown>>(cookieValue: string):
 
   return null;
 }
+
+/**
+ * Generate a CSRF token (random UUID).
+ */
+export function generateCsrfToken(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Verify CSRF: compare X-CSRF-Token header with csrf_token cookie.
+ * Returns true if they match.
+ */
+export function verifyCsrf(req: import('next/server').NextRequest): boolean {
+  const headerToken = req.headers.get('x-csrf-token');
+  const cookieToken = req.cookies.get('csrf_token')?.value;
+  if (!headerToken || !cookieToken) return false;
+  return headerToken === cookieToken;
+}

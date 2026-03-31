@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyCsrf } from '@/lib/session';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import type { GithubAvatar } from '@/types/github-storage';
@@ -24,6 +25,8 @@ export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
+
   }
 
   const rl = archiveRateLimit(getRateLimitKey(req));

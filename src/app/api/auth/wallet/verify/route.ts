@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SiweMessage } from 'siwe';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
-import { signSession } from '@/lib/session';
+import { signSession, generateCsrfToken } from '@/lib/session';
 import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -69,6 +69,17 @@ export async function POST(request: NextRequest) {
       secure: env.isProd,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
+
+    // CSRF token — non-httpOnly so JS can read it and send as header
+    cookieStore.set({
+      name: 'csrf_token',
+      value: generateCsrfToken(),
+      httpOnly: false,
+      secure: env.isProd,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24,
       path: '/',
     });
 

@@ -1,4 +1,5 @@
 // src/app/api/assets/[id]/visibility/route.ts
+import { verifyCsrf } from '@/lib/session';
 // Handles both visibility toggle and name/description updates.
 import { NextResponse } from 'next/server';
 import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
@@ -15,6 +16,8 @@ export async function PATCH(
     const session = getAdminSession(req);
     if (!session.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
+
     }
 
     const avatars = await getAvatars();

@@ -1,4 +1,5 @@
 'use client';
+import { csrfHeaders } from '@/lib/csrf-client';
 
 import { useState, useCallback, useRef } from 'react';
 import { Upload, X, Loader2, Check, Cloud, Github } from 'lucide-react';
@@ -89,7 +90,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
     const presignRes = await fetch('/api/admin/presign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({
         fileName: f.name,
         fileSize: f.size,
@@ -137,7 +138,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
 
     const confirmRes = await fetch('/api/admin/presign/confirm', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({ assetId, r2Key, displayName, description: desc, format, fileSize: f.size }),
     });
 
@@ -169,7 +170,7 @@ export function AssetUpload({ onUploaded }: { onUploaded: () => void }) {
     formData.append('name', trimmedName);
     formData.append('description', trimmedDesc);
 
-    const res = await fetch('/api/admin/upload', {
+    const res = await fetch('/api/admin/upload', { headers: csrfHeaders(),
       method: 'POST',
       body: formData,
     });

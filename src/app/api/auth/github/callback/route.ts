@@ -3,7 +3,7 @@ import { getUsers, saveUsers } from '@/lib/github-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { GithubUser } from '@/types/github-storage';
 import { cookies } from 'next/headers';
-import { signSession } from '@/lib/session';
+import { signSession, generateCsrfToken } from '@/lib/session';
 import { env } from '@/lib/env';
 
 // These export configurations tell Next.js that this is a dynamic route
@@ -154,6 +154,15 @@ export async function GET(request: NextRequest) {
       secure: env.isProd,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+    cookieStore.set({
+      name: 'csrf_token',
+      value: generateCsrfToken(),
+      httpOnly: false,
+      secure: env.isProd,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     });
     cookieStore.delete('oauth_state');

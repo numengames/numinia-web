@@ -1,4 +1,5 @@
 'use client';
+import { csrfHeaders } from '@/lib/csrf-client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Copy, ExternalLink, Save, Trash2, Download, Eye, EyeOff, Loader2, User, Camera, GripHorizontal, Link2 } from 'lucide-react';
@@ -151,7 +152,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
       });
       const res = await fetch('/api/admin/upload-thumbnail', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ imageData: base64, avatarId: avatar.id }),
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -176,7 +177,7 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
 
       const res = await fetch('/api/admin/upload-thumbnail', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ imageData: dataUrl, avatarId: avatar.id }),
       });
       if (!res.ok) throw new Error('Upload failed');

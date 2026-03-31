@@ -1,4 +1,5 @@
 "use client";
+import { csrfHeaders } from '@/lib/csrf-client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Plus } from 'lucide-react';
@@ -130,7 +131,7 @@ export default function AvatarAdminDashboard() {
     try {
       const response = await fetch(`/api/assets/${avatarId}/visibility`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       });
 
       if (!response.ok) {
@@ -155,7 +156,7 @@ export default function AvatarAdminDashboard() {
     try {
       const response = await fetch(`/api/assets/${avatarId}/visibility`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify(updates),
       });
       if (!response.ok) throw new Error('Failed to save');
@@ -192,7 +193,7 @@ export default function AvatarAdminDashboard() {
     try {
       const response = await fetch(`/api/assets/${avatarId}/visibility`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ name: trimmed }),
       });
 

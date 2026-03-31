@@ -1,4 +1,5 @@
 // src/app/api/assets/[id]/route.ts
+import { verifyCsrf } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import {
@@ -27,6 +28,8 @@ export async function DELETE(
     const session = getAdminSession(req);
     if (!session.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
+
     }
     
     // Get the current avatars
