@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import matter from 'gray-matter';
+import { DiceTapete } from './DiceTapete';
 
 interface CharacterData {
   name: string;
@@ -445,6 +446,9 @@ export function CharacterSheet() {
             </div>
           </div>
         </div>
+
+        {/* Dice Tapete — between identity and rest of sheet */}
+        {!editing && exists && <DiceTapete />}
 
         {/* Lingüísticas */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5">
