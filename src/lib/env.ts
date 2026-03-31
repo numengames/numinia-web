@@ -34,6 +34,9 @@ const serverSchema = z.object({
   ARWEAVE_WALLET_KEY:   z.string().default(''),
   IPFS_PIN_API_URL:     z.string().default(''),
   IPFS_PIN_API_KEY:     z.string().default(''),
+  // Stripe (optional — season pass purchase, degrades gracefully without it)
+  STRIPE_SECRET_KEY:      z.string().default(''),
+  STRIPE_WEBHOOK_SECRET:  z.string().default(''),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -99,6 +102,10 @@ export const env = {
   },
   adminWalletAddresses: (process.env.ADMIN_WALLET_ADDRESSES ?? '')
     .split(',').map(a => a.trim().toLowerCase()).filter(Boolean),
+  stripe: {
+    secretKey:     process.env.STRIPE_SECRET_KEY ?? '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+  },
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',
   isProd:  process.env.NODE_ENV === 'production',

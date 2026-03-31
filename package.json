@@ -52,6 +52,7 @@
     "remark-gfm": "^4.0.1",
     "remark-html": "^16.0.1",
     "siwe": "^3.0.0",
+    "stripe": "^21.0.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.162.0",

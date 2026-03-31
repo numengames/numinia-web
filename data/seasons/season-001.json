@@ -1,0 +1,265 @@
+{
+  "id": "season-001",
+  "slug": "el-despertar-del-velo",
+  "title": {
+    "en": "Season I — The Awakening of the Veil",
+    "ja": "シーズンI — ヴェールの目覚め"
+  },
+  "description": {
+    "en": "Eight doors stand between you and the truth. Cross the veil, prove your worth, and claim the treasures hidden within the temples of Numinia.",
+    "ja": "8つの扉があなたと真実の間に立ちはだかる。ヴェールを越え、己の価値を証明し、ヌミニアの神殿に隠された宝物を手に入れよ。"
+  },
+  "status": "active",
+  "pass_price_eur": 9.99,
+  "stripe_price_id": "",
+  "start_date": "2026-04-15T00:00:00Z",
+  "end_date": "2026-07-15T00:00:00Z",
+  "adventures": [
+    {
+      "id": "adv-001",
+      "order": 1,
+      "name": { "en": "Umbral", "ja": "ウンブラル" },
+      "description": {
+        "en": "Cross the threshold into the Egyptian temple. Decipher the ancient hieroglyphs to unlock the first seal.",
+        "ja": "エジプトの神殿への入り口を越えよ。古代のヒエログリフを解読し、最初の封印を解け。"
+      },
+      "url": "https://oncyber.io/door_of_anubis",
+      "requires_pass": false,
+      "duration_minutes": 25,
+      "difficulty": 4,
+      "puzzle_type": "hieroglyph",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-001",
+        "name": { "en": "Shadow Mask", "ja": "影の仮面" },
+        "description": { "en": "A mask forged in the shadows of Anubis' temple", "ja": "アヌビスの神殿の影で鍛えられた仮面" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      },
+      "premium_loot": {
+        "id": "loot-p-001",
+        "name": { "en": "Night Cloak", "ja": "夜のマント" },
+        "description": { "en": "An ethereal cloak woven from the night itself", "ja": "夜そのものから織られた霊妙なマント" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-002",
+      "order": 2,
+      "name": { "en": "Espejo roto", "ja": "壊れた鏡" },
+      "description": {
+        "en": "The falcon god watches. Navigate the logic puzzles reflected in the broken mirrors of Horus.",
+        "ja": "鷹の神が見守る。ホルスの壊れた鏡に映る論理パズルを解け。"
+      },
+      "url": "https://oncyber.io/door_of_horus",
+      "requires_pass": false,
+      "duration_minutes": 12,
+      "difficulty": 2,
+      "puzzle_type": "logic",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-002",
+        "name": { "en": "Fractal Crystal", "ja": "フラクタル結晶" },
+        "description": { "en": "A shard of Horus' all-seeing eye", "ja": "ホルスの全能の目の破片" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-002",
+        "name": { "en": "Mirror Aura", "ja": "鏡のオーラ" },
+        "description": { "en": "An aura that reflects the truth of those who gaze upon it", "ja": "見つめる者の真実を映し出すオーラ" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-003",
+      "order": 3,
+      "name": { "en": "Raíces", "ja": "根源" },
+      "description": {
+        "en": "Imhotep's library holds the key. Solve the brain puzzles woven into the roots of ancient knowledge.",
+        "ja": "イムホテプの図書館が鍵を握る。古代の知識の根に織り込まれた頭脳パズルを解け。"
+      },
+      "url": "https://oncyber.io/door_of_imhotep",
+      "requires_pass": false,
+      "duration_minutes": 20,
+      "difficulty": 3,
+      "puzzle_type": "brain_puzzle",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-003",
+        "name": { "en": "Root Crown", "ja": "根の冠" },
+        "description": { "en": "A crown grown from the tree of knowledge", "ja": "知識の木から育った冠" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      },
+      "premium_loot": {
+        "id": "loot-p-003",
+        "name": { "en": "Ancestral Boots", "ja": "祖先のブーツ" },
+        "description": { "en": "Boots that carry the wisdom of the ancients", "ja": "古代の知恵を宿すブーツ" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-004",
+      "order": 4,
+      "name": { "en": "Marea", "ja": "潮流" },
+      "description": {
+        "en": "Isis commands the tides. Train your visual acuity to see through the illusions of the deep.",
+        "ja": "イシスが潮流を支配する。深淵の幻影を見透かす視覚を鍛えよ。"
+      },
+      "url": "https://oncyber.io/door_of_isis",
+      "requires_pass": false,
+      "duration_minutes": 15,
+      "difficulty": 2,
+      "puzzle_type": "visual_acuity",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-004",
+        "name": { "en": "Abyssal Gem", "ja": "深淵の宝石" },
+        "description": { "en": "A gem that pulses with the rhythm of the tides", "ja": "潮流のリズムで脈打つ宝石" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-004",
+        "name": { "en": "Mist Trident", "ja": "霧のトライデント" },
+        "description": { "en": "A trident that commands the mist between worlds", "ja": "世界の間の霧を操るトライデント" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-005",
+      "order": 5,
+      "name": { "en": "Ceniza", "ja": "灰燼" },
+      "description": {
+        "en": "The scales of Maat weigh your soul. Escape the trial chamber before the flames consume all.",
+        "ja": "マアトの天秤が魂を量る。炎がすべてを焼き尽くす前に試練の間から脱出せよ。"
+      },
+      "url": "https://oncyber.io/door_of_maat",
+      "requires_pass": false,
+      "duration_minutes": 15,
+      "difficulty": 3,
+      "puzzle_type": "escape_room",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-005",
+        "name": { "en": "Fire Ring", "ja": "炎の指輪" },
+        "description": { "en": "A ring forged in the fires of judgment", "ja": "審判の炎で鍛えられた指輪" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-005",
+        "name": { "en": "Flame Pauldrons", "ja": "炎の肩当て" },
+        "description": { "en": "Pauldrons burning with eternal fire", "ja": "永遠の炎で燃え続ける肩当て" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-006",
+      "order": 6,
+      "name": { "en": "Eco", "ja": "エコー" },
+      "description": {
+        "en": "Neith's arrows hide across the temple. Hunt the easter eggs scattered throughout her domain.",
+        "ja": "ネイトの矢が神殿のあちこちに隠されている。彼女の領域に散らばるイースターエッグを探し出せ。"
+      },
+      "url": "https://oncyber.io/door_of_neith",
+      "requires_pass": false,
+      "duration_minutes": 10,
+      "difficulty": 1,
+      "puzzle_type": "easter_egg",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-006",
+        "name": { "en": "Echo Pendant", "ja": "エコーのペンダント" },
+        "description": { "en": "A pendant that resonates with hidden truths", "ja": "隠された真実と共鳴するペンダント" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-006",
+        "name": { "en": "Resonance Gloves", "ja": "共鳴のグローブ" },
+        "description": { "en": "Gloves that amplify the echoes of the ancients", "ja": "古代のエコーを増幅するグローブ" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-007",
+      "order": 7,
+      "name": { "en": "Nexo", "ja": "ネクサス" },
+      "description": {
+        "en": "The lion goddess guards the labyrinth. Navigate the maze of Sacmis to find the nexus point.",
+        "ja": "獅子の女神が迷宮を守る。サクミスの迷路を進み、ネクサスポイントを見つけよ。"
+      },
+      "url": "https://oncyber.io/door_of_sacmis",
+      "requires_pass": false,
+      "duration_minutes": 8,
+      "difficulty": 1,
+      "puzzle_type": "maze",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-007",
+        "name": { "en": "Nexus Orb", "ja": "ネクサスオーブ" },
+        "description": { "en": "An orb that connects all points in space", "ja": "空間のすべての点をつなぐオーブ" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-007",
+        "name": { "en": "Portal Belt", "ja": "ポータルベルト" },
+        "description": { "en": "A belt that opens doorways between dimensions", "ja": "次元の間に扉を開くベルト" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    },
+    {
+      "id": "adv-008",
+      "order": 8,
+      "name": { "en": "El velo", "ja": "ヴェール" },
+      "description": {
+        "en": "The final door. Thoth, keeper of knowledge, tests your mastery of all that came before. Only pass holders may enter.",
+        "ja": "最後の扉。知識の守護者トトが、これまでのすべての習熟度を試す。パス保有者のみ入場可能。"
+      },
+      "url": "https://oo.oncyber.io/door_of_thoth",
+      "requires_pass": true,
+      "duration_minutes": 20,
+      "difficulty": 4,
+      "puzzle_type": "logic",
+      "published": true,
+      "free_loot": {
+        "id": "loot-f-008",
+        "name": { "en": "Final Seal", "ja": "最後の封印" },
+        "description": { "en": "The seal that binds the veil between worlds", "ja": "世界の間のヴェールを結ぶ封印" },
+        "thumbnail_url": "",
+        "type": "artifact"
+      },
+      "premium_loot": {
+        "id": "loot-p-008",
+        "name": { "en": "Veil Armor", "ja": "ヴェールの鎧" },
+        "description": { "en": "Armor woven from the fabric of the veil itself", "ja": "ヴェールの織物から編まれた鎧" },
+        "thumbnail_url": "",
+        "type": "wearable"
+      }
+    }
+  ],
+  "burn_ritual": {
+    "enabled": false,
+    "required_items": 8,
+    "reward": {
+      "id": "loot-burn-001",
+      "name": { "en": "The Veil — Exclusive Artwork", "ja": "ヴェール — 限定アートワーク" },
+      "description": {
+        "en": "A unique 1/1 digital artwork by a renowned NFT artist, unlocked only by completing all 8 adventures and performing the burn ritual.",
+        "ja": "全8つの冒険を完了し焼却の儀式を行うことでのみ解放される、著名なNFTアーティストによるユニークな1/1デジタルアートワーク。"
+      },
+      "thumbnail_url": "",
+      "type": "nft_artwork"
+    }
+  }
+}

@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User, BookOpen } from 'lucide-react';
+import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User, BookOpen, Flame } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
 
 /** The slug used in /en/LAP/{section} routes. */
-export type LAPSection = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'codex' | 'stats' | 'settings' | 'updates';
+export type LAPSection = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'seasons' | 'codex' | 'stats' | 'settings' | 'updates';
 
 // Keep the old name as alias so nothing else breaks during migration.
 export type AdminView = LAPSection;
@@ -23,6 +23,7 @@ const MAIN_NAV: NavItem[] = [
   { id: 'character', label: 'Character', icon: User },
   { id: 'portals', label: 'Portals', icon: Globe },
   { id: 'loot', label: 'Loot', icon: Swords },
+  { id: 'seasons', label: 'Seasons', icon: Flame },
   { id: 'codex', label: 'Codex', icon: BookOpen },
   { id: 'assets', label: 'Assets', icon: Package },
   { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
