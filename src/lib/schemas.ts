@@ -12,6 +12,30 @@
 
 import { z } from 'zod';
 
+// Allowed hosts for asset URLs
+const ALLOWED_URL_HOSTS = [
+  'raw.githubusercontent.com',
+  'r2.dev',
+  'r2.cloudflarestorage.com',
+  'arweave.net',
+  'ipfs.io',
+  'gateway.pinata.cloud',
+  'dweb.link',
+  'assets.numinia.store',
+  'assets.opensourceavatars.com',
+];
+
+/** Validate that a URL belongs to an allowed host */
+export function isAllowedAssetUrl(url: string): boolean {
+  if (!url) return true; // null/empty is fine
+  try {
+    const hostname = new URL(url).hostname;
+    return ALLOWED_URL_HOSTS.some(h => hostname === h || hostname.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+}
+
 // Coerce unknown values to string — handles null, undefined, number gracefully
 const str = z.coerce.string();
 const optStr = z.string().nullish().transform(v => v ?? undefined);

@@ -3,6 +3,7 @@ import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { generateAssetId } from '@/lib/asset-id';
+import { isAllowedAssetUrl } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -172,7 +173,11 @@ export async function POST(req: NextRequest) {
       projectId: avatarData.projectId,
       description: avatarData.description ?? '',
       thumbnailUrl: avatarData.thumbnailUrl ?? '',
-      modelFileUrl: avatarData.modelFileUrl ?? '',
+      modelFileUrl: (() => {
+        const url = avatarData.modelFileUrl ?? '';
+        if (url && !isAllowedAssetUrl(url)) throw new Error('Invalid asset URL host');
+        return url;
+      })(),
       polygonCount: avatarData.polygonCount ?? 0,
       format: avatarData.format || 'VRM',
       materialCount: avatarData.materialCount ?? 0,

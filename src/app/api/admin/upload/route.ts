@@ -6,6 +6,7 @@ import { fetchData, updateData } from '@/lib/github-storage';
 import { generateAssetId, createAssetMetadata } from '@/lib/asset-id';
 import { getContentPath, getFormat } from '@/lib/content-paths';
 import { uploadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { validateMimeType } from '@/lib/mime-validation';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -56,6 +57,12 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
 
     // Step 1: Upload binary to data repo
     const fileBuffer = await file.arrayBuffer();
+
+    // Validate magic bytes — reject executables renamed to .glb etc.
+    if (!validateMimeType(fileBuffer, ext)) {
+      return NextResponse.json({ error: `File content does not match .${ext} format` }, { status: 400 });
+    }
+
     const base64Content = Buffer.from(fileBuffer).toString('base64');
 
     // Compute SHA-256 hash for integrity verification + deduplication
