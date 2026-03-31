@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
   if (!GITHUB_TOKEN) {
     return NextResponse.json({ error: 'GitHub token not configured' }, { status: 500 });
@@ -31,8 +31,19 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
     return NextResponse.json({ error: 'imageData and avatarId required' }, { status: 400 });
   }
 
+  // Validate avatarId format — prevent path traversal
+  if (!/^(ndg-[a-f0-9-]+|[a-z0-9-]+)$/i.test(avatarId)) {
+    return NextResponse.json({ error: 'Invalid avatar ID format' }, { status: 400 });
+  }
+
   // Strip data URL prefix (data:image/png;base64,...)
   const base64 = imageData.replace(/^data:image\/\w+;base64,/, '');
+
+  // Size limit: 5MB max
+  const bufferSize = Buffer.from(base64, 'base64').length;
+  if (bufferSize > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Image too large (max 5MB)' }, { status: 400 });
+  }
   const filePath = `content/thumbnails/${avatarId}.png`;
   const thumbnailUrl = `${RAW_BASE}/${filePath}`;
 
@@ -70,7 +81,7 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
 
   if (!uploadRes.ok) {
     const err = await uploadRes.json();
-    return NextResponse.json({ error: 'Failed to upload image', details: err }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
   }
 
   // Update the avatar's JSON file to set the new thumbnail URL

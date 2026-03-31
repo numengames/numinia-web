@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET as nonceHandler } from '@/app/api/auth/wallet/nonce/route';
+vi.mock('@/lib/session', () => ({ verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } }, verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), generateCsrfToken: () => 'test-csrf' }));
 import { GET as sessionGet, DELETE as sessionDelete } from '@/app/api/auth/wallet/session/route';
 
 // Mock next/headers cookies

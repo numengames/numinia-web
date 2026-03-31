@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 
 // Mock admin session
 const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
+vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } } }));
 vi.mock('@/lib/auth/getSession', () => ({
   getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
 }));

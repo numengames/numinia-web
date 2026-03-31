@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
+vi.mock('@/lib/session', () => ({ verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } }, verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), generateCsrfToken: () => 'test-csrf' }));
 // Mock cookies
 const mockCookies = new Map<string, string>();
 vi.mock('next/headers', () => ({

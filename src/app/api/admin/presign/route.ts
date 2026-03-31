@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
   const rl = presignRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -87,7 +87,7 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
   } catch (error) {
     console.error('Presign error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate upload URL' },
+      { error: 'Failed to generate upload URL' },
       { status: 500 }
     );
   }

@@ -3,22 +3,15 @@ import { cookies } from 'next/headers';
 
 export async function POST() {
   try {
-    // Clear the session cookie
     const cookieStore = await cookies();
     cookieStore.delete('session');
-    
-    return NextResponse.json({ 
-      success: true,
-      message: 'Sesión cerrada correctamente'
-    });
+    cookieStore.delete('admin_session');
+    cookieStore.delete('user_session');
+    cookieStore.delete('csrf_token');
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to logout'
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Failed to logout' }, { status: 500 });
   }
 }

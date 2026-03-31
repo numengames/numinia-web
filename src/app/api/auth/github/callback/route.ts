@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     // Check if the user already exists in our database
     const users = await getUsers();
     // Try to find the user by email or username
-    let user = users.find((u: GithubUser) => u.email === primaryEmail || 
+    let user = users.find((u: GithubUser) => u.email?.toLowerCase() === primaryEmail?.toLowerCase() || 
                             u.username?.toLowerCase() === userData.login?.toLowerCase());
 
     if (!user) {
@@ -167,8 +167,9 @@ export async function GET(request: NextRequest) {
     });
     cookieStore.delete('oauth_state');
 
-    // Redirect to the original destination (validated, stored in CSRF cookie)
-    const redirectTo = oauthState.redirectTo || '/';
+    // Redirect — only allow relative paths (prevent open redirect)
+    let redirectTo = oauthState.redirectTo || '/';
+    if (redirectTo.startsWith('http') || redirectTo.startsWith('//')) redirectTo = '/';
     return NextResponse.redirect(new URL(redirectTo, request.url));
   } catch (error) {
     console.error('Auth callback error:', error);

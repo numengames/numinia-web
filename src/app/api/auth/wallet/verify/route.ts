@@ -22,18 +22,23 @@ export async function POST(request: NextRequest) {
 
     // Verify the SIWE signature
     const siweMessage = new SiweMessage(message);
-    const result = await siweMessage.verify({ signature });
-
-    if (!result.success) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    }
-
-    // Check nonce matches the one we stored in the cookie
+    // Verify nonce from cookie BEFORE signature verification
     const cookieStore = await cookies();
     const nonceCookie = cookieStore.get('siwe_nonce');
+    if (!nonceCookie) {
+      return NextResponse.json({ error: 'No nonce cookie' }, { status: 401 });
+    }
 
-    if (!nonceCookie || nonceCookie.value !== siweMessage.nonce) {
-      return NextResponse.json({ error: 'Invalid nonce' }, { status: 401 });
+    // Verify signature with domain + nonce binding
+    const expectedDomain = env.isProd ? 'numinia.store' : new URL(env.siteUrl || 'http://localhost:3000').host;
+    const result = await siweMessage.verify({
+      signature,
+      domain: expectedDomain,
+      nonce: nonceCookie.value,
+    });
+
+    if (!result.success) {
+      return NextResponse.json({ error: 'Invalid signature or domain' }, { status: 401 });
     }
 
     // Determine role: admin if in whitelist, user otherwise
@@ -87,13 +92,13 @@ export async function POST(request: NextRequest) {
     // Clean up the nonce cookie
     cookieStore.delete('siwe_nonce');
 
+    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, method: 'wallet' } });
+
     return NextResponse.json({
       success: true,
       address: siweMessage.address,
       role,
     });
-
-    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, method: 'wallet' } });
   } catch (error) {
     console.error('SIWE verify error:', error);
     return NextResponse.json({ error: 'Verification failed' }, { status: 500 });

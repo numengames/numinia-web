@@ -19,10 +19,9 @@ describe('session signing', () => {
     expect(verifySession('')).toBeNull();
   });
 
-  it('accepts legacy plain JSON (migration fallback)', () => {
-    const legacy = JSON.stringify({ address: '0x456', role: 'user' });
-    const result = verifySession(legacy);
-    expect(result).toEqual({ address: '0x456', role: 'user' });
+  it('rejects plain JSON (no legacy fallback)', () => {
+    const plainJson = JSON.stringify({ address: '0x456', role: 'admin' });
+    expect(verifySession(plainJson)).toBeNull();
   });
 
   it('rejects garbage string', () => {

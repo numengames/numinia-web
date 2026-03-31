@@ -15,9 +15,9 @@ export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
   try {
     const { assetId, r2Key, displayName, description, format, fileSize, fileHash } = await req.json();
@@ -52,7 +52,7 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
   } catch (error) {
     console.error('Presign confirm error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create metadata' },
+      { error: 'Failed to create metadata' },
       { status: 500 }
     );
   }

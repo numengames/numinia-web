@@ -17,9 +17,9 @@ export async function PATCH(
     const session = getAdminSession(req);
     if (!session.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
     }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
     const avatars = await getAvatars();
     const avatar = avatars.find((a: Avatar) => a.id === id);

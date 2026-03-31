@@ -29,9 +29,9 @@ export async function DELETE(
     const session = getAdminSession(req);
     if (!session.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
     }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
     
     // Get the current avatars
     const avatars = await getAvatars();

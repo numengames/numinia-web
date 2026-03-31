@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
   const session = getAdminSession(req);
   if (!session.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   }
+    if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
   const rl = uploadRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -108,7 +108,7 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
     if (!uploadRes.ok) {
       const err = await uploadRes.json();
       console.error('GitHub upload failed:', err);
-      return NextResponse.json({ error: 'Failed to upload file', details: err.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
     }
 
     // Step 2: Add entry to the correct project JSON file

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { NextRequest } from 'next/server';
+vi.mock('@/lib/session', () => ({ verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } }, verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), generateCsrfToken: () => 'test-csrf' }));
 
 function createRequest(cookies: Record<string, string> = {}): NextRequest {
   const url = 'http://localhost:3000/api/test';

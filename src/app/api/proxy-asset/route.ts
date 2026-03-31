@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     ];
 
     const urlObj = new URL(url);
-    const isAllowedDomain = allowedDomains.some(domain => urlObj.hostname.includes(domain));
+    const hostname = urlObj.hostname.toLowerCase();
+    const isAllowedDomain = allowedDomains.some(d => hostname === d || hostname.endsWith(`.${d}`));
 
     if (!isAllowedDomain) {
       return NextResponse.json(
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error proxying asset:', error);
     return NextResponse.json(
-      { error: 'Failed to proxy asset', message: (error as Error).message },
+      { error: 'Failed to proxy asset' },
       { status: 500 }
     );
   }
