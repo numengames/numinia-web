@@ -2,7 +2,7 @@
 import { csrfHeaders } from '@/lib/csrf-client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, RefreshCw } from 'lucide-react';
 import { AssetUpload } from '@/components/admin/AssetUpload';
 import AdminTableView from '@/components/admin/AdminTableView';
 import { AssetDetailModal } from '@/components/admin/AssetDetailModal';
@@ -43,6 +43,44 @@ export default function AvatarAdminDashboard() {
   const [formatFilter, setFormatFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [bulkSyncing, setBulkSyncing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState('');
+
+  const missingR2 = avatars.filter(a => !a.storage?.r2 && (a.storage?.github_raw || a.modelFileUrl?.includes('raw.githubusercontent')));
+  const missingGH = avatars.filter(a => !a.storage?.github_raw && a.storage?.r2);
+  const needsSync = missingR2.length + missingGH.length;
+
+  const handleBulkSync = useCallback(async () => {
+    setBulkSyncing(true);
+    let done = 0;
+    const total = missingR2.length + missingGH.length;
+
+    for (const asset of missingR2) {
+      setBulkProgress(`Syncing to R2: ${asset.name} (${++done}/${total})`);
+      try {
+        await fetch('/api/admin/sync-to-r2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          body: JSON.stringify({ assetId: asset.id }),
+        });
+      } catch { /* continue */ }
+    }
+
+    for (const asset of missingGH) {
+      setBulkProgress(`Syncing to GitHub: ${asset.name} (${++done}/${total})`);
+      try {
+        await fetch('/api/admin/sync-to-github', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          body: JSON.stringify({ assetId: asset.id }),
+        });
+      } catch { /* continue */ }
+    }
+
+    setBulkProgress(`Done! ${total} assets synced.`);
+    setBulkSyncing(false);
+    setTimeout(() => { setBulkProgress(''); window.location.reload(); }, 2000);
+  }, [missingR2, missingGH]);
   const [viewMode, setViewMode] = useState<'gallery' | 'table'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('admin-view-mode') as 'gallery' | 'table') || 'table';
@@ -308,6 +346,20 @@ export default function AvatarAdminDashboard() {
               <Plus className="h-3 w-3" /> Upload
             </Button>
 
+            {/* Bulk sync */}
+            {needsSync > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                onClick={handleBulkSync}
+                disabled={bulkSyncing}
+              >
+                {bulkSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Sync {needsSync}
+              </Button>
+            )}
+
             {/* Count */}
             <span className="text-xs text-gray-400">{filteredAvatars.length} assets</span>
 
@@ -335,6 +387,14 @@ export default function AvatarAdminDashboard() {
         {showUpload && (
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 mb-4">
             <AssetUpload onUploaded={() => { setShowUpload(false); window.location.reload(); }} />
+          </div>
+        )}
+
+        {/* Bulk sync progress */}
+        {bulkProgress && (
+          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+            {bulkSyncing && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}
+            {bulkProgress}
           </div>
         )}
 

@@ -169,6 +169,49 @@ function StatsView() {
           </div>
         </div>
       )}
+
+      {/* Storage Health */}
+      {(() => {
+        const total = Number(stats.total_assets) || 0;
+        const layer = stats.by_layer as Record<string, number> | undefined;
+        if (!layer || total === 0) return null;
+        const r2 = layer.r2 || 0;
+        const gh = layer.github || 0;
+        const redundant = Math.min(r2, gh); // rough estimate
+        const singlePoint = total - redundant;
+        const pct = total > 0 ? Math.round((redundant / total) * 100) : 0;
+        return (
+          <div className="mt-6">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Redundancy Health</h2>
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+              {/* Progress bar */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-500">Redundant assets</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{pct}%</span>
+                </div>
+                <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                <div>
+                  <div className="text-lg font-bold text-green-600">{redundant}</div>
+                  <div className="text-gray-500">Redundant (2+ layers)</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-red-500">{singlePoint}</div>
+                  <div className="text-gray-500">Single point of failure</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">{total}</div>
+                  <div className="text-gray-500">Total assets</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
