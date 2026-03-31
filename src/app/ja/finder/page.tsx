@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import { SITE_URL } from '@/lib/constants';
 import Finder from "@/components/finder/Finder";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import type { Metadata } from 'next';
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'アセットファインダー - 一括ダウンロード | Open Source Avatars',
     description: '複数の3Dアセットを一度に閲覧・ダウンロード。VRM、GLB、FBXなどの3Dアセットフォーマットを一括ダウンロードするファイルファインダーインターフェース。',
-    url: 'https://numinia.store/ja/finder',
+    url: SITE_URL + '/ja/finder',
     type: 'website',
     images: [
       {

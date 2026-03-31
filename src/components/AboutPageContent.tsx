@@ -1,4 +1,5 @@
 "use client";
+import { SITE_URL } from '@/lib/constants';
 
 import React from 'react';
 import { AvatarHeader } from "@/components/asset/AvatarHeader";
@@ -91,12 +92,12 @@ export function AboutPageContent() {
     updateMetaTag('description', description);
     updateMetaTag('og:title', 'About - Numinia Digital Goods');
     updateMetaTag('og:description', description);
-    updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
+    updateMetaTag('og:image', `${SITE_URL}${ogImageUrl}`);
     updateMetaTag('og:url', typeof window !== 'undefined' ? window.location.href : '');
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', 'About - Numinia Digital Goods');
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
+    updateMetaTag('twitter:image', `${SITE_URL}${ogImageUrl}`);
   }, []);
 
   const howItWorksSteps = t('about.howItWorks.steps', { returnObjects: true });

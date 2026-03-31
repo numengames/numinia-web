@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { SITE_URL } from '@/lib/constants';
 import { AuthProvider } from '@/lib/auth/AuthProvider';
 import { I18nProvider } from '@/lib/i18n';
 
@@ -12,17 +13,17 @@ export const metadata: Metadata = {
   title: 'Numinia Digital Goods — Free CC0 3D Assets for Games, VR & Metaverse',
   description: 'Browse and download free CC0 digital assets: 3D models (GLB), avatars (VRM), Hyperfy worlds (HYP), audio, video, STL. No attribution required.',
   alternates: {
-    canonical: 'https://numinia.store/en',
-    languages: { 'en': 'https://numinia.store/en', 'ja': 'https://numinia.store/ja' },
+    canonical: SITE_URL + '/en',
+    languages: { 'en': SITE_URL + '/en', 'ja': SITE_URL + '/ja' },
   },
   openGraph: {
     title: 'Numinia Open Source 3D Assets - Free GLB Models',
     description: 'Download free, high-quality CC0 digital assets for games, VR, and 3D projects. CC0 licensed.',
-    url: 'https://numinia.store/en',
+    url: SITE_URL + '/en',
     type: 'website',
     images: [
       {
-        url: 'https://numinia.store/opengraph-image.png',
+        url: SITE_URL + '/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'Numinia Open Source 3D Assets - Free GLB Models',
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Numinia Open Source 3D Assets - Free GLB Models',
     description: 'Download free, high-quality CC0 digital assets. CC0 licensed.',
-    images: ['https://numinia.store/opengraph-image.png'],
+    images: [SITE_URL + '/opengraph-image.png'],
   },
 };
 

@@ -1,4 +1,5 @@
 import './globals.css';
+import { SITE_URL } from '@/lib/constants';
 import { I18nProvider } from '@/lib/i18n';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
@@ -7,7 +8,7 @@ import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
 import { CookieConsent } from '@/components/CookieConsent';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://numinia.store'),
+  metadataBase: new URL(SITE_URL + ''),
   title: {
     default: 'Numinia Digital Goods - Free CC0 3D Assets for Games, VR & 3D Projects',
     template: '%s | Numinia Digital Goods',
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
     '3Dモデル',
     'オープンソース3Dアセット',
   ],
-  authors: [{ name: 'Numinia', url: 'https://numinia.store' }],
+  authors: [{ name: 'Numinia', url: SITE_URL + '' }],
   creator: 'Numinia',
   publisher: 'Numinia Digital Goods',
   applicationName: 'Numinia Digital Goods',
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://numinia.store',
+    url: SITE_URL + '',
     title: 'Numinia Digital Goods - Free CC0 3D Assets',
     description: 'Download free, high-quality 3D assets for games, VR, and 3D projects. CC0 licensed.',
     siteName: 'Numinia Digital Goods',

@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import { SITE_URL } from '@/lib/constants';
 import Finder from "@/components/finder/Finder";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import type { Metadata } from 'next';
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Asset Finder - Batch Download | Open Source Avatars',
     description: 'Browse and download multiple assets at once. File finder interface for batch downloading VRM, GLB, FBX, and other 3D asset formats.',
-    url: 'https://numinia.store/finder',
+    url: SITE_URL + '/finder',
     type: 'website',
     images: [
       {

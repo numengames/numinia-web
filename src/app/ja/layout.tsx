@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { SITE_URL } from '@/lib/constants';
 import { AuthProvider } from '@/lib/auth/AuthProvider';
 import { I18nProvider } from '@/lib/i18n';
 
@@ -14,12 +15,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Numinia Open Source 3D Assets - 無料GLB 3Dアセット',
     description: 'ゲーム、VR、3Dプロジェクト向けの無料の高品質CC0デジタルアセットをダウンロード。CC0ライセンス。',
-    url: 'https://numinia.store/ja',
+    url: SITE_URL + '/ja',
     type: 'website',
     locale: 'ja_JP',
     images: [
       {
-        url: 'https://numinia.store/opengraph-image.png',
+        url: SITE_URL + '/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'Numinia Open Source 3D Assets - 無料GLB 3Dアセット',
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Numinia Open Source 3D Assets - 無料GLB 3Dアセット',
     description: '無料の高品質CC0デジタルアセットをダウンロード。CC0ライセンス。',
-    images: ['https://numinia.store/opengraph-image.png'],
+    images: [SITE_URL + '/opengraph-image.png'],
   },
 };
 

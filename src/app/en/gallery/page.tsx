@@ -1,4 +1,5 @@
 import React from "react";
+import { SITE_URL } from '@/lib/constants';
 import AvatarGallery from "@/components/asset/AvatarGallery";
 import type { Metadata } from 'next';
 
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free CC0 Digital Assets Gallery | Open Source Avatars',
     description: 'Browse and download free CC0 digital assets for VR, gaming, VTubing, and metaverse. All CC0 licensed.',
-    url: 'https://numinia.store/en/archive',
+    url: SITE_URL + '/en/archive',
     type: 'website',
     images: [
       {

@@ -1,10 +1,11 @@
 import { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/constants';
 import { getAvatars } from '@/lib/github-storage';
 
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://numinia.store';
+  const baseUrl = SITE_URL + '';
   const currentDate = new Date();
   const locales = ['en', 'ja'];
 

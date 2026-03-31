@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { SITE_URL } from '@/lib/constants';
 
 interface MetadataParams {
   title: string;
@@ -10,7 +11,7 @@ interface MetadataParams {
   keywords?: string[];
 }
 
-const baseUrl = 'https://numinia.store';
+const baseUrl = SITE_URL + '';
 
 const defaultKeywords = [
   'free 3D assets',
@@ -56,7 +57,7 @@ export function generateSEOMetadata({
     title: fullTitle,
     description,
     keywords: allKeywords,
-    authors: [{ name: 'Numinia', url: 'https://numinia.store' }],
+    authors: [{ name: 'Numinia', url: SITE_URL + '' }],
     creator: 'Numinia',
     publisher: 'Open Source 3D Assets',
     

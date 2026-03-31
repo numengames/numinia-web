@@ -1,4 +1,5 @@
 'use client';
+import { SITE_URL } from '@/lib/constants';
 
 import dynamic from 'next/dynamic';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
@@ -42,12 +43,12 @@ export default function VRMInspectorPage() {
     updateMetaTag('description', description);
     updateMetaTag('og:title', 'GLB Inspector - Analyze & Preview GLB 3D Models | Open Source 3D Assets');
     updateMetaTag('og:description', description);
-    updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
+    updateMetaTag('og:image', `${SITE_URL}${ogImageUrl}`);
     updateMetaTag('og:url', window.location.href);
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', 'GLB Inspector - Analyze & Preview GLB 3D Models | Open Source 3D Assets');
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
+    updateMetaTag('twitter:image', `${SITE_URL}${ogImageUrl}`);
   }, []);
 
   if (isMobile) {

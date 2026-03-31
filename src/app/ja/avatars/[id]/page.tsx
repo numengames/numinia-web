@@ -1,4 +1,5 @@
 'use client';
+import { SITE_URL } from '@/lib/constants';
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -84,12 +85,12 @@ export default function AvatarDetailPage() {
           updateMetaTag('description', pageDescription);
           updateMetaTag('og:title', pageTitle);
           updateMetaTag('og:description', pageDescription);
-          updateMetaTag('og:image', `https://numinia.store${ogImageUrl}`);
+          updateMetaTag('og:image', `${SITE_URL}${ogImageUrl}`);
           updateMetaTag('og:url', window.location.href);
           updateMetaTag('twitter:card', 'summary_large_image');
           updateMetaTag('twitter:title', pageTitle);
           updateMetaTag('twitter:description', pageDescription);
-          updateMetaTag('twitter:image', `https://numinia.store${ogImageUrl}`);
+          updateMetaTag('twitter:image', `${SITE_URL}${ogImageUrl}`);
         }
       } catch (err) {
         console.error('Error fetching avatar:', err);
@@ -174,9 +175,9 @@ export default function AvatarDetailPage() {
       <AvatarProductSchema avatar={avatar} locale="ja" />
       <BreadcrumbSchema
         items={[
-          { name: 'ホーム', url: 'https://numinia.store/ja' },
-          { name: 'ギャラリー', url: 'https://numinia.store/ja/gallery' },
-          { name: avatar.name, url: `https://numinia.store/ja/avatars/${avatar.id}` },
+          { name: 'ホーム', url: SITE_URL + '/ja' },
+          { name: 'ギャラリー', url: SITE_URL + '/ja/gallery' },
+          { name: avatar.name, url: `${SITE_URL}/ja/avatars/${avatar.id}` },
         ]}
       />
       
