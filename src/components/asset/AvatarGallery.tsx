@@ -545,35 +545,35 @@ export const AvatarGallery: React.FC = () => {
               </div>
 
               {/* Tags filter */}
-              {allGalleryTags.length > 0 && (
-                <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700">
-                  <button
-                    onClick={() => setTagsExpanded(!tagsExpanded)}
-                    className="w-full flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-                  >
-                    <span>Tags</span>
-                    {tagsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </button>
+              <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700">
+                <button
+                  onClick={() => setTagsExpanded(!tagsExpanded)}
+                  className="w-full flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                >
+                  <span>Tags {allGalleryTags.length > 0 && <span className="font-normal text-gray-400">({allGalleryTags.length})</span>}</span>
+                  {tagsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </button>
 
-                  {tagsExpanded && (
-                    <div className="mt-2 flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-                      {allGalleryTags.map(([tag, count]) => (
-                        <button
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
-                            selectedTags.has(tag)
-                              ? 'bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700 dark:text-violet-400'
-                              : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+                {tagsExpanded && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                    {allGalleryTags.length > 0 ? allGalleryTags.map(([tag, count]) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${
+                          selectedTags.has(tag)
+                            ? 'bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700 dark:text-violet-400'
+                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
                           }`}
                         >
                           {tag} <span className="text-gray-400">{count}</span>
                         </button>
-                      ))}
+                      )) : (
+                        <p className="text-[10px] text-gray-400 italic">No tags yet. Add tags to assets in L.A.P.</p>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
 
               {/* Random Asset + Favorites buttons */}
               <div className="px-3 pt-3 pb-2 border-b border-gray-300 dark:border-gray-700 flex gap-2">
