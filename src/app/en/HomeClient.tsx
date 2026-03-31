@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import React, { useEffect, useState, useRef } from "react";
@@ -94,14 +93,10 @@ export default function Home() {
             bottom: 0
           }}
         >
-          <div 
-            className="absolute right-0 top-1/2 -translate-y-1/2"
-            style={{ 
-              width: '600px', 
-              height: '600px',
-              maxWidth: '100vw',
-              maxHeight: '100vh'
-            }}
+          {/* Background 3D — desktop only (prevents Three.js load on mobile) */}
+          <div
+            className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block"
+            style={{ width: '600px', height: '600px', maxWidth: '100vw', maxHeight: '100vh' }}
           >
             {heroVisible && (
               <HomeVRMViewer

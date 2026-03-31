@@ -36,13 +36,13 @@ export default function ProfilePage() {
       fetch('/api/assets').then(r => r.json()),
     ]).then(([sessionData, assetData]) => {
       if (!sessionData.authenticated) {
-        router.push('/en/gallery');
+        router.push('/en/archive');
         return;
       }
       setSession(sessionData);
       setAssets(assetData.avatars || []);
     }).catch(() => {
-      router.push('/en/gallery');
+      router.push('/en/archive');
     }).finally(() => setLoading(false));
   }, [router]);
 
@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await fetch('/api/auth/wallet/session', { method: 'DELETE' });
-    router.push('/en/gallery');
+    router.push('/en/archive');
   };
 
   const copyAddress = () => {
@@ -81,7 +81,7 @@ export default function ProfilePage() {
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Profile</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push('/en/gallery')} className="text-xs">
+            <Button variant="outline" size="sm" onClick={() => router.push('/en/archive')} className="text-xs">
               Gallery
             </Button>
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-xs text-gray-500 hover:text-red-600">
@@ -151,7 +151,7 @@ export default function ProfilePage() {
               {favoriteAssets.map(asset => (
                 <button
                   key={asset.id}
-                  onClick={() => router.push(`/en/gallery?asset=${asset.id}`)}
+                  onClick={() => router.push(`/en/archive?asset=${asset.id}`)}
                   className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:ring-2 hover:ring-gray-400 transition-all text-left"
                 >
                   <div className="aspect-square bg-gray-100 dark:bg-gray-800">

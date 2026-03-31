@@ -16,8 +16,8 @@ export function WebsiteSchema({ locale = 'en' }: WebsiteSchemaProps) {
     url: `https://numinia.store/${locale}`,
     description:
       locale === 'en'
-        ? 'Download 991+ free, high-quality 3D GLB assets for games, VR, 3D projects. CC0 licensed open-source models, props, and environments for any project.'
-        : '991以上の無料で高品質な3D GLBアセットをダウンロード。ゲーム、VR、3Dプロジェクト用。CC0ライセンスのオープンソースモデル、小道具、環境。',
+        ? 'Download free, high-quality 3D GLB assets for games, VR, 3D projects. CC0 licensed open-source models, props, and environments for any project.'
+        : '無料で高品質な3D GLBアセットをダウンロード。ゲーム、VR、3Dプロジェクト用。CC0ライセンスのオープンソースモデル、小道具、環境。',
     potentialAction: {
       '@type': 'SearchAction',
       target: {

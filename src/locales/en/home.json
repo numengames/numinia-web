@@ -16,8 +16,8 @@
   "about": {
     "section_title": "About the Project",
     "title": "Find 3D Assets You Can Actually Use",
-    "description": "Open Source 3D Assets helps you discover quality 3D models with clear licensing. Whether you need props for a game, environment assets for VR, or structures for visualization - we've collected 991+ GLB files from talented creators so you don't have to hunt them down yourself.",
-    "description_2": "991+ assets across 17 themed collections - mostly CC0 (use however you want). We make the licenses crystal clear so you know exactly what you can do.",
+    "description": "Open Source 3D Assets helps you discover quality 3D models with clear licensing. Whether you need props for a game, environment assets for VR, or structures for visualization - we've collected many GLB files from talented creators so you don't have to hunt them down yourself.",
+    "description_2": "many assets across 17 themed collections - mostly CC0 (use however you want). We make the licenses crystal clear so you know exactly what you can do.",
     "github_description": "No gatekeeping. Download directly from our gallery, or if you're a developer, grab our",
     "github_link": "JSON database from GitHub",
     "github_description_2": "and build your own tools with it."
@@ -27,7 +27,7 @@
     "title": "Awesome Free Tools for Everyone",
     "browse": {
       "title": "Asset Gallery",
-      "description": "Browse our extensive collection of 991+ 3D assets with advanced filtering options:",
+      "description": "Browse our extensive collection of many 3D assets with advanced filtering options:",
       "bulletPoints": {
         "preview": "Preview assets in 3D before downloading",
         "filter": "Filter by collection, theme, and style",

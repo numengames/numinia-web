@@ -48,7 +48,7 @@ export default async function Image() {
             marginBottom: '64px',
           }}
         >
-          300+ Free 3D VRM Avatars for VR, Gaming & Metaverse
+          Free CC0 Digital Assets for VR, Gaming & Metaverse
         </div>
 
         {/* Stats */}

@@ -86,7 +86,7 @@ export function AboutPageContent() {
       meta.setAttribute('content', content);
     };
 
-    const description = 'Discover 991+ free CC0 3D assets in GLB format. Props, environments, and structures from Polygonal Mind and more. Use in Blender, Unity, Unreal, Three.js.';
+    const description = 'Discover free CC0 3D assets in GLB format. Props, environments, and structures from Polygonal Mind and more. Use in Blender, Unity, Unreal, Three.js.';
     const ogImageUrl = '/api/og?type=default&title=About Numinia Digital Goods&description=Free CC0 3D Models';
     updateMetaTag('description', description);
     updateMetaTag('og:title', 'About - Numinia Digital Goods');

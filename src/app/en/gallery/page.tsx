@@ -3,16 +3,16 @@ import AvatarGallery from "@/components/asset/AvatarGallery";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '300+ Free GLB Assets Gallery | Open Source Avatars',
-  description: 'Browse and download 300+ free, high-quality 3D GLB assets for VR, gaming, VTubing, and metaverse. All CC0 licensed - use them in any project, no attribution required.',
+  title: 'Free CC0 Digital Assets Gallery | Open Source Avatars',
+  description: 'Browse and download free CC0 digital assets for VR, gaming, VTubing, and metaverse. All CC0 licensed - use them in any project, no attribution required.',
   openGraph: {
-    title: '300+ Free GLB Assets Gallery | Open Source Avatars',
-    description: 'Browse and download 300+ free, high-quality 3D GLB assets for VR, gaming, VTubing, and metaverse. All CC0 licensed.',
-    url: 'https://numinia.store/en/gallery',
+    title: 'Free CC0 Digital Assets Gallery | Open Source Avatars',
+    description: 'Browse and download free CC0 digital assets for VR, gaming, VTubing, and metaverse. All CC0 licensed.',
+    url: 'https://numinia.store/en/archive',
     type: 'website',
     images: [
       {
-        url: '/api/og?type=gallery&title=Asset Gallery&description=300+ Free GLB Assets for VR, Gaming & Metaverse',
+        url: '/api/og?type=gallery&title=Asset Gallery&description=Free CC0 Digital Assets for VR, Gaming & Metaverse',
         width: 1200,
         height: 630,
         alt: 'Open Source Assets Gallery',
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: '300+ Free GLB Assets Gallery',
-    description: 'Browse and download 300+ free, high-quality 3D GLB assets. All CC0 licensed.',
-    images: ['/api/og?type=gallery&title=Asset Gallery&description=300+ Free GLB Assets for VR, Gaming & Metaverse'],
+    title: 'Free CC0 Digital Assets Gallery',
+    description: 'Browse and download free CC0 digital assets. All CC0 licensed.',
+    images: ['/api/og?type=gallery&title=Asset Gallery&description=Free CC0 Digital Assets for VR, Gaming & Metaverse'],
   },
 };
 

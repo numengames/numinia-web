@@ -126,7 +126,7 @@ export default function Home() {
               </p>
               <div className="flex gap-4">
                 <a
-                  href="/en/gallery"
+                  href="/en/archive"
                   className="inline-flex items-center px-8 py-4 bg-black dark:bg-cream text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all text-lg font-medium"
                 >
                   {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />
@@ -209,7 +209,7 @@ export default function Home() {
                         <li>{t('home.features.browse.bulletPoints.download')}</li>
                         <li>{t('home.features.browse.bulletPoints.updates')}</li>
                       </ul>
-                      <a href="/gallery" className="inline-flex items-center text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-300 font-medium no-underline mt-6">
+                      <a href="/en/archive" className="inline-flex items-center text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 dark:text-gray-300 font-medium no-underline mt-6">
                         {t('home.features.browse.cta')} <ArrowRight className="ml-2 h-5 w-5" />
                       </a>
                     </div>
@@ -398,7 +398,7 @@ export default function Home() {
             </p>
             <div className="flex gap-4 justify-center">
               <a
-                href="/gallery"
+                href="/en/archive"
                 className="inline-flex items-center px-8 py-4 bg-black text-white rounded-lg hover:bg-gray-800 transition-all text-lg font-medium"
               >
                 {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />

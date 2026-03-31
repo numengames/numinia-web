@@ -14,7 +14,7 @@
       "You filter by collection, theme, or style and download what you need",
       "Files are hosted on GitHub, IPFS, or Arweave—making them accessible and preservable"
     ],
-    "description": "Think of us as a search engine for free 3D assets - making 991+ models discoverable in one place."
+    "description": "Think of us as a search engine for free 3D assets - making many models discoverable in one place."
   },
   "status": {
     "title": "Current Status",
@@ -24,7 +24,7 @@
         "description": "Expect updates and improvements"
       },
       "avatars": {
-        "label": "991+ Assets",
+        "label": "many Assets",
         "description": "Across 17 collections"
       },
       "format": {
@@ -42,7 +42,7 @@
     "polygonalMind": {
       "title": "Polygonal Mind Collections",
       "description": "17 themed collections featuring props, environments, and structures. From MomusPark's park assets to Tomb Chaser's Egyptian pyramids and Japanese neon pagodas.",
-      "stats": "991+ assets | CC0 License"
+      "stats": "many assets | CC0 License"
     }
   },
   "license": {

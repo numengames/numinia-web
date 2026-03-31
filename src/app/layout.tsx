@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: 'Numinia Digital Goods - Free CC0 3D Assets for Games, VR & 3D Projects',
     template: '%s | Numinia Digital Goods',
   },
-  description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed open-source 3D models and environments. No attribution required.',
+  description: 'Download free, high-quality CC0 digital assets for games, VR, and 3D projects. CC0 licensed open-source 3D models and environments. No attribution required.',
   keywords: [
     'free 3D assets',
     'GLB models download',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     site: '@numinia_xyz',
     creator: '@numinia_xyz',
     title: 'Numinia Open Source 3D Assets - Free GLB Models',
-    description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed.',
+    description: 'Download free, high-quality CC0 digital assets for games, VR, and 3D projects. CC0 licensed.',
   },
   
   robots: {

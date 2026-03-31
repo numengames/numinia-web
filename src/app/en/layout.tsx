@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Numinia Open Source 3D Assets - Free GLB Models',
-    description: 'Download 991+ free, high-quality GLB 3D assets for games, VR, and 3D projects. CC0 licensed.',
+    description: 'Download free, high-quality CC0 digital assets for games, VR, and 3D projects. CC0 licensed.',
     url: 'https://numinia.store/en',
     type: 'website',
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Numinia Open Source 3D Assets - Free GLB Models',
-    description: 'Download 991+ free, high-quality GLB 3D assets. CC0 licensed.',
+    description: 'Download free, high-quality CC0 digital assets. CC0 licensed.',
     images: ['https://numinia.store/opengraph-image.png'],
   },
 };

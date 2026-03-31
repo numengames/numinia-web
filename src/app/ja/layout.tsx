@@ -10,10 +10,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'Numinia Open Source 3D Assets - ゲーム・VR・3D向け無料GLBモデル',
-  description: 'ゲーム、VR、3Dプロジェクト向けの991種類以上の無料・高品質GLB 3Dアセットをダウンロード。CC0ライセンス - クレジット表記不要で自由に使用可能。',
+  description: 'ゲーム、VR、3Dプロジェクト向けの無料の高品質CC0デジタルアセットをダウンロード。CC0ライセンス - クレジット表記不要で自由に使用可能。',
   openGraph: {
     title: 'Numinia Open Source 3D Assets - 無料GLB 3Dアセット',
-    description: 'ゲーム、VR、3Dプロジェクト向けの991種類以上の無料・高品質GLB 3Dアセットをダウンロード。CC0ライセンス。',
+    description: 'ゲーム、VR、3Dプロジェクト向けの無料の高品質CC0デジタルアセットをダウンロード。CC0ライセンス。',
     url: 'https://numinia.store/ja',
     type: 'website',
     locale: 'ja_JP',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Numinia Open Source 3D Assets - 無料GLB 3Dアセット',
-    description: '991種類以上の無料・高品質GLB 3Dアセットをダウンロード。CC0ライセンス。',
+    description: '無料の高品質CC0デジタルアセットをダウンロード。CC0ライセンス。',
     images: ['https://numinia.store/opengraph-image.png'],
   },
 };

@@ -176,7 +176,7 @@ export default function AvatarDetailPage() {
       <BreadcrumbSchema
         items={[
           { name: 'Home', url: 'https://numinia.store/en' },
-          { name: 'Gallery', url: 'https://numinia.store/en/gallery' },
+          { name: 'Gallery', url: 'https://numinia.store/en/archive' },
           { name: avatar.name, url: `https://numinia.store/en/avatars/${avatar.id}` },
         ]}
       />
