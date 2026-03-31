@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { env } from '@/lib/env';
@@ -129,6 +130,8 @@ if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, 
     assets.push(newEntry);
 
     await updateData(catalogFile, assets, `asset: add ${displayName}`);
+
+    logAudit({ action: 'upload', actor: session.address || 'admin', target: assetId, metadata: { name: displayName, format } });
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
