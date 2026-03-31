@@ -253,7 +253,9 @@ function StatRow({ label, value, onChange }: { label: string; value: number; onC
 }
 
 function rollDiceFromStat(pool: number, statName: string) {
-  const fn = typeof window !== 'undefined' ? (window as Record<string, unknown>).__numiniaRollDice as ((pool: number, name: string) => void) | undefined : undefined;
+  if (typeof window === 'undefined') return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fn = (window as any).__numiniaRollDice as ((pool: number, name: string) => void) | undefined;
   if (fn) fn(pool, statName);
 }
 
