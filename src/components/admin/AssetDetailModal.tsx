@@ -365,17 +365,51 @@ export function AssetDetailModal({ avatar, onClose, onSave, onDelete, onToggleVi
                 <div className="flex justify-between"><span className="text-gray-400">Visibility</span><Badge variant="secondary" className={`text-[10px] ${avatar.isPublic ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>{avatar.isPublic ? 'Public' : 'Hidden'}</Badge></div>
               </div>
 
-              {/* Storage */}
+              {/* Storage — all 4 layers with status + sync */}
               <div className="space-y-1.5 text-xs">
                 <h4 className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">Storage</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {storage?.r2 && <a href={storage.r2} target="_blank" rel="noopener noreferrer"><Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px] cursor-pointer hover:bg-orange-200" title="R2 CDN">R2 ↗</Badge></a>}
-                  {storage?.github_raw && <a href={storage.github_raw} target="_blank" rel="noopener noreferrer"><Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] cursor-pointer hover:bg-gray-200" title="GitHub">GH ↗</Badge></a>}
-                  {storage?.ipfs_cid && <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px]" title={`IPFS: ${storage.ipfs_cid}`}>IPFS</Badge>}
-                  {storage?.arweave_tx && <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]" title={`AR: ${storage.arweave_tx}`}>AR</Badge>}
-                  {!storage?.r2 && !storage?.github_raw && !storage?.ipfs_cid && !storage?.arweave_tx && <span className="text-gray-400 italic">No info</span>}
+                <div className="space-y-1">
+                  {[
+                    { key: 'R2', url: storage?.r2, ok: !!storage?.r2, color: 'text-orange-500', bgOk: 'bg-orange-50', label: 'Cloudflare R2 CDN', syncTo: 'r2' },
+                    { key: 'GitHub', url: storage?.github_raw, ok: !!storage?.github_raw, color: 'text-gray-600', bgOk: 'bg-gray-50', label: 'GitHub Raw', syncTo: 'github' },
+                    { key: 'IPFS', url: storage?.ipfs_cid ? `https://ipfs.io/ipfs/${storage.ipfs_cid}` : null, ok: !!storage?.ipfs_cid, color: 'text-blue-500', bgOk: 'bg-blue-50', label: 'IPFS', syncTo: 'ipfs' },
+                    { key: 'Arweave', url: storage?.arweave_tx ? `https://arweave.net/${storage.arweave_tx}` : null, ok: !!storage?.arweave_tx, color: 'text-green-500', bgOk: 'bg-green-50', label: 'Arweave', syncTo: 'arweave' },
+                  ].map(layer => (
+                    <div key={layer.key} className={`flex items-center justify-between px-2 py-1 rounded ${layer.ok ? layer.bgOk + ' dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-900'}`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-sm ${layer.ok ? layer.color : 'text-gray-300 dark:text-gray-700'}`}>{layer.ok ? '●' : '○'}</span>
+                        <span className={`text-[10px] ${layer.ok ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'}`}>{layer.key}</span>
+                      </div>
+                      {layer.ok && layer.url ? (
+                        <a href={layer.url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 hover:underline">View ↗</a>
+                      ) : !layer.ok && (layer.syncTo === 'r2' || layer.syncTo === 'github') ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/admin/sync-to-${layer.syncTo}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ assetId: avatar.id }),
+                              });
+                              if (res.ok) window.location.reload();
+                            } catch {}
+                          }}
+                          className="text-[9px] text-violet-500 hover:text-violet-700 font-medium"
+                        >
+                          Sync →
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
-
+                {(() => {
+                  const count = [storage?.r2, storage?.github_raw, storage?.ipfs_cid, storage?.arweave_tx].filter(Boolean).length;
+                  return count <= 1 ? (
+                    <div className="text-[9px] text-red-400 mt-1">⚠ Single point of failure — sync to more layers</div>
+                  ) : (
+                    <div className="text-[9px] text-green-600 mt-1">✓ Redundant ({count} layers)</div>
+                  );
+                })()}
               </div>
             </div>
 

@@ -270,35 +270,29 @@ export default function AdminTableView({
                   </Badge>
                 </TableCell>
 
-                {/* Storage */}
+                {/* Storage — show all 4 layers with status dots */}
                 <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {avatar.storage?.r2 && (
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-[10px] px-1.5 py-0" title="Stored on Cloudflare R2 CDN">
-                        R2
-                      </Badge>
-                    )}
-                    {avatar.storage?.github_raw && (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0" title="Stored on GitHub">
-                        GH
-                      </Badge>
-                    )}
-                    {!avatar.storage && avatar.modelFileUrl?.includes("raw.githubusercontent") && (
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0" title="Stored on GitHub">
-                        GH
-                      </Badge>
-                    )}
-                    {avatar.storage?.ipfs_cid && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0">
-                        IPFS
-                      </Badge>
-                    )}
-                    {avatar.storage?.arweave_tx && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0">
-                        AR
-                      </Badge>
-                    )}
-                  </div>
+                  {(() => {
+                    const s = avatar.storage;
+                    const hasGh = !!(s?.github_raw || (!s && avatar.modelFileUrl?.includes('raw.githubusercontent')));
+                    const layers = [
+                      { key: 'R2', ok: !!s?.r2, color: 'text-orange-500' },
+                      { key: 'GH', ok: hasGh, color: 'text-gray-500' },
+                      { key: 'IPFS', ok: !!s?.ipfs_cid, color: 'text-blue-500' },
+                      { key: 'AR', ok: !!s?.arweave_tx, color: 'text-green-500' },
+                    ];
+                    const count = layers.filter(l => l.ok).length;
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        {layers.map(l => (
+                          <span key={l.key} className={`text-[9px] font-medium ${l.ok ? l.color : 'text-gray-300 dark:text-gray-700'}`} title={`${l.key}: ${l.ok ? 'stored' : 'missing'}`}>
+                            {l.ok ? '●' : '○'} {l.key}
+                          </span>
+                        ))}
+                        {count <= 1 && <span className="text-[8px] text-red-400 ml-1" title="Single point of failure">!</span>}
+                      </div>
+                    );
+                  })()}
                 </TableCell>
 
                 {/* Version */}
