@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 import { CrescentSpinner } from '@/components/ui/crescent-spinner';
 import { useFavorites } from '@/lib/hooks/useFavorites';
+import { GallerySkeleton } from './GallerySkeleton';
 import { AssetActions } from './AssetActions';
 import { LoginModal } from '@/components/auth/LoginModal';
 import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
@@ -412,14 +413,9 @@ export const AvatarGallery: React.FC = () => {
           />
         </div>
         
-        {/* Loading content area */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <CrescentSpinner size="md" className="mx-auto mb-4" />
-            <p className="text-white dark:text-white text-sm font-medium">
-              {t('common.loading')}
-            </p>
-          </div>
+        {/* Skeleton loading content */}
+        <div className="flex-1 overflow-hidden py-4">
+          <GallerySkeleton />
         </div>
       </div>
     );

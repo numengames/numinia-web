@@ -13,6 +13,7 @@ import { useI18n } from '@/lib/i18n';
 import { AvatarProductSchema, BreadcrumbSchema } from '@/components/StructuredData';
 import { downloadAvatar } from '@/lib/download-utils';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { AssetDetailSkeleton } from '@/components/asset/AssetDetailSkeleton';
 import Head from 'next/head';
 
 interface Avatar {
@@ -136,14 +137,7 @@ export default function AvatarDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-cream dark:bg-cream-dark flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-4"></div>
-          <p className="text-gray-500 dark:text-gray-400">Loading avatar...</p>
-        </div>
-      </div>
-    );
+    return <AssetDetailSkeleton />;
   }
 
   if (error || !avatar) {

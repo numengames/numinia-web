@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ThumbnailImageProps {
   src: string | null | undefined;
@@ -26,20 +27,27 @@ export function ThumbnailImage({
   ...rest
 }: ThumbnailImageProps) {
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const imgSrc = error || !src ? '/placeholder.png' : src;
 
   return (
-    <Image
-      src={imgSrc}
-      alt={alt}
-      fill={fill && !width}
-      width={width}
-      height={height}
-      sizes={fill && !width ? sizes : undefined}
-      className={className}
-      onError={() => setError(true)}
-      priority={priority}
-      {...rest}
-    />
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-gray-700" />
+      )}
+      <Image
+        src={imgSrc}
+        alt={alt}
+        fill={fill && !width}
+        width={width}
+        height={height}
+        sizes={fill && !width ? sizes : undefined}
+        className={cn(className, !loaded && 'opacity-0')}
+        onError={() => setError(true)}
+        onLoad={() => setLoaded(true)}
+        priority={priority}
+        {...rest}
+      />
+    </>
   );
 }
