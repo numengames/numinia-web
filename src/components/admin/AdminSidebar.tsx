@@ -112,7 +112,7 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
       <nav className="flex-1 px-2 py-2 space-y-0.5">
         {MAIN_NAV.map((item) => {
           const Icon = item.icon;
-          const href = item.href ?? sectionHref(item.id);
+          const href = sectionHref(item.id);
           const isActive = item.id === activeSection;
 
           return (
