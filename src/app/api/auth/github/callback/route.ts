@@ -6,6 +6,9 @@ import { cookies } from 'next/headers';
 import { signSession, generateCsrfToken } from '@/lib/session';
 import { env } from '@/lib/env';
 import { computeRankForGithubUser } from '@/lib/auth/resolveRank';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/auth/github/callback');
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
     
     if (!tokenResponse.ok || tokenData.error) {
-      console.error('Error getting token:', tokenData);
+      log.error({ detail: tokenData }, 'Error getting token');
       return NextResponse.redirect(new URL('/login?error=token_error', request.url));
     }
     
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
     const userData = await userResponse.json();
     
     if (!userResponse.ok) {
-      console.error('Error getting user:', userData);
+      log.error({ detail: userData }, 'Error getting user');
       return NextResponse.redirect(new URL('/login?error=user_error', request.url));
     }
     
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
     const emailData = await emailResponse.json();
     
     if (!emailResponse.ok) {
-      console.error('Error getting emails:', emailData);
+      log.error({ detail: emailData }, 'Error getting emails');
       return NextResponse.redirect(new URL('/login?error=email_error', request.url));
     }
     
@@ -178,7 +181,7 @@ export async function GET(request: NextRequest) {
     if (redirectTo.startsWith('http') || redirectTo.startsWith('//')) redirectTo = '/';
     return NextResponse.redirect(new URL(redirectTo, request.url));
   } catch (error) {
-    console.error('Auth callback error:', error);
+    log.error({ err: error }, 'Auth callback error');
     return NextResponse.redirect(new URL('/login?error=unknown', request.url));
   }
 } 

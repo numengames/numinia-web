@@ -7,6 +7,9 @@ import { getR2PublicUrl } from '@/lib/r2-client';
 import { getContentPath } from '@/lib/content-paths';
 import { createAssetMetadata } from '@/lib/asset-id';
 import { PresignConfirmRequestSchema } from '@/lib/schemas';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/presign/confirm');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-  const rl = presignRateLimit(getRateLimitKey(req));
+  const rl = await presignRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch { /* cleanup is best-effort */ }
-    console.error('Presign confirm error:', error);
+    log.error({ err: error }, 'Presign confirm error');
     return NextResponse.json(
       { error: 'Failed to create metadata' },
       { status: 500 }

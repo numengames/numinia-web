@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAvatars, GithubAvatar } from '@/lib/github-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/analyze-avatar-formats');
 
 // No need for a separate interface since we're importing GithubAvatar
 export async function GET() {
@@ -57,7 +60,7 @@ export async function GET() {
       patterns: sortedPatterns
     });
   } catch (error) {
-    console.error('Error analyzing avatar formats:', error);
+    log.error({ err: error }, 'Error analyzing avatar formats');
     return NextResponse.json({ 
       error: 'Failed to analyze avatar formats',
     }, { status: 500 });

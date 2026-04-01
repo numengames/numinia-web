@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/auth/github/login');
 
 export async function GET() {
   try {
@@ -11,7 +14,7 @@ export async function GET() {
     // Redirect to GitHub login page
     return NextResponse.redirect(githubAuthUrl.toString());
   } catch (error) {
-    console.error('GitHub login error:', error);
+    log.error({ err: error }, 'GitHub login error');
     return NextResponse.redirect(new URL('/login?error=auth_error', env.github.redirectUri));
   }
 } 

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/collections');
 
 const GITHUB_OWNER = env.github.repoOwner;
 const GITHUB_REPO = env.github.repoName;
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
     response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     return response;
   } catch (error) {
-    console.error('Error fetching community collections:', error);
+    log.error({ err: error }, 'Error fetching community collections');
     return NextResponse.json(
       {
         error: 'Failed to fetch community collections',

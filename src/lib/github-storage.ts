@@ -17,6 +17,9 @@ import {
   RawTagSchema, RawDownloadSchema, RawAvatarTagSchema,
   safeParseArray,
 } from '@/lib/schemas';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/github-storage');
 // Next.js loads .env / .env.local automatically — no dotenv.config() needed.
 
 // In-memory cache for GitHub API responses.
@@ -173,7 +176,7 @@ async function fetchData<T = unknown>(path: string): Promise<T> {
     setCache(path, data);
     return data;
   } catch (error) {
-    console.error(`Error fetching from GitHub: ${path}`, error);
+    log.error({ err: error, path }, 'Error fetching from GitHub');
     throw error;
   }
 }
@@ -257,7 +260,7 @@ async function updateData(
       return true;
     } catch (error) {
       if (attempt === MAX_RETRIES - 1) {
-        console.error(`Error updating data in GitHub: ${path}`, error);
+        log.error({ err: error, path }, 'Error updating data in GitHub');
         throw error;
       }
     }
@@ -400,7 +403,7 @@ async function getAvatars(projectIds?: string[]) {
               if (Array.isArray(projectAvatars)) {
                 
                 if (projectAvatars.length === 0) {
-                  console.warn(`  ⚠ File ${avatarFile} exists but is empty (0 avatars)`);
+                  log.warn({ avatarFile }, 'File exists but is empty (0 avatars)');
                 }
                 
                 // Ensure all avatars have the correct project_id
@@ -412,11 +415,11 @@ async function getAvatars(projectIds?: string[]) {
                   project_id: avatar.project_id || projectId
                 }));
               } else {
-                console.warn(`  ✗ Invalid data format from ${avatarFile}: expected array, got ${typeof projectAvatars}`);
+                log.warn({ avatarFile, actualType: typeof projectAvatars }, 'Invalid data format: expected array');
               }
               return [];
             } catch (error) {
-              console.error(`  ✗ Error fetching avatars for project ${project.name || projectId} (${avatarFile}):`, error);
+              log.error({ err: error, projectId, avatarFile }, 'Error fetching avatars for project');
               return [];
             }
           });
@@ -426,7 +429,7 @@ async function getAvatars(projectIds?: string[]) {
         allAvatars = avatarArrays.flat();
         
         if (allAvatars.length === 0) {
-          console.warn('⚠ No assets loaded! Check project files and asset_data_file paths.');
+          log.warn('No assets loaded! Check project files and asset_data_file paths.');
         }
       }
     }
@@ -439,7 +442,7 @@ async function getAvatars(projectIds?: string[]) {
       }
     }
   } catch (error) {
-    console.error('Error in getAvatars, trying fallback:', error);
+    log.error({ err: error }, 'Error in getAvatars, trying fallback');
     // Final fallback: try the old single-file structure
     try {
       const rawAvatars = await fetchData<Record<string, unknown>[]>(DATA_PATHS.avatars);
@@ -447,7 +450,7 @@ async function getAvatars(projectIds?: string[]) {
         allAvatars = rawAvatars;
       }
     } catch (fallbackError) {
-      console.error('Fallback also failed:', fallbackError);
+      log.error({ err: fallbackError }, 'Fallback also failed');
       return []; // Return empty array if everything fails
     }
   }
@@ -613,7 +616,7 @@ async function getDownloadCounts(): Promise<DownloadCounts> {
     const data = await fetchData<DownloadCounts>('download-counts.json');
     return data || { counts: {} };
   } catch (error) {
-    console.error('Error fetching download counts:', error);
+    log.error({ err: error }, 'Error fetching download counts');
     return { counts: {} };
   }
 }

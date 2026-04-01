@@ -42,6 +42,11 @@ const serverSchema = z.object({
   MINT_WALLET_PRIVATE_KEY:  z.string().default(''),
   SEASON_PASS_CONTRACT:     z.string().default(''),
   SEASON_PASS_CHAIN_ID:     z.string().default('84532'),
+  // Upstash Redis (optional — rate limiting + audit degrade to in-memory without it)
+  UPSTASH_REDIS_REST_URL:   z.string().default(''),
+  UPSTASH_REDIS_REST_TOKEN: z.string().default(''),
+  // Sentry (optional — error tracking, degrades gracefully without it)
+  SENTRY_DSN: z.string().default(''),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -116,6 +121,13 @@ export const env = {
     mintPrivateKey:  process.env.MINT_WALLET_PRIVATE_KEY ?? '',
     contractAddress: process.env.SEASON_PASS_CONTRACT ?? '',
     chainId:         process.env.SEASON_PASS_CHAIN_ID ?? '84532',
+  },
+  redis: {
+    url:   process.env.UPSTASH_REDIS_REST_URL   ?? '',
+    token: process.env.UPSTASH_REDIS_REST_TOKEN ?? '',
+  },
+  sentry: {
+    dsn: process.env.SENTRY_DSN ?? '',
   },
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',

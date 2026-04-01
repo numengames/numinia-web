@@ -7,12 +7,15 @@ import { signSession, generateCsrfToken } from '@/lib/session';
 import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { computeRankForAddress } from '@/lib/auth/resolveRank';
 import { registerWalletUser } from '@/lib/rank-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/auth/wallet/verify');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  const rl = authRateLimit(getRateLimitKey(request));
+  const rl = await authRateLimit(getRateLimitKey(request));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } });
 
   try {
@@ -119,7 +122,7 @@ export async function POST(request: NextRequest) {
       rank,
     });
   } catch (error) {
-    console.error('SIWE verify error:', error);
+    log.error({ err: error }, 'SIWE verify error');
     return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
   }
 }

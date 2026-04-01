@@ -18,6 +18,9 @@ import {
 import { NextRequest } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/assets/[id]');
 
 export async function DELETE(
   req: NextRequest,
@@ -35,7 +38,7 @@ export async function DELETE(
     }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-    const rl = assetsDeleteRateLimit(getRateLimitKey(req));
+    const rl = await assetsDeleteRateLimit(getRateLimitKey(req));
     if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
     // Get the current avatars
@@ -70,7 +73,7 @@ export async function DELETE(
         try {
           await Promise.all(deletePromises);
         } catch (r2Error) {
-          console.error('Failed to delete from R2:', r2Error);
+          log.error({ err: r2Error }, 'Failed to delete from R2');
         }
       }
     }
@@ -98,7 +101,7 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('Delete avatar error:', error);
+    log.error({ err: error }, 'Delete avatar error');
     return NextResponse.json(
       { error: 'Failed to delete avatar' },
       { status: 500 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSession } from '@/lib/auth/getSession';
 import { getActiveSeason, getUserSeasonStatus } from '@/lib/season-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/seasons');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ season, userProgress });
   } catch (error) {
-    console.error('Failed to load season:', error);
+    log.error({ err: error }, 'Failed to load season');
     return NextResponse.json(
       { error: 'Failed to load season data' },
       { status: 500 },

@@ -1,4 +1,7 @@
 import { TurboFactory } from '@ardrive/turbo-sdk';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/arweave');
 
 /**
  * This module handles interactions with Arweave where avatar files are stored.
@@ -57,7 +60,7 @@ export async function getArweaveMetadata(txId: string): Promise<any> {
     }
     return await response.json();
   } catch (error) {
-    console.error('Error fetching Arweave metadata:', error);
+    log.error({ err: error }, 'Error fetching Arweave metadata');
     return null;
   }
 }

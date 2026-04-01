@@ -1,14 +1,17 @@
 /**
- * In-memory rate limiter with sliding window.
- * Per-instance on Vercel (serverless), but effective against single-origin attacks.
- * Cleanup of expired entries runs every 60s.
+ * Rate limiter with sliding window.
+ *
+ * Uses Upstash Redis sorted sets when available (shared across all serverless
+ * instances). Falls back to an in-memory Map when Redis is not configured
+ * (local dev, CI).
+ *
+ * Cleanup of in-memory expired entries runs every 60s.
  */
 
 import { NextRequest } from 'next/server';
+import { getRedis } from './redis';
 
-interface RateLimitEntry {
-  timestamps: number[];
-}
+/* ---------- types ---------- */
 
 interface RateLimitConfig {
   windowMs: number;
@@ -19,6 +22,12 @@ interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   retryAfterMs: number;
+}
+
+/* ---------- in-memory fallback ---------- */
+
+interface RateLimitEntry {
+  timestamps: number[];
 }
 
 const stores = new Map<string, Map<string, RateLimitEntry>>();
@@ -32,46 +41,93 @@ function getStore(name: string): Map<string, RateLimitEntry> {
   return store;
 }
 
-// Cleanup expired entries every 60s
+// Cleanup expired entries every 60s (in-memory only)
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
     for (const [, store] of stores) {
       for (const [key, entry] of store) {
-        entry.timestamps = entry.timestamps.filter(t => now - t < 120000); // 2min retention
+        entry.timestamps = entry.timestamps.filter(t => now - t < 120000);
         if (entry.timestamps.length === 0) store.delete(key);
       }
     }
   }, 60000);
 }
 
+function checkInMemory(name: string, config: RateLimitConfig, key: string): RateLimitResult {
+  const store = getStore(name);
+  const now = Date.now();
+  const windowStart = now - config.windowMs;
+
+  let entry = store.get(key);
+  if (!entry) {
+    entry = { timestamps: [] };
+    store.set(key, entry);
+  }
+
+  entry.timestamps = entry.timestamps.filter(t => t > windowStart);
+
+  if (entry.timestamps.length >= config.maxRequests) {
+    const oldestInWindow = entry.timestamps[0];
+    const retryAfterMs = oldestInWindow + config.windowMs - now;
+    return { allowed: false, remaining: 0, retryAfterMs: Math.max(0, retryAfterMs) };
+  }
+
+  entry.timestamps.push(now);
+  return { allowed: true, remaining: config.maxRequests - entry.timestamps.length, retryAfterMs: 0 };
+}
+
+/* ---------- Redis implementation ---------- */
+
+async function checkRedis(name: string, config: RateLimitConfig, key: string): Promise<RateLimitResult> {
+  const redis = getRedis()!;
+  const redisKey = `rl:${name}:${key}`;
+  const now = Date.now();
+  const windowStart = now - config.windowMs;
+
+  // Pipeline: remove old entries, count current, add new — atomic
+  const pipeline = redis.pipeline();
+  pipeline.zremrangebyscore(redisKey, 0, windowStart);
+  pipeline.zcard(redisKey);
+
+  const results = await pipeline.exec();
+  const currentCount = results[1] as number;
+
+  if (currentCount >= config.maxRequests) {
+    // Get the oldest timestamp still in the window
+    const oldest = await redis.zrange<number[]>(redisKey, 0, 0);
+    const retryAfterMs = oldest.length > 0
+      ? oldest[0] + config.windowMs - now
+      : config.windowMs;
+    return { allowed: false, remaining: 0, retryAfterMs: Math.max(0, retryAfterMs) };
+  }
+
+  // Add current request and set TTL
+  const addPipeline = redis.pipeline();
+  addPipeline.zadd(redisKey, { score: now, member: `${now}:${Math.random().toString(36).slice(2, 8)}` });
+  addPipeline.expire(redisKey, Math.ceil(config.windowMs / 1000) + 1);
+  await addPipeline.exec();
+
+  return { allowed: true, remaining: config.maxRequests - currentCount - 1, retryAfterMs: 0 };
+}
+
+/* ---------- public API ---------- */
+
 /**
  * Create a rate limiter for a specific endpoint.
+ * Returns a sync function (in-memory) or async function (Redis).
+ * Callers should always `await` the result for compatibility.
  */
 export function createRateLimit(name: string, config: RateLimitConfig) {
-  const store = getStore(name);
-
-  return function check(key: string): RateLimitResult {
-    const now = Date.now();
-    const windowStart = now - config.windowMs;
-
-    let entry = store.get(key);
-    if (!entry) {
-      entry = { timestamps: [] };
-      store.set(key, entry);
+  return function check(key: string): RateLimitResult | Promise<RateLimitResult> {
+    const redis = getRedis();
+    if (redis) {
+      return checkRedis(name, config, key).catch(() => {
+        // If Redis fails, fall back to in-memory
+        return checkInMemory(name, config, key);
+      });
     }
-
-    // Remove timestamps outside the window
-    entry.timestamps = entry.timestamps.filter(t => t > windowStart);
-
-    if (entry.timestamps.length >= config.maxRequests) {
-      const oldestInWindow = entry.timestamps[0];
-      const retryAfterMs = oldestInWindow + config.windowMs - now;
-      return { allowed: false, remaining: 0, retryAfterMs: Math.max(0, retryAfterMs) };
-    }
-
-    entry.timestamps.push(now);
-    return { allowed: true, remaining: config.maxRequests - entry.timestamps.length, retryAfterMs: 0 };
+    return checkInMemory(name, config, key);
   };
 }
 

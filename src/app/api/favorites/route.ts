@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest) {
     return response as Response;
   }
 
-  const rl = favoritesRateLimit(getRateLimitKey(req));
+  const rl = await favoritesRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {

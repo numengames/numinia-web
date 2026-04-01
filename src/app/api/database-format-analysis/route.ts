@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/database-format-analysis');
 
 // Define a type-safe interface
 interface Avatar {
@@ -43,7 +46,7 @@ async function getAvatarsFromFile(): Promise<Avatar[]> {
     
     return await response.json();
   } catch (error) {
-    console.error('Error reading avatars file:', error);
+    log.error({ err: error }, 'Error reading avatars file');
     // Return empty array as fallback
     return [];
   }
@@ -211,7 +214,7 @@ WHERE id = '${avatar.id}';
       sqlStatements
     });
   } catch (error) {
-    console.error('Error analyzing avatar formats:', error);
+    log.error({ err: error }, 'Error analyzing avatar formats');
     return NextResponse.json({ 
       error: 'Failed to analyze avatar formats',
       message: (error as Error).message

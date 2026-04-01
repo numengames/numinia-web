@@ -11,6 +11,9 @@
  */
 
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/schemas');
 
 // Allowed hosts for asset URLs
 const ALLOWED_URL_HOSTS = [
@@ -219,9 +222,9 @@ export function safeParseArray<T>(
     if (result.success) {
       results.push(result.data);
     } else {
-      console.warn(
-        `[${context}] Skipped invalid entry at index ${i}:`,
-        result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', '),
+      log.warn(
+        { context, index: i, issues: result.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ') },
+        'Skipped invalid entry',
       );
     }
   }

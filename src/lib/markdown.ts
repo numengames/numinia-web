@@ -4,6 +4,9 @@ import remarkGfm from 'remark-gfm';
 import matter from 'gray-matter';
 import fs from 'fs';
 import path from 'path';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/markdown');
 
 export interface MarkdownContent {
   content: string;
@@ -88,8 +91,7 @@ export function getProjectRoot(): string {
   }
   
   // Log warning if docs not found
-  console.warn(`[getProjectRoot] Docs folder not found. Current working directory: ${cwd}`);
-  console.warn(`[getProjectRoot] Tried paths:`, possiblePaths.map(p => p.docsPath));
+  log.warn({ cwd, triedPaths: possiblePaths.map(p => p.docsPath) }, 'Docs folder not found');
   
   // Fallback to current working directory
   return cwd;

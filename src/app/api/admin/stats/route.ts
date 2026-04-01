@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getAvatars, getProjects } from '@/lib/github-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/stats');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -88,7 +91,7 @@ export async function GET(req: NextRequest) {
       generated_at: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Stats error:', error);
+    log.error({ err: error }, 'Stats error');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to generate stats' },
       { status: 500 },

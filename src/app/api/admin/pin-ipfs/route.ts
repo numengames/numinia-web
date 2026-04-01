@@ -7,6 +7,9 @@ import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import type { GithubAvatar } from '@/types/github-storage';
 import { env } from '@/lib/env';
 import { archiveRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/pin-ipfs');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -27,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-  const rl = archiveRateLimit(getRateLimitKey(req));
+  const rl = await archiveRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const pinApiUrl = env.ipfs.pinApiUrl;
@@ -110,7 +113,7 @@ export async function POST(req: NextRequest) {
       size_bytes: fileBlob.size,
     });
   } catch (error) {
-    console.error('IPFS pin error:', error);
+    log.error({ err: error }, 'IPFS pin error');
     return NextResponse.json(
       { error: 'Pin failed' },
       { status: 500 },

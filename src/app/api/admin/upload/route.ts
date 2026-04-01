@@ -8,6 +8,9 @@ import { generateAssetId, createAssetMetadata } from '@/lib/asset-id';
 import { getContentPath, getFormat } from '@/lib/content-paths';
 import { uploadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { validateMimeType } from '@/lib/mime-validation';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/upload');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-  const rl = uploadRateLimit(getRateLimitKey(req));
+  const rl = await uploadRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const token = env.github.token;
@@ -108,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     if (!uploadRes.ok) {
       const err = await uploadRes.json();
-      console.error('GitHub upload failed:', err);
+      log.error({ err }, 'GitHub upload failed');
       return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
     }
 
@@ -144,7 +147,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Upload error:', error);
+    log.error({ err: error }, 'Upload error');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Upload failed' },
       { status: 500 }

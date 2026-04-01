@@ -7,6 +7,9 @@ import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/
 import { NextRequest } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { AssetUpdateSchema } from '@/lib/schemas';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/assets/visibility');
 
 export async function PATCH(
   req: NextRequest,
@@ -71,7 +74,7 @@ export async function PATCH(
       ...(updates.is_public !== undefined ? { isPublic: updates.is_public } : {}),
     });
   } catch (error) {
-    console.error('Error updating avatar:', error);
+    log.error({ err: error }, 'Error updating avatar');
     return NextResponse.json(
       { error: 'Failed to update avatar' },
       { status: 500 }

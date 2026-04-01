@@ -3,6 +3,9 @@ import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { charactersRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { CharacterSaveSchema } from '@/lib/schemas';
 import { env } from '@/lib/env';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/characters');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ exists: true, content, sha: data.sha });
   } catch (error) {
-    console.error('Character fetch error:', error);
+    log.error({ err: error }, 'Character fetch error');
     return NextResponse.json({ error: 'Failed to fetch character' }, { status: 500 });
   }
 }
@@ -57,7 +60,7 @@ export async function PUT(req: NextRequest) {
     return response as Response;
   }
 
-  const rl = charactersRateLimit(getRateLimitKey(req));
+  const rl = await charactersRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
@@ -109,7 +112,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Character save error:', error);
+    log.error({ err: error }, 'Character save error');
     return NextResponse.json({ error: 'Failed to save character' }, { status: 500 });
   }
 }

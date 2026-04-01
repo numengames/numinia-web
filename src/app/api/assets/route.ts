@@ -4,6 +4,9 @@ import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { getAdminSession, requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { generateAssetId } from '@/lib/asset-id';
 import { isAllowedAssetUrl } from '@/lib/schemas';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/assets');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -139,7 +142,7 @@ export async function GET(req: NextRequest) {
     response.headers.set('Vary', 'Cookie');
     return response;
   } catch (error) {
-    console.error('Error fetching avatars:', error);
+    log.error({ err: error }, 'Error fetching avatars');
     return NextResponse.json(
       { 
         error: 'Failed to fetch avatars',
@@ -202,7 +205,7 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json(newAvatar, { status: 201 });
   } catch (error) {
-    console.error('Error creating avatar:', error);
+    log.error({ err: error }, 'Error creating avatar');
     return NextResponse.json(
       { 
         error: 'Failed to create avatar',

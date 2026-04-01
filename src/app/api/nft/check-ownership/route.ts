@@ -36,7 +36,7 @@ async function ethCall(to: string, data: string): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
-  const rl = nftCheckRateLimit(getRateLimitKey(req));
+  const rl = await nftCheckRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const address = req.nextUrl.searchParams.get('address');

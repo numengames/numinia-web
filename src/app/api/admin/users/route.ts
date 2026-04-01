@@ -10,6 +10,9 @@ import { getUsers } from '@/lib/github-storage';
 import { getRankOverrides, isUserBanned, getWalletUsers } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
 import type { Rank } from '@/types/rank';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/users');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -95,7 +98,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ users: allUsers });
   } catch (error) {
-    console.error('Error listing users:', error);
+    log.error({ err: error }, 'Error listing users');
     return NextResponse.json({ error: 'Failed to list users' }, { status: 500 });
   }
 }

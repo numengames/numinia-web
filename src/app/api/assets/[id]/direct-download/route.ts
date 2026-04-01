@@ -9,6 +9,9 @@ import {
   isGitHubRawUrl,
   normalizeIPFSUrl,
 } from '@/lib/download-utils';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/assets/direct-download');
 
 interface DownloadCounts {
   counts: Record<string, number>;
@@ -38,10 +41,10 @@ export async function GET(
 
     if (!avatar) {
       // Log for debugging - this helps identify if avatar IDs don't match
-      console.error(`Avatar not found. ID: "${id}", Total avatars: ${avatars.length}`);
+      log.error({ assetId: id, totalAvatars: avatars.length }, 'Avatar not found');
       // Log first few avatar IDs for debugging
       if (avatars.length > 0) {
-        console.error('Sample avatar IDs:', avatars.slice(0, 3).map(a => a.id));
+        log.error({ sampleIds: avatars.slice(0, 3).map(a => a.id) }, 'Sample avatar IDs');
       }
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
     }
@@ -65,7 +68,7 @@ export async function GET(
       } else {
         // Format not found in alternate models - but instead of returning an error,
         // let's fallback to the default model and log a warning
-        console.warn(`Requested format '${format}' not available for avatar '${avatar.name}'. Using default model instead.`);
+        log.warn({ format, avatarName: avatar.name }, 'Requested format not available, using default model');
         modelUrl = avatar.modelFileUrl;
         actualFormat = 'default'; // Reset to default format
       }
@@ -142,7 +145,7 @@ export async function GET(
       if (!response.ok) {
         // For IPFS URLs, provide more helpful error messages
         if (isIPFS) {
-          console.error(`IPFS fetch failed: ${response.status} ${response.statusText}`);
+          log.error({ status: response.status, statusText: response.statusText }, 'IPFS fetch failed');
           // Try alternative IPFS gateway if dweb.link fails
           if (normalizedUrl.includes('dweb.link')) {
             const alternativeUrl = normalizedUrl.replace('dweb.link', 'ipfs.io');
@@ -181,10 +184,10 @@ export async function GET(
                   }
                   downloadCounts.counts[avatar.id] = (downloadCounts.counts[avatar.id] || 0) + 1;
                   saveDownloadCounts(downloadCounts).catch((err: Error) => 
-                    console.error('Failed to save download count:', err)
+                    log.error({ err }, 'Failed to save download count')
                   );
                 } catch (error) {
-                  console.error('Error updating download counts:', error);
+                  log.error({ err: error }, 'Error updating download counts');
                 }
                 // Use application/octet-stream for all binary model files
                 const contentType = (actualFormat === 'fbx' || actualFormat === 'glb' || actualFormat === 'voxel-fbx') 
@@ -204,7 +207,7 @@ export async function GET(
                 });
               }
             } catch (retryError) {
-              console.error('Retry with alternative gateway also failed:', retryError);
+              log.error({ err: retryError }, 'Retry with alternative gateway also failed');
             }
           }
         }
@@ -226,10 +229,10 @@ export async function GET(
         
         downloadCounts.counts[avatar.id] = (downloadCounts.counts[avatar.id] || 0) + 1;
         saveDownloadCounts(downloadCounts).catch((err: Error) => 
-          console.error('Failed to save download count:', err)
+          log.error({ err }, 'Failed to save download count')
         );
       } catch (error) {
-        console.error('Error updating download counts:', error);
+        log.error({ err: error }, 'Error updating download counts');
         // Continue anyway
       }
       
@@ -255,14 +258,14 @@ export async function GET(
         }
       });
     } catch (error) {
-      console.error('Download error:', error);
+      log.error({ err: error }, 'Download error');
       return NextResponse.json({
         error: 'Failed to download file',
         message: (error as Error).message
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('API error:', error);
+    log.error({ err: error }, 'API error');
     return NextResponse.json({
       error: 'Internal server error',
       message: (error as Error).message

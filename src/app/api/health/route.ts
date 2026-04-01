@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { getRedis } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,10 +60,30 @@ async function checkR2(): Promise<ServiceCheck> {
   }
 }
 
-export async function GET() {
-  const [github, r2] = await Promise.all([checkGitHub(), checkR2()]);
+async function checkRedis(): Promise<ServiceCheck> {
+  const redis = getRedis();
+  if (!redis) {
+    return { status: 'ok', latencyMs: 0, error: 'Redis not configured (optional)' };
+  }
+  const start = Date.now();
+  try {
+    const pong = await redis.ping();
+    const latencyMs = Date.now() - start;
+    if (pong === 'PONG') return { status: 'ok', latencyMs };
+    return { status: 'degraded', latencyMs, error: `Unexpected response: ${pong}` };
+  } catch (err) {
+    return {
+      status: 'error',
+      latencyMs: Date.now() - start,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+}
 
-  const services = { github, r2 };
+export async function GET() {
+  const [github, r2, redis] = await Promise.all([checkGitHub(), checkR2(), checkRedis()]);
+
+  const services = { github, r2, redis };
 
   const overallStatus: ServiceStatus =
     Object.values(services).some((s) => s.status === 'error')

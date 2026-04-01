@@ -13,6 +13,9 @@ import { defineChain } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
 import { mintAdditionalSupplyTo } from 'thirdweb/extensions/erc1155';
 import { env } from '@/lib/env';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/thirdweb-mint');
 
 export function isThirdwebConfigured(): boolean {
   return !!(
@@ -34,7 +37,7 @@ export async function mintSeasonPass(
   tokenId: number = 0,
 ): Promise<{ transactionHash: string; tokenId: string } | null> {
   if (!isThirdwebConfigured()) {
-    console.warn('Thirdweb not configured — skipping NFT mint');
+    log.warn('Thirdweb not configured — skipping NFT mint');
     return null;
   }
 

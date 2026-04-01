@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getArweaveTxId } from '@/lib/arweaveMapping';
 import { getArweaveUrl } from '@/lib/arweave';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/resolve-voxel-url');
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +49,7 @@ export async function POST(request: Request) {
       triedVariations: variations
     }, { status: 404 });
   } catch (error) {
-    console.error('Error resolving voxel URL:', error);
+    log.error({ err: error }, 'Error resolving voxel URL');
     return NextResponse.json({ 
       error: 'Failed to resolve voxel URL',
       url: null 

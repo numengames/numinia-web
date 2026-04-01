@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { proxyRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/proxy-asset');
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -10,7 +13,7 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  const rl = proxyRateLimit(getRateLimitKey(request));
+  const rl = await proxyRateLimit(getRateLimitKey(request));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error proxying asset:', error);
+    log.error({ err: error }, 'Error proxying asset');
     return NextResponse.json(
       { error: 'Failed to proxy asset' },
       { status: 500 }

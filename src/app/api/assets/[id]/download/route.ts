@@ -3,6 +3,9 @@ import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 import { AvatarMetadata, getModelFilenameForFormat } from '@/lib/download-utils';
 import { downloadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/assets/download');
 
 interface DownloadCounts {
   counts: Record<string, number>;
@@ -19,7 +22,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rl = downloadRateLimit(getRateLimitKey(request));
+  const rl = await downloadRateLimit(getRateLimitKey(request));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const { id } = await params;
@@ -85,11 +88,11 @@ export async function POST(
         
         // Save the updated download counts
         saveDownloadCounts(downloadCounts).catch((error: Error) => {
-          console.error('Failed to update download count:', error);
+          log.error({ err: error }, 'Failed to update download count');
           // Continue anyway, since this shouldn't block the download
         });
       } catch (error) {
-        console.error('Failed to update download count:', error);
+        log.error({ err: error }, 'Failed to update download count');
         // Continue anyway, since this shouldn't block the download
       }
 
@@ -100,14 +103,14 @@ export async function POST(
         avatarName: avatar.name || avatar.metadata?.number || 'avatar'
       });
     } catch (error) {
-      console.error('Download error:', error);
+      log.error({ err: error }, 'Download error');
       return NextResponse.json(
         { error: 'Failed to generate download URL' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('Download error:', error);
+    log.error({ err: error }, 'Download error');
     return NextResponse.json(
       { error: 'Failed to process download request' },
       { status: 500 }

@@ -8,6 +8,9 @@ import { generateAssetId } from '@/lib/asset-id';
 import { presignRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { getContentPath } from '@/lib/content-paths';
 import { PresignRequestSchema } from '@/lib/schemas';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/admin/presign');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-  const rl = presignRateLimit(getRateLimitKey(req));
+  const rl = await presignRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   if (!isR2Configured()) {
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest) {
       description: description || '',
     });
   } catch (error) {
-    console.error('Presign error:', error);
+    log.error({ err: error }, 'Presign error');
     return NextResponse.json(
       { error: 'Failed to generate upload URL' },
       { status: 500 }

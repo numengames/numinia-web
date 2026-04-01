@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/auth/github');
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -15,7 +18,7 @@ export const runtime = 'nodejs';
  * It redirects the user to GitHub's authorization page
  */
 export async function GET(request: NextRequest) {
-  const rl = authRateLimit(getRateLimitKey(request));
+  const rl = await authRateLimit(getRateLimitKey(request));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Auth initiation error:', error);
+    log.error({ err: error }, 'Auth initiation error');
     return NextResponse.redirect(new URL('/login?error=initiation_failed', request.url));
   }
 } 

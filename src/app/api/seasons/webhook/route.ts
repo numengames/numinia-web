@@ -3,6 +3,9 @@ import Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { addPassHolder, updatePassHolderNft } from '@/lib/season-storage';
 import { mintSeasonPass } from '@/lib/thirdweb-mint';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/seasons/webhook');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     const stripe = new Stripe(env.stripe.secretKey);
     event = stripe.webhooks.constructEvent(body, sig, env.stripe.webhookSecret);
   } catch (error) {
-    console.error('Webhook signature verification failed:', error);
+    log.error({ err: error }, 'Webhook signature verification failed');
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 },
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
     const walletAddress = session.metadata?.wallet_address;
 
     if (!seasonId || !walletAddress) {
-      console.error('Webhook missing metadata:', { seasonId, walletAddress });
+      log.error({ seasonId, walletAddress }, 'Webhook missing metadata');
       return NextResponse.json({ received: true });
     }
 
@@ -57,7 +60,7 @@ export async function POST(req: NextRequest) {
         burnCompleted: false,
       });
     } catch (error) {
-      console.error('Failed to record pass holder:', error);
+      log.error({ err: error }, 'Failed to record pass holder');
       return NextResponse.json(
         { error: 'Failed to record purchase' },
         { status: 500 },
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
     try {
       const mintResult = await mintSeasonPass(walletAddress);
       if (mintResult) {
-        console.error(`Season pass NFT minted: tx=${mintResult.transactionHash}`);
+        log.info({ tx: mintResult.transactionHash }, 'Season pass NFT minted');
         await updatePassHolderNft(
           seasonId,
           walletAddress,
@@ -77,7 +80,7 @@ export async function POST(req: NextRequest) {
         );
       }
     } catch (mintError) {
-      console.error('NFT mint failed (pass still recorded in JSON):', mintError);
+      log.error({ err: mintError }, 'NFT mint failed (pass still recorded in JSON)');
     }
   }
 

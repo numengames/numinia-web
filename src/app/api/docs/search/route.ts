@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadSearchableContent, searchContent } from '@/lib/search';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/docs/search');
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results });
   } catch (error) {
-    console.error('Search error:', error);
+    log.error({ err: error }, 'Search error');
     return NextResponse.json(
       { error: 'Failed to search documentation' },
       { status: 500 }

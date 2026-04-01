@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 import { verifySession } from '@/lib/session';
 import { mapRoleToRank } from '@/lib/rank';
 import type { Rank } from '@/types/rank';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/auth/session');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -31,7 +34,7 @@ export async function GET(req: NextRequest) {
       },
     }, { status: 200 });
   } catch (error) {
-    console.error('Session API error:', error);
+    log.error({ err: error }, 'Session API error');
     return NextResponse.json({ user: null }, { status: 500 });
   }
 }

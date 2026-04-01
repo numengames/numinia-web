@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { updateAdventureProgress, getUserSeasonStatus } from '@/lib/season-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/seasons/progress');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
     const updated = await getUserSeasonStatus(seasonId, address);
     return NextResponse.json({ success: true, progress: updated });
   } catch (error) {
-    console.error('Failed to update season progress:', error);
+    log.error({ err: error }, 'Failed to update season progress');
     return NextResponse.json(
       { error: 'Failed to update progress' },
       { status: 500 },

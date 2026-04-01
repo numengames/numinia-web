@@ -2,6 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { getDocsPath, getProjectRoot } from './markdown';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/search');
 
 export interface SearchResult {
   id: string;
@@ -33,7 +36,7 @@ function getAllMarkdownFiles(dir: string, basePath: string = '', locale: string 
     }
   } catch (error) {
     // Directory doesn't exist or can't be read
-    console.warn(`Could not read directory ${dir}:`, error);
+    log.warn({ dir, err: error }, 'Could not read directory');
   }
   
   return files;
@@ -105,7 +108,7 @@ export async function loadSearchableContent(locale: string = 'en'): Promise<Sear
         locale,
       });
     } catch (error) {
-      console.warn(`Failed to load search content from ${filePath}:`, error);
+      log.warn({ filePath, err: error }, 'Failed to load search content');
     }
   }
   

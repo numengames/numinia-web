@@ -3,6 +3,9 @@ import Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getActiveSeason, getUserSeasonStatus } from '@/lib/season-storage';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('api/seasons/checkout');
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error('Stripe checkout error:', error);
+    log.error({ err: error }, 'Stripe checkout error');
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 },

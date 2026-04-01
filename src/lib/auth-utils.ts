@@ -1,4 +1,7 @@
 import { cookies } from 'next/headers';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('lib/auth-utils');
 
 /**
  * User session information from the cookie
@@ -26,7 +29,7 @@ export async function getUserSession(): Promise<UserSession | null> {
     const session = JSON.parse(sessionCookie.value);
     return session as UserSession;
   } catch (error) {
-    console.error('Failed to parse session cookie:', error);
+    log.error({ err: error }, 'Failed to parse session cookie');
     return null;
   }
 }
