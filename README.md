@@ -4,7 +4,19 @@ A curated registry of free CC0 digital assets: 3D models (GLB), avatars (VRM), w
 
 **Live:** [numinia.store](https://numinia.store)
 
-## What is this?
+## What is Numinia?
+
+Numinia is a city-state imagined as a game — a gamified organizational model created by [Numen Games](https://numen.games). It blends role-playing, mythology, and technology into a living universe where play is not entertainment, but a path to learning, collaboration, and better human relationships.
+
+The universe is built around four guilds (knowledge profiles), four factions (fields of development), and a rich mythology that fuses Mediterranean culture, steampunk, cyberpunk, and Egyptian symbolism. Its purpose: **leveling up organizations to build better relationships.**
+
+Numinia Digital Goods is one expression of this universe — an open library of CC0 digital assets that anyone can use, remix, and build upon. The assets here are the building blocks of the metaverse: 3D models, avatars, interactive worlds, audio, and video.
+
+Our values: Cosmic Harmony, Equability, Curiosity, and Healthy Environments. Our pillars: **Craft** (art as a driver), **Learn** (humans play to learn), **Remix** (copy it and make it better).
+
+> For the full philosophical and narrative framework, see [Seminal Documents](docs/seminal-documents/).
+
+## How it works
 
 Numinia Digital Goods is an open platform for discovering and managing CC0-licensed digital assets. All assets are free to use in any project, no attribution required.
 

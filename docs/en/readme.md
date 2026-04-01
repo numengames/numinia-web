@@ -5,7 +5,7 @@ description: "Documentation for the Numinia Digital Goods platform"
 
 # Resources & Downloads
 
-Welcome to the Numinia Digital Goods documentation. Everything you need to browse, download, and integrate CC0 digital assets into your projects.
+Welcome to the Numinia Digital Goods documentation. Numinia Digital Goods is the open asset library of Numinia, a city-state built through play by [Numen Games](https://numen.games). Everything here is CC0 — free to use, remix, and build upon.
 
 ## Asset Collections
 

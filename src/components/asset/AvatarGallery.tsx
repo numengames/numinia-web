@@ -654,13 +654,13 @@ export const AvatarGallery: React.FC = () => {
                         <h3 className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
                           {formatName(avatar.name)}
                         </h3>
-                        <p className="text-xs truncate text-gray-500 dark:text-gray-400">
+                        <p className="text-xs truncate text-gray-600 dark:text-gray-400">
                           {avatar.project}
                         </p>
                         {avatar.tags && avatar.tags.length > 0 && (
                           <div className="flex flex-wrap gap-0.5 mt-1">
                             {avatar.tags.slice(0, 3).map(tag => (
-                              <span key={tag} className="text-[8px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded px-1 py-px">{tag}</span>
+                              <span key={tag} className="text-[8px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded px-1 py-px">{tag}</span>
                             ))}
                           </div>
                         )}

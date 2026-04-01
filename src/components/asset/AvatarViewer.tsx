@@ -644,7 +644,7 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
                 />
                 
                 {/* Browser Panel */}
-                <div className="fixed inset-0 bg-cream dark:bg-cream-dark flex flex-col z-30" style={{ top: '64px' }}>
+                <div className="fixed inset-0 bg-cream dark:bg-cream-dark flex flex-col z-30" style={{ top: 'var(--osa-avatar-header-height)' }}>
                   {/* Header */}
                   <div className="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between bg-cream dark:bg-cream-dark shadow-sm">
                     <div className="flex items-center gap-2">

@@ -293,7 +293,7 @@ export default function Home() {
             <h2 className="text-5xl md:text-6xl font-bold mb-8">{t('home.cta.title')}</h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-16 max-w-2xl mx-auto leading-relaxed">{t('home.cta.description')}</p>
             <div className="flex gap-4 justify-center">
-              <a href={`/${locale}/archive`} className="inline-flex items-center px-8 py-4 bg-black text-white rounded-lg hover:bg-gray-800 transition-all text-lg font-medium">
+              <a href={`/${locale}/archive`} className="inline-flex items-center px-8 py-4 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all text-lg font-medium">
                 {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />
               </a>
               <a href={`/${locale}/archive`} className="inline-flex items-center px-8 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-900 transition-all text-lg font-medium">
