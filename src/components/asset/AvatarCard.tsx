@@ -33,8 +33,7 @@ export const AvatarCard: React.FC<AvatarCardProps> = ({
     onSelect(avatar.id);
   };
 
-  // High-quality placeholder (you can replace later with real PNG thumbnails)
-  const thumbnailSrc = avatar.thumbnailUrl || 'https://picsum.photos/id/1015/400/400';
+  const thumbnailSrc = avatar.thumbnailUrl || '/placeholder.png';
 
   return (
     <Card
