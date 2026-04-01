@@ -41,7 +41,7 @@ const serverSchema = z.object({
   THIRDWEB_SECRET_KEY:      z.string().default(''),
   MINT_WALLET_PRIVATE_KEY:  z.string().default(''),
   SEASON_PASS_CONTRACT:     z.string().default(''),
-  SEASON_PASS_CHAIN_ID:     z.string().default('84532'),
+  SEASON_PASS_CHAIN_ID:     z.string().default('8453'),
   // Upstash Redis (optional — rate limiting + audit degrade to in-memory without it)
   UPSTASH_REDIS_REST_URL:   z.string().default(''),
   UPSTASH_REDIS_REST_TOKEN: z.string().default(''),
