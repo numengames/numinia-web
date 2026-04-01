@@ -47,6 +47,8 @@ const serverSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().default(''),
   // Sentry (optional — error tracking, degrades gracefully without it)
   SENTRY_DSN: z.string().default(''),
+  // PostgreSQL via Neon (optional — degrades to GitHub-as-DB without it)
+  DATABASE_URL: z.string().default(''),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -128,6 +130,9 @@ export const env = {
   },
   sentry: {
     dsn: process.env.SENTRY_DSN ?? '',
+  },
+  database: {
+    url: process.env.DATABASE_URL ?? '',
   },
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',
