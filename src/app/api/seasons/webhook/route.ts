@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { env } from '@/lib/env';
-import { addPassHolder } from '@/lib/season-storage';
+import { addPassHolder, updatePassHolderNft } from '@/lib/season-storage';
+import { mintSeasonPass } from '@/lib/thirdweb-mint';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -61,6 +62,22 @@ export async function POST(req: NextRequest) {
         { error: 'Failed to record purchase' },
         { status: 500 },
       );
+    }
+
+    // Mint NFT to buyer's wallet (best-effort — pass works via JSON even if mint fails)
+    try {
+      const mintResult = await mintSeasonPass(walletAddress);
+      if (mintResult) {
+        console.log(`Season pass NFT minted: tx=${mintResult.transactionHash}`);
+        await updatePassHolderNft(
+          seasonId,
+          walletAddress,
+          mintResult.tokenId,
+          mintResult.transactionHash,
+        );
+      }
+    } catch (mintError) {
+      console.error('NFT mint failed (pass still recorded in JSON):', mintError);
     }
   }
 

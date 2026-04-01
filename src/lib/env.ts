@@ -37,6 +37,11 @@ const serverSchema = z.object({
   // Stripe (optional — season pass purchase, degrades gracefully without it)
   STRIPE_SECRET_KEY:      z.string().default(''),
   STRIPE_WEBHOOK_SECRET:  z.string().default(''),
+  // Thirdweb (optional — NFT minting for season pass, degrades gracefully)
+  THIRDWEB_SECRET_KEY:      z.string().default(''),
+  MINT_WALLET_PRIVATE_KEY:  z.string().default(''),
+  SEASON_PASS_CONTRACT:     z.string().default(''),
+  SEASON_PASS_CHAIN_ID:     z.string().default('84532'),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -105,6 +110,12 @@ export const env = {
   stripe: {
     secretKey:     process.env.STRIPE_SECRET_KEY ?? '',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? '',
+  },
+  thirdweb: {
+    secretKey:       process.env.THIRDWEB_SECRET_KEY ?? '',
+    mintPrivateKey:  process.env.MINT_WALLET_PRIVATE_KEY ?? '',
+    contractAddress: process.env.SEASON_PASS_CONTRACT ?? '',
+    chainId:         process.env.SEASON_PASS_CHAIN_ID ?? '84532',
   },
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',

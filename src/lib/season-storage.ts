@@ -88,6 +88,8 @@ interface RawPassHolder {
   address: string;
   purchased_at: string;
   stripe_session_id: string;
+  nft_token_id?: string;
+  nft_transaction_hash?: string;
   completed_adventures: string[];
   burn_completed: boolean;
 }
@@ -156,6 +158,8 @@ function toPassHolder(raw: RawPassHolder): PassHolder {
     address: raw.address,
     purchasedAt: raw.purchased_at,
     stripeSessionId: raw.stripe_session_id,
+    nftTokenId: raw.nft_token_id,
+    nftTransactionHash: raw.nft_transaction_hash,
     completedAdventures: raw.completed_adventures,
     burnCompleted: raw.burn_completed,
   };
@@ -176,6 +180,8 @@ function toRawPassHolder(holder: PassHolder): RawPassHolder {
     address: holder.address,
     purchased_at: holder.purchasedAt,
     stripe_session_id: holder.stripeSessionId,
+    nft_token_id: holder.nftTokenId,
+    nft_transaction_hash: holder.nftTransactionHash,
     completed_adventures: holder.completedAdventures,
     burn_completed: holder.burnCompleted,
   };
@@ -241,6 +247,33 @@ export async function addPassHolder(
     progressPath(seasonId),
     rawHolders,
     `Add season pass holder: ${holder.address.slice(0, 10)}…`,
+  );
+}
+
+/** Update a pass holder with NFT mint data. */
+export async function updatePassHolderNft(
+  seasonId: string,
+  address: string,
+  nftTokenId: string,
+  nftTransactionHash: string,
+): Promise<boolean> {
+  const progress = await getSeasonProgress(seasonId);
+  const holder = progress.passHolders.find(
+    (h) => h.address.toLowerCase() === address.toLowerCase(),
+  );
+  if (!holder) return false;
+
+  holder.nftTokenId = nftTokenId;
+  holder.nftTransactionHash = nftTransactionHash;
+
+  const rawHolders: RawSeasonProgress = {
+    pass_holders: progress.passHolders.map(toRawPassHolder),
+  };
+
+  return updateData(
+    progressPath(seasonId),
+    rawHolders,
+    `Record NFT mint for ${address.slice(0, 10)}…`,
   );
 }
 

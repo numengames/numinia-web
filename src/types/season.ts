@@ -60,6 +60,8 @@ export interface PassHolder {
   address: string;
   purchasedAt: string;
   stripeSessionId: string;
+  nftTokenId?: string;
+  nftTransactionHash?: string;
   completedAdventures: string[];
   burnCompleted: boolean;
 }

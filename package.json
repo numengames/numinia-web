@@ -55,6 +55,7 @@
     "stripe": "^21.0.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "thirdweb": "^5.119.3",
     "three": "^0.162.0",
     "uuid": "^11.1.0",
     "uuidv7": "^1.2.1",
