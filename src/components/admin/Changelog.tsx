@@ -16,18 +16,44 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
-  { text: 'Radicle.xyz — decentralized git (keep GitHub too)', status: 'research' },
-  { text: 'Payment methods — crypto + fiat for premium assets', status: 'research' },
+  { text: 'Season Pass — Stripe checkout + Thirdweb NFT mint (Base)', status: 'in-progress' },
+  { text: 'Rate limiting persistente (Upstash Redis)', status: 'planned' },
+  { text: 'Blog/content section para SEO long-tail', status: 'planned' },
+  { text: 'Server-side pagination en API de assets', status: 'planned' },
+  { text: 'Download counts visibles en gallery cards', status: 'planned' },
   { text: 'Character Sheet — dice rolls (D6 pool) in web', status: 'planned' },
   { text: 'Portals — Hyperfy world management + launcher', status: 'planned' },
-  { text: 'Loot — on-chain NFT display in profile', status: 'planned' },
   { text: 'Archive UX redesign (layout, filters, search)', status: 'planned' },
-  { text: 'Monitoring — Sentry error tracking integration', status: 'planned' },
+  { text: 'Radicle.xyz — decentralized git (keep GitHub too)', status: 'research' },
   { text: 'Books/Library section — digital lore + docs', status: 'research' },
-  { text: 'Manifold integration study (license review)', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.12.0',
+    date: '2026-04-01',
+    time: '23:00',
+    items: [
+      { text: 'Aviso Legal LSSI-CE — NIF, domicilio, Registro Mercantil de Numen Games S.L.', type: 'new' },
+      { text: 'Health endpoint upgraded — checks GitHub API + R2 CDN with latency', type: 'improvement' },
+      { text: 'Privacy Policy — international data transfers (GDPR Art. 44-49) documented', type: 'new' },
+      { text: 'Cookie consent redesigned — floating card, accept/reject, auditable record', type: 'improvement' },
+      { text: 'Thumbnails migrated to Next.js <Image> — WebP/AVIF, responsive srcset', type: 'improvement' },
+      { text: 'ThumbnailImage component — reusable with auto-fallback to placeholder', type: 'new' },
+      { text: 'Breadcrumb navigation on asset detail pages (EN + JA)', type: 'new' },
+      { text: 'Cache headers: stale-while-revalidate on assets, portals, collections API', type: 'improvement' },
+      { text: 'Vercel Analytics + Speed Insights integrated', type: 'new' },
+      { text: 'CI: license-checker gate (blocks GPL/LGPL/AGPL/SSPL)', type: 'new' },
+      { text: 'CI: Vitest coverage reporting with @vitest/coverage-v8', type: 'new' },
+      { text: 'CI: npm audit now blocking (was continue-on-error)', type: 'improvement' },
+      { text: 'prefers-reduced-motion — disables all animations (WCAG 2.1)', type: 'new' },
+      { text: 'llms.txt expanded — FAQ, all API endpoints, AI agent instructions', type: 'improvement' },
+      { text: 'next.config.js — 9 new remotePatterns (R2, Arweave, IPFS domains)', type: 'improvement' },
+      { text: 'Consent utility (consent.ts) — getConsentRecord, hasAnalyticsConsent', type: 'new' },
+      { text: 'Finder: avatar selection stuck on first click — feedback loop fixed', type: 'fix' },
+      { text: 'Aviso Legal link added to footer', type: 'fix' },
+    ],
+  },
   {
     version: '0.11.0',
     date: '2026-04-01',
