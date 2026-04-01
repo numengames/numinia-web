@@ -290,6 +290,7 @@ export function CharacterSheet() {
   const [exists, setExists] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
+  const [canEdit, setCanEdit] = useState(false); // Nomads cannot edit (citizen+ only)
 
   // Load character
   useEffect(() => {
@@ -299,6 +300,9 @@ export function CharacterSheet() {
         if (session.authenticated && session.address) {
           setWalletAddress(session.address);
           setChar(prev => ({ ...prev, wallet: session.address }));
+          // Nomads are read-only; citizen+ can edit
+          const rank = session.rank ?? 'nomad';
+          setCanEdit(rank !== 'nomad');
           return fetch('/api/characters');
         }
         return null;
@@ -308,8 +312,8 @@ export function CharacterSheet() {
         if (data?.exists && data.content) {
           setChar(markdownToCharacter(data.content));
           setExists(true);
-        } else {
-          setEditing(true); // New character — start in edit mode
+        } else if (canEdit) {
+          setEditing(true); // New character — start in edit mode (only if can edit)
         }
       })
       .catch(() => {})
@@ -370,7 +374,7 @@ export function CharacterSheet() {
       <div className="flex items-center justify-between mb-6 print:hidden">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Character Sheet</h1>
         <div className="flex items-center gap-2">
-          {exists && (
+          {canEdit && exists && (
             <Button variant="ghost" size="sm" onClick={() => setEditing(!editing)} className="gap-1.5 text-xs">
               {editing ? <><Eye className="h-3.5 w-3.5" /> View</> : <><Pencil className="h-3.5 w-3.5" /> Edit</>}
             </Button>
@@ -381,9 +385,11 @@ export function CharacterSheet() {
           <Button variant="ghost" size="sm" onClick={handleExportPDF} className="gap-1.5 text-xs">
             <FileText className="h-3.5 w-3.5" /> PDF
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5 text-xs">
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? '✓ Saved' : <><Save className="h-3.5 w-3.5" /> Save</>}
-          </Button>
+          {canEdit && (
+            <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5 text-xs">
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? '✓ Saved' : <><Save className="h-3.5 w-3.5" /> Save</>}
+            </Button>
+          )}
         </div>
       </div>
 
