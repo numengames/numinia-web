@@ -81,6 +81,19 @@
       "title": "Blockchain",
       "enableTestnets": "Enable testnets",
       "network": "Network"
+    },
+    "billing": {
+      "title": "Billing",
+      "description": "Manage your hosting plan for world-building spaces.",
+      "currentPlan": "Current Plan",
+      "active": "Active",
+      "free": "Free",
+      "current": "Current",
+      "select": "Select",
+      "spaces": "Spaces",
+      "users": "Users",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "Storage"
     }
   },
   "stats": {

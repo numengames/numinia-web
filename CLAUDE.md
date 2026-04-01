@@ -121,11 +121,14 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 | Framework | Next.js 16.2.1, App Router, React 18, TypeScript |
 | Styling | Tailwind CSS 3 + shadcn/ui (copied to `src/components/ui/`) |
 | 3D | Three.js 0.162 + @pixiv/three-vrm + STL viewer |
-| Auth | SIWE (any wallet) + GitHub OAuth |
+| Auth | SIWE (any wallet) + GitHub OAuth (migrating to Thirdweb Connect) |
+| Database | GitHub JSON (primary), Neon PostgreSQL via Drizzle ORM (enterprise, optional) |
+| Cache | Upstash Redis (rate limiting, audit queue — fallback to in-memory) |
 | Storage | GitHub (metadata), Cloudflare R2 (CDN), Arweave + IPFS (permanent) |
+| Logging | Pino (structured JSON) + Sentry (error tracking, optional) |
 | Env | Zod validation in `src/lib/env.ts` |
 | i18n | Static imports in `src/lib/i18n.tsx` — EN + JA |
-| Tests | Vitest 4 + RTL + jsdom — 138 tests |
+| Tests | Vitest 4 + RTL + jsdom — 186 tests |
 | Deploy | Vercel |
 | Legal | Numen Games S.L., Spanish law, GDPR compliant |
 
@@ -133,31 +136,59 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 
 ## Architecture decisions (do not change without discussion)
 
-### 1. GitHub as metadata database
+### 1. Data access: Repository Pattern + dual data sources
+**New architecture (Phase 2, 2026-04-01):**
+- `src/lib/data-source.ts` — factory: `getDataSource()` returns GitHub or DB repos
+- `src/lib/repositories/types.ts` — 8 interfaces (IAssetRepo, IProjectRepo, etc.)
+- `src/lib/repositories/github.repo.ts` — wraps `github-storage.ts`
+- `src/lib/repositories/db.repo.ts` — Drizzle ORM queries against Neon PostgreSQL
+- Feature flag: `DATABASE_URL` present = DB mode, absent = GitHub mode
+- 14 API routes already migrated to use `getDataSource()` instead of direct imports
+
+**Legacy (still works, still the default):**
 `src/lib/github-storage.ts` — reads/writes JSON + markdown to data repo via GitHub API.
 - Optimistic locking: retries 3x on 409 Conflict
 - In-memory cache with 1min TTL, full invalidation on writes
-- All env vars through `src/lib/env.ts` — never `process.env.X` directly
+- Routes using `fetchData`/`updateData` directly: presign, upload, characters, portals
 
-### 2. Asset URL resolution chain
+### 2. Database schema (Neon PostgreSQL + Drizzle ORM)
+- `src/db/schema.ts` — 13 tables, mirrors GitHub JSON structures
+- `src/db/index.ts` — `getDb()` singleton, returns null if DATABASE_URL not configured
+- `drizzle/` — SQL migrations (plain SQL, File Over App compatible)
+- Key tables: `assets` (37 cols, flattened storage/nft for indexing), `projects`, `users`, `seasons`, `adventures`, `pass_holders`, `characters`, `portals`, `audit_events`
+
+### 3. Shared state: Redis (Upstash)
+- `src/lib/redis.ts` — singleton client, null if not configured
+- `src/lib/rate-limit.ts` — Redis sorted sets (ZADD/ZRANGEBYSCORE) with in-memory fallback
+- `src/lib/audit.ts` — Redis LPUSH queue with periodic GitHub flush
+- All 14 rate-limited API routes use `await` for async Redis calls
+
+### 4. Structured logging
+- `src/lib/logger.ts` — Pino logger with `createLogger(module)` for scoped logs
+- JSON output in production, pretty-print in development
+- ~80 `console.error/warn` calls replaced across 37 files
+- Sentry integration: `sentry.{client,server,edge}.config.ts` — activates only when `SENTRY_DSN` set
+
+### 5. Asset URL resolution chain
 `src/lib/assetUrls.ts`: Arweave TX → R2 CDN → GitHub raw fallback
 
-### 3. 3D components are lazy-loaded
+### 6. 3D components are lazy-loaded
 Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 
-### 4. i18n uses static imports
+### 7. i18n uses static imports
 16 JSON files loaded statically. No dynamic `import()` with template literals.
 
-### 5. Auth: wallet-first, any user can sign in
+### 8. Auth: wallet-first, any user can sign in
 - Admin wallets (whitelist) get `admin_session` cookie
 - Any wallet gets `user_session` cookie
 - `getAdminSession()` / `getUserSession()` in `src/lib/auth/getSession.ts`
+- **Planned migration**: Thirdweb Connect v5 (350+ wallets + embedded wallets + social login)
 
 ---
 
 ## Environment variables
 
-See `.env.example`. Validated by Zod at runtime.
+See `.env.example`. Validated by Zod at runtime. All optional vars degrade gracefully.
 
 | Variable | Required | Purpose |
 |---|---|---|
@@ -168,21 +199,39 @@ See `.env.example`. Validated by Zod at runtime.
 | `R2_*` | No | Cloudflare R2 storage |
 | `ARWEAVE_WALLET_KEY` | No | Arweave uploads (JWK JSON) |
 | `IPFS_PIN_API_URL/KEY` | No | IPFS pinning (Pinata-compatible) |
+| `DATABASE_URL` | No | Neon PostgreSQL (enables DB mode, falls back to GitHub) |
+| `UPSTASH_REDIS_REST_URL` | No | Redis for shared rate limiting + audit |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Redis auth token |
+| `SENTRY_DSN` | No | Error tracking + performance monitoring |
 
 ---
 
-## Current status (v0.10.0 — 2026-04-01)
+## Current status (v0.11.0 — 2026-04-01)
 
-### Done
+### Platform features (done)
 - ✅ Auth: SIWE (admin + user), GitHub OAuth, LoginModal, profiles
 - ✅ L.A.P.: Character Sheet, Portals Map, Loot, Assets, Stats, Settings, Changelog
 - ✅ Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
 - ✅ Storage: R2 presigned (500MB), Arweave archive, IPFS pin
 - ✅ Data: UUID v7, tags, optimistic locking, auto-thumbnails
-- ✅ Quality: 138 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
+- ✅ Quality: 186 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
 - ✅ Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
 - ✅ Portals: 4 districts, 14 oncyber worlds, interactive SVG map
 - ✅ Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
+
+### Enterprise migration (in progress — Phase 1+2 done)
+- ✅ Phase 1A: Redis/Upstash — shared rate limiting + audit across serverless instances
+- ✅ Phase 1B: CI/CD — GitHub Actions (type-check + test + license + audit + build)
+- ✅ Phase 1C: Structured logging (Pino) + Sentry error tracking
+- ✅ Phase 1D: Health check enhanced (GitHub + R2 + Redis)
+- ✅ Phase 2A: Neon PostgreSQL schema (13 tables) + Drizzle ORM
+- ✅ Phase 2B: Repository pattern + data source factory
+- ✅ Phase 2D: 14 API routes migrated to repository pattern
+- 🔲 Phase 2C: Data migration script (JSON → Postgres) — needs Neon configured
+- 🔲 Phase 2E: GitHub sync (DB → JSON periodic export for File Over App)
+- 🔲 Phase 2F: Auth migration to Thirdweb Connect v5
+- 🔲 Phase 3: API versioning + OpenAPI + SDK + Inngest jobs + webhooks
+- 🔲 Phase 4: Multi-creator + E2E tests + security hardening + dev portal
 
 ### Remaining (low priority)
 | Task | Impact |
@@ -194,11 +243,30 @@ See `.env.example`. Validated by Zod at runtime.
 
 ## Key files for AI agents
 
+### Data layer (start here when modifying data access)
 | File | Purpose |
 |---|---|
-| `src/lib/github-storage.ts` | All data CRUD + optimistic locking |
-| `src/lib/env.ts` | Zod-validated env vars |
+| `src/lib/data-source.ts` | **Entry point** — `getDataSource()` returns GitHub or DB repos |
+| `src/lib/repositories/types.ts` | Repository interfaces (IAssetRepo, IProjectRepo, etc.) |
+| `src/lib/repositories/github.repo.ts` | GitHub implementation (wraps github-storage.ts) |
+| `src/lib/repositories/db.repo.ts` | PostgreSQL implementation (Drizzle queries) |
+| `src/lib/github-storage.ts` | Legacy data CRUD (still used by routes not yet migrated) |
+| `src/db/schema.ts` | Drizzle schema — 13 tables, the source of truth for DB structure |
+| `src/db/index.ts` | `getDb()` — Neon client singleton |
+
+### Infrastructure
+| File | Purpose |
+|---|---|
+| `src/lib/env.ts` | Zod-validated env vars (all services registered here) |
+| `src/lib/redis.ts` | Upstash Redis client (null if not configured) |
+| `src/lib/rate-limit.ts` | Redis sorted sets + in-memory fallback |
+| `src/lib/audit.ts` | Redis queue + GitHub flush |
+| `src/lib/logger.ts` | Pino structured logger with `createLogger(module)` |
 | `src/lib/auth/getSession.ts` | Session check (admin + user) |
+
+### UI & features
+| File | Purpose |
+|---|---|
 | `src/components/character/CharacterSheet.tsx` | RPG character sheet |
 | `src/components/portals/PortalsMap.tsx` | Interactive world map |
 | `src/components/asset/HypViewer.tsx` | .hyp viewer (Files/Script/Props) |
@@ -206,11 +274,6 @@ See `.env.example`. Validated by Zod at runtime.
 | `src/components/asset/STLViewer.tsx` | STL 3D print viewer |
 | `src/components/auth/LoginModal.tsx` | User login (wallet + GitHub) |
 | `src/components/admin/AdminSidebar.tsx` | L.A.P. sidebar navigation |
-| `src/app/api/characters/route.ts` | Character sheet CRUD |
-| `src/app/api/nft/check-ownership/route.ts` | NFT ownership (Base chain) |
-| `src/app/api/admin/archive/route.ts` | Arweave upload |
-| `src/lib/utils/hypParser.ts` | .hyp binary parser |
-| `src/lib/hooks/useFavorites.ts` | Favorites (localStorage) |
 
 ---
 
@@ -234,6 +297,11 @@ cp .env.example .env.local
 npm install
 npm run dev          # http://localhost:3000
 npm run type-check   # TypeScript validation
-npm test             # Vitest (138 tests)
+npm test             # Vitest (186 tests)
 npm run build        # Production build
+
+# Optional enterprise services (all degrade gracefully without them):
+# DATABASE_URL=...        → Neon PostgreSQL (otherwise GitHub JSON)
+# UPSTASH_REDIS_REST_URL= → shared rate limiting (otherwise in-memory)
+# SENTRY_DSN=...          → error tracking (otherwise console only)
 ```

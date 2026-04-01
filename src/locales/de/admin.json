@@ -81,6 +81,19 @@
       "title": "Blockchain",
       "enableTestnets": "Testnets aktivieren",
       "network": "Netzwerk"
+    },
+    "billing": {
+      "title": "Abrechnung",
+      "description": "Verwalte deinen Hosting-Plan für Weltenbau-Bereiche.",
+      "currentPlan": "Aktueller Plan",
+      "active": "Aktiv",
+      "free": "Kostenlos",
+      "current": "Aktuell",
+      "select": "Auswählen",
+      "spaces": "Bereiche",
+      "users": "Benutzer",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "Speicher"
     }
   },
   "stats": {

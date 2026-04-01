@@ -81,6 +81,19 @@
       "title": "区块链",
       "enableTestnets": "启用测试网",
       "network": "网络"
+    },
+    "billing": {
+      "title": "账单",
+      "description": "管理您的世界构建空间托管计划。",
+      "currentPlan": "当前计划",
+      "active": "活跃",
+      "free": "免费",
+      "current": "当前",
+      "select": "选择",
+      "spaces": "空间",
+      "users": "用户",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "存储"
     }
   },
   "stats": {

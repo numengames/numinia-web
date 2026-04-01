@@ -1,7 +1,7 @@
 'use client';
 
 import { useI18n } from '@/lib/i18n';
-import { User, Globe, Layout, Shield, Bell, Languages, Database, Link2, Info } from 'lucide-react';
+import { User, Globe, Layout, Shield, Bell, Languages, Database, Link2, Info, CreditCard } from 'lucide-react';
 
 interface SettingsNavProps {
   activeSection: string;
@@ -21,6 +21,7 @@ const SECTIONS = [
     { id: 'language', icon: Languages },
     { id: 'storageSection', icon: Database },
     { id: 'blockchain', icon: Link2 },
+    { id: 'billing', icon: CreditCard },
   ]},
   { group: '', items: [
     { id: 'about', icon: Info },

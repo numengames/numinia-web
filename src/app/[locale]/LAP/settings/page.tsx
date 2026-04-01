@@ -11,6 +11,7 @@ import { RolesSection } from '@/components/admin/settings/RolesSection';
 import { SidebarOptionsSection } from '@/components/admin/settings/SidebarOptionsSection';
 import { StorageSection } from '@/components/admin/settings/StorageSection';
 import { BlockchainSection } from '@/components/admin/settings/BlockchainSection';
+import { BillingSection } from '@/components/admin/settings/BillingSection';
 
 import type { Rank } from '@/types/rank';
 
@@ -175,7 +176,12 @@ export default function SettingsPage() {
 
           <div className="border-t border-gray-200 dark:border-gray-700" />
 
-          {/* 8. About */}
+          {/* 8. Billing */}
+          <BillingSection />
+
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+
+          {/* 9. About */}
           <section id="settings-about">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.settings.about')}</h2>
             <div className="space-y-2 text-sm text-gray-500">

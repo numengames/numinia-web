@@ -81,6 +81,19 @@
       "title": "Blockchain",
       "enableTestnets": "Habilitar testnets",
       "network": "Red"
+    },
+    "billing": {
+      "title": "Facturación",
+      "description": "Gestiona tu plan de alojamiento para espacios de construcción de mundos.",
+      "currentPlan": "Plan actual",
+      "active": "Activo",
+      "free": "Gratuito",
+      "current": "Actual",
+      "select": "Seleccionar",
+      "spaces": "Espacios",
+      "users": "Usuarios",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "Almacenamiento"
     }
   },
   "stats": {

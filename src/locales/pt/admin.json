@@ -81,6 +81,19 @@
       "title": "Blockchain",
       "enableTestnets": "Habilitar testnets",
       "network": "Rede"
+    },
+    "billing": {
+      "title": "Faturamento",
+      "description": "Gerencie seu plano de hospedagem para espaços de construção de mundos.",
+      "currentPlan": "Plano atual",
+      "active": "Ativo",
+      "free": "Gratuito",
+      "current": "Atual",
+      "select": "Selecionar",
+      "spaces": "Espaços",
+      "users": "Usuários",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "Armazenamento"
     }
   },
   "stats": {

@@ -81,6 +81,19 @@
       "title": "ブロックチェーン",
       "enableTestnets": "テストネットを有効にする",
       "network": "ネットワーク"
+    },
+    "billing": {
+      "title": "請求",
+      "description": "ワールド構築スペースのホスティングプランを管理します。",
+      "currentPlan": "現在のプラン",
+      "active": "有効",
+      "free": "無料",
+      "current": "現在",
+      "select": "選択",
+      "spaces": "スペース",
+      "users": "ユーザー",
+      "aiTokens": "AI Tokens",
+      "storageLabel": "ストレージ"
     }
   },
   "stats": {
