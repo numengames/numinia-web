@@ -89,6 +89,33 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Check Thirdweb JWT (tw_jwt) — any valid JWT means authenticated user
+  if (!isAdmin) {
+    const twJwt = request.cookies.get('tw_jwt');
+    if (twJwt?.value) {
+      try {
+        const parts = twJwt.value.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          if (payload.sub) isAdmin = true; // Any wallet-authenticated user can access LAP
+        }
+      } catch { /* malformed JWT — treat as unauthenticated */ }
+    }
+  }
+
+  // Check user_session cookie (regular wallet users)
+  if (!isAdmin) {
+    const userCookie = request.cookies.get('user_session');
+    if (userCookie) {
+      try {
+        const dot = userCookie.value.indexOf('.');
+        const payload = dot > 0 ? atob(userCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : userCookie.value;
+        const data = JSON.parse(payload);
+        if (data.address) isAdmin = true; // Any authenticated wallet user can access LAP
+      } catch { /* malformed cookie — treat as unauthenticated */ }
+    }
+  }
+
   // L.A.P. and admin routes — redirect unauthenticated users to home
   if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAdmin) {
     const locale = currentLocale || defaultLocale;
