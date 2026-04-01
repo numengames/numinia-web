@@ -4,13 +4,13 @@
   "short_name": "Numinia",
   "description": "Open registry of CC0 digital assets: 3D models, avatars, worlds, audio, video. Free for games, VR, and metaverse projects.",
   "lang": "en",
-  "start_url": "/en/gallery",
+  "start_url": "/en/archive",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#EBE7E0",
   "theme_color": "#EBE7E0",
-  "categories": ["entertainment", "art", "design"],
+  "categories": ["entertainment", "art", "design", "games"],
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -29,6 +29,15 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/opengraph-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Numinia Digital Goods - Free CC0 3D Assets Gallery"
     }
   ]
 }

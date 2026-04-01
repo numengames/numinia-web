@@ -19,6 +19,37 @@
 
 ---
 
+## Numinia Universe Context
+
+> For deep understanding, read the canonical sources in `docs/seminal-documents/`.
+
+Numinia Digital Goods exists within a larger universe. Understanding this context is essential for making coherent decisions about the platform.
+
+**What Numen Games is:** An organizational experiment that uses gamification to transform how organizations work. Founded 2020 by five Oracles (co-founders). The core thesis: play is how humans learn, grow, and build better relationships.
+
+**What Numinia is:** A city-state imagined as an RPG — the narrative projection of Numen Games' organizational model. The relationship follows a chain: **Operating System** (organizational need) → **Functional Model** (structural architecture) → **Narrative Projection** (the game/story that makes it tangible). These three are inseparable.
+
+**Key structural elements:**
+- **4 Guilds** (knowledge profiles): Alchemists, Exegetes, Procurators, Sentinels — each with 2 branches and 2 houses per branch (Basic Level Theory)
+- **4 Factions** (fields of development): Hermeticists (Education), Heirs of Eleusis (Play), Stellar Circle (Organization), Neo-Atlantists (Art) — horizontal Prototype Theory arrangement with Play as prototype
+- **5 Species:** Biomechanical, Humanitas, Reptilian, Cyanite, Spectral
+- **15 Positions:** Guardian of the Gates, Pythia, Ambassador, Game Master, Legionary, Armonauta, Whisperer of Machines, Runner of the Veil, Archivist, Hermeneut, Mediator of the Prism, Cartographer of the Wind, Oniromant, Anacárquide, Ethnarch
+- **4 Districts** (floating): Vitruvian (130m, Education), Ouroboros (40m, Play), Solomon (70m, Organization), Sycamore (100m, Art)
+- **3 Forces:** Velo (psychic/spiritual), Umbral (physical/natural), Prisma (refractive/creative)
+- **6 Ranks:** Nomad → Citizen → Pilgrim → Vernacular → Archon → Oracle
+
+**Purpose:** Leveling up organizations to build better relationships.
+**Mission:** Build games to make work better.
+**Values:** Cosmic Harmony, Equability, Curiosity, Healthy Environments.
+**Pillars:** Craft (art as driver), Learn (play to learn), Remix (copy and improve).
+**Cause:** Digital Humanism.
+
+**Game system (Numen):** Hybrid of PbtA + Carved from Brindlewood + D6 system. Collaborative narrative construction. Players co-create the world through Heterocósmica mechanics and Propp narrative functions.
+
+**Calendar:** 13 lunar cycles × 29 days = 377 days/year. Key rituals: Dark Council (strategy, Mondays), Lunar Coven (creative play, Thursdays).
+
+---
+
 ## Repository map (2 repos)
 
 ```

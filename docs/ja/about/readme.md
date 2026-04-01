@@ -7,6 +7,12 @@ description: "About Numinia Digital Goods — philosophy, formats, and storage"
 
 Numinia Digital Goods is an open platform for CC0-licensed digital assets built by [Numen Games](https://numen.games). We believe digital goods should be free, permanent, and interoperable.
 
+## The Universe Behind the Platform
+
+Numinia is a city-state imagined as a role-playing game, created by Numen Games as a gamified organizational model. The digital goods here are the shared building blocks of that universe — CC0 assets for anyone to use, remix, and build upon.
+
+> For the full lore, philosophy, and organizational framework, see the [Seminal Documents](/docs/seminal-documents/) (English).
+
 ## Core Principle: File Over App
 
 The data is the product, not the app. All asset metadata lives in open JSON files on GitHub, and binaries are stored on CDN and permanent storage (Arweave). If numinia.store disappears, the files remain — fork the data, build your own viewer.
