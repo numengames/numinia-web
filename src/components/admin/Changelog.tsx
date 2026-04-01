@@ -17,6 +17,7 @@ type IncomingItem = {
 
 const INCOMING: IncomingItem[] = [
   { text: 'Season Pass — Stripe checkout + Thirdweb NFT mint (Base)', status: 'in-progress' },
+  { text: 'Spanish (ES) translation', status: 'planned' },
   { text: 'Rate limiting persistente (Upstash Redis)', status: 'planned' },
   { text: 'Blog/content section para SEO long-tail', status: 'planned' },
   { text: 'Server-side pagination en API de assets', status: 'planned' },
@@ -29,6 +30,29 @@ const INCOMING: IncomingItem[] = [
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.13.0',
+    date: '2026-04-02',
+    time: '03:30',
+    items: [
+      { text: 'Dynamic [locale] routing — all pages now support any locale via URL segment', type: 'new' },
+      { text: 'i18n: added Korean, Chinese, Portuguese, and German translations', type: 'new' },
+      { text: 'i18n: complete coverage for gallery, actions, viewer, and finder components', type: 'improvement' },
+      { text: 'LAP admin UI fully translated + compact language dropdown in Settings', type: 'new' },
+      { text: 'Language selector persists preference via cookie', type: 'new' },
+      { text: 'Skeleton screens replace spinner loading states across the platform', type: 'improvement' },
+      { text: 'Gallery card micro-interactions (hover scale, shadow transitions)', type: 'improvement' },
+      { text: 'Blur placeholder (LQIP) replaces animate-pulse for image loading', type: 'improvement' },
+      { text: 'Error pages (404, 500) with branded design + global-error boundary', type: 'new' },
+      { text: 'Accessibility: improved touch targets and keyboard navigation', type: 'improvement' },
+      { text: 'API routes hardened with error boundaries and input validation', type: 'fix' },
+      { text: 'Dark mode: Assets admin dashboard, logo, Khepri icon inversions fixed', type: 'fix' },
+      { text: 'Fallback image unified to /placeholder.png (removed picsum.photos)', type: 'fix' },
+      { text: 'Page transitions, header height, and loading screen text color fixed', type: 'fix' },
+      { text: 'PWA manifest improvements + visual consistency polish', type: 'improvement' },
+      { text: 'AdminSidebar: removed stale href/label references', type: 'fix' },
+    ],
+  },
   {
     version: '0.12.0',
     date: '2026-04-01',

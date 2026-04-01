@@ -94,7 +94,7 @@ export default function SettingsPage() {
       <section className="my-8">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.settings.about')}</h2>
         <div className="space-y-2 text-sm text-gray-500">
-          <div className="flex justify-between"><span>{t('admin.settings.version')}</span><span className="text-gray-900 dark:text-white">0.12.0</span></div>
+          <div className="flex justify-between"><span>{t('admin.settings.version')}</span><span className="text-gray-900 dark:text-white">0.13.0</span></div>
           <div className="flex justify-between"><span>{t('admin.settings.idSystem')}</span><span className="text-gray-900 dark:text-white">UUID v7 (RFC 9562)</span></div>
           <div className="flex justify-between"><span>{t('admin.settings.storage')}</span><span className="text-gray-900 dark:text-white">R2 + GitHub</span></div>
           <div className="flex justify-between">

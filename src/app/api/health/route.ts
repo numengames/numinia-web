@@ -77,7 +77,7 @@ export async function GET() {
     {
       status: overallStatus,
       timestamp: new Date().toISOString(),
-      version: '0.12.0',
+      version: '0.13.0',
       services,
     },
     { status: statusCode }
