@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "Personaje",
+    "portals": "Portales",
+    "loot": "Botín",
+    "seasons": "Temporadas",
+    "codex": "Códice",
+    "assets": "Recursos",
+    "archive": "Archivo",
+    "updates": "Novedades",
+    "stats": "Estadísticas",
+    "settings": "Ajustes"
+  },
+  "sidebar": {
+    "menu": "Menú",
+    "expand": "Expandir barra lateral",
+    "collapse": "Contraer barra lateral",
+    "signOut": "Cerrar sesión",
+    "signOutTitle": "Cerrar sesión"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "Conecta tu wallet o inicia sesión para acceder al L.A.P."
+  },
+  "settings": {
+    "title": "Ajustes",
+    "language": "Idioma",
+    "languageHint": "El idioma se detecta automáticamente desde tu navegador. Tu elección aquí anula la detección automática.",
+    "platform": "Plataforma",
+    "publicGallery": "Galería pública",
+    "publicGalleryDesc": "Mostrar recursos en la galería pública de numinia.store",
+    "autoUploadR2": "Subida automática a R2",
+    "autoUploadR2Desc": "Subir archivos automáticamente al CDN de Cloudflare R2 cuando esté disponible",
+    "downloadTracking": "Seguimiento de descargas",
+    "downloadTrackingDesc": "Registrar conteos anónimos de descargas de recursos",
+    "about": "Acerca de",
+    "version": "Versión",
+    "idSystem": "Sistema de ID",
+    "storage": "Almacenamiento",
+    "documentation": "Documentación"
+  },
+  "stats": {
+    "title": "Estadísticas",
+    "totalAssets": "Total de recursos",
+    "totalSize": "Tamaño total",
+    "projects": "Proyectos",
+    "byType": "Por tipo",
+    "storageLayers": "Capas de almacenamiento",
+    "redundancyHealth": "Estado de redundancia",
+    "redundantAssets": "Recursos redundantes",
+    "redundant": "Redundante",
+    "singlePoint": "Punto único",
+    "total": "Total",
+    "loadFailed": "Error al cargar las estadísticas."
+  },
+  "updates": {
+    "title": "Novedades"
+  },
+  "upload": {
+    "title": "Subir recurso",
+    "fileTooLarge": "Archivo demasiado grande. Máximo 500 MB."
+  }
+}

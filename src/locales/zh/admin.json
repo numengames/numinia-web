@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "角色",
+    "portals": "传送门",
+    "loot": "战利品",
+    "seasons": "赛季",
+    "codex": "法典",
+    "assets": "资源",
+    "archive": "档案馆",
+    "updates": "更新",
+    "stats": "统计",
+    "settings": "设置"
+  },
+  "sidebar": {
+    "menu": "菜单",
+    "expand": "展开侧边栏",
+    "collapse": "收起侧边栏",
+    "signOut": "退出登录",
+    "signOutTitle": "退出登录"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "连接钱包或登录以访问 L.A.P."
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "languageHint": "语言会从浏览器自动检测。在此处的选择将覆盖自动检测。",
+    "platform": "平台",
+    "publicGallery": "公开画廊",
+    "publicGalleryDesc": "在 numinia.store 的公开画廊中展示资源",
+    "autoUploadR2": "自动上传到 R2",
+    "autoUploadR2Desc": "可用时自动将文件上传到 Cloudflare R2 CDN",
+    "downloadTracking": "下载追踪",
+    "downloadTrackingDesc": "追踪资源的匿名下载次数",
+    "about": "关于",
+    "version": "版本",
+    "idSystem": "ID 系统",
+    "storage": "存储",
+    "documentation": "文档"
+  },
+  "stats": {
+    "title": "统计",
+    "totalAssets": "资源总数",
+    "totalSize": "总大小",
+    "projects": "项目",
+    "byType": "按类型",
+    "storageLayers": "存储层",
+    "redundancyHealth": "冗余健康度",
+    "redundantAssets": "冗余资源",
+    "redundant": "冗余",
+    "singlePoint": "单点",
+    "total": "合计",
+    "loadFailed": "统计数据加载失败。"
+  },
+  "updates": {
+    "title": "更新"
+  },
+  "upload": {
+    "title": "上传资源",
+    "fileTooLarge": "文件过大。最大 500 MB。"
+  }
+}

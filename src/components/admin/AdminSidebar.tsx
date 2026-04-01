@@ -18,22 +18,22 @@ interface AdminSidebarProps {
   onSignOut: () => void;
 }
 
-type NavItem = { id: LAPSection | 'archive'; label: string; icon: typeof Package; href?: string };
+type NavItem = { id: LAPSection | 'archive'; icon: typeof Package };
 
 const MAIN_NAV: NavItem[] = [
-  { id: 'character', label: 'Character', icon: User },
-  { id: 'portals', label: 'Portals', icon: Globe },
-  { id: 'loot', label: 'Loot', icon: Swords },
-  { id: 'seasons', label: 'Seasons', icon: Flame },
-  { id: 'codex', label: 'Codex', icon: BookOpen },
-  { id: 'assets', label: 'Assets', icon: Package },
-  { id: 'archive', label: 'Archive', icon: Archive },
+  { id: 'character', icon: User },
+  { id: 'portals', icon: Globe },
+  { id: 'loot', icon: Swords },
+  { id: 'seasons', icon: Flame },
+  { id: 'codex', icon: BookOpen },
+  { id: 'assets', icon: Package },
+  { id: 'archive', icon: Archive },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
-  { id: 'updates', label: 'Updates', icon: Bell },
-  { id: 'stats', label: 'Stats', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'updates', icon: Bell },
+  { id: 'stats', icon: BarChart3 },
+  { id: 'settings', icon: Settings },
 ];
 
 /** Derive the active section from the current pathname. */
@@ -49,7 +49,7 @@ function useActiveSection(): LAPSection {
 export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
   const activeSection = useActiveSection();
   const pathname = usePathname();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 640;
@@ -102,7 +102,7 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? t('admin.sidebar.expand') as string : t('admin.sidebar.collapse') as string}
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -130,10 +130,10 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
                   ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
               }`}
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? t(`admin.nav.${item.id}`) as string : undefined}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              {!collapsed && <span>{t(`admin.nav.${item.id}`)}</span>}
             </Link>
           );
         })}
@@ -185,10 +185,10 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
           <button
             onClick={onSignOut}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-            title="Sign out"
+            title={t('admin.sidebar.signOutTitle') as string}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Sign Out</span>}
+            {!collapsed && <span>{t('admin.sidebar.signOut')}</span>}
           </button>
         </div>
       </div>

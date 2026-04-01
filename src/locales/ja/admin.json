@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "キャラクター",
+    "portals": "ポータル",
+    "loot": "ルート",
+    "seasons": "シーズン",
+    "codex": "コーデックス",
+    "assets": "アセット",
+    "archive": "アーカイブ",
+    "updates": "アップデート",
+    "stats": "統計",
+    "settings": "設定"
+  },
+  "sidebar": {
+    "menu": "メニュー",
+    "expand": "サイドバーを展開",
+    "collapse": "サイドバーを折りたたむ",
+    "signOut": "サインアウト",
+    "signOutTitle": "サインアウト"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "L.A.P.にアクセスするには、ウォレットを接続するかサインインしてください"
+  },
+  "settings": {
+    "title": "設定",
+    "language": "言語",
+    "languageHint": "言語はブラウザから自動検出されます。ここでの選択は自動検出を上書きします。",
+    "platform": "プラットフォーム",
+    "publicGallery": "公開ギャラリー",
+    "publicGalleryDesc": "numinia.storeの公開ギャラリーにアセットを表示する",
+    "autoUploadR2": "R2への自動アップロード",
+    "autoUploadR2Desc": "利用可能な場合、ファイルをCloudflare R2 CDNに自動アップロードする",
+    "downloadTracking": "ダウンロード追跡",
+    "downloadTrackingDesc": "アセットの匿名ダウンロード数を追跡する",
+    "about": "バージョン情報",
+    "version": "バージョン",
+    "idSystem": "IDシステム",
+    "storage": "ストレージ",
+    "documentation": "ドキュメント"
+  },
+  "stats": {
+    "title": "統計",
+    "totalAssets": "総アセット数",
+    "totalSize": "合計サイズ",
+    "projects": "プロジェクト",
+    "byType": "タイプ別",
+    "storageLayers": "ストレージレイヤー",
+    "redundancyHealth": "冗長性ヘルス",
+    "redundantAssets": "冗長アセット",
+    "redundant": "冗長",
+    "singlePoint": "単一ポイント",
+    "total": "合計",
+    "loadFailed": "統計の読み込みに失敗しました。"
+  },
+  "updates": {
+    "title": "アップデート"
+  },
+  "upload": {
+    "title": "アセットをアップロード",
+    "fileTooLarge": "ファイルが大きすぎます。最大500 MBです。"
+  }
+}

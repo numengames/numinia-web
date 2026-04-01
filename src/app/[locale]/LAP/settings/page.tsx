@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { locales, type Locale } from '@/lib/i18n-config';
-import { Globe } from 'lucide-react';
+import { Globe, ChevronDown } from 'lucide-react';
 
 const languageNames: Record<Locale, string> = {
   en: 'English',
@@ -16,55 +16,75 @@ const languageNames: Record<Locale, string> = {
 };
 
 export default function SettingsPage() {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
+  const [langOpen, setLangOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setLangOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLanguageChange = (newLocale: Locale) => {
     setLocale(newLocale);
-    // Set cookie so middleware respects the choice on next visit
     document.cookie = `preferred-locale=${newLocale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
-    // Navigate to the same page in the new locale
+    setLangOpen(false);
     window.location.href = `/${newLocale}/LAP/settings`;
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">{t('admin.settings.title')}</h1>
 
       {/* Language */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Globe className="h-4 w-4" />
-          Language
+          {t('admin.settings.language')}
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {locales.map((code) => (
-            <button
-              key={code}
-              onClick={() => handleLanguageChange(code)}
-              className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
-                locale === code
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white'
-                  : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500'
-              }`}
-            >
-              {languageNames[code]}
-            </button>
-          ))}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setLangOpen(!langOpen)}
+            className="w-full sm:w-64 flex items-center justify-between px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-gray-900 dark:text-white hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+          >
+            <span>{languageNames[locale as Locale]}</span>
+            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {langOpen && (
+            <div className="absolute z-50 mt-1 w-full sm:w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              {locales.map((code) => (
+                <button
+                  key={code}
+                  onClick={() => handleLanguageChange(code)}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                    locale === code
+                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-medium'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {languageNames[code]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          Language is auto-detected from your browser. Your choice here overrides auto-detection.
-        </p>
+        <p className="text-xs text-gray-400 mt-2">{t('admin.settings.languageHint')}</p>
       </section>
 
       <div className="border-t border-gray-200 dark:border-gray-700" />
 
       {/* Platform */}
       <section className="my-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Platform</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.settings.platform')}</h2>
         <div className="space-y-4">
-          <SettingRow label="Public Gallery" description="Show assets in the public gallery at numinia.store" enabled={true} />
-          <SettingRow label="Auto-upload to R2" description="Automatically upload files to Cloudflare R2 CDN when available" enabled={true} />
-          <SettingRow label="Download Tracking" description="Track anonymous download counts for assets" enabled={true} />
+          <SettingRow label={t('admin.settings.publicGallery') as string} description={t('admin.settings.publicGalleryDesc') as string} enabled={true} />
+          <SettingRow label={t('admin.settings.autoUploadR2') as string} description={t('admin.settings.autoUploadR2Desc') as string} enabled={true} />
+          <SettingRow label={t('admin.settings.downloadTracking') as string} description={t('admin.settings.downloadTrackingDesc') as string} enabled={true} />
         </div>
       </section>
 
@@ -72,13 +92,13 @@ export default function SettingsPage() {
 
       {/* About */}
       <section className="my-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">About</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.settings.about')}</h2>
         <div className="space-y-2 text-sm text-gray-500">
-          <div className="flex justify-between"><span>Version</span><span className="text-gray-900 dark:text-white">0.12.0</span></div>
-          <div className="flex justify-between"><span>ID System</span><span className="text-gray-900 dark:text-white">UUID v7 (RFC 9562)</span></div>
-          <div className="flex justify-between"><span>Storage</span><span className="text-gray-900 dark:text-white">R2 + GitHub</span></div>
+          <div className="flex justify-between"><span>{t('admin.settings.version')}</span><span className="text-gray-900 dark:text-white">0.12.0</span></div>
+          <div className="flex justify-between"><span>{t('admin.settings.idSystem')}</span><span className="text-gray-900 dark:text-white">UUID v7 (RFC 9562)</span></div>
+          <div className="flex justify-between"><span>{t('admin.settings.storage')}</span><span className="text-gray-900 dark:text-white">R2 + GitHub</span></div>
           <div className="flex justify-between">
-            <span>Documentation</span>
+            <span>{t('admin.settings.documentation')}</span>
             <a href="https://github.com/PabloFMM/numinia-digital-goods" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">GitHub ↗</a>
           </div>
         </div>

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function StatsPage() {
+  const { t } = useI18n();
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,23 +17,23 @@ export default function StatsPage() {
   }, []);
 
   if (loading) return <div className="flex items-center justify-center p-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-  if (!stats) return <div className="p-6 text-gray-500">Failed to load stats.</div>;
+  if (!stats) return <div className="p-6 text-gray-500">{t('admin.stats.loadFailed')}</div>;
 
   const total = Number(stats.total_assets) || 0;
   const layer = stats.by_layer as Record<string, number> | undefined;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Stats</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t('admin.stats.title')}</h1>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <StatCard label="Total Assets" value={String(stats.total_assets ?? 0)} />
-        <StatCard label="Total Size" value={`${stats.total_size_mb ?? 0} MB`} />
-        <StatCard label="Projects" value={String(stats.total_projects ?? 0)} />
+        <StatCard label={t('admin.stats.totalAssets') as string} value={String(stats.total_assets ?? 0)} />
+        <StatCard label={t('admin.stats.totalSize') as string} value={`${stats.total_size_mb ?? 0} MB`} />
+        <StatCard label={t('admin.stats.projects') as string} value={String(stats.total_projects ?? 0)} />
       </div>
 
       {!!stats.by_type && (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">By Type</h2>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('admin.stats.byType')}</h2>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {Object.entries(stats.by_type as Record<string, number>).map(([type, count]) => (
               <div key={type} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
@@ -45,7 +47,7 @@ export default function StatsPage() {
 
       {!!layer && (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Storage Layers</h2>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('admin.stats.storageLayers')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {Object.entries(layer).map(([l, count]) => (
               <div key={l} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
@@ -65,11 +67,11 @@ export default function StatsPage() {
         const pct = Math.round((redundant / total) * 100);
         return (
           <div className="mt-6">
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Redundancy Health</h2>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('admin.stats.redundancyHealth')}</h2>
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500">Redundant assets</span>
+                  <span className="text-gray-500">{t('admin.stats.redundantAssets')}</span>
                   <span className="font-medium text-gray-900 dark:text-white">{pct}%</span>
                 </div>
                 <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -77,9 +79,9 @@ export default function StatsPage() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                <div><div className="text-lg font-bold text-green-600">{redundant}</div><div className="text-gray-500">Redundant</div></div>
-                <div><div className="text-lg font-bold text-red-500">{singlePoint}</div><div className="text-gray-500">Single point</div></div>
-                <div><div className="text-lg font-bold text-gray-900 dark:text-white">{total}</div><div className="text-gray-500">Total</div></div>
+                <div><div className="text-lg font-bold text-green-600">{redundant}</div><div className="text-gray-500">{t('admin.stats.redundant')}</div></div>
+                <div><div className="text-lg font-bold text-red-500">{singlePoint}</div><div className="text-gray-500">{t('admin.stats.singlePoint')}</div></div>
+                <div><div className="text-lg font-bold text-gray-900 dark:text-white">{total}</div><div className="text-gray-500">{t('admin.stats.total')}</div></div>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { WalletConnect } from '@/components/admin/WalletConnect';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 type AdminSession = {
   authenticated: boolean;
@@ -22,6 +23,7 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<AdminSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     fetch('/api/auth/wallet/session')
@@ -50,9 +52,9 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-cream dark:bg-cream-dark">
         <img src="/logo-numinia.svg" alt="Numinia" className="h-8 w-auto" />
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">L.A.P.</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('admin.shell.title')}</h1>
           <p className="text-sm text-gray-500">
-            Connect your wallet or sign in to access L.A.P.
+            {t('admin.shell.connectMessage')}
           </p>
         </div>
         <WalletConnect onAuthenticated={setSession} />

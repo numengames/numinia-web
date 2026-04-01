@@ -17,6 +17,7 @@ import enResources from '../locales/en/resources.json';
 import enVrmviewer from '../locales/en/vrmviewer.json';
 import enHome      from '../locales/en/home.json';
 import enFinder    from '../locales/en/finder.json';
+import enAdmin     from '../locales/en/admin.json';
 
 import jaCommon    from '../locales/ja/common.json';
 import jaHeader    from '../locales/ja/header.json';
@@ -26,6 +27,7 @@ import jaResources from '../locales/ja/resources.json';
 import jaVrmviewer from '../locales/ja/vrmviewer.json';
 import jaHome      from '../locales/ja/home.json';
 import jaFinder    from '../locales/ja/finder.json';
+import jaAdmin     from '../locales/ja/admin.json';
 
 import esCommon    from '../locales/es/common.json';
 import esHeader    from '../locales/es/header.json';
@@ -35,6 +37,7 @@ import esResources from '../locales/es/resources.json';
 import esVrmviewer from '../locales/es/vrmviewer.json';
 import esHome      from '../locales/es/home.json';
 import esFinder    from '../locales/es/finder.json';
+import esAdmin     from '../locales/es/admin.json';
 
 import koCommon    from '../locales/ko/common.json';
 import koHeader    from '../locales/ko/header.json';
@@ -44,6 +47,7 @@ import koResources from '../locales/ko/resources.json';
 import koVrmviewer from '../locales/ko/vrmviewer.json';
 import koHome      from '../locales/ko/home.json';
 import koFinder    from '../locales/ko/finder.json';
+import koAdmin     from '../locales/ko/admin.json';
 
 import zhCommon    from '../locales/zh/common.json';
 import zhHeader    from '../locales/zh/header.json';
@@ -53,6 +57,7 @@ import zhResources from '../locales/zh/resources.json';
 import zhVrmviewer from '../locales/zh/vrmviewer.json';
 import zhHome      from '../locales/zh/home.json';
 import zhFinder    from '../locales/zh/finder.json';
+import zhAdmin     from '../locales/zh/admin.json';
 
 import ptCommon    from '../locales/pt/common.json';
 import ptHeader    from '../locales/pt/header.json';
@@ -62,6 +67,7 @@ import ptResources from '../locales/pt/resources.json';
 import ptVrmviewer from '../locales/pt/vrmviewer.json';
 import ptHome      from '../locales/pt/home.json';
 import ptFinder    from '../locales/pt/finder.json';
+import ptAdmin     from '../locales/pt/admin.json';
 
 import deCommon    from '../locales/de/common.json';
 import deHeader    from '../locales/de/header.json';
@@ -71,6 +77,7 @@ import deResources from '../locales/de/resources.json';
 import deVrmviewer from '../locales/de/vrmviewer.json';
 import deHome      from '../locales/de/home.json';
 import deFinder    from '../locales/de/finder.json';
+import deAdmin     from '../locales/de/admin.json';
 
 // Type for translation keys
 type TranslationKey = string;
@@ -101,6 +108,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: enVrmviewer,
     home: enHome,
     finder: enFinder,
+    admin: enAdmin,
   },
   ja: {
     common: jaCommon,
@@ -111,6 +119,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: jaVrmviewer,
     home: jaHome,
     finder: jaFinder,
+    admin: jaAdmin,
   },
   es: {
     common: esCommon,
@@ -121,6 +130,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: esVrmviewer,
     home: esHome,
     finder: esFinder,
+    admin: esAdmin,
   },
   ko: {
     common: koCommon,
@@ -131,6 +141,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: koVrmviewer,
     home: koHome,
     finder: koFinder,
+    admin: koAdmin,
   },
   zh: {
     common: zhCommon,
@@ -141,6 +152,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: zhVrmviewer,
     home: zhHome,
     finder: zhFinder,
+    admin: zhAdmin,
   },
   pt: {
     common: ptCommon,
@@ -151,6 +163,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: ptVrmviewer,
     home: ptHome,
     finder: ptFinder,
+    admin: ptAdmin,
   },
   de: {
     common: deCommon,
@@ -161,6 +174,7 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: deVrmviewer,
     home: deHome,
     finder: deFinder,
+    admin: deAdmin,
   },
 };
 

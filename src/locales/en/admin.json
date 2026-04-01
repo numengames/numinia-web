@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "Character",
+    "portals": "Portals",
+    "loot": "Loot",
+    "seasons": "Seasons",
+    "codex": "Codex",
+    "assets": "Assets",
+    "archive": "Archive",
+    "updates": "Updates",
+    "stats": "Stats",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "menu": "Menu",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "signOut": "Sign Out",
+    "signOutTitle": "Sign out"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "Connect your wallet or sign in to access L.A.P."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageHint": "Language is auto-detected from your browser. Your choice here overrides auto-detection.",
+    "platform": "Platform",
+    "publicGallery": "Public Gallery",
+    "publicGalleryDesc": "Show assets in the public gallery at numinia.store",
+    "autoUploadR2": "Auto-upload to R2",
+    "autoUploadR2Desc": "Automatically upload files to Cloudflare R2 CDN when available",
+    "downloadTracking": "Download Tracking",
+    "downloadTrackingDesc": "Track anonymous download counts for assets",
+    "about": "About",
+    "version": "Version",
+    "idSystem": "ID System",
+    "storage": "Storage",
+    "documentation": "Documentation"
+  },
+  "stats": {
+    "title": "Stats",
+    "totalAssets": "Total Assets",
+    "totalSize": "Total Size",
+    "projects": "Projects",
+    "byType": "By Type",
+    "storageLayers": "Storage Layers",
+    "redundancyHealth": "Redundancy Health",
+    "redundantAssets": "Redundant assets",
+    "redundant": "Redundant",
+    "singlePoint": "Single point",
+    "total": "Total",
+    "loadFailed": "Failed to load stats."
+  },
+  "updates": {
+    "title": "Updates"
+  },
+  "upload": {
+    "title": "Upload Asset",
+    "fileTooLarge": "File too large. Max 500 MB."
+  }
+}

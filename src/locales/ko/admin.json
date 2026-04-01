@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "캐릭터",
+    "portals": "포탈",
+    "loot": "전리품",
+    "seasons": "시즌",
+    "codex": "코덱스",
+    "assets": "에셋",
+    "archive": "아카이브",
+    "updates": "업데이트",
+    "stats": "통계",
+    "settings": "설정"
+  },
+  "sidebar": {
+    "menu": "메뉴",
+    "expand": "사이드바 펼치기",
+    "collapse": "사이드바 접기",
+    "signOut": "로그아웃",
+    "signOutTitle": "로그아웃"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "L.A.P.에 접근하려면 지갑을 연결하거나 로그인하세요"
+  },
+  "settings": {
+    "title": "설정",
+    "language": "언어",
+    "languageHint": "언어는 브라우저에서 자동으로 감지됩니다. 여기서 선택하면 자동 감지를 무시합니다.",
+    "platform": "플랫폼",
+    "publicGallery": "공개 갤러리",
+    "publicGalleryDesc": "numinia.store의 공개 갤러리에 에셋 표시",
+    "autoUploadR2": "R2 자동 업로드",
+    "autoUploadR2Desc": "가능한 경우 Cloudflare R2 CDN에 파일을 자동으로 업로드",
+    "downloadTracking": "다운로드 추적",
+    "downloadTrackingDesc": "에셋의 익명 다운로드 수 추적",
+    "about": "정보",
+    "version": "버전",
+    "idSystem": "ID 시스템",
+    "storage": "스토리지",
+    "documentation": "문서"
+  },
+  "stats": {
+    "title": "통계",
+    "totalAssets": "총 에셋",
+    "totalSize": "총 크기",
+    "projects": "프로젝트",
+    "byType": "유형별",
+    "storageLayers": "스토리지 레이어",
+    "redundancyHealth": "이중화 상태",
+    "redundantAssets": "이중화된 에셋",
+    "redundant": "이중화",
+    "singlePoint": "단일 지점",
+    "total": "합계",
+    "loadFailed": "통계를 불러오지 못했습니다."
+  },
+  "updates": {
+    "title": "업데이트"
+  },
+  "upload": {
+    "title": "에셋 업로드",
+    "fileTooLarge": "파일이 너무 큽니다. 최대 500 MB입니다."
+  }
+}

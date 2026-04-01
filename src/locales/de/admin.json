@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "character": "Charakter",
+    "portals": "Portale",
+    "loot": "Beute",
+    "seasons": "Staffeln",
+    "codex": "Kodex",
+    "assets": "Assets",
+    "archive": "Archiv",
+    "updates": "Aktualisierungen",
+    "stats": "Statistiken",
+    "settings": "Einstellungen"
+  },
+  "sidebar": {
+    "menu": "Menü",
+    "expand": "Seitenleiste ausklappen",
+    "collapse": "Seitenleiste einklappen",
+    "signOut": "Abmelden",
+    "signOutTitle": "Abmelden"
+  },
+  "shell": {
+    "title": "L.A.P.",
+    "connectMessage": "Verbinde dein Wallet oder melde dich an, um auf das L.A.P. zuzugreifen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "languageHint": "Die Sprache wird automatisch vom Browser erkannt. Deine Auswahl hier überschreibt die automatische Erkennung.",
+    "platform": "Plattform",
+    "publicGallery": "Öffentliche Galerie",
+    "publicGalleryDesc": "Assets in der öffentlichen Galerie auf numinia.store anzeigen",
+    "autoUploadR2": "Automatischer Upload zu R2",
+    "autoUploadR2Desc": "Dateien automatisch zum Cloudflare R2 CDN hochladen, wenn verfügbar",
+    "downloadTracking": "Download-Tracking",
+    "downloadTrackingDesc": "Anonyme Download-Zähler für Assets erfassen",
+    "about": "Über",
+    "version": "Version",
+    "idSystem": "ID-System",
+    "storage": "Speicher",
+    "documentation": "Dokumentation"
+  },
+  "stats": {
+    "title": "Statistiken",
+    "totalAssets": "Assets gesamt",
+    "totalSize": "Gesamtgröße",
+    "projects": "Projekte",
+    "byType": "Nach Typ",
+    "storageLayers": "Speicherebenen",
+    "redundancyHealth": "Redundanz-Status",
+    "redundantAssets": "Redundante Assets",
+    "redundant": "Redundant",
+    "singlePoint": "Einzelpunkt",
+    "total": "Gesamt",
+    "loadFailed": "Statistiken konnten nicht geladen werden."
+  },
+  "updates": {
+    "title": "Aktualisierungen"
+  },
+  "upload": {
+    "title": "Asset hochladen",
+    "fileTooLarge": "Datei zu groß. Maximal 500 MB."
+  }
+}
