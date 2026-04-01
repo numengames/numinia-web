@@ -20,7 +20,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     <div className={`min-h-screen flex items-center justify-center bg-cream dark:bg-gray-950 ${className}`}>
       <div className="text-center">
         <CrescentSpinner size="md" className="mx-auto mb-4" />
-        <p className="text-white dark:text-white text-sm font-medium">
+        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
           {loadingText}
         </p>
       </div>

@@ -36,13 +36,13 @@
     --radius: 0.5rem;
 
     /* Fixed header heights (used by docs/resources layout) */
-    --osa-avatar-header-height: 4rem; /* mobile: AvatarHeader h-16 */
+    --osa-avatar-header-height: 5rem; /* mobile: AvatarHeader h-20 */
     --osa-doc-header-height: 6rem; /* mobile: DocHeader h-24 */
   }
 
   @media (min-width: 768px) {
     :root {
-      --osa-avatar-header-height: 5rem; /* md+: AvatarHeader md:h-20 */
+      --osa-avatar-header-height: 6rem; /* md+: AvatarHeader md:h-24 */
       --osa-doc-header-height: 5rem; /* md+: DocHeader h-20 */
     }
   }

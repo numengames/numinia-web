@@ -40,7 +40,9 @@ export default async function LocaleLayout({
   return (
     <I18nProvider defaultLocale={locale}>
       <AuthProvider>
-        {children}
+        <div className="animate-fade-in">
+          {children}
+        </div>
         <CookieConsent />
       </AuthProvider>
     </I18nProvider>
