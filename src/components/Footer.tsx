@@ -25,7 +25,7 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
               <img 
                 src="/logo-numinia.svg" 
                 alt="Numinia Digital Goods" 
-                className="h-9 w-auto"
+                className="h-9 w-auto dark:invert"
               />
             </Link>
             <p className="text-small text-gray-500 dark:text-gray-400 leading-relaxed">

@@ -475,7 +475,7 @@ export const AvatarGallery: React.FC = () => {
             >
               {/* Logo */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5" />
+                <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5 dark:invert" />
               </div>
 
               {/* Search and Controls Container */}

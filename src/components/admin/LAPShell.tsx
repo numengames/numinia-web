@@ -50,7 +50,7 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
   if (!session?.authenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-cream dark:bg-cream-dark">
-        <img src="/logo-numinia.svg" alt="Numinia" className="h-8 w-auto" />
+        <img src="/logo-numinia.svg" alt="Numinia" className="h-8 w-auto dark:invert" />
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">{t('admin.shell.title')}</h1>
           <p className="text-sm text-gray-500">

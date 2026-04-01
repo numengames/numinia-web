@@ -93,11 +93,11 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
       <div className="p-4 flex items-center justify-between">
         {!collapsed ? (
           <div className="flex items-center gap-2">
-            <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px]" />
-            <img src="/logo-numinia.svg" alt="Numinia" className="h-4 w-auto" />
+            <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px] dark:invert" />
+            <img src="/logo-numinia.svg" alt="Numinia" className="h-4 w-auto dark:invert" />
           </div>
         ) : (
-          <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px]" />
+          <img src="/icon-khepri.svg" alt="Numinia" className="h-[18px] w-[18px] dark:invert" />
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}

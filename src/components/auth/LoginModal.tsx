@@ -89,7 +89,7 @@ export function LoginModal({ open, onClose, onAuthenticated }: LoginModalProps) 
         {/* Header */}
         <div className="px-6 pt-6 pb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5" />
+            <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5 dark:invert" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Sign In</h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">

@@ -42,7 +42,7 @@ export const AvatarHeader: React.FC<AvatarHeaderProps> = ({
               alt="Numinia Digital Goods"
               width={120}
               height={14}
-              className="h-3 md:h-3.5 w-auto"
+              className="h-3 md:h-3.5 w-auto dark:invert"
               priority
             />
           </Link>

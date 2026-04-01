@@ -80,7 +80,7 @@ export default function ProfilePage() {
       <div className="border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5" />
+            <img src="/icon-khepri.svg" alt="Numinia" className="h-5 w-5 dark:invert" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Profile</h1>
           </div>
           <div className="flex items-center gap-2">
