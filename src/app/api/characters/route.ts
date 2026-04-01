@@ -17,7 +17,7 @@ function getCharacterPath(address: string): string {
 export async function GET(req: NextRequest) {
   let session: SessionWithRank;
   try {
-    session = await requireRank(req, 'citizen');
+    session = await requireRank(req, 'nomad');
   } catch (response) {
     return response as Response;
   }
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   let session: SessionWithRank;
   try {
-    session = await requireRank(req, 'citizen');
+    session = await requireRank(req, 'nomad');
   } catch (response) {
     return response as Response;
   }

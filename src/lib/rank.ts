@@ -56,12 +56,14 @@ export function inferRank(context: RankContext): Rank {
     return 'pilgrim';
   }
 
-  // 5. Authenticated → citizen
+  // 5. Authenticated wallet or GitHub → nomad (registered but no guild/faction yet)
+  // Citizen rank requires Session Zero completion (future).
+  // For now, all authenticated users without special status are nomads.
   if (context.walletAddress || context.githubUserId) {
-    return 'citizen';
+    return 'nomad';
   }
 
-  // 6. Default
+  // 6. Default (not authenticated)
   return 'nomad';
 }
 

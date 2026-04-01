@@ -60,5 +60,26 @@
   "upload": {
     "title": "Subir recurso",
     "fileTooLarge": "Archivo demasiado grande. Máximo 500 MB."
+  },
+  "users": {
+    "title": "Usuarios",
+    "total": "Total",
+    "banned": "Baneados",
+    "search": "Buscar por nombre o ID...",
+    "ban": "Banear usuario",
+    "unban": "Desbanear",
+    "changeRank": "Cambiar rango",
+    "banTarget": "Usuario",
+    "banReason": "Razón",
+    "banDuration": "Duración",
+    "permanent": "Permanente"
+  },
+  "rank": {
+    "nomad": "Nómada",
+    "citizen": "Ciudadano",
+    "pilgrim": "Peregrino",
+    "vernacular": "Vernáculo",
+    "archon": "Arconte",
+    "oracle": "Oráculo"
   }
 }

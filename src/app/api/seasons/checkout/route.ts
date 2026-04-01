@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   let session: SessionWithRank;
   try {
-    session = await requireRank(req, 'citizen');
+    session = await requireRank(req, 'nomad');
   } catch (response) {
     return response as Response;
   }

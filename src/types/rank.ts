@@ -84,9 +84,9 @@ export const DEFAULT_RANK_PERMISSIONS: Record<Rank, RankPermissions> = {
   nomad: {
     canBrowse: true,
     canDownload: true,
-    canFavorite: false,
-    canEditProfile: false,
-    canSessionZero: false,
+    canFavorite: true,
+    canEditProfile: true,
+    canSessionZero: true,
     canAccessSeasonContent: false,
     canBurnRitual: false,
     canUploadAssets: false,
@@ -270,6 +270,6 @@ export interface RankContext {
 export const LEGACY_ROLE_TO_RANK: Record<string, Rank> = {
   admin: 'archon',
   creator: 'vernacular',
-  user: 'citizen',
+  user: 'nomad',
   anonymous: 'nomad',
 };

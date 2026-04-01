@@ -19,12 +19,12 @@ describe('inferRank', () => {
     expect(inferRank({})).toBe('nomad');
   });
 
-  it('returns citizen for authenticated wallet', () => {
-    expect(inferRank({ walletAddress: '0xabc' })).toBe('citizen');
+  it('returns nomad for authenticated wallet (citizen requires Session Zero)', () => {
+    expect(inferRank({ walletAddress: '0xabc' })).toBe('nomad');
   });
 
-  it('returns citizen for authenticated GitHub user', () => {
-    expect(inferRank({ githubUserId: 'user-123' })).toBe('citizen');
+  it('returns nomad for authenticated GitHub user (citizen requires Session Zero)', () => {
+    expect(inferRank({ githubUserId: 'user-123' })).toBe('nomad');
   });
 
   it('returns pilgrim for season pass holder', () => {
@@ -63,8 +63,8 @@ describe('inferRank', () => {
     expect(inferRank({ walletAddress: '0xabc', storedRole: 'creator', isPassHolder: true })).toBe('vernacular');
   });
 
-  it('stored role user does not upgrade to vernacular', () => {
-    expect(inferRank({ walletAddress: '0xabc', storedRole: 'user' })).toBe('citizen');
+  it('stored role user stays nomad (citizen requires Session Zero)', () => {
+    expect(inferRank({ walletAddress: '0xabc', storedRole: 'user' })).toBe('nomad');
   });
 });
 
@@ -113,8 +113,8 @@ describe('mapRoleToRank', () => {
     expect(mapRoleToRank('creator')).toBe('vernacular');
   });
 
-  it('maps user to citizen', () => {
-    expect(mapRoleToRank('user')).toBe('citizen');
+  it('maps user to nomad (citizen requires Session Zero)', () => {
+    expect(mapRoleToRank('user')).toBe('nomad');
   });
 
   it('maps anonymous to nomad', () => {
@@ -141,9 +141,9 @@ describe('getPermissionsForRank', () => {
     expect(perms.canDownload).toBe(true);
   });
 
-  it('nomad cannot favorite or upload', () => {
+  it('nomad can favorite (authenticated nomads have basic features)', () => {
     const perms = getPermissionsForRank('nomad');
-    expect(perms.canFavorite).toBe(false);
+    expect(perms.canFavorite).toBe(true);
     expect(perms.canUploadAssets).toBe(false);
   });
 
