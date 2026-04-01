@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySession } from '@/lib/session';
+import { getThirdwebAuth, TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
+import { env } from '@/lib/env';
 import { mapRoleToRank } from '@/lib/rank';
 import type { Rank } from '@/types/rank';
 
@@ -20,6 +22,30 @@ export async function GET() {
         role: session.role || 'admin',
         rank: session.rank ?? mapRoleToRank(session.role || 'admin'),
       });
+    }
+  }
+
+  // Check Thirdweb JWT (tw_jwt cookie from ConnectButton auth)
+  const twJwt = cookieStore.get(TW_JWT_COOKIE)?.value;
+  if (twJwt) {
+    const auth = getThirdwebAuth();
+    if (auth) {
+      try {
+        const result = await auth.verifyJWT({ jwt: twJwt });
+        if (result.valid && result.parsedJWT.sub) {
+          const address = result.parsedJWT.sub;
+          const isAdmin = env.adminWalletAddresses.includes(address.toLowerCase());
+          const role = isAdmin ? 'admin' : 'user';
+          return NextResponse.json({
+            authenticated: true,
+            address,
+            role,
+            rank: mapRoleToRank(role),
+          });
+        }
+      } catch {
+        // Invalid JWT — fall through to legacy checks
+      }
     }
   }
 
@@ -60,5 +86,6 @@ export async function DELETE() {
   cookieStore.delete('admin_session');
   cookieStore.delete('user_session');
   cookieStore.delete('csrf_token');
+  cookieStore.delete(TW_JWT_COOKIE);
   return NextResponse.json({ success: true });
 }

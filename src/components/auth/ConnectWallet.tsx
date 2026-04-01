@@ -61,7 +61,7 @@ async function getLoginPayload(params: { address: string }) {
   return res.json();
 }
 
-async function doLogin(params: { payload: unknown; signature: string }) {
+async function defaultDoLogin(params: { payload: unknown; signature: string }) {
   const res = await fetch('/api/auth/thirdweb', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -86,10 +86,16 @@ async function doLogout() {
 
 interface ConnectWalletProps {
   theme?: 'dark' | 'light';
+  onLogin?: () => void;
 }
 
-export function ConnectWallet({ theme = 'dark' }: ConnectWalletProps) {
+export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
   if (!client) return null; // Not configured — parent should show legacy LoginModal
+
+  async function handleLogin(params: { payload: unknown; signature: string }) {
+    await defaultDoLogin(params);
+    onLogin?.();
+  }
 
   return (
     <ConnectButton
@@ -99,7 +105,7 @@ export function ConnectWallet({ theme = 'dark' }: ConnectWalletProps) {
       connectModal={{ size: 'compact' }}
       auth={{
         getLoginPayload,
-        doLogin,
+        doLogin: handleLogin,
         isLoggedIn,
         doLogout,
       }}

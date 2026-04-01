@@ -11,7 +11,7 @@
 import { createThirdwebClient, getContract, sendAndConfirmTransaction } from 'thirdweb';
 import { defineChain } from 'thirdweb/chains';
 import { privateKeyToAccount } from 'thirdweb/wallets';
-import { mintAdditionalSupplyTo } from 'thirdweb/extensions/erc1155';
+import { claimTo } from 'thirdweb/extensions/erc1155';
 import { env } from '@/lib/env';
 import { createLogger } from '@/lib/logger';
 
@@ -58,11 +58,12 @@ export async function mintSeasonPass(
     address: env.thirdweb.contractAddress,
   });
 
-  const transaction = mintAdditionalSupplyTo({
+  // Contract is an ERC-1155 Drop — use claimTo (not mintAdditionalSupplyTo)
+  const transaction = claimTo({
     contract,
     to: toAddress,
     tokenId: BigInt(tokenId),
-    supply: BigInt(1),
+    quantity: BigInt(1),
   });
 
   const receipt = await sendAndConfirmTransaction({ transaction, account });
