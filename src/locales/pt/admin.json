@@ -38,7 +38,50 @@
     "version": "Versão",
     "idSystem": "Sistema de ID",
     "storage": "Armazenamento",
-    "documentation": "Documentação"
+    "documentation": "Documentação",
+    "sections": {
+      "account": "Conta",
+      "space": "Espaço",
+      "platform": "Plataforma"
+    },
+    "profile": {
+      "title": "Perfil",
+      "wallet": "Endereço da carteira",
+      "rank": "Posto",
+      "copied": "Copiado!"
+    },
+    "overview": {
+      "title": "Visão geral",
+      "spaceName": "Nome",
+      "logo": "Logo",
+      "description": "Descrição"
+    },
+    "roles": {
+      "title": "Cargos e permissões",
+      "description": "Cada posto inclui todas as permissões dos postos inferiores.",
+      "permissionGroups": {
+        "browse": "Navegar",
+        "identity": "Identidade",
+        "season": "Temporada",
+        "create": "Criar",
+        "admin": "Administração",
+        "oracle": "Oracle"
+      }
+    },
+    "sidebarOptions": {
+      "title": "Opções da barra lateral",
+      "description": "Alternar a visibilidade dos módulos na barra lateral do LAP."
+    },
+    "storageSection": {
+      "title": "Armazenamento",
+      "connected": "Conectado",
+      "disconnected": "Não configurado"
+    },
+    "blockchain": {
+      "title": "Blockchain",
+      "enableTestnets": "Habilitar testnets",
+      "network": "Rede"
+    }
   },
   "stats": {
     "title": "Estatísticas",

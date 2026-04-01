@@ -38,7 +38,50 @@
     "version": "버전",
     "idSystem": "ID 시스템",
     "storage": "스토리지",
-    "documentation": "문서"
+    "documentation": "문서",
+    "sections": {
+      "account": "계정",
+      "space": "스페이스",
+      "platform": "플랫폼"
+    },
+    "profile": {
+      "title": "프로필",
+      "wallet": "지갑 주소",
+      "rank": "등급",
+      "copied": "복사됨!"
+    },
+    "overview": {
+      "title": "개요",
+      "spaceName": "이름",
+      "logo": "로고",
+      "description": "설명"
+    },
+    "roles": {
+      "title": "역할 및 권한",
+      "description": "각 등급은 하위 등급의 모든 권한을 포함합니다.",
+      "permissionGroups": {
+        "browse": "탐색",
+        "identity": "아이덴티티",
+        "season": "시즌",
+        "create": "생성",
+        "admin": "관리",
+        "oracle": "Oracle"
+      }
+    },
+    "sidebarOptions": {
+      "title": "사이드바 옵션",
+      "description": "LAP 사이드바에서 모듈의 표시 여부를 전환합니다."
+    },
+    "storageSection": {
+      "title": "스토리지",
+      "connected": "연결됨",
+      "disconnected": "미설정"
+    },
+    "blockchain": {
+      "title": "블록체인",
+      "enableTestnets": "테스트넷 활성화",
+      "network": "네트워크"
+    }
   },
   "stats": {
     "title": "통계",

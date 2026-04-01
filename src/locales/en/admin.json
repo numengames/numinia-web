@@ -38,7 +38,50 @@
     "version": "Version",
     "idSystem": "ID System",
     "storage": "Storage",
-    "documentation": "Documentation"
+    "documentation": "Documentation",
+    "sections": {
+      "account": "Account",
+      "space": "Space",
+      "platform": "Platform"
+    },
+    "profile": {
+      "title": "Profile",
+      "wallet": "Wallet Address",
+      "rank": "Rank",
+      "copied": "Copied!"
+    },
+    "overview": {
+      "title": "Overview",
+      "spaceName": "Name",
+      "logo": "Logo",
+      "description": "Description"
+    },
+    "roles": {
+      "title": "Roles & Permissions",
+      "description": "Each rank includes all permissions from ranks below.",
+      "permissionGroups": {
+        "browse": "Browse",
+        "identity": "Identity",
+        "season": "Season",
+        "create": "Create",
+        "admin": "Admin",
+        "oracle": "Oracle"
+      }
+    },
+    "sidebarOptions": {
+      "title": "Sidebar Options",
+      "description": "Toggle visibility of modules in the LAP sidebar."
+    },
+    "storageSection": {
+      "title": "Storage",
+      "connected": "Connected",
+      "disconnected": "Not configured"
+    },
+    "blockchain": {
+      "title": "Blockchain",
+      "enableTestnets": "Enable testnets",
+      "network": "Network"
+    }
   },
   "stats": {
     "title": "Stats",

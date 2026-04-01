@@ -38,7 +38,50 @@
     "version": "版本",
     "idSystem": "ID 系统",
     "storage": "存储",
-    "documentation": "文档"
+    "documentation": "文档",
+    "sections": {
+      "account": "账户",
+      "space": "空间",
+      "platform": "平台"
+    },
+    "profile": {
+      "title": "个人资料",
+      "wallet": "钱包地址",
+      "rank": "等级",
+      "copied": "已复制！"
+    },
+    "overview": {
+      "title": "概览",
+      "spaceName": "名称",
+      "logo": "Logo",
+      "description": "描述"
+    },
+    "roles": {
+      "title": "角色与权限",
+      "description": "每个等级包含所有下级等级的权限。",
+      "permissionGroups": {
+        "browse": "浏览",
+        "identity": "身份",
+        "season": "赛季",
+        "create": "创建",
+        "admin": "管理",
+        "oracle": "Oracle"
+      }
+    },
+    "sidebarOptions": {
+      "title": "侧边栏选项",
+      "description": "切换 LAP 侧边栏中模块的可见性。"
+    },
+    "storageSection": {
+      "title": "存储",
+      "connected": "已连接",
+      "disconnected": "未配置"
+    },
+    "blockchain": {
+      "title": "区块链",
+      "enableTestnets": "启用测试网",
+      "network": "网络"
+    }
   },
   "stats": {
     "title": "统计",

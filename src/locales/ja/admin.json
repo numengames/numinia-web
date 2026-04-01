@@ -38,7 +38,50 @@
     "version": "バージョン",
     "idSystem": "IDシステム",
     "storage": "ストレージ",
-    "documentation": "ドキュメント"
+    "documentation": "ドキュメント",
+    "sections": {
+      "account": "アカウント",
+      "space": "スペース",
+      "platform": "プラットフォーム"
+    },
+    "profile": {
+      "title": "プロフィール",
+      "wallet": "ウォレットアドレス",
+      "rank": "ランク",
+      "copied": "コピーしました！"
+    },
+    "overview": {
+      "title": "概要",
+      "spaceName": "名前",
+      "logo": "ロゴ",
+      "description": "説明"
+    },
+    "roles": {
+      "title": "ロールと権限",
+      "description": "各ランクは下位ランクのすべての権限を含みます。",
+      "permissionGroups": {
+        "browse": "閲覧",
+        "identity": "アイデンティティ",
+        "season": "シーズン",
+        "create": "作成",
+        "admin": "管理",
+        "oracle": "Oracle"
+      }
+    },
+    "sidebarOptions": {
+      "title": "サイドバーオプション",
+      "description": "LAP サイドバーのモジュール表示を切り替えます。"
+    },
+    "storageSection": {
+      "title": "ストレージ",
+      "connected": "接続済み",
+      "disconnected": "未設定"
+    },
+    "blockchain": {
+      "title": "ブロックチェーン",
+      "enableTestnets": "テストネットを有効にする",
+      "network": "ネットワーク"
+    }
   },
   "stats": {
     "title": "統計",
