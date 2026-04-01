@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Lock, CheckCircle2, Flame, Clock, Timer, Star, ExternalLink } from 'lucide-react';
+import { Lock, CheckCircle2, Flame, Clock, Timer, Star, ExternalLink, Loader2 } from 'lucide-react';
 import type { Season, Adventure, UserSeasonStatus, PuzzleType } from '@/types/season';
 
 // ---------------------------------------------------------------------------
@@ -128,14 +128,37 @@ export function SeasonTimeline() {
 
   useEffect(() => { fetchSeason(); }, [fetchSeason]);
 
-  // Handle ?purchase=success redirect from Stripe
+  // Handle ?purchase=success redirect from Stripe — poll until pass is confirmed
+  const pollRef = useRef(false);
+
   useEffect(() => {
-    if (searchParams.get('purchase') === 'success') {
-      setPurchaseSuccess(true);
-      const timer = setTimeout(() => fetchSeason(), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, fetchSeason]);
+    if (searchParams.get('purchase') !== 'success') return;
+    setPurchaseSuccess(true);
+    pollRef.current = true;
+
+    let attempt = 0;
+    const maxAttempts = 5;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const poll = async () => {
+      if (!pollRef.current || attempt >= maxAttempts) return;
+      attempt++;
+      try {
+        const res = await fetch('/api/seasons');
+        const data = await res.json();
+        setSeason(data.season);
+        setUserProgress(data.userProgress);
+        if (data.userProgress?.hasPass) {
+          pollRef.current = false;
+          return;
+        }
+      } catch { /* retry next cycle */ }
+      timer = setTimeout(poll, 2000);
+    };
+
+    timer = setTimeout(poll, 2000);
+    return () => { pollRef.current = false; clearTimeout(timer); };
+  }, [searchParams]);
 
   const countdown = useCountdown(season?.endDate ?? '');
   const hasPass = userProgress?.hasPass ?? false;
@@ -208,13 +231,28 @@ export function SeasonTimeline() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-[1100px] mx-auto">
-      {/* Purchase success banner */}
+      {/* Purchase success banner — adapts to actual pass state */}
       {purchaseSuccess && (
-        <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-lg px-4 py-3 text-sm text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          {locale === 'ja'
-            ? '購入完了！シーズンパスが有効になりました。'
-            : 'Purchase complete! Your season pass is now active.'}
+        <div className={`border rounded-lg px-4 py-3 text-sm flex items-center gap-2 ${
+          hasPass
+            ? 'bg-emerald-900/40 border-emerald-700/50 text-emerald-300'
+            : 'bg-amber-900/40 border-amber-700/50 text-amber-300'
+        }`}>
+          {hasPass ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              {locale === 'ja'
+                ? '購入完了！シーズンパスが有効になりました。'
+                : 'Purchase complete! Your season pass is now active.'}
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+              {locale === 'ja'
+                ? '購入処理中...パスを確認しています。'
+                : 'Processing purchase... verifying your pass.'}
+            </>
+          )}
         </div>
       )}
 

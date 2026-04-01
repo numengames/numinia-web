@@ -47,7 +47,13 @@ export async function POST(req: NextRequest) {
     const walletAddress = session.metadata?.wallet_address;
 
     if (!seasonId || !walletAddress) {
-      log.error({ seasonId, walletAddress }, 'Webhook missing metadata');
+      log.error({
+        seasonId,
+        walletAddress,
+        stripeSessionId: session.id,
+        customerEmail: session.customer_email,
+        metadata: session.metadata,
+      }, 'Webhook missing metadata — check checkout session metadata config');
       return NextResponse.json({ received: true });
     }
 
@@ -59,8 +65,9 @@ export async function POST(req: NextRequest) {
         completedAdventures: [],
         burnCompleted: false,
       });
+      log.info({ seasonId, address: walletAddress, stripeSession: session.id }, 'Pass holder recorded');
     } catch (error) {
-      log.error({ err: error }, 'Failed to record pass holder');
+      log.error({ err: error, seasonId, walletAddress, stripeSession: session.id }, 'Failed to record pass holder');
       return NextResponse.json(
         { error: 'Failed to record purchase' },
         { status: 500 },

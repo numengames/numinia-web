@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { WalletConnect } from '@/components/admin/WalletConnect';
+import { ConnectWallet, isThirdwebConnectAvailable } from '@/components/auth/ConnectWallet';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
@@ -60,7 +61,17 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
             {t('admin.shell.connectMessage')}
           </p>
         </div>
-        <WalletConnect onAuthenticated={setSession} />
+        {isThirdwebConnectAvailable() ? (
+          <ConnectWallet
+            onLogin={async () => {
+              const res = await fetch('/api/auth/wallet/session');
+              const data = await res.json();
+              setSession(data);
+            }}
+          />
+        ) : (
+          <WalletConnect onAuthenticated={setSession} />
+        )}
       </div>
     );
   }

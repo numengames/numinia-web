@@ -128,7 +128,7 @@ export const env = {
     secretKey:       process.env.THIRDWEB_SECRET_KEY ?? '',
     mintPrivateKey:  process.env.MINT_WALLET_PRIVATE_KEY ?? '',
     contractAddress: process.env.SEASON_PASS_CONTRACT ?? '',
-    chainId:         process.env.SEASON_PASS_CHAIN_ID ?? '84532',
+    chainId:         process.env.SEASON_PASS_CHAIN_ID ?? '8453',
   },
   redis: {
     url:   process.env.UPSTASH_REDIS_REST_URL   ?? '',
