@@ -46,6 +46,8 @@ export function LanguageSelector() {
       ? '/' + segments.slice(1).join('/')
       : pathname;
 
+    // Persist preference in cookie so middleware respects it on next visit
+    document.cookie = `preferred-locale=${newLocale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`;
     const newPath = `/${newLocale}${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`;
     window.location.href = newPath;
     setIsOpen(false);

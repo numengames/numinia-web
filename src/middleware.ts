@@ -8,7 +8,7 @@ import type { NextRequest } from 'next/server';
 const locales = ['en', 'ja', 'es', 'ko', 'zh', 'pt', 'de'];
 const defaultLocale = 'en';
 
-// Get the preferred locale from headers
+// Get the preferred locale: cookie > Accept-Language > default
 function getLocale(request: NextRequest) {
   // Check if locale is set in URL
   const pathname = request.nextUrl.pathname;
@@ -17,14 +17,18 @@ function getLocale(request: NextRequest) {
   );
   if (pathnameLocale) return pathnameLocale;
 
+  // Check user preference cookie (set by Settings or LanguageSelector)
+  const preferredLocale = request.cookies.get('preferred-locale')?.value;
+  if (preferredLocale && locales.includes(preferredLocale)) return preferredLocale;
+
   // Check Accept-Language header
   const acceptedLanguages = request.headers.get('accept-language');
   if (acceptedLanguages) {
-    const preferredLocale = acceptedLanguages
+    const browserLocale = acceptedLanguages
       .split(',')
       .map(lang => lang.split(';')[0].trim().substring(0, 2))
       .find(lang => locales.includes(lang));
-    if (preferredLocale) return preferredLocale;
+    if (browserLocale) return browserLocale;
   }
 
   // Default to English
