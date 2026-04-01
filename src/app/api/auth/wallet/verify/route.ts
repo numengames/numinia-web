@@ -6,6 +6,7 @@ import { env } from '@/lib/env';
 import { signSession, generateCsrfToken } from '@/lib/session';
 import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { computeRankForAddress } from '@/lib/auth/resolveRank';
+import { registerWalletUser } from '@/lib/rank-storage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
 
     // Clean up the nonce cookie
     cookieStore.delete('siwe_nonce');
+
+    // Register wallet in user registry (fire-and-forget)
+    registerWalletUser(address);
 
     logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, rank, method: 'wallet' } });
 

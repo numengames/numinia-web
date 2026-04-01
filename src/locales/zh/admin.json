@@ -60,5 +60,26 @@
   "upload": {
     "title": "上传资源",
     "fileTooLarge": "文件过大。最大 500 MB。"
+  },
+  "users": {
+    "title": "用户",
+    "total": "合计",
+    "banned": "已封禁",
+    "search": "按用户名或ID搜索...",
+    "ban": "封禁用户",
+    "unban": "解除封禁",
+    "changeRank": "更改等级",
+    "banTarget": "用户",
+    "banReason": "原因",
+    "banDuration": "时长",
+    "permanent": "永久"
+  },
+  "rank": {
+    "nomad": "Nomad",
+    "citizen": "Citizen",
+    "pilgrim": "Pilgrim",
+    "vernacular": "Vernacular",
+    "archon": "Archon",
+    "oracle": "Oracle"
   }
 }

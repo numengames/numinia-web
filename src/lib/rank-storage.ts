@@ -22,6 +22,7 @@ import { MAX_ORACLES } from '@/types/rank';
 
 const RANK_OVERRIDES_PATH = 'data/system/rank-overrides.json';
 const BANS_PATH = 'data/moderation/bans.json';
+const WALLET_USERS_PATH = 'data/users/wallet-users.json';
 
 // ---------------------------------------------------------------------------
 // Rank overrides
@@ -140,4 +141,52 @@ export async function removeBan(banId: string): Promise<void> {
 
   const file: BansFile = { bans };
   await updateData(BANS_PATH, file, `Unban ${ban.identifier}`);
+}
+
+// ---------------------------------------------------------------------------
+// Wallet user registry (tracks all wallets that have ever connected)
+// ---------------------------------------------------------------------------
+
+interface WalletUser {
+  address: string;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+interface WalletUsersFile {
+  users: WalletUser[];
+}
+
+/** Get all registered wallet users. */
+export async function getWalletUsers(): Promise<WalletUser[]> {
+  try {
+    const data = await fetchData<WalletUsersFile>(WALLET_USERS_PATH);
+    return data?.users ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Register a wallet address on login. Updates lastSeen if already known.
+ * Fire-and-forget — errors are silently ignored so login is never blocked.
+ */
+export async function registerWalletUser(address: string): Promise<void> {
+  try {
+    const users = await getWalletUsers();
+    const normalized = address.toLowerCase();
+    const now = new Date().toISOString();
+    const existing = users.find(u => u.address === normalized);
+
+    if (existing) {
+      existing.lastSeen = now;
+    } else {
+      users.push({ address: normalized, firstSeen: now, lastSeen: now });
+    }
+
+    const file: WalletUsersFile = { users };
+    await updateData(WALLET_USERS_PATH, file, `Register wallet ${normalized.slice(0, 10)}...`);
+  } catch {
+    // Fire-and-forget: never block login
+  }
 }

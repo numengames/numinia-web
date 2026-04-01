@@ -60,5 +60,26 @@
   "upload": {
     "title": "アセットをアップロード",
     "fileTooLarge": "ファイルが大きすぎます。最大500 MBです。"
+  },
+  "users": {
+    "title": "ユーザー",
+    "total": "合計",
+    "banned": "BAN済み",
+    "search": "ユーザー名またはIDで検索...",
+    "ban": "ユーザーをBANする",
+    "unban": "BAN解除",
+    "changeRank": "ランクを変更",
+    "banTarget": "ユーザー",
+    "banReason": "理由",
+    "banDuration": "期間",
+    "permanent": "永久"
+  },
+  "rank": {
+    "nomad": "Nomad",
+    "citizen": "Citizen",
+    "pilgrim": "Pilgrim",
+    "vernacular": "Vernacular",
+    "archon": "Archon",
+    "oracle": "Oracle"
   }
 }

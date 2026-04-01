@@ -1,13 +1,13 @@
 /**
  * GET /api/admin/users — List all known users with computed ranks.
- * Merges: GitHub OAuth users + rank overrides (Oracles/Archons) + pass holders.
+ * Merges: GitHub OAuth users + rank overrides + registered wallet users.
  * Requires: archon+
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getUsers } from '@/lib/github-storage';
-import { getRankOverrides, isUserBanned } from '@/lib/rank-storage';
+import { getRankOverrides, isUserBanned, getWalletUsers } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
 import type { Rank } from '@/types/rank';
 
@@ -33,9 +33,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [githubUsers, overrides] = await Promise.all([
+    const [githubUsers, overrides, walletUsers] = await Promise.all([
       getUsers(),
       getRankOverrides(),
+      getWalletUsers(),
     ]);
 
     const seen = new Set<string>();
@@ -57,14 +58,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 2. Wallet-based rank overrides (Oracles, Archons not in GitHub users)
+    // 2. Wallet-based rank overrides (Oracles, Archons)
     for (const override of overrides) {
       if (seen.has(override.identifier.toLowerCase())) continue;
       seen.add(override.identifier.toLowerCase());
       const banned = await isUserBanned(override.identifier);
-      const shortAddr = override.identifier.length > 10
-        ? `${override.identifier.slice(0, 6)}...${override.identifier.slice(-4)}`
-        : override.identifier;
+      const shortAddr = `${override.identifier.slice(0, 6)}...${override.identifier.slice(-4)}`;
       allUsers.push({
         id: override.identifier,
         username: shortAddr,
@@ -73,6 +72,24 @@ export async function GET(req: NextRequest) {
         banned,
         createdAt: override.assignedAt,
         updatedAt: override.assignedAt,
+      });
+    }
+
+    // 3. Registered wallet users (Nomads and others not yet in overrides)
+    for (const wu of walletUsers) {
+      if (seen.has(wu.address.toLowerCase())) continue;
+      seen.add(wu.address.toLowerCase());
+      const override = overrides.find(o => o.identifier.toLowerCase() === wu.address.toLowerCase());
+      const banned = await isUserBanned(wu.address);
+      const shortAddr = `${wu.address.slice(0, 6)}...${wu.address.slice(-4)}`;
+      allUsers.push({
+        id: wu.address,
+        username: shortAddr,
+        source: 'wallet',
+        rank: override?.rank ?? 'nomad',
+        banned,
+        createdAt: wu.firstSeen,
+        updatedAt: wu.lastSeen,
       });
     }
 

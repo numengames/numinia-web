@@ -18,7 +18,7 @@ export default function GLBInspectorLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-cream dark:bg-cream-dark">
       {children}
     </div>
   );

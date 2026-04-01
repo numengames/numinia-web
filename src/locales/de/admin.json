@@ -60,5 +60,26 @@
   "upload": {
     "title": "Asset hochladen",
     "fileTooLarge": "Datei zu groß. Maximal 500 MB."
+  },
+  "users": {
+    "title": "Benutzer",
+    "total": "Gesamt",
+    "banned": "Gesperrt",
+    "search": "Nach Benutzername oder ID suchen...",
+    "ban": "Benutzer sperren",
+    "unban": "Entsperren",
+    "changeRank": "Rang ändern",
+    "banTarget": "Benutzer",
+    "banReason": "Grund",
+    "banDuration": "Dauer",
+    "permanent": "Dauerhaft"
+  },
+  "rank": {
+    "nomad": "Nomad",
+    "citizen": "Citizen",
+    "pilgrim": "Pilgrim",
+    "vernacular": "Vernacular",
+    "archon": "Archon",
+    "oracle": "Oracle"
   }
 }

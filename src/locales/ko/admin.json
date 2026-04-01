@@ -60,5 +60,26 @@
   "upload": {
     "title": "에셋 업로드",
     "fileTooLarge": "파일이 너무 큽니다. 최대 500 MB입니다."
+  },
+  "users": {
+    "title": "사용자",
+    "total": "합계",
+    "banned": "차단됨",
+    "search": "사용자명 또는 ID로 검색...",
+    "ban": "사용자 차단",
+    "unban": "차단 해제",
+    "changeRank": "등급 변경",
+    "banTarget": "사용자",
+    "banReason": "사유",
+    "banDuration": "기간",
+    "permanent": "영구"
+  },
+  "rank": {
+    "nomad": "Nomad",
+    "citizen": "Citizen",
+    "pilgrim": "Pilgrim",
+    "vernacular": "Vernacular",
+    "archon": "Archon",
+    "oracle": "Oracle"
   }
 }

@@ -16,7 +16,7 @@ export async function generateMetadata({
 
 export default function ArchivePage() {
   return (
-    <main className="min-h-screen bg-cream">
+    <main className="min-h-screen bg-cream dark:bg-cream-dark">
       <AvatarGallery />
     </main>
   );

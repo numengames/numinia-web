@@ -85,11 +85,12 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
       </h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         <StatCard label={(t('admin.users.total') as string) || 'Total'} value={String(users.length)} />
-        <StatCard label="Banned" value={String(bannedCount)} variant={bannedCount > 0 ? 'danger' : 'default'} />
-        <StatCard label="Archon+" value={String((rankCounts.archon ?? 0) + (rankCounts.oracle ?? 0))} />
-        <StatCard label="Vernacular+" value={String(rankCounts.vernacular ?? 0)} />
+        <StatCard label={(t('admin.users.banned') as string) || 'Banned'} value={String(bannedCount)} variant={bannedCount > 0 ? 'danger' : 'default'} />
+        <StatCard label="Oracle" value={String(rankCounts.oracle ?? 0)} />
+        <StatCard label="Archon" value={String(rankCounts.archon ?? 0)} />
+        <StatCard label="Vernacular" value={String(rankCounts.vernacular ?? 0)} />
       </div>
 
       {/* Search + Filter */}
