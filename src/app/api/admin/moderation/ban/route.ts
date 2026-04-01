@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
   const actor = session.address ?? session.userId ?? 'unknown';
   const banId = randomUUID();
 
-  await addBan({
+  try {
+    await addBan({
     id: banId,
     identifier,
     identifierType: identifierType ?? 'wallet',
@@ -59,6 +60,10 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ success: true, banId });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Ban failed';
+    return NextResponse.json({ error: msg }, { status: 403 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {

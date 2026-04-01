@@ -160,7 +160,7 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {!user.banned ? (
+                      {!user.banned && user.rank !== 'oracle' ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -169,7 +169,7 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
                         >
                           Ban
                         </Button>
-                      ) : (
+                      ) : user.banned ? (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -178,7 +178,7 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
                         >
                           Unban
                         </Button>
-                      )}
+                      ) : null}
                       {isOracle && (
                         <Button
                           variant="ghost"

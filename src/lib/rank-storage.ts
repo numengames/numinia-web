@@ -87,8 +87,12 @@ export async function getBans(): Promise<Ban[]> {
   }
 }
 
-/** Check if a user is currently banned (active + not expired). */
+/** Check if a user is currently banned (active + not expired). Oracles are never banned. */
 export async function isUserBanned(identifier: string): Promise<boolean> {
+  // Oracles cannot be banned
+  const override = await findRankOverride(identifier);
+  if (override?.rank === 'oracle') return false;
+
   const bans = await getBans();
   const normalized = identifier.toLowerCase();
   const now = new Date().toISOString();
@@ -100,8 +104,14 @@ export async function isUserBanned(identifier: string): Promise<boolean> {
   );
 }
 
-/** Add a ban entry. */
+/** Add a ban entry. Throws if target is an Oracle. */
 export async function addBan(ban: Ban): Promise<void> {
+  // Oracles cannot be banned
+  const override = await findRankOverride(ban.identifier);
+  if (override?.rank === 'oracle') {
+    throw new Error('Cannot ban an Oracle');
+  }
+
   const bans = await getBans();
   bans.push({ ...ban, identifier: ban.identifier.toLowerCase() });
 
