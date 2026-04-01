@@ -609,9 +609,10 @@ export const AvatarGallery: React.FC = () => {
                     <div
                       key={avatar.id}
                       className={`
-                        relative flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all group/card
+                        relative flex flex-col rounded-lg overflow-hidden cursor-pointer transition-all duration-200 group/card
+                        hover:-translate-y-0.5 hover:shadow-lg
                         ${currentAvatar?.id === avatar.id ?
-                          'ring-2 ring-gray-900 dark:ring-gray-100' :
+                          'ring-2 ring-gray-900 dark:ring-gray-100 -translate-y-0.5 shadow-lg' :
                           'hover:ring-2 hover:ring-gray-400 dark:hover:ring-gray-600'
                         }
                       `}
@@ -621,14 +622,14 @@ export const AvatarGallery: React.FC = () => {
                       <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
                         <button
                           onClick={(e) => { e.stopPropagation(); toggleFavorite(avatar.id); }}
-                          className={`p-1 rounded-full transition-all ${
+                          className={`p-1 rounded-full transition-all active:scale-125 ${
                             isFavorite(avatar.id)
                               ? 'text-red-500 opacity-100'
                               : 'text-white/60 opacity-70 hover:opacity-100 hover:text-red-400'
                           }`}
                           title={isFavorite(avatar.id) ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                          <Heart className={`h-4 w-4 drop-shadow-md ${isFavorite(avatar.id) ? 'fill-current' : ''}`} />
+                          <Heart className={`h-4 w-4 drop-shadow-md transition-transform ${isFavorite(avatar.id) ? 'fill-current scale-110' : ''}`} />
                         </button>
                         <AssetActions
                           name={avatar.name}
@@ -638,12 +639,14 @@ export const AvatarGallery: React.FC = () => {
                       </div>
 
                       {/* Thumbnail */}
-                      <div className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800">
-                        <ThumbnailImage
-                          src={avatar.thumbnailUrl}
-                          alt={formatName(avatar.name)}
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        />
+                      <div className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        <div className="absolute inset-0 transition-transform duration-300 group-hover/card:scale-105">
+                          <ThumbnailImage
+                            src={avatar.thumbnailUrl}
+                            alt={formatName(avatar.name)}
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          />
+                        </div>
                       </div>
                       
                       {/* Info */}
