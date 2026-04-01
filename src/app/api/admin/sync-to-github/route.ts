@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { verifyCsrf } from '@/lib/session';
-import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { env } from '@/lib/env';
 import { logAudit } from '@/lib/audit';
 import type { GithubAvatar } from '@/types/github-storage';
@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     const { assetId } = await req.json();
     if (!assetId) return NextResponse.json({ error: 'assetId required' }, { status: 400 });
 
-    const avatars = await getAvatars();
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: GithubAvatar) => a.id === assetId);
     if (!avatar) return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
 
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${env.github.branch}/${repoPath}`;
 
-    await updateAvatarInSource(assetId, { storage: { ...(storage || {}), github_raw: rawUrl } });
+    await ds.assets.update(assetId, { storage: { ...(storage || {}), github_raw: rawUrl } });
     logAudit({ action: 'sync-to-github', actor: session.address || 'admin', target: assetId });
 
     return NextResponse.json({ success: true, github_raw: rawUrl });

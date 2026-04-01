@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 import {
   AvatarMetadata,
@@ -20,7 +20,7 @@ interface DownloadCounts {
 interface Avatar {
   id: string;
   name: string;
-  modelFileUrl: string | null;
+  modelFileUrl?: string | null;
   metadata: AvatarMetadata;
 }
 
@@ -35,8 +35,9 @@ export async function GET(
     const format = searchParams.get('format') || null;
     
     // Next.js automatically decodes URL parameters, so params.id is already decoded
-    // Get avatar details from GitHub storage
-    const avatars = await getAvatars();
+    // Get avatar details from data source
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: Avatar) => a.id === id);
 
     if (!avatar) {
@@ -178,12 +179,12 @@ export async function GET(
                 const buffer = await retryResponse.arrayBuffer();
                 // Update download counts in the background
                 try {
-                  const downloadCounts = await getDownloadCounts() as DownloadCounts;
+                  const downloadCounts = await ds.downloadCounts.getAll();
                   if (!downloadCounts.counts) {
                     downloadCounts.counts = {};
                   }
                   downloadCounts.counts[avatar.id] = (downloadCounts.counts[avatar.id] || 0) + 1;
-                  saveDownloadCounts(downloadCounts).catch((err: Error) => 
+                  ds.downloadCounts.saveAll(downloadCounts).catch((err: Error) =>
                     log.error({ err }, 'Failed to save download count')
                   );
                 } catch (error) {
@@ -221,14 +222,14 @@ export async function GET(
       
       // Update download counts in the background
       try {
-        const downloadCounts = await getDownloadCounts() as DownloadCounts;
-        
+        const downloadCounts = await ds.downloadCounts.getAll();
+
         if (!downloadCounts.counts) {
           downloadCounts.counts = {};
         }
-        
+
         downloadCounts.counts[avatar.id] = (downloadCounts.counts[avatar.id] || 0) + 1;
-        saveDownloadCounts(downloadCounts).catch((err: Error) => 
+        ds.downloadCounts.saveAll(downloadCounts).catch((err: Error) =>
           log.error({ err }, 'Failed to save download count')
         );
       } catch (error) {

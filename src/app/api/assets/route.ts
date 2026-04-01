@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { getAdminSession, requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { generateAssetId } from '@/lib/asset-id';
@@ -31,11 +31,12 @@ export async function GET(req: NextRequest) {
     // Check if user is authenticated (wallet or GitHub OAuth)
     const { isAdmin } = getAdminSession(req);
 
-    // Fetch avatars and projects from GitHub storage
+    // Fetch avatars and projects from data source
     // If projectIds is provided, only fetch avatars from those projects
+    const ds = getDataSource();
     const [avatars, projects] = await Promise.all([
-      getAvatars(projectIds),
-      getProjects()
+      ds.assets.getAll(projectIds),
+      ds.projects.getAll()
     ]);
 
 
@@ -197,11 +198,12 @@ export async function POST(req: NextRequest) {
     };
     
     // Get current avatars and add the new one
-    const avatars: GithubAvatar[] = await getAvatars() as GithubAvatar[];
+    const ds = getDataSource();
+    const avatars: GithubAvatar[] = await ds.assets.getAll() as GithubAvatar[];
     avatars.push(newAvatar);
-    
+
     // Save the updated avatars array
-    await saveAvatars(avatars);
+    await ds.assets.saveAll(avatars);
     
     return NextResponse.json(newAvatar, { status: 201 });
   } catch (error) {

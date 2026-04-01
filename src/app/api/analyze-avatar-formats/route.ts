@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAvatars, GithubAvatar } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
+import type { GithubAvatar } from '@/types/github-storage';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/analyze-avatar-formats');
@@ -8,7 +9,8 @@ const log = createLogger('api/analyze-avatar-formats');
 export async function GET() {
   try {
     // Get all avatars
-    const avatars = await getAvatars() as GithubAvatar[];
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll() as GithubAvatar[];
     
     // Find all the different key patterns in alternateModels
     const patterns: Record<string, any> = {};

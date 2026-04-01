@@ -3,7 +3,7 @@ import { isAllowedAssetUrl } from '@/lib/schemas';
 import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
-import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import type { GithubAvatar } from '@/types/github-storage';
 import { env } from '@/lib/env';
 import { archiveRateLimit, getRateLimitKey } from '@/lib/rate-limit';
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Find the asset
-    const avatars = await getAvatars();
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: GithubAvatar) => a.id === assetId);
     if (!avatar || !avatar.modelFileUrl) {
       return NextResponse.json({ error: 'Asset not found or has no file URL' }, { status: 404 });
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
     const txId = uploadResult.id;
 
     // Update the asset's storage field
-    await updateAvatarInSource(assetId, {
+    await ds.assets.update(assetId, {
       storage: {
         ...(storage || {}),
         arweave_tx: txId,

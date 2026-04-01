@@ -14,7 +14,7 @@ import { RANK_HIERARCHY } from '@/types/rank';
 interface UserRow {
   id: string;
   username: string;
-  role: string;
+  source: 'github' | 'wallet';
   rank: Rank;
   banned: boolean;
   createdAt: string;
@@ -206,7 +206,7 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
           open={!!banTarget}
           onClose={() => setBanTarget(null)}
           identifier={banTarget.id}
-          identifierType="github"
+          identifierType={banTarget.source === 'wallet' ? 'wallet' : 'github'}
           onBanned={fetchUsers}
         />
       )}
@@ -217,6 +217,7 @@ export function UserManagement({ sessionRank = 'archon' }: UserManagementProps) 
           userId={rankTarget.id}
           username={rankTarget.username}
           currentRank={rankTarget.rank}
+          sessionRank={sessionRank}
           onChanged={fetchUsers}
         />
       )}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
-import { getAvatars, getProjects } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/admin/stats');
@@ -17,9 +17,10 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const ds = getDataSource();
     const [avatars, projects] = await Promise.all([
-      getAvatars(),
-      getProjects(),
+      ds.assets.getAll(),
+      ds.projects.getAll(),
     ]);
 
     // Count by type

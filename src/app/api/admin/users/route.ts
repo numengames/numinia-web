@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
-import { getUsers } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { getRankOverrides, isUserBanned, getWalletUsers } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
 import type { Rank } from '@/types/rank';
@@ -36,8 +36,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const ds = getDataSource();
     const [githubUsers, overrides, walletUsers] = await Promise.all([
-      getUsers(),
+      ds.users.getAll(),
       getRankOverrides(),
       getWalletUsers(),
     ]);

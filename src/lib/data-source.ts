@@ -13,6 +13,8 @@
 
 import type { IDataSource } from './repositories/types';
 import { getDb } from '@/db';
+import { createGitHubDataSource } from './repositories/github.repo';
+import { createDbDataSource } from './repositories/db.repo';
 
 let cachedSource: IDataSource | null = null;
 
@@ -24,18 +26,7 @@ export function getDataSource(): IDataSource {
   if (cachedSource) return cachedSource;
 
   const db = getDb();
-
-  if (db) {
-    // Lazy import to avoid loading Drizzle when using GitHub mode
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createDbDataSource } = require('./repositories/db.repo') as typeof import('./repositories/db.repo');
-    cachedSource = createDbDataSource();
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createGitHubDataSource } = require('./repositories/github.repo') as typeof import('./repositories/github.repo');
-    cachedSource = createGitHubDataSource();
-  }
-
+  cachedSource = db ? createDbDataSource() : createGitHubDataSource();
   return cachedSource;
 }
 

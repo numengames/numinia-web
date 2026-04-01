@@ -3,7 +3,8 @@ import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 // Handles both visibility toggle and name/description updates.
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
+import type { GithubAvatar as Avatar } from '@/types/github-storage';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { AssetUpdateSchema } from '@/lib/schemas';
 import { createLogger } from '@/lib/logger';
@@ -25,7 +26,8 @@ export async function PATCH(
     }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-    const avatars = await getAvatars();
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: Avatar) => a.id === id);
 
     if (!avatar) {
@@ -52,7 +54,7 @@ export async function PATCH(
       updates.is_public = !avatar.isPublic;
     }
 
-    const saved = await updateAvatarInSource(id, updates);
+    const saved = await ds.assets.update(id, updates);
 
     if (!saved) {
       return NextResponse.json({ error: 'Avatar not found in source files' }, { status: 404 });

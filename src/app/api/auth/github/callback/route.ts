@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUsers, saveUsers } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { v4 as uuidv4 } from 'uuid';
 import { GithubUser } from '@/types/github-storage';
 import { cookies } from 'next/headers';
@@ -112,7 +112,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Check if the user already exists in our database
-    const users = await getUsers();
+    const ds = getDataSource();
+    const users = await ds.users.getAll();
     // Try to find the user by email or username
     let user = users.find((u: GithubUser) => u.email?.toLowerCase() === primaryEmail?.toLowerCase() || 
                             u.username?.toLowerCase() === userData.login?.toLowerCase());
@@ -131,7 +132,7 @@ export async function GET(request: NextRequest) {
       
       // Add the new user to our database
       users.push(user);
-      await saveUsers(users);
+      await ds.users.saveAll(users);
     } else {
       // Update the user's last login time
       user.updatedAt = new Date().toISOString();
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
       const userIndex = users.findIndex((u: GithubUser) => u.id === userId);
       if (userIndex !== -1) {
         users[userIndex] = user;
-        await saveUsers(users);
+        await ds.users.saveAll(users);
       }
     }
     

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { verifyCsrf } from '@/lib/session';
-import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { getR2Client, getR2BucketName, getR2PublicUrl, isR2Configured } from '@/lib/r2-client';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { logAudit } from '@/lib/audit';
@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     const { assetId } = await req.json();
     if (!assetId) return NextResponse.json({ error: 'assetId required' }, { status: 400 });
 
-    const avatars = await getAvatars();
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: GithubAvatar) => a.id === assetId);
     if (!avatar) return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const r2Url = `${getR2PublicUrl()}/${r2Key}`;
 
-    await updateAvatarInSource(assetId, { storage: { ...(storage || {}), r2: r2Url } });
+    await ds.assets.update(assetId, { storage: { ...(storage || {}), r2: r2Url } });
     logAudit({ action: 'sync-to-r2', actor: session.address || 'admin', target: assetId });
 
     return NextResponse.json({ success: true, r2: r2Url });

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
-import { getUsers } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { verifyCsrf } from '@/lib/session';
 import { findRankOverride, saveRankOverride, removeRankOverride, isUserBanned } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
@@ -26,7 +26,8 @@ export async function GET(req: NextRequest, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  const users = await getUsers();
+  const ds = getDataSource();
+  const users = await ds.users.getAll();
   const user = users.find(u => u.id === id);
 
   if (!user) {
@@ -91,19 +92,22 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Oracle rank can only be set via rank-overrides.json' }, { status: 403 });
   }
 
-  const users = await getUsers();
+  // Look up user in GitHub users first, fall back to treating id as wallet address
+  const ds = getDataSource();
+  const users = await ds.users.getAll();
   const user = users.find(u => u.id === id);
 
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
+  // The identifier for the rank override: GitHub user ID or wallet address
+  const targetIdentifier = user?.id ?? id;
+  const targetIdentifierType: 'github' | 'wallet' = user ? 'github' : 'wallet';
+  const targetUsername = user?.username ?? `${id.slice(0, 6)}...${id.slice(-4)}`;
 
   const actor = session.address ?? session.userId ?? 'unknown';
 
   try {
     await saveRankOverride({
-      identifier: user.id,
-      identifierType: 'github',
+      identifier: targetIdentifier,
+      identifierType: targetIdentifierType,
       rank: targetRank,
       assignedBy: actor,
       assignedAt: new Date().toISOString(),
@@ -117,8 +121,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   logAudit({
     action: 'rank-change',
     actor,
-    target: user.id,
-    metadata: { username: user.username, newRank: targetRank, reason },
+    target: targetIdentifier,
+    metadata: { username: targetUsername, newRank: targetRank, reason },
   });
 
   return NextResponse.json({ success: true, rank: targetRank });

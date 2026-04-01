@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
+import { getDataSource } from '@/lib/data-source';
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 import { AvatarMetadata, getModelFilenameForFormat } from '@/lib/download-utils';
 import { downloadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
@@ -14,7 +14,7 @@ interface DownloadCounts {
 interface Avatar {
   id: string;
   name: string;
-  modelFileUrl: string | null;
+  modelFileUrl?: string | null;
   metadata: AvatarMetadata;
 }
 
@@ -31,8 +31,9 @@ export async function POST(
     // Get request body for format preference
     const { format } = await request.json().catch(() => ({}));
     
-    // Get avatar details from GitHub storage
-    const avatars = await getAvatars();
+    // Get avatar details from data source
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     const avatar = avatars.find((a: Avatar) => a.id === id);
 
     if (!avatar) {
@@ -77,17 +78,17 @@ export async function POST(
 
       // Record the download count (privacy-friendly approach)
       try {
-        const downloadCounts = await getDownloadCounts() as DownloadCounts;
-        
+        const downloadCounts = await ds.downloadCounts.getAll();
+
         if (!downloadCounts.counts) {
           downloadCounts.counts = {};
         }
-        
+
         // Increment the download count for this avatar
         downloadCounts.counts[avatar.id] = (downloadCounts.counts[avatar.id] || 0) + 1;
-        
+
         // Save the updated download counts
-        saveDownloadCounts(downloadCounts).catch((error: Error) => {
+        ds.downloadCounts.saveAll(downloadCounts).catch((error: Error) => {
           log.error({ err: error }, 'Failed to update download count');
           // Continue anyway, since this shouldn't block the download
         });

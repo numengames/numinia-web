@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RankBadge } from './RankBadge';
-import { RANK_HIERARCHY, type Rank } from '@/types/rank';
+import { RANK_HIERARCHY, RANK_LEVEL, type Rank } from '@/types/rank';
 import { useI18n } from '@/lib/i18n';
 
 interface RankChangeDialogProps {
@@ -13,10 +13,11 @@ interface RankChangeDialogProps {
   userId: string;
   username: string;
   currentRank: Rank;
+  sessionRank: Rank;
   onChanged: () => void;
 }
 
-export function RankChangeDialog({ open, onClose, userId, username, currentRank, onChanged }: RankChangeDialogProps) {
+export function RankChangeDialog({ open, onClose, userId, username, currentRank, sessionRank, onChanged }: RankChangeDialogProps) {
   const { t } = useI18n();
   const [selectedRank, setSelectedRank] = useState<Rank>(currentRank);
   const [reason, setReason] = useState('');
@@ -67,7 +68,7 @@ export function RankChangeDialog({ open, onClose, userId, username, currentRank,
           <div>
             <label className="text-sm text-gray-500 block mb-2">New rank</label>
             <div className="flex flex-wrap gap-2">
-              {RANK_HIERARCHY.map(rank => (
+              {RANK_HIERARCHY.filter(r => RANK_LEVEL[r] < RANK_LEVEL[sessionRank] && r !== 'oracle').map(rank => (
                 <button
                   key={rank}
                   onClick={() => setSelectedRank(rank)}

@@ -4,11 +4,8 @@ import { verifyCsrf } from '@/lib/session';
 import { assetsDeleteRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { NextRequest, NextResponse } from 'next/server';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getDataSource } from '@/lib/data-source';
 import {
-  getAvatars,
-  deleteAvatarFromSource,
-  getAvatarTags,
-  saveAvatarTags,
   getDownloads,
   saveDownloads,
   GithubAvatar as Avatar,
@@ -41,7 +38,8 @@ export async function DELETE(
     if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
     // Get the current avatars
-    const avatars = await getAvatars();
+    const ds = getDataSource();
+    const avatars = await ds.assets.getAll();
     
     // Find the specific avatar by ID
     const avatarIndex = avatars.findIndex((a: Avatar) => a.id === avatarId);
@@ -78,15 +76,15 @@ export async function DELETE(
     }
 
     // Remove the avatar from its source file
-    await deleteAvatarFromSource(avatarId);
+    await ds.assets.delete(avatarId);
     
     // Also clean up any avatar tags and download records
     
     // 1. Remove any avatar-tag associations
-    const avatarTags = await getAvatarTags();
+    const avatarTags = await ds.assetTags.getAll();
     const updatedAvatarTags = avatarTags.filter((at: AvatarTag) => at.avatarId !== avatarId);
     if (avatarTags.length !== updatedAvatarTags.length) {
-      await saveAvatarTags(updatedAvatarTags);
+      await ds.assetTags.saveAll(updatedAvatarTags);
     }
     
     // 2. Remove any download records for this avatar
