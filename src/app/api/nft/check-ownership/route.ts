@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { nftCheckRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -35,6 +36,9 @@ async function ethCall(to: string, data: string): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
+  const rl = nftCheckRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   const address = req.nextUrl.searchParams.get('address');
   const contract = req.nextUrl.searchParams.get('contract');
   const tokenId = req.nextUrl.searchParams.get('tokenId');

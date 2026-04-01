@@ -6,6 +6,8 @@ import { rollDice, getOutcomeColor, getOutcomeBg, type DiceResult } from '@/lib/
 import { Dices } from 'lucide-react';
 
 const MAX_VISIBLE_DICE = 10;
+const ROLL_ANIMATION_MS = 2200;
+const MAX_HISTORY_ENTRIES = 5;
 
 interface RollHistoryEntry {
   statName: string;
@@ -31,9 +33,9 @@ export function DiceTapete() {
       setRolling(false);
       setHistory(prev => [
         { statName, outcome: result.outcome, net: result.net, timestamp: Date.now() },
-        ...prev.slice(0, 4), // keep last 5
+        ...prev.slice(0, MAX_HISTORY_ENTRIES - 1),
       ]);
-    }, 2200);
+    }, ROLL_ANIMATION_MS);
   }, [rolling]);
 
   // Expose triggerRoll via ref pattern — we'll use a global callback

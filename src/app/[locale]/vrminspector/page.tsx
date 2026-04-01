@@ -7,6 +7,7 @@ import { AvatarHeader } from '@/components/asset/AvatarHeader';
 import { Info, Smile, Image, Computer } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { Suspense, useEffect } from 'react';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 // Dynamically import the VRMInspector component with no SSR
 const VRMInspector = dynamic(
@@ -137,8 +138,10 @@ export default function VRMInspectorPage() {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <VRMInspector />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div>Loading...</div>}>
+        <VRMInspector />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

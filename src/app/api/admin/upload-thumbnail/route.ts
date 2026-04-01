@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       fileSha = data.sha;
     }
-  } catch {}
+  } catch { /* file may not exist yet — sha stays undefined for create */ }
 
   // Upload image to GitHub
   const uploadRes = await fetch(

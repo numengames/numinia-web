@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSession } from '@/lib/auth/getSession';
+import { charactersRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { CharacterSaveSchema } from '@/lib/schemas';
 import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
@@ -51,11 +53,16 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  const rl = charactersRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   try {
-    const { content } = await req.json();
-    if (typeof content !== 'string') {
-      return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+    const raw = await req.json();
+    const parsed = CharacterSaveSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { content } = parsed.data;
 
     const path = getCharacterPath(session.address);
     const base64Content = Buffer.from(content).toString('base64');

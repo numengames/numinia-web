@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
 import { getAdminSession } from '@/lib/auth/getSession';
+import { AssetUpdateSchema } from '@/lib/schemas';
 
 export async function PATCH(
   req: NextRequest,
@@ -28,40 +29,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
     }
 
-    // Parse body — may contain { name } for rename, or be empty for visibility toggle
-    let body: Record<string, unknown> = {};
+    // Parse body — may contain field updates, or be empty for visibility toggle
+    let updates: Record<string, unknown> = {};
     try {
-      body = await req.json();
+      const raw = await req.json();
+      const parsed = AssetUpdateSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+      }
+      updates = Object.fromEntries(
+        Object.entries(parsed.data).filter(([k, v]) => v !== undefined && !(k === 'name' && v === ''))
+      );
     } catch {
       // empty body = visibility toggle
-    }
-
-    const updates: Record<string, unknown> = {};
-
-    // Editable fields — add new fields here as needed
-    if (typeof body.name === 'string' && body.name.trim()) {
-      updates.name = body.name.trim();
-    }
-    if (typeof body.description === 'string') {
-      updates.description = body.description.trim();
-    }
-    if (typeof body.creator === 'string') {
-      updates.creator = body.creator.trim();
-    }
-    if (typeof body.license === 'string') {
-      updates.license = body.license.trim();
-    }
-    if (typeof body.status === 'string') {
-      updates.status = body.status.trim();
-    }
-    if (typeof body.version === 'string') {
-      updates.version = body.version.trim();
-    }
-    if (body.nft && typeof body.nft === 'object') {
-      updates.nft = body.nft;
-    }
-    if (Array.isArray(body.tags)) {
-      updates.tags = body.tags;
     }
 
     // If no explicit field updates, toggle visibility

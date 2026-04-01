@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getDownloadCounts, saveDownloadCounts } from '@/lib/github-storage';
 import { resolveAvatarAssetUrl } from '@/lib/assetUrls';
 import { AvatarMetadata, getModelFilenameForFormat } from '@/lib/download-utils';
+import { downloadRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 interface DownloadCounts {
   counts: Record<string, number>;
@@ -15,11 +16,14 @@ interface Avatar {
 }
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rl = downloadRateLimit(getRateLimitKey(request));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   const { id } = await params;
-  
+
   try {
     // Get request body for format preference
     const { format } = await request.json().catch(() => ({}));

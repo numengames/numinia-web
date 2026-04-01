@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     try {
       const mintResult = await mintSeasonPass(walletAddress);
       if (mintResult) {
-        console.log(`Season pass NFT minted: tx=${mintResult.transactionHash}`);
+        console.error(`Season pass NFT minted: tx=${mintResult.transactionHash}`);
         await updatePassHolderNft(
           seasonId,
           walletAddress,

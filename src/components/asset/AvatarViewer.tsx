@@ -13,6 +13,7 @@ import { HypViewer } from './HypViewer';
 import { STLViewer } from './STLViewer';
 import { ImageViewer } from './ImageViewer';
 import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 const VRMViewer = dynamic(() => import('@/components/VRMViewer/VRMViewer').then(mod => mod.VRMViewer), { 
   ssr: false,
@@ -374,14 +375,16 @@ export const AvatarViewer: React.FC<ExtendedAvatarViewerProps> = ({
       ) : isImageUrl ? (
         <ImageViewer key={displayModelUrl} url={displayModelUrl} name={avatar.name} />
       ) : (
-        <VRMViewer
-          url={displayModelUrl}
-          backgroundGLB={null}
-          onMetadataLoad={onMetadataLoad}
-          onTexturesLoad={() => {}}
-          showInfoPanel={showInfoPanel}
-          onToggleInfoPanel={toggleInfoPanel}
-        />
+        <ErrorBoundary>
+          <VRMViewer
+            url={displayModelUrl}
+            backgroundGLB={null}
+            onMetadataLoad={onMetadataLoad}
+            onTexturesLoad={() => {}}
+            showInfoPanel={showInfoPanel}
+            onToggleInfoPanel={toggleInfoPanel}
+          />
+        </ErrorBoundary>
       )}
       
       {/* Mobile Touch Controls — only for 3D models */}

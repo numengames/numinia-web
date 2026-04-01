@@ -7,6 +7,7 @@ import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
 import { generateAssetId } from '@/lib/asset-id';
 import { presignRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { getContentPath } from '@/lib/content-paths';
+import { PresignRequestSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -44,20 +45,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { fileName, fileSize, name, description } = await req.json();
-
-    const ext = fileName?.split('.').pop()?.toLowerCase() ?? '';
-    if (!ACCEPTED_EXTENSIONS.includes(ext)) {
-      return NextResponse.json(
-        { error: `Unsupported format: .${ext}` },
-        { status: 400 }
-      );
+    const raw = await req.json();
+    const parsed = PresignRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { fileName, fileSize, name, description } = parsed.data;
 
-    if (fileSize > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File too large (max 500MB)' }, { status: 400 });
-    }
-
+    const ext = fileName.split('.').pop()!.toLowerCase();
     const format = ext.toUpperCase();
     const assetId = generateAssetId();
     const { folder } = getContentPath(format);

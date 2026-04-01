@@ -153,6 +153,57 @@ export const RawAvatarTagSchema = z.object({
   tag_id: str,
 }).passthrough();
 
+/* ─── Request body schemas (API input validation) ─── */
+
+const ACCEPTED_EXTENSIONS = ['glb', 'vrm', 'hyp', 'mp3', 'ogg', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'webp', 'stl'];
+
+/** POST /api/admin/presign — request a presigned upload URL */
+export const PresignRequestSchema = z.object({
+  fileName: z.string().min(1).max(255),
+  fileSize: z.number().int().positive().max(500 * 1024 * 1024, { message: 'File too large (max 500MB)' }),
+  name: z.string().max(255).optional(),
+  description: z.string().max(2000).optional(),
+}).refine(
+  (d) => {
+    const ext = d.fileName.split('.').pop()?.toLowerCase() ?? '';
+    return ACCEPTED_EXTENSIONS.includes(ext);
+  },
+  { message: 'Unsupported format' },
+);
+
+/** POST /api/admin/presign/confirm — confirm upload and create metadata */
+export const PresignConfirmRequestSchema = z.object({
+  assetId: z.string().min(1),
+  r2Key: z.string().min(1),
+  displayName: z.string().min(1).max(255),
+  description: z.string().max(2000).optional(),
+  format: z.string().min(1).max(10),
+  fileSize: z.number().int().nonnegative().optional(),
+  fileHash: z.string().max(128).optional(),
+});
+
+/** PATCH /api/assets/[id]/visibility — update asset fields */
+export const AssetUpdateSchema = z.object({
+  name: z.string().max(255).transform(v => v.trim()).optional(),
+  description: z.string().max(2000).transform(v => v.trim()).optional(),
+  creator: z.string().max(255).transform(v => v.trim()).optional(),
+  license: z.string().max(50).transform(v => v.trim()).optional(),
+  status: z.string().max(20).transform(v => v.trim()).optional(),
+  version: z.string().max(20).transform(v => v.trim()).optional(),
+  nft: z.record(z.string(), z.unknown()).optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+});
+
+/** PUT /api/favorites — save user favorites */
+export const FavoritesRequestSchema = z.object({
+  favorites: z.array(z.string().min(1).max(100)).max(500),
+});
+
+/** PUT /api/characters — save character sheet */
+export const CharacterSaveSchema = z.object({
+  content: z.string().min(1).max(100_000),
+});
+
 /**
  * Safely parse an array of items with a Zod schema.
  * Invalid items are logged and skipped instead of crashing.

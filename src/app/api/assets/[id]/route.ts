@@ -1,6 +1,7 @@
 // src/app/api/assets/[id]/route.ts
 import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
+import { assetsDeleteRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import {
@@ -32,7 +33,10 @@ export async function DELETE(
 
     }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
-    
+
+    const rl = assetsDeleteRateLimit(getRateLimitKey(req));
+    if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
     // Get the current avatars
     const avatars = await getAvatars();
     

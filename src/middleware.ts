@@ -74,7 +74,7 @@ export function middleware(request: NextRequest) {
       const payload = dot > 0 ? atob(walletCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : walletCookie.value;
       const data = JSON.parse(payload);
       if (data.role === 'admin') isAdmin = true;
-    } catch {}
+    } catch { /* malformed cookie — treat as unauthenticated */ }
   }
 
   if (!isAdmin) {
@@ -85,7 +85,7 @@ export function middleware(request: NextRequest) {
         const payload = dot > 0 ? atob(sessionCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : sessionCookie.value;
         const data = JSON.parse(payload);
         if (['admin', 'creator'].includes(data.role)) isAdmin = true;
-      } catch {}
+      } catch { /* malformed cookie — treat as unauthenticated */ }
     }
   }
 

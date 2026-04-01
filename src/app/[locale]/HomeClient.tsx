@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { AvatarHeader } from '@/components/asset/AvatarHeader';
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 const HomeVRMViewer = dynamic(
   () => import('@/components/VRMViewer/HomeVRMViewer').then((mod) => mod.HomeVRMViewer),
   { ssr: false, loading: () => null }
@@ -85,7 +86,7 @@ export default function Home() {
             style={{ width: '600px', height: '600px', maxWidth: '100vw', maxHeight: '100vh' }}
           >
             {heroVisible && (
-              <HomeVRMViewer className="w-full h-full blur-sm opacity-50" avatar={heroAsset} />
+              <ErrorBoundary><HomeVRMViewer className="w-full h-full blur-sm opacity-50" avatar={heroAsset} /></ErrorBoundary>
             )}
           </div>
         </div>
@@ -117,7 +118,7 @@ export default function Home() {
             </div>
             <div className="flex-1 w-full lg:w-auto hidden lg:block">
               {heroVisible && (
-                <HomeVRMViewer className="w-full aspect-square max-w-2xl mx-auto" avatar={heroAsset} />
+                <ErrorBoundary><HomeVRMViewer className="w-full aspect-square max-w-2xl mx-auto" avatar={heroAsset} /></ErrorBoundary>
               )}
             </div>
           </div>

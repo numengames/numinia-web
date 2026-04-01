@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserSession } from '@/lib/auth/getSession';
+import { favoritesRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { FavoritesRequestSchema } from '@/lib/schemas';
 import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
@@ -42,9 +44,14 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
+  const rl = favoritesRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   try {
-    const { favorites } = await req.json();
-    if (!Array.isArray(favorites)) return NextResponse.json({ error: 'favorites must be array' }, { status: 400 });
+    const raw = await req.json();
+    const parsed = FavoritesRequestSchema.safeParse(raw);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    const { favorites } = parsed.data;
 
     const path = getFavoritesPath(session.address);
     const content = Buffer.from(JSON.stringify(favorites, null, 2)).toString('base64');

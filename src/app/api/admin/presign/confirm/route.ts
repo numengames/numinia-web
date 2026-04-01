@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCsrf } from '@/lib/session';
+import { presignRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { getAdminSession } from '@/lib/auth/getSession';
 import { fetchData, updateData } from '@/lib/github-storage';
 import { getR2PublicUrl } from '@/lib/r2-client';
 import { getContentPath } from '@/lib/content-paths';
 import { createAssetMetadata } from '@/lib/asset-id';
+import { PresignConfirmRequestSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -19,12 +21,16 @@ export async function POST(req: NextRequest) {
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 
-  try {
-    const { assetId, r2Key, displayName, description, format, fileSize, fileHash } = await req.json();
+  const rl = presignRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
-    if (!assetId || !r2Key || !displayName || !format) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  try {
+    const raw = await req.json();
+    const parsed = PresignConfirmRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     }
+    const { assetId, r2Key, displayName, description, format, fileSize, fileHash } = parsed.data;
 
     const publicUrl = `${getR2PublicUrl()}/${r2Key}`;
 

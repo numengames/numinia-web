@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { proxyRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -9,6 +10,9 @@ export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
+  const rl = proxyRateLimit(getRateLimitKey(request));
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   try {
     // Get the target URL from the query parameter
     const url = request.nextUrl.searchParams.get('url');

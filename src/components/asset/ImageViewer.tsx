@@ -9,6 +9,11 @@ interface ImageViewerProps {
   name: string;
 }
 
+const ZOOM_STEP_BUTTON = 1.3;
+const ZOOM_STEP_WHEEL = 1.1;
+const ZOOM_MAX = 8;
+const ZOOM_MIN = 0.25;
+
 export function ImageViewer({ url, name }: ImageViewerProps) {
   const { t } = useI18n();
   const [zoom, setZoom] = useState(1);
@@ -17,14 +22,14 @@ export function ImageViewer({ url, name }: ImageViewerProps) {
   const dragStart = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const zoomIn = () => setZoom(z => Math.min(z * 1.3, 8));
-  const zoomOut = () => setZoom(z => Math.max(z / 1.3, 0.25));
+  const zoomIn = () => setZoom(z => Math.min(z * ZOOM_STEP_BUTTON, ZOOM_MAX));
+  const zoomOut = () => setZoom(z => Math.max(z / ZOOM_STEP_BUTTON, ZOOM_MIN));
   const resetView = () => { setZoom(1); setPosition({ x: 0, y: 0 }); };
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    if (e.deltaY < 0) setZoom(z => Math.min(z * 1.1, 8));
-    else setZoom(z => Math.max(z / 1.1, 0.25));
+    if (e.deltaY < 0) setZoom(z => Math.min(z * ZOOM_STEP_WHEEL, ZOOM_MAX));
+    else setZoom(z => Math.max(z / ZOOM_STEP_WHEEL, ZOOM_MIN));
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
