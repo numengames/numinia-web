@@ -16,20 +16,45 @@ type IncomingItem = {
 };
 
 const INCOMING: IncomingItem[] = [
-  { text: 'Season Pass — Stripe checkout + Thirdweb NFT mint (Base)', status: 'in-progress' },
+  { text: 'Data migration script (JSON → PostgreSQL)', status: 'planned' },
+  { text: 'GitHub sync (DB → JSON periodic export for File Over App)', status: 'planned' },
   { text: 'Spanish (ES) translation', status: 'planned' },
-  { text: 'Rate limiting persistente (Upstash Redis)', status: 'planned' },
   { text: 'Blog/content section para SEO long-tail', status: 'planned' },
   { text: 'Server-side pagination en API de assets', status: 'planned' },
   { text: 'Download counts visibles en gallery cards', status: 'planned' },
-  { text: 'Character Sheet — dice rolls (D6 pool) in web', status: 'planned' },
-  { text: 'Portals — Hyperfy world management + launcher', status: 'planned' },
+  { text: 'E2E tests with Playwright (critical user flows)', status: 'planned' },
   { text: 'Archive UX redesign (layout, filters, search)', status: 'planned' },
+  { text: 'API versioning + OpenAPI playground', status: 'research' },
+  { text: 'Multi-creator platform (user uploads + moderation)', status: 'research' },
   { text: 'Radicle.xyz — decentralized git (keep GitHub too)', status: 'research' },
-  { text: 'Books/Library section — digital lore + docs', status: 'research' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.14.0',
+    date: '2026-04-02',
+    time: '16:00',
+    items: [
+      { text: '6-tier rank system: Nomad → Citizen → Pilgrim → Vernacular → Archon → Oracle', type: 'new' },
+      { text: 'Rank-based permissions across all admin actions and API routes', type: 'new' },
+      { text: 'Thirdweb Connect auth — 350+ wallets, embedded wallets, social login', type: 'new' },
+      { text: 'Neon PostgreSQL + Drizzle ORM schema (13 tables, dual data source)', type: 'new' },
+      { text: 'Repository pattern: getDataSource() factory (GitHub ↔ DB switchable)', type: 'new' },
+      { text: '14 API routes migrated to repository pattern', type: 'improvement' },
+      { text: 'Upstash Redis — shared rate limiting + audit queue across serverless', type: 'new' },
+      { text: 'Structured logging (Pino) replacing console.* across 37 files', type: 'improvement' },
+      { text: 'Sentry error tracking (optional, activates with SENTRY_DSN)', type: 'new' },
+      { text: 'Health endpoint now checks GitHub + R2 + Redis', type: 'improvement' },
+      { text: 'Billing section in LAP Settings (tabs, credits, invoices)', type: 'new' },
+      { text: 'Data migration script (JSON → Postgres) + GitHub sync', type: 'new' },
+      { text: 'Season Pass chain switched to Base mainnet (8453)', type: 'improvement' },
+      { text: 'Oracle protection — cannot be banned at any layer', type: 'fix' },
+      { text: 'Wallet users registered as Nomad (not Citizen), rank enforcement fixed', type: 'fix' },
+      { text: 'Complete logout clears all auth cookies, prevents admin re-entry', type: 'fix' },
+      { text: 'Stats counter and user list dark mode fixed', type: 'fix' },
+      { text: '190 tests across 19 files (was 158/18)', type: 'improvement' },
+    ],
+  },
   {
     version: '0.13.0',
     date: '2026-04-02',
