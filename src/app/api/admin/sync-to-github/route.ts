@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { verifyCsrf } from '@/lib/session';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import { env } from '@/lib/env';
@@ -16,8 +16,12 @@ const MAX_GITHUB_SIZE = 50 * 1024 * 1024; // 50MB practical limit
  * Copies an R2-only asset to GitHub (data repo).
  */
 export async function POST(req: NextRequest) {
-  const session = getAdminSession(req);
-  if (!session.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'archon');
+  } catch (response) {
+    return response as Response;
+  }
   if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   try {

@@ -16,7 +16,7 @@ import {
   GithubDownload as Download
 } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
 
 export async function DELETE(
@@ -27,10 +27,11 @@ export async function DELETE(
   try {
     const avatarId = id;
 
-    const session = getAdminSession(req);
-    if (!session.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+    let session: SessionWithRank;
+    try {
+      session = await requireRank(req, 'archon');
+    } catch (response) {
+      return response as Response;
     }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 

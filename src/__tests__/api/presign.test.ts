@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
+const mockRequireRank = vi.fn();
 vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } } }));
 vi.mock('@/lib/auth/getSession', () => ({
-  getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
+  requireRank: (...args: unknown[]) => mockRequireRank(...args),
 }));
 
 const mockR2Configured = vi.fn(() => true);
@@ -37,13 +37,21 @@ function makeRequest(body: Record<string, unknown>) {
 }
 
 beforeEach(() => {
-  mockIsAdmin.mockReturnValue({ isAdmin: true });
+  mockRequireRank.mockResolvedValue({
+    authenticated: true,
+    role: 'admin',
+    rank: 'archon',
+    permissions: {},
+    banned: false,
+  });
   mockR2Configured.mockReturnValue(true);
 });
 
 describe('POST /api/admin/presign', () => {
   it('returns 401 for non-admin', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: false });
+    mockRequireRank.mockImplementation(async () => {
+      throw Response.json({ error: 'Unauthorized' }, { status: 401 });
+    });
     const res = await POST(makeRequest({ fileName: 'test.glb', fileSize: 1000 }));
     expect(res.status).toBe(401);
   });

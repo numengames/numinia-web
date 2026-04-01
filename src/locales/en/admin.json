@@ -9,7 +9,8 @@
     "archive": "Archive",
     "updates": "Updates",
     "stats": "Stats",
-    "settings": "Settings"
+    "settings": "Settings",
+    "users": "Users"
   },
   "sidebar": {
     "menu": "Menu",
@@ -59,5 +60,26 @@
   "upload": {
     "title": "Upload Asset",
     "fileTooLarge": "File too large. Max 500 MB."
+  },
+  "users": {
+    "title": "Users",
+    "total": "Total",
+    "banned": "Banned",
+    "search": "Search by username or ID...",
+    "ban": "Ban User",
+    "unban": "Unban",
+    "changeRank": "Change Rank",
+    "banTarget": "User",
+    "banReason": "Reason",
+    "banDuration": "Duration",
+    "permanent": "Permanent"
+  },
+  "rank": {
+    "nomad": "Nomad",
+    "citizen": "Citizen",
+    "pilgrim": "Pilgrim",
+    "vernacular": "Vernacular",
+    "archon": "Archon",
+    "oracle": "Oracle"
   }
 }

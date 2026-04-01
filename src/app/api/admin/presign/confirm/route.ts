@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCsrf } from '@/lib/session';
 import { presignRateLimit, getRateLimitKey } from '@/lib/rate-limit';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { fetchData, updateData } from '@/lib/github-storage';
 import { getR2PublicUrl } from '@/lib/r2-client';
 import { getContentPath } from '@/lib/content-paths';
@@ -14,10 +14,11 @@ export const runtime = 'nodejs';
 // Called after the client has uploaded the binary directly to R2.
 // Creates the metadata entry in the GitHub data repo.
 export async function POST(req: NextRequest) {
-  const session = getAdminSession(req);
-  if (!session.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'archon');
+  } catch (response) {
+    return response as Response;
   }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 

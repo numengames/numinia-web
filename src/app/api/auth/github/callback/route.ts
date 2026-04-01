@@ -5,6 +5,7 @@ import { GithubUser } from '@/types/github-storage';
 import { cookies } from 'next/headers';
 import { signSession, generateCsrfToken } from '@/lib/session';
 import { env } from '@/lib/env';
+import { computeRankForGithubUser } from '@/lib/auth/resolveRank';
 
 // These export configurations tell Next.js that this is a dynamic route
 // and should not be statically generated
@@ -141,14 +142,19 @@ export async function GET(request: NextRequest) {
       }
     }
     
-        // Set session cookie and clear the oauth_state CSRF cookie
+        // Compute rank for the session cookie
+    const userRole = user.role || 'creator';
+    const rank = await computeRankForGithubUser(user.id, userRole);
+
+    // Set session cookie and clear the oauth_state CSRF cookie
     const cookieStore = await cookies();
     cookieStore.set({
       name: 'session',
       value: signSession({
         userId: user.id,
         username: user.username,
-        role: user.role || 'creator',
+        role: userRole,
+        rank,
       }),
       httpOnly: true,
       secure: env.isProd,

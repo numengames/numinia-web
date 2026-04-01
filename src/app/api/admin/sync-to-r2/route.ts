@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { verifyCsrf } from '@/lib/session';
 import { getAvatars, updateAvatarInSource } from '@/lib/github-storage';
 import { getR2Client, getR2BucketName, getR2PublicUrl, isR2Configured } from '@/lib/r2-client';
@@ -15,8 +15,12 @@ export const runtime = 'nodejs';
  * Copies a GitHub-only asset to R2 CDN.
  */
 export async function POST(req: NextRequest) {
-  const session = getAdminSession(req);
-  if (!session.isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'archon');
+  } catch (response) {
+    return response as Response;
+  }
   if (!verifyCsrf(req)) return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
 
   if (!isR2Configured()) return NextResponse.json({ error: 'R2 not configured' }, { status: 503 });

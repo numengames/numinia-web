@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
 import { signSession, generateCsrfToken } from '@/lib/session';
 import { authRateLimit, getRateLimitKey } from '@/lib/rate-limit';
+import { computeRankForAddress } from '@/lib/auth/resolveRank';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -54,6 +55,9 @@ export async function POST(request: NextRequest) {
     const isAdmin = env.adminWalletAddresses.length > 0 && env.adminWalletAddresses.includes(address);
     const role = isAdmin ? 'admin' : 'user';
 
+    // Compute rank from overrides + env var + season progress
+    const rank = await computeRankForAddress(address, role);
+
     // Create session — admin gets admin_session cookie, all users get user_session
     if (isAdmin) {
       cookieStore.set({
@@ -61,6 +65,7 @@ export async function POST(request: NextRequest) {
         value: signSession({
           address: siweMessage.address,
           role: 'admin',
+          rank,
           authenticatedAt: new Date().toISOString(),
         }),
         httpOnly: true,
@@ -77,6 +82,7 @@ export async function POST(request: NextRequest) {
       value: signSession({
         address: siweMessage.address,
         role,
+        rank,
         authenticatedAt: new Date().toISOString(),
       }),
       httpOnly: true,
@@ -100,12 +106,13 @@ export async function POST(request: NextRequest) {
     // Clean up the nonce cookie
     cookieStore.delete('siwe_nonce');
 
-    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, method: 'wallet' } });
+    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, rank, method: 'wallet' } });
 
     return NextResponse.json({
       success: true,
       address: siweMessage.address,
       role,
+      rank,
     });
   } catch (error) {
     console.error('SIWE verify error:', error);

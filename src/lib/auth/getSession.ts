@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { verifySession } from '@/lib/session';
+import type { Rank, RankPermissions } from '@/types/rank';
+import { mapRoleToRank, meetsMinimumRank, getPermissionsForRank } from '@/lib/rank';
 
 // Unified session type for both GitHub OAuth and Ethereum wallet auth.
 export type AdminSession = {
@@ -62,4 +64,91 @@ export function getUserSession(req: NextRequest): UserSession {
   }
 
   return { authenticated: false, role: 'anonymous' };
+}
+
+// ---------------------------------------------------------------------------
+// Rank-aware session (Phase 0+1 additions — does NOT replace above functions)
+// ---------------------------------------------------------------------------
+
+/** Session enriched with rank, permissions, and ban status. */
+export type SessionWithRank = {
+  authenticated: boolean;
+  address?: string;
+  userId?: string;
+  username?: string;
+  role: string;
+  rank: Rank;
+  permissions: RankPermissions;
+  banned: boolean;
+};
+
+/**
+ * Get user session enriched with computed rank and permissions.
+ * Reads rank overrides + season progress + bans from the data repo.
+ */
+export async function getSessionWithRank(req: NextRequest): Promise<SessionWithRank> {
+  const session = getUserSession(req);
+
+  if (!session.authenticated) {
+    return {
+      ...session,
+      rank: 'nomad',
+      permissions: getPermissionsForRank('nomad'),
+      banned: false,
+    };
+  }
+
+  // Lazy import to avoid circular deps + keep this file synchronous for existing callers
+  const { resolveUserRank } = await import('@/lib/auth/resolveRank');
+  const resolved = await resolveUserRank(session);
+
+  return {
+    ...session,
+    rank: resolved.rank,
+    permissions: resolved.permissions,
+    banned: resolved.banned,
+  };
+}
+
+/**
+ * Require a minimum rank for an API route. Returns SessionWithRank on success.
+ *
+ * Replaces the pattern:
+ *   const session = getAdminSession(req);
+ *   if (!session.isAdmin) return new Response(null, { status: 401 });
+ *
+ * With:
+ *   const session = await requireRank(req, 'archon');
+ *   // throws RankError if insufficient
+ *
+ * @throws {Response} 401 if not authenticated, 403 if rank too low or banned
+ */
+export async function requireRank(
+  req: NextRequest,
+  minimum: Rank,
+): Promise<SessionWithRank> {
+  const session = await getSessionWithRank(req);
+
+  if (!session.authenticated) {
+    throw Response.json(
+      { error: 'Authentication required', code: 'UNAUTHENTICATED' },
+      { status: 401 },
+    );
+  }
+
+  if (session.banned) {
+    throw Response.json(
+      { error: 'Account suspended', code: 'BANNED' },
+      { status: 403 },
+    );
+  }
+
+  if (!meetsMinimumRank(session.rank, minimum)) {
+    throw Response.json(
+      { error: `Rank '${minimum}' or higher required`, code: 'INSUFFICIENT_RANK', requiredRank: minimum, currentRank: session.rank },
+      { status: 403 },
+    );
+  }
+
+  return session;
 }

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-// Mock getAdminSession
-const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
+// Mock requireRank
+const mockRequireRank = vi.fn();
 vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } } }));
 vi.mock('@/lib/auth/getSession', () => ({
-  getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
+  requireRank: (...args: unknown[]) => mockRequireRank(...args),
 }));
 
 // Mock github-storage
@@ -32,13 +32,21 @@ function makeRequest(id: string, body?: Record<string, unknown>) {
 }
 
 beforeEach(() => {
-  mockIsAdmin.mockReturnValue({ isAdmin: true });
+  mockRequireRank.mockResolvedValue({
+    authenticated: true,
+    role: 'admin',
+    rank: 'archon',
+    permissions: {},
+    banned: false,
+  });
   mockUpdate.mockResolvedValue(true);
 });
 
 describe('PATCH /api/assets/[id]/visibility', () => {
   it('returns 401 for non-admin', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: false });
+    mockRequireRank.mockImplementation(async () => {
+      throw Response.json({ error: 'Unauthorized' }, { status: 401 });
+    });
     const res = await makeRequest('test-1');
     expect(res.status).toBe(401);
   });

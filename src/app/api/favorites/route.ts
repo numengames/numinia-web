@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserSession } from '@/lib/auth/getSession';
+import { getUserSession, requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { favoritesRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { FavoritesRequestSchema } from '@/lib/schemas';
 import { env } from '@/lib/env';
@@ -39,9 +39,11 @@ export async function GET(req: NextRequest) {
 
 // PUT — save user's favorites to data repo
 export async function PUT(req: NextRequest) {
-  const session = getUserSession(req);
-  if (!session.authenticated || !session.address) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'citizen');
+  } catch (response) {
+    return response as Response;
   }
 
   const rl = favoritesRateLimit(getRateLimitKey(req));
@@ -53,7 +55,7 @@ export async function PUT(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     const { favorites } = parsed.data;
 
-    const path = getFavoritesPath(session.address);
+    const path = getFavoritesPath(session.address!);
     const content = Buffer.from(JSON.stringify(favorites, null, 2)).toString('base64');
 
     // Get SHA if file exists
@@ -71,7 +73,7 @@ export async function PUT(req: NextRequest) {
       {
         method: 'PUT',
         headers: { Authorization: `token ${env.github.token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `favorites: ${session.address.slice(0, 8)}`, content, ...(sha ? { sha } : {}), branch: env.github.branch }),
+        body: JSON.stringify({ message: `favorites: ${session.address!.slice(0, 8)}`, content, ...(sha ? { sha } : {}), branch: env.github.branch }),
       }
     );
 

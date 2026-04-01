@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { charactersRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { CharacterSaveSchema } from '@/lib/schemas';
 import { env } from '@/lib/env';
@@ -15,12 +15,14 @@ function getCharacterPath(address: string): string {
 
 // GET /api/characters — get current user's character sheet
 export async function GET(req: NextRequest) {
-  const session = getUserSession(req);
-  if (!session.authenticated || !session.address) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'citizen');
+  } catch (response) {
+    return response as Response;
   }
 
-  const path = getCharacterPath(session.address);
+  const path = getCharacterPath(session.address!);
 
   try {
     const res = await fetch(
@@ -48,9 +50,11 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/characters — save current user's character sheet
 export async function PUT(req: NextRequest) {
-  const session = getUserSession(req);
-  if (!session.authenticated || !session.address) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'citizen');
+  } catch (response) {
+    return response as Response;
   }
 
   const rl = charactersRateLimit(getRateLimitKey(req));
@@ -64,7 +68,7 @@ export async function PUT(req: NextRequest) {
     }
     const { content } = parsed.data;
 
-    const path = getCharacterPath(session.address);
+    const path = getCharacterPath(session.address!);
     const base64Content = Buffer.from(content).toString('base64');
 
     // Get current SHA if file exists
@@ -90,7 +94,7 @@ export async function PUT(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: `character: update ${session.address.slice(0, 8)}`,
+          message: `character: update ${session.address!.slice(0, 8)}`,
           content: base64Content,
           ...(sha ? { sha } : {}),
           branch: env.github.branch,

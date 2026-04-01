@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, getProjects, saveAvatars } from '@/lib/github-storage';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { getAdminSession, requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { generateAssetId } from '@/lib/asset-id';
 import { isAllowedAssetUrl } from '@/lib/schemas';
 
@@ -152,9 +152,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = getAdminSession(req);
-    if (!session.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let session: SessionWithRank;
+    try {
+      session = await requireRank(req, 'archon');
+    } catch (response) {
+      return response as Response;
     }
     
     // Parse the request body

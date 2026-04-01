@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
+const mockRequireRank = vi.fn();
 vi.mock('@/lib/auth/getSession', () => ({
-  getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
+  requireRank: (...args: unknown[]) => mockRequireRank(...args),
 }));
 
 const mockAvatars = [
@@ -21,12 +21,20 @@ vi.mock('@/lib/github-storage', () => ({
 import { GET } from '@/app/api/admin/stats/route';
 
 beforeEach(() => {
-  mockIsAdmin.mockReturnValue({ isAdmin: true });
+  mockRequireRank.mockResolvedValue({
+    authenticated: true,
+    role: 'admin',
+    rank: 'archon',
+    permissions: {},
+    banned: false,
+  });
 });
 
 describe('GET /api/admin/stats', () => {
   it('returns 401 for non-admin', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: false });
+    mockRequireRank.mockImplementation(async () => {
+      throw Response.json({ error: 'Unauthorized' }, { status: 401 });
+    });
     const res = await GET(new NextRequest('http://localhost/api/admin/stats'));
     expect(res.status).toBe(401);
   });

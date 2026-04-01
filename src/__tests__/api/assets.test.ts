@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-// Mock admin session
-const mockIsAdmin = vi.fn(() => ({ isAdmin: true }));
+// Mock auth session
+const mockRequireRank = vi.fn();
+const mockGetAdminSession = vi.fn(() => ({ isAdmin: false }));
 vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } } }));
 vi.mock('@/lib/auth/getSession', () => ({
-  getAdminSession: (...args: Parameters<typeof mockIsAdmin>) => mockIsAdmin(...args),
+  requireRank: (...args: unknown[]) => mockRequireRank(...args),
+  getAdminSession: () => mockGetAdminSession(),
 }));
 
 // Mock data
@@ -45,7 +47,12 @@ import { GET, POST } from '@/app/api/assets/route';
 import { DELETE } from '@/app/api/assets/[id]/route';
 
 beforeEach(() => {
-  mockIsAdmin.mockReturnValue({ isAdmin: false });
+  // GET handler uses getAdminSession — default to non-admin
+  mockGetAdminSession.mockReturnValue({ isAdmin: false });
+  // POST/DELETE handlers use requireRank — default to rejected (non-admin)
+  mockRequireRank.mockImplementation(async () => {
+    throw Response.json({ error: 'Unauthorized' }, { status: 401 });
+  });
 });
 
 describe('GET /api/assets', () => {
@@ -61,7 +68,7 @@ describe('GET /api/assets', () => {
   });
 
   it('returns all avatars for admin', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockGetAdminSession.mockReturnValue({ isAdmin: true });
     const req = new NextRequest('http://localhost/api/assets');
     const res = await GET(req);
     const data = await res.json();
@@ -70,7 +77,7 @@ describe('GET /api/assets', () => {
   });
 
   it('filters by search query', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockGetAdminSession.mockReturnValue({ isAdmin: true });
     const req = new NextRequest('http://localhost/api/assets?search=audio');
     const res = await GET(req);
     const data = await res.json();
@@ -89,7 +96,7 @@ describe('GET /api/assets', () => {
   });
 
   it('sorts by newest first', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockGetAdminSession.mockReturnValue({ isAdmin: true });
     const req = new NextRequest('http://localhost/api/assets');
     const res = await GET(req);
     const data = await res.json();
@@ -122,7 +129,9 @@ describe('POST /api/assets', () => {
   });
 
   it('returns 400 without required fields', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockRequireRank.mockResolvedValue({
+      authenticated: true, role: 'admin', rank: 'archon', permissions: {}, banned: false,
+    });
     const req = new NextRequest('http://localhost/api/assets', {
       method: 'POST',
       body: JSON.stringify({ name: 'Test' }), // missing projectId
@@ -133,7 +142,9 @@ describe('POST /api/assets', () => {
   });
 
   it('creates asset for admin with valid data', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockRequireRank.mockResolvedValue({
+      authenticated: true, role: 'admin', rank: 'archon', permissions: {}, banned: false,
+    });
     const req = new NextRequest('http://localhost/api/assets', {
       method: 'POST',
       body: JSON.stringify({ name: 'New Asset', projectId: 'p1', format: 'GLB' }),
@@ -157,14 +168,18 @@ describe('DELETE /api/assets/[id]', () => {
   });
 
   it('returns 404 for unknown ID', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockRequireRank.mockResolvedValue({
+      authenticated: true, role: 'admin', rank: 'archon', permissions: {}, banned: false,
+    });
     const req = new NextRequest('http://localhost/api/assets/nonexistent', { method: 'DELETE' });
     const res = await DELETE(req, { params: Promise.resolve({ id: 'nonexistent' }) });
     expect(res.status).toBe(404);
   });
 
   it('deletes asset for admin', async () => {
-    mockIsAdmin.mockReturnValue({ isAdmin: true });
+    mockRequireRank.mockResolvedValue({
+      authenticated: true, role: 'admin', rank: 'archon', permissions: {}, banned: false,
+    });
     const req = new NextRequest('http://localhost/api/assets/a1', { method: 'DELETE' });
     const res = await DELETE(req, { params: Promise.resolve({ id: 'a1' }) });
     expect(res.status).toBe(204);

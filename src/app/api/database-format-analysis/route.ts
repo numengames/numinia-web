@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -50,9 +50,11 @@ async function getAvatarsFromFile(): Promise<Avatar[]> {
 }
 
 export async function GET(req: NextRequest) {
-  const session = getAdminSession(req);
-  if (!session.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'archon');
+  } catch (response) {
+    return response as Response;
   }
 
   try {

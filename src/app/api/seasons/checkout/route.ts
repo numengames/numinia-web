@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { env } from '@/lib/env';
-import { getUserSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getActiveSeason, getUserSeasonStatus } from '@/lib/season-storage';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +15,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const session = getUserSession(req);
-  if (!session.authenticated || !session.address) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'citizen');
+  } catch (response) {
+    return response as Response;
   }
 
   const season = await getActiveSeason();
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check if user already has the pass
-  const status = await getUserSeasonStatus(season.id, session.address);
+  const status = await getUserSeasonStatus(season.id, session.address!);
   if (status.hasPass) {
     return NextResponse.json(
       { error: 'You already own this season pass' },
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
       ],
       metadata: {
         season_id: season.id,
-        wallet_address: session.address,
+        wallet_address: session.address!,
       },
       success_url: `${baseUrl}/${locale}/LAP/seasons?purchase=success`,
       cancel_url: `${baseUrl}/${locale}/LAP/seasons`,

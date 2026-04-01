@@ -1,0 +1,104 @@
+/**
+ * GET  /api/admin/users/[id] — User detail with rank and ban status (archon+)
+ * PATCH /api/admin/users/[id] — Change rank override (oracle only)
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
+import { getUsers } from '@/lib/github-storage';
+import { verifyCsrf } from '@/lib/session';
+import { findRankOverride, saveRankOverride, removeRankOverride, isUserBanned } from '@/lib/rank-storage';
+import { mapRoleToRank } from '@/lib/rank';
+import { logAudit } from '@/lib/audit';
+import { RANK_HIERARCHY, type Rank } from '@/types/rank';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(req: NextRequest, context: RouteContext) {
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'archon');
+  } catch (response) {
+    return response as Response;
+  }
+
+  const { id } = await context.params;
+  const users = await getUsers();
+  const user = users.find(u => u.id === id);
+
+  if (!user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const override = await findRankOverride(user.id);
+  const banned = await isUserBanned(user.id);
+  const rank = override?.rank ?? mapRoleToRank(user.role);
+
+  return NextResponse.json({
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      rank,
+      banned,
+      override: override ?? null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  });
+}
+
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  let session: SessionWithRank;
+  try {
+    session = await requireRank(req, 'oracle');
+  } catch (response) {
+    return response as Response;
+  }
+
+  if (!verifyCsrf(req)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  const { id } = await context.params;
+  const body = await req.json();
+  const { rank, reason } = body as { rank?: string; reason?: string };
+
+  if (!rank || !RANK_HIERARCHY.includes(rank as Rank)) {
+    return NextResponse.json({ error: 'Invalid rank' }, { status: 400 });
+  }
+
+  if (!reason) {
+    return NextResponse.json({ error: 'Reason required' }, { status: 400 });
+  }
+
+  const users = await getUsers();
+  const user = users.find(u => u.id === id);
+
+  if (!user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
+  const actor = session.address ?? session.userId ?? 'unknown';
+
+  await saveRankOverride({
+    identifier: user.id,
+    identifierType: 'github',
+    rank: rank as Rank,
+    assignedBy: actor,
+    assignedAt: new Date().toISOString(),
+    reason,
+  });
+
+  logAudit({
+    action: 'rank-change',
+    actor,
+    target: user.id,
+    metadata: { username: user.username, newRank: rank, reason },
+  });
+
+  return NextResponse.json({ success: true, rank });
+}

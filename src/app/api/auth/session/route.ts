@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifySession } from '@/lib/session';
+import { mapRoleToRank } from '@/lib/rank';
+import type { Rank } from '@/types/rank';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -14,7 +16,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    const sessionData = verifySession<{ userId?: string; username?: string; email?: string; role?: string }>(sessionCookie.value);
+    const sessionData = verifySession<{ userId?: string; username?: string; email?: string; role?: string; rank?: Rank }>(sessionCookie.value);
     if (!sessionData) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest) {
         username: sessionData.username,
         email: sessionData.email,
         role: sessionData.role,
+        rank: sessionData.rank ?? mapRoleToRank(sessionData.role),
       },
     }, { status: 200 });
   } catch (error) {

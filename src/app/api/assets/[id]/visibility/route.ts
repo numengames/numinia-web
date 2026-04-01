@@ -5,7 +5,7 @@ import { verifyCsrf } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
 import { NextRequest } from 'next/server';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { AssetUpdateSchema } from '@/lib/schemas';
 
 export async function PATCH(
@@ -15,10 +15,11 @@ export async function PATCH(
   const { id } = await params;
 
   try {
-    const session = getAdminSession(req);
-    if (!session.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
+    let session: SessionWithRank;
+    try {
+      session = await requireRank(req, 'archon');
+    } catch (response) {
+      return response as Response;
     }
     if (!verifyCsrf(req)) return NextResponse.json({ error: "CSRF token invalid" }, { status: 403 });
 

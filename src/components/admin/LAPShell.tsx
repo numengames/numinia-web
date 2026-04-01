@@ -7,10 +7,13 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
+import type { Rank } from '@/types/rank';
+
 type AdminSession = {
   authenticated: boolean;
   address?: string;
   role?: string;
+  rank?: Rank;
 };
 
 /**
@@ -66,6 +69,7 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-cream dark:bg-cream-dark">
       <AdminSidebar
         walletAddress={session.address}
+        rank={session.rank}
         onSignOut={handleSignOut}
       />
       <main className="flex-1 overflow-y-auto">
