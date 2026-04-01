@@ -1,0 +1,104 @@
+{
+  "title": "关于 Numinia Digital Goods",
+  "whatWeDo": {
+    "title": "我们做什么",
+    "description1": "Numinia Digital Goods 是一个 CC0 数字资产的开放注册平台——涵盖 3D 模型、虚拟形象、虚拟世界、音频和视频。",
+    "description2": "我们从优秀创作者和开源社区中精选资产。所有资产使用开放格式（GLB、VRM、HYP），兼容游戏引擎、VR 平台和元宇宙。无需在分散的仓库中四处搜寻——在一个地方浏览、预览和下载。"
+  },
+  "howItWorks": {
+    "title": "工作原理",
+    "subtitle": "我们索引合集 → 保存元数据 → 您浏览并下载",
+    "steps": [
+      "我们寻找使用开源许可的 3D 资产合集",
+      "我们编目下载链接、预览图、规格和许可信息",
+      "您可以按合集、主题或风格筛选，下载所需内容",
+      "文件托管在 GitHub、IPFS 或 Arweave 上——确保可访问性和可保存性"
+    ],
+    "description": "可以把我们看作免费 3D 资产的搜索引擎——让众多模型在一个地方被发现。"
+  },
+  "status": {
+    "title": "当前状态",
+    "badges": {
+      "beta": {
+        "label": "测试版",
+        "description": "持续更新和改进中"
+      },
+      "avatars": {
+        "label": "海量资产",
+        "description": "涵盖 17 个合集"
+      },
+      "format": {
+        "label": "GLB 格式",
+        "description": "通用兼容性"
+      },
+      "license": {
+        "label": "CC0 许可",
+        "description": "可自由用于任何项目"
+      }
+    }
+  },
+  "collections": {
+    "title": "精选合集",
+    "polygonalMind": {
+      "title": "Polygonal Mind 合集",
+      "description": "17 个主题合集，包含道具、环境和建筑。从 MomusPark 的公园资产到 Tomb Chaser 的埃及金字塔和日式霓虹灯塔。",
+      "stats": "海量资产 | CC0 许可"
+    }
+  },
+  "license": {
+    "title": "许可协议",
+    "description": "我们合集中的大多数资产为 CC0（公共领域）——这意味着您可以将其用于任何用途，无需署名。部分合集可能有不同的许可协议，我们会在每个资产页面上清楚标注。"
+  },
+  "technical": {
+    "title": "技术详情",
+    "format": {
+      "title": "文件格式",
+      "description": "所有资产使用 GLB（二进制 glTF）格式，这是 Web 及更广泛领域的 3D 标准格式。兼容 Blender、Unity、Unreal Engine、Three.js 等。"
+    },
+    "storage": {
+      "title": "数据存储",
+      "description": "资产元数据和文件可存储在 GitHub、IPFS 或 Arweave 上——确保长期可访问性、去中心化和版本控制。我们不局限于单一托管服务商。"
+    }
+  },
+  "future": {
+    "title": "未来计划",
+    "items": [
+      "来自优秀创作者的更多资产合集",
+      "按多边形数、材质类型和主题进行高级筛选",
+      "资产标签和分类系统"
+    ]
+  },
+  "getInvolved": {
+    "title": "参与贡献",
+    "submitCollection": {
+      "title": "提交合集",
+      "description": "有开放许可的 3D 资产想要分享？我们非常欢迎！",
+      "requirements": {
+        "title": "要求：",
+        "list": [
+          "开源许可（CC0、CC-BY 等）",
+          "GLB 格式",
+          "稳定的托管服务（GitHub、IPFS、Arweave 等）"
+        ]
+      },
+      "submitVia": "通过 [GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions) 提交"
+    },
+    "contributeCode": {
+      "title": "贡献代码",
+      "description": "发现了 Bug？想添加新功能？",
+      "link": "提交问题 → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    },
+    "giveFeedback": {
+      "title": "提供反馈",
+      "description": "有改进建议？请告诉我们！",
+      "link": "分享反馈 → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    }
+  },
+  "connect": {
+    "title": "联系我们",
+    "website": "网站",
+    "websiteUrl": "https://numinia.store",
+    "twitter": "Twitter",
+    "twitterUrl": "https://x.com/numinia_store"
+  }
+}

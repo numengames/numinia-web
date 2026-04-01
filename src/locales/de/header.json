@@ -1,0 +1,22 @@
+{
+  "navigation": {
+    "avatars": "Archiv",
+    "finder": "Finder",
+    "about": "Über uns",
+    "resources": "Ressourcen",
+    "viewer": "Inspektor"
+  },
+  "warning": {
+    "desktop": "Neue Funktion - Probleme auf X melden",
+    "mobile": "Beta"
+  },
+  "social": {
+    "portfolio": "Portfolio",
+    "github": "GitHub",
+    "twitter": "X (Twitter)"
+  },
+  "notification": {
+    "newFeature": "Neue Funktion",
+    "reportIssues": "Probleme auf X melden"
+  }
+}

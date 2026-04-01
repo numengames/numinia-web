@@ -1,0 +1,185 @@
+{
+  "title": "Asset-Finder",
+  "description": "Durchsuche und lade mehrere 3D-Assets gleichzeitig herunter",
+  "mobileNotice": "⚠️ Für Massendownloads am besten auf dem Desktop nutzen",
+  "mobile": {
+    "desktopOnly": {
+      "title": "Nur für Desktop",
+      "description": "Der Asset-Finder ist derzeit für die Desktop-Nutzung optimiert. Bitte besuche diese Seite auf einem Computer für das beste Erlebnis."
+    }
+  },
+  "collections": {
+    "title": "Sammlungen",
+    "searchPlaceholder": "Projekte suchen...",
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen",
+    "avatarCount": "{count} Assets"
+  },
+  "avatarList": {
+    "title": "3D-Assets",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "searchPlaceholder": "Assets suchen...",
+    "noResults": "Keine Assets gefunden",
+    "hiddenSelectedWarning": "Du hast {count} {items} ausgewählt, die gerade nicht angezeigt werden",
+    "columns": {
+      "name": "Name",
+      "formats": "Formate",
+      "files": "Dateien",
+      "license": "Lizenz",
+      "collection": "Sammlung"
+    },
+    "fileTypes": {
+      "vrm": "VRM",
+      "fbx": "FBX",
+      "voxelVrm": "Voxel VRM",
+      "voxelFbx": "Voxel FBX",
+      "thumbnail": "Vorschaubild",
+      "texture": "Textur"
+    }
+  },
+  "fileList": {
+    "title": "Dateien",
+    "noSelection": "Wähle ein Asset aus, um Dateien anzuzeigen",
+    "noFiles": "Keine Dateien verfügbar",
+    "categories": {
+      "vrm": "VRM",
+      "glb": "GLB",
+      "fbx": "FBX",
+      "images": "BILDER",
+      "models": "Modelle",
+      "thumbnails": "Vorschaubilder",
+      "textures": "Texturen"
+    }
+  },
+  "preview": {
+    "title": "Vorschau",
+    "noSelection": "Wähle ein Asset zur Vorschau aus",
+    "download": "Herunterladen",
+    "fbxNotSupported": {
+      "title": "FBX-Vorschau nicht unterstützt",
+      "message": "Die FBX-Vorschau wird derzeit nicht unterstützt, aber du kannst die Datei über den Download-Button unten herunterladen."
+    },
+    "metadata": {
+      "name": "Name",
+      "collection": "Sammlung",
+      "license": "Lizenz",
+      "formats": "Verfügbare Formate",
+      "currentFile": "Aktuelle Datei"
+    }
+  },
+  "downloadQueue": {
+    "title": "Download-Warteschlange",
+    "minimize": "Minimieren",
+    "maximize": "Maximieren",
+    "clear": "Warteschlange leeren",
+    "downloadAll": "Alle Ausgewählten herunterladen",
+    "status": {
+      "queued": "In Warteschlange",
+      "downloading": "Wird heruntergeladen",
+      "complete": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    },
+    "progress": "Lade {current} von {total} Dateien herunter",
+    "overallProgress": "{completed} von {total} abgeschlossen",
+    "cancel": "Abbrechen",
+    "retry": "Erneut versuchen",
+    "empty": "Keine Dateien in der Warteschlange"
+  },
+  "batchDownload": {
+    "title": "Massendownload-Manager",
+    "selectedAvatars": "Ausgewählte Assets",
+    "selectedFiles": "Ausgewählte Dateien",
+    "downloadOptions": "Download-Optionen",
+    "downloadVrms": "VRM-Dateien herunterladen",
+    "downloadFbx": "FBX-Dateien herunterladen",
+    "downloadGlb": "GLB-Dateien herunterladen",
+    "downloadImages": "Bilder herunterladen",
+    "extractTextures": "Texturen extrahieren (Experimentell)",
+    "comingSoon": "Demnächst verfügbar",
+    "startDownload": "Download starten",
+    "selectOption": "Bitte wähle mindestens eine Download-Option",
+    "downloadProgress": "Download-Fortschritt",
+    "downloadFolder": "Download-Ordner",
+    "selectFolder": "Ordner auswählen",
+    "changeFolder": "Ordner ändern",
+    "folderHint": "Wähle einen Ordner, um Dateien direkt ohne Aufforderung zu speichern. Wenn nicht ausgewählt, wirst du beim Starten des Downloads zur Ordnerauswahl aufgefordert.",
+    "folderNotSupported": "Die Ordnerauswahl wird in diesem Browser nicht unterstützt. Dateien werden in deinen Standard-Download-Ordner heruntergeladen.",
+    "folderRequired": "Bitte wähle einen Download-Ordner, um Speicher-Aufforderungen für jede Datei zu vermeiden. Die Ordnerauswahl ist für Massendownloads erforderlich.",
+    "folderSelectionError": "Fehler bei der Ordnerauswahl. Bitte versuche es erneut.",
+    "selectFolderAndDownload": "Ordner auswählen & Herunterladen",
+    "folderRecommended": "Die Auswahl eines Ordners verhindert Speicher-Aufforderungen für jede Datei",
+    "required": "Erforderlich",
+    "folderSelected": "Dateien werden hier automatisch gespeichert",
+    "openFolder": "Ordner im Dateimanager öffnen",
+    "open": "Öffnen",
+    "filesDownloadedTo": "Dateien heruntergeladen nach:",
+    "selectFolderFirst": "Bitte wähle zuerst einen Download-Ordner",
+    "zipNote": "Alle ausgewählten Dateien werden in ein einzelnes ZIP-Archiv komprimiert, sobald sie bereit sind"
+  },
+  "filters": {
+    "title": "Filter",
+    "fileTypes": {
+      "title": "Dateitypen",
+      "hasVrm": "Hat VRM",
+      "hasFbx": "Hat FBX",
+      "hasVoxel": "Hat Voxel"
+    }
+  },
+  "errors": {
+    "loadError": "Assets konnten nicht geladen werden",
+    "downloadError": "Download fehlgeschlagen",
+    "retryError": "Erneuter Versuch fehlgeschlagen"
+  },
+  "common": {
+    "noImage": "Kein Bild",
+    "unknown": "Unbekannt",
+    "download": "Herunterladen",
+    "downloadAllFiles": "Alle Dateien herunterladen",
+    "close": "Schließen",
+    "change": "Ändern",
+    "select": "Auswählen",
+    "loadMore": "Mehr laden ({count} verbleibend)",
+    "thumbnail": "Vorschaubild",
+    "texture": "Textur"
+  },
+  "sections": {
+    "basicInformation": "GRUNDLEGENDE INFORMATIONEN",
+    "modelInformation": "MODELLINFORMATIONEN",
+    "licenseInformation": "LIZENZINFORMATIONEN",
+    "availableFiles": "VERFÜGBARE DATEIEN",
+    "description": "BESCHREIBUNG",
+    "fileInformation": "DATEIINFORMATIONEN"
+  },
+  "fileSizeUnits": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB"
+  },
+  "licenseTypes": {
+    "redistributionProhibited": "Weiterverbreitung untersagt",
+    "cc0": "CC0",
+    "ccBy": "CC BY",
+    "ccByNc": "CC BY NC",
+    "ccBySa": "CC BY SA",
+    "ccByNcSa": "CC BY NC SA",
+    "ccByNd": "CC BY ND",
+    "ccByNcNd": "CC BY NC ND",
+    "other": "Sonstige"
+  },
+  "permissions": {
+    "everyone": "Alle",
+    "explicitUser": "Expliziter Nutzer",
+    "onlyAuthor": "Nur der Autor"
+  },
+  "usage": {
+    "allow": "Erlauben",
+    "disallow": "Nicht erlauben"
+  },
+  "lightbox": {
+    "download": "Herunterladen",
+    "downloadImage": "Bild herunterladen",
+    "close": "Schließen"
+  }
+}

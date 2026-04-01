@@ -1,0 +1,106 @@
+{
+  "title": "리소스 및 다운로드",
+  "collections": {
+    "title": "에셋 컬렉션",
+    "description": "이 사이트는 명확한 라이선스와 출처가 있는 3D 에셋 컬렉션을 소개합니다:",
+    "original": {
+      "title": "Polygonal Mind 컬렉션 (CC0)",
+      "name": "17개 테마 컬렉션 – 다수의 무료 3D 에셋",
+      "license": "라이선스: CC0 (퍼블릭 도메인) – 저작자 표시 없이 자유롭게 사용 가능",
+      "storage": "저장소: GitHub (numinia-digital-goods-data)",
+      "batchDownload": "소스: numinia-digital-goods-data 저장소",
+      "includes": "포함: GLB 파일, 프롭, 환경, 구조물"
+    },
+    "community": {
+      "title": "추가 컬렉션",
+      "note": "CC0 및 오픈 라이선스 3D 컬렉션이 추가될 수 있습니다. 현재 목록은 에셋 브라우저에서 확인하세요."
+    },
+    "licenseNote": "라이선스가 중요합니다! CC0 에셋은 저작자 표시 없이 자유롭게 사용할 수 있습니다. CC-BY 에셋은 저작자 표시가 필요합니다. 항상 컬렉션 세부정보를 확인하세요."
+  },
+  "developers": {
+    "title": "개발자용",
+    "database": {
+      "title": "에셋 데이터베이스 (GitHub)",
+      "description": "모든 에셋 메타데이터를 JSON 파일로 이용할 수 있습니다. 앱이나 게임에 통합하기에 적합합니다.",
+      "link": "에셋 데이터베이스 보기 →",
+      "structure": {
+        "title": "구조",
+        "projects": "projects.json → 전체 컬렉션 + 라이선스 정보",
+        "assets": "/assets/",
+        "r1": "pm-momuspark.json → 컬렉션 에셋 데이터",
+        "r2": "pm-medieval-fair.json",
+        "r3": "기타 컬렉션 JSON 파일..."
+      },
+      "includes": "각 에셋에 포함된 정보:",
+      "includesList": [
+        "GLB 직접 다운로드 링크",
+        "미리보기 이미지",
+        "메타데이터 및 태그",
+        "라이선스 정보"
+      ]
+    },
+    "website": {
+      "title": "웹사이트 소스 코드",
+      "description": "갤러리 웹사이트는 오픈 소스입니다.",
+      "link": "웹사이트 코드 보기 →"
+    }
+  },
+  "glb": {
+    "title": "GLB 형식 소개",
+    "description": "GLB는 3D 모델, 프롭, 환경에 사용되는 바이너리 glTF 형식입니다.",
+    "why": {
+      "title": "GLB를 사용하는 이유:",
+      "reasons": [
+        "Blender, Unity, Unreal, Three.js 및 대부분의 3D 도구와 호환",
+        "개방형 Khronos 표준 – 특정 벤더에 종속되지 않음",
+        "단일 파일: 모델과 머티리얼이 하나의 파일에 포함",
+        "효율적이며 웹 친화적"
+      ]
+    },
+    "compatible": {
+      "title": "호환 환경:",
+      "list": [
+        "Blender (기본 지원)",
+        "Unity (GLTFUtility 등)",
+        "Unreal Engine (glTF 가져오기)",
+        "Three.js / 웹 (GLTFLoader)"
+      ]
+    },
+    "learnMore": "glTF/GLB에 대해 더 알아보기 →"
+  },
+  "ardrive": {
+    "title": "ArDrive란?",
+    "description": "ArDrive는 Arweave 기반의 영구적이고 탈중앙화된 저장소입니다.",
+    "why": {
+      "title": "왜 중요한가:",
+      "reasons": [
+        "파일이 영구 보관됩니다 (삭제되거나 오프라인으로 전환될 수 없음)",
+        "일회성 결제, 구독료 없음",
+        "오픈 소스 콘텐츠 보존에 이상적"
+      ]
+    },
+    "note": "일부 에셋 소스는 영구 저장을 위해 ArDrive 또는 IPFS를 사용할 수 있습니다. 메인 레지스트리는 numinia-digital-goods-data GitHub 저장소입니다."
+  },
+  "philosophy": {
+    "title": "오픈 소스 철학",
+    "description": "우리는 3D 에셋이 무료이고 누구나 접근할 수 있어야 한다고 믿습니다.",
+    "why": "그래서 CC0(퍼블릭 도메인) 컬렉션을 중점적으로 소개합니다:",
+    "benefits": [
+      "✅ 상업 프로젝트에 사용 가능",
+      "✅ 자유롭게 수정 및 리믹스 가능",
+      "✅ 저작자 표시 불필요",
+      "✅ 게임, 앱, VR, 아트워크에 사용 가능"
+    ],
+    "note": "각 컬렉션에는 고유한 라이선스가 있습니다. 각 에셋으로 무엇을 할 수 있는지 쉽게 확인할 수 있도록 안내합니다.",
+    "conclusion": "3D 생태계는 유료 장벽이 아닌 개방형 표준 위에 구축되어야 합니다."
+  },
+  "help": {
+    "title": "도움이 필요하신가요?",
+    "questions": "라이선스에 관한 질문이 있으신가요? 각 에셋 페이지의 컬렉션 세부정보를 확인하세요.",
+    "building": "무언가를 만들고 계신가요? JSON 데이터는 무료로 사용할 수 있습니다. 나만의 에셋 브라우저를 만들어 보세요!",
+    "contribute": "기여하고 싶으신가요? GitHub을 통해 컬렉션을 제출하세요.",
+    "contributeLink": "https://github.com/PabloFMM/numinia-digital-goods-data",
+    "contact": "연락처: @numinia_xyz",
+    "contactLink": "https://x.com/numinia_xyz"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "title": "Sobre o Numinia Digital Goods",
+  "whatWeDo": {
+    "title": "O Que Fazemos",
+    "description1": "Numinia Digital Goods é um registro aberto de assets digitais CC0 — modelos 3D, avatares, mundos, áudio e vídeo.",
+    "description2": "Nós curamos assets de criadores talentosos e da comunidade open source. Todos os assets usam formatos abertos (GLB, VRM, HYP), tornando-os compatíveis com engines de jogos, plataformas VR e o metaverso. Sem precisar vasculhar repositórios espalhados — navegue, visualize e baixe em um só lugar."
+  },
+  "howItWorks": {
+    "title": "Como Funciona",
+    "subtitle": "Indexamos coleções → Preservamos metadados → Você navega e baixa",
+    "steps": [
+      "Encontramos coleções de assets 3D com licenças open source",
+      "Catalogamos links de download, prévias, especificações e informações de licença",
+      "Você filtra por coleção, tema ou estilo e baixa o que precisar",
+      "Os arquivos são hospedados no GitHub, IPFS ou Arweave — tornando-os acessíveis e preserváveis"
+    ],
+    "description": "Pense em nós como um mecanismo de busca para assets 3D gratuitos — tornando muitos modelos descobríveis em um só lugar."
+  },
+  "status": {
+    "title": "Status Atual",
+    "badges": {
+      "beta": {
+        "label": "Beta",
+        "description": "Espere atualizações e melhorias"
+      },
+      "avatars": {
+        "label": "Muitos Assets",
+        "description": "Em 17 coleções"
+      },
+      "format": {
+        "label": "Formato GLB",
+        "description": "Compatibilidade universal"
+      },
+      "license": {
+        "label": "Licença CC0",
+        "description": "Use livremente em qualquer projeto"
+      }
+    }
+  },
+  "collections": {
+    "title": "Coleções em Destaque",
+    "polygonalMind": {
+      "title": "Coleções Polygonal Mind",
+      "description": "17 coleções temáticas com props, ambientes e estruturas. De assets de parque do MomusPark às pirâmides egípcias e pagodas neon japonesas do Tomb Chaser.",
+      "stats": "muitos assets | Licença CC0"
+    }
+  },
+  "license": {
+    "title": "Licenciamento",
+    "description": "A maioria dos assets em nossa coleção são CC0 (domínio público) — o que significa que você pode usá-los para qualquer coisa sem atribuição. Algumas coleções podem ter licenças diferentes, que exibimos claramente em cada página de asset."
+  },
+  "technical": {
+    "title": "Detalhes Técnicos",
+    "format": {
+      "title": "Formato de Arquivo",
+      "description": "Todos os assets usam GLB (glTF binário), o formato padrão para 3D na web e além. Compatível com Blender, Unity, Unreal Engine, Three.js e mais."
+    },
+    "storage": {
+      "title": "Armazenamento de Dados",
+      "description": "Metadados e arquivos dos assets podem ser armazenados no GitHub, IPFS ou Arweave — garantindo acessibilidade a longo prazo, descentralização e controle de versão. Não estamos limitados a um único provedor de hospedagem."
+    }
+  },
+  "future": {
+    "title": "Próximos Passos",
+    "items": [
+      "Mais coleções de assets de criadores talentosos",
+      "Filtragem avançada por contagem de polígonos, tipo de material e tema",
+      "Sistema de tags e categorização de assets"
+    ]
+  },
+  "getInvolved": {
+    "title": "Participe",
+    "submitCollection": {
+      "title": "Envie uma Coleção",
+      "description": "Tem assets 3D com licença aberta que gostaria de compartilhar? Adoraríamos adicioná-los!",
+      "requirements": {
+        "title": "Requisitos:",
+        "list": [
+          "Licença open source (CC0, CC-BY, etc.)",
+          "Formato GLB",
+          "Hospedagem estável (GitHub, IPFS, Arweave, etc.)"
+        ]
+      },
+      "submitVia": "Envie via [GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions)"
+    },
+    "contributeCode": {
+      "title": "Contribua com Código",
+      "description": "Encontrou um bug? Quer adicionar uma funcionalidade?",
+      "link": "Abra uma issue → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    },
+    "giveFeedback": {
+      "title": "Dê seu Feedback",
+      "description": "Tem ideias para melhorias? Nos avise!",
+      "link": "Compartilhe feedback → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    }
+  },
+  "connect": {
+    "title": "Conecte-se",
+    "website": "Website",
+    "websiteUrl": "https://numinia.store",
+    "twitter": "Twitter",
+    "twitterUrl": "https://x.com/numinia_store"
+  }
+}

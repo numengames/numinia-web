@@ -1,0 +1,204 @@
+{
+  "title": "GLB 检查器",
+  "description": "将您的 GLB 3D 资产拖放到此处，或点击下方按钮开始探索。来看看您的模型里有什么吧！",
+  "mobile": {
+    "desktopOnly": {
+      "title": "仅限桌面端",
+      "description": "GLB 检查器目前仅针对桌面端优化。请在电脑上访问此页面以获得最佳体验。"
+    },
+    "intro": {
+      "title": "GLB 检查器",
+      "description": "一个强大的 GLB 3D 资产文件检查和分析工具。查看元数据、探索纹理等。"
+    },
+    "features": {
+      "title": "主要功能",
+      "modelInfo": {
+        "title": "模型信息",
+        "description": "查看详细的元数据，包括作者信息和许可协议。"
+      },
+      "expressionControl": {
+        "title": "表情控制",
+        "description": "测试和预览面部表情和混合变形。"
+      },
+      "textureAnalysis": {
+        "title": "纹理分析",
+        "description": "检查并下载模型纹理及格式详情。"
+      }
+    },
+    "comingSoon": {
+      "title": "移动版即将推出",
+      "description": "我们正在开发移动端优化版本的 GLB 检查器。目前请使用桌面电脑访问全部功能。"
+    },
+    "openDesktop": "在桌面端打开"
+  },
+  "buttons": {
+    "openFile": "打开 GLB 文件",
+    "learnMore": "了解更多",
+    "showWireframe": "显示线框",
+    "hideWireframe": "隐藏线框",
+    "showBones": "显示骨骼",
+    "hideBones": "隐藏骨骼"
+  },
+  "features": {
+    "title": "主要功能",
+    "modelInfo": {
+      "title": "模型信息",
+      "description": "查看详细的元数据，包括作者信息和许可协议。"
+    },
+    "expressionControl": {
+      "title": "表情控制",
+      "description": "测试和预览面部表情和混合变形。"
+    },
+    "textureAnalysis": {
+      "title": "纹理分析",
+      "description": "检查并下载模型纹理及格式详情。"
+    },
+    "technicalDetails": {
+      "title": "技术详情",
+      "description": "访问原始元数据和模型统计数据。"
+    }
+  },
+  "tips": {
+    "title": "快速提示",
+    "controls": {
+      "title": "相机控制",
+      "description": "左键点击旋转，右键点击平移，滚轮缩放"
+    },
+    "wireframe": {
+      "title": "可视化选项",
+      "description": "切换线框和骨骼可视化"
+    },
+    "expressions": {
+      "title": "表情测试",
+      "description": "通过直观的滑块测试面部表情"
+    }
+  },
+  "dropzone": {
+    "title": "你好！👋",
+    "description": "将您的 GLB 3D 资产拖放到此处，或点击下方按钮开始探索。来看看您的模型里有什么吧！",
+    "instructions": "将 GLB 文件拖放到此处以加载"
+  },
+  "loading": "加载中...",
+  "metadata": {
+    "title": "模型信息",
+    "basicInfo": "基本信息",
+    "author": "作者",
+    "contactInfo": "联系信息",
+    "license": "许可协议",
+    "otherPermissions": "其他权限",
+    "references": "参考资料",
+    "version": "版本",
+    "stats": {
+      "title": "模型统计",
+      "triangles": "三角面数",
+      "materials": "材质",
+      "textures": "纹理",
+      "bones": "骨骼",
+      "blendshapes": "混合变形",
+      "fileSize": "文件大小"
+    }
+  },
+  "expressions": {
+    "title": "表情",
+    "controls": "表情控制",
+    "reset": "全部重置",
+    "noExpressions": "无可用表情",
+    "blendshapesLabel": "混合变形 / 变形目标",
+    "categories": {
+      "emotions": "情绪",
+      "mouth": "嘴部",
+      "eyes": "眼部",
+      "other": "其他"
+    }
+  },
+  "textures": {
+    "title": "纹理",
+    "format": "格式",
+    "dimensions": "尺寸",
+    "size": "大小",
+    "download": "下载纹理",
+    "noTextures": "无可用纹理",
+    "details": {
+      "fileSize": "文件大小",
+      "format": "格式",
+      "type": "类型",
+      "usage": "用途",
+      "material": "材质",
+      "filter": "过滤",
+      "wrap": "环绕",
+      "mipmaps": "Mipmaps"
+    }
+  },
+  "technical": {
+    "title": "技术详情",
+    "raw": "原始元数据",
+    "copy": "复制到剪贴板",
+    "description": "此视图显示 GLB 文件的原始元数据结构。适用于调试和开发。"
+  },
+  "units": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "tb": "TB"
+  },
+  "errors": {
+    "noVrmData": "无法从文件中加载模型数据",
+    "setupFailed": "模型设置失败：{{error}}",
+    "loadFailed": "GLB 文件加载失败：{{error}}",
+    "initializationFailed": "3D 查看器初始化失败"
+  },
+  "tabs": {
+    "about": "关于",
+    "information": "信息",
+    "textures": "纹理",
+    "expressions": "表情",
+    "rawMetadata": "原始元数据"
+  },
+  "license": {
+    "title": "许可信息",
+    "type": "许可类型",
+    "allowedUsers": "允许使用者",
+    "commercialUse": "商业使用",
+    "violentUsage": "暴力使用",
+    "sexualUsage": "色情使用"
+  },
+  "statistics": {
+    "title": "模型统计",
+    "fileSize": "文件大小",
+    "format": "格式",
+    "height": "身高",
+    "geometry": "几何体",
+    "vertices": "顶点数",
+    "triangles": "三角面数",
+    "assets": "资产",
+    "materials": "材质",
+    "textures": "纹理",
+    "bones": "骨骼"
+  },
+  "texture": {
+    "dimensions": "尺寸",
+    "fileSize": "文件大小",
+    "format": "格式",
+    "type": "类型",
+    "usage": "用途",
+    "material": "材质",
+    "filter": "过滤模式",
+    "wrap": "环绕模式",
+    "mipmaps": "Mipmaps",
+    "download": "下载纹理"
+  },
+  "upload": {
+    "instructions": "上传 GLB 文件以检查其内容"
+  },
+  "raw": {
+    "description": "此视图显示 GLB 文件的原始元数据结构，适用于调试和开发。"
+  },
+  "controls": {
+    "title": "控制",
+    "orbit": "左键点击并拖动以旋转视图",
+    "pan": "右键点击并拖动以平移",
+    "zoom": "鼠标滚轮缩放",
+    "reset": "双击重置视图"
+  }
+}

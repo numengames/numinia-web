@@ -1,0 +1,106 @@
+{
+  "title": "资源与下载",
+  "collections": {
+    "title": "资产合集",
+    "description": "本站展示了具有明确许可和来源的 3D 资产合集：",
+    "original": {
+      "title": "Polygonal Mind 合集 (CC0)",
+      "name": "17 个主题合集——海量免费 3D 资产",
+      "license": "许可：CC0（公共领域）——随意使用，无需署名",
+      "storage": "存储：GitHub (numinia-digital-goods-data)",
+      "batchDownload": "来源：numinia-digital-goods-data 仓库",
+      "includes": "包含：GLB 文件、道具、环境、建筑"
+    },
+    "community": {
+      "title": "更多合集",
+      "note": "可能会陆续添加更多 CC0 和开放许可的 3D 合集。请在资产浏览器中查看当前列表。"
+    },
+    "licenseNote": "许可协议很重要！CC0 资产可以自由使用，无需署名。CC-BY 资产需要注明出处。请务必查看合集详情。"
+  },
+  "developers": {
+    "title": "开发者专区",
+    "database": {
+      "title": "资产数据库 (GitHub)",
+      "description": "以 JSON 文件访问所有资产元数据——非常适合集成到您的应用或游戏中。",
+      "link": "查看资产数据库 →",
+      "structure": {
+        "title": "结构",
+        "projects": "projects.json → 所有合集 + 许可信息",
+        "assets": "/assets/",
+        "r1": "pm-momuspark.json → 合集资产数据",
+        "r2": "pm-medieval-fair.json",
+        "r3": "其他合集 JSON 文件..."
+      },
+      "includes": "每个资产包含：",
+      "includesList": [
+        "GLB 直接下载链接",
+        "预览图片",
+        "元数据和标签",
+        "许可信息"
+      ]
+    },
+    "website": {
+      "title": "网站源代码",
+      "description": "画廊网站是开源的。",
+      "link": "查看网站代码 →"
+    }
+  },
+  "glb": {
+    "title": "关于 GLB 格式",
+    "description": "GLB 是用于 3D 模型、道具和环境的二进制 glTF 格式。",
+    "why": {
+      "title": "我们为什么使用 GLB：",
+      "reasons": [
+        "兼容 Blender、Unity、Unreal、Three.js 及大多数 3D 工具",
+        "开放的 Khronos 标准——不绑定单一厂商",
+        "单文件：模型和材质合并在一个文件中",
+        "高效且适合网络传输"
+      ]
+    },
+    "compatible": {
+      "title": "兼容：",
+      "list": [
+        "Blender（原生支持）",
+        "Unity（GLTFUtility 或类似插件）",
+        "Unreal Engine（glTF 导入）",
+        "Three.js / Web (GLTFLoader)"
+      ]
+    },
+    "learnMore": "了解更多关于 glTF/GLB →"
+  },
+  "ardrive": {
+    "title": "什么是 ArDrive？",
+    "description": "ArDrive 是基于 Arweave 构建的永久去中心化存储。",
+    "why": {
+      "title": "为什么重要：",
+      "reasons": [
+        "文件永久存储（不可删除或下线）",
+        "一次性付款，无订阅费",
+        "非常适合保存开源内容"
+      ]
+    },
+    "note": "部分资产来源可能使用 ArDrive 或 IPFS 进行永久存储。我们的主注册表是 numinia-digital-goods-data GitHub 仓库。"
+  },
+  "philosophy": {
+    "title": "开源理念",
+    "description": "我们相信 3D 资产应该是免费且易于获取的。",
+    "why": "这就是我们推荐 CC0（公共领域）合集的原因：",
+    "benefits": [
+      "✅ 可用于商业项目",
+      "✅ 自由修改和混合创作",
+      "✅ 无需署名",
+      "✅ 可用于游戏、应用、VR 和艺术创作"
+    ],
+    "note": "各合集有各自的许可协议——我们让这些信息易于查找，让您清楚了解每个资产的使用权限。",
+    "conclusion": "3D 生态系统应建立在开放标准之上，而非付费墙之后。"
+  },
+  "help": {
+    "title": "需要帮助？",
+    "questions": "对许可有疑问？请查看每个资产页面上的合集详情。",
+    "building": "正在开发项目？我们的 JSON 数据可以免费使用——构建您自己的资产浏览器吧！",
+    "contribute": "想要贡献？通过 GitHub 提交您的合集。",
+    "contributeLink": "https://github.com/PabloFMM/numinia-digital-goods-data",
+    "contact": "联系方式：@numinia_xyz",
+    "contactLink": "https://x.com/numinia_xyz"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "title": "Numinia Digital Goods 소개",
+  "whatWeDo": {
+    "title": "우리가 하는 일",
+    "description1": "Numinia Digital Goods는 CC0 디지털 에셋을 위한 오픈 레지스트리입니다. 3D 모델, 아바타, 월드, 오디오, 비디오를 다루고 있습니다.",
+    "description2": "재능 있는 크리에이터와 오픈 소스 커뮤니티의 에셋을 큐레이션합니다. 모든 에셋은 개방형 형식(GLB, VRM, HYP)을 사용하여 게임 엔진, VR 플랫폼, 메타버스와 호환됩니다. 여기저기 흩어진 저장소를 뒤질 필요 없이 한곳에서 탐색, 미리보기, 다운로드할 수 있습니다."
+  },
+  "howItWorks": {
+    "title": "이용 방법",
+    "subtitle": "컬렉션 색인 → 메타데이터 보존 → 탐색 및 다운로드",
+    "steps": [
+      "오픈 소스 라이선스가 적용된 3D 에셋 컬렉션을 발굴합니다",
+      "다운로드 링크, 미리보기, 스펙, 라이선스 정보를 카탈로그로 정리합니다",
+      "컬렉션, 테마, 스타일별로 필터링하여 필요한 것을 다운로드할 수 있습니다",
+      "파일은 GitHub, IPFS 또는 Arweave에 호스팅되어 접근성과 보존성을 보장합니다"
+    ],
+    "description": "무료 3D 에셋을 위한 검색 엔진이라고 생각하시면 됩니다. 수많은 모델을 한곳에서 찾을 수 있습니다."
+  },
+  "status": {
+    "title": "현재 상태",
+    "badges": {
+      "beta": {
+        "label": "베타",
+        "description": "지속적으로 업데이트 및 개선 중"
+      },
+      "avatars": {
+        "label": "다수의 에셋",
+        "description": "17개 컬렉션에 걸쳐"
+      },
+      "format": {
+        "label": "GLB 형식",
+        "description": "범용 호환성"
+      },
+      "license": {
+        "label": "CC0 라이선스",
+        "description": "모든 프로젝트에 자유롭게 사용 가능"
+      }
+    }
+  },
+  "collections": {
+    "title": "주요 컬렉션",
+    "polygonalMind": {
+      "title": "Polygonal Mind 컬렉션",
+      "description": "프롭, 환경, 구조물로 구성된 17개 테마 컬렉션. MomusPark의 공원 에셋부터 Tomb Chaser의 이집트 피라미드와 일본 네온 탑까지 다양합니다.",
+      "stats": "다수의 에셋 | CC0 라이선스"
+    }
+  },
+  "license": {
+    "title": "라이선스",
+    "description": "컬렉션의 대부분의 에셋은 CC0(퍼블릭 도메인)입니다. 저작자 표시 없이 어떤 용도로든 사용할 수 있습니다. 일부 컬렉션은 다른 라이선스가 적용될 수 있으며, 각 에셋 페이지에 명확히 표시되어 있습니다."
+  },
+  "technical": {
+    "title": "기술 상세정보",
+    "format": {
+      "title": "파일 형식",
+      "description": "모든 에셋은 웹 및 다양한 환경에서의 3D 표준 형식인 GLB(바이너리 glTF)를 사용합니다. Blender, Unity, Unreal Engine, Three.js 등과 호환됩니다."
+    },
+    "storage": {
+      "title": "데이터 저장",
+      "description": "에셋 메타데이터와 파일은 GitHub, IPFS 또는 Arweave에 저장할 수 있어 장기적인 접근성, 탈중앙화, 버전 관리를 보장합니다. 단일 호스팅 제공업체에 종속되지 않습니다."
+    }
+  },
+  "future": {
+    "title": "향후 계획",
+    "items": [
+      "재능 있는 크리에이터의 에셋 컬렉션 추가",
+      "폴리곤 수, 머티리얼 유형, 테마별 고급 필터링",
+      "에셋 태그 및 분류 시스템"
+    ]
+  },
+  "getInvolved": {
+    "title": "참여하기",
+    "submitCollection": {
+      "title": "컬렉션 제출",
+      "description": "공유하고 싶은 오픈 라이선스 3D 에셋이 있으신가요? 기꺼이 추가하겠습니다!",
+      "requirements": {
+        "title": "요구사항:",
+        "list": [
+          "오픈 소스 라이선스 (CC0, CC-BY 등)",
+          "GLB 형식",
+          "안정적인 호스팅 (GitHub, IPFS, Arweave 등)"
+        ]
+      },
+      "submitVia": "[GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions)를 통해 제출해 주세요"
+    },
+    "contributeCode": {
+      "title": "코드 기여",
+      "description": "버그를 발견하셨나요? 새 기능을 추가하고 싶으신가요?",
+      "link": "이슈 등록하기 → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    },
+    "giveFeedback": {
+      "title": "피드백 보내기",
+      "description": "개선에 대한 아이디어가 있으신가요? 알려주세요!",
+      "link": "피드백 공유하기 → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    }
+  },
+  "connect": {
+    "title": "연결",
+    "website": "웹사이트",
+    "websiteUrl": "https://numinia.store",
+    "twitter": "Twitter",
+    "twitterUrl": "https://x.com/numinia_store"
+  }
+}

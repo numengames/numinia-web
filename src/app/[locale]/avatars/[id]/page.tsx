@@ -34,7 +34,7 @@ interface Avatar {
 export default function AvatarDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [avatar, setAvatar] = useState<Avatar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

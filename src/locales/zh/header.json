@@ -1,0 +1,22 @@
+{
+  "navigation": {
+    "avatars": "档案库",
+    "finder": "查找器",
+    "about": "关于",
+    "resources": "资源",
+    "viewer": "检查器"
+  },
+  "warning": {
+    "desktop": "新功能 - 在 X 上报告问题",
+    "mobile": "测试版"
+  },
+  "social": {
+    "portfolio": "作品集",
+    "github": "GitHub",
+    "twitter": "X (Twitter)"
+  },
+  "notification": {
+    "newFeature": "新功能",
+    "reportIssues": "在 X 上报告问题"
+  }
+}

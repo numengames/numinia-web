@@ -1,0 +1,38 @@
+{
+  "details": {
+    "title": "기술 상세정보",
+    "format": "형식",
+    "polygons": "폴리곤",
+    "materials": "머티리얼",
+    "license": "라이선스",
+    "project": "프로젝트",
+    "author": "제작자"
+  },
+  "vrm": {
+    "title": "VRM 정보",
+    "version": "VRM 버전",
+    "allowedUsers": "허용된 사용자",
+    "everyone": "모든 사용자"
+  },
+  "controls": {
+    "info": "아바타 정보",
+    "wireframe": "와이어프레임",
+    "showBones": "본 표시",
+    "ruler": "키 눈금자",
+    "download": "다운로드",
+    "select": "선택",
+    "deselectAll": "선택 해제",
+    "selectAll": "전체 선택",
+    "search": "아바타 검색...",
+    "browse": "아바타 둘러보기"
+  },
+  "height": "키: {{height}}m",
+  "formats": {
+    "vrm": "VRM",
+    "fbx": "FBX",
+    "vrmViewer": "GLB 뷰어",
+    "fbxViewer": "FBX 뷰어",
+    "voxel": "복셀 VRM",
+    "voxel-fbx": "복셀 FBX"
+  }
+}

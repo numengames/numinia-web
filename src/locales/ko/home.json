@@ -1,0 +1,113 @@
+{
+  "title": "오픈 소스 3D 에셋",
+  "description": "게임, VR 및 3D 프로젝트를 위한 고품질 3D 에셋을 발견하고, 맞춤 설정하고, 다운로드하세요. 완전 무료이며 오픈 소스입니다.",
+  "explore_gallery": "갤러리 둘러보기",
+  "try_viewer": "3D 뷰어 체험하기",
+  "features_title": "3D 에셋에 필요한 모든 것",
+  "hero": {
+    "title": "오픈 소스 3D 에셋",
+    "titleBig": "오픈 소스 3D 에셋",
+    "tagline": "게임, VR 및 3D 프로젝트용",
+    "description": "프롭, 환경, 구조물을 포함한 고품질 3D 에셋 큐레이션 컬렉션. 완전 무료이며 오픈 소스입니다. GLB 및 glTF 표준 기반으로 제작되었습니다.",
+    "exploreButton": "갤러리 둘러보기",
+    "viewerButton": "3D 인스펙터 체험하기",
+    "githubButton": "GitHub에서 보기"
+  },
+  "about": {
+    "section_title": "프로젝트 소개",
+    "title": "실제로 사용할 수 있는 3D 에셋 찾기",
+    "description": "오픈 소스 3D 에셋은 명확한 라이선스가 적용된 고품질 3D 모델을 찾을 수 있도록 도와줍니다. 게임용 프롭, VR용 환경 에셋, 시각화를 위한 구조물 등 무엇이 필요하든, 재능 있는 크리에이터가 만든 수많은 GLB 파일을 한곳에 모아두었습니다.",
+    "description_2": "17개 테마 컬렉션에 걸친 다수의 에셋, 대부분 CC0(원하는 대로 사용 가능). 정확히 무엇을 할 수 있는지 알 수 있도록 라이선스를 명확하게 표시합니다.",
+    "github_description": "제한 없습니다. 갤러리에서 직접 다운로드하거나 개발자라면",
+    "github_link": "GitHub의 JSON 데이터베이스",
+    "github_description_2": "를 가져다가 나만의 도구를 만들어 보세요."
+  },
+  "features": {
+    "section_title": "도구 및 기능",
+    "title": "모두를 위한 무료 도구",
+    "browse": {
+      "title": "에셋 갤러리",
+      "description": "고급 필터링 옵션으로 수많은 3D 에셋 컬렉션을 탐색하세요:",
+      "bulletPoints": {
+        "preview": "다운로드 전 3D로 에셋 미리보기",
+        "filter": "컬렉션, 테마, 스타일별 필터링",
+        "download": "일괄 다운로드 옵션 제공",
+        "updates": "정기적으로 새로운 에셋 추가"
+      },
+      "cta": "갤러리 열기"
+    },
+    "inspector": {
+      "title": "3D 인스펙터",
+      "description": "3D 에셋 파일을 분석하고 검사하는 고급 도구:",
+      "bulletPoints": {
+        "metadata": "상세 메타데이터 및 속성 확인",
+        "materials": "머티리얼 및 텍스처 정보 조회",
+        "geometry": "폴리곤 수 및 버텍스 데이터 확인",
+        "validation": "기술 사양 검증"
+      },
+      "cta": "인스펙터 열기"
+    }
+  },
+  "technical": {
+    "section_title": "기술 개요",
+    "title": "개방형 표준 기반",
+    "vrm_title": "GLB 형식 설명",
+    "vrm_description": "GLB는 glTF(GL Transmission Format)의 바이너리 버전으로, 웹 및 다양한 환경을 위한 표준 3D 파일 형식입니다. \"3D의 JPEG\"이라고 생각하시면 됩니다. 효율적이고 폭넓게 지원되며 실시간 렌더링에 적합합니다.",
+    "key_features": "주요 특징:",
+    "features_intro": "이 형식은 강력한 기능을 제공합니다:",
+    "vrm_features": {
+      "skeleton": "스켈레탈 애니메이션 및 리깅 지원",
+      "materials": "사실적인 크로스 플랫폼 렌더링을 위한 PBR 머티리얼",
+      "expressions": "셰이프 애니메이션을 위한 모프 타겟",
+      "eye_movement": "유연한 지오메트리 및 노드 계층 구조",
+      "vr": "게임 및 VR에서의 실시간 렌더링에 최적화"
+    },
+    "compatibility_title": "통합 및 호환성",
+    "compatibility_description": "GLB 에셋은 주요 3D 프레임워크 및 엔진과 완벽하게 호환됩니다:",
+    "compatibility_items": {
+      "threejs": "웹 개발을 위한 Three.js 및 React Three Fiber",
+      "vrchat": "게임 개발을 위한 Unity 및 Unreal Engine",
+      "engines": "Blender, Maya 및 3D 모델링 소프트웨어",
+      "webgl": "Babylon.js 및 기타 WebGL 프레임워크",
+      "webxr": "커스텀 WebXR 및 AR 애플리케이션"
+    },
+    "learn_more": "GLB 통합에 대해 더 알아보기"
+  },
+  "applications": {
+    "section_title": "활용 분야",
+    "title": "에셋 활용처",
+    "web": {
+      "title": "웹 개발",
+      "description": "Three.js, React Three Fiber 및 기타 WebGL 프레임워크를 사용하는 현대적인 웹 애플리케이션에 적합합니다. 웹에서 인터랙티브한 3D 경험을 만드는 데 이상적입니다."
+    },
+    "vr": {
+      "title": "VR 및 게임",
+      "description": "Unity, Unreal Engine 및 게임 개발에 바로 사용할 수 있습니다. 표준 GLB 형식을 통해 VR 인터랙션 및 게임 플랫폼을 완벽하게 지원합니다."
+    },
+    "creative": {
+      "title": "크리에이티브 및 시각화",
+      "description": "건축 시각화, 제품 디자인, 교육 콘텐츠 또는 창작 프로젝트에 사용하세요. 모든 3D 애플리케이션에 적합합니다."
+    },
+    "showcase_description": "공식 쇼케이스에서 glTF 기술을 사용하는 더 많은 플랫폼과 애플리케이션을 발견해 보세요.",
+    "showcase_link": "glTF 쇼케이스 보기"
+  },
+  "comingSoon": {
+    "title": "출시 예정",
+    "studio": {
+      "title": "에셋 스튜디오",
+      "description": "3D 에셋의 배경과 조명을 맞춤 설정하여 스크린샷을 찍고 비디오를 제작하세요."
+    },
+    "editor": {
+      "title": "머티리얼 에디터",
+      "description": "내장 에디터를 사용하여 브라우저에서 직접 에셋의 머티리얼과 텍스처를 수정하세요."
+    }
+  },
+  "cta": {
+    "title": "무료 3D 에셋을 만나보세요",
+    "description": "개방형 표준 기반의 CC0 라이선스 3D 에셋 컬렉션이 계속 성장하고 있습니다. 자유롭게 사용, 수정, 공유할 수 있으며 어떤 제약도 없습니다. 지금 바로 고품질 모델을 탐색해 보세요!",
+    "documentation": "문서 보기"
+  },
+  "footer": {
+    "made_with": "♥️를 담아 제작"
+  }
+}

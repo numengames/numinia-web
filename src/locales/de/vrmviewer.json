@@ -1,0 +1,204 @@
+{
+  "title": "GLB-Inspektor",
+  "description": "Ziehe dein GLB-3D-Asset hierher oder klicke unten, um loszulegen. Schauen wir uns an, was in deinem Modell steckt!",
+  "mobile": {
+    "desktopOnly": {
+      "title": "Nur für Desktop",
+      "description": "Der GLB-Inspektor ist derzeit für die Desktop-Nutzung optimiert. Bitte besuche diese Seite auf einem Computer für das beste Erlebnis."
+    },
+    "intro": {
+      "title": "GLB-Inspektor",
+      "description": "Ein leistungsstarkes Tool zum Inspizieren und Analysieren von GLB-3D-Asset-Dateien. Metadaten anzeigen, Texturen erkunden und mehr."
+    },
+    "features": {
+      "title": "Hauptfunktionen",
+      "modelInfo": {
+        "title": "Modellinformationen",
+        "description": "Umfassende Metadaten anzeigen, einschließlich Autorendetails und Lizenzierung."
+      },
+      "expressionControl": {
+        "title": "Ausdruckssteuerung",
+        "description": "Gesichtsausdrücke und Blendshapes testen und voranzeigen."
+      },
+      "textureAnalysis": {
+        "title": "Texturanalyse",
+        "description": "Modelltexturen mit Formatdetails untersuchen und herunterladen."
+      }
+    },
+    "comingSoon": {
+      "title": "Mobile Version kommt bald",
+      "description": "Wir arbeiten an einer mobil-optimierten Version des GLB-Inspektors. Bitte nutze vorerst einen Desktop-Computer, um auf alle Funktionen zuzugreifen."
+    },
+    "openDesktop": "Auf Desktop öffnen"
+  },
+  "buttons": {
+    "openFile": "GLB-Datei öffnen",
+    "learnMore": "Mehr erfahren",
+    "showWireframe": "Drahtgitter anzeigen",
+    "hideWireframe": "Drahtgitter ausblenden",
+    "showBones": "Knochen anzeigen",
+    "hideBones": "Knochen ausblenden"
+  },
+  "features": {
+    "title": "Hauptfunktionen",
+    "modelInfo": {
+      "title": "Modellinformationen",
+      "description": "Umfassende Metadaten anzeigen, einschließlich Autorendetails und Lizenzierung."
+    },
+    "expressionControl": {
+      "title": "Ausdruckssteuerung",
+      "description": "Gesichtsausdrücke und Blendshapes testen und voranzeigen."
+    },
+    "textureAnalysis": {
+      "title": "Texturanalyse",
+      "description": "Modelltexturen mit Formatdetails untersuchen und herunterladen."
+    },
+    "technicalDetails": {
+      "title": "Technische Details",
+      "description": "Auf Roh-Metadaten und Modellstatistiken zugreifen."
+    }
+  },
+  "tips": {
+    "title": "Schnelltipps",
+    "controls": {
+      "title": "Kamerasteuerung",
+      "description": "Linksklick zum Drehen, Rechtsklick zum Verschieben, Scrollen zum Zoomen"
+    },
+    "wireframe": {
+      "title": "Darstellungsoptionen",
+      "description": "Drahtgitter- und Skelettdarstellung umschalten"
+    },
+    "expressions": {
+      "title": "Ausdruckstest",
+      "description": "Gesichtsausdrücke mit intuitiven Reglern testen"
+    }
+  },
+  "dropzone": {
+    "title": "Hallo! 👋",
+    "description": "Ziehe dein GLB-3D-Asset hierher oder klicke unten, um loszulegen. Schauen wir uns an, was in deinem Modell steckt!",
+    "instructions": "Ziehe eine GLB-Datei hierher, um sie zu laden"
+  },
+  "loading": "Wird geladen...",
+  "metadata": {
+    "title": "Modellinformationen",
+    "basicInfo": "Grundlegende Informationen",
+    "author": "Autor",
+    "contactInfo": "Kontaktinformationen",
+    "license": "Lizenz",
+    "otherPermissions": "Weitere Berechtigungen",
+    "references": "Referenzen",
+    "version": "Version",
+    "stats": {
+      "title": "Modellstatistiken",
+      "triangles": "Dreiecke",
+      "materials": "Materialien",
+      "textures": "Texturen",
+      "bones": "Knochen",
+      "blendshapes": "Blendshapes",
+      "fileSize": "Dateigröße"
+    }
+  },
+  "expressions": {
+    "title": "Ausdrücke",
+    "controls": "Ausdruckssteuerung",
+    "reset": "Alle zurücksetzen",
+    "noExpressions": "Keine Ausdrücke verfügbar",
+    "blendshapesLabel": "Blendshapes / Morph Targets",
+    "categories": {
+      "emotions": "Emotionen",
+      "mouth": "Mund",
+      "eyes": "Augen",
+      "other": "Sonstige"
+    }
+  },
+  "textures": {
+    "title": "Texturen",
+    "format": "Format",
+    "dimensions": "Abmessungen",
+    "size": "Größe",
+    "download": "Textur herunterladen",
+    "noTextures": "Keine Texturen verfügbar",
+    "details": {
+      "fileSize": "Dateigröße",
+      "format": "Format",
+      "type": "Typ",
+      "usage": "Verwendung",
+      "material": "Material",
+      "filter": "Filter",
+      "wrap": "Wiederholung",
+      "mipmaps": "Mipmaps"
+    }
+  },
+  "technical": {
+    "title": "Technische Details",
+    "raw": "Roh-Metadaten",
+    "copy": "In Zwischenablage kopieren",
+    "description": "Diese Ansicht zeigt die Roh-Metadatenstruktur der GLB-Datei. Nützlich für Debugging und Entwicklung."
+  },
+  "units": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "tb": "TB"
+  },
+  "errors": {
+    "noVrmData": "Modelldaten konnten nicht aus der Datei geladen werden",
+    "setupFailed": "Modell-Setup fehlgeschlagen: {{error}}",
+    "loadFailed": "GLB-Datei konnte nicht geladen werden: {{error}}",
+    "initializationFailed": "3D-Betrachter konnte nicht initialisiert werden"
+  },
+  "tabs": {
+    "about": "Über",
+    "information": "Informationen",
+    "textures": "Texturen",
+    "expressions": "Ausdrücke",
+    "rawMetadata": "Roh-Metadaten"
+  },
+  "license": {
+    "title": "Lizenzinformationen",
+    "type": "Lizenztyp",
+    "allowedUsers": "Erlaubte Nutzer",
+    "commercialUse": "Kommerzielle Nutzung",
+    "violentUsage": "Gewaltdarstellung",
+    "sexualUsage": "Sexuelle Nutzung"
+  },
+  "statistics": {
+    "title": "Modellstatistiken",
+    "fileSize": "Dateigröße",
+    "format": "Format",
+    "height": "Höhe",
+    "geometry": "Geometrie",
+    "vertices": "Vertices",
+    "triangles": "Dreiecke",
+    "assets": "Assets",
+    "materials": "Materialien",
+    "textures": "Texturen",
+    "bones": "Knochen"
+  },
+  "texture": {
+    "dimensions": "Abmessungen",
+    "fileSize": "Dateigröße",
+    "format": "Format",
+    "type": "Typ",
+    "usage": "Verwendung",
+    "material": "Material",
+    "filter": "Filtermodus",
+    "wrap": "Wiederholungsmodus",
+    "mipmaps": "Mipmaps",
+    "download": "Textur herunterladen"
+  },
+  "upload": {
+    "instructions": "Lade eine GLB-Datei hoch, um ihren Inhalt zu inspizieren"
+  },
+  "raw": {
+    "description": "Dies zeigt die Roh-Metadatenstruktur der GLB-Datei, nützlich für Debugging und Entwicklung."
+  },
+  "controls": {
+    "title": "Steuerung",
+    "orbit": "Linksklick + Ziehen zum Drehen der Ansicht",
+    "pan": "Rechtsklick + Ziehen zum Verschieben",
+    "zoom": "Mausrad zum Zoomen",
+    "reset": "Doppelklick zum Zurücksetzen der Ansicht"
+  }
+}

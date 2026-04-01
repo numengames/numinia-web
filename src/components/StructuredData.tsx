@@ -1,11 +1,12 @@
 'use client';
 import { SITE_URL } from '@/lib/constants';
+import type { Locale } from '@/lib/i18n-config';
 
 import React from 'react';
 import Script from 'next/script';
 
 interface WebsiteSchemaProps {
-  locale?: 'en' | 'ja';
+  locale?: Locale;
 }
 
 export function WebsiteSchema({ locale = 'en' }: WebsiteSchemaProps) {
@@ -38,7 +39,7 @@ export function WebsiteSchema({ locale = 'en' }: WebsiteSchemaProps) {
 }
 
 interface OrganizationSchemaProps {
-  locale?: 'en' | 'ja';
+  locale?: Locale;
 }
 
 export function OrganizationSchema({ locale = 'en' }: OrganizationSchemaProps) {
@@ -84,7 +85,7 @@ interface AvatarProductSchemaProps {
     project: string;
     createdAt: string;
   };
-  locale?: 'en' | 'ja';
+  locale?: Locale;
 }
 
 export function AvatarProductSchema({ avatar, locale = 'en' }: AvatarProductSchemaProps) {
@@ -189,7 +190,7 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
 
 interface CollectionPageSchemaProps {
   totalItems: number;
-  locale?: 'en' | 'ja';
+  locale?: Locale;
 }
 
 export function CollectionPageSchema({ totalItems, locale = 'en' }: CollectionPageSchemaProps) {

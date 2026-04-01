@@ -1,0 +1,185 @@
+{
+  "title": "资产查找器",
+  "description": "浏览并一次性下载多个 3D 资产",
+  "mobileNotice": "⚠️ 建议在桌面端使用以获得最佳批量下载体验",
+  "mobile": {
+    "desktopOnly": {
+      "title": "仅限桌面端",
+      "description": "资产查找器目前仅针对桌面端优化。请在电脑上访问此页面以获得最佳体验。"
+    }
+  },
+  "collections": {
+    "title": "合集",
+    "searchPlaceholder": "搜索项目...",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "avatarCount": "{count} 个资产"
+  },
+  "avatarList": {
+    "title": "3D 资产",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "searchPlaceholder": "搜索资产...",
+    "noResults": "未找到资产",
+    "hiddenSelectedWarning": "您已选择 {count} 个当前未显示的{items}",
+    "columns": {
+      "name": "名称",
+      "formats": "格式",
+      "files": "文件",
+      "license": "许可协议",
+      "collection": "合集"
+    },
+    "fileTypes": {
+      "vrm": "VRM",
+      "fbx": "FBX",
+      "voxelVrm": "体素 VRM",
+      "voxelFbx": "体素 FBX",
+      "thumbnail": "缩略图",
+      "texture": "纹理"
+    }
+  },
+  "fileList": {
+    "title": "文件",
+    "noSelection": "选择一个资产以查看文件",
+    "noFiles": "无可用文件",
+    "categories": {
+      "vrm": "VRM",
+      "glb": "GLB",
+      "fbx": "FBX",
+      "images": "图片",
+      "models": "模型",
+      "thumbnails": "缩略图",
+      "textures": "纹理"
+    }
+  },
+  "preview": {
+    "title": "预览",
+    "noSelection": "选择一个资产以预览",
+    "download": "下载",
+    "fbxNotSupported": {
+      "title": "不支持 FBX 预览",
+      "message": "目前不支持 FBX 预览，但您仍可使用下方的下载按钮下载该文件。"
+    },
+    "metadata": {
+      "name": "名称",
+      "collection": "合集",
+      "license": "许可协议",
+      "formats": "可用格式",
+      "currentFile": "当前文件"
+    }
+  },
+  "downloadQueue": {
+    "title": "下载队列",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "clear": "清空队列",
+    "downloadAll": "下载全部已选",
+    "status": {
+      "queued": "排队中",
+      "downloading": "下载中",
+      "complete": "已完成",
+      "failed": "失败"
+    },
+    "progress": "正在下载第 {current} 个，共 {total} 个文件",
+    "overallProgress": "已完成 {completed} / {total}",
+    "cancel": "取消",
+    "retry": "重试",
+    "empty": "队列中没有文件"
+  },
+  "batchDownload": {
+    "title": "批量下载管理器",
+    "selectedAvatars": "已选资产",
+    "selectedFiles": "已选文件",
+    "downloadOptions": "下载选项",
+    "downloadVrms": "下载 VRM 文件",
+    "downloadFbx": "下载 FBX 文件",
+    "downloadGlb": "下载 GLB 文件",
+    "downloadImages": "下载图片",
+    "extractTextures": "提取纹理（实验性功能）",
+    "comingSoon": "即将推出",
+    "startDownload": "开始下载",
+    "selectOption": "请至少选择一个下载选项",
+    "downloadProgress": "下载进度",
+    "downloadFolder": "下载文件夹",
+    "selectFolder": "选择文件夹",
+    "changeFolder": "更改文件夹",
+    "folderHint": "选择一个文件夹以直接保存文件，无需逐个确认。如未选择，将在开始下载时提示您选择文件夹。",
+    "folderNotSupported": "此浏览器不支持文件夹选择。文件将下载到默认下载文件夹。",
+    "folderRequired": "请选择下载文件夹以避免每个文件的保存提示。批量下载需要选择文件夹。",
+    "folderSelectionError": "选择文件夹时出错，请重试。",
+    "selectFolderAndDownload": "选择文件夹并下载",
+    "folderRecommended": "选择文件夹可避免每个文件的保存提示",
+    "required": "必选",
+    "folderSelected": "文件将自动保存到此处",
+    "openFolder": "在文件管理器中打开文件夹",
+    "open": "打开",
+    "filesDownloadedTo": "文件已下载到：",
+    "selectFolderFirst": "请先选择下载文件夹",
+    "zipNote": "所有已选文件准备就绪后将压缩为一个 ZIP 压缩包"
+  },
+  "filters": {
+    "title": "筛选",
+    "fileTypes": {
+      "title": "文件类型",
+      "hasVrm": "包含 VRM",
+      "hasFbx": "包含 FBX",
+      "hasVoxel": "包含体素"
+    }
+  },
+  "errors": {
+    "loadError": "加载资产失败",
+    "downloadError": "下载失败",
+    "retryError": "重试失败"
+  },
+  "common": {
+    "noImage": "无图片",
+    "unknown": "未知",
+    "download": "下载",
+    "downloadAllFiles": "下载所有文件",
+    "close": "关闭",
+    "change": "更改",
+    "select": "选择",
+    "loadMore": "加载更多（剩余 {count} 个）",
+    "thumbnail": "缩略图",
+    "texture": "纹理"
+  },
+  "sections": {
+    "basicInformation": "基本信息",
+    "modelInformation": "模型信息",
+    "licenseInformation": "许可信息",
+    "availableFiles": "可用文件",
+    "description": "描述",
+    "fileInformation": "文件信息"
+  },
+  "fileSizeUnits": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB"
+  },
+  "licenseTypes": {
+    "redistributionProhibited": "禁止再分发",
+    "cc0": "CC0",
+    "ccBy": "CC BY",
+    "ccByNc": "CC BY NC",
+    "ccBySa": "CC BY SA",
+    "ccByNcSa": "CC BY NC SA",
+    "ccByNd": "CC BY ND",
+    "ccByNcNd": "CC BY NC ND",
+    "other": "其他"
+  },
+  "permissions": {
+    "everyone": "所有人",
+    "explicitUser": "指定用户",
+    "onlyAuthor": "仅作者"
+  },
+  "usage": {
+    "allow": "允许",
+    "disallow": "不允许"
+  },
+  "lightbox": {
+    "download": "下载",
+    "downloadImage": "下载图片",
+    "close": "关闭"
+  }
+}

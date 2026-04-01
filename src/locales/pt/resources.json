@@ -1,0 +1,106 @@
+{
+  "title": "Recursos e Downloads",
+  "collections": {
+    "title": "Coleções de Assets",
+    "description": "Este site exibe coleções de assets 3D com licenças e fontes claras:",
+    "original": {
+      "title": "Coleções Polygonal Mind (CC0)",
+      "name": "17 coleções temáticas – muitos assets 3D gratuitos",
+      "license": "Licença: CC0 (Domínio Público) – use como quiser, sem necessidade de atribuição",
+      "storage": "Armazenamento: GitHub (numinia-digital-goods-data)",
+      "batchDownload": "Fonte: repositório numinia-digital-goods-data",
+      "includes": "Inclui: arquivos GLB, props, ambientes, estruturas"
+    },
+    "community": {
+      "title": "Mais Coleções",
+      "note": "Coleções adicionais CC0 e com licença aberta podem ser adicionadas ao longo do tempo. Confira o Navegador de Assets para as listagens atuais."
+    },
+    "licenseNote": "A licença importa! Assets CC0 podem ser usados livremente sem crédito. Assets CC-BY requerem atribuição. Sempre verifique os detalhes da coleção."
+  },
+  "developers": {
+    "title": "Para Desenvolvedores",
+    "database": {
+      "title": "Banco de Dados de Assets (GitHub)",
+      "description": "Acesse todos os metadados dos assets como arquivos JSON – perfeito para integrar ao seu app ou jogo.",
+      "link": "Ver Banco de Dados de Assets →",
+      "structure": {
+        "title": "Estrutura",
+        "projects": "projects.json → Todas as coleções + informações de licença",
+        "assets": "/assets/",
+        "r1": "pm-momuspark.json → Dados de assets da coleção",
+        "r2": "pm-medieval-fair.json",
+        "r3": "Outros arquivos JSON de coleções..."
+      },
+      "includes": "Cada asset inclui:",
+      "includesList": [
+        "Link direto de download GLB",
+        "Imagens de prévia",
+        "Metadados e tags",
+        "Informações de licença"
+      ]
+    },
+    "website": {
+      "title": "Código-Fonte do Site",
+      "description": "O site da galeria é open source.",
+      "link": "Ver Código do Site →"
+    }
+  },
+  "glb": {
+    "title": "Sobre o Formato GLB",
+    "description": "GLB é o formato binário glTF usado para modelos 3D, props e ambientes.",
+    "why": {
+      "title": "Por que usamos GLB:",
+      "reasons": [
+        "Funciona no Blender, Unity, Unreal, Three.js e na maioria das ferramentas 3D",
+        "Padrão aberto Khronos – não está preso a um fornecedor",
+        "Arquivo único: modelo e materiais em um só arquivo",
+        "Eficiente e otimizado para web"
+      ]
+    },
+    "compatible": {
+      "title": "Compatível com:",
+      "list": [
+        "Blender (nativo)",
+        "Unity (GLTFUtility ou similar)",
+        "Unreal Engine (importação glTF)",
+        "Three.js / Web (GLTFLoader)"
+      ]
+    },
+    "learnMore": "Saiba mais sobre glTF/GLB →"
+  },
+  "ardrive": {
+    "title": "O que é ArDrive?",
+    "description": "ArDrive é armazenamento permanente e descentralizado construído sobre Arweave.",
+    "why": {
+      "title": "Por que isso importa:",
+      "reasons": [
+        "Arquivos armazenados para sempre (não podem ser deletados ou tirados do ar)",
+        "Pagamento único, sem assinaturas",
+        "Perfeito para preservar conteúdo open source"
+      ]
+    },
+    "note": "Algumas fontes de assets podem usar ArDrive ou IPFS para armazenamento permanente. Nosso registro principal é o repositório GitHub numinia-digital-goods-data."
+  },
+  "philosophy": {
+    "title": "Filosofia Open Source",
+    "description": "Acreditamos que assets 3D devem ser gratuitos e acessíveis.",
+    "why": "É por isso que destacamos coleções CC0 (domínio público):",
+    "benefits": [
+      "✅ Use em projetos comerciais",
+      "✅ Modifique e remixe livremente",
+      "✅ Sem necessidade de atribuição",
+      "✅ Use em jogos, apps, VR e obras de arte"
+    ],
+    "note": "As coleções têm suas próprias licenças – facilitamos encontrá-las para que você saiba o que pode fazer com cada asset.",
+    "conclusion": "O ecossistema 3D deve ser construído sobre padrões abertos, não trancado atrás de paywalls."
+  },
+  "help": {
+    "title": "Precisa de Ajuda?",
+    "questions": "Dúvidas sobre licenças? Confira os detalhes da coleção em cada página de asset.",
+    "building": "Construindo algo? Nossos dados JSON são gratuitos – construa seu próprio navegador de assets!",
+    "contribute": "Quer contribuir? Envie sua coleção via GitHub.",
+    "contributeLink": "https://github.com/PabloFMM/numinia-digital-goods-data",
+    "contact": "Contato: @numinia_xyz",
+    "contactLink": "https://x.com/numinia_xyz"
+  }
+}

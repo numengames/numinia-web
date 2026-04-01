@@ -1,0 +1,113 @@
+{
+  "title": "Open-Source-3D-Assets",
+  "description": "Entdecke, passe an und lade hochwertige 3D-Assets für Spiele, VR und 3D-Projekte herunter — alles komplett kostenlos und Open Source.",
+  "explore_gallery": "Galerie erkunden",
+  "try_viewer": "3D-Betrachter ausprobieren",
+  "features_title": "Alles, was du für 3D-Assets brauchst",
+  "hero": {
+    "title": "Open-Source-3D-Assets",
+    "titleBig": "Open-Source-3D-Assets",
+    "tagline": "für Spiele, VR & 3D-Projekte",
+    "description": "Eine kuratierte Sammlung hochwertiger 3D-Assets einschließlich Props, Umgebungen und Strukturen — komplett kostenlos und Open Source. Basierend auf GLB- und glTF-Standards.",
+    "exploreButton": "Galerie erkunden",
+    "viewerButton": "3D-Inspektor ausprobieren",
+    "githubButton": "Auf GitHub ansehen"
+  },
+  "about": {
+    "section_title": "Über das Projekt",
+    "title": "Finde 3D-Assets, die du wirklich nutzen kannst",
+    "description": "Open Source 3D Assets hilft dir, qualitativ hochwertige 3D-Modelle mit klarer Lizenzierung zu entdecken. Ob Props für ein Spiel, Umgebungs-Assets für VR oder Strukturen zur Visualisierung — wir haben viele GLB-Dateien von talentierten Erstellern gesammelt, damit du sie nicht selbst suchen musst.",
+    "description_2": "Viele Assets in 17 thematischen Sammlungen — überwiegend CC0 (verwende sie wie du willst). Wir machen die Lizenzen glasklar, damit du genau weißt, was du tun kannst.",
+    "github_description": "Kein Gatekeeping. Lade direkt aus unserer Galerie herunter, oder wenn du Entwickler bist, hol dir unsere",
+    "github_link": "JSON-Datenbank von GitHub",
+    "github_description_2": "und baue deine eigenen Tools damit."
+  },
+  "features": {
+    "section_title": "Tools & Funktionen",
+    "title": "Großartige kostenlose Tools für alle",
+    "browse": {
+      "title": "Asset-Galerie",
+      "description": "Durchstöbere unsere umfangreiche Sammlung von vielen 3D-Assets mit erweiterten Filteroptionen:",
+      "bulletPoints": {
+        "preview": "Assets in 3D voranzeigen vor dem Herunterladen",
+        "filter": "Nach Sammlung, Thema und Stil filtern",
+        "download": "Optionen für Massendownload verfügbar",
+        "updates": "Regelmäßige Updates mit neuen Ergänzungen"
+      },
+      "cta": "Galerie öffnen"
+    },
+    "inspector": {
+      "title": "3D-Inspektor",
+      "description": "Fortgeschrittenes Tool zum Analysieren und Inspizieren von 3D-Asset-Dateien:",
+      "bulletPoints": {
+        "metadata": "Detaillierte Metadaten und Eigenschaften untersuchen",
+        "materials": "Material- und Texturinformationen anzeigen",
+        "geometry": "Polygonanzahl und Vertex-Daten prüfen",
+        "validation": "Technische Spezifikationen validieren"
+      },
+      "cta": "Inspektor öffnen"
+    }
+  },
+  "technical": {
+    "section_title": "Technische Übersicht",
+    "title": "Auf offenen Standards aufgebaut",
+    "vrm_title": "Das GLB-Format erklärt",
+    "vrm_description": "GLB ist die binäre Version von glTF (GL Transmission Format), dem Standard-3D-Dateiformat für das Web und darüber hinaus. Stell es dir als das \"JPEG der 3D-Welt\" vor — effizient, weit verbreitet und perfekt für Echtzeit-Rendering.",
+    "key_features": "Hauptmerkmale:",
+    "features_intro": "Das Format bietet leistungsstarke Möglichkeiten:",
+    "vrm_features": {
+      "skeleton": "Unterstützung für Skelettanimationen und Rigging",
+      "materials": "PBR-Materialien für realistisches plattformübergreifendes Rendering",
+      "expressions": "Morph Targets für Formanimation",
+      "eye_movement": "Flexible Geometrie- und Knotenhierarchien",
+      "vr": "Optimiert für Echtzeit-Rendering in Spielen und VR"
+    },
+    "compatibility_title": "Integration & Kompatibilität",
+    "compatibility_description": "GLB-Assets funktionieren nahtlos mit den wichtigsten 3D-Frameworks und Engines:",
+    "compatibility_items": {
+      "threejs": "Three.js und React Three Fiber für Webentwicklung",
+      "vrchat": "Unity und Unreal Engine für Spieleentwicklung",
+      "engines": "Blender, Maya und 3D-Modellierungssoftware",
+      "webgl": "Babylon.js und andere WebGL-Frameworks",
+      "webxr": "Individuelle WebXR- und AR-Anwendungen"
+    },
+    "learn_more": "Mehr über GLB-Integration erfahren"
+  },
+  "applications": {
+    "section_title": "Anwendungen",
+    "title": "Wo du unsere Assets einsetzen kannst",
+    "web": {
+      "title": "Webentwicklung",
+      "description": "Perfekt für moderne Webanwendungen mit Three.js, React Three Fiber und anderen WebGL-Frameworks. Ideal für interaktive 3D-Erlebnisse im Web."
+    },
+    "vr": {
+      "title": "VR & Gaming",
+      "description": "Bereit für Unity, Unreal Engine und Spieleentwicklung. Volle Unterstützung für VR-Interaktionen und Gaming-Plattformen durch das Standard-GLB-Format."
+    },
+    "creative": {
+      "title": "Kreativ & Visualisierung",
+      "description": "Verwende sie für Architekturvisualisierung, Produktdesign, Bildungsinhalte oder kreative Projekte. Perfekt für jede 3D-Anwendung."
+    },
+    "showcase_description": "Entdecke weitere großartige Anwendungen und Plattformen, die glTF-Technologie nutzen, in der offiziellen Vitrine.",
+    "showcase_link": "glTF-Vitrine ansehen"
+  },
+  "comingSoon": {
+    "title": "Demnächst verfügbar",
+    "studio": {
+      "title": "Asset-Studio",
+      "description": "Erstelle Screenshots und Videos mit anpassbaren Hintergründen und Beleuchtung für deine 3D-Assets."
+    },
+    "editor": {
+      "title": "Material-Editor",
+      "description": "Bearbeite Materialien und Texturen deiner Assets direkt im Browser mit unserem integrierten Editor."
+    }
+  },
+  "cta": {
+    "title": "Genieße kostenlose 3D-Assets",
+    "description": "Greife auf eine wachsende Sammlung von CC0-lizenzierten 3D-Assets zu, die auf offenen Standards basieren. Frei zum Verwenden, Bearbeiten und Teilen — ohne Einschränkungen. Beginne heute mit der Erkundung unserer hochwertigen Modelle!",
+    "documentation": "Dokumentation ansehen"
+  },
+  "footer": {
+    "made_with": "Gemacht mit ♥️ von"
+  }
+}

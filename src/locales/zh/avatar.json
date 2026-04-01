@@ -1,0 +1,38 @@
+{
+  "details": {
+    "title": "技术详情",
+    "format": "格式",
+    "polygons": "多边形数",
+    "materials": "材质",
+    "license": "许可协议",
+    "project": "项目",
+    "author": "作者"
+  },
+  "vrm": {
+    "title": "VRM 信息",
+    "version": "VRM 版本",
+    "allowedUsers": "允许使用者",
+    "everyone": "所有人"
+  },
+  "controls": {
+    "info": "虚拟形象信息",
+    "wireframe": "线框模式",
+    "showBones": "显示骨骼",
+    "ruler": "身高标尺",
+    "download": "下载",
+    "select": "选择",
+    "deselectAll": "取消全选",
+    "selectAll": "全选",
+    "search": "搜索虚拟形象...",
+    "browse": "浏览虚拟形象"
+  },
+  "height": "身高：{{height}}m",
+  "formats": {
+    "vrm": "VRM",
+    "fbx": "FBX",
+    "vrmViewer": "GLB 查看器",
+    "fbxViewer": "FBX 查看器",
+    "voxel": "体素 VRM",
+    "voxel-fbx": "体素 FBX"
+  }
+}

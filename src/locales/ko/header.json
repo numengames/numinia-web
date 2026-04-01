@@ -1,0 +1,22 @@
+{
+  "navigation": {
+    "avatars": "아카이브",
+    "finder": "파인더",
+    "about": "소개",
+    "resources": "리소스",
+    "viewer": "인스펙터"
+  },
+  "warning": {
+    "desktop": "새로운 기능 - X에서 문제를 제보해 주세요",
+    "mobile": "베타"
+  },
+  "social": {
+    "portfolio": "포트폴리오",
+    "github": "GitHub",
+    "twitter": "X (Twitter)"
+  },
+  "notification": {
+    "newFeature": "새로운 기능",
+    "reportIssues": "X에서 문제를 제보해 주세요"
+  }
+}

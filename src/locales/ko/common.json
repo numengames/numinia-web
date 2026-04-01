@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home": "홈",
+    "about": "소개",
+    "gallery": "갤러리",
+    "resources": "리소스",
+    "login": "로그인"
+  },
+  "actions": {
+    "view": "보기",
+    "upload": "업로드",
+    "download": "다운로드",
+    "close": "닫기",
+    "cancel": "취소",
+    "confirm": "확인",
+    "submit": "제출"
+  },
+  "language": {
+    "select": "언어 선택",
+    "en": "English",
+    "ja": "日本語",
+    "es": "Español",
+    "ko": "한국어",
+    "zh": "中文",
+    "pt": "Português",
+    "de": "Deutsch"
+  },
+  "loading": "로딩 중..."
+}

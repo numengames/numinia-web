@@ -36,6 +36,42 @@ import esVrmviewer from '../locales/es/vrmviewer.json';
 import esHome      from '../locales/es/home.json';
 import esFinder    from '../locales/es/finder.json';
 
+import koCommon    from '../locales/ko/common.json';
+import koHeader    from '../locales/ko/header.json';
+import koAvatar    from '../locales/ko/avatar.json';
+import koAbout     from '../locales/ko/about.json';
+import koResources from '../locales/ko/resources.json';
+import koVrmviewer from '../locales/ko/vrmviewer.json';
+import koHome      from '../locales/ko/home.json';
+import koFinder    from '../locales/ko/finder.json';
+
+import zhCommon    from '../locales/zh/common.json';
+import zhHeader    from '../locales/zh/header.json';
+import zhAvatar    from '../locales/zh/avatar.json';
+import zhAbout     from '../locales/zh/about.json';
+import zhResources from '../locales/zh/resources.json';
+import zhVrmviewer from '../locales/zh/vrmviewer.json';
+import zhHome      from '../locales/zh/home.json';
+import zhFinder    from '../locales/zh/finder.json';
+
+import ptCommon    from '../locales/pt/common.json';
+import ptHeader    from '../locales/pt/header.json';
+import ptAvatar    from '../locales/pt/avatar.json';
+import ptAbout     from '../locales/pt/about.json';
+import ptResources from '../locales/pt/resources.json';
+import ptVrmviewer from '../locales/pt/vrmviewer.json';
+import ptHome      from '../locales/pt/home.json';
+import ptFinder    from '../locales/pt/finder.json';
+
+import deCommon    from '../locales/de/common.json';
+import deHeader    from '../locales/de/header.json';
+import deAvatar    from '../locales/de/avatar.json';
+import deAbout     from '../locales/de/about.json';
+import deResources from '../locales/de/resources.json';
+import deVrmviewer from '../locales/de/vrmviewer.json';
+import deHome      from '../locales/de/home.json';
+import deFinder    from '../locales/de/finder.json';
+
 // Type for translation keys
 type TranslationKey = string;
 
@@ -86,6 +122,46 @@ const translations: Record<Locale, Record<string, any>> = {
     home: esHome,
     finder: esFinder,
   },
+  ko: {
+    common: koCommon,
+    header: koHeader,
+    avatar: koAvatar,
+    about: koAbout,
+    resources: koResources,
+    vrmviewer: koVrmviewer,
+    home: koHome,
+    finder: koFinder,
+  },
+  zh: {
+    common: zhCommon,
+    header: zhHeader,
+    avatar: zhAvatar,
+    about: zhAbout,
+    resources: zhResources,
+    vrmviewer: zhVrmviewer,
+    home: zhHome,
+    finder: zhFinder,
+  },
+  pt: {
+    common: ptCommon,
+    header: ptHeader,
+    avatar: ptAvatar,
+    about: ptAbout,
+    resources: ptResources,
+    vrmviewer: ptVrmviewer,
+    home: ptHome,
+    finder: ptFinder,
+  },
+  de: {
+    common: deCommon,
+    header: deHeader,
+    avatar: deAvatar,
+    about: deAbout,
+    resources: deResources,
+    vrmviewer: deVrmviewer,
+    home: deHome,
+    finder: deFinder,
+  },
 };
 
 // Provider props type
@@ -116,7 +192,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
 
   const t = useCallback((key: TranslationKey, options?: { returnObjects?: boolean }): string | string[] => {
     const [namespace, ...keys] = key.split('.');
-    let current: TranslationValue = translations[locale]?.[namespace];
+    let current: TranslationValue = translations[locale]?.[namespace] ?? translations.en?.[namespace];
 
     if (!current) {
       console.warn(`Translation namespace not found: ${namespace}`);

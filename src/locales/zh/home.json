@@ -1,0 +1,113 @@
+{
+  "title": "开源 3D 资产",
+  "description": "发现、定制并下载高质量的 3D 资产，适用于游戏、VR 和 3D 项目——完全免费且开源。",
+  "explore_gallery": "探索画廊",
+  "try_viewer": "试用 3D 查看器",
+  "features_title": "3D 资产所需的一切",
+  "hero": {
+    "title": "开源 3D 资产",
+    "titleBig": "开源 3D 资产",
+    "tagline": "适用于游戏、VR 和 3D 项目",
+    "description": "精选高质量 3D 资产合集，包括道具、环境和建筑——完全免费且开源。基于 GLB 和 glTF 标准构建。",
+    "exploreButton": "探索画廊",
+    "viewerButton": "试用 3D 检查器",
+    "githubButton": "在 GitHub 上查看"
+  },
+  "about": {
+    "section_title": "关于项目",
+    "title": "找到真正可用的 3D 资产",
+    "description": "开源 3D 资产帮助您发现许可清晰的优质 3D 模型。无论您需要游戏道具、VR 环境资产还是可视化建筑——我们从优秀创作者那里收集了大量 GLB 文件，省去您四处搜寻的麻烦。",
+    "description_2": "海量资产涵盖 17 个主题合集——大部分为 CC0（随意使用）。我们清晰标注许可协议，让您确切了解使用权限。",
+    "github_description": "没有任何限制。直接从我们的画廊下载，或者如果您是开发者，可以从 GitHub 获取我们的",
+    "github_link": "JSON 数据库",
+    "github_description_2": "并用它构建您自己的工具。"
+  },
+  "features": {
+    "section_title": "工具与功能",
+    "title": "面向所有人的免费工具",
+    "browse": {
+      "title": "资产画廊",
+      "description": "浏览我们庞大的 3D 资产合集，支持高级筛选选项：",
+      "bulletPoints": {
+        "preview": "下载前在 3D 中预览资产",
+        "filter": "按合集、主题和风格筛选",
+        "download": "支持批量下载",
+        "updates": "定期更新新内容"
+      },
+      "cta": "打开画廊"
+    },
+    "inspector": {
+      "title": "3D 检查器",
+      "description": "用于分析和检查 3D 资产文件的高级工具：",
+      "bulletPoints": {
+        "metadata": "查看详细的元数据和属性",
+        "materials": "查看材质和纹理信息",
+        "geometry": "检查多边形数和顶点数据",
+        "validation": "验证技术规格"
+      },
+      "cta": "打开检查器"
+    }
+  },
+  "technical": {
+    "section_title": "技术概述",
+    "title": "基于开放标准构建",
+    "vrm_title": "GLB 格式详解",
+    "vrm_description": "GLB 是 glTF（GL 传输格式）的二进制版本，是 Web 及更广泛领域的标准 3D 文件格式。可以把它看作「3D 界的 JPEG」——高效、广泛支持，非常适合实时渲染。",
+    "key_features": "主要特性：",
+    "features_intro": "该格式提供强大的功能：",
+    "vrm_features": {
+      "skeleton": "支持骨骼动画和绑定",
+      "materials": "PBR 材质实现逼真的跨平台渲染",
+      "expressions": "变形目标实现形状动画",
+      "eye_movement": "灵活的几何体和节点层级",
+      "vr": "针对游戏和 VR 中的实时渲染进行了优化"
+    },
+    "compatibility_title": "集成与兼容性",
+    "compatibility_description": "GLB 资产可与主流 3D 框架和引擎无缝配合：",
+    "compatibility_items": {
+      "threejs": "Three.js 和 React Three Fiber 用于 Web 开发",
+      "vrchat": "Unity 和 Unreal Engine 用于游戏开发",
+      "engines": "Blender、Maya 和 3D 建模软件",
+      "webgl": "Babylon.js 和其他 WebGL 框架",
+      "webxr": "自定义 WebXR 和 AR 应用"
+    },
+    "learn_more": "了解更多关于 GLB 集成"
+  },
+  "applications": {
+    "section_title": "应用场景",
+    "title": "在哪里使用我们的资产",
+    "web": {
+      "title": "Web 开发",
+      "description": "非常适合使用 Three.js、React Three Fiber 和其他 WebGL 框架的现代 Web 应用。是在网页上创建交互式 3D 体验的理想选择。"
+    },
+    "vr": {
+      "title": "VR 与游戏",
+      "description": "适用于 Unity、Unreal Engine 和游戏开发。通过标准 GLB 格式完全支持 VR 交互和游戏平台。"
+    },
+    "creative": {
+      "title": "创意与可视化",
+      "description": "可用于建筑可视化、产品设计、教育内容或创意项目。适用于任何 3D 应用场景。"
+    },
+    "showcase_description": "在官方展示中发现更多使用 glTF 技术的精彩应用和平台。",
+    "showcase_link": "查看 glTF 展示"
+  },
+  "comingSoon": {
+    "title": "即将推出",
+    "studio": {
+      "title": "资产工作室",
+      "description": "使用可自定义的背景和灯光为您的 3D 资产截图和录制视频。"
+    },
+    "editor": {
+      "title": "材质编辑器",
+      "description": "通过内置编辑器直接在浏览器中修改资产的材质和纹理。"
+    }
+  },
+  "cta": {
+    "title": "畅享免费 3D 资产",
+    "description": "访问不断增长的 CC0 许可 3D 资产合集，基于开放标准构建。免费使用、修改和分享——没有任何附加条件。立即开始探索我们的高质量模型！",
+    "documentation": "查看文档"
+  },
+  "footer": {
+    "made_with": "用 ♥️ 制作，来自"
+  }
+}
