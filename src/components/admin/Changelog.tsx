@@ -27,9 +27,36 @@ const INCOMING: IncomingItem[] = [
   { text: 'API versioning + OpenAPI playground', status: 'research' },
   { text: 'Multi-creator platform (user uploads + moderation)', status: 'research' },
   { text: 'Radicle.xyz — decentralized git (keep GitHub too)', status: 'research' },
+  { text: 'On-chain season progress verification', status: 'planned' },
+  { text: 'Multiple seasons support (sequential)', status: 'planned' },
+  { text: 'Burn ritual — on-chain NFT burn mechanic', status: 'planned' },
 ];
 
 const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: '0.15.0',
+    date: '2026-04-02',
+    time: '22:00',
+    items: [
+      { text: 'Season Pass (Battle Pass) — 8 adventures, free + premium loot tracks, burn ritual placeholder', type: 'new' },
+      { text: 'Stripe Checkout integration (9.99€ season pass purchase)', type: 'new' },
+      { text: 'Stripe webhook records pass holders in GitHub JSON', type: 'new' },
+      { text: 'NFT minting via Thirdweb SDK (ERC-1155 Drop on Base mainnet)', type: 'new' },
+      { text: 'Season timeline UI with adventure nodes, puzzle types, difficulty stars, hover tooltips', type: 'new' },
+      { text: 'Admin progress management panel for seasons', type: 'new' },
+      { text: 'Season data files in GitHub data repo (index, definition, progress)', type: 'new' },
+      { text: 'Season types with puzzle types, duration, difficulty, descriptions (EN + JA)', type: 'improvement' },
+      { text: 'Graceful degradation: Stripe, Thirdweb, NFT mint degrade independently', type: 'improvement' },
+      { text: 'Best-effort NFT minting pattern (pass works via JSON even if mint fails)', type: 'improvement' },
+      { text: 'LAPShell uses Thirdweb ConnectButton when configured (fallback to legacy)', type: 'improvement' },
+      { text: 'CSP: added *.thirdweb.com to connect-src (was blocking ConnectButton)', type: 'fix' },
+      { text: 'Chain ID fixed from 84532 (testnet) to 8453 (Base mainnet)', type: 'fix' },
+      { text: 'Webhook: enhanced structured logging for debugging pass holder recording', type: 'fix' },
+      { text: 'SeasonTimeline: replaced 2s timeout with polling (5 retries, 2s intervals)', type: 'fix' },
+      { text: 'Purchase banner shows "Processing..." until confirmed, then "Complete!"', type: 'fix' },
+      { text: 'Middleware recognizes tw_jwt and user_session cookies for LAP access', type: 'fix' },
+    ],
+  },
   {
     version: '0.14.0',
     date: '2026-04-02',

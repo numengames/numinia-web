@@ -1,7 +1,7 @@
 # CLAUDE.md — Numinia Digital Goods
 
 > Context file for AI agents (Claude, Copilot, etc.) and human developers.
-> Read this before touching any code. Updated: 2026-04-01.
+> Read this before touching any code. Updated: 2026-04-02.
 
 ---
 
@@ -92,14 +92,17 @@ numinia-digital-goods-data/
 | Finder | `/en/finder` | File-level browser with batch download |
 | Inspector | `/en/glbinspector` | GLB/VRM file inspector |
 | L.A.P. | `/en/LAP` | Logged-in user panel (was "Admin") |
+| Seasons | `/en/LAP/seasons` | Season Pass — Battle Pass with adventures, loot tracks, Stripe purchase |
 
 ### L.A.P. sidebar (top → bottom)
 1. **Character** — RPG character sheet (markdown, editable, PDF/MD export)
 2. **Portals** — Interactive world map (4 districts, 14 oncyber 3D worlds)
 3. **Loot** — NFT collections (ERC-721/1155, linked assets)
-4. **Assets** — Admin asset management (CRUD, tags, thumbnails)
-5. **Archive** — Link to public gallery
-6. Stats / Settings / Updates — bottom section
+4. **Seasons** — Season Pass (Battle Pass), adventure timeline, purchase flow
+5. **Codex** — Game lore and documentation
+6. **Assets** — Admin asset management (CRUD, tags, thumbnails)
+7. **Archive** — Link to public gallery
+8. Stats / Settings / Updates — bottom section
 
 ---
 
@@ -121,7 +124,9 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 | Framework | Next.js 16.2.1, App Router, React 18, TypeScript |
 | Styling | Tailwind CSS 3 + shadcn/ui (copied to `src/components/ui/`) |
 | 3D | Three.js 0.162 + @pixiv/three-vrm + STL viewer |
-| Auth | SIWE (any wallet) + GitHub OAuth (migrating to Thirdweb Connect) |
+| Auth | Thirdweb Connect v5 (primary) + SIWE fallback + GitHub OAuth |
+| Payments | Stripe Checkout (redirect mode, server-side webhook) |
+| NFT Mint | Thirdweb SDK — ERC-1155 Drop on Base mainnet (claimTo) |
 | Database | GitHub JSON (primary), Neon PostgreSQL via Drizzle ORM (enterprise, optional) |
 | Cache | Upstash Redis (rate limiting, audit queue — fallback to in-memory) |
 | Storage | GitHub (metadata), Cloudflare R2 (CDN), Arweave + IPFS (permanent) |
@@ -182,7 +187,8 @@ Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 - Admin wallets (whitelist) get `admin_session` cookie
 - Any wallet gets `user_session` cookie
 - `getAdminSession()` / `getUserSession()` in `src/lib/auth/getSession.ts`
-- **Planned migration**: Thirdweb Connect v5 (350+ wallets + embedded wallets + social login)
+- **Thirdweb Connect v5**: 350+ wallets + embedded wallets + social login (Google, Discord, GitHub, X)
+- `tw_jwt` cookie for Thirdweb auth, recognized by middleware + session endpoints
 
 ---
 
@@ -203,18 +209,30 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `UPSTASH_REDIS_REST_URL` | No | Redis for shared rate limiting + audit |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Redis auth token |
 | `SENTRY_DSN` | No | Error tracking + performance monitoring |
+| `STRIPE_SECRET_KEY` | No | Stripe API key (season pass purchases) |
+| `STRIPE_WEBHOOK_SECRET` | No | Stripe webhook signature verification |
+| `THIRDWEB_SECRET_KEY` | No | Thirdweb server-side operations |
+| `THIRDWEB_AUTH_DOMAIN` | No | SIWE domain for JWT verification |
+| `THIRDWEB_AUTH_ADMIN_KEY` | No | Private key for signing Thirdweb JWTs |
+| `NEXT_PUBLIC_THIRDWEB_CLIENT_ID` | No | Client-side Thirdweb ConnectButton |
+| `SEASON_PASS_CONTRACT` | No | ERC-1155 contract address on Base |
+| `SEASON_PASS_CHAIN_ID` | No | Chain ID (default: 8453 = Base mainnet) |
+| `MINT_WALLET_PRIVATE_KEY` | No | Private key of wallet that mints NFTs |
 
 ---
 
-## Current status (v0.11.0 — 2026-04-01)
+## Current status (v0.15.0 — 2026-04-02)
 
 ### Platform features (done)
-- ✅ Auth: SIWE (admin + user), GitHub OAuth, LoginModal, profiles
-- ✅ L.A.P.: Character Sheet, Portals Map, Loot, Assets, Stats, Settings, Changelog
+- ✅ Auth: Thirdweb Connect v5 (primary) + SIWE fallback + GitHub OAuth
+- ✅ L.A.P.: Character Sheet, Portals Map, Loot, Seasons, Assets, Stats, Settings, Changelog
 - ✅ Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
 - ✅ Storage: R2 presigned (500MB), Arweave archive, IPFS pin
 - ✅ Data: UUID v7, tags, optimistic locking, auto-thumbnails
-- ✅ Quality: 186 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
+- ✅ Seasons: Season Pass (Battle Pass), 8 adventures, free + premium loot, Stripe Checkout (9.99€)
+- ✅ NFT Mint: Thirdweb SDK ERC-1155 Drop on Base mainnet (best-effort, degrades gracefully)
+- ✅ Payments: Stripe Checkout → webhook → GitHub JSON + NFT mint
+- ✅ Quality: 190 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
 - ✅ Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
 - ✅ Portals: 4 districts, 14 oncyber worlds, interactive SVG map
 - ✅ Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
@@ -229,7 +247,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 - ✅ Phase 2D: 14 API routes migrated to repository pattern
 - 🔲 Phase 2C: Data migration script (JSON → Postgres) — needs Neon configured
 - 🔲 Phase 2E: GitHub sync (DB → JSON periodic export for File Over App)
-- 🔲 Phase 2F: Auth migration to Thirdweb Connect v5
+- 🔄 Phase 2F: Auth migration to Thirdweb Connect v5 (ConnectButton integrated, full legacy removal pending)
 - 🔲 Phase 3: API versioning + OpenAPI + SDK + Inngest jobs + webhooks
 - 🔲 Phase 4: Multi-creator + E2E tests + security hardening + dev portal
 
@@ -273,7 +291,20 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `src/components/asset/ImageViewer.tsx` | Image zoom/pan/fullscreen |
 | `src/components/asset/STLViewer.tsx` | STL 3D print viewer |
 | `src/components/auth/LoginModal.tsx` | User login (wallet + GitHub) |
+| `src/components/auth/ConnectWallet.tsx` | Thirdweb ConnectButton wrapper |
 | `src/components/admin/AdminSidebar.tsx` | L.A.P. sidebar navigation |
+
+### Seasons & Payments
+| File | Purpose |
+|---|---|
+| `src/types/season.ts` | Season, Adventure, PassHolder, LootItem types |
+| `src/lib/season-storage.ts` | Season data CRUD against GitHub data repo |
+| `src/lib/thirdweb-mint.ts` | NFT minting service (ERC-1155 claimTo) |
+| `src/lib/thirdweb-auth.ts` | Thirdweb JWT auth (SIWE + cookie) |
+| `src/components/seasons/SeasonTimeline.tsx` | Adventure timeline UI + purchase flow |
+| `src/app/api/seasons/route.ts` | GET season data + user progress |
+| `src/app/api/seasons/checkout/route.ts` | POST Stripe Checkout session |
+| `src/app/api/seasons/webhook/route.ts` | POST Stripe webhook (pass holder + NFT mint) |
 
 ---
 
@@ -297,7 +328,7 @@ cp .env.example .env.local
 npm install
 npm run dev          # http://localhost:3000
 npm run type-check   # TypeScript validation
-npm test             # Vitest (186 tests)
+npm test             # Vitest (190 tests)
 npm run build        # Production build
 
 # Optional enterprise services (all degrade gracefully without them):
