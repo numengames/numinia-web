@@ -23,7 +23,7 @@
     "select": "Selecionar",
     "deselectAll": "Desmarcar Todos",
     "selectAll": "Selecionar Todos",
-    "search": "Buscar avatares...",
+    "search": "Buscar assets...",
     "browse": "Explorar Avatares"
   },
   "height": "Altura: {{height}}m",
@@ -34,5 +34,44 @@
     "fbxViewer": "Visualizador FBX",
     "voxel": "Voxel VRM",
     "voxel-fbx": "Voxel FBX"
+  },
+  "gallery": {
+    "title": "Avatares Open Source",
+    "description": "Uma coleção de assets CC0",
+    "descriptionFull": "Uma coleção de assets CC0 e open source da Numinia",
+    "projects": "Projetos",
+    "tags": "Tags",
+    "noTags": "Sem tags ainda. Adicione tags aos assets no L.A.P.",
+    "random": "Aleatório",
+    "removeFromFavorites": "Remover dos favoritos",
+    "addToFavorites": "Adicionar aos favoritos",
+    "noFavoritesYet": "Sem favoritos ainda",
+    "noFavoritesHint": "Clique no coração de qualquer cartão de asset para adicionar aos seus favoritos",
+    "scrollHint": "Role para baixo para carregar mais...",
+    "allDisplayed": "Todos os {count} assets exibidos",
+    "finderLink": "Precisa baixar vários assets? Experimente o Finder",
+    "adminBadge": "admin",
+    "signOut": "Sair",
+    "signIn": "Entrar",
+    "collapseSidebar": "Recolher barra lateral",
+    "expandSidebar": "Expandir barra lateral",
+    "selectAsset": "Selecione um asset para visualizar"
+  },
+  "actions": {
+    "viewOriginal": "Ver Original",
+    "download": "Baixar",
+    "copyLink": "Copiar Link",
+    "shareOnX": "Compartilhar no X",
+    "tooltip": "Ações"
+  },
+  "imageViewer": {
+    "zoomIn": "Aumentar zoom",
+    "zoomOut": "Diminuir zoom",
+    "resetView": "Redefinir visualização",
+    "fullscreen": "Tela cheia",
+    "download": "Baixar"
+  },
+  "viewer": {
+    "loading": "Carregando visualizador..."
   }
 }

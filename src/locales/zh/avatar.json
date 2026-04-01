@@ -23,7 +23,7 @@
     "select": "选择",
     "deselectAll": "取消全选",
     "selectAll": "全选",
-    "search": "搜索虚拟形象...",
+    "search": "搜索资源...",
     "browse": "浏览虚拟形象"
   },
   "height": "身高：{{height}}m",
@@ -34,5 +34,44 @@
     "fbxViewer": "FBX 查看器",
     "voxel": "体素 VRM",
     "voxel-fbx": "体素 FBX"
+  },
+  "gallery": {
+    "title": "开源虚拟形象",
+    "description": "CC0 资源合集",
+    "descriptionFull": "Numinia 的 CC0 及开源资源合集",
+    "projects": "项目",
+    "tags": "标签",
+    "noTags": "暂无标签。请在 L.A.P. 中为资源添加标签。",
+    "random": "随机",
+    "removeFromFavorites": "取消收藏",
+    "addToFavorites": "添加收藏",
+    "noFavoritesYet": "暂无收藏",
+    "noFavoritesHint": "点击任意资源卡片上的心形图标即可添加到收藏",
+    "scrollHint": "向下滚动加载更多...",
+    "allDisplayed": "已显示全部 {count} 个资源",
+    "finderLink": "需要批量下载资源？试试 Finder",
+    "adminBadge": "管理员",
+    "signOut": "退出登录",
+    "signIn": "登录",
+    "collapseSidebar": "收起侧栏",
+    "expandSidebar": "展开侧栏",
+    "selectAsset": "选择一个资源查看"
+  },
+  "actions": {
+    "viewOriginal": "查看原图",
+    "download": "下载",
+    "copyLink": "复制链接",
+    "shareOnX": "分享到 X",
+    "tooltip": "操作"
+  },
+  "imageViewer": {
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "resetView": "重置视图",
+    "fullscreen": "全屏",
+    "download": "下载"
+  },
+  "viewer": {
+    "loading": "正在加载查看器..."
   }
 }

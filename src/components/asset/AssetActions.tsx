@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { MoreHorizontal, Download, Link2, Share2, ExternalLink } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface AssetActionsProps {
   name: string;
@@ -10,6 +11,7 @@ interface AssetActionsProps {
 }
 
 export function AssetActions({ name, assetUrl, pageUrl }: AssetActionsProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -44,10 +46,10 @@ export function AssetActions({ name, assetUrl, pageUrl }: AssetActionsProps) {
   };
 
   const items = [
-    ...(assetUrl ? [{ label: 'View Original', icon: ExternalLink, action: () => { window.open(assetUrl, '_blank'); setOpen(false); } }] : []),
-    ...(assetUrl ? [{ label: 'Download', icon: Download, action: () => { const a = document.createElement('a'); a.href = assetUrl; a.download = ''; a.click(); setOpen(false); } }] : []),
-    { label: 'Copy Link', icon: Link2, action: copyLink },
-    { label: 'Share on X', icon: Share2, action: shareOnX },
+    ...(assetUrl ? [{ label: t('avatar.actions.viewOriginal') as string, icon: ExternalLink, action: () => { window.open(assetUrl, '_blank'); setOpen(false); } }] : []),
+    ...(assetUrl ? [{ label: t('avatar.actions.download') as string, icon: Download, action: () => { const a = document.createElement('a'); a.href = assetUrl; a.download = ''; a.click(); setOpen(false); } }] : []),
+    { label: t('avatar.actions.copyLink') as string, icon: Link2, action: copyLink },
+    { label: t('avatar.actions.shareOnX') as string, icon: Share2, action: shareOnX },
   ];
 
   return (
@@ -55,7 +57,7 @@ export function AssetActions({ name, assetUrl, pageUrl }: AssetActionsProps) {
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className="p-1 rounded-full transition-all text-white/80 hover:text-white hover:bg-black/20"
-        title="Actions"
+        title={t('avatar.actions.tooltip') as string}
       >
         <MoreHorizontal className="h-4 w-4 drop-shadow-md" />
       </button>

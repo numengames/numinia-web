@@ -17,9 +17,7 @@ import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 const VRMViewer = dynamic(() => import('@/components/VRMViewer/VRMViewer').then(mod => mod.VRMViewer), { 
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
-      <p className="text-gray-500">Loading viewer...</p>
-    </div>
+    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
   )
 });
 

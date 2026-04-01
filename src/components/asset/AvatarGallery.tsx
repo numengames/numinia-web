@@ -407,8 +407,8 @@ export const AvatarGallery: React.FC = () => {
       <div className="h-screen max-h-screen w-screen max-w-screen overflow-hidden bg-cream dark:bg-cream-dark flex flex-col transition-colors">
         <div className="flex-none">
           <AvatarHeader 
-            title="Open Source Avatars"
-            description="A collection of CC0 assets"
+            title={t('avatar.gallery.title') as string}
+            description={t('avatar.gallery.description') as string}
             socialLink="https://x.com/numinia_store"
           />
         </div>
@@ -426,8 +426,8 @@ export const AvatarGallery: React.FC = () => {
       <div className="h-screen max-h-screen w-screen max-w-screen overflow-hidden bg-cream dark:bg-cream-dark flex flex-col transition-colors">
         <div className="flex-none">
           <AvatarHeader 
-            title="Open Source Avatars"
-            description="A collection of CC0 assets"
+            title={t('avatar.gallery.title') as string}
+            description={t('avatar.gallery.description') as string}
             socialLink="https://x.com/numinia_store"
           />
         </div>
@@ -459,8 +459,8 @@ export const AvatarGallery: React.FC = () => {
     <div className="h-screen max-h-screen w-screen max-w-screen overflow-hidden bg-cream dark:bg-cream-dark flex flex-col transition-colors">
       <div className="flex-none">
         <AvatarHeader 
-          title="Open Source Avatars"
-          description="A collection of CC0 and open source assets by Numinia"
+          title={t('avatar.gallery.title') as string}
+          description={t('avatar.gallery.descriptionFull') as string}
           socialLink="https://x.com/numinia_store"
         />
       </div>
@@ -484,7 +484,7 @@ export const AvatarGallery: React.FC = () => {
                 <div className="relative">
                   <Input
                     type="text"
-                    placeholder="Search assets..."
+                    placeholder={t('avatar.controls.search') as string}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-3 h-9 text-sm border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
@@ -500,7 +500,7 @@ export const AvatarGallery: React.FC = () => {
                     onClick={() => setProjectsExpanded(!projectsExpanded)}
                     className="w-full flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                   >
-                    <span>Projects</span>
+                    <span>{t('avatar.gallery.projects')}</span>
                     {projectsExpanded ? (
                       <ChevronDown className="h-4 w-4" />
                     ) : (
@@ -547,7 +547,7 @@ export const AvatarGallery: React.FC = () => {
                   onClick={() => setTagsExpanded(!tagsExpanded)}
                   className="w-full flex items-center justify-between text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  <span>Tags {allGalleryTags.length > 0 && <span className="font-normal text-gray-400">({allGalleryTags.length})</span>}</span>
+                  <span>{t('avatar.gallery.tags')} {allGalleryTags.length > 0 && <span className="font-normal text-gray-400">({allGalleryTags.length})</span>}</span>
                   {tagsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </button>
 
@@ -566,7 +566,7 @@ export const AvatarGallery: React.FC = () => {
                           {tag} <span className="text-gray-400">{count}</span>
                         </button>
                       )) : (
-                        <p className="text-[10px] text-gray-400 italic">No tags yet. Add tags to assets in L.A.P.</p>
+                        <p className="text-[10px] text-gray-400 italic">{t('avatar.gallery.noTags')}</p>
                       )}
                     </div>
                   )}
@@ -580,7 +580,7 @@ export const AvatarGallery: React.FC = () => {
                   className="flex-1 h-10 text-sm font-medium border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  <span>Random</span>
+                  <span>{t('avatar.gallery.random')}</span>
                 </Button>
                 <Button
                   onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
@@ -627,7 +627,7 @@ export const AvatarGallery: React.FC = () => {
                               ? 'text-red-500 opacity-100'
                               : 'text-white/60 opacity-70 hover:opacity-100 hover:text-red-400'
                           }`}
-                          title={isFavorite(avatar.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          title={isFavorite(avatar.id) ? t('avatar.gallery.removeFromFavorites') as string : t('avatar.gallery.addToFavorites') as string}
                         >
                           <Heart className={`h-4 w-4 drop-shadow-md transition-transform ${isFavorite(avatar.id) ? 'fill-current scale-110' : ''}`} />
                         </button>
@@ -673,8 +673,8 @@ export const AvatarGallery: React.FC = () => {
                 {displayedAvatars.length === 0 && showFavoritesOnly && (
                   <div className="px-3 py-8 text-center space-y-2">
                     <Heart className="h-8 w-8 mx-auto text-gray-300 dark:text-gray-600" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No favorites yet</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Click the heart on any asset card to add it to your favorites</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('avatar.gallery.noFavoritesYet')}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('avatar.gallery.noFavoritesHint')}</p>
                   </div>
                 )}
 
@@ -683,7 +683,7 @@ export const AvatarGallery: React.FC = () => {
                   <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                     Showing {displayedAvatars.length} of {filteredAvatars.length} assets
                     <br />
-                    <span className="text-xs">Scroll down to load more...</span>
+                    <span className="text-xs">{t('avatar.gallery.scrollHint')}</span>
                   </div>
                 )}
                 
@@ -691,14 +691,14 @@ export const AvatarGallery: React.FC = () => {
                 {!hasMore && displayedAvatars.length > 0 && (
                   <div className="px-3 py-4 space-y-2">
                     <div className="text-center text-xs text-gray-400 dark:text-gray-500">
-                      All {filteredAvatars.length} assets displayed
+                      {(t('avatar.gallery.allDisplayed') as string).replace('{count}', String(filteredAvatars.length))}
                     </div>
                     <div className="text-center">
                       <Link
                         href={`/${currentLocale}/finder`}
                         className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                       >
-                        Need to download multiple assets? Try Finder
+                        {t('avatar.gallery.finderLink')}
                       </Link>
                     </div>
                   </div>
@@ -714,16 +714,16 @@ export const AvatarGallery: React.FC = () => {
                         {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                       </div>
                       {userRole === 'admin' && (
-                        <span className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 px-1.5 py-0.5 rounded-full font-medium">admin</span>
+                        <span className="text-[9px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 px-1.5 py-0.5 rounded-full font-medium">{t('avatar.gallery.adminBadge')}</span>
                       )}
                     </div>
                     <button
                       onClick={disconnectWallet}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-                      title="Sign out"
+                      title={t('avatar.gallery.signOut') as string}
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
-                      <span>Sign Out</span>
+                      <span>{t('avatar.gallery.signOut')}</span>
                     </button>
                   </>
                 ) : (
@@ -732,7 +732,7 @@ export const AvatarGallery: React.FC = () => {
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
                   >
                     <LogIn className="h-4 w-4 shrink-0" />
-                    <span>Sign In</span>
+                    <span>{t('avatar.gallery.signIn')}</span>
                   </button>
                 )}
               </div>
@@ -750,7 +750,7 @@ export const AvatarGallery: React.FC = () => {
               <button
                 onClick={() => setSidebarCollapsed(true)}
                 className="absolute top-4 left-full w-6 h-12 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-r-md flex items-center justify-center shadow-md transition-colors z-20"
-                aria-label="Collapse sidebar"
+                aria-label={t('avatar.gallery.collapseSidebar') as string}
               >
                 <ChevronLeft className="h-4 w-4 text-gray-900 dark:text-gray-100" />
               </button>
@@ -763,7 +763,7 @@ export const AvatarGallery: React.FC = () => {
           <button
             onClick={() => setSidebarCollapsed(false)}
             className="absolute top-4 left-0 w-6 h-12 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-r-md flex items-center justify-center z-50 shadow-md transition-colors"
-            aria-label="Expand sidebar"
+            aria-label={t('avatar.gallery.expandSidebar') as string}
           >
             <ChevronRight className="h-4 w-4 text-gray-900 dark:text-gray-100" />
           </button>
@@ -827,7 +827,7 @@ export const AvatarGallery: React.FC = () => {
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-              <p className="text-gray-500 dark:text-gray-400">Select an asset to view</p>
+              <p className="text-gray-500 dark:text-gray-400">{t('avatar.gallery.selectAsset')}</p>
             </div>
           )}
         </div>

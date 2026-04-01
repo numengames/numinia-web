@@ -23,7 +23,7 @@
     "select": "選択",
     "deselectAll": "全選択解除",
     "selectAll": "全選択",
-    "search": "アバターを検索...",
+    "search": "アセットを検索...",
     "browse": "アバターを選択"
   },
   "height": "身長: {{height}}m",
@@ -34,5 +34,44 @@
     "fbxViewer": "FBXビューアー",
     "voxel": "ボクセルVRM",
     "voxel-fbx": "ボクセルFBX"
+  },
+  "gallery": {
+    "title": "オープンソースアバター",
+    "description": "CC0アセットのコレクション",
+    "descriptionFull": "Numiniaによる CC0およびオープンソースアセットのコレクション",
+    "projects": "プロジェクト",
+    "tags": "タグ",
+    "noTags": "タグはまだありません。L.A.P.でアセットにタグを追加してください。",
+    "random": "ランダム",
+    "removeFromFavorites": "お気に入りから削除",
+    "addToFavorites": "お気に入りに追加",
+    "noFavoritesYet": "お気に入りはまだありません",
+    "noFavoritesHint": "アセットカードのハートをクリックしてお気に入りに追加してください",
+    "scrollHint": "スクロールしてさらに読み込む...",
+    "allDisplayed": "全 {count} アセットを表示中",
+    "finderLink": "複数のアセットをダウンロードしたい場合は Finder をお試しください",
+    "adminBadge": "管理者",
+    "signOut": "サインアウト",
+    "signIn": "サインイン",
+    "collapseSidebar": "サイドバーを折りたたむ",
+    "expandSidebar": "サイドバーを展開",
+    "selectAsset": "アセットを選択して表示"
+  },
+  "actions": {
+    "viewOriginal": "オリジナルを表示",
+    "download": "ダウンロード",
+    "copyLink": "リンクをコピー",
+    "shareOnX": "Xでシェア",
+    "tooltip": "アクション"
+  },
+  "imageViewer": {
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "resetView": "表示をリセット",
+    "fullscreen": "フルスクリーン",
+    "download": "ダウンロード"
+  },
+  "viewer": {
+    "loading": "ビューアーを読み込み中..."
   }
-} 
+}

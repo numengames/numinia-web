@@ -23,7 +23,7 @@
     "select": "선택",
     "deselectAll": "선택 해제",
     "selectAll": "전체 선택",
-    "search": "아바타 검색...",
+    "search": "에셋 검색...",
     "browse": "아바타 둘러보기"
   },
   "height": "키: {{height}}m",
@@ -34,5 +34,44 @@
     "fbxViewer": "FBX 뷰어",
     "voxel": "복셀 VRM",
     "voxel-fbx": "복셀 FBX"
+  },
+  "gallery": {
+    "title": "오픈소스 아바타",
+    "description": "CC0 에셋 컬렉션",
+    "descriptionFull": "Numinia의 CC0 및 오픈소스 에셋 컬렉션",
+    "projects": "프로젝트",
+    "tags": "태그",
+    "noTags": "아직 태그가 없습니다. L.A.P.에서 에셋에 태그를 추가하세요.",
+    "random": "랜덤",
+    "removeFromFavorites": "즐겨찾기에서 제거",
+    "addToFavorites": "즐겨찾기에 추가",
+    "noFavoritesYet": "아직 즐겨찾기가 없습니다",
+    "noFavoritesHint": "에셋 카드의 하트를 클릭하여 즐겨찾기에 추가하세요",
+    "scrollHint": "아래로 스크롤하여 더 불러오기...",
+    "allDisplayed": "전체 {count}개 에셋 표시됨",
+    "finderLink": "여러 에셋을 다운로드해야 하나요? Finder를 사용해 보세요",
+    "adminBadge": "관리자",
+    "signOut": "로그아웃",
+    "signIn": "로그인",
+    "collapseSidebar": "사이드바 접기",
+    "expandSidebar": "사이드바 펼치기",
+    "selectAsset": "에셋을 선택하여 보기"
+  },
+  "actions": {
+    "viewOriginal": "원본 보기",
+    "download": "다운로드",
+    "copyLink": "링크 복사",
+    "shareOnX": "X에 공유",
+    "tooltip": "액션"
+  },
+  "imageViewer": {
+    "zoomIn": "확대",
+    "zoomOut": "축소",
+    "resetView": "보기 초기화",
+    "fullscreen": "전체 화면",
+    "download": "다운로드"
+  },
+  "viewer": {
+    "loading": "뷰어 로딩 중..."
   }
 }
