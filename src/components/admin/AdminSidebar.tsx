@@ -159,10 +159,10 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                 }`}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? t(`admin.nav.${item.id}`) as string : undefined}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span>{t(`admin.nav.${item.id}`)}</span>}
                 {showBadge && (
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
                     {badgeCount}
