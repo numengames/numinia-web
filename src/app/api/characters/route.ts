@@ -25,7 +25,11 @@ export async function GET(req: NextRequest) {
     return response as Response;
   }
 
-  const path = getCharacterPath(session.address!);
+  if (!session.address) {
+    return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
+  }
+
+  const path = getCharacterPath(session.address);
 
   try {
     const res = await fetch(
@@ -60,6 +64,10 @@ export async function PUT(req: NextRequest) {
     return response as Response;
   }
 
+  if (!session.address) {
+    return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
+  }
+
   const rl = await charactersRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
@@ -71,7 +79,7 @@ export async function PUT(req: NextRequest) {
     }
     const { content } = parsed.data;
 
-    const path = getCharacterPath(session.address!);
+    const path = getCharacterPath(session.address);
     const base64Content = Buffer.from(content).toString('base64');
 
     // Get current SHA if file exists
@@ -97,7 +105,7 @@ export async function PUT(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: `character: update ${session.address!.slice(0, 8)}`,
+          message: `character: update ${session.address.slice(0, 8)}`,
           content: base64Content,
           ...(sha ? { sha } : {}),
           branch: env.github.branch,

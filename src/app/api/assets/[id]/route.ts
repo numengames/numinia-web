@@ -2,7 +2,7 @@
 import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 import { assetsDeleteRateLimit, getRateLimitKey } from '@/lib/rate-limit';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import {
   getAvatars,
@@ -15,7 +15,6 @@ import {
   GithubAvatarTag as AvatarTag,
   GithubDownload as Download
 } from '@/lib/github-storage';
-import { NextRequest } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { getR2Client, getR2BucketName, isR2Configured } from '@/lib/r2-client';
 import { createLogger } from '@/lib/logger';

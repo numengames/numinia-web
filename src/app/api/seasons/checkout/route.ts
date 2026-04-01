@@ -25,6 +25,10 @@ export async function POST(req: NextRequest) {
     return response as Response;
   }
 
+  if (!session.address) {
+    return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
+  }
+
   const season = await getActiveSeason();
   if (!season || season.status !== 'active') {
     return NextResponse.json(
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check if user already has the pass
-  const status = await getUserSeasonStatus(season.id, session.address!);
+  const status = await getUserSeasonStatus(season.id, session.address);
   if (status.hasPass) {
     return NextResponse.json(
       { error: 'You already own this season pass' },
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
       ],
       metadata: {
         season_id: season.id,
-        wallet_address: session.address!,
+        wallet_address: session.address,
       },
       success_url: `${baseUrl}/${locale}/LAP/seasons?purchase=success`,
       cancel_url: `${baseUrl}/${locale}/LAP/seasons`,

@@ -46,6 +46,10 @@ export async function PUT(req: NextRequest) {
     return response as Response;
   }
 
+  if (!session.address) {
+    return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
+  }
+
   const rl = await favoritesRateLimit(getRateLimitKey(req));
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
@@ -55,7 +59,7 @@ export async function PUT(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
     const { favorites } = parsed.data;
 
-    const path = getFavoritesPath(session.address!);
+    const path = getFavoritesPath(session.address);
     const content = Buffer.from(JSON.stringify(favorites, null, 2)).toString('base64');
 
     // Get SHA if file exists
@@ -73,7 +77,7 @@ export async function PUT(req: NextRequest) {
       {
         method: 'PUT',
         headers: { Authorization: `token ${env.github.token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `favorites: ${session.address!.slice(0, 8)}`, content, ...(sha ? { sha } : {}), branch: env.github.branch }),
+        body: JSON.stringify({ message: `favorites: ${session.address.slice(0, 8)}`, content, ...(sha ? { sha } : {}), branch: env.github.branch }),
       }
     );
 

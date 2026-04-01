@@ -2,9 +2,8 @@
 import { logAudit } from '@/lib/audit';
 import { verifyCsrf } from '@/lib/session';
 // Handles both visibility toggle and name/description updates.
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAvatars, updateAvatarInSource, GithubAvatar as Avatar } from '@/lib/github-storage';
-import { NextRequest } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
 import { AssetUpdateSchema } from '@/lib/schemas';
 import { createLogger } from '@/lib/logger';
