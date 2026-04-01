@@ -264,7 +264,7 @@ export default function AvatarAdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-cream relative">
+    <div className="min-h-screen bg-cream dark:bg-cream-dark relative">
       <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Assets</h1>
@@ -365,17 +365,17 @@ export default function AvatarAdminDashboard() {
             <span className="text-xs text-gray-400">{filteredAvatars.length} assets</span>
 
             {/* View toggle */}
-            <div className="flex border rounded-md overflow-hidden">
+            <div className="flex border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
               <button
                 onClick={() => { setViewMode('gallery'); localStorage.setItem('admin-view-mode', 'gallery'); }}
-                className={`p-1 transition-colors ${viewMode === 'gallery' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                className={`p-1 transition-colors ${viewMode === 'gallery' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
                 title="Gallery view"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
               </button>
               <button
                 onClick={() => { setViewMode('table'); localStorage.setItem('admin-view-mode', 'table'); }}
-                className={`p-1 transition-colors ${viewMode === 'table' ? 'bg-black text-white' : 'bg-white text-gray-400 hover:text-gray-700'}`}
+                className={`p-1 transition-colors ${viewMode === 'table' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
                 title="Table view"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
