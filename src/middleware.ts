@@ -3,8 +3,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// List of supported locales
-const locales = ['en', 'ja'];
+// Import from the single source of truth for locale config.
+// Middleware runs on Edge so we inline the values to avoid import issues.
+const locales = ['en', 'ja', 'es', 'ko', 'zh', 'pt', 'de'];
 const defaultLocale = 'en';
 
 // Get the preferred locale from headers

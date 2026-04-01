@@ -1,0 +1,104 @@
+{
+  "title": "Acerca de Numinia Digital Goods",
+  "whatWeDo": {
+    "title": "Que hacemos",
+    "description1": "Numinia Digital Goods es un registro abierto de activos digitales CC0: modelos 3D, avatares, mundos, audio y video.",
+    "description2": "Curamos activos de creadores talentosos y la comunidad open source. Todos los activos usan formatos abiertos (GLB, VRM, HYP), haciendolos compatibles con motores de juegos, plataformas VR y el metaverso. Sin buscar en repos dispersos: explora, previsualiza y descarga en un solo lugar."
+  },
+  "howItWorks": {
+    "title": "Como funciona",
+    "subtitle": "Indexamos colecciones → Preservamos metadata → Tu exploras y descargas",
+    "steps": [
+      "Encontramos colecciones de activos 3D con licencias open source",
+      "Catalogamos enlaces de descarga, previsualizaciones, especificaciones e info de licencia",
+      "Filtras por coleccion, tema o estilo y descargas lo que necesites",
+      "Los archivos estan alojados en GitHub, IPFS o Arweave, haciendolos accesibles y preservables"
+    ],
+    "description": "Piensa en nosotros como un buscador de activos 3D gratuitos, haciendo muchos modelos descubribles en un solo lugar."
+  },
+  "status": {
+    "title": "Estado actual",
+    "badges": {
+      "beta": {
+        "label": "Beta",
+        "description": "Espera actualizaciones y mejoras"
+      },
+      "avatars": {
+        "label": "Muchos activos",
+        "description": "En 17 colecciones"
+      },
+      "format": {
+        "label": "Formato GLB",
+        "description": "Compatibilidad universal"
+      },
+      "license": {
+        "label": "Licencia CC0",
+        "description": "Usa libremente en cualquier proyecto"
+      }
+    }
+  },
+  "collections": {
+    "title": "Colecciones destacadas",
+    "polygonalMind": {
+      "title": "Colecciones Polygonal Mind",
+      "description": "17 colecciones tematicas con props, entornos y estructuras. Desde los activos del parque MomusPark hasta las piramides egipcias y pagodas neon japonesas de Tomb Chaser.",
+      "stats": "Muchos activos | Licencia CC0"
+    }
+  },
+  "license": {
+    "title": "Licencias",
+    "description": "La mayoria de activos en nuestra coleccion son CC0 (dominio publico), lo que significa que puedes usarlos para cualquier cosa sin atribucion. Algunas colecciones pueden tener licencias diferentes, que mostramos claramente en cada pagina de activo."
+  },
+  "technical": {
+    "title": "Detalles tecnicos",
+    "format": {
+      "title": "Formato de archivo",
+      "description": "Todos los activos usan GLB (glTF binario), el formato estandar para 3D en la web y mas alla. Compatible con Blender, Unity, Unreal Engine, Three.js y mas."
+    },
+    "storage": {
+      "title": "Almacenamiento de datos",
+      "description": "La metadata y archivos de activos pueden almacenarse en GitHub, IPFS o Arweave, asegurando accesibilidad a largo plazo, descentralizacion y control de versiones. No estamos limitados a un solo proveedor de hosting."
+    }
+  },
+  "future": {
+    "title": "Que viene",
+    "items": [
+      "Mas colecciones de activos de creadores talentosos",
+      "Filtrado avanzado por conteo de poligonos, tipo de material y tema",
+      "Sistema de etiquetado y categorizacion de activos"
+    ]
+  },
+  "getInvolved": {
+    "title": "Participa",
+    "submitCollection": {
+      "title": "Envia una coleccion",
+      "description": "Tienes activos 3D con licencia abierta que te gustaria compartir? Nos encantaria anadirlos!",
+      "requirements": {
+        "title": "Requisitos:",
+        "list": [
+          "Licencia open source (CC0, CC-BY, etc.)",
+          "Formato GLB",
+          "Hosting estable (GitHub, IPFS, Arweave, etc.)"
+        ]
+      },
+      "submitVia": "Envia via [GitHub Discussions](https://github.com/PabloFMM/numinia-digital-goods/discussions)"
+    },
+    "contributeCode": {
+      "title": "Contribuye con codigo",
+      "description": "Encontraste un bug? Quieres anadir una funcionalidad?",
+      "link": "Abre un issue → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    },
+    "giveFeedback": {
+      "title": "Da tu feedback",
+      "description": "Tienes ideas para mejorar? Cuentanos!",
+      "link": "Comparte feedback → [GitHub Issues](https://github.com/PabloFMM/numinia-digital-goods/issues)"
+    }
+  },
+  "connect": {
+    "title": "Conecta",
+    "website": "Sitio web",
+    "websiteUrl": "https://numinia.store",
+    "twitter": "Twitter",
+    "twitterUrl": "https://x.com/numinia_store"
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "title": "Inspector GLB",
+  "description": "Arrastra tu activo 3D GLB aqui o haz clic abajo para empezar a explorar. Veamos que hay dentro de tu modelo!",
+  "mobile": {
+    "desktopOnly": {
+      "title": "Solo para escritorio",
+      "description": "El Inspector GLB esta optimizado para uso en escritorio. Por favor visita esta pagina en un ordenador para la mejor experiencia."
+    },
+    "intro": {
+      "title": "Inspector GLB",
+      "description": "Una herramienta potente para inspeccionar y analizar archivos de activos 3D GLB. Ve metadata, explora texturas y mas."
+    },
+    "features": {
+      "title": "Funcionalidades clave",
+      "modelInfo": {
+        "title": "Informacion del modelo",
+        "description": "Ve metadata completa, incluyendo detalles del autor y licencia."
+      },
+      "expressionControl": {
+        "title": "Control de expresiones",
+        "description": "Prueba y previsualiza expresiones faciales y blendshapes."
+      },
+      "textureAnalysis": {
+        "title": "Analisis de texturas",
+        "description": "Examina y descarga texturas del modelo con detalles de formato."
+      }
+    },
+    "comingSoon": {
+      "title": "Version movil proximamente",
+      "description": "Estamos trabajando en una version optimizada para movil del Inspector GLB. Por ahora, usa un ordenador de escritorio para acceder a todas las funcionalidades."
+    },
+    "openDesktop": "Abrir en escritorio"
+  },
+  "buttons": {
+    "openFile": "Abrir archivo GLB",
+    "learnMore": "Saber mas",
+    "showWireframe": "Mostrar wireframe",
+    "hideWireframe": "Ocultar wireframe",
+    "showBones": "Mostrar huesos",
+    "hideBones": "Ocultar huesos"
+  },
+  "features": {
+    "title": "Funcionalidades clave",
+    "modelInfo": {
+      "title": "Informacion del modelo",
+      "description": "Ve metadata completa, incluyendo detalles del autor y licencia."
+    },
+    "expressionControl": {
+      "title": "Control de expresiones",
+      "description": "Prueba y previsualiza expresiones faciales y blendshapes."
+    },
+    "textureAnalysis": {
+      "title": "Analisis de texturas",
+      "description": "Examina y descarga texturas del modelo con detalles de formato."
+    },
+    "technicalDetails": {
+      "title": "Detalles tecnicos",
+      "description": "Accede a metadata cruda y estadisticas del modelo."
+    }
+  },
+  "tips": {
+    "title": "Consejos rapidos",
+    "controls": {
+      "title": "Controles de camara",
+      "description": "Clic izquierdo para orbitar, clic derecho para panoramica, scroll para zoom"
+    },
+    "wireframe": {
+      "title": "Opciones de visualizacion",
+      "description": "Activa wireframe y visualizacion de esqueleto"
+    },
+    "expressions": {
+      "title": "Prueba de expresiones",
+      "description": "Prueba expresiones faciales con controles intuitivos"
+    }
+  },
+  "dropzone": {
+    "title": "Hola! 👋",
+    "description": "Arrastra tu activo 3D GLB aqui o haz clic abajo para empezar a explorar. Veamos que hay dentro de tu modelo!",
+    "instructions": "Arrastra un archivo GLB aqui para cargarlo"
+  },
+  "loading": "Cargando...",
+  "metadata": {
+    "title": "Informacion del modelo",
+    "basicInfo": "Informacion basica",
+    "author": "Autor",
+    "contactInfo": "Informacion de contacto",
+    "license": "Licencia",
+    "otherPermissions": "Otros permisos",
+    "references": "Referencias",
+    "version": "Version",
+    "stats": {
+      "title": "Estadisticas del modelo",
+      "triangles": "Triangulos",
+      "materials": "Materiales",
+      "textures": "Texturas",
+      "bones": "Huesos",
+      "blendshapes": "Blendshapes",
+      "fileSize": "Tamano de archivo"
+    }
+  },
+  "expressions": {
+    "title": "Expresiones",
+    "controls": "Controles de expresiones",
+    "reset": "Resetear todo",
+    "noExpressions": "No hay expresiones disponibles",
+    "blendshapesLabel": "Blendshapes / Morph Targets",
+    "categories": {
+      "emotions": "Emociones",
+      "mouth": "Boca",
+      "eyes": "Ojos",
+      "other": "Otros"
+    }
+  },
+  "textures": {
+    "title": "Texturas",
+    "format": "Formato",
+    "dimensions": "Dimensiones",
+    "size": "Tamano",
+    "download": "Descargar textura",
+    "noTextures": "No hay texturas disponibles",
+    "details": {
+      "fileSize": "Tamano de archivo",
+      "format": "Formato",
+      "type": "Tipo",
+      "usage": "Uso",
+      "material": "Material",
+      "filter": "Filtro",
+      "wrap": "Envoltura",
+      "mipmaps": "Mipmaps"
+    }
+  },
+  "technical": {
+    "title": "Detalles tecnicos",
+    "raw": "Metadata cruda",
+    "copy": "Copiar al portapapeles",
+    "description": "Esta vista muestra la estructura de metadata cruda del archivo GLB. Util para depuracion y desarrollo."
+  },
+  "units": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "tb": "TB"
+  },
+  "errors": {
+    "noVrmData": "No se pudo cargar los datos del modelo del archivo",
+    "setupFailed": "Error al configurar el modelo: {{error}}",
+    "loadFailed": "Error al cargar el archivo GLB: {{error}}",
+    "initializationFailed": "Error al inicializar el visor 3D"
+  },
+  "tabs": {
+    "about": "Acerca de",
+    "information": "Informacion",
+    "textures": "Texturas",
+    "expressions": "Expresiones",
+    "rawMetadata": "Metadata cruda"
+  },
+  "license": {
+    "title": "Informacion de licencia",
+    "type": "Tipo de licencia",
+    "allowedUsers": "Usuarios permitidos",
+    "commercialUse": "Uso comercial",
+    "violentUsage": "Uso violento",
+    "sexualUsage": "Uso sexual"
+  },
+  "statistics": {
+    "title": "Estadisticas del modelo",
+    "fileSize": "Tamano de archivo",
+    "format": "Formato",
+    "height": "Altura",
+    "geometry": "Geometria",
+    "vertices": "Vertices",
+    "triangles": "Triangulos",
+    "assets": "Activos",
+    "materials": "Materiales",
+    "textures": "Texturas",
+    "bones": "Huesos"
+  },
+  "texture": {
+    "dimensions": "Dimensiones",
+    "fileSize": "Tamano de archivo",
+    "format": "Formato",
+    "type": "Tipo",
+    "usage": "Uso",
+    "material": "Material",
+    "filter": "Modo de filtro",
+    "wrap": "Modo de envoltura",
+    "mipmaps": "Mipmaps",
+    "download": "Descargar textura"
+  },
+  "upload": {
+    "instructions": "Sube un archivo GLB para inspeccionar su contenido"
+  },
+  "raw": {
+    "description": "Esto muestra la estructura de metadata cruda del archivo GLB, util para depuracion y desarrollo."
+  },
+  "controls": {
+    "title": "Controles",
+    "orbit": "Clic izquierdo + arrastrar para rotar la vista",
+    "pan": "Clic derecho + arrastrar para panoramica",
+    "zoom": "Rueda del raton para zoom",
+    "reset": "Doble clic para resetear vista"
+  }
+}

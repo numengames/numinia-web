@@ -18,7 +18,12 @@
   "language": {
     "select": "Select Language",
     "en": "English",
-    "ja": "日本語"
+    "ja": "日本語",
+    "es": "Español",
+    "ko": "한국어",
+    "zh": "中文",
+    "pt": "Português",
+    "de": "Deutsch"
   },
   "loading": "Loading..."
 } 

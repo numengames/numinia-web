@@ -1,11 +1,9 @@
 import './globals.css';
 import { SITE_URL } from '@/lib/constants';
-import { I18nProvider } from '@/lib/i18n';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import type { Metadata } from 'next';
 import { WebsiteSchema, OrganizationSchema } from '@/components/StructuredData';
-import { CookieConsent } from '@/components/CookieConsent';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -110,12 +108,9 @@ export default function RootLayout({
         </a>
         <WebsiteSchema />
         <OrganizationSchema />
-        <I18nProvider defaultLocale="en">
-          <main id="main-content">
-            {children}
-          </main>
-          <CookieConsent />
-        </I18nProvider>
+        <main id="main-content">
+          {children}
+        </main>
         <Analytics />
         <SpeedInsights />
       </body>

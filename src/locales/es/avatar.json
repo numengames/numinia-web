@@ -1,0 +1,38 @@
+{
+  "details": {
+    "title": "Detalles tecnicos",
+    "format": "Formato",
+    "polygons": "Poligonos",
+    "materials": "Materiales",
+    "license": "Licencia",
+    "project": "Proyecto",
+    "author": "Autor"
+  },
+  "vrm": {
+    "title": "Informacion VRM",
+    "version": "Version VRM",
+    "allowedUsers": "Usuarios permitidos",
+    "everyone": "Todos"
+  },
+  "controls": {
+    "info": "Info del avatar",
+    "wireframe": "Wireframe",
+    "showBones": "Mostrar huesos",
+    "ruler": "Regla de altura",
+    "download": "Descargar",
+    "select": "Seleccionar",
+    "deselectAll": "Deseleccionar todo",
+    "selectAll": "Seleccionar todo",
+    "search": "Buscar avatares...",
+    "browse": "Explorar avatares"
+  },
+  "height": "Altura: {{height}}m",
+  "formats": {
+    "vrm": "VRM",
+    "fbx": "FBX",
+    "vrmViewer": "Visor GLB",
+    "fbxViewer": "Visor FBX",
+    "voxel": "Voxel VRM",
+    "voxel-fbx": "Voxel FBX"
+  }
+}

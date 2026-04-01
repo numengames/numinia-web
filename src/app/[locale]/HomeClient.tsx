@@ -1,0 +1,310 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from "react";
+import { AvatarHeader } from '@/components/asset/AvatarHeader';
+import dynamic from 'next/dynamic';
+const HomeVRMViewer = dynamic(
+  () => import('@/components/VRMViewer/HomeVRMViewer').then((mod) => mod.HomeVRMViewer),
+  { ssr: false, loading: () => null }
+);
+import { Footer } from '@/components/Footer';
+import { useI18n } from '@/lib/i18n';
+import { Palette, Search, Code, Box, GitBranch, Boxes, Microscope, ArrowRight } from "lucide-react";
+import { Avatar } from '@/types/avatar';
+
+const HERO_ASSET_NAME = 'Venus_01_Floating';
+
+export default function Home() {
+  const { t, locale } = useI18n();
+  const [heroAsset, setHeroAsset] = useState<Avatar | null>(null);
+  const [heroVisible, setHeroVisible] = useState(false);
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  const title = String(t('home.title'));
+  const description = String(t('home.description'));
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHeroVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!heroVisible) return;
+
+    const fetchHeroAsset = async () => {
+      try {
+        const response = await fetch(`/api/assets?assetName=${encodeURIComponent(HERO_ASSET_NAME)}`);
+        const data = await response.json();
+
+        if (data.avatars && data.avatars.length > 0) {
+          setHeroAsset(data.avatars[0]);
+        } else {
+          const fallbackResponse = await fetch('/api/assets');
+          const fallbackData = await fallbackResponse.json();
+          if (fallbackData.avatars && fallbackData.avatars.length > 0) {
+            const randomIndex = Math.floor(Math.random() * fallbackData.avatars.length);
+            setHeroAsset(fallbackData.avatars[randomIndex]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching hero asset:', error);
+      }
+    };
+
+    fetchHeroAsset();
+  }, [heroVisible]);
+
+  return (
+    <main className="min-h-screen bg-cream dark:bg-cream-dark transition-colors">
+      <AvatarHeader
+        title={title}
+        description={description}
+        socialLink="https://x.com/numinia_store"
+      />
+
+      <section ref={heroRef} className="relative overflow-hidden bg-cream dark:bg-cream-dark min-h-[600px] lg:min-h-0" style={{ marginTop: 'var(--osa-avatar-header-height)' }}>
+        <div
+          className="absolute inset-0 pointer-events-none z-0 lg:hidden"
+          style={{ width: '100%', height: '100%', minHeight: '600px', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div
+            className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block"
+            style={{ width: '600px', height: '600px', maxWidth: '100vw', maxHeight: '100vh' }}
+          >
+            {heroVisible && (
+              <HomeVRMViewer className="w-full h-full blur-sm opacity-50" avatar={heroAsset} />
+            )}
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 pt-20 pb-32 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-20">
+            <div className="flex-1 max-w-2xl relative z-10">
+              <h1 className="text-7xl md:text-8xl font-bold mb-12 leading-[0.95] tracking-tight text-gray-900 dark:text-white">
+                <span className="block">{t('home.hero.titleBig')}</span>
+                <span className="block mt-2 text-2xl md:text-3xl font-normal text-gray-500 dark:text-gray-400">{t('home.hero.tagline')}</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
+                {t('home.hero.description')}
+              </p>
+              <div className="flex gap-4">
+                <a
+                  href={`/${locale}/archive`}
+                  className="inline-flex items-center px-8 py-4 bg-black dark:bg-cream text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-all text-lg font-medium"
+                >
+                  {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />
+                </a>
+                <a
+                  href={`/${locale}/glbinspector`}
+                  className="inline-flex items-center px-8 py-4 border-2 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg hover:border-gray-900 dark:hover:border-gray-300 transition-all text-lg font-medium"
+                >
+                  {t('home.hero.viewerButton')}
+                </a>
+              </div>
+            </div>
+            <div className="flex-1 w-full lg:w-auto hidden lg:block">
+              {heroVisible && (
+                <HomeVRMViewer className="w-full aspect-square max-w-2xl mx-auto" avatar={heroAsset} />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-cream dark:bg-cream-dark">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <div className="h-px flex-1 bg-gray-200"></div>
+              <span className="text-gray-900 dark:text-white font-medium uppercase text-sm tracking-wider">{t('home.about.section_title')}</span>
+              <div className="h-px flex-1 bg-gray-200"></div>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-bold mb-12 text-center">{t('home.about.title')}</h2>
+            <div className="prose prose-lg max-w-none">
+              <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-20">{t('home.about.description')}</p>
+              <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-20">{t('home.about.description_2')}</p>
+              <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+                {t('home.about.github_description')} <a href="https://github.com/PabloFMM/numinia-digital-goods" className="text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 underline">{t('home.about.github_link')}</a> {t('home.about.github_description_2')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <div className="h-px flex-1 bg-gray-200"></div>
+              <span className="text-gray-900 dark:text-white font-medium uppercase text-sm tracking-wider">{t('home.features.section_title')}</span>
+              <div className="h-px flex-1 bg-gray-200"></div>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-bold mb-20 text-center">{t('home.features.title')}</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+              <div className="bg-cream dark:bg-gray-800 p-12 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-6">
+                  <div className="bg-black p-3 rounded-lg"><Search className="h-8 w-8 text-white" /></div>
+                  <div>
+                    <h3 className="text-3xl font-bold mb-6">{t('home.features.browse.title')}</h3>
+                    <div className="prose prose-lg">
+                      <p className="text-gray-600 dark:text-gray-300 mb-6">{t('home.features.browse.description')}</p>
+                      <ul className="space-y-2 text-gray-600 dark:text-gray-300">
+                        <li>{t('home.features.browse.bulletPoints.preview')}</li>
+                        <li>{t('home.features.browse.bulletPoints.filter')}</li>
+                        <li>{t('home.features.browse.bulletPoints.download')}</li>
+                        <li>{t('home.features.browse.bulletPoints.updates')}</li>
+                      </ul>
+                      <a href={`/${locale}/archive`} className="inline-flex items-center text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 font-medium no-underline mt-6">
+                        {t('home.features.browse.cta')} <ArrowRight className="ml-2 h-5 w-5" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-cream dark:bg-gray-800 p-12 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-6">
+                  <div className="bg-black p-3 rounded-lg"><Microscope className="h-8 w-8 text-white" /></div>
+                  <div>
+                    <h3 className="text-3xl font-bold mb-6">{t('home.features.inspector.title')}</h3>
+                    <div className="prose prose-lg">
+                      <p className="text-gray-600 dark:text-gray-300 mb-6">{t('home.features.inspector.description')}</p>
+                      <ul className="space-y-2 text-gray-600 dark:text-gray-300">
+                        <li>{t('home.features.inspector.bulletPoints.metadata')}</li>
+                        <li>{t('home.features.inspector.bulletPoints.geometry')}</li>
+                        <li>{t('home.features.inspector.bulletPoints.materials')}</li>
+                        <li>{t('home.features.inspector.bulletPoints.validation')}</li>
+                      </ul>
+                      <a href={`/${locale}/glbinspector`} className="inline-flex items-center text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 font-medium no-underline mt-6">
+                        {t('home.features.inspector.cta')} <ArrowRight className="ml-2 h-5 w-5" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-cream dark:bg-cream-dark">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <div className="h-px flex-1 bg-gray-200"></div>
+              <span className="text-gray-900 dark:text-white font-medium uppercase text-sm tracking-wider">{t('home.technical.section_title')}</span>
+              <div className="h-px flex-1 bg-gray-200"></div>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-bold mb-16 text-center">{t('home.technical.title')}</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+              <div>
+                <h3 className="text-3xl font-bold mb-8 flex items-center gap-3"><Box className="h-10 w-10 text-black" />{t('home.technical.vrm_title')}</h3>
+                <div className="prose prose-lg">
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{t('home.technical.vrm_description')}</p>
+                  <p className="font-semibold mt-8 mb-6 text-gray-900 dark:text-gray-100">{t('home.technical.key_features')}</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700">
+                    <p className="mb-6 text-gray-600 dark:text-gray-300">{t('home.technical.features_intro')}</p>
+                    <ul className="space-y-3">
+                      {(['skeleton', 'materials', 'expressions', 'eye_movement', 'vr'] as const).map((key) => (
+                        <li key={key} className="flex items-start gap-3">
+                          <span className="text-black font-bold">•</span>
+                          <span className="text-gray-600 dark:text-gray-300">{t(`home.technical.vrm_features.${key}`)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-3xl font-bold mb-8 flex items-center gap-3"><GitBranch className="h-10 w-10 text-black" />{t('home.technical.compatibility_title')}</h3>
+                <div className="prose prose-lg">
+                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{t('home.technical.compatibility_description')}</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-8 border border-gray-200 dark:border-gray-700 mt-6">
+                    <ul className="space-y-3">
+                      {(['threejs', 'vrchat', 'engines', 'webgl', 'webxr'] as const).map((key) => (
+                        <li key={key} className="flex items-start gap-3">
+                          <span className="text-black font-bold">•</span>
+                          <span className="text-gray-600 dark:text-gray-300">{t(`home.technical.compatibility_items.${key}`)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <a href="https://vrm.dev" className="inline-flex items-center mt-8 text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 font-medium no-underline">
+                      {t('home.technical.learn_more')} <ArrowRight className="ml-2 h-5 w-5" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center gap-4 mb-12">
+              <div className="h-px flex-1 bg-gray-200"></div>
+              <span className="text-gray-900 dark:text-white font-medium uppercase text-sm tracking-wider">{t('home.applications.section_title')}</span>
+              <div className="h-px flex-1 bg-gray-200"></div>
+            </div>
+            <h2 className="text-5xl md:text-6xl font-bold mb-20 text-center">{t('home.applications.title')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 mb-16">
+              <div>
+                <Code className="h-12 w-12 text-gray-900 dark:text-white mb-8" />
+                <h3 className="text-3xl font-bold mb-6">{t('home.applications.web.title')}</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{t('home.applications.web.description')}</p>
+              </div>
+              <div>
+                <Boxes className="h-12 w-12 text-gray-900 dark:text-white mb-8" />
+                <h3 className="text-3xl font-bold mb-6">{t('home.applications.vr.title')}</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{t('home.applications.vr.description')}</p>
+              </div>
+              <div>
+                <Palette className="h-12 w-12 text-gray-900 dark:text-white mb-8" />
+                <h3 className="text-3xl font-bold mb-6">{t('home.applications.creative.title')}</h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{t('home.applications.creative.description')}</p>
+              </div>
+            </div>
+            <div className="text-center mt-16">
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">{t('home.applications.showcase_description')}</p>
+              <a href="https://vrm.dev/en/showcase/" className="inline-flex items-center text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-300 font-medium text-lg">
+                {t('home.applications.showcase_link')} <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-cream dark:bg-cream-dark">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-5xl md:text-6xl font-bold mb-8">{t('home.cta.title')}</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-16 max-w-2xl mx-auto leading-relaxed">{t('home.cta.description')}</p>
+            <div className="flex gap-4 justify-center">
+              <a href={`/${locale}/archive`} className="inline-flex items-center px-8 py-4 bg-black text-white rounded-lg hover:bg-gray-800 transition-all text-lg font-medium">
+                {t('home.hero.exploreButton')} <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+              <a href={`/${locale}/archive`} className="inline-flex items-center px-8 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-gray-900 transition-all text-lg font-medium">
+                {t('home.cta.documentation')}
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </main>
+  );
+}

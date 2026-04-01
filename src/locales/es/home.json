@@ -1,0 +1,113 @@
+{
+  "title": "Activos 3D Open Source",
+  "description": "Descubre, personaliza y descarga activos 3D de alta calidad para juegos, VR y proyectos 3D - completamente gratis y open source.",
+  "explore_gallery": "Explorar galeria",
+  "try_viewer": "Probar visor 3D",
+  "features_title": "Todo lo que necesitas para activos 3D",
+  "hero": {
+    "title": "Activos 3D Open Source",
+    "titleBig": "Activos 3D Open Source",
+    "tagline": "para Juegos, VR y Proyectos 3D",
+    "description": "Una coleccion curada de activos 3D de alta calidad incluyendo props, entornos y estructuras - completamente gratis y open source. Basado en estandares GLB y glTF.",
+    "exploreButton": "Explorar galeria",
+    "viewerButton": "Probar Inspector 3D",
+    "githubButton": "Ver en GitHub"
+  },
+  "about": {
+    "section_title": "Sobre el proyecto",
+    "title": "Encuentra activos 3D que realmente puedas usar",
+    "description": "Open Source 3D Assets te ayuda a descubrir modelos 3D de calidad con licencias claras. Ya sea que necesites props para un juego, activos de entorno para VR o estructuras para visualizacion - hemos recopilado muchos archivos GLB de creadores talentosos para que no tengas que buscarlos tu mismo.",
+    "description_2": "Muchos activos en 17 colecciones tematicas - mayormente CC0 (usa como quieras). Hacemos las licencias transparentes para que sepas exactamente que puedes hacer.",
+    "github_description": "Sin restricciones. Descarga directamente desde nuestra galeria, o si eres desarrollador, obtiene nuestra",
+    "github_link": "base de datos JSON de GitHub",
+    "github_description_2": "y construye tus propias herramientas."
+  },
+  "features": {
+    "section_title": "Herramientas y funcionalidades",
+    "title": "Herramientas gratuitas increibles para todos",
+    "browse": {
+      "title": "Galeria de activos",
+      "description": "Explora nuestra extensa coleccion de muchos activos 3D con opciones de filtrado avanzado:",
+      "bulletPoints": {
+        "preview": "Previsualiza activos en 3D antes de descargar",
+        "filter": "Filtra por coleccion, tema y estilo",
+        "download": "Opciones de descarga por lotes disponibles",
+        "updates": "Actualizaciones regulares con nuevas adiciones"
+      },
+      "cta": "Abrir galeria"
+    },
+    "inspector": {
+      "title": "Inspector 3D",
+      "description": "Herramienta avanzada para analizar e inspeccionar archivos de activos 3D:",
+      "bulletPoints": {
+        "metadata": "Examina metadata detallada y propiedades",
+        "materials": "Ve informacion de materiales y texturas",
+        "geometry": "Comprueba conteo de poligonos y datos de vertices",
+        "validation": "Valida especificaciones tecnicas"
+      },
+      "cta": "Abrir Inspector"
+    }
+  },
+  "technical": {
+    "section_title": "Vision tecnica",
+    "title": "Construido sobre estandares abiertos",
+    "vrm_title": "Formato GLB explicado",
+    "vrm_description": "GLB es la version binaria de glTF (GL Transmission Format), el formato de archivo 3D estandar para la web y mas alla. Piensa en el como el \"JPEG del 3D\" - eficiente, ampliamente soportado y perfecto para renderizado en tiempo real.",
+    "key_features": "Caracteristicas clave:",
+    "features_intro": "El formato proporciona capacidades potentes:",
+    "vrm_features": {
+      "skeleton": "Soporte para animaciones esqueletales y rigging",
+      "materials": "Materiales PBR para renderizado realista multiplataforma",
+      "expressions": "Morph targets para animacion de formas",
+      "eye_movement": "Geometria flexible y jerarquias de nodos",
+      "vr": "Optimizado para renderizado en tiempo real en juegos y VR"
+    },
+    "compatibility_title": "Integracion y compatibilidad",
+    "compatibility_description": "Los activos GLB funcionan perfectamente con los principales frameworks y motores 3D:",
+    "compatibility_items": {
+      "threejs": "Three.js y React Three Fiber para desarrollo web",
+      "vrchat": "Unity y Unreal Engine para desarrollo de juegos",
+      "engines": "Blender, Maya y software de modelado 3D",
+      "webgl": "Babylon.js y otros frameworks WebGL",
+      "webxr": "Aplicaciones WebXR y AR personalizadas"
+    },
+    "learn_more": "Saber mas sobre la integracion GLB"
+  },
+  "applications": {
+    "section_title": "Aplicaciones",
+    "title": "Donde usar nuestros activos",
+    "web": {
+      "title": "Desarrollo web",
+      "description": "Perfecto para aplicaciones web modernas usando Three.js, React Three Fiber y otros frameworks WebGL. Ideal para crear experiencias 3D interactivas en la web."
+    },
+    "vr": {
+      "title": "VR y gaming",
+      "description": "Listo para Unity, Unreal Engine y desarrollo de juegos. Soporte completo para interacciones VR y plataformas de gaming a traves del formato estandar GLB."
+    },
+    "creative": {
+      "title": "Creativo y visualizacion",
+      "description": "Usa en visualizacion arquitectonica, diseno de productos, contenido educativo o proyectos creativos. Perfecto para cualquier aplicacion 3D."
+    },
+    "showcase_description": "Descubre mas aplicaciones y plataformas increibles usando tecnologia glTF en el showcase oficial.",
+    "showcase_link": "Ver showcase glTF"
+  },
+  "comingSoon": {
+    "title": "Proximamente",
+    "studio": {
+      "title": "Estudio de activos",
+      "description": "Toma capturas y crea videos con fondos e iluminacion personalizables para tus activos 3D."
+    },
+    "editor": {
+      "title": "Editor de materiales",
+      "description": "Modifica materiales y texturas de tus activos directamente en el navegador con nuestro editor integrado."
+    }
+  },
+  "cta": {
+    "title": "Disfruta activos 3D gratuitos",
+    "description": "Accede a una coleccion creciente de activos 3D con licencia CC0 basados en estandares abiertos. Libres para usar, modificar y compartir - sin condiciones. Empieza a explorar nuestros modelos de alta calidad hoy!",
+    "documentation": "Ver documentacion"
+  },
+  "footer": {
+    "made_with": "Hecho con ♥️ por"
+  }
+}

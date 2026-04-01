@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, Home } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export interface BreadcrumbItem {
   label: string;
@@ -14,12 +15,13 @@ interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
+  const { locale } = useI18n();
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
       <ol className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
         <li>
           <Link
-            href="/en/archive"
+            href={`/${locale}/archive`}
             className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors flex items-center"
           >
             <Home className="h-3.5 w-3.5" />

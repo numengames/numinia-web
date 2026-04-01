@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "gallery": "Galeria",
+    "resources": "Recursos",
+    "login": "Iniciar sesion"
+  },
+  "actions": {
+    "view": "Ver",
+    "upload": "Subir",
+    "download": "Descargar",
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "submit": "Enviar"
+  },
+  "language": {
+    "select": "Seleccionar idioma",
+    "en": "English",
+    "ja": "日本語",
+    "es": "Español",
+    "ko": "한국어",
+    "zh": "中文",
+    "pt": "Português",
+    "de": "Deutsch"
+  },
+  "loading": "Cargando..."
+}

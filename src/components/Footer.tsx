@@ -167,10 +167,10 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'default' }) => {
                 © {currentYear} Numinia Digital Goods. All assets are CC0.
               </p>
               <div className="flex items-center gap-3 text-small">
-                <Link href="/en/legal/aviso-legal" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Aviso Legal</Link>
-                <Link href="/en/legal/privacy" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Privacy</Link>
-                <Link href="/en/legal/terms" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Terms</Link>
-                <Link href="/en/legal/cookies" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Cookies</Link>
+                <Link href={`/${locale}/legal/aviso-legal`} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Aviso Legal</Link>
+                <Link href={`/${locale}/legal/privacy`} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Privacy</Link>
+                <Link href={`/${locale}/legal/terms`} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Terms</Link>
+                <Link href={`/${locale}/legal/cookies`} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">Cookies</Link>
               </div>
             </div>
             <div className="flex items-center gap-4">

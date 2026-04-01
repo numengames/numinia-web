@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Package, BarChart3, Settings, Bell, LogOut, ChevronLeft, ChevronRight, Globe, Swords, Archive, User, BookOpen, Flame } from 'lucide-react';
 import { LATEST_VERSION, CHANGELOG_DATA } from '@/components/admin/Changelog';
+import { useI18n } from '@/lib/i18n';
 
 /** The slug used in /en/LAP/{section} routes. */
 export type LAPSection = 'assets' | 'upload' | 'character' | 'portals' | 'loot' | 'seasons' | 'codex' | 'stats' | 'settings' | 'updates';
@@ -26,7 +27,7 @@ const MAIN_NAV: NavItem[] = [
   { id: 'seasons', label: 'Seasons', icon: Flame },
   { id: 'codex', label: 'Codex', icon: BookOpen },
   { id: 'assets', label: 'Assets', icon: Package },
-  { id: 'archive', label: 'Archive', icon: Archive, href: '/en/archive' },
+  { id: 'archive', label: 'Archive', icon: Archive },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
@@ -48,8 +49,7 @@ function useActiveSection(): LAPSection {
 export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
   const activeSection = useActiveSection();
   const pathname = usePathname();
-  // Derive locale from path (/en/LAP/… or /ja/LAP/…)
-  const locale = pathname.startsWith('/ja') ? 'ja' : 'en';
+  const { locale } = useI18n();
 
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 640;
@@ -63,8 +63,8 @@ export function AdminSidebar({ walletAddress, onSignOut }: AdminSidebarProps) {
     : CHANGELOG_DATA.length;
   const badgeCount = unseenCount > 0 ? unseenCount : 0;
 
-  /** Build the href for a LAP section */
-  const sectionHref = (id: string) => `/${locale}/LAP/${id}`;
+  /** Build the href for a LAP section or a top-level page */
+  const sectionHref = (id: string) => id === 'archive' ? `/${locale}/archive` : `/${locale}/LAP/${id}`;
 
   return (
     <>

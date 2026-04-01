@@ -1,0 +1,185 @@
+{
+  "title": "Buscador de activos",
+  "description": "Explora y descarga multiples activos 3D a la vez",
+  "mobileNotice": "⚠️ Mejor experiencia en escritorio para descargas por lotes",
+  "mobile": {
+    "desktopOnly": {
+      "title": "Solo para escritorio",
+      "description": "El Buscador de Activos esta optimizado para uso en escritorio. Por favor visita esta pagina en un ordenador para la mejor experiencia."
+    }
+  },
+  "collections": {
+    "title": "Colecciones",
+    "searchPlaceholder": "Buscar proyectos...",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo",
+    "avatarCount": "{count} activos"
+  },
+  "avatarList": {
+    "title": "Activos 3D",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "searchPlaceholder": "Buscar activos...",
+    "noResults": "No se encontraron activos",
+    "hiddenSelectedWarning": "Tienes {count} {items} seleccionados que no se muestran ahora",
+    "columns": {
+      "name": "Nombre",
+      "formats": "Formatos",
+      "files": "Archivos",
+      "license": "Licencia",
+      "collection": "Coleccion"
+    },
+    "fileTypes": {
+      "vrm": "VRM",
+      "fbx": "FBX",
+      "voxelVrm": "Voxel VRM",
+      "voxelFbx": "Voxel FBX",
+      "thumbnail": "Miniatura",
+      "texture": "Textura"
+    }
+  },
+  "fileList": {
+    "title": "Archivos",
+    "noSelection": "Selecciona un activo para ver archivos",
+    "noFiles": "No hay archivos disponibles",
+    "categories": {
+      "vrm": "VRM",
+      "glb": "GLB",
+      "fbx": "FBX",
+      "images": "IMAGENES",
+      "models": "Modelos",
+      "thumbnails": "Miniaturas",
+      "textures": "Texturas"
+    }
+  },
+  "preview": {
+    "title": "Previsualizacion",
+    "noSelection": "Selecciona un activo para previsualizar",
+    "download": "Descargar",
+    "fbxNotSupported": {
+      "title": "Previsualizacion FBX no soportada",
+      "message": "La previsualizacion FBX no esta soportada en este momento, pero puedes descargar el archivo usando el boton de descarga abajo."
+    },
+    "metadata": {
+      "name": "Nombre",
+      "collection": "Coleccion",
+      "license": "Licencia",
+      "formats": "Formatos disponibles",
+      "currentFile": "Archivo actual"
+    }
+  },
+  "downloadQueue": {
+    "title": "Cola de descarga",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "clear": "Limpiar cola",
+    "downloadAll": "Descargar todo seleccionado",
+    "status": {
+      "queued": "En cola",
+      "downloading": "Descargando",
+      "complete": "Completo",
+      "failed": "Fallido"
+    },
+    "progress": "Descargando {current} de {total} archivos",
+    "overallProgress": "{completed} de {total} completados",
+    "cancel": "Cancelar",
+    "retry": "Reintentar",
+    "empty": "No hay archivos en cola"
+  },
+  "batchDownload": {
+    "title": "Gestor de descargas por lotes",
+    "selectedAvatars": "Activos seleccionados",
+    "selectedFiles": "Archivos seleccionados",
+    "downloadOptions": "Opciones de descarga",
+    "downloadVrms": "Descargar archivos VRM",
+    "downloadFbx": "Descargar archivos FBX",
+    "downloadGlb": "Descargar archivos GLB",
+    "downloadImages": "Descargar imagenes",
+    "extractTextures": "Extraer texturas (experimental)",
+    "comingSoon": "Proximamente",
+    "startDownload": "Iniciar descarga",
+    "selectOption": "Por favor selecciona al menos una opcion de descarga",
+    "downloadProgress": "Progreso de descarga",
+    "downloadFolder": "Carpeta de descarga",
+    "selectFolder": "Seleccionar carpeta",
+    "changeFolder": "Cambiar carpeta",
+    "folderHint": "Selecciona una carpeta para guardar archivos directamente sin avisos. Si no la seleccionas, se te pedira seleccionar una carpeta al iniciar la descarga.",
+    "folderNotSupported": "La seleccion de carpeta no esta soportada en este navegador. Los archivos se descargaran en tu carpeta de descargas predeterminada.",
+    "folderRequired": "Por favor selecciona una carpeta de descarga para evitar avisos de guardado para cada archivo. La seleccion de carpeta es necesaria para descargas por lotes.",
+    "folderSelectionError": "Error al seleccionar carpeta. Por favor intenta de nuevo.",
+    "selectFolderAndDownload": "Seleccionar carpeta y descargar",
+    "folderRecommended": "Seleccionar una carpeta evitara avisos de guardado para cada archivo",
+    "required": "Requerido",
+    "folderSelected": "Los archivos se guardaran aqui automaticamente",
+    "openFolder": "Abrir carpeta en explorador de archivos",
+    "open": "Abrir",
+    "filesDownloadedTo": "Archivos descargados en:",
+    "selectFolderFirst": "Por favor selecciona una carpeta de descarga primero",
+    "zipNote": "Todos los archivos seleccionados se comprimiran en un unico archivo ZIP cuando esten listos"
+  },
+  "filters": {
+    "title": "Filtros",
+    "fileTypes": {
+      "title": "Tipos de archivo",
+      "hasVrm": "Tiene VRM",
+      "hasFbx": "Tiene FBX",
+      "hasVoxel": "Tiene Voxel"
+    }
+  },
+  "errors": {
+    "loadError": "Error al cargar activos",
+    "downloadError": "Descarga fallida",
+    "retryError": "Reintento fallido"
+  },
+  "common": {
+    "noImage": "Sin img",
+    "unknown": "Desconocido",
+    "download": "Descargar",
+    "downloadAllFiles": "Descargar todos los archivos",
+    "close": "Cerrar",
+    "change": "Cambiar",
+    "select": "Seleccionar",
+    "loadMore": "Cargar mas ({count} restantes)",
+    "thumbnail": "Miniatura",
+    "texture": "Textura"
+  },
+  "sections": {
+    "basicInformation": "INFORMACION BASICA",
+    "modelInformation": "INFORMACION DEL MODELO",
+    "licenseInformation": "INFORMACION DE LICENCIA",
+    "availableFiles": "ARCHIVOS DISPONIBLES",
+    "description": "DESCRIPCION",
+    "fileInformation": "INFORMACION DEL ARCHIVO"
+  },
+  "fileSizeUnits": {
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB"
+  },
+  "licenseTypes": {
+    "redistributionProhibited": "Redistribucion prohibida",
+    "cc0": "CC0",
+    "ccBy": "CC BY",
+    "ccByNc": "CC BY NC",
+    "ccBySa": "CC BY SA",
+    "ccByNcSa": "CC BY NC SA",
+    "ccByNd": "CC BY ND",
+    "ccByNcNd": "CC BY NC ND",
+    "other": "Otro"
+  },
+  "permissions": {
+    "everyone": "Todos",
+    "explicitUser": "Usuario explicito",
+    "onlyAuthor": "Solo autor"
+  },
+  "usage": {
+    "allow": "Permitir",
+    "disallow": "No permitir"
+  },
+  "lightbox": {
+    "download": "Descargar",
+    "downloadImage": "Descargar imagen",
+    "close": "Cerrar"
+  }
+}

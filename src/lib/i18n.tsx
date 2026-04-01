@@ -3,6 +3,9 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import React from 'react';
 
+import { locales, type Locale } from './i18n-config';
+export { locales, type Locale } from './i18n-config';
+
 // Static imports — Turbopack cannot reliably bundle dynamic template-literal imports
 // (import(`../locales/${locale}/file.json`)) because the locale is a runtime variable.
 // Using static imports guarantees all translation files are included in the bundle.
@@ -24,9 +27,14 @@ import jaVrmviewer from '../locales/ja/vrmviewer.json';
 import jaHome      from '../locales/ja/home.json';
 import jaFinder    from '../locales/ja/finder.json';
 
-// Define available locales
-export const locales = ['en', 'ja'] as const;
-export type Locale = typeof locales[number];
+import esCommon    from '../locales/es/common.json';
+import esHeader    from '../locales/es/header.json';
+import esAvatar    from '../locales/es/avatar.json';
+import esAbout     from '../locales/es/about.json';
+import esResources from '../locales/es/resources.json';
+import esVrmviewer from '../locales/es/vrmviewer.json';
+import esHome      from '../locales/es/home.json';
+import esFinder    from '../locales/es/finder.json';
 
 // Type for translation keys
 type TranslationKey = string;
@@ -67,6 +75,16 @@ const translations: Record<Locale, Record<string, any>> = {
     vrmviewer: jaVrmviewer,
     home: jaHome,
     finder: jaFinder,
+  },
+  es: {
+    common: esCommon,
+    header: esHeader,
+    avatar: esAvatar,
+    about: esAbout,
+    resources: esResources,
+    vrmviewer: esVrmviewer,
+    home: esHome,
+    finder: esFinder,
   },
 };
 

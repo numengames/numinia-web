@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
 import { CONSENT_KEY, isConsentCurrent, saveConsent } from '@/lib/consent';
+import { useI18n } from '@/lib/i18n';
 
 export function CookieConsent() {
+  const { locale } = useI18n();
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const acceptRef = useRef<HTMLButtonElement>(null);
@@ -72,7 +74,7 @@ export function CookieConsent() {
           We use strictly necessary cookies for authentication and security.
           No tracking, analytics, or advertising.{' '}
           <Link
-            href="/en/legal/cookies"
+            href={`/${locale}/legal/cookies`}
             className="text-gray-900 dark:text-gray-200 underline decoration-gray-300 dark:decoration-gray-600 underline-offset-2 hover:decoration-gray-900 dark:hover:decoration-gray-200 transition-colors"
           >
             Learn more

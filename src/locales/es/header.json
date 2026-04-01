@@ -1,0 +1,22 @@
+{
+  "navigation": {
+    "avatars": "Archivo",
+    "finder": "Buscador",
+    "about": "Acerca de",
+    "resources": "Recursos",
+    "viewer": "Inspector"
+  },
+  "warning": {
+    "desktop": "Nueva funcionalidad - Reporta problemas en X",
+    "mobile": "Beta"
+  },
+  "social": {
+    "portfolio": "Portfolio",
+    "github": "GitHub",
+    "twitter": "X (Twitter)"
+  },
+  "notification": {
+    "newFeature": "Nueva funcionalidad",
+    "reportIssues": "Reporta problemas en X"
+  }
+}
