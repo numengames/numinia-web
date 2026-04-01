@@ -43,35 +43,38 @@ export const RANK_LEVEL: Record<Rank, number> = {
 
 /** Every permission that can be gated by rank. */
 export interface RankPermissions {
-  // Nomad+
+  // Nomad+ (read-only: browse, download, view favorites, view character sheet)
   canBrowse: boolean;
   canDownload: boolean;
+  canFavorite: boolean; // save/load favorites list
 
-  // Citizen+
-  canFavorite: boolean;
+  // Citizen+ (edit identity, access loot, Session Zero)
   canEditProfile: boolean;
   canSessionZero: boolean;
+  canAccessLoot: boolean;
 
-  // Pilgrim+
+  // Pilgrim+ (purchased a digital good)
   canAccessSeasonContent: boolean;
   canBurnRitual: boolean;
 
-  // Vernacular+
+  // Vernacular+ (CRUD own content)
   canUploadAssets: boolean;
   canEditOwnMetadata: boolean;
+  canDeleteOwnAssets: boolean;
   canViewOwnStats: boolean;
   canAccessLAP: boolean;
 
-  // Archon+
+  // Archon+ (moderate + manage all content + promote up to Vernacular)
   canManageAllAssets: boolean;
   canManageSeasons: boolean;
   canViewGlobalStats: boolean;
   canViewAuditLog: boolean;
   canBanUsers: boolean;
   canManageUsers: boolean;
+  canPromoteVernacular: boolean;
 
-  // Oracle only
-  canManageAdmins: boolean;
+  // Oracle only (max 4 — full admin + promote Archons)
+  canPromoteArchon: boolean;
   canEditRankPermissions: boolean;
   canEditSystemConfig: boolean;
 }
@@ -82,136 +85,70 @@ export interface RankPermissions {
  */
 export const DEFAULT_RANK_PERMISSIONS: Record<Rank, RankPermissions> = {
   nomad: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: false,
-    canBurnRitual: false,
-    canUploadAssets: false,
-    canEditOwnMetadata: false,
-    canViewOwnStats: false,
-    canAccessLAP: false,
-    canManageAllAssets: false,
-    canManageSeasons: false,
-    canViewGlobalStats: false,
-    canViewAuditLog: false,
-    canBanUsers: false,
-    canManageUsers: false,
-    canManageAdmins: false,
-    canEditRankPermissions: false,
-    canEditSystemConfig: false,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: false,     canSessionZero: false,      canAccessLoot: false,
+    canAccessSeasonContent: false, canBurnRitual: false,
+    canUploadAssets: false,    canEditOwnMetadata: false,  canDeleteOwnAssets: false,
+    canViewOwnStats: false,    canAccessLAP: false,
+    canManageAllAssets: false,  canManageSeasons: false,   canViewGlobalStats: false,
+    canViewAuditLog: false,    canBanUsers: false,         canManageUsers: false,
+    canPromoteVernacular: false,
+    canPromoteArchon: false,   canEditRankPermissions: false, canEditSystemConfig: false,
   },
   citizen: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: false,
-    canBurnRitual: false,
-    canUploadAssets: false,
-    canEditOwnMetadata: false,
-    canViewOwnStats: false,
-    canAccessLAP: false,
-    canManageAllAssets: false,
-    canManageSeasons: false,
-    canViewGlobalStats: false,
-    canViewAuditLog: false,
-    canBanUsers: false,
-    canManageUsers: false,
-    canManageAdmins: false,
-    canEditRankPermissions: false,
-    canEditSystemConfig: false,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: true,      canSessionZero: true,       canAccessLoot: true,
+    canAccessSeasonContent: false, canBurnRitual: false,
+    canUploadAssets: false,    canEditOwnMetadata: false,  canDeleteOwnAssets: false,
+    canViewOwnStats: false,    canAccessLAP: false,
+    canManageAllAssets: false,  canManageSeasons: false,   canViewGlobalStats: false,
+    canViewAuditLog: false,    canBanUsers: false,         canManageUsers: false,
+    canPromoteVernacular: false,
+    canPromoteArchon: false,   canEditRankPermissions: false, canEditSystemConfig: false,
   },
   pilgrim: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: true,
-    canBurnRitual: true,
-    canUploadAssets: false,
-    canEditOwnMetadata: false,
-    canViewOwnStats: false,
-    canAccessLAP: false,
-    canManageAllAssets: false,
-    canManageSeasons: false,
-    canViewGlobalStats: false,
-    canViewAuditLog: false,
-    canBanUsers: false,
-    canManageUsers: false,
-    canManageAdmins: false,
-    canEditRankPermissions: false,
-    canEditSystemConfig: false,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: true,      canSessionZero: true,       canAccessLoot: true,
+    canAccessSeasonContent: true, canBurnRitual: true,
+    canUploadAssets: false,    canEditOwnMetadata: false,  canDeleteOwnAssets: false,
+    canViewOwnStats: false,    canAccessLAP: false,
+    canManageAllAssets: false,  canManageSeasons: false,   canViewGlobalStats: false,
+    canViewAuditLog: false,    canBanUsers: false,         canManageUsers: false,
+    canPromoteVernacular: false,
+    canPromoteArchon: false,   canEditRankPermissions: false, canEditSystemConfig: false,
   },
   vernacular: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: true,
-    canBurnRitual: true,
-    canUploadAssets: true,
-    canEditOwnMetadata: true,
-    canViewOwnStats: true,
-    canAccessLAP: true,
-    canManageAllAssets: false,
-    canManageSeasons: false,
-    canViewGlobalStats: false,
-    canViewAuditLog: false,
-    canBanUsers: false,
-    canManageUsers: false,
-    canManageAdmins: false,
-    canEditRankPermissions: false,
-    canEditSystemConfig: false,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: true,      canSessionZero: true,       canAccessLoot: true,
+    canAccessSeasonContent: true, canBurnRitual: true,
+    canUploadAssets: true,     canEditOwnMetadata: true,   canDeleteOwnAssets: true,
+    canViewOwnStats: true,     canAccessLAP: true,
+    canManageAllAssets: false,  canManageSeasons: false,   canViewGlobalStats: false,
+    canViewAuditLog: false,    canBanUsers: false,         canManageUsers: false,
+    canPromoteVernacular: false,
+    canPromoteArchon: false,   canEditRankPermissions: false, canEditSystemConfig: false,
   },
   archon: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: true,
-    canBurnRitual: true,
-    canUploadAssets: true,
-    canEditOwnMetadata: true,
-    canViewOwnStats: true,
-    canAccessLAP: true,
-    canManageAllAssets: true,
-    canManageSeasons: true,
-    canViewGlobalStats: true,
-    canViewAuditLog: true,
-    canBanUsers: true,
-    canManageUsers: true,
-    canManageAdmins: false,
-    canEditRankPermissions: false,
-    canEditSystemConfig: false,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: true,      canSessionZero: true,       canAccessLoot: true,
+    canAccessSeasonContent: true, canBurnRitual: true,
+    canUploadAssets: true,     canEditOwnMetadata: true,   canDeleteOwnAssets: true,
+    canViewOwnStats: true,     canAccessLAP: true,
+    canManageAllAssets: true,   canManageSeasons: true,    canViewGlobalStats: true,
+    canViewAuditLog: true,     canBanUsers: true,          canManageUsers: true,
+    canPromoteVernacular: true,
+    canPromoteArchon: false,   canEditRankPermissions: false, canEditSystemConfig: false,
   },
   oracle: {
-    canBrowse: true,
-    canDownload: true,
-    canFavorite: true,
-    canEditProfile: true,
-    canSessionZero: true,
-    canAccessSeasonContent: true,
-    canBurnRitual: true,
-    canUploadAssets: true,
-    canEditOwnMetadata: true,
-    canViewOwnStats: true,
-    canAccessLAP: true,
-    canManageAllAssets: true,
-    canManageSeasons: true,
-    canViewGlobalStats: true,
-    canViewAuditLog: true,
-    canBanUsers: true,
-    canManageUsers: true,
-    canManageAdmins: true,
-    canEditRankPermissions: true,
-    canEditSystemConfig: true,
+    canBrowse: true,           canDownload: true,          canFavorite: true,
+    canEditProfile: true,      canSessionZero: true,       canAccessLoot: true,
+    canAccessSeasonContent: true, canBurnRitual: true,
+    canUploadAssets: true,     canEditOwnMetadata: true,   canDeleteOwnAssets: true,
+    canViewOwnStats: true,     canAccessLAP: true,
+    canManageAllAssets: true,   canManageSeasons: true,    canViewGlobalStats: true,
+    canViewAuditLog: true,     canBanUsers: true,          canManageUsers: true,
+    canPromoteVernacular: true,
+    canPromoteArchon: true,    canEditRankPermissions: true, canEditSystemConfig: true,
   },
 };
 
@@ -259,7 +196,8 @@ export interface RankContext {
   walletAddress?: string;
   githubUserId?: string;
   storedRole?: string;
-  isPassHolder?: boolean;
+  hasCompletedSessionZero?: boolean;
+  hasPurchased?: boolean;
   rankOverride?: Rank;
 }
 
@@ -269,7 +207,10 @@ export interface RankContext {
 
 export const LEGACY_ROLE_TO_RANK: Record<string, Rank> = {
   admin: 'archon',
-  creator: 'vernacular',
+  creator: 'nomad',  // vernacular now requires manual promotion
   user: 'nomad',
   anonymous: 'nomad',
 };
+
+/** Maximum number of simultaneous Oracles. */
+export const MAX_ORACLES = 4;

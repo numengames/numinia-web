@@ -5,6 +5,9 @@
  * The caller provides the context; this module returns the computed rank.
  *
  * Based on the STSI framework: ranks give permissions (static, cumulative).
+ *
+ * Nomad reads. Citizen edits identity. Pilgrim purchases.
+ * Vernacular creates. Archon moderates. Oracle governs.
  */
 
 import {
@@ -25,12 +28,14 @@ import { env } from '@/lib/env';
  * Compute the rank for a user given their context signals.
  *
  * Priority (highest first):
- * 1. Explicit override from rank-overrides.json
+ * 1. Explicit override from rank-overrides.json (oracle, archon, vernacular)
  * 2. Wallet in ADMIN_WALLET_ADDRESSES env var → archon (backward compat)
- * 3. Stored role === 'creator' → vernacular
- * 4. Season pass holder → pilgrim
- * 5. Authenticated (wallet or GitHub) → citizen
+ * 3. Has purchased a digital good → pilgrim
+ * 4. Has completed Session Zero → citizen
+ * 5. Authenticated (wallet or GitHub) → nomad
  * 6. Default → nomad
+ *
+ * Note: vernacular is ONLY by manual promotion (no auto-detection).
  */
 export function inferRank(context: RankContext): Rank {
   // 1. Explicit rank override takes absolute priority
@@ -46,19 +51,17 @@ export function inferRank(context: RankContext): Rank {
     }
   }
 
-  // 3. Stored role 'creator' → vernacular
-  if (context.storedRole === 'creator') {
-    return 'vernacular';
-  }
-
-  // 4. Season pass holder → pilgrim
-  if (context.isPassHolder) {
+  // 3. Has purchased any digital good → pilgrim
+  if (context.hasPurchased) {
     return 'pilgrim';
   }
 
-  // 5. Authenticated wallet or GitHub → nomad (registered but no guild/faction yet)
-  // Citizen rank requires Session Zero completion (future).
-  // For now, all authenticated users without special status are nomads.
+  // 4. Has completed Session Zero → citizen
+  if (context.hasCompletedSessionZero) {
+    return 'citizen';
+  }
+
+  // 5. Authenticated → nomad (registered but no guild/faction yet)
   if (context.walletAddress || context.githubUserId) {
     return 'nomad';
   }
@@ -83,7 +86,7 @@ export function meetsMinimumRank(userRank: Rank, requiredRank: Rank): boolean {
 /**
  * Get the permission set for a rank.
  *
- * Uses hardcoded defaults. In Phase 2+, this will accept an optional
+ * Uses hardcoded defaults. In future, this will accept an optional
  * override matrix from `data/system/rank-permissions.json`.
  */
 export function getPermissionsForRank(rank: Rank): RankPermissions {

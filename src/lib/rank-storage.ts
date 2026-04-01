@@ -14,6 +14,7 @@ import type {
   Ban,
   BansFile,
 } from '@/types/rank';
+import { MAX_ORACLES } from '@/types/rank';
 
 // ---------------------------------------------------------------------------
 // Data paths in the data repo
@@ -45,11 +46,21 @@ export async function findRankOverride(
   return overrides.find(o => o.identifier.toLowerCase() === normalized);
 }
 
-/** Add or update a rank override. */
+/** Add or update a rank override. Throws if oracle limit (4) would be exceeded. */
 export async function saveRankOverride(override: RankOverride): Promise<void> {
   const overrides = await getRankOverrides();
   const normalized = override.identifier.toLowerCase();
   const idx = overrides.findIndex(o => o.identifier.toLowerCase() === normalized);
+
+  // Enforce max 4 oracles
+  if (override.rank === 'oracle') {
+    const currentOracles = overrides.filter(o =>
+      o.rank === 'oracle' && o.identifier.toLowerCase() !== normalized,
+    );
+    if (currentOracles.length >= MAX_ORACLES) {
+      throw new Error(`Cannot exceed ${MAX_ORACLES} Oracles`);
+    }
+  }
 
   if (idx >= 0) {
     overrides[idx] = { ...override, identifier: normalized };

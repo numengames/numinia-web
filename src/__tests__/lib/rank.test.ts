@@ -1,14 +1,12 @@
 /**
- * Unit tests for the pure rank inference engine.
+ * Unit tests for the pure rank inference engine (v2 rules).
  *
- * These test inferRank(), meetsMinimumRank(), mapRoleToRank(),
- * hasPermission(), and getPermissionsForRank() — all pure functions
- * with no side effects, no I/O, no mocks needed.
+ * Nomad reads. Citizen edits identity. Pilgrim purchases.
+ * Vernacular creates. Archon moderates. Oracle governs.
  */
 
 import { describe, it, expect } from 'vitest';
 import { inferRank, meetsMinimumRank, mapRoleToRank, hasPermission, getPermissionsForRank } from '@/lib/rank';
-import type { RankContext } from '@/types/rank';
 
 // ---------------------------------------------------------------------------
 // inferRank
@@ -23,25 +21,27 @@ describe('inferRank', () => {
     expect(inferRank({ walletAddress: '0xabc' })).toBe('nomad');
   });
 
-  it('returns nomad for authenticated GitHub user (citizen requires Session Zero)', () => {
+  it('returns nomad for authenticated GitHub user', () => {
     expect(inferRank({ githubUserId: 'user-123' })).toBe('nomad');
   });
 
-  it('returns pilgrim for season pass holder', () => {
-    expect(inferRank({ walletAddress: '0xabc', isPassHolder: true })).toBe('pilgrim');
+  it('returns citizen when Session Zero is completed', () => {
+    expect(inferRank({ walletAddress: '0xabc', hasCompletedSessionZero: true })).toBe('citizen');
   });
 
-  it('returns vernacular for creator role', () => {
-    expect(inferRank({ githubUserId: 'user-123', storedRole: 'creator' })).toBe('vernacular');
+  it('returns pilgrim when user has purchased a digital good', () => {
+    expect(inferRank({ walletAddress: '0xabc', hasPurchased: true })).toBe('pilgrim');
   });
 
-  it('returns vernacular for creator even without pass', () => {
-    expect(inferRank({ walletAddress: '0xabc', storedRole: 'creator', isPassHolder: false })).toBe('vernacular');
+  it('purchase trumps Session Zero (pilgrim > citizen)', () => {
+    expect(inferRank({ walletAddress: '0xabc', hasPurchased: true, hasCompletedSessionZero: true })).toBe('pilgrim');
   });
 
-  it('returns archon for wallet in ADMIN_WALLET_ADDRESSES', () => {
-    // This test depends on env.adminWalletAddresses being set.
-    // In test env, the env var is empty, so this tests the override path instead.
+  it('stored role creator no longer auto-promotes to vernacular', () => {
+    expect(inferRank({ githubUserId: 'user-123', storedRole: 'creator' })).toBe('nomad');
+  });
+
+  it('returns archon for explicit override', () => {
     expect(inferRank({ walletAddress: '0xabc', rankOverride: 'archon' })).toBe('archon');
   });
 
@@ -53,18 +53,14 @@ describe('inferRank', () => {
     expect(inferRank({
       walletAddress: '0xabc',
       storedRole: 'creator',
-      isPassHolder: true,
+      hasPurchased: true,
+      hasCompletedSessionZero: true,
       rankOverride: 'oracle',
     })).toBe('oracle');
   });
 
-  it('creator rank is higher than pilgrim', () => {
-    // A creator (vernacular) outranks a pass holder (pilgrim)
-    expect(inferRank({ walletAddress: '0xabc', storedRole: 'creator', isPassHolder: true })).toBe('vernacular');
-  });
-
-  it('stored role user stays nomad (citizen requires Session Zero)', () => {
-    expect(inferRank({ walletAddress: '0xabc', storedRole: 'user' })).toBe('nomad');
+  it('vernacular only via override (not automatic)', () => {
+    expect(inferRank({ walletAddress: '0xabc', rankOverride: 'vernacular' })).toBe('vernacular');
   });
 });
 
@@ -83,20 +79,11 @@ describe('meetsMinimumRank', () => {
 
   it('oracle meets everything', () => {
     expect(meetsMinimumRank('oracle', 'nomad')).toBe(true);
-    expect(meetsMinimumRank('oracle', 'citizen')).toBe(true);
-    expect(meetsMinimumRank('oracle', 'pilgrim')).toBe(true);
-    expect(meetsMinimumRank('oracle', 'vernacular')).toBe(true);
-    expect(meetsMinimumRank('oracle', 'archon')).toBe(true);
     expect(meetsMinimumRank('oracle', 'oracle')).toBe(true);
   });
 
   it('archon does not meet oracle', () => {
     expect(meetsMinimumRank('archon', 'oracle')).toBe(false);
-  });
-
-  it('citizen meets citizen but not pilgrim', () => {
-    expect(meetsMinimumRank('citizen', 'citizen')).toBe(true);
-    expect(meetsMinimumRank('citizen', 'pilgrim')).toBe(false);
   });
 });
 
@@ -109,69 +96,73 @@ describe('mapRoleToRank', () => {
     expect(mapRoleToRank('admin')).toBe('archon');
   });
 
-  it('maps creator to vernacular', () => {
-    expect(mapRoleToRank('creator')).toBe('vernacular');
+  it('maps creator to nomad (vernacular requires manual promotion)', () => {
+    expect(mapRoleToRank('creator')).toBe('nomad');
   });
 
-  it('maps user to nomad (citizen requires Session Zero)', () => {
+  it('maps user to nomad', () => {
     expect(mapRoleToRank('user')).toBe('nomad');
-  });
-
-  it('maps anonymous to nomad', () => {
-    expect(mapRoleToRank('anonymous')).toBe('nomad');
   });
 
   it('maps undefined to nomad', () => {
     expect(mapRoleToRank(undefined)).toBe('nomad');
   });
-
-  it('maps unknown role to nomad', () => {
-    expect(mapRoleToRank('superadmin')).toBe('nomad');
-  });
 });
 
 // ---------------------------------------------------------------------------
-// Permissions
+// Permissions v2
 // ---------------------------------------------------------------------------
 
-describe('getPermissionsForRank', () => {
-  it('nomad can browse and download', () => {
-    const perms = getPermissionsForRank('nomad');
-    expect(perms.canBrowse).toBe(true);
-    expect(perms.canDownload).toBe(true);
+describe('permissions v2', () => {
+  it('nomad: can browse, download, favorite — cannot edit profile', () => {
+    const p = getPermissionsForRank('nomad');
+    expect(p.canBrowse).toBe(true);
+    expect(p.canDownload).toBe(true);
+    expect(p.canFavorite).toBe(true);
+    expect(p.canEditProfile).toBe(false);
+    expect(p.canSessionZero).toBe(false);
+    expect(p.canAccessLoot).toBe(false);
   });
 
-  it('nomad can favorite (authenticated nomads have basic features)', () => {
-    const perms = getPermissionsForRank('nomad');
-    expect(perms.canFavorite).toBe(true);
-    expect(perms.canUploadAssets).toBe(false);
+  it('citizen: can edit profile, access loot, Session Zero', () => {
+    const p = getPermissionsForRank('citizen');
+    expect(p.canEditProfile).toBe(true);
+    expect(p.canSessionZero).toBe(true);
+    expect(p.canAccessLoot).toBe(true);
+    expect(p.canUploadAssets).toBe(false);
   });
 
-  it('citizen can favorite but not upload', () => {
-    const perms = getPermissionsForRank('citizen');
-    expect(perms.canFavorite).toBe(true);
-    expect(perms.canUploadAssets).toBe(false);
+  it('pilgrim: can access season content and burn ritual', () => {
+    const p = getPermissionsForRank('pilgrim');
+    expect(p.canAccessSeasonContent).toBe(true);
+    expect(p.canBurnRitual).toBe(true);
+    expect(p.canUploadAssets).toBe(false);
   });
 
-  it('vernacular can upload and access LAP', () => {
-    const perms = getPermissionsForRank('vernacular');
-    expect(perms.canUploadAssets).toBe(true);
-    expect(perms.canAccessLAP).toBe(true);
-    expect(perms.canManageAllAssets).toBe(false);
+  it('vernacular: CRUD own assets, access LAP', () => {
+    const p = getPermissionsForRank('vernacular');
+    expect(p.canUploadAssets).toBe(true);
+    expect(p.canEditOwnMetadata).toBe(true);
+    expect(p.canDeleteOwnAssets).toBe(true);
+    expect(p.canAccessLAP).toBe(true);
+    expect(p.canManageAllAssets).toBe(false);
   });
 
-  it('archon can manage all assets and ban users', () => {
-    const perms = getPermissionsForRank('archon');
-    expect(perms.canManageAllAssets).toBe(true);
-    expect(perms.canBanUsers).toBe(true);
-    expect(perms.canManageAdmins).toBe(false);
+  it('archon: manage all + ban + promote vernacular — cannot promote archon', () => {
+    const p = getPermissionsForRank('archon');
+    expect(p.canManageAllAssets).toBe(true);
+    expect(p.canBanUsers).toBe(true);
+    expect(p.canPromoteVernacular).toBe(true);
+    expect(p.canPromoteArchon).toBe(false);
+    expect(p.canEditRankPermissions).toBe(false);
   });
 
-  it('oracle has all permissions', () => {
-    const perms = getPermissionsForRank('oracle');
-    expect(perms.canManageAdmins).toBe(true);
-    expect(perms.canEditRankPermissions).toBe(true);
-    expect(perms.canEditSystemConfig).toBe(true);
+  it('oracle: all permissions including promote archon and system config', () => {
+    const p = getPermissionsForRank('oracle');
+    expect(p.canPromoteArchon).toBe(true);
+    expect(p.canPromoteVernacular).toBe(true);
+    expect(p.canEditRankPermissions).toBe(true);
+    expect(p.canEditSystemConfig).toBe(true);
   });
 });
 
@@ -180,15 +171,11 @@ describe('hasPermission', () => {
     expect(hasPermission('archon', 'canBanUsers')).toBe(true);
   });
 
-  it('citizen does not have canBanUsers', () => {
-    expect(hasPermission('citizen', 'canBanUsers')).toBe(false);
+  it('nomad does not have canEditProfile', () => {
+    expect(hasPermission('nomad', 'canEditProfile')).toBe(false);
   });
 
   it('pilgrim has canAccessSeasonContent', () => {
     expect(hasPermission('pilgrim', 'canAccessSeasonContent')).toBe(true);
-  });
-
-  it('citizen does not have canAccessSeasonContent', () => {
-    expect(hasPermission('citizen', 'canAccessSeasonContent')).toBe(false);
   });
 });

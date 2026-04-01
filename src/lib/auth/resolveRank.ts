@@ -63,16 +63,17 @@ export async function resolveUserRank(
   // Check for explicit rank override
   const override = await findRankOverride(identifier);
 
-  // Check if user is a season pass holder (only if they have a wallet address)
+  // Check if user has purchased any digital good (season pass, etc.)
   const address = 'address' in session ? session.address : undefined;
-  const isPassHolder = address ? await checkPassHolder(address) : false;
+  const hasPurchased = address ? await checkPassHolder(address) : false;
 
   // Infer rank
   const rank = inferRank({
     walletAddress: address,
     githubUserId: 'userId' in session ? session.userId : undefined,
     storedRole: session.role,
-    isPassHolder,
+    hasPurchased,
+    hasCompletedSessionZero: false, // TODO: check when Session Zero is implemented
     rankOverride: override?.rank,
   });
 
@@ -99,12 +100,13 @@ export async function computeRankForAddress(
   role: string,
 ): Promise<Rank> {
   const override = await findRankOverride(address);
-  const isPassHolder = await checkPassHolder(address);
+  const hasPurchased = await checkPassHolder(address);
 
   return inferRank({
     walletAddress: address,
     storedRole: role,
-    isPassHolder,
+    hasPurchased,
+    hasCompletedSessionZero: false, // TODO: check when Session Zero is implemented
     rankOverride: override?.rank,
   });
 }

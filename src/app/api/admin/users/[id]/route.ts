@@ -10,7 +10,7 @@ import { verifyCsrf } from '@/lib/session';
 import { findRankOverride, saveRankOverride, removeRankOverride, isUserBanned } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
 import { logAudit } from '@/lib/audit';
-import { RANK_HIERARCHY, type Rank } from '@/types/rank';
+import { RANK_HIERARCHY, RANK_LEVEL, type Rank } from '@/types/rank';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,9 +52,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
+  // Archon+ can change ranks, but scoped to ranks below their own
   let session: SessionWithRank;
   try {
-    session = await requireRank(req, 'oracle');
+    session = await requireRank(req, 'archon');
   } catch (response) {
     return response as Response;
   }
@@ -75,6 +76,21 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'Reason required' }, { status: 400 });
   }
 
+  const targetRank = rank as Rank;
+
+  // Scope check: can only assign ranks STRICTLY below your own
+  if (RANK_LEVEL[targetRank] >= RANK_LEVEL[session.rank]) {
+    return NextResponse.json(
+      { error: `Cannot assign rank '${targetRank}' — must be below your rank '${session.rank}'` },
+      { status: 403 },
+    );
+  }
+
+  // Cannot modify oracle rank via API
+  if (targetRank === 'oracle') {
+    return NextResponse.json({ error: 'Oracle rank can only be set via rank-overrides.json' }, { status: 403 });
+  }
+
   const users = await getUsers();
   const user = users.find(u => u.id === id);
 
@@ -84,21 +100,26 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
   const actor = session.address ?? session.userId ?? 'unknown';
 
-  await saveRankOverride({
-    identifier: user.id,
-    identifierType: 'github',
-    rank: rank as Rank,
-    assignedBy: actor,
-    assignedAt: new Date().toISOString(),
-    reason,
-  });
+  try {
+    await saveRankOverride({
+      identifier: user.id,
+      identifierType: 'github',
+      rank: targetRank,
+      assignedBy: actor,
+      assignedAt: new Date().toISOString(),
+      reason,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to save rank';
+    return NextResponse.json({ error: msg }, { status: 403 });
+  }
 
   logAudit({
     action: 'rank-change',
     actor,
     target: user.id,
-    metadata: { username: user.username, newRank: rank, reason },
+    metadata: { username: user.username, newRank: targetRank, reason },
   });
 
-  return NextResponse.json({ success: true, rank });
+  return NextResponse.json({ success: true, rank: targetRank });
 }
