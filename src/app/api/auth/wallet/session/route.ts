@@ -36,12 +36,29 @@ export async function GET() {
     }
   }
 
+  // Fall back to GitHub OAuth session (mirrors getAdminSession logic)
+  const githubCookie = cookieStore.get('session');
+  if (githubCookie) {
+    const session = verifySession<{ userId?: string; username?: string; role?: string; rank?: Rank }>(githubCookie.value);
+    if (session && ['admin', 'creator'].includes(session.role || '')) {
+      return NextResponse.json({
+        authenticated: true,
+        userId: session.userId,
+        username: session.username,
+        role: session.role,
+        rank: session.rank ?? mapRoleToRank(session.role || 'creator'),
+      });
+    }
+  }
+
   return NextResponse.json({ authenticated: false, rank: 'nomad' });
 }
 
 export async function DELETE() {
   const cookieStore = await cookies();
+  cookieStore.delete('session');
   cookieStore.delete('admin_session');
   cookieStore.delete('user_session');
+  cookieStore.delete('csrf_token');
   return NextResponse.json({ success: true });
 }

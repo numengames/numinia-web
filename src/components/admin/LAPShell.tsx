@@ -39,7 +39,7 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
   const handleSignOut = useCallback(async () => {
     await fetch('/api/auth/wallet/session', { method: 'DELETE' });
     setSession({ authenticated: false });
-    router.refresh();
+    router.push('/');
   }, [router]);
 
   if (isLoading) {

@@ -89,10 +89,10 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // L.A.P. and admin routes — let the page handle its own auth gate
-  // (shows LoginModal/WalletConnect if not authenticated)
+  // L.A.P. and admin routes — redirect unauthenticated users to home
   if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAdmin) {
-    // Page handles auth display
+    const locale = currentLocale || defaultLocale;
+    return NextResponse.redirect(new URL(`/${locale}/`, request.url));
   }
 
   return res;
