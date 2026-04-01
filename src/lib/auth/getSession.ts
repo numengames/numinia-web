@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { verifySession } from '@/lib/session';
+import { getThirdwebAuth, TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
 import type { Rank, RankPermissions } from '@/types/rank';
 import { mapRoleToRank, meetsMinimumRank, getPermissionsForRank } from '@/lib/rank';
 
@@ -12,10 +13,31 @@ export type AdminSession = {
   role: string;
 };
 
-// Checks both auth methods and returns a unified session object.
-// Order: wallet (admin_session) takes priority over GitHub OAuth (session).
+// Checks all auth methods and returns a unified session object.
+// Order: Thirdweb JWT → wallet (admin_session) → GitHub OAuth (session).
 export function getAdminSession(req: NextRequest): AdminSession {
-  // Try wallet auth first (admin_session cookie)
+  // 1. Check Thirdweb JWT — admin status resolved via ADMIN_WALLET_ADDRESSES
+  const twCookie = req.cookies.get(TW_JWT_COOKIE);
+  if (twCookie?.value) {
+    try {
+      const parts = twCookie.value.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+        if (payload.sub) {
+          const address = payload.sub.toLowerCase();
+          const adminAddresses = (process.env.ADMIN_WALLET_ADDRESSES ?? '')
+            .split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+          if (adminAddresses.includes(address)) {
+            return { isAdmin: true, address: payload.sub, role: 'admin' };
+          }
+        }
+      }
+    } catch {
+      // Invalid JWT — fall through
+    }
+  }
+
+  // 2. Legacy wallet auth (admin_session cookie)
   const walletCookie = req.cookies.get('admin_session');
   if (walletCookie) {
     const data = verifySession<{ address?: string; role?: string }>(walletCookie.value);
@@ -24,7 +46,7 @@ export function getAdminSession(req: NextRequest): AdminSession {
     }
   }
 
-  // Fall back to GitHub OAuth (session cookie)
+  // 3. Legacy GitHub OAuth (session cookie)
   const sessionCookie = req.cookies.get('session');
   if (sessionCookie) {
     const data = verifySession<{ userId?: string; username?: string; role?: string }>(sessionCookie.value);
@@ -45,8 +67,29 @@ export type UserSession = {
   role: string;
 };
 
-// Checks for any authenticated user (wallet user_session or GitHub session)
+// Checks for any authenticated user.
+// Priority: Thirdweb JWT → wallet user_session → GitHub session
 export function getUserSession(req: NextRequest): UserSession {
+  // 1. Check Thirdweb JWT (new auth — async verification done at rank level)
+  //    For sync getUserSession, we decode the JWT payload without full verification.
+  //    Full verification happens in getSessionWithRank() which is async.
+  const twCookie = req.cookies.get(TW_JWT_COOKIE);
+  if (twCookie?.value) {
+    try {
+      // JWT structure: header.payload.signature — decode payload
+      const parts = twCookie.value.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+        if (payload.sub) {
+          return { authenticated: true, address: payload.sub, role: 'user' };
+        }
+      }
+    } catch {
+      // Invalid JWT — fall through to legacy auth
+    }
+  }
+
+  // 2. Legacy wallet auth (user_session cookie)
   const walletCookie = req.cookies.get('user_session');
   if (walletCookie) {
     const data = verifySession<{ address?: string; role?: string }>(walletCookie.value);
@@ -55,6 +98,7 @@ export function getUserSession(req: NextRequest): UserSession {
     }
   }
 
+  // 3. Legacy GitHub OAuth (session cookie)
   const sessionCookie = req.cookies.get('session');
   if (sessionCookie) {
     const data = verifySession<{ userId?: string; username?: string; role?: string }>(sessionCookie.value);

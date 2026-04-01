@@ -49,6 +49,9 @@ const serverSchema = z.object({
   SENTRY_DSN: z.string().default(''),
   // PostgreSQL via Neon (optional — degrades to GitHub-as-DB without it)
   DATABASE_URL: z.string().default(''),
+  // Thirdweb Auth (optional — enables ConnectButton + embedded wallets)
+  THIRDWEB_AUTH_DOMAIN: z.string().default(''),
+  THIRDWEB_AUTH_ADMIN_KEY: z.string().default(''), // Private key for signing JWTs (not the minting key)
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
@@ -57,6 +60,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SITE_URL:                       z.string().default('http://localhost:3000'),
   NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE: z.string().default(''),
   NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE:        z.string().default(''),
+  NEXT_PUBLIC_THIRDWEB_CLIENT_ID:             z.string().default(''), // Thirdweb ConnectButton
 });
 
 // Validate server vars at module load — only on the server, only at runtime.
@@ -80,11 +84,13 @@ const clientResult = clientSchema.safeParse({
   NEXT_PUBLIC_SITE_URL:                       process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE: process.env.NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE,
   NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE:        process.env.NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE,
+  NEXT_PUBLIC_THIRDWEB_CLIENT_ID:             process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
 });
 const clientEnv = clientResult.success ? clientResult.data : {
   NEXT_PUBLIC_SITE_URL:                       'http://localhost:3000',
   NEXT_PUBLIC_OPEN_SOURCE_3D_ASSETS_RAW_BASE: '',
   NEXT_PUBLIC_POLYGON_MODELS_RAW_BASE:        '',
+  NEXT_PUBLIC_THIRDWEB_CLIENT_ID:             '',
 };
 
 export const env = {
@@ -133,6 +139,11 @@ export const env = {
   },
   database: {
     url: process.env.DATABASE_URL ?? '',
+  },
+  thirdwebAuth: {
+    domain:   process.env.THIRDWEB_AUTH_DOMAIN   ?? '',
+    adminKey: process.env.THIRDWEB_AUTH_ADMIN_KEY ?? '',
+    clientId: clientEnv.NEXT_PUBLIC_THIRDWEB_CLIENT_ID,
   },
   siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL,
   isDev:   process.env.NODE_ENV === 'development',
