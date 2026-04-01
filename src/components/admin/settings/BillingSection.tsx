@@ -155,7 +155,7 @@ export function BillingSection() {
                   { label: t('admin.settings.billing.aiTokens'), value: plan.aiTokens },
                   { label: t('admin.settings.billing.storageLabel'), value: plan.storage },
                 ].map((spec) => (
-                  <div key={spec.label} className="text-center">
+                  <div key={String(spec.label)} className="text-center">
                     <div className="text-sm font-bold text-gray-900 dark:text-white">{spec.value}</div>
                     <div className="text-[10px] text-gray-400">{spec.label}</div>
                   </div>
