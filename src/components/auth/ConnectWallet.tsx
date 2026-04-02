@@ -8,14 +8,17 @@
  *   2. ConnectButton here with client + wallets + optional SIWE auth
  *   3. Auth callbacks POST to /api/auth/thirdweb
  *
- * Two modes:
- *   - With SIWE auth: when server-side auth is configured (THIRDWEB_AUTH_DOMAIN etc.)
- *     ConnectButton shows wallet connection → SIWE signature → JWT session
- *   - Connection only: when server auth is not configured, just connects wallet
+ * Two variants:
+ *   - "default": full-width button for login page / LAP (48px height, 280px min)
+ *   - "compact": sidebar-friendly, no min-width constraint
+ *
+ * SIWE auth is only enabled when the server-side auth API is available.
+ * Without it, the button still connects wallets (connection-only mode).
  *
  * Requires NEXT_PUBLIC_THIRDWEB_CLIENT_ID to be configured.
  */
 
+import { useState, useEffect } from 'react';
 import { ConnectButton } from 'thirdweb/react';
 import { createThirdwebClient } from 'thirdweb';
 import { inAppWallet, createWallet } from 'thirdweb/wallets';
@@ -77,7 +80,6 @@ async function isLoggedIn(): Promise<boolean> {
     const data = await res.json();
     return data.loggedIn === true;
   } catch {
-    // Network error or API down — treat as not logged in, don't hang
     return false;
   }
 }
@@ -95,10 +97,28 @@ async function doLogout() {
   window.location.href = '/';
 }
 
+/**
+ * Check if server-side SIWE auth is configured.
+ * If not, ConnectButton works in connection-only mode (no SIWE).
+ */
+async function checkAuthAvailable(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/auth/thirdweb');
+    if (!res.ok) return false;
+    const data = await res.json();
+    // If reason is 'thirdweb-auth-not-configured', SIWE is not available
+    return data.reason !== 'thirdweb-auth-not-configured';
+  } catch {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Button styles (UX conventions)
 // ---------------------------------------------------------------------------
-const loginButtonStyle: React.CSSProperties = {
+
+/** Full-width button for login page / standalone contexts */
+const defaultButtonStyle: React.CSSProperties = {
   minHeight: '48px',
   minWidth: '280px',
   width: '100%',
@@ -112,21 +132,57 @@ const loginButtonStyle: React.CSSProperties = {
   transition: 'background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease',
 };
 
+/** Compact button for sidebars and tight spaces */
+const compactButtonStyle: React.CSSProperties = {
+  minHeight: '44px',
+  width: '100%',
+  padding: '10px 16px',
+  fontFamily: 'Inter, Roboto, system-ui, sans-serif',
+  fontSize: '14px',
+  fontWeight: 600,
+  borderRadius: '8px',
+  border: 'none',
+  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  transition: 'background-color 150ms ease, transform 100ms ease',
+};
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 interface ConnectWalletProps {
   theme?: 'dark' | 'light';
+  variant?: 'default' | 'compact';
   onLogin?: () => void;
 }
 
-export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
+export function ConnectWallet({ theme = 'dark', variant = 'default', onLogin }: ConnectWalletProps) {
+  const [authAvailable, setAuthAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkAuthAvailable().then(setAuthAvailable);
+  }, []);
+
   if (!client) return null;
+  // Wait for auth check before rendering to avoid SIWE errors
+  if (authAvailable === null) return null;
+
+  const buttonStyle = variant === 'compact' ? compactButtonStyle : defaultButtonStyle;
+  const label = variant === 'compact' ? 'Conectar' : 'Iniciar sesión';
 
   async function handleLogin(params: { payload: unknown; signature: string }) {
     await doLogin(params);
     onLogin?.();
   }
+
+  // Only pass auth prop when server-side SIWE is configured
+  const authProp = authAvailable
+    ? {
+        getLoginPayload,
+        doLogin: handleLogin,
+        isLoggedIn,
+        doLogout,
+      }
+    : undefined;
 
   return (
     <ConnectButton
@@ -135,25 +191,20 @@ export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
       theme={theme}
       autoConnect={{ timeout: 10000 }}
       connectButton={{
-        label: 'Iniciar sesión',
-        style: loginButtonStyle,
+        label,
+        style: buttonStyle,
         className: 'numinia-login-btn',
       }}
       signInButton={{
         label: 'Iniciar sesión',
-        style: loginButtonStyle,
+        style: buttonStyle,
         className: 'numinia-login-btn',
       }}
       connectModal={{
         size: 'compact',
         showThirdwebBranding: false,
       }}
-      auth={{
-        getLoginPayload,
-        doLogin: handleLogin,
-        isLoggedIn,
-        doLogout,
-      }}
+      auth={authProp}
     />
   );
 }

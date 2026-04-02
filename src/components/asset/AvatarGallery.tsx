@@ -728,6 +728,7 @@ export const AvatarGallery: React.FC = () => {
                 ) : (
                   <ConnectWallet
                     theme="dark"
+                    variant="compact"
                     onLogin={async () => {
                       const res = await fetch('/api/auth/wallet/session');
                       const data = await res.json();
