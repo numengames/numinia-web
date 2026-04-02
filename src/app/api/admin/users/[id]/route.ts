@@ -102,7 +102,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   const targetIdentifierType: 'github' | 'wallet' = user ? 'github' : 'wallet';
   const targetUsername = user?.username ?? `${id.slice(0, 6)}...${id.slice(-4)}`;
 
-  const actor = session.address ?? session.userId ?? 'unknown';
+  const actor = session.address ?? 'unknown';
 
   try {
     await saveRankOverride({

@@ -18,11 +18,6 @@ const serverSchema = z.object({
   GITHUB_TOKEN:      z.string().min(1, 'GITHUB_TOKEN is required'),
   // Session signing (HMAC-SHA256). Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   SESSION_SECRET:       z.string().min(32, 'SESSION_SECRET must be at least 32 chars').default(''),
-  // GitHub OAuth — optional: only needed for login, not for reading the gallery.
-  // Auth routes validate these at request time and return 503 if missing.
-  GITHUB_CLIENT_ID:     z.string().default(''),
-  GITHUB_CLIENT_SECRET: z.string().default(''),
-  GITHUB_REDIRECT_URI:  z.string().default('http://localhost:3000/api/auth/github/callback'),
   // Admin wallet allowlist (comma-separated ETH addresses)
   ADMIN_WALLET_ADDRESSES: z.string().default(''),
   // Cloudflare R2 (optional — upload features degrade gracefully without it)
@@ -100,9 +95,6 @@ export const env = {
     repoName:     process.env.GITHUB_REPO_NAME     ?? '',
     branch:       process.env.GITHUB_BRANCH        ?? 'main',
     token:        process.env.GITHUB_TOKEN         ?? '',
-    clientId:     process.env.GITHUB_CLIENT_ID     ?? '',
-    clientSecret: process.env.GITHUB_CLIENT_SECRET ?? '',
-    redirectUri:  process.env.GITHUB_REDIRECT_URI  ?? 'http://localhost:3000/api/auth/github/callback',
   },
   r2: {
     accountId:       process.env.R2_ACCOUNT_ID        ?? '',

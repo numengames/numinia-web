@@ -54,7 +54,7 @@ const CHANGELOG: ChangelogEntry[] = [
       { text: 'Webhook: enhanced structured logging for debugging pass holder recording', type: 'fix' },
       { text: 'SeasonTimeline: replaced 2s timeout with polling (5 retries, 2s intervals)', type: 'fix' },
       { text: 'Purchase banner shows "Processing..." until confirmed, then "Complete!"', type: 'fix' },
-      { text: 'Middleware recognizes tw_jwt and user_session cookies for LAP access', type: 'fix' },
+      { text: 'Auth consolidated to Thirdweb Connect v5 only — removed SIWE + GitHub OAuth legacy', type: 'fix' },
     ],
   },
   {

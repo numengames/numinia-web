@@ -539,7 +539,7 @@ function AdminProgressPanel({
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    setIsAdmin(document.cookie.includes('admin_session'));
+    setIsAdmin(document.cookie.includes('tw_jwt'));
   }, []);
 
   if (!isAdmin) return null;

@@ -20,7 +20,7 @@ import { CrescentSpinner } from '@/components/ui/crescent-spinner';
 import { useFavorites } from '@/lib/hooks/useFavorites';
 import { GallerySkeleton } from './GallerySkeleton';
 import { AssetActions } from './AssetActions';
-import { LoginModal } from '@/components/auth/LoginModal';
+import { ConnectWallet } from '@/components/auth/ConnectWallet';
 import { ThumbnailImage } from '@/components/ui/ThumbnailImage';
 
 // Utility function to format camelCase or PascalCase names with spaces
@@ -44,10 +44,9 @@ export const AvatarGallery: React.FC = () => {
   const { toggleFavorite, isFavorite, count: favCount } = useFavorites();
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  // User session (wallet or GitHub)
+  // User session (Thirdweb wallet)
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>('anonymous');
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/wallet/session')
@@ -727,13 +726,17 @@ export const AvatarGallery: React.FC = () => {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
-                  >
-                    <LogIn className="h-4 w-4 shrink-0" />
-                    <span>{t('avatar.gallery.signIn')}</span>
-                  </button>
+                  <ConnectWallet
+                    theme="dark"
+                    onLogin={async () => {
+                      const res = await fetch('/api/auth/wallet/session');
+                      const data = await res.json();
+                      if (data.authenticated) {
+                        setWalletAddress(data.address);
+                        setUserRole(data.role || 'user');
+                      }
+                    }}
+                  />
                 )}
               </div>
             </div>
@@ -833,15 +836,6 @@ export const AvatarGallery: React.FC = () => {
         </div>
       </div>
 
-      {/* Login modal */}
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onAuthenticated={(session) => {
-          if (session.address) setWalletAddress(session.address);
-          setUserRole(session.role);
-        }}
-      />
     </div>
   );
 };

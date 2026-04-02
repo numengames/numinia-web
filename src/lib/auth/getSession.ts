@@ -1,22 +1,19 @@
 import { NextRequest } from 'next/server';
-import { verifySession } from '@/lib/session';
 import { getThirdwebAuth, TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
 import type { Rank, RankPermissions } from '@/types/rank';
 import { mapRoleToRank, meetsMinimumRank, getPermissionsForRank } from '@/lib/rank';
 
-// Unified session type for both GitHub OAuth and Ethereum wallet auth.
+// Unified session type — Thirdweb wallet auth only.
 export type AdminSession = {
   isAdmin: boolean;
-  userId?: string;
-  username?: string;
   address?: string;
   role: string;
 };
 
-// Checks all auth methods and returns a unified session object.
-// Order: Thirdweb JWT → wallet (admin_session) → GitHub OAuth (session).
+/**
+ * Check if the request has an admin session (Thirdweb JWT + ADMIN_WALLET_ADDRESSES).
+ */
 export function getAdminSession(req: NextRequest): AdminSession {
-  // 1. Check Thirdweb JWT — admin status resolved via ADMIN_WALLET_ADDRESSES
   const twCookie = req.cookies.get(TW_JWT_COOKIE);
   if (twCookie?.value) {
     try {
@@ -33,25 +30,7 @@ export function getAdminSession(req: NextRequest): AdminSession {
         }
       }
     } catch {
-      // Invalid JWT — fall through
-    }
-  }
-
-  // 2. Legacy wallet auth (admin_session cookie)
-  const walletCookie = req.cookies.get('admin_session');
-  if (walletCookie) {
-    const data = verifySession<{ address?: string; role?: string }>(walletCookie.value);
-    if (data?.role === 'admin') {
-      return { isAdmin: true, address: data.address, role: data.role };
-    }
-  }
-
-  // 3. Legacy GitHub OAuth (session cookie)
-  const sessionCookie = req.cookies.get('session');
-  if (sessionCookie) {
-    const data = verifySession<{ userId?: string; username?: string; role?: string }>(sessionCookie.value);
-    if (data && ['admin', 'creator'].includes(data.role || '')) {
-      return { isAdmin: true, userId: data.userId, username: data.username, role: data.role || 'creator' };
+      // Invalid JWT — treat as unauthenticated
     }
   }
 
@@ -62,21 +41,18 @@ export function getAdminSession(req: NextRequest): AdminSession {
 export type UserSession = {
   authenticated: boolean;
   address?: string;
-  userId?: string;
-  username?: string;
   role: string;
 };
 
-// Checks for any authenticated user.
-// Priority: Thirdweb JWT → wallet user_session → GitHub session
+/**
+ * Check for any authenticated user via Thirdweb JWT.
+ * Decodes the JWT payload without full verification (sync).
+ * Full verification happens in getSessionWithRank() which is async.
+ */
 export function getUserSession(req: NextRequest): UserSession {
-  // 1. Check Thirdweb JWT (new auth — async verification done at rank level)
-  //    For sync getUserSession, we decode the JWT payload without full verification.
-  //    Full verification happens in getSessionWithRank() which is async.
   const twCookie = req.cookies.get(TW_JWT_COOKIE);
   if (twCookie?.value) {
     try {
-      // JWT structure: header.payload.signature — decode payload
       const parts = twCookie.value.split('.');
       if (parts.length === 3) {
         const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
@@ -85,25 +61,7 @@ export function getUserSession(req: NextRequest): UserSession {
         }
       }
     } catch {
-      // Invalid JWT — fall through to legacy auth
-    }
-  }
-
-  // 2. Legacy wallet auth (user_session cookie)
-  const walletCookie = req.cookies.get('user_session');
-  if (walletCookie) {
-    const data = verifySession<{ address?: string; role?: string }>(walletCookie.value);
-    if (data) {
-      return { authenticated: true, address: data.address, role: data.role || 'user' };
-    }
-  }
-
-  // 3. Legacy GitHub OAuth (session cookie)
-  const sessionCookie = req.cookies.get('session');
-  if (sessionCookie) {
-    const data = verifySession<{ userId?: string; username?: string; role?: string }>(sessionCookie.value);
-    if (data) {
-      return { authenticated: true, userId: data.userId, username: data.username, role: data.role || 'user' };
+      // Invalid JWT — treat as unauthenticated
     }
   }
 
@@ -111,15 +69,13 @@ export function getUserSession(req: NextRequest): UserSession {
 }
 
 // ---------------------------------------------------------------------------
-// Rank-aware session (Phase 0+1 additions — does NOT replace above functions)
+// Rank-aware session
 // ---------------------------------------------------------------------------
 
 /** Session enriched with rank, permissions, and ban status. */
 export type SessionWithRank = {
   authenticated: boolean;
   address?: string;
-  userId?: string;
-  username?: string;
   role: string;
   rank: Rank;
   permissions: RankPermissions;
@@ -156,14 +112,6 @@ export async function getSessionWithRank(req: NextRequest): Promise<SessionWithR
 
 /**
  * Require a minimum rank for an API route. Returns SessionWithRank on success.
- *
- * Replaces the pattern:
- *   const session = getAdminSession(req);
- *   if (!session.isAdmin) return new Response(null, { status: 401 });
- *
- * With:
- *   const session = await requireRank(req, 'archon');
- *   // throws RankError if insufficient
  *
  * @throws {Response} 401 if not authenticated, 403 if rank too low or banned
  */

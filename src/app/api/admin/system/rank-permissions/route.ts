@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest) {
 
   // For now, return the default matrix as read-only.
   // Phase 4+ will implement writing to data/system/rank-permissions.json
-  const actor = session.address ?? session.userId ?? 'unknown';
+  const actor = session.address ?? 'unknown';
 
   logAudit({
     action: 'rank-permissions-view',

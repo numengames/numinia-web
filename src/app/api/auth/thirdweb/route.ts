@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getThirdwebAuth, TW_JWT_COOKIE, TW_JWT_COOKIE_OPTIONS } from '@/lib/thirdweb-auth';
+import { generateCsrfToken } from '@/lib/session';
 import { createLogger } from '@/lib/logger';
 import { cookies } from 'next/headers';
 
@@ -87,6 +88,15 @@ export async function POST(req: NextRequest) {
 
         response.cookies.set(TW_JWT_COOKIE, jwt, TW_JWT_COOKIE_OPTIONS);
 
+        // Set CSRF token for admin API requests
+        response.cookies.set('csrf_token', generateCsrfToken(), {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: '/',
+        });
+
         log.info({ address: verifiedPayload.payload?.address }, 'Thirdweb login');
         return response;
       }
@@ -94,13 +104,7 @@ export async function POST(req: NextRequest) {
       case 'logout': {
         const response = NextResponse.json({ success: true });
         response.cookies.set(TW_JWT_COOKIE, '', { ...TW_JWT_COOKIE_OPTIONS, maxAge: 0 });
-
-        // Also clear legacy cookies for clean logout
-        response.cookies.set('admin_session', '', { path: '/', maxAge: 0 });
-        response.cookies.set('user_session', '', { path: '/', maxAge: 0 });
-        response.cookies.set('session', '', { path: '/', maxAge: 0 });
         response.cookies.set('csrf_token', '', { path: '/', maxAge: 0 });
-
         return response;
       }
 

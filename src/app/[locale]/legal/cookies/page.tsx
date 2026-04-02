@@ -34,11 +34,8 @@ export default async function CookiesPage({ params }: { params: Promise<{ locale
               <tr><th>Cookie</th><th>Purpose</th><th>Duration</th></tr>
             </thead>
             <tbody>
-              <tr><td><code>admin_session</code></td><td>Admin wallet authentication</td><td>24 hours</td></tr>
-              <tr><td><code>user_session</code></td><td>User wallet authentication</td><td>24 hours</td></tr>
-              <tr><td><code>session</code></td><td>GitHub OAuth authentication</td><td>7 days</td></tr>
-              <tr><td><code>siwe_nonce</code></td><td>CSRF protection for wallet sign-in</td><td>5 minutes</td></tr>
-              <tr><td><code>oauth_state</code></td><td>CSRF protection for GitHub OAuth</td><td>10 minutes</td></tr>
+              <tr><td><code>tw_jwt</code></td><td>Thirdweb wallet authentication (JWT)</td><td>7 days</td></tr>
+              <tr><td><code>csrf_token</code></td><td>CSRF protection for admin API requests</td><td>7 days</td></tr>
             </tbody>
           </table>
 

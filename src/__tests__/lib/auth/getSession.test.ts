@@ -1,7 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
-import { getAdminSession } from '@/lib/auth/getSession';
+import { describe, it, expect } from 'vitest';
+import { getAdminSession, getUserSession } from '@/lib/auth/getSession';
 import { NextRequest } from 'next/server';
-vi.mock('@/lib/session', () => ({ verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } }, verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), generateCsrfToken: () => 'test-csrf' }));
+
+// Helper: create a fake JWT with a given payload (no real signature)
+function fakeJwt(payload: Record<string, unknown>): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256' })).toString('base64url');
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  return `${header}.${body}.fakesig`;
+}
 
 function createRequest(cookies: Record<string, string> = {}): NextRequest {
   const url = 'http://localhost:3000/api/test';
@@ -20,92 +26,60 @@ describe('getAdminSession', () => {
     expect(session.role).toBe('anonymous');
   });
 
-  it('recognizes wallet admin_session cookie', () => {
+  it('recognizes tw_jwt with admin address', () => {
+    const address = '0x42e62e421bedf2469826879ec1a0574d7d3cca26';
+    process.env.ADMIN_WALLET_ADDRESSES = address;
     const req = createRequest({
-      admin_session: JSON.stringify({
-        address: '0x42e62e421bEdf2469826879Ec1a0574d7D3ccA26',
-        role: 'admin',
-        authenticatedAt: new Date().toISOString(),
-      }),
+      tw_jwt: fakeJwt({ sub: address }),
     });
     const session = getAdminSession(req);
     expect(session.isAdmin).toBe(true);
     expect(session.role).toBe('admin');
-    expect(session.address).toBe('0x42e62e421bEdf2469826879Ec1a0574d7D3ccA26');
+    expect(session.address).toBe(address);
+    delete process.env.ADMIN_WALLET_ADDRESSES;
   });
 
-  it('recognizes GitHub OAuth session cookie with admin role', () => {
+  it('rejects tw_jwt with non-admin address', () => {
+    process.env.ADMIN_WALLET_ADDRESSES = '0xADMIN';
     const req = createRequest({
-      session: JSON.stringify({
-        userId: 'user-123',
-        username: 'PabloFMM',
-        role: 'admin',
-      }),
-    });
-    const session = getAdminSession(req);
-    expect(session.isAdmin).toBe(true);
-    expect(session.userId).toBe('user-123');
-  });
-
-  it('recognizes GitHub OAuth session cookie with creator role', () => {
-    const req = createRequest({
-      session: JSON.stringify({
-        userId: 'user-456',
-        username: 'creator1',
-        role: 'creator',
-      }),
-    });
-    const session = getAdminSession(req);
-    expect(session.isAdmin).toBe(true);
-  });
-
-  it('rejects GitHub OAuth session with user role', () => {
-    const req = createRequest({
-      session: JSON.stringify({
-        userId: 'user-789',
-        username: 'normaluser',
-        role: 'user',
-      }),
+      tw_jwt: fakeJwt({ sub: '0xNOTADMIN' }),
     });
     const session = getAdminSession(req);
     expect(session.isAdmin).toBe(false);
+    delete process.env.ADMIN_WALLET_ADDRESSES;
   });
 
-  it('wallet session takes priority over GitHub OAuth', () => {
+  it('handles malformed JWT gracefully', () => {
     const req = createRequest({
-      admin_session: JSON.stringify({
-        address: '0xWALLET',
-        role: 'admin',
-      }),
-      session: JSON.stringify({
-        userId: 'github-user',
-        role: 'admin',
-      }),
-    });
-    const session = getAdminSession(req);
-    expect(session.isAdmin).toBe(true);
-    expect(session.address).toBe('0xWALLET');
-    expect(session.userId).toBeUndefined();
-  });
-
-  it('handles malformed cookies gracefully', () => {
-    const req = createRequest({
-      admin_session: 'not-json',
-      session: '{broken',
+      tw_jwt: 'not-a-jwt',
     });
     const session = getAdminSession(req);
     expect(session.isAdmin).toBe(false);
     expect(session.role).toBe('anonymous');
   });
+});
 
-  it('rejects wallet session without admin role', () => {
+describe('getUserSession', () => {
+  it('returns unauthenticated when no cookies', () => {
+    const req = createRequest();
+    const session = getUserSession(req);
+    expect(session.authenticated).toBe(false);
+  });
+
+  it('recognizes tw_jwt with any address', () => {
     const req = createRequest({
-      admin_session: JSON.stringify({
-        address: '0xSOME',
-        role: 'user',
-      }),
+      tw_jwt: fakeJwt({ sub: '0xUSER' }),
     });
-    const session = getAdminSession(req);
-    expect(session.isAdmin).toBe(false);
+    const session = getUserSession(req);
+    expect(session.authenticated).toBe(true);
+    expect(session.address).toBe('0xUSER');
+  });
+
+  it('returns unauthenticated for JWT without sub', () => {
+    const req = createRequest({
+      tw_jwt: fakeJwt({ iss: 'test' }),
+    });
+    const session = getUserSession(req);
+    expect(session.authenticated).toBe(false);
   });
 });

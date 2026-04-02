@@ -3,14 +3,13 @@
 /**
  * ConnectWallet — Thirdweb ConnectButton wrapper.
  *
- * Replaces the custom LoginModal with thirdweb's unified auth UI:
+ * Thirdweb ConnectButton — sole auth method for Numinia:
  *   - 350+ external wallets (MetaMask, WalletConnect, Coinbase, etc.)
  *   - In-app wallets with social login (Google, Discord, GitHub, Twitter/X)
  *   - Email (OTP) and passkeys
- *   - SIWE server auth with JWT cookie
+ *   - SIWE server auth with JWT cookie (tw_jwt)
  *
- * Only renders when NEXT_PUBLIC_THIRDWEB_CLIENT_ID is configured.
- * Falls back to the legacy LoginModal otherwise.
+ * Requires NEXT_PUBLIC_THIRDWEB_CLIENT_ID to be configured.
  *
  * Usage:
  *   <ConnectWallet />                    // Default dark theme
@@ -90,7 +89,7 @@ interface ConnectWalletProps {
 }
 
 export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
-  if (!client) return null; // Not configured — parent should show legacy LoginModal
+  if (!client) return null; // Not configured — NEXT_PUBLIC_THIRDWEB_CLIENT_ID required
 
   async function handleLogin(params: { payload: unknown; signature: string }) {
     await defaultDoLogin(params);

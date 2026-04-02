@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'identifier and reason are required' }, { status: 400 });
   }
 
-  const actor = session.address ?? session.userId ?? 'unknown';
+  const actor = session.address ?? 'unknown';
   const banId = randomUUID();
 
   try {
@@ -85,7 +85,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'banId is required' }, { status: 400 });
   }
 
-  const actor = session.address ?? session.userId ?? 'unknown';
+  const actor = session.address ?? 'unknown';
 
   await removeBan(banId);
 

@@ -9,7 +9,7 @@ import { NextRequest } from 'next/server';
 import type { Rank, RankPermissions } from '@/types/rank';
 import { inferRank, getPermissionsForRank, mapRoleToRank } from '@/lib/rank';
 import { findRankOverride, isUserBanned } from '@/lib/rank-storage';
-import type { AdminSession, UserSession } from '@/lib/auth/getSession';
+import type { UserSession } from '@/lib/auth/getSession';
 
 // ---------------------------------------------------------------------------
 // Lazy import to avoid circular dependency with season-storage
@@ -46,10 +46,9 @@ export interface ResolvedRank {
  * Reads rank overrides, checks season pass status, infers rank, checks bans.
  */
 export async function resolveUserRank(
-  session: AdminSession | UserSession,
+  session: UserSession,
 ): Promise<ResolvedRank> {
-  const identifier = ('address' in session ? session.address : undefined)
-    ?? ('userId' in session ? session.userId : undefined);
+  const identifier = session.address;
 
   // No identifier → nomad
   if (!identifier) {
@@ -70,7 +69,6 @@ export async function resolveUserRank(
   // Infer rank
   const rank = inferRank({
     walletAddress: address,
-    githubUserId: 'userId' in session ? session.userId : undefined,
     storedRole: session.role,
     hasPurchased,
     hasCompletedSessionZero: false, // TODO: check when Session Zero is implemented
@@ -85,46 +83,6 @@ export async function resolveUserRank(
     permissions: getPermissionsForRank(rank),
     banned,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Convenience: compute rank for a wallet address (used during login)
-// ---------------------------------------------------------------------------
-
-/**
- * Compute rank for a wallet address at login time.
- * Used to embed rank hint in the session cookie.
- */
-export async function computeRankForAddress(
-  address: string,
-  role: string,
-): Promise<Rank> {
-  const override = await findRankOverride(address);
-  const hasPurchased = await checkPassHolder(address);
-
-  return inferRank({
-    walletAddress: address,
-    storedRole: role,
-    hasPurchased,
-    hasCompletedSessionZero: false, // TODO: check when Session Zero is implemented
-    rankOverride: override?.rank,
-  });
-}
-
-/**
- * Compute rank for a GitHub user at login time.
- */
-export async function computeRankForGithubUser(
-  userId: string,
-  role: string,
-): Promise<Rank> {
-  const override = await findRankOverride(userId);
-
-  return inferRank({
-    githubUserId: userId,
-    storedRole: role,
-    rankOverride: override?.rank,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -148,7 +106,7 @@ export async function checkBanAndReject(
 
   if (!session.authenticated) return null; // anonymous users can't be banned
 
-  const identifier = session.address ?? session.userId;
+  const identifier = session.address;
   if (!identifier) return null;
 
   const banned = await isUserBanned(identifier);

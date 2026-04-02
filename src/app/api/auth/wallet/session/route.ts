@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifySession } from '@/lib/session';
 import { getThirdwebAuth, TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
 import { env } from '@/lib/env';
 import { mapRoleToRank } from '@/lib/rank';
-import type { Rank } from '@/types/rank';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -12,20 +10,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   const cookieStore = await cookies();
 
-  const adminCookie = cookieStore.get('admin_session');
-  if (adminCookie) {
-    const session = verifySession<{ address?: string; role?: string; rank?: Rank }>(adminCookie.value);
-    if (session) {
-      return NextResponse.json({
-        authenticated: true,
-        address: session.address,
-        role: session.role || 'admin',
-        rank: session.rank ?? mapRoleToRank(session.role || 'admin'),
-      });
-    }
-  }
-
-  // Check Thirdweb JWT (tw_jwt cookie from ConnectButton auth)
+  // Check Thirdweb JWT
   const twJwt = cookieStore.get(TW_JWT_COOKIE)?.value;
   if (twJwt) {
     const auth = getThirdwebAuth();
@@ -44,36 +29,8 @@ export async function GET() {
           });
         }
       } catch {
-        // Invalid JWT — fall through to legacy checks
+        // Invalid JWT — fall through
       }
-    }
-  }
-
-  const userCookie = cookieStore.get('user_session');
-  if (userCookie) {
-    const session = verifySession<{ address?: string; role?: string; rank?: Rank }>(userCookie.value);
-    if (session) {
-      return NextResponse.json({
-        authenticated: true,
-        address: session.address,
-        role: session.role || 'user',
-        rank: session.rank ?? mapRoleToRank(session.role || 'user'),
-      });
-    }
-  }
-
-  // Fall back to GitHub OAuth session (mirrors getAdminSession logic)
-  const githubCookie = cookieStore.get('session');
-  if (githubCookie) {
-    const session = verifySession<{ userId?: string; username?: string; role?: string; rank?: Rank }>(githubCookie.value);
-    if (session && ['admin', 'creator'].includes(session.role || '')) {
-      return NextResponse.json({
-        authenticated: true,
-        userId: session.userId,
-        username: session.username,
-        role: session.role,
-        rank: session.rank ?? mapRoleToRank(session.role || 'creator'),
-      });
     }
   }
 
@@ -82,10 +39,7 @@ export async function GET() {
 
 export async function DELETE() {
   const cookieStore = await cookies();
-  cookieStore.delete('session');
-  cookieStore.delete('admin_session');
-  cookieStore.delete('user_session');
-  cookieStore.delete('csrf_token');
   cookieStore.delete(TW_JWT_COOKIE);
+  cookieStore.delete('csrf_token');
   return NextResponse.json({ success: true });
 }

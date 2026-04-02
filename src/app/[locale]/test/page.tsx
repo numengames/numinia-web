@@ -3,35 +3,30 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConnectWallet } from '@/components/auth/ConnectWallet';
 
 export default function TestPage() {
   const [status, setStatus] = useState('');
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
 
   const checkSession = async () => {
     try {
-      // Check GitHub session
-      const response = await fetch('/api/auth/session', {
-        method: 'GET',
+      const response = await fetch('/api/auth/thirdweb', {
         credentials: 'include',
       });
-
       const data = await response.json();
 
-      if (data.user) {
-        setUserData(data.user);
-        setStatus(`Logged in as: ${data.user.username} (${data.user.role})`);
+      if (data.loggedIn) {
+        setUserData(data);
+        setStatus(`Logged in as: ${data.address}`);
       } else {
         setUserData(null);
         setStatus('No active session');
       }
     } catch (e: unknown) {
-      // Type guard for error
       if (e instanceof Error) {
-        console.error('Session check error:', e);
         setStatus('Error checking session: ' + e.message);
       } else {
-        console.error('Unknown error:', e);
         setStatus('Error checking session');
       }
     }
@@ -41,31 +36,21 @@ export default function TestPage() {
     checkSession();
   }, []);
 
-  const handleGitHubSignIn = () => {
-    window.location.href = '/api/auth/github/login';
-  };
-
   const handleSignOut = async () => {
     try {
       setStatus('Signing out...');
-      const response = await fetch('/api/auth/logout', {
+      await fetch('/api/auth/thirdweb', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'logout' }),
         credentials: 'include',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to sign out');
-      }
-
       setUserData(null);
       setStatus('Signed out successfully');
     } catch (e: unknown) {
-      // Type guard for error
       if (e instanceof Error) {
-        console.error('Sign out error:', e);
         setStatus(e.message || 'Sign out failed');
       } else {
-        console.error('Unknown error:', e);
         setStatus('Sign out failed');
       }
     }
@@ -79,12 +64,9 @@ export default function TestPage() {
 
           <div className="space-y-2">
             {!userData ? (
-              <Button
-                onClick={handleGitHubSignIn}
-                className="w-full"
-              >
-                Sign In with GitHub
-              </Button>
+              <div className="flex justify-center">
+                <ConnectWallet onLogin={checkSession} />
+              </div>
             ) : (
               <Button
                 onClick={handleSignOut}
