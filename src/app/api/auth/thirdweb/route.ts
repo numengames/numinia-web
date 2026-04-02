@@ -73,8 +73,11 @@ export async function POST(req: NextRequest) {
       }
 
       case 'login': {
-        // Verify signature and issue JWT
-        const verifiedPayload = await auth.verifyPayload(body);
+        // Verify signature and issue JWT — pass only payload + signature
+        const verifiedPayload = await auth.verifyPayload({
+          payload: body.payload,
+          signature: body.signature,
+        });
         if (!verifiedPayload.valid) {
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
