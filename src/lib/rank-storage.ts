@@ -107,12 +107,12 @@ export async function isUserBanned(identifier: string): Promise<boolean> {
 
   const bans = await getBans();
   const normalized = identifier.toLowerCase();
-  const now = new Date().toISOString();
+  const now = Date.now();
 
   return bans.some(ban =>
     ban.active &&
     ban.identifier.toLowerCase() === normalized &&
-    (ban.expiresAt === null || ban.expiresAt > now),
+    (ban.expiresAt === null || new Date(ban.expiresAt).getTime() > now),
   );
 }
 

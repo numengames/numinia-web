@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('api/auth/logout');
@@ -11,6 +12,7 @@ export async function POST() {
     cookieStore.delete('admin_session');
     cookieStore.delete('user_session');
     cookieStore.delete('csrf_token');
+    cookieStore.delete(TW_JWT_COOKIE);
 
     return NextResponse.json({ success: true });
   } catch (error) {

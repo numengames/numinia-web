@@ -61,7 +61,7 @@ export function middleware(request: NextRequest) {
   // credential-based requests (cookies).
 
   // Check for session — wallet auth (admin_session) or GitHub OAuth (session)
-  let isAdmin = false;
+  let isAuthenticated = false;
 
   // Middleware runs on Edge — can't use Node.js crypto for HMAC verification.
   // This is a lightweight routing check only. Real auth enforcement is in API routes
@@ -73,51 +73,51 @@ export function middleware(request: NextRequest) {
       const dot = walletCookie.value.indexOf('.');
       const payload = dot > 0 ? atob(walletCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : walletCookie.value;
       const data = JSON.parse(payload);
-      if (data.role === 'admin') isAdmin = true;
+      if (data.role === 'admin') isAuthenticated = true;
     } catch { /* malformed cookie — treat as unauthenticated */ }
   }
 
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     const sessionCookie = request.cookies.get('session');
     if (sessionCookie) {
       try {
         const dot = sessionCookie.value.indexOf('.');
         const payload = dot > 0 ? atob(sessionCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : sessionCookie.value;
         const data = JSON.parse(payload);
-        if (['admin', 'creator'].includes(data.role)) isAdmin = true;
+        if (['admin', 'creator'].includes(data.role)) isAuthenticated = true;
       } catch { /* malformed cookie — treat as unauthenticated */ }
     }
   }
 
   // Check Thirdweb JWT (tw_jwt) — any valid JWT means authenticated user
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     const twJwt = request.cookies.get('tw_jwt');
     if (twJwt?.value) {
       try {
         const parts = twJwt.value.split('.');
         if (parts.length === 3) {
           const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-          if (payload.sub) isAdmin = true; // Any wallet-authenticated user can access LAP
+          if (payload.sub) isAuthenticated = true; // Any wallet-authenticated user can access LAP
         }
       } catch { /* malformed JWT — treat as unauthenticated */ }
     }
   }
 
   // Check user_session cookie (regular wallet users)
-  if (!isAdmin) {
+  if (!isAuthenticated) {
     const userCookie = request.cookies.get('user_session');
     if (userCookie) {
       try {
         const dot = userCookie.value.indexOf('.');
         const payload = dot > 0 ? atob(userCookie.value.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/')) : userCookie.value;
         const data = JSON.parse(payload);
-        if (data.address) isAdmin = true; // Any authenticated wallet user can access LAP
+        if (data.address) isAuthenticated = true; // Any authenticated wallet user can access LAP
       } catch { /* malformed cookie — treat as unauthenticated */ }
     }
   }
 
   // L.A.P. and admin routes — redirect unauthenticated users to home
-  if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAdmin) {
+  if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAuthenticated) {
     const locale = currentLocale || defaultLocale;
     return NextResponse.redirect(new URL(`/${locale}/`, request.url));
   }

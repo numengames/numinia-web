@@ -48,7 +48,16 @@ export async function GET(request: NextRequest) {
     if (oauthState.csrf !== stateParam) {
       return NextResponse.redirect(new URL('/login?error=csrf_mismatch', request.url));
     }
-    
+
+    // Get cookie store early so we can clean up oauth_state on all paths
+    const cookieStore = await cookies();
+
+    // Helper: redirect with oauth_state cleanup
+    const errorRedirect = (error: string) => {
+      cookieStore.delete('oauth_state');
+      return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
+    };
+
     // Exchange the code for an access token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
@@ -68,7 +77,7 @@ export async function GET(request: NextRequest) {
     
     if (!tokenResponse.ok || tokenData.error) {
       log.error({ detail: tokenData }, 'Error getting token');
-      return NextResponse.redirect(new URL('/login?error=token_error', request.url));
+      return errorRedirect('token_error');
     }
     
     const accessToken = tokenData.access_token;
@@ -85,7 +94,7 @@ export async function GET(request: NextRequest) {
     
     if (!userResponse.ok) {
       log.error({ detail: userData }, 'Error getting user');
-      return NextResponse.redirect(new URL('/login?error=user_error', request.url));
+      return errorRedirect('user_error');
     }
     
     // Get user email
@@ -100,7 +109,7 @@ export async function GET(request: NextRequest) {
     
     if (!emailResponse.ok) {
       log.error({ detail: emailData }, 'Error getting emails');
-      return NextResponse.redirect(new URL('/login?error=email_error', request.url));
+      return errorRedirect('email_error');
     }
     
     // Find the primary email
@@ -108,7 +117,7 @@ export async function GET(request: NextRequest) {
     const primaryEmail = (emailData as GitHubEmail[]).find((email) => email.primary)?.email || emailData[0]?.email;
     
     if (!primaryEmail) {
-      return NextResponse.redirect(new URL('/login?error=no_email', request.url));
+      return errorRedirect('no_email');
     }
     
     // Check if the user already exists in our database
@@ -151,7 +160,6 @@ export async function GET(request: NextRequest) {
     const rank = await computeRankForGithubUser(user.id, userRole);
 
     // Set session cookie and clear the oauth_state CSRF cookie
-    const cookieStore = await cookies();
     cookieStore.set({
       name: 'session',
       value: signSession({

@@ -47,10 +47,12 @@ export async function POST(request: NextRequest) {
 
     // Validate domain manually (verify() doesn't support multiple domains)
     if (result.success && !allowedDomains.includes(siweMessage.domain)) {
+      cookieStore.delete('siwe_nonce');
       return NextResponse.json({ error: 'Invalid domain' }, { status: 401 });
     }
 
     if (!result.success) {
+      cookieStore.delete('siwe_nonce');
       return NextResponse.json({ error: 'Invalid signature or domain' }, { status: 401 });
     }
 
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: env.isProd,
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
+        maxAge: 60 * 60 * 24 * 7, // 7 days (consistent with user_session)
         path: '/',
       });
     }
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: env.isProd,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24 * 7, // 7 days (consistent with GitHub OAuth session)
       path: '/',
     });
 
@@ -103,17 +105,16 @@ export async function POST(request: NextRequest) {
       httpOnly: false,
       secure: env.isProd,
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24 * 7, // 7 days (consistent with session)
       path: '/',
     });
 
     // Clean up the nonce cookie
     cookieStore.delete('siwe_nonce');
 
-    // Register wallet in user registry (fire-and-forget)
-    registerWalletUser(address);
-
-    logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, rank, method: 'wallet' } });
+    // Register wallet in user registry + audit log (must await in serverless)
+    await registerWalletUser(address);
+    await logAudit({ action: 'login', actor: siweMessage.address, metadata: { role, rank, method: 'wallet' } });
 
     return NextResponse.json({
       success: true,
