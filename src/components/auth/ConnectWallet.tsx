@@ -85,6 +85,27 @@ async function doLogout() {
   window.location.href = '/';
 }
 
+/**
+ * Shared button styles following UX conventions:
+ * - 48px min height (mobile-first touch target)
+ * - 16px font, semibold (600), system-ui/Inter
+ * - 8px border-radius, subtle shadow, no visible border
+ * - WCAG AA contrast: dark text on light bg / light text on dark bg
+ */
+const loginButtonStyle: React.CSSProperties = {
+  minHeight: '48px',
+  minWidth: '280px',
+  width: '100%',
+  padding: '14px 24px',
+  fontFamily: 'Inter, Roboto, system-ui, sans-serif',
+  fontSize: '16px',
+  fontWeight: 600,
+  borderRadius: '8px',
+  border: 'none',
+  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+  transition: 'background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease',
+};
+
 interface ConnectWalletProps {
   theme?: 'dark' | 'light';
   onLogin?: () => void;
@@ -103,6 +124,16 @@ export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
       client={client}
       wallets={wallets}
       theme={theme}
+      connectButton={{
+        label: 'Iniciar sesión',
+        style: loginButtonStyle,
+        className: 'numinia-login-btn',
+      }}
+      signInButton={{
+        label: 'Iniciar sesión',
+        style: loginButtonStyle,
+        className: 'numinia-login-btn',
+      }}
       connectModal={{ size: 'compact' }}
       auth={{
         getLoginPayload,
