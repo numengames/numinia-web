@@ -21,7 +21,9 @@
   },
   "shell": {
     "title": "L.A.P.",
-    "connectMessage": "Verbinde dein Wallet oder melde dich an, um auf das L.A.P. zuzugreifen"
+    "connectMessage": "Verbinde dein Wallet oder melde dich an, um auf das L.A.P. zuzugreifen",
+    "banned": "Konto gesperrt",
+    "bannedMessage": "Dein Konto wurde gesperrt. Kontaktiere den Support für weitere Informationen."
   },
   "settings": {
     "title": "Einstellungen",

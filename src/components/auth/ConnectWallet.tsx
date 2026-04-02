@@ -81,6 +81,8 @@ async function doLogout() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'logout' }),
   });
+  // Hard reload to reset AuthProvider + Thirdweb client state
+  window.location.href = '/';
 }
 
 interface ConnectWalletProps {

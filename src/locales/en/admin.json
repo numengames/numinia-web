@@ -21,7 +21,9 @@
   },
   "shell": {
     "title": "L.A.P.",
-    "connectMessage": "Connect your wallet or sign in to access L.A.P."
+    "connectMessage": "Connect your wallet or sign in to access L.A.P.",
+    "banned": "Account Suspended",
+    "bannedMessage": "Your account has been suspended. Contact support for more information."
   },
   "settings": {
     "title": "Settings",

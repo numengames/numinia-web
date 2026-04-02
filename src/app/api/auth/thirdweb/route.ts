@@ -104,7 +104,13 @@ export async function POST(req: NextRequest) {
       case 'logout': {
         const response = NextResponse.json({ success: true });
         response.cookies.set(TW_JWT_COOKIE, '', { ...TW_JWT_COOKIE_OPTIONS, maxAge: 0 });
-        response.cookies.set('csrf_token', '', { path: '/', maxAge: 0 });
+        response.cookies.set('csrf_token', '', {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 0,
+        });
         return response;
       }
 

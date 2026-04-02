@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getThirdwebAuth, TW_JWT_COOKIE } from '@/lib/thirdweb-auth';
 import { env } from '@/lib/env';
-import { mapRoleToRank } from '@/lib/rank';
+import { resolveUserRank } from '@/lib/auth/resolveRank';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,11 +21,20 @@ export async function GET() {
           const address = result.parsedJWT.sub;
           const isAdmin = env.adminWalletAddresses.includes(address.toLowerCase());
           const role = isAdmin ? 'admin' : 'user';
+
+          const resolved = await resolveUserRank({
+            authenticated: true,
+            address,
+            role,
+          });
+
           return NextResponse.json({
             authenticated: true,
             address,
             role,
-            rank: mapRoleToRank(role),
+            rank: resolved.rank,
+            banned: resolved.banned,
+            permissions: resolved.permissions,
           });
         }
       } catch {

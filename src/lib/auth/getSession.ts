@@ -39,37 +39,6 @@ export function getAdminSession(req: NextRequest): AdminSession {
   return { isAdmin: false, role: 'anonymous' };
 }
 
-/**
- * Verify JWT signature and return admin session. Async — calls Thirdweb SDK.
- * Use this for any route that grants elevated access.
- */
-export async function verifyAdminSession(req: NextRequest): Promise<AdminSession> {
-  const twCookie = req.cookies.get(TW_JWT_COOKIE);
-  if (!twCookie?.value) return { isAdmin: false, role: 'anonymous' };
-
-  const auth = getThirdwebAuth();
-  if (!auth) return { isAdmin: false, role: 'anonymous' };
-
-  try {
-    const result = await auth.verifyJWT({ jwt: twCookie.value });
-    if (!result.valid || !result.parsedJWT.sub) {
-      return { isAdmin: false, role: 'anonymous' };
-    }
-
-    const address = result.parsedJWT.sub.toLowerCase();
-    const adminAddresses = (process.env.ADMIN_WALLET_ADDRESSES ?? '')
-      .split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
-
-    if (adminAddresses.includes(address)) {
-      return { isAdmin: true, address: result.parsedJWT.sub, role: 'admin' };
-    }
-
-    return { isAdmin: false, address: result.parsedJWT.sub, role: 'user' };
-  } catch {
-    return { isAdmin: false, role: 'anonymous' };
-  }
-}
-
 // User session type — for any authenticated user (admin or regular)
 export type UserSession = {
   authenticated: boolean;

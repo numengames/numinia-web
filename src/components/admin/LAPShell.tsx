@@ -14,6 +14,7 @@ type AdminSession = {
   address?: string;
   role?: string;
   rank?: Rank;
+  banned?: boolean;
 };
 
 /**
@@ -46,6 +47,20 @@ export function LAPShell({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (session?.banned) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-cream dark:bg-cream-dark">
+        <img src="/logo-numinia.svg" alt="Numinia" className="h-8 w-auto dark:invert" />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">{t('admin.shell.banned')}</h1>
+          <p className="text-sm text-gray-500">
+            {t('admin.shell.bannedMessage')}
+          </p>
+        </div>
       </div>
     );
   }

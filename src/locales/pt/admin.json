@@ -21,7 +21,9 @@
   },
   "shell": {
     "title": "L.A.P.",
-    "connectMessage": "Conecte sua carteira ou faça login para acessar o L.A.P."
+    "connectMessage": "Conecte sua carteira ou faça login para acessar o L.A.P.",
+    "banned": "Conta Suspensa",
+    "bannedMessage": "Sua conta foi suspensa. Entre em contato com o suporte para mais informações."
   },
   "settings": {
     "title": "Configurações",

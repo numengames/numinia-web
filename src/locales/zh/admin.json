@@ -21,7 +21,9 @@
   },
   "shell": {
     "title": "L.A.P.",
-    "connectMessage": "连接钱包或登录以访问 L.A.P."
+    "connectMessage": "连接钱包或登录以访问 L.A.P.",
+    "banned": "账户已暂停",
+    "bannedMessage": "您的账户已被暂停。请联系支持获取更多信息。"
   },
   "settings": {
     "title": "设置",

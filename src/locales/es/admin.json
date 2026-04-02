@@ -21,7 +21,9 @@
   },
   "shell": {
     "title": "L.A.P.",
-    "connectMessage": "Conecta tu wallet o inicia sesión para acceder al L.A.P."
+    "connectMessage": "Conecta tu wallet o inicia sesión para acceder al L.A.P.",
+    "banned": "Cuenta Suspendida",
+    "bannedMessage": "Tu cuenta ha sido suspendida. Contacta con soporte para más información."
   },
   "settings": {
     "title": "Ajustes",
