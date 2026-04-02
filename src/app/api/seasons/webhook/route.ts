@@ -4,8 +4,32 @@ import { env } from '@/lib/env';
 import { addPassHolder, updatePassHolderNft } from '@/lib/season-storage';
 import { mintSeasonPass } from '@/lib/thirdweb-mint';
 import { createLogger } from '@/lib/logger';
+import { getRedis } from '@/lib/redis';
 
 const log = createLogger('api/seasons/webhook');
+
+// Idempotency: track processed Stripe event IDs to prevent double-processing on retries.
+// Uses Redis when available, falls back to in-memory Set (per-instance, best-effort).
+const processedEventsLocal = new Set<string>();
+const IDEMPOTENCY_TTL = 60 * 60 * 24; // 24h in seconds
+
+async function isEventProcessed(eventId: string): Promise<boolean> {
+  const redis = getRedis();
+  if (redis) {
+    const exists = await redis.get(`stripe:event:${eventId}`);
+    return exists !== null;
+  }
+  return processedEventsLocal.has(eventId);
+}
+
+async function markEventProcessed(eventId: string): Promise<void> {
+  const redis = getRedis();
+  if (redis) {
+    await redis.set(`stripe:event:${eventId}`, '1', { ex: IDEMPOTENCY_TTL });
+  } else {
+    processedEventsLocal.add(eventId);
+  }
+}
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,6 +63,12 @@ export async function POST(req: NextRequest) {
       { error: 'Invalid signature' },
       { status: 400 },
     );
+  }
+
+  // Idempotency check: skip already-processed events (Stripe retries on timeout)
+  if (await isEventProcessed(event.id)) {
+    log.info({ eventId: event.id }, 'Duplicate Stripe event — skipping');
+    return NextResponse.json({ received: true });
   }
 
   if (event.type === 'checkout.session.completed') {
@@ -90,6 +120,9 @@ export async function POST(req: NextRequest) {
       log.error({ err: mintError }, 'NFT mint failed (pass still recorded in JSON)');
     }
   }
+
+  // Mark event as processed after successful handling
+  await markEventProcessed(event.id);
 
   return NextResponse.json({ received: true });
 }

@@ -10,6 +10,7 @@ import { verifyCsrf } from '@/lib/session';
 import { findRankOverride, saveRankOverride, removeRankOverride, isUserBanned } from '@/lib/rank-storage';
 import { mapRoleToRank } from '@/lib/rank';
 import { logAudit } from '@/lib/audit';
+import { rankChangeRateLimit, getRateLimitKey } from '@/lib/rate-limit';
 import { RANK_HIERARCHY, RANK_LEVEL, type Rank } from '@/types/rank';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +64,11 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
 
   if (!verifyCsrf(req)) {
     return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+  }
+
+  const rl = await rankChangeRateLimit(getRateLimitKey(req));
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   const { id } = await context.params;

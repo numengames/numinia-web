@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDataSource } from '@/lib/data-source';
 import { GithubAvatar, GithubProject } from '@/types/github-storage';
 import { getAdminSession, requireRank, type SessionWithRank } from '@/lib/auth/getSession';
+import { verifyCsrf } from '@/lib/session';
 import { generateAssetId } from '@/lib/asset-id';
 import { isAllowedAssetUrl } from '@/lib/schemas';
 import { createLogger } from '@/lib/logger';
@@ -162,7 +163,11 @@ export async function POST(req: NextRequest) {
     } catch (response) {
       return response as Response;
     }
-    
+
+    if (!verifyCsrf(req)) {
+      return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
+    }
+
     // Parse the request body
     const avatarData = await req.json();
     

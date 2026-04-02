@@ -157,3 +157,4 @@ export const favoritesRateLimit = createRateLimit('favorites', { windowMs: 60000
 export const charactersRateLimit = createRateLimit('characters', { windowMs: 60000, maxRequests: 15 });
 export const nftCheckRateLimit = createRateLimit('nft-check', { windowMs: 60000, maxRequests: 20 });
 export const proxyRateLimit = createRateLimit('proxy', { windowMs: 60000, maxRequests: 30 });
+export const rankChangeRateLimit = createRateLimit('rank-change', { windowMs: 60000, maxRequests: 5 });

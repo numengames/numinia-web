@@ -70,7 +70,11 @@ numinia-digital-goods-data/
 │   ├── images/numinia-images.json       ← image catalog
 │   ├── 3dprint/numinia-3dprint.json     ← STL catalog
 │   ├── portals/numinia-portals.json     ← world map (4 districts, oncyber links)
-│   └── characters/{wallet}.md           ← per-user character sheets (markdown)
+│   ├── characters/{wallet}.md           ← per-user character sheets (markdown)
+│   ├── seasons/                         ← season definitions + progress
+│   ├── system/rank-overrides.json       ← rank override entries
+│   ├── moderation/bans.json             ← ban records
+│   └── users/wallet-users.json          ← wallet user registry
 ├── content/
 │   ├── models/      ← .glb files
 │   ├── avatars/     ← .vrm files
@@ -91,13 +95,13 @@ numinia-digital-goods-data/
 | Archive | `/en/archive` | Public gallery — browse, search, filter, download assets |
 | Finder | `/en/finder` | File-level browser with batch download |
 | Inspector | `/en/glbinspector` | GLB/VRM file inspector |
-| L.A.P. | `/en/LAP` | Logged-in user panel (was "Admin") |
+| L.A.P. | `/en/LAP` | Logged-in user panel (planned rename to P.A.R. — Personal Akashic Reader) |
 | Seasons | `/en/LAP/seasons` | Season Pass — Battle Pass with adventures, loot tracks, Stripe purchase |
 
 ### L.A.P. sidebar (top → bottom)
 1. **Character** — RPG character sheet (markdown, editable, PDF/MD export)
 2. **Portals** — Interactive world map (4 districts, 14 oncyber 3D worlds)
-3. **Loot** — NFT collections (ERC-721/1155, linked assets)
+3. **Loot** — NFT collections (ERC-721/1155, curated in-game utility items)
 4. **Seasons** — Season Pass (Battle Pass), adventure timeline, purchase flow
 5. **Codex** — Game lore and documentation
 6. **Assets** — Admin asset management (CRUD, tags, thumbnails)
@@ -132,7 +136,7 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 | Storage | GitHub (metadata), Cloudflare R2 (CDN), Arweave + IPFS (permanent) |
 | Logging | Pino (structured JSON) + Sentry (error tracking, optional) |
 | Env | Zod validation in `src/lib/env.ts` |
-| i18n | Static imports in `src/lib/i18n.tsx` — EN + JA |
+| i18n | Static imports in `src/lib/i18n.tsx` — 7 locales (EN, JA, ES, KO, ZH, PT, DE) |
 | Tests | Vitest 4 + RTL + jsdom — 173 tests |
 | Deploy | Vercel |
 | Legal | Numen Games S.L., Spanish law, GDPR compliant |
@@ -148,13 +152,13 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 - `src/lib/repositories/github.repo.ts` — wraps `github-storage.ts`
 - `src/lib/repositories/db.repo.ts` — Drizzle ORM queries against Neon PostgreSQL
 - Feature flag: `DATABASE_URL` present = DB mode, absent = GitHub mode
-- 14 API routes already migrated to use `getDataSource()` instead of direct imports
+- 13 API routes migrated to use `getDataSource()` instead of direct imports
 
 **Legacy (still works, still the default):**
 `src/lib/github-storage.ts` — reads/writes JSON + markdown to data repo via GitHub API.
 - Optimistic locking: retries 3x on 409 Conflict
 - In-memory cache with 1min TTL, full invalidation on writes
-- Routes using `fetchData`/`updateData` directly: presign, upload, characters, portals
+- 5 routes still using `fetchData`/`updateData` directly: upload, presign/confirm, upload-thumbnail, moderation/log, portals
 
 ### 2. Database schema (Neon PostgreSQL + Drizzle ORM)
 - `src/db/schema.ts` — 13 tables, mirrors GitHub JSON structures
@@ -166,12 +170,11 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 - `src/lib/redis.ts` — singleton client, null if not configured
 - `src/lib/rate-limit.ts` — Redis sorted sets (ZADD/ZRANGEBYSCORE) with in-memory fallback
 - `src/lib/audit.ts` — Redis LPUSH queue with periodic GitHub flush
-- All 14 rate-limited API routes use `await` for async Redis calls
+- All rate-limited API routes use `await` for async Redis calls
 
 ### 4. Structured logging
 - `src/lib/logger.ts` — Pino logger with `createLogger(module)` for scoped logs
 - JSON output in production, pretty-print in development
-- ~80 `console.error/warn` calls replaced across 37 files
 - Sentry integration: `sentry.{client,server,edge}.config.ts` — activates only when `SENTRY_DSN` set
 
 ### 5. Asset URL resolution chain
@@ -181,7 +184,7 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 
 ### 7. i18n uses static imports
-16 JSON files loaded statically. No dynamic `import()` with template literals.
+16 JSON files loaded statically per locale. No dynamic `import()` with template literals.
 
 ### 8. Auth: Thirdweb Connect v5 (sole method)
 - `tw_jwt` httpOnly cookie — JWT issued by Thirdweb Auth (SIWE under the hood)
@@ -189,9 +192,9 @@ Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 - `requireRank(req, 'archon')` — **verifies JWT signature** via Thirdweb SDK, checks rank + ban
 - `getAdminSession(req)` — sync, decodes JWT without verification (read-only checks only)
 - `getUserSession(req)` — sync, decodes JWT without verification (non-critical reads)
-- `verifyAdminSession(req)` — async, full JWT signature verification for elevated access
 - CSRF: token set at Thirdweb login, verified by `verifyCsrf()` on all mutation routes
 - Middleware (`tw_jwt` decode only): lightweight routing guard, NOT real auth enforcement
+- Stripe webhook: idempotency via Redis event ID tracking (fallback to in-memory Set)
 
 ---
 
@@ -204,6 +207,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `GITHUB_REPO_OWNER` | Yes | Data repo owner |
 | `GITHUB_REPO_NAME` | Yes | Data repo name |
 | `GITHUB_TOKEN` | Yes | Read/write data repo |
+| `SESSION_SECRET` | Yes | Session signing (min 32 chars) |
 | `ADMIN_WALLET_ADDRESSES` | No | Comma-separated ETH admin addresses |
 | `R2_*` | No | Cloudflare R2 storage |
 | `ARWEAVE_WALLET_KEY` | No | Arweave uploads (JWK JSON) |
@@ -227,38 +231,44 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 ## Current status (v0.15.0 — 2026-04-02)
 
 ### Platform features (done)
-- ✅ Auth: Thirdweb Connect v5 (sole method — SIWE/GitHub OAuth removed)
-- ✅ L.A.P.: Character Sheet, Portals Map, Loot, Seasons, Assets, Stats, Settings, Changelog
-- ✅ Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
-- ✅ Storage: R2 presigned (500MB), Arweave archive, IPFS pin
-- ✅ Data: UUID v7, tags, optimistic locking, auto-thumbnails
-- ✅ Seasons: Season Pass (Battle Pass), 8 adventures, free + premium loot, Stripe Checkout (9.99€)
-- ✅ NFT Mint: Thirdweb SDK ERC-1155 Drop on Base mainnet (best-effort, degrades gracefully)
-- ✅ Payments: Stripe Checkout → webhook → GitHub JSON + NFT mint
-- ✅ Quality: 173 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
-- ✅ Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
-- ✅ Portals: 4 districts, 14 oncyber worlds, interactive SVG map
-- ✅ Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
+- Auth: Thirdweb Connect v5 (sole method — SIWE/GitHub OAuth removed, JWT verified on mutations)
+- L.A.P.: Character Sheet, Portals Map, Loot, Seasons, Assets, Stats, Settings, Changelog
+- Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
+- Storage: R2 presigned (500MB), Arweave archive, IPFS pin
+- Data: UUID v7, tags, optimistic locking, auto-thumbnails
+- Seasons: Season Pass (Battle Pass), 8 adventures, free + premium loot, Stripe Checkout (9.99 EUR)
+- NFT Mint: Thirdweb SDK ERC-1155 Drop on Base mainnet (best-effort, degrades gracefully)
+- Payments: Stripe Checkout → webhook (idempotent) → GitHub JSON + NFT mint
+- Security: JWT signature verification on all mutations, CSRF on all mutations, rate limiting on all admin routes
+- Quality: 173 tests (17 files), 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
+- Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
+- Portals: 4 districts, 14 oncyber worlds, interactive SVG map
+- Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
 
 ### Enterprise migration (in progress — Phase 1+2 done)
-- ✅ Phase 1A: Redis/Upstash — shared rate limiting + audit across serverless instances
-- ✅ Phase 1B: CI/CD — GitHub Actions (type-check + test + license + audit + build)
-- ✅ Phase 1C: Structured logging (Pino) + Sentry error tracking
-- ✅ Phase 1D: Health check enhanced (GitHub + R2 + Redis)
-- ✅ Phase 2A: Neon PostgreSQL schema (13 tables) + Drizzle ORM
-- ✅ Phase 2B: Repository pattern + data source factory
-- ✅ Phase 2D: 14 API routes migrated to repository pattern
-- 🔲 Phase 2C: Data migration script (JSON → Postgres) — needs Neon configured
-- 🔲 Phase 2E: GitHub sync (DB → JSON periodic export for File Over App)
-- ✅ Phase 2F: Auth consolidated to Thirdweb Connect v5 (legacy SIWE + GitHub OAuth removed)
-- 🔲 Phase 3: API versioning + OpenAPI + SDK + Inngest jobs + webhooks
-- 🔲 Phase 4: Multi-creator + E2E tests + security hardening + dev portal
+- Phase 1A: Redis/Upstash — shared rate limiting + audit across serverless instances
+- Phase 1B: CI/CD — GitHub Actions (type-check + test + license + audit + build)
+- Phase 1C: Structured logging (Pino) + Sentry error tracking
+- Phase 1D: Health check enhanced (GitHub + R2 + Redis)
+- Phase 2A: Neon PostgreSQL schema (13 tables) + Drizzle ORM
+- Phase 2B: Repository pattern + data source factory
+- Phase 2D: 13 API routes migrated to repository pattern
+- Phase 2F: Auth consolidated to Thirdweb Connect v5 (legacy SIWE + GitHub OAuth removed)
+- Pending Phase 2C: Data migration script (JSON → Postgres) — needs Neon configured
+- Pending Phase 2E: GitHub sync (DB → JSON periodic export for File Over App)
+- Pending Phase 3: API versioning + OpenAPI + SDK + Inngest jobs + webhooks
+- Pending Phase 4: Multi-creator + E2E tests + security hardening + dev portal
 
-### Remaining (low priority)
-| Task | Impact |
+### Known issues (needs QA)
+| Issue | Status |
 |---|---|
-| 5 @ts-nocheck files (Three.js viewers, 8K lines) | Low |
-| Upload Mixamo GLB to R2 (replace legacy FBX CDN) | Low |
+| Ban system not working (user reported) | Needs investigation + QA |
+| Session Zero not implemented (nobody becomes Citizen automatically) | Design phase |
+| Legal pages reference old auth methods (SIWE, GitHub OAuth) | Needs text update |
+| 5 API routes still use github-storage.ts directly | Migrate to getDataSource() |
+| `verifyAdminSession()` is dead code (never imported) | Delete |
+| 5 @ts-nocheck files (Three.js viewers, 8K lines) | Low priority |
+| i18n: Changelog + PortalsMap have hardcoded English | Low priority |
 
 ---
 
@@ -271,7 +281,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `src/lib/repositories/types.ts` | Repository interfaces (IAssetRepo, IProjectRepo, etc.) |
 | `src/lib/repositories/github.repo.ts` | GitHub implementation (wraps github-storage.ts) |
 | `src/lib/repositories/db.repo.ts` | PostgreSQL implementation (Drizzle queries) |
-| `src/lib/github-storage.ts` | Legacy data CRUD (still used by routes not yet migrated) |
+| `src/lib/github-storage.ts` | Legacy data CRUD (still used by 5 routes not yet migrated) |
 | `src/db/schema.ts` | Drizzle schema — 13 tables, the source of truth for DB structure |
 | `src/db/index.ts` | `getDb()` — Neon client singleton |
 
@@ -283,7 +293,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `src/lib/rate-limit.ts` | Redis sorted sets + in-memory fallback |
 | `src/lib/audit.ts` | Redis queue + GitHub flush |
 | `src/lib/logger.ts` | Pino structured logger with `createLogger(module)` |
-| `src/lib/auth/getSession.ts` | Session check (admin + user) |
+| `src/lib/auth/getSession.ts` | Session check (requireRank, getAdminSession, getUserSession) |
 
 ### UI & features
 | File | Purpose |
@@ -306,7 +316,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `src/components/seasons/SeasonTimeline.tsx` | Adventure timeline UI + purchase flow |
 | `src/app/api/seasons/route.ts` | GET season data + user progress |
 | `src/app/api/seasons/checkout/route.ts` | POST Stripe Checkout session |
-| `src/app/api/seasons/webhook/route.ts` | POST Stripe webhook (pass holder + NFT mint) |
+| `src/app/api/seasons/webhook/route.ts` | POST Stripe webhook (idempotent, pass holder + NFT mint) |
 
 ---
 
@@ -330,7 +340,7 @@ cp .env.example .env.local
 npm install
 npm run dev          # http://localhost:3000
 npm run type-check   # TypeScript validation
-npm test             # Vitest (190 tests)
+npm test             # Vitest (173 tests)
 npm run build        # Production build
 
 # Optional enterprise services (all degrade gracefully without them):
