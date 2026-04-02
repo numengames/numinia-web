@@ -124,7 +124,7 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 | Framework | Next.js 16.2.1, App Router, React 18, TypeScript |
 | Styling | Tailwind CSS 3 + shadcn/ui (copied to `src/components/ui/`) |
 | 3D | Three.js 0.162 + @pixiv/three-vrm + STL viewer |
-| Auth | Thirdweb Connect v5 (primary) + SIWE fallback + GitHub OAuth |
+| Auth | Thirdweb Connect v5 (sole auth — 350+ wallets, social login, email, passkeys) |
 | Payments | Stripe Checkout (redirect mode, server-side webhook) |
 | NFT Mint | Thirdweb SDK — ERC-1155 Drop on Base mainnet (claimTo) |
 | Database | GitHub JSON (primary), Neon PostgreSQL via Drizzle ORM (enterprise, optional) |
@@ -133,7 +133,7 @@ Format: `ndg-{uuid-v7}` — Example: `ndg-019078e5-5a4c-7b00-8000-1a2b3c4d5e6f`
 | Logging | Pino (structured JSON) + Sentry (error tracking, optional) |
 | Env | Zod validation in `src/lib/env.ts` |
 | i18n | Static imports in `src/lib/i18n.tsx` — EN + JA |
-| Tests | Vitest 4 + RTL + jsdom — 186 tests |
+| Tests | Vitest 4 + RTL + jsdom — 173 tests |
 | Deploy | Vercel |
 | Legal | Numen Games S.L., Spanish law, GDPR compliant |
 
@@ -183,12 +183,15 @@ Always `next/dynamic({ ssr: false })`. Never static import for 3D.
 ### 7. i18n uses static imports
 16 JSON files loaded statically. No dynamic `import()` with template literals.
 
-### 8. Auth: wallet-first, any user can sign in
-- Admin wallets (whitelist) get `admin_session` cookie
-- Any wallet gets `user_session` cookie
-- `getAdminSession()` / `getUserSession()` in `src/lib/auth/getSession.ts`
-- **Thirdweb Connect v5**: 350+ wallets + embedded wallets + social login (Google, Discord, GitHub, X)
-- `tw_jwt` cookie for Thirdweb auth, recognized by middleware + session endpoints
+### 8. Auth: Thirdweb Connect v5 (sole method)
+- `tw_jwt` httpOnly cookie — JWT issued by Thirdweb Auth (SIWE under the hood)
+- Admin wallets: `ADMIN_WALLET_ADDRESSES` env var (comma-separated)
+- `requireRank(req, 'archon')` — **verifies JWT signature** via Thirdweb SDK, checks rank + ban
+- `getAdminSession(req)` — sync, decodes JWT without verification (read-only checks only)
+- `getUserSession(req)` — sync, decodes JWT without verification (non-critical reads)
+- `verifyAdminSession(req)` — async, full JWT signature verification for elevated access
+- CSRF: token set at Thirdweb login, verified by `verifyCsrf()` on all mutation routes
+- Middleware (`tw_jwt` decode only): lightweight routing guard, NOT real auth enforcement
 
 ---
 
@@ -224,7 +227,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 ## Current status (v0.15.0 — 2026-04-02)
 
 ### Platform features (done)
-- ✅ Auth: Thirdweb Connect v5 (primary) + SIWE fallback + GitHub OAuth
+- ✅ Auth: Thirdweb Connect v5 (sole method — SIWE/GitHub OAuth removed)
 - ✅ L.A.P.: Character Sheet, Portals Map, Loot, Seasons, Assets, Stats, Settings, Changelog
 - ✅ Viewers: VRM, GLB, HYP (Files/Script/Props tabs), STL, Image (zoom/pan), audio, video
 - ✅ Storage: R2 presigned (500MB), Arweave archive, IPFS pin
@@ -232,7 +235,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 - ✅ Seasons: Season Pass (Battle Pass), 8 adventures, free + premium loot, Stripe Checkout (9.99€)
 - ✅ NFT Mint: Thirdweb SDK ERC-1155 Drop on Base mainnet (best-effort, degrades gracefully)
 - ✅ Payments: Stripe Checkout → webhook → GitHub JSON + NFT mint
-- ✅ Quality: 190 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
+- ✅ Quality: 173 tests, 0 process.env bypasses, SECURITY.md, CONTRIBUTING.md, Dependabot
 - ✅ Legal: Terms, Privacy, Cookie Policy + consent banner (Numen Games S.L.)
 - ✅ Portals: 4 districts, 14 oncyber worlds, interactive SVG map
 - ✅ Character: RPG ficha as markdown (File Over App), edit/view modes, PDF/MD export
@@ -247,7 +250,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 - ✅ Phase 2D: 14 API routes migrated to repository pattern
 - 🔲 Phase 2C: Data migration script (JSON → Postgres) — needs Neon configured
 - 🔲 Phase 2E: GitHub sync (DB → JSON periodic export for File Over App)
-- 🔄 Phase 2F: Auth migration to Thirdweb Connect v5 (ConnectButton integrated, full legacy removal pending)
+- ✅ Phase 2F: Auth consolidated to Thirdweb Connect v5 (legacy SIWE + GitHub OAuth removed)
 - 🔲 Phase 3: API versioning + OpenAPI + SDK + Inngest jobs + webhooks
 - 🔲 Phase 4: Multi-creator + E2E tests + security hardening + dev portal
 
@@ -290,8 +293,7 @@ See `.env.example`. Validated by Zod at runtime. All optional vars degrade grace
 | `src/components/asset/HypViewer.tsx` | .hyp viewer (Files/Script/Props) |
 | `src/components/asset/ImageViewer.tsx` | Image zoom/pan/fullscreen |
 | `src/components/asset/STLViewer.tsx` | STL 3D print viewer |
-| `src/components/auth/LoginModal.tsx` | User login (wallet + GitHub) |
-| `src/components/auth/ConnectWallet.tsx` | Thirdweb ConnectButton wrapper |
+| `src/components/auth/ConnectWallet.tsx` | Thirdweb ConnectButton (sole auth UI) |
 | `src/components/admin/AdminSidebar.tsx` | L.A.P. sidebar navigation |
 
 ### Seasons & Payments

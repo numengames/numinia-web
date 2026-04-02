@@ -1,36 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { signSession, verifySession } from '@/lib/session';
+import { generateCsrfToken, verifyCsrf } from '@/lib/session';
+import { NextRequest } from 'next/server';
 
-describe('session signing', () => {
-  it('signs and verifies a payload', () => {
-    const payload = { address: '0x123', role: 'admin' };
-    const signed = signSession(payload);
-    const verified = verifySession(signed);
-    expect(verified).toEqual(payload);
+describe('CSRF utilities', () => {
+  it('generates a UUID token', () => {
+    const token = generateCsrfToken();
+    expect(token).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
-  it('rejects tampered cookie', () => {
-    const signed = signSession({ address: '0x123', role: 'admin' });
-    const tampered = signed.slice(0, -2) + 'xx';
-    expect(verifySession(tampered)).toBeNull();
+  it('generates unique tokens', () => {
+    const a = generateCsrfToken();
+    const b = generateCsrfToken();
+    expect(a).not.toBe(b);
   });
 
-  it('rejects empty string', () => {
-    expect(verifySession('')).toBeNull();
+  it('verifies matching token', () => {
+    const token = generateCsrfToken();
+    const req = new NextRequest('http://localhost/api/test', {
+      headers: { 'X-CSRF-Token': token },
+    });
+    req.cookies.set('csrf_token', token);
+    expect(verifyCsrf(req)).toBe(true);
   });
 
-  it('rejects plain JSON (no legacy fallback)', () => {
-    const plainJson = JSON.stringify({ address: '0x456', role: 'admin' });
-    expect(verifySession(plainJson)).toBeNull();
+  it('rejects mismatched token', () => {
+    const req = new NextRequest('http://localhost/api/test', {
+      headers: { 'X-CSRF-Token': 'wrong-token' },
+    });
+    req.cookies.set('csrf_token', generateCsrfToken());
+    expect(verifyCsrf(req)).toBe(false);
   });
 
-  it('rejects garbage string', () => {
-    expect(verifySession('not-a-cookie-at-all')).toBeNull();
+  it('rejects missing header', () => {
+    const req = new NextRequest('http://localhost/api/test');
+    req.cookies.set('csrf_token', generateCsrfToken());
+    expect(verifyCsrf(req)).toBe(false);
   });
 
-  it('signed cookie contains a dot separator', () => {
-    const signed = signSession({ test: true });
-    expect(signed).toContain('.');
-    expect(signed.split('.').length).toBe(2);
+  it('rejects missing cookie', () => {
+    const req = new NextRequest('http://localhost/api/test', {
+      headers: { 'X-CSRF-Token': generateCsrfToken() },
+    });
+    expect(verifyCsrf(req)).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const mockRequireRank = vi.fn();
-vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, signSession: (p: unknown) => JSON.stringify(p), verifySession: (v: string) => { try { return JSON.parse(v); } catch { return null; } } }));
+vi.mock('@/lib/session', () => ({ verifyCsrf: () => true, generateCsrfToken: () => 'test-csrf' }));
 vi.mock('@/lib/auth/getSession', () => ({
   requireRank: (...args: unknown[]) => mockRequireRank(...args),
 }));

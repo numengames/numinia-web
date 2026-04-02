@@ -11,7 +11,9 @@ export type AdminSession = {
 };
 
 /**
- * Check if the request has an admin session (Thirdweb JWT + ADMIN_WALLET_ADDRESSES).
+ * Decode JWT payload WITHOUT signature verification (sync, lightweight).
+ * Used ONLY for non-critical reads (e.g. "show hidden assets to admin").
+ * For mutation routes, use requireRank() which verifies the JWT signature.
  */
 export function getAdminSession(req: NextRequest): AdminSession {
   const twCookie = req.cookies.get(TW_JWT_COOKIE);
@@ -37,6 +39,37 @@ export function getAdminSession(req: NextRequest): AdminSession {
   return { isAdmin: false, role: 'anonymous' };
 }
 
+/**
+ * Verify JWT signature and return admin session. Async — calls Thirdweb SDK.
+ * Use this for any route that grants elevated access.
+ */
+export async function verifyAdminSession(req: NextRequest): Promise<AdminSession> {
+  const twCookie = req.cookies.get(TW_JWT_COOKIE);
+  if (!twCookie?.value) return { isAdmin: false, role: 'anonymous' };
+
+  const auth = getThirdwebAuth();
+  if (!auth) return { isAdmin: false, role: 'anonymous' };
+
+  try {
+    const result = await auth.verifyJWT({ jwt: twCookie.value });
+    if (!result.valid || !result.parsedJWT.sub) {
+      return { isAdmin: false, role: 'anonymous' };
+    }
+
+    const address = result.parsedJWT.sub.toLowerCase();
+    const adminAddresses = (process.env.ADMIN_WALLET_ADDRESSES ?? '')
+      .split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+
+    if (adminAddresses.includes(address)) {
+      return { isAdmin: true, address: result.parsedJWT.sub, role: 'admin' };
+    }
+
+    return { isAdmin: false, address: result.parsedJWT.sub, role: 'user' };
+  } catch {
+    return { isAdmin: false, role: 'anonymous' };
+  }
+}
+
 // User session type — for any authenticated user (admin or regular)
 export type UserSession = {
   authenticated: boolean;
@@ -45,26 +78,57 @@ export type UserSession = {
 };
 
 /**
- * Check for any authenticated user via Thirdweb JWT.
- * Decodes the JWT payload without full verification (sync).
- * Full verification happens in getSessionWithRank() which is async.
+ * Verify JWT and return user session. Async — calls Thirdweb SDK.
+ * Replaces the old sync getUserSession() for all critical paths.
+ */
+async function verifyUserSession(req: NextRequest): Promise<UserSession> {
+  const twCookie = req.cookies.get(TW_JWT_COOKIE);
+  if (!twCookie?.value) return { authenticated: false, role: 'anonymous' };
+
+  const auth = getThirdwebAuth();
+  if (!auth) {
+    // Thirdweb not configured — decode without verification (dev fallback)
+    return decodeJwtPayload(twCookie.value);
+  }
+
+  try {
+    const result = await auth.verifyJWT({ jwt: twCookie.value });
+    if (!result.valid || !result.parsedJWT.sub) {
+      return { authenticated: false, role: 'anonymous' };
+    }
+    return { authenticated: true, address: result.parsedJWT.sub, role: 'user' };
+  } catch {
+    return { authenticated: false, role: 'anonymous' };
+  }
+}
+
+/**
+ * Decode JWT payload WITHOUT signature verification (sync, lightweight).
+ * Safe for read-only operations (e.g. seasons progress, favorites).
+ * For mutations, use requireRank() which verifies the JWT signature.
  */
 export function getUserSession(req: NextRequest): UserSession {
   const twCookie = req.cookies.get(TW_JWT_COOKIE);
-  if (twCookie?.value) {
-    try {
-      const parts = twCookie.value.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
-        if (payload.sub) {
-          return { authenticated: true, address: payload.sub, role: 'user' };
-        }
-      }
-    } catch {
-      // Invalid JWT — treat as unauthenticated
-    }
-  }
+  if (!twCookie?.value) return { authenticated: false, role: 'anonymous' };
+  return decodeJwtPayload(twCookie.value);
+}
 
+/**
+ * Decode JWT payload without verification (sync).
+ * Also used as fallback when Thirdweb Auth is not configured (dev).
+ */
+function decodeJwtPayload(jwt: string): UserSession {
+  try {
+    const parts = jwt.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+      if (payload.sub) {
+        return { authenticated: true, address: payload.sub, role: 'user' };
+      }
+    }
+  } catch {
+    // malformed
+  }
   return { authenticated: false, role: 'anonymous' };
 }
 
@@ -84,10 +148,10 @@ export type SessionWithRank = {
 
 /**
  * Get user session enriched with computed rank and permissions.
- * Reads rank overrides + season progress + bans from the data repo.
+ * VERIFIES JWT signature via Thirdweb SDK before trusting the token.
  */
 export async function getSessionWithRank(req: NextRequest): Promise<SessionWithRank> {
-  const session = getUserSession(req);
+  const session = await verifyUserSession(req);
 
   if (!session.authenticated) {
     return {
@@ -98,7 +162,7 @@ export async function getSessionWithRank(req: NextRequest): Promise<SessionWithR
     };
   }
 
-  // Lazy import to avoid circular deps + keep this file synchronous for existing callers
+  // Lazy import to avoid circular deps
   const { resolveUserRank } = await import('@/lib/auth/resolveRank');
   const resolved = await resolveUserRank(session);
 
@@ -112,6 +176,7 @@ export async function getSessionWithRank(req: NextRequest): Promise<SessionWithR
 
 /**
  * Require a minimum rank for an API route. Returns SessionWithRank on success.
+ * JWT signature is VERIFIED before checking rank.
  *
  * @throws {Response} 401 if not authenticated, 403 if rank too low or banned
  */

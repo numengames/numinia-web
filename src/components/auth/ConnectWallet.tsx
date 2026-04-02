@@ -112,9 +112,3 @@ export function ConnectWallet({ theme = 'dark', onLogin }: ConnectWalletProps) {
   );
 }
 
-/**
- * Check if Thirdweb Connect is available (client-side check).
- */
-export function isThirdwebConnectAvailable(): boolean {
-  return !!clientId;
-}

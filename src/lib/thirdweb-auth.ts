@@ -21,10 +21,7 @@ const log = createLogger('lib/thirdweb-auth');
 
 let authInstance: ReturnType<typeof createAuth> | null = null;
 
-/**
- * Returns true if Thirdweb Auth is configured.
- */
-export function isThirdwebAuthConfigured(): boolean {
+function isThirdwebAuthConfigured(): boolean {
   return !!(
     process.env.THIRDWEB_AUTH_DOMAIN &&
     process.env.THIRDWEB_AUTH_ADMIN_KEY &&

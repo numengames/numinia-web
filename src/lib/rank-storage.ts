@@ -167,26 +167,3 @@ export async function getWalletUsers(): Promise<WalletUser[]> {
   }
 }
 
-/**
- * Register a wallet address on login. Updates lastSeen if already known.
- * Fire-and-forget — errors are silently ignored so login is never blocked.
- */
-export async function registerWalletUser(address: string): Promise<void> {
-  try {
-    const users = await getWalletUsers();
-    const normalized = address.toLowerCase();
-    const now = new Date().toISOString();
-    const existing = users.find(u => u.address === normalized);
-
-    if (existing) {
-      existing.lastSeen = now;
-    } else {
-      users.push({ address: normalized, firstSeen: now, lastSeen: now });
-    }
-
-    const file: WalletUsersFile = { users };
-    await updateData(WALLET_USERS_PATH, file, `Register wallet ${normalized.slice(0, 10)}...`);
-  } catch {
-    // Fire-and-forget: never block login
-  }
-}

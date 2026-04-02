@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRank, type SessionWithRank } from '@/lib/auth/getSession';
+import { verifyCsrf } from '@/lib/session';
 import { updateAdventureProgress, getUserSeasonStatus } from '@/lib/season-storage';
 import { createLogger } from '@/lib/logger';
 
@@ -9,6 +10,10 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  if (!verifyCsrf(req)) {
+    return NextResponse.json({ error: 'CSRF token invalid' }, { status: 403 });
+  }
+
   let session: SessionWithRank;
   try {
     session = await requireRank(req, 'archon');
