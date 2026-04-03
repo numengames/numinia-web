@@ -17,7 +17,7 @@
 
 import { ConnectButton } from 'thirdweb/react';
 import { createThirdwebClient } from 'thirdweb';
-import { inAppWallet, createWallet } from 'thirdweb/wallets';
+import { createWallet } from 'thirdweb/wallets';
 
 // ---------------------------------------------------------------------------
 // Client — singleton, created once from env var
@@ -27,14 +27,12 @@ const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID;
 const client = clientId ? createThirdwebClient({ clientId }) : null;
 
 // ---------------------------------------------------------------------------
-// Wallets — in-app (social + email + passkey) + external
+// Wallets — external wallets only.
+// In-App Wallet (social login) is disabled until Thirdweb domain verification
+// is complete. social.thirdweb.com returns 500 without it.
+// TODO: Re-enable inAppWallet after verifying domain in Thirdweb Dashboard.
 // ---------------------------------------------------------------------------
 const wallets = [
-  inAppWallet({
-    auth: {
-      options: ['google', 'discord', 'github', 'x', 'email', 'passkey'],
-    },
-  }),
   createWallet('io.metamask'),
   createWallet('com.coinbase.wallet'),
   createWallet('me.rainbow'),
@@ -151,7 +149,7 @@ export function ConnectWallet({ theme = 'dark', variant = 'default', onLogin }: 
       client={client}
       wallets={wallets}
       theme={theme}
-      autoConnect={{ timeout: 10000 }}
+      autoConnect={false}
       connectButton={{
         label,
         style: buttonStyle,

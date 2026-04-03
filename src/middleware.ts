@@ -72,8 +72,10 @@ export function middleware(request: NextRequest) {
     } catch { /* malformed JWT — treat as unauthenticated */ }
   }
 
-  // L.A.P. and admin routes — redirect unauthenticated users to home
-  if (pathname.match(/^\/[a-z]{2}\/(admin|LAP)/) && !isAuthenticated) {
+  // Admin-only routes — redirect unauthenticated users to home.
+  // LAP is NOT guarded here because LAPShell has its own auth UI
+  // (shows ConnectWallet button when not authenticated).
+  if (pathname.match(/^\/[a-z]{2}\/admin/) && !isAuthenticated) {
     const locale = currentLocale || defaultLocale;
     return NextResponse.redirect(new URL(`/${locale}/`, request.url));
   }
