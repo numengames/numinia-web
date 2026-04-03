@@ -63,7 +63,10 @@ export function middleware(request: NextRequest) {
     try {
       const parts = twJwt.value.split('.');
       if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        // Base64url → base64: replace URL-safe chars and add padding
+        let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const payload = JSON.parse(atob(b64));
         if (payload.sub) isAuthenticated = true;
       }
     } catch { /* malformed JWT — treat as unauthenticated */ }
