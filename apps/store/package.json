@@ -1,0 +1,35 @@
+{
+  "name": "@numinia/store",
+  "version": "0.16.0",
+  "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "type-check": "astro check",
+    "lint": "eslint src --no-error-on-unmatched-pattern",
+    "test": "echo 'unit tests arrive with Phase 1 components'"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.2",
+    "@astrojs/react": "^6.0.2",
+    "@numinia/domain": "*",
+    "@numinia/ui": "*",
+    "@pixiv/three-vrm": "^3.5.5",
+    "@react-three/fiber": "^9.7.0",
+    "astro": "^7.2.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "three": "^0.185.1",
+    "viem": "^2.55.16"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.185.0"
+  }
+}

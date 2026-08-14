@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "types": ["astro/client"]
+  },
+  "include": ["src/**/*", "astro.config.mjs"],
+  "exclude": ["dist"]
+}

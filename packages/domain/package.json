@@ -4,10 +4,13 @@
   "description": "Numinia domain model — the Functional Model layer. Framework-agnostic by decree (ADR-009): zod is the only runtime dependency.",
   "license": "MIT",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
     "type-check": "tsc --noEmit",

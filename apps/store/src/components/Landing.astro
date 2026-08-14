@@ -1,0 +1,34 @@
+---
+import { GUILDS, type SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+
+const HEADLINE: Record<SupportedLocale, string> = {
+  es: 'Numinia se está reconstruyendo',
+  en: 'Numinia is being rebuilt',
+  ja: 'ヌミニアは再建の途上にある',
+  ko: '누미니아는 재건 중입니다',
+  'pt-br': 'Numinia está sendo reconstruída',
+};
+---
+
+<BaseLayout locale={locale} title="Numinia">
+  <h1>{HEADLINE[locale]}</h1>
+  <ul>
+    {GUILDS.map((guild) => <li>{guild.name[locale]}</li>)}
+  </ul>
+</BaseLayout>
+
+<style>
+  h1 {
+    color: var(--numinia-color-primary);
+  }
+  li {
+    color: var(--numinia-color-text-muted);
+  }
+</style>

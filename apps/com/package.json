@@ -1,0 +1,24 @@
+{
+  "name": "@numinia/com",
+  "version": "0.16.0",
+  "description": "numinia.com — production track of the Numinia platform (Phase 2+). Skeleton only.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev --port 4322",
+    "build": "astro build",
+    "preview": "astro preview --port 4322",
+    "type-check": "astro check",
+    "lint": "eslint src --no-error-on-unmatched-pattern",
+    "test": "echo 'production app tests arrive with Phase 2'"
+  },
+  "dependencies": {
+    "@numinia/domain": "*",
+    "@numinia/ui": "*",
+    "astro": "^7.2.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10"
+  }
+}

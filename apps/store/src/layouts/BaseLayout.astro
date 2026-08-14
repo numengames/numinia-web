@@ -1,0 +1,39 @@
+---
+import '@numinia/ui/tokens.css';
+import type { SupportedLocale } from '@numinia/domain';
+
+interface Props {
+  locale: SupportedLocale;
+  title: string;
+}
+
+const { locale, title } = Astro.props;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    background: var(--numinia-color-background);
+    color: var(--numinia-color-text);
+    font-family: var(--numinia-font-mono);
+  }
+  main {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--numinia-space-5) var(--numinia-space-3);
+  }
+</style>
