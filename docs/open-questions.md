@@ -52,6 +52,10 @@
 
 `numinia-platform` is clean-room (zero legacy lines, fresh history): Numen Games holds full copyright and can pick **any** license — no relicensing constraints, MIT deps are AGPL-compatible. Trade-off is strategic, not legal: AGPL protects against closed SaaS forks but adds friction to the Remix pillar and to corporate adopters; assets remain CC0 either way. Constitution currently says MIT (and root/domain `package.json` say MIT). **Decide before the first public release / GitHub remote creation**; if AGPL, update constitution + `package.json` files + an ADR. *(Not legal advice; confirm with counsel.)*
 
+### D12 — Analytics backend/vendor (Oracle decision, raised 2026-08-15)
+
+`packages/analytics` (ADR-016) is transport-pluggable and currently local-only (memory transport). Before any public deploy: pick the backend (Plausible / self-hosted Umami / custom beacon endpoint / other) **and** ship the consent banner. Privacy constraints already fixed: no PII, referrer host only, drop-not-buffer before consent. The choice never touches call sites.
+
 ## E. Process conflicts needing an explicit ruling
 
 | # | Conflict | Detail |
