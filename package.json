@@ -1,0 +1,30 @@
+{
+  "name": "numinia-platform",
+  "version": "0.16.0",
+  "private": true,
+  "description": "Numinia Platform monorepo — the material culture of the city-state, rebuilt. Continues the numinia.store version line (legacy ended at 0.15.0).",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "ci": "turbo run type-check lint test build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "turbo": "^2.6.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4"
+  }
+}

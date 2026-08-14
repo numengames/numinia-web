@@ -1,0 +1,25 @@
+{
+  "name": "@numinia/domain",
+  "version": "0.16.0",
+  "description": "Numinia domain model — the Functional Model layer. Framework-agnostic by decree (ADR-009): zod is the only runtime dependency.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src __tests__",
+    "test": "vitest run --coverage",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "^4.0.18"
+  }
+}
