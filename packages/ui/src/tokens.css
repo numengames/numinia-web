@@ -1,0 +1,50 @@
+/**
+ * Numinia design tokens — derived from Numinia Brand & Culture (seminal).
+ *
+ * PROVISIONAL: values stand until the Oracle delivers the visual Brand
+ * package (logo, guild iconography, seal designs — open-questions D8).
+ * Palette: Mediterranean × steampunk × cyberpunk. Typography: Geist Mono.
+ */
+
+:root {
+  /* PROVISIONAL — Brand & Culture palette I/II */
+  --numinia-color-seafoam: #a6dad5; /* tranquil Mediterranean waters */
+  --numinia-color-turquoise: #018ea1; /* depths of the sea */
+  --numinia-color-amber: #efa517; /* sunset over ancient landscapes */
+  --numinia-color-beige: #f9ebdc; /* sands and timeless structures */
+  --numinia-color-coral: #f35059; /* neon-lit cyberpunk energy */
+  --numinia-color-darkred: #d33440; /* historical wisdom, revolutionary ideas */
+
+  /* PROVISIONAL — semantic aliases */
+  --numinia-color-background: var(--numinia-color-beige);
+  --numinia-color-surface: #ffffff;
+  --numinia-color-text: #1a1a1a;
+  --numinia-color-text-muted: #5a5a5a;
+  --numinia-color-primary: var(--numinia-color-turquoise);
+  --numinia-color-accent: var(--numinia-color-amber);
+  --numinia-color-danger: var(--numinia-color-darkred);
+
+  /* PROVISIONAL — typography (Brand & Culture: Geist Mono) */
+  --numinia-font-mono: 'Geist Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+
+  /* PROVISIONAL — spacing scale */
+  --numinia-space-1: 0.25rem;
+  --numinia-space-2: 0.5rem;
+  --numinia-space-3: 1rem;
+  --numinia-space-4: 1.5rem;
+  --numinia-space-5: 2.5rem;
+
+  /* PROVISIONAL — radii */
+  --numinia-radius-sm: 4px;
+  --numinia-radius-md: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* PROVISIONAL — dark surfaces keep the palette's copper-and-silicon mood */
+    --numinia-color-background: #12100e;
+    --numinia-color-surface: #1c1a17;
+    --numinia-color-text: var(--numinia-color-beige);
+    --numinia-color-text-muted: #b8ad9e;
+  }
+}
