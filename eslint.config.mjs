@@ -17,10 +17,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/src/**/*.{ts,tsx}'],
+    files: ['**/src/**/*.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/features/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       // Named exports only (constitution §Code standards). Config files are exempt below.
       'no-restricted-syntax': [
         'error',

@@ -12,6 +12,7 @@
   "engines": {
     "node": ">=22"
   },
+  "packageManager": "npm@11.16.0",
   "scripts": {
     "build": "turbo run build",
     "type-check": "turbo run type-check",

@@ -48,6 +48,10 @@
 | D9 | **Translation QA** for JA/KO/PT-BR constants (native review) | Pending workflow | 🧬 hire/find |
 | D10 | **Humor/archetype constant depth** — TODO says "attribute links" (humors) and "guild/faction alignment" (archetypes); confirm full attribute sets (hours, elements, organs, conducts) are Phase 0 or later | Partially resolved | 🤖 with 🧬 sign-off |
 
+### D11 — License: MIT vs AGPL-3.0 (Oracle decision, raised 2026-08-14)
+
+`numinia-platform` is clean-room (zero legacy lines, fresh history): Numen Games holds full copyright and can pick **any** license — no relicensing constraints, MIT deps are AGPL-compatible. Trade-off is strategic, not legal: AGPL protects against closed SaaS forks but adds friction to the Remix pillar and to corporate adopters; assets remain CC0 either way. Constitution currently says MIT (and root/domain `package.json` say MIT). **Decide before the first public release / GitHub remote creation**; if AGPL, update constitution + `package.json` files + an ADR. *(Not legal advice; confirm with counsel.)*
+
 ## E. Process conflicts needing an explicit ruling
 
 | # | Conflict | Detail |
