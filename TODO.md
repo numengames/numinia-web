@@ -4,7 +4,7 @@
 > Format: each task has a phase, priority, agent type, and status.
 > This file is the single source of truth until tasks migrate to Huly.
 >
-> Last updated: 2026-04-03
+> Last updated: 2026-08-15 — Phase 0 executed (MISSION-000); deploy deferred by Oracle order until the GitHub remote exists (with license decision D11)
 
 ---
 
@@ -19,56 +19,56 @@
 - [x] Constants: ranks with full i18n
 - [x] Constants: seals and thresholds
 - [x] Constants: permissions with `resolvePermissions()` and `hasPermission()`
-- [ ] Constants: species (5 species, all fields, i18n) — 🤖 Digital
-- [ ] Constants: districts (4 districts, coordinates, i18n) — 🤖 Digital
-- [ ] Constants: competences (9 competences, 3 domains, i18n) — 🤖 Digital
-- [ ] Constants: archetypes (12 archetypes, guild/faction alignment) — 🤖 Digital
-- [ ] Constants: humors (4 humors, attribute links) — 🤖 Digital
-- [ ] Validators: Zod schemas for all external data (GitHub repo JSON) — 🤖 Digital
-- [ ] Validators: Zod schema for env vars (crash at boot) — 🤖 Digital
-- [ ] Resolvers: `asset-url.ts` (Arweave → R2 → IPFS → GitHub chain) — 🤖 Digital
-- [ ] Resolvers: `guild-resolver.ts` (superordinate → basic → subordinate) — 🤖 Digital
-- [ ] Tests: 100% coverage on all types, constants, validators, resolvers — 🤖 Digital
-- [ ] `package.json` for `@numinia/domain` — 🤖 Digital
+- [x] Constants: species (5 species, all fields, i18n) — 🤖 Digital
+- [x] Constants: districts (4 districts, coordinates, i18n) — 🤖 Digital
+- [x] Constants: competences (9 competences, 3 domains, i18n) — 🤖 Digital
+- [x] Constants: archetypes (12 archetypes, guild/faction alignment) — 🤖 Digital
+- [x] Constants: humors (4 humors, attribute links) — 🤖 Digital
+- [x] Validators: Zod schemas for all external data (GitHub repo JSON) — 🤖 Digital
+- [x] Validators: Zod schema for env vars (crash at boot) — 🤖 Digital
+- [x] Resolvers: `asset-url.ts` (Arweave → R2 → IPFS → GitHub chain) — 🤖 Digital
+- [x] Resolvers: `guild-resolver.ts` (superordinate → basic → subordinate) — 🤖 Digital
+- [x] Tests: 100% coverage on all types, constants, validators, resolvers — 🤖 Digital
+- [x] `package.json` for `@numinia/domain` — 🤖 Digital
 
 ### 0.1 Monorepo Scaffold
 
-- [ ] Initialize Turborepo with `apps/store`, `apps/com`, `packages/*` — 🤖 Digital
-- [ ] `tsconfig` base with strict mode — 🤖 Digital
-- [ ] ESLint + Prettier config — 🤖 Digital
-- [ ] `turbo.json` with pipeline (type-check → lint → test → build) — 🤖 Digital
+- [x] Initialize Turborepo with `apps/store`, `apps/com`, `packages/*` — 🤖 Digital
+- [x] `tsconfig` base with strict mode — 🤖 Digital
+- [x] ESLint + Prettier config — 🤖 Digital
+- [x] `turbo.json` with pipeline (type-check → lint → test → build) — 🤖 Digital
 
 ### 0.3 Design Tokens
 
-- [ ] `packages/ui/src/tokens.css` with Brand & Culture colors — 🤖 Digital
+- [x] `packages/ui/src/tokens.css` with Brand & Culture colors — 🤖 Digital
 - [ ] Tailwind 4 config consuming tokens — 🤖 Digital
 - [ ] **BLOCKED:** Need visual Brand & Culture assets (logo, guild icons, seals) — 🧬 Biological (Pablo)
 
 ### 0.4 Astro + Testing Config
 
-- [ ] `apps/store` with Astro 5 + React integration — 🤖 Digital
-- [ ] Vitest config — 🤖 Digital
-- [ ] Playwright config — 🤖 Digital
-- [ ] Cucumber.js config + first `.feature` file — 🤖 Digital
-- [ ] i18n routing (5 languages) — 🤖 Digital
+- [x] `apps/store` with Astro 5 + React integration — 🤖 Digital
+- [x] Vitest config — 🤖 Digital
+- [x] Playwright config — 🤖 Digital
+- [x] Cucumber.js config + first `.feature` file — 🤖 Digital
+- [x] i18n routing (5 languages) — 🤖 Digital
 
 ### 0.5 Env Var Validation
 
-- [ ] Zod schema for all env vars — 🤖 Digital
-- [ ] Crash at boot if missing — 🤖 Digital
-- [ ] `.env.example` with all required vars — 🤖 Digital
+- [x] Zod schema for all env vars — 🤖 Digital
+- [x] Crash at boot if missing — 🤖 Digital
+- [x] `.env.example` with all required vars — 🤖 Digital
 
 ### 0.6 CI/CD
 
-- [ ] GitHub Actions workflow: type-check → lint → test → build — 🤖 Digital
+- [x] GitHub Actions workflow: type-check → lint → test → build — 🤖 Digital
 - [ ] Branch protection rules for `main` — 🧬 Biological
 
 ### 0.7 Spike Technical
 
-- [ ] Astro 5 + React island with Three.js/@pixiv/three-vrm rendering a VRM — 🔀 Hybrid
-- [ ] SIWE login flow with viem in Astro endpoint — 🔀 Hybrid
-- [ ] Fetch data from `numinia-digital-goods-data` via GitHub API — 🤖 Digital
-- [ ] **DECISION GATE:** If spike fails → evaluate Next.js fallback
+- [x] Astro 5 + React island with Three.js/@pixiv/three-vrm rendering a VRM — 🔀 Hybrid
+- [x] SIWE login flow with viem in Astro endpoint — 🔀 Hybrid
+- [x] Fetch data from `numinia-digital-goods-data` via GitHub API — 🤖 Digital
+- [x] **DECISION GATE: PASSED (2026-08-15).** VRM island renders (Playwright-verified); no Next.js fallback needed. See missions/MISSION-000-report.md
 
 ---
 
