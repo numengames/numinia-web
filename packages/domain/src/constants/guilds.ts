@@ -503,7 +503,8 @@ export const GUILDS: readonly Guild[] = [
       en: 'Creative, scientific and artistic minds: inventors, discoverers and innovators.',
       ja: '創造と科学と芸術の精神。発明家、発見者、革新者。',
       ko: '창조적이고 과학적이며 예술적인 정신 — 발명가, 발견자, 혁신가.',
-      'pt-br': 'Mentes criativas, científicas e artísticas: inventores, descobridores e inovadores.',
+      'pt-br':
+        'Mentes criativas, científicas e artísticas: inventores, descobridores e inovadores.',
     },
     branches: [artisans, engineers],
   },
@@ -521,7 +522,8 @@ export const GUILDS: readonly Guild[] = [
       en: 'They live by letters, history and fantasy: chroniclers of the ages and visionaries.',
       ja: '文芸と歴史と幻想に生きる者たち。時代の記録者にして夢想家。',
       ko: '문학과 역사, 환상 속에 사는 자들 — 시대의 기록자이자 몽상가.',
-      'pt-br': 'Vivem pelas letras, pela história e pela fantasia: cronistas das eras e visionários.',
+      'pt-br':
+        'Vivem pelas letras, pela história e pela fantasia: cronistas das eras e visionários.',
     },
     branches: [chroniclers, scholars],
   },

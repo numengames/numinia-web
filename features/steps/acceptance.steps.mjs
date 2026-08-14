@@ -79,20 +79,13 @@ Then('validation succeeds', function () {
 const fixturePath = path.join(repoRoot, 'packages', 'domain', 'src', 'acceptance-fixture.ts');
 
 Given('a source file containing an {string} type and a {string}', async function (_type, _call) {
-  await writeFile(
-    fixturePath,
-    'export function bad(x: any): void { console.log(x); }\n',
-    'utf8',
-  );
+  await writeFile(fixturePath, 'export function bad(x: any): void { console.log(x); }\n', 'utf8');
 });
 
 When('the lint gate runs on it', async function () {
   this.lint = await new Promise((resolve) => {
-    execFile(
-      'npx',
-      ['eslint', fixturePath],
-      { cwd: repoRoot },
-      (error, stdout, stderr) => resolve({ code: error?.code ?? 0, output: stdout + stderr }),
+    execFile('npx', ['eslint', fixturePath], { cwd: repoRoot }, (error, stdout, stderr) =>
+      resolve({ code: error?.code ?? 0, output: stdout + stderr }),
     );
   });
   await unlink(fixturePath);

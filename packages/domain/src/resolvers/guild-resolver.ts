@@ -2,7 +2,15 @@
  * Guild resolution — traverse the superordinate → basic → subordinate levels.
  */
 
-import type { Branch, BranchId, Guild, GuildId, GuildPath, House, HouseId } from '../types/guild.js';
+import type {
+  Branch,
+  BranchId,
+  Guild,
+  GuildId,
+  GuildPath,
+  House,
+  HouseId,
+} from '../types/guild.js';
 import { GUILDS } from '../constants/guilds.js';
 
 export function getGuild(id: GuildId): Guild | undefined {

@@ -10,9 +10,9 @@ test('VRM avatar renders inside the Astro React island', async ({ page }) => {
   await page.goto('/spike/');
 
   // Real catalog data validated at build time.
-  const count = await page.locator('[data-spike-catalog-count]').getAttribute(
-    'data-spike-catalog-count',
-  );
+  const count = await page
+    .locator('[data-spike-catalog-count]')
+    .getAttribute('data-spike-catalog-count');
   expect(Number(count)).toBeGreaterThan(0);
 
   // client:visible: the island hydrates when scrolled into view.

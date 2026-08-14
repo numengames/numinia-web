@@ -38,29 +38,27 @@ const assetRecordSchema = z
       })
       .default({ arweave_tx: null, r2: null, ipfs_cid: null, github_raw: null }),
   })
-  .transform(
-    (record): Asset => ({
-      id: record.id,
-      name: record.name,
-      description: record.description,
-      format: record.type as AssetFormat,
-      license: record.license,
-      projectId: record.project_id,
-      modelFileUrl: record.model_file_url,
-      thumbnailUrl: record.thumbnail_url,
-      tags: record.tags,
-      isPublic: record.is_public,
-      isDraft: record.is_draft,
-      createdAt: record.created_at,
-      updatedAt: record.updated_at,
-      storage: {
-        arweaveTx: record.storage.arweave_tx,
-        r2Url: record.storage.r2,
-        ipfsCid: record.storage.ipfs_cid,
-        githubRawUrl: record.storage.github_raw,
-      },
-    }),
-  );
+  .transform((record): Asset => ({
+    id: record.id,
+    name: record.name,
+    description: record.description,
+    format: record.type as AssetFormat,
+    license: record.license,
+    projectId: record.project_id,
+    modelFileUrl: record.model_file_url,
+    thumbnailUrl: record.thumbnail_url,
+    tags: record.tags,
+    isPublic: record.is_public,
+    isDraft: record.is_draft,
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    storage: {
+      arweaveTx: record.storage.arweave_tx,
+      r2Url: record.storage.r2,
+      ipfsCid: record.storage.ipfs_cid,
+      githubRawUrl: record.storage.github_raw,
+    },
+  }));
 
 export function parseAssetRecord(input: unknown): Asset {
   return assetRecordSchema.parse(input);

@@ -22,7 +22,9 @@ describe('resolvePermissions (cumulative ladder)', () => {
       const lower = resolvePermissions(lowerRank);
       const current = resolvePermissions(rank);
       for (const permission of lower) {
-        expect(current.has(permission), `${rank} lost "${permission}" from ${lowerRank}`).toBe(true);
+        expect(current.has(permission), `${rank} lost "${permission}" from ${lowerRank}`).toBe(
+          true,
+        );
       }
       expect(current.size).toBeGreaterThan(lower.size);
     }

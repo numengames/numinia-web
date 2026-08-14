@@ -23,7 +23,8 @@ export const FACTIONS: readonly Faction[] = [
       en: 'Guardians of wisdom and erudition: they study, preserve and expand knowledge.',
       ja: '知恵と学識の守護者。知識を学び、守り、広げる。',
       ko: '지혜와 학식의 수호자 — 지식을 연구하고 보존하며 넓힌다.',
-      'pt-br': 'Guardiões da sabedoria e da erudição: estudam, preservam e expandem o conhecimento.',
+      'pt-br':
+        'Guardiões da sabedoria e da erudição: estudam, preservam e expandem o conhecimento.',
     },
     seedName: {
       es: 'Sociedad Hermética de los Siete Principios',

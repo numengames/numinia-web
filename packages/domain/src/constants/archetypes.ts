@@ -11,7 +11,13 @@ export const ARCHETYPES: readonly Archetype[] = [
     id: 'innocent',
     alignedGuilds: ['sentinels'],
     alignedFactions: ['heirs-of-eleusis'],
-    name: { es: 'Inocente', en: 'Innocent', ja: '無垢なる者', ko: '순수한 자', 'pt-br': 'Inocente' },
+    name: {
+      es: 'Inocente',
+      en: 'Innocent',
+      ja: '無垢なる者',
+      ko: '순수한 자',
+      'pt-br': 'Inocente',
+    },
     description: {
       es: 'La esperanza pura y la confianza esencial.',
       en: 'Pure hope and essential trust.',
