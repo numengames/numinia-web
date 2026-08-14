@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pre-commit gate: formatting, lint and secret scan on STAGED files only.
+# A bad commit is impossible, not merely detectable (infra-quality-plan W1).
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+code_files=$(echo "$staged" | grep -E '\.(ts|tsx|mjs|css|json)$' | grep -v 'package-lock.json' || true)
+lint_files=$(echo "$staged" | grep -E '\.(ts|tsx|mjs)$' || true)
+
+if [ -n "$code_files" ]; then
+  echo "pre-commit: prettier --check"
+  # shellcheck disable=SC2086
+  npx prettier --check $code_files
+fi
+
+if [ -n "$lint_files" ]; then
+  echo "pre-commit: eslint"
+  # shellcheck disable=SC2086
+  npx eslint --no-error-on-unmatched-pattern $lint_files
+fi
+
+echo "pre-commit: secretlint"
+if ! echo "$staged" | tr '\n' '\0' | xargs -0 npx secretlint --no-color; then
+  echo "pre-commit: secretlint found potential secrets in staged files" >&2
+  exit 1
+fi
+
+exit 0

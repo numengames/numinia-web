@@ -1,0 +1,18 @@
+#!/bin/sh
+# Commit-message gate: enforce the constitution's format
+#   [track] type(scope): description
+# track ∈ {store, com}; type ∈ conventional set. Merge/revert/fixup pass through.
+msg_file="$1"
+first_line=$(head -n 1 "$msg_file")
+
+case "$first_line" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+if ! echo "$first_line" | grep -Eq '^\[(store|com)\] (feat|fix|refactor|test|docs|chore|style|perf)\([a-z0-9-]+\): .+'; then
+  echo "commit-msg: invalid format." >&2
+  echo "  expected: [store|com] type(scope): description" >&2
+  echo "  got:      $first_line" >&2
+  exit 1
+fi
+exit 0

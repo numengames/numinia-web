@@ -1,0 +1,9 @@
+#!/bin/sh
+# Pre-push gate: the full local pipeline plus acceptance — nothing leaves the
+# machine broken. (Inert until a remote exists; armed from day one after.)
+set -e
+echo "pre-push: turbo pipeline"
+npm run ci
+echo "pre-push: acceptance (Gherkin)"
+npm run test:acceptance
+exit 0
