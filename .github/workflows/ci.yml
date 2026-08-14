@@ -22,3 +22,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - name: Pipeline
         run: npm run ci
+        env:
+          GITHUB_REPO_OWNER: PabloFMM
+          GITHUB_REPO_NAME: numinia-digital-goods-data
+      - name: Acceptance (Gherkin)
+        run: npm run test:acceptance
