@@ -66,7 +66,7 @@ numinia-platform/
 ├── packages/
 │   ├── domain/                   # THE MOST IMPORTANT PACKAGE
 │   │   ├── src/
-│   │   │   ├── types/            # 18 type files — the soul of the codebase
+│   │   │   ├── types/            # 19 type files — the soul of the codebase
 │   │   │   ├── constants/        # Data instances with i18n (5 languages)
 │   │   │   ├── resolvers/        # Asset URL resolution, guild resolution
 │   │   │   └── validators/       # Zod schemas for all external data
@@ -119,7 +119,7 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 | Layer | Technology | Why |
 |-------|-----------|-----|
-| Framework | Astro 5 | SSG for gallery (SEO), islands for interactivity |
+| Framework | Astro (current stable — 7.x at rebuild start, ADR-015) | SSG for gallery (SEO), islands for interactivity |
 | Islands | React 19 | Only where needed: 3D viewer, wallet, citizen dashboard |
 | 3D | Three.js + @react-three/fiber + @pixiv/three-vrm | Proven stack for GLB/VRM |
 | Styling | Tailwind CSS 4 + Numinia design tokens | Utility-first + brand consistency |
@@ -355,6 +355,7 @@ PUBLIC_SITE_URL=https://numinia.store
 ### Components
 - Max **200 lines** per file. If it's longer, split it.
 - Every component handles three states: loading, error, empty.
+- Every interactive element carries `data-metric="<area>-<action>"` (funnel instrumentation — docs/analytics.md).
 - No default exports. Use `export function ComponentName()`.
 - 3D components are ALWAYS lazy-loaded: `client:visible` in Astro or `React.lazy()`.
 
@@ -428,6 +429,9 @@ Current priority: **Phase 0 — complete domain model + spike technical**
 | ADR-006 | Progressive auth (Web2→Web3) | 2026-04-03 | Numinia bridges digital divide. Details TBD |
 | ADR-007 | Guild names corrected from RPG manual | 2026-04-03 | Manual is canonical source, not old CLAUDE.md |
 | ADR-008 | All code comments in English | 2026-04-03 | Accessibility and best practices |
+| ADR-009 | Domain model framework-agnostic (zod-only) | 2026-04-03 | See DECISIONS.md |
+| ADR-010 | v0.1.0 design preserved, code discarded | 2026-04-03 | See DECISIONS.md |
+| ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation | 2026-08 | See docs/decisions/ |
 
 ---
 

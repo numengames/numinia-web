@@ -1,3 +1,9 @@
+> ⚠️ **HISTORICAL DOCUMENT (superseded).** This is the original 2026-04-03 CTO
+> proposal, kept as context. Where it disagrees with `CLAUDE.md`, `DECISIONS.md`
+> (ADR-001+), or `docs/decisions/`, those win — e.g. i18n is 5 languages
+> (ADR-001, not "EN/JA/ES"), Astro is current-stable (ADR-015), and phases/
+> status live in `TODO.md` + `missions/`.
+
 # NUMINIA.STORE — Plan de Reconstrucción desde Cero
 
 **Autor:** Auditoría CTO externa
