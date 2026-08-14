@@ -5,7 +5,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "noEmit": true,
-    "types": ["astro/client"]
+    "types": ["astro/client", "node"]
   },
   "include": ["src/**/*", "astro.config.mjs"],
   "exclude": ["dist"]

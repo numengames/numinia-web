@@ -7,8 +7,13 @@ import { parseEnv } from '@numinia/domain';
 
 // Fail closed AT BOOT: a missing required variable kills dev/build here,
 // before any server binds (MISSION-000 env-validation scenario).
-const rawEnv = { ...loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), ''), ...process.env };
-export const env = parseEnv(rawEnv);
+// .env values are hoisted into process.env so that application modules
+// (src/lib/env.ts) see the exact same environment during build and runtime.
+const fileEnv = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
+for (const [key, value] of Object.entries(fileEnv)) {
+  if (process.env[key] === undefined) process.env[key] = value;
+}
+const env = parseEnv(process.env);
 
 export default defineConfig({
   site: env.publicSiteUrl,

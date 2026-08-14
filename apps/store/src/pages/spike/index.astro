@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { VRMViewer } from '../../components/spike/VRMViewer';
 import { fetchAvatarCatalog } from '../../lib/data';
-import { env } from '../../../astro.config.mjs';
+import { env } from '../../lib/env';
 
 // Build-time fetch + Zod validation: an invalid catalog fails this build loudly.
 const catalog = await fetchAvatarCatalog({
