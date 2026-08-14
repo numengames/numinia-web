@@ -1,0 +1,5 @@
+# Verbatim data snapshots and generated output
+**/fixtures/**
+**/dist/**
+**/coverage/**
+package-lock.json

@@ -101,3 +101,28 @@ Then('the report names the offending file and both line positions', function () 
   assert.ok(this.lint.output.includes('no-console'), 'console rule not reported');
   assert.ok(/\d+:\d+/.test(this.lint.output), 'line:column positions missing');
 });
+
+// --- data fixture ---
+
+import { ASSET_FORMATS, parseAssetCatalog } from '@numinia/domain';
+
+Given('the committed avatar catalog fixture', async function () {
+  this.fixtureRaw = JSON.parse(
+    await readFile(path.join(repoRoot, 'apps', 'store', 'fixtures', 'avatar-catalog.json'), 'utf8'),
+  );
+});
+
+When('it is parsed with the domain asset validator', function () {
+  this.catalog = parseAssetCatalog(this.fixtureRaw);
+});
+
+Then('it yields at least {int} valid asset', function (minimum) {
+  assert.ok(this.catalog.length >= minimum, `only ${this.catalog.length} assets`);
+});
+
+Then('every asset has a non-empty id and a known format', function () {
+  for (const asset of this.catalog) {
+    assert.ok(asset.id.length > 0);
+    assert.ok(ASSET_FORMATS.includes(asset.format), `unknown format ${asset.format}`);
+  }
+});

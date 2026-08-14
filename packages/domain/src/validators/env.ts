@@ -13,6 +13,8 @@ const envSchema = z.object({
   /** Optional in Phase 0: public raw reads need no auth. Empty string = absent. */
   GITHUB_TOKEN: z.string().optional(),
   PUBLIC_SITE_URL: z.url().default('http://localhost:4321'),
+  /** 'fixture' builds hermetically from a committed catalog snapshot (offline/CI). */
+  DATA_SOURCE: z.enum(['network', 'fixture']).default('network'),
 });
 
 export interface DomainEnv {
@@ -21,6 +23,7 @@ export interface DomainEnv {
   readonly githubBranch: string;
   readonly githubToken: string | null;
   readonly publicSiteUrl: string;
+  readonly dataSource: 'network' | 'fixture';
 }
 
 export class EnvValidationError extends Error {
@@ -49,5 +52,6 @@ export function parseEnv(input: Readonly<Record<string, string | undefined>>): D
     githubBranch: parsed.GITHUB_BRANCH,
     githubToken: parsed.GITHUB_TOKEN ? parsed.GITHUB_TOKEN : null,
     publicSiteUrl: parsed.PUBLIC_SITE_URL,
+    dataSource: parsed.DATA_SOURCE,
   };
 }

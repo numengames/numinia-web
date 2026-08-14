@@ -54,6 +54,12 @@ describe('env validation (fail closed — legacy audit rule 4)', () => {
     const withToken = parseEnv({ ...valid, GITHUB_TOKEN: 'ghp_x' });
     expect(withToken.githubToken).toBe('ghp_x');
   });
+
+  it('defaults DATA_SOURCE to network and accepts fixture', () => {
+    expect(parseEnv(valid).dataSource).toBe('network');
+    expect(parseEnv({ ...valid, DATA_SOURCE: 'fixture' }).dataSource).toBe('fixture');
+    expect(() => parseEnv({ ...valid, DATA_SOURCE: 'wat' })).toThrowError(EnvValidationError);
+  });
 });
 
 describe('asset catalog validation (build fails loudly — MISSION-000 data spike)', () => {

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Inert until the GitHub remote exists; activates by installing the Renovate app.",
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "schedule": ["before 8am on monday"],
+  "packageRules": [
+    {
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev tooling"
+    },
+    {
+      "matchPackageNames": ["three", "@pixiv/three-vrm", "@types/three"],
+      "groupName": "three.js stack"
+    }
+  ]
+}

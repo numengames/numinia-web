@@ -26,3 +26,18 @@ export async function fetchAvatarCatalog(config: DataSourceConfig): Promise<read
   }
   return parseAssetCatalog(await response.json());
 }
+
+/**
+ * Hermetic alternative (DATA_SOURCE=fixture): a committed snapshot of the real
+ * catalog, validated by the exact same schema — offline dev and deterministic
+ * CI without weakening the loud-failure guarantee of the network path.
+ */
+export async function loadFixtureCatalog(fixturePath?: string): Promise<readonly Asset[]> {
+  const { readFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  // Resolve from the app root (build cwd), not import.meta.url — prerender
+  // relocates modules into dist/ and would break relative resolution.
+  const resolved = fixturePath ?? join(process.cwd(), 'fixtures', 'avatar-catalog.json');
+  const raw = await readFile(resolved, 'utf8');
+  return parseAssetCatalog(JSON.parse(raw));
+}

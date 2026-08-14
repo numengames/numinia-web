@@ -6,13 +6,13 @@ set -e
 staged=$(git diff --cached --name-only --diff-filter=ACM)
 [ -z "$staged" ] && exit 0
 
-code_files=$(echo "$staged" | grep -E '\.(ts|tsx|mjs|css|json)$' | grep -v 'package-lock.json' || true)
+code_files=$(echo "$staged" | grep -E '\.(ts|tsx|mjs|css|json)$' | grep -vE 'package-lock\.json|/fixtures/' || true)
 lint_files=$(echo "$staged" | grep -E '\.(ts|tsx|mjs)$' || true)
 
 if [ -n "$code_files" ]; then
   echo "pre-commit: prettier --check"
   # shellcheck disable=SC2086
-  npx prettier --check $code_files
+  npx prettier --check --no-error-on-unmatched-pattern $code_files
 fi
 
 if [ -n "$lint_files" ]; then
