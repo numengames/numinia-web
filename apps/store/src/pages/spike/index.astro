@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { VRMViewer } from '../../components/spike/VRMViewer';
+import { fetchAvatarCatalog } from '../../lib/data';
+import { env } from '../../../astro.config.mjs';
+
+// Build-time fetch + Zod validation: an invalid catalog fails this build loudly.
+const catalog = await fetchAvatarCatalog({
+  owner: env.githubRepoOwner,
+  repo: env.githubRepoName,
+  branch: env.githubBranch,
+});
+const publicVrms = catalog.filter((asset) => asset.format === 'vrm' && asset.isPublic);
+const firstVrm = publicVrms[0] ?? null;
+---
+
+<BaseLayout locale="en" title="Numinia — Phase 0.7 spike">
+  <h1>Phase 0.7 technical spike</h1>
+  <p data-spike-catalog-count={catalog.length}>
+    Validated {catalog.length} assets from the public data repo ({publicVrms.length} public VRM).
+  </p>
+  <ul>
+    {publicVrms.map((asset) => <li>{asset.name}</li>)}
+  </ul>
+  <h2>VRM island (client:visible)</h2>
+  <VRMViewer client:visible url={firstVrm ? firstVrm.modelFileUrl : null} />
+</BaseLayout>
