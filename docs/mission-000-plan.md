@@ -4,7 +4,7 @@
 > Each file lists one line of WHY. Order = commit order (one acceptance criterion per commit).
 > Inputs: constitution (CLAUDE.md v0.2.0), MISSION-000 spec, TODO.md §0, glossary v0.1.0 (pending ratification),
 > legacy test audit rules (docs/reference/legacy-test-audit.md §D).
-> Date: 2026-08-14 · Status: **AWAITING APPROVAL**
+> Date: 2026-08-14 · Status: **APPROVED by the Oracle (2026-08-14)** — with decisions: deploy = Vercel (Cloudflare migration in a future version), deferred type files confirmed, npm confirmed, platform version line continues from legacy → first rebuild release = **v0.16.0**.
 
 ## Architectural verdict feeding this plan
 

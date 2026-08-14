@@ -4,8 +4,8 @@
 > The English column is the code name; the `id` column is the exact string-literal used in `packages/domain` unions.
 > No type file may use a term absent from this glossary. Changing a term requires changing this file first.
 >
-> Version: 0.1.0 — 2026-08-14 · Status: **PENDING ORACLE RATIFICATION**
-> Items marked ⚠️ are proposals that need an explicit decision; everything else is derived directly from the seminal sources.
+> Version: 1.0.0 — 2026-08-14 · Status: **RATIFIED by the Oracle** (all 6 ⚠ proposals accepted; the Oracle flagged the taxonomy as revisitable in a future session — changes go through this file first, then code).
+> Items marked ⚠️ record the ratified proposal and its alternatives, kept for that future revisit.
 
 Sources: `docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md` (manual, canonical), `About_Session_Zero.md`, `Compendium_of_Attributes_and_Ranks_in_Numinia.md`, `Role_structure_in_the_Numinia_system.md`, `Welcome_to_Numinia.md`, plus resolutions ADR-011/012/013.
 

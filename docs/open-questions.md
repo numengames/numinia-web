@@ -6,7 +6,7 @@
 >
 > Last updated: 2026-08-14 · Maintained by: Claude (digital agent)
 
-## A. Taxonomy — needed to freeze `docs/glossary.md` v1.0.0 (gate for all of `packages/domain`)
+## A. Taxonomy — ~~needed to freeze `docs/glossary.md` v1.0.0~~ **RESOLVED 2026-08-14**: the Oracle ratified all six proposals (glossary frozen at v1.0.0) and flagged the taxonomy as **revisitable in a future session** — any change goes through the glossary first.
 
 | # | Question | Sources | Proposal on the table | Blocks |
 |---|---|---|---|:---:|
@@ -20,7 +20,7 @@
 
 | # | Discrepancy | Evidence | Severity |
 |---|---|---|:---:|
-| B1 | **Session Zero seal names.** CLAUDE.md says Threshold of Thought grants "Thought + Knowledge"; *About Session Zero* is explicit: **Seal of Culture + Seal of Wisdom**. Other three thresholds match. | `CLAUDE.md` §Session Zero vs `docs/seminal/About_Session_Zero.md` (Treasure Room, Lyra) | High — one-line fix, but it feeds `seal.ts` constants |
+| B1 | ~~**Session Zero seal names.**~~ **RESOLVED 2026-08-14**: Oracle authorized the correction (glossary ratification #4); CLAUDE.md now says Culture + Wisdom. | `CLAUDE.md` §Session Zero (fixed) | Closed |
 | B2 | **Type-file count drift.** CLAUDE.md says "18 type files" but its own table lists 19; TODO.md says 14+4=18. Real number gets settled by the taxonomy freeze. | `CLAUDE.md` §Domain model vs `TODO.md` §0.2 | Low — cosmetic until `types/` exists |
 | B3 | **Mission template references a missing file**: `./Definition_of_Done_v0.2.0.md` does not exist in the repo (template DoD checklist duplicates it partially). | `missions/Mission_Template_v0_2_0.md` footer | Medium — MISSION-000 DoD needs an authoritative DoD |
 
@@ -39,7 +39,7 @@
 |---|---|---|---|
 | D1 | **Progressive auth Web2→Web3** (ADR-006 details: Web2 entry method, when Web2 becomes insufficient, migration to wallet without losing progress) | TBD — Pablo has "many nuances" | 🧬🤖 Hybrid, critical |
 | D2 | **Gender-restricted positions policy** (ADR-013 open question: enforce, display, or ignore in user-facing flows; inclusivity + legal implications) | Data field exists, nothing reads it | 🧬 Pablo decision |
-| D3 | **Deploy target for Phase 0**: Vercel vs Cloudflare Pages (constitution allows both; spike 0.7 needs one) | Open | 🧬 quick decision |
+| D3 | ~~**Deploy target for Phase 0**~~ **RESOLVED 2026-08-14**: Vercel for Phase 0 (v0.16.0); the Oracle considers Cloudflare more suitable long-term — **migration planned for a future version** (new open item D3-bis). | Vercel now / Cloudflare later | Closed → D3-bis |
 | D4 | **Hyperfy Session Zero infrastructure location** — never-touch guarantee is unverifiable until located; Phase 3 integrates via API | Unlocated | 🧬 info |
 | D5 | **"L.A.P." acronym** (Vernacular permission "access-lap") — legacy sidebar panel; planned rename to "P.A.R. — Personal Akashic Reader" per legacy docs. Confirm naming for `permission.ts`. | Unknown | 🧬 info |
 | D6 | **Huly integration design** (missions board ↔ platform: API, deep links, bidirectional?) | Not designed | 🧬🤖 Hybrid |

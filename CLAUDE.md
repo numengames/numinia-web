@@ -254,7 +254,7 @@ Use `resolvePermissions(rank)` and `hasPermission(rank, permission)` from `packa
 ### Session Zero
 
 4 escape rooms in Hyperfy, each linked to a guild:
-- Threshold of Thought → Exegetes (seals: Thought + Knowledge)
+- Threshold of Thought → Exegetes (seals: Culture + Wisdom)
 - Threshold of Transformation → Alchemists (seals: Transformation + Creativity)
 - Threshold of Justice → Procurators (seals: Justice + Valor)
 - Threshold of Valor → Sentinels (seals: Protection + Balance)
