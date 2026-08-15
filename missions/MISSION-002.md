@@ -9,7 +9,7 @@
 > _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
 
 > **Agent type:** 🔀 Hybrid (evaluation gate needs Oracle sign-off)
-> **Priority:** 🔴 Critical · **Effort:** L · **Status:** 📋 Backlog
+> **Priority:** 🔴 Critical · **Effort:** L · **Status:** 🔵 In progress — Step 0 executed 2026-08-15, pending Oracle sign-off
 > **Guild / House:** Sentinels (protection) + Procurators (law)
 > **Track:** `com`-grade `packages/auth`; `store` for the login surface. **No deploy.**
 > **Governing decision:** docs/decisions/ADR-006-progressive-auth-final.md
@@ -27,7 +27,22 @@ understanding Web3 first.
   RPC for future EIP-1271) under our fail-closed and no-PII constraints.
 - **Validation method:** Step 0 evaluation spike with a written checklist —
   every capability demonstrated locally or the gate fails.
-- **Learning outcome:** _(fill on completion)_
+- **Learning outcome (Step 0, 2026-08-15 — mission still open):**
+  - The hypothesis held: In-App Wallets (Google ✅, email OTP ✅), external wallets
+    (MetaMask ✅), and SIWE payload verification all work under fail-closed +
+    no-PII constraints. Passkey is environment-limited on Linux desktop (no
+    platform authenticator), not a vendor failure — retest on phone/deploy.
+  - Trust layering works as designed: thirdweb only proves address ownership;
+    the session token is ours (`@numinia/auth` HMAC, rank nomad). No adminAccount
+    or vendor JWT was ever needed.
+  - **Logout must disconnect the wallet, not just drop the cookie**: in-app
+    wallets sign silently, so a still-connected wallet re-authenticates
+    instantly. This rule must survive into the production login island.
+  - ConnectEmbed is a closed surface: method-selection UX required heuristic
+    listening (capture-phase + `getLastAuthProvider`). For production, prefer
+    own buttons over `useConnect` for full control.
+  - Stateless HMAC sessions have no server-side revocation (accepted for the
+    spike; revisit at Step 2 if TTL > 1h is ever wanted).
 
 ## ✅ Acceptance Criteria (Gherkin, to be encoded in features/)
 

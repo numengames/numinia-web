@@ -9,11 +9,11 @@
 > _Part of the Law. Index: [LEY.md](./LEY.md)_
 
 > Living document: what is DONE, what is NEXT, and who owns each next step.
-> Updated: 2026-08-15 · 38 commits on `main` · everything LOCAL (no remote, no deploy, no license published).
+> Updated: 2026-08-15 · 41 commits on `main` · everything LOCAL (no remote, no deploy, no license published).
 
 ## Where we are
 
-**v0.16.0 built and verified — v0.17.0 (the Archive) built and verified — nothing published, by standing order.**
+**v0.18.0 (progressive identity spike, MISSION-002 Step 0) built and locally verified — nothing published, by standing order.**
 `npm run verify` = the whole truth: turbo pipeline (20 tasks) → Gherkin acceptance (11 scenarios) → license gate → bundle budgets → e2e incl. WCAG (11 tests). All green.
 
 ## DONE (chronological)
@@ -74,17 +74,30 @@
 - **Link-integrity gate** (`npm run links`, in verify): found and fixed 97 broken legacy links in docs content; now 8,404 internal links / 296 pages / 0 broken.
 - **The Law chartered**: every governing .md opens with description + epistemic value + pragmatic value + system coupling (systems thinking / active inference); indexed in docs/LEY.md.
 
-## NEXT (ordered, with owner)
+## In progress
 
-| #   | What                                                                                                                                                                                         | Owner                     | Notes                                                                |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------- |
-| 1   | **Fix the data repo** (from data-doctor): 3 missing thumbnails, 1 missing VRM binary on R2 (`ndg-019d3f89…`), 3dprint catalog 404                                                            | 🧬 Pablo                  | Small; then re-run `node scripts/data-doctor.mjs` + refresh fixtures |
-| 2   | ~~ADR-006 auth session~~ **DONE 2026-08-15**: ADR-006 final + MISSION-002 spec written (thirdweb conditional, Pilgrim provisional D13, eval gate D14)                                        | ✅                        | Next executable: MISSION-002 Step 0 gate                             |
-| 3   | ~~Deferred domain types~~ **DONE 2026-08-15**: 21 type files total + 15 positions in 5 locales (restrictions as data, pinned by test)                                                        | ✅                        | Domain complete                                                      |
-| 3b  | ~~MISSION-003 web parity~~ **DONE 2026-08-15**: gallery, chrome+landing, finder, updates (original LAP style + footer version), legal drafts, docs (22 originals, 55 pages), 3D inspector    | ✅                        | Legal wording + [PENDING] fields need 🧬                             |
-| 4   | **Push day** when the Oracle decides: license D11 → repo name/visibility → follow `docs/remote-checklist.md` → first CI green closes MISSION-000's last criterion                            | 🧬 decision, 🤖 execution | Runbook ready                                                        |
-| 5   | **Deploy day** (after push, when ordered): Vercel first (Cloudflare later, D3-bis) + consent banner + analytics backend (D12)                                                                | 🧬 decision, 🤖 execution | Both explicitly forbidden until ordered                              |
-| 6   | Pending sessions parked in `docs/open-questions.md`: taxonomy revisit, gender-restriction policy (ADR-013), Huly integration, brand visual package (D8), translation QA (D9), write-path ADR | 🧬🤖                      | Each is scoped and referenced                                        |
+### MISSION-002 Step 0 — thirdweb evaluation gate (started 2026-08-15)
+
+- thirdweb project configured: Client ID in local `apps/store/.env` (public by design), allowed domains set on dashboard — **pending fix: `localhost:3000` → `localhost:4321`** (Astro dev port).
+- `THIRDWEB_SECRET_KEY` recovered from the legacy Vercel project env vars; goes into local `.env` only (never committed — history forensically clean, verified again 2026-08-15).
+- **Spike built and server-side verified (2026-08-15)**: `thirdweb@5.121` installed; `/spike/auth` page + `LoginSpike` island (ConnectEmbed: google/email/passkey In-App Wallet + MetaMask/WalletConnect); endpoints `/api/auth/login|session|logout` — thirdweb only proves address ownership (`verifyPayload`), the session is OUR `@numinia/auth` HMAC token (rank nomad, httpOnly, sameSite strict). Type-check clean.
+- **Proven locally** (`apps/store/scripts/spike-auth-e2e.mjs` + curl): no cookie → 401 · forged token → 401 (signature) · garbage signature → 401 · real signed payload → 200 + session {address, rank nomad} · payload replay → 401 (single-use nonce via `@numinia/auth` store) · logout → 200. Known/accepted: stateless tokens have no server-side revocation (out of spike scope).
+- **Browser pass (Pablo, 2026-08-15)**: Google ✅ (logout fixed: must disconnect the wallet too — in-app wallets re-sign silently) · email OTP ✅ · MetaMask ✅ · passkey ⚠️ environment-limited (Linux desktop lacks a platform authenticator; retest on phone/Chrome QR — not a vendor failure).
+- **Login UX iterated to final**: no static copy; tapping a method inside ConnectEmbed (capture-phase listener + `getLastAuthProvider` detection) reveals that method's 1-2-3 progress bar — current step highlighted, next steps muted, advanced by real state (no wallet → connected-unsigned → verified session). Copy rule: never mention payments/transactions. Playwright-verified.
+- **Remaining to close the gate**: Pablo's final pass on the finished UX, then Oracle sign-off → MISSION-002 Step 1.
+
+## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0)
+
+| #   | What                                                                                                                                                                                                                                                              | Owner                     | Notes                                                                                                      |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1   | **Close the D14 gate**: Pablo's final pass on `/spike/auth` → Oracle sign-off. Passkey stays conditionally verified (Linux desktop limitation; retest on phone/deploy)                                                                                            | 🧬 Oracle                 | Everything else about identity is blocked behind this                                                      |
+| 2   | **MISSION-002 Steps 1–3** (after gate): promote the spike into the real login island on /lap/ (own buttons via `useConnect`, i18n ×5, wallet_connect funnel events), com-grade tests + mutation on the vendor layer, rank inference wiring                        | 🤖                        | Step-0 learnings encoded in the mission's Learning outcome                                                 |
+| 3   | **Fix the data repo** (from data-doctor): 3 missing thumbnails, 1 missing VRM binary on R2 (`ndg-019d3f89…`), 3dprint catalog 404                                                                                                                                 | 🧬 Pablo                  | Small; then re-run `node scripts/data-doctor.mjs` + refresh fixtures                                       |
+| 4   | **Security: full key-rotation audit** — inventory every credential (thirdweb, R2, GitHub tokens; legacy Vercel project holds ~21 env vars, several "Needs Attention"), rotate stale ones, verify each lives only where it should, decommission legacy Vercel vars | 🧬🤖                      | Raised 2026-08-15. **Mandatory before deploy day**; thirdweb secret was recovered from legacy Vercel today |
+| 5   | **Push day** when the Oracle decides: license D11 → repo name/visibility → `docs/remote-checklist.md` → first CI green closes MISSION-000's last criterion                                                                                                        | 🧬 decision, 🤖 execution | Runbook ready                                                                                              |
+| 6   | **Deploy day** (after push + #4): **revisit D3-bis first** — the Cloudflare case hardened today (`@numinia/auth` is WinterCG-pure by design, R2 already in the stack, egress economics); then consent banner + analytics backend (D12)                            | 🧬 decision, 🤖 execution | Both explicitly forbidden until ordered                                                                    |
+| 7   | **MISSION-005 — Data dignity narrative**: rental-vs-ownership copy at every trust moment + /city/ page, anchored on Lanier (NYT 2019). Seed line live on `/spike/auth`. Glossary terms first (ADR-012)                                                            | 🔀                        | Spec in missions/MISSION-005-data-dignity.md                                                               |
+| 8   | Pending sessions parked in `docs/open-questions.md`: taxonomy revisit, gender-restriction policy (ADR-013), Huly integration, brand visual package (D8), translation QA (D9), write-path ADR                                                                      | 🧬🤖                      | Each is scoped and referenced                                                                              |
 
 ## Standing orders (never forget)
 

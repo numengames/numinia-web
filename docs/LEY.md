@@ -65,6 +65,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [missions/MISSION-002.md](../missions/MISSION-002.md)                             | Identity (spec, gated)  |
 | [missions/MISSION-003-web-parity.md](../missions/MISSION-003-web-parity.md)       | Web parity P1–P5        |
 | [missions/MISSION-004-three-pillars.md](../missions/MISSION-004-three-pillars.md) | Three pillars + the Law |
+| [missions/MISSION-005-data-dignity.md](../missions/MISSION-005-data-dignity.md)   | Data dignity narrative  |
 
 ## Not law, but load-bearing
 
