@@ -22,7 +22,7 @@
 |---|---|---|:---:|
 | B1 | ~~**Session Zero seal names.**~~ **RESOLVED 2026-08-14**: Oracle authorized the correction (glossary ratification #4); CLAUDE.md now says Culture + Wisdom. | `CLAUDE.md` §Session Zero (fixed) | Closed |
 | B2 | **Type-file count drift.** CLAUDE.md says "18 type files" but its own table lists 19; TODO.md says 14+4=18. Real number gets settled by the taxonomy freeze. | `CLAUDE.md` §Domain model vs `TODO.md` §0.2 | Low — cosmetic until `types/` exists |
-| B3 | **Mission template references a missing file**: `./Definition_of_Done_v0.2.0.md` does not exist in the repo (template DoD checklist duplicates it partially). | `missions/Mission_Template_v0_2_0.md` footer | Medium — MISSION-000 DoD needs an authoritative DoD |
+| B3 | ~~**Mission template references a missing file**~~ **RESOLVED 2026-08-15**: `missions/Definition_of_Done_v0.2.0.md` created (infra-quality W5). | Fixed | Closed |
 
 ## C. Corpus & provenance
 

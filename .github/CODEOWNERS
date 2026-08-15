@@ -1,0 +1,9 @@
+# Inert until the GitHub remote exists. Then: these paths require Oracle-visible review.
+# (Replace @PabloFMM with the final org/owner handles on push day.)
+
+/packages/domain/   @PabloFMM
+/apps/com/          @PabloFMM
+/CLAUDE.md          @PabloFMM
+/DECISIONS.md       @PabloFMM
+/docs/glossary.md   @PabloFMM
+/docs/seminal/      @PabloFMM
