@@ -20,6 +20,7 @@ import { HUMORS } from '../src/constants/humors.js';
 import { SEALS, THRESHOLDS } from '../src/constants/seals.js';
 import { POSITIONS } from '../src/constants/positions.js';
 import { POSITION_IDS } from '../src/types/position.js';
+import { PORTALS, AGORA_PLAZA, BUILT_PORTAL_COUNT } from '../src/constants/portals.js';
 
 /** MISSION-000 Gherkin: every constant has all five UI locales populated. */
 function expectFullyLocalized(context: string, value: LocalizedString): void {
@@ -261,5 +262,55 @@ describe('structural integrity (glossary as authority, ADR-012)', () => {
       diameterKm: 80,
       coordinates: { x: 375, y: 232 },
     });
+  });
+});
+
+describe('portals (canonical source: data repo, data/portals/numinia-portals.json)', () => {
+  it('portals and the hub are fully localized', () => {
+    for (const portal of PORTALS) {
+      expectFullyLocalized(`portal ${portal.id} name`, portal.name);
+      expectFullyLocalized(`portal ${portal.id} description`, portal.description);
+    }
+    expectFullyLocalized('hub name', AGORA_PLAZA.name);
+    expectFullyLocalized('hub description', AGORA_PLAZA.description);
+  });
+
+  it('ids are unique and every district has portals', () => {
+    const ids = PORTALS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).not.toContain(AGORA_PLAZA.id);
+    for (const districtId of DISTRICT_IDS) {
+      expect(
+        PORTALS.some((p) => p.districtId === districtId),
+        `district ${districtId} has no portals`,
+      ).toBe(true);
+    }
+  });
+
+  it('the city counts 14 built portals: 13 district worlds plus the Ágora', () => {
+    const built = PORTALS.filter((p) => p.worldUrl !== undefined);
+    expect(built.length).toBe(13);
+    expect(AGORA_PLAZA.worldUrl.length).toBeGreaterThan(0);
+    expect(BUILT_PORTAL_COUNT).toBe(14);
+  });
+
+  it('world URLs are https and map positions stay on the map (0-100)', () => {
+    for (const portal of PORTALS) {
+      if (portal.worldUrl !== undefined) {
+        expect(portal.worldUrl, `portal ${portal.id} URL`).toMatch(/^https:\/\//);
+      }
+      for (const axis of ['x', 'y'] as const) {
+        expect(
+          portal.mapPosition[axis],
+          `portal ${portal.id} position ${axis}`,
+        ).toBeGreaterThanOrEqual(0);
+        expect(
+          portal.mapPosition[axis],
+          `portal ${portal.id} position ${axis}`,
+        ).toBeLessThanOrEqual(100);
+      }
+    }
+    expect(AGORA_PLAZA.mapPosition).toEqual({ x: 50, y: 50 });
+    expect(AGORA_PLAZA.worldUrl).toMatch(/^https:\/\//);
   });
 });

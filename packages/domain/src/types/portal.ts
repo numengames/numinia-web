@@ -21,3 +21,13 @@ export interface Portal {
   readonly worldUrl?: string;
   readonly mapPosition: PortalMapPosition;
 }
+
+/** The Plaza del Ágora — the central hub. It belongs to no district: every
+    district measures its coordinates FROM it (see DistrictCoordinates). */
+export interface PortalHub {
+  readonly id: string;
+  readonly name: LocalizedString;
+  readonly description: LocalizedString;
+  readonly worldUrl: string;
+  readonly mapPosition: PortalMapPosition;
+}
