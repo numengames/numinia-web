@@ -23,6 +23,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.21.0',
+    date: '2026-08-15 17:45',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The scarab signs the page: Khepri closes every footer, as the house rule commands',
+      },
+      {
+        type: 'UPD',
+        text: 'The city sheds its duplicate wordmark; grids across the site now reveal as you arrive',
+      },
+    ],
+  },
+  {
     version: 'v0.20.0',
     date: '2026-08-15 17:00',
     entries: [

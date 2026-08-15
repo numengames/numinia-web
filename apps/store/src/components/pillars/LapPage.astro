@@ -35,7 +35,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <ol data-lap-ranks>
       {
         RANK_DEFINITIONS.map((rank) => (
-          <li>
+          <li class="reveal">
             <h3>{rank.name[locale]}</h3>
             <p>{rank.description[locale]}</p>
           </li>

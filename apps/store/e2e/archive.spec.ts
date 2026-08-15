@@ -39,6 +39,8 @@ test('a detail page renders, passes WCAG A/AA, and offers a download', async ({ 
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    // Same exemption as a11y.spec: the binaria is decoration (WCAG 1.4.3).
+    .exclude('.binaria')
     .analyze();
   expect(
     results.violations.map((violation) => violation.id),

@@ -2,6 +2,9 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { CURRENT_VERSION } from '../../lib/updates';
+// §8.5 / repertoire rule: Khepri closes every piece, never opens it — the
+// scarab's one canonical home on the site is the foot of the page.
+import khepriLogo from '../../../../../khepri/assets/Khepri_Logo.svg?raw';
 
 interface Props {
   locale: SupportedLocale;
@@ -53,10 +56,15 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
       <a href={`${prefix}/legal/legal-notice/`} data-metric="footer-legal-notice">{t.legalNotice}</a>
     </nav>
   </div>
-  <p>
-    {t.footerLicenseNote}
-    <a href={`${prefix}/updates/`} class="version" data-metric="footer-version">{CURRENT_VERSION}</a>
-  </p>
+  <div class="cierre">
+    <span class="khepri" set:html={khepriLogo} />
+    <p>
+      {t.footerLicenseNote}
+      <a href={`${prefix}/updates/`} class="version" data-metric="footer-version">
+        {CURRENT_VERSION}
+      </a>
+    </p>
+  </div>
 </footer>
 
 <style>
@@ -99,8 +107,27 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   a:focus-visible {
     color: var(--texto);
   }
-  p {
-    margin-top: var(--s5);
+  /* The closing signature: hairline above, scarab in muted ink beside the
+     license line. Arena on Nocturno, Noche on Diurno — never in color (§8.2). */
+  .cierre {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    margin-top: var(--s6);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--linea);
+  }
+  .khepri {
+    display: inline-flex;
+    color: var(--texto-3);
+    flex: none;
+  }
+  .khepri :global(svg) {
+    width: 28px;
+    height: 28px;
+  }
+  .cierre p {
+    margin: 0;
     color: var(--texto-3);
   }
   .version {

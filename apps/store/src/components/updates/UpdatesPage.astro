@@ -46,7 +46,7 @@ function formatDate(date: string): string {
   <ol data-updates>
     {
       updates.map((update, index) => (
-        <li data-version={update.version}>
+        <li class="reveal" data-version={update.version}>
           <h2>
             {update.version}
             {index === 0 && <span class="tag tag-latest">{t.latestLabel}</span>}

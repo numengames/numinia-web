@@ -1,10 +1,9 @@
 ---
 /**
- * The city's threshold: Numinia wordmark in ink (§8 — Numinia_Word signs
- * only Numinia pieces), typed tagline (§10-01, THE orchestrated moment),
- * circuit relief behind it in Nocturno (§6.2).
+ * The city's threshold: typed tagline (§10-01, THE orchestrated moment),
+ * circuit relief behind it in Nocturno (§6.2). No wordmark here — the site
+ * header already carries it; the mark never competes with itself.
  */
-import wordmark from '../../../../../../khepri/assets/Numinia_Word.svg?raw';
 import type { LandingContent } from '../../../i18n/city-landing';
 
 interface Props {
@@ -14,8 +13,7 @@ const { hero } = Astro.props;
 ---
 
 <section class="hero" data-materia="relieve" data-escalonado>
-  <div class="marca" set:html={wordmark} />
-  <h1 class="titulo-l" data-tecleo>{hero.tagline}</h1>
+  <h1 class="display-m" data-tecleo>{hero.tagline}</h1>
   <p class="intro cuerpo-l reveal">{hero.intro}</p>
   <div class="ctas reveal">
     <a href="#semilla" class="btn btn-primario" data-metric="city-hero-explore">
@@ -30,16 +28,6 @@ const { hero } = Astro.props;
     text-align: center;
     padding: var(--s9) var(--s5) var(--s7);
     border-bottom: 1px solid var(--linea);
-  }
-  .marca {
-    color: var(--texto);
-    display: flex;
-    justify-content: center;
-    margin-bottom: var(--s6);
-  }
-  .marca :global(svg) {
-    height: 44px;
-    width: auto;
   }
   h1 {
     color: var(--texto);
