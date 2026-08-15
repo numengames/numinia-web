@@ -1,6 +1,6 @@
 {
   "name": "@numinia/store",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "numinia.store \u2014 spikes and proof-of-concept track of the Numinia platform.",
   "license": "MIT",
   "type": "module",

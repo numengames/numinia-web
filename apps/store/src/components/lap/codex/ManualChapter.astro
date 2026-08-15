@@ -1,0 +1,242 @@
+---
+/**
+ * A chapter of the Manual, read as a page of the book: the author's text
+ * untouched on a paper surface, lore quotes in italic, caps subtitles as
+ * section marks, the waxing moon tracking the read (§10.1-06), and a pager.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import { loadManual, type ManualChapter } from '../../../lib/lap/manual';
+import LunaProgreso from '../../city/scroller/LunaProgreso.astro';
+import CodexTabs from './CodexTabs.astro';
+import LapShell from '../LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  chapter: ManualChapter;
+}
+const { locale, chapter } = Astro.props;
+const t = LAP_UI[locale].manual;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const chapters = await loadManual();
+const index = chapters.findIndex((entry) => entry.id === chapter.id);
+const prev = chapters[index - 1];
+const next = chapters[index + 1];
+const eyebrow = chapter.number === null ? 'Introducción' : `${t.chapter} ${chapter.number}`;
+---
+
+<LapShell
+  locale={locale}
+  current="codex"
+  title={`${chapter.title} — ${t.title} — Numinia`}
+  description={`${eyebrow} · ${chapter.title}`}
+>
+  <CodexTabs locale={locale} current="manual" />
+  <article class="pagina tarjeta" data-codex-chapter={chapter.id}>
+    <header>
+      <p class="etiqueta">{eyebrow}</p>
+      <h1>{chapter.title}</h1>
+      {
+        chapter.fragments.some((fragment) => fragment.title) && (
+          <nav class="sumario" aria-label={t.indexTitle}>
+            {chapter.fragments
+              .filter((fragment) => fragment.title)
+              .map((fragment) => (
+                <a href={`#${fragment.id}`} data-metric="codex-fragment">
+                  {fragment.title}
+                </a>
+              ))}
+          </nav>
+        )
+      }
+    </header>
+    {
+      chapter.fragments.map((fragment, fragmentIndex) => (
+        <section id={fragment.id} aria-label={fragment.title || chapter.title}>
+          {fragment.title && (
+            <h2>
+              <span class="etiqueta">Fragmento {fragmentIndex}</span>
+              {fragment.title}
+            </h2>
+          )}
+          {fragment.blocks.map((block) =>
+            block.kind === 'table' ? (
+              <div class="tabla-envoltura">
+                <table>
+                  <tbody>
+                    {block.rows.map((row, rowIndex) => (
+                      <tr>
+                        {row.map((cell) =>
+                          rowIndex === 0 ? <th scope="col">{cell}</th> : <td>{cell}</td>,
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : block.kind === 'quote' ? (
+              <blockquote>{block.text}</blockquote>
+            ) : block.kind === 'subtitle' ? (
+              <h3 class="etiqueta">{block.text}</h3>
+            ) : (
+              <p>{block.text}</p>
+            ),
+          )}
+        </section>
+      ))
+    }
+  </article>
+  <nav class="pager" aria-label={`${t.prev} / ${t.next}`}>
+    {
+      prev ? (
+        <a href={`${prefix}/lap/codex/${prev.id}/`} rel="prev" data-metric="codex-prev">
+          ← {prev.title}
+        </a>
+      ) : (
+        <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">
+          ← {t.indexTitle}
+        </a>
+      )
+    }
+    {
+      next && (
+        <a href={`${prefix}/lap/codex/${next.id}/`} rel="next" data-metric="codex-next">
+          {next.title} →
+        </a>
+      )
+    }
+  </nav>
+  <LunaProgreso />
+</LapShell>
+
+<style>
+  /* The page of the book: reading measure, generous air, level II calm. */
+  .pagina {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: var(--s6) var(--s5) var(--s7);
+  }
+  @media (min-width: 50rem) {
+    .pagina {
+      padding: var(--s7) var(--s8);
+    }
+  }
+  header {
+    text-align: center;
+    margin-bottom: var(--s6);
+  }
+  header .etiqueta {
+    margin: 0 0 var(--s2);
+  }
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--texto);
+  }
+  h2 {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    font-size: 1.44rem;
+    font-weight: 600;
+    color: var(--texto);
+    margin: var(--s7) 0 var(--s4);
+  }
+  h2 .etiqueta {
+    font-weight: 500;
+  }
+  h3.etiqueta {
+    margin: var(--s6) 0 var(--s3);
+    font-weight: 500;
+    color: var(--ambar);
+  }
+  /* Measure holds at every viewport: 65ch is the comfort ceiling (§4.4). */
+  p,
+  blockquote,
+  h2,
+  h3 {
+    max-width: 65ch;
+  }
+  p {
+    line-height: 1.55;
+    color: var(--texto-2);
+    margin: 0 0 var(--s4);
+    text-wrap: pretty;
+  }
+  .sumario {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--s2) var(--s4);
+    margin-top: var(--s4);
+    font-size: 0.875rem;
+  }
+  .sumario a {
+    color: var(--enlace);
+    text-decoration: none;
+    padding: var(--s1) 0;
+  }
+  .sumario a:hover,
+  .sumario a:focus-visible {
+    text-decoration: underline;
+  }
+  section {
+    scroll-margin-top: var(--s6);
+  }
+  /* §13.11 table: amber etiqueta header, Mono cells, scrolls inside itself. */
+  .tabla-envoltura {
+    overflow-x: auto;
+    margin: 0 0 var(--s4);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.875rem;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: var(--s2) var(--s3);
+    border-bottom: 1px solid var(--linea);
+    vertical-align: top;
+  }
+  th {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    white-space: nowrap;
+  }
+  td {
+    color: var(--texto-2);
+  }
+  /* Lore openings: italic is for quotes and lore alone (§4.4). */
+  blockquote {
+    margin: 0 0 var(--s4);
+    padding-left: var(--s4);
+    border-left: 2px solid var(--verdemar);
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--texto-2);
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s4);
+    max-width: 46rem;
+    margin: var(--s5) auto 0;
+    font-size: 0.875rem;
+  }
+  .pager a {
+    color: var(--enlace);
+    text-decoration: none;
+  }
+  .pager a:hover,
+  .pager a:focus-visible {
+    text-decoration: underline;
+  }
+</style>

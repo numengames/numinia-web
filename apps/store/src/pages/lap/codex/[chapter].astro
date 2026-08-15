@@ -1,0 +1,13 @@
+---
+import ManualChapter from "../../../components/lap/codex/ManualChapter.astro";
+import { loadManual } from "../../../lib/lap/manual";
+
+export async function getStaticPaths() {
+  const chapters = await loadManual();
+  return chapters.map((chapter) => ({ params: { chapter: chapter.id }, props: { chapter } }));
+}
+
+const { chapter } = Astro.props;
+---
+
+<ManualChapter locale="en" chapter={chapter} />

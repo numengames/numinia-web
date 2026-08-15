@@ -6,6 +6,11 @@
  * · §10 motion states · §13.2 menu · §13.11 platform decisions.
  */
 
+/* Capsule radius (pills, bars) — named, never a bare 9999px literal. */
+:root {
+  --radio-completo: 9999px;
+}
+
 /* ---- §4.3 Type scale (1.200, base 16) ------------------------------- */
 .display-l {
   font-size: 3.583rem;
@@ -49,6 +54,15 @@
   font-size: 2.986rem;
   font-weight: 500;
   line-height: 1.35;
+}
+
+/* ---- No-JS safety net for the reveal (§10-02) ------------------------
+   The kit hides .reveal until an observer adds .visible. Without JS nothing
+   ever would, and the page would ship blank — so the hidden state applies
+   only when the boot script has marked JS as alive. */
+html:not([data-js='on']) .reveal {
+  opacity: 1 !important;
+  transform: none !important;
 }
 
 /* ---- §5 Elevation: Diurno gets the single shadow; Nocturno steps ----- */
@@ -101,16 +115,21 @@ a.tarjeta:focus-visible,
 /* ---- §13.11 Platform decision: the primary dresses in ink ------------ */
 /* #017C8D stays the product-game/marketing primary; on the platform the
    main action is the same ink pill as every active state. */
+/* Ink cannot darken any further, and §9.1 forbids LIGHTENING a fill that
+   carries light text: the fill holds and interaction reads as an inner
+   Verdemar ring instead. */
 .btn-primario {
   background: var(--texto);
   color: var(--fondo);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: box-shadow 120ms var(--ciclo);
 }
 .btn-primario:hover,
 .btn-primario:focus-visible {
-  background: var(--texto-2);
+  box-shadow: inset 0 0 0 1px var(--verdemar);
 }
 .btn-primario:active {
-  background: var(--texto-3);
+  box-shadow: inset 0 0 0 2px var(--verdemar);
 }
 
 /* ---- Active dresses in ink (§9.8): shared pill for current things ---- */

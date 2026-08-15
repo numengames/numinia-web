@@ -48,6 +48,10 @@ const urlFor = (target: SupportedLocale): string =>
       /* Khepri modes (§13.11): Diurno default, Nocturno by choice. Runs before
          first paint so a stored choice never flashes. localStorage is allowed
          here by decision D17 — this is chrome bootstrap, not component state. */
+      /* Marks that JS is alive BEFORE first paint: the reveal animation may
+         only hide content when something can bring it back (Layer 0/1 must
+         render without JS, per the constitution). */
+      document.documentElement.dataset.js = 'on';
       try {
         if (localStorage.getItem('numinia-modo') === 'nocturno')
           document.documentElement.dataset.modo = 'nocturno';

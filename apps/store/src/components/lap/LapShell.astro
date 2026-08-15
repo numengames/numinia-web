@@ -16,7 +16,8 @@ export type LapSection =
   | 'codex'
   | 'portals'
   | 'loot'
-  | 'seasons';
+  | 'seasons'
+  | 'stats';
 
 interface Props {
   locale: SupportedLocale;
@@ -29,7 +30,7 @@ const { locale, current, title, description } = Astro.props;
 const t = LAP_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
-type IconName = 'house' | 'user' | 'book-open' | 'globe' | 'sword' | 'flame' | 'bell';
+type IconName = 'house' | 'user' | 'book-open' | 'globe' | 'sword' | 'flame' | 'chart-bar' | 'bell';
 const ITEMS: ReadonlyArray<{
   id: LapSection | 'updates';
   href: string;
@@ -42,6 +43,7 @@ const ITEMS: ReadonlyArray<{
   { id: 'portals', href: `${prefix}/lap/portals/`, label: t.sections.portals, icon: 'globe' },
   { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot, icon: 'sword' },
   { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons, icon: 'flame' },
+  { id: 'stats', href: `${prefix}/lap/stats/`, label: t.sections.stats, icon: 'chart-bar' },
   { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates, icon: 'bell' },
 ];
 ---
@@ -51,11 +53,19 @@ const ITEMS: ReadonlyArray<{
     <nav aria-label="L.A.P.">
       <div class="cabecera">
         <p class="etiqueta">L.A.P.</p>
-        <button type="button" class="plegar" data-lap-fold aria-label="L.A.P." title="L.A.P.">
+          <button
+          type="button"
+          class="plegar"
+          data-lap-fold
+          aria-expanded="true"
+          aria-controls="lap-nav-items"
+          aria-label={t.foldNav}
+          title={t.foldNav}
+        >
           <Icon name="caret-left" size={16} />
-        </button>
+      </button>
       </div>
-      <ul>
+      <ul id="lap-nav-items">
         {
           ITEMS.map((item) => (
             <li>
@@ -83,10 +93,18 @@ const ITEMS: ReadonlyArray<{
   /* Sidebar fold — a chrome preference like the mode (decision D17):
      localStorage only, applied by the BaseLayout boot script pre-paint. */
   const root = document.documentElement;
-  document.querySelector('[data-lap-fold]')?.addEventListener('click', () => {
+  /* Mobile rail: bring the current section into view — a rail that always
+     starts at "Overview" hides where you are. */
+  document
+    .querySelector('[data-lap-shell] a[aria-current="page"]')
+    ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  const foldButton = document.querySelector('[data-lap-fold]');
+  foldButton?.setAttribute('aria-expanded', String(root.dataset['lapNav'] !== 'plegado'));
+  foldButton?.addEventListener('click', () => {
     const folded = root.dataset['lapNav'] === 'plegado';
     if (folded) delete root.dataset['lapNav'];
     else root.dataset['lapNav'] = 'plegado';
+    foldButton.setAttribute('aria-expanded', String(folded));
     try {
       localStorage.setItem('numinia-lap-nav', folded ? 'abierto' : 'plegado');
     } catch {
@@ -101,9 +119,14 @@ const ITEMS: ReadonlyArray<{
     gap: var(--s6);
     align-items: start;
   }
+  /* Grid items default to min-width:auto — the scrollable mobile rail would
+     stretch the page instead of scrolling inside itself. */
+  .lap > * {
+    min-width: 0;
+  }
   @media (min-width: 50rem) {
     .lap {
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: 240px minmax(0, 1fr);
     }
     :global(html[data-lap-nav='plegado']) .lap {
       grid-template-columns: 64px minmax(0, 1fr);
@@ -173,6 +196,39 @@ const ITEMS: ReadonlyArray<{
   a[aria-current='page'] {
     background: var(--texto);
     color: var(--fondo);
+  }
+  /* Mobile: the sidebar becomes a horizontal scrollable rail — thumb-first,
+     44px touch targets, no fold button (nothing to fold). */
+  @media (max-width: 49.99rem) {
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+    }
+    nav {
+      overflow: hidden;
+    }
+    ul {
+      flex-direction: row;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    ul::-webkit-scrollbar {
+      display: none;
+    }
+    /* The fade says: there is more rail to the right. */
+    nav {
+      mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    }
+    a {
+      min-height: 44px;
+      flex: none;
+    }
+    .cabecera {
+      display: none;
+    }
   }
   /* Folded rail: icons only, labels and wordgroup hidden, caret flips. */
   :global(html[data-lap-nav='plegado']) .texto,

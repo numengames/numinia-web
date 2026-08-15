@@ -1,0 +1,190 @@
+---
+/**
+ * Archive statistics (MISSION-009): §9.5 probes — the figure in Mono
+ * tabular, the label as etiqueta; the redundancy bar is §9.8 (real
+ * percentage known, ink fill, Mono figure beside it). Honest numbers only.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import { loadArchive } from '../../lib/archive';
+import { computeArchiveStats } from '../../lib/lap/stats';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const stats = computeArchiveStats(await loadArchive());
+const LAYERS: ReadonlyArray<[keyof typeof stats.layers, string]> = [
+  ['r2', 'R2'],
+  ['ipfs', 'IPFS'],
+  ['arweave', 'Arweave'],
+  ['github', 'GitHub'],
+];
+const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) * 100);
+---
+
+<LapShell
+  locale={locale}
+  current="stats"
+  title={`${t.stats.title} — L.A.P. — Numinia`}
+  description={t.stats.intro}
+>
+  <article data-lap-stats>
+    <h1>{t.stats.title}</h1>
+    <p class="intro">{t.stats.intro}</p>
+
+    <div class="sondas" data-escalonado>
+      <div class="kpi reveal">
+        <p class="dato-xl">{stats.total}</p>
+        <p class="etiqueta">{t.stats.totalAssets}</p>
+      </div>
+      <div class="kpi reveal">
+        <p class="dato-xl">{stats.projects}</p>
+        <p class="etiqueta">{t.stats.projects}</p>
+      </div>
+    </div>
+
+    <h2 class="etiqueta">{t.stats.byFormat}</h2>
+    <div class="malla">
+      {
+        stats.byFormat.map((row) => (
+          <div class="kpi reveal">
+            <p class="cifra mono">{row.count}</p>
+            <p class="etiqueta">{row.format.toUpperCase()}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2 class="etiqueta">{t.stats.storageLayers}</h2>
+    <div class="malla">
+      {
+        LAYERS.map(([key, label]) => (
+          <div class="kpi reveal">
+            <p class="cifra mono">{stats.layers[key]}</p>
+            <p class="etiqueta">{label}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2 class="etiqueta">{t.stats.redundancy}</h2>
+    <div class="tarjeta reveal salud">
+      <div class="barra-fila">
+        <div
+          class="barra"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label={t.stats.redundancy}
+        >
+          <span style={`width:${pct}%`}></span>
+        </div>
+        <span class="mono pctcifra">{pct}%</span>
+      </div>
+      <dl>
+        <div>
+          <dt class="mono">{stats.redundancy.redundant}</dt>
+          <dd>{t.stats.redundant}</dd>
+        </div>
+        <div>
+          <dt class="mono">{stats.redundancy.single}</dt>
+          <dd>{t.stats.single}</dd>
+        </div>
+        <div>
+          <dt class="mono">{stats.total}</dt>
+          <dd>{t.stats.totalAssets}</dd>
+        </div>
+      </dl>
+    </div>
+  </article>
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 0;
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  h2 {
+    margin: var(--s7) 0 var(--s3);
+    font-weight: 500;
+  }
+  .sondas,
+  .malla {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  }
+  .sondas {
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    margin-top: var(--s5);
+  }
+  .kpi .dato-xl {
+    margin: 0;
+    color: var(--texto);
+  }
+  .cifra {
+    margin: 0;
+    font-size: 2.074rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+    color: var(--texto);
+  }
+  .kpi .etiqueta {
+    margin: var(--s1) 0 0;
+  }
+  .salud {
+    max-width: 40rem;
+  }
+  /* §9.8 progress bar: 4px capsule, ink fill, ALWAYS a Mono figure beside. */
+  .barra-fila {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+  }
+  .barra {
+    flex: 1;
+    height: 4px;
+    border-radius: var(--radio-completo);
+    background: var(--linea-f);
+    overflow: hidden;
+  }
+  .barra span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radio-completo);
+    background: var(--texto);
+  }
+  .pctcifra {
+    font-variant-numeric: tabular-nums;
+    color: var(--texto);
+  }
+  dl {
+    display: flex;
+    gap: var(--s6);
+    margin: var(--s4) 0 0;
+    flex-wrap: wrap;
+  }
+  dt {
+    font-size: 1.44rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto);
+  }
+  dd {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+</style>

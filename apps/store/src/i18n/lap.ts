@@ -14,7 +14,31 @@ export interface LapMessages {
     readonly portals: string;
     readonly loot: string;
     readonly seasons: string;
+    readonly stats: string;
     readonly updates: string;
+  };
+  readonly foldNav: string;
+  readonly stats: {
+    readonly title: string;
+    readonly intro: string;
+    readonly totalAssets: string;
+    readonly projects: string;
+    readonly byFormat: string;
+    readonly storageLayers: string;
+    readonly redundancy: string;
+    readonly redundant: string;
+    readonly single: string;
+  };
+  readonly manual: {
+    readonly tab: string;
+    readonly identitiesTab: string;
+    readonly title: string;
+    readonly intro: string;
+    readonly chapter: string;
+    readonly esNote: string;
+    readonly prev: string;
+    readonly next: string;
+    readonly indexTitle: string;
   };
   readonly sheet: {
     readonly title: string;
@@ -131,6 +155,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       portals: 'Portales',
       loot: 'Botín',
       seasons: 'Temporadas',
+      stats: 'Estadísticas',
       updates: 'Novedades',
     },
     sheet: {
@@ -153,6 +178,30 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       profile: 'Perfil',
       notes: 'Notas',
       fields: FIELDS_ES,
+    },
+    foldNav: 'Plegar o desplegar la navegación',
+    stats: {
+      title: 'Estadísticas del Archivo',
+      intro: 'Números reales del catálogo público — lo que hay, dónde vive y cuán a salvo está.',
+      totalAssets: 'Assets públicos',
+      projects: 'Proyectos',
+      byFormat: 'Por formato',
+      storageLayers: 'Capas de almacenamiento',
+      redundancy: 'Salud de redundancia',
+      redundant: 'Redundantes',
+      single: 'Punto único',
+    },
+    manual: {
+      tab: 'El Manual',
+      identitiesTab: 'Identidades',
+      title: 'El Manual de Numinia',
+      intro:
+        'El juego de rol completo, tal como lo escribió su autor — el texto fundacional de la ciudad.',
+      chapter: 'Capítulo',
+      esNote: '',
+      prev: 'Anterior',
+      next: 'Siguiente',
+      indexTitle: 'Índice',
     },
     emptyTitle: 'Aún no hay nada aquí',
     emptyPortals:
@@ -180,6 +229,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       portals: 'Portals',
       loot: 'Loot',
       seasons: 'Seasons',
+      stats: 'Stats',
       updates: 'Updates',
     },
     sheet: {
@@ -201,6 +251,30 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       profile: 'Profile',
       notes: 'Notes',
       fields: FIELDS_EN,
+    },
+    foldNav: 'Collapse or expand the navigation',
+    stats: {
+      title: 'Archive Statistics',
+      intro: 'Real numbers from the public catalog — what exists, where it lives, how safe it is.',
+      totalAssets: 'Public assets',
+      projects: 'Projects',
+      byFormat: 'By format',
+      storageLayers: 'Storage layers',
+      redundancy: 'Redundancy health',
+      redundant: 'Redundant',
+      single: 'Single point',
+    },
+    manual: {
+      tab: 'The Manual',
+      identitiesTab: 'Identities',
+      title: 'The Numinia Manual',
+      intro:
+        'The complete role-playing game, exactly as its author wrote it — the founding text of the city.',
+      chapter: 'Chapter',
+      esNote: 'The Manual is available in its original Spanish for now.',
+      prev: 'Previous',
+      next: 'Next',
+      indexTitle: 'Index',
     },
     emptyTitle: 'Nothing here yet',
     emptyPortals: 'Portals are charted in Phase 5. The map arrives before the fog.',
@@ -227,6 +301,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       portals: 'ポータル',
       loot: '戦利品',
       seasons: 'シーズン',
+      stats: '統計',
       updates: '更新情報',
     },
     sheet: {
@@ -249,6 +324,29 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       profile: 'プロフィール',
       notes: 'メモ',
       fields: FIELDS_EN,
+    },
+    foldNav: 'ナビゲーションの折りたたみ',
+    stats: {
+      title: 'アーカイブ統計',
+      intro: '公開カタログの実数 — 何があり、どこに保存され、どれほど安全か。',
+      totalAssets: '公開アセット',
+      projects: 'プロジェクト',
+      byFormat: '形式別',
+      storageLayers: 'ストレージ層',
+      redundancy: '冗長性ヘルス',
+      redundant: '冗長',
+      single: '単一保存',
+    },
+    manual: {
+      tab: 'マニュアル',
+      identitiesTab: 'アイデンティティ',
+      title: 'ヌミニア・マニュアル',
+      intro: '著者が書いたままの完全なRPG — 都市の礎となるテキスト。',
+      chapter: '章',
+      esNote: 'マニュアルは現在、原文(スペイン語)のみで提供されています。',
+      prev: '前へ',
+      next: '次へ',
+      indexTitle: '目次',
     },
     emptyTitle: 'まだ何もありません',
     emptyPortals: 'ポータルはフェーズ5で地図化されます。',
@@ -274,6 +372,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       portals: '포털',
       loot: '전리품',
       seasons: '시즌',
+      stats: '통계',
       updates: '업데이트',
     },
     sheet: {
@@ -295,6 +394,29 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       profile: '프로필',
       notes: '메모',
       fields: FIELDS_EN,
+    },
+    foldNav: '내비게이션 접기/펼치기',
+    stats: {
+      title: '아카이브 통계',
+      intro: '공개 카탈로그의 실제 수치 — 무엇이 있고, 어디에 저장되며, 얼마나 안전한지.',
+      totalAssets: '공개 에셋',
+      projects: '프로젝트',
+      byFormat: '형식별',
+      storageLayers: '스토리지 계층',
+      redundancy: '중복성 상태',
+      redundant: '중복 보관',
+      single: '단일 보관',
+    },
+    manual: {
+      tab: '매뉴얼',
+      identitiesTab: '정체성',
+      title: '누미니아 매뉴얼',
+      intro: '저자가 쓴 그대로의 완전한 RPG — 도시의 기초가 되는 텍스트.',
+      chapter: '장',
+      esNote: '매뉴얼은 현재 원문(스페인어)으로만 제공됩니다.',
+      prev: '이전',
+      next: '다음',
+      indexTitle: '목차',
     },
     emptyTitle: '아직 아무것도 없습니다',
     emptyPortals: '포털은 5단계에서 지도화됩니다.',
@@ -320,6 +442,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       portals: 'Portais',
       loot: 'Espólio',
       seasons: 'Temporadas',
+      stats: 'Estatísticas',
       updates: 'Novidades',
     },
     sheet: {
@@ -375,6 +498,29 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         prestige: 'Prestígio',
         prisma: 'Prisma',
       },
+    },
+    foldNav: 'Recolher ou expandir a navegação',
+    stats: {
+      title: 'Estatísticas do Arquivo',
+      intro: 'Números reais do catálogo público — o que existe, onde vive e quão seguro está.',
+      totalAssets: 'Assets públicos',
+      projects: 'Projetos',
+      byFormat: 'Por formato',
+      storageLayers: 'Camadas de armazenamento',
+      redundancy: 'Saúde de redundância',
+      redundant: 'Redundantes',
+      single: 'Ponto único',
+    },
+    manual: {
+      tab: 'O Manual',
+      identitiesTab: 'Identidades',
+      title: 'O Manual de Numinia',
+      intro: 'O RPG completo, exatamente como seu autor o escreveu — o texto fundador da cidade.',
+      chapter: 'Capítulo',
+      esNote: 'O Manual está disponível no original em espanhol por enquanto.',
+      prev: 'Anterior',
+      next: 'Próximo',
+      indexTitle: 'Índice',
     },
     emptyTitle: 'Ainda não há nada aqui',
     emptyPortals: 'Os portais são cartografados na Fase 5.',

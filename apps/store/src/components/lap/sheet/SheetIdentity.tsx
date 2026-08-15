@@ -16,6 +16,10 @@ interface Props {
 
 const TEXT_FIELDS: ReadonlyArray<keyof LapSheet['identity']> = ['name', 'player', 'wallet'];
 
+/** §13.11: wallet addresses always Mono and truncated, full value on title. */
+const truncate = (address: string): string =>
+  address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
+
 export function SheetIdentity({ sheet, options, labels, editing, onIdentity }: Props) {
   const guild = options.guilds.find((option) => option.id === sheet.identity.guild);
   const branch = guild?.branches.find((option) => option.id === sheet.identity.branch);
@@ -52,8 +56,15 @@ export function SheetIdentity({ sheet, options, labels, editing, onIdentity }: P
                 data-metric="lap-sheet-field"
               />
             ) : (
-              <output className={key === 'wallet' ? 'mono' : ''}>
-                {sheet.identity[key] || labels.none}
+              <output
+                className={key === 'wallet' ? 'mono' : ''}
+                title={key === 'wallet' ? sheet.identity[key] : undefined}
+              >
+                {sheet.identity[key]
+                  ? key === 'wallet'
+                    ? truncate(sheet.identity[key])
+                    : sheet.identity[key]
+                  : labels.none}
               </output>
             )}
           </label>

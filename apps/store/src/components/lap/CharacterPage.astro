@@ -66,7 +66,7 @@ const options: SheetOptions = {
 
 <style>
   h1 {
-    font-size: 2.488rem;
+    font-size: 2.074rem;
     font-weight: 600;
     letter-spacing: -0.02em;
     margin-top: 0;
@@ -109,7 +109,7 @@ const options: SheetOptions = {
   }
   [data-lap-sheet] label > span {
     font-family: var(--mono);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--texto-3);
@@ -167,19 +167,19 @@ const options: SheetOptions = {
     width: 4.5rem;
     text-align: right;
   }
+  /* §9.1 silent button: a verb, sentence case, interactive Verdemar. */
   [data-lap-sheet] .stat-value button {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ambar);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--enlace);
     background: transparent;
-    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    border: none;
     border-radius: var(--radio-control);
-    padding: 2px var(--s2);
+    padding: var(--s1) var(--s2);
     cursor: pointer;
   }
-  [data-lap-sheet] .stat-value button:hover {
-    color: var(--texto);
+  [data-lap-sheet] .stat-value button:hover,
+  [data-lap-sheet] .stat-value button:focus-visible {
+    text-decoration: underline;
   }
 </style>

@@ -1,0 +1,56 @@
+---
+/** Codex tabs (§13.11): The Manual | Identities — active underlined in amber. */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+
+interface Props {
+  locale: SupportedLocale;
+  current: 'manual' | 'identities';
+}
+const { locale, current } = Astro.props;
+const t = LAP_UI[locale].manual;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<nav class="pestanas" aria-label={t.tab}>
+  <a
+    href={`${prefix}/lap/codex/`}
+    aria-current={current === 'manual' ? 'page' : undefined}
+    data-metric="codex-tab-manual"
+  >
+    {t.tab}
+  </a>
+  <a
+    href={`${prefix}/lap/codex/identities/`}
+    aria-current={current === 'identities' ? 'page' : undefined}
+    data-metric="codex-tab-identities"
+  >
+    {t.identitiesTab}
+  </a>
+</nav>
+
+<style>
+  .pestanas {
+    display: flex;
+    gap: var(--s4);
+    border-bottom: 1px solid var(--linea-f);
+    margin-bottom: var(--s5);
+  }
+  a {
+    color: var(--texto-2);
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: var(--s2) 2px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 120ms var(--ciclo);
+  }
+  a:hover,
+  a:focus-visible {
+    color: var(--texto);
+  }
+  a[aria-current='page'] {
+    color: var(--texto);
+    border-bottom-color: var(--ambar);
+  }
+</style>

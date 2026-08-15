@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.24.0',
+    date: '2026-08-15 19:15',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Manual opens in the Codex: the founding role-playing text, chapter by chapter',
+      },
+      {
+        type: 'NEW',
+        text: 'Archive statistics: what exists, where it lives, and how much of it is kept twice',
+      },
+      {
+        type: 'UPD',
+        text: 'Verified on Chromium and Firefox at phone, tablet and desktop — and readable with JavaScript off',
+      },
+    ],
+  },
+  {
     version: 'v0.23.0',
     date: '2026-08-15 18:45',
     entries: [

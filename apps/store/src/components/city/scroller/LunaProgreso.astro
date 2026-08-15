@@ -65,6 +65,17 @@ const PHASES = Array.from({ length: 8 }, (_, i) => (i === 0 ? '' : litPath(i / 7
     color: var(--texto-2);
     z-index: 5;
     pointer-events: none;
+    /* A disc of surface keeps it off the prose it floats over. */
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: 50%;
+    padding: var(--s1);
+    display: flex;
+  }
+  @media (max-width: 25rem) {
+    .luna {
+      display: none;
+    }
   }
   path {
     opacity: 0;

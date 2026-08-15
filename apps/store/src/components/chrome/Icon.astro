@@ -17,7 +17,11 @@ import githubLogo from '../../../../../packages/ui/src/icons/github-logo.svg?raw
 import globe from '../../../../../packages/ui/src/icons/globe-hemisphere-west.svg?raw';
 import house from '../../../../../packages/ui/src/icons/house.svg?raw';
 import magnifyingGlass from '../../../../../packages/ui/src/icons/magnifying-glass.svg?raw';
+import flameLight from '../../../../../packages/ui/src/icons/flame-light.svg?raw';
+import globeLight from '../../../../../packages/ui/src/icons/globe-hemisphere-west-light.svg?raw';
 import moon from '../../../../../packages/ui/src/icons/moon.svg?raw';
+import moonStars from '../../../../../packages/ui/src/icons/moon-stars.svg?raw';
+import swordLight from '../../../../../packages/ui/src/icons/sword-light.svg?raw';
 import packageIcon from '../../../../../packages/ui/src/icons/package.svg?raw';
 import signOut from '../../../../../packages/ui/src/icons/sign-out.svg?raw';
 import sun from '../../../../../packages/ui/src/icons/sun.svg?raw';
@@ -41,6 +45,10 @@ const ICONS = {
   house,
   'magnifying-glass': magnifyingGlass,
   moon,
+  'moon-stars': moonStars,
+  'flame-light': flameLight,
+  'globe-light': globeLight,
+  'sword-light': swordLight,
   package: packageIcon,
   'sign-out': signOut,
   sun,
@@ -52,7 +60,7 @@ const ICONS = {
 
 interface Props {
   name: keyof typeof ICONS;
-  /** §7.1: regular 16–40px; bold below 16 (not in this subset yet). */
+  /** §7.1: regular 16–40px default; `-light` variants are for ≥48px. */
   size?: number;
   /** Meaningful icons carry a label; omitted = decorative (aria-hidden). */
   label?: string;
