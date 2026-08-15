@@ -13,6 +13,7 @@ test.beforeEach(async ({ page }) => {
 test('selecting a collection fills the file list and preview follows the file', async ({
   page,
 }) => {
+  test.slow(); // the preview is a WebGL island — starved under parallel load
   const collections = page.locator('[data-metric="finder-collection"]');
   expect(await collections.count()).toBeGreaterThan(0);
 

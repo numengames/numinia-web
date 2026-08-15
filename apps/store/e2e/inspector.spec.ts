@@ -18,8 +18,10 @@ test('renders a local GLB and reports its statistics', async ({ page }) => {
     mimeType: 'model/gltf-binary',
     buffer: buildTriangleGlb(),
   });
+  // 30s, not 15: alone this takes <1s, but a WebGL context under full
+  // parallel suite load on a busy machine has hit 15s exactly once.
   await expect(page.locator('[data-inspector]')).toHaveAttribute('data-inspector-status', 'ready', {
-    timeout: 15_000,
+    timeout: 30_000,
   });
   await expect(page.locator('[data-inspector] canvas')).toBeVisible();
   const stats = page.locator('[data-inspector-stats]');
