@@ -1,6 +1,6 @@
 {
   "name": "@numinia/store",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
   "license": "MIT",
   "type": "module",
@@ -23,6 +23,7 @@
     "@numinia/analytics": "*",
     "@numinia/auth": "*",
     "@numinia/domain": "*",
+    "@numinia/state": "*",
     "@numinia/ui": "*",
     "@pixiv/three-vrm": "^3.5.5",
     "astro": "^7.2.2",

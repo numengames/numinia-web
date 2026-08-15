@@ -110,6 +110,17 @@ test('management data is refused without a session', async ({ request }) => {
   expect(await response.text()).not.toContain('assets');
 });
 
+test('the census is refused without a session — read and write alike', async ({ request }) => {
+  const read = await request.get(
+    '/api/admin/census?wallet=0x0000000000000000000000000000000000000001',
+  );
+  expect(read.status()).toBe(403);
+  const write = await request.post('/api/admin/census', {
+    data: { wallet: '0x0000000000000000000000000000000000000001', rank: 'citizen' },
+  });
+  expect(write.status()).toBe(403);
+});
+
 test('the sheet round-trips through a real file in this engine', async ({ page }) => {
   test.slow(); // island hydration + a real download, slower under load
   await page.goto('/es/lap/character/');

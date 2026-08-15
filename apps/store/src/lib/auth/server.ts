@@ -113,12 +113,33 @@ export function rankForAddress(address: string): Rank {
   return config?.oracles.has(address.toLowerCase()) ? 'oracle' : 'nomad';
 }
 
+/**
+ * Full rank resolution (ADR-018): the allowlist Oracle wins; otherwise the
+ * public census remembers what the city granted. Fail closed in privilege
+ * terms — a census outage or absent record grants nothing above Nomad, and
+ * a census can never mint an Oracle (that stays in the env allowlist).
+ */
+export async function resolveRank(address: string): Promise<Rank> {
+  if (rankForAddress(address) === 'oracle') return 'oracle';
+  const { getStateStore } = await import('../state/server');
+  const store = getStateStore();
+  if (!store) return 'nomad';
+  try {
+    const { censusPath, CensusRecordSchema } = await import('@numinia/state');
+    const found = await store.read(censusPath(address.toLowerCase()), CensusRecordSchema);
+    if (!found || found.record.rank === 'oracle') return 'nomad';
+    return found.record.rank;
+  } catch {
+    return 'nomad';
+  }
+}
+
 /** Issues our own vendor-independent session after thirdweb verified the address. */
 export async function issueSession(address: string): Promise<string> {
   const iat = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     sub: address,
-    rank: rankForAddress(address),
+    rank: await resolveRank(address),
     iat,
     exp: iat + SESSION_TTL_SECONDS,
   };

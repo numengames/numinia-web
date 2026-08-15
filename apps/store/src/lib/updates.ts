@@ -23,6 +23,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.31.0',
+    date: '2026-08-16 02:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The census arrives (ADR-018): ranks the city grants are remembered, and your session carries them from login',
+      },
+      {
+        type: 'NEW',
+        text: 'Rank management API for Archons and Oracles — every grant is an audited commit; no census can mint an Oracle',
+      },
+    ],
+  },
+  {
     version: 'v0.30.0',
     date: '2026-08-16 01:30',
     entries: [
