@@ -14,7 +14,7 @@ const t = GALLERY_MESSAGES[locale];
 const collections = await loadGallery();
 ---
 
-<BaseLayout locale={locale} title={`${t.galleryTitle} — Numinia`}>
+<BaseLayout locale={locale} title={`${t.galleryTitle} — Numinia`} description={t.galleryIntro}>
   <header>
     <h1>{t.galleryTitle}</h1>
     <p>{t.galleryIntro}</p>

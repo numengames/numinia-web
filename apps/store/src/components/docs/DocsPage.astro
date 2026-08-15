@@ -22,9 +22,13 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 const hrefFor = (target: string): string =>
   `${prefix}/docs/${target === '' ? '' : `${target}/`}`;
 const { Content } = page.module;
+const description =
+  typeof page.module.frontmatter['description'] === 'string'
+    ? page.module.frontmatter['description']
+    : undefined;
 ---
 
-<BaseLayout locale={locale} title={`${page.title} — Numinia`}>
+<BaseLayout locale={locale} title={`${page.title} — Numinia`} description={description}>
   <div class="layout">
     <nav aria-label={t.sidebarLabel}>
       <h2>{t.sidebarLabel}</h2>

@@ -54,8 +54,17 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
 ];
 
+/**
+ * Newest version of a timeline; the sentinel keeps an empty table from
+ * crashing module load so data regressions fail in tests, not at import.
+ */
+export function newestVersion(updates: readonly UpdateVersion[]): string {
+  const first = updates[0];
+  return first ? first.version : 'v0.0.0';
+}
+
 /** The version the site footer advertises — always the newest timeline entry. */
-export const CURRENT_VERSION: string = (REBUILD_UPDATES[0] as UpdateVersion).version;
+export const CURRENT_VERSION: string = newestVersion(REBUILD_UPDATES);
 
 export type RoadmapStatus = 'planned' | 'research';
 

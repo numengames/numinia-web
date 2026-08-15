@@ -12,7 +12,7 @@ const { locale } = Astro.props;
 const t = INSPECTOR_MESSAGES[locale];
 ---
 
-<BaseLayout locale={locale} title={`${t.inspectorTitle} — Numinia`}>
+<BaseLayout locale={locale} title={`${t.inspectorTitle} — Numinia`} description={t.inspectorIntro}>
   <header>
     <h1>{t.inspectorTitle}</h1>
     <p>{t.inspectorIntro}</p>

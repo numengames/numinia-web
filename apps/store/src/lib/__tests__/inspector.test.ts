@@ -11,6 +11,7 @@ describe('detectKind', () => {
     expect(detectKind('model.glb')).toBe('glb');
     expect(detectKind('scene.GLTF')).toBe('glb');
     expect(detectKind('avatar.VRM')).toBe('vrm');
+    expect(detectKind('  padded.vrm  ')).toBe('vrm');
   });
 
   it('rejects everything else', () => {
@@ -23,7 +24,10 @@ describe('detectKind', () => {
 describe('formatBytes', () => {
   it('scales through units with one decimal', () => {
     expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(1023)).toBe('1023 B');
+    expect(formatBytes(1024)).toBe('1.0 KB');
     expect(formatBytes(1536)).toBe('1.5 KB');
+    expect(formatBytes(1024 * 1024)).toBe('1.0 MB');
     expect(formatBytes(5 * 1024 * 1024)).toBe('5.0 MB');
     expect(formatBytes(3 * 1024 * 1024 * 1024)).toBe('3.0 GB');
   });
@@ -52,10 +56,15 @@ describe('statsRows', () => {
     vrmAuthors: null,
   };
 
-  it('renders six rows for plain GLB stats with formatted numbers', () => {
-    const rows = statsRows(base, labels);
-    expect(rows).toHaveLength(6);
-    expect(rows[1]).toEqual({ label: 'Vertices', value: '12,345' });
+  it('renders exactly the six GLB rows, labeled and formatted', () => {
+    expect(statsRows(base, labels)).toEqual([
+      { label: 'Meshes', value: '2' },
+      { label: 'Vertices', value: '12,345' },
+      { label: 'Triangles', value: '6,789' },
+      { label: 'Materials', value: '3' },
+      { label: 'Textures', value: '4' },
+      { label: 'Animations', value: '1' },
+    ]);
   });
 
   it('appends VRM rows only when metadata is present', () => {

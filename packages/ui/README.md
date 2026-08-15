@@ -1,7 +1,7 @@
 # @numinia/ui
 
 Design tokens for the Numinia visual identity, derived from the seminal
-*Numinia Brand & Culture* (Mediterranean × steampunk × cyberpunk palette,
+_Numinia Brand & Culture_ (Mediterranean × steampunk × cyberpunk palette,
 Geist Mono).
 
 **Every value is `/* PROVISIONAL */`** until the Oracle delivers the visual

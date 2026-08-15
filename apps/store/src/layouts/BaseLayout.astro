@@ -7,11 +7,22 @@ import SiteFooter from '../components/chrome/SiteFooter.astro';
 interface Props {
   locale: SupportedLocale;
   title: string;
+  /** Meta + OG description; every indexed page should pass one. */
+  description?: string | undefined;
   /** The spike page opts out of the site chrome (internal, not in the sitemap). */
   chrome?: boolean;
 }
 
-const { locale, title, chrome = true } = Astro.props;
+const { locale, title, description, chrome = true } = Astro.props;
+
+/** OG locale codes (territory formats differ from our ids). */
+const OG_LOCALES: Record<SupportedLocale, string> = {
+  es: 'es_ES',
+  en: 'en_US',
+  ja: 'ja_JP',
+  ko: 'ko_KR',
+  'pt-br': 'pt_BR',
+};
 
 // SEO: canonical + hreflang alternates, derived from the current path.
 // Locale variants share the path minus the locale prefix; en is unprefixed.
@@ -30,6 +41,12 @@ const urlFor = (target: SupportedLocale): string =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={urlFor(locale)} />
+    <meta property="og:locale" content={OG_LOCALES[locale]} />
     <link rel="canonical" href={urlFor(locale)} />
     {SUPPORTED_LOCALES.map((alt) => (
       <link rel="alternate" hreflang={alt} href={urlFor(alt)} />

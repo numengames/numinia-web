@@ -14,7 +14,7 @@ const t = FINDER_MESSAGES[locale];
 const tree = await loadFinderTree();
 ---
 
-<BaseLayout locale={locale} title={`${t.finderTitle} — Numinia`}>
+<BaseLayout locale={locale} title={`${t.finderTitle} — Numinia`} description={t.finderIntro}>
   <header>
     <h1>{t.finderTitle}</h1>
     <p>{t.finderIntro}</p>

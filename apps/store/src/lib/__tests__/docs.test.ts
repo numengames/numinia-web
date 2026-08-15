@@ -23,16 +23,19 @@ describe('slugFromFile', () => {
   it('returns null outside the docs tree or for unknown locales', () => {
     expect(slugFromFile('/x/src/content/docs/es/help.md')).toBeNull();
     expect(slugFromFile('/x/src/pages/index.astro')).toBeNull();
+    expect(slugFromFile('/x/src/content/docs/en/help.md.png')).toBeNull();
   });
 });
 
 describe('sortNav', () => {
-  it('orders sections canonically with indexes before children', () => {
+  it('orders canonically, NOT alphabetically: unknown sections go last', () => {
+    // 'a-custom' sorts alphabetically before everything but canonically last.
     const nav = sortNav([
+      { slug: 'a-custom', title: 'Custom' },
       { slug: 'help', title: 'Help' },
       { slug: 'developers/website', title: 'Website' },
       { slug: 'about/license', title: 'License' },
-      { slug: 'unknown-section', title: 'Later' },
+      { slug: 'avatar-collections', title: 'Collections' },
       { slug: '', title: 'Resources' },
       { slug: 'about', title: 'About' },
       { slug: 'developers', title: 'Developers' },
@@ -41,10 +44,11 @@ describe('sortNav', () => {
       '',
       'about',
       'about/license',
+      'avatar-collections',
       'developers',
       'developers/website',
       'help',
-      'unknown-section',
+      'a-custom',
     ]);
   });
 });

@@ -24,7 +24,7 @@ const LANGUAGE_NOTICE: Partial<Record<SupportedLocale, string>> = {
 };
 ---
 
-<BaseLayout locale={locale} title={`${content.title} — Numinia`}>
+<BaseLayout locale={locale} title={`${content.title} — Numinia`} description={content.sections[0]?.body[0]}>
   <p data-legal-draft role="note">{DRAFT_BANNER[contentLocale]}</p>
   {LANGUAGE_NOTICE[locale] && <p class="language-notice">{LANGUAGE_NOTICE[locale]}</p>}
   <h1>{content.title}</h1>

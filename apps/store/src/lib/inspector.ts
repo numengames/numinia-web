@@ -9,7 +9,8 @@ export type InspectorKind = 'glb' | 'vrm';
 /** Classify a filename by extension; null means "not inspectable here". */
 export function detectKind(filename: string): InspectorKind | null {
   const match = /\.([a-z0-9]+)$/i.exec(filename.trim());
-  const extension = match?.[1]?.toLowerCase();
+  if (!match) return null;
+  const extension = (match[1] as string).toLowerCase();
   if (extension === 'glb' || extension === 'gltf') return 'glb';
   if (extension === 'vrm') return 'vrm';
   return null;
@@ -18,10 +19,9 @@ export function detectKind(filename: string): InspectorKind | null {
 /** Human-readable size: 1536 → "1.5 KB". */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes;
-  let unit = 'B';
-  for (const next of units) {
+  let value = bytes / 1024;
+  let unit = 'KB';
+  for (const next of ['MB', 'GB']) {
     if (value < 1024) break;
     value /= 1024;
     unit = next;

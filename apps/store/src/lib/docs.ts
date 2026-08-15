@@ -25,7 +25,7 @@ export function slugFromFile(file: string): { locale: DocsContentLocale; slug: s
 const SECTION_ORDER = ['', 'about', 'avatar-collections', 'developers', 'help'];
 
 function sectionOf(slug: string): string {
-  return slug.includes('/') ? (slug.split('/')[0] as string) : slug;
+  return slug.split('/')[0] as string;
 }
 
 function sectionRank(slug: string): number {

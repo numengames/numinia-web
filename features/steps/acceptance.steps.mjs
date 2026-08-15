@@ -400,3 +400,27 @@ Then('the inspector page exists under every locale prefix as an island', async f
     assert.ok(html.includes('<astro-island'), `inspector island missing for ${prefix || 'en'}`);
   }
 });
+
+// --- SEO descriptions (v0.17.0 polish) ---
+
+Then('key pages declare meta description and open graph tags', async function () {
+  const pages = [
+    'index.html',
+    'es/index.html',
+    'gallery/index.html',
+    'archive/index.html',
+    'finder/index.html',
+    'updates/index.html',
+    'docs/index.html',
+    'inspector/index.html',
+    'legal/privacy/index.html',
+  ];
+  for (const page of pages) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    assert.ok(/<meta name="description" content="[^"]+"/.test(html), `${page}: no description`);
+    assert.ok(html.includes('property="og:title"'), `${page}: no og:title`);
+    assert.ok(html.includes('property="og:locale"'), `${page}: no og:locale`);
+    const ogTitles = html.match(/property="og:title"/g) ?? [];
+    assert.equal(ogTitles.length, 1, `${page}: duplicated og:title`);
+  }
+});

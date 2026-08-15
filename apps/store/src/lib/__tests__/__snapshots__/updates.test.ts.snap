@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
+[
+  {
+    "date": "2026-08-15",
+    "entries": [
+      {
+        "text": "The Archive: every public asset in 5 locales with search and filters",
+        "type": "NEW",
+      },
+      {
+        "text": "Gallery: the avatars of the city, collection by collection",
+        "type": "NEW",
+      },
+      {
+        "text": "Finder: three-pane collection explorer with batch download",
+        "type": "NEW",
+      },
+      {
+        "text": "Site chrome: header, footer, and a no-JS language selector",
+        "type": "NEW",
+      },
+      {
+        "text": "SEO: sitemap, robots.txt, canonical and hreflang on every page",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.17.0",
+  },
+  {
+    "date": "2026-08-14",
+    "entries": [
+      {
+        "text": "Full platform rebuild: Astro + Turborepo monorepo (code razed, design preserved)",
+        "type": "NEW",
+      },
+      {
+        "text": "Domain model regenerated from the seminal corpus (guilds, ranks, seals, assets)",
+        "type": "NEW",
+      },
+      {
+        "text": "Quality floor: 100% domain coverage, mutation testing, WCAG gate, bundle budgets",
+        "type": "UPD",
+      },
+      {
+        "text": "Hermetic builds from committed catalog snapshots (File Over App)",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.16.0",
+  },
+]
+`;

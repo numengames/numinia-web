@@ -55,10 +55,11 @@ describe('loadGallery', () => {
     vi.resetModules();
     vi.doMock('../archive', () => ({
       loadArchive: () =>
+        // Insertion order deliberately differs from every expected ordering.
         Promise.resolve([
-          { category: 'avatars', asset: { ...template, id: 'b-av', projectId: '' } },
-          { category: 'avatars', asset: { ...template, id: 'a-av', projectId: 'zeta' } },
-          { category: 'avatars', asset: { ...template, id: 'c-av', projectId: 'zeta' } },
+          { category: 'avatars', asset: { ...template, id: 'c-av', name: 'C', projectId: 'zeta' } },
+          { category: 'avatars', asset: { ...template, id: 'a-av', name: 'A', projectId: 'zeta' } },
+          { category: 'avatars', asset: { ...template, id: 'b-av', name: 'B', projectId: '' } },
           { category: 'models', asset: { ...template, id: 'not-avatar', projectId: 'zeta' } },
         ]),
     }));
