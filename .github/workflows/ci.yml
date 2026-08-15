@@ -60,8 +60,8 @@ jobs:
           cache: npm
       - name: Install (reproducible)
         run: npm ci
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install browsers (chromium + firefox + webkit — the CI config enables all three)
+        run: npx playwright install --with-deps chromium firefox webkit
         working-directory: apps/store
       - name: Build store (hermetic catalog)
         run: npm --workspace @numinia/store run build
