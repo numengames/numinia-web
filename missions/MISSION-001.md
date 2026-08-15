@@ -1,20 +1,31 @@
 # 🪐 MISSION-001 — The CC0 Archive (Phase 1 core)
 
+> **For humans.** Mission record: the Archive — every public asset browsable and downloadable in 5 locales.
+>
+> **Epistemic value.** Resolves what MISSION-001 promised and what it shipped.
+> **Pragmatic value.** Its Gherkin criteria remain binding regression contracts for the archive.
+> **In the system.** Observes: MISSION-000 foundations. Regulates: archive behavior. Coupled to: features/archive.feature.
+>
+> _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
+
 > **Agent type:** 🤖 Digital · **Priority:** 🔴 Critical · **Effort:** L
 > **Status:** ✅ Done (2026-08-15) — all acceptance criteria verified: 32 public assets × 5 locales = 165 SSG pages, 11/11 Gherkin, 11/11 e2e (incl. WCAG on archive), budgets green. NOT deployed (standing order).
 > **Guild / House:** Alchemists (creation) + Procurators (structure)
 > **Track:** `store` pages, `com`-grade shared logic. **No deploy, no publish.**
 
 ## 📝 Subtitle
+
 The public gallery that replaces numinia.store's Layer 0: one SSG URL per
 asset, multi-format viewing, search, downloads — fully local until push day.
 
 ## 📖 Story Statement
+
 As a visitor, I want to browse, preview and download CC0 digital goods in my
 language, so that Numinia's material culture is useful to me even before I know
 the city exists.
 
 ## ⚡ Pragmatic Value
+
 Funnel 1 (visitor → downloader) becomes real: every card, filter and download
 is instrumented. v0.17.0 material.
 
@@ -35,11 +46,13 @@ is instrumented. v0.17.0 material.
   committed multi-catalog snapshot.
 
 ## 🚫 Out of scope
+
 Wallet/auth, LAP, seasons, character sheet, HYP deep parsing, server-side
 search, data-repo writes, deploy.
 
 ## ⚠️ Risks
-| Risk | Mitigation |
-|---|---|
+
+| Risk                               | Mitigation                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Dead URLs found by data-doctor (4) | Pages render with placeholder + report link; missing binary asset still gets a page but download shows unavailable state |
-| 3dprint catalog 404 | Excluded from sources; recorded in data-doctor report |
+| 3dprint catalog 404                | Excluded from sources; recorded in data-doctor report                                                                    |

@@ -1,5 +1,13 @@
 # CLAUDE.md — Numinia Web Platform
 
+> **For humans.** The constitution: what Numinia is, how this monorepo is organized, and the non-negotiable rules every agent follows before touching code.
+>
+> **Epistemic value.** Resolves who we are, what we build, and which layer/phase any task belongs to — the shared world-model that keeps every agent's predictions aligned.
+> **Pragmatic value.** Gates every action: naming, testing, i18n, security, and what NOT to do. If an action contradicts this file, the action is wrong.
+> **In the system.** Observes: seminal corpus, ADRs, glossary. Regulates: all code and docs. Coupled to: DECISIONS.md, docs/glossary.md, missions/.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 > Codex for digital agents (Claude Code, Copilot, etc.) and biological agents (developers).
 > Read this completely before touching any code.
 > All code comments in English. No exceptions.
@@ -38,6 +46,7 @@ Missions (work)           →  Domain model (structure)  →  Adventures (play)
 The Functional Model is the skeleton. The Narrative Projection is the skin. The Operating System is the soul. They are distinguishable but not separable. When you build a component, ask: which layer am I touching?
 
 **Missions are NOT Adventures.**
+
 - Missions = Operating System. Work items in Huly. Assigned to agents (biological/digital/hybrid). Have acceptance criteria in Gherkin format. (See Mission Template v0.2.0)
 - Adventures = Narrative Projection. Game experiences in Hyperfy. Part of Seasons. Have rewards. Designed by the DJ.
 
@@ -101,15 +110,15 @@ numinia-platform/
 
 ## Two tracks: store vs com
 
-| Aspect | numinia.store | numinia.com |
-|--------|:---:|:---:|
-| Purpose | Spikes, PoCs, rapid validation | Production platform |
-| Quality bar | "Does it work?" | "Is it excellent?" |
-| Tests | Unit tests on domain | Full coverage + e2e + Cucumber |
-| Deploy | Vercel preview | Vercel/Cloudflare production |
-| Breaking changes | Acceptable | Never without migration |
-| Console.log | Acceptable during dev | Zero in committed code |
-| `any` types | Discouraged | Forbidden |
+| Aspect           |         numinia.store          |          numinia.com           |
+| ---------------- | :----------------------------: | :----------------------------: |
+| Purpose          | Spikes, PoCs, rapid validation |      Production platform       |
+| Quality bar      |        "Does it work?"         |       "Is it excellent?"       |
+| Tests            |      Unit tests on domain      | Full coverage + e2e + Cucumber |
+| Deploy           |         Vercel preview         |  Vercel/Cloudflare production  |
+| Breaking changes |           Acceptable           |    Never without migration     |
+| Console.log      |     Acceptable during dev      |     Zero in committed code     |
+| `any` types      |          Discouraged           |           Forbidden            |
 
 Both apps import from the same `packages/`. The domain model is shared and must always be production-grade, even when used by `store`.
 
@@ -117,20 +126,20 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 ## Tech stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Framework | Astro (current stable — 7.x at rebuild start, ADR-015) | SSG for gallery (SEO), islands for interactivity |
-| Islands | React 19 | Only where needed: 3D viewer, wallet, citizen dashboard |
-| 3D | Three.js + @react-three/fiber + @pixiv/three-vrm | Proven stack for GLB/VRM |
-| Styling | Tailwind CSS 4 + Numinia design tokens | Utility-first + brand consistency |
-| Auth | Progressive (Web2 → SIWE) | Bridge for digital divide. Details TBD in dedicated session |
-| Data (metadata) | GitHub repos (JSON files) | File Over App — data is portable |
-| Data (binaries) | Arweave (permanent) + R2 (CDN) + IPFS | Permanence + performance |
-| Validation | Zod | Runtime type safety for all external data and env vars |
-| Testing | Vitest + Playwright + Cucumber.js | Unit + e2e + BDD with Gherkin |
-| Monorepo | Turborepo | Shared packages, parallel builds |
-| CI/CD | GitHub Actions | type-check → lint → test → build |
-| Deploy | Vercel or Cloudflare Pages | Both support Astro SSG |
+| Layer           | Technology                                             | Why                                                         |
+| --------------- | ------------------------------------------------------ | ----------------------------------------------------------- |
+| Framework       | Astro (current stable — 7.x at rebuild start, ADR-015) | SSG for gallery (SEO), islands for interactivity            |
+| Islands         | React 19                                               | Only where needed: 3D viewer, wallet, citizen dashboard     |
+| 3D              | Three.js + @react-three/fiber + @pixiv/three-vrm       | Proven stack for GLB/VRM                                    |
+| Styling         | Tailwind CSS 4 + Numinia design tokens                 | Utility-first + brand consistency                           |
+| Auth            | Progressive (Web2 → SIWE)                              | Bridge for digital divide. Details TBD in dedicated session |
+| Data (metadata) | GitHub repos (JSON files)                              | File Over App — data is portable                            |
+| Data (binaries) | Arweave (permanent) + R2 (CDN) + IPFS                  | Permanence + performance                                    |
+| Validation      | Zod                                                    | Runtime type safety for all external data and env vars      |
+| Testing         | Vitest + Playwright + Cucumber.js                      | Unit + e2e + BDD with Gherkin                               |
+| Monorepo        | Turborepo                                              | Shared packages, parallel builds                            |
+| CI/CD           | GitHub Actions                                         | type-check → lint → test → build                            |
+| Deploy          | Vercel or Cloudflare Pages                             | Both support Astro SSG                                      |
 
 ### What NOT to use
 
@@ -146,11 +155,11 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 **Decision (2026-04-03):** 5 UI languages, 2 lore languages.
 
-| Layer | Languages | Type |
-|-------|-----------|------|
-| UI strings, labels, navigation | ES, EN, JA, KO, PT-BR | `LocalizedString` (5 fields) |
-| Deep lore (RPG narrative, Akashic Archive) | ES, EN | `LoreString` (2 fields) |
-| Asset metadata (names, short descriptions) | ES, EN, JA, KO, PT-BR | `LocalizedString` |
+| Layer                                      | Languages             | Type                         |
+| ------------------------------------------ | --------------------- | ---------------------------- |
+| UI strings, labels, navigation             | ES, EN, JA, KO, PT-BR | `LocalizedString` (5 fields) |
+| Deep lore (RPG narrative, Akashic Archive) | ES, EN                | `LoreString` (2 fields)      |
+| Asset metadata (names, short descriptions) | ES, EN, JA, KO, PT-BR | `LocalizedString`            |
 
 **Why these 5:** ES (canonical, team, LATAM), EN (global, Web3, 3D), JA (VRM native, avatar/RPG culture), KO (Web3 adoption leader), PT-BR (Brazil gaming + cultural proximity).
 
@@ -168,27 +177,27 @@ The canonical source is the RPG manual ("Numinia. El juego de rol"), 4668 lines 
 
 ### Domain type files (packages/domain/src/types/)
 
-| File | What it models | Key types |
-|------|---------------|-----------|
-| `i18n.ts` | Bilingual support | `LocalizedString`, `LoreString`, `SupportedLocale` |
-| `guild.ts` | 4 guilds × 2 branches × 2 houses | `Guild`, `Branch`, `House`, `GuildPath` |
-| `faction.ts` | 4 factions with Prototype Theory | `Faction`, `PrototypeRole` |
-| `district.ts` | 4 districts with coordinates | `District`, `DistrictCoordinates` |
-| `rank.ts` | 6 progression levels | `Rank`, `RankLevel` |
-| `species.ts` | 5 species + hybrid system | `Species`, `SpeciesConfig` (discriminated union) |
-| `attribute.ts` | 4 physical + 4 psychic | `AttributeScores` |
-| `competence.ts` | 9 skills in 3 domains | `CompetenceScores` |
-| `archetype.ts` | 12 Jungian archetypes | `Archetype` |
-| `humor.ts` | 4 humors (Greek medicine) | `Humor` |
-| `linguistic.ts` | Dialect, sociolect, idiolect | `LinguisticProfile` |
-| `seal.ts` | Session Zero seals + Prism Cells | `SealCollection`, `PrismCellBalance` |
-| `asset.ts` | 7-format digital goods + storage | `Asset`, `AssetLore`, `AssetCollection` |
-| `season.ts` | Temporal progression | `Season`, `Adventure`, `Reward` |
-| `portal.ts` | Spatial navigation (14 portals) | `Portal`, `PortalMapPosition` |
-| `equipment.ts` | Weapons + relics | `Equipment`, `EquipmentProperty` |
-| `permission.ts` | 22 permissions in 6 groups | `Permission`, `ResolvedPermissions` |
-| `mission.ts` | Operational work units | `Mission`, `AcceptanceCriterion` (Gherkin) |
-| `character-sheet.ts` | Complete citizen identity | `CharacterSheet` |
+| File                 | What it models                   | Key types                                          |
+| -------------------- | -------------------------------- | -------------------------------------------------- |
+| `i18n.ts`            | Bilingual support                | `LocalizedString`, `LoreString`, `SupportedLocale` |
+| `guild.ts`           | 4 guilds × 2 branches × 2 houses | `Guild`, `Branch`, `House`, `GuildPath`            |
+| `faction.ts`         | 4 factions with Prototype Theory | `Faction`, `PrototypeRole`                         |
+| `district.ts`        | 4 districts with coordinates     | `District`, `DistrictCoordinates`                  |
+| `rank.ts`            | 6 progression levels             | `Rank`, `RankLevel`                                |
+| `species.ts`         | 5 species + hybrid system        | `Species`, `SpeciesConfig` (discriminated union)   |
+| `attribute.ts`       | 4 physical + 4 psychic           | `AttributeScores`                                  |
+| `competence.ts`      | 9 skills in 3 domains            | `CompetenceScores`                                 |
+| `archetype.ts`       | 12 Jungian archetypes            | `Archetype`                                        |
+| `humor.ts`           | 4 humors (Greek medicine)        | `Humor`                                            |
+| `linguistic.ts`      | Dialect, sociolect, idiolect     | `LinguisticProfile`                                |
+| `seal.ts`            | Session Zero seals + Prism Cells | `SealCollection`, `PrismCellBalance`               |
+| `asset.ts`           | 7-format digital goods + storage | `Asset`, `AssetLore`, `AssetCollection`            |
+| `season.ts`          | Temporal progression             | `Season`, `Adventure`, `Reward`                    |
+| `portal.ts`          | Spatial navigation (14 portals)  | `Portal`, `PortalMapPosition`                      |
+| `equipment.ts`       | Weapons + relics                 | `Equipment`, `EquipmentProperty`                   |
+| `permission.ts`      | 22 permissions in 6 groups       | `Permission`, `ResolvedPermissions`                |
+| `mission.ts`         | Operational work units           | `Mission`, `AcceptanceCriterion` (Gherkin)         |
+| `character-sheet.ts` | Complete citizen identity        | `CharacterSheet`                                   |
 
 ### Guilds (Basic Level Theory — vertical hierarchy)
 
@@ -254,6 +263,7 @@ Use `resolvePermissions(rank)` and `hasPermission(rank, permission)` from `packa
 ### Session Zero
 
 4 escape rooms in Hyperfy, each linked to a guild:
+
 - Threshold of Thought → Exegetes (seals: Culture + Wisdom)
 - Threshold of Transformation → Alchemists (seals: Transformation + Creativity)
 - Threshold of Justice → Procurators (seals: Justice + Valor)
@@ -265,15 +275,15 @@ Use `resolvePermissions(rank)` and `hasPermission(rank, permission)` from `packa
 
 The platform manages 7 formats (not just 3D):
 
-| Format | Category | Example |
-|--------|----------|---------|
-| `glb` | 3D model/scene | Buildings, objects |
-| `vrm` | Avatar | Characters (pixiv standard) |
-| `hyp` | Hyperfy world | Virtual spaces |
-| `mp3` | Audio | Ambient, music |
-| `mp4` | Video | Cinematics |
-| `png` | Image | Textures, art, UI |
-| `jpg` | Image | Photos, thumbnails |
+| Format | Category       | Example                     |
+| ------ | -------------- | --------------------------- |
+| `glb`  | 3D model/scene | Buildings, objects          |
+| `vrm`  | Avatar         | Characters (pixiv standard) |
+| `hyp`  | Hyperfy world  | Virtual spaces              |
+| `mp3`  | Audio          | Ambient, music              |
+| `mp4`  | Video          | Cinematics                  |
+| `png`  | Image          | Textures, art, UI           |
+| `jpg`  | Image          | Photos, thumbnails          |
 
 Storage layers (resolution priority): Arweave → R2 → IPFS → GitHub
 
@@ -343,16 +353,19 @@ PUBLIC_SITE_URL=https://numinia.store
 ## Code standards (non-negotiable)
 
 ### Language
+
 - All code comments, commit messages, and documentation in **English**.
 - Variable names, function names, class names in English.
 - Lore content and user-facing text follow the i18n strategy (5 or 2 languages).
 
 ### TypeScript
+
 - Strict mode. No `any`. No `as unknown as X`.
 - Prefer `interface` over `type` for object shapes.
 - Use discriminated unions for state: `{ status: 'loading' } | { status: 'ready', data: T } | { status: 'error', error: Error }`.
 
 ### Components
+
 - Max **200 lines** per file. If it's longer, split it.
 - Every component handles three states: loading, error, empty.
 - Every interactive element carries `data-metric="<area>-<action>"` (funnel instrumentation — docs/analytics.md).
@@ -360,12 +373,14 @@ PUBLIC_SITE_URL=https://numinia.store
 - 3D components are ALWAYS lazy-loaded: `client:visible` in Astro or `React.lazy()`.
 
 ### Styles
+
 - Tailwind utilities in markup. No CSS files unless defining design tokens.
 - Design tokens in `packages/ui/src/tokens.css`.
 - Colors: `#A6DAD5` (seafoam), `#018EA1` (turquoise), `#EFA517` (amber), `#F9EBDC` (beige), `#F35059` (coral), `#D33440` (dark red).
 - Typography: Geist Mono.
 
 ### Testing
+
 - Domain model: 100% coverage.
 - Components: test behavior, not implementation.
 - E2e: Playwright for critical paths.
@@ -374,12 +389,14 @@ PUBLIC_SITE_URL=https://numinia.store
 - Run tests before every commit: `turbo test`.
 
 ### Security
+
 - Auth: progressive Web2→Web3 (details in dedicated ADR).
 - CORS: explicit origin, never `*` with credentials.
 - No `console.log` in production code. Use a proper logger or remove.
 - No secrets in client-side code.
 
 ### Git
+
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`.
 - No force pushes to main.
 - PR required for `com/`. Direct push acceptable for `store/` spikes.
@@ -404,14 +421,14 @@ PUBLIC_SITE_URL=https://numinia.store
 
 ## Build phases
 
-| Phase | Focus | Status |
-|:---:|-------|:---:|
-| 0 | Foundations: monorepo, domain model, CI, design tokens | **In progress** (domain model 70%) |
-| 1 | Platform viewer/manager: SSG pages, multi-format viewer, search, download | Not started |
-| 2 | Identity: progressive auth (Web2→SIWE), citizen dashboard, character sheet | Not started |
-| 3 | Gamification: seals, forge, seasons, adventures, Huly integration | Not started |
-| 4 | Decentralization: Arweave pipeline, public API, ZK | Not started |
-| 5 | XR: Hyperfy bridge, WebXR preview, agent integration | Not started |
+| Phase | Focus                                                                      |               Status               |
+| :---: | -------------------------------------------------------------------------- | :--------------------------------: |
+|   0   | Foundations: monorepo, domain model, CI, design tokens                     | **In progress** (domain model 70%) |
+|   1   | Platform viewer/manager: SSG pages, multi-format viewer, search, download  |            Not started             |
+|   2   | Identity: progressive auth (Web2→SIWE), citizen dashboard, character sheet |            Not started             |
+|   3   | Gamification: seals, forge, seasons, adventures, Huly integration          |            Not started             |
+|   4   | Decentralization: Arweave pipeline, public API, ZK                         |            Not started             |
+|   5   | XR: Hyperfy bridge, WebXR preview, agent integration                       |            Not started             |
 
 Current priority: **Phase 0 — complete domain model + spike technical**
 
@@ -419,25 +436,26 @@ Current priority: **Phase 0 — complete domain model + spike technical**
 
 ## Architecture decisions log
 
-| # | Decision | Date | Why |
-|---|----------|------|-----|
-| ADR-001 | 5 languages (ES, EN, JA, KO, PT-BR) | 2026-04-03 | Market analysis: Web3, RPG, VRM, gaming. ZH/DE deferred |
-| ADR-002 | Lore only in ES+EN | 2026-04-03 | Literary translation quality > coverage |
-| ADR-003 | 7 asset formats (not just 3D) | 2026-04-03 | v0.1.0 already manages multimedia |
-| ADR-004 | Gherkin for acceptance criteria | 2026-04-03 | Dual-agent readable: humans + machines |
-| ADR-005 | Missions ≠ Adventures | 2026-04-03 | Peirce: Operating System ≠ Narrative Projection |
-| ADR-006 | Progressive auth (Web2→Web3) | 2026-04-03 | Numinia bridges digital divide. Details TBD |
-| ADR-007 | Guild names corrected from RPG manual | 2026-04-03 | Manual is canonical source, not old CLAUDE.md |
-| ADR-008 | All code comments in English | 2026-04-03 | Accessibility and best practices |
-| ADR-009 | Domain model framework-agnostic (zod-only) | 2026-04-03 | See DECISIONS.md |
-| ADR-010 | v0.1.0 design preserved, code discarded | 2026-04-03 | See DECISIONS.md |
-| ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation | 2026-08 | See docs/decisions/ |
+| #            | Decision                                                                                                               | Date       | Why                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------- |
+| ADR-001      | 5 languages (ES, EN, JA, KO, PT-BR)                                                                                    | 2026-04-03 | Market analysis: Web3, RPG, VRM, gaming. ZH/DE deferred |
+| ADR-002      | Lore only in ES+EN                                                                                                     | 2026-04-03 | Literary translation quality > coverage                 |
+| ADR-003      | 7 asset formats (not just 3D)                                                                                          | 2026-04-03 | v0.1.0 already manages multimedia                       |
+| ADR-004      | Gherkin for acceptance criteria                                                                                        | 2026-04-03 | Dual-agent readable: humans + machines                  |
+| ADR-005      | Missions ≠ Adventures                                                                                                  | 2026-04-03 | Peirce: Operating System ≠ Narrative Projection         |
+| ADR-006      | Progressive auth (Web2→Web3)                                                                                           | 2026-04-03 | Numinia bridges digital divide. Details TBD             |
+| ADR-007      | Guild names corrected from RPG manual                                                                                  | 2026-04-03 | Manual is canonical source, not old CLAUDE.md           |
+| ADR-008      | All code comments in English                                                                                           | 2026-04-03 | Accessibility and best practices                        |
+| ADR-009      | Domain model framework-agnostic (zod-only)                                                                             | 2026-04-03 | See DECISIONS.md                                        |
+| ADR-010      | v0.1.0 design preserved, code discarded                                                                                | 2026-04-03 | See DECISIONS.md                                        |
+| ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation | 2026-08    | See docs/decisions/                                     |
 
 ---
 
 ## For AI agents
 
 When working on a task:
+
 1. Read this file completely.
 2. Identify which layer (0-3) and which phase (0-5) the task belongs to.
 3. Check if the relevant types exist in `packages/domain`. If not, create them first.
@@ -447,6 +465,7 @@ When working on a task:
 7. Ask when in doubt. Never assume.
 
 When receiving a Mission:
+
 1. Read the story statement first. If unclear, ask.
 2. Implement acceptance criteria as Gherkin `.feature` files.
 3. Fill the Agent Collaboration Protocol for your phase.
@@ -457,4 +476,4 @@ Make it count.
 
 ---
 
-*"Sin reglas no hay juego; y sin juego no hay alma; y sin alma... no hay Numinia."*
+_"Sin reglas no hay juego; y sin juego no hay alma; y sin alma... no hay Numinia."_

@@ -1,5 +1,13 @@
 # Project Status — Numinia Platform
 
+> **For humans.** The living state of the project: what is DONE, what is NEXT, who owns each step.
+>
+> **Epistemic value.** Resolves where we are without replaying history — the belief state after every session.
+> **Pragmatic value.** Session planning starts here; anything shipped or decided must land here or it did not happen.
+> **In the system.** Observes: every merge and Oracle order. Regulates: priorities. Coupled to: TODO.md, missions/.
+>
+> _Part of the Law. Index: [LEY.md](./LEY.md)_
+
 > Living document: what is DONE, what is NEXT, and who owns each next step.
 > Updated: 2026-08-15 · 38 commits on `main` · everything LOCAL (no remote, no deploy, no license published).
 

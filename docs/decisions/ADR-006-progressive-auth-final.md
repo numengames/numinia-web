@@ -1,12 +1,17 @@
 # ADR-006 (final): Progressive authentication — embedded wallet via thirdweb
 
+> **For humans.** Decision record: embedded wallet via thirdweb.
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 **Status:** Accepted (Oracle session 2026-08-15) — entry vendor **conditional on the MISSION-002 evaluation spike**; boundary and storage marked **provisional/evolving** by the Oracle.
 **Supersedes:** the "details TBD" state of ADR-006 in DECISIONS.md.
 
 ## Definition
 
 1. **Entry model (option B): embedded wallet.** Users enter with social/email/passkey and receive an embedded wallet under the hood; external wallets connect natively alongside. Vendor: **thirdweb** (In-App Wallets + Connect), **conditional** on the Oracle's clause "si se puede hacer todo con thirdweb" — MISSION-002 opens with an evaluation spike that must check every required capability before any integration code lands.
-2. **Layers 0–1 need no auth at all**: browsing and CC0 downloads stay anonymous. "Nomad" is any *authenticated* identity — and thanks to the embedded wallet, every Nomad has an address from day one, which keeps the rank ladder single-primitive.
+2. **Layers 0–1 need no auth at all**: browsing and CC0 downloads stay anonymous. "Nomad" is any _authenticated_ identity — and thanks to the embedded wallet, every Nomad has an address from day one, which keeps the rank ladder single-primitive.
 3. **Web3 boundary (provisional): Pilgrim.** Nomad and Citizen (Session Zero) work with any entry identity; exchange with Numinia (purchases, on-chain loot) requires a real wallet action. The Oracle flagged this line for **QA and possible future change** — tracked as open-questions D13; the code must keep the boundary a single configurable rank constant.
 4. **User state (evolving): deferred until Citizen.** No persistent server-side user state before Citizen; completing Session Zero produces the first record — a signed attestation committed to the data repo (File Over App, like the legacy's markdown ficha but signature-backed). Evolution path: richer attestations → on-chain (Phase 3+). No traditional DB, ever (constitution).
 5. **Signature scope at launch: EOA-only**, verified locally (no RPC), as proven in the Phase 0.7 spike. Contract wallets (EIP-1271) **fail closed** with a clear error until supported; when added, verification runs via RPC and **thirdweb RPC endpoints are an acceptable provider for viem** (Oracle asked; confirmed — no second vendor needed).

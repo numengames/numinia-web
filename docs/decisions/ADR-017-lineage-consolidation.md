@@ -1,5 +1,10 @@
 # ADR-017 — Lineage consolidation: numinia-digital-goods history grafted into numinia-platform
 
+> **For humans.** Decision record: Lineage consolidation: numinia-digital-goods history grafted into numinia-platform.
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 - **Status:** Accepted (Oracle decision, 2026-08-15)
 - **Deciders:** Pablo (Oracle) — option chosen from a CTO memo with forensic analysis
 - **Related:** ADR-010 (design preserved, code discarded), D11 (license), D15 (remote destiny)

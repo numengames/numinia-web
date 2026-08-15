@@ -19,18 +19,18 @@
 ## The core product question
 
 > Who is a Nomad, technically? The rank ladder starts at Nomad ("registered by
-> the system"). What is the *minimum* identity that registration requires?
+> the system"). What is the _minimum_ identity that registration requires?
 
 Everything else derives from this.
 
 ## Option map — Web2 entry
 
-| Option | How | Pros | Cons / nuances |
-|---|---|---|---|
-| A. **Guest-first** (no auth at Layer 0/1) | Anonymous browsing + downloads; identity only appears at Layer 2 | Zero friction, matches CC0 openness; nothing to build | "Nomad" = merely a visitor; no cross-device continuity; favorites live client-side (constitution bans localStorage in components — needs a cookie-based or deferred design) |
-| B. **Embedded wallet via social/email login** (thirdweb-style, or self-hosted passkey→wallet) | User logs in with social/email/passkey; a wallet is created under the hood | One identity system (always a wallet address); progressive by construction; legacy already validated the UX | Vendor dependency (thirdweb) vs build cost (self-hosted AA/passkey infra); custody questions; the legacy's failure mode (unverified JWT) must not be copied |
-| C. **Passkeys (WebAuthn) as native Web2 tier** | Passkey identity first; wallet linked later | Standards-based, no vendor, phishing-resistant, no passwords | Two identity primitives to reconcile (passkey id ↔ wallet address); linking ceremony needed; where is the mapping stored without a DB? (File Over App: signed attestation in the data repo?) |
-| D. **Wallet-only from day one** | SIWE or nothing | Simplest, sovereign, already spiked | Excludes exactly the audience the "digital divide bridge" mission targets |
+| Option                                                                                        | How                                                                        | Pros                                                                                                        | Cons / nuances                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A. **Guest-first** (no auth at Layer 0/1)                                                     | Anonymous browsing + downloads; identity only appears at Layer 2           | Zero friction, matches CC0 openness; nothing to build                                                       | "Nomad" = merely a visitor; no cross-device continuity; favorites live client-side (constitution bans localStorage in components — needs a cookie-based or deferred design)                  |
+| B. **Embedded wallet via social/email login** (thirdweb-style, or self-hosted passkey→wallet) | User logs in with social/email/passkey; a wallet is created under the hood | One identity system (always a wallet address); progressive by construction; legacy already validated the UX | Vendor dependency (thirdweb) vs build cost (self-hosted AA/passkey infra); custody questions; the legacy's failure mode (unverified JWT) must not be copied                                  |
+| C. **Passkeys (WebAuthn) as native Web2 tier**                                                | Passkey identity first; wallet linked later                                | Standards-based, no vendor, phishing-resistant, no passwords                                                | Two identity primitives to reconcile (passkey id ↔ wallet address); linking ceremony needed; where is the mapping stored without a DB? (File Over App: signed attestation in the data repo?) |
+| D. **Wallet-only from day one**                                                               | SIWE or nothing                                                            | Simplest, sovereign, already spiked                                                                         | Excludes exactly the audience the "digital divide bridge" mission targets                                                                                                                    |
 
 ## The storage question (no DB allowed)
 

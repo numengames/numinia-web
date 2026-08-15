@@ -1,5 +1,10 @@
 # ADR-015: Astro 7 instead of the constitution's "Astro 5"
 
+> **For humans.** Decision record: ADR-015: Astro 7 instead of the constitution's "Astro 5".
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 **Status:** Accepted (autonomous, flagged for Oracle review)
 **Date:** 2026-08-15
 

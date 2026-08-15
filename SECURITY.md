@@ -1,5 +1,13 @@
 # Security Policy
 
+> **For humans.** The security policy: commitments, reporting, and fail-closed principles.
+>
+> **Epistemic value.** Resolves how the platform treats secrets, auth, and vulnerabilities — and how to report one.
+> **Pragmatic value.** Every security-touching change is checked against these commitments (fail closed, no silent degradation).
+> **In the system.** Observes: legacy audit lessons. Regulates: auth, secrets, deps. Coupled to: docs/reference/legacy-test-audit.md, packages/auth.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 ## Principles (commitments, not aspirations)
 
 - **Fail closed.** Missing configuration crashes at boot naming the variable;

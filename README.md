@@ -1,11 +1,19 @@
 # Numinia Platform
 
+> **For humans.** The front door: what this repository is, its layout, and how to run it.
+>
+> **Epistemic value.** Resolves a newcomer's first uncertainty — what am I looking at and where do I start.
+> **Pragmatic value.** Points every reader to the constitution before they touch code.
+> **In the system.** Observes: nothing. Regulates: first contact. Coupled to: CLAUDE.md, docs/LEY.md.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 The monorepo of the Numinia rebuild — the material culture of a city-state that
 exists between planes. This is **not** a 3D asset marketplace: the digital goods
 are the objects its citizens use, earn, and carry through the Veil. Read
 [CLAUDE.md](./CLAUDE.md) (the constitution) before touching any code.
 
-> Version line continues numinia.store: legacy ended at 0.15.0 → this repo is **v0.16.0**.
+> Version line continues numinia.store: legacy ended at 0.15.0 → this repo is **v0.17.0**.
 > Local-only for now: no remote, no deploy, no license published (open-questions D11).
 
 ## Lineage

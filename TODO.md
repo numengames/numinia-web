@@ -1,5 +1,13 @@
 # TODO.md — Numinia Platform Backlog
 
+> **For humans.** The captured backlog: tasks by phase, owner, and status.
+>
+> **Epistemic value.** Resolves what remains and in which order — the gap between current state and the goal state.
+> **Pragmatic value.** Feeds mission planning; items leave only by shipping or by explicit Oracle removal.
+> **In the system.** Observes: docs/status.md, missions. Regulates: work selection. Coupled to: docs/open-questions.md.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 > Tasks captured during the 2026-04-03 architecture session.
 > Format: each task has a phase, priority, agent type, and status.
 > This file is the single source of truth until tasks migrate to Huly.
@@ -104,6 +112,7 @@
 ## Future Phases (not yet actionable)
 
 ### Phase 1 — Platform Viewer/Manager
+
 - [ ] Migrate data from `numinia-digital-goods-data` to new schema
 - [x] SSG pages for each asset (one URL per asset, SEO)
 - [x] Multi-format viewer (GLB, VRM, images, audio, video)
@@ -114,9 +123,11 @@
 - [ ] Adventure visualization (RPG-style presentation)
 
 ### Phase 2 — Identity
+
 - [ ] Progressive auth implementation (depends on ADR-006 completion)
 - [ ] Citizen dashboard
 - [ ] Character sheet (interactive, based on v0.1.0 design)
 
 ### Phase 3+ — Deferred
+
 - [ ] Gamification, decentralization, XR (per rebuild plan)

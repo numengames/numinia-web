@@ -1,12 +1,17 @@
 # ADR-014: Reconstruction of the 22-permission set
 
+> **For humans.** Decision record: ADR-014: Reconstruction of the 22-permission set.
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 **Status:** Accepted (autonomous, flagged for Oracle review)
 **Date:** 2026-08-14
 **Decided by:** Claude (Digital Agent) during MISSION-000 Step 2
 
 ## Definition
 
-The constitution says "22 permissions in 6 groups" but its rank ladder enumerates only 19. The missing three are reconstructed from the legacy v2 permission matrix (seminal *Platform Role System*, superseded but evidentiary, and the legacy `rank.ts` behavior):
+The constitution says "22 permissions in 6 groups" but its rank ladder enumerates only 19. The missing three are reconstructed from the legacy v2 permission matrix (seminal _Platform Role System_, superseded but evidentiary, and the legacy `rank.ts` behavior):
 
 - `delete-own-assets` → **create** group (vernacular+) — legacy `canDeleteOwnAssets`.
 - `ban-users` → **admin** group (archon+) — legacy `canBanUsers`.

@@ -1,5 +1,13 @@
 # MISSION-003 — Functional parity with the original web (public surface)
 
+> **For humans.** Mission record: functional parity with the original numinia.store public surface (P1–P5).
+>
+> **Epistemic value.** Resolves which original sections exist in the rebuild and where each landed.
+> **Pragmatic value.** Its phase criteria are the regression contracts for gallery, finder, updates, legal, docs, inspector.
+> **In the system.** Observes: the original site + legacy inventory. Regulates: public surface. Coupled to: features/*.feature.
+>
+> _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
+
 - **Status:** ✅ Done (P1–P5 shipped 2026-08-15; legal wording pending Oracle sign-off)
 - **Layer:** 0–1 (public, no auth) · **Phase:** 1 of the build roadmap
 - **Origin:** Oracle directive 2026-08-15: "tiene que quedar como la versión de la web original" → clarified as **functional parity of the public sections**, rebuilt on the new stack with the new quality bar.

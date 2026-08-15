@@ -1,4 +1,5 @@
 # 🪐 Mission Template — Numinia Standard v0.2.0
+
 (Action + Expected outcome. Short, functional, no narrative)
 
 ---
@@ -18,14 +19,17 @@
 ---
 
 ## 📝 Subtitle (Brief Context)
+
 (One line that explains the scope or context)
 
 ## 📖 Story Statement / Description
+
 (Classic Agile format for clarity)
 
 As a [user/persona], I want [goal], so that [benefit].
 
 ## 🧠 Epistemic Value
+
 (What do we need to understand, validate, or discover?)
 
 - **Hypothesis:** (What do we believe to be true?)
@@ -33,15 +37,18 @@ As a [user/persona], I want [goal], so that [benefit].
 - **Learning outcome:** (What did we actually learn? — fill on completion)
 
 ## ⚡ Pragmatic Value
+
 (What practical impact does this create? Why is it valuable?)
 
 - **Who benefits:** (End user / team / system)
 - **Measurable impact:** (Metric, KPI, or observable change expected)
 
 ## 🎯 Expected Outcome
+
 (One-liner summary of what "Done" means)
 
 ## ✅ Acceptance Criteria
+
 (Specific, verifiable conditions — each one a checkbox)
 
 - [ ] Criterion 1
@@ -51,22 +58,25 @@ As a [user/persona], I want [goal], so that [benefit].
 ## ⚠️ Risks & Dependencies
 
 | Risk / Dependency | Probability | Impact | Mitigation |
-|---|:---:|:---:|---|
-| (description) | 🟡 | 🔴 | (action) |
+| ----------------- | :---------: | :----: | ---------- |
+| (description)     |     🟡      |   🔴   | (action)   |
 
 ## 🤝 Agent Collaboration Protocol
+
 (How do biological and digital agents interact in this mission?)
 
-| Phase | 🧬 Biological agent | 🤖 Digital agent |
-|---|---|---|
-| Planning | (role) | (role) |
-| Execution | (role) | (role) |
-| Review | (role) | (role) |
+| Phase     | 🧬 Biological agent | 🤖 Digital agent |
+| --------- | ------------------- | ---------------- |
+| Planning  | (role)              | (role)           |
+| Execution | (role)              | (role)           |
+| Review    | (role)              | (role)           |
 
 ## 📝 Notes / Context
+
 (Free space for clarifications, PO annotations, or background info)
 
 ## 🔗 Links & Resources
+
 - [ ] (link 1 — description)
 - [ ] (link 2 — description)
 
@@ -79,6 +89,7 @@ As a [user/persona], I want [goal], so that [benefit].
 5. Fill **Learning outcome** in Epistemic Value after completion — this is how the Guild grows.
 
 ## ✅ Definition of Done
+
 > Reference: [Definition of Done (DoD) — Numinia Standard v0.2.0](./Definition_of_Done_v0.2.0.md)
 
 - [ ] Unit Tests Completed

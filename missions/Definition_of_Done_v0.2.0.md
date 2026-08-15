@@ -1,5 +1,13 @@
 # Definition of Done — Numinia Standard v0.2.0
 
+> **For humans.** The definition of done: the checklist every mission must satisfy before it may close.
+>
+> **Epistemic value.** Resolves whether work is actually finished versus merely stopped.
+> **Pragmatic value.** No mission closes without passing every applicable line; partial completion is reported as such.
+> **In the system.** Observes: mission reports. Regulates: closure. Coupled to: missions/*, CONTRIBUTING.md.
+>
+> _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
+
 > Referenced by every mission (Mission_Template_v0_2_0.md). A mission is Done
 > only when every applicable item holds — "almost ready" is not a state.
 

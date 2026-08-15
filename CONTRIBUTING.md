@@ -1,5 +1,13 @@
 # Contributing to Numinia Platform
 
+> **For humans.** How to contribute: workflow, commit format, quality gates, and track rules (store vs com).
+>
+> **Epistemic value.** Resolves what a valid contribution looks like before it is attempted.
+> **Pragmatic value.** Enforced by git hooks and CI — the machinery mirrors this text; divergence between them is a bug.
+> **In the system.** Observes: CLAUDE.md standards. Regulates: commits and PRs. Coupled to: .githooks/, .github/workflows/ci.yml.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 Welcome, agent — biological or digital. Read [CLAUDE.md](./CLAUDE.md) (the
 constitution) completely before touching code. This file is the operational
 summary; the constitution wins on any conflict.
@@ -31,10 +39,10 @@ summary; the constitution wins on any conflict.
 
 ## Quick map
 
-| I want to… | Go to |
-|---|---|
-| Understand the domain | `packages/domain` + `docs/glossary.md` |
+| I want to…             | Go to                                     |
+| ---------------------- | ----------------------------------------- |
+| Understand the domain  | `packages/domain` + `docs/glossary.md`    |
 | Add an analytics event | `docs/analytics.md` (name it there first) |
-| See what is undecided | `docs/open-questions.md` |
-| Know what Done means | `missions/Definition_of_Done_v0.2.0.md` |
-| Push-day runbook | `docs/remote-checklist.md` |
+| See what is undecided  | `docs/open-questions.md`                  |
+| Know what Done means   | `missions/Definition_of_Done_v0.2.0.md`   |
+| Push-day runbook       | `docs/remote-checklist.md`                |

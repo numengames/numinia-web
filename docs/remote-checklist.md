@@ -1,11 +1,19 @@
 # Push-Day Runbook — creating the GitHub remote
 
+> **For humans.** The push-day runbook: the exact ordered steps for creating the GitHub remote.
+>
+> **Epistemic value.** Resolves what must happen (and in what order) on the day the repo goes public.
+> **Pragmatic value.** Push day executes this list top to bottom; deviations require Oracle sign-off.
+> **In the system.** Observes: D11/D15 decisions. Regulates: the first push. Coupled to: docs/open-questions.md, SECURITY.md.
+>
+> _Part of the Law. Index: [LEY.md](./LEY.md)_
+
 > The exact ordered checklist for the day the Oracle decides to publish.
 > Nothing here happens without that explicit order.
 
 ## Before the first push (decisions)
 
-1. **License (D11)**: MIT vs AGPL-3.0 — decide, then update `LICENSE` file (create it!), constitution §, and every `package.json` `license` field if AGPL. *(Not legal advice; confirm with counsel.)*
+1. **License (D11)**: MIT vs AGPL-3.0 — decide, then update `LICENSE` file (create it!), constitution §, and every `package.json` `license` field if AGPL. _(Not legal advice; confirm with counsel.)_
 2. **Repo name + visibility** (public/private first?) — Oracle.
 3. Review `docs/reference/` and `docs/seminal/` for anything not meant to be public (seminal corpus publication is itself a decision — the RPG manual is unpublished IP).
 4. Rotate/verify: no real tokens anywhere (`git log -p | secretlint` spot check already covered by hooks going forward).

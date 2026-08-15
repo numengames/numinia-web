@@ -1,5 +1,10 @@
 # ADR-013: Gender-restricted positions are modeled as data, never as logic
 
+> **For humans.** Decision record: ADR-013: Gender-restricted positions are modeled as data, never as logic.
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 **Status:** Accepted (modeling) · **OPEN QUESTION** (product policy)
 **Date:** 2026-08-14
 **Decided by:** Pablo (Oracle) · Recorded by: Claude (Digital Agent)
@@ -15,7 +20,7 @@ Modeling rule:
 
 ## Epistemic value
 
-The restriction is part of the canonical narrative and must not be silently softened or silently enforced — either would be an unauthorized product decision. Recording it as inert data keeps the seminal corpus lossless while deferring policy: the manual stays the source of truth for *what the lore says*; the Oracle stays the source of truth for *what the platform does with it*.
+The restriction is part of the canonical narrative and must not be silently softened or silently enforced — either would be an unauthorized product decision. Recording it as inert data keeps the seminal corpus lossless while deferring policy: the manual stays the source of truth for _what the lore says_; the Oracle stays the source of truth for _what the platform does with it_.
 
 ## Pragmatic value
 

@@ -1,5 +1,13 @@
 # Architecture Decision Records — Numinia Platform
 
+> **For humans.** The architecture decision log in Peirce format — why the platform is shaped the way it is.
+>
+> **Epistemic value.** Resolves 'why is it like this?' for every structural choice, so agents stop re-deriving or re-litigating settled questions.
+> **Pragmatic value.** Blocks re-opening decided matters without a new Oracle session; each entry names what it forecloses.
+> **In the system.** Observes: sessions with the Oracle. Regulates: architecture. Coupled to: CLAUDE.md, docs/decisions/ADR-*.
+>
+> _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
+
 > Each decision follows the Peirce trichotomy:
 > **Definition** (what) · **Epistemic value** (why we believe it) · **Pragmatic value** (what it enables)
 >
@@ -67,6 +75,7 @@
 **Definition:** Missions (work items in Huly, assigned to agents) and Adventures (game experiences in Hyperfy, part of Seasons) are distinct domain concepts modeled in separate type files.
 
 **Epistemic value:** Peirce's trichotomy applied:
+
 - Missions = Operating System (Object) — organizational work
 - Adventures = Narrative Projection (Representamen) — game experience
 - Both converge in the Functional Model (Ground) — domain types
@@ -88,6 +97,7 @@ Conflating them would collapse the semiotic layers that Numinia is built on.
 **Pragmatic value:** The `packages/auth` package must support multiple auth strategies. The `CharacterSheet.walletAddress` is already optional (`string | undefined`). The permission system works on rank, not on auth method.
 
 **Open questions:**
+
 - What is the Web2 entry method? Email + magic link? Social login? Guest session?
 - At what point does Web2 auth become insufficient? (Probably at Pilgrim rank, where on-chain actions begin)
 - How do we migrate a Web2 account to a wallet without losing progress?
@@ -102,15 +112,15 @@ Conflating them would collapse the semiotic layers that Numinia is built on.
 
 **Epistemic value:** The CLAUDE.md v0.1.0 contained English translations that do not match the RPG manual. Example: "Armonauts" appeared as a house name in the old CLAUDE.md, but the manual says "Proyectistas" (house) and the character sheet shows "Armonauta" as a Position (role), not a House.
 
-| Old CLAUDE.md | RPG Manual (canonical) | Type |
-|---|---|---|
-| Armonauts | Proyectistas | House under Artisans |
-| Technoweavers | Estetas | House under Artisans |
-| Mnemographers | Logógrafos | House under Chroniclers |
-| Archivists | Bardos | House under Chroniclers |
-| Pythias | Hierofantes | House under Scholars |
-| Hermeneuts | Taumaturgos | House under Scholars |
-| Guides | Exploradores | House under Archangels |
+| Old CLAUDE.md | RPG Manual (canonical) | Type                    |
+| ------------- | ---------------------- | ----------------------- |
+| Armonauts     | Proyectistas           | House under Artisans    |
+| Technoweavers | Estetas                | House under Artisans    |
+| Mnemographers | Logógrafos             | House under Chroniclers |
+| Archivists    | Bardos                 | House under Chroniclers |
+| Pythias       | Hierofantes            | House under Scholars    |
+| Hermeneuts    | Taumaturgos            | House under Scholars    |
+| Guides        | Exploradores           | House under Archangels  |
 
 **Pragmatic value:** Claude Code will use the correct names. The constants in `packages/domain/src/constants/guilds.ts` include both `[EN]` and `[ES]` names for every entity.
 

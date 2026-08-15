@@ -32,14 +32,14 @@ Tras analizar los siete documentos seminales — el manual RPG completo (4668 l�
 
 ### Puntuaciones actualizadas
 
-| Dimensión | Antes de leer docs | Después | Comentario |
-|-----------|:---:|:---:|------------|
-| Visión fundacional | No evaluada | **9.5/10** | Epistemología sólida, RPG completo, modelo replicable |
-| Coherencia visión↔ejecución | — | **1/10** | La brecha más grande que he visto en un proyecto |
-| Valor de los datos (991+ CC0 assets) | 8/10 | **8/10** | Se mantiene — el tesoro es portable |
-| Session Zero en Hyperfy | No evaluado | **7/10** | Existe y funciona — validación del modelo |
-| Código actual de numinia.store | 3.4/10 | **2/10** | Baja más al entender lo que debería ser |
-| Ecosistema Numen Games (19 repos) | 6/10 | **7/10** | Hay piezas reutilizables (agents, models, integrations) |
+| Dimensión                            | Antes de leer docs |  Después   | Comentario                                              |
+| ------------------------------------ | :----------------: | :--------: | ------------------------------------------------------- |
+| Visión fundacional                   |    No evaluada     | **9.5/10** | Epistemología sólida, RPG completo, modelo replicable   |
+| Coherencia visión↔ejecución          |         —          |  **1/10**  | La brecha más grande que he visto en un proyecto        |
+| Valor de los datos (991+ CC0 assets) |        8/10        |  **8/10**  | Se mantiene — el tesoro es portable                     |
+| Session Zero en Hyperfy              |    No evaluado     |  **7/10**  | Existe y funciona — validación del modelo               |
+| Código actual de numinia.store       |       3.4/10       |  **2/10**  | Baja más al entender lo que debería ser                 |
+| Ecosistema Numen Games (19 repos)    |        6/10        |  **7/10**  | Hay piezas reutilizables (agents, models, integrations) |
 
 ---
 
@@ -91,21 +91,21 @@ Tomados literalmente de tu respuesta: "estándar de la industria, open source o 
 
 ### Stack seleccionado
 
-| Capa | Tecnología | Justificación |
-|------|-----------|---------------|
-| **Framework** | **Astro 5** + islas React | SSG por defecto (SEO máximo para la galería CC0), hidratación parcial solo donde se necesita 3D/interactividad. El web de Numen Games ya usa Astro — coherencia de ecosistema |
-| **Islas interactivas** | **React 19** + Three.js/R3F | Solo el viewer 3D y componentes interactivos se hidratan. El 90% de la galería es HTML estático |
-| **3D/XR** | **Three.js** + @react-three/fiber + @pixiv/three-vrm | Stack actual probado. Se mantiene pero en componentes limpios y testeados |
-| **Estilos** | **Tailwind CSS 4** + tokens de diseño Numinia | Sistema de diseño propio derivado de la identidad visual de Brand & Culture |
-| **Auth** | **SIWE** (Sign-In With Ethereum) via viem | Ya es dependencia del proyecto. Wallet = identidad. Sin base de datos de usuarios |
-| **Datos (metadata)** | **GitHub** (JSON) → migración futura a Ceramic/ComposeDB | File Over App. Los datos están en repos públicos. La app los consume |
-| **Datos (binarios)** | **Arweave** (permanente) + **R2** (CDN/cache) | Pipeline automático: upload → Arweave TX ID → cache en R2 → servir |
-| **Gamificación** | **Modelo de dominio en TypeScript** | Gremios, facciones, rangos, sellos, competencias como tipos del dominio |
-| **ZK (futuro)** | **Semaphore** o **Zupass** | Verificación de membresía en gremio/facción sin revelar wallet |
-| **Testing** | **Vitest** + Playwright + Testing Library | Unit + integration + e2e desde el primer commit |
-| **CI/CD** | **GitHub Actions** | type-check → lint → test → build → deploy |
-| **Deploy** | **Vercel** (mantenido) o **Cloudflare Pages** | Ambos soportan Astro SSG. Cloudflare da más control sobre R2 |
-| **Monorepo** | **Turborepo** | Separar: `apps/store`, `packages/domain`, `packages/3d-viewer`, `packages/ui` |
+| Capa                   | Tecnología                                               | Justificación                                                                                                                                                                 |
+| ---------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**          | **Astro 5** + islas React                                | SSG por defecto (SEO máximo para la galería CC0), hidratación parcial solo donde se necesita 3D/interactividad. El web de Numen Games ya usa Astro — coherencia de ecosistema |
+| **Islas interactivas** | **React 19** + Three.js/R3F                              | Solo el viewer 3D y componentes interactivos se hidratan. El 90% de la galería es HTML estático                                                                               |
+| **3D/XR**              | **Three.js** + @react-three/fiber + @pixiv/three-vrm     | Stack actual probado. Se mantiene pero en componentes limpios y testeados                                                                                                     |
+| **Estilos**            | **Tailwind CSS 4** + tokens de diseño Numinia            | Sistema de diseño propio derivado de la identidad visual de Brand & Culture                                                                                                   |
+| **Auth**               | **SIWE** (Sign-In With Ethereum) via viem                | Ya es dependencia del proyecto. Wallet = identidad. Sin base de datos de usuarios                                                                                             |
+| **Datos (metadata)**   | **GitHub** (JSON) → migración futura a Ceramic/ComposeDB | File Over App. Los datos están en repos públicos. La app los consume                                                                                                          |
+| **Datos (binarios)**   | **Arweave** (permanente) + **R2** (CDN/cache)            | Pipeline automático: upload → Arweave TX ID → cache en R2 → servir                                                                                                            |
+| **Gamificación**       | **Modelo de dominio en TypeScript**                      | Gremios, facciones, rangos, sellos, competencias como tipos del dominio                                                                                                       |
+| **ZK (futuro)**        | **Semaphore** o **Zupass**                               | Verificación de membresía en gremio/facción sin revelar wallet                                                                                                                |
+| **Testing**            | **Vitest** + Playwright + Testing Library                | Unit + integration + e2e desde el primer commit                                                                                                                               |
+| **CI/CD**              | **GitHub Actions**                                       | type-check → lint → test → build → deploy                                                                                                                                     |
+| **Deploy**             | **Vercel** (mantenido) o **Cloudflare Pages**            | Ambos soportan Astro SSG. Cloudflare da más control sobre R2                                                                                                                  |
+| **Monorepo**           | **Turborepo**                                            | Separar: `apps/store`, `packages/domain`, `packages/3d-viewer`, `packages/ui`                                                                                                 |
 
 ### Por qué Astro en vez de Next.js
 
@@ -323,15 +323,15 @@ apps/store/                    # Astro app
 
 ## 7. Lo que se salva del proyecto actual
 
-| Asset | Acción | Destino |
-|-------|--------|---------|
-| 991+ assets CC0 (data repo) | Migrar metadata al nuevo schema | `packages/domain` types + data repo |
-| Dominio numinia.store | Mantener | Apunta al nuevo deploy |
-| i18n EN/JA | Migrar traducciones | Astro i18n nativo |
-| Dependencias validadas (Three.js, @pixiv/three-vrm, viem, siwe, ArDrive) | Mantener en el nuevo package.json | Sin cambio |
-| CLAUDE.md | Evolucionar como documentación del nuevo repo | Se reescribe con la nueva arquitectura |
-| CI/CD (GitHub Actions) | Adaptar al monorepo | Turborepo + Actions |
-| Session Zero en Hyperfy | No tocar — es infraestructura independiente | Se integra vía API en Fase 3 |
+| Asset                                                                    | Acción                                        | Destino                                |
+| ------------------------------------------------------------------------ | --------------------------------------------- | -------------------------------------- |
+| 991+ assets CC0 (data repo)                                              | Migrar metadata al nuevo schema               | `packages/domain` types + data repo    |
+| Dominio numinia.store                                                    | Mantener                                      | Apunta al nuevo deploy                 |
+| i18n EN/JA                                                               | Migrar traducciones                           | Astro i18n nativo                      |
+| Dependencias validadas (Three.js, @pixiv/three-vrm, viem, siwe, ArDrive) | Mantener en el nuevo package.json             | Sin cambio                             |
+| CLAUDE.md                                                                | Evolucionar como documentación del nuevo repo | Se reescribe con la nueva arquitectura |
+| CI/CD (GitHub Actions)                                                   | Adaptar al monorepo                           | Turborepo + Actions                    |
+| Session Zero en Hyperfy                                                  | No tocar — es infraestructura independiente   | Se integra vía API en Fase 3           |
 
 ### Lo que se descarta
 
@@ -349,6 +349,7 @@ apps/store/                    # Astro app
 ## 8. Métricas de éxito
 
 ### Fase 1 (Galería)
+
 - Lighthouse Performance: >95
 - Lighthouse SEO: >95
 - Tiempo de carga primera visita: <1.5s
@@ -358,17 +359,20 @@ apps/store/                    # Astro app
 - Test coverage domain model: >90%
 
 ### Fase 2 (Identidad)
+
 - Login con wallet en <3 clicks
 - Sesión segura con nonce criptográfico
 - CORS correctamente configurado
 - 0 datos personales almacenados en servidor
 
 ### Fase 3 (Gamificación)
+
 - Los 8 sellos de Session Zero son visibles y verificables
 - Cada colección tiene contexto narrativo visible
 - La hoja de personaje refleja gremio, facción, y rango
 
 ### Fase 4 (Descentralización)
+
 - 100% de assets con TX ID en Arweave
 - API pública documentada
 - Al menos 1 aplicación de terceros consume los datos
@@ -377,13 +381,13 @@ apps/store/                    # Astro app
 
 ## 9. Riesgos y mitigaciones
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|:---:|:---:|------------|
-| Astro no soporta bien las islas React con Three.js | Media | Alto | Prototipo técnico en Fase 0 — si falla, fallback a Next.js con output: export |
-| Session Zero en Hyperfy no tiene API para verificar completion | Alta | Medio | Diseñar sistema de verificación manual (firmar mensaje con wallet al completar) hasta que exista API |
-| La comunidad actual es 0 (0 stars, 0 forks) | Certeza | Bajo | No es un problema — se construye comunidad con el producto, no al revés |
-| Arweave costs para 991+ assets | Media | Bajo | ArDrive Turbo con créditos prepagados. Los GLBs son relativamente pequeños |
-| Scope creep por la riqueza del universo Numinia | Alta | Alto | Cada fase tiene un entregable concreto y desplegable. No se empieza la siguiente sin cerrar la anterior |
+| Riesgo                                                         | Probabilidad | Impacto | Mitigación                                                                                              |
+| -------------------------------------------------------------- | :----------: | :-----: | ------------------------------------------------------------------------------------------------------- |
+| Astro no soporta bien las islas React con Three.js             |    Media     |  Alto   | Prototipo técnico en Fase 0 — si falla, fallback a Next.js con output: export                           |
+| Session Zero en Hyperfy no tiene API para verificar completion |     Alta     |  Medio  | Diseñar sistema de verificación manual (firmar mensaje con wallet al completar) hasta que exista API    |
+| La comunidad actual es 0 (0 stars, 0 forks)                    |   Certeza    |  Bajo   | No es un problema — se construye comunidad con el producto, no al revés                                 |
+| Arweave costs para 991+ assets                                 |    Media     |  Bajo   | ArDrive Turbo con créditos prepagados. Los GLBs son relativamente pequeños                              |
+| Scope creep por la riqueza del universo Numinia                |     Alta     |  Alto   | Cada fase tiene un entregable concreto y desplegable. No se empieza la siguiente sin cerrar la anterior |
 
 ---
 
@@ -399,6 +403,6 @@ Si estos tres puntos funcionan juntos, la arquitectura propuesta es viable. Si a
 
 ---
 
-*"Sin reglas no hay juego; y sin juego no hay alma; y sin alma... no hay Numinia."*
+_"Sin reglas no hay juego; y sin juego no hay alma; y sin alma... no hay Numinia."_
 
-*Este plan es la primera regla del nuevo juego.*
+_Este plan es la primera regla del nuevo juego._

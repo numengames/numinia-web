@@ -1,5 +1,13 @@
 # 🪐 MISSION-002 — Progressive Identity (Phase 2 core)
 
+> **For humans.** Mission spec: progressive identity (Web2→Web3) with the thirdweb evaluation gate at Step 0.
+>
+> **Epistemic value.** Resolves how identity will be built and which vendor questions gate it (D13, D14).
+> **Pragmatic value.** No identity code beyond the vendor-independent core until Step 0 passes with the Oracle.
+> **In the system.** Observes: ADR-006. Regulates: auth work. Coupled to: packages/auth, docs/decisions/ADR-006-progressive-auth-final.md.
+>
+> _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
+
 > **Agent type:** 🔀 Hybrid (evaluation gate needs Oracle sign-off)
 > **Priority:** 🔴 Critical · **Effort:** L · **Status:** 📋 Backlog
 > **Guild / House:** Sentinels (protection) + Procurators (law)
@@ -7,11 +15,13 @@
 > **Governing decision:** docs/decisions/ADR-006-progressive-auth-final.md
 
 ## 📖 Story Statement
+
 As a visitor, I want to become a Nomad with the identity I already have
 (social, email, passkey, or wallet), so that entering Numinia never requires
 understanding Web3 first.
 
 ## 🧠 Epistemic Value
+
 - **Hypothesis (the Oracle's clause):** everything ADR-006 needs can be done
   with thirdweb (In-App Wallets, Connect, JWT auth with verifiable signatures,
   RPC for future EIP-1271) under our fail-closed and no-PII constraints.
@@ -55,6 +65,7 @@ Scenario: The Web3 boundary is one constant
 ```
 
 ## Plan sketch (plan-before-code applies at execution time)
+
 0. **Evaluation spike + checklist → GATE** (halt on failure; report).
 1. `packages/auth` (com): verified-session primitives, boundary constant,
    fail-closed config loading; 100% coverage + mutation.
@@ -64,4 +75,5 @@ Scenario: The Web3 boundary is one constant
 4. Report with what was NOT done (Session Zero recording lands with Phase 3).
 
 ## 🚫 Out of scope
+
 Session Zero verification, purchases, EIP-1271, on-chain state, deploy.

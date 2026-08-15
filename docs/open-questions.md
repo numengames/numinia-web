@@ -1,5 +1,13 @@
 # Open Questions & Discrepancies — Session Backlog
 
+> **For humans.** The registry of unresolved doubts, contradictions, and deferred decisions (D-numbers).
+>
+> **Epistemic value.** Resolves what we do NOT know yet — keeping uncertainty explicit instead of silently assumed.
+> **Pragmatic value.** Nothing listed here may be decided silently; each item names its blocking score and needed session.
+> **In the system.** Observes: every session's loose ends. Regulates: future agendas. Coupled to: DECISIONS.md, docs/status.md.
+>
+> _Part of the Law. Index: [LEY.md](./LEY.md)_
+
 > Every unresolved doubt, contradiction, or pending decision, consolidated for future themed sessions.
 > Rule: nothing here is decided silently. Each item names its sources, its blocking score (1–10), and the session type it needs.
 > Cross-references: `docs/onboarding-report.md` §c/§e (full audit trail), `docs/glossary.md` (⚠ items), ADR-013.

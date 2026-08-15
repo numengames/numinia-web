@@ -1,5 +1,10 @@
 # ADR-016: Analytics foundation — typed funnel events, consent-gated, transport-pluggable
 
+> **For humans.** Decision record: typed funnel events, consent-gated, transport-pluggable.
+> **Epistemic value.** Fixes one architectural belief so it is never silently re-derived.
+> **Pragmatic value.** Binding until superseded by a newer ADR with Oracle sign-off.
+> _Part of the Law. Index: [../LEY.md](../LEY.md)_
+
 **Status:** Accepted (autonomous, flagged for Oracle review)
 **Date:** 2026-08-15
 

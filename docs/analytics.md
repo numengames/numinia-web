@@ -1,5 +1,13 @@
 # Analytics & Funnels — conventions and taxonomy
 
+> **For humans.** The funnel instrumentation contract: the data-metric convention and the frozen event taxonomy.
+>
+> **Epistemic value.** Resolves which user actions are observable and under which names — the platform's sensory map.
+> **Pragmatic value.** Every interactive element must carry data-metric per this contract; new events require an ADR-016 amendment.
+> **In the system.** Observes: ADR-016. Regulates: instrumentation. Coupled to: packages/analytics, apps/store.
+>
+> _Part of the Law. Index: [LEY.md](./LEY.md)_
+
 > Authority for every analytics event name and prop (ADR-016). Changing anything
 > here changes dashboards: update this file first, then `packages/analytics`.
 
@@ -25,15 +33,15 @@
 
 ## Event catalog (v1)
 
-| Event | Props | Phase | Purpose |
-|---|---|---|---|
-| `page_view` | `referrerHost?` | 0 | Traffic + acquisition source (host only) |
-| `cta_click` | `metricId` | 0 | Generic interaction — the funnel glue |
-| `download_click` | `assetId`, `format` | 1 | Gallery conversion |
-| `wallet_connect_start` | — | 2 | Identity funnel entry (no address) |
-| `wallet_connect_success` | — | 2 | Identity funnel conversion (no address) |
-| `session_zero_start` | — | 3 | Citizenship funnel entry |
-| `seal_earned` | `sealId` | 3 | Citizenship funnel progress |
+| Event                    | Props               | Phase | Purpose                                  |
+| ------------------------ | ------------------- | ----- | ---------------------------------------- |
+| `page_view`              | `referrerHost?`     | 0     | Traffic + acquisition source (host only) |
+| `cta_click`              | `metricId`          | 0     | Generic interaction — the funnel glue    |
+| `download_click`         | `assetId`, `format` | 1     | Gallery conversion                       |
+| `wallet_connect_start`   | —                   | 2     | Identity funnel entry (no address)       |
+| `wallet_connect_success` | —                   | 2     | Identity funnel conversion (no address)  |
+| `session_zero_start`     | —                   | 3     | Citizenship funnel entry                 |
+| `seal_earned`            | `sealId`            | 3     | Citizenship funnel progress              |
 
 Envelope on every event: `name`, `path`, `locale?`, `ts`.
 
