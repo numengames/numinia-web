@@ -1,6 +1,9 @@
 # Infrastructure & Quality Plan — raising the project's floor
 
-> Rule 2: this is an L-rated effort — **awaiting Oracle approval** before execution.
+> Rule 2: L-rated effort — **approved and EXECUTED 2026-08-15** ("haz la mejor opción").
+> Results: W1 hooks live-verified (secret commit rejected) · W3 hermetic builds green ·
+> W2 `npm run verify` = CI parity · W5 governance pack complete · W4 mutation scores
+> analytics 100% / domain-logic 99.02%, knip clean after fixing 3 real findings.
 > Scope: everything stays LOCAL (no deploy, no remote, no vendors) per standing order.
 > Date: 2026-08-15 · Current baseline: 27 commits, 16/16 pipeline, 77 unit tests at 100%,
 > 8/8 Gherkin, 1/1 e2e — green, but green *only when someone remembers to run it*.
