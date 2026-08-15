@@ -1,0 +1,74 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<footer>
+  <div class="columns">
+    <nav aria-label={t.footerNavigation}>
+      <h2>{t.footerNavigation}</h2>
+      <a href={`${prefix}/`} data-metric="footer-home">{t.navHome}</a>
+      <a href={`${prefix}/gallery/`} data-metric="footer-gallery">{t.navGallery}</a>
+      <a href={`${prefix}/archive/`} data-metric="footer-archive">{t.navArchive}</a>
+    </nav>
+    <nav aria-label={t.footerResources}>
+      <h2>{t.footerResources}</h2>
+      <a href="https://numen.games" rel="noopener" data-metric="footer-numen">Numen Games</a>
+      <a
+        href="https://github.com/PabloFMM/numinia-digital-goods-data"
+        rel="noopener"
+        data-metric="footer-data-repo"
+      >
+        {t.footerDataRepo}
+      </a>
+    </nav>
+  </div>
+  <p>{t.footerLicenseNote}</p>
+</footer>
+
+<style>
+  footer {
+    max-width: 60rem;
+    margin: var(--numinia-space-5) auto 0;
+    padding: var(--numinia-space-4) var(--numinia-space-3);
+    border-top: 1px solid var(--numinia-color-surface);
+    font-size: 0.85rem;
+  }
+  .columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--numinia-space-5);
+  }
+  nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--numinia-space-1);
+  }
+  h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--numinia-color-text-muted);
+    margin: 0 0 var(--numinia-space-1);
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  a:hover,
+  a:focus-visible {
+    color: var(--numinia-color-primary-strong);
+  }
+  p {
+    margin-top: var(--numinia-space-4);
+    color: var(--numinia-color-text-muted);
+  }
+</style>

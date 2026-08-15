@@ -18,7 +18,7 @@ const publicVrms = catalog.filter((asset) => asset.format === 'vrm' && asset.isP
 const firstVrm = publicVrms[0] ?? null;
 ---
 
-<BaseLayout locale="en" title="Numinia — Phase 0.7 spike">
+<BaseLayout locale="en" title="Numinia — Phase 0.7 spike" chrome={false}>
   <h1>Phase 0.7 technical spike</h1>
   <p data-spike-catalog-count={catalog.length}>
     Validated {catalog.length} assets from the public data repo ({publicVrms.length} public VRM).

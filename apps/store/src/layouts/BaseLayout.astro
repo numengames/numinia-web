@@ -1,13 +1,17 @@
 ---
 import '@numinia/ui/tokens.css';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
+import SiteHeader from '../components/chrome/SiteHeader.astro';
+import SiteFooter from '../components/chrome/SiteFooter.astro';
 
 interface Props {
   locale: SupportedLocale;
   title: string;
+  /** The spike page opts out of the site chrome (internal, not in the sitemap). */
+  chrome?: boolean;
 }
 
-const { locale, title } = Astro.props;
+const { locale, title, chrome = true } = Astro.props;
 
 // SEO: canonical + hreflang alternates, derived from the current path.
 // Locale variants share the path minus the locale prefix; en is unprefixed.
@@ -34,9 +38,11 @@ const urlFor = (target: SupportedLocale): string =>
     <slot name="head" />
   </head>
   <body>
+    {chrome && <SiteHeader locale={locale} basePath={basePath} />}
     <main>
       <slot />
     </main>
+    {chrome && <SiteFooter locale={locale} />}
     <script>
       import '../scripts/metrics';
     </script>

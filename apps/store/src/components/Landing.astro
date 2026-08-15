@@ -1,56 +1,89 @@
 ---
-import { GUILDS, type SupportedLocale } from '@numinia/domain';
+import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { ARCHIVE_MESSAGES, GALLERY_MESSAGES } from '../i18n/messages';
+import { LANDING_MESSAGES } from '../i18n/messages';
 
 interface Props {
   locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;
+const t = LANDING_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
-
-const HEADLINE: Record<SupportedLocale, string> = {
-  es: 'Numinia se está reconstruyendo',
-  en: 'Numinia is being rebuilt',
-  ja: 'ヌミニアは再建の途上にある',
-  ko: '누미니아는 재건 중입니다',
-  'pt-br': 'Numinia está sendo reconstruída',
-};
 ---
 
 <BaseLayout locale={locale} title="Numinia">
-  <h1>{HEADLINE[locale]}</h1>
-  <nav aria-label="Numinia">
-    <a href={`${prefix}/gallery/`} data-metric="landing-gallery">
-      {GALLERY_MESSAGES[locale].galleryTitle}
-    </a>
-    <a href={`${prefix}/archive/`} data-metric="landing-archive">
-      {ARCHIVE_MESSAGES[locale].archiveTitle}
-    </a>
-  </nav>
-  <ul>
-    {GUILDS.map((guild) => <li>{guild.name[locale]}</li>)}
-  </ul>
+  <section class="hero">
+    <h1>{t.heroTitle}</h1>
+    <p>{t.heroSub}</p>
+    <div class="ctas">
+      <a href={`${prefix}/gallery/`} class="cta" data-metric="landing-gallery">{t.ctaGallery}</a>
+      <a href={`${prefix}/archive/`} class="cta cta-secondary" data-metric="landing-archive">
+        {t.ctaArchive}
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>{t.aboutTitle}</h2>
+    <p>{t.aboutBody}</p>
+  </section>
+
+  <section>
+    <h2>{t.toolsTitle}</h2>
+    <ul>
+      <li>{t.toolGallery}</li>
+      <li>{t.toolArchive}</li>
+      <li class="soon">{t.toolsSoon}</li>
+    </ul>
+  </section>
 </BaseLayout>
 
 <style>
-  h1 {
-    color: var(--numinia-color-primary);
+  .hero {
+    padding: var(--numinia-space-5) 0;
+    text-align: center;
   }
-  nav {
+  .hero h1 {
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    color: var(--numinia-color-primary-strong);
+    margin: 0 0 var(--numinia-space-2);
+  }
+  .hero p {
+    max-width: 42rem;
+    margin: 0 auto var(--numinia-space-4);
+    color: var(--numinia-color-text-muted);
+  }
+  .ctas {
     display: flex;
     gap: var(--numinia-space-2);
-    margin: var(--numinia-space-3) 0;
+    justify-content: center;
+    flex-wrap: wrap;
   }
-  nav a {
-    padding: 0.4rem 1rem;
+  .cta {
+    padding: 0.6rem 1.4rem;
     border-radius: var(--numinia-radius-sm);
     background: var(--numinia-color-primary-strong);
     color: #ffffff;
     text-decoration: none;
   }
+  .cta-secondary {
+    background: var(--numinia-color-surface);
+    color: inherit;
+    border: 1px solid var(--numinia-color-text-muted);
+  }
+  section + section {
+    margin-top: var(--numinia-space-5);
+  }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--numinia-color-primary-strong);
+  }
+  section p,
   li {
+    line-height: 1.6;
+  }
+  .soon {
     color: var(--numinia-color-text-muted);
   }
 </style>
