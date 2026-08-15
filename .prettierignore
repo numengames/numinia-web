@@ -1,3 +1,6 @@
 
 # Immutable seminal corpus — never reformat (Oracle order)
 docs/seminal/
+
+# Khepri kit — installed as delivered, never modified (its LEEME + §13.1)
+khepri/

@@ -151,6 +151,16 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 ---
 
+## Sistema de diseño
+
+Todo diseño se rige por khepri/2026_08_15-Numen_Design_System-v4.2.0.md (Khepri v4.2.0).
+Precedencia (§0.3): ante contradicción con material antiguo, Khepri manda.
+Kit generado en khepri/kit/ (css, js, tokens.json): se enlaza o copia, jamás se reescribe.
+Presupuesto de lectura: fragmento §19.5 ~1,2k tokens (tarea rápida) · §19 ~5k (producción)
+· documento ~30k (auditoría). Antes de entregar: checklist §19.4.
+
+---
+
 ## Internationalization (i18n)
 
 **Decision (2026-04-03):** 5 UI languages, 2 lore languages.
