@@ -91,6 +91,11 @@
 - **D16 — L.A.P. opens to Nomads**: part of the L.A.P. content is visible without logging in. Login is asked exactly where it earns its place — gated content or data persistence — never as an entrance wall. This softens MISSION-002 Steps 1–3 (login becomes a contextual moment inside L.A.P., not its door) and will retire the "citizenship required" copy in `i18n/pillars.ts` when implemented.
 - **Design system incoming**: the Oracle holds the design-system document. Priority shifts to rebuilding the rest of the platform with it — preparation first (ingest doc → tokens in `packages/ui` → primitives inventory), execution after.
 
+### MISSION-006 Phase A ✅ (2026-08-15 evening) — the platform wears Khepri
+
+- Token bridge live: legacy `--numinia-*` aliases point at Khepri; kit CSS byte-identical copy in packages/ui pinned by test; Geist/Geist Mono self-hosted. Modes: Diurno default + Nocturno toggle in the chrome, pre-paint boot (D17: localStorage for chrome preference only). Chrome dressed (wordmark in ink, active pillar = ink pill, binary signature in the footer). Amber contrast fixes (§9.7 avisos). Bundle gate learned spike-only reachability. **Full verify green (38/38 e2e incl. WCAG both-mode tokens).**
+- Next: Oracle visual review → Phase B surface passes (landing polish → city → assets → lap → docs → login island).
+
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)
 
 | #   | What                                                                                                                                                                                                                                                              | Owner                     | Notes                                                                                                      |
