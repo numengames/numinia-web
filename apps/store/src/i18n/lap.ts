@@ -56,6 +56,15 @@ export interface LapMessages {
     readonly redundant: string;
     readonly single: string;
   };
+  readonly portals: {
+    readonly title: string;
+    readonly intro: string;
+    readonly openPortals: string;
+    readonly mapAria: string;
+    readonly hub: string;
+    readonly enter: string;
+    readonly unbuilt: string;
+  };
   readonly manual: {
     readonly tab: string;
     readonly identitiesTab: string;
@@ -252,6 +261,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       redundant: 'Redundantes',
       single: 'Punto único',
     },
+    portals: {
+      title: 'Portales de Numinia',
+      intro:
+        'El mapa de la ciudad: cuatro distritos alrededor de la Plaza del Ágora. Cada portal abre un mundo virtual; los atenuados aún no se han construido.',
+      openPortals: 'Portales abiertos',
+      mapAria: 'Mapa de portales de la ciudad',
+      hub: 'Nodo central',
+      enter: 'Entrar al mundo',
+      unbuilt: 'Próximamente',
+    },
     manual: {
       tab: 'El Manual',
       identitiesTab: 'Identidades',
@@ -359,6 +378,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       redundant: 'Redundant',
       single: 'Single point',
     },
+    portals: {
+      title: 'Portals of Numinia',
+      intro:
+        'The city map: four districts around the Agora Plaza. Each portal opens a virtual world; the dimmed ones are not built yet.',
+      openPortals: 'Open portals',
+      mapAria: 'City portals map',
+      hub: 'Central hub',
+      enter: 'Enter the world',
+      unbuilt: 'Coming soon',
+    },
     manual: {
       tab: 'The Manual',
       identitiesTab: 'Identities',
@@ -464,6 +493,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       redundant: '冗長',
       single: '単一保存',
     },
+    portals: {
+      title: 'ヌミニアのポータル',
+      intro:
+        '都市の地図 — アゴラ広場を囲む四つの区。各ポータルは仮想世界へ開く。淡色のものは未建設。',
+      openPortals: '開通ポータル',
+      mapAria: '都市ポータルの地図',
+      hub: '中央ノード',
+      enter: 'ワールドへ入る',
+      unbuilt: '近日公開',
+    },
     manual: {
       tab: 'マニュアル',
       identitiesTab: 'アイデンティティ',
@@ -563,6 +602,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       redundancy: '중복성 상태',
       redundant: '중복 보관',
       single: '단일 보관',
+    },
+    portals: {
+      title: '누미니아의 포털',
+      intro:
+        '도시의 지도 — 아고라 광장을 둘러싼 네 개의 구. 각 포털은 가상 세계로 열리며, 흐린 것은 아직 지어지지 않았다.',
+      openPortals: '열린 포털',
+      mapAria: '도시 포털 지도',
+      hub: '중앙 노드',
+      enter: '월드 입장',
+      unbuilt: '공개 예정',
     },
     manual: {
       tab: '매뉴얼',
@@ -700,6 +749,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       redundancy: 'Saúde de redundância',
       redundant: 'Redundantes',
       single: 'Ponto único',
+    },
+    portals: {
+      title: 'Portais de Numinia',
+      intro:
+        'O mapa da cidade: quatro distritos ao redor da Praça da Ágora. Cada portal abre um mundo virtual; os esmaecidos ainda não foram construídos.',
+      openPortals: 'Portais abertos',
+      mapAria: 'Mapa de portais da cidade',
+      hub: 'Nó central',
+      enter: 'Entrar no mundo',
+      unbuilt: 'Em breve',
     },
     manual: {
       tab: 'O Manual',

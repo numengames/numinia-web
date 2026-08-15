@@ -1,0 +1,251 @@
+---
+/**
+ * Portals map (LAP iteration #1): the four districts around the Ágora with
+ * their portal nodes from @numinia/domain. The positioned map draws only at
+ * desktop widths (map dots cannot honor 44px touch targets); the district
+ * list below is the canonical, always-present reading — built portals link
+ * out to their world, unbuilt ones sit dimmed with an honest label.
+ */
+import type { Portal, SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, BUILT_PORTAL_COUNT, DISTRICTS, PORTALS } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import Icon from '../chrome/Icon.astro';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+
+const byDistrict: ReadonlyArray<{
+  district: (typeof DISTRICTS)[number];
+  portals: readonly Portal[];
+}> = DISTRICTS.map((district) => ({
+  district,
+  portals: PORTALS.filter((portal) => portal.districtId === district.id),
+}));
+---
+
+<LapShell
+  locale={locale}
+  current="portals"
+  title={`${t.portals.title} — L.A.P. — Numinia`}
+  description={t.portals.intro}
+>
+  <article data-lap-portals>
+    <h1>{t.portals.title}</h1>
+    <p class="intro">{t.portals.intro}</p>
+
+    <div class="sondas">
+      <div class="kpi reveal">
+        <p class="dato-xl mono">{BUILT_PORTAL_COUNT}</p>
+        <p class="etiqueta">{t.portals.openPortals}</p>
+      </div>
+    </div>
+
+    {/* The positioned map — a desktop luxury, decorative duplicate of the
+        list below, so its nodes stay out of the tab order and of the
+        accessibility tree (the list carries the same links at 44px). */}
+    <div class="mapa tarjeta reveal" aria-hidden="true">
+      {
+        DISTRICTS.map((district) => (
+          <p
+            class="etiqueta distrito"
+            style={`left:${district.id === 'vitruvian' || district.id === 'solomon' ? 25 : 75}%; top:${district.id === 'vitruvian' || district.id === 'sycamore' ? 4 : 56}%`}
+          >
+            {district.name[locale]}
+          </p>
+        ))
+      }
+      {
+        PORTALS.map((portal) => (
+          <span
+            class={`nodo${portal.worldUrl ? '' : ' apagado'}`}
+            style={`left:${portal.mapPosition.x}%; top:${portal.mapPosition.y}%`}
+          >
+            <span class="punto" />
+            {portal.name[locale]}
+          </span>
+        ))
+      }
+      <span class="nodo hub" style={`left:${AGORA_PLAZA.mapPosition.x}%; top:${AGORA_PLAZA.mapPosition.y}%`}>
+        <span class="punto" />
+        {AGORA_PLAZA.name[locale]}
+      </span>
+    </div>
+
+    {/* The hub card — the map's center, first in the reading order. */}
+    <section class="tarjeta reveal nucleo">
+      <p class="etiqueta">{t.portals.hub}</p>
+      <h2>{AGORA_PLAZA.name[locale]}</h2>
+      <p class="desc">{AGORA_PLAZA.description[locale]}</p>
+      <a
+        class="btn btn-primario"
+        href={AGORA_PLAZA.worldUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-metric="lap-portals-enter"
+      >
+        {t.portals.enter}
+        <Icon name="globe" size={18} />
+      </a>
+    </section>
+
+    {
+      byDistrict.map(({ district, portals }) => (
+        <section class="distrito-seccion">
+          <h2 class="etiqueta">{district.name[locale]}</h2>
+          <ul class="portales">
+            {portals.map((portal) => (
+              <li class={`tarjeta reveal${portal.worldUrl ? '' : ' apagado'}`}>
+                <h3>{portal.name[locale]}</h3>
+                <p class="desc">{portal.description[locale]}</p>
+                {portal.worldUrl ? (
+                  <a
+                    class="btn btn-fantasma"
+                    href={portal.worldUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-metric="lap-portals-enter"
+                  >
+                    {t.portals.enter}
+                    <Icon name="globe" size={18} />
+                  </a>
+                ) : (
+                  <p class="etiqueta pendiente">{t.portals.unbuilt}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </article>
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 0;
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  .sondas {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    margin: var(--s5) 0;
+  }
+  .kpi .dato-xl {
+    margin: 0;
+    color: var(--texto);
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .etiqueta {
+    margin: var(--s1) 0 0;
+  }
+
+  /* ── The map (desktop only: dots cannot honor touch targets) ────── */
+  .mapa {
+    display: none;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    margin: 0 0 var(--s5);
+    overflow: hidden;
+  }
+  @media (min-width: 50rem) {
+    .mapa {
+      display: block;
+    }
+  }
+  .distrito {
+    position: absolute;
+    transform: translateX(-50%);
+    margin: 0;
+  }
+  .nodo {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    white-space: nowrap;
+  }
+  .punto {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radio-completo);
+    background: var(--texto);
+    flex: none;
+  }
+  .nodo.apagado {
+    color: var(--texto-3);
+  }
+  .nodo.apagado .punto {
+    background: var(--linea-f);
+  }
+  .nodo.hub {
+    color: var(--texto);
+    font-weight: 500;
+  }
+  .nodo.hub .punto {
+    width: 12px;
+    height: 12px;
+    background: var(--acento);
+  }
+
+  /* ── Hub + district cards ────────────────────────────────────────── */
+  .nucleo h2 {
+    margin: var(--s1) 0 var(--s2);
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  .distrito-seccion > h2 {
+    margin: var(--s6) 0 var(--s3);
+    font-weight: 500;
+  }
+  .portales {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  }
+  .portales h3 {
+    margin: 0 0 var(--s2);
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .desc {
+    color: var(--texto-2);
+    line-height: 1.55;
+    margin: 0 0 var(--s3);
+  }
+  /* Announced-but-unbuilt: a quieter card, NEVER quieter text — opacity
+     on the card sank the copy below WCAG contrast (the gate caught it). */
+  .tarjeta.apagado {
+    background: transparent;
+    border-style: dashed;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .pendiente {
+    margin: 0;
+    color: var(--texto-2);
+  }
+</style>

@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 00:30",
+    "entries": [
+      {
+        "text": "Portals of Numinia: the city map with its 14 open worlds around the Agora Plaza, from the domain model",
+        "type": "NEW",
+      },
+      {
+        "text": "Portal constants join the domain: 13 district worlds + the hub, five locales, 100% covered",
+        "type": "NEW",
+      },
+      {
+        "text": "The L.A.P. mobile rail reads honestly: per-side fades only where content hides, items snap into place",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.28.0",
+  },
+  {
     "date": "2026-08-15 20:30",
     "entries": [
       {

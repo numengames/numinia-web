@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.28.0',
+    date: '2026-08-16 00:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Portals of Numinia: the city map with its 14 open worlds around the Agora Plaza, from the domain model',
+      },
+      {
+        type: 'NEW',
+        text: 'Portal constants join the domain: 13 district worlds + the hub, five locales, 100% covered',
+      },
+      {
+        type: 'UPD',
+        text: 'The L.A.P. mobile rail reads honestly: per-side fades only where content hides, items snap into place',
+      },
+    ],
+  },
+  {
     version: 'v0.27.0',
     date: '2026-08-15 20:30',
     entries: [
