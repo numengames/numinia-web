@@ -1,8 +1,10 @@
 ---
-import { SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
+import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 // Khepri brand asset (§8): wordmark travels as currentColor and dresses in ink.
 import wordmark from '../../../../../khepri/assets/Numinia_Word.svg?raw';
+import Icon from './Icon.astro';
+import LanguageMenu from './LanguageMenu.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -14,19 +16,6 @@ const { locale, basePath } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
-/** Language names in their own language — never translated (a11y convention). */
-const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
-  es: 'Español',
-  en: 'English',
-  ja: '日本語',
-  ko: '한국어',
-  'pt-br': 'Português',
-};
-
-const pathFor = (target: SupportedLocale): string =>
-  `${target === 'en' ? '' : `/${target}`}${basePath}`;
-
-/** Active pillar: §13.11 — the active item is an ink pill with paper text. */
 const isActive = (section: string): boolean => basePath.startsWith(`/${section}/`);
 const NAV = [
   { section: 'city', href: `${prefix}/city/`, label: t.navCity, metric: 'nav-city' },
@@ -58,24 +47,13 @@ const NAV = [
       }
     </nav>
     <div class="tools">
+      <!-- §13.2 utilities as Phosphor regular 20px: the icon shows the mode
+           a tap takes you to — moon invites Nocturno, sun invites Diurno. -->
       <button type="button" class="mode" data-metric="chrome-mode" aria-label={t.modeToggle}>
-        <span class="dot" aria-hidden="true"></span>
-        <span data-mode-label>DIURNO</span>
+        <Icon name="moon" size={20} class="solo-diurno" />
+        <Icon name="sun" size={20} class="solo-nocturno" />
       </button>
-      <nav aria-label={t.languageSelector} class="languages">
-        {
-          SUPPORTED_LOCALES.map((code) => (
-            <a
-              href={pathFor(code)}
-              aria-current={code === locale ? 'true' : undefined}
-              lang={code}
-              data-metric={`lang-${code}`}
-            >
-              {LANGUAGE_NAMES[code]}
-            </a>
-          ))
-        }
-      </nav>
+      <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
     </div>
   </div>
 </header>
@@ -85,13 +63,7 @@ const NAV = [
      Persistence via localStorage is decision D17 (chrome preference, not
      component state); the boot script in BaseLayout applies it pre-paint. */
   const root = document.documentElement;
-  const button = document.querySelector<HTMLButtonElement>('[data-metric="chrome-mode"]');
-  const label = button?.querySelector('[data-mode-label]');
-  const paint = () => {
-    if (label) label.textContent = root.dataset.modo === 'nocturno' ? 'NOCTURNO' : 'DIURNO';
-  };
-  paint();
-  button?.addEventListener('click', () => {
+  document.querySelector('[data-metric="chrome-mode"]')?.addEventListener('click', () => {
     const next = root.dataset.modo === 'nocturno' ? 'diurno' : 'nocturno';
     root.dataset.modo = next;
     try {
@@ -99,7 +71,6 @@ const NAV = [
     } catch {
       /* private mode: the choice simply lives for this page */
     }
-    paint();
   });
 </script>
 
@@ -127,12 +98,12 @@ const NAV = [
     width: auto;
     display: block;
   }
+  /* §13.2 menu: entries in Mono etiqueta caps; active = 2px amber underline. */
   nav {
     display: flex;
     gap: var(--s1);
     flex-wrap: wrap;
   }
-  /* §13.2 menu: entries in Mono etiqueta caps; active = 2px amber underline. */
   nav a {
     font-family: var(--mono);
     font-size: 0.75rem;
@@ -156,42 +127,34 @@ const NAV = [
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: var(--s4);
+    gap: var(--s3);
   }
   .mode {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
     display: inline-flex;
     align-items: center;
-    gap: var(--s2);
-    min-height: 32px;
-    padding: 4px var(--s3);
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
     background: transparent;
     color: var(--texto-2);
     border: 1px solid var(--linea-f);
     border-radius: var(--radio-control);
     cursor: pointer;
-    transition: border-color 120ms var(--ciclo);
+    transition:
+      color 120ms var(--ciclo),
+      border-color 120ms var(--ciclo);
   }
   .mode:hover,
   .mode:focus-visible {
     border-color: var(--verdemar);
     color: var(--texto);
   }
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ambar);
+  /* Pure-CSS swap keyed on the html mode attribute: no flash, no JS paint. */
+  :global(html:not([data-modo='diurno'])) .mode :global(.solo-diurno) {
+    display: none;
   }
-  .languages {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-  }
-  .languages a[aria-current='true'] {
-    color: var(--turquesa);
-    font-weight: 600;
+  :global(html[data-modo='diurno']) .mode :global(.solo-nocturno) {
+    display: none;
   }
 </style>

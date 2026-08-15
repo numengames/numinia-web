@@ -1,0 +1,58 @@
+---
+/**
+ * Phosphor icon (§7) — regular weight, self-hosted subset (§7.3), official
+ * SVGs from phosphor-icons/core normalized to currentColor. Never redrawn.
+ * Decorative by default (aria-hidden); pass a label to make it meaningful.
+ */
+import caretDown from '../../../../../packages/ui/src/icons/caret-down.svg?raw';
+import downloadSimple from '../../../../../packages/ui/src/icons/download-simple.svg?raw';
+import githubLogo from '../../../../../packages/ui/src/icons/github-logo.svg?raw';
+import globe from '../../../../../packages/ui/src/icons/globe-hemisphere-west.svg?raw';
+import magnifyingGlass from '../../../../../packages/ui/src/icons/magnifying-glass.svg?raw';
+import moon from '../../../../../packages/ui/src/icons/moon.svg?raw';
+import sun from '../../../../../packages/ui/src/icons/sun.svg?raw';
+import xLogo from '../../../../../packages/ui/src/icons/x-logo.svg?raw';
+
+const ICONS = {
+  'caret-down': caretDown,
+  'download-simple': downloadSimple,
+  'github-logo': githubLogo,
+  globe,
+  'magnifying-glass': magnifyingGlass,
+  moon,
+  sun,
+  'x-logo': xLogo,
+} as const;
+
+interface Props {
+  name: keyof typeof ICONS;
+  /** §7.1: regular 16–40px; bold below 16 (not in this subset yet). */
+  size?: number;
+  /** Meaningful icons carry a label; omitted = decorative (aria-hidden). */
+  label?: string;
+  class?: string;
+}
+
+const { name, size = 20, label, class: className } = Astro.props;
+---
+
+<span
+  class:list={['icono', className]}
+  style={`--icono-size:${size}px`}
+  aria-hidden={label ? undefined : 'true'}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  set:html={ICONS[name]}
+/>
+
+<style>
+  .icono {
+    display: inline-flex;
+    flex: none;
+  }
+  .icono :global(svg) {
+    width: var(--icono-size, 20px);
+    height: var(--icono-size, 20px);
+    display: block;
+  }
+</style>

@@ -1,6 +1,7 @@
 ---
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../chrome/Icon.astro';
 import { ModelViewer } from '../viewer/ModelViewer';
 import { ARCHIVE_MESSAGES } from '../../i18n/messages';
 import { downloadUrl } from '../../lib/archive';
@@ -70,6 +71,7 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
           class="btn btn-primario"
           data-metric="archive-download"
         >
+          <Icon name="download-simple" size={16} />
           {t.download}
         </a>
       ) : (

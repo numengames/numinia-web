@@ -23,6 +23,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.19.0',
+    date: '2026-08-15 16:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The platform wears Khepri: the Numen Games design system, in Diurno and Nocturno',
+      },
+      {
+        type: 'NEW',
+        text: 'Mode toggle (sun/moon), language menu, Phosphor iconography, the typing headline',
+      },
+      {
+        type: 'UPD',
+        text: 'Every surface redressed: ink for what acts, amber for what labels, Mono for what measures',
+      },
+      {
+        type: 'UPD',
+        text: 'The binary separator now speaks — decode it and find the promise of the house',
+      },
+    ],
+  },
+  {
     version: 'v0.18.0',
     date: '2026-08-15 14:30',
     entries: [
