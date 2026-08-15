@@ -231,3 +231,105 @@ describe('GitStateStore — SHA-conditional reads and writes', () => {
     ).rejects.toThrow(StateHttpError);
   });
 });
+
+describe('mutation-hardening — the details that carry doctrine', () => {
+  it('config errors NAME the variable and the class, one per line', () => {
+    try {
+      parseStateEnv({ STATE_REPO_OWNER: '', STATE_REPO_NAME: '', STATE_GITHUB_TOKEN: 'short' });
+      expect.unreachable('parseStateEnv must throw on empty values');
+    } catch (error) {
+      const err = error as Error;
+      expect(err.name).toBe('StateConfigError');
+      expect(err.message).toContain('STATE_REPO_OWNER must be set');
+      expect(err.message).toContain('STATE_REPO_NAME must be set');
+      expect(err.message).toContain('STATE_GITHUB_TOKEN looks too short to be real');
+      expect(err.message).toContain('\n  STATE_REPO_NAME');
+      expect(err.message).toContain('STATE_REPO_OWNER: ');
+    }
+  });
+
+  it('base64 decoding skips every whitespace kind and matches exact vectors', () => {
+    const abc = toBase64(new TextEncoder().encode('abc'));
+    expect(abc).toBe('YWJj');
+    for (const noise of ['YW\rJj', 'YW\tJj', 'YW Jj', 'Y\nWJj']) {
+      expect(new TextDecoder().decode(fromBase64(noise) as Uint8Array), noise).toBe('abc');
+    }
+    // Exact byte grouping across a full 4-char group boundary.
+    expect([...(fromBase64('YWJjZA==') as Uint8Array)]).toEqual([97, 98, 99, 100]);
+    expect([...(fromBase64('TnVtaW5pYQ==') as Uint8Array)]).toEqual([
+      78, 117, 109, 105, 110, 105, 97,
+    ]);
+  });
+
+  it('wallet anchors hold in records: no prefix junk, no suffix junk', () => {
+    for (const wallet of [`z${CENSUS.wallet}`, `${CENSUS.wallet}ff`]) {
+      expect(() => CensusRecordSchema.parse({ ...CENSUS, wallet }), wallet).toThrow();
+    }
+  });
+
+  it('unban is a real action and the reason rule speaks its doctrine', () => {
+    const base = {
+      wallet: CENSUS.wallet,
+      action: 'unban',
+      reason: 'appeal accepted',
+      at: '2026-08-16T00:00:00.000Z',
+      actor: CENSUS.actor,
+    };
+    expect(ModerationRecordSchema.parse(base).action).toBe('unban');
+    const failed = ModerationRecordSchema.safeParse({ ...base, reason: '' });
+    expect(failed.success).toBe(false);
+    if (!failed.success) {
+      expect(failed.error.issues[0]?.message).toBe('moderation without a reason is not governance');
+    }
+  });
+
+  it('requests speak as numinia-state with the GitHub accept header', async () => {
+    const fetchImpl = vi.fn(async (_input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      expect(headers.get('accept')).toBe('application/vnd.github+json');
+      expect(headers.get('user-agent')).toBe('numinia-state');
+      return jsonResponse(404, {});
+    }) as unknown as typeof fetch;
+    await storeWith(fetchImpl).read('census/x.json', CensusRecordSchema);
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('errors carry their names and their evidence', async () => {
+    const fetchImpl = (async () => jsonResponse(500, {})) as unknown as typeof fetch;
+    try {
+      await storeWith(fetchImpl).read('census/x.json', CensusRecordSchema);
+      expect.unreachable('read must throw on 500');
+    } catch (error) {
+      const err = error as Error;
+      expect(err.name).toBe('StateHttpError');
+      expect(err.message).toContain('500');
+      expect(err.message).toContain('GET census/x.json');
+    }
+    const conflicting = (async () => jsonResponse(409, {})) as unknown as typeof fetch;
+    try {
+      await storeWith(conflicting).write('census/x.json', CENSUS, {
+        message: 'm',
+        actor: CENSUS.actor,
+        sha: 's',
+      });
+      expect.unreachable('write must throw on 409');
+    } catch (error) {
+      const err = error as Error;
+      expect(err.name).toBe('StateConflictError');
+      expect(err.message).toContain('census/x.json');
+      expect(err.message).toContain('retry');
+    }
+    const forbidden = (async () => jsonResponse(403, {})) as unknown as typeof fetch;
+    await expect(
+      storeWith(forbidden).write('census/x.json', CENSUS, { message: 'm', actor: CENSUS.actor }),
+    ).rejects.toThrow(/PUT census\/x\.json/);
+  });
+
+  it('undecodable content names itself', async () => {
+    const fetchImpl = (async () =>
+      jsonResponse(200, { content: '***', sha: 's' })) as unknown as typeof fetch;
+    await expect(storeWith(fetchImpl).read('census/x.json', CensusRecordSchema)).rejects.toThrow(
+      /undecodable content at census\/x\.json/,
+    );
+  });
+});

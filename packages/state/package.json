@@ -16,13 +16,16 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint src __tests__",
     "test": "vitest run --coverage",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "test:mutation": "stryker run"
   },
   "dependencies": {
     "@numinia/domain": "*",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "vitest": "^4.0.18"
   }

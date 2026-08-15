@@ -9,3 +9,4 @@ export * from './encoding.js';
 export * from './session.js';
 export * from './nonce.js';
 export * from './boundary.js';
+export * from './attestation.js';
