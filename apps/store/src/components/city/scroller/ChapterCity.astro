@@ -1,0 +1,153 @@
+---
+/** Chapter II · The City: the Ágora and districts, the numínido, the ranks. */
+import type { LandingContent } from '../../../i18n/city-landing';
+import ArtSplit from './ArtSplit.astro';
+import ChapterMark from './ChapterMark.astro';
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  t: LandingContent;
+}
+const { t } = Astro.props;
+---
+
+<ChapterMark id="ciudad" label={t.chapters.city.label} title={t.chapters.city.title} />
+
+<SectionShell>
+  <Prose
+    eyebrow={t.districts.eyebrow}
+    title={t.districts.title}
+    paragraphs={t.districts.paragraphs}
+    align="center"
+  />
+  <div class="agora reveal">
+    <img src="/images/seals/agora.webp" alt={t.districts.agora.name} width="144" height="144" loading="lazy" />
+    <p class="nombre">{t.districts.agora.name}</p>
+    <p class="desc">{t.districts.agora.desc}</p>
+  </div>
+  <div class="distritos">
+    {
+      t.districts.items.map((district) => (
+        <article class="tarjeta reveal">
+          <img src={district.seal} alt={`${district.name}`} width="112" height="112" loading="lazy" />
+          <h3>{district.name}</h3>
+          <p class="etiqueta">{district.tag}</p>
+          <ul>
+            {district.spaces.map((space) => (
+              <li>{space}</li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<ArtSplit {...t.numinid} side="right" />
+
+<SectionShell>
+  <Prose eyebrow={t.ranks.eyebrow} title={t.ranks.title} paragraphs={t.ranks.paragraphs} />
+  <ol class="rangos">
+    {
+      t.ranks.items.map((rank, index) => (
+        <li class="tarjeta reveal">
+          <span class="orden mono">{String(index + 1).padStart(2, '0')}</span>
+          <div>
+            <p class="nombre">{rank.name}</p>
+            <p class="desc">{rank.desc}</p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</SectionShell>
+
+<style>
+  .agora {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    max-width: 20rem;
+    margin: var(--s7) auto 0;
+    text-align: center;
+  }
+  .agora .nombre {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    margin: 0;
+  }
+  .agora .desc {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .distritos {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    margin-top: var(--s7);
+  }
+  .distritos .tarjeta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--s2);
+  }
+  .distritos h3 {
+    margin: var(--s2) 0 0;
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  .distritos .etiqueta {
+    margin: 0;
+  }
+  .distritos ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--s2) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+  }
+  .rangos {
+    list-style: none;
+    padding: 0;
+    margin: var(--s6) 0 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+  .rangos li {
+    display: flex;
+    gap: var(--s3);
+    align-items: flex-start;
+    padding: var(--s3) var(--s4);
+  }
+  .orden {
+    font-size: 1.44rem;
+    color: var(--texto-3);
+  }
+  .rangos .nombre {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto);
+    margin: 0;
+  }
+  .rangos .desc {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    margin: var(--s1) 0 0;
+  }
+</style>

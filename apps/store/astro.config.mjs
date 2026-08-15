@@ -45,7 +45,9 @@ export default defineConfig({
     react(),
     sitemap({
       // Internal pages stay out of the index (robots.txt disallows them too).
-      filter: (page) => !page.includes('/spike/'),
+      // Internal pages and redirect stubs stay out of the index.
+      filter: (page) =>
+        !page.includes('/spike/') && !/\/city\/(inhabitants|districts|the-game)\//.test(page),
     }),
   ],
   markdown: {

@@ -23,6 +23,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.20.0',
+    date: '2026-08-15 17:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The City becomes one chronicle: four chapters in a single scroll, from the Seed to the Game',
+      },
+      {
+        type: 'NEW',
+        text: 'The numinia.com canon moves in: its words, its art, its seals — now dressed in Khepri',
+      },
+      {
+        type: 'NEW',
+        text: 'A waxing moon marks your reading — finish the chronicle and it turns full',
+      },
+      {
+        type: 'UPD',
+        text: 'Old city subpages now lead to their chapters; the merge plan for numinia.com is written',
+      },
+    ],
+  },
+  {
     version: 'v0.19.0',
     date: '2026-08-15 16:30',
     entries: [

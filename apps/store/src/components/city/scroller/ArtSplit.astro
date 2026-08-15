@@ -1,0 +1,46 @@
+---
+/**
+ * Prose beside an illustration. The art carries the world; no text sits on
+ * top of it, so no veil is required (§8.2 applies only to overlaid marks).
+ */
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  paragraphs: readonly string[];
+  img: { src: string; alt: string };
+  side?: 'left' | 'right';
+  quote?: string | undefined;
+  id?: string | undefined;
+}
+
+const { eyebrow, title, paragraphs, img, side = 'right', quote, id } = Astro.props;
+---
+
+<SectionShell id={id} split>
+  <div class:list={['copy', side === 'left' ? 'after' : '']}>
+    <Prose eyebrow={eyebrow} title={title} paragraphs={paragraphs} quote={quote} />
+  </div>
+  <figure class="reveal">
+    <img src={img.src} alt={img.alt} loading="lazy" width="640" height="640" />
+  </figure>
+</SectionShell>
+
+<style>
+  figure {
+    margin: 0;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radio-marco);
+    border: 1px solid var(--linea);
+  }
+  @media (min-width: 50rem) {
+    .after {
+      order: 2;
+    }
+  }
+</style>

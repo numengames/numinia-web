@@ -1,0 +1,38 @@
+---
+/** Full-bleed section band with a hairline seam and the scroller rhythm. */
+interface Props {
+  id?: string | undefined;
+  /** Two-column layout (prose + aside) on wide viewports. */
+  split?: boolean;
+}
+const { id, split = false } = Astro.props;
+---
+
+<section id={id} class:list={[{ split }]}>
+  <div class="inner">
+    <slot />
+  </div>
+</section>
+
+<style>
+  section {
+    border-bottom: 1px solid var(--linea);
+    scroll-margin-top: var(--s7);
+  }
+  .inner {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: var(--s8) var(--s4);
+  }
+  .split .inner {
+    display: grid;
+    gap: var(--s6);
+    align-items: center;
+  }
+  @media (min-width: 50rem) {
+    .split .inner {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s7);
+    }
+  }
+</style>

@@ -438,13 +438,34 @@ Then('every page header links city, assets, and lap', async function () {
 });
 
 Then('the city pages exist under every locale prefix', async function () {
+  // MISSION-007: one chronicle. The city page carries the four chapter
+  // anchors; the old subpages survive as redirect stubs to those anchors.
   for (const prefix of LOCALE_PREFIXES) {
-    for (const slug of ['city', 'city/inhabitants', 'city/districts', 'city/the-game']) {
-      const html = await readFile(
+    const city = await readFile(
+      path.join(this.distDir, prefix, 'city', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.ok(city, `missing city for ${prefix || 'en'}`);
+    for (const anchor of [
+      'id="semilla"',
+      'id="ciudad"',
+      'id="identidad"',
+      'id="vida"',
+      'id="juego"',
+    ]) {
+      assert.ok(city.includes(anchor), `city (${prefix || 'en'}) lacks ${anchor}`);
+    }
+    for (const [slug, anchor] of [
+      ['city/inhabitants', '#identidad'],
+      ['city/districts', '#ciudad'],
+      ['city/the-game', '#juego'],
+    ]) {
+      const stub = await readFile(
         path.join(this.distDir, prefix, slug, 'index.html'),
         'utf8',
       ).catch(() => null);
-      assert.ok(html, `missing ${slug} for ${prefix || 'en'}`);
+      assert.ok(stub, `missing redirect stub ${slug} for ${prefix || 'en'}`);
+      assert.ok(stub.includes(anchor), `${slug} (${prefix || 'en'}) does not point at ${anchor}`);
     }
   }
 });

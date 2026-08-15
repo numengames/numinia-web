@@ -1,0 +1,19 @@
+---
+/** The City page shell: canon meta + the chapter scroller. */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { content } from '../../i18n/city-landing';
+import { loreLocale } from '../../i18n/city';
+import CityScroller from './scroller/CityScroller.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const meta = content[loreLocale(locale)].meta;
+---
+
+<BaseLayout locale={locale} title={meta.title} description={meta.description}>
+  <CityScroller locale={locale} />
+</BaseLayout>

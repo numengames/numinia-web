@@ -26,7 +26,6 @@ const PAGES = [
   '/docs/developers/',
   '/es/inspector/',
   '/es/city/',
-  '/es/city/inhabitants/',
   '/es/assets/',
   '/es/lap/',
 ];

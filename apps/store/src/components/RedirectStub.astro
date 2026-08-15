@@ -1,0 +1,28 @@
+---
+/**
+ * Static redirect stub (MISSION-007): old City subpages point at their
+ * chapter anchor. Plain HTML meta-refresh so it works on ANY static host
+ * (node today, Cloudflare Workers assets at the numinia.com merge) — no
+ * server runtime involved. Kept out of the sitemap by the spike-style
+ * filter in astro.config; robots noindex, canonical to the target.
+ */
+interface Props {
+  to: string;
+}
+const { to } = Astro.props;
+const site = (Astro.site?.toString() ?? '/').replace(/\/$/, '');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={`${site}${to.split('#')[0]}`} />
+    <title>Numinia</title>
+  </head>
+  <body>
+    <p><a href={to}>→</a></p>
+  </body>
+</html>

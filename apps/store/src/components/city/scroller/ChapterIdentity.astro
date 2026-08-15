@@ -1,0 +1,205 @@
+---
+/** Identity: species (who are you?), guilds (what do you know?), factions
+    (what do you pursue?) — the three questions of the numínido. */
+import type { LandingContent, Lang } from '../../../i18n/city-landing';
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  t: LandingContent;
+  lang: Lang;
+}
+const { t, lang } = Astro.props;
+
+const SPECIES_KEYS: ReadonlyArray<[string, 'projection' | 'character' | 'field' | 'thought']> =
+  lang === 'es'
+    ? [
+        ['Proyección', 'projection'],
+        ['Carácter', 'character'],
+        ['Campo de fuerza', 'field'],
+        ['Pensamiento', 'thought'],
+      ]
+    : [
+        ['Projection', 'projection'],
+        ['Character', 'character'],
+        ['Force field', 'field'],
+        ['Thought', 'thought'],
+      ];
+const L = (es: string, en: string): string => (lang === 'es' ? es : en);
+---
+
+<SectionShell id="identidad">
+  <Prose
+    eyebrow={t.species.eyebrow}
+    title={t.species.title}
+    paragraphs={t.species.paragraphs}
+    align="center"
+    quote={t.species.question}
+  />
+  <div class="malla especies">
+    {
+      t.species.items.map((species) => (
+        <article class="tarjeta reveal">
+          <h3>{species.name}</h3>
+          <dl>
+            {SPECIES_KEYS.map(([label, key]) => (
+              <div>
+                <dt>{label}</dt>
+                <dd>{species[key]}</dd>
+              </div>
+            ))}
+          </dl>
+          <p class="lema">{species.motto}</p>
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<SectionShell>
+  <Prose
+    eyebrow={t.guilds.eyebrow}
+    title={t.guilds.title}
+    paragraphs={t.guilds.paragraphs}
+    align="center"
+    quote={t.guilds.question}
+  />
+  <div class="malla">
+    {
+      t.guilds.items.map((guild) => (
+        <article class="tarjeta reveal sello-arriba">
+          <img src={guild.seal} alt={guild.name} width="96" height="96" loading="lazy" />
+          <h3>{guild.name}</h3>
+          <p class="desc">{guild.desc}</p>
+          {guild.branches.map((branch) => (
+            <div class="rama">
+              <p class="rama-nombre">{branch.name}</p>
+              <p class="desc">{branch.houses.join(' · ')}</p>
+            </div>
+          ))}
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<SectionShell>
+  <Prose
+    eyebrow={t.factions.eyebrow}
+    title={t.factions.title}
+    paragraphs={t.factions.paragraphs}
+    align="center"
+    quote={t.factions.question}
+  />
+  <div class="malla">
+    {
+      t.factions.items.map((faction) => (
+        <article class="tarjeta reveal sello-arriba">
+          <img src={faction.seal} alt={faction.name} width="96" height="96" loading="lazy" />
+          <h3>{faction.name}</h3>
+          <p class="etiqueta">{L('Distrito', 'District')}: {faction.district}</p>
+          <p class="desc">{faction.desc}</p>
+          <dl class="ficha">
+            <div>
+              <dt>{L('Campo', 'Field')}</dt>
+              <dd>{faction.field}</dd>
+            </div>
+            <div>
+              <dt>{L('Principios', 'Principles')}</dt>
+              <dd>{faction.principles}</dd>
+            </div>
+            <div>
+              <dt>{L('Nombre semilla', 'Seed name')}</dt>
+              <dd class="semilla">{faction.seedName}</dd>
+            </div>
+          </dl>
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<style>
+  .malla {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    margin-top: var(--s6);
+  }
+  .especies {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  }
+  .tarjeta h3 {
+    margin: 0 0 var(--s3);
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--texto);
+  }
+  .sello-arriba {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--s2);
+  }
+  .sello-arriba h3 {
+    margin: var(--s2) 0 0;
+  }
+  dl {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--linea);
+    padding-top: var(--s3);
+  }
+  dt {
+    font-weight: 600;
+    color: var(--texto);
+  }
+  dd {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  .lema {
+    margin: var(--s4) 0 0;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--texto-3);
+    text-align: center;
+  }
+  .desc {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .rama {
+    width: 100%;
+    border-top: 1px solid var(--linea);
+    padding-top: var(--s2);
+    text-align: left;
+  }
+  .rama-nombre {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto);
+    margin: 0 0 var(--s1);
+  }
+  .ficha {
+    width: 100%;
+    text-align: left;
+  }
+  .semilla {
+    font-style: italic;
+  }
+  .etiqueta {
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,105 @@
+---
+/** Chapter IV · The Game: play as the lesson, creating reality, the lab. */
+import type { LandingContent } from '../../../i18n/city-landing';
+import ArtSplit from './ArtSplit.astro';
+import ChapterMark from './ChapterMark.astro';
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  t: LandingContent;
+}
+const { t } = Astro.props;
+---
+
+<ChapterMark id="juego" label={t.chapters.game.label} title={t.chapters.game.title} />
+
+<ArtSplit {...t.lesson} side="right" />
+
+<SectionShell>
+  <Prose
+    eyebrow={t.reality.eyebrow}
+    title={t.reality.title}
+    paragraphs={t.reality.paragraphs}
+    quote={t.reality.footnote}
+  />
+  <div class="columnas">
+    {
+      [t.reality.playFor, t.reality.appearsIn].map((column) => (
+        <div class="tarjeta reveal">
+          <h3>{column.title}</h3>
+          <ul>
+            {column.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<SectionShell split>
+  <Prose eyebrow={t.lab.eyebrow} title={t.lab.title} paragraphs={t.lab.paragraphs} />
+  <div class="laboratorio">
+    {
+      t.lab.cards.map((card) => (
+        <div class="tarjeta reveal">
+          <h3>{card.name}</h3>
+          <p>{card.desc}</p>
+        </div>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<style>
+  .columnas {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    max-width: 52rem;
+    margin: var(--s6) auto 0;
+  }
+  .columnas h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .columnas ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--s4) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .columnas li::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--ambar);
+    margin-right: var(--s2);
+    vertical-align: middle;
+  }
+  .laboratorio {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  .laboratorio h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .laboratorio p {
+    margin: var(--s1) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+</style>

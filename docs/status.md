@@ -97,6 +97,7 @@
 - **Phase B done (same evening)**: platform.css layer (§4.3 scale, §5 elevation, §9 components, §13.11 ink primary, §6.2 relief, §13.2 menu), kit motion inline (tecleo + reveal + orchestrated entry), and every surface dressed — landing per the §13.2 hero plan, archive/gallery/finder/inspector/city/lap/updates/docs/legal on tarjetas + amber etiquetas + Mono-for-measured. Gates encode the system's own exemptions (binaria = WCAG decoration; axe waits for the settled page; reduced-motion runs). Verify exit 0.
 - **Punch-list round 1 done (v0.19.0)**: mode toggle = Phosphor sun/moon icon, languages in a §9.8 dropdown (current = ink), Phosphor subset self-hosted (packages/ui/src/icons + chrome/Icon.astro), download icon on archive detail. Verify exit 0.
 - **Working mode from here (Oracle order)**: SMALL missions — one reviewable increment per unit, versioned, with visual evidence. Recorded in agent memory.
+- **MISSION-007 — The City chronicle ✅ (v0.20.0)**: /city/ is one four-chapter scroller carrying the numinia.com canon verbatim (city-landing.ts + art/seals), Khepri-dressed, with the waxing-moon reading progress; old subpages = host-agnostic redirect stubs. **D18 decided: EN root at the numinia.com merge**; full adaptation checklist in docs/merge-numinia-com.md (today: Cloudflare Workers assets, manual wrangler, no CI).
 - Next: Oracle's next punch-list items, one at a time.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)

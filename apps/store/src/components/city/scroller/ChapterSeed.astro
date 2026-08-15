@@ -1,0 +1,113 @@
+---
+/** Chapter I · The Seed: what, history, why, the engine, the ecosystem. */
+import type { LandingContent } from '../../../i18n/city-landing';
+import ArtSplit from './ArtSplit.astro';
+import ChapterMark from './ChapterMark.astro';
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  t: LandingContent;
+}
+const { t } = Astro.props;
+const ecosystemCells = [
+  ...t.ecosystem.disciplines.slice(0, 4),
+  t.ecosystem.center,
+  ...t.ecosystem.disciplines.slice(4),
+];
+---
+
+<ChapterMark id="semilla" label={t.chapters.seed.label} title={t.chapters.seed.title} />
+
+<ArtSplit {...t.what} side="right" />
+<ArtSplit {...t.history} side="left" />
+<ArtSplit {...t.why} side="right" quote={t.why.question} />
+
+<SectionShell split>
+  <Prose eyebrow={t.engine.eyebrow} title={t.engine.title} paragraphs={t.engine.paragraphs} />
+  <ul class="motor">
+    {
+      t.engine.items.map((item) => (
+        <li class="tarjeta reveal">
+          <span class="nombre">{item.name}</span>
+          <p>{item.desc}</p>
+        </li>
+      ))
+    }
+  </ul>
+</SectionShell>
+
+<SectionShell>
+  <Prose
+    eyebrow={t.ecosystem.eyebrow}
+    title={t.ecosystem.title}
+    paragraphs={t.ecosystem.paragraphs}
+    align="center"
+  />
+  <div class="malla reveal" role="presentation">
+    {
+      ecosystemCells.map((cell) =>
+        cell === t.ecosystem.center ? (
+          <div class="celda centro">{cell}</div>
+        ) : (
+          <div class="celda">{cell}</div>
+        ),
+      )
+    }
+  </div>
+</SectionShell>
+
+<ArtSplit {...t.construction} side="left" />
+
+<style>
+  .motor {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  .motor .tarjeta {
+    padding: var(--s3) var(--s4);
+  }
+  .nombre {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto);
+  }
+  .motor p {
+    margin: var(--s1) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  /* The cultural lattice: Numinia at the center, dressed in amber hairline. */
+  .malla {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s3);
+    max-width: 34rem;
+    margin: var(--s6) auto 0;
+  }
+  .celda {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 72px;
+    padding: var(--s2);
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  .celda.centro {
+    color: var(--ambar);
+    border-color: var(--ambar);
+    font-weight: 600;
+  }
+</style>

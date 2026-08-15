@@ -1,6 +1,6 @@
 {
   "name": "@numinia/auth",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "description": "Numinia auth core — vendor-independent, fail-closed session primitives (ADR-006). WinterCG-compatible: Web Crypto only, no Node-specific APIs.",
   "license": "MIT",
   "type": "module",

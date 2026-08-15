@@ -1,0 +1,77 @@
+---
+/**
+ * Reading-progress moon (§10.1-06): waxing phases only, new to full —
+ * finishing the chronicle is a full moon. Eight discrete phases stepped by
+ * scroll position. Own geometric glyph (§7.2: the Moon is a mark, not a
+ * Phosphor icon). Decorative: the scrollbar remains the accessible measure.
+ */
+
+const R = 15;
+const CX = 18;
+const TOP = CX - R;
+const BOTTOM = CX + R;
+
+/** Two-arc lit region for waxing phase t∈(0..1]: fixed right limb + moving
+    terminator. t<0.5 crescent (terminator bulges right), t≥0.5 gibbous. */
+function litPath(t: number): string {
+  const rx = Math.max(0.5, Math.abs(R * (1 - 2 * t)));
+  const sweep = t < 0.5 ? 0 : 1;
+  return `M${CX},${TOP} A${R},${R} 0 1,1 ${CX},${BOTTOM} A${rx},${R} 0 1,${sweep} ${CX},${TOP} Z`;
+}
+
+const PHASES = Array.from({ length: 8 }, (_, i) => (i === 0 ? '' : litPath(i / 7)));
+---
+
+<div class="luna" data-luna aria-hidden="true">
+  <svg viewBox="0 0 36 36" width="36" height="36">
+    <circle cx={CX} cy={CX} r={R} fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+    {PHASES.map((d, i) => (d ? <path d={d} fill="currentColor" data-fase={i} /> : null))}
+  </svg>
+</div>
+
+<script>
+  // Step the visible phase with scroll; fades ≤240ms live in CSS.
+  const luna = document.querySelector('[data-luna]');
+  const phases = [...(luna?.querySelectorAll('[data-fase]') ?? [])] as SVGPathElement[];
+  let ticking = false;
+  function paint(): void {
+    const doc = document.documentElement;
+    const total = doc.scrollHeight - window.innerHeight;
+    const t = total > 0 ? Math.min(1, window.scrollY / total) : 1;
+    const current = Math.min(7, Math.floor(t * 8));
+    for (const path of phases) {
+      path.style.opacity = Number(path.dataset['fase']) <= current ? '1' : '0';
+    }
+    ticking = false;
+  }
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(paint);
+      }
+    },
+    { passive: true },
+  );
+  paint();
+</script>
+
+<style>
+  .luna {
+    position: fixed;
+    right: var(--s5);
+    bottom: var(--s5);
+    color: var(--texto-2);
+    z-index: 5;
+    pointer-events: none;
+  }
+  path {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    path {
+      transition: opacity 240ms var(--ciclo);
+    }
+  }
+</style>

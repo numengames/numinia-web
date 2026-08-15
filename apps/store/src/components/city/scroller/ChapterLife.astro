@@ -1,0 +1,295 @@
+---
+/** Chapter III · Life: roles, groups, learning by building, the cycle,
+    the rituals. */
+import type { LandingContent } from '../../../i18n/city-landing';
+import ArtSplit from './ArtSplit.astro';
+import ChapterMark from './ChapterMark.astro';
+import Prose from './Prose.astro';
+import SectionShell from './SectionShell.astro';
+
+interface Props {
+  t: LandingContent;
+}
+const { t } = Astro.props;
+---
+
+<ChapterMark id="vida" label={t.chapters.life.label} title={t.chapters.life.title} />
+
+<SectionShell split>
+  <div>
+    <Prose eyebrow={t.roles.eyebrow} title={t.roles.title} paragraphs={t.roles.paragraphs} />
+    <p class="cita reveal">{t.roles.footnote}</p>
+  </div>
+  <div class="venn reveal" aria-hidden="true">
+    <div class="circulo arriba"><span>{t.roles.venn.species}</span></div>
+    <div class="circulo izquierda"><span>{t.roles.venn.guild}</span></div>
+    <div class="circulo derecha"><span>{t.roles.venn.faction}</span></div>
+    <p class="rol">{t.roles.venn.role}</p>
+  </div>
+</SectionShell>
+
+<SectionShell>
+  <Prose
+    eyebrow={t.groups.eyebrow}
+    title={t.groups.title}
+    paragraphs={t.groups.paragraphs}
+    align="center"
+  />
+  <div class="grupos">
+    {
+      t.groups.items.map((group) => (
+        <article class="tarjeta reveal">
+          <img src={group.seal} alt={group.name} width="96" height="96" loading="lazy" />
+          <h3>{group.name}</h3>
+          <p>{group.desc}</p>
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<ArtSplit {...t.diversity} side="right" />
+
+<SectionShell>
+  <Prose eyebrow={t.learning.eyebrow} title={t.learning.title} paragraphs={t.learning.paragraphs} />
+  <div class="pares">
+    {
+      t.learning.pairs.map(([first, second]) => (
+        <div class="par reveal" role="presentation">
+          <div class="pieza">{first}</div>
+          <div class="pieza baja">{second}</div>
+        </div>
+      ))
+    }
+  </div>
+  <p class="cita reveal">{t.learning.footnote}</p>
+</SectionShell>
+
+<ArtSplit {...t.records} side="left" />
+
+<SectionShell>
+  <Prose
+    eyebrow={t.cycle.eyebrow}
+    title={t.cycle.title}
+    paragraphs={t.cycle.paragraphs}
+    align="center"
+    quote={t.cycle.footnote}
+  />
+  <ol class="ciclo">
+    {
+      t.cycle.steps.map((step, index) => (
+        <li class="reveal">
+          <span class="paso mono">{index + 1}</span>
+          <p class="nombre">{step.name}</p>
+          <p class="sub">{step.sub}</p>
+        </li>
+      ))
+    }
+  </ol>
+</SectionShell>
+
+<SectionShell>
+  <Prose eyebrow={t.ritual.eyebrow} title={t.ritual.title} paragraphs={t.ritual.paragraphs} />
+  <div class="concilios">
+    {
+      t.ritual.councils.map((council) => (
+        <article class="tarjeta reveal">
+          <div class="cabecera">
+            <h3>{council.name}</h3>
+            <span class="glifo" aria-hidden="true">
+              {council.icon === 'moon' ? '☾' : '❋'}
+            </span>
+          </div>
+          <ul>
+            {council.points.map((point) => (
+              <li>{point}</li>
+            ))}
+          </ul>
+        </article>
+      ))
+    }
+  </div>
+</SectionShell>
+
+<style>
+  .cita {
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ambar);
+    max-width: 65ch;
+    margin: var(--s5) 0 0;
+  }
+  /* The role Venn: three thin circles, the role at the intersection. */
+  .venn {
+    position: relative;
+    width: min(20rem, 90vw);
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+  .circulo {
+    position: absolute;
+    width: 62%;
+    aspect-ratio: 1;
+    border: 1px solid var(--linea-f);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+  }
+  .circulo span {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    padding: var(--s3);
+  }
+  .arriba {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: flex-start;
+  }
+  .izquierda {
+    bottom: 0;
+    left: 0;
+    align-items: flex-end;
+  }
+  .derecha {
+    bottom: 0;
+    right: 0;
+    align-items: flex-end;
+  }
+  .rol {
+    position: absolute;
+    top: 52%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.44rem;
+    font-weight: 600;
+    color: var(--ambar);
+    margin: 0;
+  }
+  .grupos {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    max-width: 48rem;
+    margin: var(--s6) auto 0;
+  }
+  .grupos .tarjeta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--s2);
+  }
+  .grupos h3 {
+    margin: var(--s2) 0 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .grupos p {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .pares {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    margin-top: var(--s6);
+  }
+  .par {
+    position: relative;
+    height: 10rem;
+  }
+  .pieza {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 70%;
+    height: 6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+    font-size: 1.1rem;
+    color: var(--texto);
+    text-align: center;
+  }
+  .pieza.baja {
+    top: auto;
+    left: auto;
+    right: 0;
+    bottom: 0;
+    background: var(--elevada);
+  }
+  .ciclo {
+    list-style: none;
+    padding: 0;
+    margin: var(--s7) 0 0;
+    display: grid;
+    gap: var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    text-align: center;
+  }
+  .paso {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--ambar);
+    border-radius: 50%;
+    font-size: 1.44rem;
+    color: var(--ambar);
+  }
+  .ciclo .nombre {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--texto);
+    margin: var(--s3) 0 0;
+  }
+  .ciclo .sub {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    margin: var(--s1) 0 0;
+  }
+  .concilios {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    max-width: 52rem;
+    margin: var(--s6) auto 0;
+  }
+  .cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .concilios h3 {
+    margin: 0;
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  .glifo {
+    font-size: 1.728rem;
+    color: var(--texto-3);
+  }
+  .concilios ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--s4) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .concilios li {
+    border-top: 1px solid var(--linea);
+    padding: var(--s2) 0;
+  }
+</style>

@@ -1,0 +1,80 @@
+---
+/**
+ * The City as one chronicle: hero, four chapters in sequence, the waxing
+ * moon marking the read. Content is the numinia.com canon (city-landing.ts);
+ * the dress is Khepri.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { content, type Lang } from '../../../i18n/city-landing';
+import { CITY_LANGUAGE_NOTICE, loreLocale } from '../../../i18n/city';
+import ChapterCity from './ChapterCity.astro';
+import ChapterGame from './ChapterGame.astro';
+import ChapterIdentity from './ChapterIdentity.astro';
+import ChapterLife from './ChapterLife.astro';
+import ChapterSeed from './ChapterSeed.astro';
+import LunaProgreso from './LunaProgreso.astro';
+import ScrollerHero from './ScrollerHero.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const lang: Lang = loreLocale(locale);
+const t = content[lang];
+const notice = CITY_LANGUAGE_NOTICE[locale];
+
+const ANCHORS = [
+  { href: '#semilla', label: t.nav.seed },
+  { href: '#ciudad', label: t.nav.city },
+  { href: '#identidad', label: t.nav.identity },
+  { href: '#vida', label: t.nav.life },
+  { href: '#juego', label: t.nav.game },
+];
+---
+
+<article data-city="scroller">
+  {notice && <p class="language-notice">{notice}</p>}
+  <ScrollerHero hero={t.hero} />
+  <nav class="capitulos" aria-label={t.nav.city}>
+    {
+      ANCHORS.map((anchor) => (
+        <a href={anchor.href} class="menu-entrada" data-metric="city-anchor">
+          {anchor.label}
+        </a>
+      ))
+    }
+  </nav>
+  <ChapterSeed t={t} />
+  <ChapterCity t={t} />
+  <ChapterIdentity t={t} lang={lang} />
+  <ChapterLife t={t} />
+  <ChapterGame t={t} />
+  <LunaProgreso />
+</article>
+
+<style>
+  /* The scroller breathes full-width inside the page shell. */
+  article {
+    margin: 0 calc(-1 * var(--numinia-space-3));
+  }
+  .language-notice {
+    color: var(--texto-3);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: var(--s3) var(--s4) 0;
+    margin: 0;
+  }
+  .capitulos {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--s4);
+    padding: var(--s2) var(--s4);
+    background: var(--superficie);
+    border-bottom: 1px solid var(--linea-f);
+  }
+</style>

@@ -1,0 +1,58 @@
+---
+/**
+ * Section head + prose (the scroller's basic voice): amber eyebrow etiqueta,
+ * Sans title in ink, revealed paragraphs. Level II — lore affirms in Sans.
+ */
+interface Props {
+  eyebrow: string;
+  title: string;
+  paragraphs?: readonly string[];
+  align?: 'left' | 'center';
+  /** Closing lore question/quote — italic, amber (§4.4 emphasis). */
+  quote?: string | undefined;
+}
+
+const { eyebrow, title, paragraphs = [], align = 'left', quote } = Astro.props;
+---
+
+<div class:list={['prose', align]}>
+  <p class="etiqueta">{eyebrow}</p>
+  <h2>{title}</h2>
+  {paragraphs.map((paragraph) => <p class="reveal parrafo">{paragraph}</p>)}
+  <slot />
+  {quote && <p class="reveal cita">{quote}</p>}
+</div>
+
+<style>
+  .prose.center {
+    text-align: center;
+  }
+  .prose.center .parrafo,
+  .prose.center .cita {
+    margin-inline: auto;
+  }
+  .etiqueta {
+    margin: 0 0 var(--s3);
+  }
+  h2 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--texto);
+    margin: 0 0 var(--s4);
+    line-height: 1.1;
+  }
+  .parrafo {
+    max-width: 65ch;
+    line-height: 1.55;
+    color: var(--texto-2);
+    margin: 0 0 var(--s3);
+  }
+  .cita {
+    max-width: 65ch;
+    margin-top: var(--s5);
+    font-style: italic;
+    font-size: 1.2rem;
+    color: var(--ambar);
+  }
+</style>
