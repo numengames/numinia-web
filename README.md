@@ -8,6 +8,15 @@ are the objects its citizens use, earn, and carry through the Veil. Read
 > Version line continues numinia.store: legacy ended at 0.15.0 → this repo is **v0.16.0**.
 > Local-only for now: no remote, no deploy, no license published (open-questions D11).
 
+## Lineage
+
+This repository carries the **full git history** of the project: 316 commits of
+numinia-digital-goods (v0.1.0–v0.15.0, Next.js, Feb–Apr 2026), a razing commit
+where that implementation ends (ADR-010: design preserved, code discarded), and
+the rebuild from there on. The legacy history is archaeology — never copy code
+from it (ADR-017). Its `.env.local` commits were scrubbed (they held only public
+data-repo coordinates), so legacy SHAs differ from the original GitHub repo.
+
 ## Layout
 
 ```
