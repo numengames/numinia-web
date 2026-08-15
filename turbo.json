@@ -11,7 +11,9 @@
   ],
   "tasks": {
     "type-check": {
-      "dependsOn": ["^type-check"]
+      // ^build, not just ^type-check: dependents resolve @numinia/* types
+      // from dist/*.d.ts, which only exists after the dependency builds.
+      "dependsOn": ["^type-check", "^build"]
     },
     "lint": {},
     "test": {
