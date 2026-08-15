@@ -94,7 +94,8 @@
 ### MISSION-006 Phase A ✅ (2026-08-15 evening) — the platform wears Khepri
 
 - Token bridge live: legacy `--numinia-*` aliases point at Khepri; kit CSS byte-identical copy in packages/ui pinned by test; Geist/Geist Mono self-hosted. Modes: Diurno default + Nocturno toggle in the chrome, pre-paint boot (D17: localStorage for chrome preference only). Chrome dressed (wordmark in ink, active pillar = ink pill, binary signature in the footer). Amber contrast fixes (§9.7 avisos). Bundle gate learned spike-only reachability. **Full verify green (38/38 e2e incl. WCAG both-mode tokens).**
-- Next: Oracle visual review → Phase B surface passes (landing polish → city → assets → lap → docs → login island).
+- **Phase B done (same evening)**: platform.css layer (§4.3 scale, §5 elevation, §9 components, §13.11 ink primary, §6.2 relief, §13.2 menu), kit motion inline (tecleo + reveal + orchestrated entry), and every surface dressed — landing per the §13.2 hero plan, archive/gallery/finder/inspector/city/lap/updates/docs/legal on tarjetas + amber etiquetas + Mono-for-measured. Gates encode the system's own exemptions (binaria = WCAG decoration; axe waits for the settled page; reduced-motion runs). Verify exit 0.
+- Next: the Oracle's punch-list review ("qué no veo bien implementado o qué falta"), then fixes.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)
 
