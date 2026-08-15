@@ -23,6 +23,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.18.0',
+    date: '2026-08-15 14:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Progressive identity spike: enter with Google, an email code, a passkey, or your own wallet (MISSION-002 Step 0)',
+      },
+      {
+        type: 'NEW',
+        text: 'Sessions are Numinia-issued: the vendor only proves the address; the keys and the trust stay ours',
+      },
+      {
+        type: 'NEW',
+        text: 'Guided login: a live 1-2-3 progress bar walks each method, reacting to what you choose',
+      },
+      {
+        type: 'NEW',
+        text: '"Digital ownership, not digital rental" — the data-dignity line debuts at the login (MISSION-005 seed)',
+      },
+    ],
+  },
+  {
     version: 'v0.17.0',
     date: '2026-08-15 11:45',
     entries: [
