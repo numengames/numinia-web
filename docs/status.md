@@ -9,7 +9,7 @@
 > _Part of the Law. Index: [LEY.md](./LEY.md)_
 
 > Living document: what is DONE, what is NEXT, and who owns each next step.
-> Updated: 2026-08-15 (night) · remote LIVE: `numengames/numinia-web` (private, force-pushed by Oracle order) · numinia.com still serves the OLD landing from the `numinia-web` Worker · no license published (D11).
+> Updated: 2026-08-15 (night) · remote LIVE: `numengames/numinia-web` (private) · **numinia.com SERVES THE PLATFORM** (deployed via GitHub Actions) · no license published (D11).
 
 ## Where we are
 
@@ -115,7 +115,31 @@
 - **Still missing for a full admin (needs the write-path ADR, queued in open-questions)**: banning/promoting users (no user store exists — the platform only knows the session it issued and the configured Oracle wallets), asset upload/edit/delete, Session Zero rank progression (Phase 3), Portals map data (domain has the type, not the constants), Seasons/Loot (Phase 3).
 - Next: Oracle's next punch-list items, one at a time.
 
-## 🚨 IN FLIGHT — deploy to numinia.com (updated 2026-08-15, night)
+## 🚀 DEPLOYED — numinia.com serves the platform (2026-08-15, night)
+
+**The city is public.** `numinia.com` + `www` serve the new platform from the
+`numinia-web` Worker, deployed via the GitHub Actions "Deploy to Cloudflare"
+workflow (manual trigger, Pablo pressed the button). Externally verified:
+`/`, `/city/`, `/lap/` all 200. Deploys are now: push to GitHub → CI → press
+Run workflow. The old landing is gone (history in the backup bundle).
+
+**First remote CI — every fresh-runner lie found and fixed tonight:**
+`.nvmrc` said Node 22 while the repo lives on 24 (engine-strict refused
+license-checker@5) · e2e installed only Chromium while CI config enables
+chromium+firefox+webkit · deploy/e2e built the app without building
+workspace packages first (dist/ exports) · `type-check` needed `^build`
+(dependents resolve @numinia/domain from dist/*.d.ts) · turbo strict mode
+was silently stripping build env vars — turbo.json now declares all seven.
+Audit highs (axios/js-yaml/ws, thirdweb transitives) pinned via root
+overrides; production audit clean at high level.
+
+**Cleanup queue:** ~~delete the duplicate `numinia-platform` Worker~~ (gone —
+confirmed absent in the dashboard 2026-08-15 night) · key rotation TOMORROW
+(inherited CLOUDFLARE_API_TOKEN repo secrets, thirdweb, R2, ~21 stale legacy
+Vercel vars) · cache Playwright browsers in the e2e job (~10 min → ~3) ·
+confirm the e2e job's first full remote verdict.
+
+## Previous in-flight record (superseded above, kept for context)
 
 **The "outage" never existed.** External vantage points get `200 OK` from
 `www.numinia.com` (Cloudflare edge, cache HIT). The timeouts were LOCAL: the
