@@ -134,11 +134,25 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
   /* Sidebar fold — a chrome preference like the mode (decision D17):
      localStorage only, applied by the BaseLayout boot script pre-paint. */
   const root = document.documentElement;
-  /* Mobile rail: bring the current section into view — a rail that always
-     starts at "Overview" hides where you are. */
-  document
-    .querySelector('[data-lap-shell] a[aria-current="page"]')
-    ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  /* Mobile rail: edge fades appear only where content actually hides —
+     a faded card border reads as "broken", a faded overflowing label reads
+     as "more". And bring the current section into view by scrolling the
+     rail itself (scrollIntoView can drag ancestors along). */
+  const rail = document.querySelector<HTMLElement>('[data-lap-shell] #lap-nav-items');
+  const railNav = rail?.closest('nav');
+  const updateFades = (): void => {
+    if (!rail || !railNav) return;
+    const max = rail.scrollWidth - rail.clientWidth;
+    railNav.toggleAttribute('data-fade-left', max > 0 && rail.scrollLeft > 4);
+    railNav.toggleAttribute('data-fade-right', max > 0 && rail.scrollLeft < max - 4);
+  };
+  rail?.addEventListener('scroll', updateFades, { passive: true });
+  window.addEventListener('resize', updateFades, { passive: true });
+  const active = document.querySelector<HTMLElement>('[data-lap-shell] a[aria-current="page"]');
+  if (rail && active && rail.scrollWidth > rail.clientWidth) {
+    rail.scrollLeft = active.offsetLeft - (rail.clientWidth - active.offsetWidth) / 2;
+  }
+  updateFades();
   /* The management zone appears when the session carries the rank. */
   void fetch('/api/auth/session')
     .then((response) => (response.ok ? response.json() : null))
@@ -266,14 +280,44 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      scroll-snap-type: x proximity;
     }
     ul::-webkit-scrollbar {
       display: none;
     }
-    /* The fade says: there is more rail to the right. */
-    nav {
-      mask-image: linear-gradient(to right, #000 85%, transparent 100%);
-      -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    ul li {
+      scroll-snap-align: start;
+    }
+    /* No JS: a static right fade still says "there is more rail". */
+    :global(html:not([data-js='on'])) nav #lap-nav-items {
+      mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+    }
+    /* Edge fades on the CONTENT (never the card border), each side only
+       while something hides behind it — toggled by the shell script. */
+    nav[data-fade-right] #lap-nav-items {
+      mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent 100%);
+    }
+    nav[data-fade-left] #lap-nav-items {
+      mask-image: linear-gradient(to right, transparent 0, #000 40px);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 40px);
+    }
+    nav[data-fade-left][data-fade-right] #lap-nav-items {
+      mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        #000 40px,
+        #000 calc(100% - 40px),
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0,
+        #000 40px,
+        #000 calc(100% - 40px),
+        transparent 100%
+      );
     }
     a {
       min-height: 44px;
