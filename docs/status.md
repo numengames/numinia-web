@@ -31,6 +31,11 @@
 - **32 real public assets → 165 SSG pages** (5 locales) with SEO/OG; multi-format previews (native img/audio/video, unified GLB+VRM island, HYP note); client-side search + format filters; downloads via the domain storage chain; fully instrumented (funnel visitor→download live).
 - Gates extended and paying off: WCAG axe gate caught a real contrast violation (fixed via `--numinia-color-primary-strong` token).
 
+### `packages/auth` — vendor-independent core ✅ (2026-08-15)
+- All MISSION-002 groundwork that touches no vendor: fail-closed config (`parseAuthEnv`, ≥32-char secret), HMAC-SHA256 session tokens `v1.<payload>.<sig>` with constant-time compare + strict zod payload (unknown rank ⇒ rejected), single-use TTL nonce store, and the D13 boundary as ONE constant (`WEB3_BOUNDARY_RANK = 'pilgrim'` in `src/boundary.ts`).
+- WinterCG-pure (Web Crypto only, no Node/DOM libs) so it runs identically on Node, Workers, or edge. 15 tests, 100% coverage, mutation score 98.09% (3 survivors are documented equivalent mutants).
+- MISSION-002 Step 0 (thirdweb evaluation gate) now only needs the vendor layer on top.
+
 ### Audits & references ✅
 - Legacy test audit (`docs/reference/legacy-test-audit.md`): 3 severe security findings, 12 binding test rules → all encoded into this repo's machinery.
 - **Data-doctor** (`docs/reference/data-doctor-report.md`): 32 assets schema-clean; findings needing data-repo fixes (below).

@@ -1,0 +1,32 @@
+{
+  "name": "@numinia/auth",
+  "version": "0.16.0",
+  "description": "Numinia auth core — vendor-independent, fail-closed session primitives (ADR-006). WinterCG-compatible: Web Crypto only, no Node-specific APIs.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src __tests__",
+    "test": "vitest run --coverage",
+    "test:mutation": "stryker run",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@numinia/domain": "*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "^4.0.18"
+  }
+}
