@@ -31,7 +31,9 @@ jobs:
       - name: Install (reproducible)
         run: npm ci
       - name: Build for Cloudflare (real catalog — a deploy must not ship fixtures)
-        run: npm run build --workspace=apps/store
+        # Through turbo so workspace packages (domain, ui, analytics) build
+        # first — their exports point at dist/, absent on a fresh runner.
+        run: npx turbo run build --filter=@numinia/store
         env:
           DEPLOY_TARGET: cloudflare
           PUBLIC_SITE_URL: https://numinia.com

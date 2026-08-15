@@ -64,7 +64,8 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
         working-directory: apps/store
       - name: Build store (hermetic catalog)
-        run: npm --workspace @numinia/store run build
+        # Through turbo so workspace packages build first (dist/ exports).
+        run: npx turbo run build --filter=@numinia/store
         env:
           DATA_SOURCE: fixture
       - name: VRM rendering gate

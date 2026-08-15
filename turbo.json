@@ -1,5 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DEPLOY_TARGET",
+    "DATA_SOURCE",
+    "PUBLIC_SITE_URL",
+    "PUBLIC_THIRDWEB_CLIENT_ID",
+    "GITHUB_REPO_OWNER",
+    "GITHUB_REPO_NAME",
+    "GITHUB_BRANCH"
+  ],
   "tasks": {
     "type-check": {
       "dependsOn": ["^type-check"]
