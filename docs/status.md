@@ -115,6 +115,53 @@
 - **Still missing for a full admin (needs the write-path ADR, queued in open-questions)**: banning/promoting users (no user store exists — the platform only knows the session it issued and the configured Oracle wallets), asset upload/edit/delete, Session Zero rank progression (Phase 3), Portals map data (domain has the type, not the constants), Seasons/Loot (Phase 3).
 - Next: Oracle's next punch-list items, one at a time.
 
+## 🚨 IN FLIGHT — deploy to numinia.com (2026-08-15, evening)
+
+**State right now:** the Worker `numinia-platform` IS deployed (created 19:16 UTC,
+100% of traffic, version `c373b8ed`) on account `b4ad274110590f342408891b0b10056e`.
+The deploy moved the custom domains `numinia.com` and `www.numinia.com` off the
+old `numinia-web` Worker — and **since then both domains time out**: DNS resolves
+to Cloudflare (188.114.97.5) but no HTTP response arrives. Other hosts (including
+numinia.store) answer fine from the same machine, so the outage is real, not local.
+
+**Most likely cause:** the custom-hostname/edge-certificate re-provisioning after
+moving the domains between Workers got stuck (normal window is minutes).
+
+**Next diagnostic** (needs the Oracle's terminal — the scoped API token lives
+there, not in the agent's environment):
+
+```
+curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  "https://api.cloudflare.com/client/v4/accounts/b4ad274110590f342408891b0b10056e/workers/domains" \
+  | python3 -m json.tool | grep -E '"hostname"|"service"|"status"|"errors"'
+```
+
+**Rollback if needed:** attach `numinia.com` + `www.numinia.com` back to the
+`numinia-web` Worker (dashboard → Workers & Pages → numinia-web → Settings →
+Domains & Routes). The platform Worker stays deployed and can be re-attached.
+
+**Auth state:** `wrangler logout` done; the scoped API token (Workers + KV +
+Routes + Zone read, with TTL) is exported in the Oracle's shell — `wrangler
+whoami` confirms "logged in with an API Token". The agent's shells do NOT see it
+(different processes); anything authenticated must be run by the Oracle or the
+token added to `~/.bashrc`.
+
+**Deploy build recipe:**
+
+```
+set -a; source apps/store/.env; set +a
+DEPLOY_TARGET=cloudflare npm run build --workspace=apps/store
+npx wrangler deploy -c wrangler.jsonc
+```
+
+**Git remote still pending:** the Oracle chose to publish the code in the EXISTING
+repo `numengames/numinia-web` (3 commits, unrelated history). Non-destructive path:
+`git remote add origin https://github.com/numengames/numinia-web.git` then
+`git push origin main:platform`, then switch the default branch on GitHub —
+their history survives on `main`. A force-push over `main` would erase it.
+License stays undecided (D11): the README states plainly that default copyright
+applies meanwhile.
+
 ## NEXT (re-prioritized 2026-08-15, evening — after MISSIONS 006-011)
 
 | #   | What                                                                                                                                                                                                 | Owner                     | Blocks / notes                                                               |
