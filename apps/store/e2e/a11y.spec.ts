@@ -18,6 +18,8 @@ const PAGES = [
   '/es/archive/',
   '/gallery/',
   '/es/gallery/',
+  '/finder/',
+  '/es/finder/',
 ];
 
 for (const path of PAGES) {

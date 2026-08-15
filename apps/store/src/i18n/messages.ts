@@ -26,6 +26,7 @@ export interface ChromeMessages {
   readonly navHome: string;
   readonly navGallery: string;
   readonly navArchive: string;
+  readonly navFinder: string;
   readonly languageSelector: string;
   readonly footerNavigation: string;
   readonly footerResources: string;
@@ -38,6 +39,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Inicio',
     navGallery: 'Galería',
     navArchive: 'Archivo',
+    navFinder: 'Finder',
     languageSelector: 'Idioma',
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
@@ -48,6 +50,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Home',
     navGallery: 'Gallery',
     navArchive: 'Archive',
+    navFinder: 'Finder',
     languageSelector: 'Language',
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
@@ -58,6 +61,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'ホーム',
     navGallery: 'ギャラリー',
     navArchive: 'アーカイブ',
+    navFinder: 'Finder',
     languageSelector: '言語',
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
@@ -68,6 +72,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: '홈',
     navGallery: '갤러리',
     navArchive: '아카이브',
+    navFinder: 'Finder',
     languageSelector: '언어',
     footerNavigation: '내비게이션',
     footerResources: '리소스',
@@ -78,6 +83,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Início',
     navGallery: 'Galeria',
     navArchive: 'Arquivo',
+    navFinder: 'Finder',
     languageSelector: 'Idioma',
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
@@ -113,7 +119,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     toolsTitle: 'Herramientas',
     toolGallery: 'La galería: los avatares de la ciudad, colección a colección.',
     toolArchive: 'El archivo: todos los formatos, con búsqueda, filtros y descarga directa.',
-    toolsSoon: 'En camino: el Finder de colecciones y el inspector 3D.',
+    toolsSoon: 'En camino: el inspector 3D.',
   },
   en: {
     heroTitle: 'Open-source digital goods for games, VR, and 3D worlds',
@@ -127,7 +133,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     toolsTitle: 'Tools',
     toolGallery: 'The gallery: the avatars of the city, collection by collection.',
     toolArchive: 'The archive: every format, with search, filters, and direct download.',
-    toolsSoon: 'Coming next: the collection Finder and the 3D inspector.',
+    toolsSoon: 'Coming next: the 3D inspector.',
   },
   ja: {
     heroTitle: 'ゲーム・VR・3Dワールドのためのオープンソース・デジタルグッズ',
@@ -141,7 +147,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     toolsTitle: 'ツール',
     toolGallery: 'ギャラリー:都市のアバターをコレクションごとに。',
     toolArchive: 'アーカイブ:全フォーマット。検索・フィルター・直接ダウンロード。',
-    toolsSoon: '近日公開:コレクションFinderと3Dインスペクター。',
+    toolsSoon: '近日公開:3Dインスペクター。',
   },
   ko: {
     heroTitle: '게임·VR·3D 월드를 위한 오픈소스 디지털 굿즈',
@@ -155,7 +161,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     toolsTitle: '도구',
     toolGallery: '갤러리: 도시의 아바타를 컬렉션별로.',
     toolArchive: '아카이브: 모든 포맷, 검색·필터·직접 다운로드.',
-    toolsSoon: '곧 공개: 컬렉션 Finder와 3D 인스펙터.',
+    toolsSoon: '곧 공개: 3D 인스펙터.',
   },
   'pt-br': {
     heroTitle: 'Bens digitais open source para jogos, VR e mundos 3D',
@@ -169,7 +175,143 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     toolsTitle: 'Ferramentas',
     toolGallery: 'A galeria: os avatares da cidade, coleção por coleção.',
     toolArchive: 'O arquivo: todos os formatos, com busca, filtros e download direto.',
-    toolsSoon: 'Em breve: o Finder de coleções e o inspetor 3D.',
+    toolsSoon: 'Em breve: o inspetor 3D.',
+  },
+};
+
+/** Finder island — every label the client component needs, resolved at build. */
+export interface FinderMessages {
+  readonly finderTitle: string;
+  readonly finderIntro: string;
+  readonly collectionsLabel: string;
+  readonly filesLabel: string;
+  readonly previewLabel: string;
+  readonly emptyPreview: string;
+  readonly queueLabel: string;
+  readonly addToQueue: string;
+  readonly removeFromQueue: string;
+  readonly downloadAll: string;
+  readonly download: string;
+  readonly downloadUnavailable: string;
+  readonly queueEmpty: string;
+  readonly categories: Readonly<Record<string, string>>;
+}
+
+export const FINDER_MESSAGES: Readonly<Record<SupportedLocale, FinderMessages>> = {
+  es: {
+    finderTitle: 'Finder',
+    finderIntro: 'Explora las colecciones de la ciudad y descarga por lotes.',
+    collectionsLabel: 'Colecciones',
+    filesLabel: 'Archivos',
+    previewLabel: 'Vista previa',
+    emptyPreview: 'Selecciona un archivo para previsualizarlo.',
+    queueLabel: 'Cola de descarga',
+    addToQueue: 'Añadir a la cola',
+    removeFromQueue: 'Quitar de la cola',
+    downloadAll: 'Descargar todo',
+    download: 'Descargar',
+    downloadUnavailable: 'Descarga no disponible',
+    queueEmpty: 'La cola está vacía.',
+    categories: {
+      models: 'Modelos',
+      avatars: 'Avatares',
+      worlds: 'Mundos',
+      audio: 'Audio',
+      video: 'Vídeo',
+      images: 'Imágenes',
+    },
+  },
+  en: {
+    finderTitle: 'Finder',
+    finderIntro: 'Browse the city collections and batch-download.',
+    collectionsLabel: 'Collections',
+    filesLabel: 'Files',
+    previewLabel: 'Preview',
+    emptyPreview: 'Select a file to preview it.',
+    queueLabel: 'Download queue',
+    addToQueue: 'Add to queue',
+    removeFromQueue: 'Remove from queue',
+    downloadAll: 'Download all',
+    download: 'Download',
+    downloadUnavailable: 'Download unavailable',
+    queueEmpty: 'The queue is empty.',
+    categories: {
+      models: 'Models',
+      avatars: 'Avatars',
+      worlds: 'Worlds',
+      audio: 'Audio',
+      video: 'Video',
+      images: 'Images',
+    },
+  },
+  ja: {
+    finderTitle: 'Finder',
+    finderIntro: '都市のコレクションを探索して、まとめてダウンロード。',
+    collectionsLabel: 'コレクション',
+    filesLabel: 'ファイル',
+    previewLabel: 'プレビュー',
+    emptyPreview: 'ファイルを選択するとプレビューできます。',
+    queueLabel: 'ダウンロードキュー',
+    addToQueue: 'キューに追加',
+    removeFromQueue: 'キューから削除',
+    downloadAll: 'すべてダウンロード',
+    download: 'ダウンロード',
+    downloadUnavailable: 'ダウンロード不可',
+    queueEmpty: 'キューは空です。',
+    categories: {
+      models: 'モデル',
+      avatars: 'アバター',
+      worlds: 'ワールド',
+      audio: 'オーディオ',
+      video: 'ビデオ',
+      images: '画像',
+    },
+  },
+  ko: {
+    finderTitle: 'Finder',
+    finderIntro: '도시의 컬렉션을 둘러보고 일괄 다운로드하세요.',
+    collectionsLabel: '컬렉션',
+    filesLabel: '파일',
+    previewLabel: '미리보기',
+    emptyPreview: '파일을 선택하면 미리 볼 수 있습니다.',
+    queueLabel: '다운로드 대기열',
+    addToQueue: '대기열에 추가',
+    removeFromQueue: '대기열에서 제거',
+    downloadAll: '모두 다운로드',
+    download: '다운로드',
+    downloadUnavailable: '다운로드 불가',
+    queueEmpty: '대기열이 비어 있습니다.',
+    categories: {
+      models: '모델',
+      avatars: '아바타',
+      worlds: '월드',
+      audio: '오디오',
+      video: '비디오',
+      images: '이미지',
+    },
+  },
+  'pt-br': {
+    finderTitle: 'Finder',
+    finderIntro: 'Explore as coleções da cidade e baixe em lote.',
+    collectionsLabel: 'Coleções',
+    filesLabel: 'Arquivos',
+    previewLabel: 'Pré-visualização',
+    emptyPreview: 'Selecione um arquivo para visualizá-lo.',
+    queueLabel: 'Fila de download',
+    addToQueue: 'Adicionar à fila',
+    removeFromQueue: 'Remover da fila',
+    downloadAll: 'Baixar tudo',
+    download: 'Baixar',
+    downloadUnavailable: 'Download indisponível',
+    queueEmpty: 'A fila está vazia.',
+    categories: {
+      models: 'Modelos',
+      avatars: 'Avatares',
+      worlds: 'Mundos',
+      audio: 'Áudio',
+      video: 'Vídeo',
+      images: 'Imagens',
+    },
   },
 };
 

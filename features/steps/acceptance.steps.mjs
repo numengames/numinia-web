@@ -256,3 +256,28 @@ Then('the gallery page ships no JS islands', async function () {
   const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
   assert.ok(!html.includes('<astro-island'), 'gallery page hydrates a JS island');
 });
+
+// --- finder (MISSION-003 P2) ---
+
+Then('the finder page exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const page = path.join(this.distDir, prefix, 'finder', 'index.html');
+    const html = await readFile(page, 'utf8').catch(() => null);
+    assert.ok(html, `missing finder page for ${prefix || 'en'}`);
+  }
+});
+
+Then('each finder page mounts exactly one island', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(path.join(this.distDir, prefix, 'finder', 'index.html'), 'utf8');
+    const islands = html.match(/<astro-island/g) ?? [];
+    assert.equal(islands.length, 1, `island count wrong for ${prefix || 'en'}`);
+  }
+});
+
+Then('the finder island data covers every public asset', async function () {
+  const html = await readFile(path.join(this.distDir, 'finder', 'index.html'), 'utf8');
+  for (const id of this.publicIds) {
+    assert.ok(html.includes(id), `finder island data misses asset ${id}`);
+  }
+});

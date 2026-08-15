@@ -1,0 +1,124 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { FINDER_MESSAGES } from '../../i18n/messages';
+import { loadFinderTree } from '../../lib/finder';
+import { Finder } from './Finder';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = FINDER_MESSAGES[locale];
+const tree = await loadFinderTree();
+---
+
+<BaseLayout locale={locale} title={`${t.finderTitle} — Numinia`}>
+  <header>
+    <h1>{t.finderTitle}</h1>
+    <p>{t.finderIntro}</p>
+  </header>
+  <Finder client:load tree={tree} labels={t} />
+</BaseLayout>
+
+<style>
+  header p {
+    color: var(--numinia-color-text-muted);
+  }
+</style>
+
+<style is:global>
+  /* Island internals — global by necessity (Astro scoping stops at React). */
+  [data-finder] .panes {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1fr) minmax(14rem, 1.4fr) minmax(16rem, 2fr);
+    gap: var(--numinia-space-3);
+    align-items: start;
+  }
+  @media (max-width: 50rem) {
+    [data-finder] .panes {
+      grid-template-columns: 1fr;
+    }
+  }
+  [data-finder] ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  [data-finder] h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--numinia-color-text-muted);
+    margin: var(--numinia-space-2) 0 var(--numinia-space-1);
+  }
+  [data-finder] button {
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: inherit;
+    background: var(--numinia-color-surface);
+    border: 1px solid transparent;
+    border-radius: var(--numinia-radius-sm);
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+  }
+  [data-finder] button[aria-pressed='true'] {
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+  }
+  [data-finder-tree] li,
+  [data-finder-files] li,
+  [data-finder-queue] li {
+    display: flex;
+    gap: var(--numinia-space-1);
+    margin-bottom: var(--numinia-space-1);
+    align-items: center;
+  }
+  [data-finder-tree] button,
+  [data-finder-files] button:first-child {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--numinia-space-1);
+    text-align: left;
+  }
+  [data-finder-files] .format,
+  [data-finder-tree] .count {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.75rem;
+  }
+  [data-finder] button[aria-pressed='true'] .format,
+  [data-finder] button[aria-pressed='true'] .count {
+    color: #ffffff;
+  }
+  [data-finder-preview] {
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-3);
+  }
+  [data-finder-preview] img,
+  [data-finder-preview] video,
+  [data-finder-preview] canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--numinia-radius-sm);
+  }
+  [data-finder-preview] audio {
+    width: 100%;
+  }
+  [data-finder-preview] a {
+    display: inline-block;
+    margin-top: var(--numinia-space-2);
+    padding: 0.4rem 1rem;
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+    text-decoration: none;
+  }
+  [data-finder-queue] {
+    margin-top: var(--numinia-space-4);
+    border-top: 1px solid var(--numinia-color-surface);
+    padding-top: var(--numinia-space-2);
+  }
+</style>
