@@ -19,6 +19,8 @@ const PAGES = [
   { path: '/es/', name: 'landing-es' },
   { path: '/archive/', name: 'archive-index' },
   { path: '/es/archive/', name: 'archive-index-es' },
+  { path: '/gallery/', name: 'gallery' },
+  { path: '/es/gallery/', name: 'gallery-es' },
 ] as const;
 
 async function settle(page: Page): Promise<void> {

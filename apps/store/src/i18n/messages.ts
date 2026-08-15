@@ -21,6 +21,46 @@ export interface ArchiveMessages {
   readonly worldFileNote: string;
 }
 
+export interface GalleryMessages {
+  readonly galleryTitle: string;
+  readonly galleryIntro: string;
+  readonly emptyState: string;
+  readonly viewInArchive: string;
+}
+
+export const GALLERY_MESSAGES: Readonly<Record<SupportedLocale, GalleryMessages>> = {
+  es: {
+    galleryTitle: 'Galería',
+    galleryIntro: 'Los avatares de Numinia, colección a colección. Todos CC0, todos tuyos.',
+    emptyState: 'La galería está vacía por ahora.',
+    viewInArchive: 'Ver en el Archivo',
+  },
+  en: {
+    galleryTitle: 'Gallery',
+    galleryIntro: 'The avatars of Numinia, collection by collection. All CC0, all yours.',
+    emptyState: 'The gallery is empty for now.',
+    viewInArchive: 'View in the Archive',
+  },
+  ja: {
+    galleryTitle: 'ギャラリー',
+    galleryIntro: 'ヌミニアのアバターをコレクションごとに。すべてCC0、すべてあなたのもの。',
+    emptyState: 'ギャラリーはまだ空です。',
+    viewInArchive: 'アーカイブで見る',
+  },
+  ko: {
+    galleryTitle: '갤러리',
+    galleryIntro: '누미니아의 아바타를 컬렉션별로. 전부 CC0, 전부 당신의 것.',
+    emptyState: '갤러리가 아직 비어 있습니다.',
+    viewInArchive: '아카이브에서 보기',
+  },
+  'pt-br': {
+    galleryTitle: 'Galeria',
+    galleryIntro: 'Os avatares de Numinia, coleção por coleção. Todos CC0, todos seus.',
+    emptyState: 'A galeria está vazia por enquanto.',
+    viewInArchive: 'Ver no Arquivo',
+  },
+};
+
 export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>> = {
   es: {
     archiveTitle: 'Archivo',

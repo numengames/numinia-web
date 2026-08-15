@@ -1,0 +1,63 @@
+---
+import type { Asset, SupportedLocale } from '@numinia/domain';
+
+interface Props {
+  asset: Asset;
+  locale: SupportedLocale;
+}
+
+const { asset, locale } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<a href={`${prefix}/archive/${asset.id}/`} data-gallery-card data-metric="gallery-card">
+  <article>
+    {
+      asset.thumbnailUrl ? (
+        <img src={asset.thumbnailUrl} alt="" loading="lazy" width="280" height="280" />
+      ) : (
+        <div class="placeholder" aria-hidden="true">
+          VRM
+        </div>
+      )
+    }
+    <h3>{asset.name}</h3>
+  </article>
+</a>
+
+<style>
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+  article {
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-2);
+    height: 100%;
+    transition: transform 120ms ease;
+  }
+  a:hover article,
+  a:focus-visible article {
+    transform: translateY(-2px);
+  }
+  img,
+  .placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-background);
+  }
+  .placeholder {
+    display: grid;
+    place-items: center;
+    color: var(--numinia-color-text-muted);
+    font-size: 1.2rem;
+  }
+  h3 {
+    font-size: 0.95rem;
+    margin: var(--numinia-space-2) 0 0;
+    text-align: center;
+  }
+</style>

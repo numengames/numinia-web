@@ -1,0 +1,61 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GalleryCard from './GalleryCard.astro';
+import { GALLERY_MESSAGES } from '../../i18n/messages';
+import { loadGallery } from '../../lib/gallery';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = GALLERY_MESSAGES[locale];
+const collections = await loadGallery();
+---
+
+<BaseLayout locale={locale} title={`${t.galleryTitle} — Numinia`}>
+  <header>
+    <h1>{t.galleryTitle}</h1>
+    <p>{t.galleryIntro}</p>
+  </header>
+
+  {
+    collections.length === 0 ? (
+      <p data-gallery-empty>{t.emptyState}</p>
+    ) : (
+      collections.map((collection) => (
+        <section aria-labelledby={`collection-${collection.id}`}>
+          <h2 id={`collection-${collection.id}`}>{collection.id}</h2>
+          <ul>
+            {collection.avatars.map((asset) => (
+              <li>
+                <GalleryCard asset={asset} locale={locale} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    )
+  }
+</BaseLayout>
+
+<style>
+  header p {
+    color: var(--numinia-color-text-muted);
+  }
+  h2 {
+    font-size: 1rem;
+    margin: var(--numinia-space-4) 0 var(--numinia-space-2);
+    color: var(--numinia-color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: var(--numinia-space-3);
+  }
+</style>

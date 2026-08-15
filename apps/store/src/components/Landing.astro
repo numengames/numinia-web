@@ -1,12 +1,14 @@
 ---
 import { GUILDS, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { ARCHIVE_MESSAGES, GALLERY_MESSAGES } from '../i18n/messages';
 
 interface Props {
   locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
 
 const HEADLINE: Record<SupportedLocale, string> = {
   es: 'Numinia se está reconstruyendo',
@@ -19,6 +21,14 @@ const HEADLINE: Record<SupportedLocale, string> = {
 
 <BaseLayout locale={locale} title="Numinia">
   <h1>{HEADLINE[locale]}</h1>
+  <nav aria-label="Numinia">
+    <a href={`${prefix}/gallery/`} data-metric="landing-gallery">
+      {GALLERY_MESSAGES[locale].galleryTitle}
+    </a>
+    <a href={`${prefix}/archive/`} data-metric="landing-archive">
+      {ARCHIVE_MESSAGES[locale].archiveTitle}
+    </a>
+  </nav>
   <ul>
     {GUILDS.map((guild) => <li>{guild.name[locale]}</li>)}
   </ul>
@@ -27,6 +37,18 @@ const HEADLINE: Record<SupportedLocale, string> = {
 <style>
   h1 {
     color: var(--numinia-color-primary);
+  }
+  nav {
+    display: flex;
+    gap: var(--numinia-space-2);
+    margin: var(--numinia-space-3) 0;
+  }
+  nav a {
+    padding: 0.4rem 1rem;
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+    text-decoration: none;
   }
   li {
     color: var(--numinia-color-text-muted);

@@ -204,3 +204,55 @@ Then('the sitemap does not list internal pages', async function () {
   const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
   assert.ok(!sitemap.includes('/spike/'), 'sitemap leaks the spike page');
 });
+
+// --- gallery (MISSION-003 P1) ---
+
+const LOCALE_PREFIXES = ['', 'es', 'ja', 'ko', 'pt-br'];
+
+async function publicAvatarIds() {
+  const raw = JSON.parse(
+    await readFile(path.join(repoRoot, 'apps', 'store', 'fixtures', 'catalogs.json'), 'utf8'),
+  );
+  return (raw.avatars ?? [])
+    .filter((record) => record.is_public !== false && record.is_draft !== true)
+    .map((record) => record.id);
+}
+
+Then('the gallery page exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const page = path.join(this.distDir, prefix, 'gallery', 'index.html');
+    const html = await readFile(page, 'utf8').catch(() => null);
+    assert.ok(html, `missing gallery page for ${prefix || 'en'}`);
+  }
+});
+
+Then('each gallery page shows a card for every public avatar', async function () {
+  const avatarIds = await publicAvatarIds();
+  assert.ok(avatarIds.length > 0, 'fixture has no public avatars');
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(path.join(this.distDir, prefix, 'gallery', 'index.html'), 'utf8');
+    const cards = html.match(/data-gallery-card/g) ?? [];
+    assert.equal(cards.length, avatarIds.length, `card count mismatch for ${prefix || 'en'}`);
+  }
+});
+
+Then('every gallery card links to its archive detail page', async function () {
+  const avatarIds = await publicAvatarIds();
+  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
+  for (const id of avatarIds) {
+    assert.ok(html.includes(`/archive/${id}/`), `gallery misses link to archive/${id}`);
+  }
+});
+
+Then('every gallery card carries the {string} metric', async function (metric) {
+  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
+  const cards = (html.match(/data-gallery-card/g) ?? []).length;
+  const metrics = (html.match(new RegExp(`data-metric="${metric}"`, 'g')) ?? []).length;
+  assert.ok(cards > 0, 'no gallery cards found');
+  assert.equal(metrics, cards, 'metric count differs from card count');
+});
+
+Then('the gallery page ships no JS islands', async function () {
+  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
+  assert.ok(!html.includes('<astro-island'), 'gallery page hydrates a JS island');
+});
