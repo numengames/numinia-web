@@ -1,7 +1,7 @@
 {
   "name": "@numinia/store",
-  "version": "0.17.0",
-  "description": "numinia.store \u2014 spikes and proof-of-concept track of the Numinia platform.",
+  "version": "0.18.0",
+  "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
   "license": "MIT",
   "type": "module",
   "private": true,
@@ -20,12 +20,14 @@
     "@astrojs/react": "^6.0.2",
     "@astrojs/sitemap": "^3.7.3",
     "@numinia/analytics": "*",
+    "@numinia/auth": "*",
     "@numinia/domain": "*",
     "@numinia/ui": "*",
     "@pixiv/three-vrm": "^3.5.5",
     "astro": "^7.2.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "thirdweb": "^5.121.0",
     "three": "^0.185.1",
     "viem": "^2.55.16"
   },
@@ -33,13 +35,13 @@
     "@astrojs/check": "^0.9.10",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.185.0",
     "@vitest/coverage-v8": "^4.0.18",
-    "vitest": "^4.0.18",
-    "@stryker-mutator/core": "^10.0.0",
-    "@stryker-mutator/vitest-runner": "^10.0.0"
+    "vitest": "^4.0.18"
   }
 }

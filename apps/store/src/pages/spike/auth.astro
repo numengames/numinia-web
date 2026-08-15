@@ -1,0 +1,99 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LoginSpike } from '../../components/auth/LoginSpike';
+---
+
+<BaseLayout locale="en" title="Numinia — MISSION-002 auth spike" chrome={false}>
+  <h1>MISSION-002 Step 0 — thirdweb evaluation gate</h1>
+  <p>
+    Progressive identity spike: social / email / passkey (In-App Wallet) and external wallets,
+    verified server-side via SIWE. The session cookie is our own HMAC token (@numinia/auth) —
+    thirdweb never issues trust here.
+  </p>
+  <LoginSpike client:load />
+  <p data-dignity-line>
+    <strong>Digital ownership, not digital rental.</strong> On today's internet, the data you
+    generate is controlled by a third party. In Numinia the keys — and everything you earn with
+    them — are yours.
+  </p>
+</BaseLayout>
+
+<style is:global>
+  /* Login progress (React island). Global scope: the markup renders
+     client-side, outside Astro's scoped hashing. */
+  [data-login-progress] {
+    margin: 1.5rem 0;
+  }
+  [data-login-progress] ol {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin: 0 0 0.6rem;
+  }
+  [data-login-progress] li {
+    display: flex;
+    align-items: center;
+  }
+  [data-login-progress] li:not(:first-child)::before {
+    content: '';
+    width: 3rem;
+    height: 2px;
+    background: var(--numinia-color-text-muted, #888);
+    opacity: 0.4;
+  }
+  [data-login-progress] li[data-step-state='done']::before,
+  [data-login-progress] li[data-step-state='active']::before {
+    background: var(--numinia-color-primary-strong, #018ea1);
+    opacity: 1;
+  }
+  [data-step-dot] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 2px solid var(--numinia-color-text-muted, #888);
+    font-size: 0.9rem;
+    opacity: 0.6;
+  }
+  li[data-step-state='active'] [data-step-dot] {
+    opacity: 1;
+    border-color: var(--numinia-color-primary-strong, #018ea1);
+    background: var(--numinia-color-primary-strong, #018ea1);
+    color: var(--numinia-color-beige, #f9ebdc);
+    font-weight: 700;
+  }
+  li[data-step-state='done'] [data-step-dot] {
+    opacity: 1;
+    border-color: var(--numinia-color-primary-strong, #018ea1);
+    color: var(--numinia-color-primary-strong, #018ea1);
+  }
+  [data-login-progress] p {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border-left: 3px solid var(--numinia-color-accent, #efa517);
+    background: var(--numinia-color-surface, rgba(0, 0, 0, 0.04));
+    font-size: 0.9rem;
+  }
+  [data-dignity-line] {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--numinia-color-text-muted, #888);
+    font-size: 0.9rem;
+    color: var(--numinia-color-text-muted, #666);
+    max-width: 46rem;
+  }
+  [data-dignity-line] strong {
+    color: var(--numinia-color-text, inherit);
+  }
+  [data-login-progress] p[data-next-step] {
+    border-left-color: transparent;
+    background: transparent;
+    color: var(--numinia-color-text-muted, #666);
+    font-size: 0.85rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0;
+  }
+</style>
