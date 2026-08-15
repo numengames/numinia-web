@@ -1,6 +1,6 @@
 {
   "name": "@numinia/analytics",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "Numinia analytics foundation — typed funnel events, consent-gated, privacy-first, transport-pluggable.",
   "license": "MIT",
   "type": "module",

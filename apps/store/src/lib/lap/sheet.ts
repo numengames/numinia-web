@@ -55,12 +55,12 @@ export const VALUE_KEYS = [
   'prestige',
   'prisma',
 ] as const;
-export const COMPETENCE_KEYS = COMPETENCES.map((competence) => competence.id);
+const COMPETENCE_KEYS = COMPETENCES.map((competence) => competence.id);
 
-export type IdentityKey = (typeof IDENTITY_KEYS)[number];
-export type TextKey = (typeof TEXT_KEYS)[number];
-export type AttributeKey = (typeof ATTRIBUTE_KEYS)[number];
-export type ValueKey = (typeof VALUE_KEYS)[number];
+type IdentityKey = (typeof IDENTITY_KEYS)[number];
+type TextKey = (typeof TEXT_KEYS)[number];
+type AttributeKey = (typeof ATTRIBUTE_KEYS)[number];
+type ValueKey = (typeof VALUE_KEYS)[number];
 
 export interface LapSheet {
   identity: Record<IdentityKey, string>;

@@ -23,6 +23,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.23.0',
+    date: '2026-08-15 18:45',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The L.A.P. sidebar folds to an icon rail — every section wears its Phosphor glyph',
+      },
+    ],
+  },
+  {
     version: 'v0.22.0',
     date: '2026-08-15 18:15',
     entries: [

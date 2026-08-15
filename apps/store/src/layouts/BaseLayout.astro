@@ -51,6 +51,8 @@ const urlFor = (target: SupportedLocale): string =>
       try {
         if (localStorage.getItem('numinia-modo') === 'nocturno')
           document.documentElement.dataset.modo = 'nocturno';
+        if (localStorage.getItem('numinia-lap-nav') === 'plegado')
+          document.documentElement.dataset.lapNav = 'plegado';
       } catch {}
     </script>
     <title>{title}</title>

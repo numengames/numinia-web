@@ -1,21 +1,21 @@
 /** Shared prop shapes for the sheet island — options arrive pre-localized
     from the Astro page so the island ships no domain tables. */
 
-export interface Option {
+interface Option {
   readonly id: string;
   readonly label: string;
 }
 
-export interface HouseOption extends Option {
+interface HouseOption extends Option {
   readonly branchId: string;
 }
 
-export interface BranchOption extends Option {
+interface BranchOption extends Option {
   readonly guildId: string;
   readonly houses: readonly HouseOption[];
 }
 
-export interface GuildOption extends Option {
+interface GuildOption extends Option {
   readonly branches: readonly BranchOption[];
 }
 

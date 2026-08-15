@@ -1,6 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["cucumber.js", "apps/store/scripts/**"],
+  "ignore": [
+    "apps/store/scripts/**",
+    "apps/store/src/scripts/khepri.js",
+    "cucumber.js",
+    "khepri/**"
+  ],
   "ignoreDependencies": [
     "prettier",
     "secretlint",

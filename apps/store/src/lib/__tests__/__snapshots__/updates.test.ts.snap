@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-15 18:45",
+    "entries": [
+      {
+        "text": "The L.A.P. sidebar folds to an icon rail — every section wears its Phosphor glyph",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.23.0",
+  },
+  {
     "date": "2026-08-15 18:15",
     "entries": [
       {

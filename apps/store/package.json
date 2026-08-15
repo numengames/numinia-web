@@ -1,7 +1,7 @@
 {
   "name": "@numinia/store",
-  "version": "0.22.0",
-  "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
+  "version": "0.23.0",
+  "description": "numinia.store \u2014 spikes and proof-of-concept track of the Numinia platform.",
   "license": "MIT",
   "type": "module",
   "private": true,
@@ -16,6 +16,7 @@
     "test:mutation": "stryker run"
   },
   "dependencies": {
+    "@astrojs/markdown-satteri": "^0.3.5",
     "@astrojs/node": "^11.1.2",
     "@astrojs/react": "^6.0.2",
     "@astrojs/sitemap": "^3.7.3",
@@ -29,7 +30,8 @@
     "react-dom": "^19.2.8",
     "thirdweb": "^5.121.0",
     "three": "^0.185.1",
-    "viem": "^2.55.16"
+    "viem": "^2.55.16",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

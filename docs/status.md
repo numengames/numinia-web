@@ -99,6 +99,15 @@
 - **Working mode from here (Oracle order)**: SMALL missions — one reviewable increment per unit, versioned, with visual evidence. Recorded in agent memory.
 - **MISSION-007 — The City chronicle ✅ (v0.20.0)**: /city/ is one four-chapter scroller carrying the numinia.com canon verbatim (city-landing.ts + art/seals), Khepri-dressed, with the waxing-moon reading progress; old subpages = host-agnostic redirect stubs. **D18 decided: EN root at the numinia.com merge**; full adaptation checklist in docs/merge-numinia-com.md (today: Cloudflare Workers assets, manual wrangler, no CI).
 - **MISSION-008 — The L.A.P. platform ✅ (v0.22.0)**: §13.11 shell ×5 locales; character sheet as the player's own .md file (File Over App + data dignity — export/import, tolerant parser, unit-pinned round-trip); Codex read-only from the domain; honest empty states for portals/loot/seasons; Nd6 dice. Legacy surveyed read-only (veda lifted by the Oracle). ja/ko sheet labels fall back to EN (D9 queue).
+- **v0.23.0**: LAP sidebar folds to an icon rail (Phosphor 18px, D17-style persistence); knip findings fixed (unlisted zod/satteri declared, kit ignored, exports trimmed).
+- **LAP iteration map from the Oracle's legacy screenshots (2026-08-15)** — small missions queue, in rough order of value/feasibility:
+  1. **Portals map** — the district map with 14 portal nodes (needs portal CONSTANTS in domain; type exists, data extractable from the manual/legacy).
+  2. **Codex book reader** — the RPG manual as a readable book (source already in docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md; index sidebar + page view, lore ES+EN).
+  3. **Stats (public)** — archive KPIs from real catalog data (counts by type, storage layers, redundancy health): §9.5 probes, feasible today.
+  4. **Sheet extras** — avatar image, PDF export beside MD, prestige/prisma KPI cards like the legacy view.
+  5. **Seasons pass timeline** — adventure nodes + rewards track (UI can precede Phase 3 with demo data only if the Oracle wants).
+  6. **Loot / digital goods** — NFT-linked collections (needs identity + write path).
+  7. **Settings / Users / admin zone** — needs MISSION-002 identity + rank gating (minRank pattern from legacy sidebar).
 - Next: Oracle's next punch-list items, one at a time.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)

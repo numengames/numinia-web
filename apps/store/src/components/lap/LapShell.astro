@@ -1,11 +1,13 @@
 ---
 /**
- * L.A.P. platform shell (§13.11): sidebar on surface, 40px rows, the active
- * section dressed in ink. Open to Nomads (D16) — no wall, ever; sections
- * that need persistence explain themselves instead of demanding login.
+ * L.A.P. platform shell (§13.11): sidebar on surface, 40px rows with
+ * Phosphor regular 18px icons, the active section dressed in ink, and a
+ * collapse toggle — folded, the rail keeps icons and tooltips (legacy LAP
+ * pattern, redrawn in Khepri). Open to Nomads (D16): no wall, ever.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../chrome/Icon.astro';
 import { LAP_UI } from '../../i18n/lap';
 
 export type LapSection =
@@ -27,21 +29,32 @@ const { locale, current, title, description } = Astro.props;
 const t = LAP_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
-const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: string }> = [
-  { id: 'overview', href: `${prefix}/lap/`, label: t.sections.overview },
-  { id: 'character', href: `${prefix}/lap/character/`, label: t.sections.character },
-  { id: 'codex', href: `${prefix}/lap/codex/`, label: t.sections.codex },
-  { id: 'portals', href: `${prefix}/lap/portals/`, label: t.sections.portals },
-  { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot },
-  { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons },
-  { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates },
+type IconName = 'house' | 'user' | 'book-open' | 'globe' | 'sword' | 'flame' | 'bell';
+const ITEMS: ReadonlyArray<{
+  id: LapSection | 'updates';
+  href: string;
+  label: string;
+  icon: IconName;
+}> = [
+  { id: 'overview', href: `${prefix}/lap/`, label: t.sections.overview, icon: 'house' },
+  { id: 'character', href: `${prefix}/lap/character/`, label: t.sections.character, icon: 'user' },
+  { id: 'codex', href: `${prefix}/lap/codex/`, label: t.sections.codex, icon: 'book-open' },
+  { id: 'portals', href: `${prefix}/lap/portals/`, label: t.sections.portals, icon: 'globe' },
+  { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot, icon: 'sword' },
+  { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons, icon: 'flame' },
+  { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates, icon: 'bell' },
 ];
 ---
 
 <BaseLayout locale={locale} title={title} description={description}>
   <div class="lap" data-lap-shell>
     <nav aria-label="L.A.P.">
-      <p class="etiqueta">L.A.P.</p>
+      <div class="cabecera">
+        <p class="etiqueta">L.A.P.</p>
+        <button type="button" class="plegar" data-lap-fold aria-label="L.A.P." title="L.A.P.">
+          <Icon name="caret-left" size={16} />
+        </button>
+      </div>
       <ul>
         {
           ITEMS.map((item) => (
@@ -49,9 +62,11 @@ const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: st
               <a
                 href={item.href}
                 aria-current={item.id === current ? 'page' : undefined}
+                title={item.label}
                 data-metric={`lap-nav-${item.id}`}
               >
-                {item.label}
+                <Icon name={item.icon} size={18} />
+                <span class="texto">{item.label}</span>
               </a>
             </li>
           ))
@@ -64,6 +79,22 @@ const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: st
   </div>
 </BaseLayout>
 
+<script>
+  /* Sidebar fold — a chrome preference like the mode (decision D17):
+     localStorage only, applied by the BaseLayout boot script pre-paint. */
+  const root = document.documentElement;
+  document.querySelector('[data-lap-fold]')?.addEventListener('click', () => {
+    const folded = root.dataset['lapNav'] === 'plegado';
+    if (folded) delete root.dataset['lapNav'];
+    else root.dataset['lapNav'] = 'plegado';
+    try {
+      localStorage.setItem('numinia-lap-nav', folded ? 'abierto' : 'plegado');
+    } catch {
+      /* private mode: the fold lives for this page */
+    }
+  });
+</script>
+
 <style>
   .lap {
     display: grid;
@@ -74,16 +105,44 @@ const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: st
     .lap {
       grid-template-columns: 220px minmax(0, 1fr);
     }
+    :global(html[data-lap-nav='plegado']) .lap {
+      grid-template-columns: 64px minmax(0, 1fr);
+    }
   }
-  /* §13.11 sidebar: surface ground, etiqueta group label, 40px rows. */
   nav {
     background: var(--superficie);
     border: 1px solid var(--linea);
     border-radius: var(--radio-marco);
     padding: var(--s3);
   }
+  .cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s1) var(--s2) var(--s2);
+  }
   .etiqueta {
-    margin: var(--s1) 0 var(--s2) var(--s2);
+    margin: 0;
+  }
+  .plegar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radio-control);
+    color: var(--texto-3);
+    cursor: pointer;
+    transition:
+      color 120ms var(--ciclo),
+      transform 120ms var(--ciclo);
+  }
+  .plegar:hover,
+  .plegar:focus-visible {
+    color: var(--texto);
   }
   ul {
     list-style: none;
@@ -96,6 +155,7 @@ const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: st
   a {
     display: flex;
     align-items: center;
+    gap: var(--s3);
     min-height: 40px;
     padding: 0 var(--s3);
     border-radius: var(--radio-control);
@@ -110,9 +170,23 @@ const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: st
     color: var(--texto);
     background: var(--elevada);
   }
-  /* The active section dresses in ink — the same pill in both modes. */
   a[aria-current='page'] {
     background: var(--texto);
     color: var(--fondo);
+  }
+  /* Folded rail: icons only, labels and wordgroup hidden, caret flips. */
+  :global(html[data-lap-nav='plegado']) .texto,
+  :global(html[data-lap-nav='plegado']) .etiqueta {
+    display: none;
+  }
+  :global(html[data-lap-nav='plegado']) .cabecera {
+    justify-content: center;
+  }
+  :global(html[data-lap-nav='plegado']) .plegar {
+    transform: rotate(180deg);
+  }
+  :global(html[data-lap-nav='plegado']) a {
+    justify-content: center;
+    padding: 0;
   }
 </style>
