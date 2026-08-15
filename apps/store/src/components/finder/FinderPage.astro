@@ -24,7 +24,7 @@ const tree = await loadFinderTree();
 
 <style>
   header p {
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-2);
   }
 </style>
 
@@ -33,7 +33,7 @@ const tree = await loadFinderTree();
   [data-finder] .panes {
     display: grid;
     grid-template-columns: minmax(11rem, 1fr) minmax(14rem, 1.4fr) minmax(16rem, 2fr);
-    gap: var(--numinia-space-3);
+    gap: var(--s4);
     align-items: start;
   }
   @media (max-width: 50rem) {
@@ -46,26 +46,38 @@ const tree = await loadFinderTree();
     margin: 0;
     padding: 0;
   }
+  /* Group labels: §4.3 etiqueta — Mono caps in amber (§13.11 sidebar). */
   [data-finder] h3 {
-    font-size: 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--numinia-color-text-muted);
-    margin: var(--numinia-space-2) 0 var(--numinia-space-1);
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+    margin: var(--s3) 0 var(--s2);
   }
+  /* §13.11 rows: 36px, secondary text; the active row is an ink pill. */
   [data-finder] button {
     font-family: inherit;
-    font-size: 0.85rem;
-    color: inherit;
-    background: var(--numinia-color-surface);
+    font-size: 0.875rem;
+    min-height: 36px;
+    color: var(--texto-2);
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--numinia-radius-sm);
+    border-radius: var(--radio-control);
     padding: 0.35rem 0.6rem;
     cursor: pointer;
+    transition:
+      background 120ms var(--ciclo),
+      color 120ms var(--ciclo);
+  }
+  [data-finder] button:hover {
+    color: var(--texto);
+    background: var(--superficie);
   }
   [data-finder] button[aria-pressed='true'] {
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
+    background: var(--texto);
+    color: var(--fondo);
   }
   [data-finder-tree] li,
   [data-finder-files] li,
@@ -83,42 +95,54 @@ const tree = await loadFinderTree();
     gap: var(--numinia-space-1);
     text-align: left;
   }
+  /* Formats and counts are measured: Mono (§4.2). */
   [data-finder-files] .format,
   [data-finder-tree] .count {
-    color: var(--numinia-color-text-muted);
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--texto-3);
     font-size: 0.75rem;
   }
   [data-finder] button[aria-pressed='true'] .format,
   [data-finder] button[aria-pressed='true'] .count {
-    color: #ffffff;
+    color: var(--fondo);
   }
+  /* §9.4 tarjeta. */
   [data-finder-preview] {
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-3);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    padding: var(--s4);
   }
   [data-finder-preview] img,
   [data-finder-preview] video,
   [data-finder-preview] canvas {
     max-width: 100%;
     height: auto;
-    border-radius: var(--numinia-radius-sm);
+    border-radius: var(--radio-control);
   }
   [data-finder-preview] audio {
     width: 100%;
   }
+  /* The download is the primary of the pane — ink (§13.11). */
   [data-finder-preview] a {
-    display: inline-block;
-    margin-top: var(--numinia-space-2);
-    padding: 0.4rem 1rem;
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    margin-top: var(--s3);
+    padding: 10px var(--s5);
+    border-radius: var(--radio-control);
+    background: var(--texto);
+    color: var(--fondo);
     text-decoration: none;
+    transition: background 120ms var(--ciclo);
+  }
+  [data-finder-preview] a:hover {
+    background: var(--texto-2);
   }
   [data-finder-queue] {
-    margin-top: var(--numinia-space-4);
-    border-top: 1px solid var(--numinia-color-surface);
-    padding-top: var(--numinia-space-2);
+    margin-top: var(--s5);
+    border-top: 1px solid var(--linea-f);
+    padding-top: var(--s3);
   }
 </style>

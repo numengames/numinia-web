@@ -23,7 +23,7 @@ const t = INSPECTOR_MESSAGES[locale];
 
 <style>
   header p {
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-2);
   }
   .privacy {
     font-size: 0.85rem;
@@ -35,15 +35,15 @@ const t = INSPECTOR_MESSAGES[locale];
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--numinia-space-1);
-    padding: var(--numinia-space-5);
-    border: 2px dashed var(--numinia-color-text-muted);
-    border-radius: var(--numinia-radius-md);
+    gap: var(--s2);
+    padding: var(--s7);
+    border: 2px dashed var(--linea-f);
+    border-radius: var(--radio-marco);
     cursor: pointer;
     text-align: center;
   }
   [data-inspector] .dropzone:focus-within {
-    border-color: var(--numinia-color-primary-strong);
+    border-color: var(--turquesa);
   }
   [data-inspector] .dropzone input {
     position: absolute;
@@ -53,20 +53,23 @@ const t = INSPECTOR_MESSAGES[locale];
     clip: rect(0 0 0 0);
   }
   [data-inspector] .pick {
-    color: var(--numinia-color-primary-strong);
+    color: var(--enlace);
     text-decoration: underline;
   }
+  /* §9.7: what happened + what to do, critical edge in grana. */
   [data-inspector] [role='alert'] {
-    background: var(--numinia-color-danger, #d33440);
-    color: #ffffff;
-    padding: var(--numinia-space-2);
-    border-radius: var(--numinia-radius-sm);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-left: 2px solid var(--grana);
+    color: var(--texto);
+    padding: var(--s3) var(--s4);
+    border-radius: var(--radio-marco);
   }
   [data-inspector] .result {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(14rem, 1fr);
-    gap: var(--numinia-space-3);
-    margin-top: var(--numinia-space-3);
+    gap: var(--s4);
+    margin-top: var(--s4);
     align-items: start;
   }
   @media (max-width: 50rem) {
@@ -77,20 +80,24 @@ const t = INSPECTOR_MESSAGES[locale];
   [data-inspector] canvas {
     max-width: 100%;
     height: auto;
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
+    background: var(--superficie);
+    border-radius: var(--radio-marco);
   }
+  /* §9.4 tarjeta; stats are probes. */
   [data-inspector-stats] {
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-3);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    padding: var(--s4);
   }
   [data-inspector-stats] h3 {
     margin-top: 0;
-    font-size: 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--numinia-color-text-muted);
+    letter-spacing: 0.1em;
+    color: var(--ambar);
   }
   [data-inspector-stats] dl {
     margin: 0;
@@ -98,15 +105,18 @@ const t = INSPECTOR_MESSAGES[locale];
   [data-inspector-stats] .row {
     display: flex;
     justify-content: space-between;
-    gap: var(--numinia-space-2);
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--numinia-color-background);
+    gap: var(--s3);
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--linea);
   }
   [data-inspector-stats] dt {
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-2);
   }
+  /* Measurements read in Mono tabular (§4.2, §13.11). */
   [data-inspector-stats] dd {
     margin: 0;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
     text-align: right;
   }

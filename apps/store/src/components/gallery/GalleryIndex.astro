@@ -41,21 +41,33 @@ const collections = await loadGallery();
 </BaseLayout>
 
 <style>
-  header p {
-    color: var(--numinia-color-text-muted);
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
+  header p {
+    color: var(--texto-2);
+    max-width: 65ch;
+  }
+  /* Collection names are labels: §4.3 etiqueta — Mono caps in amber. */
   h2 {
-    font-size: 1rem;
-    margin: var(--numinia-space-4) 0 var(--numinia-space-2);
-    color: var(--numinia-color-text-muted);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: var(--s6) 0 var(--s3);
+    color: var(--ambar);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
+  }
+  [data-gallery-empty] {
+    color: var(--texto-2);
   }
   ul {
     list-style: none;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: var(--numinia-space-3);
+    gap: var(--s4);
   }
 </style>

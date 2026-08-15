@@ -11,7 +11,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 ---
 
 <a href={`${prefix}/archive/${asset.id}/`} data-gallery-card data-metric="gallery-card">
-  <article>
+  <article class="tarjeta">
     {
       asset.thumbnailUrl ? (
         <img src={asset.thumbnailUrl} alt="" loading="lazy" width="280" height="280" />
@@ -30,29 +30,29 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     text-decoration: none;
     color: inherit;
   }
+  /* §9.4 tarjeta at platform density; §10-04: hover elevates, never moves. */
   article {
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-2);
+    padding: var(--s3);
     height: 100%;
-    transition: transform 120ms ease;
+    transition: background 120ms var(--ciclo);
   }
   a:hover article,
   a:focus-visible article {
-    transform: translateY(-2px);
+    background: var(--elevada);
   }
   img,
   .placeholder {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-background);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
   }
   .placeholder {
     display: grid;
     place-items: center;
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-3);
+    font-family: var(--mono);
     font-size: 1.2rem;
   }
   h3 {

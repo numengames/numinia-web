@@ -19,7 +19,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   data-format={asset.format}
   data-metric="archive-card"
 >
-  <article>
+  <article class="tarjeta">
     {
       asset.thumbnailUrl ? (
         <img src={asset.thumbnailUrl} alt="" loading="lazy" width="240" height="240" />
@@ -42,40 +42,48 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     text-decoration: none;
     color: inherit;
   }
+  /* §9.4 tarjeta at platform density; hover = surface step (§10-04). */
   article {
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-2);
+    padding: var(--s3);
     height: 100%;
+    transition: background 120ms var(--ciclo);
+  }
+  a:hover article,
+  a:focus-visible article {
+    background: var(--elevada);
   }
   img,
   .placeholder {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-background);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
   }
   .placeholder {
     display: grid;
     place-items: center;
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-3);
+    font-family: var(--mono);
     font-size: 1.2rem;
   }
   h3 {
     font-size: 0.95rem;
-    margin: var(--numinia-space-2) 0 var(--numinia-space-1);
+    margin: var(--s2) 0 var(--s1);
   }
+  /* Format is measured data: Mono etiqueta, color informs (§4.2, §3.4). */
   .badge {
     display: inline-block;
+    font-family: var(--mono);
     font-size: 0.7rem;
+    letter-spacing: 0.08em;
     padding: 0.1rem 0.45rem;
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
-    margin-right: var(--numinia-space-1);
+    border-radius: var(--radio-control);
+    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    color: var(--turquesa);
+    margin-right: var(--s1);
   }
   .badge-muted {
-    background: var(--numinia-color-text-muted);
+    color: var(--texto-3);
   }
 </style>

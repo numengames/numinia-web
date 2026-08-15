@@ -61,7 +61,7 @@ const CARDS = [
     {
       CARDS.map((card) => (
         <li>
-          <a href={card.href} data-metric={card.metric}>
+          <a href={card.href} class="tarjeta reveal" data-metric={card.metric}>
             <h2>{card.title}</h2>
             <p>{card.body}</p>
           </a>
@@ -72,39 +72,40 @@ const CARDS = [
 </BaseLayout>
 
 <style>
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
   header p {
-    color: var(--numinia-color-text-muted);
-    max-width: 42rem;
+    color: var(--texto-2);
+    max-width: 65ch;
   }
   ul {
     list-style: none;
     padding: 0;
+    margin-top: var(--s5);
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    gap: var(--numinia-space-3);
+    gap: var(--s4);
   }
+  /* §9.4 tarjeta: titular titulo.s scaled down for grid, body in secondary. */
   a {
     display: block;
     height: 100%;
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-3);
     color: inherit;
     text-decoration: none;
-    transition: transform 120ms ease;
-  }
-  a:hover,
-  a:focus-visible {
-    transform: translateY(-2px);
   }
   h2 {
-    margin: 0 0 var(--numinia-space-1);
-    font-size: 1rem;
-    color: var(--numinia-color-primary-strong);
+    margin: 0 0 var(--s2);
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--texto);
   }
   a p {
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.875rem;
+    line-height: 1.55;
     margin: 0;
+    color: var(--texto-2);
   }
 </style>

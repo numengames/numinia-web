@@ -6,6 +6,9 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     ignores: [
+      // Khepri kit copies ship as delivered (its LEEME + §13.1) — never linted.
+      'khepri/**',
+      'apps/store/src/scripts/khepri.js',
       '**/dist/**',
       '**/coverage/**',
       '**/.astro/**',

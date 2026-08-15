@@ -34,23 +34,29 @@ const ITEMS = [
 </nav>
 
 <style>
+  /* §13.11 tabs: the active one underlines in 2px amber. */
   nav {
     display: flex;
-    gap: var(--numinia-space-2);
+    gap: var(--s4);
     flex-wrap: wrap;
-    margin-bottom: var(--numinia-space-4);
-    border-bottom: 1px solid var(--numinia-color-surface);
-    padding-bottom: var(--numinia-space-2);
+    margin-bottom: var(--s5);
+    border-bottom: 1px solid var(--linea-f);
   }
   a {
-    color: inherit;
+    color: var(--texto-2);
     text-decoration: none;
     font-size: 0.9rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: var(--numinia-radius-sm);
+    padding: var(--s2) 2px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 120ms var(--ciclo);
+  }
+  a:hover,
+  a:focus-visible {
+    color: var(--texto);
   }
   a[aria-current='page'] {
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
+    color: var(--texto);
+    border-bottom-color: var(--ambar);
   }
 </style>

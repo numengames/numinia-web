@@ -67,6 +67,7 @@ const description = asset.description || `${asset.format.toUpperCase()} · CC0 �
           download
           target="_blank"
           rel="noopener noreferrer"
+          class="btn btn-primario"
           data-metric="archive-download"
         >
           {t.download}
@@ -79,30 +80,45 @@ const description = asset.description || `${asset.format.toUpperCase()} · CC0 �
 </BaseLayout>
 
 <style>
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
   img,
   video {
     max-width: 100%;
-    border-radius: var(--numinia-radius-md);
+    border-radius: var(--radio-marco);
   }
   section {
-    margin: var(--numinia-space-4) 0;
+    margin: var(--s5) 0;
   }
+  /* §13.11 table idiom: labels as amber etiqueta, values in Mono (measured). */
   dl {
     display: grid;
     grid-template-columns: max-content 1fr;
-    gap: var(--numinia-space-1) var(--numinia-space-3);
-    color: var(--numinia-color-text-muted);
+    gap: var(--s2) var(--s4);
   }
   dt {
-    font-weight: bold;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    font-weight: 500;
+    align-self: center;
   }
+  dd {
+    margin: 0;
+    font-family: var(--mono);
+    color: var(--texto-2);
+  }
+  /* The download is the ONE primary of this view (§9.1) — ink per §13.11. */
   a[data-metric='archive-download'] {
-    display: inline-block;
-    margin-top: var(--numinia-space-3);
-    padding: var(--numinia-space-2) var(--numinia-space-4);
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
-    border-radius: var(--numinia-radius-sm);
+    margin-top: var(--s4);
     text-decoration: none;
+  }
+  [data-download-unavailable] {
+    color: var(--texto-2);
   }
 </style>

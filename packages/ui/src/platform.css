@@ -1,0 +1,175 @@
+/**
+ * Numinia platform layer on top of the Khepri kit (khepri.css).
+ * Everything here IMPLEMENTS the design .md — values come from Khepri
+ * variables only; no new colors, no new durations, no new radii.
+ * Sections referenced: §4.3 type scale · §5 space/elevation · §9 components
+ * · §10 motion states · §13.2 menu · §13.11 platform decisions.
+ */
+
+/* ---- §4.3 Type scale (1.200, base 16) ------------------------------- */
+.display-l {
+  font-size: 3.583rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.display-m {
+  font-size: 2.986rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.titulo-l {
+  font-size: 2.488rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.titulo-m {
+  font-size: 2.074rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.titulo-s {
+  font-size: 1.728rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.cuerpo-l {
+  font-size: 1.44rem;
+  line-height: 1.55;
+}
+.cuerpo-s {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+.dato-xl {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.986rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* ---- §5 Elevation: Diurno gets the single shadow; Nocturno steps ----- */
+[data-modo='diurno'] .tarjeta {
+  box-shadow:
+    0 1px 2px rgba(20, 17, 15, 0.08),
+    0 8px 24px rgba(20, 17, 15, 0.06);
+}
+/* §10-04 elevación: hover raises one surface step, never moves. */
+a.tarjeta,
+.tarjeta[data-eleva] {
+  transition: background 120ms var(--ciclo);
+}
+a.tarjeta:hover,
+a.tarjeta:focus-visible,
+.tarjeta[data-eleva]:hover {
+  background: var(--elevada);
+}
+
+/* ---- §9.2 Estado pill: mono, dot in currentColor, border at 40% ------ */
+.pildora {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 2px var(--s3);
+  border-radius: var(--radio-control);
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+}
+.pildora::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ---- §9.5 Dato/KPI: a probe, not a card ------------------------------ */
+.kpi {
+  background: var(--fondo);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-marco);
+  padding: var(--s4) var(--s5);
+}
+.kpi .etiqueta {
+  color: var(--texto-3);
+}
+
+/* ---- §13.11 Platform decision: the primary dresses in ink ------------ */
+/* #017C8D stays the product-game/marketing primary; on the platform the
+   main action is the same ink pill as every active state. */
+.btn-primario {
+  background: var(--texto);
+  color: var(--fondo);
+}
+.btn-primario:hover,
+.btn-primario:focus-visible {
+  background: var(--texto-2);
+}
+.btn-primario:active {
+  background: var(--texto-3);
+}
+
+/* ---- Active dresses in ink (§9.8): shared pill for current things ---- */
+.tinta-activa {
+  background: var(--texto);
+  color: var(--fondo);
+  border-radius: var(--radio-control);
+}
+
+/* ---- §6.2 Materia: circuit relief on Nocturno heroes only ------------ */
+/* Baked at 5.5% visibility; never in Diurno, never behind long reading. */
+html:not([data-modo='diurno']) [data-materia='relieve'] {
+  background-image: url('./assets/textura-relieve-nocturno-768.webp');
+  background-position: center;
+  background-size: cover;
+}
+
+/* ---- §13.2 Menu: entries in Mono etiqueta, active = 2px amber -------- */
+.menu-entrada {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+  text-decoration: none;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+  transition: color 120ms var(--ciclo);
+}
+.menu-entrada:hover,
+.menu-entrada:focus-visible {
+  color: var(--texto);
+}
+.menu-entrada[aria-current] {
+  color: var(--texto);
+  border-bottom-color: var(--ambar);
+}
+
+/* ---- §10-03 Signal sweep over the binaria (max one per view) --------- */
+@media (prefers-reduced-motion: no-preference) {
+  .binaria[data-barrido] {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--turquesa) 60%, transparent) 50%,
+        transparent 100%
+      )
+      no-repeat;
+    background-size: 30% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: barrido 8s linear infinite;
+  }
+}
+@keyframes barrido {
+  from {
+    background-position: -30% 0;
+  }
+  to {
+    background-position: 130% 0;
+  }
+}

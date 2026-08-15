@@ -10,99 +10,95 @@ interface Props {
 const { locale } = Astro.props;
 const t = LANDING_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
+
+/** §6.1 — the canonical binary phrase; copied from §19.3, never invented. */
+const BINARIA =
+  '010011000110010101100001011101100110010100100000011101000110100001101001011011100110011101110011001000000110001001100101011101000111010001100101011100100010000001110100011010000110000101101110001000000111011101100101001000000110011001101111011101010110111001100100001000000111010001101000011001010110110100101110' +
+  'x'.repeat(60);
+
+const PILLARS = [
+  { href: `${prefix}/city/`, metric: 'landing-pillar-city', text: t.pillarCity },
+  { href: `${prefix}/assets/`, metric: 'landing-pillar-assets', text: t.pillarAssets },
+  { href: `${prefix}/lap/`, metric: 'landing-pillar-lap', text: t.pillarLap },
+];
 ---
 
 <BaseLayout locale={locale} title="Numinia" description={t.heroSub}>
-  <section class="hero">
-    <h1>{t.heroTitle}</h1>
-    <p>{t.heroSub}</p>
-    <div class="ctas">
-      <a href={`${prefix}/city/`} class="cta" data-metric="landing-city">{t.ctaCity}</a>
-      <a href={`${prefix}/assets/`} class="cta cta-secondary" data-metric="landing-assets">
+  <!-- §13.2 hero: the thesis, relief behind it (Nocturno only), the single
+       orchestrated moment of the piece — typing + staggered reveals. -->
+  <section class="hero" data-materia="relieve" data-escalonado>
+    <h1 class="display-m" data-tecleo>{t.heroTitle}</h1>
+    <p class="sub cuerpo-l reveal">{t.heroSub}</p>
+    <div class="ctas reveal">
+      <a href={`${prefix}/city/`} class="btn btn-primario" data-metric="landing-city">
+        {t.ctaCity}
+      </a>
+      <a href={`${prefix}/assets/`} class="btn btn-fantasma" data-metric="landing-assets">
         {t.ctaAssets}
       </a>
     </div>
+    <p class="binaria" data-barrido aria-hidden="true">{BINARIA}</p>
   </section>
 
-  <section>
-    <h2>{t.pillarsTitle}</h2>
+  <section class="doors">
+    <p class="etiqueta">{t.pillarsTitle}</p>
     <ul class="pillars">
-      <li>
-        <a href={`${prefix}/city/`} data-metric="landing-pillar-city">{t.pillarCity}</a>
-      </li>
-      <li>
-        <a href={`${prefix}/assets/`} data-metric="landing-pillar-assets">{t.pillarAssets}</a>
-      </li>
-      <li>
-        <a href={`${prefix}/lap/`} data-metric="landing-pillar-lap">{t.pillarLap}</a>
-      </li>
+      {
+        PILLARS.map((pillar) => (
+          <li>
+            <a href={pillar.href} class="tarjeta reveal" data-metric={pillar.metric}>
+              {pillar.text}
+            </a>
+          </li>
+        ))
+      }
     </ul>
   </section>
 </BaseLayout>
 
 <style>
   .hero {
-    padding: var(--numinia-space-5) 0;
+    padding: var(--s8) var(--s5) var(--s6);
+    margin: 0 calc(-1 * var(--s4));
     text-align: center;
+    border-radius: var(--radio-marco);
   }
   .hero h1 {
-    font-size: clamp(1.5rem, 4vw, 2.4rem);
-    color: var(--numinia-color-primary-strong);
-    margin: 0 0 var(--numinia-space-2);
+    color: var(--texto);
+    margin: 0 auto var(--s4);
+    max-width: 24ch;
   }
-  .hero p {
-    max-width: 42rem;
-    margin: 0 auto var(--numinia-space-4);
-    color: var(--numinia-color-text-muted);
+  .sub {
+    max-width: 56ch;
+    margin: 0 auto var(--s5);
+    color: var(--texto-2);
   }
   .ctas {
     display: flex;
-    gap: var(--numinia-space-2);
+    gap: var(--s3);
     justify-content: center;
     flex-wrap: wrap;
   }
-  .cta {
-    padding: 0.6rem 1.4rem;
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-primary-strong);
-    color: #ffffff;
+  .btn {
     text-decoration: none;
   }
-  .cta-secondary {
-    background: var(--numinia-color-surface);
-    color: inherit;
-    border: 1px solid var(--numinia-color-text-muted);
+  .hero .binaria {
+    margin: var(--s7) auto 0;
+    max-width: 100%;
   }
-  section + section {
-    margin-top: var(--numinia-space-5);
-  }
-  h2 {
-    font-size: 1.1rem;
-    color: var(--numinia-color-primary-strong);
-  }
-  section p,
-  li {
-    line-height: 1.6;
+  .doors {
+    margin-top: var(--s8);
   }
   .pillars {
     list-style: none;
     padding: 0;
+    margin: var(--s4) 0 0;
     display: grid;
-    gap: var(--numinia-space-2);
+    gap: var(--s4);
   }
   .pillars a {
     display: block;
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-2) var(--numinia-space-3);
-    color: inherit;
+    color: var(--texto);
     text-decoration: none;
-  }
-  .pillars a:hover,
-  .pillars a:focus-visible {
-    outline: 1px solid var(--numinia-color-primary-strong);
-  }
-  .soon {
-    color: var(--numinia-color-text-muted);
   }
 </style>

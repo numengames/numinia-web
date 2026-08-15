@@ -132,21 +132,25 @@ const NAV = [
     gap: var(--s1);
     flex-wrap: wrap;
   }
+  /* §13.2 menu: entries in Mono etiqueta caps; active = 2px amber underline. */
   nav a {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: var(--texto-2);
     text-decoration: none;
-    padding: 6px var(--s3);
-    border-radius: var(--radio-control);
+    padding: 6px var(--s2);
+    border-bottom: 2px solid transparent;
     transition: color 120ms var(--ciclo);
   }
   nav a:hover,
   nav a:focus-visible {
     color: var(--texto);
   }
-  /* §13.11 — active dresses in ink: ink pill, paper text, both modes. */
   nav a[aria-current='page'] {
-    background: var(--texto);
-    color: var(--fondo);
+    color: var(--texto);
+    border-bottom-color: var(--ambar);
   }
   .tools {
     margin-left: auto;

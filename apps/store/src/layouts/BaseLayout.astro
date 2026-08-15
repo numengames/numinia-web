@@ -1,5 +1,9 @@
 ---
 import '@numinia/ui/tokens.css';
+import '@numinia/ui/platform.css';
+// Khepri motion (§13.1 kit + integration) ships INLINE: the landing budget
+// forbids external JS on Layer 0 pages, and the kit is ~2KB.
+import khepriMotion from '../scripts/khepri.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import SiteHeader from '../components/chrome/SiteHeader.astro';
 import SiteFooter from '../components/chrome/SiteFooter.astro';
@@ -72,6 +76,7 @@ const urlFor = (target: SupportedLocale): string =>
     <script>
       import '../scripts/metrics';
     </script>
+    <script is:inline set:html={khepriMotion} />
   </body>
 </html>
 

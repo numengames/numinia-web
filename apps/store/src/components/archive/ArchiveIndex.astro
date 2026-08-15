@@ -101,51 +101,76 @@ const presentFormats = ASSET_FORMATS.filter((format) =>
 </script>
 
 <style>
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
   header p {
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-2);
+    max-width: 65ch;
   }
   search {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--numinia-space-2);
-    margin: var(--numinia-space-4) 0;
+    gap: var(--s3);
+    margin: var(--s5) 0;
     align-items: center;
   }
+  /* §9.3 field: base ground, strong hairline, control radius. */
   input[type='search'] {
     flex: 1 1 16rem;
-    padding: var(--numinia-space-2);
-    border: 1px solid var(--numinia-color-text-muted);
-    border-radius: var(--numinia-radius-sm);
-    background: var(--numinia-color-surface);
+    padding: 10px var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
     color: inherit;
     font-family: inherit;
+    font-size: 1rem;
+  }
+  input[type='search']::placeholder {
+    color: var(--texto-3);
   }
   [data-format-filters] {
     display: flex;
-    gap: var(--numinia-space-1);
+    gap: var(--s2);
     flex-wrap: wrap;
   }
+  /* §9.8 — the chosen option dresses in ink; formats read in Mono. */
   button {
-    font-family: inherit;
+    font-family: var(--mono);
     font-size: 0.8rem;
-    padding: 0.3rem 0.7rem;
-    border-radius: var(--numinia-radius-sm);
-    border: 1px solid var(--numinia-color-text-muted);
-    background: var(--numinia-color-surface);
-    color: inherit;
+    letter-spacing: 0.05em;
+    min-height: 32px;
+    padding: 4px var(--s3);
+    border-radius: var(--radio-control);
+    border: 1px solid var(--linea-f);
+    background: transparent;
+    color: var(--texto-2);
     cursor: pointer;
+    transition:
+      background 120ms var(--ciclo),
+      color 120ms var(--ciclo);
+  }
+  button:hover {
+    color: var(--texto);
+    border-color: var(--verdemar);
   }
   button[aria-pressed='true'] {
-    background: var(--numinia-color-primary-strong);
-    border-color: var(--numinia-color-primary-strong);
-    color: #ffffff;
+    background: var(--texto);
+    border-color: var(--texto);
+    color: var(--fondo);
+  }
+  [data-archive-empty],
+  [data-archive-no-results] {
+    color: var(--texto-2);
   }
   ul {
     list-style: none;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-    gap: var(--numinia-space-3);
+    gap: var(--s4);
   }
   .visually-hidden {
     position: absolute;

@@ -45,31 +45,40 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   article {
     max-width: 46rem;
   }
+  /* Lore is level II: titles affirm in Sans ink (§4.2, §11). */
   h1 {
-    color: var(--numinia-color-primary-strong);
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--texto);
   }
   h2 {
-    font-size: 1.1rem;
-    color: var(--numinia-color-primary-strong);
-    margin-top: var(--numinia-space-4);
+    font-size: 1.728rem;
+    font-weight: 600;
+    color: var(--texto);
+    margin-top: var(--s6);
   }
   p {
-    line-height: 1.7;
+    line-height: 1.55;
   }
   .language-notice {
-    color: var(--numinia-color-text-muted);
-    font-size: 0.85rem;
+    color: var(--texto-3);
+    font-size: 0.875rem;
   }
   .next {
     display: flex;
     flex-direction: column;
-    gap: var(--numinia-space-1);
-    margin-top: var(--numinia-space-4);
-    border-top: 1px solid var(--numinia-color-surface);
-    padding-top: var(--numinia-space-3);
+    gap: var(--s2);
+    margin-top: var(--s6);
+    border-top: 1px solid var(--linea-f);
+    padding-top: var(--s4);
   }
   .next a {
-    color: var(--numinia-color-primary-strong);
+    color: var(--enlace);
     text-decoration: none;
+  }
+  .next a:hover,
+  .next a:focus-visible {
+    text-decoration: underline;
   }
 </style>

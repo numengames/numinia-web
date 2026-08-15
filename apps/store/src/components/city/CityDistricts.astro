@@ -58,32 +58,38 @@ const SPACES: Readonly<Record<string, readonly string[]>> = {
     max-width: 52rem;
   }
   h1 {
-    color: var(--numinia-color-primary-strong);
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--texto);
   }
   p {
-    line-height: 1.7;
+    line-height: 1.55;
   }
   .language-notice {
-    color: var(--numinia-color-text-muted);
-    font-size: 0.85rem;
+    color: var(--texto-3);
+    font-size: 0.875rem;
   }
   .cards {
     list-style: none;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: var(--numinia-space-2);
+    gap: var(--s4);
   }
+  /* §9.4 tarjeta at platform density. */
   .cards li {
-    background: var(--numinia-color-surface);
-    border-radius: var(--numinia-radius-md);
-    padding: var(--numinia-space-2) var(--numinia-space-3);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    padding: var(--s3) var(--s4);
   }
+  /* The Ágora is the center: seafoam hairline marks it. */
   .agora {
-    border: 1px solid var(--numinia-color-primary-strong);
+    border-color: var(--verdemar);
   }
   .cards h3 {
-    margin: 0 0 var(--numinia-space-1);
+    margin: 0 0 var(--s2);
     font-size: 0.95rem;
   }
   .cards p {
@@ -91,6 +97,6 @@ const SPACES: Readonly<Record<string, readonly string[]>> = {
     margin: 0.3rem 0;
   }
   .spaces {
-    color: var(--numinia-color-text-muted);
+    color: var(--texto-3);
   }
 </style>
