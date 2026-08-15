@@ -37,6 +37,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [docs/decisions/ADR-015](./decisions/ADR-015-astro-7.md)                             | Astro 7                                |
 | [docs/decisions/ADR-016](./decisions/ADR-016-analytics-foundation.md)                | Analytics foundation                   |
 | [docs/decisions/ADR-017](./decisions/ADR-017-lineage-consolidation.md)               | Lineage consolidation                  |
+| [docs/decisions/ADR-018](./decisions/ADR-018-write-path.md)                          | The write path                         |
 
 ## State — where we are and what is unknown
 

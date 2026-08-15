@@ -124,3 +124,12 @@ hot for A — and D when Phase 4 arrives.** Concretely:
 _Prepared 2026-08-16 (night) by the digital agent, by standing order
 ("mejora lo que toque"). No writes were implemented; this page unblocks
 the session that decides them._
+
+---
+
+## RESOLVED — 2026-08-16, in-session
+
+The Oracle adopted the recommendation in full: **[ADR-018](./decisions/ADR-018-write-path.md)**
+(A as spine, C as doctrine, D19 census public, D20 uploads via PR review,
+D21/D22 nothing personal server-side). D23 and D4 remain open there.
+This dossier stays as the option map behind that decision.
