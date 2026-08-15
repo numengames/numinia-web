@@ -56,6 +56,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [missions/Definition_of_Done_v0.2.0.md](../missions/Definition_of_Done_v0.2.0.md) | When work may close       |
 | [docs/remote-checklist.md](./remote-checklist.md)                                 | Push-day runbook          |
 | [docs/deploy-runbook.md](./deploy-runbook.md)                                     | How numinia.com ships     |
+| [docs/adr-write-path-dossier.md](./adr-write-path-dossier.md)                     | Write-path option map     |
 
 ## Missions — what was promised and delivered
 
