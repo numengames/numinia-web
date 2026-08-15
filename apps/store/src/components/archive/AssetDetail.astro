@@ -1,0 +1,105 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ModelViewer } from '../viewer/ModelViewer';
+import { ARCHIVE_MESSAGES } from '../../i18n/messages';
+import { downloadUrl } from '../../lib/archive';
+import type { CatalogedAsset } from '../../lib/data';
+
+interface Props {
+  entry: CatalogedAsset;
+  locale: SupportedLocale;
+}
+
+const { entry, locale } = Astro.props;
+const { asset, category } = entry;
+const t = ARCHIVE_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const binaryUrl = downloadUrl(asset);
+const description = asset.description || `${asset.format.toUpperCase()} · CC0 · Numinia`;
+---
+
+<BaseLayout locale={locale} title={`${asset.name} — Numinia`}>
+  <Fragment slot="head">
+    <meta name="description" content={description} />
+    <meta property="og:title" content={asset.name} />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content={description} />
+    {asset.thumbnailUrl && <meta property="og:image" content={asset.thumbnailUrl} />}
+  </Fragment>
+
+  <nav>
+    <a href={`${prefix}/archive/`} data-metric="archive-back">{t.backToArchive}</a>
+  </nav>
+
+  <article>
+    <h1>{asset.name}</h1>
+    {asset.description && <p>{asset.description}</p>}
+
+    <section aria-label="preview">
+      {asset.format === 'png' || asset.format === 'jpg' ? (
+        binaryUrl ? (
+          <img src={binaryUrl} alt={asset.name} loading="lazy" />
+        ) : (
+          <p>{t.downloadUnavailable}</p>
+        )
+      ) : asset.format === 'mp3' ? (
+        binaryUrl ? <audio controls src={binaryUrl}></audio> : <p>{t.downloadUnavailable}</p>
+      ) : asset.format === 'mp4' ? (
+        binaryUrl ? <video controls src={binaryUrl}></video> : <p>{t.downloadUnavailable}</p>
+      ) : asset.format === 'hyp' ? (
+        <p>{t.worldFileNote}</p>
+      ) : (
+        <ModelViewer client:visible url={binaryUrl} kind={asset.format === 'vrm' ? 'vrm' : 'glb'} />
+      )}
+    </section>
+
+    <dl>
+      <dt>{t.format}</dt>
+      <dd>{asset.format.toUpperCase()}</dd>
+      <dt>{t.category}</dt>
+      <dd>{category}</dd>
+      <dt>{t.license}</dt>
+      <dd>{asset.license}</dd>
+    </dl>
+
+    {
+      binaryUrl ? (
+        <a href={binaryUrl} download data-metric="archive-download" rel="noopener">
+          {t.download}
+        </a>
+      ) : (
+        <p data-download-unavailable>{t.downloadUnavailable}</p>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  img,
+  video {
+    max-width: 100%;
+    border-radius: var(--numinia-radius-md);
+  }
+  section {
+    margin: var(--numinia-space-4) 0;
+  }
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--numinia-space-1) var(--numinia-space-3);
+    color: var(--numinia-color-text-muted);
+  }
+  dt {
+    font-weight: bold;
+  }
+  a[data-metric='archive-download'] {
+    display: inline-block;
+    margin-top: var(--numinia-space-3);
+    padding: var(--numinia-space-2) var(--numinia-space-4);
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+    border-radius: var(--numinia-radius-sm);
+    text-decoration: none;
+  }
+</style>

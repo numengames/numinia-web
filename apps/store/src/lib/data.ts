@@ -41,3 +41,69 @@ export async function loadFixtureCatalog(fixturePath?: string): Promise<readonly
   const raw = await readFile(resolved, 'utf8');
   return parseAssetCatalog(JSON.parse(raw));
 }
+
+// ---------------------------------------------------------------------------
+// Multi-catalog archive (MISSION-001)
+// ---------------------------------------------------------------------------
+
+export const ASSET_CATEGORIES = [
+  'models',
+  'avatars',
+  'worlds',
+  'audio',
+  'video',
+  'images',
+] as const;
+export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
+
+const CATALOG_PATHS: Readonly<Record<AssetCategory, string>> = {
+  models: 'data/assets/numinia-assets.json',
+  avatars: 'data/avatars/numinia-avatars.json',
+  worlds: 'data/worlds/numinia-worlds.json',
+  audio: 'data/audio/numinia-audio.json',
+  video: 'data/video/numinia-video.json',
+  images: 'data/images/numinia-images.json',
+  // 3dprint deliberately absent: the catalog is 404 (data-doctor report).
+};
+
+export interface CatalogedAsset {
+  readonly asset: Asset;
+  readonly category: AssetCategory;
+}
+
+export async function fetchAllCatalogs(
+  config: DataSourceConfig,
+): Promise<readonly CatalogedAsset[]> {
+  const results: CatalogedAsset[] = [];
+  for (const category of ASSET_CATEGORIES) {
+    const url = catalogUrl(config, CATALOG_PATHS[category]);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${category} catalog: HTTP ${response.status} (${url})`);
+    }
+    for (const asset of parseAssetCatalog(await response.json())) {
+      results.push({ asset, category });
+    }
+  }
+  return results;
+}
+
+export async function loadFixtureCatalogs(): Promise<readonly CatalogedAsset[]> {
+  const { readFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const raw = JSON.parse(
+    await readFile(join(process.cwd(), 'fixtures', 'catalogs.json'), 'utf8'),
+  ) as Record<string, unknown>;
+  const results: CatalogedAsset[] = [];
+  for (const category of ASSET_CATEGORIES) {
+    for (const asset of parseAssetCatalog(raw[category])) {
+      results.push({ asset, category });
+    }
+  }
+  return results;
+}
+
+/** The public archive shows only published, non-draft assets. */
+export function publicAssets(all: readonly CatalogedAsset[]): readonly CatalogedAsset[] {
+  return all.filter(({ asset }) => asset.isPublic && !asset.isDraft);
+}

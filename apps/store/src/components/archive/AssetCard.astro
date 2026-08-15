@@ -1,0 +1,81 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import type { CatalogedAsset } from '../../lib/data';
+
+interface Props {
+  entry: CatalogedAsset;
+  locale: SupportedLocale;
+}
+
+const { entry, locale } = Astro.props;
+const { asset, category } = entry;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<a
+  href={`${prefix}/archive/${asset.id}/`}
+  data-archive-card
+  data-name={asset.name.toLowerCase()}
+  data-format={asset.format}
+  data-metric="archive-card"
+>
+  <article>
+    {
+      asset.thumbnailUrl ? (
+        <img src={asset.thumbnailUrl} alt="" loading="lazy" width="240" height="240" />
+      ) : (
+        <div class="placeholder" aria-hidden="true">
+          {asset.format.toUpperCase()}
+        </div>
+      )
+    }
+    <h3>{asset.name}</h3>
+    <p>
+      <span class="badge">{asset.format.toUpperCase()}</span>
+      <span class="badge badge-muted">{category}</span>
+    </p>
+  </article>
+</a>
+
+<style>
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+  article {
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-2);
+    height: 100%;
+  }
+  img,
+  .placeholder {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-background);
+  }
+  .placeholder {
+    display: grid;
+    place-items: center;
+    color: var(--numinia-color-text-muted);
+    font-size: 1.2rem;
+  }
+  h3 {
+    font-size: 0.95rem;
+    margin: var(--numinia-space-2) 0 var(--numinia-space-1);
+  }
+  .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+    margin-right: var(--numinia-space-1);
+  }
+  .badge-muted {
+    background: var(--numinia-color-text-muted);
+  }
+</style>

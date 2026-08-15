@@ -21,6 +21,8 @@
   --numinia-color-text: #1a1a1a;
   --numinia-color-text-muted: #5a5a5a;
   --numinia-color-primary: var(--numinia-color-turquoise);
+  /* PROVISIONAL — darker primary for small white text (WCAG AA >= 4.5:1) */
+  --numinia-color-primary-strong: #01596b;
   --numinia-color-accent: var(--numinia-color-amber);
   --numinia-color-danger: var(--numinia-color-darkred);
 

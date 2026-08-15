@@ -105,11 +105,11 @@
 
 ### Phase 1 — Platform Viewer/Manager
 - [ ] Migrate data from `numinia-digital-goods-data` to new schema
-- [ ] SSG pages for each asset (one URL per asset, SEO)
-- [ ] Multi-format viewer (GLB, VRM, images, audio, video)
-- [ ] Search + filter client-side
+- [x] SSG pages for each asset (one URL per asset, SEO)
+- [x] Multi-format viewer (GLB, VRM, images, audio, video)
+- [x] Search + filter client-side
 - [ ] Download flow + batch download
-- [ ] i18n: 5 languages in UI
+- [x] i18n: 5 languages in UI
 - [ ] Season pass mockup (visual, not functional)
 - [ ] Adventure visualization (RPG-style presentation)
 

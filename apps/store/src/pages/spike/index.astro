@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { VRMViewer } from '../../components/spike/VRMViewer';
+import { ModelViewer } from '../../components/viewer/ModelViewer';
 import { fetchAvatarCatalog, loadFixtureCatalog } from '../../lib/data';
 import { env } from '../../lib/env';
 
@@ -27,5 +27,5 @@ const firstVrm = publicVrms[0] ?? null;
     {publicVrms.map((asset) => <li>{asset.name}</li>)}
   </ul>
   <h2>VRM island (client:visible)</h2>
-  <VRMViewer client:visible url={firstVrm ? firstVrm.modelFileUrl : null} />
+  <ModelViewer client:visible url={firstVrm ? firstVrm.modelFileUrl : null} kind="vrm" />
 </BaseLayout>

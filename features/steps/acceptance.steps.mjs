@@ -126,3 +126,54 @@ Then('every asset has a non-empty id and a known format', function () {
     assert.ok(ASSET_FORMATS.includes(asset.format), `unknown format ${asset.format}`);
   }
 });
+
+// --- archive (MISSION-001) ---
+
+Given('the committed multi-catalog fixture', async function () {
+  const raw = JSON.parse(
+    await readFile(path.join(repoRoot, 'apps', 'store', 'fixtures', 'catalogs.json'), 'utf8'),
+  );
+  this.publicIds = Object.values(raw)
+    .flat()
+    .filter((record) => record.is_public !== false && record.is_draft !== true)
+    .map((record) => record.id);
+  assert.ok(this.publicIds.length > 0, 'fixture has no public assets');
+});
+
+When('I collect the public asset ids', function () {
+  assert.ok(Array.isArray(this.publicIds));
+});
+
+Then('each asset has a detail page under every locale prefix', async function () {
+  const prefixes = ['', 'es', 'ja', 'ko', 'pt-br'];
+  for (const id of this.publicIds) {
+    for (const prefix of prefixes) {
+      const page = path.join(this.distDir, prefix, 'archive', id, 'index.html');
+      const html = await readFile(page, 'utf8').catch(() => null);
+      assert.ok(html, `missing page ${prefix || 'en'}/archive/${id}`);
+    }
+  }
+});
+
+Then('each detail page carries a download control or an unavailable notice', async function () {
+  for (const id of this.publicIds) {
+    const html = await readFile(path.join(this.distDir, 'archive', id, 'index.html'), 'utf8');
+    assert.ok(
+      html.includes('data-metric="archive-download"') || html.includes('data-download-unavailable'),
+      `page ${id} lacks download control and unavailable notice`,
+    );
+  }
+});
+
+Then('the archive index contains one card per public asset', async function () {
+  const html = await readFile(path.join(this.distDir, 'archive', 'index.html'), 'utf8');
+  const cards = html.match(/data-archive-card/g) ?? [];
+  // The inline filter script references the attribute once; discount it.
+  assert.equal(cards.length - 1, this.publicIds.length);
+});
+
+Then('the archive index offers search and format filters', async function () {
+  const html = await readFile(path.join(this.distDir, 'archive', 'index.html'), 'utf8');
+  assert.ok(html.includes('id="archive-search"'), 'search input missing');
+  assert.ok(html.includes('data-filter-format'), 'format filters missing');
+});

@@ -1,0 +1,18 @@
+---
+import AssetDetail from '../../../../components/archive/AssetDetail.astro';
+import { loadArchive } from '../../../../lib/archive';
+import type { CatalogedAsset } from '../../../../lib/data';
+
+export async function getStaticPaths() {
+  const archive = await loadArchive();
+  return archive.map((entry) => ({ params: { id: entry.asset.id }, props: { entry } }));
+}
+
+interface Props {
+  entry: CatalogedAsset;
+}
+
+const { entry } = Astro.props;
+---
+
+<AssetDetail entry={entry} locale="ja" />

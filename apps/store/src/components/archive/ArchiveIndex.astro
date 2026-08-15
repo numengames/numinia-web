@@ -1,0 +1,157 @@
+---
+import { ASSET_FORMATS, type SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AssetCard from './AssetCard.astro';
+import { ARCHIVE_MESSAGES } from '../../i18n/messages';
+import { loadArchive } from '../../lib/archive';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = ARCHIVE_MESSAGES[locale];
+const archive = await loadArchive();
+const presentFormats = ASSET_FORMATS.filter((format) =>
+  archive.some((entry) => entry.asset.format === format),
+);
+---
+
+<BaseLayout locale={locale} title={`${t.archiveTitle} — Numinia`}>
+  <header>
+    <h1>{t.archiveTitle}</h1>
+    <p>{t.archiveIntro}</p>
+  </header>
+
+  {
+    archive.length === 0 ? (
+      <p data-archive-empty>{t.emptyState}</p>
+    ) : (
+      <>
+        <search role="search">
+          <label>
+            <span class="visually-hidden">{t.searchPlaceholder}</span>
+            <input
+              id="archive-search"
+              type="search"
+              placeholder={t.searchPlaceholder}
+              data-metric="archive-search"
+            />
+          </label>
+          <div data-format-filters>
+            <button data-filter-format="" aria-pressed="true" data-metric="archive-filter-all">
+              {t.allFormats}
+            </button>
+            {presentFormats.map((format) => (
+              <button
+                data-filter-format={format}
+                aria-pressed="false"
+                data-metric={`archive-filter-${format}`}
+              >
+                {format.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </search>
+        <p data-archive-no-results hidden>
+          {t.noResults}
+        </p>
+        <ul data-archive-grid>
+          {archive.map((entry) => (
+            <li>
+              <AssetCard entry={entry} locale={locale} />
+            </li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+</BaseLayout>
+
+<script>
+  // Client-side search + format filter over the pre-rendered grid.
+  const input = document.querySelector<HTMLInputElement>('#archive-search');
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter-format]')];
+  const cards = [...document.querySelectorAll<HTMLElement>('[data-archive-card]')];
+  const noResults = document.querySelector<HTMLElement>('[data-archive-no-results]');
+  let activeFormat = '';
+
+  function apply(): void {
+    const query = (input?.value ?? '').trim().toLowerCase();
+    let visible = 0;
+    for (const card of cards) {
+      const matchesText = !query || (card.dataset['name'] ?? '').includes(query);
+      const matchesFormat = !activeFormat || card.dataset['format'] === activeFormat;
+      const show = matchesText && matchesFormat;
+      const item = card.closest('li');
+      if (item) item.hidden = !show;
+      if (show) visible += 1;
+    }
+    if (noResults) noResults.hidden = visible !== 0;
+  }
+
+  input?.addEventListener('input', apply);
+  for (const chip of chips) {
+    chip.addEventListener('click', () => {
+      activeFormat = chip.dataset['filterFormat'] ?? '';
+      for (const other of chips) other.setAttribute('aria-pressed', String(other === chip));
+      apply();
+    });
+  }
+</script>
+
+<style>
+  header p {
+    color: var(--numinia-color-text-muted);
+  }
+  search {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--numinia-space-2);
+    margin: var(--numinia-space-4) 0;
+    align-items: center;
+  }
+  input[type='search'] {
+    flex: 1 1 16rem;
+    padding: var(--numinia-space-2);
+    border: 1px solid var(--numinia-color-text-muted);
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-surface);
+    color: inherit;
+    font-family: inherit;
+  }
+  [data-format-filters] {
+    display: flex;
+    gap: var(--numinia-space-1);
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--numinia-radius-sm);
+    border: 1px solid var(--numinia-color-text-muted);
+    background: var(--numinia-color-surface);
+    color: inherit;
+    cursor: pointer;
+  }
+  button[aria-pressed='true'] {
+    background: var(--numinia-color-primary-strong);
+    border-color: var(--numinia-color-primary-strong);
+    color: #ffffff;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--numinia-space-3);
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+</style>

@@ -16,10 +16,10 @@ test('VRM avatar renders inside the Astro React island', async ({ page }) => {
   expect(Number(count)).toBeGreaterThan(0);
 
   // client:visible: the island hydrates when scrolled into view.
-  await page.locator('figure[data-vrm-status]').scrollIntoViewIfNeeded();
+  await page.locator('figure[data-viewer-status]').scrollIntoViewIfNeeded();
 
   // The island flips this attribute only after the VRM scene is added.
-  await expect(page.locator('[data-vrm-loaded="true"]')).toBeVisible({ timeout: 90_000 });
+  await expect(page.locator('[data-viewer-loaded="true"]')).toBeVisible({ timeout: 90_000 });
 
   // The canvas must have real WebGL content (not a blank context).
   const pixelSum = await page.evaluate(() => {
