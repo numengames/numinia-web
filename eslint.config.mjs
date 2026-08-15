@@ -42,4 +42,17 @@ export default tseslint.config(
       'no-restricted-syntax': 'off',
     },
   },
+  {
+    // Node ESM scripts (tooling, cucumber steps): runtime globals are real there.
+    files: ['scripts/**/*.mjs', 'features/**/*.mjs', 'apps/*/scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+        URL: 'readonly',
+        console: 'readonly',
+      },
+    },
+  },
 );
