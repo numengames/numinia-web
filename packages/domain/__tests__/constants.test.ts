@@ -18,6 +18,8 @@ import { COMPETENCES, COMPETENCE_DOMAINS } from '../src/constants/competences.js
 import { ARCHETYPES } from '../src/constants/archetypes.js';
 import { HUMORS } from '../src/constants/humors.js';
 import { SEALS, THRESHOLDS } from '../src/constants/seals.js';
+import { POSITIONS } from '../src/constants/positions.js';
+import { POSITION_IDS } from '../src/types/position.js';
 
 /** MISSION-000 Gherkin: every constant has all five UI locales populated. */
 function expectFullyLocalized(context: string, value: LocalizedString): void {
@@ -92,6 +94,31 @@ describe('five-locale completeness (MISSION-000 acceptance)', () => {
       expectFullyLocalized(`threshold ${t.id} name`, t.name);
       expectFullyLocalized(`threshold ${t.id} description`, t.description);
     }
+  });
+
+  it('positions are fully localized', () => {
+    for (const position of POSITIONS) {
+      expectFullyLocalized(`position ${position.id} name`, position.name);
+      expectFullyLocalized(`position ${position.id} description`, position.description);
+    }
+  });
+});
+
+describe('positions (ADR-013 — lore restrictions as inert data)', () => {
+  it('covers the fifteen position ids in manual order', () => {
+    expect(POSITIONS.map((p) => p.id)).toEqual([...POSITION_IDS]);
+  });
+
+  it('records exactly the four manual gender restrictions, verbatim', () => {
+    const restricted = Object.fromEntries(
+      POSITIONS.filter((p) => p.loreRestriction).map((p) => [p.id, p.loreRestriction?.gender]),
+    );
+    expect(restricted).toEqual({
+      pythia: 'women-only',
+      'runner-of-the-veil': 'men-only',
+      oneiromancer: 'men-only',
+      anacharchid: 'women-only',
+    });
   });
 });
 
