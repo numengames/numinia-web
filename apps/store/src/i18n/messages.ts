@@ -40,6 +40,7 @@ export interface ChromeMessages {
   readonly legalNotice: string;
   readonly languageSelector: string;
   readonly modeToggle: string;
+  readonly signIn: string;
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
@@ -64,6 +65,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de color',
+    signIn: 'Entrar en Numinia',
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
@@ -86,6 +88,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Legal notice',
     languageSelector: 'Language',
     modeToggle: 'Color mode',
+    signIn: 'Enter Numinia',
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
@@ -108,6 +111,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '法的通知',
     languageSelector: '言語',
     modeToggle: 'カラーモード',
+    signIn: 'ヌミニアに入る',
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
@@ -130,6 +134,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '법적 고지사항',
     languageSelector: '언어',
     modeToggle: '색상 모드',
+    signIn: '누미니아 입장',
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
@@ -152,6 +157,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de cor',
+    signIn: 'Entrar em Numinia',
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',

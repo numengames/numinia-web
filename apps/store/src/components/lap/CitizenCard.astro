@@ -1,0 +1,159 @@
+---
+/**
+ * The citizen card — the player area's own face (§2.4: the pixel register is
+ * where the world speaks). The scarab sprite lives on its OWN Nocturno canvas,
+ * framed and integer-scaled: the pixel register has no Diurno mode, so it
+ * keeps its night inside the light page instead of being recoloured.
+ * HUD counters are persisting data → Geist Mono (§9.6), never Pixelify.
+ */
+import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale].citizen;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const nomad = RANK_DEFINITIONS[0]!;
+---
+
+<section class="ciudadania" data-materia="relieve" data-citizen>
+  <div class="sello" aria-hidden="true">
+    <img src="/images/pixel/khepri-sprite-24.png" alt="" width="24" height="24" />
+  </div>
+  <div class="identidad">
+    <p class="etiqueta">{t.title}</p>
+    <p class="nombre" data-citizen-name>{t.noSession}</p>
+    <p class="pildora rango" data-citizen-rank>{nomad.name[locale]}</p>
+  </div>
+  <dl class="hud">
+    <div>
+      <dt>{t.seals}</dt>
+      <dd class="mono" data-citizen-seals>0<span>/8</span></dd>
+    </div>
+    <div>
+      <dt>{t.prisma}</dt>
+      <dd class="mono moneda" data-citizen-prisma>
+        <img src="/images/pixel/moneda-12.png" alt="" width="12" height="12" />
+        0
+      </dd>
+    </div>
+  </dl>
+  <a href={`${prefix}/lap/session/`} class="btn btn-primario" data-metric="citizen-enter" data-citizen-enter>
+    {t.enter}
+  </a>
+</section>
+
+<script>
+  /* A real session renames the card: address in Mono truncated (§13.11). */
+  void fetch('/api/auth/session')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((session: { address: string; rank: string } | null) => {
+      if (!session) return;
+      const card = document.querySelector('[data-citizen]');
+      const name = card?.querySelector('[data-citizen-name]');
+      if (name) {
+        name.textContent = `${session.address.slice(0, 6)}…${session.address.slice(-4)}`;
+        name.classList.add('mono');
+        name.setAttribute('title', session.address);
+      }
+      card?.querySelector('[data-citizen-enter]')?.setAttribute('hidden', '');
+    })
+    .catch(() => undefined);
+</script>
+
+<style>
+  .ciudadania {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s5);
+    padding: var(--s5);
+    margin-bottom: var(--s6);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  /* §2.4 framed pixel tile: its own night, integer scale, nearest neighbour. */
+  .sello {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    background: #14110f;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  .sello img {
+    width: 72px;
+    height: 72px;
+    image-rendering: pixelated;
+  }
+  .identidad {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  .identidad .etiqueta {
+    margin: 0 0 var(--s2);
+  }
+  .nombre {
+    margin: 0 0 var(--s3);
+    font-size: 1.44rem;
+    font-weight: 600;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+  }
+  .rango {
+    color: var(--verdemar);
+  }
+  /* HUD counters: persisting data reads in Mono tabular (§9.6). */
+  .hud {
+    display: flex;
+    gap: var(--s6);
+    margin: 0;
+  }
+  .hud dt {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+  }
+  .hud dd {
+    margin: var(--s1) 0 0;
+    font-size: 1.728rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto);
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+  }
+  .hud dd span {
+    font-size: 1rem;
+    color: var(--texto-3);
+  }
+  .moneda img {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+  }
+  .ciudadania .btn {
+    text-decoration: none;
+  }
+  @media (max-width: 40rem) {
+    .ciudadania {
+      gap: var(--s4);
+    }
+    .sello {
+      width: 72px;
+      height: 72px;
+    }
+    .sello img {
+      width: 48px;
+      height: 48px;
+    }
+  }
+</style>

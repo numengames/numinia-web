@@ -54,6 +54,17 @@ const NAV = [
         <Icon name="sun" size={20} class="solo-nocturno" />
       </button>
       <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
+      <!-- The door is always in sight (§13.2 utilities): a Nomad can enter
+           from any page, and the icon fills once a session exists. -->
+      <a
+        href={`${prefix}/lap/session/`}
+        class="entrar"
+        aria-label={t.signIn}
+        title={t.signIn}
+        data-metric="chrome-sign-in"
+      >
+        <Icon name="user" size={20} />
+      </a>
     </div>
   </div>
 </header>
@@ -128,6 +139,24 @@ const NAV = [
     display: flex;
     align-items: center;
     gap: var(--s3);
+  }
+  .entrar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--texto-2);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    transition:
+      color 120ms var(--ciclo),
+      border-color 120ms var(--ciclo);
+  }
+  .entrar:hover,
+  .entrar:focus-visible {
+    border-color: var(--verdemar);
+    color: var(--texto);
   }
   .mode {
     display: inline-flex;

@@ -23,6 +23,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.26.0',
+    date: '2026-08-15 20:15',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The player area looks like one: your citizenship card, the scarab in pixels, seals and prisma at a glance',
+      },
+      {
+        type: 'UPD',
+        text: 'The door is always in sight — enter Numinia from any page of the city',
+      },
+    ],
+  },
+  {
     version: 'v0.25.0',
     date: '2026-08-15 19:45',
     entries: [

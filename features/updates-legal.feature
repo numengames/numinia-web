@@ -7,7 +7,7 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     Given the store application has been built
     Then the updates page exists under every locale prefix
     And the updates page lists every version from "1" to "15"
-    And the updates page lists version "v0.16.0" and "v0.25.0"
+    And the updates page lists version "v0.16.0" and "v0.26.0"
 
   Scenario: Legal pages exist and declare their draft status
     Given the store application has been built

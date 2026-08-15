@@ -19,6 +19,15 @@ export interface LapMessages {
     readonly settings: string;
   };
   readonly foldNav: string;
+  readonly citizen: {
+    readonly title: string;
+    readonly noSession: string;
+    readonly rankLabel: string;
+    readonly seals: string;
+    readonly prisma: string;
+    readonly enter: string;
+    readonly dashboardIntro: string;
+  };
   readonly stats: {
     readonly title: string;
     readonly intro: string;
@@ -182,6 +191,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_ES,
     },
     foldNav: 'Plegar o desplegar la navegación',
+    citizen: {
+      title: 'Tu ciudadanía',
+      noSession: 'Sin sesión — nómada de paso',
+      rankLabel: 'Rango',
+      seals: 'Sellos',
+      prisma: 'Prisma',
+      enter: 'Entrar en Numinia',
+      dashboardIntro:
+        'Tu puesto en la ciudad: quién eres, qué llevas y qué puertas tienes abiertas.',
+    },
     stats: {
       title: 'Estadísticas del Archivo',
       intro: 'Números reales del catálogo público — lo que hay, dónde vive y cuán a salvo está.',
@@ -256,6 +275,15 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'Collapse or expand the navigation',
+    citizen: {
+      title: 'Your citizenship',
+      noSession: 'No session — a Nomad passing through',
+      rankLabel: 'Rank',
+      seals: 'Seals',
+      prisma: 'Prisma',
+      enter: 'Enter Numinia',
+      dashboardIntro: 'Your post in the city: who you are, what you carry, which doors stand open.',
+    },
     stats: {
       title: 'Archive Statistics',
       intro: 'Real numbers from the public catalog — what exists, where it lives, how safe it is.',
@@ -330,6 +358,15 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'ナビゲーションの折りたたみ',
+    citizen: {
+      title: 'あなたの市民権',
+      noSession: 'セッションなし — 通りすがりのノマド',
+      rankLabel: 'ランク',
+      seals: '印章',
+      prisma: 'プリズマ',
+      enter: 'ヌミニアに入る',
+      dashboardIntro: '都市でのあなたの立ち位置:誰であり、何を携え、どの扉が開いているか。',
+    },
     stats: {
       title: 'アーカイブ統計',
       intro: '公開カタログの実数 — 何があり、どこに保存され、どれほど安全か。',
@@ -401,6 +438,15 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: '내비게이션 접기/펼치기',
+    citizen: {
+      title: '당신의 시민권',
+      noSession: '세션 없음 — 지나가는 노마드',
+      rankLabel: '랭크',
+      seals: '인장',
+      prisma: '프리즈마',
+      enter: '누미니아 입장',
+      dashboardIntro: '도시에서의 당신의 자리: 누구이며, 무엇을 지녔고, 어떤 문이 열려 있는지.',
+    },
     stats: {
       title: '아카이브 통계',
       intro: '공개 카탈로그의 실제 수치 — 무엇이 있고, 어디에 저장되며, 얼마나 안전한지.',
@@ -506,6 +552,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       },
     },
     foldNav: 'Recolher ou expandir a navegação',
+    citizen: {
+      title: 'Sua cidadania',
+      noSession: 'Sem sessão — nômade de passagem',
+      rankLabel: 'Rank',
+      seals: 'Selos',
+      prisma: 'Prisma',
+      enter: 'Entrar em Numinia',
+      dashboardIntro:
+        'Seu posto na cidade: quem você é, o que carrega e quais portas estão abertas.',
+    },
     stats: {
       title: 'Estatísticas do Arquivo',
       intro: 'Números reais do catálogo público — o que existe, onde vive e quão seguro está.',

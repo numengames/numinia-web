@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-15 20:15",
+    "entries": [
+      {
+        "text": "The player area looks like one: your citizenship card, the scarab in pixels, seals and prisma at a glance",
+        "type": "UPD",
+      },
+      {
+        "text": "The door is always in sight — enter Numinia from any page of the city",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.26.0",
+  },
+  {
     "date": "2026-08-15 19:45",
     "entries": [
       {
