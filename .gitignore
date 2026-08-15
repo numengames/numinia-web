@@ -21,3 +21,6 @@ coverage/
 *.log
 stryker-setup-*.js
 apps/store/test-results/
+
+# Wrangler build artefacts (generated on every deploy build)
+.wrangler/

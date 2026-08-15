@@ -41,10 +41,20 @@
    - `/` anchors (`#semilla` `#ciudad` `#identidad` `#vida` `#juego`) — content
      now at `/city/#…`; anchors can't 301 server-side. Mitigation: `/` (platform
      landing) links La Ciudad above the fold; `/es/` likewise.
-4. **API routes** (`/api/auth/*`): NOT in the first merge — Workers assets is
-   static-only. When identity ships (MISSION-002 Steps 1–3), either
-   `@astrojs/cloudflare` adapter or a sibling Worker; `@numinia/auth` is
-   WinterCG-pure by design and runs on Workers unchanged.
+4. ~~**API routes**: not in the first merge~~ **RESOLVED 2026-08-15**: the
+   `@astrojs/cloudflare` adapter is wired behind `DEPLOY_TARGET=cloudflare`
+   (Node stays the default for local dev, CI and e2e), so `/api/auth/*` and
+   `/api/admin/*` ship with the site. Three changes made it portable:
+   committed content is now IMPORTED instead of read with `node:fs` (the
+   prerender runs inside a Worker), `src/lib/env.ts` names its keys one by one
+   so bundlers can replace them, and only NON-SECRET build vars are injected
+   via `vite.define` — a secret there would be compiled into the bundle.
+   Validated with `npx wrangler deploy --dry-run -c wrangler.jsonc`:
+   2000 assets, 296 KB gzipped, both custom domains, correct vars.
+   **Pending at deploy:** the adapter declares a `SESSION` KV binding (Astro
+   sessions); we do not use them, but the deploy may ask for a KV namespace —
+   create one or disable sessions. And the secrets go in with
+   `wrangler secret put` (never in the config file).
 5. **thirdweb allowed domains**: already include numinia.com/www — verified
    during MISSION-002 setup.
 6. **CI deploy**: GitHub Action with `CLOUDFLARE_API_TOKEN` — token creation

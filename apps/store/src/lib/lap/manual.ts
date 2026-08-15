@@ -6,8 +6,9 @@
  * structure around it (audit rule: the corpus is immutable).
  */
 
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+// The corpus is committed content: IMPORT it (portable to any runtime —
+// Cloudflare Workers have no node:fs) instead of reading the disk at build.
+import manualRaw from '../../../../../docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md?raw';
 
 export interface ManualTableBlock {
   readonly kind: 'table';
@@ -135,21 +136,8 @@ export function parseManual(raw: string): readonly ManualChapter[] {
 
 let cache: readonly ManualChapter[] | null = null;
 
-/** The manual, read once per build from the immutable seminal corpus. */
+/** The manual, parsed once per build from the immutable seminal corpus. */
 export async function loadManual(): Promise<readonly ManualChapter[]> {
-  if (!cache) {
-    const raw = await readFile(
-      join(
-        process.cwd(),
-        '..',
-        '..',
-        'docs',
-        'seminal',
-        'Numinia__El_juego_de_rol__manual_completo_.md',
-      ),
-      'utf8',
-    );
-    cache = parseManual(raw);
-  }
+  cache ??= parseManual(manualRaw);
   return cache;
 }

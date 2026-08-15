@@ -6,6 +6,10 @@
 
 import { parseAssetCatalog, type Asset } from '@numinia/domain';
 
+// Committed fixtures travel as imports: hermetic builds on any runtime.
+import avatarCatalogFixture from '../../fixtures/avatar-catalog.json';
+import catalogsFixture from '../../fixtures/catalogs.json';
+
 const RAW_BASE = 'https://raw.githubusercontent.com';
 
 export interface DataSourceConfig {
@@ -33,13 +37,14 @@ export async function fetchAvatarCatalog(config: DataSourceConfig): Promise<read
  * CI without weakening the loud-failure guarantee of the network path.
  */
 export async function loadFixtureCatalog(fixturePath?: string): Promise<readonly Asset[]> {
-  const { readFile } = await import('node:fs/promises');
-  const { join } = await import('node:path');
-  // Resolve from the app root (build cwd), not import.meta.url — prerender
-  // relocates modules into dist/ and would break relative resolution.
-  const resolved = fixturePath ?? join(process.cwd(), 'fixtures', 'avatar-catalog.json');
-  const raw = await readFile(resolved, 'utf8');
-  return parseAssetCatalog(JSON.parse(raw));
+  // A path argument still reads the disk (tests use it); the default path is
+  // the IMPORTED snapshot, so the build graph carries no node:fs — Cloudflare
+  // Workers have none, and the prerender runs inside one.
+  if (fixturePath) {
+    const { readFile } = await import('node:fs/promises');
+    return parseAssetCatalog(JSON.parse(await readFile(fixturePath, 'utf8')));
+  }
+  return parseAssetCatalog(avatarCatalogFixture);
 }
 
 // ---------------------------------------------------------------------------
@@ -89,11 +94,7 @@ export async function fetchAllCatalogs(
 }
 
 export async function loadFixtureCatalogs(): Promise<readonly CatalogedAsset[]> {
-  const { readFile } = await import('node:fs/promises');
-  const { join } = await import('node:path');
-  const raw = JSON.parse(
-    await readFile(join(process.cwd(), 'fixtures', 'catalogs.json'), 'utf8'),
-  ) as Record<string, unknown>;
+  const raw = catalogsFixture as Record<string, unknown>;
   const results: CatalogedAsset[] = [];
   for (const category of ASSET_CATEGORIES) {
     for (const asset of parseAssetCatalog(raw[category])) {

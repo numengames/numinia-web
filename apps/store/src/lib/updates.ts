@@ -4,8 +4,8 @@
  * record; rebuild versions are appended here as first-class data.
  */
 
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+// Committed record: imported, not read from disk (runtime-portable).
+import legacyChangelog from '../../../../docs/reference/legacy-changelog.md?raw';
 
 export type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
 
@@ -277,10 +277,7 @@ export function parseRoadmap(markdown: string): readonly RoadmapItem[] {
 }
 
 async function readRecord(): Promise<string> {
-  return readFile(
-    join(process.cwd(), '..', '..', 'docs', 'reference', 'legacy-changelog.md'),
-    'utf8',
-  );
+  return legacyChangelog;
 }
 
 /** The legacy "Incoming" roadmap, as displayed by the original LAP/updates page. */

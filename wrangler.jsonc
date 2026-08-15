@@ -1,0 +1,35 @@
+{
+  // Deploy target for numinia.com (MISSION-012). Inert until the Oracle runs
+  // `wrangler deploy`: nothing here reaches the internet by itself.
+  //
+  //   DEPLOY_TARGET=cloudflare npm run build --workspace=apps/store
+  //   npx wrangler deploy
+  //
+  // Secrets are NEVER in this file. Set them once with:
+  //   npx wrangler secret put THIRDWEB_SECRET_KEY
+  //   npx wrangler secret put AUTH_SESSION_SECRET
+  //   npx wrangler secret put ADMIN_WALLET_ADDRESSES
+  //   npx wrangler secret put GITHUB_TOKEN        (only when the write path lands)
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "numinia-platform",
+  "main": "apps/store/dist/server/entry.mjs",
+  "compatibility_date": "2026-08-15",
+  // Astro's Cloudflare adapter also writes apps/store/dist/server/wrangler.json
+  // (bindings it needs). This file is the DEPLOY config: domains + vars.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "apps/store/dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+  },
+  "routes": [
+    { "pattern": "numinia.com", "custom_domain": true },
+    { "pattern": "www.numinia.com", "custom_domain": true },
+  ],
+  "vars": {
+    "PUBLIC_SITE_URL": "https://numinia.com",
+    "GITHUB_REPO_OWNER": "PabloFMM",
+    "GITHUB_REPO_NAME": "numinia-digital-goods-data",
+    "DATA_SOURCE": "fixture",
+  },
+}
