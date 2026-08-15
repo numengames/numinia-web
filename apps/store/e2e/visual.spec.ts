@@ -8,6 +8,7 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { buildTriangleGlb } from './support/triangle-glb';
 
 // Baselines were rendered on the dev machine; CI runners draw fonts
 // differently, so the suite is local-only until baselines are regenerated
@@ -53,6 +54,18 @@ for (const { path, name } of PAGES) {
 }
 
 test('visual: archive detail (stable asset, viewer masked)', async ({ page }) => {
+  // Hermetic: the viewer island fetches the real model from the storage
+  // chain (R2/Arweave) — unreachable from this network on LaLiga block days
+  // and a flake source anywhere. The canvas is masked in the baseline, so a
+  // minimal local GLB keeps the pixels identical while letting the page
+  // reach networkidle. Real-model rendering is the spike test's job.
+  await page.route(/\.(glb|vrm)(\?.*)?$/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'model/gltf-binary',
+      body: buildTriangleGlb(),
+    }),
+  );
   // Navigate via the index so the test breaks loudly if the archive is empty.
   await page.goto('/archive/');
   await settle(page);

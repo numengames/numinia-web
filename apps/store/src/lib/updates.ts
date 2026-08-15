@@ -7,9 +7,9 @@
 // Committed record: imported, not read from disk (runtime-portable).
 import legacyChangelog from '../../../../docs/reference/legacy-changelog.md?raw';
 
-export type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
+type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
 
-export interface UpdateEntry {
+interface UpdateEntry {
   readonly type: UpdateEntryType;
   readonly text: string;
 }
@@ -254,7 +254,7 @@ export function newestVersion(updates: readonly UpdateVersion[]): string {
 /** The version the site footer advertises — always the newest timeline entry. */
 export const CURRENT_VERSION: string = newestVersion(REBUILD_UPDATES);
 
-export type RoadmapStatus = 'planned' | 'research';
+type RoadmapStatus = 'planned' | 'research';
 
 export interface RoadmapItem {
   readonly item: string;

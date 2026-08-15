@@ -15,7 +15,7 @@ interface LegalSection {
   readonly body: readonly string[];
 }
 
-export interface LegalContent {
+interface LegalContent {
   readonly title: string;
   readonly sections: readonly LegalSection[];
 }

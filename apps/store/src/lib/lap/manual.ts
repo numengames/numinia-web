@@ -10,14 +10,14 @@
 // Cloudflare Workers have no node:fs) instead of reading the disk at build.
 import manualRaw from '../../../../../docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md?raw';
 
-export interface ManualTableBlock {
+interface ManualTableBlock {
   readonly kind: 'table';
   readonly rows: ReadonlyArray<readonly string[]>;
 }
-export type ManualBlock =
+type ManualBlock =
   { readonly kind: 'paragraph' | 'quote' | 'subtitle'; readonly text: string } | ManualTableBlock;
 
-export interface ManualFragment {
+interface ManualFragment {
   readonly id: string;
   readonly title: string;
   /** '' for the lead fragment: its prose belongs to the chapter opening. */
