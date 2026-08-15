@@ -178,10 +178,10 @@ export interface LandingMessages {
 
 export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>> = {
   es: {
-    heroTitle: 'Bienes digitales open source para juegos, VR y mundos 3D',
+    heroTitle: 'Numinia: una ciudad para el conocimiento, proyectada sobre un tablero de juego',
     heroSub:
-      'Avatares, modelos, mundos y más — la cultura material de Numinia, libre bajo CC0 para usar, remezclar y mejorar.',
-    ctaCity: 'Descubrir la Ciudad',
+      'Recorre su crónica, llévate su cultura material — avatares, modelos y mundos, todo CC0 — y cruza al área del jugador. La ciudad se construye con quienes entran.',
+    ctaCity: 'Entrar en la Ciudad',
     ctaAssets: 'Explorar los Assets',
     pillarsTitle: 'Tres puertas',
     pillarCity:
@@ -192,10 +192,10 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
       'L.A.P.: el área del jugador — tu puerta al juego virtual y a tu información de ciudadano.',
   },
   en: {
-    heroTitle: 'Open-source digital goods for games, VR, and 3D worlds',
+    heroTitle: 'Numinia: a city for knowledge, projected onto a game board',
     heroSub:
-      'Avatars, models, worlds and more — the material culture of Numinia, free under CC0 to use, remix, and improve.',
-    ctaCity: 'Discover the City',
+      'Walk its chronicle, take its material culture — avatars, models and worlds, all CC0 — and step into the player area. The city is built by those who enter.',
+    ctaCity: 'Enter the City',
     ctaAssets: 'Explore the Assets',
     pillarsTitle: 'Three doors',
     pillarCity:
@@ -206,10 +206,10 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
       'L.A.P.: the player area — your door to the virtual game and your citizen information.',
   },
   ja: {
-    heroTitle: 'ゲーム・VR・3Dワールドのためのオープンソース・デジタルグッズ',
+    heroTitle: 'ヌミニア:ゲーム盤の上に描かれた、知のための都市',
     heroSub:
-      'アバター、モデル、ワールドなど — ヌミニアの物質文化。CC0で自由に使い、リミックスし、改良できます。',
-    ctaCity: '都市を知る',
+      '都市の物語をたどり、その物質文化 — アバター、モデル、ワールド、すべてCC0 — を持ち帰り、プレイヤーエリアへ。都市は、訪れる人とともに築かれます。',
+    ctaCity: '都市に入る',
     ctaAssets: 'アセットを探索',
     pillarsTitle: '三つの扉',
     pillarCity: '都市:ヌミニアとは — その歴史、地区、住民、そして都市を築くゲーム。',
@@ -218,10 +218,10 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     pillarLap: 'L.A.P.:プレイヤーエリア — 仮想ゲームと市民情報への入り口。',
   },
   ko: {
-    heroTitle: '게임·VR·3D 월드를 위한 오픈소스 디지털 굿즈',
+    heroTitle: '누미니아: 게임 보드 위에 그려진, 지식을 위한 도시',
     heroSub:
-      '아바타, 모델, 월드 등 — 누미니아의 물질 문화. CC0로 자유롭게 쓰고, 리믹스하고, 개선하세요.',
-    ctaCity: '도시 알아보기',
+      '도시의 연대기를 걷고, 그 물질 문화 — 아바타, 모델, 월드, 모두 CC0 — 를 가져가고, 플레이어 구역으로 들어오세요. 도시는 들어오는 사람들과 함께 지어집니다.',
+    ctaCity: '도시로 들어가기',
     ctaAssets: '에셋 탐색하기',
     pillarsTitle: '세 개의 문',
     pillarCity: '도시: 누미니아란 — 역사, 구역, 주민, 그리고 도시를 만드는 게임.',
@@ -229,10 +229,10 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     pillarLap: 'L.A.P.: 플레이어 구역 — 가상 게임과 시민 정보로 가는 문.',
   },
   'pt-br': {
-    heroTitle: 'Bens digitais open source para jogos, VR e mundos 3D',
+    heroTitle: 'Numinia: uma cidade para o conhecimento, projetada sobre um tabuleiro de jogo',
     heroSub:
-      'Avatares, modelos, mundos e mais — a cultura material de Numinia, livre sob CC0 para usar, remixar e melhorar.',
-    ctaCity: 'Descobrir a Cidade',
+      'Percorra sua crônica, leve sua cultura material — avatares, modelos e mundos, tudo CC0 — e entre na área do jogador. A cidade se constrói com quem entra.',
+    ctaCity: 'Entrar na Cidade',
     ctaAssets: 'Explorar os Assets',
     pillarsTitle: 'Três portas',
     pillarCity:

@@ -64,6 +64,18 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
         {CURRENT_VERSION}
       </a>
     </p>
+    <p class="byline">
+      by
+      <a
+        href="https://numen.games"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-metric="footer-numen-signature"
+      >
+        Numen Games
+      </a>
+      — we build for a better future.
+    </p>
   </div>
 </footer>
 
@@ -129,6 +141,18 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   .cierre p {
     margin: 0;
     color: var(--texto-3);
+  }
+  /* The house signature: brand voice, never translated, link in seafoam. */
+  .byline {
+    margin-left: auto;
+  }
+  .byline a {
+    color: var(--enlace);
+    text-decoration: none;
+  }
+  .byline a:hover,
+  .byline a:focus-visible {
+    text-decoration: underline;
   }
   .version {
     margin-left: var(--s2);
