@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "type-check": "astro check",
     "lint": "eslint src --no-error-on-unmatched-pattern",
-    "test": "echo 'unit tests arrive with Phase 1 components'",
+    "test": "vitest run --coverage",
     "e2e": "playwright test"
   },
   "dependencies": {
@@ -35,6 +35,8 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/three": "^0.185.0"
+    "@types/three": "^0.185.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "^4.0.18"
   }
 }
