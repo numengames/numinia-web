@@ -28,6 +28,7 @@ export interface ChromeMessages {
   readonly navArchive: string;
   readonly navFinder: string;
   readonly navUpdates: string;
+  readonly navDocs: string;
   readonly footerLegal: string;
   readonly legalPrivacy: string;
   readonly legalCookies: string;
@@ -47,6 +48,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navArchive: 'Archivo',
     navFinder: 'Finder',
     navUpdates: 'Actualizaciones',
+    navDocs: 'Recursos',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidad',
     legalCookies: 'Cookies',
@@ -64,6 +66,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navArchive: 'Archive',
     navFinder: 'Finder',
     navUpdates: 'Updates',
+    navDocs: 'Resources',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacy',
     legalCookies: 'Cookies',
@@ -81,6 +84,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navArchive: 'アーカイブ',
     navFinder: 'Finder',
     navUpdates: '更新履歴',
+    navDocs: 'リソース',
     footerLegal: '法的情報',
     legalPrivacy: 'プライバシー',
     legalCookies: 'クッキー',
@@ -98,6 +102,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navArchive: '아카이브',
     navFinder: 'Finder',
     navUpdates: '업데이트',
+    navDocs: '리소스',
     footerLegal: '법적 고지',
     legalPrivacy: '개인정보',
     legalCookies: '쿠키',
@@ -115,6 +120,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navArchive: 'Arquivo',
     navFinder: 'Finder',
     navUpdates: 'Atualizações',
+    navDocs: 'Recursos',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidade',
     legalCookies: 'Cookies',
@@ -407,6 +413,61 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: 'Em breve',
     latestLabel: 'Mais recente',
     statusLabels: { planned: 'Planejado', research: 'Pesquisa' },
+  },
+};
+
+/** Docs (resources) section shell. */
+export interface DocsMessages {
+  readonly docsTitle: string;
+  readonly sidebarLabel: string;
+  readonly previousLabel: string;
+  readonly nextLabel: string;
+  readonly legacyBanner: string;
+  readonly languageNotice: string | null;
+}
+
+export const DOCS_MESSAGES: Readonly<Record<SupportedLocale, DocsMessages>> = {
+  es: {
+    docsTitle: 'Recursos',
+    sidebarLabel: 'Documentación',
+    previousLabel: 'Anterior',
+    nextLabel: 'Siguiente',
+    legacyBanner:
+      'Esta página describe la arquitectura anterior de la plataforma y está pendiente de reescritura.',
+    languageNotice: 'Este contenido está disponible solo en inglés y japonés por ahora.',
+  },
+  en: {
+    docsTitle: 'Resources',
+    sidebarLabel: 'Documentation',
+    previousLabel: 'Previous',
+    nextLabel: 'Next',
+    legacyBanner:
+      'This page describes the previous platform architecture and is pending a rewrite.',
+    languageNotice: null,
+  },
+  ja: {
+    docsTitle: 'リソース',
+    sidebarLabel: 'ドキュメント',
+    previousLabel: '前へ',
+    nextLabel: '次へ',
+    legacyBanner: 'このページは旧プラットフォーム構成を説明しており、書き直し予定です。',
+    languageNotice: null,
+  },
+  ko: {
+    docsTitle: '리소스',
+    sidebarLabel: '문서',
+    previousLabel: '이전',
+    nextLabel: '다음',
+    legacyBanner: '이 페이지는 이전 플랫폼 아키텍처를 설명하며 재작성될 예정입니다.',
+    languageNotice: '이 콘텐츠는 현재 영어와 일본어로만 제공됩니다.',
+  },
+  'pt-br': {
+    docsTitle: 'Recursos',
+    sidebarLabel: 'Documentação',
+    previousLabel: 'Anterior',
+    nextLabel: 'Próximo',
+    legacyBanner: 'Esta página descreve a arquitetura anterior da plataforma e aguarda reescrita.',
+    languageNotice: 'Este conteúdo está disponível apenas em inglês e japonês por enquanto.',
   },
 };
 

@@ -64,7 +64,8 @@ export interface RoadmapItem {
   readonly status: RoadmapStatus;
 }
 
-const ROADMAP_ROW = /^\| (.+) \| (planned|research) \|$/;
+// Tolerates prettier's column padding in the markdown table.
+const ROADMAP_ROW = /^\| (.+?) *\| *(planned|research) *\|$/;
 
 /** Parse the "Incoming roadmap" table rows from the extracted record. */
 export function parseRoadmap(markdown: string): readonly RoadmapItem[] {

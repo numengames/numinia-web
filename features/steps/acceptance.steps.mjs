@@ -348,3 +348,42 @@ Then('the updates page shows the incoming roadmap', async function () {
   assert.ok(html.includes('data-roadmap'), 'roadmap section missing');
   assert.ok(html.includes('Radicle.xyz'), 'roadmap items missing');
 });
+
+// --- docs (MISSION-003 P4) ---
+
+Then('the docs index exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const page = path.join(this.distDir, prefix, 'docs', 'index.html');
+    const html = await readFile(page, 'utf8').catch(() => null);
+    assert.ok(html, `missing docs index for ${prefix || 'en'}`);
+    assert.ok(
+      html.includes('data-metric="docs-nav"'),
+      `docs sidebar missing for ${prefix || 'en'}`,
+    );
+  }
+});
+
+Then('the docs section renders {string} pages per locale', async function (expected) {
+  const { readdir } = await import('node:fs/promises');
+  for (const prefix of LOCALE_PREFIXES) {
+    const root = path.join(this.distDir, prefix, 'docs');
+    let count = 0;
+    const walk = async (dir) => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) await walk(path.join(dir, entry.name));
+        else if (entry.name === 'index.html') count += 1;
+      }
+    };
+    await walk(root);
+    assert.equal(count, Number(expected), `docs page count for ${prefix || 'en'}`);
+  }
+});
+
+Then('legacy-architecture docs carry the legacy banner', async function () {
+  for (const slug of ['developers', 'developers/database', 'developers/website']) {
+    const html = await readFile(path.join(this.distDir, 'docs', slug, 'index.html'), 'utf8');
+    assert.ok(html.includes('data-doc-legacy'), `docs/${slug} lacks the legacy banner`);
+  }
+  const evergreen = await readFile(path.join(this.distDir, 'docs', 'help', 'index.html'), 'utf8');
+  assert.ok(!evergreen.includes('data-doc-legacy'), 'docs/help wrongly flagged legacy');
+});

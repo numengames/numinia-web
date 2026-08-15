@@ -72,7 +72,7 @@ describe('parseRoadmap', () => {
       '| Item | Status |',
       '|---|---|',
       '| Thing one | planned |',
-      '| Thing two | research |',
+      '| Thing two          | research   |',
       '| Not a roadmap row | done |',
     ].join('\n');
     expect(parseRoadmap(markdown)).toEqual([

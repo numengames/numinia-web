@@ -28,6 +28,11 @@ export default defineConfig({
       filter: (page) => !page.includes('/spike/'),
     }),
   ],
+  markdown: {
+    // Light syntax theme: the default dark theme fails WCAG contrast on our
+    // light surface background (caught by the axe gate on /docs/developers/).
+    shikiConfig: { theme: 'github-light' },
+  },
   i18n: {
     locales: ['es', 'en', 'ja', 'ko', 'pt-br'],
     defaultLocale: 'en',

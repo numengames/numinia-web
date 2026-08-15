@@ -1,0 +1,151 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { DOCS_MESSAGES } from '../../i18n/messages';
+import { prevNext } from '../../lib/docs';
+import { docPage, docsNav } from './content';
+
+interface Props {
+  locale: SupportedLocale;
+  slug: string;
+}
+
+const { locale, slug } = Astro.props;
+const t = DOCS_MESSAGES[locale];
+// Content exists in en+ja only (original corpus); everyone else reads EN.
+const contentLocale = locale === 'ja' ? 'ja' : 'en';
+const page = docPage(contentLocale, slug);
+if (!page) throw new Error(`Unknown doc: ${contentLocale}/${slug}`);
+const nav = docsNav(contentLocale);
+const { prev, next } = prevNext(nav, slug);
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const hrefFor = (target: string): string =>
+  `${prefix}/docs/${target === '' ? '' : `${target}/`}`;
+const { Content } = page.module;
+---
+
+<BaseLayout locale={locale} title={`${page.title} — Numinia`}>
+  <div class="layout">
+    <nav aria-label={t.sidebarLabel}>
+      <h2>{t.sidebarLabel}</h2>
+      <ul>
+        {
+          nav.map((entry) => (
+            <li class={entry.slug.includes('/') ? 'child' : ''}>
+              <a
+                href={hrefFor(entry.slug)}
+                aria-current={entry.slug === slug ? 'page' : undefined}
+                data-metric="docs-nav"
+              >
+                {entry.title}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <article data-doc={slug || 'index'}>
+      {t.languageNotice && <p class="language-notice">{t.languageNotice}</p>}
+      {page.legacy && <p class="legacy-banner" role="note" data-doc-legacy>{t.legacyBanner}</p>}
+      <Content />
+      <nav class="pager" aria-label={`${t.previousLabel} / ${t.nextLabel}`}>
+        {
+          prev ? (
+            <a href={hrefFor(prev.slug)} rel="prev" data-metric="docs-prev">
+              ← {prev.title}
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          next && (
+            <a href={hrefFor(next.slug)} rel="next" data-metric="docs-next">
+              {next.title} →
+            </a>
+          )
+        }
+      </nav>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1fr) minmax(0, 3fr);
+    gap: var(--numinia-space-4);
+    align-items: start;
+  }
+  @media (max-width: 50rem) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  nav h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--numinia-color-text-muted);
+  }
+  nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  nav li {
+    margin-bottom: var(--numinia-space-1);
+  }
+  nav li.child {
+    padding-left: var(--numinia-space-2);
+  }
+  nav a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  nav a[aria-current='page'] {
+    color: var(--numinia-color-primary-strong);
+    font-weight: 700;
+  }
+  article {
+    line-height: 1.65;
+    max-width: 46rem;
+  }
+  article :global(h1) {
+    color: var(--numinia-color-primary-strong);
+  }
+  article :global(a) {
+    color: var(--numinia-color-primary-strong);
+  }
+  article :global(code) {
+    background: var(--numinia-color-surface);
+    padding: 0.1rem 0.3rem;
+    border-radius: var(--numinia-radius-sm);
+  }
+  article :global(pre) {
+    background: var(--numinia-color-surface);
+    padding: var(--numinia-space-2);
+    border-radius: var(--numinia-radius-sm);
+    overflow-x: auto;
+  }
+  .language-notice {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.85rem;
+  }
+  .legacy-banner {
+    background: var(--numinia-color-accent, #efa517);
+    color: #1c1c1c;
+    padding: var(--numinia-space-2);
+    border-radius: var(--numinia-radius-sm);
+    font-size: 0.85rem;
+  }
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--numinia-space-2);
+    margin-top: var(--numinia-space-5);
+    border-top: 1px solid var(--numinia-color-surface);
+    padding-top: var(--numinia-space-2);
+  }
+</style>

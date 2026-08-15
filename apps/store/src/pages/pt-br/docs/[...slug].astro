@@ -1,0 +1,15 @@
+---
+import DocsPage from '../../../components/docs/DocsPage.astro';
+import { docsNav } from '../../../components/docs/content';
+
+export function getStaticPaths() {
+  return docsNav('en')
+    .filter((entry) => entry.slug !== '')
+    .map((entry) => ({ params: { slug: entry.slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Docs slug route requires a slug');
+---
+
+<DocsPage locale="pt-br" slug={slug} />

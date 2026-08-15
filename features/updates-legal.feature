@@ -18,3 +18,9 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     Given the store application has been built
     Then every page footer shows the current version linking to the updates page
     And the updates page shows the incoming roadmap
+
+  Scenario: The resources docs render with sidebar and legacy notices
+    Given the store application has been built
+    Then the docs index exists under every locale prefix
+    And the docs section renders "11" pages per locale
+    And legacy-architecture docs carry the legacy banner
