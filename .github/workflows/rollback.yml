@@ -1,0 +1,73 @@
+# Rollback numinia.com — restore a previous Worker version WITHOUT a build.
+#
+# EXPERIMENTAL: first exercised in anger it has not been. The always-works
+# alternative is the dashboard: Workers → numinia-web → Deployments → Rollback.
+#
+# Leave version_id blank to restore the version BEFORE the current one.
+# The run prints the full version list first — read it before trusting
+# the automatic pick. No checkout, no npm ci: wrangler alone, ~30 seconds.
+name: Rollback numinia.com
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_id:
+        description: "Worker version ID to restore (blank = the previous version)"
+        required: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Restore a previous version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Show version history (the evidence before the act)
+        run: npx --yes wrangler@4 versions list --name numinia-web
+      - name: Pick target version
+        id: target
+        run: |
+          if [ -n "${{ inputs.version_id }}" ]; then
+            echo "id=${{ inputs.version_id }}" >> "$GITHUB_OUTPUT"
+            echo "Restoring explicitly requested version: ${{ inputs.version_id }}"
+          else
+            id=$(npx --yes wrangler@4 versions list --name numinia-web --json | jq -r '.[1].id // empty')
+            if [ -z "$id" ]; then
+              echo "::error::Could not determine the previous version — pass version_id explicitly (see the list above)."
+              exit 1
+            fi
+            echo "id=$id" >> "$GITHUB_OUTPUT"
+            echo "Restoring previous version: $id"
+          fi
+      - name: Restore (100% of traffic)
+        run: npx --yes wrangler@4 versions deploy "${{ steps.target.outputs.id }}@100%" --name numinia-web --yes
+      - name: Verify the live site answers
+        run: |
+          set -e
+          sleep 10
+          for path in / /city/ /lap/; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://numinia.com$path")
+            echo "GET $path -> $code"
+            [ "$code" = "200" ]
+          done
+          echo "Live commit now: $(curl -s --max-time 20 https://numinia.com/version.json || echo 'pre-version.json build')"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Rollback — ${{ job.status }}"
+            echo ""
+            echo "- Restored version: \`${{ steps.target.outputs.id }}\`"
+            echo "- Live: https://numinia.com · https://numinia.com/version.json"
+            echo "- Remember: main still holds the code that was rolled away — revert or fix it, or the next green CI ships it again."
+          } >> "$GITHUB_STEP_SUMMARY"

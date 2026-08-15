@@ -20,6 +20,9 @@ push to main ──► CI (quality · e2e · supply-chain) ──green──► 
 - **Manual (emergency lever):** Actions → "Deploy to Cloudflare" → Run workflow.
   It REFUSES commits whose CI is not green unless the `force` checkbox is
   ticked. Force is for outages, not for impatience.
+- **Superseded guard:** if `main` moved on while an older CI was finishing,
+  the older run does NOT ship (quiet skip with a notice) — the newer commit's
+  own green CI ships it. An old rerun can never overwrite newer code.
 
 ## What ships
 
@@ -42,15 +45,28 @@ push to main ──► CI (quality · e2e · supply-chain) ──green──► 
 
 ## The smoke test (what green means)
 
-After every deploy the workflow checks the LIVE site: `/`, `/city/`, `/lap/`,
-`/es/` must answer **200**, and `/api/auth/session` must answer **401** —
-401 (not 503) proves the Worker secrets are loaded and auth fails closed.
+Every build is stamped with its own identity: **`https://numinia.com/version.json`**
+carries the commit SHA and build time. After deploying, the workflow polls it
+(up to 60s of edge propagation) and FAILS unless the live site serves exactly
+the SHA it just built — no more "did it really ship?". Then it checks `/`,
+`/city/`, `/lap/`, `/es/` answer **200** and `/api/auth/session` answers
+**401** — 401 (not 503) proves the Worker secrets are loaded and auth fails
+closed.
 
 ## Rollback (instant, no build)
 
-Cloudflare dashboard → **Workers** → `numinia-web` → **Deployments** →
-pick a previous version → **Rollback**. Takes seconds. The git revert can
-follow calmly afterwards.
+Two paths:
+
+1. **Actions → "Rollback numinia.com"** (experimental — not yet exercised in
+   anger): leave `version_id` blank to restore the previous Worker version,
+   or pass an explicit ID. It prints the version list first, restores at 100%
+   traffic in ~30s (no build, no npm ci), and verifies the live site.
+2. **Cloudflare dashboard** (always works): Workers → `numinia-web` →
+   Deployments → pick a version → Rollback.
+
+⚠️ With auto-deploy, a rollback only buys time: `main` still holds the bad
+code, and the **next green CI ships it again**. Revert or fix on `main`
+right after rolling back.
 
 ## Verifying from Spain on a match day
 

@@ -6,15 +6,18 @@
 #   2. MANUAL — workflow_dispatch as the emergency lever; it refuses commits
 #      whose CI is not green unless `force` is explicitly checked.
 #
+# The guard job decides IF this run ships (green CI, not superseded by a
+# newer main); the deploy job does the shipping and then PROVES it: the build
+# is stamped with its commit SHA (/version.json) and the smoke test asserts
+# the live site serves exactly that SHA.
+#
 # Runtime secrets live on the Worker itself (`wrangler secret put`), never here.
 # Repo secrets used: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID (inherited
 # from the pre-platform repo; rotation scheduled — see docs/status.md NEXT #2).
-# Repo variable required: PUBLIC_THIRDWEB_CLIENT_ID (public by design, baked
-# into the client bundle at build time).
+# Repo variable required: PUBLIC_THIRDWEB_CLIENT_ID (public by design).
 #
-# Rollback: Cloudflare dashboard → Workers → numinia-web → Deployments →
-# "Rollback" on any previous version (instant, no build). Details in
-# docs/deploy-runbook.md.
+# Rollback: Actions → "Rollback numinia.com" (experimental) or Cloudflare
+# dashboard → Workers → numinia-web → Deployments → Rollback (instant).
 name: Deploy to Cloudflare
 
 on:
@@ -34,32 +37,63 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build & deploy numinia-web
+  guard:
+    name: Should this ship?
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    # Auto path only fires on green CI; manual path always enters (gated below).
+    timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      ship: ${{ steps.decide.outputs.ship }}
+      sha: ${{ steps.decide.outputs.sha }}
     steps:
-      - name: Checkout (the exact SHA the CI approved)
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - name: Gate — manual deploys need green CI on this commit
-        if: github.event_name == 'workflow_dispatch' && inputs.force != true
+      - name: Decide
+        id: decide
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sha="${{ github.sha }}"
-          echo "Checking check-runs for $sha ..."
+          sha="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          # Auto path: skip quietly if main moved on — the newer commit's own
+          # green CI will ship it. Prevents an old rerun overwriting new code.
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            tip=$(gh api "repos/${{ github.repository }}/branches/main" --jq .commit.sha)
+            if [ "$tip" != "$sha" ]; then
+              echo "::notice::main is at $tip; $sha is superseded — not shipping (the newer CI will)."
+              echo "ship=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "ship=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Manual path: require green CI on the commit unless force.
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "::warning::FORCE deploy of $sha — CI checks bypassed by the Oracle."
+            echo "ship=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           json=$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs" --paginate)
           bad=$(echo "$json" | jq '[.check_runs[] | select(.conclusion != null and .conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral")] | length')
           pending=$(echo "$json" | jq '[.check_runs[] | select(.status != "completed")] | length')
           total=$(echo "$json" | jq '.check_runs | length')
           echo "check-runs: $total total, $pending pending, $bad not green"
-          if [ "$total" -eq 0 ]; then echo "::error::No CI results for this commit — push it and let CI run, or use force."; exit 1; fi
-          if [ "$pending" -gt 0 ]; then echo "::error::CI is still running for this commit — wait for green, or use force."; exit 1; fi
+          if [ "$total" -eq 0 ]; then echo "::error::No CI results for this commit — let CI run, or use force."; exit 1; fi
+          if [ "$pending" -gt 0 ]; then echo "::error::CI is still running — wait for green, or use force."; exit 1; fi
           if [ "$bad" -gt 0 ]; then echo "::error::CI is red on this commit — fix it, or use force if you truly must."; exit 1; fi
+          echo "ship=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Build & deploy numinia-web
+    needs: guard
+    if: needs.guard.outputs.ship == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (the exact SHA the guard approved)
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ needs.guard.outputs.sha }}
       - name: Gate — the login cannot ship blind
         env:
           CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
@@ -85,14 +119,34 @@ jobs:
           GITHUB_REPO_OWNER: PabloFMM
           GITHUB_REPO_NAME: numinia-digital-goods-data
           PUBLIC_THIRDWEB_CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
+      - name: Stamp the build with its own identity (/version.json)
+        run: |
+          printf '{"commit":"%s","builtAt":"%s"}\n' \
+            "${{ needs.guard.outputs.sha }}" "$(date -u +%FT%TZ)" \
+            > apps/store/dist/client/version.json
+          cat apps/store/dist/client/version.json
       - name: Deploy Worker (numinia-web, custom domains numinia.com + www)
         run: npx wrangler deploy -c wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Smoke test — the live city answers
+      - name: Smoke test — the live city answers AND is this exact commit
         run: |
           set -e
+          sha="${{ needs.guard.outputs.sha }}"
+          # The edge needs a few seconds to serve the new version everywhere.
+          live=""
+          for i in $(seq 1 12); do
+            live=$(curl -s --max-time 20 https://numinia.com/version.json | jq -r '.commit // empty' 2>/dev/null || true)
+            [ "$live" = "$sha" ] && break
+            echo "attempt $i: live=$live (want $sha) — retrying in 5s"
+            sleep 5
+          done
+          if [ "$live" != "$sha" ]; then
+            echo "::error::Live site serves '$live', expected '$sha' — the deploy did not take."
+            exit 1
+          fi
+          echo "version match: $live"
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://numinia.com$1")
             echo "GET $1 -> $code (expected $2)"
@@ -110,8 +164,8 @@ jobs:
           {
             echo "## numinia.com deploy — ${{ job.status }}"
             echo ""
-            echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`"
+            echo "- Commit: \`${{ needs.guard.outputs.sha }}\`"
             echo "- Trigger: ${{ github.event_name }}"
-            echo "- Live: https://numinia.com · https://www.numinia.com"
-            echo "- Rollback: Cloudflare dashboard → Workers → numinia-web → Deployments → Rollback (instant)"
+            echo "- Live: https://numinia.com · verify: https://numinia.com/version.json"
+            echo "- Rollback: Actions → \"Rollback numinia.com\", or Cloudflare dashboard → Workers → numinia-web → Deployments"
           } >> "$GITHUB_STEP_SUMMARY"
