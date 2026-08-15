@@ -3,8 +3,17 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   timeout: 120_000,
+  // Visual baselines are keyed by platform; a small ratio absorbs font
+  // antialiasing drift between local Linux and CI runners.
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.02,
+      animations: 'disabled',
+    },
+  },
   use: {
     baseURL: 'http://localhost:4321',
+    viewport: { width: 1280, height: 720 },
   },
   webServer: {
     command: 'node dist/server/entry.mjs',
