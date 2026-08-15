@@ -103,9 +103,11 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
           spellCheck={false}
           data-metric="census-wallet"
         />
+        {/* Ghost, not primary: granting is the view's one primary action
+            (§19.4 — one primary per view; lookup merely opens the record). */}
         <button
           type="button"
-          className="btn btn-primario"
+          className="btn btn-fantasma"
           onClick={() => void lookup()}
           data-metric="census-lookup"
         >
