@@ -62,6 +62,12 @@ export default defineConfig({
   output: 'static',
   vite: { define: publicDefines },
   /**
+   * Astro sessions off: we never use them (our session is our own signed
+   * cookie), and leaving them on makes the Cloudflare adapter demand a KV
+   * namespace the deploy would have to create for nothing.
+   */
+  session: false,
+  /**
    * Adapter by target. Locally (and in CI/e2e) the Node adapter serves the
    * on-demand auth endpoints; the numinia.com deploy runs on Cloudflare
    * Workers, where @numinia/auth works unchanged because it was written
