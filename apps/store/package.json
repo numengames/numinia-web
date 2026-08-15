@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "type-check": "astro check",
     "lint": "eslint src --no-error-on-unmatched-pattern",
-    "test": "echo 'unit tests arrive with Phase 1 components'"
+    "test": "echo 'unit tests arrive with Phase 1 components'",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.2",
@@ -32,6 +33,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/three": "^0.185.0"
+    "@types/three": "^0.185.0",
+    "license-checker-rseidelsohn": "^5.0.1"
   }
 }

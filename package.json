@@ -20,7 +20,10 @@
     "test": "turbo run test",
     "ci": "turbo run type-check lint test build",
     "test:acceptance": "cucumber-js",
-    "prepare": "node scripts/install-hooks.mjs"
+    "prepare": "node scripts/install-hooks.mjs",
+    "licenses:check": "license-checker-rseidelsohn --excludePrivatePackages --failOn 'GPL-1.0;GPL-2.0;GPL-3.0;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later;AGPL-1.0;AGPL-3.0;AGPL-3.0-only;AGPL-3.0-or-later;SSPL-1.0'",
+    "e2e": "npm --workspace @numinia/store run e2e",
+    "verify": "npm run ci && npm run test:acceptance && npm run licenses:check && npm run e2e"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.1",
