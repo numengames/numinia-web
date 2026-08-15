@@ -95,7 +95,9 @@
 
 - Token bridge live: legacy `--numinia-*` aliases point at Khepri; kit CSS byte-identical copy in packages/ui pinned by test; Geist/Geist Mono self-hosted. Modes: Diurno default + Nocturno toggle in the chrome, pre-paint boot (D17: localStorage for chrome preference only). Chrome dressed (wordmark in ink, active pillar = ink pill, binary signature in the footer). Amber contrast fixes (§9.7 avisos). Bundle gate learned spike-only reachability. **Full verify green (38/38 e2e incl. WCAG both-mode tokens).**
 - **Phase B done (same evening)**: platform.css layer (§4.3 scale, §5 elevation, §9 components, §13.11 ink primary, §6.2 relief, §13.2 menu), kit motion inline (tecleo + reveal + orchestrated entry), and every surface dressed — landing per the §13.2 hero plan, archive/gallery/finder/inspector/city/lap/updates/docs/legal on tarjetas + amber etiquetas + Mono-for-measured. Gates encode the system's own exemptions (binaria = WCAG decoration; axe waits for the settled page; reduced-motion runs). Verify exit 0.
-- Next: the Oracle's punch-list review ("qué no veo bien implementado o qué falta"), then fixes.
+- **Punch-list round 1 done (v0.19.0)**: mode toggle = Phosphor sun/moon icon, languages in a §9.8 dropdown (current = ink), Phosphor subset self-hosted (packages/ui/src/icons + chrome/Icon.astro), download icon on archive detail. Verify exit 0.
+- **Working mode from here (Oracle order)**: SMALL missions — one reviewable increment per unit, versioned, with visual evidence. Recorded in agent memory.
+- Next: Oracle's next punch-list items, one at a time.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)
 
