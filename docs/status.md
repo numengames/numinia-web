@@ -31,6 +31,11 @@
 - **32 real public assets → 165 SSG pages** (5 locales) with SEO/OG; multi-format previews (native img/audio/video, unified GLB+VRM island, HYP note); client-side search + format filters; downloads via the domain storage chain; fully instrumented (funnel visitor→download live).
 - Gates extended and paying off: WCAG axe gate caught a real contrast violation (fixed via `--numinia-color-primary-strong` token).
 
+### Autonomous batch ✅ (2026-08-15, "continúa sin mí")
+- **SEO plumbing** (`0a571c7`): sitemap (spike filtered out), dynamic `robots.txt` from env, canonical + hreflang ×5 locales on every page; `features/seo.feature` pins it (13 scenarios green).
+- **Store lib unit tests** (`6e92a41`): data.ts + archive.ts fully unit-tested (stubbed network, loud-failure paths, memoization, storage-chain fallback); 100% per-file coverage on `src/lib`.
+- **Visual regression** (`baf769e`): 5 Playwright pixel baselines (landing/archive ×2 locales + detail, canvas masked); local-only until CI regenerates its own (runbook step added).
+
 ### `packages/auth` — vendor-independent core ✅ (2026-08-15)
 - All MISSION-002 groundwork that touches no vendor: fail-closed config (`parseAuthEnv`, ≥32-char secret), HMAC-SHA256 session tokens `v1.<payload>.<sig>` with constant-time compare + strict zod payload (unknown rank ⇒ rejected), single-use TTL nonce store, and the D13 boundary as ONE constant (`WEB3_BOUNDARY_RANK = 'pilgrim'` in `src/boundary.ts`).
 - WinterCG-pure (Web Crypto only, no Node/DOM libs) so it runs identically on Node, Workers, or edge. 15 tests, 100% coverage, mutation score 98.09% (3 survivors are documented equivalent mutants).
