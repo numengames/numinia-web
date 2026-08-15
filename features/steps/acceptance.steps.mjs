@@ -387,3 +387,16 @@ Then('legacy-architecture docs carry the legacy banner', async function () {
   const evergreen = await readFile(path.join(this.distDir, 'docs', 'help', 'index.html'), 'utf8');
   assert.ok(!evergreen.includes('data-doc-legacy'), 'docs/help wrongly flagged legacy');
 });
+
+// --- inspector (MISSION-003 P5) ---
+
+Then('the inspector page exists under every locale prefix as an island', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(
+      path.join(this.distDir, prefix, 'inspector', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.ok(html, `missing inspector page for ${prefix || 'en'}`);
+    assert.ok(html.includes('<astro-island'), `inspector island missing for ${prefix || 'en'}`);
+  }
+});

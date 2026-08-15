@@ -29,6 +29,7 @@ export interface ChromeMessages {
   readonly navFinder: string;
   readonly navUpdates: string;
   readonly navDocs: string;
+  readonly navInspector: string;
   readonly footerLegal: string;
   readonly legalPrivacy: string;
   readonly legalCookies: string;
@@ -49,6 +50,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navFinder: 'Finder',
     navUpdates: 'Actualizaciones',
     navDocs: 'Recursos',
+    navInspector: 'Inspector',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidad',
     legalCookies: 'Cookies',
@@ -67,6 +69,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navFinder: 'Finder',
     navUpdates: 'Updates',
     navDocs: 'Resources',
+    navInspector: 'Inspector',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacy',
     legalCookies: 'Cookies',
@@ -85,6 +88,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navFinder: 'Finder',
     navUpdates: '更新履歴',
     navDocs: 'リソース',
+    navInspector: 'インスペクター',
     footerLegal: '法的情報',
     legalPrivacy: 'プライバシー',
     legalCookies: 'クッキー',
@@ -103,6 +107,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navFinder: 'Finder',
     navUpdates: '업데이트',
     navDocs: '리소스',
+    navInspector: '인스펙터',
     footerLegal: '법적 고지',
     legalPrivacy: '개인정보',
     legalCookies: '쿠키',
@@ -121,6 +126,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navFinder: 'Finder',
     navUpdates: 'Atualizações',
     navDocs: 'Recursos',
+    navInspector: 'Inspetor',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidade',
     legalCookies: 'Cookies',
@@ -139,13 +145,14 @@ export interface LandingMessages {
   readonly heroTitle: string;
   readonly heroSub: string;
   readonly ctaGallery: string;
-  readonly ctaArchive: string;
+  readonly ctaInspector: string;
   readonly aboutTitle: string;
   readonly aboutBody: string;
   readonly toolsTitle: string;
   readonly toolGallery: string;
   readonly toolArchive: string;
-  readonly toolsSoon: string;
+  readonly toolFinder: string;
+  readonly toolInspector: string;
 }
 
 export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>> = {
@@ -154,70 +161,75 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     heroSub:
       'Avatares, modelos, mundos y más — la cultura material de Numinia, libre bajo CC0 para usar, remezclar y mejorar.',
     ctaGallery: 'Explorar la galería',
-    ctaArchive: 'Abrir el archivo',
+    ctaInspector: 'Probar el Inspector 3D',
     aboutTitle: 'El proyecto',
     aboutBody:
       'Numinia es una ciudad entre planos, y estos son los objetos que sus ciudadanos usan, ganan y llevan consigo. Cada activo se publica en formatos abiertos (GLB, VRM y más) con metadatos portables: los datos viven en repositorios públicos, no en una base de datos cerrada.',
     toolsTitle: 'Herramientas',
     toolGallery: 'La galería: los avatares de la ciudad, colección a colección.',
     toolArchive: 'El archivo: todos los formatos, con búsqueda, filtros y descarga directa.',
-    toolsSoon: 'En camino: el inspector 3D.',
+    toolFinder: 'El Finder: explora colecciones y descarga por lotes.',
+    toolInspector: 'El Inspector 3D: examina tus GLB y VRM sin subir nada.',
   },
   en: {
     heroTitle: 'Open-source digital goods for games, VR, and 3D worlds',
     heroSub:
       'Avatars, models, worlds and more — the material culture of Numinia, free under CC0 to use, remix, and improve.',
     ctaGallery: 'Explore the gallery',
-    ctaArchive: 'Open the archive',
+    ctaInspector: 'Try the 3D Inspector',
     aboutTitle: 'The project',
     aboutBody:
       'Numinia is a city between planes, and these are the objects its citizens use, earn, and carry. Every asset ships in open formats (GLB, VRM and more) with portable metadata: the data lives in public repositories, not a closed database.',
     toolsTitle: 'Tools',
     toolGallery: 'The gallery: the avatars of the city, collection by collection.',
     toolArchive: 'The archive: every format, with search, filters, and direct download.',
-    toolsSoon: 'Coming next: the 3D inspector.',
+    toolFinder: 'The Finder: browse collections and batch-download.',
+    toolInspector: 'The 3D Inspector: examine your GLB and VRM files without uploading anything.',
   },
   ja: {
     heroTitle: 'ゲーム・VR・3Dワールドのためのオープンソース・デジタルグッズ',
     heroSub:
       'アバター、モデル、ワールドなど — ヌミニアの物質文化。CC0で自由に使い、リミックスし、改良できます。',
     ctaGallery: 'ギャラリーを見る',
-    ctaArchive: 'アーカイブを開く',
+    ctaInspector: '3Dインスペクターを試す',
     aboutTitle: 'プロジェクトについて',
     aboutBody:
       'ヌミニアは次元の狭間にある都市。ここにあるのは市民が使い、獲得し、持ち歩く品々です。すべてのアセットはオープンフォーマット（GLB、VRMなど）とポータブルなメタデータで公開され、データは閉じたデータベースではなく公開リポジトリにあります。',
     toolsTitle: 'ツール',
     toolGallery: 'ギャラリー:都市のアバターをコレクションごとに。',
     toolArchive: 'アーカイブ:全フォーマット。検索・フィルター・直接ダウンロード。',
-    toolsSoon: '近日公開:3Dインスペクター。',
+    toolFinder: 'Finder:コレクションを探索して一括ダウンロード。',
+    toolInspector: '3Dインスペクター:GLB/VRMをアップロードなしで検査。',
   },
   ko: {
     heroTitle: '게임·VR·3D 월드를 위한 오픈소스 디지털 굿즈',
     heroSub:
       '아바타, 모델, 월드 등 — 누미니아의 물질 문화. CC0로 자유롭게 쓰고, 리믹스하고, 개선하세요.',
     ctaGallery: '갤러리 둘러보기',
-    ctaArchive: '아카이브 열기',
+    ctaInspector: '3D 인스펙터 사용해 보기',
     aboutTitle: '프로젝트 소개',
     aboutBody:
       '누미니아는 차원 사이의 도시이며, 여기 있는 것은 시민들이 쓰고, 얻고, 지니는 물건들입니다. 모든 에셋은 개방형 포맷(GLB, VRM 등)과 이동 가능한 메타데이터로 공개되며, 데이터는 닫힌 데이터베이스가 아닌 공개 저장소에 있습니다.',
     toolsTitle: '도구',
     toolGallery: '갤러리: 도시의 아바타를 컬렉션별로.',
     toolArchive: '아카이브: 모든 포맷, 검색·필터·직접 다운로드.',
-    toolsSoon: '곧 공개: 3D 인스펙터.',
+    toolFinder: 'Finder: 컬렉션 탐색과 일괄 다운로드.',
+    toolInspector: '3D 인스펙터: 업로드 없이 GLB/VRM을 검사.',
   },
   'pt-br': {
     heroTitle: 'Bens digitais open source para jogos, VR e mundos 3D',
     heroSub:
       'Avatares, modelos, mundos e mais — a cultura material de Numinia, livre sob CC0 para usar, remixar e melhorar.',
     ctaGallery: 'Explorar a galeria',
-    ctaArchive: 'Abrir o arquivo',
+    ctaInspector: 'Testar o Inspetor 3D',
     aboutTitle: 'O projeto',
     aboutBody:
       'Numinia é uma cidade entre planos, e estes são os objetos que seus cidadãos usam, ganham e carregam. Cada ativo é publicado em formatos abertos (GLB, VRM e mais) com metadados portáveis: os dados vivem em repositórios públicos, não em um banco de dados fechado.',
     toolsTitle: 'Ferramentas',
     toolGallery: 'A galeria: os avatares da cidade, coleção por coleção.',
     toolArchive: 'O arquivo: todos os formatos, com busca, filtros e download direto.',
-    toolsSoon: 'Em breve: o inspetor 3D.',
+    toolFinder: 'O Finder: explore coleções e baixe em lote.',
+    toolInspector: 'O Inspetor 3D: examine seus GLB e VRM sem enviar nada.',
   },
 };
 
@@ -468,6 +480,146 @@ export const DOCS_MESSAGES: Readonly<Record<SupportedLocale, DocsMessages>> = {
     nextLabel: 'Próximo',
     legacyBanner: 'Esta página descreve a arquitetura anterior da plataforma e aguarda reescrita.',
     languageNotice: 'Este conteúdo está disponível apenas em inglês e japonês por enquanto.',
+  },
+};
+
+/** 3D inspector page + island labels. */
+export interface InspectorMessages {
+  readonly inspectorTitle: string;
+  readonly inspectorIntro: string;
+  readonly dropHint: string;
+  readonly pickFile: string;
+  readonly unsupported: string;
+  readonly loadError: string;
+  readonly statsTitle: string;
+  readonly fileLabel: string;
+  readonly sizeLabel: string;
+  readonly privacyNote: string;
+  readonly statLabels: Readonly<
+    Record<
+      | 'meshes'
+      | 'vertices'
+      | 'triangles'
+      | 'materials'
+      | 'textures'
+      | 'animations'
+      | 'vrmName'
+      | 'vrmAuthors',
+      string
+    >
+  >;
+}
+
+export const INSPECTOR_MESSAGES: Readonly<Record<SupportedLocale, InspectorMessages>> = {
+  es: {
+    inspectorTitle: 'Inspector 3D',
+    inspectorIntro: 'Inspecciona un GLB o VRM local: vista previa y metadatos.',
+    dropHint: 'Arrastra aquí un archivo .glb, .gltf o .vrm',
+    pickFile: 'o elige un archivo',
+    unsupported: 'Formato no soportado — usa .glb, .gltf o .vrm',
+    loadError: 'No se pudo leer el modelo (archivo corrupto o incompatible).',
+    statsTitle: 'Metadatos',
+    fileLabel: 'Archivo',
+    sizeLabel: 'Tamaño',
+    privacyNote: 'Todo ocurre en tu navegador: el archivo nunca se sube.',
+    statLabels: {
+      meshes: 'Mallas',
+      vertices: 'Vértices',
+      triangles: 'Triángulos',
+      materials: 'Materiales',
+      textures: 'Texturas',
+      animations: 'Animaciones',
+      vrmName: 'Nombre VRM',
+      vrmAuthors: 'Autoría VRM',
+    },
+  },
+  en: {
+    inspectorTitle: '3D Inspector',
+    inspectorIntro: 'Inspect a local GLB or VRM: live preview plus metadata.',
+    dropHint: 'Drop a .glb, .gltf or .vrm file here',
+    pickFile: 'or pick a file',
+    unsupported: 'Unsupported format — use .glb, .gltf or .vrm',
+    loadError: 'The model could not be read (corrupt or incompatible file).',
+    statsTitle: 'Metadata',
+    fileLabel: 'File',
+    sizeLabel: 'Size',
+    privacyNote: 'Everything happens in your browser: the file is never uploaded.',
+    statLabels: {
+      meshes: 'Meshes',
+      vertices: 'Vertices',
+      triangles: 'Triangles',
+      materials: 'Materials',
+      textures: 'Textures',
+      animations: 'Animations',
+      vrmName: 'VRM name',
+      vrmAuthors: 'VRM authors',
+    },
+  },
+  ja: {
+    inspectorTitle: '3Dインスペクター',
+    inspectorIntro: 'ローカルのGLB/VRMを検査:プレビューとメタデータ。',
+    dropHint: '.glb / .gltf / .vrm ファイルをここにドロップ',
+    pickFile: 'またはファイルを選択',
+    unsupported: '非対応フォーマットです — .glb / .gltf / .vrm を使ってください',
+    loadError: 'モデルを読み込めませんでした(破損または非互換)。',
+    statsTitle: 'メタデータ',
+    fileLabel: 'ファイル',
+    sizeLabel: 'サイズ',
+    privacyNote: 'すべてブラウザ内で完結します。ファイルはアップロードされません。',
+    statLabels: {
+      meshes: 'メッシュ',
+      vertices: '頂点',
+      triangles: '三角形',
+      materials: 'マテリアル',
+      textures: 'テクスチャ',
+      animations: 'アニメーション',
+      vrmName: 'VRM名',
+      vrmAuthors: 'VRM作者',
+    },
+  },
+  ko: {
+    inspectorTitle: '3D 인스펙터',
+    inspectorIntro: '로컬 GLB/VRM 검사: 미리보기와 메타데이터.',
+    dropHint: '.glb / .gltf / .vrm 파일을 여기에 끌어다 놓으세요',
+    pickFile: '또는 파일 선택',
+    unsupported: '지원하지 않는 형식 — .glb / .gltf / .vrm을 사용하세요',
+    loadError: '모델을 읽을 수 없습니다(손상되었거나 호환되지 않는 파일).',
+    statsTitle: '메타데이터',
+    fileLabel: '파일',
+    sizeLabel: '크기',
+    privacyNote: '모든 처리는 브라우저 안에서 이루어지며 파일은 업로드되지 않습니다.',
+    statLabels: {
+      meshes: '메시',
+      vertices: '정점',
+      triangles: '삼각형',
+      materials: '머티리얼',
+      textures: '텍스처',
+      animations: '애니메이션',
+      vrmName: 'VRM 이름',
+      vrmAuthors: 'VRM 제작자',
+    },
+  },
+  'pt-br': {
+    inspectorTitle: 'Inspetor 3D',
+    inspectorIntro: 'Inspecione um GLB ou VRM local: prévia e metadados.',
+    dropHint: 'Arraste um arquivo .glb, .gltf ou .vrm aqui',
+    pickFile: 'ou escolha um arquivo',
+    unsupported: 'Formato não suportado — use .glb, .gltf ou .vrm',
+    loadError: 'Não foi possível ler o modelo (arquivo corrompido ou incompatível).',
+    statsTitle: 'Metadados',
+    fileLabel: 'Arquivo',
+    sizeLabel: 'Tamanho',
+    privacyNote: 'Tudo acontece no seu navegador: o arquivo nunca é enviado.',
+    statLabels: {
+      meshes: 'Malhas',
+      vertices: 'Vértices',
+      triangles: 'Triângulos',
+      materials: 'Materiais',
+      textures: 'Texturas',
+      animations: 'Animações',
+      vrmName: 'Nome VRM',
+      vrmAuthors: 'Autoria VRM',
+    },
   },
 };
 

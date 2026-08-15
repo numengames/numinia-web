@@ -18,8 +18,8 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <p>{t.heroSub}</p>
     <div class="ctas">
       <a href={`${prefix}/gallery/`} class="cta" data-metric="landing-gallery">{t.ctaGallery}</a>
-      <a href={`${prefix}/archive/`} class="cta cta-secondary" data-metric="landing-archive">
-        {t.ctaArchive}
+      <a href={`${prefix}/inspector/`} class="cta cta-secondary" data-metric="landing-inspector">
+        {t.ctaInspector}
       </a>
     </div>
   </section>
@@ -34,7 +34,8 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <ul>
       <li>{t.toolGallery}</li>
       <li>{t.toolArchive}</li>
-      <li class="soon">{t.toolsSoon}</li>
+      <li>{t.toolFinder}</li>
+      <li>{t.toolInspector}</li>
     </ul>
   </section>
 </BaseLayout>

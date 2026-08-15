@@ -24,6 +24,7 @@ const PAGES = [
   '/es/legal/privacy/',
   '/es/docs/',
   '/docs/developers/',
+  '/es/inspector/',
 ];
 
 for (const path of PAGES) {

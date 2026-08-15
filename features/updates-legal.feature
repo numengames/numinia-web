@@ -24,3 +24,7 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     Then the docs index exists under every locale prefix
     And the docs section renders "11" pages per locale
     And legacy-architecture docs carry the legacy banner
+
+  Scenario: The 3D inspector is available in every locale
+    Given the store application has been built
+    Then the inspector page exists under every locale prefix as an island

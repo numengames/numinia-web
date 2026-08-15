@@ -1,6 +1,6 @@
 # MISSION-003 — Functional parity with the original web (public surface)
 
-- **Status:** Proposed (awaiting Oracle approval)
+- **Status:** ✅ Done (P1–P5 shipped 2026-08-15; legal wording pending Oracle sign-off)
 - **Layer:** 0–1 (public, no auth) · **Phase:** 1 of the build roadmap
 - **Origin:** Oracle directive 2026-08-15: "tiene que quedar como la versión de la web original" → clarified as **functional parity of the public sections**, rebuilt on the new stack with the new quality bar.
 - **Constraint inherited from the constitution:** LAP/admin/profile/login are Layer 2–3 and stay out of this mission (MISSION-002 owns identity). ADR-017: the legacy tree is consulted as feature inventory (file names, routes, the live site we ran locally) — **never** as source code.
