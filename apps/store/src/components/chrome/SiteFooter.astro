@@ -58,24 +58,19 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   </div>
   <div class="cierre">
     <span class="khepri" set:html={khepriLogo} />
-    <p>
-      {t.footerLicenseNote}
-      <a href={`${prefix}/updates/`} class="version" data-metric="footer-version">
-        {CURRENT_VERSION}
-      </a>
-    </p>
+    <!-- Explicit string expressions: Astro collapses template whitespace
+         around inline elements, which once glued "by" to the link. -->
     <p class="byline">
-      by
-      <a
+      {'by '}<a
         href="https://numen.games"
         target="_blank"
         rel="noopener noreferrer"
         data-metric="footer-numen-signature"
-      >
-        Numen Games
-      </a>
-      — we build for a better future.
+      >Numen Games</a>{' — we build for a better future.'}
     </p>
+    <a href={`${prefix}/updates/`} class="version" data-metric="footer-version">
+      {CURRENT_VERSION}
+    </a>
   </div>
 </footer>
 
@@ -144,6 +139,9 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   }
   /* The house signature: brand voice, never translated, link in seafoam. */
   .byline {
+    flex: 1;
+  }
+  .version {
     margin-left: auto;
   }
   .byline a {

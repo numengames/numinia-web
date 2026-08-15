@@ -43,7 +43,6 @@ export interface ChromeMessages {
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
-  readonly footerLicenseNote: string;
 }
 
 export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> = {
@@ -68,7 +67,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
-    footerLicenseNote: '© 2026 Numinia. Todos los bienes digitales son CC0.',
   },
   en: {
     navHome: 'Home',
@@ -91,7 +89,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
-    footerLicenseNote: '© 2026 Numinia. All digital goods are CC0.',
   },
   ja: {
     navHome: 'ホーム',
@@ -114,7 +111,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
-    footerLicenseNote: '© 2026 Numinia. すべてのデジタルグッズはCC0です。',
   },
   ko: {
     navHome: '홈',
@@ -137,7 +133,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
-    footerLicenseNote: '© 2026 Numinia. 모든 디지털 굿즈는 CC0입니다.',
   },
   'pt-br': {
     navHome: 'Início',
@@ -160,7 +155,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',
-    footerLicenseNote: '© 2026 Numinia. Todos os bens digitais são CC0.',
   },
 };
 
