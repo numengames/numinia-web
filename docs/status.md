@@ -120,8 +120,11 @@
 **The city is public.** `numinia.com` + `www` serve the new platform from the
 `numinia-web` Worker, deployed via the GitHub Actions "Deploy to Cloudflare"
 workflow (manual trigger, Pablo pressed the button). Externally verified:
-`/`, `/city/`, `/lap/` all 200. Deploys are now: push to GitHub → CI → press
-Run workflow. The old landing is gone (history in the backup bundle).
+`/`, `/city/`, `/lap/` all 200. The old landing is gone (history in the
+backup bundle). **Same night, Oracle decision: AUTO-DEPLOY on green CI** —
+push to main → CI green → that SHA ships itself, smoke-tested against the
+live site. Manual button stays as the emergency lever (refuses non-green
+commits unless `force`). Full picture: docs/deploy-runbook.md.
 
 **First remote CI — every fresh-runner lie found and fixed tonight:**
 `.nvmrc` said Node 22 while the repo lives on 24 (engine-strict refused

@@ -1,16 +1,33 @@
-# Deploy numinia.com — the platform replaces the old landing on the
-# `numinia-web` Worker (one-Worker policy: name matches this repo).
+# Deploy numinia.com — the platform ships from the `numinia-web` Worker
+# (one-Worker policy: name matches this repo).
 #
-# Manual trigger ONLY (workflow_dispatch): publishing is an Oracle act.
+# Two triggers (Oracle decision 2026-08-15, night):
+#   1. AUTO — every CI run that finishes green on main deploys that exact SHA.
+#   2. MANUAL — workflow_dispatch as the emergency lever; it refuses commits
+#      whose CI is not green unless `force` is explicitly checked.
+#
 # Runtime secrets live on the Worker itself (`wrangler secret put`), never here.
 # Repo secrets used: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID (inherited
 # from the pre-platform repo; rotation scheduled — see docs/status.md NEXT #2).
 # Repo variable required: PUBLIC_THIRDWEB_CLIENT_ID (public by design, baked
 # into the client bundle at build time).
+#
+# Rollback: Cloudflare dashboard → Workers → numinia-web → Deployments →
+# "Rollback" on any previous version (instant, no build). Details in
+# docs/deploy-runbook.md.
 name: Deploy to Cloudflare
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Deploy even if this commit's CI is not green (emergencies only)"
+        type: boolean
+        default: false
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: deploy-production
@@ -20,9 +37,37 @@ jobs:
   deploy:
     name: Build & deploy numinia-web
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Auto path only fires on green CI; manual path always enters (gated below).
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
-      - name: Checkout
+      - name: Checkout (the exact SHA the CI approved)
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Gate — manual deploys need green CI on this commit
+        if: github.event_name == 'workflow_dispatch' && inputs.force != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="${{ github.sha }}"
+          echo "Checking check-runs for $sha ..."
+          json=$(gh api "repos/${{ github.repository }}/commits/$sha/check-runs" --paginate)
+          bad=$(echo "$json" | jq '[.check_runs[] | select(.conclusion != null and .conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral")] | length')
+          pending=$(echo "$json" | jq '[.check_runs[] | select(.status != "completed")] | length')
+          total=$(echo "$json" | jq '.check_runs | length')
+          echo "check-runs: $total total, $pending pending, $bad not green"
+          if [ "$total" -eq 0 ]; then echo "::error::No CI results for this commit — push it and let CI run, or use force."; exit 1; fi
+          if [ "$pending" -gt 0 ]; then echo "::error::CI is still running for this commit — wait for green, or use force."; exit 1; fi
+          if [ "$bad" -gt 0 ]; then echo "::error::CI is red on this commit — fix it, or use force if you truly must."; exit 1; fi
+      - name: Gate — the login cannot ship blind
+        env:
+          CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
+        run: |
+          if [ -z "$CLIENT_ID" ]; then
+            echo "::error::Repo variable PUBLIC_THIRDWEB_CLIENT_ID is empty — the login would ship broken. Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -45,3 +90,28 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Smoke test — the live city answers
+        run: |
+          set -e
+          check() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://numinia.com$1")
+            echo "GET $1 -> $code (expected $2)"
+            [ "$code" = "$2" ]
+          }
+          check /        200
+          check /city/   200
+          check /lap/    200
+          check /es/     200
+          # 401 (not 503) proves the Worker secrets are loaded and auth fails closed.
+          check /api/auth/session 401
+      - name: Deploy summary
+        if: always()
+        run: |
+          {
+            echo "## numinia.com deploy — ${{ job.status }}"
+            echo ""
+            echo "- Commit: \`${{ github.event.workflow_run.head_sha || github.sha }}\`"
+            echo "- Trigger: ${{ github.event_name }}"
+            echo "- Live: https://numinia.com · https://www.numinia.com"
+            echo "- Rollback: Cloudflare dashboard → Workers → numinia-web → Deployments → Rollback (instant)"
+          } >> "$GITHUB_STEP_SUMMARY"

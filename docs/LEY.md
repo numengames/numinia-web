@@ -55,6 +55,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [docs/analytics.md](./analytics.md)                                               | Instrumentation contract  |
 | [missions/Definition_of_Done_v0.2.0.md](../missions/Definition_of_Done_v0.2.0.md) | When work may close       |
 | [docs/remote-checklist.md](./remote-checklist.md)                                 | Push-day runbook          |
+| [docs/deploy-runbook.md](./deploy-runbook.md)                                     | How numinia.com ships     |
 
 ## Missions — what was promised and delivered
 
