@@ -17,7 +17,8 @@ export type LapSection =
   | 'portals'
   | 'loot'
   | 'seasons'
-  | 'stats';
+  | 'stats'
+  | 'settings';
 
 interface Props {
   locale: SupportedLocale;
@@ -30,7 +31,16 @@ const { locale, current, title, description } = Astro.props;
 const t = LAP_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
-type IconName = 'house' | 'user' | 'book-open' | 'globe' | 'sword' | 'flame' | 'chart-bar' | 'bell';
+type IconName =
+  | 'house'
+  | 'user'
+  | 'book-open'
+  | 'globe'
+  | 'sword'
+  | 'flame'
+  | 'chart-bar'
+  | 'bell'
+  | 'gear';
 const ITEMS: ReadonlyArray<{
   id: LapSection | 'updates';
   href: string;
@@ -45,6 +55,7 @@ const ITEMS: ReadonlyArray<{
   { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons, icon: 'flame' },
   { id: 'stats', href: `${prefix}/lap/stats/`, label: t.sections.stats, icon: 'chart-bar' },
   { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates, icon: 'bell' },
+  { id: 'settings', href: `${prefix}/lap/settings/`, label: t.sections.settings, icon: 'gear' },
 ];
 ---
 
@@ -71,6 +82,7 @@ const ITEMS: ReadonlyArray<{
             <li>
               <a
                 href={item.href}
+                data-section={item.id}
                 aria-current={item.id === current ? 'page' : undefined}
                 title={item.label}
                 data-metric={`lap-nav-${item.id}`}
@@ -229,6 +241,15 @@ const ITEMS: ReadonlyArray<{
     .cabecera {
       display: none;
     }
+  }
+  /* Sections the citizen hid in Settings (never the current one). */
+  :global(html[data-lap-hidden~='character']) a[data-section='character']:not([aria-current]),
+  :global(html[data-lap-hidden~='codex']) a[data-section='codex']:not([aria-current]),
+  :global(html[data-lap-hidden~='portals']) a[data-section='portals']:not([aria-current]),
+  :global(html[data-lap-hidden~='loot']) a[data-section='loot']:not([aria-current]),
+  :global(html[data-lap-hidden~='seasons']) a[data-section='seasons']:not([aria-current]),
+  :global(html[data-lap-hidden~='stats']) a[data-section='stats']:not([aria-current]) {
+    display: none;
   }
   /* Folded rail: icons only, labels and wordgroup hidden, caret flips. */
   :global(html[data-lap-nav='plegado']) .texto,

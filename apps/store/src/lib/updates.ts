@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.25.0',
+    date: '2026-08-15 19:45',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Settings: appearance, language, which panel sections you keep, and what your rank grants',
+      },
+      {
+        type: 'NEW',
+        text: 'Enter Numinia from the L.A.P.: Google, email, passkey or your own wallet — never a wall',
+      },
+      {
+        type: 'UPD',
+        text: 'Your preferences live in this browser; your sheet lives in your file. Nothing on our servers',
+      },
+    ],
+  },
+  {
     version: 'v0.24.0',
     date: '2026-08-15 19:15',
     entries: [

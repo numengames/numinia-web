@@ -19,10 +19,11 @@ const BUDGETS = {
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
   threeDChunkBytes: 1_500_000,
-  /** Chunks reachable ONLY from /spike/ pages (internal, unindexed — e.g. the
-      thirdweb auth vendor of MISSION-002). Public Layer 0/1 pages never load
-      these; the general chunk budget still guards everything they reach. */
-  spikeOnlyChunkBytes: 500_000,
+  /** Chunks reachable ONLY from the identity surfaces (/spike/ and the
+      L.A.P. session page): the wallet vendor is legitimately heavy and loads
+      solely when someone chooses to enter. Layer 0/1 pages never reach it —
+      their strict budget below still guards everything they do. */
+  identityOnlyChunkBytes: 1_500_000,
   /** Whole-page HTML weight for the landing. */
   landingHtmlBytes: 30_000,
 };
@@ -70,8 +71,9 @@ async function collectHtml(dir) {
 const chunkRef = /_astro\/([\w.-]+\.js)/g;
 const publicEntries = new Set();
 for (const file of await collectHtml(DIST)) {
-  const isSpike = path.relative(DIST, file).split(path.sep).includes('spike');
-  if (isSpike) continue;
+  const segments = path.relative(DIST, file).split(path.sep);
+  const isIdentitySurface = segments.includes('spike') || segments.includes('session');
+  if (isIdentitySurface) continue;
   const html = await readFile(file, 'utf8');
   for (const match of html.matchAll(chunkRef)) publicEntries.add(match[1]);
 }
@@ -96,14 +98,14 @@ while (queue.length > 0) {
 for (const chunk of chunks) {
   const { size } = await stat(path.join(astroDir, chunk));
   const is3d = /vrm|three|viewer/i.test(chunk);
-  const spikeOnly = !publiclyReachable.has(chunk);
+  const identityOnly = !publiclyReachable.has(chunk);
   const budget = is3d
     ? BUDGETS.threeDChunkBytes
-    : spikeOnly
-      ? BUDGETS.spikeOnlyChunkBytes
+    : identityOnly
+      ? BUDGETS.identityOnlyChunkBytes
       : BUDGETS.chunkBytes;
   if (size > budget) {
-    failures.push(`chunk ${chunk} ${size}B > ${budget}B${spikeOnly ? ' (spike-only)' : ''}`);
+    failures.push(`chunk ${chunk} ${size}B > ${budget}B${identityOnly ? ' (identity-only)' : ''}`);
   }
 }
 

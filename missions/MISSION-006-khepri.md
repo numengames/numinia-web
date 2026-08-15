@@ -33,8 +33,8 @@ platform feels like one product built by one house, not an accretion of tools.
   bake alpha — 9.9 MB) stay OUT of git per constitution (no binaries); kept in
   `~/Descargas` for now; needed only for 3D/metaverse work (§13.7).
 - Companion docs received for the SEPARATE numen.games project (master prompt
-  + marketing schema v0.6.0) — different repo, different constitution; not
-  part of this mission.
+  - marketing schema v0.6.0) — different repo, different constitution; not
+    part of this mission.
 
 ## Phase A — Preparation (before touching any page)
 

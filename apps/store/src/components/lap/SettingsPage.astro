@@ -1,0 +1,484 @@
+---
+/**
+ * Settings (MISSION-010): what the platform can honestly offer today —
+ * appearance, language, which sidebar sections you keep, your session, what
+ * your rank grants (§Ranks, straight from the domain), and where your data
+ * lives. Controls follow §9.8: switches are capsules, ON dresses in ink.
+ */
+import { PERMISSION_GROUPS, RANK_DEFINITIONS, resolvePermissions, type SupportedLocale } from '@numinia/domain';
+import { SETTINGS_UI } from '../../i18n/settings';
+import { LAP_UI } from '../../i18n/lap';
+import { CURRENT_VERSION } from '../../lib/updates';
+import Icon from '../chrome/Icon.astro';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = SETTINGS_UI[locale];
+const lap = LAP_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+/** Sections a citizen may hide from the rail (chrome preference, D17). */
+const HIDEABLE = ['character', 'codex', 'portals', 'loot', 'seasons', 'stats'] as const;
+
+/** Nomad is the rank without a session: show what it opens and what waits. */
+const nomadGrants = resolvePermissions('nomad');
+const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
+  es: 'Español',
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+  'pt-br': 'Português',
+};
+---
+
+<LapShell locale={locale} current="settings" title={`${t.title} — L.A.P. — Numinia`} description={t.intro}>
+  <article data-lap-settings>
+    <h1>{t.title}</h1>
+    <p class="intro">{t.intro}</p>
+
+    <!-- Session: the login lives here, contextual, never a wall (D16). -->
+    <section aria-labelledby="s-session">
+      <h2 id="s-session" class="etiqueta">{t.session}</h2>
+      <div class="tarjeta sesion" data-session-card>
+        <p data-session-state data-signed-in={t.signedIn}>{t.signedOut}</p>
+        <dl hidden data-session-detail>
+          <div>
+            <dt>{t.rank}</dt>
+            <dd data-session-rank>—</dd>
+          </div>
+          <div>
+            <dt>{t.address}</dt>
+            <dd class="mono" data-session-address>—</dd>
+          </div>
+        </dl>
+        <div class="acciones">
+          <a href={`${prefix}/lap/session/`} class="btn btn-primario" data-metric="settings-sign-in">
+            {t.signIn}
+          </a>
+          <button type="button" class="btn btn-fantasma" hidden data-session-signout data-metric="settings-sign-out">
+            {t.signOut}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-appearance">
+      <h2 id="s-appearance" class="etiqueta">{t.appearance}</h2>
+      <div class="tarjeta">
+        <div class="fila">
+          <span>{t.mode}</span>
+          <div class="segmento" role="group" aria-label={t.mode}>
+            <button type="button" data-set-mode="diurno" data-metric="settings-mode-diurno">
+              <Icon name="sun" size={16} />
+              {t.modeDiurno}
+            </button>
+            <button type="button" data-set-mode="nocturno" data-metric="settings-mode-nocturno">
+              <Icon name="moon-stars" size={16} />
+              {t.modeNocturno}
+            </button>
+          </div>
+        </div>
+        <p class="nota">
+          <strong>{t.motion}.</strong>
+          {t.motionNote}
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-language">
+      <h2 id="s-language" class="etiqueta">{t.language}</h2>
+      <div class="tarjeta">
+        <div class="idiomas">
+          {
+            (Object.keys(LANGUAGE_NAMES) as SupportedLocale[]).map((code) => (
+              <a
+                href={`${code === 'en' ? '' : `/${code}`}/lap/settings/`}
+                lang={code}
+                aria-current={code === locale ? 'true' : undefined}
+                data-metric={`settings-lang-${code}`}
+              >
+                {LANGUAGE_NAMES[code]}
+              </a>
+            ))
+          }
+        </div>
+        <p class="nota">{t.languageNote}</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-sidebar">
+      <h2 id="s-sidebar" class="etiqueta">{t.sidebar}</h2>
+      <div class="tarjeta">
+        <ul class="interruptores">
+          {
+            HIDEABLE.map((section) => (
+              <li>
+                <label>
+                  <span>{lap.sections[section]}</span>
+                  <input
+                    type="checkbox"
+                    checked
+                    data-section-toggle={section}
+                    data-metric="settings-section-toggle"
+                  />
+                  <span class="pista" aria-hidden="true" />
+                </label>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="nota">{t.sidebarNote}</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-permissions">
+      <h2 id="s-permissions" class="etiqueta">{t.permissions}</h2>
+      <div class="tarjeta">
+        <p class="nota">{t.permissionsNote}</p>
+        <ol class="rangos">
+          {
+            RANK_DEFINITIONS.map((rank, index) => (
+              <li>
+                <span class="mono nivel">{index}</span>
+                <div>
+                  <p class="nombre">{rank.name[locale]}</p>
+                  <p class="grupo mono">{PERMISSION_GROUPS[index]?.toUpperCase()}</p>
+                </div>
+                <span class="pildora" data-estado={index === 0 ? 'granted' : 'locked'}>
+                  {index === 0 ? t.granted : t.locked}
+                </span>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="nota mono">
+          {nomadGrants.size}/22 · {[...nomadGrants].join(' · ')}
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-data">
+      <h2 id="s-data" class="etiqueta">{t.data}</h2>
+      <div class="tarjeta">
+        <p>{t.dataNote}</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="s-about">
+      <h2 id="s-about" class="etiqueta">{t.about}</h2>
+      <div class="tarjeta">
+        <dl class="acerca">
+          <div>
+            <dt>{t.version}</dt>
+            <dd class="mono">
+              <a href={`${prefix}/updates/`} data-metric="settings-version">{CURRENT_VERSION}</a>
+            </dd>
+          </div>
+          <div>
+            <dt>{t.designSystem}</dt>
+            <dd class="mono">Khepri v4.2.0</dd>
+          </div>
+          <div>
+            <dt>{t.sourceData}</dt>
+            <dd class="mono">
+              <a
+                href="https://github.com/PabloFMM/numinia-digital-goods-data"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="settings-data-repo"
+              >
+                numinia-digital-goods-data
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  </article>
+</LapShell>
+
+<script>
+  /* Chrome preferences (D17: localStorage for chrome only) + a live read of
+     the session. Everything degrades: without JS the page still tells the
+     truth, it just cannot toggle. */
+  const root = document.documentElement;
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-mode]')) {
+    button.addEventListener('click', () => {
+      const mode = button.dataset['setMode'] ?? 'diurno';
+      root.dataset['modo'] = mode;
+      try {
+        localStorage.setItem('numinia-modo', mode);
+      } catch {
+        /* private mode */
+      }
+      paintMode();
+    });
+  }
+  function paintMode(): void {
+    const current = root.dataset['modo'] === 'nocturno' ? 'nocturno' : 'diurno';
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-mode]')) {
+      button.setAttribute('aria-pressed', String(button.dataset['setMode'] === current));
+    }
+  }
+  paintMode();
+
+  const HIDDEN_KEY = 'numinia-lap-hidden';
+  const readHidden = (): string[] => {
+    try {
+      return (localStorage.getItem(HIDDEN_KEY) ?? '').split(',').filter(Boolean);
+    } catch {
+      return [];
+    }
+  };
+  const hidden = new Set(readHidden());
+  for (const input of document.querySelectorAll<HTMLInputElement>('[data-section-toggle]')) {
+    const section = input.dataset['sectionToggle'] ?? '';
+    input.checked = !hidden.has(section);
+    input.addEventListener('change', () => {
+      if (input.checked) hidden.delete(section);
+      else hidden.add(section);
+      try {
+        localStorage.setItem(HIDDEN_KEY, [...hidden].join(','));
+      } catch {
+        /* private mode */
+      }
+      root.dataset['lapHidden'] = [...hidden].join(' ');
+    });
+  }
+
+  const card = document.querySelector('[data-session-card]');
+  if (card) {
+    void fetch('/api/auth/session')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((session: { address: string; rank: string } | null) => {
+        if (!session) return;
+        const state = card.querySelector('[data-session-state]');
+        const detail = card.querySelector('[data-session-detail]');
+        const signIn = card.querySelector('[data-metric="settings-sign-in"]');
+        const signOut = card.querySelector('[data-session-signout]');
+        if (state) state.textContent = state.getAttribute('data-signed-in') ?? state.textContent;
+        detail?.removeAttribute('hidden');
+        signIn?.setAttribute('hidden', '');
+        signOut?.removeAttribute('hidden');
+        const rank = card.querySelector('[data-session-rank]');
+        const address = card.querySelector('[data-session-address]');
+        if (rank) rank.textContent = session.rank;
+        if (address) {
+          address.textContent = `${session.address.slice(0, 6)}…${session.address.slice(-4)}`;
+          address.setAttribute('title', session.address);
+        }
+      })
+      .catch(() => undefined);
+    card.querySelector('[data-session-signout]')?.addEventListener('click', () => {
+      void fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
+    });
+  }
+</script>
+
+<style>
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 0;
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  section {
+    margin-top: var(--s6);
+  }
+  h2 {
+    margin: 0 0 var(--s3);
+    font-weight: 500;
+  }
+  .tarjeta {
+    max-width: 46rem;
+  }
+  .nota {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    margin: var(--s3) 0 0;
+  }
+  .fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    flex-wrap: wrap;
+  }
+  /* §9.8 segmented control: the chosen option dresses in ink. */
+  .segmento {
+    display: flex;
+    gap: var(--s1);
+  }
+  .segmento button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 0 var(--s4);
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    background: transparent;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    cursor: pointer;
+    transition:
+      color 120ms var(--ciclo),
+      background 120ms var(--ciclo);
+  }
+  .segmento button[aria-pressed='true'] {
+    background: var(--texto);
+    border-color: var(--texto);
+    color: var(--fondo);
+  }
+  .idiomas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  .idiomas a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    color: var(--texto-2);
+    text-decoration: none;
+  }
+  .idiomas a[aria-current='true'] {
+    background: var(--texto);
+    border-color: var(--texto);
+    color: var(--fondo);
+  }
+  /* §9.8 switch: capsule 36×20, disc 14, ON = ink. */
+  .interruptores {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .interruptores label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s4);
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .interruptores input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .pista {
+    position: relative;
+    flex: none;
+    width: 36px;
+    height: 20px;
+    border-radius: var(--radio-completo);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    transition: background 120ms var(--ciclo);
+  }
+  .pista::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--texto-3);
+    transition: transform 120ms var(--ciclo);
+  }
+  input:checked + .pista {
+    background: var(--texto);
+    border-color: var(--texto);
+  }
+  input:checked + .pista::after {
+    background: var(--fondo);
+    transform: translateX(16px);
+  }
+  input:focus-visible + .pista {
+    outline: 2px solid #018ea1;
+    outline-offset: 2px;
+  }
+  .rangos {
+    list-style: none;
+    margin: var(--s4) 0 0;
+    padding: 0;
+  }
+  .rangos li {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-height: 40px;
+    border-bottom: 1px solid var(--linea);
+  }
+  .nivel {
+    color: var(--texto-3);
+  }
+  .rangos .nombre {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto);
+  }
+  .grupo {
+    margin: 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+  }
+  .rangos li > div {
+    flex: 1;
+  }
+  .pildora[data-estado='granted'] {
+    color: var(--verdemar);
+  }
+  .pildora[data-estado='locked'] {
+    color: var(--texto-3);
+  }
+  .sesion .acciones {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    margin-top: var(--s4);
+  }
+  .sesion .acciones a {
+    text-decoration: none;
+  }
+  .sesion dl,
+  .acerca {
+    display: grid;
+    gap: var(--s2) var(--s5);
+    grid-template-columns: max-content 1fr;
+    margin: var(--s4) 0 0;
+  }
+  dt {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+  }
+  dd {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  dd a {
+    color: var(--enlace);
+    text-decoration: none;
+  }
+</style>

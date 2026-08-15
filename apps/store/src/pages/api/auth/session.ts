@@ -5,11 +5,15 @@
  */
 
 import type { APIRoute } from 'astro';
-import { SESSION_COOKIE, verifySession } from '../../../lib/auth/server';
+import { authConfigured, SESSION_COOKIE, verifySession } from '../../../lib/auth/server';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ cookies }) => {
+  // Fail closed: unconfigured auth can never yield a session.
+  if (!authConfigured()) {
+    return Response.json({ error: 'Auth not configured' }, { status: 401 });
+  }
   const token = cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
     return Response.json({ error: 'No session' }, { status: 401 });

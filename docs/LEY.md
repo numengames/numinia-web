@@ -58,19 +58,20 @@ inference: documents are how this organism keeps its world-model and its actions
 
 ## Missions — what was promised and delivered
 
-| Document                                                                          | Rules on                |
-| --------------------------------------------------------------------------------- | ----------------------- |
-| [missions/MISSION-000-report.md](../missions/MISSION-000-report.md)               | Foundations (report)    |
-| [missions/MISSION-001.md](../missions/MISSION-001.md)                             | The Archive             |
-| [missions/MISSION-002.md](../missions/MISSION-002.md)                             | Identity (spec, gated)  |
-| [missions/MISSION-003-web-parity.md](../missions/MISSION-003-web-parity.md)       | Web parity P1–P5        |
-| [missions/MISSION-004-three-pillars.md](../missions/MISSION-004-three-pillars.md) | Three pillars + the Law |
-| [missions/MISSION-005-data-dignity.md](../missions/MISSION-005-data-dignity.md)   | Data dignity narrative  |
-| [missions/MISSION-006-khepri.md](../missions/MISSION-006-khepri.md)               | Khepri design execution |
-| [missions/MISSION-007-city-chronicle.md](../missions/MISSION-007-city-chronicle.md) | The City chronicle      |
-| [missions/MISSION-008-lap-platform.md](../missions/MISSION-008-lap-platform.md)   | The L.A.P. platform     |
-| [missions/MISSION-009-codex-stats.md](../missions/MISSION-009-codex-stats.md)     | Codex manual + stats    |
-| [docs/merge-numinia-com.md](./merge-numinia-com.md)                               | numinia.com merge plan  |
+| Document                                                                                | Rules on                |
+| --------------------------------------------------------------------------------------- | ----------------------- |
+| [missions/MISSION-000-report.md](../missions/MISSION-000-report.md)                     | Foundations (report)    |
+| [missions/MISSION-001.md](../missions/MISSION-001.md)                                   | The Archive             |
+| [missions/MISSION-002.md](../missions/MISSION-002.md)                                   | Identity (spec, gated)  |
+| [missions/MISSION-003-web-parity.md](../missions/MISSION-003-web-parity.md)             | Web parity P1–P5        |
+| [missions/MISSION-004-three-pillars.md](../missions/MISSION-004-three-pillars.md)       | Three pillars + the Law |
+| [missions/MISSION-005-data-dignity.md](../missions/MISSION-005-data-dignity.md)         | Data dignity narrative  |
+| [missions/MISSION-006-khepri.md](../missions/MISSION-006-khepri.md)                     | Khepri design execution |
+| [missions/MISSION-007-city-chronicle.md](../missions/MISSION-007-city-chronicle.md)     | The City chronicle      |
+| [missions/MISSION-008-lap-platform.md](../missions/MISSION-008-lap-platform.md)         | The L.A.P. platform     |
+| [missions/MISSION-009-codex-stats.md](../missions/MISSION-009-codex-stats.md)           | Codex manual + stats    |
+| [missions/MISSION-010-settings-session.md](../missions/MISSION-010-settings-session.md) | Settings + the door     |
+| [docs/merge-numinia-com.md](./merge-numinia-com.md)                                     | numinia.com merge plan  |
 
 ## Not law, but load-bearing
 

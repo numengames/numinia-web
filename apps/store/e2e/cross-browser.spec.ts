@@ -17,6 +17,7 @@ const PAGES = [
   '/es/lap/codex/',
   '/es/lap/codex/capitulo-2/',
   '/es/lap/stats/',
+  '/es/lap/settings/',
   '/es/city/',
   '/es/archive/',
   '/',

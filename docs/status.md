@@ -110,6 +110,7 @@
   7. **Settings / Users / admin zone** — needs MISSION-002 identity + rank gating (minRank pattern from legacy sidebar).
 - **MISSION-009 — Codex manual + Archive stats ✅ (v0.24.0)**: the RPG manual reads as a book inside /lap/codex/ (own parser: structure added, author text untouched, tables preserved, fragment anchors), archive statistics from real catalog data (§9.5 probes + §9.8 redundancy bar). Reviewed by a UX panel and a Khepri compliance audit — every finding applied (no-JS content restored, wallet truncation, light 48px empty states, ink primary that never lightens, canonical binaria, 44px targets…). New gate: cross-browser + responsive + no-JS.
 - **Known gap**: WebKit (iPhone/Safari engine) cannot launch on this workstation — missing system libs. The gate runs it under `PLAYWRIGHT_WEBKIT=1` or in CI after `playwright install-deps`; phone-width coverage today is Chromium + Firefox.
+- **MISSION-010 — Settings + the door ✅ (v0.25.0)**: /lap/settings/ (session card, appearance, language, panel-section switches, rank→permissions from the domain, data & about) and /lap/session/ (the login, contextual per D16) ×5 locales. **D14 closed by Oracle order**: MISSION-002 Steps 1–3 landed. Auth now fails closed cleanly (401/503, no module-scope crash); budget gate learned the identity class; `[hidden]` guard added after a control leaked to visitors.
 - Next: Oracle's next punch-list items, one at a time.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)

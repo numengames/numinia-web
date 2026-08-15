@@ -121,7 +121,7 @@ describe('loadRoadmap / CURRENT_VERSION', () => {
   });
 
   it('advertises the newest rebuild version', () => {
-    expect(CURRENT_VERSION).toBe('v0.24.0');
+    expect(CURRENT_VERSION).toBe('v0.25.0');
     expect(newestVersion([])).toBe('v0.0.0');
     expect(CURRENT_VERSION).toBe(REBUILD_UPDATES[0]!.version);
     expect(CURRENT_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);

@@ -9,7 +9,7 @@
 > _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
 
 > **Agent type:** 🔀 Hybrid (evaluation gate needs Oracle sign-off)
-> **Priority:** 🔴 Critical · **Effort:** L · **Status:** 🔵 In progress — Step 0 executed 2026-08-15, pending Oracle sign-off
+> **Priority:** 🔴 Critical · **Effort:** L · **Status:** ✅ Steps 0–3 done (2026-08-15). Gate D14 closed by Oracle order to build the login; surface shipped in MISSION-010. Remaining: Session Zero ranks (Phase 3).
 > **Guild / House:** Sentinels (protection) + Procurators (law)
 > **Track:** `com`-grade `packages/auth`; `store` for the login surface. **No deploy.**
 > **Governing decision:** docs/decisions/ADR-006-progressive-auth-final.md

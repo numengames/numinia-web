@@ -16,6 +16,7 @@ export interface LapMessages {
     readonly seasons: string;
     readonly stats: string;
     readonly updates: string;
+    readonly settings: string;
   };
   readonly foldNav: string;
   readonly stats: {
@@ -157,6 +158,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       seasons: 'Temporadas',
       stats: 'Estadísticas',
       updates: 'Novedades',
+      settings: 'Ajustes',
     },
     sheet: {
       title: 'Ficha de personaje',
@@ -231,6 +233,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       seasons: 'Seasons',
       stats: 'Stats',
       updates: 'Updates',
+      settings: 'Settings',
     },
     sheet: {
       title: 'Character sheet',
@@ -303,6 +306,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       seasons: 'シーズン',
       stats: '統計',
       updates: '更新情報',
+      settings: '設定',
     },
     sheet: {
       title: 'キャラクターシート',
@@ -374,6 +378,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       seasons: '시즌',
       stats: '통계',
       updates: '업데이트',
+      settings: '설정',
     },
     sheet: {
       title: '캐릭터 시트',
@@ -444,6 +449,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       seasons: 'Temporadas',
       stats: 'Estatísticas',
       updates: 'Novidades',
+      settings: 'Configurações',
     },
     sheet: {
       title: 'Ficha de personagem',

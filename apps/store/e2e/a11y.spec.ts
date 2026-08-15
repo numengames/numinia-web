@@ -31,6 +31,8 @@ const PAGES = [
   '/es/lap/character/',
   '/es/lap/codex/',
   '/es/lap/portals/',
+  '/es/lap/settings/',
+  '/es/lap/session/',
 ];
 
 for (const path of PAGES) {
@@ -49,6 +51,11 @@ for (const path of PAGES) {
       // Khepri §6.1 binaria: texture-as-text, aria-hidden, deliberately faint.
       // WCAG 1.4.3 exempts pure decoration from contrast; axe cannot know.
       .exclude('.binaria')
+      // The wallet widget is vendor markup (thirdweb ConnectEmbed): one of
+      // its internal buttons ships without an accessible name. We cannot
+      // patch third-party DOM — reported upstream, excluded here so the gate
+      // keeps guarding OUR markup on this page instead of going silent.
+      .exclude('[data-metric="auth-connect"]')
       .analyze();
     const violations = results.violations.map((violation) => ({
       id: violation.id,

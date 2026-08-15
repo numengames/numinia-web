@@ -6,23 +6,29 @@
  */
 
 import type { APIRoute } from 'astro';
-import { auth, issueSession, SESSION_COOKIE } from '../../../lib/auth/server';
+import { authConfigured, getAuth, issueSession, SESSION_COOKIE } from '../../../lib/auth/server';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url }) => {
+  if (!authConfigured()) {
+    return Response.json({ error: 'Auth not configured' }, { status: 503 });
+  }
   const address = url.searchParams.get('address');
   const chainId = url.searchParams.get('chainId');
   if (!address) {
     return Response.json({ error: 'address is required' }, { status: 400 });
   }
-  const payload = await auth.generatePayload(
+  const payload = await getAuth().generatePayload(
     chainId ? { address, chainId: Number(chainId) } : { address },
   );
   return Response.json(payload);
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!authConfigured()) {
+    return Response.json({ error: 'Auth not configured' }, { status: 503 });
+  }
   let body: unknown;
   try {
     body = await request.json();
@@ -34,9 +40,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.json({ error: 'payload and signature are required' }, { status: 400 });
   }
 
-  const verified = await auth.verifyPayload({
+  const verified = await getAuth().verifyPayload({
     // Malformed shapes fail verification inside thirdweb; we stay fail-closed.
-    payload: payload as Parameters<typeof auth.verifyPayload>[0]['payload'],
+    payload: payload as Parameters<ReturnType<typeof getAuth>['verifyPayload']>[0]['payload'],
     signature: signature as `0x${string}`,
   });
   if (!verified.valid) {

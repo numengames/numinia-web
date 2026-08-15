@@ -56,6 +56,12 @@
   line-height: 1.35;
 }
 
+/* [hidden] must always win: any `display` from a component class silently
+   defeats the attribute, and a control meant to be absent then shows up. */
+[hidden] {
+  display: none !important;
+}
+
 /* ---- No-JS safety net for the reveal (§10-02) ------------------------
    The kit hides .reveal until an observer adds .visible. Without JS nothing
    ever would, and the page would ship blank — so the hidden state applies

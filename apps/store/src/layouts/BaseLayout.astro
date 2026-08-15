@@ -57,6 +57,8 @@ const urlFor = (target: SupportedLocale): string =>
           document.documentElement.dataset.modo = 'nocturno';
         if (localStorage.getItem('numinia-lap-nav') === 'plegado')
           document.documentElement.dataset.lapNav = 'plegado';
+        var hidden = localStorage.getItem('numinia-lap-hidden');
+        if (hidden) document.documentElement.dataset.lapHidden = hidden.split(',').join(' ');
       } catch {}
     </script>
     <title>{title}</title>
