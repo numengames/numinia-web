@@ -25,7 +25,39 @@ describe('env validation (fail closed — legacy audit rule 4)', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(EnvValidationError);
       expect(String(error)).toContain('GITHUB_REPO_OWNER');
+      expect((error as Error).name).toBe('EnvValidationError');
+      expect((error as Error).message).toContain('Invalid environment variables');
     }
+  });
+
+  it('formats every issue as "VAR: message" on its own indented line', () => {
+    try {
+      parseEnv({});
+      expect.unreachable('parseEnv must throw');
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).toContain('\n  GITHUB_REPO_OWNER:');
+      expect(message).toContain('\n  GITHUB_REPO_NAME:');
+    }
+  });
+
+  it('names the variable in the empty-string message too', () => {
+    try {
+      parseEnv({ ...valid, GITHUB_REPO_OWNER: '' });
+      expect.unreachable('parseEnv must throw');
+    } catch (error) {
+      expect((error as Error).message).toContain('GITHUB_REPO_OWNER is required');
+    }
+    try {
+      parseEnv({ ...valid, GITHUB_REPO_NAME: '' });
+      expect.unreachable('parseEnv must throw');
+    } catch (error) {
+      expect((error as Error).message).toContain('GITHUB_REPO_NAME is required');
+    }
+  });
+
+  it('accepts an explicit multi-character branch', () => {
+    expect(parseEnv({ ...valid, GITHUB_BRANCH: 'develop' }).githubBranch).toBe('develop');
   });
 
   it('rejects empty strings for required variables', () => {
@@ -55,8 +87,9 @@ describe('env validation (fail closed — legacy audit rule 4)', () => {
     expect(withToken.githubToken).toBe('ghp_x');
   });
 
-  it('defaults DATA_SOURCE to network and accepts fixture', () => {
+  it('defaults DATA_SOURCE to network and accepts both explicit values', () => {
     expect(parseEnv(valid).dataSource).toBe('network');
+    expect(parseEnv({ ...valid, DATA_SOURCE: 'network' }).dataSource).toBe('network');
     expect(parseEnv({ ...valid, DATA_SOURCE: 'fixture' }).dataSource).toBe('fixture');
     expect(() => parseEnv({ ...valid, DATA_SOURCE: 'wat' })).toThrowError(EnvValidationError);
   });
@@ -73,14 +106,24 @@ describe('asset catalog validation (build fails loudly — MISSION-000 data spik
     is_draft: false,
   };
 
-  it('accepts a real-shaped record and normalizes it', () => {
+  it('accepts a real-shaped record and normalizes it to the exact envelope', () => {
     const asset = parseAssetRecord(validRecord);
-    expect(asset.id).toBe(validRecord.id);
-    expect(asset.format).toBe('glb');
-    expect(asset.isPublic).toBe(true);
-    expect(asset.isDraft).toBe(false);
-    expect(asset.tags).toEqual([]);
-    expect(asset.license).toBe('CC0');
+    expect(asset).toEqual({
+      id: validRecord.id,
+      name: validRecord.name,
+      description: validRecord.description,
+      format: 'glb',
+      license: 'CC0',
+      projectId: '',
+      modelFileUrl: validRecord.model_file_url,
+      thumbnailUrl: null,
+      tags: [],
+      isPublic: true,
+      isDraft: false,
+      createdAt: '',
+      updatedAt: '',
+      storage: { arweaveTx: null, r2Url: null, ipfsCid: null, githubRawUrl: null },
+    });
   });
 
   it('accepts legacy records with unknown extra fields (passthrough, no data loss surprises)', () => {
@@ -102,22 +145,41 @@ describe('asset catalog validation (build fails loudly — MISSION-000 data spik
     expect(asset.format).toBe('vrm');
   });
 
-  it('parses a whole catalog and reports the offending index on failure', () => {
+  it('parses a whole catalog and reports the offending index with field detail', () => {
     expect(parseAssetCatalog([validRecord, { ...validRecord, id: 'ndg-2' }])).toHaveLength(2);
     try {
       parseAssetCatalog([validRecord, { broken: true }]);
       expect.unreachable('parseAssetCatalog must throw');
     } catch (error) {
-      expect(String(error)).toContain('index 1');
+      const message = (error as Error).message;
+      expect(message).toContain('Asset catalog invalid at index 1');
+      expect(message).toMatch(/id: /);
+      expect(message).toContain('; '); // multiple issues joined
     }
   });
 
-  it('rejects non-array catalogs', () => {
-    expect(() => parseAssetCatalog({ not: 'an array' })).toThrowError();
+  it('rejects non-array catalogs with a dedicated message', () => {
+    expect(() => parseAssetCatalog({ not: 'an array' })).toThrowError(
+      'Asset catalog must be a JSON array',
+    );
   });
 
   it('reports root-level detail for a null record inside the catalog', () => {
     expect(() => parseAssetCatalog([null])).toThrowError(/index 0 — \(root\)/);
+  });
+
+  it('reports nested field paths with dot notation', () => {
+    expect(() => parseAssetCatalog([{ ...validRecord, storage: { arweave_tx: 42 } }])).toThrowError(
+      /storage\.arweave_tx/,
+    );
+  });
+
+  it('applies exact defaults for a minimal record', () => {
+    const asset = parseAssetRecord({ id: 'a', name: 'n', type: 'vrm' });
+    expect(asset.description).toBe('');
+    expect(asset.modelFileUrl).toBe('');
+    expect(asset.isPublic).toBe(true);
+    expect(asset.isDraft).toBe(false);
   });
 
   it('normalizes an explicit storage block', () => {

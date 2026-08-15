@@ -30,9 +30,41 @@ describe('resolvePermissions (cumulative ladder)', () => {
     }
   });
 
-  it('oracle holds all 22 permissions', () => {
-    expect(resolvePermissions('oracle').size).toBe(PERMISSIONS.length);
+  it('oracle holds exactly the 22 declared permissions — no more, no less, none renamed', () => {
+    expect([...resolvePermissions('oracle')].sort()).toEqual([...PERMISSIONS].sort());
     expect(PERMISSIONS).toHaveLength(22);
+  });
+
+  it('each rank grants exactly its declared permissions (full ladder pin)', () => {
+    const expectedGrants: Record<string, string[]> = {
+      nomad: ['browse', 'download', 'favorite'],
+      citizen: ['edit-profile', 'session-zero', 'access-loot'],
+      pilgrim: ['access-season-content', 'burn-ritual'],
+      vernacular: [
+        'upload-assets',
+        'edit-own-metadata',
+        'delete-own-assets',
+        'view-own-stats',
+        'access-lap',
+      ],
+      archon: [
+        'manage-all-assets',
+        'manage-seasons',
+        'manage-users',
+        'view-audit-log',
+        'ban-users',
+        'promote-vernacular',
+      ],
+      oracle: ['promote-archon', 'edit-rank-permissions', 'edit-system-config'],
+    };
+    for (let i = 0; i < RANKS.length; i++) {
+      const rank = RANKS[i];
+      if (rank === undefined) throw new Error('unreachable');
+      const current = resolvePermissions(rank);
+      const below = i === 0 ? new Set<string>() : resolvePermissions(RANKS[i - 1] as never);
+      const granted = [...current].filter((p) => !below.has(p)).sort();
+      expect(granted, `grants of ${rank}`).toEqual([...(expectedGrants[rank] ?? [])].sort());
+    }
   });
 
   it('grants land at the right rank', () => {

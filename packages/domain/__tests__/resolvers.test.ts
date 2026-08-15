@@ -53,6 +53,7 @@ describe('classifyStorageUrl (parsed hostnames, never substrings — audit B6)',
     expect(classifyStorageUrl('https://pub-abc.r2.dev/x.glb')).toBe('r2');
     expect(classifyStorageUrl('https://bucket.r2.cloudflarestorage.com/x')).toBe('r2');
     expect(classifyStorageUrl('https://dweb.link/ipfs/Qm')).toBe('ipfs');
+    expect(classifyStorageUrl('https://ipfs.io/ipfs/Qm')).toBe('ipfs');
     expect(classifyStorageUrl('https://raw.githubusercontent.com/o/r/m/f')).toBe('github');
   });
 

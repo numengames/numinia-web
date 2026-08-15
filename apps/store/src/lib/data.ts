@@ -14,7 +14,7 @@ export interface DataSourceConfig {
   readonly branch: string;
 }
 
-export function catalogUrl(config: DataSourceConfig, path: string): string {
+function catalogUrl(config: DataSourceConfig, path: string): string {
   return `${RAW_BASE}/${config.owner}/${config.repo}/${config.branch}/${path}`;
 }
 

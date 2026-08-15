@@ -42,13 +42,21 @@ describe('event taxonomy (funnel backbone)', () => {
     );
   });
 
-  it('rejects malformed props for a known event', () => {
-    expect(() => buildEvent('download_click', ctx, { assetId: 'a1' } as never)).toThrowError();
+  it('rejects malformed props for a known event, naming the prop', () => {
+    expect(() => buildEvent('download_click', ctx, { assetId: 'a1' } as never)).toThrowError(
+      /requires non-empty string prop "format"/,
+    );
     expect(() => buildEvent('cta_click', ctx, { metricId: '' } as never)).toThrowError();
+    expect(() => buildEvent('cta_click', ctx, { metricId: 42 } as never)).toThrowError(
+      /non-empty string/,
+    );
   });
 
-  it('rejects an empty optional prop', () => {
+  it('rejects an empty or non-string optional prop', () => {
     expect(() => buildEvent('page_view', ctx, { referrerHost: '' } as never)).toThrowError(
+      /non-empty string/,
+    );
+    expect(() => buildEvent('page_view', ctx, { referrerHost: 7 } as never)).toThrowError(
       /non-empty string/,
     );
   });
@@ -56,11 +64,16 @@ describe('event taxonomy (funnel backbone)', () => {
   it('strips unexpected props — nothing undeclared travels (privacy by design)', () => {
     expect(() =>
       buildEvent('wallet_connect_success', ctx, { address: '0xabc' } as never),
-    ).toThrowError();
+    ).toThrowError(/does not declare prop "address"/);
   });
 });
 
 describe('consent gating (GDPR: drop, never buffer, before consent)', () => {
+  it('initial state is unknown by default', () => {
+    expect(createConsent().get()).toBe('unknown');
+    expect(createConsent('denied').get()).toBe('denied');
+  });
+
   it('starts unknown and drops events', () => {
     const transport = memoryTransport();
     const consent = createConsent();
@@ -109,8 +122,18 @@ describe('emitter robustness (analytics must never break the app)', () => {
       },
       consent,
     });
-    expect(analytics.track('page_view', ctx, {}).accepted === false).toBe(true);
+    const result = analytics.track('page_view', ctx, {});
+    expect(result).toEqual({ accepted: false, reason: 'transport' });
     expect(() => analytics.flush()).not.toThrow();
+  });
+
+  it('flush delegates to the transport', () => {
+    const transport = memoryTransport();
+    const analytics = createAnalytics({ transport, consent: createConsent('granted') });
+    analytics.track('page_view', ctx, {});
+    expect(transport.events).toHaveLength(1);
+    analytics.flush();
+    expect(transport.events).toHaveLength(0);
   });
 });
 

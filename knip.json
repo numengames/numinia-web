@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["cucumber.js", "apps/store/scripts/**"],
+  "ignoreDependencies": [
+    "prettier",
+    "secretlint",
+    "@secretlint/secretlint-rule-preset-recommend",
+    "vite"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "features/steps/*.mjs"]
+    },
+    "apps/store": {
+      "entry": ["src/pages/**/*.{astro,ts}", "src/scripts/*.ts", "e2e/*.spec.ts"]
+    },
+    "apps/com": {
+      "entry": ["src/pages/**/*.astro"]
+    },
+    "packages/domain": {
+      "entry": ["src/index.ts", "__tests__/*.test.ts"]
+    },
+    "packages/analytics": {
+      "entry": ["src/index.ts", "__tests__/*.test.ts"]
+    }
+  }
+}
