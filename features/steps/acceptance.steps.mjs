@@ -473,3 +473,28 @@ Then('the link integrity gate passes', async function () {
   });
   assert.match(result.stdout, /0 broken/);
 });
+
+Then('every external link opens in a new tab', async function () {
+  const { readdir } = await import('node:fs/promises');
+  const offenders = [];
+  const walk = async (dir) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(full);
+      else if (entry.name.endsWith('.html')) {
+        const html = await readFile(full, 'utf8');
+        for (const match of html.matchAll(/<a\s[^>]*href="https?:\/\/[^"]+"[^>]*>/g)) {
+          if (!match[0].includes('target="_blank"')) {
+            offenders.push(`${path.relative(this.distDir, full)}: ${match[0].slice(0, 80)}`);
+          }
+        }
+      }
+    }
+  };
+  await walk(this.distDir);
+  assert.deepEqual(
+    offenders.slice(0, 5),
+    [],
+    `external links without target=_blank (${offenders.length})`,
+  );
+});

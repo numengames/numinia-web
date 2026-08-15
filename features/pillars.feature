@@ -15,3 +15,7 @@ Feature: Three pillars (MISSION-004)
   Scenario: No internal link on the site is broken
     Given the store application has been built
     Then the link integrity gate passes
+
+  Scenario: External links always open in a new tab
+    Given the store application has been built
+    Then every external link opens in a new tab

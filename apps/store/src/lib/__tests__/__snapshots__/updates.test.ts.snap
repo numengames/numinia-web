@@ -3,8 +3,12 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
-    "date": "2026-08-15",
+    "date": "2026-08-15 11:45",
     "entries": [
+      {
+        "text": "Three pillars: La Ciudad (the Numinia narrative), Assets hub, and L.A.P.",
+        "type": "NEW",
+      },
       {
         "text": "The Archive: every public asset in 5 locales with search and filters",
         "type": "NEW",
@@ -18,18 +22,34 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
       {
+        "text": "3D Inspector: local GLB/VRM preview + metadata, fully in-browser",
+        "type": "NEW",
+      },
+      {
+        "text": "Resources: the 22 original docs pages rebuilt (en/ja)",
+        "type": "NEW",
+      },
+      {
+        "text": "Updates timeline + legal draft pages; version linked in the footer",
+        "type": "NEW",
+      },
+      {
         "text": "Site chrome: header, footer, and a no-JS language selector",
         "type": "NEW",
       },
       {
-        "text": "SEO: sitemap, robots.txt, canonical and hreflang on every page",
+        "text": "SEO: sitemap, robots.txt, canonical, hreflang, meta/OG on every page",
+        "type": "UPD",
+      },
+      {
+        "text": "Link-integrity gate: 8,404 internal links checked on every build",
         "type": "UPD",
       },
     ],
     "version": "v0.17.0",
   },
   {
-    "date": "2026-08-14",
+    "date": "2026-08-14 21:00",
     "entries": [
       {
         "text": "Full platform rebuild: Astro + Turborepo monorepo (code razed, design preserved)",

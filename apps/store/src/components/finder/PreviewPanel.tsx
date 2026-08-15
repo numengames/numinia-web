@@ -52,7 +52,13 @@ export function PreviewPanel({ item, labels }: PreviewPanelProps) {
           <h3>{item.name}</h3>
           <PreviewMedia item={item} labels={labels} />
           {item.url ? (
-            <a href={item.url} download data-metric="finder-download">
+            <a
+              href={item.url}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              data-metric="finder-download"
+            >
               {labels.download}
             </a>
           ) : (

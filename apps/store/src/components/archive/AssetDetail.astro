@@ -62,7 +62,13 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
 
     {
       binaryUrl ? (
-        <a href={binaryUrl} download data-metric="archive-download" rel="noopener">
+        <a
+          href={binaryUrl}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          data-metric="archive-download"
+        >
           {t.download}
         </a>
       ) : (

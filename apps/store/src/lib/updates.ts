@@ -24,18 +24,26 @@ export interface UpdateVersion {
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
     version: 'v0.17.0',
-    date: '2026-08-15',
+    date: '2026-08-15 11:45',
     entries: [
+      {
+        type: 'NEW',
+        text: 'Three pillars: La Ciudad (the Numinia narrative), Assets hub, and L.A.P.',
+      },
       { type: 'NEW', text: 'The Archive: every public asset in 5 locales with search and filters' },
       { type: 'NEW', text: 'Gallery: the avatars of the city, collection by collection' },
       { type: 'NEW', text: 'Finder: three-pane collection explorer with batch download' },
+      { type: 'NEW', text: '3D Inspector: local GLB/VRM preview + metadata, fully in-browser' },
+      { type: 'NEW', text: 'Resources: the 22 original docs pages rebuilt (en/ja)' },
+      { type: 'NEW', text: 'Updates timeline + legal draft pages; version linked in the footer' },
       { type: 'NEW', text: 'Site chrome: header, footer, and a no-JS language selector' },
-      { type: 'UPD', text: 'SEO: sitemap, robots.txt, canonical and hreflang on every page' },
+      { type: 'UPD', text: 'SEO: sitemap, robots.txt, canonical, hreflang, meta/OG on every page' },
+      { type: 'UPD', text: 'Link-integrity gate: 8,404 internal links checked on every build' },
     ],
   },
   {
     version: 'v0.16.0',
-    date: '2026-08-14',
+    date: '2026-08-14 21:00',
     entries: [
       {
         type: 'NEW',

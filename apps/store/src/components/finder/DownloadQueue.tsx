@@ -16,7 +16,8 @@ function triggerDownload(url: string, name: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = name;
-  anchor.rel = 'noopener';
+  anchor.rel = 'noopener noreferrer';
+  anchor.target = '_blank';
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
