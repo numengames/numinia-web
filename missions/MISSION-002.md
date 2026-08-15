@@ -79,6 +79,12 @@ Scenario: The Web3 boundary is one constant
   Then it is refused with a clear upgrade path
 ```
 
+> **Re-scoped by D16 (2026-08-15):** the L.A.P. is open to Nomads — part of its
+> content is visible with no session. Login is asked only where it earns its
+> place: gated content or data persistence. Steps 1–3 therefore build a
+> contextual login moment, not an entrance wall, and run AFTER the design
+> system work by Oracle order.
+
 ## Plan sketch (plan-before-code applies at execution time)
 
 0. **Evaluation spike + checklist → GATE** (halt on failure; report).
