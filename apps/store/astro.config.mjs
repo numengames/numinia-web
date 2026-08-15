@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import { loadEnv } from 'vite';
 import react from '@astrojs/react';
 import node from '@astrojs/node';
+import sitemap from '@astrojs/sitemap';
 import { parseEnv } from '@numinia/domain';
 
 // Fail closed AT BOOT: a missing required variable kills dev/build here,
@@ -20,7 +21,13 @@ export default defineConfig({
   output: 'static',
   // Node adapter serves the on-demand SIWE endpoint locally (no cloud deploy yet).
   adapter: node({ mode: 'standalone' }),
-  integrations: [react()],
+  integrations: [
+    react(),
+    sitemap({
+      // Internal pages stay out of the index (robots.txt disallows them too).
+      filter: (page) => !page.includes('/spike/'),
+    }),
+  ],
   i18n: {
     locales: ['es', 'en', 'ja', 'ko', 'pt-br'],
     defaultLocale: 'en',

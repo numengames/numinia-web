@@ -44,7 +44,12 @@ export default tseslint.config(
   },
   {
     // Node ESM scripts (tooling, cucumber steps): runtime globals are real there.
-    files: ['scripts/**/*.mjs', 'features/**/*.mjs', 'apps/*/scripts/**/*.mjs'],
+    files: [
+      'scripts/**/*.mjs',
+      'features/**/*.mjs',
+      'apps/*/scripts/**/*.mjs',
+      '**/astro.config.mjs',
+    ],
     languageOptions: {
       globals: {
         process: 'readonly',

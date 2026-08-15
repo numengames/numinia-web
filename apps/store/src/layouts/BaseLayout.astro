@@ -1,6 +1,6 @@
 ---
 import '@numinia/ui/tokens.css';
-import type { SupportedLocale } from '@numinia/domain';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 
 interface Props {
   locale: SupportedLocale;
@@ -8,6 +8,16 @@ interface Props {
 }
 
 const { locale, title } = Astro.props;
+
+// SEO: canonical + hreflang alternates, derived from the current path.
+// Locale variants share the path minus the locale prefix; en is unprefixed.
+const site = (Astro.site?.toString() ?? '/').replace(/\/$/, '');
+const localePrefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+const basePath = Astro.url.pathname.startsWith(`${localePrefix}/`)
+  ? Astro.url.pathname.slice(localePrefix.length)
+  : Astro.url.pathname;
+const urlFor = (target: SupportedLocale): string =>
+  `${site}${target === DEFAULT_LOCALE ? '' : `/${target}`}${basePath}`;
 ---
 
 <!doctype html>
@@ -16,6 +26,11 @@ const { locale, title } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <link rel="canonical" href={urlFor(locale)} />
+    {SUPPORTED_LOCALES.map((alt) => (
+      <link rel="alternate" hreflang={alt} href={urlFor(alt)} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={urlFor(DEFAULT_LOCALE)} />
     <slot name="head" />
   </head>
   <body>

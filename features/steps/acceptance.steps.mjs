@@ -177,3 +177,30 @@ Then('the archive index offers search and format filters', async function () {
   assert.ok(html.includes('id="archive-search"'), 'search input missing');
   assert.ok(html.includes('data-filter-format'), 'format filters missing');
 });
+
+// --- SEO plumbing ---
+
+Then('the page declares a canonical link', function () {
+  assert.match(this.pageHtml, /<link rel="canonical" href="[^"]+"/);
+});
+
+Then('it declares hreflang alternates for every locale and x-default', function () {
+  for (const code of ['en', 'es', 'ja', 'ko', 'pt-br', 'x-default']) {
+    assert.ok(
+      this.pageHtml.includes(`hreflang="${code}"`),
+      `missing hreflang alternate for ${code}`,
+    );
+  }
+});
+
+Then('the sitemap exists and lists every public asset page', async function () {
+  const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
+  for (const id of this.publicIds) {
+    assert.ok(sitemap.includes(`/archive/${id}/`), `sitemap missing archive/${id}`);
+  }
+});
+
+Then('the sitemap does not list internal pages', async function () {
+  const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
+  assert.ok(!sitemap.includes('/spike/'), 'sitemap leaks the spike page');
+});
