@@ -19,7 +19,8 @@ export type LapSection =
   | 'seasons'
   | 'stats'
   | 'settings'
-  | 'admin-assets';
+  | 'admin-assets'
+  | 'admin-census';
 
 interface Props {
   locale: SupportedLocale;
@@ -42,7 +43,8 @@ type IconName =
   | 'chart-bar'
   | 'bell'
   | 'gear'
-  | 'package';
+  | 'package'
+  | 'users';
 const ITEMS: ReadonlyArray<{
   id: LapSection | 'updates';
   href: string;
@@ -64,6 +66,7 @@ const ITEMS: ReadonlyArray<{
     data behind it is gated server-side, so this is signage, not the lock. */
 const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: IconName }> = [
   { id: 'admin-assets', href: `${prefix}/lap/admin/assets/`, label: t.admin.assets, icon: 'package' },
+  { id: 'admin-census', href: `${prefix}/lap/admin/census/`, label: t.census.title, icon: 'users' },
 ];
 ---
 

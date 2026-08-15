@@ -36,6 +36,21 @@ export interface LapMessages {
     readonly count: string;
     readonly readOnly: string;
   };
+  readonly census: {
+    readonly title: string;
+    readonly intro: string;
+    readonly walletPlaceholder: string;
+    readonly lookup: string;
+    readonly notFound: string;
+    readonly unconfigured: string;
+    readonly invalidWallet: string;
+    readonly currentRank: string;
+    readonly since: string;
+    readonly updatedBy: string;
+    readonly grant: string;
+    readonly granted: string;
+    readonly failed: string;
+  };
   readonly citizen: {
     readonly title: string;
     readonly noSession: string;
@@ -242,6 +257,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       readOnly:
         'Solo lectura: escribir en el repositorio de datos necesita su propia decisión (ADR de escritura).',
     },
+    census: {
+      title: 'Censo',
+      intro:
+        'El registro público de rangos: busca una wallet y concede lo que la ciudad decida. Cada concesión queda escrita en la historia.',
+      walletPlaceholder: '0x…',
+      lookup: 'Buscar',
+      notFound: 'Sin registro: nómada de paso.',
+      unconfigured: 'El censo aún no está configurado (falta el repositorio de estado — D23).',
+      invalidWallet: 'Eso no es una dirección 0x válida.',
+      currentRank: 'Rango',
+      since: 'Desde',
+      updatedBy: 'Última pluma',
+      grant: 'Conceder',
+      granted: 'Concedido — escrito en la historia.',
+      failed: 'No se pudo. Revisa e inténtalo de nuevo.',
+    },
     citizen: {
       title: 'Tu ciudadanía',
       noSession: 'Sin sesión — nómada de paso',
@@ -361,6 +392,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       readOnly:
         'Read-only: writing to the data repository needs its own decision (write-path ADR).',
     },
+    census: {
+      title: 'Census',
+      intro:
+        'The public record of ranks: look a wallet up and grant what the city decides. Every grant is written into history.',
+      walletPlaceholder: '0x…',
+      lookup: 'Look up',
+      notFound: 'No record: a Nomad passing through.',
+      unconfigured: 'The census is not configured yet (the state repo is pending — D23).',
+      invalidWallet: 'That is not a valid 0x address.',
+      currentRank: 'Rank',
+      since: 'Since',
+      updatedBy: 'Last pen',
+      grant: 'Grant',
+      granted: 'Granted — written into history.',
+      failed: 'It failed. Check and retry.',
+    },
     citizen: {
       title: 'Your citizenship',
       noSession: 'No session — a Nomad passing through',
@@ -477,6 +524,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       count: 'アセット',
       readOnly: '読み取り専用:データリポジトリへの書き込みには独自の決定が必要です。',
     },
+    census: {
+      title: '市民名簿',
+      intro:
+        '公開ランク台帳 — ウォレットを検索し、都市が定めた位階を授ける。すべての授与は歴史に刻まれる。',
+      walletPlaceholder: '0x…',
+      lookup: '検索',
+      notFound: '記録なし — 通りすがりのノマド。',
+      unconfigured: '名簿は未設定（状態リポジトリ待ち — D23）。',
+      invalidWallet: '有効な 0x アドレスではありません。',
+      currentRank: '位階',
+      since: '取得日',
+      updatedBy: '最後の筆',
+      grant: '授与',
+      granted: '授与 — 歴史に記録された。',
+      failed: '失敗。確認して再試行してください。',
+    },
     citizen: {
       title: 'あなたの市民権',
       noSession: 'セッションなし — 通りすがりのノマド',
@@ -587,6 +650,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       created: '생성일',
       count: '에셋',
       readOnly: '읽기 전용: 데이터 저장소 쓰기에는 별도의 결정이 필요합니다.',
+    },
+    census: {
+      title: '시민 명부',
+      intro:
+        '공개 계급 대장 — 지갑을 조회하고 도시가 정한 계급을 부여한다. 모든 부여는 역사에 기록된다.',
+      walletPlaceholder: '0x…',
+      lookup: '조회',
+      notFound: '기록 없음 — 지나가는 노마드.',
+      unconfigured: '명부가 아직 설정되지 않았습니다(상태 저장소 대기 — D23).',
+      invalidWallet: '유효한 0x 주소가 아닙니다.',
+      currentRank: '계급',
+      since: '취득일',
+      updatedBy: '마지막 펜',
+      grant: '부여',
+      granted: '부여됨 — 역사에 기록되었습니다.',
+      failed: '실패했습니다. 확인 후 다시 시도하세요.',
     },
     citizen: {
       title: '당신의 시민권',
@@ -734,6 +813,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       created: 'Criado',
       count: 'assets',
       readOnly: 'Somente leitura: escrever no repositório de dados precisa de sua própria decisão.',
+    },
+    census: {
+      title: 'Censo',
+      intro:
+        'O registro público de patentes: busque uma wallet e conceda o que a cidade decidir. Cada concessão fica escrita na história.',
+      walletPlaceholder: '0x…',
+      lookup: 'Buscar',
+      notFound: 'Sem registro: nômade de passagem.',
+      unconfigured: 'O censo ainda não está configurado (falta o repositório de estado — D23).',
+      invalidWallet: 'Isso não é um endereço 0x válido.',
+      currentRank: 'Patente',
+      since: 'Desde',
+      updatedBy: 'Última pena',
+      grant: 'Conceder',
+      granted: 'Concedido — escrito na história.',
+      failed: 'Falhou. Verifique e tente de novo.',
     },
     citizen: {
       title: 'Sua cidadania',

@@ -1,0 +1,118 @@
+---
+/**
+ * The census desk (MISSION-016). The page is static; every answer comes
+ * from the session-gated endpoint — a visitor without rank receives the
+ * refusal, never a record. Rank options come localized from the domain;
+ * Oracle is not among them (ADR-011: the allowlist is its only source).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { RANK_DEFINITIONS } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import LapShell from '../LapShell.astro';
+import { CensusPanel } from './CensusPanel';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const ranks = RANK_DEFINITIONS.filter((rank) => rank.id !== 'oracle').map((rank) => ({
+  id: rank.id,
+  name: rank.name[locale],
+}));
+const labels = {
+  ...t.census,
+  forbidden: t.admin.forbidden,
+  forbiddenNote: t.admin.forbiddenNote,
+  loading: t.admin.loading,
+};
+---
+
+<LapShell
+  locale={locale}
+  current="admin-census"
+  title={`${t.census.title} — L.A.P. — Numinia`}
+  description={t.census.intro}
+>
+  <header class="cabecera">
+    <h1>{t.census.title}</h1>
+    <p class="intro">{t.census.intro}</p>
+  </header>
+  <CensusPanel client:load labels={labels} ranks={ranks} />
+</LapShell>
+
+<style>
+  .cabecera {
+    margin-bottom: var(--s5);
+  }
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--s2);
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+</style>
+
+<style is:global>
+  [data-census-panel] .busqueda {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    margin-bottom: var(--s4);
+  }
+  [data-census-panel] input {
+    flex: 1;
+    min-width: 16rem;
+    min-height: 44px;
+    padding: 0 var(--s3);
+    font-family: var(--mono);
+    background: var(--superficie);
+    color: var(--texto);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  [data-census-panel] .estado {
+    color: var(--texto-2);
+  }
+  [data-census-panel] .aviso {
+    border-left: 2px solid var(--ambar);
+    padding-left: var(--s3);
+  }
+  [data-census-panel] dl {
+    display: flex;
+    gap: var(--s6);
+    flex-wrap: wrap;
+    margin: 0 0 var(--s4);
+  }
+  [data-census-panel] dt {
+    margin: 0 0 var(--s1);
+  }
+  [data-census-panel] dd {
+    margin: 0;
+    color: var(--texto);
+  }
+  [data-census-panel] .conceder {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  [data-census-panel] select {
+    min-height: 44px;
+    padding: 0 var(--s3);
+    background: var(--superficie);
+    color: var(--texto);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  [data-census-panel] .refuso p {
+    margin: 0 0 var(--s2);
+  }
+</style>

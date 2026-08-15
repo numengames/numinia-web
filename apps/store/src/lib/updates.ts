@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.32.0',
+    date: '2026-08-16 03:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The census desk opens in the management zone: look a wallet up, grant a rank, watch it enter history',
+      },
+      {
+        type: 'NEW',
+        text: 'Attestations: the city can now issue signed statements the citizen keeps — seals, ranks, thresholds',
+      },
+      {
+        type: 'UPD',
+        text: 'Mutation testing hardened the new cores: state 81%→98%, attestations 98.5%, every gap killed by a test',
+      },
+    ],
+  },
+  {
     version: 'v0.31.0',
     date: '2026-08-16 02:00',
     entries: [

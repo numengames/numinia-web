@@ -34,6 +34,7 @@ const PAGES = [
   '/es/lap/settings/',
   '/es/lap/session/',
   '/es/lap/admin/assets/',
+  '/es/lap/admin/census/',
 ];
 
 for (const path of PAGES) {
