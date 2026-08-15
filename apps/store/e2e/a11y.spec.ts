@@ -67,3 +67,38 @@ for (const path of PAGES) {
     expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
   });
 }
+
+test('keyboard: the chrome walks in order and the focus ring is the system turquoise', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  const stops: string[] = [];
+  let sawSystemOutline = false;
+  for (let i = 0; i < 8; i += 1) {
+    await page.keyboard.press('Tab');
+    const info = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      const style = getComputedStyle(el);
+      return {
+        metric: el.dataset['metric'] ?? el.tagName.toLowerCase(),
+        outlineColor: style.outlineColor,
+        outlineWidth: style.outlineWidth,
+      };
+    });
+    stops.push(info.metric);
+    // §5: outline 2px solid #018EA1 = rgb(1, 142, 161), visible always.
+    if (info.outlineColor === 'rgb(1, 142, 161)' && info.outlineWidth === '2px') {
+      sawSystemOutline = true;
+    }
+  }
+  // Tab order follows the chrome's reading order — brand, pillars, utilities.
+  const expected = ['nav-home', 'nav-city', 'nav-assets', 'nav-lap', 'chrome-mode'];
+  const positions = expected.map((metric) => stops.indexOf(metric));
+  expect(positions, stops.join(' → ')).not.toContain(-1);
+  expect(
+    [...positions].sort((a, b) => a - b),
+    stops.join(' → '),
+  ).toEqual(positions);
+  expect(sawSystemOutline, `outlines seen on: ${stops.join(' → ')}`).toBe(true);
+});
