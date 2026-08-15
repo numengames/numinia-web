@@ -6,32 +6,42 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
-import { loadManual, type ManualChapter } from '../../../lib/lap/manual';
+import { loadManual } from '../../../lib/lap/manual';
 import LunaProgreso from '../../city/scroller/LunaProgreso.astro';
+import CodexGate from './CodexGate.astro';
 import CodexTabs from './CodexTabs.astro';
 import LapShell from '../LapShell.astro';
+import { viewerFrom } from '../../../lib/lap/gate';
 
 interface Props {
   locale: SupportedLocale;
-  chapter: ManualChapter;
+  chapterId: string;
 }
-const { locale, chapter } = Astro.props;
+const { locale, chapterId } = Astro.props;
 const t = LAP_UI[locale].manual;
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const chapters = await loadManual();
-const index = chapters.findIndex((entry) => entry.id === chapter.id);
+// The gate first: without a session the corpus is never even loaded.
+const viewer = await viewerFrom(Astro.cookies);
+const chapters = viewer ? await loadManual() : [];
+const index = chapters.findIndex((entry) => entry.id === chapterId);
+const chapter = chapters[index];
 const prev = chapters[index - 1];
 const next = chapters[index + 1];
-const eyebrow = chapter.number === null ? 'Introducción' : `${t.chapter} ${chapter.number}`;
+const eyebrow = chapter?.number == null ? 'Introducción' : `${t.chapter} ${chapter.number}`;
+if (viewer && !chapter) {
+  return Astro.redirect(`${prefix}/lap/codex/`);
+}
 ---
 
 <LapShell
   locale={locale}
   current="codex"
-  title={`${chapter.title} — ${t.title} — Numinia`}
-  description={`${eyebrow} · ${chapter.title}`}
+  title={`${chapter?.title ?? t.title} — Numinia`}
+  description={chapter ? `${eyebrow} · ${chapter.title}` : t.gatedNote}
 >
   <CodexTabs locale={locale} current="manual" />
+  {!viewer && <CodexGate locale={locale} />}
+  {viewer && chapter && (
   <article class="pagina tarjeta" data-codex-chapter={chapter.id}>
     <header>
       <p class="etiqueta">{eyebrow}</p>
@@ -107,6 +117,7 @@ const eyebrow = chapter.number === null ? 'Introducción' : `${t.chapter} ${chap
     }
   </nav>
   <LunaProgreso />
+  )}
 </LapShell>
 
 <style>

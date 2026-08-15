@@ -86,6 +86,15 @@ test('content survives with JavaScript disabled (SSG promise)', async ({ browser
   await context.close();
 });
 
+test('the Manual never leaks to a visitor without a session', async ({ page, request }) => {
+  // The corpus is unpublished IP: gated must mean ABSENT from the response,
+  // not hidden with CSS.
+  const chapter = await request.get('/es/lap/codex/capitulo-2/');
+  expect(await chapter.text()).not.toMatch(/La historia de Numinia no es solo|Holberins/);
+  await page.goto('/es/lap/codex/');
+  await expect(page.locator('[data-metric="codex-gate-enter"]')).toBeVisible();
+});
+
 test('management data is refused without a session', async ({ request }) => {
   const response = await request.get('/api/admin/overview');
   expect(response.status()).toBe(403);

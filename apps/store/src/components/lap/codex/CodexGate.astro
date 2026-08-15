@@ -1,0 +1,53 @@
+---
+/** What a visitor without a session sees where the Manual would be (§9.7). */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import Icon from '../../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+const { locale } = Astro.props;
+const t = LAP_UI[locale].manual;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<div class="puerta">
+  <Icon name="book-open" size={48} class="glifo" />
+  <h1>{t.gated}</h1>
+  <p>{t.gatedNote}</p>
+  <a href={`${prefix}/lap/session/`} class="btn btn-primario" data-metric="codex-gate-enter">
+    {t.gatedAction}
+  </a>
+</div>
+
+<style>
+  .puerta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: var(--s3);
+    min-height: 50vh;
+    padding: var(--s7) var(--s4);
+  }
+  .glifo {
+    color: var(--texto-3);
+  }
+  h1 {
+    font-size: 1.728rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  p {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--texto-2);
+    line-height: 1.55;
+  }
+  .btn {
+    margin-top: var(--s3);
+    text-decoration: none;
+  }
+</style>

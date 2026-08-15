@@ -31,9 +31,24 @@ async function exists(candidate) {
   }
 }
 
+/**
+ * Routes rendered ON DEMAND leave no file in dist/client, so a file check
+ * would call them broken. They are real routes served by the worker: the
+ * session-gated Codex (its text must never be a static file) and the API.
+ */
+function isOnDemand(clean) {
+  const withoutLocale = clean.replace(/^\/(es|ja|ko|pt-br)\//, '/');
+  return (
+    /^\/lap\/codex\/?$/.test(withoutLocale) ||
+    /^\/lap\/codex\/[^/]+\/?$/.test(withoutLocale) ||
+    withoutLocale.startsWith('/api/')
+  );
+}
+
 async function resolves(target) {
   // /path/ -> /path/index.html ; /file.ext -> as-is ; /path -> try both.
   const clean = target.split(/[?#]/)[0];
+  if (isOnDemand(clean)) return true;
   const rel = clean.replace(/^\//, '');
   if (clean.endsWith('/')) return exists(path.join(DIST, rel, 'index.html'));
   if (path.extname(clean)) return exists(path.join(DIST, rel));

@@ -7,8 +7,10 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
 import { loadManual } from '../../../lib/lap/manual';
+import CodexGate from './CodexGate.astro';
 import CodexTabs from './CodexTabs.astro';
 import LapShell from '../LapShell.astro';
+import { viewerFrom } from '../../../lib/lap/gate';
 
 interface Props {
   locale: SupportedLocale;
@@ -16,7 +18,10 @@ interface Props {
 const { locale } = Astro.props;
 const t = LAP_UI[locale].manual;
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const chapters = await loadManual();
+// Oracle order (2026-08-15): the Manual is read from inside the city. The
+// page renders on demand so the corpus never lands in a static file.
+const viewer = await viewerFrom(Astro.cookies);
+const chapters = viewer ? await loadManual() : [];
 ---
 
 <LapShell
@@ -26,6 +31,8 @@ const chapters = await loadManual();
   description={t.intro}
 >
   <CodexTabs locale={locale} current="manual" />
+  {!viewer && <CodexGate locale={locale} />}
+  {viewer && (
   <article data-codex-manual>
     <h1>{t.title}</h1>
     <p class="intro">{t.intro}</p>
@@ -52,6 +59,7 @@ const chapters = await loadManual();
       }
     </ol>
   </article>
+  )}
 </LapShell>
 
 <style>

@@ -66,6 +66,9 @@ export interface LapMessages {
     readonly prev: string;
     readonly next: string;
     readonly indexTitle: string;
+    readonly gated: string;
+    readonly gatedNote: string;
+    readonly gatedAction: string;
   };
   readonly sheet: {
     readonly title: string;
@@ -260,6 +263,10 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       prev: 'Anterior',
       next: 'Siguiente',
       indexTitle: 'Índice',
+      gated: 'El Manual pide sesión',
+      gatedNote:
+        'El juego de rol completo se lee dentro de la ciudad: entra con lo que ya tienes y el Códice se abre.',
+      gatedAction: 'Entrar en Numinia',
     },
     emptyTitle: 'Aún no hay nada aquí',
     emptyPortals:
@@ -363,6 +370,10 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       prev: 'Previous',
       next: 'Next',
       indexTitle: 'Index',
+      gated: 'The Manual asks for a session',
+      gatedNote:
+        'The complete role-playing game is read inside the city: enter with what you already have and the Codex opens.',
+      gatedAction: 'Enter Numinia',
     },
     emptyTitle: 'Nothing here yet',
     emptyPortals: 'Portals are charted in Phase 5. The map arrives before the fog.',
@@ -463,6 +474,9 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       prev: '前へ',
       next: '次へ',
       indexTitle: '目次',
+      gated: 'マニュアルにはセッションが必要です',
+      gatedNote: '完全なRPGは都市の中で読めます。お持ちの方法で入場すると、コデックスが開きます。',
+      gatedAction: 'ヌミニアに入る',
     },
     emptyTitle: 'まだ何もありません',
     emptyPortals: 'ポータルはフェーズ5で地図化されます。',
@@ -560,6 +574,9 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       prev: '이전',
       next: '다음',
       indexTitle: '목차',
+      gated: '매뉴얼은 세션이 필요합니다',
+      gatedNote: '완전한 RPG는 도시 안에서 읽습니다. 가진 방법으로 입장하면 코덱스가 열립니다.',
+      gatedAction: '누미니아 입장',
     },
     emptyTitle: '아직 아무것도 없습니다',
     emptyPortals: '포털은 5단계에서 지도화됩니다.',
@@ -694,6 +711,10 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       prev: 'Anterior',
       next: 'Próximo',
       indexTitle: 'Índice',
+      gated: 'O Manual pede sessão',
+      gatedNote:
+        'O RPG completo se lê dentro da cidade: entre com o que já tem e o Códice se abre.',
+      gatedAction: 'Entrar em Numinia',
     },
     emptyTitle: 'Ainda não há nada aqui',
     emptyPortals: 'Os portais são cartografados na Fase 5.',

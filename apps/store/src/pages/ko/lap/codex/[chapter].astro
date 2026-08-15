@@ -1,13 +1,11 @@
 ---
 import ManualChapter from "../../../../components/lap/codex/ManualChapter.astro";
-import { loadManual } from "../../../../lib/lap/manual";
 
-export async function getStaticPaths() {
-  const chapters = await loadManual();
-  return chapters.map((chapter) => ({ params: { chapter: chapter.id }, props: { chapter } }));
-}
+/* On demand: the Manual is session-gated, so its text must never be baked
+   into a static file (Oracle order 2026-08-15). */
+export const prerender = false;
 
-const { chapter } = Astro.props;
+const { chapter } = Astro.params;
 ---
 
-<ManualChapter locale="ko" chapter={chapter} />
+<ManualChapter locale="ko" chapterId={chapter ?? ''} />
