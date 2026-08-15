@@ -19,6 +19,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
       <a href={`${prefix}/gallery/`} data-metric="footer-gallery">{t.navGallery}</a>
       <a href={`${prefix}/archive/`} data-metric="footer-archive">{t.navArchive}</a>
       <a href={`${prefix}/finder/`} data-metric="footer-finder">{t.navFinder}</a>
+      <a href={`${prefix}/updates/`} data-metric="footer-updates">{t.navUpdates}</a>
     </nav>
     <nav aria-label={t.footerResources}>
       <h2>{t.footerResources}</h2>
@@ -30,6 +31,13 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
       >
         {t.footerDataRepo}
       </a>
+    </nav>
+    <nav aria-label={t.footerLegal}>
+      <h2>{t.footerLegal}</h2>
+      <a href={`${prefix}/legal/privacy/`} data-metric="footer-privacy">{t.legalPrivacy}</a>
+      <a href={`${prefix}/legal/cookies/`} data-metric="footer-cookies">{t.legalCookies}</a>
+      <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
+      <a href={`${prefix}/legal/legal-notice/`} data-metric="footer-legal-notice">{t.legalNotice}</a>
     </nav>
   </div>
   <p>{t.footerLicenseNote}</p>

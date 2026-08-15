@@ -1,0 +1,96 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { UPDATES_MESSAGES } from '../../i18n/messages';
+import { loadUpdates } from '../../lib/updates';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = UPDATES_MESSAGES[locale];
+const updates = await loadUpdates();
+---
+
+<BaseLayout locale={locale} title={`${t.updatesTitle} — Numinia`}>
+  <header>
+    <h1>{t.updatesTitle}</h1>
+    <p>{t.updatesIntro}</p>
+    {locale !== 'en' && <p class="note">{t.techNote}</p>}
+  </header>
+
+  <ol data-updates>
+    {
+      updates.map((update) => (
+        <li data-version={update.version}>
+          <h2>
+            {update.version} <time>{update.date}</time>
+          </h2>
+          <ul>
+            {update.entries.map((entry) => (
+              <li>
+                <span class={`tag tag-${entry.type.toLowerCase()}`}>{t.typeLabels[entry.type]}</span>
+                {entry.text}
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ol>
+</BaseLayout>
+
+<style>
+  header p {
+    color: var(--numinia-color-text-muted);
+  }
+  .note {
+    font-size: 0.85rem;
+  }
+  ol {
+    list-style: none;
+    padding: 0;
+  }
+  ol > li {
+    border-left: 2px solid var(--numinia-color-primary-strong);
+    padding: 0 0 var(--numinia-space-3) var(--numinia-space-3);
+    margin: 0;
+  }
+  h2 {
+    font-size: 1rem;
+  }
+  time {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.8rem;
+    font-weight: 400;
+    margin-left: var(--numinia-space-1);
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  ul li {
+    margin-bottom: var(--numinia-space-1);
+    line-height: 1.5;
+  }
+  .tag {
+    display: inline-block;
+    min-width: 4.2rem;
+    text-align: center;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    margin-right: var(--numinia-space-1);
+    border-radius: var(--numinia-radius-sm);
+    background: var(--numinia-color-surface);
+    color: var(--numinia-color-text-muted);
+  }
+  .tag-new {
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+  }
+  .tag-fix {
+    background: var(--numinia-color-danger, #d33440);
+    color: #ffffff;
+  }
+</style>

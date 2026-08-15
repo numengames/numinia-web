@@ -281,3 +281,54 @@ Then('the finder island data covers every public asset', async function () {
     assert.ok(html.includes(id), `finder island data misses asset ${id}`);
   }
 });
+
+// --- updates + legal (MISSION-003 P3) ---
+
+const LEGAL_DOCS = ['privacy', 'cookies', 'terms', 'legal-notice'];
+
+Then('the updates page exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const page = path.join(this.distDir, prefix, 'updates', 'index.html');
+    const html = await readFile(page, 'utf8').catch(() => null);
+    assert.ok(html, `missing updates page for ${prefix || 'en'}`);
+  }
+});
+
+Then(
+  'the updates page lists every version from {string} to {string}',
+  async function (first, last) {
+    const html = await readFile(path.join(this.distDir, 'updates', 'index.html'), 'utf8');
+    for (let minor = Number(first); minor <= Number(last); minor += 1) {
+      assert.ok(html.includes(`data-version="v0.${minor}.0"`), `missing v0.${minor}.0`);
+    }
+  },
+);
+
+Then('the updates page lists version {string} and {string}', async function (a, b) {
+  const html = await readFile(path.join(this.distDir, 'updates', 'index.html'), 'utf8');
+  for (const version of [a, b]) {
+    assert.ok(html.includes(`data-version="${version}"`), `missing ${version}`);
+  }
+});
+
+Then('every legal page exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const doc of LEGAL_DOCS) {
+      const page = path.join(this.distDir, prefix, 'legal', doc, 'index.html');
+      const html = await readFile(page, 'utf8').catch(() => null);
+      assert.ok(html, `missing legal/${doc} for ${prefix || 'en'}`);
+    }
+  }
+});
+
+Then('every legal page carries the draft banner', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const doc of LEGAL_DOCS) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
+        'utf8',
+      );
+      assert.ok(html.includes('data-legal-draft'), `legal/${doc} (${prefix || 'en'}) lacks banner`);
+    }
+  }
+});

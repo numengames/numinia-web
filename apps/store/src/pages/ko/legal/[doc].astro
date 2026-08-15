@@ -1,0 +1,14 @@
+---
+import LegalPage from '../../../components/legal/LegalPage.astro';
+import { LEGAL_DOCS } from '../../../i18n/legal';
+
+export function getStaticPaths() {
+  return LEGAL_DOCS.map((doc) => ({ params: { doc } }));
+}
+
+// Narrow the route param against the known docs — fail the build otherwise.
+const doc = LEGAL_DOCS.find((candidate) => candidate === Astro.params.doc);
+if (!doc) throw new Error(`Unknown legal doc: ${Astro.params.doc}`);
+---
+
+<LegalPage locale="ko" doc={doc} />

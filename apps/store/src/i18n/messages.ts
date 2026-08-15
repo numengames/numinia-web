@@ -27,6 +27,12 @@ export interface ChromeMessages {
   readonly navGallery: string;
   readonly navArchive: string;
   readonly navFinder: string;
+  readonly navUpdates: string;
+  readonly footerLegal: string;
+  readonly legalPrivacy: string;
+  readonly legalCookies: string;
+  readonly legalTerms: string;
+  readonly legalNotice: string;
   readonly languageSelector: string;
   readonly footerNavigation: string;
   readonly footerResources: string;
@@ -40,6 +46,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navGallery: 'Galería',
     navArchive: 'Archivo',
     navFinder: 'Finder',
+    navUpdates: 'Actualizaciones',
+    footerLegal: 'Legal',
+    legalPrivacy: 'Privacidad',
+    legalCookies: 'Cookies',
+    legalTerms: 'Términos',
+    legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
@@ -51,6 +63,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navGallery: 'Gallery',
     navArchive: 'Archive',
     navFinder: 'Finder',
+    navUpdates: 'Updates',
+    footerLegal: 'Legal',
+    legalPrivacy: 'Privacy',
+    legalCookies: 'Cookies',
+    legalTerms: 'Terms',
+    legalNotice: 'Legal notice',
     languageSelector: 'Language',
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
@@ -62,6 +80,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navGallery: 'ギャラリー',
     navArchive: 'アーカイブ',
     navFinder: 'Finder',
+    navUpdates: '更新履歴',
+    footerLegal: '法的情報',
+    legalPrivacy: 'プライバシー',
+    legalCookies: 'クッキー',
+    legalTerms: '利用規約',
+    legalNotice: '法的通知',
     languageSelector: '言語',
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
@@ -73,6 +97,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navGallery: '갤러리',
     navArchive: '아카이브',
     navFinder: 'Finder',
+    navUpdates: '업데이트',
+    footerLegal: '법적 고지',
+    legalPrivacy: '개인정보',
+    legalCookies: '쿠키',
+    legalTerms: '이용약관',
+    legalNotice: '법적 고지사항',
     languageSelector: '언어',
     footerNavigation: '내비게이션',
     footerResources: '리소스',
@@ -84,6 +114,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navGallery: 'Galeria',
     navArchive: 'Arquivo',
     navFinder: 'Finder',
+    navUpdates: 'Atualizações',
+    footerLegal: 'Legal',
+    legalPrivacy: 'Privacidade',
+    legalCookies: 'Cookies',
+    legalTerms: 'Termos',
+    legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
@@ -312,6 +348,47 @@ export const FINDER_MESSAGES: Readonly<Record<SupportedLocale, FinderMessages>> 
       video: 'Vídeo',
       images: 'Imagens',
     },
+  },
+};
+
+/** Updates timeline page. */
+export interface UpdatesMessages {
+  readonly updatesTitle: string;
+  readonly updatesIntro: string;
+  readonly techNote: string;
+  readonly typeLabels: Readonly<Record<'NEW' | 'FIX' | 'IMP', string>>;
+}
+
+export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>> = {
+  es: {
+    updatesTitle: 'Actualizaciones',
+    updatesIntro: 'La línea temporal de la plataforma, de v0.1.0 al presente.',
+    techNote: 'El registro técnico se mantiene en inglés.',
+    typeLabels: { NEW: 'Nuevo', FIX: 'Arreglo', IMP: 'Mejora' },
+  },
+  en: {
+    updatesTitle: 'Updates',
+    updatesIntro: 'The platform timeline, from v0.1.0 to the present.',
+    techNote: 'The technical record is kept in English.',
+    typeLabels: { NEW: 'New', FIX: 'Fix', IMP: 'Improved' },
+  },
+  ja: {
+    updatesTitle: '更新履歴',
+    updatesIntro: 'v0.1.0から現在までのプラットフォームの歩み。',
+    techNote: '技術記録は英語で管理されています。',
+    typeLabels: { NEW: '新規', FIX: '修正', IMP: '改善' },
+  },
+  ko: {
+    updatesTitle: '업데이트',
+    updatesIntro: 'v0.1.0부터 현재까지의 플랫폼 타임라인.',
+    techNote: '기술 기록은 영어로 유지됩니다.',
+    typeLabels: { NEW: '신규', FIX: '수정', IMP: '개선' },
+  },
+  'pt-br': {
+    updatesTitle: 'Atualizações',
+    updatesIntro: 'A linha do tempo da plataforma, de v0.1.0 ao presente.',
+    techNote: 'O registro técnico é mantido em inglês.',
+    typeLabels: { NEW: 'Novo', FIX: 'Correção', IMP: 'Melhoria' },
   },
 };
 
