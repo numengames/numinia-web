@@ -7,7 +7,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export type UpdateEntryType = 'NEW' | 'FIX' | 'IMP';
+export type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
 
 export interface UpdateEntry {
   readonly type: UpdateEntryType;
@@ -30,7 +30,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       { type: 'NEW', text: 'Gallery: the avatars of the city, collection by collection' },
       { type: 'NEW', text: 'Finder: three-pane collection explorer with batch download' },
       { type: 'NEW', text: 'Site chrome: header, footer, and a no-JS language selector' },
-      { type: 'IMP', text: 'SEO: sitemap, robots.txt, canonical and hreflang on every page' },
+      { type: 'UPD', text: 'SEO: sitemap, robots.txt, canonical and hreflang on every page' },
     ],
   },
   {
@@ -46,16 +46,52 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         text: 'Domain model regenerated from the seminal corpus (guilds, ranks, seals, assets)',
       },
       {
-        type: 'IMP',
+        type: 'UPD',
         text: 'Quality floor: 100% domain coverage, mutation testing, WCAG gate, bundle budgets',
       },
-      { type: 'IMP', text: 'Hermetic builds from committed catalog snapshots (File Over App)' },
+      { type: 'UPD', text: 'Hermetic builds from committed catalog snapshots (File Over App)' },
     ],
   },
 ];
 
+/** The version the site footer advertises — always the newest timeline entry. */
+export const CURRENT_VERSION: string = (REBUILD_UPDATES[0] as UpdateVersion).version;
+
+export type RoadmapStatus = 'planned' | 'research';
+
+export interface RoadmapItem {
+  readonly item: string;
+  readonly status: RoadmapStatus;
+}
+
+const ROADMAP_ROW = /^\| (.+) \| (planned|research) \|$/;
+
+/** Parse the "Incoming roadmap" table rows from the extracted record. */
+export function parseRoadmap(markdown: string): readonly RoadmapItem[] {
+  const items: RoadmapItem[] = [];
+  for (const line of markdown.split('\n')) {
+    const row = ROADMAP_ROW.exec(line);
+    if (row) {
+      items.push({ item: row[1] as string, status: row[2] as RoadmapStatus });
+    }
+  }
+  return items;
+}
+
+async function readRecord(): Promise<string> {
+  return readFile(
+    join(process.cwd(), '..', '..', 'docs', 'reference', 'legacy-changelog.md'),
+    'utf8',
+  );
+}
+
+/** The legacy "Incoming" roadmap, as displayed by the original LAP/updates page. */
+export async function loadRoadmap(): Promise<readonly RoadmapItem[]> {
+  return parseRoadmap(await readRecord());
+}
+
 const VERSION_HEADING = /^## (v\d+\.\d+\.\d+) — (.+)$/;
-const ENTRY_LINE = /^- (NEW|FIX|IMP) — (.+)$/;
+const ENTRY_LINE = /^- (NEW|FIX|UPD) — (.+)$/;
 
 /** Parse the extracted legacy changelog markdown into structured versions. */
 export function parseLegacyChangelog(markdown: string): readonly UpdateVersion[] {
@@ -79,9 +115,5 @@ export function parseLegacyChangelog(markdown: string): readonly UpdateVersion[]
 
 /** Full timeline, newest first: rebuild versions then the legacy record. */
 export async function loadUpdates(): Promise<readonly UpdateVersion[]> {
-  const markdown = await readFile(
-    join(process.cwd(), '..', '..', 'docs', 'reference', 'legacy-changelog.md'),
-    'utf8',
-  );
-  return [...REBUILD_UPDATES, ...parseLegacyChangelog(markdown)];
+  return [...REBUILD_UPDATES, ...parseLegacyChangelog(await readRecord())];
 }

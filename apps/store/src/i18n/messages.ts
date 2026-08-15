@@ -356,7 +356,10 @@ export interface UpdatesMessages {
   readonly updatesTitle: string;
   readonly updatesIntro: string;
   readonly techNote: string;
-  readonly typeLabels: Readonly<Record<'NEW' | 'FIX' | 'IMP', string>>;
+  readonly typeLabels: Readonly<Record<'NEW' | 'FIX' | 'UPD', string>>;
+  readonly roadmapTitle: string;
+  readonly latestLabel: string;
+  readonly statusLabels: Readonly<Record<'planned' | 'research', string>>;
 }
 
 export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>> = {
@@ -364,31 +367,46 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     updatesTitle: 'Actualizaciones',
     updatesIntro: 'La línea temporal de la plataforma, de v0.1.0 al presente.',
     techNote: 'El registro técnico se mantiene en inglés.',
-    typeLabels: { NEW: 'Nuevo', FIX: 'Arreglo', IMP: 'Mejora' },
+    typeLabels: { NEW: 'Nuevo', FIX: 'Arreglo', UPD: 'Mejora' },
+    roadmapTitle: 'Próximamente',
+    latestLabel: 'Última',
+    statusLabels: { planned: 'Planificado', research: 'Investigación' },
   },
   en: {
     updatesTitle: 'Updates',
     updatesIntro: 'The platform timeline, from v0.1.0 to the present.',
     techNote: 'The technical record is kept in English.',
-    typeLabels: { NEW: 'New', FIX: 'Fix', IMP: 'Improved' },
+    typeLabels: { NEW: 'New', FIX: 'Fix', UPD: 'Updated' },
+    roadmapTitle: 'Incoming',
+    latestLabel: 'Latest',
+    statusLabels: { planned: 'Planned', research: 'Research' },
   },
   ja: {
     updatesTitle: '更新履歴',
     updatesIntro: 'v0.1.0から現在までのプラットフォームの歩み。',
     techNote: '技術記録は英語で管理されています。',
-    typeLabels: { NEW: '新規', FIX: '修正', IMP: '改善' },
+    typeLabels: { NEW: '新規', FIX: '修正', UPD: '更新' },
+    roadmapTitle: '今後の予定',
+    latestLabel: '最新',
+    statusLabels: { planned: '計画中', research: '調査中' },
   },
   ko: {
     updatesTitle: '업데이트',
     updatesIntro: 'v0.1.0부터 현재까지의 플랫폼 타임라인.',
     techNote: '기술 기록은 영어로 유지됩니다.',
-    typeLabels: { NEW: '신규', FIX: '수정', IMP: '개선' },
+    typeLabels: { NEW: '신규', FIX: '수정', UPD: '업데이트' },
+    roadmapTitle: '예정',
+    latestLabel: '최신',
+    statusLabels: { planned: '계획됨', research: '조사 중' },
   },
   'pt-br': {
     updatesTitle: 'Atualizações',
     updatesIntro: 'A linha do tempo da plataforma, de v0.1.0 ao presente.',
     techNote: 'O registro técnico é mantido em inglês.',
-    typeLabels: { NEW: 'Novo', FIX: 'Correção', IMP: 'Melhoria' },
+    typeLabels: { NEW: 'Novo', FIX: 'Correção', UPD: 'Melhoria' },
+    roadmapTitle: 'Em breve',
+    latestLabel: 'Mais recente',
+    statusLabels: { planned: 'Planejado', research: 'Pesquisa' },
   },
 };
 

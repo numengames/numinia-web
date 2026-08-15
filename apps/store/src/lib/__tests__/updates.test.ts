@@ -4,7 +4,14 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { loadUpdates, parseLegacyChangelog, REBUILD_UPDATES } from '../updates';
+import {
+  CURRENT_VERSION,
+  loadRoadmap,
+  loadUpdates,
+  parseLegacyChangelog,
+  parseRoadmap,
+  REBUILD_UPDATES,
+} from '../updates';
 
 describe('parseLegacyChangelog', () => {
   it('extracts versions with typed entries and ignores prose', () => {
@@ -17,7 +24,7 @@ describe('parseLegacyChangelog', () => {
       '- FIX — fixed a thing',
       'random prose line',
       '## v0.1.0 — 2026-02-10',
-      '- IMP — improved a thing',
+      '- UPD — updated a thing',
       '- WAT — unknown types are ignored',
     ].join('\n');
     const versions = parseLegacyChangelog(markdown);
@@ -33,7 +40,7 @@ describe('parseLegacyChangelog', () => {
       {
         version: 'v0.1.0',
         date: '2026-02-10',
-        entries: [{ type: 'IMP', text: 'improved a thing' }],
+        entries: [{ type: 'UPD', text: 'updated a thing' }],
       },
     ]);
   });
@@ -56,5 +63,37 @@ describe('loadUpdates', () => {
     for (const update of updates) {
       expect(update.entries.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('parseRoadmap', () => {
+  it('extracts table rows with their status and ignores other tables', () => {
+    const markdown = [
+      '| Item | Status |',
+      '|---|---|',
+      '| Thing one | planned |',
+      '| Thing two | research |',
+      '| Not a roadmap row | done |',
+    ].join('\n');
+    expect(parseRoadmap(markdown)).toEqual([
+      { item: 'Thing one', status: 'planned' },
+      { item: 'Thing two', status: 'research' },
+    ]);
+  });
+});
+
+describe('loadRoadmap / CURRENT_VERSION', () => {
+  it('loads the legacy Incoming roadmap from the committed record', async () => {
+    const roadmap = await loadRoadmap();
+    expect(roadmap.length).toBeGreaterThanOrEqual(10);
+    for (const entry of roadmap) {
+      expect(['planned', 'research']).toContain(entry.status);
+      expect(entry.item).toBeTruthy();
+    }
+  });
+
+  it('advertises the newest rebuild version', () => {
+    expect(CURRENT_VERSION).toBe(REBUILD_UPDATES[0]!.version);
+    expect(CURRENT_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);
   });
 });

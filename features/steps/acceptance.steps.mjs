@@ -332,3 +332,19 @@ Then('every legal page carries the draft banner', async function () {
     }
   }
 });
+
+Then('every page footer shows the current version linking to the updates page', async function () {
+  for (const page of ['index.html', 'gallery/index.html', 'es/archive/index.html']) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    const match = /<a[^>]*data-metric="footer-version"[^>]*>(v\d+\.\d+\.\d+)<\/a>/.exec(html);
+    assert.ok(match, `${page}: footer version link missing`);
+    const href = /href="([^"]*)"[^>]*data-metric="footer-version"/.exec(html);
+    assert.ok(href && href[1].endsWith('/updates/'), `${page}: version does not link updates`);
+  }
+});
+
+Then('the updates page shows the incoming roadmap', async function () {
+  const html = await readFile(path.join(this.distDir, 'updates', 'index.html'), 'utf8');
+  assert.ok(html.includes('data-roadmap'), 'roadmap section missing');
+  assert.ok(html.includes('Radicle.xyz'), 'roadmap items missing');
+});

@@ -2,7 +2,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { UPDATES_MESSAGES } from '../../i18n/messages';
-import { loadUpdates } from '../../lib/updates';
+import { loadRoadmap, loadUpdates } from '../../lib/updates';
 
 interface Props {
   locale: SupportedLocale;
@@ -11,6 +11,13 @@ interface Props {
 const { locale } = Astro.props;
 const t = UPDATES_MESSAGES[locale];
 const updates = await loadUpdates();
+const roadmap = await loadRoadmap();
+
+/** "2026-04-02 22:00" → "2026-04-02 · 22:00 UTC" (dates without time pass through). */
+function formatDate(date: string): string {
+  const [day, time] = date.split(' ');
+  return time ? `${day} · ${time} UTC` : (day ?? date);
+}
 ---
 
 <BaseLayout locale={locale} title={`${t.updatesTitle} — Numinia`}>
@@ -20,17 +27,37 @@ const updates = await loadUpdates();
     {locale !== 'en' && <p class="note">{t.techNote}</p>}
   </header>
 
+  {
+    roadmap.length > 0 && (
+      <section data-roadmap>
+        <h2>{t.roadmapTitle}</h2>
+        <ul>
+          {roadmap.map((entry) => (
+            <li>
+              <span class={`tag tag-${entry.status}`}>{t.statusLabels[entry.status]}</span>
+              {entry.item}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
   <ol data-updates>
     {
-      updates.map((update) => (
+      updates.map((update, index) => (
         <li data-version={update.version}>
           <h2>
-            {update.version} <time>{update.date}</time>
+            {update.version}
+            {index === 0 && <span class="tag tag-latest">{t.latestLabel}</span>}
+            <time>{formatDate(update.date)}</time>
           </h2>
           <ul>
             {update.entries.map((entry) => (
               <li>
-                <span class={`tag tag-${entry.type.toLowerCase()}`}>{t.typeLabels[entry.type]}</span>
+                <span class={`tag tag-${entry.type.toLowerCase()}`}>
+                  {t.typeLabels[entry.type]}
+                </span>
                 {entry.text}
               </li>
             ))}
@@ -47,6 +74,15 @@ const updates = await loadUpdates();
   }
   .note {
     font-size: 0.85rem;
+  }
+  [data-roadmap] {
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-3);
+    margin-bottom: var(--numinia-space-4);
+  }
+  [data-roadmap] h2 {
+    margin-top: 0;
   }
   ol {
     list-style: none;
@@ -92,5 +128,16 @@ const updates = await loadUpdates();
   .tag-fix {
     background: var(--numinia-color-danger, #d33440);
     color: #ffffff;
+  }
+  .tag-latest {
+    background: var(--numinia-color-accent, #efa517);
+    color: #1c1c1c;
+    margin-left: var(--numinia-space-1);
+  }
+  .tag-planned,
+  .tag-research {
+    border: 1px solid var(--numinia-color-text-muted);
+    background: transparent;
+    min-width: 5.4rem;
   }
 </style>

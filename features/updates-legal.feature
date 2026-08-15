@@ -13,3 +13,8 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     Given the store application has been built
     Then every legal page exists under every locale prefix
     And every legal page carries the draft banner
+
+  Scenario: The footer advertises the current version linking to the timeline
+    Given the store application has been built
+    Then every page footer shows the current version linking to the updates page
+    And the updates page shows the incoming roadmap
