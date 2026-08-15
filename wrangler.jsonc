@@ -11,7 +11,7 @@
   //   npx wrangler secret put ADMIN_WALLET_ADDRESSES
   //   npx wrangler secret put GITHUB_TOKEN        (only when the write path lands)
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "numinia-platform",
+  "name": "numinia-web",
   "main": "apps/store/dist/server/entry.mjs",
   "compatibility_date": "2026-08-15",
   // Astro's Cloudflare adapter also writes apps/store/dist/server/wrangler.json

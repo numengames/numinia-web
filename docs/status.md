@@ -9,7 +9,7 @@
 > _Part of the Law. Index: [LEY.md](./LEY.md)_
 
 > Living document: what is DONE, what is NEXT, and who owns each next step.
-> Updated: 2026-08-15 · 41 commits on `main` · everything LOCAL (no remote, no deploy, no license published).
+> Updated: 2026-08-15 (night) · remote LIVE: `numengames/numinia-web` (private, force-pushed by Oracle order) · numinia.com still serves the OLD landing from the `numinia-web` Worker · no license published (D11).
 
 ## Where we are
 
@@ -115,52 +115,52 @@
 - **Still missing for a full admin (needs the write-path ADR, queued in open-questions)**: banning/promoting users (no user store exists — the platform only knows the session it issued and the configured Oracle wallets), asset upload/edit/delete, Session Zero rank progression (Phase 3), Portals map data (domain has the type, not the constants), Seasons/Loot (Phase 3).
 - Next: Oracle's next punch-list items, one at a time.
 
-## 🚨 IN FLIGHT — deploy to numinia.com (2026-08-15, evening)
+## 🚨 IN FLIGHT — deploy to numinia.com (updated 2026-08-15, night)
 
-**State right now:** the Worker `numinia-platform` IS deployed (created 19:16 UTC,
-100% of traffic, version `c373b8ed`) on account `b4ad274110590f342408891b0b10056e`.
-The deploy moved the custom domains `numinia.com` and `www.numinia.com` off the
-old `numinia-web` Worker — and **since then both domains time out**: DNS resolves
-to Cloudflare (188.114.97.5) but no HTTP response arrives. Other hosts (including
-numinia.store) answer fine from the same machine, so the outage is real, not local.
+**The "outage" never existed.** External vantage points get `200 OK` from
+`www.numinia.com` (Cloudflare edge, cache HIT). The timeouts were LOCAL: the
+Oracle's ISP blocks the Cloudflare IP range 188.114.x.x (Spanish LaLiga-style
+blocking, Saturday evening). Lesson recorded: always verify from an external
+vantage (e.g. `curl "https://api.hackertarget.com/httpheaders/?q=https://www.numinia.com"`)
+before diagnosing a Cloudflare outage from this network. check-host.net is
+itself behind Cloudflare and also unreachable during blocks.
 
-**Most likely cause:** the custom-hostname/edge-certificate re-provisioning after
-moving the domains between Workers got stuck (normal window is minutes).
+**Worker consolidation (Oracle order 2026-08-15):** only ONE Worker must exist —
+`numinia-web`, matching the GitHub repo. The custom domains `numinia.com` + `www`
+are back on `numinia-web` (the rollback held) and serve the OLD landing.
+`wrangler.jsonc` now targets `"name": "numinia-web"`; the duplicate
+`numinia-platform` Worker gets deleted after the first successful platform
+deploy. `nwos-web` is unrelated — never touch it.
 
-**Next diagnostic** (needs the Oracle's terminal — the scoped API token lives
-there, not in the agent's environment):
+**GitHub remote DONE (2026-08-15, night):** the Oracle ordered the destructive
+path — `git push --force origin main` to `numengames/numinia-web` (now PRIVATE,
+flipped before the push because docs/seminal/ carries the unpublished RPG
+manual). Old repo backed up at `~/Documentos/Repositorios/numinia-web-pre-platform.bundle`.
+Old repo's GitHub-Actions deploy workflow died with the push (workflows run from
+the pushed tree); its repo secrets `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
+SURVIVE and are reusable for our deploy workflow. Our `ci.yml` ran remotely for
+the first time (MISSION-000's last criterion — verify the result). GitHub flags
+10 Dependabot vulnerabilities (3 high) — review pending.
 
-```
-curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  "https://api.cloudflare.com/client/v4/accounts/b4ad274110590f342408891b0b10056e/workers/domains" \
-  | python3 -m json.tool | grep -E '"hostname"|"service"|"status"|"errors"'
-```
+**Wrangler auth:** OAuth login as pablofm@numengames.com (broad scopes), stored
+in `~/.config/.wrangler/config/default.toml`. Agent shells CAN use wrangler.
+The permission classifier blocks the agent from sourcing `.env` (secrets) and
+from force-pushes — those exact commands must be run by the Oracle (`!` prefix).
 
-**Rollback if needed:** attach `numinia.com` + `www.numinia.com` back to the
-`numinia-web` Worker (dashboard → Workers & Pages → numinia-web → Settings →
-Domains & Routes). The platform Worker stays deployed and can be re-attached.
+**Remaining before the platform goes live on numinia.com:**
 
-**Auth state:** `wrangler logout` done; the scoped API token (Workers + KV +
-Routes + Zone read, with TTL) is exported in the Oracle's shell — `wrangler
-whoami` confirms "logged in with an API Token". The agent's shells do NOT see it
-(different processes); anything authenticated must be run by the Oracle or the
-token added to `~/.bashrc`.
+1. Worker secrets (Oracle runs it — classifier blocks the agent):
+   `set -a; source apps/store/.env; set +a;` then for each of
+   `THIRDWEB_SECRET_KEY`, `AUTH_SESSION_SECRET`, `ADMIN_WALLET_ADDRESSES`:
+   `printf '%s' "$VAR" | npx wrangler secret put VAR --name numinia-web`
+2. Key-rotation audit (NEXT #2) — still mandatory before the final deploy.
+3. Deploy decision: GitHub Actions workflow (reuse surviving repo secrets;
+   needs `PUBLIC_THIRDWEB_CLIENT_ID` as a repo variable) vs manual
+   `DEPLOY_TARGET=cloudflare npm run build --workspace=apps/store && npx wrangler deploy -c wrangler.jsonc`.
+4. After first successful deploy: delete the `numinia-platform` Worker.
 
-**Deploy build recipe:**
-
-```
-set -a; source apps/store/.env; set +a
-DEPLOY_TARGET=cloudflare npm run build --workspace=apps/store
-npx wrangler deploy -c wrangler.jsonc
-```
-
-**Git remote still pending:** the Oracle chose to publish the code in the EXISTING
-repo `numengames/numinia-web` (3 commits, unrelated history). Non-destructive path:
-`git remote add origin https://github.com/numengames/numinia-web.git` then
-`git push origin main:platform`, then switch the default branch on GitHub —
-their history survives on `main`. A force-push over `main` would erase it.
 License stays undecided (D11): the README states plainly that default copyright
-applies meanwhile.
+applies meanwhile; the repo is private, which softens the urgency.
 
 ## NEXT (re-prioritized 2026-08-15, evening — after MISSIONS 006-011)
 
