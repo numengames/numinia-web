@@ -1,0 +1,29 @@
+{
+  "name": "@numinia/state",
+  "version": "0.30.0",
+  "description": "Numinia state core — the write path's vendor-independent heart (ADR-018). Git-as-database primitives: SHA-conditional entity files, fail-closed config, WinterCG-pure.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src __tests__",
+    "test": "vitest run --coverage",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@numinia/domain": "*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "^4.0.18"
+  }
+}

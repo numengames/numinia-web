@@ -21,6 +21,9 @@
     },
     "packages/auth": {
       "entry": ["src/index.ts", "__tests__/*.test.ts"]
+    },
+    "packages/state": {
+      "entry": ["src/index.ts", "__tests__/*.test.ts"]
     }
   }
 }
