@@ -59,6 +59,15 @@ test('phone · primary controls meet the 44px touch target', async ({ page }) =>
   }
 });
 
+test('phone · the chrome stays compact — two rows, never three', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/es/');
+  await page.waitForLoadState('networkidle');
+  const height = await page.locator('header').evaluate((el) => el.getBoundingClientRect().height);
+  // Two 44px rows + paddings ≈ 105px; three loose rows was ~154px.
+  expect(height).toBeLessThanOrEqual(120);
+});
+
 test('both modes flip every surface token', async ({ page }) => {
   await page.goto('/es/lap/stats/');
   const read = async (): Promise<string> =>

@@ -186,4 +186,37 @@ const NAV = [
   :global(html[data-modo='diurno']) .mode :global(.solo-nocturno) {
     display: none;
   }
+  /* Phones: the chrome sprawled into three loose rows (~154px before any
+     content). Two tight rows instead — brand + utilities share the first,
+     the nav takes the second at full width, entries grown to 44px targets. */
+  @media (max-width: 48rem) {
+    .inner {
+      gap: 0 var(--s3);
+      padding: var(--s2) var(--s4);
+    }
+    .brand {
+      order: 1;
+      margin-right: auto;
+    }
+    /* The wordmark sheds 4px so brand and utilities truly share the row. */
+    .brand :global(svg) {
+      height: 16px;
+    }
+    .tools {
+      order: 2;
+      margin-left: 0;
+      gap: var(--s1);
+    }
+    nav {
+      order: 3;
+      flex-basis: 100%;
+      gap: var(--s2);
+    }
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 var(--s2);
+    }
+  }
 </style>

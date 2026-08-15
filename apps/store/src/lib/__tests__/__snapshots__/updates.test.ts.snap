@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 01:30",
+    "entries": [
+      {
+        "text": "The chrome learns to travel light: on phones it takes two tight rows, a third less screen before the city appears",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.30.0",
+  },
+  {
     "date": "2026-08-16 01:00",
     "entries": [
       {

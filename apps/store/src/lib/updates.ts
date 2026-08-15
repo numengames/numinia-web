@@ -23,6 +23,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.30.0',
+    date: '2026-08-16 01:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The chrome learns to travel light: on phones it takes two tight rows, a third less screen before the city appears',
+      },
+    ],
+  },
+  {
     version: 'v0.29.0',
     date: '2026-08-16 01:00',
     entries: [
