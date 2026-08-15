@@ -37,7 +37,7 @@
 
 | # | Topic | Status | Session type |
 |---|---|---|---|
-| D1 | **Progressive auth Web2→Web3** (ADR-006 details: Web2 entry method, when Web2 becomes insufficient, migration to wallet without losing progress) | TBD — Pablo has "many nuances" | 🧬🤖 Hybrid, critical |
+| D1 | ~~**Progressive auth Web2→Web3**~~ **RESOLVED 2026-08-15** — session held; ADR-006 final in docs/decisions/. Follow-ups: D13, D14. | Closed | — |
 | D2 | **Gender-restricted positions policy** (ADR-013 open question: enforce, display, or ignore in user-facing flows; inclusivity + legal implications) | Data field exists, nothing reads it | 🧬 Pablo decision |
 | D3 | ~~**Deploy target for Phase 0**~~ **RESOLVED 2026-08-14**: Vercel for Phase 0 (v0.16.0); the Oracle considers Cloudflare more suitable long-term — **migration planned for a future version** (new open item D3-bis). | Vercel now / Cloudflare later | Closed → D3-bis |
 | D4 | **Hyperfy Session Zero infrastructure location** — never-touch guarantee is unverifiable until located; Phase 3 integrates via API | Unlocated | 🧬 info |
@@ -51,6 +51,14 @@
 ### D11 — License: MIT vs AGPL-3.0 (Oracle decision, raised 2026-08-14)
 
 `numinia-platform` is clean-room (zero legacy lines, fresh history): Numen Games holds full copyright and can pick **any** license — no relicensing constraints, MIT deps are AGPL-compatible. Trade-off is strategic, not legal: AGPL protects against closed SaaS forks but adds friction to the Remix pillar and to corporate adopters; assets remain CC0 either way. Constitution currently says MIT (and root/domain `package.json` say MIT). **Decide before the first public release / GitHub remote creation**; if AGPL, update constitution + `package.json` files + an ADR. *(Not legal advice; confirm with counsel.)*
+
+### D13 — Pilgrim boundary is provisional (raised 2026-08-15)
+
+The Web2→Web3 line sits at **Pilgrim** by Oracle decision, explicitly flagged "tenemos que evaluar y hacer QA, puede que lo cambiemos". Code keeps it a single configurable rank constant; revisit after MISSION-002 QA.
+
+### D14 — thirdweb evaluation outcome (raised 2026-08-15)
+
+MISSION-002 Step 0 gate: does thirdweb cover the full ADR-006 checklist under fail-closed + no-PII constraints? If not → back to the Oracle (options C/self-hosted). Also confirmed: thirdweb RPC is acceptable for future EIP-1271 verification via viem.
 
 ### D12 — Analytics backend/vendor (Oracle decision, raised 2026-08-15)
 

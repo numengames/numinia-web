@@ -79,7 +79,7 @@ Conflating them would collapse the semiotic layers that Numinia is built on.
 
 ## ADR-006: Progressive authentication (Web2 → Web3)
 
-**Status:** Accepted in principle, **details TBD** (requires dedicated session)
+**Status:** Accepted in principle — **RESOLVED 2026-08-15**: see docs/decisions/ADR-006-progressive-auth-final.md (embedded wallet via thirdweb, conditional on evaluation spike; Pilgrim boundary provisional)
 
 **Definition:** Authentication is not wallet-only. The platform must support a progressive path from Web2 entry (email/social?) to Web3 sovereignty (SIWE wallet connection).
 

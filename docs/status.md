@@ -42,8 +42,8 @@
 | # | What | Owner | Notes |
 |---|---|---|---|
 | 1 | **Fix the data repo** (from data-doctor): 3 missing thumbnails, 1 missing VRM binary on R2 (`ndg-019d3f89…`), 3dprint catalog 404 | 🧬 Pablo | Small; then re-run `node scripts/data-doctor.mjs` + refresh fixtures |
-| 2 | **ADR-006 auth session** (60–90 min, agenda in the dossier) → ADR final + MISSION-002 spec | 🧬🤖 together | Blocks Phase 2 (identity) |
-| 3 | **Deferred domain types** (#3): season, portal, equipment, linguistic, mission, character-sheet + 15 positions constants in 5 locales | 🤖 Claude | Mechanical, ~1 session; needed before Phase 2/3 features |
+| 2 | ~~ADR-006 auth session~~ **DONE 2026-08-15**: ADR-006 final + MISSION-002 spec written (thirdweb conditional, Pilgrim provisional D13, eval gate D14) | ✅ | Next executable: MISSION-002 Step 0 gate |
+| 3 | ~~Deferred domain types~~ **DONE 2026-08-15**: 21 type files total + 15 positions in 5 locales (restrictions as data, pinned by test) | ✅ | Domain complete |
 | 4 | **Push day** when the Oracle decides: license D11 → repo name/visibility → follow `docs/remote-checklist.md` → first CI green closes MISSION-000's last criterion | 🧬 decision, 🤖 execution | Runbook ready |
 | 5 | **Deploy day** (after push, when ordered): Vercel first (Cloudflare later, D3-bis) + consent banner + analytics backend (D12) | 🧬 decision, 🤖 execution | Both explicitly forbidden until ordered |
 | 6 | Pending sessions parked in `docs/open-questions.md`: taxonomy revisit, gender-restriction policy (ADR-013), Huly integration, brand visual package (D8), translation QA (D9), write-path ADR | 🧬🤖 | Each is scoped and referenced |
