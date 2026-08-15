@@ -13,8 +13,11 @@ exists between planes. This is **not** a 3D asset marketplace: the digital goods
 are the objects its citizens use, earn, and carry through the Veil. Read
 [CLAUDE.md](./CLAUDE.md) (the constitution) before touching any code.
 
-> Version line continues numinia.store: legacy ended at 0.15.0 → this repo is **v0.17.0**.
-> Local-only for now: no remote, no deploy, no license published (open-questions D11).
+> Version line continues numinia.store: legacy ended at 0.15.0 → this repo is **v0.27.0**.
+> No deploy yet (D3-bis). **No license yet (D11 undecided):** until a LICENSE file
+> lands, default copyright applies — all rights reserved. Nothing here is granted
+> for reuse by publication alone. The digital goods in the data repository keep
+> their own CC0 terms; this note is about the code.
 
 ## Lineage
 
