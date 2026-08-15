@@ -7,7 +7,7 @@ description: 'Get help, report issues, or contribute to Numinia Digital Goods'
 
 ## Questions about licenses?
 
-Most assets are CC0 (public domain) — check the license field on each asset page. See our [License Guide](/en/resources/about/license).
+Most assets are CC0 (public domain) — check the license field on each asset page. See our [License Guide](../../docs/about/license/).
 
 ## Building something?
 

@@ -1,0 +1,56 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import { CITY_MESSAGES } from '../../i18n/city';
+
+interface Props {
+  locale: SupportedLocale;
+  current: 'index' | 'inhabitants' | 'districts' | 'game';
+}
+
+const { locale, current } = Astro.props;
+const t = CITY_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+const ITEMS = [
+  { key: 'index', href: `${prefix}/city/`, label: t.cityTitle },
+  { key: 'inhabitants', href: `${prefix}/city/inhabitants/`, label: t.inhabitantsTitle },
+  { key: 'districts', href: `${prefix}/city/districts/`, label: t.districtsTitle },
+  { key: 'game', href: `${prefix}/city/the-game/`, label: t.gameTitle },
+] as const;
+---
+
+<nav aria-label={t.cityTitle} data-city-subnav>
+  {
+    ITEMS.map((item) => (
+      <a
+        href={item.href}
+        aria-current={item.key === current ? 'page' : undefined}
+        data-metric={`city-nav-${item.key}`}
+      >
+        {item.label}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  nav {
+    display: flex;
+    gap: var(--numinia-space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--numinia-space-4);
+    border-bottom: 1px solid var(--numinia-color-surface);
+    padding-bottom: var(--numinia-space-2);
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--numinia-radius-sm);
+  }
+  a[aria-current='page'] {
+    background: var(--numinia-color-primary-strong);
+    color: #ffffff;
+  }
+</style>

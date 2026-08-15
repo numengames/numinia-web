@@ -1,0 +1,52 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CitySubnav from './CitySubnav.astro';
+import { CITY_LANGUAGE_NOTICE, CITY_LORE, CITY_MESSAGES, loreLocale } from '../../i18n/city';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CITY_MESSAGES[locale];
+const lore = CITY_LORE[loreLocale(locale)];
+const notice = CITY_LANGUAGE_NOTICE[locale];
+const es = loreLocale(locale) === 'es';
+---
+
+<BaseLayout locale={locale} title={`${t.gameTitle} — Numinia`} description={t.cityIntro}>
+  <CitySubnav locale={locale} current="game" />
+  <article data-city="game">
+    <h1>{t.gameTitle}</h1>
+    {notice && <p class="language-notice">{notice}</p>}
+    {lore.gameBody.map((paragraph) => <p>{paragraph}</p>)}
+
+    <h2>{es ? 'Los Registros Akáshicos' : 'The Akashic Records'}</h2>
+    {lore.akashic.map((paragraph) => <p>{paragraph}</p>)}
+
+    <h2>{es ? 'Una evolución sin fin' : 'An endless evolution'}</h2>
+    <p>{lore.cycle}</p>
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    max-width: 46rem;
+  }
+  h1,
+  h2 {
+    color: var(--numinia-color-primary-strong);
+  }
+  h2 {
+    font-size: 1.1rem;
+    margin-top: var(--numinia-space-4);
+  }
+  p {
+    line-height: 1.7;
+  }
+  .language-notice {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.85rem;
+  }
+</style>

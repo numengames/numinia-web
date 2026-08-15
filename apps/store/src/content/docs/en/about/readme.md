@@ -13,7 +13,7 @@ Numinia is more than a store — it's a city-state imagined as a role-playing ga
 
 The digital goods you find here are the shared building blocks of that universe — CC0 assets that anyone can use, remix, and build upon, true to our belief that knowledge belongs to everyone.
 
-> Want to go deeper? Read the [Seminal Documents](/docs/seminal-documents/) for the full lore, philosophy, and organizational model.
+> Want to go deeper? Read the [Seminal Documents](../../city/) for the full lore, philosophy, and organizational model.
 
 ## Core Principle: File Over App
 
@@ -32,7 +32,7 @@ The data is the product, not the app. All asset metadata lives in open JSON file
 
 ## Topics
 
-- [GLB Format](/en/resources/about/glb) — The universal 3D standard
-- [Arweave Storage](/en/resources/about/ardrive) — Permanent decentralized storage
-- [Open Source Philosophy](/en/resources/about/philosophy) — Why CC0 matters
-- [License Guide](/en/resources/about/license) — CC0 vs CC-BY explained
+- [GLB Format](../../docs/about/glb/) — The universal 3D standard
+- [Arweave Storage](../../docs/about/ardrive/) — Permanent decentralized storage
+- [Open Source Philosophy](../../docs/about/philosophy/) — Why CC0 matters
+- [License Guide](../../docs/about/license/) — CC0 vs CC-BY explained

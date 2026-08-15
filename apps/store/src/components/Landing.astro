@@ -17,25 +17,25 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <h1>{t.heroTitle}</h1>
     <p>{t.heroSub}</p>
     <div class="ctas">
-      <a href={`${prefix}/gallery/`} class="cta" data-metric="landing-gallery">{t.ctaGallery}</a>
-      <a href={`${prefix}/inspector/`} class="cta cta-secondary" data-metric="landing-inspector">
-        {t.ctaInspector}
+      <a href={`${prefix}/city/`} class="cta" data-metric="landing-city">{t.ctaCity}</a>
+      <a href={`${prefix}/assets/`} class="cta cta-secondary" data-metric="landing-assets">
+        {t.ctaAssets}
       </a>
     </div>
   </section>
 
   <section>
-    <h2>{t.aboutTitle}</h2>
-    <p>{t.aboutBody}</p>
-  </section>
-
-  <section>
-    <h2>{t.toolsTitle}</h2>
-    <ul>
-      <li>{t.toolGallery}</li>
-      <li>{t.toolArchive}</li>
-      <li>{t.toolFinder}</li>
-      <li>{t.toolInspector}</li>
+    <h2>{t.pillarsTitle}</h2>
+    <ul class="pillars">
+      <li>
+        <a href={`${prefix}/city/`} data-metric="landing-pillar-city">{t.pillarCity}</a>
+      </li>
+      <li>
+        <a href={`${prefix}/assets/`} data-metric="landing-pillar-assets">{t.pillarAssets}</a>
+      </li>
+      <li>
+        <a href={`${prefix}/lap/`} data-metric="landing-pillar-lap">{t.pillarLap}</a>
+      </li>
     </ul>
   </section>
 </BaseLayout>
@@ -83,6 +83,24 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   section p,
   li {
     line-height: 1.6;
+  }
+  .pillars {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--numinia-space-2);
+  }
+  .pillars a {
+    display: block;
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-2) var(--numinia-space-3);
+    color: inherit;
+    text-decoration: none;
+  }
+  .pillars a:hover,
+  .pillars a:focus-visible {
+    outline: 1px solid var(--numinia-color-primary-strong);
   }
   .soon {
     color: var(--numinia-color-text-muted);

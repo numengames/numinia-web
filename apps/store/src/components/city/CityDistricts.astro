@@ -1,0 +1,96 @@
+---
+import { DISTRICTS, type SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CitySubnav from './CitySubnav.astro';
+import { CITY_LANGUAGE_NOTICE, CITY_LORE, CITY_MESSAGES, loreLocale } from '../../i18n/city';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CITY_MESSAGES[locale];
+const lore = CITY_LORE[loreLocale(locale)];
+const notice = CITY_LANGUAGE_NOTICE[locale];
+
+/** Space names are proper nouns from the deck — displayed as-is (lore). */
+const SPACES: Readonly<Record<string, readonly string[]>> = {
+  solomon: ['Pritaneo', 'Ateneo', 'Casa de la Moneda', 'Torre de los Alquimistas'],
+  ouroboros: ['Taberna Hyperborean', 'Casa de los Enigmas', 'Templo de Khepri', 'Barrio Viejo'],
+  vitruvian: ['Sociedad Histórica', 'Biblioteca Atlantis', 'Academia Lemuria', 'Campus Escolástico'],
+  sycamore: ['Museo Akasha', 'Multiplex', 'La Forja', 'Acrópolis'],
+};
+---
+
+<BaseLayout locale={locale} title={`${t.districtsTitle} — Numinia`} description={t.cityIntro}>
+  <CitySubnav locale={locale} current="districts" />
+  <article data-city="districts">
+    <h1>{t.districtsTitle}</h1>
+    {notice && <p class="language-notice">{notice}</p>}
+    {lore.districtsIntro.map((paragraph) => <p>{paragraph}</p>)}
+
+    <ul class="cards">
+      <li class="agora">
+        <h3>Ágora</h3>
+        <p>
+          {
+            loreLocale(locale) === 'es'
+              ? 'El núcleo: lugar de encuentro y convergencia de toda la ciudad.'
+              : 'The core: the meeting and convergence point of the whole city.'
+          }
+        </p>
+      </li>
+      {
+        DISTRICTS.map((district) => (
+          <li>
+            <h3>{district.name[locale]}</h3>
+            <p>{district.description[locale]}</p>
+            <p class="spaces">{(SPACES[district.id] ?? []).join(' · ')}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    max-width: 52rem;
+  }
+  h1 {
+    color: var(--numinia-color-primary-strong);
+  }
+  p {
+    line-height: 1.7;
+  }
+  .language-notice {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.85rem;
+  }
+  .cards {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--numinia-space-2);
+  }
+  .cards li {
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-2) var(--numinia-space-3);
+  }
+  .agora {
+    border: 1px solid var(--numinia-color-primary-strong);
+  }
+  .cards h3 {
+    margin: 0 0 var(--numinia-space-1);
+    font-size: 0.95rem;
+  }
+  .cards p {
+    font-size: 0.85rem;
+    margin: 0.3rem 0;
+  }
+  .spaces {
+    color: var(--numinia-color-text-muted);
+  }
+</style>

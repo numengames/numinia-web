@@ -17,11 +17,18 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <nav aria-label={t.footerNavigation}>
       <h2>{t.footerNavigation}</h2>
       <a href={`${prefix}/`} data-metric="footer-home">{t.navHome}</a>
+      <a href={`${prefix}/city/`} data-metric="footer-city">{t.navCity}</a>
+      <a href={`${prefix}/assets/`} data-metric="footer-assets">{t.navAssets}</a>
+      <a href={`${prefix}/lap/`} data-metric="footer-lap">{t.navLap}</a>
+      <a href={`${prefix}/updates/`} data-metric="footer-updates">{t.navUpdates}</a>
+    </nav>
+    <nav aria-label={t.navAssets}>
+      <h2>{t.navAssets}</h2>
       <a href={`${prefix}/gallery/`} data-metric="footer-gallery">{t.navGallery}</a>
       <a href={`${prefix}/archive/`} data-metric="footer-archive">{t.navArchive}</a>
       <a href={`${prefix}/finder/`} data-metric="footer-finder">{t.navFinder}</a>
+      <a href={`${prefix}/inspector/`} data-metric="footer-inspector">{t.navInspector}</a>
       <a href={`${prefix}/docs/`} data-metric="footer-docs">{t.navDocs}</a>
-      <a href={`${prefix}/updates/`} data-metric="footer-updates">{t.navUpdates}</a>
     </nav>
     <nav aria-label={t.footerResources}>
       <h2>{t.footerResources}</h2>

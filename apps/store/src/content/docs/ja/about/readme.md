@@ -11,7 +11,7 @@ Numinia Digital Goods is an open platform for CC0-licensed digital assets built 
 
 Numinia is a city-state imagined as a role-playing game, created by Numen Games as a gamified organizational model. The digital goods here are the shared building blocks of that universe — CC0 assets for anyone to use, remix, and build upon.
 
-> For the full lore, philosophy, and organizational framework, see the [Seminal Documents](/docs/seminal-documents/) (English).
+> For the full lore, philosophy, and organizational framework, see the [Seminal Documents](../../city/) (English).
 
 ## Core Principle: File Over App
 
@@ -30,7 +30,7 @@ The data is the product, not the app. All asset metadata lives in open JSON file
 
 ## Topics
 
-- [GLB Format](/ja/resources/about/glb) — The universal 3D standard
-- [Arweave Storage](/ja/resources/about/ardrive) — Permanent decentralized storage
-- [Open Source Philosophy](/ja/resources/about/philosophy) — Why CC0 matters
-- [License Guide](/ja/resources/about/license) — CC0 vs CC-BY explained
+- [GLB Format](../../docs/about/glb) — The universal 3D standard
+- [Arweave Storage](../../docs/about/ardrive) — Permanent decentralized storage
+- [Open Source Philosophy](../../docs/about/philosophy) — Why CC0 matters
+- [License Guide](../../docs/about/license) — CC0 vs CC-BY explained

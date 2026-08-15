@@ -8,7 +8,7 @@
 >
 > _Part of the Law. Index: [docs/LEY.md](../docs/LEY.md)_
 
-- **Status:** In progress (Oracle directive 2026-08-15)
+- **Status:** ✅ Done (2026-08-15) — UI design pass pending the Oracle design .md
 - **Layer:** 0–1 · **Scope:** UX only (UI design arrives later via the Oracle's design .md)
 - **Canonical narrative source:** `2026_06_02-Presentación_Numinia-v0.6.0.pdf` (the deck) + seminal corpus. Numinia is a **metagame**; the platform will live at **numinia.com**.
 

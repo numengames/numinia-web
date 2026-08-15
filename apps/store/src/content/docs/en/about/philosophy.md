@@ -66,4 +66,4 @@ The Numinia RPG (a tabletop role-playing game) and Numinia Digital Goods (this p
 
 Together they form what the project calls the **Operating System → Functional Model → Narrative Projection** chain: a real organizational need (Operating System) is given structure (Functional Model) and brought to life through story and play (Narrative Projection).
 
-> For the complete philosophical and epistemological framework, see the [Seminal Documents](/docs/seminal-documents/).
+> For the complete philosophical and epistemological framework, see the [Seminal Documents](../../../city/).

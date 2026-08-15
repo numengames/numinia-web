@@ -1,0 +1,110 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ASSETS_HUB_MESSAGES } from '../../i18n/pillars';
+import {
+  ARCHIVE_MESSAGES,
+  DOCS_MESSAGES,
+  FINDER_MESSAGES,
+  GALLERY_MESSAGES,
+  INSPECTOR_MESSAGES,
+} from '../../i18n/messages';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = ASSETS_HUB_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+const CARDS = [
+  {
+    href: `${prefix}/gallery/`,
+    title: GALLERY_MESSAGES[locale].galleryTitle,
+    body: GALLERY_MESSAGES[locale].galleryIntro,
+    metric: 'assets-gallery',
+  },
+  {
+    href: `${prefix}/archive/`,
+    title: ARCHIVE_MESSAGES[locale].archiveTitle,
+    body: ARCHIVE_MESSAGES[locale].archiveIntro,
+    metric: 'assets-archive',
+  },
+  {
+    href: `${prefix}/finder/`,
+    title: FINDER_MESSAGES[locale].finderTitle,
+    body: FINDER_MESSAGES[locale].finderIntro,
+    metric: 'assets-finder',
+  },
+  {
+    href: `${prefix}/inspector/`,
+    title: INSPECTOR_MESSAGES[locale].inspectorTitle,
+    body: INSPECTOR_MESSAGES[locale].inspectorIntro,
+    metric: 'assets-inspector',
+  },
+  {
+    href: `${prefix}/docs/`,
+    title: DOCS_MESSAGES[locale].docsTitle,
+    body: t.resourcesCard,
+    metric: 'assets-docs',
+  },
+] as const;
+---
+
+<BaseLayout locale={locale} title={`${t.assetsTitle} — Numinia`} description={t.assetsIntro}>
+  <header>
+    <h1>{t.assetsTitle}</h1>
+    <p>{t.assetsIntro}</p>
+  </header>
+  <ul data-assets-hub>
+    {
+      CARDS.map((card) => (
+        <li>
+          <a href={card.href} data-metric={card.metric}>
+            <h2>{card.title}</h2>
+            <p>{card.body}</p>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>
+
+<style>
+  header p {
+    color: var(--numinia-color-text-muted);
+    max-width: 42rem;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--numinia-space-3);
+  }
+  a {
+    display: block;
+    height: 100%;
+    background: var(--numinia-color-surface);
+    border-radius: var(--numinia-radius-md);
+    padding: var(--numinia-space-3);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 120ms ease;
+  }
+  a:hover,
+  a:focus-visible {
+    transform: translateY(-2px);
+  }
+  h2 {
+    margin: 0 0 var(--numinia-space-1);
+    font-size: 1rem;
+    color: var(--numinia-color-primary-strong);
+  }
+  a p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+</style>

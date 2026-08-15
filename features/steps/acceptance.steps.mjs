@@ -424,3 +424,52 @@ Then('key pages declare meta description and open graph tags', async function ()
     assert.equal(ogTitles.length, 1, `${page}: duplicated og:title`);
   }
 });
+
+// --- three pillars (MISSION-004) ---
+
+Then('every page header links city, assets, and lap', async function () {
+  for (const page of ['index.html', 'es/index.html', 'gallery/index.html', 'lap/index.html']) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    for (const metric of ['nav-city', 'nav-assets', 'nav-lap']) {
+      assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
+    }
+    assert.ok(!html.includes('data-metric="nav-gallery"'), `${page}: old nav still present`);
+  }
+});
+
+Then('the city pages exist under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const slug of ['city', 'city/inhabitants', 'city/districts', 'city/the-game']) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, slug, 'index.html'),
+        'utf8',
+      ).catch(() => null);
+      assert.ok(html, `missing ${slug} for ${prefix || 'en'}`);
+    }
+  }
+});
+
+Then('the assets hub and lap pages exist under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const slug of ['assets', 'lap']) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, slug, 'index.html'),
+        'utf8',
+      ).catch(() => null);
+      assert.ok(html, `missing ${slug} for ${prefix || 'en'}`);
+    }
+  }
+  const lap = await readFile(path.join(this.distDir, 'lap', 'index.html'), 'utf8');
+  assert.ok(lap.includes('data-lap-ranks'), 'lap page lacks the ranks list');
+  assert.ok(lap.includes('data-lap-status'), 'lap page lacks the status note');
+});
+
+Then('the link integrity gate passes', async function () {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const run = promisify(execFile);
+  const result = await run('node', [path.join(repoRoot, 'scripts', 'link-check.mjs')], {
+    cwd: repoRoot,
+  });
+  assert.match(result.stdout, /0 broken/);
+});

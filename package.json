@@ -2,7 +2,7 @@
   "name": "numinia-platform",
   "version": "0.17.0",
   "private": true,
-  "description": "Numinia Platform monorepo — the material culture of the city-state, rebuilt. Continues the numinia.store version line (legacy ended at 0.15.0).",
+  "description": "Numinia Platform monorepo \u2014 the material culture of the city-state, rebuilt. Continues the numinia.store version line (legacy ended at 0.15.0).",
   "license": "MIT",
   "type": "module",
   "workspaces": [
@@ -23,10 +23,11 @@
     "prepare": "node scripts/install-hooks.mjs",
     "licenses:check": "license-checker-rseidelsohn --excludePrivatePackages --failOn 'GPL-1.0;GPL-2.0;GPL-3.0;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later;AGPL-1.0;AGPL-3.0;AGPL-3.0-only;AGPL-3.0-or-later;SSPL-1.0'",
     "e2e": "npm --workspace @numinia/store run e2e",
-    "verify": "npm run ci && npm run test:acceptance && npm run licenses:check && npm run budget && npm run e2e",
+    "verify": "npm run ci && npm run test:acceptance && npm run licenses:check && npm run budget && npm run links && npm run e2e",
     "deadcode": "knip",
     "test:mutation": "npm --workspace @numinia/domain run test:mutation && npm --workspace @numinia/analytics run test:mutation",
-    "budget": "node scripts/bundle-budget.mjs"
+    "budget": "node scripts/bundle-budget.mjs",
+    "links": "node scripts/link-check.mjs"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.1",

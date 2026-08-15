@@ -34,5 +34,5 @@ GET https://numinia.store/api/nft/check-ownership?address=0x...&contract=0x...  
 
 ## Resources
 
-- [Asset Database](/ja/resources/developers/database) — JSON structure and schema
-- [Website Source Code](/ja/resources/developers/website) — App repo and how to contribute
+- [Asset Database](../../docs/developers/database) — JSON structure and schema
+- [Website Source Code](../../docs/developers/website) — App repo and how to contribute

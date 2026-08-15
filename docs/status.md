@@ -67,6 +67,13 @@
 - Legacy changelog v0.1.0–0.15.0 extracted as portable data.
 - ADR-006 auth session dossier ready (`docs/adr-006-auth-dossier.md`).
 
+### MISSION-004 — Three pillars ✅ (2026-08-15, Oracle directive)
+
+- Site reorganized as **La Ciudad · Assets · L.A.P.** (deck v0.6.0 as canonical narrative; Numinia = metagame; future home numinia.com — building stays in apps/store until production order).
+- New: /city/** (what/history/inhabitants/districts/game — lore ES+EN, data from @numinia/domain), /assets/ hub, /lap/ (player area + 6 ranks + honest "citizenship required" status). Landing + header/footer speak the three pillars.
+- **Link-integrity gate** (`npm run links`, in verify): found and fixed 97 broken legacy links in docs content; now 8,404 internal links / 296 pages / 0 broken.
+- **The Law chartered**: every governing .md opens with description + epistemic value + pragmatic value + system coupling (systems thinking / active inference); indexed in docs/LEY.md.
+
 ## NEXT (ordered, with owner)
 
 | #   | What                                                                                                                                                                                         | Owner                     | Notes                                                                |

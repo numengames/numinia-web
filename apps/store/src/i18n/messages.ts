@@ -24,6 +24,9 @@ export interface ArchiveMessages {
 /** Site chrome: header nav, language selector, footer. */
 export interface ChromeMessages {
   readonly navHome: string;
+  readonly navCity: string;
+  readonly navAssets: string;
+  readonly navLap: string;
   readonly navGallery: string;
   readonly navArchive: string;
   readonly navFinder: string;
@@ -45,6 +48,9 @@ export interface ChromeMessages {
 export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> = {
   es: {
     navHome: 'Inicio',
+    navCity: 'La Ciudad',
+    navAssets: 'Assets',
+    navLap: 'L.A.P.',
     navGallery: 'Galería',
     navArchive: 'Archivo',
     navFinder: 'Finder',
@@ -64,6 +70,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
   },
   en: {
     navHome: 'Home',
+    navCity: 'The City',
+    navAssets: 'Assets',
+    navLap: 'L.A.P.',
     navGallery: 'Gallery',
     navArchive: 'Archive',
     navFinder: 'Finder',
@@ -83,6 +92,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
   },
   ja: {
     navHome: 'ホーム',
+    navCity: '都市',
+    navAssets: 'アセット',
+    navLap: 'L.A.P.',
     navGallery: 'ギャラリー',
     navArchive: 'アーカイブ',
     navFinder: 'Finder',
@@ -102,6 +114,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
   },
   ko: {
     navHome: '홈',
+    navCity: '도시',
+    navAssets: '에셋',
+    navLap: 'L.A.P.',
     navGallery: '갤러리',
     navArchive: '아카이브',
     navFinder: 'Finder',
@@ -121,6 +136,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
   },
   'pt-br': {
     navHome: 'Início',
+    navCity: 'A Cidade',
+    navAssets: 'Assets',
+    navLap: 'L.A.P.',
     navGallery: 'Galeria',
     navArchive: 'Arquivo',
     navFinder: 'Finder',
@@ -144,15 +162,12 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
 export interface LandingMessages {
   readonly heroTitle: string;
   readonly heroSub: string;
-  readonly ctaGallery: string;
-  readonly ctaInspector: string;
-  readonly aboutTitle: string;
-  readonly aboutBody: string;
-  readonly toolsTitle: string;
-  readonly toolGallery: string;
-  readonly toolArchive: string;
-  readonly toolFinder: string;
-  readonly toolInspector: string;
+  readonly ctaCity: string;
+  readonly ctaAssets: string;
+  readonly pillarsTitle: string;
+  readonly pillarCity: string;
+  readonly pillarAssets: string;
+  readonly pillarLap: string;
 }
 
 export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>> = {
@@ -160,76 +175,65 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     heroTitle: 'Bienes digitales open source para juegos, VR y mundos 3D',
     heroSub:
       'Avatares, modelos, mundos y más — la cultura material de Numinia, libre bajo CC0 para usar, remezclar y mejorar.',
-    ctaGallery: 'Explorar la galería',
-    ctaInspector: 'Probar el Inspector 3D',
-    aboutTitle: 'El proyecto',
-    aboutBody:
-      'Numinia es una ciudad entre planos, y estos son los objetos que sus ciudadanos usan, ganan y llevan consigo. Cada activo se publica en formatos abiertos (GLB, VRM y más) con metadatos portables: los datos viven en repositorios públicos, no en una base de datos cerrada.',
-    toolsTitle: 'Herramientas',
-    toolGallery: 'La galería: los avatares de la ciudad, colección a colección.',
-    toolArchive: 'El archivo: todos los formatos, con búsqueda, filtros y descarga directa.',
-    toolFinder: 'El Finder: explora colecciones y descarga por lotes.',
-    toolInspector: 'El Inspector 3D: examina tus GLB y VRM sin subir nada.',
+    ctaCity: 'Descubrir la Ciudad',
+    ctaAssets: 'Explorar los Assets',
+    pillarsTitle: 'Tres puertas',
+    pillarCity:
+      'La Ciudad: qué es Numinia — su historia, sus distritos, sus habitantes y el juego que la construye.',
+    pillarAssets:
+      'Assets: bienes digitales CC0 en formatos abiertos para construir mundos — galería, archivo, finder e inspector.',
+    pillarLap:
+      'L.A.P.: el área del jugador — tu puerta al juego virtual y a tu información de ciudadano.',
   },
   en: {
     heroTitle: 'Open-source digital goods for games, VR, and 3D worlds',
     heroSub:
       'Avatars, models, worlds and more — the material culture of Numinia, free under CC0 to use, remix, and improve.',
-    ctaGallery: 'Explore the gallery',
-    ctaInspector: 'Try the 3D Inspector',
-    aboutTitle: 'The project',
-    aboutBody:
-      'Numinia is a city between planes, and these are the objects its citizens use, earn, and carry. Every asset ships in open formats (GLB, VRM and more) with portable metadata: the data lives in public repositories, not a closed database.',
-    toolsTitle: 'Tools',
-    toolGallery: 'The gallery: the avatars of the city, collection by collection.',
-    toolArchive: 'The archive: every format, with search, filters, and direct download.',
-    toolFinder: 'The Finder: browse collections and batch-download.',
-    toolInspector: 'The 3D Inspector: examine your GLB and VRM files without uploading anything.',
+    ctaCity: 'Discover the City',
+    ctaAssets: 'Explore the Assets',
+    pillarsTitle: 'Three doors',
+    pillarCity:
+      'The City: what Numinia is — its history, its districts, its inhabitants, and the game that builds it.',
+    pillarAssets:
+      'Assets: CC0 digital goods in open formats for building worlds — gallery, archive, finder, and inspector.',
+    pillarLap:
+      'L.A.P.: the player area — your door to the virtual game and your citizen information.',
   },
   ja: {
     heroTitle: 'ゲーム・VR・3Dワールドのためのオープンソース・デジタルグッズ',
     heroSub:
       'アバター、モデル、ワールドなど — ヌミニアの物質文化。CC0で自由に使い、リミックスし、改良できます。',
-    ctaGallery: 'ギャラリーを見る',
-    ctaInspector: '3Dインスペクターを試す',
-    aboutTitle: 'プロジェクトについて',
-    aboutBody:
-      'ヌミニアは次元の狭間にある都市。ここにあるのは市民が使い、獲得し、持ち歩く品々です。すべてのアセットはオープンフォーマット（GLB、VRMなど）とポータブルなメタデータで公開され、データは閉じたデータベースではなく公開リポジトリにあります。',
-    toolsTitle: 'ツール',
-    toolGallery: 'ギャラリー:都市のアバターをコレクションごとに。',
-    toolArchive: 'アーカイブ:全フォーマット。検索・フィルター・直接ダウンロード。',
-    toolFinder: 'Finder:コレクションを探索して一括ダウンロード。',
-    toolInspector: '3Dインスペクター:GLB/VRMをアップロードなしで検査。',
+    ctaCity: '都市を知る',
+    ctaAssets: 'アセットを探索',
+    pillarsTitle: '三つの扉',
+    pillarCity: '都市:ヌミニアとは — その歴史、地区、住民、そして都市を築くゲーム。',
+    pillarAssets:
+      'アセット:世界を作るためのCC0デジタルグッズ — ギャラリー、アーカイブ、Finder、インスペクター。',
+    pillarLap: 'L.A.P.:プレイヤーエリア — 仮想ゲームと市民情報への入り口。',
   },
   ko: {
     heroTitle: '게임·VR·3D 월드를 위한 오픈소스 디지털 굿즈',
     heroSub:
       '아바타, 모델, 월드 등 — 누미니아의 물질 문화. CC0로 자유롭게 쓰고, 리믹스하고, 개선하세요.',
-    ctaGallery: '갤러리 둘러보기',
-    ctaInspector: '3D 인스펙터 사용해 보기',
-    aboutTitle: '프로젝트 소개',
-    aboutBody:
-      '누미니아는 차원 사이의 도시이며, 여기 있는 것은 시민들이 쓰고, 얻고, 지니는 물건들입니다. 모든 에셋은 개방형 포맷(GLB, VRM 등)과 이동 가능한 메타데이터로 공개되며, 데이터는 닫힌 데이터베이스가 아닌 공개 저장소에 있습니다.',
-    toolsTitle: '도구',
-    toolGallery: '갤러리: 도시의 아바타를 컬렉션별로.',
-    toolArchive: '아카이브: 모든 포맷, 검색·필터·직접 다운로드.',
-    toolFinder: 'Finder: 컬렉션 탐색과 일괄 다운로드.',
-    toolInspector: '3D 인스펙터: 업로드 없이 GLB/VRM을 검사.',
+    ctaCity: '도시 알아보기',
+    ctaAssets: '에셋 탐색하기',
+    pillarsTitle: '세 개의 문',
+    pillarCity: '도시: 누미니아란 — 역사, 구역, 주민, 그리고 도시를 만드는 게임.',
+    pillarAssets: '에셋: 월드를 만들기 위한 CC0 디지털 굿즈 — 갤러리, 아카이브, Finder, 인스펙터.',
+    pillarLap: 'L.A.P.: 플레이어 구역 — 가상 게임과 시민 정보로 가는 문.',
   },
   'pt-br': {
     heroTitle: 'Bens digitais open source para jogos, VR e mundos 3D',
     heroSub:
       'Avatares, modelos, mundos e mais — a cultura material de Numinia, livre sob CC0 para usar, remixar e melhorar.',
-    ctaGallery: 'Explorar a galeria',
-    ctaInspector: 'Testar o Inspetor 3D',
-    aboutTitle: 'O projeto',
-    aboutBody:
-      'Numinia é uma cidade entre planos, e estes são os objetos que seus cidadãos usam, ganham e carregam. Cada ativo é publicado em formatos abertos (GLB, VRM e mais) com metadados portáveis: os dados vivem em repositórios públicos, não em um banco de dados fechado.',
-    toolsTitle: 'Ferramentas',
-    toolGallery: 'A galeria: os avatares da cidade, coleção por coleção.',
-    toolArchive: 'O arquivo: todos os formatos, com busca, filtros e download direto.',
-    toolFinder: 'O Finder: explore coleções e baixe em lote.',
-    toolInspector: 'O Inspetor 3D: examine seus GLB e VRM sem enviar nada.',
+    ctaCity: 'Descobrir a Cidade',
+    ctaAssets: 'Explorar os Assets',
+    pillarsTitle: 'Três portas',
+    pillarCity:
+      'A Cidade: o que é Numinia — sua história, seus distritos, seus habitantes e o jogo que a constrói.',
+    pillarAssets:
+      'Assets: bens digitais CC0 em formatos abertos para construir mundos — galeria, arquivo, finder e inspetor.',
+    pillarLap: 'L.A.P.: a área do jogador — sua porta para o jogo virtual e suas informações.',
   },
 };
 

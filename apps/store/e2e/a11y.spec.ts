@@ -25,6 +25,10 @@ const PAGES = [
   '/es/docs/',
   '/docs/developers/',
   '/es/inspector/',
+  '/es/city/',
+  '/es/city/inhabitants/',
+  '/es/assets/',
+  '/es/lap/',
 ];
 
 for (const path of PAGES) {

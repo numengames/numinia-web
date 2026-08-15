@@ -39,6 +39,6 @@ All Numinia-curated assets use **CC0 (Public Domain)**. No attribution required,
 
 ## Browse & Download
 
-- [Gallery](/ja/gallery) — Visual browser with 3D preview
-- [Finder](/ja/finder) — File-level browser with batch download
-- [API](/ja/resources/developers/database) — JSON data for programmatic access
+- [Gallery](../../gallery/) — Visual browser with 3D preview
+- [Finder](../../finder/) — File-level browser with batch download
+- [API](../../docs/developers/database) — JSON data for programmatic access

@@ -1,0 +1,75 @@
+---
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CitySubnav from './CitySubnav.astro';
+import { CITY_LANGUAGE_NOTICE, CITY_LORE, CITY_MESSAGES, loreLocale } from '../../i18n/city';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CITY_MESSAGES[locale];
+const lore = CITY_LORE[loreLocale(locale)];
+const notice = CITY_LANGUAGE_NOTICE[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<BaseLayout locale={locale} title={`${t.cityTitle} — Numinia`} description={t.cityIntro}>
+  <CitySubnav locale={locale} current="index" />
+  <article data-city="index">
+    <h1>{t.cityTitle}</h1>
+    {notice && <p class="language-notice">{notice}</p>}
+
+    {lore.whatIs.map((paragraph) => <p>{paragraph}</p>)}
+
+    <h2>{loreLocale(locale) === 'es' ? 'Historia de Numinia' : 'History of Numinia'}</h2>
+    {lore.history.map((paragraph) => <p>{paragraph}</p>)}
+
+    <h2>{loreLocale(locale) === 'es' ? 'El motor activo' : 'The active engine'}</h2>
+    <p>{lore.engine}</p>
+
+    <nav aria-label={t.readMore} class="next">
+      <a href={`${prefix}/city/inhabitants/`} data-metric="city-cta-inhabitants">
+        {t.inhabitantsTitle} →
+      </a>
+      <a href={`${prefix}/city/districts/`} data-metric="city-cta-districts">
+        {t.districtsTitle} →
+      </a>
+      <a href={`${prefix}/city/the-game/`} data-metric="city-cta-game">{t.gameTitle} →</a>
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    max-width: 46rem;
+  }
+  h1 {
+    color: var(--numinia-color-primary-strong);
+  }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--numinia-color-primary-strong);
+    margin-top: var(--numinia-space-4);
+  }
+  p {
+    line-height: 1.7;
+  }
+  .language-notice {
+    color: var(--numinia-color-text-muted);
+    font-size: 0.85rem;
+  }
+  .next {
+    display: flex;
+    flex-direction: column;
+    gap: var(--numinia-space-1);
+    margin-top: var(--numinia-space-4);
+    border-top: 1px solid var(--numinia-color-surface);
+    padding-top: var(--numinia-space-3);
+  }
+  .next a {
+    color: var(--numinia-color-primary-strong);
+    text-decoration: none;
+  }
+</style>

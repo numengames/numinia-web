@@ -1,0 +1,100 @@
+---
+import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LAP_MESSAGES } from '../../i18n/pillars';
+import { UPDATES_MESSAGES } from '../../i18n/messages';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<BaseLayout locale={locale} title={`${t.lapTitle} — Numinia`} description={t.lapIntro}>
+  <article data-lap>
+    <h1>{t.lapTitle}</h1>
+    <p class="intro">{t.lapIntro}</p>
+    <p>{t.lapBody}</p>
+
+    <aside data-lap-status role="note">
+      <h2>{t.statusTitle}</h2>
+      <p>{t.statusBody}</p>
+      <p>
+        {t.updatesNote}
+        <a href={`${prefix}/updates/`} data-metric="lap-updates">
+          → {UPDATES_MESSAGES[locale].updatesTitle}
+        </a>
+      </p>
+    </aside>
+
+    <h2>{t.ranksTitle}</h2>
+    <p>{t.ranksIntro}</p>
+    <ol data-lap-ranks>
+      {
+        RANK_DEFINITIONS.map((rank) => (
+          <li>
+            <h3>{rank.name[locale]}</h3>
+            <p>{rank.description[locale]}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    max-width: 46rem;
+  }
+  h1,
+  h2 {
+    color: var(--numinia-color-primary-strong);
+  }
+  h2 {
+    font-size: 1.1rem;
+    margin-top: var(--numinia-space-4);
+  }
+  p {
+    line-height: 1.7;
+  }
+  .intro {
+    color: var(--numinia-color-text-muted);
+  }
+  [data-lap-status] {
+    background: var(--numinia-color-surface);
+    border-left: 3px solid var(--numinia-color-accent, #efa517);
+    border-radius: var(--numinia-radius-sm);
+    padding: var(--numinia-space-2) var(--numinia-space-3);
+    margin: var(--numinia-space-3) 0;
+  }
+  [data-lap-status] h2 {
+    margin-top: 0;
+    font-size: 0.9rem;
+  }
+  [data-lap-status] a {
+    color: var(--numinia-color-primary-strong);
+    text-decoration: underline;
+    margin-left: 0.3rem;
+  }
+  ol {
+    list-style: none;
+    padding: 0;
+    counter-reset: rank;
+  }
+  ol li {
+    border-left: 2px solid var(--numinia-color-primary-strong);
+    padding: 0 0 var(--numinia-space-2) var(--numinia-space-3);
+  }
+  ol h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  ol p {
+    margin: 0.2rem 0 0;
+    font-size: 0.9rem;
+    color: var(--numinia-color-text-muted);
+  }
+</style>

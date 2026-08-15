@@ -11,30 +11,30 @@ Welcome to the Numinia Digital Goods documentation. Numinia Digital Goods is the
 
 Browse 3D models (GLB), avatars (VRM), Hyperfy worlds (HYP), audio, video, and STL files for 3D printing.
 
-[View Asset Collections →](/en/resources/avatar-collections)
+[View Asset Collections →](../docs/avatar-collections/)
 
 ## For Developers
 
 API access, JSON database structure, and how to build on Numinia data.
 
-[View Developer Resources →](/en/resources/developers)
+[View Developer Resources →](../docs/developers/)
 
 ## About
 
 Supported formats, decentralized storage, and licensing.
 
-[Learn More →](/en/resources/about)
+[Learn More →](../docs/about/)
 
 ## Help & Contact
 
 Get help, report issues, or contribute.
 
-[Get Help →](/en/resources/help)
+[Get Help →](../docs/help/)
 
 ## Quick Links
 
-- [Asset Collections](/en/resources/avatar-collections)
-- [License Guide (CC0 vs CC-BY)](/en/resources/about/license)
-- [Asset Database (JSON)](/en/resources/developers/database)
-- [GLB Format](/en/resources/about/glb)
-- [Arweave Storage](/en/resources/about/ardrive)
+- [Asset Collections](../docs/avatar-collections/)
+- [License Guide (CC0 vs CC-BY)](../docs/about/license/)
+- [Asset Database (JSON)](../docs/developers/database/)
+- [GLB Format](../docs/about/glb/)
+- [Arweave Storage](../docs/about/ardrive/)
