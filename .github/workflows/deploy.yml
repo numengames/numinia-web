@@ -1,0 +1,45 @@
+# Deploy numinia.com — the platform replaces the old landing on the
+# `numinia-web` Worker (one-Worker policy: name matches this repo).
+#
+# Manual trigger ONLY (workflow_dispatch): publishing is an Oracle act.
+# Runtime secrets live on the Worker itself (`wrangler secret put`), never here.
+# Repo secrets used: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID (inherited
+# from the pre-platform repo; rotation scheduled — see docs/status.md NEXT #2).
+# Repo variable required: PUBLIC_THIRDWEB_CLIENT_ID (public by design, baked
+# into the client bundle at build time).
+name: Deploy to Cloudflare
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & deploy numinia-web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install (reproducible)
+        run: npm ci
+      - name: Build for Cloudflare (real catalog — a deploy must not ship fixtures)
+        run: npm run build --workspace=apps/store
+        env:
+          DEPLOY_TARGET: cloudflare
+          PUBLIC_SITE_URL: https://numinia.com
+          GITHUB_REPO_OWNER: PabloFMM
+          GITHUB_REPO_NAME: numinia-digital-goods-data
+          PUBLIC_THIRDWEB_CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
+      - name: Deploy Worker (numinia-web, custom domains numinia.com + www)
+        run: npx wrangler deploy -c wrangler.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
