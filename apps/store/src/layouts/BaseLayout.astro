@@ -15,9 +15,11 @@ interface Props {
   description?: string | undefined;
   /** The spike page opts out of the site chrome (internal, not in the sitemap). */
   chrome?: boolean;
+  /** Platform surfaces fill the viewport instead of the reading column. */
+  wide?: boolean;
 }
 
-const { locale, title, description, chrome = true } = Astro.props;
+const { locale, title, description, chrome = true, wide = false } = Astro.props;
 
 /** OG locale codes (territory formats differ from our ids). */
 const OG_LOCALES: Record<SupportedLocale, string> = {
@@ -77,7 +79,7 @@ const urlFor = (target: SupportedLocale): string =>
   </head>
   <body>
     {chrome && <SiteHeader locale={locale} basePath={basePath} />}
-    <main>
+    <main data-wide={wide ? '' : undefined}>
       <slot />
     </main>
     {chrome && <SiteFooter locale={locale} />}
@@ -94,5 +96,16 @@ const urlFor = (target: SupportedLocale): string =>
     max-width: 60rem;
     margin: 0 auto;
     padding: var(--numinia-space-5) var(--numinia-space-3);
+  }
+  /* Platform surfaces use the room they have — no vw hacks (Firefox counts
+     the scrollbar in 50vw and the page would overflow). */
+  main[data-wide] {
+    max-width: none;
+    padding: var(--s5) var(--s4) var(--s7);
+  }
+  @media (min-width: 100rem) {
+    main[data-wide] {
+      padding-inline: var(--s8);
+    }
   }
 </style>

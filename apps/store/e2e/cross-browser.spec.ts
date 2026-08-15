@@ -18,6 +18,7 @@ const PAGES = [
   '/es/lap/codex/capitulo-2/',
   '/es/lap/stats/',
   '/es/lap/settings/',
+  '/es/lap/admin/assets/',
   '/es/city/',
   '/es/archive/',
   '/',
@@ -83,6 +84,12 @@ test('content survives with JavaScript disabled (SSG promise)', async ({ browser
     expect(hidden, `${path} hides content without JS`).toBe(0);
   }
   await context.close();
+});
+
+test('management data is refused without a session', async ({ request }) => {
+  const response = await request.get('/api/admin/overview');
+  expect(response.status()).toBe(403);
+  expect(await response.text()).not.toContain('assets');
 });
 
 test('the sheet round-trips through a real file in this engine', async ({ page }) => {

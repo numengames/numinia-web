@@ -1,0 +1,202 @@
+---
+/**
+ * The Oracle's asset table (MISSION-011). The page itself is static; the
+ * DATA is not — it arrives from a session-gated endpoint, so what a visitor
+ * without rank receives is a refusal, never a leak.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import LapShell from '../LapShell.astro';
+import { AdminAssets } from './AdminAssets';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+---
+
+<LapShell
+  locale={locale}
+  current="admin-assets"
+  title={`${t.admin.assets} — L.A.P. — Numinia`}
+  description={t.admin.assetsIntro}
+>
+  <header class="cabecera">
+    <h1>{t.admin.assets}</h1>
+    <p class="intro">{t.admin.assetsIntro}</p>
+  </header>
+  <AdminAssets client:load labels={t.admin} />
+</LapShell>
+
+<style>
+  .cabecera {
+    margin-bottom: var(--s5);
+  }
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--s2);
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+</style>
+
+<style is:global>
+  /* §13.11 platform table: amber etiqueta header, 40px rows, Mono measures,
+     the whole thing scrolling inside its own box on narrow screens. */
+  [data-admin-assets] .controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+  }
+  [data-admin-assets] input[type='search'] {
+    flex: 1 1 16rem;
+    min-height: 44px;
+    padding: 10px var(--s4);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+  }
+  [data-admin-assets] .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  [data-admin-assets] .filtros button {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    min-height: 32px;
+    padding: 4px var(--s3);
+    color: var(--texto-2);
+    background: transparent;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    cursor: pointer;
+    transition:
+      background 120ms var(--ciclo),
+      color 120ms var(--ciclo);
+  }
+  [data-admin-assets] .filtros button[aria-pressed='true'] {
+    background: var(--texto);
+    border-color: var(--texto);
+    color: var(--fondo);
+  }
+  [data-admin-assets] .cuenta {
+    margin: 0 0 0 auto;
+    color: var(--texto-3);
+    font-size: 0.875rem;
+  }
+  [data-admin-assets] .tabla-envoltura {
+    overflow-x: auto;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    background: var(--superficie);
+  }
+  [data-admin-assets] table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  [data-admin-assets] th {
+    text-align: left;
+    padding: var(--s2) var(--s4);
+    border-bottom: 1px solid var(--linea-f);
+    white-space: nowrap;
+  }
+  [data-admin-assets] th button {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  [data-admin-assets] th:not(:has(button)) {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+  }
+  [data-admin-assets] td {
+    padding: var(--s2) var(--s4);
+    height: 40px;
+    border-bottom: 1px solid var(--linea);
+    vertical-align: middle;
+  }
+  [data-admin-assets] tbody tr {
+    transition: background 120ms var(--ciclo);
+  }
+  [data-admin-assets] tbody tr:hover {
+    background: var(--elevada);
+  }
+  [data-admin-assets] .nombre {
+    display: block;
+    color: var(--texto);
+    font-weight: 500;
+  }
+  [data-admin-assets] .id {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--texto-3);
+    overflow-wrap: anywhere;
+  }
+  [data-admin-assets] .secundario {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  [data-admin-assets] .formato {
+    color: var(--turquesa);
+    font-size: 0.75rem;
+  }
+  [data-admin-assets] .capas {
+    display: inline-flex;
+    gap: var(--s2);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+  }
+  [data-admin-assets] .capas [data-on='yes'] {
+    color: var(--verdemar);
+  }
+  [data-admin-assets] .capas [data-on='no'] {
+    color: var(--texto-3);
+    opacity: 0.5;
+  }
+  [data-admin-assets] .nota,
+  [data-admin-assets] .estado {
+    margin-top: var(--s4);
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  [data-admin-assets] .refuso {
+    max-width: 46rem;
+    border-left: 2px solid var(--ambar);
+  }
+  [data-admin-assets] .refuso p {
+    margin: 0 0 var(--s2);
+    color: var(--texto-2);
+  }
+  [data-admin-assets] .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+</style>

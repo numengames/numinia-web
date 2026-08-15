@@ -12,6 +12,7 @@
 import { createThirdwebClient } from 'thirdweb';
 import { createAuth } from 'thirdweb/auth';
 import { z } from 'zod';
+import type { Rank } from '@numinia/domain';
 import {
   createNonceStore,
   createSessionToken,
@@ -23,6 +24,8 @@ import {
 
 const envSchema = z.object({
   THIRDWEB_SECRET_KEY: z.string().min(32, 'THIRDWEB_SECRET_KEY looks truncated'),
+  /** Oracle wallets (comma-separated). Absent = nobody is an Oracle. */
+  ADMIN_WALLET_ADDRESSES: z.string().optional(),
 });
 
 /**
@@ -30,7 +33,11 @@ const envSchema = z.object({
  * endpoint (fail closed, ADR-006) instead of throwing at module scope on
  * every request — which crashed the route and logged a stack per visit.
  */
-let cached: { readonly secretKey: string; readonly sessionSecret: string } | null = null;
+let cached: {
+  readonly secretKey: string;
+  readonly sessionSecret: string;
+  readonly oracles: ReadonlySet<string>;
+} | null = null;
 
 export function authConfigured(): boolean {
   return loadConfig() !== null;
@@ -41,7 +48,16 @@ function loadConfig(): typeof cached {
   try {
     const vendor = envSchema.parse(process.env);
     const { sessionSecret } = parseAuthEnv(process.env);
-    cached = { secretKey: vendor.THIRDWEB_SECRET_KEY, sessionSecret };
+    cached = {
+      secretKey: vendor.THIRDWEB_SECRET_KEY,
+      sessionSecret,
+      oracles: new Set(
+        (vendor.ADMIN_WALLET_ADDRESSES ?? '')
+          .split(',')
+          .map((address) => address.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    };
     return cached;
   } catch {
     return null;
@@ -87,12 +103,22 @@ export function getAuth(): ReturnType<typeof createAuth> {
   return authInstance;
 }
 
+/**
+ * Rank at session time. Oracles are configured, never self-declared: the
+ * address must appear in ADMIN_WALLET_ADDRESSES (server-side env). Everyone
+ * else enters as a Nomad; the ladder between them belongs to Session Zero.
+ */
+export function rankForAddress(address: string): Rank {
+  const config = loadConfig();
+  return config?.oracles.has(address.toLowerCase()) ? 'oracle' : 'nomad';
+}
+
 /** Issues our own vendor-independent session after thirdweb verified the address. */
 export async function issueSession(address: string): Promise<string> {
   const iat = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     sub: address,
-    rank: 'nomad',
+    rank: rankForAddress(address),
     iat,
     exp: iat + SESSION_TTL_SECONDS,
   };

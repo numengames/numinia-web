@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.27.0',
+    date: '2026-08-15 20:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The management zone opens for Oracles: the whole archive in one table, sortable and searchable',
+      },
+      {
+        type: 'UPD',
+        text: 'The player area now fills the screen, edge to edge, like the tool it is',
+      },
+      {
+        type: 'UPD',
+        text: 'One iconography everywhere — the citizenship card speaks the same language as the rest',
+      },
+    ],
+  },
+  {
     version: 'v0.26.0',
     date: '2026-08-15 20:15',
     entries: [

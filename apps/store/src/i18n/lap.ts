@@ -19,6 +19,23 @@ export interface LapMessages {
     readonly settings: string;
   };
   readonly foldNav: string;
+  readonly adminGroup: string;
+  readonly admin: {
+    readonly assets: string;
+    readonly assetsIntro: string;
+    readonly forbidden: string;
+    readonly forbiddenNote: string;
+    readonly loading: string;
+    readonly search: string;
+    readonly all: string;
+    readonly name: string;
+    readonly format: string;
+    readonly category: string;
+    readonly storage: string;
+    readonly created: string;
+    readonly count: string;
+    readonly readOnly: string;
+  };
   readonly citizen: {
     readonly title: string;
     readonly noSession: string;
@@ -191,6 +208,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_ES,
     },
     foldNav: 'Plegar o desplegar la navegación',
+    adminGroup: 'Gestión',
+    admin: {
+      assets: 'Assets',
+      assetsIntro:
+        'Todo lo que la ciudad custodia: formato, categoría y en qué capas vive cada binario.',
+      forbidden: 'Zona de Oráculos',
+      forbiddenNote:
+        'Esta sala pide rango de Archonte o superior. Entra con la cartera que lo tiene y volverá a abrirse.',
+      loading: 'Consultando el archivo…',
+      search: 'Buscar por nombre o id…',
+      all: 'Todos',
+      name: 'Nombre',
+      format: 'Formato',
+      category: 'Categoría',
+      storage: 'Almacenamiento',
+      created: 'Creado',
+      count: 'assets',
+      readOnly:
+        'Solo lectura: escribir en el repositorio de datos necesita su propia decisión (ADR de escritura).',
+    },
     citizen: {
       title: 'Tu ciudadanía',
       noSession: 'Sin sesión — nómada de paso',
@@ -275,6 +312,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'Collapse or expand the navigation',
+    adminGroup: 'Management',
+    admin: {
+      assets: 'Assets',
+      assetsIntro:
+        'Everything the city keeps: format, category, and which layers hold each binary.',
+      forbidden: 'Oracles only',
+      forbiddenNote:
+        'This room asks for Archon rank or above. Enter with the wallet that holds it and it opens again.',
+      loading: 'Consulting the archive…',
+      search: 'Search by name or id…',
+      all: 'All',
+      name: 'Name',
+      format: 'Format',
+      category: 'Category',
+      storage: 'Storage',
+      created: 'Created',
+      count: 'assets',
+      readOnly:
+        'Read-only: writing to the data repository needs its own decision (write-path ADR).',
+    },
     citizen: {
       title: 'Your citizenship',
       noSession: 'No session — a Nomad passing through',
@@ -358,6 +415,24 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'ナビゲーションの折りたたみ',
+    adminGroup: '管理',
+    admin: {
+      assets: 'アセット',
+      assetsIntro: '都市が保管するすべて:形式、カテゴリ、そして各バイナリがどの層にあるか。',
+      forbidden: 'オラクル専用',
+      forbiddenNote:
+        'この部屋はアルコン以上のランクが必要です。該当するウォレットで入場してください。',
+      loading: 'アーカイブを照会中…',
+      search: '名前またはIDで検索…',
+      all: 'すべて',
+      name: '名前',
+      format: '形式',
+      category: 'カテゴリ',
+      storage: 'ストレージ',
+      created: '作成日',
+      count: 'アセット',
+      readOnly: '読み取り専用:データリポジトリへの書き込みには独自の決定が必要です。',
+    },
     citizen: {
       title: 'あなたの市民権',
       noSession: 'セッションなし — 通りすがりのノマド',
@@ -438,6 +513,23 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: '내비게이션 접기/펼치기',
+    adminGroup: '관리',
+    admin: {
+      assets: '에셋',
+      assetsIntro: '도시가 보관하는 모든 것: 형식, 카테고리, 각 바이너리가 있는 계층.',
+      forbidden: '오라클 전용',
+      forbiddenNote: '이 방은 아콘 이상의 랭크가 필요합니다. 해당 지갑으로 입장하세요.',
+      loading: '아카이브 조회 중…',
+      search: '이름 또는 ID로 검색…',
+      all: '전체',
+      name: '이름',
+      format: '형식',
+      category: '카테고리',
+      storage: '스토리지',
+      created: '생성일',
+      count: '에셋',
+      readOnly: '읽기 전용: 데이터 저장소 쓰기에는 별도의 결정이 필요합니다.',
+    },
     citizen: {
       title: '당신의 시민권',
       noSession: '세션 없음 — 지나가는 노마드',
@@ -552,6 +644,25 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       },
     },
     foldNav: 'Recolher ou expandir a navegação',
+    adminGroup: 'Gestão',
+    admin: {
+      assets: 'Assets',
+      assetsIntro:
+        'Tudo o que a cidade guarda: formato, categoria e em quais camadas vive cada binário.',
+      forbidden: 'Zona de Oráculos',
+      forbiddenNote:
+        'Esta sala pede rank de Arconte ou superior. Entre com a carteira que o tem e ela reabre.',
+      loading: 'Consultando o arquivo…',
+      search: 'Buscar por nome ou id…',
+      all: 'Todos',
+      name: 'Nome',
+      format: 'Formato',
+      category: 'Categoria',
+      storage: 'Armazenamento',
+      created: 'Criado',
+      count: 'assets',
+      readOnly: 'Somente leitura: escrever no repositório de dados precisa de sua própria decisão.',
+    },
     citizen: {
       title: 'Sua cidadania',
       noSession: 'Sem sessão — nômade de passagem',

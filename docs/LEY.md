@@ -71,6 +71,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [missions/MISSION-008-lap-platform.md](../missions/MISSION-008-lap-platform.md)         | The L.A.P. platform     |
 | [missions/MISSION-009-codex-stats.md](../missions/MISSION-009-codex-stats.md)           | Codex manual + stats    |
 | [missions/MISSION-010-settings-session.md](../missions/MISSION-010-settings-session.md) | Settings + the door     |
+| [missions/MISSION-011-oracle-zone.md](../missions/MISSION-011-oracle-zone.md)           | The Oracle zone         |
 | [docs/merge-numinia-com.md](./merge-numinia-com.md)                                     | numinia.com merge plan  |
 
 ## Not law, but load-bearing
