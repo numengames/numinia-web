@@ -129,9 +129,11 @@ function formatDate(date: string): string {
     background: var(--numinia-color-danger, #d33440);
     color: #ffffff;
   }
+  /* Khepri §9.2: emphasis as outlined etiqueta — amber flips per mode, AA in both. */
   .tag-latest {
-    background: var(--numinia-color-accent, #efa517);
-    color: #1c1c1c;
+    background: transparent;
+    border: 1px solid currentColor;
+    color: var(--ambar);
     margin-left: var(--numinia-space-1);
   }
   .tag-planned,

@@ -41,9 +41,12 @@ const LANGUAGE_NOTICE: Partial<Record<SupportedLocale, string>> = {
 </BaseLayout>
 
 <style>
+  /* Khepri §9.7 aviso: surface + amber edge; text keeps mode contrast. */
   [data-legal-draft] {
-    background: var(--numinia-color-accent, #efa517);
-    color: #1c1c1c;
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-left: 2px solid var(--ambar);
+    color: var(--texto);
     padding: var(--numinia-space-2);
     border-radius: var(--numinia-radius-sm);
     font-size: 0.85rem;

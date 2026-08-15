@@ -13,6 +13,9 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 ---
 
 <footer>
+  <p class="binaria" aria-hidden="true">
+    01001100011001010110000101110110011001010010000001110100011010000110100101101110011001110111001100100000011000100110010101110100011101000110010101110010xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  </p>
   <div class="columns">
     <nav aria-label={t.footerNavigation}>
       <h2>{t.footerNavigation}</h2>
@@ -59,43 +62,51 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 <style>
   footer {
     max-width: 60rem;
-    margin: var(--numinia-space-5) auto 0;
-    padding: var(--numinia-space-4) var(--numinia-space-3);
-    border-top: 1px solid var(--numinia-color-surface);
-    font-size: 0.85rem;
+    margin: var(--s7) auto 0;
+    padding: var(--s5) var(--s4) var(--s6);
+    border-top: 1px solid var(--linea-f);
+    font-size: 0.875rem;
+  }
+  /* §6.1 — the binary is signal, not noise: a decorative separator. */
+  .binaria {
+    margin: 0 0 var(--s5);
   }
   .columns {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--numinia-space-5);
+    gap: var(--s7);
   }
   nav {
     display: flex;
     flex-direction: column;
-    gap: var(--numinia-space-1);
+    gap: var(--s1);
   }
   h2 {
-    font-size: 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--numinia-color-text-muted);
-    margin: 0 0 var(--numinia-space-1);
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+    font-weight: 500;
+    margin: 0 0 var(--s2);
   }
   a {
-    color: inherit;
+    color: var(--texto-2);
     text-decoration: none;
+    transition: color 120ms var(--ciclo);
   }
   a:hover,
   a:focus-visible {
-    color: var(--numinia-color-primary-strong);
+    color: var(--texto);
   }
   p {
-    margin-top: var(--numinia-space-4);
-    color: var(--numinia-color-text-muted);
+    margin-top: var(--s5);
+    color: var(--texto-3);
   }
   .version {
-    margin-left: var(--numinia-space-2);
-    color: var(--numinia-color-primary-strong);
-    font-weight: 700;
+    margin-left: var(--s2);
+    font-family: var(--mono);
+    color: var(--turquesa);
+    font-weight: 600;
   }
 </style>

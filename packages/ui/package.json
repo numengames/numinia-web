@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    "./tokens.css": "./src/tokens.css"
+    "./tokens.css": "./src/tokens.css",
+    "./khepri.css": "./src/khepri.css"
   },
   "scripts": {
     "type-check": "echo 'no ts sources yet'",

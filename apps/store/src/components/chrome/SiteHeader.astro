@@ -1,6 +1,8 @@
 ---
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
+// Khepri brand asset (§8): wordmark travels as currentColor and dresses in ink.
+import wordmark from '../../../../../khepri/assets/Numinia_Word.svg?raw';
 
 interface Props {
   locale: SupportedLocale;
@@ -23,69 +25,169 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
 
 const pathFor = (target: SupportedLocale): string =>
   `${target === 'en' ? '' : `/${target}`}${basePath}`;
+
+/** Active pillar: §13.11 — the active item is an ink pill with paper text. */
+const isActive = (section: string): boolean => basePath.startsWith(`/${section}/`);
+const NAV = [
+  { section: 'city', href: `${prefix}/city/`, label: t.navCity, metric: 'nav-city' },
+  { section: 'assets', href: `${prefix}/assets/`, label: t.navAssets, metric: 'nav-assets' },
+  { section: 'lap', href: `${prefix}/lap/`, label: t.navLap, metric: 'nav-lap' },
+];
 ---
 
 <header>
-  <a href={`${prefix}/`} class="brand" data-metric="nav-home">Numinia</a>
-  <nav aria-label={t.footerNavigation}>
-    <a href={`${prefix}/city/`} data-metric="nav-city">{t.navCity}</a>
-    <a href={`${prefix}/assets/`} data-metric="nav-assets">{t.navAssets}</a>
-    <a href={`${prefix}/lap/`} data-metric="nav-lap">{t.navLap}</a>
-  </nav>
-  <nav aria-label={t.languageSelector} class="languages">
-    {
-      SUPPORTED_LOCALES.map((code) => (
-        <a
-          href={pathFor(code)}
-          aria-current={code === locale ? 'true' : undefined}
-          lang={code}
-          data-metric={`lang-${code}`}
-        >
-          {LANGUAGE_NAMES[code]}
-        </a>
-      ))
-    }
-  </nav>
+  <div class="inner">
+    <a
+      href={`${prefix}/`}
+      class="brand"
+      data-metric="nav-home"
+      aria-label="Numinia"
+      set:html={wordmark}
+    />
+    <nav aria-label={t.footerNavigation}>
+      {
+        NAV.map((item) => (
+          <a
+            href={item.href}
+            data-metric={item.metric}
+            aria-current={isActive(item.section) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <div class="tools">
+      <button type="button" class="mode" data-metric="chrome-mode" aria-label={t.modeToggle}>
+        <span class="dot" aria-hidden="true"></span>
+        <span data-mode-label>DIURNO</span>
+      </button>
+      <nav aria-label={t.languageSelector} class="languages">
+        {
+          SUPPORTED_LOCALES.map((code) => (
+            <a
+              href={pathFor(code)}
+              aria-current={code === locale ? 'true' : undefined}
+              lang={code}
+              data-metric={`lang-${code}`}
+            >
+              {LANGUAGE_NAMES[code]}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+  </div>
 </header>
+
+<script>
+  /* Khepri mode toggle (§13.11: Diurno default, Nocturno by choice).
+     Persistence via localStorage is decision D17 (chrome preference, not
+     component state); the boot script in BaseLayout applies it pre-paint. */
+  const root = document.documentElement;
+  const button = document.querySelector<HTMLButtonElement>('[data-metric="chrome-mode"]');
+  const label = button?.querySelector('[data-mode-label]');
+  const paint = () => {
+    if (label) label.textContent = root.dataset.modo === 'nocturno' ? 'NOCTURNO' : 'DIURNO';
+  };
+  paint();
+  button?.addEventListener('click', () => {
+    const next = root.dataset.modo === 'nocturno' ? 'diurno' : 'nocturno';
+    root.dataset.modo = next;
+    try {
+      localStorage.setItem('numinia-modo', next);
+    } catch {
+      /* private mode: the choice simply lives for this page */
+    }
+    paint();
+  });
+</script>
 
 <style>
   header {
+    border-bottom: 1px solid var(--linea-f);
+    background: var(--superficie);
+  }
+  .inner {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--numinia-space-3);
+    gap: var(--s4);
     max-width: 60rem;
     margin: 0 auto;
-    padding: var(--numinia-space-3);
+    padding: var(--s3) var(--s4);
   }
   .brand {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--numinia-color-primary-strong);
-    text-decoration: none;
-    letter-spacing: 0.04em;
+    color: var(--texto);
+    display: inline-flex;
+    align-items: center;
+  }
+  .brand :global(svg) {
+    height: 20px;
+    width: auto;
+    display: block;
   }
   nav {
     display: flex;
-    gap: var(--numinia-space-2);
+    gap: var(--s1);
     flex-wrap: wrap;
   }
   nav a {
-    color: inherit;
+    color: var(--texto-2);
     text-decoration: none;
-    padding: 0.2rem 0.4rem;
-    border-radius: var(--numinia-radius-sm);
+    padding: 6px var(--s3);
+    border-radius: var(--radio-control);
+    transition: color 120ms var(--ciclo);
   }
   nav a:hover,
   nav a:focus-visible {
-    background: var(--numinia-color-surface);
+    color: var(--texto);
+  }
+  /* §13.11 — active dresses in ink: ink pill, paper text, both modes. */
+  nav a[aria-current='page'] {
+    background: var(--texto);
+    color: var(--fondo);
+  }
+  .tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+  }
+  .mode {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 32px;
+    padding: 4px var(--s3);
+    background: transparent;
+    color: var(--texto-2);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    cursor: pointer;
+    transition: border-color 120ms var(--ciclo);
+  }
+  .mode:hover,
+  .mode:focus-visible {
+    border-color: var(--verdemar);
+    color: var(--texto);
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ambar);
   }
   .languages {
-    margin-left: auto;
-    font-size: 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
   }
   .languages a[aria-current='true'] {
-    color: var(--numinia-color-primary-strong);
-    font-weight: 700;
+    color: var(--turquesa);
+    font-weight: 600;
   }
 </style>

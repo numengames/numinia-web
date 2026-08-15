@@ -39,6 +39,7 @@ export interface ChromeMessages {
   readonly legalTerms: string;
   readonly legalNotice: string;
   readonly languageSelector: string;
+  readonly modeToggle: string;
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
@@ -63,6 +64,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalTerms: 'Términos',
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
+    modeToggle: 'Modo de color',
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
@@ -85,6 +87,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalTerms: 'Terms',
     legalNotice: 'Legal notice',
     languageSelector: 'Language',
+    modeToggle: 'Color mode',
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
@@ -107,6 +110,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalTerms: '利用規約',
     legalNotice: '法的通知',
     languageSelector: '言語',
+    modeToggle: 'カラーモード',
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
@@ -129,6 +133,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalTerms: '이용약관',
     legalNotice: '법적 고지사항',
     languageSelector: '언어',
+    modeToggle: '색상 모드',
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
@@ -151,6 +156,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalTerms: 'Termos',
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
+    modeToggle: 'Modo de cor',
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',

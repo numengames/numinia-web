@@ -137,9 +137,12 @@ const description =
     color: var(--numinia-color-text-muted);
     font-size: 0.85rem;
   }
+  /* Khepri §9.7 aviso: surface + amber edge; text keeps mode contrast. */
   .legacy-banner {
-    background: var(--numinia-color-accent, #efa517);
-    color: #1c1c1c;
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-left: 2px solid var(--ambar);
+    color: var(--texto);
     padding: var(--numinia-space-2);
     border-radius: var(--numinia-radius-sm);
     font-size: 0.85rem;

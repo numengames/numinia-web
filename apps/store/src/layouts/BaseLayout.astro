@@ -36,10 +36,19 @@ const urlFor = (target: SupportedLocale): string =>
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-modo="diurno">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      /* Khepri modes (§13.11): Diurno default, Nocturno by choice. Runs before
+         first paint so a stored choice never flashes. localStorage is allowed
+         here by decision D17 — this is chrome bootstrap, not component state. */
+      try {
+        if (localStorage.getItem('numinia-modo') === 'nocturno')
+          document.documentElement.dataset.modo = 'nocturno';
+      } catch {}
+    </script>
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <meta property="og:title" content={title} />
@@ -67,12 +76,7 @@ const urlFor = (target: SupportedLocale): string =>
 </html>
 
 <style>
-  body {
-    margin: 0;
-    background: var(--numinia-color-background);
-    color: var(--numinia-color-text);
-    font-family: var(--numinia-font-mono);
-  }
+  /* Base surface and type come from the Khepri kit (body rule in khepri.css). */
   main {
     max-width: 60rem;
     margin: 0 auto;

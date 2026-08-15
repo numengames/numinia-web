@@ -20,3 +20,4 @@ coverage/
 .vscode/
 *.log
 stryker-setup-*.js
+apps/store/test-results/
