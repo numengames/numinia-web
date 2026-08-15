@@ -1,8 +1,10 @@
 ---
+/** L.A.P. overview — open to everyone (D16): what this place is, the ranks
+    ladder, and the honest status note. */
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
-import BaseLayout from '../../layouts/BaseLayout.astro';
 import { LAP_MESSAGES } from '../../i18n/pillars';
 import { UPDATES_MESSAGES } from '../../i18n/messages';
+import LapShell from './LapShell.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -13,7 +15,7 @@ const t = LAP_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 ---
 
-<BaseLayout locale={locale} title={`${t.lapTitle} — Numinia`} description={t.lapIntro}>
+<LapShell locale={locale} current="overview" title={`${t.lapTitle} — Numinia`} description={t.lapIntro}>
   <article data-lap>
     <h1>{t.lapTitle}</h1>
     <p class="intro">{t.lapIntro}</p>
@@ -43,19 +45,16 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
       }
     </ol>
   </article>
-</BaseLayout>
+</LapShell>
 
 <style>
-  article {
-    max-width: 46rem;
-  }
   h1 {
     font-size: 2.488rem;
     font-weight: 600;
     letter-spacing: -0.02em;
     color: var(--texto);
+    margin-top: 0;
   }
-  /* Section headings as amber etiqueta (§4.3): the platform is a tool. */
   h2 {
     font-family: var(--mono);
     font-size: 0.75rem;
@@ -67,12 +66,12 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   }
   p {
     line-height: 1.55;
+    max-width: 65ch;
   }
   .intro {
     font-size: 1.2rem;
     color: var(--texto-2);
   }
-  /* §9.7 aviso: surface, marco radius, amber semantic edge. */
   [data-lap-status] {
     background: var(--superficie);
     border: 1px solid var(--linea);
@@ -88,11 +87,9 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     color: var(--enlace);
     margin-left: 0.3rem;
   }
-  /* Rank ladder: progression reads as data — names stay, line in seafoam. */
   ol {
     list-style: none;
     padding: 0;
-    counter-reset: rank;
   }
   ol li {
     border-left: 2px solid var(--verdemar);

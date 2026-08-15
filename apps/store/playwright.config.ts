@@ -21,7 +21,10 @@ export default defineConfig({
   webServer: {
     command: 'node dist/server/entry.mjs',
     port: 4321,
-    reuseExistingServer: true,
+    // NEVER reuse: a lingering dev daemon on 4321 poisoned three runs with
+    // HMR state (phantom island failures). If the port is busy, fail loudly
+    // and stop the dev server first: `npx astro dev stop`.
+    reuseExistingServer: false,
     timeout: 30_000,
   },
 });

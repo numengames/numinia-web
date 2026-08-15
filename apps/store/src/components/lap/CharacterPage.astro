@@ -1,0 +1,185 @@
+---
+/**
+ * Character page: builds localized options from the domain and hands them to
+ * the sheet island. Styles live here (island markup is global to Astro).
+ */
+import {
+  ARCHETYPES,
+  COMPETENCES,
+  DISTRICTS,
+  FACTIONS,
+  GUILDS,
+  HUMORS,
+  POSITIONS,
+  SPECIES,
+  type SupportedLocale,
+} from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import LapShell from './LapShell.astro';
+import { SheetIsland } from './sheet/SheetIsland';
+import type { SheetOptions } from './sheet/sheet-props';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const L = (text: Readonly<Record<string, string>>): string => text[locale] ?? text['en'] ?? '';
+const opt = (items: ReadonlyArray<{ id: string; name: Readonly<Record<string, string>> }>) =>
+  items.map((item) => ({ id: item.id, label: L(item.name) }));
+
+const options: SheetOptions = {
+  species: opt(SPECIES),
+  positions: opt(POSITIONS),
+  guilds: GUILDS.map((guild) => ({
+    id: guild.id,
+    label: L(guild.name),
+    branches: guild.branches.map((branch) => ({
+      id: branch.id,
+      guildId: guild.id,
+      label: L(branch.name),
+      houses: branch.houses.map((house) => ({
+        id: house.id,
+        branchId: branch.id,
+        label: L(house.name),
+      })),
+    })),
+  })),
+  factions: opt(FACTIONS),
+  districts: opt(DISTRICTS),
+  archetypes: opt(ARCHETYPES),
+  humors: opt(HUMORS),
+  competences: opt(COMPETENCES),
+};
+---
+
+<LapShell
+  locale={locale}
+  current="character"
+  title={`${t.sheet.title} — L.A.P. — Numinia`}
+  description={t.sheet.fileNote}
+>
+  <h1>{t.sheet.title}</h1>
+  <SheetIsland client:load options={options} labels={t.sheet} />
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 0;
+  }
+</style>
+
+<style is:global>
+  /* Sheet island internals (§9.3 fields, §13.11 rows, Mono for measures). */
+  [data-lap-sheet] .nota {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  [data-lap-sheet] .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    margin: var(--s4) 0;
+  }
+  [data-lap-sheet] .resultado {
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-left: 2px solid var(--ambar);
+    border-radius: var(--radio-marco);
+    padding: var(--s2) var(--s4);
+  }
+  [data-lap-sheet] .etiqueta {
+    margin: var(--s6) 0 var(--s3);
+    font-weight: 500;
+  }
+  [data-lap-sheet] .campos {
+    display: grid;
+    gap: var(--s3) var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+  [data-lap-sheet] label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+  }
+  [data-lap-sheet] label > span {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-3);
+  }
+  [data-lap-sheet] input,
+  [data-lap-sheet] select,
+  [data-lap-sheet] textarea {
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    padding: 8px var(--s3);
+  }
+  [data-lap-sheet] output,
+  [data-lap-sheet] .notas {
+    min-height: 1.4em;
+    color: var(--texto);
+  }
+  [data-lap-sheet] .notas {
+    white-space: pre-wrap;
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  [data-lap-sheet] .stats {
+    display: grid;
+    gap: var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    align-items: start;
+  }
+  [data-lap-sheet] .stats ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  [data-lap-sheet] .stats li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    min-height: 36px;
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-lap-sheet] .stat-label {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  [data-lap-sheet] .stat-value {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-lap-sheet] .stats input {
+    width: 4.5rem;
+    text-align: right;
+  }
+  [data-lap-sheet] .stat-value button {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    background: transparent;
+    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    border-radius: var(--radio-control);
+    padding: 2px var(--s2);
+    cursor: pointer;
+  }
+  [data-lap-sheet] .stat-value button:hover {
+    color: var(--texto);
+  }
+</style>

@@ -98,6 +98,7 @@
 - **Punch-list round 1 done (v0.19.0)**: mode toggle = Phosphor sun/moon icon, languages in a §9.8 dropdown (current = ink), Phosphor subset self-hosted (packages/ui/src/icons + chrome/Icon.astro), download icon on archive detail. Verify exit 0.
 - **Working mode from here (Oracle order)**: SMALL missions — one reviewable increment per unit, versioned, with visual evidence. Recorded in agent memory.
 - **MISSION-007 — The City chronicle ✅ (v0.20.0)**: /city/ is one four-chapter scroller carrying the numinia.com canon verbatim (city-landing.ts + art/seals), Khepri-dressed, with the waxing-moon reading progress; old subpages = host-agnostic redirect stubs. **D18 decided: EN root at the numinia.com merge**; full adaptation checklist in docs/merge-numinia-com.md (today: Cloudflare Workers assets, manual wrangler, no CI).
+- **MISSION-008 — The L.A.P. platform ✅ (v0.22.0)**: §13.11 shell ×5 locales; character sheet as the player's own .md file (File Over App + data dignity — export/import, tolerant parser, unit-pinned round-trip); Codex read-only from the domain; honest empty states for portals/loot/seasons; Nd6 dice. Legacy surveyed read-only (veda lifted by the Oracle). ja/ko sheet labels fall back to EN (D9 queue).
 - Next: Oracle's next punch-list items, one at a time.
 
 ## NEXT (re-prioritized 2026-08-15 after MISSION-002 Step 0 + afternoon directives)

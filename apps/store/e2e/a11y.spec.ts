@@ -28,6 +28,9 @@ const PAGES = [
   '/es/city/',
   '/es/assets/',
   '/es/lap/',
+  '/es/lap/character/',
+  '/es/lap/codex/',
+  '/es/lap/portals/',
 ];
 
 for (const path of PAGES) {

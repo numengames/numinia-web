@@ -28,6 +28,20 @@ async function settle(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
   // Fonts finish layout-shifting after load; wait for the ready promise.
   await page.evaluate(() => document.fonts.ready);
+  // The typing headline (§10-01) must FINISH before pixels are compared:
+  // while typing, the element carries aria-label and the block cursor, and a
+  // half-typed headline wraps to fewer lines, shifting the whole page. The
+  // reference implementation removes both when done (or never adds them
+  // under reduced motion).
+  await page
+    .waitForFunction(
+      () =>
+        [...document.querySelectorAll('[data-tecleo]')].every(
+          (el) => !el.hasAttribute('aria-label') && !el.querySelector('.cursor'),
+        ),
+      { timeout: 15_000 },
+    )
+    .catch(() => undefined);
 }
 
 for (const { path, name } of PAGES) {

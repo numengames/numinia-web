@@ -1,0 +1,118 @@
+---
+/**
+ * L.A.P. platform shell (§13.11): sidebar on surface, 40px rows, the active
+ * section dressed in ink. Open to Nomads (D16) — no wall, ever; sections
+ * that need persistence explain themselves instead of demanding login.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LAP_UI } from '../../i18n/lap';
+
+export type LapSection =
+  | 'overview'
+  | 'character'
+  | 'codex'
+  | 'portals'
+  | 'loot'
+  | 'seasons';
+
+interface Props {
+  locale: SupportedLocale;
+  current: LapSection;
+  title: string;
+  description?: string | undefined;
+}
+
+const { locale, current, title, description } = Astro.props;
+const t = LAP_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+const ITEMS: ReadonlyArray<{ id: LapSection | 'updates'; href: string; label: string }> = [
+  { id: 'overview', href: `${prefix}/lap/`, label: t.sections.overview },
+  { id: 'character', href: `${prefix}/lap/character/`, label: t.sections.character },
+  { id: 'codex', href: `${prefix}/lap/codex/`, label: t.sections.codex },
+  { id: 'portals', href: `${prefix}/lap/portals/`, label: t.sections.portals },
+  { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot },
+  { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons },
+  { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates },
+];
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+  <div class="lap" data-lap-shell>
+    <nav aria-label="L.A.P.">
+      <p class="etiqueta">L.A.P.</p>
+      <ul>
+        {
+          ITEMS.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={item.id === current ? 'page' : undefined}
+                data-metric={`lap-nav-${item.id}`}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="contenido">
+      <slot />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .lap {
+    display: grid;
+    gap: var(--s6);
+    align-items: start;
+  }
+  @media (min-width: 50rem) {
+    .lap {
+      grid-template-columns: 220px minmax(0, 1fr);
+    }
+  }
+  /* §13.11 sidebar: surface ground, etiqueta group label, 40px rows. */
+  nav {
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    padding: var(--s3);
+  }
+  .etiqueta {
+    margin: var(--s1) 0 var(--s2) var(--s2);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--s3);
+    border-radius: var(--radio-control);
+    color: var(--texto-2);
+    text-decoration: none;
+    transition:
+      color 120ms var(--ciclo),
+      background 120ms var(--ciclo);
+  }
+  a:hover,
+  a:focus-visible {
+    color: var(--texto);
+    background: var(--elevada);
+  }
+  /* The active section dresses in ink — the same pill in both modes. */
+  a[aria-current='page'] {
+    background: var(--texto);
+    color: var(--fondo);
+  }
+</style>

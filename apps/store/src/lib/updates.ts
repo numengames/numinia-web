@@ -23,6 +23,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.22.0',
+    date: '2026-08-15 18:15',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The L.A.P. becomes a platform: sidebar, character sheet, codex — open to every Nomad',
+      },
+      {
+        type: 'NEW',
+        text: 'Your character sheet is a file you own: edit it, export it as Markdown, bring it back',
+      },
+      {
+        type: 'NEW',
+        text: 'The Codex: every species, guild, faction, district, archetype and humor the city records',
+      },
+      {
+        type: 'NEW',
+        text: 'Dice at the table: a stat of N rolls N six-sided dice, results in plain sight',
+      },
+    ],
+  },
+  {
     version: 'v0.21.0',
     date: '2026-08-15 17:45',
     entries: [

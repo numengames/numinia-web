@@ -1,0 +1,187 @@
+---
+/**
+ * The Codex — the city model, readable (MISSION-008): every identity the
+ * domain records, straight from @numinia/domain and localized. Read-only by
+ * nature; the sheet is where choices are made.
+ */
+import {
+  ARCHETYPES,
+  COMPETENCES,
+  DISTRICTS,
+  FACTIONS,
+  GUILDS,
+  HUMORS,
+  SPECIES,
+  type SupportedLocale,
+} from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const L = (text: Readonly<Record<string, string>>): string => text[locale] ?? text['en'] ?? '';
+---
+
+<LapShell
+  locale={locale}
+  current="codex"
+  title={`${t.codexTitle} — L.A.P. — Numinia`}
+  description={t.codexIntro}
+>
+  <article data-lap-codex>
+    <h1>{t.codexTitle}</h1>
+    <p class="intro">{t.codexIntro}</p>
+
+    <h2>{t.codexGroups.species}</h2>
+    <div class="malla">
+      {
+        SPECIES.map((species) => (
+          <div class="tarjeta reveal">
+            <h3>{L(species.name)}</h3>
+            <p>{L(species.description)}</p>
+            <p class="dato mono">{L(species.character)} · {L(species.forceField)}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.guilds}</h2>
+    <div class="malla">
+      {
+        GUILDS.map((guild) => (
+          <div class="tarjeta reveal">
+            <h3>{L(guild.name)}</h3>
+            <p>{L(guild.description)}</p>
+            {guild.branches.map((branch) => (
+              <p class="dato">
+                <span class="mono rama">{L(branch.name)}</span> —{' '}
+                {branch.houses.map((house) => L(house.name)).join(' · ')}
+              </p>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.factions}</h2>
+    <div class="malla">
+      {
+        FACTIONS.map((faction) => (
+          <div class="tarjeta reveal">
+            <h3>{L(faction.name)}</h3>
+            <p>{L(faction.description)}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.districts}</h2>
+    <div class="malla">
+      {
+        DISTRICTS.map((district) => (
+          <div class="tarjeta reveal">
+            <h3>{L(district.name)}</h3>
+            <p>{L(district.description)}</p>
+            <p class="dato mono">
+              {district.heightMeters} m · ⌀ {district.diameterKm} km
+            </p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.archetypes}</h2>
+    <div class="malla">
+      {
+        ARCHETYPES.map((archetype) => (
+          <div class="tarjeta reveal compacta">
+            <h3>{L(archetype.name)}</h3>
+            <p>{L(archetype.description)}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.humors}</h2>
+    <div class="malla">
+      {
+        HUMORS.map((humor) => (
+          <div class="tarjeta reveal compacta">
+            <h3>{L(humor.name)}</h3>
+            <p>{L(humor.description)}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <h2>{t.codexGroups.competences}</h2>
+    <div class="malla">
+      {
+        COMPETENCES.map((competence) => (
+          <div class="tarjeta reveal compacta">
+            <h3>{L(competence.name)}</h3>
+            <p>{L(competence.description)}</p>
+          </div>
+        ))
+      }
+    </div>
+  </article>
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.488rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-top: 0;
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  h2 {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+    margin: var(--s7) 0 var(--s3);
+  }
+  .malla {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+  .tarjeta {
+    padding: var(--s4);
+  }
+  .tarjeta.compacta {
+    padding: var(--s3) var(--s4);
+  }
+  h3 {
+    margin: 0 0 var(--s2);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .tarjeta p {
+    margin: 0 0 var(--s2);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--texto-2);
+  }
+  .dato {
+    color: var(--texto-3);
+  }
+  .rama {
+    color: var(--texto);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
