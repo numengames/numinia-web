@@ -13,7 +13,7 @@
 
 ## Where we are
 
-**v0.30.0 LIVE on numinia.com** — code on `numengames/numinia-web` (private), auto-deploy on green CI, every push that passes ships itself (docs/deploy-runbook.md).
+**LIVE on numinia.com** (the exact deployed commit is always at numinia.com/version.json) — code on `numengames/numinia-web` (private), auto-deploy on green CI, every push that passes ships itself (docs/deploy-runbook.md).
 `npm run verify` = the whole truth: turbo pipeline (24 tasks) → Gherkin acceptance (26 scenarios) → license gate → bundle budgets → link integrity (10k+ links) → e2e incl. WCAG + cross-engine (117 tests). All green.
 The old standing order "nothing is published" is FULFILLED AND RETIRED (2026-08-15 push day + deploy day, Oracle-ordered); the standing rule now is: main deploys itself, so main stays green.
 

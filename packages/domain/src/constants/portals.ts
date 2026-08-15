@@ -107,11 +107,11 @@ export const PORTALS: readonly Portal[] = [
       'pt-br': 'Escolas Ontológicas',
     },
     description: {
-      es: 'Cinco escuelas que estudian la naturaleza de lo real.',
-      en: 'Five schools studying the nature of the real.',
-      ja: '実在の本質を究める五つの学派。',
-      ko: '실재의 본질을 탐구하는 다섯 학파.',
-      'pt-br': 'Cinco escolas que estudam a natureza do real.',
+      es: 'Seis escuelas que estudian la naturaleza de lo real.',
+      en: 'Six schools studying the nature of the real.',
+      ja: '実在の本質を究める六つの学派。',
+      ko: '실재의 본질을 탐구하는 여섯 학파.',
+      'pt-br': 'Seis escolas que estudam a natureza do real.',
     },
   },
 
@@ -262,7 +262,7 @@ export const PORTALS: readonly Portal[] = [
     worldUrl: 'https://v2.oncyber.io/the_mint_of_numinia',
     mapPosition: { x: 13, y: 85 },
     name: {
-      es: 'La Ceca',
+      es: 'La Casa de la Moneda',
       en: 'The Mint',
       ja: '造幣所',
       ko: '조폐소',
@@ -396,6 +396,9 @@ export const PORTALS: readonly Portal[] = [
     },
   },
   {
+    // Provenance conflict (D24): the data repo places the temple in
+    // Ouroboros (where its oncyber world lives); the manual places it in
+    // Vitruvian (l.2598). Data repo wins for the map until the Oracle rules.
     id: 'temple-of-khepri',
     districtId: 'ouroboros',
     worldUrl: 'https://v2.oncyber.io/temple_of_khepri',
