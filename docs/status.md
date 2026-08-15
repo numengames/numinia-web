@@ -13,8 +13,9 @@
 
 ## Where we are
 
-**v0.18.0 (progressive identity spike, MISSION-002 Step 0) built and locally verified — nothing published, by standing order.**
-`npm run verify` = the whole truth: turbo pipeline (20 tasks) → Gherkin acceptance (11 scenarios) → license gate → bundle budgets → e2e incl. WCAG (11 tests). All green.
+**v0.30.0 LIVE on numinia.com** — code on `numengames/numinia-web` (private), auto-deploy on green CI, every push that passes ships itself (docs/deploy-runbook.md).
+`npm run verify` = the whole truth: turbo pipeline (24 tasks) → Gherkin acceptance (26 scenarios) → license gate → bundle budgets → link integrity (10k+ links) → e2e incl. WCAG + cross-engine (117 tests). All green.
+The old standing order "nothing is published" is FULFILLED AND RETIRED (2026-08-15 push day + deploy day, Oracle-ordered); the standing rule now is: main deploys itself, so main stays green.
 
 ## DONE (chronological)
 
@@ -213,6 +214,6 @@ applies meanwhile; the repo is private, which softens the urgency.
 
 ## Standing orders (never forget)
 
-- **Nothing is published** — no push, no deploy, no npm — until Pablo explicitly orders it.
-- The legacy repo is condemned: never read, never write, zero reuse (`docs/reference/` holds everything extracted).
+- **Main deploys itself** (since 2026-08-15 deploy day): every green CI on main ships to numinia.com. Therefore: nothing lands on main that should not be public, and main stays green. npm publication of `@numinia/*` remains forbidden until ordered.
+- The legacy repo is condemned: never read, never write, zero reuse (`docs/reference/` holds everything extracted; the consolidated git history is the sanctioned record).
 - Glossary first, then code, for any domain term. Data-metric on every interactive element. Tests before implementation.
