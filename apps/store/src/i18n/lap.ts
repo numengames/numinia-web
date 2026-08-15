@@ -85,6 +85,7 @@ export interface LapMessages {
     readonly edit: string;
     readonly done: string;
     readonly exportMd: string;
+    readonly exportPdf: string;
     readonly importMd: string;
     readonly importError: string;
     readonly roll: string;
@@ -205,6 +206,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       edit: 'Editar ficha',
       done: 'Terminar edición',
       exportMd: 'Exportar .md',
+      exportPdf: 'Exportar PDF',
       importMd: 'Importar .md',
       importError:
         'Ese archivo no parece una ficha de Numinia. Revisa el formato e inténtalo de nuevo.',
@@ -324,6 +326,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       edit: 'Edit sheet',
       done: 'Finish editing',
       exportMd: 'Export .md',
+      exportPdf: 'Export PDF',
       importMd: 'Import .md',
       importError: 'That file does not look like a Numinia sheet. Check the format and try again.',
       roll: 'Roll',
@@ -440,6 +443,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       edit: 'シートを編集',
       done: '編集を終了',
       exportMd: '.md を書き出す',
+      exportPdf: 'PDF を書き出す',
       importMd: '.md を読み込む',
       importError:
         'このファイルはヌミニアのシートではないようです。形式を確認してもう一度お試しください。',
@@ -552,6 +556,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       edit: '시트 편집',
       done: '편집 완료',
       exportMd: '.md 내보내기',
+      exportPdf: 'PDF 내보내기',
       importMd: '.md 가져오기',
       importError: '누미니아 시트 형식이 아닌 것 같습니다. 형식을 확인하고 다시 시도하세요.',
       roll: '굴리기',
@@ -662,6 +667,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       edit: 'Editar ficha',
       done: 'Concluir edição',
       exportMd: 'Exportar .md',
+      exportPdf: 'Exportar PDF',
       importMd: 'Importar .md',
       importError:
         'Esse arquivo não parece uma ficha de Numinia. Verifique o formato e tente de novo.',

@@ -113,4 +113,20 @@ test('the sheet round-trips through a real file in this engine', async ({ page }
   await page.locator('[data-metric="lap-sheet-export"]').click();
   const file = await download;
   expect(file.suggestedFilename()).toBe('numinia-character-sheet.md');
+
+  // PDF export is the print dialog (File Over App: the browser hands the
+  // citizen the file) — stub print and prove the button reaches it.
+  await page.evaluate(() => {
+    (window as { __printed?: number }).__printed = 0;
+    window.print = () => {
+      (window as { __printed?: number }).__printed =
+        ((window as { __printed?: number }).__printed ?? 0) + 1;
+    };
+  });
+  await page.locator('[data-metric="lap-sheet-export-pdf"]').click();
+  expect(await page.evaluate(() => (window as { __printed?: number }).__printed)).toBe(1);
+
+  // Leaving edit mode reveals the prestige/prisma probes.
+  await page.locator('[data-metric="lap-sheet-edit"]').click();
+  await expect(page.locator('[data-lap-sheet] .kpis .dato-xl').first()).toBeVisible();
 });

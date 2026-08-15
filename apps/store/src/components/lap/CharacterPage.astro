@@ -86,6 +86,43 @@ const options: SheetOptions = {
     gap: var(--s3);
     margin: var(--s4) 0;
   }
+  /* Prestige/Prisma probes (§9.5): the figure in Mono, label as etiqueta. */
+  [data-lap-sheet] .kpis {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    max-width: 26rem;
+    margin: 0 0 var(--s4);
+  }
+  [data-lap-sheet] .kpis .dato-xl {
+    margin: 0;
+    color: var(--texto);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-lap-sheet] .kpis .etiqueta {
+    margin: var(--s1) 0 0;
+  }
+  /* Export PDF = print: the sheet alone, ink on paper — no chrome, no
+     actions, no rail. The browser's own dialog does the file part
+     (File Over App: the PDF lands wherever the citizen decides). */
+  @media print {
+    header,
+    footer,
+    [data-lap-shell] > nav,
+    [data-lap-sheet] .acciones,
+    [data-lap-sheet] .nota,
+    [data-lap-sheet] .resultado {
+      display: none !important;
+    }
+    .lap {
+      display: block !important;
+      min-height: 0 !important;
+    }
+    body {
+      background: #fff !important;
+      color: #000 !important;
+    }
+  }
   [data-lap-sheet] .resultado {
     background: var(--superficie);
     border: 1px solid var(--linea);

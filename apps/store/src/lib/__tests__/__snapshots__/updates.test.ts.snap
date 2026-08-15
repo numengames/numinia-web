@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 01:00",
+    "entries": [
+      {
+        "text": "The character sheet exports to PDF: the print dialog hands you the file, clean sheet only",
+        "type": "NEW",
+      },
+      {
+        "text": "Prestige and Prisma probes on the sheet, like the old citizen view",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.29.0",
+  },
+  {
     "date": "2026-08-16 00:30",
     "entries": [
       {

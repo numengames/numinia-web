@@ -23,6 +23,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.29.0',
+    date: '2026-08-16 01:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The character sheet exports to PDF: the print dialog hands you the file, clean sheet only',
+      },
+      {
+        type: 'NEW',
+        text: 'Prestige and Prisma probes on the sheet, like the old citizen view',
+      },
+    ],
+  },
+  {
     version: 'v0.28.0',
     date: '2026-08-16 00:30',
     entries: [

@@ -36,6 +36,7 @@ export interface SheetLabels {
   readonly edit: string;
   readonly done: string;
   readonly exportMd: string;
+  readonly exportPdf: string;
   readonly importMd: string;
   readonly importError: string;
   readonly roll: string;

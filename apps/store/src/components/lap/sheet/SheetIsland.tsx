@@ -110,6 +110,14 @@ export function SheetIsland({ options, labels }: Props) {
         <button
           type="button"
           className="btn btn-fantasma"
+          onClick={() => window.print()}
+          data-metric="lap-sheet-export-pdf"
+        >
+          {labels.exportPdf}
+        </button>
+        <button
+          type="button"
+          className="btn btn-fantasma"
           onClick={() => fileInput.current?.click()}
           data-metric="lap-sheet-import"
         >
@@ -127,6 +135,16 @@ export function SheetIsland({ options, labels }: Props) {
         <p className="resultado mono" role="status">
           {status}
         </p>
+      )}
+      {!editing && (
+        <div className="kpis">
+          {(['prestige', 'prisma'] as const).map((key) => (
+            <div className="kpi" key={key}>
+              <p className="dato-xl mono">{sheet.values[key]}</p>
+              <p className="etiqueta">{labels.fields[key]}</p>
+            </div>
+          ))}
+        </div>
       )}
       <SheetIdentity
         sheet={sheet}
