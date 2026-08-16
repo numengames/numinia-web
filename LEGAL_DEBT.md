@@ -51,7 +51,9 @@ state.
 2. **the first build that lands ConsenSys code in `dist/`** —
    `scripts/license-guard.mjs` audits the build's module manifest for the
    three forbidden packages on every `verify` and every CI run, and fails
-   the build.
+   the build. This check is an **error in every app regardless of deploy
+   target** (ADR-019 calibration): the trigger is the AGPL-uncompliable
+   state, which exists the moment the code enters a bundle, served or not.
 
 ### Exit path (investigated 2026-08-16, ready to execute)
 

@@ -87,6 +87,22 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   (`apps/*` → `AGPL-3.0-only`).
 - The consume gate hardens: `BUSL-1.1`, `Elastic-2.0`, `Commons-Clause`,
   `UNKNOWN` and `UNLICENSED` join the `failOn` list.
+- **Gate calibration by track (Oracle ruling 2026-08-16, option (a) signed):**
+  the canon's "error on .com, warning on .store" was always about EXPOSURE,
+  not directory names — and today the label lies (numinia.com ships
+  `apps/store`'s build; `apps/com` deploys nothing). So `licenses:guard`
+  severity follows the fact: it is **derived from the deploy configuration**
+  (the `apps/*` paths in wrangler.jsonc's `main`/assets `directory`), never
+  from a hand-written map — production-deployed app → error, undeployed app →
+  warning, undeterminable config → error (fail closed, same as a missing
+  manifest). **Exception rescued from option (b):** the ConsenSys forbidden
+  packages are an error in every app regardless of deploy — their trigger is
+  not exposure but the AGPL-uncompliable state, which exists the moment the
+  code enters a bundle, whether anyone serves it or not. The two gates
+  deliberately graduate differently: `licenses:check` scans the shared
+  lockfile — the tree's floor is monorepo property, not any single app's — so
+  it stays blocking and uniform; `licenses:guard` audits concrete built
+  bundles, which is exactly what makes exposure-based severity meaningful.
 - **Queued (not in this change):** Phase C — SPDX headers on every first-party
   code file (script-assisted; pinned Khepri kit copies and vendored files are
   exempt per the canon's header exception); Phase D — `reuse lint` in CI (error
