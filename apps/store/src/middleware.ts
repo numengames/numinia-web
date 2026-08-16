@@ -20,7 +20,9 @@ const CSP_STRICT = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
   "font-src 'self'",
-  "connect-src 'self' https:",
+  // blob: because three.js fetches GLB-embedded textures via blob URLs
+  // (connect-src governs fetch, not img-src — learned live, v0.38.1).
+  "connect-src 'self' blob: https:",
   "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -28,7 +30,7 @@ const CSP_STRICT = [
   "object-src 'none'",
 ].join('; ');
 const CSP_SESSION =
-  CSP_STRICT.replace("connect-src 'self' https:", "connect-src 'self' https: wss:") +
+  CSP_STRICT.replace("connect-src 'self' blob: https:", "connect-src 'self' blob: https: wss:") +
   '; frame-src https:';
 
 function isSessionPath(pathname: string): boolean {

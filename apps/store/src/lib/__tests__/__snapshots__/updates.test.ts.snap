@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 07:10",
+    "entries": [
+      {
+        "text": "Embedded textures truly cross the wall now: fetch of blob resources is governed by connect-src, not img-src — the live probe caught it",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.38.1",
+  },
+  {
     "date": "2026-08-16 06:55",
     "entries": [
       {

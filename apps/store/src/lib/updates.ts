@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.38.1',
+    date: '2026-08-16 07:10',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Embedded textures truly cross the wall now: fetch of blob resources is governed by connect-src, not img-src — the live probe caught it',
+      },
+    ],
+  },
+  {
     version: 'v0.38.0',
     date: '2026-08-16 06:55',
     entries: [
