@@ -200,8 +200,10 @@ from force-pushes — those exact commands must be run by the Oracle (`!` prefix
    `DEPLOY_TARGET=cloudflare npm run build --workspace=apps/store && npx wrangler deploy -c wrangler.jsonc`.
 4. After first successful deploy: delete the `numinia-platform` Worker.
 
-License stays undecided (D11): the README states plainly that default copyright
-applies meanwhile; the repo is private, which softens the urgency.
+License DECIDED (2026-08-16, ADR-019): canon C-005 v1.1.0 adopted — `apps/*`
+AGPL-3.0-only, `packages/*` MIT, assets CC0-1.0, docs CC-BY-4.0, lore/brand
+reserved, declared per directory in REUSE.toml. D11 closed. SPDX headers
+(Phase C) and `reuse lint` in CI (Phase D) remain queued in ADR-019.
 
 ## NEXT (groomed 2026-08-16 morning — board reconciled to reality)
 

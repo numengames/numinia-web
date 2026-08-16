@@ -459,6 +459,7 @@ Current priority: **Phase 0 — complete domain model + spike technical**
 | ADR-009      | Domain model framework-agnostic (zod-only)                                                                             | 2026-04-03 | See DECISIONS.md                                        |
 | ADR-010      | v0.1.0 design preserved, code discarded                                                                                | 2026-04-03 | See DECISIONS.md                                        |
 | ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation | 2026-08    | See docs/decisions/                                     |
+| ADR-019      | Licensing canon C-005 adopted (apps AGPL-3.0-only · packages MIT · assets CC0 · docs CC-BY · lore reserved) — closes D11 | 2026-08-16 | docs/legal-book.md is the copied source of truth        |
 
 ---
 

@@ -17,10 +17,11 @@ are the objects its citizens use, earn, and carry through the Veil. Read
 > version lives at [numinia.com/updates](https://numinia.com/updates/) and in
 > `apps/store/src/lib/updates.ts` — this file does not track it. Live at
 > **numinia.com**, auto-deployed on green CI (docs/deploy-runbook.md).
-> **No license yet (D11 undecided):** until a LICENSE file
-> lands, default copyright applies — all rights reserved. Nothing here is granted
-> for reuse by publication alone. The digital goods in the data repository keep
-> their own CC0 terms; this note is about the code.
+> **Licensed per Numinia canon C-005** (ADR-019, 2026-08-16): `apps/*` under
+> AGPL-3.0-only, `packages/*` under MIT, documentation CC-BY-4.0, design assets
+> CC0-1.0, lore and brand reserved. The authoritative per-directory map is
+> [`REUSE.toml`](./REUSE.toml); license texts live in [`LICENSES/`](./LICENSES/).
+> The digital goods in the data repository keep their own CC0 terms.
 
 ## Lineage
 
