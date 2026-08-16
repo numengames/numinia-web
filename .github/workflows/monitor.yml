@@ -1,0 +1,76 @@
+# Night watch (MISSION-023): an hourly probe of the LIVE city. On failure it
+# opens (or updates) a "night-watch" issue — GitHub turns that into push and
+# email for the Oracle; on recovery it closes the alarm itself.
+#
+# Cost honesty: ~24 billed minutes/day on the private-repo quota. If that
+# ever pinches, the migration path is a Worker cron probing + a scoped GH
+# token to raise the same issue.
+name: Night watch
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly, off the :00 stampede
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: night-watch
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Probe the live city
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe
+        id: probe
+        run: |
+          fails=""
+          check() {
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://numinia.com$1" || echo 000)
+            echo "GET $1 -> $code (want $2)"
+            [ "$code" = "$2" ] || fails="$fails $1→$code(want:$2)"
+          }
+          check /                 200
+          check /es/              200
+          check /city/            200
+          check /lap/             200
+          check /api/auth/session 401
+          version=$(curl -s --max-time 20 https://numinia.com/version.json || echo unreachable)
+          echo "live version: $version"
+          if [ -n "$fails" ]; then
+            echo "fails=$fails" >> "$GITHUB_OUTPUT"
+            echo "::error::Probes failing:$fails"
+            exit 1
+          fi
+      - name: Raise the alarm
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILS: ${{ steps.probe.outputs.fails }}
+        run: |
+          gh label create night-watch --repo "$GITHUB_REPOSITORY" --color D33440 \
+            --description "Live-site alarm raised by the monitor" 2>/dev/null || true
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --label night-watch --state open --json number --jq '.[0].number // empty')
+          body="Probes failing: \`$FAILS\` · $(date -u +%FT%TZ) · [run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "Still failing — $body"
+          else
+            full=$(printf 'The night watch found the city dark. %s\n\nDiagnosis starts at docs/deploy-runbook.md (verify from OUTSIDE Spain-on-match-day networks first).' "$body")
+            gh issue create --repo "$GITHUB_REPOSITORY" --label night-watch \
+              --title "numinia.com is failing its probes" \
+              --body "$full"
+          fi
+      - name: Stand down on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --label night-watch --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue close "$open" --repo "$GITHUB_REPOSITORY" \
+              --comment "The city answers again — probes green at $(date -u +%FT%TZ). Standing down."
+          fi
