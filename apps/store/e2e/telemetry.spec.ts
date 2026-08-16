@@ -37,3 +37,17 @@ test('the walls are up on SSR routes (middleware)', async ({ request }) => {
   expect(api.headers()['strict-transport-security']).toContain('max-age=');
   expect(api.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
 });
+
+test('the doorman throttles a telemetry flood with Retry-After', async ({ request }) => {
+  let throttled = 0;
+  for (let i = 0; i < 14; i += 1) {
+    const response = await request.post('/api/telemetry', {
+      data: { message: `flood ${i}` },
+    });
+    if (response.status() === 429) {
+      throttled += 1;
+      expect(Number(response.headers()['retry-after'])).toBeGreaterThan(0);
+    }
+  }
+  expect(throttled).toBeGreaterThan(0);
+});

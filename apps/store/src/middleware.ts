@@ -6,6 +6,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { checkRate } from './lib/rate-limit';
 import { capMessage, logEvent } from './lib/telemetry';
 
 /* MISSION-025: the walls. Static pages get these via public/_headers (the
@@ -52,9 +53,38 @@ export function securityHeaders(
   return headers;
 }
 
+/* MISSION-026: the doorman. Only the endpoints worth abusing — mutations
+   and gated data. Page loads and the session GET stay unmetered (every page
+   asks who you are; throttling that would DoS ourselves). */
+const RATE_RULES: ReadonlyArray<{
+  test: (method: string, path: string) => boolean;
+  key: string;
+  limit: number;
+}> = [
+  { test: (m, p) => m === 'POST' && p === '/api/auth/login', key: 'login', limit: 20 },
+  { test: (m, p) => m === 'POST' && p === '/api/auth/siwe', key: 'siwe', limit: 20 },
+  { test: (m, p) => m === 'POST' && p === '/api/admin/census', key: 'census-write', limit: 20 },
+  { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
+  { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
+];
+const RATE_WINDOW_MS = 60_000;
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const started = Date.now();
   const { pathname } = context.url;
+  const method = context.request.method;
+  const rule = RATE_RULES.find((candidate) => candidate.test(method, pathname));
+  if (rule) {
+    const ip = context.request.headers.get('cf-connecting-ip') ?? 'local';
+    const verdict = checkRate(`${rule.key}:${ip}`, rule.limit, RATE_WINDOW_MS);
+    if (!verdict.allowed) {
+      logEvent({ level: 'warn', kind: 'throttled', path: pathname, rule: rule.key });
+      return Response.json(
+        { error: 'Too many requests — the doorman asks for a pause' },
+        { status: 429, headers: { 'retry-after': String(verdict.retryAfterS) } },
+      );
+    }
+  }
   try {
     const response = await next();
     for (const [name, value] of Object.entries(

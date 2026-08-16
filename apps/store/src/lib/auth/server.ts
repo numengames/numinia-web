@@ -17,7 +17,7 @@ import {
   createNonceStore,
   createSessionToken,
   parseAuthEnv,
-  verifySessionToken,
+  verifySessionTokenWithRotation,
   type SessionPayload,
   type VerifyResult,
 } from '@numinia/auth';
@@ -26,6 +26,9 @@ const envSchema = z.object({
   THIRDWEB_SECRET_KEY: z.string().min(32, 'THIRDWEB_SECRET_KEY looks truncated'),
   /** Oracle wallets (comma-separated). Absent = nobody is an Oracle. */
   ADMIN_WALLET_ADDRESSES: z.string().optional(),
+  /** Rotation overlap (MISSION-027): sessions signed with the previous
+      secret stay valid until their own TTL. Drop the var to end the grace. */
+  AUTH_SESSION_SECRET_PREVIOUS: z.string().min(32).optional(),
 });
 
 /**
@@ -36,6 +39,7 @@ const envSchema = z.object({
 let cached: {
   readonly secretKey: string;
   readonly sessionSecret: string;
+  readonly previousSecret: string | undefined;
   readonly oracles: ReadonlySet<string>;
 } | null = null;
 
@@ -51,6 +55,7 @@ function loadConfig(): typeof cached {
     cached = {
       secretKey: vendor.THIRDWEB_SECRET_KEY,
       sessionSecret,
+      previousSecret: vendor.AUTH_SESSION_SECRET_PREVIOUS,
       oracles: new Set(
         (vendor.ADMIN_WALLET_ADDRESSES ?? '')
           .split(',')
@@ -147,7 +152,8 @@ export async function issueSession(address: string): Promise<string> {
 }
 
 export async function verifySession(token: string): Promise<VerifyResult> {
-  return verifySessionToken(token, requireConfig().sessionSecret, () =>
+  const config = requireConfig();
+  return verifySessionTokenWithRotation(token, config.sessionSecret, config.previousSecret, () =>
     Math.floor(Date.now() / 1000),
   );
 }

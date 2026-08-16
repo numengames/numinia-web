@@ -10,3 +10,4 @@ export * from './session.js';
 export * from './nonce.js';
 export * from './boundary.js';
 export * from './attestation.js';
+export * from './rotation.js';
