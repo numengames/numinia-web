@@ -38,6 +38,24 @@ and narrative do not belong in the code repo.
 4. Visibility reopening passes the canon C-005 §4 visibility gate, verified
    against the real directory listing, not a hand-written list.
 
+## Execution findings (2026-08-16)
+
+- **The real-listing audit caught a second corpus:** the consolidated legacy
+  lineage (ADR-017) carried `docs/seminal-documents/` — the same texts in
+  earlier form as a DIFFERENT path, plus `Platform Role System.md` and the
+  manual as `.txt`. A hand-written path list would have missed it (same
+  lesson as the REUSE enumeration failure, twice in one day). Both paths were
+  scrubbed; both lineages live on in `numinia-lore` (`seminal/` canonical,
+  `seminal-legacy/` for the record, history preserved for each).
+- Post-rewrite audit: 0 objects under either path in all 473 commits; content
+  probes return nothing; largest remaining history blobs are legacy asset
+  uploads and package-locks. REUSE.toml has no orphaned annotations.
+- **Boundary case flagged, not decided:** `docs/reference/manual-map.md`
+  stays — it is an index (chapter titles, line anchors, divergence registry),
+  not prose reproduction, and it is load-bearing for lore-touching code. If
+  the Oracle reads the visibility gate more strictly, it moves to the lore
+  repo with a stub pointer left behind.
+
 ## Consequences
 
 - All commit SHAs change (second history rewrite after ADR-017). Backup:
