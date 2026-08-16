@@ -51,3 +51,12 @@ test('the doorman throttles a telemetry flood with Retry-After', async ({ reques
   }
   expect(throttled).toBeGreaterThan(0);
 });
+
+test('the media proxy refuses foreign hosts and empty input', async ({ request }) => {
+  const missing = await request.get('/api/media');
+  expect(missing.status()).toBe(400);
+  const foreign = await request.get(
+    '/api/media?src=' + encodeURIComponent('https://evil.com/x.glb'),
+  );
+  expect(foreign.status()).toBe(403);
+});

@@ -5,6 +5,7 @@ import Icon from '../chrome/Icon.astro';
 import { ModelViewer } from '../viewer/ModelViewer';
 import { ARCHIVE_MESSAGES } from '../../i18n/messages';
 import { downloadUrl } from '../../lib/archive';
+import { viewerProxyUrl } from '../../lib/media-proxy';
 import type { CatalogedAsset } from '../../lib/data';
 
 interface Props {
@@ -49,7 +50,11 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
       ) : asset.format === 'hyp' ? (
         <p>{t.worldFileNote}</p>
       ) : (
-        <ModelViewer client:visible url={binaryUrl} kind={asset.format === 'vrm' ? 'vrm' : 'glb'} />
+        <ModelViewer
+          client:visible
+          url={viewerProxyUrl(binaryUrl)}
+          kind={asset.format === 'vrm' ? 'vrm' : 'glb'}
+        />
       )}
     </section>
 

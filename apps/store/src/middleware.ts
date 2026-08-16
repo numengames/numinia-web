@@ -66,6 +66,7 @@ const RATE_RULES: ReadonlyArray<{
   { test: (m, p) => m === 'POST' && p === '/api/admin/census', key: 'census-write', limit: 20 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
+  { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },
 ];
 const RATE_WINDOW_MS = 60_000;
 

@@ -4,6 +4,7 @@
  */
 
 import { lazy, Suspense } from 'react';
+import { viewerProxyUrl } from '../../lib/media-proxy';
 import type { FinderItem } from '../../lib/finder';
 import type { FinderMessages } from '../../i18n/messages';
 
@@ -22,7 +23,7 @@ function PreviewMedia({ item, labels }: { item: FinderItem; labels: FinderMessag
     case 'vrm':
       return (
         <Suspense fallback={<p>…</p>}>
-          <ModelViewer url={item.url} kind={item.format} />
+          <ModelViewer url={viewerProxyUrl(item.url)} kind={item.format} />
         </Suspense>
       );
     case 'png':
