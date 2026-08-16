@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 08:00",
+    "entries": [
+      {
+        "text": "The city watches itself: structured Worker logs, a browser error beacon, and an hourly night watch that raises its own alarm",
+        "type": "NEW",
+      },
+      {
+        "text": "The walls go up: CSP and security headers on every response, a rate-limiting doorman on the sensitive doors",
+        "type": "NEW",
+      },
+      {
+        "text": "Session secrets rotate gracefully — old sessions live out their hour while new ones sign fresh",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.34.0",
+  },
+  {
     "date": "2026-08-16 06:30",
     "entries": [
       {

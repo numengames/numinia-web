@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.34.0',
+    date: '2026-08-16 08:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The city watches itself: structured Worker logs, a browser error beacon, and an hourly night watch that raises its own alarm',
+      },
+      {
+        type: 'NEW',
+        text: 'The walls go up: CSP and security headers on every response, a rate-limiting doorman on the sensitive doors',
+      },
+      {
+        type: 'NEW',
+        text: 'Session secrets rotate gracefully — old sessions live out their hour while new ones sign fresh',
+      },
+    ],
+  },
+  {
     version: 'v0.33.0',
     date: '2026-08-16 06:30',
     entries: [
