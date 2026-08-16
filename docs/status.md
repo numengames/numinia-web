@@ -207,6 +207,14 @@ reserved, declared per directory in REUSE.toml. D11 closed. SPDX headers
 The hardened gate's first catch lives in LEGAL_DEBT.md (DEBT-001): MetaMask
 SDK's ConsenSys license, tolerated ≤10k MAU, guarded out of dist/ by
 `licenses:guard`, exit at 5,000 MAU or first bundled byte.
+**Lore extraction (ADR-020, 2026-08-16):** `docs/seminal/` left for the
+private `numinia-lore` repo and was scrubbed from history (second rewrite
+after ADR-017; backup bundle beside the repo). The Codex now builds from
+`npm run lore:fetch` (real corpus, gitignored) or the committed synthetic
+fixture (hermetic CI). Deploys REQUIRE the `LORE_TOKEN` secret — fail-closed.
+Lore opening deferred under DEBT-002 (updated manual + third-party rights
+review + signed D-03 amendment; likely CC BY-SA 4.0). Historical mentions of
+docs/seminal below this line describe the pre-rewrite lineage.
 
 ## NEXT (groomed 2026-08-16 morning — board reconciled to reality)
 

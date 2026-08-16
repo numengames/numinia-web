@@ -6,9 +6,38 @@
  * structure around it (audit rule: the corpus is immutable).
  */
 
-// The corpus is committed content: IMPORT it (portable to any runtime —
-// Cloudflare Workers have no node:fs) instead of reading the disk at build.
-import manualRaw from '../../../../../docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md?raw';
+// The corpus is no longer committed here (Oracle order 2026-08-16: lore left
+// the code repository for the private lore repo). Two build-time sources,
+// both bundle-embedded (portable to any runtime — Workers have no node:fs):
+//   .lore/manual.md      — the REAL corpus, fetched by `npm run lore:fetch`
+//                          (gitignored; never re-enters this repo's tree).
+//   fixtures/manual/…    — a synthetic skeleton with zero lore, for hermetic
+//                          builds; exercises every parser shape.
+// DATA_SOURCE=fixture forces the fixture even when the real corpus is present.
+const loreFiles = import.meta.glob('../../../.lore/manual.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const fixtureFiles = import.meta.glob('../../../fixtures/manual/manual-fixture.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+const realManual = Object.values(loreFiles)[0];
+const fixtureManual = Object.values(fixtureFiles)[0];
+// Direct property read on purpose (see src/lib/env.ts): bundlers replace
+// `process.env.DATA_SOURCE`, which keeps this Worker-safe; importing the
+// fail-closed env module here would crash unit tests at import time.
+const resolvedManual =
+  (process.env.DATA_SOURCE === 'fixture' ? undefined : realManual) ?? fixtureManual;
+if (resolvedManual === undefined) {
+  // Fail closed and loud: the fixture is committed, so this only fires if
+  // the repo itself is broken — never silently render an empty Codex.
+  throw new Error('Manual source missing: neither .lore/manual.md nor the fixture resolved.');
+}
+const manualRaw: string = resolvedManual;
 
 interface ManualTableBlock {
   readonly kind: 'table';

@@ -1,6 +1,10 @@
 /**
- * Codex manual parser + archive stats: parsed against the REAL seminal
- * corpus and the REAL committed fixture (anti-tautology, audit rule 1).
+ * Codex manual parser + archive stats. Since ADR-020 the real corpus lives
+ * in the private lore repo; hermetic runs parse the committed synthetic
+ * fixture, which mirrors the real manual's structural skeleton (intro +
+ * numbered chapters + Historia fragment + tables) with zero lore. When
+ * `.lore/manual.md` is fetched locally, the same assertions hold against
+ * the real corpus (anti-tautology, audit rule 1).
  */
 
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -15,7 +19,7 @@ beforeAll(() => {
 });
 
 describe('manual parser', () => {
-  it('structures the real manual: intro + numbered chapters + fragments', async () => {
+  it('structures the manual source: intro + numbered chapters + fragments', async () => {
     const chapters = await loadManual();
     expect(chapters.length).toBeGreaterThanOrEqual(5);
     expect(chapters[0]!.id).toBe('introduccion');

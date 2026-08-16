@@ -22,16 +22,9 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# ── Seminal corpus: RESERVED BY DEFAULT, wholesale (Oracle order 2026-08-16).
-# Hand-enumerating lore files failed once — two foundational documents leaked
-# as CC-BY. The rule is inverted: everything under docs/seminal/ is reserved;
-# a technical document earns CC-BY only through an explicit exception
-# annotation added BELOW this one (later annotations win).
-[[annotations]]
-path = "docs/seminal/**"
-precedence = "closest"
-SPDX-FileCopyrightText = "2026 Numen Games S.L."
-SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
+# The seminal corpus no longer lives here: moved to the private lore repo
+# (Oracle order 2026-08-16, ADR-020) and scrubbed from history. Lore that
+# remains embedded in code (city-landing.ts) keeps its reserved annotation.
 
 # ── Apps: deployable platform that decides (identity, progression, billing) ──
 [[annotations]]

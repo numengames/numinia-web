@@ -10,6 +10,25 @@
 
 ---
 
+## DEBT-002 — Lore opening deferred (extraction done, publication conditioned)
+
+- **Opened:** 2026-08-16 (Oracle direction: lore leaves the code repository) · **Status:** OPEN
+- **What happened:** `docs/seminal/` (7 documents incl. the unpublished RPG
+  manual) moved to the private `numinia-lore` repository and was scrubbed
+  from this repo's history (ADR-020). Reserving rights and not exposing
+  content are different things — REUSE.toml only solved the first.
+- **Exposure assumption (explicit):** whatever was taken while the repo was
+  public is not recoverable; the action reduces future exposure, not past.
+  The manual being outdated limits the damage.
+- **Opening is deferred, NOT discarded.** Exit conditions, ALL required:
+  1. Updated manual (the current text is outdated),
+  2. Third-party rights review — the manual cites Jung, Eco, Blavatsky and
+     Steiner; verify quotations vs long reproductions,
+  3. **Signed amendment of D-03** with an entry in the version register —
+     never a silent REUSE.toml change.
+- **Likely license on opening:** CC BY-SA 4.0 (adoption with reciprocity —
+  the same logic as the AGPL core), not CC0.
+
 ## DEBT-001 — MetaMask SDK (ConsenSys proprietary license, no `license` field)
 
 - **Opened:** 2026-08-16 (ADR-019 hardened gate revealed it) · **Status:** OPEN

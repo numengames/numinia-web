@@ -28,6 +28,7 @@
     "deadcode": "knip",
     "test:mutation": "npm --workspace @numinia/domain run test:mutation && npm --workspace @numinia/analytics run test:mutation",
     "budget": "node scripts/bundle-budget.mjs",
+    "lore:fetch": "node scripts/fetch-lore.mjs",
     "links": "node scripts/link-check.mjs"
   },
   "devDependencies": {

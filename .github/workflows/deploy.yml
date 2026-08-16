@@ -109,6 +109,12 @@ jobs:
           cache: npm
       - name: Install (reproducible)
         run: npm ci
+      - name: Fetch the seminal manual (private lore repo — a deploy must not ship the synthetic fixture)
+        # Fails loud without LORE_TOKEN: the Codex serves citizens the REAL
+        # corpus; shipping the fixture silently would be a content regression.
+        run: npm run lore:fetch
+        env:
+          LORE_TOKEN: ${{ secrets.LORE_TOKEN }}
       - name: Build for Cloudflare (real catalog — a deploy must not ship fixtures)
         # Through turbo so workspace packages (domain, ui, analytics) build
         # first — their exports point at dist/, absent on a fresh runner.
