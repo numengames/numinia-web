@@ -74,6 +74,19 @@ const NAV = [
      Persistence via localStorage is decision D17 (chrome preference, not
      component state); the boot script in BaseLayout applies it pre-paint. */
   const root = document.documentElement;
+  /* MISSION-029: while the citizen has not chosen, the page follows the OS
+     as the light changes — sunset flips the city with it. A stored choice
+     ends the following. */
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+    try {
+      if (localStorage.getItem('numinia-modo')) return;
+    } catch {
+      return;
+    }
+    // Assign, never delete: the kit reads a MISSING attribute as Nocturno
+    // (the platform markup pins diurno explicitly for that reason).
+    root.dataset.modo = event.matches ? 'nocturno' : 'diurno';
+  });
   document.querySelector('[data-metric="chrome-mode"]')?.addEventListener('click', () => {
     const next = root.dataset.modo === 'nocturno' ? 'diurno' : 'nocturno';
     root.dataset.modo = next;

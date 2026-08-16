@@ -13,8 +13,12 @@ import path from 'node:path';
 const DIST = path.join('apps', 'store', 'dist', 'client');
 
 const BUDGETS = {
-  /** Total inline <script> bytes in the landing HTML (metrics bootstrap). */
-  landingInlineScriptBytes: 8_000,
+  /** Total inline <script> bytes in the landing HTML. Raised 8000→9000 on
+      2026-08-16 with a written reason (the budget's own doctrine): the
+      M-022 error beacon (~450B) and the M-029 preference bootstrap (~550B)
+      are sanctioned chrome — operations and accessibility, not feature
+      creep. The next raise needs its own paragraph. */
+  landingInlineScriptBytes: 9_000,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */

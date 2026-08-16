@@ -63,8 +63,20 @@ const urlFor = (target: SupportedLocale): string =>
          render without JS, per the constitution). */
       document.documentElement.dataset.js = 'on';
       try {
-        if (localStorage.getItem('numinia-modo') === 'nocturno')
+        /* M-029: stored choice > OS preference > diurno default. */
+        var sm = localStorage.getItem('numinia-modo');
+        if (sm === 'nocturno') document.documentElement.dataset.modo = 'nocturno';
+        else if (sm !== 'diurno' && matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.dataset.modo = 'nocturno';
+        /* M-029: language auto-detect — first visit, root only, then stored. */
+        if (!localStorage.getItem('numinia-lang') && location.pathname === '/') {
+          var ls = ['es', 'en', 'ja', 'ko', 'pt-br'];
+          var nl = (navigator.language || 'en').toLowerCase();
+          var lt = nl.indexOf('pt') === 0 ? 'pt-br' : nl.slice(0, 2);
+          if (ls.indexOf(lt) < 0) lt = 'en';
+          localStorage.setItem('numinia-lang', lt);
+          if (lt !== 'en') location.replace('/' + lt + '/');
+        }
         if (localStorage.getItem('numinia-lap-nav') === 'plegado')
           document.documentElement.dataset.lapNav = 'plegado';
         var hidden = localStorage.getItem('numinia-lap-hidden');
@@ -101,35 +113,33 @@ const urlFor = (target: SupportedLocale): string =>
       import '../scripts/metrics';
     </script>
     <script is:inline>
-      /* Client error beacon (MISSION-022): uncaught errors reach the Worker
-         log. Operations, not analytics — no identity, capped at 3 per page
-         so a render loop can never become a beacon flood. */
+      /* M-022 error beacon: no identity, max 3 per page. */
       (function () {
-        var sent = 0;
-        function report(message, source) {
-          if (sent >= 3) return;
-          sent += 1;
+        var n = 0;
+        function r(m, s) {
+          if (n > 2) return;
+          n += 1;
           try {
             navigator.sendBeacon(
               '/api/telemetry',
               new Blob(
                 [
                   JSON.stringify({
-                    message: String(message || 'unknown').slice(0, 500),
-                    source: String(source || '').slice(0, 300),
+                    message: String(m || '?').slice(0, 500),
+                    source: String(s || '').slice(0, 300),
                     path: location.pathname.slice(0, 300),
                   }),
                 ],
                 { type: 'application/json' },
               ),
             );
-          } catch (ignored) {}
+          } catch (e) {}
         }
-        addEventListener('error', function (event) {
-          report(event.message, (event.filename || '') + ':' + (event.lineno || 0));
+        addEventListener('error', function (e) {
+          r(e.message, (e.filename || '') + ':' + (e.lineno || 0));
         });
-        addEventListener('unhandledrejection', function (event) {
-          report((event.reason && event.reason.message) || 'unhandled rejection', 'promise');
+        addEventListener('unhandledrejection', function (e) {
+          r((e.reason && e.reason.message) || 'rejection', 'promise');
         });
       })();
     </script>

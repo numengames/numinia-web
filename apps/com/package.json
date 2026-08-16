@@ -1,6 +1,6 @@
 {
   "name": "@numinia/com",
-  "version": "0.34.0",
+  "version": "0.35.0",
   "description": "numinia.com — production track of the Numinia platform (Phase 2+). Skeleton only.",
   "license": "MIT",
   "type": "module",

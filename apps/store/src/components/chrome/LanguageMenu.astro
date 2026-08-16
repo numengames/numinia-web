@@ -54,6 +54,20 @@ const pathFor = (target: SupportedLocale): string =>
 </details>
 
 <script>
+  /* MISSION-029: an explicit language choice is a chrome preference (D17) —
+     it silences the first-visit auto-detection forever. */
+  document.querySelectorAll('[data-lang-menu] a[lang]').forEach((link) => {
+    link.addEventListener('click', () => {
+      try {
+        localStorage.setItem('numinia-lang', link.getAttribute('lang') ?? 'en');
+      } catch {
+        /* private mode: the choice lives in the URL they navigate to */
+      }
+    });
+  });
+</script>
+
+<script>
   // Close on Esc and on clicks outside — the panel never lingers.
   const menu = document.querySelector<HTMLDetailsElement>('[data-lang-menu]');
   document.addEventListener('keydown', (event) => {

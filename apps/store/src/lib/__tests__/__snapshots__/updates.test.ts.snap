@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 09:00",
+    "entries": [
+      {
+        "text": "The city reads your preferences: a dark system gets Nocturno, your browser language finds its door on first visit — and your own choice always wins",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.35.0",
+  },
+  {
     "date": "2026-08-16 08:00",
     "entries": [
       {
