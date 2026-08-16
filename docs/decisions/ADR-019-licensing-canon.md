@@ -51,12 +51,14 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   carry UI strings and domain names only (short metadata, no deep lore).
   Extracting lore prose out of code files into data is left as a future
   refactor, not a blocker.
-- **`docs/seminal/` split:** reserved lore = the RPG manual,
-  `Welcome_to_Numinia`, `About_Session_Zero`, `Numinia_Brand_and_Culture`,
-  `Compendium_of_Attributes_and_Ranks`; CC-BY-4.0 documentation =
-  `Role_structure_in_the_Numinia_system`,
-  `Epistemic_relations_between_Numen_Games_and_Numinia` (methodological essays
-  on the functional model, not narrative).
+- **`docs/seminal/` — CORRECTED 2026-08-16 (same day):** the first pass
+  hand-enumerated five reserved files and classified `Role_structure` and
+  `Epistemic_relations` as CC-BY "methodological essays" — wrong: they are
+  foundational lore, and for hours they stood licensed CC-BY-4.0. Oracle
+  order: the rule is inverted — **`docs/seminal/**` is reserved wholesale by
+  default**; a technical document earns CC-BY only through an explicit
+  exception annotation in REUSE.toml. Hand enumeration of lore is banned as a
+  mechanism: it failed on its first use.
 - **Apache-2.0 DOES ship in the client bundle** — the adoption-day claim that
   none did was an artifact of scanning from the workspace root (root has no
   production deps of its own). The bundler's module manifest shows 12

@@ -22,15 +22,13 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# ── Seminal lore: unpublished narrative canon stays reserved ─────────────────
+# ── Seminal corpus: RESERVED BY DEFAULT, wholesale (Oracle order 2026-08-16).
+# Hand-enumerating lore files failed once — two foundational documents leaked
+# as CC-BY. The rule is inverted: everything under docs/seminal/ is reserved;
+# a technical document earns CC-BY only through an explicit exception
+# annotation added BELOW this one (later annotations win).
 [[annotations]]
-path = [
-  "docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md",
-  "docs/seminal/Welcome_to_Numinia.md",
-  "docs/seminal/About_Session_Zero.md",
-  "docs/seminal/Numinia_Brand_and_Culture.md",
-  "docs/seminal/Compendium_of_Attributes_and_Ranks_in_Numinia.md",
-]
+path = "docs/seminal/**"
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
