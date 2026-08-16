@@ -111,6 +111,18 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   on `.com`, warning on `.store`) once headers exist; the `packages/*`-never-
   imports-`apps/*` lint rule; CLA text for this repo (contains AGPL code) and
   DCO adoption — the CLA document itself is a 🧬 deliverable.
+- **The repo going PUBLIC made the grant real (2026-08-16):** `private: true`
+  only prevents `npm publish`; a public repository whose packages declare
+  `license: MIT` with the work available is already a license offer, and the
+  published snapshot cannot be ungranted. The same-day audit found
+  `@numinia/auth` contains **authoritative session verification**
+  (`verifySessionToken`, rotation, attestations, single-use nonces) — core by
+  this ADR's own frontier, now MIT in that snapshot. Containment is
+  forward-looking only: the authoritative server side must move into `apps/`
+  (AGPL) **before it grows further**; neutral primitives (encoding, the
+  boundary constant) may remain at the edge. `@numinia/state` gets the same
+  review inside D-07, which is escalated to **BLOCKING** (gates Phase C and
+  any publish).
 - `private: true` on every `packages/*` is a **preventive brake until a signed
   decision — NOT a no-publication policy**. The canon intends the opposite:
   the MIT edge exists to be published (that is what distinguishes it from the

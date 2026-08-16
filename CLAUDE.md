@@ -161,6 +161,24 @@ Presupuesto de lectura: fragmento §19.5 ~1,2k tokens (tarea rápida) · §19 ~5
 
 ---
 
+## Licensing (canon C-005) — ⛔ BLOCKING: verbatim block pending
+
+> **The v1.3.0 verbatim fragment of canon C-005 MUST be pasted here (replacing
+> this pointer) before Phase C (SPDX headers) starts.** Marked blocking by
+> Oracle order 2026-08-16: without the block in this file, sessions start
+> without licensing rules loaded. Until it lands, the rules still apply — load
+> [docs/legal-book.md](docs/legal-book.md) (v1.1.0 copy) + ADR-019 before
+> touching licenses, dependencies, or creating files.
+
+Interim map: `apps/*` → AGPL-3.0-only · `packages/*` → MIT · docs → CC-BY-4.0 ·
+design assets/data → CC0-1.0 · lore/brand/`docs/seminal/**` → all rights
+reserved. Dependencies flow apps → packages, never the reverse. `REUSE.toml`
+is the per-file truth; `LEGAL_DEBT.md` lists live exceptions with exit
+conditions. Consume: NEVER BUSL, SSPL, Elastic, Commons Clause, CC-NC, CC-ND,
+or anything without a declared `license` field — resolve every dependency's
+SPDX from the registry BEFORE adding it. The repo is PUBLIC: everything on
+main is a live license offer.
+
 ## Internationalization (i18n)
 
 **Decision (2026-04-03):** 5 UI languages, 2 lore languages.
@@ -446,19 +464,19 @@ Current priority: **Phase 0 — complete domain model + spike technical**
 
 ## Architecture decisions log
 
-| #            | Decision                                                                                                               | Date       | Why                                                     |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------- |
-| ADR-001      | 5 languages (ES, EN, JA, KO, PT-BR)                                                                                    | 2026-04-03 | Market analysis: Web3, RPG, VRM, gaming. ZH/DE deferred |
-| ADR-002      | Lore only in ES+EN                                                                                                     | 2026-04-03 | Literary translation quality > coverage                 |
-| ADR-003      | 7 asset formats (not just 3D)                                                                                          | 2026-04-03 | v0.1.0 already manages multimedia                       |
-| ADR-004      | Gherkin for acceptance criteria                                                                                        | 2026-04-03 | Dual-agent readable: humans + machines                  |
-| ADR-005      | Missions ≠ Adventures                                                                                                  | 2026-04-03 | Peirce: Operating System ≠ Narrative Projection         |
-| ADR-006      | Progressive auth (Web2→Web3)                                                                                           | 2026-04-03 | Numinia bridges digital divide. Details TBD             |
-| ADR-007      | Guild names corrected from RPG manual                                                                                  | 2026-04-03 | Manual is canonical source, not old CLAUDE.md           |
-| ADR-008      | All code comments in English                                                                                           | 2026-04-03 | Accessibility and best practices                        |
-| ADR-009      | Domain model framework-agnostic (zod-only)                                                                             | 2026-04-03 | See DECISIONS.md                                        |
-| ADR-010      | v0.1.0 design preserved, code discarded                                                                                | 2026-04-03 | See DECISIONS.md                                        |
-| ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation | 2026-08    | See docs/decisions/                                     |
+| #            | Decision                                                                                                                 | Date       | Why                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------------- |
+| ADR-001      | 5 languages (ES, EN, JA, KO, PT-BR)                                                                                      | 2026-04-03 | Market analysis: Web3, RPG, VRM, gaming. ZH/DE deferred |
+| ADR-002      | Lore only in ES+EN                                                                                                       | 2026-04-03 | Literary translation quality > coverage                 |
+| ADR-003      | 7 asset formats (not just 3D)                                                                                            | 2026-04-03 | v0.1.0 already manages multimedia                       |
+| ADR-004      | Gherkin for acceptance criteria                                                                                          | 2026-04-03 | Dual-agent readable: humans + machines                  |
+| ADR-005      | Missions ≠ Adventures                                                                                                    | 2026-04-03 | Peirce: Operating System ≠ Narrative Projection         |
+| ADR-006      | Progressive auth (Web2→Web3)                                                                                             | 2026-04-03 | Numinia bridges digital divide. Details TBD             |
+| ADR-007      | Guild names corrected from RPG manual                                                                                    | 2026-04-03 | Manual is canonical source, not old CLAUDE.md           |
+| ADR-008      | All code comments in English                                                                                             | 2026-04-03 | Accessibility and best practices                        |
+| ADR-009      | Domain model framework-agnostic (zod-only)                                                                               | 2026-04-03 | See DECISIONS.md                                        |
+| ADR-010      | v0.1.0 design preserved, code discarded                                                                                  | 2026-04-03 | See DECISIONS.md                                        |
+| ADR-011..016 | Oracle/rank split · glossary authority · gender restrictions as data · 22 permissions · Astro 7 · analytics foundation   | 2026-08    | See docs/decisions/                                     |
 | ADR-019      | Licensing canon C-005 adopted (apps AGPL-3.0-only · packages MIT · assets CC0 · docs CC-BY · lore reserved) — closes D11 | 2026-08-16 | docs/legal-book.md is the copied source of truth        |
 
 ---
