@@ -10,14 +10,16 @@
  */
 
 import {
-  ARCHETYPES,
-  COMPETENCES,
-  DISTRICTS,
-  FACTIONS,
-  GUILDS,
-  HUMORS,
-  POSITIONS,
-  SPECIES,
+  ARCHETYPE_IDS,
+  BRANCH_IDS,
+  COMPETENCE_IDS,
+  DISTRICT_IDS,
+  FACTION_IDS,
+  GUILD_IDS,
+  HOUSE_IDS,
+  HUMOR_IDS,
+  POSITION_IDS,
+  SPECIES_IDS,
 } from '@numinia/domain';
 
 export const SHEET_FORMAT = 'numinia-sheet/v2';
@@ -55,7 +57,9 @@ export const VALUE_KEYS = [
   'prestige',
   'prisma',
 ] as const;
-const COMPETENCE_KEYS = COMPETENCES.map((competence) => competence.id);
+// ID constants only (types carry no localized payload): importing the
+// full constant sets shipped every locale's lore to the browser (~90KB).
+const COMPETENCE_KEYS = COMPETENCE_IDS;
 
 type IdentityKey = (typeof IDENTITY_KEYS)[number];
 type TextKey = (typeof TEXT_KEYS)[number];
@@ -87,19 +91,15 @@ export function emptySheet(): LapSheet {
 
 /** Valid domain ids per identity field — unknown ids are dropped on import. */
 const DOMAIN_IDS: Partial<Record<IdentityKey, ReadonlySet<string>>> = {
-  species: new Set(SPECIES.map((item) => item.id)),
-  position: new Set(POSITIONS.map((item) => item.id)),
-  guild: new Set(GUILDS.map((item) => item.id)),
-  branch: new Set(GUILDS.flatMap((guild) => guild.branches.map((branch) => branch.id))),
-  house: new Set(
-    GUILDS.flatMap((guild) =>
-      guild.branches.flatMap((branch) => branch.houses.map((house) => house.id)),
-    ),
-  ),
-  faction: new Set(FACTIONS.map((item) => item.id)),
-  district: new Set(DISTRICTS.map((item) => item.id)),
-  archetype: new Set(ARCHETYPES.map((item) => item.id)),
-  humor: new Set(HUMORS.map((item) => item.id)),
+  species: new Set<string>(SPECIES_IDS),
+  position: new Set<string>(POSITION_IDS),
+  guild: new Set<string>(GUILD_IDS),
+  branch: new Set<string>(BRANCH_IDS),
+  house: new Set<string>(HOUSE_IDS),
+  faction: new Set<string>(FACTION_IDS),
+  district: new Set<string>(DISTRICT_IDS),
+  archetype: new Set<string>(ARCHETYPE_IDS),
+  humor: new Set<string>(HUMOR_IDS),
 };
 
 function table(rows: ReadonlyArray<readonly [string, string | number]>): string {

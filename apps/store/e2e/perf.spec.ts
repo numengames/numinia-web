@@ -26,6 +26,7 @@ const BUDGETS: readonly Budget[] = [
   { path: '/city/', totalKB: 420, jsKB: 0, imgKB: 160 },
   { path: '/lap/', totalKB: 260, jsKB: 30, imgKB: 10 },
   { path: '/lap/portals/', totalKB: 280, jsKB: 30, imgKB: 10 },
+  { path: '/lap/character/', totalKB: 460, jsKB: 280, imgKB: 10 },
   // The login page carries the wallet vendor — the one sanctioned heavy page,
   // still under the 1MB line. It grows past it only with a written reason.
   { path: '/lap/session/', totalKB: 1024, jsKB: 900, imgKB: 10 },
