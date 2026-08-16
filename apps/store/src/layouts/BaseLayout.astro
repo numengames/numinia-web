@@ -17,9 +17,11 @@ interface Props {
   chrome?: boolean;
   /** Platform surfaces fill the viewport instead of the reading column. */
   wide?: boolean;
+  /** Share-card image; pages with their own visual (asset detail) override. */
+  ogImage?: string | undefined;
 }
 
-const { locale, title, description, chrome = true, wide = false } = Astro.props;
+const { locale, title, description, chrome = true, wide = false, ogImage } = Astro.props;
 
 /** OG locale codes (territory formats differ from our ids). */
 const OG_LOCALES: Record<SupportedLocale, string> = {
@@ -69,6 +71,10 @@ const urlFor = (target: SupportedLocale): string =>
     {description && <meta property="og:description" content={description} />}
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlFor(locale)} />
+    {/* The share card (Khepri: Noche + relieve + wordmark + the 1920·2020·2120
+        seal). Absolute URL: scrapers resolve nothing relative. */}
+    <meta property="og:image" content={ogImage ?? `${site}/og.png`} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:locale" content={OG_LOCALES[locale]} />
     <link rel="canonical" href={urlFor(locale)} />
     {SUPPORTED_LOCALES.map((alt) => (

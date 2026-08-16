@@ -20,11 +20,12 @@ const binaryUrl = downloadUrl(asset);
 const description = asset.description || `${asset.format.toUpperCase()} · CC0 · Numinia`;
 ---
 
-<BaseLayout locale={locale} title={`${asset.name} — Numinia`} description={description}>
-  <Fragment slot="head">
-    {/* BaseLayout owns description/og basics; only the image is page-specific. */}
-    {asset.thumbnailUrl && <meta property="og:image" content={asset.thumbnailUrl} />}
-  </Fragment>
+<BaseLayout
+  locale={locale}
+  title={`${asset.name} — Numinia`}
+  description={description}
+  ogImage={asset.thumbnailUrl ?? undefined}
+>
 
   <nav>
     <a href={`${prefix}/archive/`} data-metric="archive-back">{t.backToArchive}</a>
