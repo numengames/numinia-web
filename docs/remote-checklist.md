@@ -30,7 +30,7 @@
 9. Repository secrets: none needed yet (CI is hermetic). Add only when deploy day comes (D3-bis).
 10. `SECURITY.md`: fill the public contact + disclosure window.
 11. Decide analytics backend + consent banner (D12) — required before any deploy, not before the push.
-12. Visual regression baselines (`apps/store/e2e/visual.spec.ts`) are skipped on CI: regenerate them inside the CI image (`CI= npx playwright test visual --update-snapshots` on the runner or its Docker image), commit, then remove the `test.skip(!!process.env.CI, …)` guard.
+12. ~~Visual regression baselines are skipped on CI~~ **DONE 2026-08-16**: baselines regenerated inside the CI image (podman + `mcr.microsoft.com/playwright:v1.62.1-noble`), verified to pass on the dev machine within the 2% antialiasing ratio, guard removed — the visual gate now runs everywhere. Regeneration recipe lives atop `apps/store/e2e/visual.spec.ts`.
 
 ## Explicitly still forbidden after the push
 

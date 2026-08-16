@@ -10,10 +10,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { buildTriangleGlb } from './support/triangle-glb';
 
-// Baselines were rendered on the dev machine; CI runners draw fonts
-// differently, so the suite is local-only until baselines are regenerated
-// inside the CI image (tracked in docs/remote-checklist.md, push day).
-test.skip(!!process.env.CI, 'visual baselines are local-only until CI regenerates them');
+// Baselines are rendered inside the CI image (mcr playwright:noble via
+// podman — see docs/remote-checklist.md item 12, closed 2026-08-16) and
+// verified to pass on dev machines within the antialiasing ratio below.
+// Regenerate with: podman run --rm --security-opt label=disable \
+//   -v $REPO:/work -w /work/apps/store -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+//   mcr.microsoft.com/playwright:v<playwright-version>-noble \
+//   npx playwright test visual --update-snapshots --project=chromium
 
 const PAGES = [
   { path: '/', name: 'landing-en' },

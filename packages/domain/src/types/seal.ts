@@ -2,6 +2,11 @@
  * Session Zero — thresholds, seals, and Prism Cells (glossary §12–13).
  * Seal names follow the seminal source (Culture + Wisdom for Thought — the
  * constitution was corrected accordingly, ADR-012).
+ *
+ * Provenance (docs/reference/manual-map.md, divergence 3): the manual only
+ * says EIGHT seals re-smelted at La Forja grant citizenship (l.2655). The
+ * four named thresholds, the seal names, and the Cyberdog reward come from
+ * the wider corpus (deck/numinia.com), not the manual — platform canon.
  */
 
 import type { LocalizedString } from './i18n.js';
