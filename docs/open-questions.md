@@ -84,6 +84,10 @@ MISSION-002 Step 0 gate: does thirdweb cover the full ADR-006 checklist under fa
 
 The consolidated history (ADR-017) makes `github.com/PabloFMM/numinia-digital-goods` redundant as a live repo. At push day, choose: **(a)** archive it read-only with a pointer to the new repo (clean separation; old SHAs stay citable), or **(b)** repurpose it by pushing the consolidated history there (keeps URL/stars; requires force-push and renaming the repo to match the platform scope). Decide together with D11 (license). Until then it stays untouched as a permanent backup.
 
+### D-07 (canon queue) — Package map: publishable edge vs unpublishable core (priority raised 2026-08-16)
+
+The conceptual boundary is closed (ADR-019: decides → core/AGPL, shows → edge/MIT), but the exact map of which `@numinia/*` package falls on which side was queued in the canon (D-07) and was explicitly due **before the first publish**. Since 2026-08-16 all five packages sit braked (`private: true`) with no signed list of which get released, in what order, under what criteria (API stability? domain glossary freeze? SemVer floor?). **Ordered before Phase C.** Deliverable: an ADR naming each package's side and the release conditions for the edge. Note the Phase 4 metric depends on the edge actually publishing — the brake is a gate, not a policy.
+
 ## E. Process conflicts needing an explicit ruling
 
 | #   | Conflict                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Detail |

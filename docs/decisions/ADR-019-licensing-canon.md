@@ -93,5 +93,12 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   on `.com`, warning on `.store`) once headers exist; the `packages/*`-never-
   imports-`apps/*` lint rule; CLA text for this repo (contains AGPL code) and
   DCO adoption — the CLA document itself is a 🧬 deliverable.
-- `@numinia/*` npm publication remains forbidden (standing order); first
-  publish locks the MIT edge and is a stop-and-ask event.
+- `private: true` on every `packages/*` is a **preventive brake until a signed
+  decision — NOT a no-publication policy**. The canon intends the opposite:
+  the MIT edge exists to be published (that is what distinguishes it from the
+  AGPL core, and the Phase 4 metric — a third party consuming the data —
+  depends on it). The brake exists solely because the first `npm publish` is
+  a one-way door and sits in stop-and-ask. What releases it: the package-map
+  ADR (which `@numinia/*` packages are edge and publish, which are core and
+  never do — canon queue D-07), which must land **before Phase C and before
+  any first publish**.
