@@ -27,9 +27,12 @@ interface Props {
   current: LapSection;
   title: string;
   description?: string | undefined;
+  /** Opt-out of the 85rem tool cap for views whose content demands the
+      full canvas (today: the admin assets table). */
+  fullCanvas?: boolean;
 }
 
-const { locale, current, title, description } = Astro.props;
+const { locale, current, title, description, fullCanvas = false } = Astro.props;
 const t = LAP_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
@@ -71,7 +74,7 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
 ---
 
 <BaseLayout locale={locale} title={title} description={description} wide>
-  <div class="lap" data-lap-shell>
+  <div class="lap" data-lap-shell data-canvas={fullCanvas ? '' : undefined}>
     <nav aria-label="L.A.P.">
       <div class="cabecera">
         <p class="etiqueta">L.A.P.</p>
@@ -182,12 +185,20 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
 </script>
 
 <style>
-  /* The shell fills whatever width the layout hands it (BaseLayout `wide`). */
+  /* Width scale (Oracle 2026-08-16): prose reads at 60rem site-wide; the
+     L.A.P. is a tool and works at 85rem, centered so its margins keep the
+     rhythm of the rest of the city; the full canvas is per-view, granted
+     only where the content demands it (data-canvas). */
   .lap {
     display: grid;
     gap: var(--s5);
     align-items: start;
     min-height: 70vh;
+    max-width: 85rem;
+    margin-inline: auto;
+  }
+  .lap[data-canvas] {
+    max-width: none;
   }
   /* Grid items default to min-width:auto — the scrollable mobile rail would
      stretch the page instead of scrolling inside itself. */

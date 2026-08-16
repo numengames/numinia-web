@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 07:40",
+    "entries": [
+      {
+        "text": "The L.A.P. tries the middle width: an 85rem centered tool standard, keeping the rhythm of the city — only the admin table keeps the full canvas",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.39.0",
+  },
+  {
     "date": "2026-08-16 07:10",
     "entries": [
       {

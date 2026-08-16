@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.39.0',
+    date: '2026-08-16 07:40',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The L.A.P. tries the middle width: an 85rem centered tool standard, keeping the rhythm of the city — only the admin table keeps the full canvas',
+      },
+    ],
+  },
+  {
     version: 'v0.38.1',
     date: '2026-08-16 07:10',
     entries: [
