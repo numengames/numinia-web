@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { LunaEspera } from '../../chrome/LunaEspera';
 
 interface AdminAsset {
   readonly id: string;
@@ -72,7 +73,12 @@ export function AdminAssets({ labels }: { labels: AdminLabels }) {
     });
   }, [assets, query, format, sort]);
 
-  if (state === 'loading') return <p className="estado">{labels.loading}</p>;
+  if (state === 'loading')
+    return (
+      <p className="estado">
+        <LunaEspera /> {labels.loading}
+      </p>
+    );
   if (state === 'forbidden') {
     return (
       <div className="tarjeta refuso" role="note">

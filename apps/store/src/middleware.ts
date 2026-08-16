@@ -17,7 +17,7 @@ const CSP_STRICT = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
   "font-src 'self'",
   "connect-src 'self' https:",
@@ -28,10 +28,8 @@ const CSP_STRICT = [
   "object-src 'none'",
 ].join('; ');
 const CSP_SESSION =
-  CSP_STRICT.replace("connect-src 'self' https:", "connect-src 'self' https: wss:").replace(
-    "img-src 'self' data: https:",
-    "img-src 'self' data: https: blob:",
-  ) + '; frame-src https:';
+  CSP_STRICT.replace("connect-src 'self' https:", "connect-src 'self' https: wss:") +
+  '; frame-src https:';
 
 function isSessionPath(pathname: string): boolean {
   return /^\/(es\/|ja\/|ko\/|pt-br\/)?(lap\/session|spike\/auth)/.test(pathname);

@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 12:30",
+    "entries": [
+      {
+        "text": "The models wear their textures again — the walls learned that embedded textures travel as blobs",
+        "type": "FIX",
+      },
+      {
+        "text": "Avatars frame head to toe: the viewer measures each VRM instead of guessing",
+        "type": "FIX",
+      },
+      {
+        "text": "The waiting moon cycles through its eight phases wherever the city loads, and music previews wear their notes",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.37.0",
+  },
+  {
     "date": "2026-08-16 11:00",
     "entries": [
       {

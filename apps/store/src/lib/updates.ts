@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.37.0',
+    date: '2026-08-16 12:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The models wear their textures again — the walls learned that embedded textures travel as blobs',
+      },
+      {
+        type: 'FIX',
+        text: 'Avatars frame head to toe: the viewer measures each VRM instead of guessing',
+      },
+      {
+        type: 'NEW',
+        text: 'The waiting moon cycles through its eight phases wherever the city loads, and music previews wear their notes',
+      },
+    ],
+  },
+  {
     version: 'v0.36.0',
     date: '2026-08-16 11:00',
     entries: [

@@ -94,6 +94,13 @@ a:focus-visible > .tarjeta,
   background: var(--elevada);
 }
 
+/* Audio preview glyph: the raw Phosphor svg fills its 40px slot. */
+.audio-preview svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* §10.1-07 puntos de espera: a working button says so — 900ms, three
    steps, width locked so the label never shifts. */
 @keyframes puntos-espera {

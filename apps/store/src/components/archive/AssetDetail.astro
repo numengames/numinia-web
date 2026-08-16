@@ -5,7 +5,6 @@ import Icon from '../chrome/Icon.astro';
 import { ModelViewer } from '../viewer/ModelViewer';
 import { ARCHIVE_MESSAGES } from '../../i18n/messages';
 import { downloadUrl } from '../../lib/archive';
-import { viewerProxyUrl } from '../../lib/media-proxy';
 import type { CatalogedAsset } from '../../lib/data';
 
 interface Props {
@@ -44,17 +43,20 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
           <p>{t.downloadUnavailable}</p>
         )
       ) : asset.format === 'mp3' ? (
-        binaryUrl ? <audio controls src={binaryUrl}></audio> : <p>{t.downloadUnavailable}</p>
+        binaryUrl ? (
+          <div class="audio-preview">
+            <Icon name="music-notes" size={40} />
+            <audio controls src={binaryUrl} />
+          </div>
+        ) : (
+          <p>{t.downloadUnavailable}</p>
+        )
       ) : asset.format === 'mp4' ? (
         binaryUrl ? <video controls src={binaryUrl}></video> : <p>{t.downloadUnavailable}</p>
       ) : asset.format === 'hyp' ? (
         <p>{t.worldFileNote}</p>
       ) : (
-        <ModelViewer
-          client:visible
-          url={viewerProxyUrl(binaryUrl)}
-          kind={asset.format === 'vrm' ? 'vrm' : 'glb'}
-        />
+        <ModelViewer client:visible url={binaryUrl} kind={asset.format === 'vrm' ? 'vrm' : 'glb'} />
       )}
     </section>
 
@@ -88,6 +90,16 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
 </BaseLayout>
 
 <style>
+  .audio-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    color: var(--texto-2);
+  }
+  .audio-preview audio {
+    flex: 1;
+    min-width: 0;
+  }
   /* Responsive audit 2026-08-16: previews shrink into the column, and
      asset names full of underscores may break anywhere â€” a 774px H1 was
      the page's widest element on a 360px phone. */
@@ -97,10 +109,13 @@ const description = asset.description || `${asset.format.toUpperCase()} Â· CC0 Â
   }
   /* Previews shrink into the column. */
   article :global(img),
-  article :global(video),
-  article :global(audio) {
+  article :global(video) {
     max-width: 100%;
     height: auto;
+  }
+  /* audio keeps its UA height â€” height:auto collapses the control to 0. */
+  article :global(audio) {
+    max-width: 100%;
   }
 
   h1 {

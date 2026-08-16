@@ -3,8 +3,8 @@
  * three.js never enters the base finder chunk (bundle budget).
  */
 
+import musicNotes from '../../../../../packages/ui/src/icons/music-notes.svg?raw';
 import { lazy, Suspense } from 'react';
-import { viewerProxyUrl } from '../../lib/media-proxy';
 import type { FinderItem } from '../../lib/finder';
 import type { FinderMessages } from '../../i18n/messages';
 
@@ -23,7 +23,7 @@ function PreviewMedia({ item, labels }: { item: FinderItem; labels: FinderMessag
     case 'vrm':
       return (
         <Suspense fallback={<p>…</p>}>
-          <ModelViewer url={viewerProxyUrl(item.url)} kind={item.format} />
+          <ModelViewer url={item.url} kind={item.format} />
         </Suspense>
       );
     case 'png':
@@ -34,7 +34,19 @@ function PreviewMedia({ item, labels }: { item: FinderItem; labels: FinderMessag
         <p>{labels.downloadUnavailable}</p>
       );
     case 'mp3':
-      return item.url ? <audio controls src={item.url} /> : <p>{labels.downloadUnavailable}</p>;
+      return item.url ? (
+        <div className="audio-preview" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span
+            aria-hidden="true"
+            style={{ width: 40, height: 40, color: 'var(--texto-2)' }}
+            // Phosphor music-notes, self-hosted subset (MIT).
+            dangerouslySetInnerHTML={{ __html: musicNotes }}
+          />
+          <audio controls src={item.url} style={{ flex: 1, minWidth: 0 }} />
+        </div>
+      ) : (
+        <p>{labels.downloadUnavailable}</p>
+      );
     case 'mp4':
       return item.url ? <video controls src={item.url} /> : <p>{labels.downloadUnavailable}</p>;
     default:

@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { LunaEspera } from '../../chrome/LunaEspera';
 
 interface RankOption {
   readonly id: string;
@@ -125,7 +126,11 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
         </button>
       </div>
 
-      {panel.at === 'loading' && <p className="estado">{labels.loading}</p>}
+      {panel.at === 'loading' && (
+        <p className="estado">
+          <LunaEspera /> {labels.loading}
+        </p>
+      )}
       {panel.at === 'invalid' && <p className="estado aviso">{labels.invalidWallet}</p>}
       {panel.at === 'error' && <p className="estado aviso">{labels.failed}</p>}
       {panel.at === 'unconfigured' && <p className="estado aviso">{labels.unconfigured}</p>}

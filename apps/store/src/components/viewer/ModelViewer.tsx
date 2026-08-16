@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils, type VRM } from '@pixiv/three-vrm';
+import { viewerProxyUrl } from '../../lib/media-proxy';
+import { LunaEspera } from '../chrome/LunaEspera';
 
 type ViewerStatus = 'loading' | 'ready' | 'error' | 'empty';
 
@@ -44,14 +46,31 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     const light = new THREE.DirectionalLight(0xffffff, Math.PI);
     light.position.set(1, 1.5, 1).normalize();
-    scene.add(light, new THREE.AmbientLight(0xffffff, 0.6));
+    // Hemisphere fill keeps metallic materials from going dead flat.
+    const hemi = new THREE.HemisphereLight(0xfff4e0, 0x2a2420, 0.8);
+    scene.add(light, hemi, new THREE.AmbientLight(0xffffff, 0.6));
 
     let vrm: VRM | null = null;
     let subject: THREE.Object3D | null = null;
     let frame = 0;
     const clock = new THREE.Clock();
 
-    const loader = new GLTFLoader();
+    /* Chain hosts send no CORS (R2), so EVERY request — the model and any
+       external resource it references — rides our own origin. The manager
+       resolves relative resource paths against the ORIGINAL url first, so
+       a sidecar texture next to the model keeps working. blob:/data: pass
+       through untouched (embedded textures). */
+    const manager = new THREE.LoadingManager();
+    manager.setURLModifier((requested) => {
+      if (requested.startsWith('blob:') || requested.startsWith('data:')) return requested;
+      try {
+        const absolute = new URL(requested, url).href;
+        return viewerProxyUrl(absolute) ?? requested;
+      } catch {
+        return requested;
+      }
+    });
+    const loader = new GLTFLoader(manager);
     if (kind === 'vrm') {
       loader.register((parser) => new VRMLoaderPlugin(parser));
     }
@@ -62,7 +81,17 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
           vrm = gltf.userData['vrm'] as VRM;
           VRMUtils.rotateVRM0(vrm);
           subject = vrm.scene;
-          camera.position.set(0, 1.2, 2.4);
+          // Frame the avatar by its REAL bounds — a fixed camera cut tall
+          // models and drowned short ones. Feet stay down: only x/z center.
+          const box = new THREE.Box3().setFromObject(subject);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          subject.position.x -= center.x;
+          subject.position.z -= center.z;
+          subject.position.y -= box.min.y;
+          const height = size.y || 1.5;
+          camera.position.set(0, height * 0.55, height * 1.7);
+          camera.lookAt(0, height * 0.5, 0);
         } else {
           subject = gltf.scene;
           // Frame arbitrary GLB content: center it and step back far enough.
@@ -111,7 +140,9 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
         style={{ maxWidth: '100%', height: 'auto' }}
         aria-label="3D model preview"
       />
-      <figcaption>{CAPTIONS[status]}</figcaption>
+      <figcaption>
+        {status === 'loading' && <LunaEspera />} {CAPTIONS[status]}
+      </figcaption>
     </figure>
   );
 }
