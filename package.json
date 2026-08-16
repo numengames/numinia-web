@@ -1,5 +1,5 @@
 {
-  "name": "numinia-platform",
+  "name": "numinia-web",
   "version": "0.37.0",
   "private": true,
   "description": "Numinia Platform monorepo — the material culture of the city-state, rebuilt. Continues the numinia.store version line (legacy ended at 0.15.0).",

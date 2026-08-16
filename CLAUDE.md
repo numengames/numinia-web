@@ -57,7 +57,7 @@ The Functional Model is the skeleton. The Narrative Projection is the skin. The 
 This is a **Turborepo monorepo** with two deployable apps and shared packages:
 
 ```
-numinia-platform/
+numinia-web/
 ├── apps/
 │   ├── store/                    # numinia.store — Proof of concepts, spikes
 │   │   ├── src/
