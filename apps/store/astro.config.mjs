@@ -7,6 +7,7 @@ import cloudflare from '@astrojs/cloudflare';
 import sitemap from '@astrojs/sitemap';
 import { parseEnv } from '@numinia/domain';
 import { satteri } from '@astrojs/markdown-satteri';
+import { licenseManifest } from '../../scripts/vite-license-manifest.mjs';
 
 // Fail closed AT BOOT: a missing required variable kills dev/build here,
 // before any server binds (MISSION-000 env-validation scenario).
@@ -60,7 +61,7 @@ const externalLinksNewTab = {
 export default defineConfig({
   site: env.publicSiteUrl,
   output: 'static',
-  vite: { define: publicDefines },
+  vite: { define: publicDefines, plugins: [licenseManifest()] },
   /**
    * Astro sessions off: we never use them (our session is our own signed
    * cookie), and leaving them on makes the Cloudflare adapter demand a KV

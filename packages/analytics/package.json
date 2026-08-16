@@ -3,6 +3,7 @@
   "version": "0.37.0",
   "description": "Numinia analytics foundation — typed funnel events, consent-gated, privacy-first, transport-pluggable.",
   "license": "MIT",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

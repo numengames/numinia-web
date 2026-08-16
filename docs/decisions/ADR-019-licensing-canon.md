@@ -57,8 +57,13 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   `Role_structure_in_the_Numinia_system`,
   `Epistemic_relations_between_Numen_Games_and_Numinia` (methodological essays
   on the functional model, not narrative).
-- **No Apache-2.0 in production dependencies** at adoption time → no `NOTICE`
-  file yet. The skeleton rule stands: the day one ships, NOTICE is created.
+- **Apache-2.0 DOES ship in the client bundle** — the adoption-day claim that
+  none did was an artifact of scanning from the workspace root (root has no
+  production deps of its own). The bundler's module manifest shows 12
+  Apache-2.0 packages in the client bucket (thirdweb, WalletConnect, Coinbase
+  SDK, fuse.js, idb-keyval, multiformats, …) → `NOTICE` created at the root,
+  its completeness enforced by `scripts/license-guard.mjs` (a shipped
+  Apache-2.0 package missing from NOTICE fails the build).
 - **The hardened gate's first catch — MetaMask SDK (DEBT-001):** exactly three
   packages ship under the ConsenSys proprietary license with no `license`
   field: `@metamask/sdk`, `@metamask/sdk-communication-layer`,
@@ -69,8 +74,9 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   the moment the code is distributed. Oracle ruling (2026-08-16): documented
   exception with a mandatory exit — see [LEGAL_DEBT.md](../../LEGAL_DEBT.md)
   DEBT-001 for thresholds (5,000 MAU or first `dist/` hit) and the EIP-6963 +
-  WalletConnect exit path. `scripts/license-guard.mjs` greps built output for
-  the ConsenSys copyright strings on every verify/CI run. A fourth UNKNOWN,
+  WalletConnect exit path. `scripts/license-guard.mjs` audits the bundler's
+  module manifest (string scans miss minified code) on every verify/CI run.
+  A fourth UNKNOWN,
   `@metamask/eth-json-rpc-provider@1.0.1`, turned out to be registry-declared
   ISC with a field-less tarball — clarified, not excepted.
 

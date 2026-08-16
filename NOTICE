@@ -1,0 +1,25 @@
+Numinia Platform — https://numinia.com
+Copyright (c) 2026 Numen Games S.L.
+
+This product distributes the following Apache-2.0-licensed components in its
+client bundle. Each is used under the Apache License, Version 2.0
+(LICENSES/Apache-2.0.txt or https://www.apache.org/licenses/LICENSE-2.0);
+copyright remains with their respective authors.
+
+  @base-org/account            — Coinbase / Base contributors
+  @coinbase/wallet-sdk         — Coinbase, Inc.
+  @thirdweb-dev/insight        — thirdweb, Inc.
+  @walletconnect/core          — WalletConnect Foundation
+  @walletconnect/sign-client   — WalletConnect Foundation
+  @walletconnect/types         — WalletConnect Foundation
+  @walletconnect/universal-provider — WalletConnect Foundation
+  @walletconnect/utils         — WalletConnect Foundation
+  fuse.js                      — Kiro Risk
+  idb-keyval                   — Jake Archibald
+  multiformats                 — Protocol Labs
+  thirdweb                     — thirdweb, Inc.
+
+This list is enforced by scripts/license-guard.mjs: any Apache-2.0 package
+that enters the client bundle must be added here, and stale entries should be
+pruned when they stop shipping. Full dependency license texts are available
+from each package's repository.

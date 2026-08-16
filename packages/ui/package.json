@@ -1,8 +1,9 @@
 {
   "name": "@numinia/ui",
   "version": "0.37.0",
-  "description": "Numinia design system \u2014 tokens and shared UI primitives.",
+  "description": "Numinia design system — tokens and shared UI primitives.",
   "license": "MIT",
+  "private": true,
   "type": "module",
   "exports": {
     "./tokens.css": "./src/tokens.css",

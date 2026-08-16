@@ -28,9 +28,13 @@
 The ConsenSys license defines "Non-Commercial Use" to include (clause 3)
 **any use whose monthly active users stay ≤ 10,000 across all versions and
 platforms**. Numinia is far below that ceiling, so we are inside the permission
-even as a commercial entity. Verified against the built output: **no ConsenSys
-code ships in `dist/`** (thirdweb tree-shakes the SDK connector out; only the
-registry install exists in node_modules).
+even as a commercial entity. Verified against the bundler's own module
+manifest (`dist/.license-modules.json`, written by
+`scripts/vite-license-manifest.mjs`): **no ConsenSys code ships in `dist/`**
+(thirdweb tree-shakes the SDK connector out; only the registry install exists
+in node_modules). A plain string scan is NOT proof — minifiers strip license
+comments — which is why the guard audits module paths first and keeps the
+string sweep only as a second net.
 
 ### Why it cannot stay
 
@@ -45,8 +49,9 @@ state.
 
 1. **5,000 MAU** on numinia.com (half the license ceiling, our safety margin), or
 2. **the first build that lands ConsenSys code in `dist/`** —
-   `scripts/license-guard.mjs` greps built output for the ConsenSys copyright
-   strings on every `verify` and every CI run, and fails the build.
+   `scripts/license-guard.mjs` audits the build's module manifest for the
+   three forbidden packages on every `verify` and every CI run, and fails
+   the build.
 
 ### Exit path (investigated 2026-08-16, ready to execute)
 
