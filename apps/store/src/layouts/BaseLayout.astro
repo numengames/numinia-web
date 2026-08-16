@@ -21,6 +21,12 @@ interface Props {
   ogImage?: string | undefined;
 }
 
+// Font preloads: same files the kit CSS declares — Vite dedupes to one
+// hashed URL, so the preload and the @font-face hit the same cache entry.
+// Kills the swap-induced layout shift on text-first pages.
+import geistWoff from '../../../../packages/ui/src/assets/fonts/Geist-Variable.woff2?url';
+import geistMonoWoff from '../../../../packages/ui/src/assets/fonts/GeistMono-Variable.woff2?url';
+
 const { locale, title, description, chrome = true, wide = false, ogImage } = Astro.props;
 
 /** OG locale codes (territory formats differ from our ids). */
@@ -69,6 +75,8 @@ const urlFor = (target: SupportedLocale): string =>
     {description && <meta name="description" content={description} />}
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
+    <link rel="preload" href={geistWoff} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={geistMonoWoff} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlFor(locale)} />
     {/* The share card (Khepri: Noche + relieve + wordmark + the 1920·2020·2120

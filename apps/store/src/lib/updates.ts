@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.33.0',
+    date: '2026-08-16 06:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The Archive loses four fifths of its weight: baked 480px thumbnails replace full-size originals (2.4MB → 468KB)',
+      },
+      {
+        type: 'NEW',
+        text: 'A performance gate joins the walls: page-weight budgets, zero-JS promises and layout stability, pinned per page',
+      },
+      {
+        type: 'FIX',
+        text: 'The 3D islands announce their hydration — no interaction falls into the void again',
+      },
+    ],
+  },
+  {
     version: 'v0.32.0',
     date: '2026-08-16 03:00',
     entries: [

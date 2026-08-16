@@ -3,7 +3,7 @@
  * All data arrives serialized from the build; no fetching at runtime.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FinderCategory, FinderItem } from '../../lib/finder';
 import type { FinderMessages } from '../../i18n/messages';
 import { toggleQueued } from '../../lib/finder-state';
@@ -21,6 +21,10 @@ export function Finder({ tree, labels }: FinderProps) {
   const first = tree[0];
   const initialKey = first ? collectionKey(first.id, first.collections[0]?.id ?? '') : '';
   const [selectedCollection, setSelectedCollection] = useState(initialKey);
+  // Hydration beacon (see Inspector): interactions before the handlers
+  // attach would fall into the void; consumers wait for data-hydrated.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [queue, setQueue] = useState<readonly string[]>([]);
 
@@ -51,7 +55,7 @@ export function Finder({ tree, labels }: FinderProps) {
     .filter((item): item is FinderItem => item !== undefined);
 
   return (
-    <div data-finder>
+    <div data-finder data-hydrated={hydrated ? '' : undefined}>
       <div className="panes">
         <CollectionTree
           tree={tree}

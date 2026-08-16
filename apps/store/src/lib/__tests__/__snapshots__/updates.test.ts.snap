@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-16 06:30",
+    "entries": [
+      {
+        "text": "The Archive loses four fifths of its weight: baked 480px thumbnails replace full-size originals (2.4MB → 468KB)",
+        "type": "UPD",
+      },
+      {
+        "text": "A performance gate joins the walls: page-weight budgets, zero-JS promises and layout stability, pinned per page",
+        "type": "NEW",
+      },
+      {
+        "text": "The 3D islands announce their hydration — no interaction falls into the void again",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.33.0",
+  },
+  {
     "date": "2026-08-16 03:00",
     "entries": [
       {

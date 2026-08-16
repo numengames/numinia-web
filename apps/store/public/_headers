@@ -1,0 +1,6 @@
+# Workers static assets cache policy (MISSION-018). Hashed /_astro/* is
+# already immutable by default; these cover the named statics.
+/thumbs/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/og.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

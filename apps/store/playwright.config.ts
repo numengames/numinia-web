@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  // 32-core machines default to 16 workers — sixteen Chromiums fighting for
+  // software WebGL starves the 3D islands into false timeouts. Eight is
+  // plenty; CI keeps Playwright's own core-based default.
+  workers: process.env['CI'] ? undefined : 8,
   testDir: './e2e',
   timeout: 120_000,
   /**

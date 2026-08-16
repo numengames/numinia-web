@@ -7,7 +7,8 @@ import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/finder/');
-  await page.waitForSelector('[data-finder]');
+  // The beacon guarantees the handlers are attached (hydration race).
+  await page.waitForSelector('[data-finder][data-hydrated]');
 });
 
 test('selecting a collection fills the file list and preview follows the file', async ({
@@ -25,7 +26,11 @@ test('selecting a collection fills the file list and preview follows the file', 
   const firstFile = files.first();
   const fileName = (await firstFile.locator('.name').textContent()) ?? '';
   await firstFile.click();
-  await expect(page.locator('[data-finder-preview] h3')).toHaveText(fileName);
+  // Explicit margin: test.slow() scales the TEST budget, not expect's own
+  // 5s default — and the preview island starves under full-suite load.
+  await expect(page.locator('[data-finder-preview] h3')).toHaveText(fileName, {
+    timeout: 20_000,
+  });
   await expect(firstFile).toHaveAttribute('aria-pressed', 'true');
 });
 

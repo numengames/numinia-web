@@ -1,6 +1,6 @@
 {
   "name": "@numinia/state",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "description": "Numinia state core — the write path's vendor-independent heart (ADR-018). Git-as-database primitives: SHA-conditional entity files, fail-closed config, WinterCG-pure.",
   "license": "MIT",
   "type": "module",

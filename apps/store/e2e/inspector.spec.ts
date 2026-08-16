@@ -9,7 +9,8 @@ import { buildTriangleGlb } from './support/triangle-glb';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/inspector/');
-  await page.waitForSelector('[data-inspector]');
+  // The beacon guarantees the file handler is attached (hydration race).
+  await page.waitForSelector('[data-inspector][data-hydrated]');
 });
 
 test('renders a local GLB and reports its statistics', async ({ page }) => {

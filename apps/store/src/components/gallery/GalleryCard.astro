@@ -1,5 +1,6 @@
 ---
 import type { Asset, SupportedLocale } from '@numinia/domain';
+import { thumbSrc } from '../../lib/thumbs';
 
 interface Props {
   asset: Asset;
@@ -14,7 +15,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   <article class="tarjeta reveal">
     {
       asset.thumbnailUrl ? (
-        <img src={asset.thumbnailUrl} alt="" loading="lazy" width="280" height="280" />
+        <img src={thumbSrc(asset.id, asset.thumbnailUrl)} alt="" loading="lazy" decoding="async" width="280" height="280" />
       ) : (
         <div class="placeholder" aria-hidden="true">
           VRM

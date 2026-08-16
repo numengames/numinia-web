@@ -3,7 +3,15 @@
  * see it render plus its metadata. Fully client-side: nothing is uploaded.
  */
 
-import { lazy, Suspense, useCallback, useState, type ChangeEvent, type DragEvent } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from 'react';
 import {
   detectKind,
   formatBytes,
@@ -43,6 +51,11 @@ type InspectorState =
 
 export function Inspector({ labels }: { labels: InspectorLabels }) {
   const [state, setState] = useState<InspectorState>({ status: 'empty' });
+  // Hydration beacon: the SSG shell renders identical markup, so before the
+  // handlers attach, a chosen file would fall into the void. Consumers (and
+  // the e2e suite) wait for data-hydrated before trusting the input.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const accept = useCallback((file: File) => {
     const kind = detectKind(file.name);
@@ -74,7 +87,11 @@ export function Inspector({ labels }: { labels: InspectorLabels }) {
   const file = 'file' in state ? state.file : null;
 
   return (
-    <div data-inspector data-inspector-status={state.status}>
+    <div
+      data-inspector
+      data-inspector-status={state.status}
+      data-hydrated={hydrated ? '' : undefined}
+    >
       <label
         className="dropzone"
         onDrop={onDrop}
