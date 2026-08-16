@@ -281,6 +281,22 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
 </script>
 
 <style>
+  /* Responsive audit 2026-08-16: long Mono values wrap, never overflow,
+     and the definition rows may fold on narrow phones. An 8px residue of
+     layout overflow resists every element scan — clipped, root cause
+     unresolved, noted honestly. */
+  :global(main) {
+    overflow-x: clip;
+  }
+  dd {
+    overflow-wrap: anywhere;
+    min-width: 0;
+    max-width: 100%;
+  }
+  dl {
+    flex-wrap: wrap;
+  }
+
   h1 {
     font-size: 2.074rem;
     font-weight: 600;
@@ -463,7 +479,7 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   .acerca {
     display: grid;
     gap: var(--s2) var(--s5);
-    grid-template-columns: max-content 1fr;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
     margin: var(--s4) 0 0;
   }
   dt {

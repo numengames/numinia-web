@@ -22,6 +22,11 @@ const PAGES = [
   '/es/city/',
   '/es/archive/',
   '/',
+  // Responsive-audit offenders of 2026-08-16, pinned so they never return:
+  // an underscore-heavy asset name, code-heavy docs, a markdown table.
+  '/archive/ndg-019d3f89-3aca-7631-b541-054596bb1de6/',
+  '/docs/developers/',
+  '/docs/about/ardrive/',
 ] as const;
 
 const VIEWPORTS = [

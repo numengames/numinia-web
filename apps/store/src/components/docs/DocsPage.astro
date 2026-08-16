@@ -75,6 +75,39 @@ const description =
 </BaseLayout>
 
 <style>
+  /* Responsive audit 2026-08-16: wide content scrolls inside its own box —
+     the page never scrolls sideways (house rule). Grid children default to
+     min-width:auto, which lets content blow the column open — the pre can
+     only scroll once every ancestor may shrink. */
+  .layout > :global(*) {
+    min-width: 0;
+  }
+  .pager {
+    flex-wrap: wrap;
+  }
+  .pager :global(a) {
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  article :global(pre) {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  article :global(code) {
+    overflow-wrap: anywhere;
+  }
+  article :global(table) {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  nav {
+    min-width: 0;
+  }
+  nav :global(a) {
+    overflow-wrap: anywhere;
+  }
+
   .layout {
     display: grid;
     grid-template-columns: minmax(11rem, 1fr) minmax(0, 3fr);

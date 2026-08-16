@@ -102,7 +102,15 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
 
   return (
     <figure data-viewer-status={status} data-viewer-loaded={status === 'ready' ? 'true' : 'false'}>
-      <canvas ref={canvasRef} width={480} height={480} aria-label="3D model preview" />
+      <canvas
+        ref={canvasRef}
+        width={480}
+        height={480}
+        // The GL buffer stays 480²; CSS scales it into narrow viewports —
+        // a canvas wider than the phone was the top responsive offender.
+        style={{ maxWidth: '100%', height: 'auto' }}
+        aria-label="3D model preview"
+      />
       <figcaption>{CAPTIONS[status]}</figcaption>
     </figure>
   );

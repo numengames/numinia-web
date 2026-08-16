@@ -88,6 +88,21 @@ const description = asset.description || `${asset.format.toUpperCase()} · CC0 �
 </BaseLayout>
 
 <style>
+  /* Responsive audit 2026-08-16: previews shrink into the column, and
+     asset names full of underscores may break anywhere — a 774px H1 was
+     the page's widest element on a 360px phone. */
+  article :global(h1),
+  article {
+    overflow-wrap: anywhere;
+  }
+  /* Previews shrink into the column. */
+  article :global(img),
+  article :global(video),
+  article :global(audio) {
+    max-width: 100%;
+    height: auto;
+  }
+
   h1 {
     font-size: 2.488rem;
     font-weight: 600;

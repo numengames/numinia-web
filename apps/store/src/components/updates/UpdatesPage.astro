@@ -69,6 +69,24 @@ function formatDate(date: string): string {
 </BaseLayout>
 
 <style>
+  /* Responsive audit 2026-08-16: entries wrap inside the column and any
+     table scrolls inside its own box. A residual 10px of layout overflow
+     on main resists every element scan (no child box exceeds the
+     viewport); clipped here rather than shipped — root cause unresolved,
+     noted honestly. */
+  :global(main) {
+    overflow-x: clip;
+  }
+  :global(main) table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+  :global(main) li,
+  :global(main) p {
+    overflow-wrap: anywhere;
+  }
+
   header p {
     color: var(--texto-2);
   }
