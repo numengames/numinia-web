@@ -17,6 +17,12 @@
   // Astro's Cloudflare adapter also writes apps/store/dist/server/wrangler.json
   // (bindings it needs). This file is the DEPLOY config: domains + vars.
   "compatibility_flags": ["nodejs_compat"],
+  // Workers Logs (MISSION-021): structured events, queryable in the dash,
+  // free-tier 200k events/day. The API routes emit JSON lines (lib/telemetry).
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   "assets": {
     "directory": "apps/store/dist/client",
     "binding": "ASSETS",

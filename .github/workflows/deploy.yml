@@ -158,6 +158,12 @@ jobs:
           check /es/     200
           # 401 (not 503) proves the Worker secrets are loaded and auth fails closed.
           check /api/auth/session 401
+          # The walls (MISSION-025): _headers applied by the assets layer.
+          csp=$(curl -s -I --max-time 20 https://numinia.com/es/ | tr -d '\r' | grep -i '^content-security-policy:' || true)
+          echo "$csp" | grep -q "frame-ancestors 'none'" || { echo "::error::CSP missing on static pages"; exit 1; }
+          curl -s -I --max-time 20 https://numinia.com/es/ | tr -d '\r' | grep -qi '^x-content-type-options: nosniff' || { echo "::error::nosniff missing"; exit 1; }
+          sess=$(curl -s -I --max-time 20 https://numinia.com/es/lap/session/ | tr -d '\r' | grep -i '^content-security-policy:' || true)
+          echo "$sess" | grep -q 'wss:' || { echo "::error::session CSP not relaxed — login would break"; exit 1; }
       - name: Deploy summary
         if: always()
         run: |

@@ -100,6 +100,39 @@ const urlFor = (target: SupportedLocale): string =>
     <script>
       import '../scripts/metrics';
     </script>
+    <script is:inline>
+      /* Client error beacon (MISSION-022): uncaught errors reach the Worker
+         log. Operations, not analytics — no identity, capped at 3 per page
+         so a render loop can never become a beacon flood. */
+      (function () {
+        var sent = 0;
+        function report(message, source) {
+          if (sent >= 3) return;
+          sent += 1;
+          try {
+            navigator.sendBeacon(
+              '/api/telemetry',
+              new Blob(
+                [
+                  JSON.stringify({
+                    message: String(message || 'unknown').slice(0, 500),
+                    source: String(source || '').slice(0, 300),
+                    path: location.pathname.slice(0, 300),
+                  }),
+                ],
+                { type: 'application/json' },
+              ),
+            );
+          } catch (ignored) {}
+        }
+        addEventListener('error', function (event) {
+          report(event.message, (event.filename || '') + ':' + (event.lineno || 0));
+        });
+        addEventListener('unhandledrejection', function (event) {
+          report((event.reason && event.reason.message) || 'unhandled rejection', 'promise');
+        });
+      })();
+    </script>
     <script is:inline set:html={khepriMotion} />
   </body>
 </html>
