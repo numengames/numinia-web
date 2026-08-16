@@ -39,7 +39,10 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
       alpha: true,
       preserveDrawingBuffer: true,
     });
-    renderer.setSize(480, 480);
+    // updateStyle=false: setSize was writing inline width/height:480px AFTER
+    // our CSS, so max-width shrank the box but the fixed height stretched the
+    // model. The buffer stays 480²; the CSS below owns the layout box.
+    renderer.setSize(480, 480, false);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     const scene = new THREE.Scene();
@@ -137,7 +140,13 @@ export function ModelViewer({ url, kind }: ModelViewerProps) {
         height={480}
         // The GL buffer stays 480²; CSS scales it into narrow viewports —
         // a canvas wider than the phone was the top responsive offender.
-        style={{ maxWidth: '100%', height: 'auto' }}
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          height: 'auto',
+          aspectRatio: '1 / 1',
+          display: 'block',
+        }}
         aria-label="3D model preview"
       />
       <figcaption>

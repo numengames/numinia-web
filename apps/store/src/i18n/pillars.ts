@@ -67,7 +67,7 @@ export const LAP_MESSAGES: Readonly<Record<SupportedLocale, LapMessages>> = {
     statusTitle: 'Estado',
     statusBody:
       'La entrada al L.A.P. requiere ciudadanía. La identidad soberana (Web2 → Web3) está en construcción: cuando se abra, empezarás como Nómada y cruzarás la Sesión Cero para hacerte Ciudadano.',
-    updatesNote: 'Mientras tanto, puedes seguir el progreso de la plataforma en Actualizaciones.',
+    updatesNote: 'Mientras tanto, puedes seguir el progreso de la plataforma en Updates.',
   },
   en: {
     lapTitle: 'L.A.P.',
@@ -93,7 +93,7 @@ export const LAP_MESSAGES: Readonly<Record<SupportedLocale, LapMessages>> = {
     statusTitle: 'ステータス',
     statusBody:
       'L.A.P.への入場には市民権が必要です。ソブリンID(Web2→Web3)は構築中:公開されたら、放浪者として始まり、セッションゼロを越えて市民になります。',
-    updatesNote: 'それまでの間、プラットフォームの進捗は更新履歴で確認できます。',
+    updatesNote: 'それまでの間、プラットフォームの進捗は Updates で確認できます。',
   },
   ko: {
     lapTitle: 'L.A.P.',
@@ -106,7 +106,7 @@ export const LAP_MESSAGES: Readonly<Record<SupportedLocale, LapMessages>> = {
     statusTitle: '상태',
     statusBody:
       'L.A.P. 입장에는 시민권이 필요합니다. 주권 신원(Web2→Web3)은 구축 중입니다. 열리면 유랑자로 시작해 세션 제로를 거쳐 시민이 됩니다.',
-    updatesNote: '그동안 플랫폼 진행 상황은 업데이트에서 확인할 수 있습니다.',
+    updatesNote: '그동안 플랫폼 진행 상황은 Updates에서 확인할 수 있습니다.',
   },
   'pt-br': {
     lapTitle: 'L.A.P.',
@@ -119,6 +119,6 @@ export const LAP_MESSAGES: Readonly<Record<SupportedLocale, LapMessages>> = {
     statusTitle: 'Status',
     statusBody:
       'Entrar no L.A.P. requer cidadania. A identidade soberana (Web2 → Web3) está em construção: quando abrir, você começará como Nômade e cruzará a Sessão Zero para se tornar Cidadão.',
-    updatesNote: 'Enquanto isso, acompanhe o progresso da plataforma em Atualizações.',
+    updatesNote: 'Enquanto isso, acompanhe o progresso da plataforma em Updates.',
   },
 };

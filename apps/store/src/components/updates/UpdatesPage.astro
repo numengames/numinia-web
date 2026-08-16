@@ -51,6 +51,7 @@ function formatDate(date: string): string {
             {update.version}
             {index === 0 && <span class="tag tag-latest">{t.latestLabel}</span>}
             <time>{formatDate(update.date)}</time>
+            {update.missions?.map((mission) => <span class="tag tag-mission">{mission}</span>)}
           </h2>
           <ul>
             {update.entries.map((entry) => (
@@ -108,14 +109,24 @@ function formatDate(date: string): string {
     list-style: none;
     padding: 0;
   }
-  /* The timeline is a signal line: seafoam hairline. */
+  /* Oracle 2026-08-16: each version is its own §9.4 tarjeta; the seafoam
+     hairline survives as the card's signal edge. */
   ol > li {
+    background: var(--superficie);
+    border: 1px solid var(--linea);
     border-left: 2px solid var(--verdemar);
-    padding: 0 0 var(--s4) var(--s4);
-    margin: 0;
+    border-radius: var(--radio-marco);
+    padding: var(--s4);
+    margin: 0 0 var(--s4);
   }
   h2 {
     font-size: 1rem;
+    margin-top: 0;
+    /* Version, tags and time wrap as a row on narrow screens — nothing overlaps. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s1) var(--s2);
   }
   /* Versions and dates are measured: Mono tabular (§4.2). */
   time {
@@ -124,7 +135,6 @@ function formatDate(date: string): string {
     color: var(--texto-3);
     font-size: 0.8rem;
     font-weight: 400;
-    margin-left: var(--s2);
   }
   ul {
     list-style: none;
@@ -157,7 +167,11 @@ function formatDate(date: string): string {
   /* Khepri §9.2: emphasis as outlined etiqueta — amber flips per mode, AA in both. */
   .tag-latest {
     color: var(--ambar);
-    margin-left: var(--s2);
+  }
+  /* Mission ids: measured references, quiet ink, no minimum width. */
+  .tag-mission {
+    min-width: 0;
+    margin-right: 0;
   }
   .tag-planned,
   .tag-research {

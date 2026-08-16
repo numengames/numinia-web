@@ -17,7 +17,7 @@ The digital goods you find here are the shared building blocks of that universe 
 
 ## Core Principle: File Over App
 
-The data is the product, not the app. All asset metadata lives in open JSON files on GitHub, and binaries are stored on CDN and permanent storage (Arweave). If numinia.store disappears, the files remain — fork the data, build your own viewer.
+The data is the product, not the app. All asset metadata lives in open JSON files on GitHub, and binaries are stored on CDN and permanent storage (Arweave). If numinia.com disappears, the files remain — fork the data, build your own viewer.
 
 ## Supported Formats
 

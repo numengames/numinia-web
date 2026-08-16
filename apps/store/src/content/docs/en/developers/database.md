@@ -74,7 +74,7 @@ Every asset entry follows this structure:
 
 Format: `ndg-{uuid-v7}` (RFC 9562, timestamp-sortable, 122 bits entropy).
 
-See [ID_SYSTEM.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/ID_SYSTEM.md) for the full specification.
+Asset ids follow **UUID v7** ([RFC 9562](https://www.rfc-editor.org/rfc/rfc9562)) — time-ordered, collision-free.
 
 ## Fetch Data
 
@@ -88,6 +88,6 @@ const avatars = await res.json();
 Or via the API:
 
 ```
-GET https://numinia.store/api/assets
-GET https://numinia.store/api/assets?search=avatar
+# The legacy numinia.store API is retired — fetch the raw JSON directly:
+GET https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/avatars/numinia-avatars.json
 ```

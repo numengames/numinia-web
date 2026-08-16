@@ -77,4 +77,22 @@ const ANCHORS = [
     background: var(--superficie);
     border-bottom: 1px solid var(--linea-f);
   }
+  /* Oracle 2026-08-16: on phones the wrapped rows rode over the chapter text.
+     One scrolling row instead — names never stack, the bar stays one line tall. */
+  @media (max-width: 40rem) {
+    .capitulos {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      gap: var(--s3);
+      scrollbar-width: none;
+    }
+    .capitulos::-webkit-scrollbar {
+      display: none;
+    }
+    .capitulos a {
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+  }
 </style>

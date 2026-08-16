@@ -211,7 +211,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Botín',
       seasons: 'Temporadas',
       stats: 'Estadísticas',
-      updates: 'Novedades',
+      updates: 'Updates',
       settings: 'Ajustes',
     },
     sheet: {
@@ -480,7 +480,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '戦利品',
       seasons: 'シーズン',
       stats: '統計',
-      updates: '更新情報',
+      updates: 'Updates',
       settings: '設定',
     },
     sheet: {
@@ -609,7 +609,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '전리품',
       seasons: '시즌',
       stats: '통계',
-      updates: '업데이트',
+      updates: 'Updates',
       settings: '설정',
     },
     sheet: {
@@ -736,7 +736,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Espólio',
       seasons: 'Temporadas',
       stats: 'Estatísticas',
-      updates: 'Novidades',
+      updates: 'Updates',
       settings: 'Configurações',
     },
     sheet: {

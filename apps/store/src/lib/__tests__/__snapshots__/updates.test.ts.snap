@@ -3,7 +3,33 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
-    "date": "2026-08-16 12:30",
+    "date": "2026-08-16 06:55",
+    "entries": [
+      {
+        "text": "The 3D viewer keeps its square: models no longer stretch when the screen narrows",
+        "type": "FIX",
+      },
+      {
+        "text": "This timeline now tells the truth: every hour is the sealing commit, in real UTC, and versions carry their mission ids",
+        "type": "FIX",
+      },
+      {
+        "text": "Docs healed: dead legacy links replaced, tables dressed in the house style, developer pages tell the current story",
+        "type": "FIX",
+      },
+      {
+        "text": "One veil for all the art — the nine images now share the same luminance band",
+        "type": "UPD",
+      },
+      {
+        "text": "The login widget wears Khepri in Diurno and Nocturno, and the city chapters ride one scrolling row on phones",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.38.0",
+  },
+  {
+    "date": "2026-08-16 06:12",
     "entries": [
       {
         "text": "The models wear their textures again — the walls learned that embedded textures travel as blobs",
@@ -21,7 +47,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.37.0",
   },
   {
-    "date": "2026-08-16 11:00",
+    "date": "2026-08-16 05:52",
     "entries": [
       {
         "text": "The 3D viewer works again on numinia.com — model files now travel through our own door",
@@ -39,17 +65,20 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.36.0",
   },
   {
-    "date": "2026-08-16 09:00",
+    "date": "2026-08-16 05:19",
     "entries": [
       {
         "text": "The city reads your preferences: a dark system gets Nocturno, your browser language finds its door on first visit — and your own choice always wins",
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-029",
+    ],
     "version": "v0.35.0",
   },
   {
-    "date": "2026-08-16 08:00",
+    "date": "2026-08-16 05:00",
     "entries": [
       {
         "text": "The city watches itself: structured Worker logs, a browser error beacon, and an hourly night watch that raises its own alarm",
@@ -64,10 +93,14 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-021",
+      "MISSION-028",
+    ],
     "version": "v0.34.0",
   },
   {
-    "date": "2026-08-16 06:30",
+    "date": "2026-08-16 04:07",
     "entries": [
       {
         "text": "The Archive loses four fifths of its weight: baked 480px thumbnails replace full-size originals (2.4MB → 468KB)",
@@ -82,10 +115,14 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "FIX",
       },
     ],
+    "missions": [
+      "MISSION-017",
+      "MISSION-018",
+    ],
     "version": "v0.33.0",
   },
   {
-    "date": "2026-08-16 03:00",
+    "date": "2026-08-15 23:28",
     "entries": [
       {
         "text": "The census desk opens in the management zone: look a wallet up, grant a rank, watch it enter history",
@@ -100,10 +137,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-016",
+    ],
     "version": "v0.32.0",
   },
   {
-    "date": "2026-08-16 02:00",
+    "date": "2026-08-15 23:09",
     "entries": [
       {
         "text": "The census arrives (ADR-018): ranks the city grants are remembered, and your session carries them from login",
@@ -114,20 +154,28 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-015",
+      "MISSION-016",
+      "ADR-018",
+    ],
     "version": "v0.31.0",
   },
   {
-    "date": "2026-08-16 01:30",
+    "date": "2026-08-15 22:40",
     "entries": [
       {
         "text": "The chrome learns to travel light: on phones it takes two tight rows, a third less screen before the city appears",
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-014",
+    ],
     "version": "v0.30.0",
   },
   {
-    "date": "2026-08-16 01:00",
+    "date": "2026-08-15 22:27",
     "entries": [
       {
         "text": "The character sheet exports to PDF: the print dialog hands you the file, clean sheet only",
@@ -138,10 +186,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-013",
+    ],
     "version": "v0.29.0",
   },
   {
-    "date": "2026-08-16 00:30",
+    "date": "2026-08-15 22:18",
     "entries": [
       {
         "text": "Portals of Numinia: the city map with its 14 open worlds around the Agora Plaza, from the domain model",
@@ -156,10 +207,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-012",
+    ],
     "version": "v0.28.0",
   },
   {
-    "date": "2026-08-15 20:30",
+    "date": "2026-08-15 18:15",
     "entries": [
       {
         "text": "The management zone opens for Oracles: the whole archive in one table, sortable and searchable",
@@ -174,10 +228,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-011",
+    ],
     "version": "v0.27.0",
   },
   {
-    "date": "2026-08-15 20:15",
+    "date": "2026-08-15 17:45",
     "entries": [
       {
         "text": "The player area looks like one: your citizenship card, the scarab in pixels, seals and prisma at a glance",
@@ -191,7 +248,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.26.0",
   },
   {
-    "date": "2026-08-15 19:45",
+    "date": "2026-08-15 17:35",
     "entries": [
       {
         "text": "Settings: appearance, language, which panel sections you keep, and what your rank grants",
@@ -206,10 +263,14 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-010",
+      "MISSION-002",
+    ],
     "version": "v0.25.0",
   },
   {
-    "date": "2026-08-15 19:15",
+    "date": "2026-08-15 17:10",
     "entries": [
       {
         "text": "The Manual opens in the Codex: the founding role-playing text, chapter by chapter",
@@ -224,10 +285,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-009",
+    ],
     "version": "v0.24.0",
   },
   {
-    "date": "2026-08-15 18:45",
+    "date": "2026-08-15 16:15",
     "entries": [
       {
         "text": "The L.A.P. sidebar folds to an icon rail — every section wears its Phosphor glyph",
@@ -237,7 +301,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.23.0",
   },
   {
-    "date": "2026-08-15 18:15",
+    "date": "2026-08-15 15:55",
     "entries": [
       {
         "text": "The L.A.P. becomes a platform: sidebar, character sheet, codex — open to every Nomad",
@@ -256,10 +320,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-008",
+    ],
     "version": "v0.22.0",
   },
   {
-    "date": "2026-08-15 17:45",
+    "date": "2026-08-15 14:52",
     "entries": [
       {
         "text": "The scarab signs the page: Khepri closes every footer, as the house rule commands",
@@ -273,7 +340,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.21.0",
   },
   {
-    "date": "2026-08-15 17:00",
+    "date": "2026-08-15 14:39",
     "entries": [
       {
         "text": "The City becomes one chronicle: four chapters in a single scroll, from the Seed to the Game",
@@ -292,10 +359,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-007",
+    ],
     "version": "v0.20.0",
   },
   {
-    "date": "2026-08-15 16:30",
+    "date": "2026-08-15 14:13",
     "entries": [
       {
         "text": "The platform wears Khepri: the Numen Games design system, in Diurno and Nocturno",
@@ -314,10 +384,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-006",
+    ],
     "version": "v0.19.0",
   },
   {
-    "date": "2026-08-15 14:30",
+    "date": "2026-08-15 12:15",
     "entries": [
       {
         "text": "Progressive identity spike: enter with Google, an email code, a passkey, or your own wallet (MISSION-002 Step 0)",
@@ -336,10 +409,13 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "missions": [
+      "MISSION-002",
+    ],
     "version": "v0.18.0",
   },
   {
-    "date": "2026-08-15 11:45",
+    "date": "2026-08-15 08:48",
     "entries": [
       {
         "text": "Three pillars: La Ciudad (the Numinia narrative), Assets hub, and L.A.P.",
@@ -382,10 +458,15 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "UPD",
       },
     ],
+    "missions": [
+      "MISSION-001",
+      "MISSION-003",
+      "MISSION-004",
+    ],
     "version": "v0.17.0",
   },
   {
-    "date": "2026-08-14 21:00",
+    "date": "2026-08-14 20:08",
     "entries": [
       {
         "text": "Full platform rebuild: Astro + Turborepo monorepo (code razed, design preserved)",
@@ -403,6 +484,9 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "text": "Hermetic builds from committed catalog snapshots (File Over App)",
         "type": "UPD",
       },
+    ],
+    "missions": [
+      "MISSION-000",
     ],
     "version": "v0.16.0",
   },

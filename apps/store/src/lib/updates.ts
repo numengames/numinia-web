@@ -16,15 +16,44 @@ interface UpdateEntry {
 
 export interface UpdateVersion {
   readonly version: string;
+  /** Sealing commit timestamp, true UTC (git is the source — no invented hours). */
   readonly date: string;
+  /** Mission/ADR ids sealed by this version, shown as chips on the card. */
+  readonly missions?: readonly string[];
   readonly entries: readonly UpdateEntry[];
 }
 
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.38.0',
+    date: '2026-08-16 06:55',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The 3D viewer keeps its square: models no longer stretch when the screen narrows',
+      },
+      {
+        type: 'FIX',
+        text: 'This timeline now tells the truth: every hour is the sealing commit, in real UTC, and versions carry their mission ids',
+      },
+      {
+        type: 'FIX',
+        text: 'Docs healed: dead legacy links replaced, tables dressed in the house style, developer pages tell the current story',
+      },
+      {
+        type: 'UPD',
+        text: 'One veil for all the art — the nine images now share the same luminance band',
+      },
+      {
+        type: 'UPD',
+        text: 'The login widget wears Khepri in Diurno and Nocturno, and the city chapters ride one scrolling row on phones',
+      },
+    ],
+  },
+  {
     version: 'v0.37.0',
-    date: '2026-08-16 12:30',
+    date: '2026-08-16 06:12',
     entries: [
       {
         type: 'FIX',
@@ -42,7 +71,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.36.0',
-    date: '2026-08-16 11:00',
+    date: '2026-08-16 05:52',
     entries: [
       {
         type: 'FIX',
@@ -60,7 +89,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.35.0',
-    date: '2026-08-16 09:00',
+    date: '2026-08-16 05:19',
+    missions: ['MISSION-029'],
     entries: [
       {
         type: 'NEW',
@@ -70,7 +100,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.34.0',
-    date: '2026-08-16 08:00',
+    date: '2026-08-16 05:00',
+    missions: ['MISSION-021', 'MISSION-028'],
     entries: [
       {
         type: 'NEW',
@@ -88,7 +119,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.33.0',
-    date: '2026-08-16 06:30',
+    date: '2026-08-16 04:07',
+    missions: ['MISSION-017', 'MISSION-018'],
     entries: [
       {
         type: 'UPD',
@@ -106,7 +138,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.32.0',
-    date: '2026-08-16 03:00',
+    date: '2026-08-15 23:28',
+    missions: ['MISSION-016'],
     entries: [
       {
         type: 'NEW',
@@ -124,7 +157,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.31.0',
-    date: '2026-08-16 02:00',
+    date: '2026-08-15 23:09',
+    missions: ['MISSION-015', 'MISSION-016', 'ADR-018'],
     entries: [
       {
         type: 'NEW',
@@ -138,7 +172,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.30.0',
-    date: '2026-08-16 01:30',
+    date: '2026-08-15 22:40',
+    missions: ['MISSION-014'],
     entries: [
       {
         type: 'UPD',
@@ -148,7 +183,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.29.0',
-    date: '2026-08-16 01:00',
+    date: '2026-08-15 22:27',
+    missions: ['MISSION-013'],
     entries: [
       {
         type: 'NEW',
@@ -162,7 +198,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.28.0',
-    date: '2026-08-16 00:30',
+    date: '2026-08-15 22:18',
+    missions: ['MISSION-012'],
     entries: [
       {
         type: 'NEW',
@@ -180,7 +217,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.27.0',
-    date: '2026-08-15 20:30',
+    date: '2026-08-15 18:15',
+    missions: ['MISSION-011'],
     entries: [
       {
         type: 'NEW',
@@ -198,7 +236,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.26.0',
-    date: '2026-08-15 20:15',
+    date: '2026-08-15 17:45',
     entries: [
       {
         type: 'UPD',
@@ -212,7 +250,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.25.0',
-    date: '2026-08-15 19:45',
+    date: '2026-08-15 17:35',
+    missions: ['MISSION-010', 'MISSION-002'],
     entries: [
       {
         type: 'NEW',
@@ -230,7 +269,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.24.0',
-    date: '2026-08-15 19:15',
+    date: '2026-08-15 17:10',
+    missions: ['MISSION-009'],
     entries: [
       {
         type: 'NEW',
@@ -248,7 +288,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.23.0',
-    date: '2026-08-15 18:45',
+    date: '2026-08-15 16:15',
     entries: [
       {
         type: 'UPD',
@@ -258,7 +298,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.22.0',
-    date: '2026-08-15 18:15',
+    date: '2026-08-15 15:55',
+    missions: ['MISSION-008'],
     entries: [
       {
         type: 'NEW',
@@ -280,7 +321,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.21.0',
-    date: '2026-08-15 17:45',
+    date: '2026-08-15 14:52',
     entries: [
       {
         type: 'UPD',
@@ -294,7 +335,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.20.0',
-    date: '2026-08-15 17:00',
+    date: '2026-08-15 14:39',
+    missions: ['MISSION-007'],
     entries: [
       {
         type: 'NEW',
@@ -316,7 +358,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.19.0',
-    date: '2026-08-15 16:30',
+    date: '2026-08-15 14:13',
+    missions: ['MISSION-006'],
     entries: [
       {
         type: 'NEW',
@@ -338,7 +381,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.18.0',
-    date: '2026-08-15 14:30',
+    date: '2026-08-15 12:15',
+    missions: ['MISSION-002'],
     entries: [
       {
         type: 'NEW',
@@ -360,7 +404,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.17.0',
-    date: '2026-08-15 11:45',
+    date: '2026-08-15 08:48',
+    missions: ['MISSION-001', 'MISSION-003', 'MISSION-004'],
     entries: [
       {
         type: 'NEW',
@@ -379,7 +424,8 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   },
   {
     version: 'v0.16.0',
-    date: '2026-08-14 21:00',
+    date: '2026-08-14 20:08',
+    missions: ['MISSION-000'],
     entries: [
       {
         type: 'NEW',

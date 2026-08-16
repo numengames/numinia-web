@@ -100,6 +100,27 @@ const description =
     display: block;
     overflow-x: auto;
     max-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: var(--s3) 0 var(--s4);
+  }
+  /* Docs UX pass 2026-08-16: markdown tables arrived bare — dress them as
+     §9.4 measured surfaces: hairline grid, amber Mono etiqueta headers. */
+  article :global(th),
+  article :global(td) {
+    border: 1px solid var(--linea);
+    padding: var(--s1) var(--s2);
+    text-align: left;
+    vertical-align: top;
+  }
+  article :global(th) {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ambar);
+    background: var(--superficie);
   }
   nav {
     min-width: 0;

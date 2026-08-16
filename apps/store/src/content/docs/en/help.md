@@ -11,17 +11,16 @@ Most assets are CC0 (public domain) — check the license field on each asset pa
 
 ## Building something?
 
-All data is free to use. Fetch assets via API or directly from the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
+All data is free to use — fetch it directly as JSON from the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
 ## Want to contribute?
 
-- **Add assets**: Upload via [admin panel](https://numinia.store/en/admin) or submit a PR to the data repo
-- **Improve the app**: See [CONTRIBUTING.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CONTRIBUTING.md)
-- **Report a bug**: [Open an issue](https://github.com/PabloFMM/numinia-digital-goods/issues)
-- **Security issue**: See [SECURITY.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/SECURITY.md)
+- **Add assets**: submit a PR to the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data)
+- **Improve the app**: the platform is rebuilt in the [numengames](https://github.com/numengames) organization — the code repository opens as the rebuild stabilizes
+- **Report a bug**: [open an issue on the data repository](https://github.com/PabloFMM/numinia-digital-goods-data/issues)
+- **Security issue**: contact us privately (see below) — please do not open a public issue
 
 ## Contact
 
-- X: [@numinia_store](https://x.com/numinia_store)
-- GitHub: [PabloFMM/numinia-digital-goods](https://github.com/PabloFMM/numinia-digital-goods)
+- GitHub: [numengames](https://github.com/numengames)
 - Web: [numen.games](https://numen.games)

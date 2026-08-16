@@ -1,29 +1,27 @@
 ---
 legacy: true
 title: 'Website Source Code'
-description: 'The Numinia Digital Goods platform is fully open source'
+description: 'Where the platform code lives and how to build on the open data'
 ---
 
 # Website Source Code
 
-The Numinia Digital Goods platform is fully open source. Built with Next.js 16, TypeScript, Three.js, and Tailwind CSS.
+The platform is being rebuilt as an Astro + TypeScript monorepo (Three.js, Tailwind CSS 4). The rebuild lives in the numengames organization and the repository opens as it stabilizes.
 
-[View Source Code →](https://github.com/PabloFMM/numinia-digital-goods)
+[numengames on GitHub →](https://github.com/numengames)
 
-## Quick Start
+## Build on the data instead
 
-```bash
-git clone https://github.com/PabloFMM/numinia-digital-goods.git
-cd numinia-digital-goods
-cp .env.example .env.local
-npm install
-npm run dev
-```
+While the app repository is private, everything needed to build a viewer of your
+own is already public: the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data)
+holds every catalog as plain JSON — see [Asset Database](../database/).
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CONTRIBUTING.md) for setup instructions and code guidelines.
+Improvements to the data (metadata fixes, new catalogs) are welcome as pull
+requests on the [data repository](https://github.com/PabloFMM/numinia-digital-goods-data).
 
 ## Architecture
 
-See [CLAUDE.md](https://github.com/PabloFMM/numinia-digital-goods/blob/main/CLAUDE.md) for the full architecture documentation, including File Over App philosophy, authentication flows, and storage strategy.
+File Over App: the JSON data is the product; binaries live on Arweave, R2 and
+IPFS; the site is static-first with islands only where interaction demands them.

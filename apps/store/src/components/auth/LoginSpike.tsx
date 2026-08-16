@@ -25,6 +25,7 @@ import {
   type LoginMethod,
   type LoginPhase,
 } from './LoginMethodGuide';
+import { WIDGET_THEMES, useModo } from './widget-theme';
 
 const clientId = import.meta.env.PUBLIC_THIRDWEB_CLIENT_ID as string | undefined;
 
@@ -71,6 +72,7 @@ function SessionPanel({ session, onLogout }: { session: SessionState; onLogout: 
 /** Inner component so thirdweb hooks run under ThirdwebProvider. */
 function SpikeInner({ client }: { client: ReturnType<typeof createThirdwebClient> }) {
   const [session, setSession] = useState<SessionState>({ status: 'loading' });
+  const modo = useModo();
   const activeWallet = useActiveWallet();
   const activeAccount = useActiveAccount();
   const { disconnect } = useDisconnect();
@@ -131,6 +133,7 @@ function SpikeInner({ client }: { client: ReturnType<typeof createThirdwebClient
         <ConnectEmbed
           client={client}
           wallets={wallets}
+          theme={WIDGET_THEMES[modo]}
           auth={{
             getLoginPayload: async ({ address, chainId }) => {
               const params = new URLSearchParams({ address, chainId: String(chainId) });
