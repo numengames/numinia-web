@@ -1,0 +1,19 @@
+Numinia Platform — multi-licensed monorepo
+Copyright (c) 2026 Numen Games S.L.
+
+This repository mixes licenses by directory, per Numinia canon C-005
+(docs/legal-book.md, adopted in ADR-019). The authoritative per-file map is
+REUSE.toml; full license texts live in LICENSES/.
+
+Summary of the map:
+
+  apps/*                       AGPL-3.0-only   (deployable apps that decide)
+  packages/*                   MIT             (libraries, SDKs, types, tokens)
+  docs/*, missions/, features/ CC-BY-4.0       (documentation, ADRs, specs)
+  khepri/, fixtures, data      CC0-1.0         (design system, data snapshots)
+  lore & brand                 All rights reserved (see REUSE.toml annotations)
+  third-party (fonts, icons)   their own licenses (OFL-1.1, MIT)
+
+Trademarks are governed by TRADEMARKS.md and are not licensed by any of the
+above. The digital goods served by the platform live in their own repository
+under their own CC0 terms.

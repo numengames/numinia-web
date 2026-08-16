@@ -2,7 +2,7 @@
   "name": "@numinia/store",
   "version": "0.39.0",
   "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "private": true,
   "scripts": {

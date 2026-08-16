@@ -1,0 +1,128 @@
+# REUSE.toml — per-directory license map (canon C-005, ADR-019).
+# When several annotations match a file, the LAST one wins; order runs
+# general → specific. `precedence = "closest"` lets a future in-file SPDX
+# header (Phase C) override its directory default.
+
+version = 1
+SPDX-PackageName = "numinia-web"
+SPDX-PackageSupplier = "Numen Games S.L."
+SPDX-PackageDownloadLocation = "https://github.com/numengames/numinia-web"
+
+# ── Default: root configs, scripts, CI, infra ────────────────────────────────
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "MIT"
+
+# ── Documentation: root .md files, docs/, missions, Gherkin specs ────────────
+[[annotations]]
+path = ["*.md", "docs/**", "missions/**", "features/**"]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# ── Seminal lore: unpublished narrative canon stays reserved ─────────────────
+[[annotations]]
+path = [
+  "docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md",
+  "docs/seminal/Welcome_to_Numinia.md",
+  "docs/seminal/About_Session_Zero.md",
+  "docs/seminal/Numinia_Brand_and_Culture.md",
+  "docs/seminal/Compendium_of_Attributes_and_Ranks_in_Numinia.md",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
+
+# ── Apps: deployable platform that decides (identity, progression, billing) ──
+[[annotations]]
+path = "apps/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "AGPL-3.0-only"
+
+# Data snapshots for hermetic builds are data, not code.
+[[annotations]]
+path = "apps/store/fixtures/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC0-1.0"
+
+# Site documentation content (rendered /docs/ pages, 5 locales).
+[[annotations]]
+path = "apps/store/src/content/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Pinned copy of the Khepri kit script (byte-identical, never edited).
+[[annotations]]
+path = "apps/store/src/scripts/khepri.js"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC0-1.0"
+
+# Deep lore embedded in app code (ADR-019 finding): code is AGPL, the
+# narrative text it carries stays reserved.
+[[annotations]]
+path = "apps/store/src/i18n/city-landing.ts"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "AGPL-3.0-only AND LicenseRef-Numen-AllRightsReserved"
+
+# ── Packages: libraries, SDKs, types, tokens ─────────────────────────────────
+[[annotations]]
+path = "packages/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "MIT"
+
+# Pinned copy of the Khepri kit CSS (byte-identical, never edited).
+[[annotations]]
+path = "packages/ui/src/khepri.css"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC0-1.0"
+
+# Third-party: Phosphor icon SVGs, self-hosted (regular weight).
+[[annotations]]
+path = "packages/ui/src/icons/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "Phosphor Icons (https://phosphoricons.com)"
+SPDX-License-Identifier = "MIT"
+
+# ── Khepri design system: CC0 by prior canon ─────────────────────────────────
+[[annotations]]
+path = "khepri/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC0-1.0"
+
+# Third-party fonts: Geist (Vercel/basement.studio) and Pixelify Sans.
+[[annotations]]
+path = "khepri/assets/fonts/**"
+precedence = "closest"
+SPDX-FileCopyrightText = [
+  "2023 Vercel, in collaboration with basement.studio",
+  "2021 The Pixelify Sans Project Authors",
+]
+SPDX-License-Identifier = "OFL-1.1"
+
+# Brand marks are reserved: assets/marca/ plus the wordmarks and logos at the
+# assets root (ADR-019 extends ruling 4's letter to honor its intent — CC0 is
+# irrevocable, brand must never fall into it by accident).
+[[annotations]]
+path = [
+  "khepri/assets/marca/**",
+  "khepri/assets/Khepri_Logo.svg",
+  "khepri/assets/Khepri_NG_Logo.svg",
+  "khepri/assets/NG_Logo.svg",
+  "khepri/assets/Numen_Games_Horizontal_Word.svg",
+  "khepri/assets/Numen_Games_Vertical_Word.svg",
+  "khepri/assets/Numen_Word.svg",
+  "khepri/assets/Numinia_Word.svg",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"

@@ -1,0 +1,11 @@
+All Rights Reserved — Numen Games S.L.
+
+Copyright (c) 2026 Numen Games S.L.
+
+The files declared under this license reference (lore, narrative, brand marks,
+and unpublished material) are NOT licensed for reuse. Publication in this
+repository or on numinia.com grants no rights: no copying, modification,
+redistribution, or derivative works, in whole or in part, without prior
+written permission from Numen Games S.L.
+
+Trademark use is governed separately by TRADEMARKS.md.

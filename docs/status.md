@@ -204,6 +204,9 @@ License DECIDED (2026-08-16, ADR-019): canon C-005 v1.1.0 adopted — `apps/*`
 AGPL-3.0-only, `packages/*` MIT, assets CC0-1.0, docs CC-BY-4.0, lore/brand
 reserved, declared per directory in REUSE.toml. D11 closed. SPDX headers
 (Phase C) and `reuse lint` in CI (Phase D) remain queued in ADR-019.
+The hardened gate's first catch lives in LEGAL_DEBT.md (DEBT-001): MetaMask
+SDK's ConsenSys license, tolerated ≤10k MAU, guarded out of dist/ by
+`licenses:guard`, exit at 5,000 MAU or first bundled byte.
 
 ## NEXT (groomed 2026-08-16 morning — board reconciled to reality)
 

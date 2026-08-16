@@ -59,6 +59,20 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   on the functional model, not narrative).
 - **No Apache-2.0 in production dependencies** at adoption time → no `NOTICE`
   file yet. The skeleton rule stands: the day one ships, NOTICE is created.
+- **The hardened gate's first catch — MetaMask SDK (DEBT-001):** exactly three
+  packages ship under the ConsenSys proprietary license with no `license`
+  field: `@metamask/sdk`, `@metamask/sdk-communication-layer`,
+  `@metamask/sdk-install-modal-web` (transitive via thirdweb). The license is
+  not purely non-commercial — its clause 3 defines use at **≤ 10,000 MAU** as
+  permitted "Non-Commercial Use", so Numinia operates inside the grant today.
+  But its notice/restriction propagation is **incompatible with AGPL-3.0-only**
+  the moment the code is distributed. Oracle ruling (2026-08-16): documented
+  exception with a mandatory exit — see [LEGAL_DEBT.md](../../LEGAL_DEBT.md)
+  DEBT-001 for thresholds (5,000 MAU or first `dist/` hit) and the EIP-6963 +
+  WalletConnect exit path. `scripts/license-guard.mjs` greps built output for
+  the ConsenSys copyright strings on every verify/CI run. A fourth UNKNOWN,
+  `@metamask/eth-json-rpc-provider@1.0.1`, turned out to be registry-declared
+  ISC with a field-less tarball — clarified, not excepted.
 
 ## Consequences
 

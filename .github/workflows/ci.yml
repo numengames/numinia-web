@@ -40,6 +40,8 @@ jobs:
           DATA_SOURCE: fixture
       - name: Acceptance (Gherkin)
         run: npm run test:acceptance
+      - name: License guard (DEBT-001 — no ConsenSys code in dist/)
+        run: npm run licenses:guard
       - name: Coverage artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
