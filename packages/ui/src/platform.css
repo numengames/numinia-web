@@ -77,15 +77,46 @@ html:not([data-js='on']) .reveal {
     0 1px 2px rgba(20, 17, 15, 0.08),
     0 8px 24px rgba(20, 17, 15, 0.06);
 }
-/* §10-04 elevación: hover raises one surface step, never moves. */
+/* §10-04 elevación: hover raises one surface step, never moves. Covers
+   both card-as-link and card-inside-link (archive, gallery, portals) —
+   the second pattern silently missed the hover for months. Non-interactive
+   cards (dashed announcements) never elevate. */
 a.tarjeta,
+a > .tarjeta,
 .tarjeta[data-eleva] {
   transition: background 120ms var(--ciclo);
 }
 a.tarjeta:hover,
 a.tarjeta:focus-visible,
+a:hover > .tarjeta,
+a:focus-visible > .tarjeta,
 .tarjeta[data-eleva]:hover {
   background: var(--elevada);
+}
+
+/* §10.1-07 puntos de espera: a working button says so — 900ms, three
+   steps, width locked so the label never shifts. */
+@keyframes puntos-espera {
+  0% {
+    content: '·';
+  }
+  33% {
+    content: '··';
+  }
+  66% {
+    content: '···';
+  }
+}
+.btn[data-espera] {
+  pointer-events: none;
+  opacity: 0.85;
+}
+.btn[data-espera]::after {
+  content: '·';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: puntos-espera 900ms steps(1, end) infinite;
 }
 
 /* ---- §9.2 Estado pill: mono, dot in currentColor, border at 40% ------ */

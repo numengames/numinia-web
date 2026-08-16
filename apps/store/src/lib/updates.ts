@@ -23,6 +23,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.36.0',
+    date: '2026-08-16 11:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The 3D viewer works again on numinia.com — model files now travel through our own door',
+      },
+      {
+        type: 'FIX',
+        text: 'Zero sideways scroll across all 138 pages — canvases, code blocks, tables and long names learned to fit',
+      },
+      {
+        type: 'UPD',
+        text: 'More of the house motion where it belongs: cards lift on hover everywhere, working buttons show their waiting dots',
+      },
+    ],
+  },
+  {
     version: 'v0.35.0',
     date: '2026-08-16 09:00',
     entries: [

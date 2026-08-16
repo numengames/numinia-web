@@ -1,6 +1,6 @@
 {
   "name": "@numinia/domain",
-  "version": "0.35.0",
+  "version": "0.36.0",
   "description": "Numinia domain model — the Functional Model layer. Framework-agnostic by decree (ADR-009): zod is the only runtime dependency.",
   "license": "MIT",
   "type": "module",

@@ -54,6 +54,8 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
   const [panel, setPanel] = useState<Panel>({ at: 'idle' });
   const [rank, setRank] = useState(ranks[0]?.id ?? 'citizen');
   const [note, setNote] = useState('');
+  /* §10.1-07: an async button wears the waiting dots while it works. */
+  const [busy, setBusy] = useState<'lookup' | 'grant' | null>(null);
 
   const lookup = async (): Promise<void> => {
     setNote('');
@@ -62,6 +64,7 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
       return;
     }
     setPanel({ at: 'loading' });
+    setBusy('lookup');
     try {
       const response = await fetch(`/api/admin/census?wallet=${encodeURIComponent(wallet.trim())}`);
       if (response.status === 403) return setPanel({ at: 'forbidden' });
@@ -71,11 +74,14 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
       setPanel({ at: 'ready', record: data.record });
     } catch {
       setPanel({ at: 'error' });
+    } finally {
+      setBusy(null);
     }
   };
 
   const grant = async (): Promise<void> => {
     setNote('');
+    setBusy('grant');
     try {
       const response = await fetch('/api/admin/census', {
         method: 'POST',
@@ -90,6 +96,8 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
       setNote(labels.granted);
     } catch {
       setNote(labels.failed);
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -110,6 +118,8 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
           className="btn btn-fantasma"
           onClick={() => void lookup()}
           data-metric="census-lookup"
+          data-espera={busy === 'lookup' ? '' : undefined}
+          disabled={busy !== null}
         >
           {labels.lookup}
         </button>
@@ -166,6 +176,8 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
               className="btn btn-primario"
               onClick={() => void grant()}
               data-metric="census-grant"
+              data-espera={busy === 'grant' ? '' : undefined}
+              disabled={busy !== null}
             >
               {labels.grant}
             </button>

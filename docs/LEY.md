@@ -22,6 +22,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | --------------------------------- | ------------------------------------------------------------- |
 | [CLAUDE.md](../CLAUDE.md)         | The constitution: what Numinia is, structure, non-negotiables |
 | [docs/glossary.md](./glossary.md) | Naming authority ES↔EN (ADR-012)                              |
+| [docs/conceptual-glossary.md](./conceptual-glossary.md) | Los 25 conceptos fundacionales |
 | [README.md](../README.md)         | First contact with the repository                             |
 
 ## Memory — what we decided and why
