@@ -169,8 +169,9 @@ test('the chrome compacts but never leaves; the final paragraph can be marked', 
 });
 
 test('el Narrador reads aloud and follows the sounding block', async ({ page }) => {
-  // Deterministic voice: a fake speechSynthesis that "speaks" instantly —
-  // the wiring (states, highlight, pace) is ours; the voice is the OS's.
+  // Deterministic voice through the script's test seam (__narradorSynth) —
+  // window.speechSynthesis itself is not replaceable in every engine, and
+  // headless WebKit must never touch the real voice stack.
   await page.addInitScript(() => {
     class FakeUtterance {
       text: string;
@@ -203,7 +204,7 @@ test('el Narrador reads aloud and follows the sounding block', async ({ page }) 
       getVoices: () => [{ lang: 'es-ES', name: 'Voz de prueba' }],
       addEventListener() {},
     };
-    Object.defineProperty(window, 'speechSynthesis', { value: fake });
+    (window as { __narradorSynth?: unknown }).__narradorSynth = fake;
     (window as { SpeechSynthesisUtterance?: unknown }).SpeechSynthesisUtterance = FakeUtterance;
   });
   await page.goto('/es/lap/codex/bienvenidos-a-numinia/');

@@ -23,13 +23,19 @@ function blockText(block: HTMLElement): string {
   return block.textContent?.trim() ?? '';
 }
 
+/** Test seam: e2e injects a deterministic double here — replacing the
+ * real `window.speechSynthesis` is not writable in every engine. */
+interface SynthWindow {
+  __narradorSynth?: SpeechSynthesis;
+}
+
 function initNarrator(
   root: HTMLElement,
   prose: HTMLElement,
   toggle: HTMLButtonElement,
   pace: HTMLButtonElement,
 ): void {
-  const synth = window.speechSynthesis;
+  const synth = (window as SynthWindow).__narradorSynth ?? window.speechSynthesis;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const blocks = [...prose.querySelectorAll<HTMLElement>('[id]')].filter(
     (block) => blockText(block) !== '',
@@ -37,20 +43,32 @@ function initNarrator(
   if (blocks.length === 0) return;
   toggle.hidden = false;
 
-  let rate = Number(localStorage.getItem(RATE_KEY)) || 1;
+  let rate = 1;
+  try {
+    rate = Number(localStorage.getItem(RATE_KEY)) || 1;
+  } catch {
+    /* storage denied: default pace */
+  }
   if (!RATES.includes(rate as (typeof RATES)[number])) rate = 1;
   let index = 0;
   let state: 'idle' | 'reading' | 'paused' = 'idle';
   let current: HTMLElement | null = null;
 
-  // Voices load async in some engines; prefer Spanish, es-ES first.
+  // LAZY on purpose: the platform voice stack must not be touched until
+  // the reader asks for it — some engines (headless WebKit without
+  // speech-dispatcher) misbehave on mere contact.
   let voice: SpeechSynthesisVoice | undefined;
+  let warmed = false;
   const pickVoice = (): void => {
     const voices = synth.getVoices().filter((option) => option.lang.startsWith('es'));
     voice = voices.find((option) => option.lang === 'es-ES') ?? voices[0];
   };
-  pickVoice();
-  synth.addEventListener?.('voiceschanged', pickVoice);
+  const warm = (): void => {
+    if (warmed) return;
+    warmed = true;
+    pickVoice();
+    synth.addEventListener?.('voiceschanged', pickVoice);
+  };
 
   const label = toggle.querySelector('.lbl');
   const sync = (): void => {
@@ -80,7 +98,11 @@ function initNarrator(
   };
 
   const stop = (): void => {
-    synth.cancel();
+    try {
+      synth.cancel();
+    } catch {
+      /* a broken voice cannot be more silent */
+    }
     state = 'idle';
     highlight(null);
     sync();
@@ -111,15 +133,24 @@ function initNarrator(
   };
 
   toggle.addEventListener('click', () => {
-    if (state === 'reading') {
-      synth.pause();
-      state = 'paused';
-    } else if (state === 'paused') {
-      synth.resume();
-      state = 'reading';
-    } else {
-      state = 'reading';
-      speakFrom(topVisibleIndex());
+    try {
+      if (state === 'reading') {
+        synth.pause();
+        state = 'paused';
+      } else if (state === 'paused') {
+        synth.resume();
+        state = 'reading';
+      } else {
+        warm();
+        state = 'reading';
+        speakFrom(topVisibleIndex());
+      }
+    } catch {
+      // The engine has no working voice: fold the control honestly.
+      state = 'idle';
+      toggle.hidden = true;
+      pace.hidden = true;
+      return;
     }
     sync();
   });
@@ -142,11 +173,19 @@ function initNarrator(
   });
 
   // Leaving the page must silence the voice — it belongs to the chapter.
-  addEventListener('pagehide', () => synth.cancel());
+  addEventListener('pagehide', () => {
+    if (warmed) synth.cancel();
+  });
   root.addEventListener('codex:silence', stop);
   sync();
 }
 
-if (codex && body && button && rateButton && 'speechSynthesis' in window) {
+if (
+  codex &&
+  body &&
+  button &&
+  rateButton &&
+  ('__narradorSynth' in window || 'speechSynthesis' in window)
+) {
   initNarrator(codex, body, button, rateButton);
 }

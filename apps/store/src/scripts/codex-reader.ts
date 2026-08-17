@@ -47,7 +47,9 @@ function topVisibleAnchor(): string {
   // rule alone made a chapter's final paragraphs unmarkable (Oracle report
   // 2026-08-18: they can never reach the top of the viewport).
   const doc = document.documentElement;
-  if (scrollY + innerHeight >= doc.scrollHeight - 8) {
+  // 24px slack: engines round scroll positions differently (WebKit keeps
+  // fractional pixels) and "within a line of the end" IS the end.
+  if (scrollY + innerHeight >= doc.scrollHeight - 24) {
     return blocks[blocks.length - 1]?.id ?? '';
   }
   for (const block of blocks) {
