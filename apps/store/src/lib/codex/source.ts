@@ -36,6 +36,11 @@ export interface Codex {
   readonly manifest: CodexManifest;
 }
 
+/** The whole canonical file, verbatim — the free .md download (D6). */
+export function codexSourceText(): string {
+  return codexRaw;
+}
+
 let cache: Codex | null = null;
 
 /** The v0.6.0 manual, split once per build from the canonical single file. */

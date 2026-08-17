@@ -15,16 +15,23 @@ import { dirname, join } from 'node:path';
 const LORE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-lore';
 const LORE_REF = process.env.LORE_REF ?? 'main';
 
-// manual.md feeds the legacy reader; manual-v0_6_0.md feeds the Codex
-// pipeline (MIS-085). The legacy pair retires with the old reader (Phase B).
+// The v0.6.0 manual feeds the Codex pipeline (MIS-085); the codex/ docs are
+// the edition matter (glossary, acknowledgments) rendered around it.
 const FILES = [
-  {
-    path: 'seminal/Numinia__El_juego_de_rol__manual_completo_.md',
-    target: join('apps/store', '.lore', 'manual.md'),
-  },
   {
     path: 'seminal/Numinia_Manual_del_juego_de_rol_v0_6_0.md',
     target: join('apps/store', '.lore', 'manual-v0_6_0.md'),
+    marker: 'CAPÍTULO',
+  },
+  {
+    path: 'codex/glosario.md',
+    target: join('apps/store', '.lore', 'codex', 'glosario.md'),
+    marker: '# Glosario',
+  },
+  {
+    path: 'codex/agradecimientos.md',
+    target: join('apps/store', '.lore', 'codex', 'agradecimientos.md'),
+    marker: '# Agradecimientos',
   },
 ];
 
@@ -43,8 +50,10 @@ for (const file of FILES) {
     process.exit(1);
   }
   const text = await response.text();
-  if (!text.includes('CAPÍTULO')) {
-    console.error(`fetch-lore: ${file.path} does not look like the manual (no CAPÍTULO markers).`);
+  if (!text.includes(file.marker)) {
+    console.error(
+      `fetch-lore: ${file.path} does not look right (marker "${file.marker}" missing).`,
+    );
     process.exit(1);
   }
   mkdirSync(dirname(file.target), { recursive: true });
