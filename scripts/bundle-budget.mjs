@@ -17,8 +17,13 @@ const BUDGETS = {
       2026-08-16 with a written reason (the budget's own doctrine): the
       M-022 error beacon (~450B) and the M-029 preference bootstrap (~550B)
       are sanctioned chrome — operations and accessibility, not feature
-      creep. The next raise needs its own paragraph. */
-  landingInlineScriptBytes: 9_000,
+      creep. Raised 9000→9500 on 2026-08-17: the v0.40.0 consent banner
+      bootstrap (~800B, Oracle-ordered D12 slice) runs during parse so
+      returning acceptors never see a flash — legally required chrome, not
+      feature creep; it shipped past the gate because only local `verify`
+      runs budgets. Landing sits at 9322B. The next raise needs its own
+      paragraph. */
+  landingInlineScriptBytes: 9_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
