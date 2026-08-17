@@ -168,7 +168,7 @@ const thaumaturges: House = {
 
 const legalCounsels: House = {
   id: 'legal-counsels',
-  branchId: 'jurists',
+  branchId: 'legates',
   guildId: 'procurators',
   name: {
     es: 'Conejos Legales',
@@ -188,7 +188,7 @@ const legalCounsels: House = {
 
 const heralds: House = {
   id: 'heralds',
-  branchId: 'jurists',
+  branchId: 'legates',
   guildId: 'procurators',
   name: {
     es: 'Heraldos',
@@ -206,16 +206,16 @@ const heralds: House = {
   },
 };
 
-const treasurers: House = {
-  id: 'treasurers',
+const mercurials: House = {
+  id: 'mercurials',
   branchId: 'syndics',
   guildId: 'procurators',
   name: {
-    es: 'Tesoreros',
-    en: 'Treasurers',
-    ja: '財務官',
-    ko: '재무관',
-    'pt-br': 'Tesoureiros',
+    es: 'Mercuriales',
+    en: 'Mercurials',
+    ja: '商務官',
+    ko: '상무관',
+    'pt-br': 'Mercuriais',
   },
   description: {
     es: 'Administran la economía.',
@@ -226,16 +226,16 @@ const treasurers: House = {
   },
 };
 
-const councillors: House = {
-  id: 'councillors',
+const intendants: House = {
+  id: 'intendants',
   branchId: 'syndics',
   guildId: 'procurators',
   name: {
-    es: 'Concejales',
-    en: 'Councillors',
-    ja: '評議員',
-    ko: '평의원',
-    'pt-br': 'Vereadores',
+    es: 'Intendentes',
+    en: 'Intendants',
+    ja: '内務官',
+    ko: '내무관',
+    'pt-br': 'Intendentes',
   },
   description: {
     es: 'Gestionan los asuntos organizativos internos.',
@@ -408,15 +408,15 @@ const scholars: Branch = {
   houses: [hierophants, thaumaturges],
 };
 
-const jurists: Branch = {
-  id: 'jurists',
+const legates: Branch = {
+  id: 'legates',
   guildId: 'procurators',
   name: {
-    es: 'Juristas',
-    en: 'Jurists',
-    ja: '法学者',
-    ko: '법학자',
-    'pt-br': 'Juristas',
+    es: 'Legados',
+    en: 'Legates',
+    ja: 'レガドス',
+    ko: '레가도스',
+    'pt-br': 'Legados',
   },
   description: {
     es: 'Operan dentro del marco legal y judicial.',
@@ -445,7 +445,7 @@ const syndics: Branch = {
     ko: '누미니아의 경제적·사회적 이익을 보호한다.',
     'pt-br': 'Protegem os interesses econômicos e sociais de Numinia.',
   },
-  houses: [treasurers, councillors],
+  houses: [mercurials, intendants],
 };
 
 const seraphim: Branch = {
@@ -543,7 +543,7 @@ export const GUILDS: readonly Guild[] = [
       ko: '실용적인 정신 — 조직, 관리, 행정, 법률.',
       'pt-br': 'As mentes pragmáticas: organização, gestão, administração e direito.',
     },
-    branches: [jurists, syndics],
+    branches: [legates, syndics],
   },
   {
     id: 'sentinels',

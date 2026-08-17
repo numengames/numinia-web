@@ -12,8 +12,9 @@
 > The English column is the code name; the `id` column is the exact string-literal used in `packages/domain` unions.
 > No type file may use a term absent from this glossary. Changing a term requires changing this file first.
 >
-> Version: 1.0.0 — 2026-08-14 · Status: **RATIFIED by the Oracle** (all 6 ⚠ proposals accepted; the Oracle flagged the taxonomy as revisitable in a future session — changes go through this file first, then code).
+> Version: 1.1.0 — 2026-08-18 · Status: **RATIFIED by the Oracle** (all 6 ⚠ proposals accepted; the Oracle flagged the taxonomy as revisitable in a future session — changes go through this file first, then code).
 > Items marked ⚠️ record the ratified proposal and its alternatives, kept for that future revisit.
+> v1.1.0 (2026-08-18): the Procurators tree follows the v0.6.0 manual (ADR-007, manual-canonical): Juristas→**Legados** (`legates`), Tesoreros→**Mercuriales** (`mercurials`), Concejales→**Intendentes** (`intendants`). The old names remain here as history only.
 
 Sources: `docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md` (manual, canonical), `About_Session_Zero.md`, `Compendium_of_Attributes_and_Ranks_in_Numinia.md`, `Role_structure_in_the_Numinia_system.md`, `Welcome_to_Numinia.md`, plus resolutions ADR-011/012/013.
 
@@ -36,7 +37,7 @@ Sources: `docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md` (manual, c
 | Alchemists  | Ingenieros  | Engineers   | `engineers`   |
 | Exegetes    | Cronistas   | Chroniclers | `chroniclers` |
 | Exegetes    | Eruditos    | Scholars    | `scholars`    |
-| Procurators | Juristas    | Jurists     | `jurists`     |
+| Procurators | Legados     | Legates     | `legates`     |
 | Procurators | Síndicos    | Syndics     | `syndics`     |
 | Sentinels   | Serafines   | Seraphim    | `seraphim`    |
 | Sentinels   | Arcángeles  | Archangels  | `archangels`  |
@@ -53,10 +54,10 @@ Sources: `docs/seminal/Numinia__El_juego_de_rol__manual_completo_.md` (manual, c
 | Chroniclers | Bardos          | Bards          | `bards`          | Synchronic (news, chronicles)                                                                                                                                                       |
 | Scholars    | Hierofantes     | Hierophants    | `hierophants`    | **B.1** — specialists in distinct fields (ADR-012)                                                                                                                                  |
 | Scholars    | Taumaturgos     | Thaumaturges   | `thaumaturges`   | **B.2** — shape culture, develop new ideas (ADR-012)                                                                                                                                |
-| Jurists     | Conejos Legales | Legal Counsels | `legal-counsels` | ⚠️ ES is wordplay ("Conejos"/rabbits ≈ "Consejos"/counsels). EN "Legal Counsels" (constitution) drops the pun; literal "Legal Rabbits" keeps it. Proposed: keep **Legal Counsels**. |
-| Jurists     | Heraldos        | Heralds        | `heralds`        | Represent the city in legal/diplomatic matters                                                                                                                                      |
-| Syndics     | Tesoreros       | Treasurers     | `treasurers`     | Economy                                                                                                                                                                             |
-| Syndics     | Concejales      | Councillors    | `councillors`    | Internal organization                                                                                                                                                               |
+| Legates     | Conejos Legales | Legal Counsels | `legal-counsels` | ⚠️ ES is wordplay ("Conejos"/rabbits ≈ "Consejos"/counsels). EN "Legal Counsels" (constitution) drops the pun; literal "Legal Rabbits" keeps it. Proposed: keep **Legal Counsels**. |
+| Legates     | Heraldos        | Heralds        | `heralds`        | Represent the city in legal/diplomatic matters                                                                                                                                      |
+| Syndics     | Mercuriales     | Mercurials     | `mercurials`     | Economy (manual v0.6.0 rename, ex Tesoreros)                                                                                                                                                                             |
+| Syndics     | Intendentes     | Intendants     | `intendants`     | Internal organization (manual v0.6.0 rename, ex Concejales)                                                                                                                                                               |
 | Seraphim    | Capitanes       | Captains       | `captains`       | Supervise & manage structure                                                                                                                                                        |
 | Seraphim    | Guardianes      | Guardians      | `guardians`      | Norm compliance, community conflicts                                                                                                                                                |
 | Archangels  | Sanadores       | Healers        | `healers`        | Mental care & wellbeing                                                                                                                                                             |
