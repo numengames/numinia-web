@@ -1,0 +1,116 @@
+---
+/**
+ * Combined Terms + Cookies acceptance banner (open-questions D12, slice 1).
+ *
+ * Non-blocking by Oracle decision (2026-08-17): Layer 0 stays browsable and
+ * indexable; the banner sits at the viewport foot until accepted. Body copy
+ * is LOREM IPSUM until the Oracle delivers the legal wording — bump
+ * CONSENT_VERSION in lib/consent.ts when it lands, so every placeholder
+ * acceptance is re-asked.
+ *
+ * No JS: the banner stays visible (conservative — the notice never hides
+ * without a recorded acceptance). With JS: the inline script removes it for
+ * returning acceptors before paint, and Accept sets the cookie and tells
+ * the metrics bootstrap consent is granted.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { CONSENT_COOKIE, CONSENT_VERSION, consentCookieValue } from '../../lib/consent';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<aside
+  id="consent-banner"
+  aria-label={t.consentRegion}
+  data-consent-cookie={CONSENT_COOKIE}
+  data-consent-version={CONSENT_VERSION}
+  data-consent-value={consentCookieValue()}
+>
+  <p>{t.consentText}</p>
+  <div class="actions">
+    <a href={`${prefix}/legal/terms/`} data-metric="consent-terms">{t.legalTerms}</a>
+    <a href={`${prefix}/legal/cookies/`} data-metric="consent-cookies">{t.legalCookies}</a>
+    <button type="button" class="btn-primario" data-metric="consent-accept">
+      {t.consentAccept}
+    </button>
+  </div>
+</aside>
+
+<script is:inline>
+  /* Sync on purpose: runs during parse so returning acceptors never see a
+     flash. Kept dependency-free — the single source of names/values is the
+     data-* contract rendered from lib/consent.ts. */
+  (() => {
+    const banner = document.getElementById('consent-banner');
+    if (!banner) return;
+    const accepted = document.cookie
+      .split(';')
+      .some((part) => part.trim() === banner.dataset.consentCookie + '=' + banner.dataset.consentVersion);
+    if (accepted) {
+      banner.remove();
+      return;
+    }
+    banner.querySelector('[data-metric="consent-accept"]')?.addEventListener('click', () => {
+      document.cookie = banner.dataset.consentValue ?? '';
+      document.dispatchEvent(new CustomEvent('numinia:consent-granted'));
+      banner.remove();
+    });
+  })();
+</script>
+
+<style>
+  /* Elevated surface at the viewport foot — never a veil (§9.8 modals keep
+     the veil; a notice must not block Layer 0). */
+  aside {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 40;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3) var(--s5);
+    padding: var(--s3) var(--s4);
+    padding-bottom: calc(var(--s3) + env(safe-area-inset-bottom, 0px));
+    background: var(--elevada);
+    border-top: 1px solid var(--linea-f);
+    font-size: 0.875rem;
+  }
+  p {
+    margin: 0;
+    flex: 1 1 24rem;
+    color: var(--texto-2);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    margin-left: auto;
+  }
+  a {
+    color: var(--enlace);
+    text-decoration: none;
+    /* 44px touch target without inflating the visual line (§9.8). */
+    padding: var(--s3) 0;
+  }
+  a:hover,
+  a:focus-visible {
+    text-decoration: underline;
+  }
+  button {
+    font: inherit;
+    font-weight: 600;
+    border: 0;
+    border-radius: var(--radio-control);
+    padding: var(--s2) var(--s5);
+    min-height: 44px;
+    cursor: pointer;
+    transition: background 120ms var(--ciclo);
+  }
+</style>

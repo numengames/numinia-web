@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.40.0',
+    date: '2026-08-17 14:35',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The city posts its notice at the gate: a combined Terms and Cookies banner on every page — placeholder words for now, real acceptance already recorded, and the metrics only listen once you have said yes',
+      },
+    ],
+  },
+  {
     version: 'v0.39.2',
     date: '2026-08-17 09:30',
     entries: [

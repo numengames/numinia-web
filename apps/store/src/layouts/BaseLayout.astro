@@ -7,6 +7,7 @@ import khepriMotion from '../scripts/khepri.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import SiteHeader from '../components/chrome/SiteHeader.astro';
 import SiteFooter from '../components/chrome/SiteFooter.astro';
+import ConsentBanner from '../components/chrome/ConsentBanner.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -109,6 +110,7 @@ const urlFor = (target: SupportedLocale): string =>
       <slot />
     </main>
     {chrome && <SiteFooter locale={locale} />}
+    {chrome && <ConsentBanner locale={locale} />}
     <script>
       import '../scripts/metrics';
     </script>

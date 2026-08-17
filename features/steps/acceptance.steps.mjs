@@ -343,6 +343,25 @@ Then('every page footer shows the current version linking to the updates page', 
   }
 });
 
+Then('every sampled page carries the consent banner with its legal links', async function () {
+  for (const page of [
+    'index.html',
+    'gallery/index.html',
+    'es/archive/index.html',
+    'ja/index.html',
+  ]) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    const banner = /<aside[^>]*data-consent-version="[^"]+"[\s\S]*?<\/aside>/.exec(html);
+    assert.ok(banner, `${page}: consent banner missing`);
+    assert.ok(
+      banner[0].includes('data-metric="consent-accept"'),
+      `${page}: accept control missing`,
+    );
+    assert.ok(/href="[^"]*\/legal\/terms\/"/.test(banner[0]), `${page}: terms link missing`);
+    assert.ok(/href="[^"]*\/legal\/cookies\/"/.test(banner[0]), `${page}: cookies link missing`);
+  }
+});
+
 Then('the updates page shows the incoming roadmap', async function () {
   const html = await readFile(path.join(this.distDir, 'updates', 'index.html'), 'utf8');
   assert.ok(html.includes('data-roadmap'), 'roadmap section missing');

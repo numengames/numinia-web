@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-17 14:35",
+    "entries": [
+      {
+        "text": "The city posts its notice at the gate: a combined Terms and Cookies banner on every page — placeholder words for now, real acceptance already recorded, and the metrics only listen once you have said yes",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.40.0",
+  },
+  {
     "date": "2026-08-17 09:30",
     "entries": [
       {

@@ -2,9 +2,12 @@
  * Page metrics bootstrap — one delegated listener for every data-metric
  * element plus an automatic page_view (funnel foundation, ADR-016).
  *
- * Phase 0 posture: memory transport + granted consent. Nothing leaves the
- * device — there is no backend and no deploy. Before ANY public deploy this
- * must switch to a consent banner + the chosen transport (open-questions D12).
+ * Consent now comes from the combined Terms+Cookies banner (D12 slice 1):
+ * granted only when the versioned acceptance cookie is present, or the
+ * moment the visitor accepts (the banner dispatches the event below).
+ * Pre-consent events are DROPPED, never buffered (@numinia/analytics
+ * design). Transport stays memory — nothing leaves the device; the
+ * transport decision is the remaining half of D12.
  */
 
 import {
@@ -15,9 +18,12 @@ import {
   trackPageView,
   type AnalyticsContext,
 } from '@numinia/analytics';
+import { parseConsent } from '../lib/consent';
 
 const transport = memoryTransport();
-const analytics = createAnalytics({ transport, consent: createConsent('granted') });
+const consent = createConsent(parseConsent(document.cookie) ? 'granted' : 'unknown');
+document.addEventListener('numinia:consent-granted', () => consent.set('granted'));
+const analytics = createAnalytics({ transport, consent });
 
 const lang = document.documentElement.lang;
 const context: AnalyticsContext = {

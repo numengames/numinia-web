@@ -14,6 +14,10 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     Then every legal page exists under every locale prefix
     And every legal page carries the draft banner
 
+  Scenario: Every page offers the combined consent banner
+    Given the store application has been built
+    Then every sampled page carries the consent banner with its legal links
+
   Scenario: The footer advertises the current version linking to the timeline
     Given the store application has been built
     Then every page footer shows the current version linking to the updates page

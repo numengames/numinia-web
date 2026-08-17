@@ -44,6 +44,11 @@ export interface ChromeMessages {
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
+  /** Combined Terms + Cookies banner (D12). Body is lorem ipsum until the
+      Oracle delivers the real legal wording — labels are real. */
+  readonly consentRegion: string;
+  readonly consentText: string;
+  readonly consentAccept: string;
 }
 
 export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> = {
@@ -69,6 +74,10 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
+    consentRegion: 'Aviso legal',
+    consentText:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — al usar la plataforma aceptas los Términos y condiciones y la Política de cookies.',
+    consentAccept: 'Aceptar',
   },
   en: {
     navHome: 'Home',
@@ -92,6 +101,10 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
+    consentRegion: 'Legal notice',
+    consentText:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — by using the platform you accept the Terms and conditions and the Cookies policy.',
+    consentAccept: 'Accept',
   },
   ja: {
     navHome: 'ホーム',
@@ -115,6 +128,10 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
+    consentRegion: '法的なお知らせ',
+    consentText:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — プラットフォームの利用により、利用規約とクッキーポリシーに同意したことになります。',
+    consentAccept: '同意する',
   },
   ko: {
     navHome: '홈',
@@ -138,6 +155,10 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
+    consentRegion: '법적 고지',
+    consentText:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — 플랫폼을 이용하면 이용약관과 쿠키 정책에 동의하는 것입니다.',
+    consentAccept: '동의',
   },
   'pt-br': {
     navHome: 'Início',
@@ -161,6 +182,10 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',
+    consentRegion: 'Aviso legal',
+    consentText:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — ao usar a plataforma você aceita os Termos e condições e a Política de cookies.',
+    consentAccept: 'Aceitar',
   },
 };
 
