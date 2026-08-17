@@ -1,14 +1,18 @@
 ---
 /**
- * Download cards (D6): the book always travels free — no login, ever. The
- * .md is live today; PDF and EPUB arrive with the export pipeline (Phase C)
- * and say so honestly instead of pretending to be buttons.
+ * Download cards (D6): the book always travels free — no login, ever.
+ * .md straight from the canonical file; PDF and EPUB are the print/Kindle
+ * editions the export pipeline (scripts/build-exports.mjs) drops into
+ * /descargas/ at build time.
  */
+import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+
 interface Props {
   /** Chapter slug for a per-chapter download card; omit for book-only. */
   slug?: string | undefined;
 }
 const { slug } = Astro.props;
+const base = `Numinia_Manual_del_juego_de_rol_v${MANUAL_VERSION.replaceAll('.', '_')}`;
 ---
 
 <div class="descargas">
@@ -34,12 +38,22 @@ const { slug } = Astro.props;
       </a>
     )
   }
-  <span class="dcard pronto" aria-disabled="true">
+  <a
+    class="dcard"
+    href={`/descargas/${base}.pdf`}
+    download={`${base}.pdf`}
+    data-metric="codex-download-pdf"
+  >
     <span class="f">pdf</span>
-    <p class="d">Para imprimir. En el taller.</p>
-  </span>
-  <span class="dcard pronto" aria-disabled="true">
+    <p class="d">Para imprimir. Edición Diurno.</p>
+  </a>
+  <a
+    class="dcard"
+    href={`/descargas/${base}.epub`}
+    download={`${base}.epub`}
+    data-metric="codex-download-epub"
+  >
     <span class="f">epub</span>
-    <p class="d">Para tu Kindle. En el taller.</p>
-  </span>
+    <p class="d">Para tu Kindle o lector.</p>
+  </a>
 </div>

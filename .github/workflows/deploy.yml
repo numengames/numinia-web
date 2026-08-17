@@ -125,6 +125,13 @@ jobs:
           GITHUB_REPO_OWNER: PabloFMM
           GITHUB_REPO_NAME: numinia-digital-goods-data
           PUBLIC_THIRDWEB_CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
+      - name: Install Chromium (prints the PDF edition)
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/store
+      - name: Bake the free editions (PDF + EPUB from the real corpus — D6)
+        # The book always travels free: the export pipeline drops both files
+        # into dist/client/descargas/ so the Worker serves them as statics.
+        run: npm run exports:codex
       - name: Stamp the build with its own identity (/version.json)
         run: |
           printf '{"commit":"%s","builtAt":"%s"}\n' \

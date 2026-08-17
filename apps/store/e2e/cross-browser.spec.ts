@@ -117,6 +117,21 @@ test('a veiled chapter ships only its teaser, never the text', async ({ page, re
   await expect(page.locator('[data-metric="codex-gate-enter"]')).toBeVisible();
 });
 
+test('the book travels: PDF and EPUB editions download free (D6)', async ({ request }) => {
+  // Baked by scripts/build-exports.mjs into dist/client/descargas/ after
+  // every build — locally, in CI and on deploy. No login, ever.
+  const base = 'Numinia_Manual_del_juego_de_rol_v0_6_0';
+  const pdf = await request.get(`/descargas/${base}.pdf`);
+  expect(pdf.status()).toBe(200);
+  expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+  const epub = await request.get(`/descargas/${base}.epub`);
+  expect(epub.status()).toBe(200);
+  const bytes = await epub.body();
+  // EPUB handshake: a zip whose FIRST entry is the stored `mimetype`.
+  expect(bytes.subarray(0, 2).toString()).toBe('PK');
+  expect(bytes.subarray(30, 38).toString()).toBe('mimetype');
+});
+
 test('management data is refused without a session', async ({ request }) => {
   const response = await request.get('/api/admin/overview');
   expect(response.status()).toBe(403);

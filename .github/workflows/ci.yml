@@ -87,6 +87,15 @@ jobs:
         run: npx turbo run build --filter=@numinia/store
         env:
           DATA_SOURCE: fixture
+      - name: Bake the export editions (PDF + EPUB, fixture corpus — MIS-085 C)
+        run: npm run exports:codex
+        env:
+          DATA_SOURCE: fixture
+      - name: epubcheck (the EPUB must be a valid book, not just a zip)
+        run: |
+          curl -sSfL -o epubcheck.zip https://github.com/w3c/epubcheck/releases/download/v5.1.0/epubcheck-5.1.0.zip
+          unzip -q epubcheck.zip
+          java -jar epubcheck-5.1.0/epubcheck.jar apps/store/dist/client/descargas/*.epub
       - name: VRM rendering gate
         run: npm run e2e
 
