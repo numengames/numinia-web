@@ -162,8 +162,13 @@ jobs:
           check /city/   200
           check /lap/    200
           check /es/     200
-          # 401 (not 503) proves the Worker secrets are loaded and auth fails closed.
+          # 401 alone does NOT prove auth is configured (the unconfigured
+          # path also answers 401) — the body must say the session is merely
+          # absent, and the login payload endpoint must actually answer.
           check /api/auth/session 401
+          session_body=$(curl -s --max-time 20 https://numinia.com/api/auth/session)
+          echo "$session_body" | grep -q 'No session' || { echo "::error::auth is NOT configured on the live Worker (body: $session_body)"; exit 1; }
+          check "/api/auth/login?address=0x0000000000000000000000000000000000000001" 200
           # The walls (MISSION-025): _headers applied by the assets layer.
           csp=$(curl -s -I --max-time 20 https://numinia.com/es/ | tr -d '\r' | grep -i '^content-security-policy:' || true)
           echo "$csp" | grep -q "frame-ancestors 'none'" || { echo "::error::CSP missing on static pages"; exit 1; }

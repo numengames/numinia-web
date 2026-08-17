@@ -7,6 +7,7 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { checkRate } from './lib/rate-limit';
+import { primeFromWorkerd } from './lib/runtime-env';
 import { capMessage, logEvent } from './lib/telemetry';
 
 /* MISSION-025: the walls. Static pages get these via public/_headers (the
@@ -71,6 +72,9 @@ const RATE_RULES: ReadonlyArray<{
 const RATE_WINDOW_MS = 60_000;
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Cloudflare: vars and secrets only exist on cloudflare:workers' env —
+  // the bundler freezes every process.env expression (lib/runtime-env.ts).
+  await primeFromWorkerd();
   const started = Date.now();
   const { pathname } = context.url;
   const method = context.request.method;

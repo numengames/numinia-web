@@ -21,6 +21,7 @@ import {
   type SessionPayload,
   type VerifyResult,
 } from '@numinia/auth';
+import { runtimeEnv } from '../runtime-env';
 
 const envSchema = z.object({
   THIRDWEB_SECRET_KEY: z.string().min(32, 'THIRDWEB_SECRET_KEY looks truncated'),
@@ -50,8 +51,11 @@ export function authConfigured(): boolean {
 function loadConfig(): typeof cached {
   if (cached) return cached;
   try {
-    const vendor = envSchema.parse(process.env);
-    const { sessionSecret } = parseAuthEnv(process.env);
+    // runtimeEnv, not process.env: the Cloudflare build freezes the bare
+    // expression to {} — secrets only exist behind globalThis at runtime.
+    const env = runtimeEnv();
+    const vendor = envSchema.parse(env);
+    const { sessionSecret } = parseAuthEnv(env);
     cached = {
       secretKey: vendor.THIRDWEB_SECRET_KEY,
       sessionSecret,

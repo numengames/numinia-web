@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.39.2',
+    date: '2026-08-17 09:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The Worker finally reads its own secrets: the bundler had frozen the environment to an empty page, so auth answered "not configured" forever — the city now asks workerd directly, and the deploy smoke test will never believe a hollow 401 again',
+      },
+    ],
+  },
+  {
     version: 'v0.39.1',
     date: '2026-08-17 08:03',
     entries: [

@@ -1,6 +1,6 @@
 {
   "name": "@numinia/store",
-  "version": "0.39.1",
+  "version": "0.39.2",
   "description": "numinia.store — spikes and proof-of-concept track of the Numinia platform.",
   "license": "AGPL-3.0-only",
   "type": "module",

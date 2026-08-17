@@ -7,6 +7,7 @@
  */
 
 import { GitStateStore, parseStateEnv } from '@numinia/state';
+import { runtimeEnv } from '../runtime-env';
 
 let cached: GitStateStore | null = null;
 
@@ -17,7 +18,9 @@ export function stateConfigured(): boolean {
 export function getStateStore(): GitStateStore | null {
   if (cached) return cached;
   try {
-    cached = new GitStateStore(parseStateEnv(process.env));
+    // runtimeEnv, not process.env: the Cloudflare build freezes the bare
+    // expression to {} — the census token only exists behind globalThis.
+    cached = new GitStateStore(parseStateEnv(runtimeEnv()));
     return cached;
   } catch {
     return null;
