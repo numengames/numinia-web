@@ -1,0 +1,48 @@
+---
+/**
+ * Glosario del Códex (§4.8): the 79 sourced terms as a definition list,
+ * open to everyone. Definitions come from the manual text only — the
+ * document itself says so in numinia-lore.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { loadCodexDoc, parseGlossary } from '../../../lib/codex/docs';
+import { viewerFrom } from '../../../lib/lap/gate';
+import CodexShell from './CodexShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+const { locale } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const viewer = await viewerFrom(Astro.cookies);
+const entries = parseGlossary(loadCodexDoc('glosario'));
+---
+
+<CodexShell
+  locale={locale}
+  title="Glosario — Códex de Numinia"
+  description="Los términos del mundo de Numinia, definidos exclusivamente desde el texto del manual."
+  path="/ codex / glosario"
+  showGateCta={viewer === null}
+  capActual="Glosario"
+>
+  <section class="hoja" aria-label="Glosario">
+    <p class="etq">Glosario del Códex</p>
+    <dl class="glosario">
+      {
+        entries.map((entry) => (
+          <>
+            <dt>{entry.term}</dt>
+            <dd>
+              {entry.definition}
+              {entry.source && <span class="fuente">{entry.source}</span>}
+            </dd>
+          </>
+        ))
+      }
+    </dl>
+    <nav class="pager" aria-label="Volver">
+      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">← Portada</a>
+    </nav>
+  </section>
+</CodexShell>

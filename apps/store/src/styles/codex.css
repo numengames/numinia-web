@@ -1,0 +1,1060 @@
+/**
+ * Codex book plane (MIS-085, Khepri EXTENSIÓN §7 — Oracle-validated).
+ * Adapted from the frozen mockup docs/design/codex_numinia_mockup_v2_diurno.html:
+ * the look, rhythm and components there are the spec. Diurno by default,
+ * paper grain in the background only, Alegreya for body, chrome stays sans.
+ * Every hex comes from Khepri §19.3 or the signed extension palette.
+ */
+
+@font-face {
+  font-family: 'Alegreya';
+  src: url('../../../../packages/ui/src/assets/fonts/Alegreya-Variable.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Alegreya';
+  src: url('../../../../packages/ui/src/assets/fonts/Alegreya-Italic-Variable.woff2')
+    format('woff2');
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Alegreya SC';
+  src: url('../../../../packages/ui/src/assets/fonts/AlegreyaSC-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Alegreya SC';
+  src: url('../../../../packages/ui/src/assets/fonts/AlegreyaSC-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+.codex {
+  /* tinta y papel — Diurno */
+  --papel: #fdf6ee;
+  --papel-prof: #f9ebdc;
+  --tinta: #14110f;
+  --tinta-2: #5a4f45;
+  /* AA floor: >=4.5:1 on both papers for the small tertiary text */
+  --tinta-3: #75695e;
+  --estructura: #7a5100;
+  --solar: #efa517;
+  --inter: #016e7d;
+  --inter-viva: #018ea1;
+  --linea: #c4b5a6;
+  --linea-tenue: #e4d6c4;
+  --grana: #b02330;
+  --serif: 'Alegreya', 'Iowan Old Style', Palatino, Georgia, serif;
+  --sc: 'Alegreya SC', 'Alegreya', serif;
+  --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --medida: 70ch;
+  --tam: 1.125rem;
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.29 0 0 0 0 0.25 0 0 0 0 0.20 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--serif);
+  font-size: var(--tam);
+  line-height: 1.72;
+  min-height: 100svh;
+  transition:
+    background 0.35s,
+    color 0.35s;
+}
+/* Nocturno del manual — conmutador propio, independiente del LAP (D13) */
+.codex.nocturno {
+  --papel: #14110f;
+  --papel-prof: #1e1a17;
+  --tinta: #f9ebdc;
+  --tinta-2: #c4b5a6;
+  /* AA floor: >=4.5:1 on both night papers */
+  --tinta-3: #97897d;
+  --estructura: #efa517;
+  --solar: #efa517;
+  --inter: #a6dad5;
+  --inter-viva: #a6dad5;
+  --linea: #3a332d;
+  --linea-tenue: #292420;
+  --grana: #d33440;
+}
+.codex::before {
+  /* el gramaje: grano de papel, solo fondo */
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: var(--grano);
+  opacity: 1;
+}
+.codex.nocturno::before {
+  opacity: 0.5;
+}
+.codex .lienzo,
+.codex header.chrome,
+.codex footer.pie {
+  position: relative;
+  z-index: 2;
+}
+.codex ::selection {
+  background: var(--solar);
+  color: #14110f;
+}
+.codex a {
+  color: var(--inter);
+}
+.codex :focus-visible {
+  outline: 2px solid var(--inter);
+  outline-offset: 3px;
+}
+.codex[data-tam='s'] {
+  --tam: 1rem;
+}
+.codex[data-tam='l'] {
+  --tam: 1.25rem;
+}
+.codex .lienzo {
+  padding-bottom: 64px;
+}
+
+/* ─── Cromo: se aparta al leer ─── */
+.codex .chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--linea-tenue);
+  font-family: var(--sans);
+  transition:
+    transform 0.3s ease,
+    background 0.35s;
+}
+.codex .chrome.oculto {
+  transform: translateY(-100%);
+}
+.codex .chrome .wm {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--tinta-2);
+  text-decoration: none;
+}
+.codex .chrome .path {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--tinta-3);
+  letter-spacing: 0.04em;
+}
+.codex .sp {
+  flex: 1;
+}
+.codex .cbtn {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--tinta-2);
+  background: none;
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  padding: 6px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.codex .cbtn:hover {
+  color: var(--inter);
+  border-color: var(--inter);
+}
+.codex .cbtn[aria-pressed='true'] {
+  color: var(--estructura);
+  border-color: var(--estructura);
+}
+.codex .cbtn svg {
+  width: 14px;
+  height: 14px;
+}
+.codex .cbtn.tinta {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--papel);
+}
+.codex .cbtn.tinta:hover {
+  opacity: 0.85;
+}
+.codex .tams {
+  display: inline-flex;
+  border: 1px solid var(--linea);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.codex .tams button {
+  font-family: var(--serif);
+  background: none;
+  border: 0;
+  color: var(--tinta-3);
+  cursor: pointer;
+  padding: 5px 9px;
+}
+.codex .tams button[aria-pressed='true'] {
+  color: var(--tinta);
+  background: var(--papel-prof);
+}
+.codex .tams button:nth-child(1) {
+  font-size: 0.72rem;
+}
+.codex .tams button:nth-child(2) {
+  font-size: 0.86rem;
+}
+.codex .tams button:nth-child(3) {
+  font-size: 1rem;
+}
+@media (max-width: 860px) {
+  .codex .chrome .path,
+  .codex .cbtn .lbl,
+  .codex .tams {
+    display: none;
+  }
+  .codex .cbtn {
+    padding: 6px 8px;
+  }
+}
+
+/* ─── Marcos de grabado (esquinas que se dibujan) ─── */
+.codex .marco {
+  position: absolute;
+  width: 74px;
+  height: 74px;
+  pointer-events: none;
+  color: var(--estructura);
+}
+.codex .marco svg {
+  width: 100%;
+  height: 100%;
+}
+.codex .marco path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+}
+.codex .dibujado .marco path {
+  animation: trazo 1.6s ease forwards;
+}
+.codex .dibujado .marco:nth-child(2) path {
+  animation-delay: 0.12s;
+}
+.codex .dibujado .marco:nth-child(3) path {
+  animation-delay: 0.24s;
+}
+.codex .dibujado .marco:nth-child(4) path {
+  animation-delay: 0.36s;
+}
+@keyframes trazo {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .codex .marco path {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
+.codex .marco.ne {
+  top: 14px;
+  left: 14px;
+}
+.codex .marco.no {
+  top: 14px;
+  right: 14px;
+  transform: scaleX(-1);
+}
+.codex .marco.se {
+  bottom: 14px;
+  left: 14px;
+  transform: scaleY(-1);
+}
+.codex .marco.so {
+  bottom: 14px;
+  right: 14px;
+  transform: scale(-1);
+}
+
+/* ─── Portada ─── */
+.codex .portada {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 110px 24px 70px;
+  position: relative;
+}
+.codex .portada .ed {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.4em;
+  color: var(--tinta-3);
+  text-transform: uppercase;
+}
+.codex .portada h1 {
+  font-family: var(--sc);
+  font-weight: 500;
+  font-size: clamp(3rem, 10.5vw, 6.8rem);
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+  margin: 0.32em 0 0.12em;
+  color: var(--tinta);
+}
+.codex .portada h1 span {
+  color: var(--estructura);
+}
+.codex .portada .sub {
+  font-style: italic;
+  font-size: clamp(1.02rem, 2.3vw, 1.3rem);
+  color: var(--tinta-2);
+  max-width: 36ch;
+}
+.codex .filete {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 40px 0;
+  color: var(--estructura);
+}
+.codex .filete::before,
+.codex .filete::after {
+  content: '';
+  height: 1px;
+  width: 96px;
+  display: block;
+  background: linear-gradient(90deg, transparent, var(--estructura));
+}
+.codex .filete::after {
+  background: linear-gradient(90deg, var(--estructura), transparent);
+}
+.codex .filete svg {
+  width: 30px;
+  height: 30px;
+}
+.codex .portada .aut {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  color: var(--tinta-2);
+}
+.codex .portada .aut b {
+  color: var(--tinta);
+  font-weight: 500;
+}
+.codex .portada .ver {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--tinta-3);
+  margin-top: 12px;
+  letter-spacing: 0.12em;
+}
+.codex .portada .baja {
+  position: absolute;
+  bottom: 24px;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  color: var(--tinta-3);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* ─── Bloques generales ─── */
+.codex .hoja {
+  max-width: var(--medida);
+  margin: 0 auto;
+  padding: 72px 24px;
+  position: relative;
+}
+.codex .etq {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--estructura);
+  margin-bottom: 24px;
+}
+
+/* Índice */
+.codex .toc {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.codex .toc li {
+  border-bottom: 1px solid var(--linea-tenue);
+}
+.codex .toc a {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 15px 4px;
+  text-decoration: none;
+  color: var(--tinta);
+  transition: color 0.15s;
+}
+.codex .toc a:hover {
+  color: var(--inter);
+}
+.codex .toc .n {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--estructura);
+  min-width: 2.2ch;
+}
+.codex .toc .t {
+  flex: 1;
+}
+.codex .toc .st {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  color: var(--tinta-3);
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+.codex .toc li.cerrado a {
+  color: var(--tinta-3);
+}
+.codex .toc svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ─── Capítulo con columna de margen ─── */
+.codex .pliego {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 80px 24px 30px;
+  position: relative;
+}
+.codex .pliego-int {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 56px;
+  max-width: var(--medida);
+  margin: 0 auto;
+}
+@media (min-width: 1200px) {
+  .codex .pliego-int {
+    grid-template-columns: minmax(0, var(--medida)) 220px;
+    max-width: none;
+    justify-content: center;
+  }
+}
+.codex .cuerpo {
+  min-width: 0;
+}
+.codex .margen {
+  display: none;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+  padding-top: 8px;
+}
+@media (min-width: 1200px) {
+  .codex .margen {
+    display: block;
+  }
+  /* At desktop the footnote lives in the margin column, not inline. */
+  .codex .cuerpo .nota-pie {
+    display: none;
+  }
+}
+.codex .nota-m {
+  border-left: 2px solid var(--linea);
+  padding-left: 14px;
+  margin-bottom: 34px;
+  line-height: 1.55;
+}
+.codex .nota-m .num,
+.codex .nota-pie .num {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--estructura);
+}
+.codex .glifo-m {
+  color: var(--estructura);
+  opacity: 0.65;
+  margin: 20px 0 34px;
+}
+.codex .glifo-m svg {
+  width: 34px;
+  height: 34px;
+}
+
+.codex .cap-abre {
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+  padding: 58px 20px;
+}
+.codex .cap-abre .num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.42em;
+  color: var(--estructura);
+  text-transform: uppercase;
+}
+.codex .cap-abre h2 {
+  font-family: var(--sc);
+  font-weight: 500;
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  letter-spacing: 0.05em;
+  margin: 0.4em 0 0.45em;
+}
+.codex .cap-abre .epi {
+  font-style: italic;
+  color: var(--tinta-2);
+  font-size: 0.98em;
+  max-width: 44ch;
+  margin: 0 auto;
+}
+
+/* ─── El cuerpo del texto ─── */
+.codex .cuerpo > p {
+  margin: 0 0 1.3em;
+}
+.codex .cuerpo > p:first-of-type::first-letter {
+  font-family: var(--sc);
+  font-size: 4.4em;
+  float: left;
+  line-height: 0.8;
+  padding: 0.05em 0.12em 0 0;
+  color: var(--estructura);
+}
+.codex .cuerpo h2,
+.codex .cuerpo h3,
+.codex .cuerpo h4,
+.codex .cuerpo h5 {
+  font-family: var(--sc);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  margin: 1.8em 0 0.7em;
+  scroll-margin-top: 70px;
+}
+.codex .cuerpo h2 {
+  font-size: 1.55em;
+}
+.codex .cuerpo h3 {
+  font-size: 1.25em;
+}
+.codex .cuerpo h4,
+.codex .cuerpo h5 {
+  font-size: 1.05em;
+  color: var(--tinta-2);
+}
+.codex .cuerpo ul {
+  margin: 0 0 1.3em;
+  padding-left: 1.4em;
+}
+.codex .cuerpo li {
+  margin-bottom: 0.45em;
+}
+.codex .cuerpo p[id],
+.codex .cuerpo div[id],
+.codex .cuerpo ul[id],
+.codex .cuerpo aside[id] {
+  scroll-margin-top: 70px;
+}
+.codex sup.nota-ref {
+  font-family: var(--mono);
+  font-size: 0.64em;
+  color: var(--inter);
+}
+.codex .nota-pie {
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+  border-left: 2px solid var(--linea);
+  padding-left: 14px;
+  margin: 0 0 1.3em;
+  line-height: 1.55;
+}
+
+/* Cuadro de lectura */
+.codex .lectura {
+  border: 1px solid var(--linea);
+  border-left: 3px solid var(--solar);
+  background: var(--papel-prof);
+  border-radius: 0 10px 10px 0;
+  padding: 26px 30px;
+  margin: 36px 0;
+  font-style: italic;
+  color: var(--tinta-2);
+  position: relative;
+}
+.codex .lectura::before {
+  content: 'LECTURA';
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.32em;
+  color: var(--estructura);
+  position: absolute;
+  top: -9px;
+  left: 22px;
+  background: var(--papel);
+  padding: 0 8px;
+}
+.codex .lectura p + p {
+  margin-top: 1em;
+}
+
+/* Lámina — hueco de ilustración pendiente */
+.codex .lamina {
+  margin: 50px 0;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--papel-prof);
+}
+.codex .lamina .arte-hueco {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border-bottom: 1px solid var(--linea-tenue);
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 12px,
+    color-mix(in srgb, var(--linea) 24%, transparent) 12px,
+    color-mix(in srgb, var(--linea) 24%, transparent) 13px
+  );
+}
+.codex .lamina figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+  padding: 12px 18px;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+  font-style: italic;
+}
+.codex .lamina .tec {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-style: normal;
+  letter-spacing: 0.2em;
+  color: var(--tinta-3);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Tabla numerada */
+.codex .tabla {
+  margin: 46px 0;
+  overflow-x: auto;
+}
+.codex .tabla table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.codex .tabla caption {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--estructura);
+  padding-bottom: 12px;
+}
+.codex .tabla th {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--estructura);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1.5px solid var(--linea);
+}
+.codex .tabla td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--linea-tenue);
+  color: var(--tinta-2);
+  vertical-align: top;
+}
+.codex .tabla td:first-child {
+  color: var(--tinta);
+  font-style: italic;
+}
+.codex .tabla tr:hover td {
+  background: var(--papel-prof);
+}
+
+/* ─── El Umbral ─── */
+.codex .umbral {
+  max-width: var(--medida);
+  margin: 20px auto 0;
+  padding: 0 24px 90px;
+  text-align: center;
+}
+.codex .velo {
+  position: relative;
+  text-align: left;
+  color: var(--tinta-3);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 90%);
+  mask-image: linear-gradient(180deg, #000, transparent 90%);
+  filter: blur(2.2px);
+  user-select: none;
+  pointer-events: none;
+  padding-top: 26px;
+}
+.codex .velo .num {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.42em;
+  color: var(--estructura);
+  text-transform: uppercase;
+  display: block;
+  text-align: center;
+}
+.codex .velo h3 {
+  font-family: var(--sc);
+  font-weight: 500;
+  font-size: 1.8em;
+  letter-spacing: 0.05em;
+  text-align: center;
+  margin: 0.4em 0 0.9em;
+  color: var(--tinta-2);
+}
+.codex .sello {
+  width: 100px;
+  height: 100px;
+  margin: -16px auto 24px;
+  border-radius: 50%;
+  border: 1px solid var(--estructura);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle at 50% 36%,
+    color-mix(in srgb, var(--solar) 16%, transparent),
+    transparent 70%
+  );
+  box-shadow: 0 0 12px rgba(239, 165, 23, 0.25);
+  position: relative;
+  z-index: 2;
+}
+.codex .sello svg {
+  width: 50px;
+  height: 50px;
+}
+.codex .umbral h4 {
+  font-family: var(--sc);
+  font-weight: 500;
+  font-size: 1.4em;
+  margin-bottom: 10px;
+}
+.codex .umbral .p {
+  color: var(--tinta-2);
+  font-style: italic;
+  max-width: 46ch;
+  margin: 0 auto 28px;
+}
+.codex .umbral .acciones {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  margin-top: 30px;
+}
+.codex .umbral .nota {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--tinta-3);
+  margin-top: 20px;
+  letter-spacing: 0.1em;
+}
+
+/* ─── Descargas ─── */
+.codex .descargas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+  font-family: var(--sans);
+}
+.codex .dcard {
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 14px 20px;
+  min-width: 150px;
+  text-align: left;
+  background: var(--papel);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.codex .dcard:hover {
+  border-color: var(--inter);
+}
+.codex .dcard .f {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  color: var(--estructura);
+  text-transform: uppercase;
+}
+.codex .dcard .d {
+  font-size: 0.8rem;
+  color: var(--tinta-2);
+  margin-top: 4px;
+}
+.codex .dcard.pronto {
+  cursor: default;
+  opacity: 0.55;
+}
+.codex .dcard.pronto:hover {
+  border-color: var(--linea);
+}
+
+/* ─── Pager del capítulo ─── */
+.codex .pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--medida);
+  margin: 40px auto 0;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--linea-tenue);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+.codex .pager a {
+  text-decoration: none;
+  max-width: 44ch;
+}
+
+/* ─── Cierre ─── */
+.codex .cierre {
+  border-top: 1px solid var(--linea-tenue);
+  margin-top: 30px;
+}
+.codex .glosario dt {
+  font-style: italic;
+  color: var(--estructura);
+  margin-top: 18px;
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  font-size: 1.05em;
+}
+.codex .glosario dd {
+  color: var(--tinta-2);
+  margin: 4px 0 0;
+}
+.codex .glosario .fuente {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--tinta-3);
+  margin-top: 4px;
+}
+.codex .gracias {
+  font-style: italic;
+  color: var(--tinta-2);
+}
+.codex .gracias.nombres {
+  color: var(--tinta);
+  margin-top: 14px;
+}
+.codex .colofon {
+  text-align: center;
+  padding: 56px 24px 90px;
+  font-family: var(--sans);
+}
+.codex .binaria {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  margin-bottom: 32px;
+  opacity: 0.6;
+}
+.codex .binaria i {
+  width: 5px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--linea);
+}
+.codex .binaria i.uno {
+  background: var(--estructura);
+}
+.codex .colofon .marca-cierre {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 16px;
+  border: 1px solid var(--linea);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--estructura);
+}
+.codex .colofon p {
+  font-size: 0.76rem;
+  color: var(--tinta-3);
+  line-height: 1.9;
+}
+.codex .colofon .firma {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.22em;
+  text-transform: lowercase;
+  color: var(--tinta-2);
+  margin-top: 14px;
+}
+
+/* ─── Pie corriente ─── */
+.codex .pie {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--linea-tenue);
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  color: var(--tinta-3);
+  text-transform: uppercase;
+  transition:
+    transform 0.3s ease,
+    background 0.35s;
+}
+.codex .pie.oculto {
+  transform: translateY(100%);
+}
+.codex .pie .cap-actual {
+  color: var(--tinta-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.codex .pie .luna {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tinta-2);
+}
+.codex .pie .luna svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Marcapáginas */
+.codex .marcado {
+  position: relative;
+}
+.codex .marcado::before {
+  content: '';
+  position: absolute;
+  left: -34px;
+  top: 0;
+  width: 15px;
+  height: 42px;
+  background: var(--solar);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+}
+@media (max-width: 900px) {
+  .codex .marcado::before {
+    left: -19px;
+    width: 11px;
+    height: 32px;
+  }
+}
+
+/* ─── Print: Diurno forzado, ritmo de papel compacto ─── */
+@media print {
+  .codex,
+  .codex.nocturno {
+    --papel: #fdf6ee;
+    --papel-prof: #f9ebdc;
+    --tinta: #14110f;
+    --tinta-2: #5a4f45;
+    --tinta-3: #8a7d72;
+    --estructura: #7a5100;
+    --solar: #efa517;
+    --inter: #016e7d;
+    --linea: #c4b5a6;
+    --linea-tenue: #e4d6c4;
+    background: #fff;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  .codex::before,
+  .codex .chrome,
+  .codex .pie,
+  .codex .umbral .acciones,
+  .codex .descargas,
+  .codex .pager,
+  .codex .baja {
+    display: none !important;
+  }
+  .codex .lienzo {
+    padding-bottom: 0;
+  }
+  .codex .portada {
+    min-height: auto;
+    padding: 60px 0;
+  }
+  .codex .pliego {
+    padding: 24px 0;
+  }
+  .codex .cap-abre {
+    padding: 24px 0;
+    margin-bottom: 24px;
+    break-after: avoid;
+  }
+  .codex .cuerpo h2,
+  .codex .cuerpo h3 {
+    break-after: avoid;
+  }
+  .codex .lectura,
+  .codex .lamina,
+  .codex .tabla {
+    break-inside: avoid;
+  }
+  .codex .lamina .arte-hueco {
+    min-height: 90px;
+  }
+}

@@ -1,0 +1,66 @@
+---
+/**
+ * One chapter route (D8: /lap/codex/[chapter-slug], unversioned). Open
+ * chapters read in full; a veiled chapter shows its teaser under the
+ * Umbral instead — and after the last open chapter the Umbral closes the
+ * view. Legacy capitulo-N ids redirect to the new slugs.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { loadCodex } from '../../../lib/codex/source';
+import { chapterPreview } from '../../../lib/codex/render';
+import { viewerFrom } from '../../../lib/lap/gate';
+import CodexCapitulo from './CodexCapitulo.astro';
+import CodexShell from './CodexShell.astro';
+import CodexUmbral from './CodexUmbral.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  slug: string;
+}
+const { locale, slug } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const { chapters, manifest } = loadCodex();
+
+// The page already resolved the route (redirects live there — only pages
+// may return a Response in Astro); an unknown slug here is a bug.
+const index = chapters.findIndex((entry) => entry.slug === slug);
+const chapter = chapters[index];
+if (!chapter) throw new Error(`CodexCapituloPage: unresolved slug "${slug}".`);
+
+const viewer = await viewerFrom(Astro.cookies);
+const veiled = chapter.access === 'gated' && viewer === null;
+const prev = manifest.chapters[index - 1];
+const next = manifest.chapters[index + 1];
+const nextVeiled = next !== undefined && next.access === 'gated' && viewer === null;
+
+const ORDINALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const capActual =
+  chapter.number !== null
+    ? `Cap. ${ORDINALS[chapter.number - 1]} · ${chapter.title}`
+    : chapter.title;
+---
+
+<CodexShell
+  locale={locale}
+  title={`${chapter.title} — Códex de Numinia`}
+  description={`${capActual} · Manual del juego de rol de Numinia, edición del Lector Akáshico.`}
+  slug={chapter.slug}
+  path={`/ codex / ${chapter.slug}`}
+  showGateCta={viewer === null}
+  capActual={capActual}
+>
+  {
+    veiled ? (
+      <div class="pliego">
+        <CodexUmbral prefix={prefix} next={manifest.chapters[index]!} preview={chapterPreview(chapter)} />
+      </div>
+    ) : (
+      <>
+        <CodexCapitulo prefix={prefix} chapter={chapter} prev={prev} next={next} />
+        {nextVeiled && next && (
+          <CodexUmbral prefix={prefix} next={next} preview={chapterPreview(chapters[index + 1]!)} />
+        )}
+      </>
+    )
+  }
+</CodexShell>

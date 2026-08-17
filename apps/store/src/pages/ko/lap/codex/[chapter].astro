@@ -1,11 +1,14 @@
 ---
-import ManualChapter from "../../../../components/lap/codex/ManualChapter.astro";
+import CodexCapituloPage from '../../../../components/lap/codex/CodexCapituloPage.astro';
+import { resolveCodexRoute } from '../../../../lib/codex/routes';
 
-/* On demand: the Manual is session-gated, so its text must never be baked
-   into a static file (Oracle order 2026-08-15). */
 export const prerender = false;
 
-const { chapter } = Astro.params;
+const prefix = '/ko';
+const route = resolveCodexRoute(Astro.params.chapter ?? '', prefix);
+if (route.kind === 'redirect') {
+  return Astro.redirect(route.to, route.permanent ? 301 : 302);
+}
 ---
 
-<ManualChapter locale="ko" chapterId={chapter ?? ''} />
+<CodexCapituloPage locale="ko" slug={route.slug} />

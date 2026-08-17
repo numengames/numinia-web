@@ -1,0 +1,45 @@
+---
+/**
+ * Download cards (D6): the book always travels free — no login, ever. The
+ * .md is live today; PDF and EPUB arrive with the export pipeline (Phase C)
+ * and say so honestly instead of pretending to be buttons.
+ */
+interface Props {
+  /** Chapter slug for a per-chapter download card; omit for book-only. */
+  slug?: string | undefined;
+}
+const { slug } = Astro.props;
+---
+
+<div class="descargas">
+  <a
+    class="dcard"
+    href="/api/codex/manual.md"
+    download="Numinia_Manual_del_juego_de_rol_v0_6_0.md"
+    data-metric="codex-download-md"
+  >
+    <span class="f">.md</span>
+    <p class="d">El libro entero. Texto plano, tuyo.</p>
+  </a>
+  {
+    slug && (
+      <a
+        class="dcard"
+        href={`/api/codex/${slug}.md`}
+        download={`Numinia_${slug}.md`}
+        data-metric="codex-download-chapter-md"
+      >
+        <span class="f">.md · capítulo</span>
+        <p class="d">Solo este capítulo.</p>
+      </a>
+    )
+  }
+  <span class="dcard pronto" aria-disabled="true">
+    <span class="f">pdf</span>
+    <p class="d">Para imprimir. En el taller.</p>
+  </span>
+  <span class="dcard pronto" aria-disabled="true">
+    <span class="f">epub</span>
+    <p class="d">Para tu Kindle. En el taller.</p>
+  </span>
+</div>

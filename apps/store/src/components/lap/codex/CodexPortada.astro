@@ -1,0 +1,27 @@
+---
+/**
+ * Portada del Códex: the cover of the web edition. Self-drawing corner
+ * frames are THE one orchestrated moment of this view (§3 motion catalog).
+ */
+import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+import CodexMarcos from './CodexMarcos.astro';
+---
+
+<section class="portada dibujado" data-dibujable aria-label="Portada">
+  <CodexMarcos />
+  <p class="ed">Numen Games presenta</p>
+  <h1>Numi<span>n</span>ia</h1>
+  <p class="sub">El juego de rol de la ciudad escrita entre vapor y código</p>
+  <div class="filete" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+      <path d="M16 3 28 10v12L16 29 4 22V10z"></path>
+      <path d="M16 3v13m0 0L4 10m12 6 12-6M16 16v13"></path>
+      <circle cx="16" cy="10" r="1.4" fill="currentColor" stroke="none"></circle>
+      <circle cx="10" cy="19" r="1.4" fill="currentColor" stroke="none"></circle>
+      <circle cx="22" cy="19" r="1.4" fill="currentColor" stroke="none"></circle>
+    </svg>
+  </div>
+  <p class="aut">Christian Märtens <b>·</b> Pablo Fernández-Maquieira Martínez</p>
+  <p class="ver">manual del juego de rol · v{MANUAL_VERSION} · edición del Lector Akáshico</p>
+  <p class="baja">↓ abre el códex</p>
+</section>

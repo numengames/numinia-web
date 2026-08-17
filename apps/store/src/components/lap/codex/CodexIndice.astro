@@ -1,0 +1,56 @@
+---
+/**
+ * Índice del Códex: every chapter with its open/veiled state. Locked rows
+ * still link — to the chapter page, where the Umbral receives the visitor.
+ * The gate is a funnel, not a wall (D2): nothing here hides the map.
+ */
+import type { CodexChapterMeta } from '../../../lib/codex/manifest';
+
+interface Props {
+  prefix: string;
+  chapters: readonly CodexChapterMeta[];
+  hasSession: boolean;
+}
+const { prefix, chapters, hasSession } = Astro.props;
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const numeral = (chapter: CodexChapterMeta): string =>
+  chapter.number === null ? '—' : (ROMAN[chapter.number - 1] ?? String(chapter.number));
+const veiled = (chapter: CodexChapterMeta): boolean => chapter.access === 'gated' && !hasSession;
+const title = (chapter: CodexChapterMeta): string =>
+  chapter.slug === 'introduccion' ? `Introducción · ${chapter.title}` : chapter.title;
+---
+
+<section class="hoja" id="indice" aria-label="Índice">
+  <p class="etq">Índice del Códex</p>
+  <ol class="toc">
+    {
+      chapters.map((chapter) => (
+        <li class={veiled(chapter) ? 'cerrado' : undefined}>
+          <a href={`${prefix}/lap/codex/${chapter.slug}/`} data-metric="codex-chapter">
+            <span class="n">{chapter.slug === 'el-espejo-roto' ? '✦' : numeral(chapter)}</span>
+            <span class="t">{title(chapter)}</span>
+            {veiled(chapter) ? (
+              <span class="st">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="7" width="10" height="7" rx="1" />
+                  <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+                </svg>
+                tras el Umbral
+              </span>
+            ) : (
+              <span class="st">abierto</span>
+            )}
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <a href={`${prefix}/lap/codex/glosario/`} data-metric="codex-glossary">
+        <span class="n">✦</span>
+        <span class="t">Glosario</span>
+        <span class="st">abierto</span>
+      </a>
+    </li>
+  </ol>
+</section>

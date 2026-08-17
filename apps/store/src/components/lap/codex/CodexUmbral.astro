@@ -1,0 +1,53 @@
+---
+/**
+ * El Umbral (§4.10): the end-of-open-content gate. The next chapter shows
+ * itself veiled, the seal closes the view, and one primary action crosses.
+ * Honest by design (D2+D6): downloads stay free right here, and the copy
+ * says so — the Umbral is an identity funnel, not a wall.
+ */
+import type { CodexChapterMeta } from '../../../lib/codex/manifest';
+import CodexDescargas from './CodexDescargas.astro';
+
+interface Props {
+  prefix: string;
+  next: CodexChapterMeta;
+  /** First open paragraphs of the veiled chapter — teaser only; the full
+   * text is one free download away, so this reveals nothing new. */
+  preview: string;
+}
+const { prefix, next, preview } = Astro.props;
+const ROMAN = ['', 'primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo'];
+const ordinal = next.number === null ? '' : (ROMAN[next.number] ?? String(next.number));
+---
+
+<section class="umbral" id="umbral" aria-label="El Umbral">
+  <div class="velo" aria-hidden="true">
+    <span class="num">{next.number === null ? 'Módulo' : `Capítulo ${ordinal}`}</span>
+    <h3>{next.title}</h3>
+    <p>{preview}</p>
+  </div>
+  <div class="sello" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none" stroke="#7A5100" stroke-width="1.1">
+      <circle cx="16" cy="16" r="14" stroke-dasharray="3 2.4" opacity=".7"></circle>
+      <path d="M16 6 26 16 16 26 6 16z"></path>
+      <circle cx="16" cy="16" r="2" fill="#EFA517" stroke="none"></circle>
+    </svg>
+  </div>
+  <h4>Aquí termina lo que la ciudad muestra a los viajeros.</h4>
+  <p class="p">
+    Los capítulos restantes aguardan en el Lector. Cruza con tu identidad de ciudadano y el
+    Códex recordará siempre tu página. El libro completo, además, siempre viaja libre:
+  </p>
+  <CodexDescargas />
+  <div class="acciones">
+    <a class="cbtn tinta" href={`${prefix}/lap/session/`} data-metric="codex-umbral-cross">
+      <span class="lbl">Cruzar el Umbral</span>
+    </a>
+    <a class="cbtn" href={`${prefix}/lap/codex/#indice`} data-metric="codex-umbral-index">
+      <span class="lbl">Volver al índice</span>
+    </a>
+  </div>
+  <p class="nota">
+    acceso con identidad soberana · el capítulo primero y las descargas son libres, siempre
+  </p>
+</section>

@@ -1,0 +1,77 @@
+---
+/**
+ * A chapter of the Códex (§4.1 portadilla + page architecture §4): reading
+ * column ≤70ch centered, real margin column at ≥1200px carrying the glyph
+ * and the footnotes, everything collapsing inline on mobile. The corner
+ * frames draw themselves once on chapter open — THE orchestrated moment.
+ */
+import type { CodexChapterMeta } from '../../../lib/codex/manifest';
+import { slugify, type CodexChapter } from '../../../lib/codex/parse';
+import { renderChapter } from '../../../lib/codex/render';
+import CodexMarcos from './CodexMarcos.astro';
+
+interface Props {
+  prefix: string;
+  chapter: CodexChapter;
+  prev: CodexChapterMeta | undefined;
+  next: CodexChapterMeta | undefined;
+}
+const { prefix, chapter, prev, next } = Astro.props;
+const rendered = renderChapter(chapter);
+
+const ORDINALS = ['primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo'];
+const eyebrow =
+  chapter.number !== null
+    ? `Capítulo ${ORDINALS[chapter.number - 1] ?? chapter.number}`
+    : chapter.slug === 'el-espejo-roto'
+      ? 'Módulo'
+      : 'Introducción';
+---
+
+<article class="pliego" aria-label={chapter.title} data-codex-chapter={chapter.slug}>
+  <header class="cap-abre dibujado" data-dibujable id={slugify(chapter.title)}>
+    <CodexMarcos />
+    <span class="num">{eyebrow}</span>
+    <h2>{chapter.title}</h2>
+  </header>
+
+  <div class="pliego-int">
+    <div class="cuerpo" set:html={rendered.html} />
+    <aside class="margen" aria-label="Notas al margen">
+      <div class="glifo-m" aria-hidden="true">
+        <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="17" cy="17" r="14" stroke-dasharray="3 2.4"></circle>
+          <path d="M17 7 27 17 17 27 7 17z"></path>
+        </svg>
+      </div>
+      {
+        rendered.notes.map((note) => (
+          <div class="nota-m">
+            <span class="num">{note.number}</span> · <Fragment set:html={note.html} />
+          </div>
+        ))
+      }
+    </aside>
+  </div>
+
+  <nav class="pager" aria-label="Anterior / Siguiente">
+    {
+      prev ? (
+        <a href={`${prefix}/lap/codex/${prev.slug}/`} rel="prev" data-metric="codex-prev">
+          ← {prev.title}
+        </a>
+      ) : (
+        <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">
+          ← Portada
+        </a>
+      )
+    }
+    {
+      next && (
+        <a href={`${prefix}/lap/codex/${next.slug}/`} rel="next" data-metric="codex-next">
+          {next.title} →
+        </a>
+      )
+    }
+  </nav>
+</article>

@@ -1,0 +1,30 @@
+---
+/**
+ * Colofón (§4.11): binaria separator, closing seal, the provisional legal
+ * note (D10 — the Oracle will revise the wording; keep it marked), version.
+ * The binaria spells «Numinia» in bits, computed at build — no client JS.
+ */
+import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+
+const WORD = 'Numinia';
+const bits = [...WORD].flatMap((char) =>
+  char.charCodeAt(0).toString(2).padStart(8, '0').split(''),
+);
+---
+
+<div class="colofon">
+  <div class="binaria" aria-hidden="true">
+    {bits.map((bit) => <i class={bit === '1' ? 'uno' : undefined}></i>)}
+  </div>
+  <div class="marca-cierre" title="Sello de cierre">✦</div>
+  <p>
+    Numinia · Manual del juego de rol · versión {MANUAL_VERSION}<br />
+    {/* PROVISIONAL legal wording (D10): the Oracle will revise this text. */}
+    Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br />
+    © 2026 Numen Games S.L. · Texto e ilustraciones: todos los derechos reservados · <em
+      >nota provisional</em
+    ><br />
+    Compuesto en Alegreya con el sistema Khepri · La fuente de verdad vive en Git
+  </p>
+  <p class="firma">numen games · leave things better than we found them</p>
+</div>

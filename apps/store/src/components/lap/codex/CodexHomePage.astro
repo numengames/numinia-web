@@ -1,0 +1,56 @@
+---
+/**
+ * The Códex home: cover, index, free downloads, acknowledgments, colophon.
+ * Everything here is open to everyone — the map is never hidden (D2); the
+ * veil begins inside the gated chapters.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { loadCodexDoc } from '../../../lib/codex/docs';
+import { loadCodex } from '../../../lib/codex/source';
+import { viewerFrom } from '../../../lib/lap/gate';
+import CodexColofon from './CodexColofon.astro';
+import CodexDescargas from './CodexDescargas.astro';
+import CodexIndice from './CodexIndice.astro';
+import CodexPortada from './CodexPortada.astro';
+import CodexShell from './CodexShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+const { locale } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const viewer = await viewerFrom(Astro.cookies);
+const { manifest } = loadCodex();
+
+const gracias = loadCodexDoc('agradecimientos')
+  .split('\n')
+  .map((line) => line.trim())
+  .filter((line) => line !== '' && !line.startsWith('#'));
+---
+
+<CodexShell
+  locale={locale}
+  title="Códex de Numinia — Manual del juego de rol"
+  description="El manual del juego de rol de Numinia, leído en el Lector Akáshico Personal. Capítulo primero abierto; el libro entero, siempre libre de descargar."
+  path="/ codex / manual-del-juego-de-rol"
+  showGateCta={viewer === null}
+  capActual="Portada"
+>
+  <CodexPortada />
+  <CodexIndice prefix={prefix} chapters={manifest.chapters} hasSession={viewer !== null} />
+  <section class="hoja" aria-label="Descargas">
+    <p class="etq">El libro viaja libre</p>
+    <CodexDescargas />
+  </section>
+  <section class="cierre">
+    <div class="hoja" aria-label="Agradecimientos">
+      <p class="etq">Agradecimientos</p>
+      {
+        gracias.map((line) => (
+          <p class={line.includes('·') ? 'gracias nombres' : 'gracias'}>{line}</p>
+        ))
+      }
+    </div>
+    <CodexColofon />
+  </section>
+</CodexShell>

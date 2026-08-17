@@ -1,0 +1,86 @@
+---
+/**
+ * The book plane's shell (MIS-085 B): a full-viewport paper surface inside
+ * the platform document. BaseLayout keeps SEO, consent, metrics and the
+ * error beacon; the shell keeps the paper, the chrome and the reader
+ * behavior. The manual's Diurno/Nocturno and text size are restored BEFORE
+ * first paint from the manual's own localStorage keys (D13).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CodexChrome from './CodexChrome.astro';
+import '../../../styles/codex.css';
+
+import alegreyaWoff from '../../../../../../packages/ui/src/assets/fonts/Alegreya-Variable.woff2?url';
+import alegreyaScWoff from '../../../../../../packages/ui/src/assets/fonts/AlegreyaSC-Regular.woff2?url';
+
+interface Props {
+  locale: SupportedLocale;
+  title: string;
+  description: string;
+  /** Chapter slug when reading one; '' on the cover/index surfaces. */
+  slug?: string;
+  path: string;
+  showGateCta: boolean;
+  capActual: string;
+}
+const { locale, title, description, slug = '', path, showGateCta, capActual } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<BaseLayout locale={locale} title={title} description={description} chrome={false} wide>
+  <link
+    slot="head"
+    rel="preload"
+    href={alegreyaWoff}
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <link
+    slot="head"
+    rel="preload"
+    href={alegreyaScWoff}
+    as="font"
+    type="font/woff2"
+    crossorigin
+  />
+  <div class="codex" data-tam="m" data-slug={slug} data-prefix={prefix}>
+    <script is:inline>
+      /* The manual's own mode and size, restored before its first paint —
+         independent of the LAP chrome by decision D13. */
+      (function () {
+        var codex = document.currentScript.parentElement;
+        try {
+          if (localStorage.getItem('numinia-codex-modo') === 'nocturno')
+            codex.classList.add('nocturno');
+          var tam = localStorage.getItem('numinia-codex-tam');
+          if (tam === 's' || tam === 'l') codex.dataset.tam = tam;
+        } catch (e) {}
+      })();
+    </script>
+    <CodexChrome prefix={prefix} path={path} showGateCta={showGateCta}>
+      <span slot="cap-actual">{capActual}</span>
+    </CodexChrome>
+    <div class="lienzo">
+      <slot />
+    </div>
+  </div>
+  <script>
+    import '../../../scripts/codex-reader';
+  </script>
+</BaseLayout>
+
+<style is:global>
+  /* The paper covers the platform surface edge to edge. */
+  body:has(.codex) {
+    background: #fdf6ee;
+  }
+  body:has(.codex.nocturno) {
+    background: #14110f;
+  }
+  main[data-wide]:has(> .codex) {
+    padding: 0;
+    max-width: none;
+  }
+</style>

@@ -15,7 +15,9 @@ const PAGES = [
   '/es/lap/',
   '/es/lap/character/',
   '/es/lap/codex/',
-  '/es/lap/codex/capitulo-2/',
+  '/es/lap/codex/bienvenidos-a-numinia/',
+  '/es/lap/codex/historia-y-leyendas-de-numinia/',
+  '/es/lap/codex/glosario/',
   '/es/lap/stats/',
   '/es/lap/settings/',
   '/es/lap/admin/assets/',
@@ -100,11 +102,17 @@ test('content survives with JavaScript disabled (SSG promise)', async ({ browser
   await context.close();
 });
 
-test('the Manual never leaks to a visitor without a session', async ({ page, request }) => {
-  // The corpus is unpublished IP: gated must mean ABSENT from the response,
-  // not hidden with CSS.
-  const chapter = await request.get('/es/lap/codex/capitulo-2/');
-  expect(await chapter.text()).not.toMatch(/La historia de Numinia no es solo|Holberins/);
+test('a veiled chapter ships only its teaser, never the text', async ({ page, request }) => {
+  // The Umbral is a funnel, not a wall (D2+D6): the READER veils gated
+  // chapters — their body must be ABSENT from the response, not hidden
+  // with CSS — while the .md download of the whole book stays free.
+  const chapter = await request.get('/es/lap/codex/historia-y-leyendas-de-numinia/');
+  expect(await chapter.text()).not.toMatch(/Tohu va-Bohu|Athanasius/);
+  const legacy = await request.get('/es/lap/codex/capitulo-2/');
+  expect(await legacy.text()).not.toMatch(/Tohu va-Bohu|Athanasius/);
+  const download = await request.get('/api/codex/manual.md');
+  expect(download.status()).toBe(200);
+  expect(await download.text()).toContain('CAPÍTULO');
   await page.goto('/es/lap/codex/');
   await expect(page.locator('[data-metric="codex-gate-enter"]')).toBeVisible();
 });
