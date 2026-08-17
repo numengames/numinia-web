@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.39.1',
+    date: '2026-08-17 08:03',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Login follows the gate you entered by: the wallet now signs for the domain in your address bar — numinia.com and numinia.store alike — and unknown hosts are turned away at the door',
+      },
+    ],
+  },
+  {
     version: 'v0.39.0',
     date: '2026-08-16 07:40',
     entries: [

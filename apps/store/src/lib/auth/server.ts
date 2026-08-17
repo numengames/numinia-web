@@ -75,25 +75,54 @@ function requireConfig(): NonNullable<typeof cached> {
   return config;
 }
 
-/** SIWE domain must match what the browser shows, or wallets warn the user. */
-const AUTH_DOMAIN = import.meta.env.DEV ? 'localhost:4321' : 'numinia.store';
+/**
+ * SIWE domain must match the host the browser shows, or wallets flag the
+ * signature request as phishing. The same deploy answers on more than one
+ * public host (numinia.com today, numinia.store until MISSION-030 retires
+ * it), so the domain follows the request Host — but only through this
+ * allowlist: an arbitrary Host header must never reach the message a wallet
+ * asks a human to sign.
+ */
+const PRODUCTION_AUTH_DOMAINS: ReadonlySet<string> = new Set([
+  'numinia.com',
+  'www.numinia.com',
+  'numinia.store',
+  'www.numinia.store',
+]);
+
+export class AuthDomainError extends Error {
+  constructor(host: string) {
+    super(`Host is not a recognized auth domain: "${host}"`);
+    this.name = 'AuthDomainError';
+  }
+}
+
+export function resolveAuthDomain(host: string, dev: boolean = import.meta.env.DEV): string {
+  if (PRODUCTION_AUTH_DOMAINS.has(host)) return host;
+  if (dev && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return host;
+  throw new AuthDomainError(host);
+}
 
 const SESSION_TTL_SECONDS = 60 * 60;
 const NONCE_TTL_MS = 5 * 60 * 1000;
 
 export const SESSION_COOKIE = 'numinia_session';
 
-/** Single-use TTL nonces (in-memory: dev server / single instance only). */
+/** Single-use TTL nonces (in-memory: dev server / single instance only).
+    Shared across domains: a nonce is single-use citywide. */
 const nonces = createNonceStore({ ttlMs: NONCE_TTL_MS, now: Date.now });
 
-let authInstance: ReturnType<typeof createAuth> | null = null;
+const authInstances = new Map<string, ReturnType<typeof createAuth>>();
 
-/** The vendor layer, built on first use (never at import time). */
-export function getAuth(): ReturnType<typeof createAuth> {
-  if (authInstance) return authInstance;
+/** The vendor layer, built on first use (never at import time), one instance
+    per allowlisted domain. Throws AuthDomainError on unrecognized hosts. */
+export function getAuth(host: string): ReturnType<typeof createAuth> {
+  const domain = resolveAuthDomain(host);
+  const existing = authInstances.get(domain);
+  if (existing) return existing;
   const client = createThirdwebClient({ secretKey: requireConfig().secretKey });
-  authInstance = createAuth({
-    domain: AUTH_DOMAIN,
+  const authInstance = createAuth({
+    domain,
     client,
     login: {
       payloadExpirationTimeSeconds: NONCE_TTL_MS / 1000,
@@ -105,6 +134,7 @@ export function getAuth(): ReturnType<typeof createAuth> {
       },
     },
   });
+  authInstances.set(domain, authInstance);
   return authInstance;
 }
 

@@ -6,9 +6,27 @@
  */
 
 import type { APIRoute } from 'astro';
-import { authConfigured, getAuth, issueSession, SESSION_COOKIE } from '../../../lib/auth/server';
+import {
+  AuthDomainError,
+  authConfigured,
+  getAuth,
+  issueSession,
+  SESSION_COOKIE,
+} from '../../../lib/auth/server';
 
 export const prerender = false;
+
+/** SIWE binds to the host the browser shows; unknown hosts answer an honest 400. */
+function authFor(url: URL): ReturnType<typeof getAuth> | Response {
+  try {
+    return getAuth(url.host);
+  } catch (error) {
+    if (error instanceof AuthDomainError) {
+      return Response.json({ error: 'Unrecognized host' }, { status: 400 });
+    }
+    throw error;
+  }
+}
 
 export const GET: APIRoute = async ({ url }) => {
   if (!authConfigured()) {
@@ -19,16 +37,20 @@ export const GET: APIRoute = async ({ url }) => {
   if (!address) {
     return Response.json({ error: 'address is required' }, { status: 400 });
   }
-  const payload = await getAuth().generatePayload(
+  const auth = authFor(url);
+  if (auth instanceof Response) return auth;
+  const payload = await auth.generatePayload(
     chainId ? { address, chainId: Number(chainId) } : { address },
   );
   return Response.json(payload);
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, url }) => {
   if (!authConfigured()) {
     return Response.json({ error: 'Auth not configured' }, { status: 503 });
   }
+  const auth = authFor(url);
+  if (auth instanceof Response) return auth;
   let body: unknown;
   try {
     body = await request.json();
@@ -40,7 +62,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return Response.json({ error: 'payload and signature are required' }, { status: 400 });
   }
 
-  const verified = await getAuth().verifyPayload({
+  const verified = await auth.verifyPayload({
     // Malformed shapes fail verification inside thirdweb; we stay fail-closed.
     payload: payload as Parameters<ReturnType<typeof getAuth>['verifyPayload']>[0]['payload'],
     signature: signature as `0x${string}`,
