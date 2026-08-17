@@ -1,7 +1,10 @@
 #!/bin/sh
 # Pre-push gate: the full local pipeline plus acceptance — nothing leaves the
 # machine broken. (Inert until a remote exists; armed from day one after.)
+# Hermetic like CI (ci.yml): the committed fixture keeps the gate independent
+# of raw.githubusercontent rate limits. Deploys still build with real data.
 set -e
+export DATA_SOURCE=fixture
 echo "pre-push: turbo pipeline"
 npm run ci
 echo "pre-push: acceptance (Gherkin)"
