@@ -6,9 +6,16 @@
  * frames draw themselves once on chapter open — THE orchestrated moment.
  */
 import type { CodexChapterMeta } from '../../../lib/codex/manifest';
+import { loadCodexDoc } from '../../../lib/codex/docs';
+import { parseGlossary } from '../../../lib/codex/glossary';
 import { slugify, type CodexChapter } from '../../../lib/codex/parse';
 import { renderChapter } from '../../../lib/codex/render';
+import { glossaryVariants, linkGlossaryTerms } from '../../../lib/codex/terms';
 import CodexMarcos from './CodexMarcos.astro';
+
+// §4.8: chapter prose links its glossary terms (first occurrence only).
+// Module-level: the variant list is the same for every chapter render.
+const TERM_TARGETS = glossaryVariants(parseGlossary(loadCodexDoc('glosario')));
 
 interface Props {
   prefix: string;
@@ -18,6 +25,7 @@ interface Props {
 }
 const { prefix, chapter, prev, next } = Astro.props;
 const rendered = renderChapter(chapter);
+const bodyHtml = linkGlossaryTerms(rendered.html, TERM_TARGETS, `${prefix}/lap/codex/glosario/`);
 
 const ORDINALS = ['primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo'];
 const eyebrow =
@@ -36,7 +44,7 @@ const eyebrow =
   </header>
 
   <div class="pliego-int">
-    <div class="cuerpo" set:html={rendered.html} />
+    <div class="cuerpo" set:html={bodyHtml} />
     <aside class="margen" aria-label="Notas al margen">
       <div class="glifo-m" aria-hidden="true">
         <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.1">

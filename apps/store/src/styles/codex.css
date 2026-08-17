@@ -863,6 +863,27 @@
   font-variant: small-caps;
   letter-spacing: 0.04em;
   font-size: 1.05em;
+  /* Arriving from an in-chapter term link: land below the chrome. */
+  scroll-margin-top: 70px;
+}
+.codex .glosario dt:target {
+  color: var(--tinta);
+  border-left: 2px solid var(--solar);
+  padding-left: 10px;
+  margin-left: -12px;
+}
+/* Término de glosario en el cuerpo (§4.8): a reference mark in the ink —
+   the dotted rule says «defined», the color stays prose. */
+.codex .cuerpo a.termino {
+  color: inherit;
+  text-decoration: underline dotted var(--estructura);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.codex .cuerpo a.termino:hover,
+.codex .cuerpo a.termino:focus-visible {
+  color: var(--inter);
+  text-decoration-style: solid;
 }
 .codex .glosario dd {
   color: var(--tinta-2);
@@ -1045,6 +1066,11 @@
   .codex .lamina,
   .codex .tabla {
     break-inside: avoid;
+  }
+  /* Paper has no cursor: term links print as plain ink. */
+  .codex .cuerpo a.termino {
+    text-decoration: none;
+    color: inherit;
   }
   /* Paper cannot scroll: fixed layout + anywhere-wrapping keep every
      column of a wide table on the page. */

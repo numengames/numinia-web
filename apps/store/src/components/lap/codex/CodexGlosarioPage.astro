@@ -7,6 +7,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { loadCodexDoc } from '../../../lib/codex/docs';
 import { parseGlossary } from '../../../lib/codex/glossary';
+import { slugify } from '../../../lib/codex/parse';
 import { viewerFrom } from '../../../lib/lap/gate';
 import CodexShell from './CodexShell.astro';
 
@@ -33,7 +34,8 @@ const entries = parseGlossary(loadCodexDoc('glosario'));
       {
         entries.map((entry) => (
           <>
-            <dt>{entry.term}</dt>
+            {/* Anchor target for the in-chapter term links (§4.8). */}
+            <dt id={slugify(entry.term)}>{entry.term}</dt>
             <dd>
               {entry.definition}
               {entry.source && <span class="fuente">{entry.source}</span>}
