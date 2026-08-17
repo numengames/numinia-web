@@ -50,6 +50,22 @@ describe('runtimeEnv', () => {
     expect(runtimeEnv().RUNTIME_ENV_PROBE).toBe('fallback-survives');
   });
 
+  it('adopts the workerd env when the virtual module resolves', async () => {
+    vi.doMock('cloudflare:workers', () => ({ env: { FROM_WORKERD: 'yes' } }));
+    await primeFromWorkerd();
+    expect(runtimeEnv().FROM_WORKERD).toBe('yes');
+    vi.doUnmock('cloudflare:workers');
+  });
+
+  it('attempts the workerd import only once per isolate', async () => {
+    vi.doMock('cloudflare:workers', () => ({ env: { FROM_WORKERD: 'first' } }));
+    await primeFromWorkerd();
+    vi.doMock('cloudflare:workers', () => ({ env: { FROM_WORKERD: 'second' } }));
+    await primeFromWorkerd(); // guard: no re-import, first env stays
+    expect(runtimeEnv().FROM_WORKERD).toBe('first');
+    vi.doUnmock('cloudflare:workers');
+  });
+
   it('reset restores the fallback path — priming does not leak across tests', () => {
     primeRuntimeEnv({ RUNTIME_ENV_PROBE: 'primed' });
     resetRuntimeEnvForTests();
