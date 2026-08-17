@@ -5,6 +5,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import type { SheetLabels } from '../components/lap/sheet/sheet-props';
 
 export interface LapMessages {
   readonly sections: {
@@ -94,26 +95,7 @@ export interface LapMessages {
     readonly gatedNote: string;
     readonly gatedAction: string;
   };
-  readonly sheet: {
-    readonly title: string;
-    readonly fileNote: string;
-    readonly edit: string;
-    readonly done: string;
-    readonly exportMd: string;
-    readonly exportPdf: string;
-    readonly importMd: string;
-    readonly importError: string;
-    readonly roll: string;
-    readonly total: string;
-    readonly none: string;
-    readonly identity: string;
-    readonly attributes: string;
-    readonly values: string;
-    readonly competences: string;
-    readonly profile: string;
-    readonly notes: string;
-    readonly fields: Readonly<Record<string, string>>;
-  };
+  readonly sheet: SheetLabels;
   readonly emptyTitle: string;
   readonly emptyPortals: string;
   readonly emptyLoot: string;
@@ -217,7 +199,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     sheet: {
       title: 'Ficha de personaje',
       fileNote:
-        'Tu ficha es un archivo tuyo: expórtala como Markdown y guárdala donde quieras. Nada se almacena en servidores.',
+        'Tu personaje es tuyo: vive en este dispositivo y en los ficheros que te lleves. Nadie en Numinia guarda copia.',
       edit: 'Editar ficha',
       done: 'Terminar edición',
       exportMd: 'Exportar .md',
@@ -225,13 +207,32 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       importMd: 'Importar .md',
       importError:
         'Ese archivo no parece una ficha de Numinia. Revisa el formato e inténtalo de nuevo.',
+      importConfirm: 'Importar reemplaza la ficha guardada en este dispositivo. ¿Continuar?',
+      wipe: 'Borrar ficha',
+      wipeConfirm:
+        'Esto borra la ficha guardada en este dispositivo. Exporta antes si quieres conservarla.',
       roll: 'Tirar',
       total: 'Total',
       none: '—',
       identity: 'Identidad',
-      attributes: 'Atributos',
+      attributes: 'Características',
+      attributeBounds: '16 puntos · mín 1 · máx 5',
       values: 'Valores',
       competences: 'Competencias',
+      competenceHint: '6 por Gremio, Facción y Especie',
+      disabledCompetence: 'No vinculada a tu Gremio, Facción o Especie: deshabilitada.',
+      strayPoints: 'Este archivo trae puntos en competencias no habilitadas:',
+      aptitudes: 'Aptitudes especiales',
+      aptitudeName: 'Aptitud',
+      aptitudePool: 'reserva por afinidad de Posición',
+      incompatiblePosition:
+        'Posición incompatible con tu Gremio, Facción, Especie o Arquetipo (ver Códex, cap. III).',
+      positionBonus: '+1 Posición',
+      initialValue: 'inicial',
+      fromPerception: '= Percepción',
+      desequilibrium: 'Desequilibrio',
+      desequilibriumNote: 'según tu Posición — consulta el Códex, cap. III.',
+      gearOf: 'de',
       profile: 'Perfil',
       notes: 'Notas',
       fields: FIELDS_ES,
@@ -353,20 +354,39 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     sheet: {
       title: 'Character sheet',
       fileNote:
-        'Your sheet is a file you own: export it as Markdown and keep it anywhere. Nothing is stored on servers.',
+        'Your character is yours: it lives on this device and in the files you take with you. No one in Numinia keeps a copy.',
       edit: 'Edit sheet',
       done: 'Finish editing',
       exportMd: 'Export .md',
       exportPdf: 'Export PDF',
       importMd: 'Import .md',
       importError: 'That file does not look like a Numinia sheet. Check the format and try again.',
+      importConfirm: 'Importing replaces the sheet stored on this device. Continue?',
+      wipe: 'Wipe sheet',
+      wipeConfirm:
+        'This erases the sheet stored on this device. Export it first if you want to keep it.',
       roll: 'Roll',
       total: 'Total',
       none: '—',
       identity: 'Identity',
-      attributes: 'Attributes',
+      attributes: 'Characteristics',
+      attributeBounds: '16 points · min 1 · max 5',
       values: 'Values',
       competences: 'Competences',
+      competenceHint: '6 per Guild, Faction and Species',
+      disabledCompetence: 'Not tied to your Guild, Faction or Species: disabled.',
+      strayPoints: 'This file carries points in competences that are not enabled:',
+      aptitudes: 'Special aptitudes',
+      aptitudeName: 'Aptitude',
+      aptitudePool: 'pool from Position affinity',
+      incompatiblePosition:
+        'Position incompatible with your Guild, Faction, Species or Archetype (see the Codex, ch. III).',
+      positionBonus: '+1 Position',
+      initialValue: 'initial',
+      fromPerception: '= Perception',
+      desequilibrium: 'Imbalance',
+      desequilibriumNote: 'set by your Position — see the Codex, ch. III.',
+      gearOf: 'of',
       profile: 'Profile',
       notes: 'Notes',
       fields: FIELDS_EN,
@@ -494,13 +514,31 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       importMd: '.md を読み込む',
       importError:
         'このファイルはヌミニアのシートではないようです。形式を確認してもう一度お試しください。',
+      importConfirm: '読み込むと、この端末に保存されたシートが置き換えられます。続行しますか？',
+      wipe: 'シートを消去',
+      wipeConfirm: 'この端末に保存されたシートを消去します。残したい場合は先に書き出してください。',
       roll: 'ロール',
       total: '合計',
       none: '—',
       identity: 'アイデンティティ',
-      attributes: '属性',
+      attributes: '特性',
+      attributeBounds: '16ポイント · 最小1 · 最大5',
       values: '数値',
       competences: 'コンピテンス',
+      competenceHint: 'ギルド・ファクション・種族ごとに6',
+      disabledCompetence: 'ギルド・ファクション・種族に結びついていないため無効です。',
+      strayPoints: 'このファイルには有効化されていないコンピテンスのポイントが含まれています：',
+      aptitudes: '特殊アプティチュード',
+      aptitudeName: 'アプティチュード',
+      aptitudePool: 'ポジション親和性によるプール',
+      incompatiblePosition:
+        'ポジションがギルド・ファクション・種族・アーキタイプと非互換です（コデックス第III章参照）。',
+      positionBonus: '+1 ポジション',
+      initialValue: '初期値',
+      fromPerception: '= 知覚',
+      desequilibrium: '不均衡',
+      desequilibriumNote: 'ポジションにより決まります — コデックス第III章参照。',
+      gearOf: '／',
       profile: 'プロフィール',
       notes: 'メモ',
       fields: FIELDS_EN,
@@ -622,13 +660,31 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       exportPdf: 'PDF 내보내기',
       importMd: '.md 가져오기',
       importError: '누미니아 시트 형식이 아닌 것 같습니다. 형식을 확인하고 다시 시도하세요.',
+      importConfirm: '가져오면 이 기기에 저장된 시트를 대체합니다. 계속할까요?',
+      wipe: '시트 지우기',
+      wipeConfirm: '이 기기에 저장된 시트를 지웁니다. 보관하려면 먼저 내보내세요.',
       roll: '굴리기',
       total: '합계',
       none: '—',
       identity: '정체성',
-      attributes: '속성',
+      attributes: '특성',
+      attributeBounds: '16포인트 · 최소 1 · 최대 5',
       values: '수치',
       competences: '역량',
+      competenceHint: '길드·파벌·종족당 6',
+      disabledCompetence: '길드·파벌·종족과 연결되지 않아 비활성화되었습니다.',
+      strayPoints: '이 파일에는 활성화되지 않은 역량의 포인트가 있습니다:',
+      aptitudes: '특수 적성',
+      aptitudeName: '적성',
+      aptitudePool: '포지션 친화도에 따른 풀',
+      incompatiblePosition:
+        '포지션이 길드·파벌·종족·원형과 호환되지 않습니다 (코덱스 제III장 참조).',
+      positionBonus: '+1 포지션',
+      initialValue: '초기값',
+      fromPerception: '= 지각',
+      desequilibrium: '불균형',
+      desequilibriumNote: '포지션에 따라 정해집니다 — 코덱스 제III장 참조.',
+      gearOf: '/',
       profile: '프로필',
       notes: '메모',
       fields: FIELDS_EN,
@@ -742,7 +798,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     sheet: {
       title: 'Ficha de personagem',
       fileNote:
-        'Sua ficha é um arquivo seu: exporte como Markdown e guarde onde quiser. Nada é armazenado em servidores.',
+        'Seu personagem é seu: vive neste dispositivo e nos arquivos que você levar. Ninguém em Numinia guarda cópia.',
       edit: 'Editar ficha',
       done: 'Concluir edição',
       exportMd: 'Exportar .md',
@@ -750,13 +806,32 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       importMd: 'Importar .md',
       importError:
         'Esse arquivo não parece uma ficha de Numinia. Verifique o formato e tente de novo.',
+      importConfirm: 'Importar substitui a ficha guardada neste dispositivo. Continuar?',
+      wipe: 'Apagar ficha',
+      wipeConfirm:
+        'Isto apaga a ficha guardada neste dispositivo. Exporte antes se quiser conservá-la.',
       roll: 'Rolar',
       total: 'Total',
       none: '—',
       identity: 'Identidade',
-      attributes: 'Atributos',
+      attributes: 'Características',
+      attributeBounds: '16 pontos · mín 1 · máx 5',
       values: 'Valores',
       competences: 'Competências',
+      competenceHint: '6 por Guilda, Facção e Espécie',
+      disabledCompetence: 'Não vinculada à sua Guilda, Facção ou Espécie: desabilitada.',
+      strayPoints: 'Este arquivo traz pontos em competências não habilitadas:',
+      aptitudes: 'Aptidões especiais',
+      aptitudeName: 'Aptidão',
+      aptitudePool: 'reserva por afinidade de Posição',
+      incompatiblePosition:
+        'Posição incompatível com sua Guilda, Facção, Espécie ou Arquétipo (ver Códex, cap. III).',
+      positionBonus: '+1 Posição',
+      initialValue: 'inicial',
+      fromPerception: '= Percepção',
+      desequilibrium: 'Desequilíbrio',
+      desequilibriumNote: 'conforme sua Posição — consulte o Códex, cap. III.',
+      gearOf: 'de',
       profile: 'Perfil',
       notes: 'Notas',
       fields: {

@@ -178,3 +178,44 @@ test('the sheet round-trips through a real file in this engine', async ({ page }
   await page.locator('[data-metric="lap-sheet-edit"]').click();
   await expect(page.locator('[data-lap-sheet] .kpis .dato-xl').first()).toBeVisible();
 });
+
+test('v0.6.0 rules: identity enables competences and the device keeps the sheet (D11)', async ({
+  page,
+}) => {
+  test.slow();
+  await page.goto('/es/lap/character/');
+  await page.waitForLoadState('networkidle');
+  await page.locator('[data-metric="lap-sheet-edit"]').click();
+
+  const competences = page.locator('[data-lap-sheet] section[aria-label="Competencias"]');
+  const row = (name: string) => competences.locator('li').filter({ hasText: name });
+  // Blank identity: nothing is enabled — every gear group is disabled.
+  await expect(row('Tecnomancia').locator('.engranajes')).toHaveAttribute('aria-disabled', 'true');
+
+  await page.getByLabel('Especie').selectOption('biomechanical');
+  await page.getByLabel('Gremio').selectOption('alchemists');
+  await page.getByLabel('Facción').selectOption('neo-atlantists');
+
+  // Enabled by this identity; a foreign competence stays locked — its
+  // radios are real disabled controls, no interaction can score them.
+  await expect(row('Tecnomancia').locator('.engranajes')).not.toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await expect(row('Visión Neural').locator('.engranajes')).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await expect(row('Visión Neural').locator('input[value="3"]')).toBeDisabled();
+  await row('Tecnomancia').locator('input[value="3"]').check();
+
+  // D11: the character lives on this device — a full reload keeps it.
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await expect(
+    page
+      .locator('[data-lap-sheet] section[aria-label="Competencias"] li')
+      .filter({ hasText: 'Tecnomancia' })
+      .locator('.stat-value'),
+  ).toContainText('3');
+});

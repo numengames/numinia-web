@@ -219,4 +219,120 @@ const options: SheetOptions = {
   [data-lap-sheet] .stat-value button:focus-visible {
     text-decoration: underline;
   }
+  /* Gear sections (MIS-085 D, Khepri EXTENSIÓN §7.5): full-width rows. */
+  [data-lap-sheet] .filas-engranaje {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-width: 34rem;
+  }
+  [data-lap-sheet] .filas-engranaje li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    min-height: 40px;
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-lap-sheet] .presupuesto {
+    margin: 0 0 var(--s2);
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-lap-sheet] .presupuesto span {
+    color: var(--texto-3);
+  }
+  [data-lap-sheet] .aviso-regla {
+    max-width: 60ch;
+    font-size: 0.85rem;
+    color: var(--texto-2);
+    border-left: 2px solid var(--ambar);
+    padding-left: var(--s3);
+  }
+  [data-lap-sheet] .nota-regla {
+    font-size: 0.85rem;
+    color: var(--texto-3);
+    max-width: 60ch;
+  }
+  [data-lap-sheet] .chip-regla {
+    font-style: normal;
+    font-size: 0.68rem;
+    color: var(--ambar-texto, var(--texto-3));
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+    padding: 1px 7px;
+    margin-left: var(--s2);
+    white-space: nowrap;
+  }
+  /* The gears: presentation over a radio group. A set gear turns a quarter. */
+  [data-lap-sheet] .engranajes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  [data-lap-sheet] .engranajes .diente {
+    position: relative;
+    display: inline-flex;
+    width: 26px;
+    height: 26px;
+    align-items: center;
+    justify-content: center;
+    color: var(--linea-f);
+    cursor: pointer;
+  }
+  [data-lap-sheet] .engranajes .diente svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.35s ease, color 0.2s;
+  }
+  [data-lap-sheet] .engranajes .diente.puesto {
+    color: var(--ambar);
+  }
+  [data-lap-sheet] .engranajes .diente.puesto svg {
+    transform: rotate(90deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-lap-sheet] .engranajes .diente svg {
+      transition: none;
+    }
+  }
+  [data-lap-sheet] .engranajes input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  [data-lap-sheet] .engranajes input:focus-visible + svg,
+  [data-lap-sheet] .engranajes input:focus-visible + .cero {
+    outline: 2px solid var(--enlace);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  [data-lap-sheet] .engranajes .cero {
+    font-size: 0.8rem;
+    color: var(--texto-3);
+  }
+  [data-lap-sheet] .engranajes.vedado .diente {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+  [data-lap-sheet] li:has(.engranajes.vedado) .stat-label {
+    color: var(--texto-3);
+  }
+  [data-lap-sheet] .apt-nombre {
+    flex: 1;
+    min-width: 0;
+  }
+  /* Destructive door (§ data-loss warnings): Grana, never a primary. */
+  [data-lap-sheet] .btn-peligro {
+    color: var(--numinia-color-danger, #b02330);
+    border: 1px solid currentColor;
+    background: transparent;
+  }
+  [data-lap-sheet] .btn-peligro:hover,
+  [data-lap-sheet] .btn-peligro:focus-visible {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
 </style>

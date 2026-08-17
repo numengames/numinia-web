@@ -1,20 +1,26 @@
 /**
- * The character sheet island (MISSION-008): your sheet is a FILE you own.
- * State lives in memory; persistence is export/import of the portable
- * Markdown (File Over App — no accounts, no server, no silent storage,
- * and by constitution no localStorage). D16: open to everyone.
+ * The character sheet island (MISSION-008 → MIS-085 D): your character is a
+ * FILE you own. D11 (Oracle-signed) adds this-device autosave: edit →
+ * localStorage → export/import — the stored copy IS the portable Markdown,
+ * one format everywhere. Nothing ever leaves the device. The v0.6.0 rules
+ * engine derives what the manual derives and warns where a file disagrees.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   emptySheet,
   sheetFromMarkdown,
   sheetToMarkdown,
   type LapSheet,
 } from '../../../lib/lap/sheet';
+import { sheetRules } from '../../../lib/lap/rules';
 import { rollD6Pool } from '../../../lib/lap/dice';
 import type { SheetLabels, SheetOptions } from './sheet-props';
+import { SheetActions } from './SheetActions';
+import { SheetAptitudes } from './SheetAptitudes';
+import { SheetGears } from './SheetGears';
 import { SheetIdentity } from './SheetIdentity';
+import { SheetProfile } from './SheetProfile';
 import { SheetStats } from './SheetStats';
 
 interface Props {
@@ -22,20 +28,32 @@ interface Props {
   labels: SheetLabels;
 }
 
-const TEXT_KEYS: ReadonlyArray<keyof LapSheet['text']> = [
-  'dialect',
-  'sociolect',
-  'lingo',
-  'idiolect',
-  'weapons',
-  'relics',
-];
+/** D11: the character lives on this device (and in exported files). */
+const STORAGE_KEY = 'numinia-lap-personaje';
+
+function storedSheet(): LapSheet {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw && raw.includes('## ')) return sheetFromMarkdown(raw);
+  } catch {
+    /* private mode: the sheet just starts empty */
+  }
+  return emptySheet();
+}
 
 export function SheetIsland({ options, labels }: Props) {
-  const [sheet, setSheet] = useState<LapSheet>(emptySheet);
+  const [sheet, setSheet] = useState<LapSheet>(storedSheet);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState('');
-  const fileInput = useRef<HTMLInputElement>(null);
+  const rules = useMemo(() => sheetRules(sheet), [sheet]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, sheetToMarkdown(sheet));
+    } catch {
+      /* storage denied: exports still work */
+    }
+  }, [sheet]);
 
   const onIdentity = useCallback((key: keyof LapSheet['identity'], value: string) => {
     setSheet((current) => {
@@ -50,10 +68,27 @@ export function SheetIsland({ options, labels }: Props) {
 
   const onNumber = useCallback(
     (group: 'attributes' | 'values' | 'competences', key: string, value: number) => {
-      setSheet((current) => ({ ...current, [group]: { ...current[group], [key]: value } }));
+      setSheet((current) => {
+        const next = { ...current, [group]: { ...current[group], [key]: value } };
+        // Aliento del Velo = Percepción (manual 6517): keep the file truthful.
+        if (group === 'attributes')
+          next.values = { ...next.values, veilBreath: next.attributes.perception };
+        return next;
+      });
     },
     [],
   );
+
+  const onAptitude = useCallback((index: 0 | 1, patch: Partial<LapSheet['aptitudes'][0]>) => {
+    setSheet((current) => {
+      const aptitudes: LapSheet['aptitudes'] = [
+        { ...current.aptitudes[0] },
+        { ...current.aptitudes[1] },
+      ];
+      Object.assign(aptitudes[index], patch);
+      return { ...current, aptitudes };
+    });
+  }, []);
 
   const onRoll = useCallback(
     (label: string, pool: number) => {
@@ -74,63 +109,69 @@ export function SheetIsland({ options, labels }: Props) {
   }, [sheet]);
 
   const onImport = useCallback(
-    async (file: File | undefined) => {
+    (file: File | undefined) => {
       if (!file) return;
-      const text = await file.text();
-      if (!text.includes('## ')) {
-        setStatus(labels.importError);
-        return;
-      }
-      setSheet(sheetFromMarkdown(text));
-      setStatus('');
+      void file.text().then((text) => {
+        if (!text.includes('## ')) {
+          setStatus(labels.importError);
+          return;
+        }
+        setSheet(sheetFromMarkdown(text));
+        setStatus('');
+      });
     },
     [labels.importError],
   );
 
+  const onWipe = useCallback(() => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* nothing stored, nothing lost */
+    }
+    setSheet(emptySheet());
+    setStatus('');
+  }, []);
+
+  const attributeRows = (
+    [
+      'strength',
+      'movement',
+      'size',
+      'constitution',
+      'intelligence',
+      'wisdom',
+      'perception',
+      'charisma',
+    ] as const
+  ).map((key) => ({
+    key,
+    label: labels.fields[key] ?? key,
+    value: sheet.attributes[key],
+    chip: rules.position?.bonusAttribute === key ? labels.positionBonus : undefined,
+  }));
+  const competenceRows = options.competences.map((option) => ({
+    key: option.id,
+    label: option.label,
+    value: sheet.competences[option.id] ?? 0,
+    disabled: !rules.enabled.has(option.id as never),
+  }));
+  const strayPoints = rules.disabledWithPoints
+    .map((id) => options.competences.find((option) => option.id === id)?.label ?? id)
+    .join(' · ');
+
   return (
     <div data-lap-sheet>
       <p className="nota">{labels.fileNote}</p>
-      <div className="acciones">
-        <button
-          type="button"
-          className="btn btn-primario"
-          onClick={() => setEditing((value) => !value)}
-          data-metric="lap-sheet-edit"
-        >
-          {editing ? labels.done : labels.edit}
-        </button>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          onClick={onExport}
-          data-metric="lap-sheet-export"
-        >
-          {labels.exportMd}
-        </button>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          onClick={() => window.print()}
-          data-metric="lap-sheet-export-pdf"
-        >
-          {labels.exportPdf}
-        </button>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          onClick={() => fileInput.current?.click()}
-          data-metric="lap-sheet-import"
-        >
-          {labels.importMd}
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".md,text/markdown"
-          hidden
-          onChange={(event) => void onImport(event.target.files?.[0])}
-        />
-      </div>
+      <SheetActions
+        labels={labels}
+        editing={editing}
+        dirty={sheetToMarkdown(sheet) !== sheetToMarkdown(emptySheet())}
+        onToggleEdit={() => setEditing((value) => !value)}
+        onExport={onExport}
+        onImport={onImport}
+        onWipe={onWipe}
+      />
       {status && (
         <p className="resultado mono" role="status">
           {status}
@@ -140,7 +181,9 @@ export function SheetIsland({ options, labels }: Props) {
         <div className="kpis">
           {(['prestige', 'prisma'] as const).map((key) => (
             <div className="kpi" key={key}>
-              <p className="dato-xl mono">{sheet.values[key]}</p>
+              <p className="dato-xl mono">
+                {key === 'prestige' && sheet.values[key] === 0 ? labels.none : sheet.values[key]}
+              </p>
               <p className="etiqueta">{labels.fields[key]}</p>
             </div>
           ))}
@@ -153,51 +196,60 @@ export function SheetIsland({ options, labels }: Props) {
         editing={editing}
         onIdentity={onIdentity}
       />
-      <SheetStats
-        sheet={sheet}
-        options={options}
+      <SheetGears
+        title={labels.attributes}
+        rows={attributeRows}
+        budget={{
+          spent: rules.attributes.spent,
+          pool: rules.attributes.pool,
+          hint: labels.attributeBounds,
+        }}
+        disabledTitle=""
         labels={labels}
         editing={editing}
+        group="attributes"
         onNumber={onNumber}
         onRoll={onRoll}
       />
-      <section aria-label={labels.profile}>
-        <h2 className="etiqueta">{labels.profile}</h2>
-        <div className="campos">
-          {TEXT_KEYS.map((key) => (
-            <label key={key}>
-              <span>{labels.fields[key]}</span>
-              {editing ? (
-                <input
-                  value={sheet.text[key]}
-                  onChange={(event) =>
-                    setSheet((current) => ({
-                      ...current,
-                      text: { ...current.text, [key]: event.target.value },
-                    }))
-                  }
-                  data-metric="lap-sheet-field"
-                />
-              ) : (
-                <output>{sheet.text[key] || labels.none}</output>
-              )}
-            </label>
-          ))}
-        </div>
-      </section>
-      <section aria-label={labels.notes}>
-        <h2 className="etiqueta">{labels.notes}</h2>
-        {editing ? (
-          <textarea
-            rows={5}
-            value={sheet.notes}
-            onChange={(event) => setSheet((current) => ({ ...current, notes: event.target.value }))}
-            data-metric="lap-sheet-field"
-          />
-        ) : (
-          <p className="notas">{sheet.notes || labels.none}</p>
-        )}
-      </section>
+      <SheetAptitudes
+        sheet={sheet}
+        position={rules.position}
+        labels={labels}
+        editing={editing}
+        onAptitude={onAptitude}
+      />
+      <SheetGears
+        title={labels.competences}
+        rows={competenceRows}
+        budget={{
+          spent: rules.competences.spent,
+          pool: rules.competences.pool,
+          hint: labels.competenceHint,
+        }}
+        warning={strayPoints ? `${labels.strayPoints} ${strayPoints}` : undefined}
+        disabledTitle={labels.disabledCompetence}
+        labels={labels}
+        editing={editing}
+        group="competences"
+        onNumber={onNumber}
+        onRoll={onRoll}
+      />
+      <SheetStats
+        sheet={sheet}
+        rules={rules}
+        labels={labels}
+        editing={editing}
+        onNumber={onNumber}
+      />
+      <SheetProfile
+        sheet={sheet}
+        labels={labels}
+        editing={editing}
+        onText={(key, value) =>
+          setSheet((current) => ({ ...current, text: { ...current.text, [key]: value } }))
+        }
+        onNotes={(value) => setSheet((current) => ({ ...current, notes: value }))}
+      />
     </div>
   );
 }

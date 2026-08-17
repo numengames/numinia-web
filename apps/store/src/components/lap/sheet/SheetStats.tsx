@@ -1,18 +1,21 @@
 /**
- * What the citizen measures: attributes, values, competences — Mono tabular
- * per §13.11. A stat of N rolls N six-sided dice (the table's rule).
+ * The sheet's values row (§13.11 Mono tabular): Umbral, Aliento del Velo,
+ * Iniciativa, Energía, Prestigio, Prisma. v0.6.0 derivations (MIS-085 D):
+ * Aliento del Velo = Percepción (read-only), Umbral and Iniciativa show
+ * their position-granted initial value as a hint, and Prestigio stays
+ * blank until it exists (manual annex 6699).
  */
 
-import { ATTRIBUTE_KEYS, VALUE_KEYS, type LapSheet } from '../../../lib/lap/sheet';
-import type { SheetLabels, SheetOptions } from './sheet-props';
+import { VALUE_KEYS, type LapSheet } from '../../../lib/lap/sheet';
+import type { SheetRules } from '../../../lib/lap/rules';
+import type { SheetLabels } from './sheet-props';
 
 interface Props {
   sheet: LapSheet;
-  options: SheetOptions;
+  rules: SheetRules;
   labels: SheetLabels;
   editing: boolean;
   onNumber: (group: 'attributes' | 'values' | 'competences', key: string, value: number) => void;
-  onRoll: (label: string, pool: number) => void;
 }
 
 const clamp = (raw: string): number => {
@@ -20,82 +23,52 @@ const clamp = (raw: string): number => {
   return Number.isFinite(value) ? Math.min(99, Math.max(0, value)) : 0;
 };
 
-export function SheetStats({ sheet, options, labels, editing, onNumber, onRoll }: Props) {
-  const groups: ReadonlyArray<{
-    id: 'attributes' | 'values' | 'competences';
-    title: string;
-    rows: ReadonlyArray<{ key: string; label: string; value: number; rollable: boolean }>;
-  }> = [
-    {
-      id: 'attributes',
-      title: labels.attributes,
-      rows: ATTRIBUTE_KEYS.map((key) => ({
-        key,
-        label: labels.fields[key] ?? key,
-        value: sheet.attributes[key],
-        rollable: true,
-      })),
-    },
-    {
-      id: 'values',
-      title: labels.values,
-      rows: VALUE_KEYS.map((key) => ({
-        key,
-        label: labels.fields[key] ?? key,
-        value: sheet.values[key],
-        rollable: false,
-      })),
-    },
-    {
-      id: 'competences',
-      title: labels.competences,
-      rows: options.competences.map((option) => ({
-        key: option.id,
-        label: option.label,
-        value: sheet.competences[option.id] ?? 0,
-        rollable: true,
-      })),
-    },
-  ];
+export function SheetStats({ sheet, rules, labels, editing, onNumber }: Props) {
+  const initialHint = (key: string): string | undefined => {
+    if (!rules.position) return undefined;
+    if (key === 'threshold') return `${labels.initialValue} ${rules.position.initialUmbral}`;
+    if (key === 'initiative') return `${labels.initialValue} ${rules.position.initiative}`;
+    return undefined;
+  };
 
   return (
     <div className="stats">
-      {groups.map((group) => (
-        <section key={group.id} aria-label={group.title}>
-          <h2 className="etiqueta">{group.title}</h2>
-          <ul>
-            {group.rows.map((row) => (
-              <li key={row.key}>
-                <span className="stat-label">{row.label}</span>
-                {editing ? (
+      <section aria-label={labels.values}>
+        <h2 className="etiqueta">{labels.values}</h2>
+        <ul>
+          {VALUE_KEYS.map((key) => {
+            const derived = key === 'veilBreath';
+            const value = derived ? rules.veilBreath : sheet.values[key];
+            const hint = derived ? labels.fromPerception : initialHint(key);
+            const blank = key === 'prestige' && value === 0 && !editing;
+            return (
+              <li key={key}>
+                <span className="stat-label">
+                  {labels.fields[key] ?? key}
+                  {hint && <em className="chip-regla mono">{hint}</em>}
+                </span>
+                {editing && !derived ? (
                   <input
                     type="number"
                     min={0}
                     max={99}
-                    value={row.value}
-                    onChange={(event) => onNumber(group.id, row.key, clamp(event.target.value))}
+                    value={value}
+                    onChange={(event) => onNumber('values', key, clamp(event.target.value))}
                     data-metric="lap-sheet-stat"
                   />
                 ) : (
-                  <span className="stat-value mono">
-                    {row.value}
-                    {row.rollable && row.value > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => onRoll(row.label, row.value)}
-                        aria-label={`${labels.roll} ${row.value}d6 — ${row.label}`}
-                        data-metric="lap-dice-roll"
-                      >
-                        {labels.roll}
-                      </button>
-                    )}
-                  </span>
+                  <span className="stat-value mono">{blank ? labels.none : value}</span>
                 )}
               </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+            );
+          })}
+        </ul>
+        {rules.position && (
+          <p className="nota-regla">
+            {labels.desequilibrium}: {labels.desequilibriumNote}
+          </p>
+        )}
+      </section>
     </div>
   );
 }
