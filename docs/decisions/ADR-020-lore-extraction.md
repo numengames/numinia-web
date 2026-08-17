@@ -72,3 +72,23 @@ and narrative do not belong in the code repo.
   `apps/store/src/i18n/city-landing.ts` (public-facing /city/ narrative — a
   different, deliberate exposure) — its extraction to a data file is already
   queued for the canon v1.3.0 no-mixed-regimes rule.
+
+## Runbook execution (2026-08-17)
+
+The Oracle executed the runbook: `numinia-web` made private, private
+`numengames/numinia-lore` created and both branches pushed (`main`
+`4abc25f`, `modern` `5283e4b`), `LORE_TOKEN` fine-grained PAT (Contents:
+Read-only on `numinia-lore` only) stored as an Actions secret, and the
+rewritten history force-pushed (`origin/main` `11adc23` → `9c93346`; the
+pre-push hook ran the full turbo pipeline and the 26 acceptance scenarios
+green before the push left the machine).
+
+**Visibility gate (canon C-005 §4) — PASSED 2026-08-17.** Evidence, checked
+against the real listing (`git ls-files`), not a hand-written list: no
+`docs/seminal/` or `docs/seminal-documents/` paths tracked; the only
+manual-adjacent files are the synthetic fixture
+(`apps/store/fixtures/manual/manual-fixture.md`, zero lore by construction),
+Codex code, and `scripts/fetch-lore.mjs`. History audit per the findings
+above (0 objects in 473 commits). Boundary case resolved by Oracle ruling:
+`docs/reference/manual-map.md` **stays** — it is a functional index, not
+prose reproduction. Repo cleared to return to public.
