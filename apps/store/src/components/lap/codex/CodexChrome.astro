@@ -9,21 +9,34 @@ interface Props {
   prefix: string;
   path: string;
   showGateCta: boolean;
+  /** Mid-reading chapter navigation in the running footer (Oracle
+   * amendment 2026-08-18): jumping chapters must not require reaching
+   * the chapter's end. */
+  prevHref?: string | undefined;
+  prevLabel?: string | undefined;
+  nextHref?: string | undefined;
+  nextLabel?: string | undefined;
 }
-const { prefix, path, showGateCta } = Astro.props;
+const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = Astro.props;
 ---
 
 <header class="chrome" role="banner">
   <a class="wm" href={`${prefix}/lap/`} data-metric="codex-lap-back">LAP</a>
   <span class="path">{path}</span>
   <span class="sp"></span>
-  <a class="cbtn" href={`${prefix}/lap/codex/#indice`} data-metric="codex-toc">
+  <a class="cbtn" href={`${prefix}/lap/codex/#indice`} aria-label="Índice" data-metric="codex-toc">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
       ><path d="M2 4h12M2 8h12M2 12h8"></path></svg
     >
     <span class="lbl">Índice</span>
   </a>
-  <button class="cbtn" data-codex-marca aria-pressed="false" data-metric="codex-bookmark">
+  <button
+    class="cbtn"
+    data-codex-marca
+    aria-pressed="false"
+    aria-label="Marcapáginas"
+    data-metric="codex-bookmark"
+  >
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
       ><path d="M4 2h8v12l-4-3-4 3V2z"></path></svg
     >
@@ -33,6 +46,7 @@ const { prefix, path, showGateCta } = Astro.props;
     class="cbtn"
     data-codex-narrador
     aria-pressed="false"
+    aria-label="Narrador"
     hidden
     title="El Narrador lee el capítulo en voz alta"
     data-metric="codex-narrator"
@@ -68,6 +82,7 @@ const { prefix, path, showGateCta } = Astro.props;
     class="cbtn"
     data-codex-modo
     aria-pressed="false"
+    aria-label="Modo del manual"
     title="Modo del manual — independiente del resto del LAP"
     data-metric="codex-mode"
   >
@@ -99,7 +114,35 @@ const { prefix, path, showGateCta } = Astro.props;
 </header>
 
 <footer class="pie" role="contentinfo">
+  {
+    prevHref && (
+      <a
+        class="salto"
+        href={prevHref}
+        rel="prev"
+        aria-label={`Capítulo anterior: ${prevLabel}`}
+        title={prevLabel}
+        data-metric="codex-pie-prev"
+      >
+        ←
+      </a>
+    )
+  }
   <span class="cap-actual"><slot name="cap-actual">Códex</slot></span>
+  {
+    nextHref && (
+      <a
+        class="salto"
+        href={nextHref}
+        rel="next"
+        aria-label={`Capítulo siguiente: ${nextLabel}`}
+        title={nextLabel}
+        data-metric="codex-pie-next"
+      >
+        →
+      </a>
+    )
+  }
   <span class="sp"></span>
   <a
     class="cbtn"

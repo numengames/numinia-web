@@ -23,8 +23,25 @@ interface Props {
   path: string;
   showGateCta: boolean;
   capActual: string;
+  /** Chapter navigation for the running footer (chapter pages only). */
+  prevHref?: string | undefined;
+  prevLabel?: string | undefined;
+  nextHref?: string | undefined;
+  nextLabel?: string | undefined;
 }
-const { locale, title, description, slug = '', path, showGateCta, capActual } = Astro.props;
+const {
+  locale,
+  title,
+  description,
+  slug = '',
+  path,
+  showGateCta,
+  capActual,
+  prevHref,
+  prevLabel,
+  nextHref,
+  nextLabel,
+} = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 ---
 
@@ -59,7 +76,15 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
         } catch (e) {}
       })();
     </script>
-    <CodexChrome prefix={prefix} path={path} showGateCta={showGateCta}>
+    <CodexChrome
+      prefix={prefix}
+      path={path}
+      showGateCta={showGateCta}
+      prevHref={prevHref}
+      prevLabel={prevLabel}
+      nextHref={nextHref}
+      nextLabel={nextLabel}
+    >
       <span slot="cap-actual">{capActual}</span>
     </CodexChrome>
     <div class="lienzo">

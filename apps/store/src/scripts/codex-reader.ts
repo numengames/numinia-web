@@ -1,6 +1,7 @@
 /**
  * Codex reader behavior (MIS-085 B): e-reader ergonomics over the book
- * plane. Chrome hides on scroll down and returns on scroll up; the manual
+ * plane. Chrome compacts on scroll down (never hides — Oracle amendment
+ * 2026-08-18) and recovers on scroll up; the manual
  * keeps its OWN Diurno/Nocturno choice (D13) and text size in localStorage;
  * the bookmark is D3's schema; the lunar phase only grows (§10.1-06);
  * corner frames draw themselves once per view; the DJ aside types itself.
@@ -42,6 +43,13 @@ function readBookmark(): Bookmark | null {
 
 function topVisibleAnchor(): string {
   const blocks = document.querySelectorAll<HTMLElement>('.cuerpo [id]');
+  // At the very bottom the LAST block is the one being read — the top-most
+  // rule alone made a chapter's final paragraphs unmarkable (Oracle report
+  // 2026-08-18: they can never reach the top of the viewport).
+  const doc = document.documentElement;
+  if (scrollY + innerHeight >= doc.scrollHeight - 8) {
+    return blocks[blocks.length - 1]?.id ?? '';
+  }
   for (const block of blocks) {
     if (block.getBoundingClientRect().bottom > 90) return block.id;
   }
@@ -94,7 +102,10 @@ function initReader(codex: HTMLElement): void {
     });
   });
 
-  /* ── Cromo que se aparta al leer ── */
+  /* ── Cromo que se compacta al leer (enmienda del Oráculo 2026-08-18):
+     nunca desaparece — marcapáginas, índice y Narrador siempre a un
+     toque — pero al bajar cede altura y palabras. El pie sí se aparta y
+     vuelve al subir. ── */
   const chrome = codex.querySelector<HTMLElement>('.chrome');
   const footer = codex.querySelector<HTMLElement>('.pie');
   let lastY = 0;
@@ -103,7 +114,7 @@ function initReader(codex: HTMLElement): void {
     () => {
       const y = scrollY;
       const down = y > lastY && y > 160;
-      chrome?.classList.toggle('oculto', down);
+      chrome?.classList.toggle('compacta', down);
       footer?.classList.toggle('oculto', down);
       lastY = y;
     },

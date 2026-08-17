@@ -96,9 +96,12 @@
 .codex.nocturno::before {
   opacity: 0.5;
 }
-.codex .lienzo,
-.codex header.chrome,
-.codex footer.pie {
+/* Only the canvas rises above the grain by relative stacking: chrome and
+   pie are FIXED bars (z 50/40, already over the grain's z 1) — the old
+   `header.chrome` selector here out-specified their position:fixed and
+   pinned the bar to the top of the page (the bug behind «I must return
+   to the chapter start to bookmark», Oracle 2026-08-18). */
+.codex .lienzo {
   position: relative;
   z-index: 2;
 }
@@ -120,6 +123,8 @@
   --tam: 1.25rem;
 }
 .codex .lienzo {
+  /* Clear the fixed bars: chrome above, running pie below. */
+  padding-top: 54px;
   padding-bottom: 64px;
 }
 
@@ -141,10 +146,21 @@
   font-family: var(--sans);
   transition:
     transform 0.3s ease,
+    height 0.25s ease,
     background 0.35s;
 }
-.codex .chrome.oculto {
-  transform: translateY(-100%);
+/* Compact reading state (Oracle amendment 2026-08-18): the bar never
+   leaves — it cedes height and words. 54px → 40px; icons stay, the gate
+   CTA keeps its name (the one primary action never goes cryptic). */
+.codex .chrome.compacta {
+  height: 40px;
+}
+.codex .chrome.compacta .cbtn:not(.tinta) .lbl,
+.codex .chrome.compacta .tams {
+  display: none;
+}
+.codex .chrome.compacta .cbtn {
+  padding: 5px 8px;
 }
 .codex .chrome .wm {
   font-family: var(--mono);
@@ -997,6 +1013,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Saltos de capítulo (enmienda 2026-08-18): navegar sin ir al final.
+   Full-height touch targets inside the 44px bar. */
+.codex .pie .salto {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  font-size: 0.95rem;
+  color: var(--tinta-2);
+  text-decoration: none;
+}
+.codex .pie .salto:hover,
+.codex .pie .salto:focus-visible {
+  color: var(--inter);
 }
 .codex .pie .luna {
   display: flex;

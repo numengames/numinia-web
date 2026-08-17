@@ -48,6 +48,10 @@ const capActual =
   path={`/ codex / ${chapter.slug}`}
   showGateCta={viewer === null}
   capActual={capActual}
+  prevHref={prev ? `${prefix}/lap/codex/${prev.slug}/` : `${prefix}/lap/codex/`}
+  prevLabel={prev ? prev.title : 'Portada'}
+  nextHref={next ? `${prefix}/lap/codex/${next.slug}/` : undefined}
+  nextLabel={next?.title}
 >
   {
     veiled ? (

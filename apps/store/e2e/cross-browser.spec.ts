@@ -132,6 +132,42 @@ test('the book travels: PDF and EPUB editions download free (D6)', async ({ requ
   expect(bytes.subarray(30, 38).toString()).toBe('mimetype');
 });
 
+test('the chrome compacts but never leaves; the final paragraph can be marked', async ({
+  page,
+}) => {
+  await page.goto('/es/lap/codex/bienvenidos-a-numinia/');
+  await page.waitForLoadState('networkidle');
+  // Reading downward compacts the bar — it must NOT leave the screen
+  // (Oracle amendment 2026-08-18: bookmark and index always one tap away).
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await page.waitForFunction(() =>
+    document.querySelector('.codex .chrome')?.classList.contains('compacta'),
+  );
+  await expect(page.locator('.codex .chrome')).toBeInViewport();
+  // At the very end of the page, the bookmark pins the LAST block — the
+  // top-most rule alone made a chapter's closing paragraphs unmarkable.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(200);
+  await page.locator('[data-codex-marca]').click();
+  const marked = await page.evaluate(
+    () =>
+      (JSON.parse(localStorage.getItem('numinia-codex-marca') ?? '{}') as { blockId?: string })
+        .blockId,
+  );
+  const lastBlock = await page.evaluate(() => {
+    const blocks = document.querySelectorAll('.cuerpo [id]');
+    return blocks[blocks.length - 1]?.id;
+  });
+  expect(marked).toBe(lastBlock);
+  // Chapter jumps live in the running footer, mid-read.
+  await page.evaluate(() => window.scrollBy(0, -160));
+  await expect(page.locator('.pie [data-metric="codex-pie-next"]')).toBeVisible();
+  await expect(page.locator('.pie [data-metric="codex-pie-prev"]')).toHaveAttribute(
+    'href',
+    /introduccion|codex\/$/,
+  );
+});
+
 test('el Narrador reads aloud and follows the sounding block', async ({ page }) => {
   // Deterministic voice: a fake speechSynthesis that "speaks" instantly —
   // the wiring (states, highlight, pace) is ours; the voice is the OS's.
