@@ -26,6 +26,9 @@ describe('renderInline', () => {
     expect(renderInline('con **negrita** y _cursiva_ finas')).toBe(
       'con <strong>negrita</strong> y <em>cursiva</em> finas',
     );
+    // The manual's table cells break lines with literal <br> markers;
+    // self-closed so the EPUB edition can reuse the output as XHTML.
+    expect(renderInline('Ocultamiento y<br>revelación')).toBe('Ocultamiento y<br/>revelación');
   });
 
   it('does not italicize underscores inside words', () => {

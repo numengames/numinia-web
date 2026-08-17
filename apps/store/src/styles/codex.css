@@ -834,14 +834,6 @@
   color: var(--tinta-2);
   margin-top: 4px;
 }
-.codex .dcard.pronto {
-  cursor: default;
-  opacity: 0.55;
-}
-.codex .dcard.pronto:hover {
-  border-color: var(--linea);
-}
-
 /* ─── Pager del capítulo ─── */
 .codex .pager {
   display: flex;
@@ -1011,7 +1003,7 @@
     --papel-prof: #f9ebdc;
     --tinta: #14110f;
     --tinta-2: #5a4f45;
-    --tinta-3: #8a7d72;
+    --tinta-3: #75695e;
     --estructura: #7a5100;
     --solar: #efa517;
     --inter: #016e7d;
@@ -1053,6 +1045,19 @@
   .codex .lamina,
   .codex .tabla {
     break-inside: avoid;
+  }
+  /* Paper cannot scroll: fixed layout + anywhere-wrapping keep every
+     column of a wide table on the page. */
+  .codex .tabla {
+    overflow: visible;
+  }
+  .codex .tabla table {
+    table-layout: fixed;
+    font-size: 8.5pt;
+  }
+  .codex .tabla th,
+  .codex .tabla td {
+    overflow-wrap: anywhere;
   }
   .codex .lamina .arte-hueco {
     min-height: 90px;

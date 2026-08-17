@@ -2,7 +2,7 @@
  * Inline rendering for the Codex (MIS-085 B): the manual's markdown inline
  * marks become HTML, everything else is escaped. The source text is sacred
  * and arrives verbatim, so escaping comes FIRST and only whitelisted marks
- * are re-materialized afterwards: **bold**, _italic_, <u>, <sup>.
+ * are re-materialized afterwards: **bold**, _italic_, <u>, <sup>, <br>.
  */
 
 function escapeHtml(text: string): string {
@@ -14,6 +14,9 @@ export function renderInline(text: string): string {
   let html = escapeHtml(text);
   // Whitelisted literal tags from the PDF conversion, now escaped forms.
   html = html.replaceAll(/&lt;u&gt;(.*?)&lt;\/u&gt;/g, '<u>$1</u>');
+  // Cell line breaks inside the manual's tables. Self-closed: the EPUB
+  // edition reuses this output as XHTML.
+  html = html.replaceAll(/&lt;br\s*\/?&gt;/g, '<br/>');
   html = html.replaceAll(
     /&lt;sup&gt;\s*(\d{1,3})\s*&lt;\/sup&gt;/g,
     '<sup class="nota-ref" data-nota="$1">$1</sup>',

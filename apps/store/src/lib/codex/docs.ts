@@ -31,31 +31,3 @@ export function loadCodexDoc(name: CodexDocName): string {
   }
   return resolved.replaceAll(/<!--[\s\S]*?-->/g, '').trim();
 }
-
-export interface GlossaryEntry {
-  readonly term: string;
-  readonly definition: string;
-  readonly source: string;
-}
-
-/** The glossary MD (## Término / prose / _Fuente: …._) as structured entries. */
-export function parseGlossary(raw: string): readonly GlossaryEntry[] {
-  const entries: GlossaryEntry[] = [];
-  const sections = raw.split(/^## /m).slice(1);
-  for (const section of sections) {
-    const [head, ...rest] = section.split('\n');
-    const term = (head ?? '').trim();
-    if (!term || term.startsWith('Términos sin fuente')) continue;
-    const body = rest.join('\n').trim();
-    const sourceMatch = /_Fuente: ([\s\S]+?)_\s*$/.exec(body);
-    const definition = (sourceMatch ? body.slice(0, sourceMatch.index) : body)
-      .replaceAll('\n', ' ')
-      .trim();
-    entries.push({
-      term,
-      definition,
-      source: sourceMatch ? `Fuente: ${sourceMatch[1]!.replaceAll('\n', ' ').trim()}` : '',
-    });
-  }
-  return entries;
-}
