@@ -132,6 +132,62 @@ test('the book travels: PDF and EPUB editions download free (D6)', async ({ requ
   expect(bytes.subarray(30, 38).toString()).toBe('mimetype');
 });
 
+test('el Narrador reads aloud and follows the sounding block', async ({ page }) => {
+  // Deterministic voice: a fake speechSynthesis that "speaks" instantly —
+  // the wiring (states, highlight, pace) is ours; the voice is the OS's.
+  await page.addInitScript(() => {
+    class FakeUtterance {
+      text: string;
+      lang = '';
+      rate = 1;
+      voice: unknown = null;
+      onstart: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+    const fake = {
+      speaking: false,
+      paused: false,
+      speak(utterance: FakeUtterance) {
+        fake.speaking = true;
+        setTimeout(() => utterance.onstart?.(), 0);
+      },
+      cancel() {
+        fake.speaking = false;
+      },
+      pause() {
+        fake.paused = true;
+      },
+      resume() {
+        fake.paused = false;
+      },
+      getVoices: () => [{ lang: 'es-ES', name: 'Voz de prueba' }],
+      addEventListener() {},
+    };
+    Object.defineProperty(window, 'speechSynthesis', { value: fake });
+    (window as { SpeechSynthesisUtterance?: unknown }).SpeechSynthesisUtterance = FakeUtterance;
+  });
+  await page.goto('/es/lap/codex/bienvenidos-a-numinia/');
+  const narrator = page.locator('[data-codex-narrador]');
+  await expect(narrator).toBeVisible();
+  await narrator.click();
+  await expect(narrator).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.cuerpo .narrando')).toHaveCount(1);
+  const pace = page.locator('[data-codex-ritmo]');
+  await expect(pace).toBeVisible();
+  await pace.click();
+  await expect(pace).toContainText('×1.25');
+  // Pause keeps the place and hands the button its next verb.
+  await narrator.click();
+  await expect(narrator).toHaveAttribute('aria-pressed', 'false');
+  // No prose, no narrator: the glossary offers no button (v1 reads chapters).
+  await page.goto('/es/lap/codex/glosario/');
+  await expect(page.locator('[data-codex-narrador]')).toBeHidden();
+});
+
 test('management data is refused without a session', async ({ request }) => {
   const response = await request.get('/api/admin/overview');
   expect(response.status()).toBe(403);

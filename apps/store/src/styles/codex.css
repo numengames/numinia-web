@@ -240,6 +240,18 @@
   }
 }
 
+/* ─── El Narrador: el bloque que suena lleva la regla solar ─── */
+.codex .cbtn .ritmo {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+.codex .cuerpo .narrando,
+.codex .cuerpo .lectura .narrando {
+  background: var(--papel-prof);
+  box-shadow: -4px 0 0 var(--solar);
+  transition: background 0.3s;
+}
+
 /* ─── Marcos de grabado (esquinas que se dibujan) ─── */
 .codex .marco {
   position: absolute;

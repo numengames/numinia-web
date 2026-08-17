@@ -29,6 +29,36 @@ const { prefix, path, showGateCta } = Astro.props;
     >
     <span class="lbl">Marcapáginas</span>
   </button>
+  <button
+    class="cbtn"
+    data-codex-narrador
+    aria-pressed="false"
+    hidden
+    title="El Narrador lee el capítulo en voz alta"
+    data-metric="codex-narrator"
+  >
+    <svg data-ico-lee viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+      ><path d="M2 6v4h3l4 3V3L5 6H2z"></path><path d="M11.5 5.5a3.5 3.5 0 0 1 0 5"></path></svg
+    >
+    <svg
+      data-ico-pausa
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      style="display:none"><path d="M6 3v10M10 3v10"></path></svg
+    >
+    <span class="lbl">Narrador</span>
+  </button>
+  <button
+    class="cbtn"
+    data-codex-ritmo
+    hidden
+    title="Ritmo de lectura del Narrador"
+    data-metric="codex-narrator-rate"
+  >
+    <span class="ritmo mono">×1</span>
+  </button>
   <div class="tams" role="group" aria-label="Tamaño de letra">
     <button data-tam="s" aria-pressed="false" data-metric="codex-size">A</button>
     <button data-tam="m" aria-pressed="true" data-metric="codex-size">A</button>
