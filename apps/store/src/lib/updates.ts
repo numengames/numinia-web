@@ -26,6 +26,66 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.44.0',
+    date: '2026-08-17 23:29',
+    missions: ['MIS-085'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'El Narrador: the Codex reads itself aloud with your device’s own voice — the sounding paragraph carries a solar rule and the page follows it, at the pace you choose',
+      },
+      {
+        type: 'NEW',
+        text: 'Every term knows its way home: the first mention of Velo, Prisma or any glossary word in a chapter now links quietly to its definition',
+      },
+      {
+        type: 'FIX',
+        text: 'The reading bar truly travels with you at last — compact while you read, never gone — so the bookmark, the index and the chapter arrows in the footer are always one tap away, and the final paragraph of a chapter can finally be marked',
+      },
+    ],
+  },
+  {
+    version: 'v0.43.0',
+    date: '2026-08-17 22:06',
+    missions: ['MIS-085'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The character sheet speaks the manual v0.6.0: gears from zero to five, only the competences of your Guild, Faction and Species awake, your Position sets Umbral and aptitudes — and your character lives on your device and in the files you take, nowhere else',
+      },
+      {
+        type: 'UPD',
+        text: 'The Procurators follow the manual: the Legates now keep the law, and the Syndics answer to Mercurials and Intendants',
+      },
+    ],
+  },
+  {
+    version: 'v0.42.0',
+    date: '2026-08-17 21:36',
+    missions: ['MIS-085'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The book travels free: the whole manual as a print-ready PDF and a Kindle-ready EPUB, typeset by the same hands that set the web pages — no login, ever',
+      },
+    ],
+  },
+  {
+    version: 'v0.41.0',
+    date: '2026-08-17 20:30',
+    missions: ['MIS-085'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Codex opens: the RPG manual v0.6.0 reads as a printed book — paper grain, engraved corners that draw themselves, its own day and night, a bookmark that remembers your exact paragraph, and a glossary of 79 terms sourced only from the text',
+      },
+      {
+        type: 'UPD',
+        text: 'The old manual viewer retires with honors; the Umbral now veils only the reader — the downloads stay open to every traveler',
+      },
+    ],
+  },
+  {
     version: 'v0.40.0',
     date: '2026-08-17 14:35',
     entries: [
