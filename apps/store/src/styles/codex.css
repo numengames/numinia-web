@@ -227,12 +227,15 @@
   font-size: 1rem;
 }
 @media (max-width: 860px) {
+  /* Chrome-scoped ONLY: body buttons (Umbral, pager) keep their words.
+     And the gate CTA keeps its label even in the chrome — the one primary
+     action must never shrink to a cryptic arrow. */
   .codex .chrome .path,
-  .codex .cbtn .lbl,
+  .codex .chrome .cbtn:not(.tinta) .lbl,
   .codex .tams {
     display: none;
   }
-  .codex .cbtn {
+  .codex .chrome .cbtn {
     padding: 6px 8px;
   }
 }
