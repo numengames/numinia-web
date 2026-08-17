@@ -4,7 +4,7 @@
 >
 > **Epistemic value.** Resolves who we are, what we build, and which layer/phase any task belongs to — the shared world-model that keeps every agent's predictions aligned.
 > **Pragmatic value.** Gates every action: naming, testing, i18n, security, and what NOT to do. If an action contradicts this file, the action is wrong.
-> **In the system.** Observes: seminal corpus (private `numinia-lore` repo, ADR-020), ADRs, glossary. Regulates: all code and docs. Coupled to: DECISIONS.md, docs/glossary.md, missions/.
+> **In the system.** Observes: seminal corpus (private `numinia-lore` repo, ADR-020), ADRs, glossary. Regulates: all code and docs. Coupled to: DECISIONS.md, docs/glossary.md, missions (centralized in numengames/numinia-nwos, MIS-072+).
 >
 > _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
 

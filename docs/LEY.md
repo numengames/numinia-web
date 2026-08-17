@@ -55,7 +55,7 @@ inference: documents are how this organism keeps its world-model and its actions
 | [CONTRIBUTING.md](../CONTRIBUTING.md)                                             | Workflow, commits, tracks |
 | [SECURITY.md](../SECURITY.md)                                                     | Security commitments      |
 | [docs/analytics.md](./analytics.md)                                               | Instrumentation contract  |
-| [missions/Definition_of_Done_v0.2.0.md](../missions/Definition_of_Done_v0.2.0.md) | When work may close       |
+| [docs/Definition_of_Done_v0.2.0.md](./Definition_of_Done_v0.2.0.md)               | When work may close       |
 | [docs/remote-checklist.md](./remote-checklist.md)                                 | Push-day runbook          |
 | [docs/deploy-runbook.md](./deploy-runbook.md)                                     | How numinia.com ships     |
 | [docs/adr-write-path-dossier.md](./adr-write-path-dossier.md)                     | Write-path option map     |
@@ -63,20 +63,15 @@ inference: documents are how this organism keeps its world-model and its actions
 
 ## Missions — what was promised and delivered
 
+Missions are centralized in NWOS L3 (Oracle order, 2026-08-17):
+[numengames/numinia-nwos/missions](https://github.com/numengames/numinia-nwos/tree/main/missions).
+This repo's build missions live there as **MIS-072…MIS-085** (formerly
+MISSION-000…011, 030, 031). The board renders at
+[numinia.org/missions](https://numinia.org/missions).
+
 | Document                                                                                | Rules on                |
 | --------------------------------------------------------------------------------------- | ----------------------- |
-| [missions/MISSION-000-report.md](../missions/MISSION-000-report.md)                     | Foundations (report)    |
-| [missions/MISSION-001.md](../missions/MISSION-001.md)                                   | The Archive             |
-| [missions/MISSION-002.md](../missions/MISSION-002.md)                                   | Identity (spec, gated)  |
-| [missions/MISSION-003-web-parity.md](../missions/MISSION-003-web-parity.md)             | Web parity P1–P5        |
-| [missions/MISSION-004-three-pillars.md](../missions/MISSION-004-three-pillars.md)       | Three pillars + the Law |
-| [missions/MISSION-005-data-dignity.md](../missions/MISSION-005-data-dignity.md)         | Data dignity narrative  |
-| [missions/MISSION-006-khepri.md](../missions/MISSION-006-khepri.md)                     | Khepri design execution |
-| [missions/MISSION-007-city-chronicle.md](../missions/MISSION-007-city-chronicle.md)     | The City chronicle      |
-| [missions/MISSION-008-lap-platform.md](../missions/MISSION-008-lap-platform.md)         | The L.A.P. platform     |
-| [missions/MISSION-009-codex-stats.md](../missions/MISSION-009-codex-stats.md)           | Codex manual + stats    |
-| [missions/MISSION-010-settings-session.md](../missions/MISSION-010-settings-session.md) | Settings + the door     |
-| [missions/MISSION-011-oracle-zone.md](../missions/MISSION-011-oracle-zone.md)           | The Oracle zone         |
+| [MIS-072…MIS-085 in numinia-nwos](https://github.com/numengames/numinia-nwos/tree/main/missions) | All numinia-web missions |
 | [docs/merge-numinia-com.md](./merge-numinia-com.md)                                     | numinia.com merge plan  |
 
 ## Not law, but load-bearing

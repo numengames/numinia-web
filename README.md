@@ -44,7 +44,7 @@ packages/
   ui/           Design tokens (PROVISIONAL until the brand package arrives)
 docs/           Constitution support: glossary (naming authority), ADRs, plans, audits
 features/       Gherkin acceptance criteria + Cucumber steps (run against real artifacts)
-missions/       Mission specs and completion reports
+missions        Centralized in numengames/numinia-nwos (MIS-072+, Oracle order 2026-08-17)
 ```
 
 ## Quickstart

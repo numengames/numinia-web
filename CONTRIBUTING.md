@@ -44,5 +44,5 @@ summary; the constitution wins on any conflict.
 | Understand the domain  | `packages/domain` + `docs/glossary.md`    |
 | Add an analytics event | `docs/analytics.md` (name it there first) |
 | See what is undecided  | `docs/open-questions.md`                  |
-| Know what Done means   | `missions/Definition_of_Done_v0.2.0.md`   |
+| Know what Done means   | `docs/Definition_of_Done_v0.2.0.md`       |
 | Push-day runbook       | `docs/remote-checklist.md`                |

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Códex de Numinia · Lector Akásico Personal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Alegreya+SC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   CÓDEX DE NUMINIA — mockup v2 · plano libro [EXTENSIÓN firmada]
+   Diurno por defecto · papel de gramaje pesado · ergonomía e-reader
+   Khepri v4.2.0 §19.3 — ningún hex fuera de tokens
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  /* tinta y papel — Diurno */
+  --papel:#FDF6EE; --papel-prof:#F9EBDC; --tinta:#14110F;
+  --tinta-2:#5A4F45; --tinta-3:#8A7D72;
+  --estructura:#7A5100; --solar:#EFA517;
+  --inter:#016E7D; --inter-viva:#018EA1;
+  --linea:#C4B5A6; --linea-tenue:#E4D6C4;
+  --grana:#B02330;
+  --serif:'Alegreya','Iowan Old Style',Palatino,Georgia,serif;
+  --sc:'Alegreya SC','Alegreya',serif;
+  --sans:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --medida:70ch; --tam:1.125rem;
+  --grano:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.29 0 0 0 0 0.25 0 0 0 0 0.20 0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+/* Nocturno del manual — conmutador propio, independiente del LAP */
+body.nocturno{
+  --papel:#14110F; --papel-prof:#1E1A17; --tinta:#F9EBDC;
+  --tinta-2:#C4B5A6; --tinta-3:#8A7D72;
+  --estructura:#EFA517; --solar:#EFA517;
+  --inter:#A6DAD5; --inter-viva:#A6DAD5;
+  --linea:#3A332D; --linea-tenue:#292420; --grana:#D33440;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{
+  background:var(--papel);color:var(--tinta);
+  font-family:var(--serif);font-size:var(--tam);line-height:1.72;
+  transition:background .35s,color .35s;
+}
+body::before{ /* el gramaje: grano de papel, solo fondo */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:var(--grano);opacity:1;
+}
+body.nocturno::before{opacity:.5}
+main,header.chrome,footer.pie{position:relative;z-index:2}
+::selection{background:var(--solar);color:#14110F}
+a{color:var(--inter)}
+:focus-visible{outline:2px solid var(--inter);outline-offset:3px}
+body[data-tam="s"]{--tam:1rem} body[data-tam="l"]{--tam:1.25rem}
+
+/* ─── Cromo: se aparta al leer ─── */
+.chrome{
+  position:fixed;top:0;left:0;right:0;z-index:50;height:54px;
+  display:flex;align-items:center;gap:10px;padding:0 16px;
+  background:color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--linea-tenue);
+  font-family:var(--sans);transition:transform .3s ease,background .35s;
+}
+.chrome.oculto{transform:translateY(-100%)}
+.chrome .wm{font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;color:var(--tinta-2)}
+.chrome .path{font-family:var(--mono);font-size:.7rem;color:var(--tinta-3);letter-spacing:.04em}
+.chrome .sp{flex:1}
+.cbtn{
+  font-family:var(--sans);font-size:.78rem;color:var(--tinta-2);
+  background:none;border:1px solid var(--linea);border-radius:6px;
+  padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:color .15s,border-color .15s;
+}
+.cbtn:hover{color:var(--inter);border-color:var(--inter)}
+.cbtn[aria-pressed="true"]{color:var(--estructura);border-color:var(--estructura)}
+.cbtn svg{width:14px;height:14px}
+.cbtn.tinta{background:var(--tinta);border-color:var(--tinta);color:var(--papel)}
+.cbtn.tinta:hover{opacity:.85}
+.tams{display:inline-flex;border:1px solid var(--linea);border-radius:6px;overflow:hidden}
+.tams button{font-family:var(--serif);background:none;border:0;color:var(--tinta-3);cursor:pointer;padding:5px 9px}
+.tams button[aria-pressed="true"]{color:var(--tinta);background:var(--papel-prof)}
+.tams button:nth-child(1){font-size:.72rem}.tams button:nth-child(2){font-size:.86rem}.tams button:nth-child(3){font-size:1rem}
+@media(max-width:860px){.chrome .path,.cbtn .lbl,.tams{display:none}.cbtn{padding:6px 8px}}
+
+/* ─── Marcos de grabado (esquinas que se dibujan) ─── */
+.marco{position:absolute;width:74px;height:74px;pointer-events:none;color:var(--estructura)}
+.marco svg{width:100%;height:100%}
+.marco path{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;
+  stroke-dasharray:340;stroke-dashoffset:340}
+.dibujado .marco path{animation:trazo 1.6s ease forwards}
+.dibujado .marco:nth-child(2) path{animation-delay:.12s}
+.dibujado .marco:nth-child(3) path{animation-delay:.24s}
+.dibujado .marco:nth-child(4) path{animation-delay:.36s}
+@keyframes trazo{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.marco path{stroke-dashoffset:0}}
+.marco.ne{top:14px;left:14px}
+.marco.no{top:14px;right:14px;transform:scaleX(-1)}
+.marco.se{bottom:14px;left:14px;transform:scaleY(-1)}
+.marco.so{bottom:14px;right:14px;transform:scale(-1)}
+
+/* ─── Portada ─── */
+.portada{
+  min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:110px 24px 70px;position:relative;
+}
+.portada .ed{font-family:var(--mono);font-size:.68rem;letter-spacing:.4em;color:var(--tinta-3);text-transform:uppercase}
+.portada h1{
+  font-family:var(--sc);font-weight:500;font-size:clamp(3rem,10.5vw,6.8rem);
+  letter-spacing:.14em;text-indent:.14em;margin:.32em 0 .12em;color:var(--tinta);
+}
+.portada h1 span{color:var(--estructura)}
+.portada .sub{font-style:italic;font-size:clamp(1.02rem,2.3vw,1.3rem);color:var(--tinta-2);max-width:36ch}
+.filete{display:flex;align-items:center;gap:16px;margin:40px 0;color:var(--estructura)}
+.filete::before,.filete::after{content:"";height:1px;width:96px;display:block;
+  background:linear-gradient(90deg,transparent,var(--estructura))}
+.filete::after{background:linear-gradient(90deg,var(--estructura),transparent)}
+.filete svg{width:30px;height:30px}
+.portada .aut{font-family:var(--serif);font-size:.95rem;color:var(--tinta-2)}
+.portada .aut b{color:var(--tinta);font-weight:500}
+.portada .ver{font-family:var(--mono);font-size:.68rem;color:var(--tinta-3);margin-top:12px;letter-spacing:.12em}
+.portada .baja{position:absolute;bottom:24px;font-family:var(--mono);font-size:.64rem;color:var(--tinta-3);letter-spacing:.24em;text-transform:uppercase}
+
+/* ─── Bloques generales ─── */
+.hoja{max-width:var(--medida);margin:0 auto;padding:72px 24px;position:relative}
+.etq{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;text-transform:uppercase;color:var(--estructura);margin-bottom:24px}
+
+/* Índice */
+.toc{list-style:none}
+.toc li{border-bottom:1px solid var(--linea-tenue)}
+.toc a{display:flex;align-items:baseline;gap:16px;padding:15px 4px;text-decoration:none;color:var(--tinta);transition:color .15s}
+.toc a:hover{color:var(--inter)}
+.toc .n{font-family:var(--mono);font-size:.76rem;color:var(--estructura);min-width:2.2ch}
+.toc .t{flex:1}
+.toc .st{font-family:var(--sans);font-size:.7rem;color:var(--tinta-3);display:inline-flex;gap:5px;align-items:center}
+.toc li.cerrado a{color:var(--tinta-3)}
+.toc svg{width:12px;height:12px}
+
+/* ─── Capítulo con columna de margen ─── */
+.pliego{max-width:1160px;margin:0 auto;padding:80px 24px 30px;position:relative}
+.pliego-int{display:grid;grid-template-columns:1fr;gap:0 56px;max-width:var(--medida);margin:0 auto}
+@media(min-width:1200px){
+  .pliego-int{grid-template-columns:minmax(0,var(--medida)) 220px;max-width:none;justify-content:center}
+}
+.cuerpo{min-width:0}
+.margen{display:none;font-family:var(--sans);font-size:.8rem;color:var(--tinta-2);padding-top:8px}
+@media(min-width:1200px){.margen{display:block}}
+.nota-m{border-left:2px solid var(--linea);padding-left:14px;margin-bottom:34px;line-height:1.55}
+.nota-m .num{font-family:var(--mono);font-size:.62rem;color:var(--estructura)}
+.glifo-m{color:var(--estructura);opacity:.65;margin:20px 0 34px}
+.glifo-m svg{width:34px;height:34px}
+
+.cap-abre{text-align:center;margin-bottom:60px;position:relative;padding:58px 20px}
+.cap-abre .num{font-family:var(--mono);font-size:.72rem;letter-spacing:.42em;color:var(--estructura);text-transform:uppercase}
+.cap-abre h2{font-family:var(--sc);font-weight:500;font-size:clamp(1.9rem,5vw,2.9rem);letter-spacing:.05em;margin:.4em 0 .45em}
+.cap-abre .epi{font-style:italic;color:var(--tinta-2);font-size:.98em;max-width:44ch;margin:0 auto}
+
+.cuerpo>p{margin:0 0 1.3em}
+.cuerpo>p.inicial::first-letter{
+  font-family:var(--sc);font-size:4.4em;float:left;line-height:.8;
+  padding:.05em .12em 0 0;color:var(--estructura);
+}
+sup a{font-family:var(--mono);font-size:.64em;text-decoration:none;color:var(--inter)}
+
+/* Cuadro de lectura */
+.lectura{
+  border:1px solid var(--linea);border-left:3px solid var(--solar);
+  background:var(--papel-prof);border-radius:0 10px 10px 0;
+  padding:26px 30px;margin:36px 0;font-style:italic;color:var(--tinta-2);position:relative;
+}
+body.nocturno .lectura{background:var(--papel-prof)}
+.lectura::before{
+  content:"LECTURA";font-style:normal;font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.32em;color:var(--estructura);position:absolute;top:-9px;left:22px;
+  background:var(--papel);padding:0 8px;
+}
+.lectura p+p{margin-top:1em}
+
+/* Lámina — boceto a lápiz sobre papel */
+.lamina{margin:50px 0;border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:var(--papel-prof)}
+.lamina .arte{display:block;width:100%;height:auto}
+.lamina figcaption{
+  display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  padding:12px 18px;border-top:1px solid var(--linea-tenue);
+  font-family:var(--sans);font-size:.8rem;color:var(--tinta-2);font-style:italic;
+}
+.lamina .tec{font-family:var(--mono);font-size:.6rem;font-style:normal;letter-spacing:.2em;color:var(--tinta-3);text-transform:uppercase;white-space:nowrap}
+
+/* Tabla numerada */
+.tabla{margin:46px 0;overflow-x:auto}
+.tabla table{width:100%;border-collapse:collapse;font-size:.9em}
+.tabla caption{text-align:left;font-family:var(--mono);font-size:.64rem;letter-spacing:.24em;text-transform:uppercase;color:var(--estructura);padding-bottom:12px}
+.tabla th{font-family:var(--sans);font-weight:600;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--estructura);text-align:left;padding:10px 14px;border-bottom:1.5px solid var(--linea)}
+.tabla td{padding:11px 14px;border-bottom:1px solid var(--linea-tenue);color:var(--tinta-2);vertical-align:top}
+.tabla td:first-child{color:var(--tinta);font-style:italic}
+.tabla td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--tinta)}
+.tabla tr:hover td{background:var(--papel-prof)}
+
+/* Aparte del DJ — con tecleo */
+.aparte{margin:44px 0;padding:22px 26px;border:1px dashed var(--linea);border-radius:10px;font-family:var(--sans);font-size:.86em;color:var(--tinta-2)}
+.aparte b{display:block;font-family:var(--mono);font-weight:400;font-size:.6rem;letter-spacing:.3em;color:var(--inter);text-transform:uppercase;margin-bottom:10px}
+.aparte .tecleo::after{content:"▎";color:var(--inter);animation:parp 1s steps(1) infinite}
+.aparte.terminado .tecleo::after{content:""}
+@keyframes parp{50%{opacity:0}}
+
+/* ─── Ficha: engranajes (avance de /lap/character/) ─── */
+.ficha{border:1px solid var(--linea);border-radius:12px;background:var(--papel-prof);padding:30px 32px;margin:50px 0;position:relative}
+.ficha h3{font-family:var(--sc);font-weight:500;letter-spacing:.06em;font-size:1.15em;margin-bottom:4px}
+.ficha .sub{font-family:var(--sans);font-size:.78rem;color:var(--tinta-3);margin-bottom:22px}
+.linea-f{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--linea-tenue)}
+.linea-f:last-of-type{border-bottom:0}
+.linea-f .k{flex:1;font-variant:small-caps;letter-spacing:.06em}
+.engranajes{display:inline-flex;gap:7px}
+.engranaje{width:24px;height:24px;border:0;background:none;padding:0;cursor:pointer;color:var(--linea);transition:color .2s,transform .35s ease}
+.engranaje svg{width:100%;height:100%;display:block}
+.engranaje.lleno{color:var(--estructura);transform:rotate(90deg)}
+.engranaje:hover{color:var(--solar)}
+.ficha .sob{font-family:var(--sans);font-size:.76rem;color:var(--tinta-2);font-style:italic;margin-top:20px;border-top:1px solid var(--linea-tenue);padding-top:14px}
+
+/* ─── El Umbral, a la luz del día ─── */
+.umbral{max-width:var(--medida);margin:20px auto 0;padding:0 24px 90px;text-align:center}
+.velo{
+  position:relative;text-align:left;color:var(--tinta-3);
+  -webkit-mask-image:linear-gradient(180deg,#000,transparent 90%);
+  mask-image:linear-gradient(180deg,#000,transparent 90%);
+  filter:blur(2.2px);user-select:none;pointer-events:none;padding-top:26px;
+}
+.velo .num{font-family:var(--mono);font-size:.72rem;letter-spacing:.42em;color:var(--estructura);text-transform:uppercase;display:block;text-align:center}
+.velo h3{font-family:var(--sc);font-weight:500;font-size:1.8em;letter-spacing:.05em;text-align:center;margin:.4em 0 .9em;color:var(--tinta-2)}
+.sello{
+  width:100px;height:100px;margin:-16px auto 24px;border-radius:50%;
+  border:1px solid var(--estructura);display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 36%, color-mix(in srgb,var(--solar) 16%,transparent), transparent 70%);
+  box-shadow:0 0 12px rgba(239,165,23,.25);position:relative;z-index:2;
+}
+.sello svg{width:50px;height:50px}
+.umbral h4{font-family:var(--sc);font-weight:500;font-size:1.4em;margin-bottom:10px}
+.umbral .p{color:var(--tinta-2);font-style:italic;max-width:46ch;margin:0 auto 28px}
+.umbral .acciones{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-family:var(--sans)}
+.umbral .nota{font-family:var(--mono);font-size:.62rem;color:var(--tinta-3);margin-top:20px;letter-spacing:.1em}
+
+/* ─── Descargas ─── */
+.descargas{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-family:var(--sans)}
+.dcard{border:1px solid var(--linea);border-radius:10px;padding:14px 20px;min-width:150px;text-align:left;background:var(--papel);cursor:pointer;transition:border-color .15s}
+.dcard:hover{border-color:var(--inter)}
+.dcard .f{font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;color:var(--estructura);text-transform:uppercase}
+.dcard .d{font-size:.8rem;color:var(--tinta-2);margin-top:4px}
+
+/* ─── Cierre ─── */
+.cierre{border-top:1px solid var(--linea-tenue);margin-top:30px}
+.glosario dt{font-style:italic;color:var(--estructura);margin-top:18px;font-variant:small-caps;letter-spacing:.04em;font-size:1.05em}
+.glosario dd{color:var(--tinta-2);margin-top:4px}
+.gracias{font-style:italic;color:var(--tinta-2)}
+.gracias.nombres{color:var(--tinta);margin-top:14px}
+.colofon{text-align:center;padding:56px 24px 90px;font-family:var(--sans)}
+.binaria{display:flex;gap:3px;justify-content:center;margin-bottom:32px;opacity:.6}
+.binaria i{width:5px;height:12px;border-radius:1px;background:var(--linea)}
+.binaria i.uno{background:var(--estructura)}
+.colofon .marca-cierre{width:42px;height:42px;margin:0 auto 16px;border:1px solid var(--linea);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--estructura)}
+.colofon p{font-size:.76rem;color:var(--tinta-3);line-height:1.9}
+.colofon .firma{font-family:var(--mono);font-size:.64rem;letter-spacing:.22em;text-transform:lowercase;color:var(--tinta-2);margin-top:14px}
+
+/* ─── Pie corriente ─── */
+.pie{
+  position:fixed;bottom:0;left:0;right:0;z-index:40;height:44px;
+  display:flex;align-items:center;gap:16px;padding:0 20px;
+  background:color-mix(in srgb, var(--papel) 88%, transparent);
+  backdrop-filter:blur(10px);border-top:1px solid var(--linea-tenue);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--tinta-3);
+  text-transform:uppercase;transition:transform .3s ease,background .35s;
+}
+.pie.oculto{transform:translateY(100%)}
+.pie .cap-actual{color:var(--tinta-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pie .sp{flex:1}
+.pie .luna{display:flex;align-items:center;gap:10px;color:var(--tinta-2)}
+.pie .luna svg{width:18px;height:18px}
+main{padding-bottom:64px}
+
+/* Marcapáginas */
+.marca-b{position:relative}
+.marca-b .cinta{position:absolute;left:-34px;top:0;width:15px;height:42px;background:var(--solar);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);opacity:0;transition:opacity .3s}
+.marca-b.activa .cinta{opacity:1}
+@media(max-width:900px){.marca-b .cinta{left:-19px;width:11px;height:32px}}
+</style>
+</head>
+<body data-tam="m">
+
+<header class="chrome" id="cromo" role="banner">
+  <span class="wm">LAP</span>
+  <span class="path">/ codex / manual-del-juego-de-rol</span>
+  <span class="sp"></span>
+  <button class="cbtn" id="btn-toc"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h8"/></svg><span class="lbl">Índice</span></button>
+  <button class="cbtn" id="btn-marca" aria-pressed="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8v12l-4-3-4 3V2z"/></svg><span class="lbl">Marcapáginas</span></button>
+  <div class="tams" role="group" aria-label="Tamaño de letra">
+    <button data-tam="s" aria-pressed="false">A</button>
+    <button data-tam="m" aria-pressed="true">A</button>
+    <button data-tam="l" aria-pressed="false">A</button>
+  </div>
+  <button class="cbtn" id="btn-modo" aria-pressed="false" title="Modo del manual — independiente del resto del LAP">
+    <svg id="ico-sol" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M13 3l-1.4 1.4M4.4 11.6 3 13"/></svg>
+    <svg id="ico-luna" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none"><path d="M13 9.5A6 6 0 0 1 6.5 3 6 6 0 1 0 13 9.5z"/></svg>
+    <span class="lbl" id="modo-lbl">Nocturno</span>
+  </button>
+  <button class="cbtn tinta"><span class="lbl">Cruzar el Umbral</span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3l5 5-5 5"/></svg></button>
+</header>
+
+<main>
+<!-- ═══ Portada ═══ -->
+<section class="portada dibujado" aria-label="Portada">
+  <span class="marco ne"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+  <span class="marco no"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+  <span class="marco se"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+  <span class="marco so"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+  <p class="ed">Numen Games presenta</p>
+  <h1>Numi<span>n</span>ia</h1>
+  <p class="sub">El juego de rol de la ciudad escrita entre vapor y código</p>
+  <div class="filete" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
+      <path d="M16 3 28 10v12L16 29 4 22V10z"/><path d="M16 3v13m0 0L4 10m12 6 12-6M16 16v13"/>
+      <circle cx="16" cy="10" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="19" r="1.4" fill="currentColor" stroke="none"/>
+      <circle cx="22" cy="19" r="1.4" fill="currentColor" stroke="none"/>
+    </svg>
+  </div>
+  <p class="aut">Christian Märtens <b>·</b> Pablo Fernández-Maquieira Martínez</p>
+  <p class="ver">manual del juego de rol · v0.6.0 · edición del Lector Akásico</p>
+  <p class="baja">↓ abre el códex</p>
+</section>
+
+<!-- ═══ Índice ═══ -->
+<section class="hoja" id="indice" aria-label="Índice">
+  <p class="etq">Índice del Códex</p>
+  <ol class="toc">
+    <li><a href="#cap1"><span class="n">—</span><span class="t">Introducción · Los ecos de una ciudad virtual</span><span class="st">abierto</span></a></li>
+    <li><a href="#cap1"><span class="n">I</span><span class="t">Bienvenidos a Numinia</span><span class="st">abierto</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">II</span><span class="t">Historia y leyendas de Numinia</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">III</span><span class="t">Creación del personaje</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">IV</span><span class="t">Sistema de juego</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">V</span><span class="t">Geografía y cultura de Numinia</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">VI</span><span class="t">Inventario y bestiario</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li class="cerrado"><a href="#umbral"><span class="n">VII</span><span class="t">Construyendo la aventura · El Espejo Roto</span><span class="st"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>tras el Umbral</span></a></li>
+    <li><a href="#ficha"><span class="n">✦</span><span class="t">Hoja de personaje · Glosario · Agradecimientos</span><span class="st">abierto</span></a></li>
+  </ol>
+</section>
+
+<!-- ═══ Capítulo 1 ═══ -->
+<article class="pliego" id="cap1" aria-label="Capítulo primero">
+  <header class="cap-abre dibujado" id="abre-cap">
+    <span class="marco ne"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+    <span class="marco no"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+    <span class="marco se"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+    <span class="marco so"><svg viewBox="0 0 74 74"><path d="M4 70 V14 Q4 4 14 4 H70 M4 30 Q14 30 18 22 Q22 14 30 14 M12 4 Q12 12 4 12"/></svg></span>
+    <span class="num">Capítulo primero</span>
+    <h2>Bienvenidos a Numinia</h2>
+    <p class="epi">Una ciudad escrita por la voluntad y sostenida por el Velo.</p>
+  </header>
+
+  <div class="pliego-int">
+    <div class="cuerpo">
+      <div class="lectura">
+        <p>«El sonido de una piedra al rodar sobre una loseta digital quebrada fue lo único que interrumpió el silencio. A lo lejos, una esfera levitante ‒plateada y rugosa como una luna extraviada‒ proyectaba en el aire la sombra de un tablero. No tenía fin ni centro aparente.»</p>
+        <p>«‒Una pregunta que valga la pena responder ‒replicó ella. Y lanzó el dado.»</p>
+      </div>
+
+      <p class="inicial">Un juego de rol es una experiencia compartida de creación narrativa. No se trata simplemente de asumir el papel de un personaje ficticio, sino de encarnar un punto de vista, un temperamento, una manera de estar en el mundo. Jugar en Numinia no es actuar como otro, sino revelar lo que uno es cuando lo otro se diluye<sup><a href="#" id="rn1">1</a></sup>.</p>
+
+      <div class="marca-b" id="ancla-marca">
+        <span class="cinta" aria-hidden="true"></span>
+        <p>La ciudad se levanta entre vapor y código: torres sin base que crecen hacia abajo, calles que reescriben los datos de las antiguas, murales que son ecos del Akasha. Cuatro distritos la conforman, y bajo todos ellos respira el Velo — la exhalación de lo eterno que separa lo que la ciudad es de lo que la ciudad podría llegar a ser.</p>
+      </div>
+
+      <figure class="lamina">
+        <svg class="arte" viewBox="0 0 700 330" role="img" aria-label="Boceto a lápiz: el dado de obsidiana ante el tablero suspendido">
+          <defs>
+            <filter id="lapiz"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter>
+          </defs>
+          <rect width="700" height="330" fill="#F9EBDC"/>
+          <g filter="url(#lapiz)" stroke="#3A332D" fill="none" stroke-linecap="round" opacity=".85">
+            <circle cx="510" cy="92" r="44" stroke-width="1.3" stroke-dasharray="5 3"/>
+            <path d="M472 104 q38 20 78 -4" stroke-width="1" opacity=".55"/>
+            <path d="M476 80 q36 -16 70 4" stroke-width="1" opacity=".4"/>
+            <path d="M180 244 L560 244 M210 220 L540 220 M236 198 L520 198" stroke-width="1" opacity=".45"/>
+            <path d="M250 198 L215 244 M330 198 L315 244 M410 198 L415 244 M490 198 L515 244" stroke-width="1" opacity=".35"/>
+            <path d="M300 144 l40 22 v40 l-40 22 -40-22 v-40 z" stroke="#14110F" stroke-width="2"/>
+            <path d="M300 144 v42 m0 0 l-40 -20 m40 20 l40 -20 M300 186 v42" stroke="#14110F" stroke-width="1.3"/>
+            <circle cx="300" cy="166" r="3.2" fill="#7A5100" stroke="none"/>
+            <path d="M244 240 q56 16 116 2" stroke-width="7" opacity=".14"/>
+            <path d="M262 234 q40 12 84 0" stroke-width="4" opacity=".2"/>
+            <path d="M120 252 q4 -44 18 -58 q10 -10 16 2 q6 14 2 56" stroke-width="1.5" opacity=".65"/>
+            <path d="M128 200 a9 9 0 1 1 18 2" stroke-width="1.5" opacity=".65"/>
+            <path d="M112 256 q26 8 50 -2" stroke-width="2.2" opacity=".3"/>
+          </g>
+          <text x="24" y="310" font-family="monospace" font-size="10" fill="#8A7D72" letter-spacing="3">LÁMINA I · BOCETO DE GUÍA · PENDIENTE DE ARTE FINAL</text>
+        </svg>
+        <figcaption>
+          <span>Rima ante el tablero suspendido. «El origen. La primera caída.»</span>
+          <span class="tec">lápiz · lámina I-1</span>
+        </figcaption>
+      </figure>
+
+      <p>Toda historia verdadera ‒como toda gran partida‒ comienza con una pregunta lanzada al aire, un dado que gira y un mundo que aguarda. Tres grandes fuerzas sostienen ese mundo, y conviene conocerlas antes de dar el primer paso.</p>
+
+      <div class="tabla" role="region" aria-label="Tabla 1.1" tabindex="0">
+        <table>
+          <caption>Tabla 1.1 · Las tres grandes fuerzas de Numinia</caption>
+          <thead><tr><th scope="col">Fuerza</th><th scope="col">Naturaleza</th><th scope="col">Se manifiesta como</th><th scope="col">Riesgo</th></tr></thead>
+          <tbody>
+            <tr><td>El Aliento del Velo</td><td>La exhalación de lo eterno</td><td>Disonancias, símbolos vivos, anomalías</td><td class="num">alto</td></tr>
+            <tr><td>El Umbral</td><td>El límite entre el orden y el colapso</td><td>Fronteras, pruebas, desequilibrio</td><td class="num">medio</td></tr>
+            <tr><td>El Prisma</td><td>La refracción de la realidad</td><td>Versiones, espejos, mediación</td><td class="num">variable</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="aparte" id="aparte-dj">
+        <b>Nota para el DJ</b>
+        <span class="tecleo" data-texto="Prepárate poco, escucha mucho. No necesitas escribir una novela previa: llega con una idea inicial ‒un misterio, un conflicto, un lugar extraño‒ y deja que los jugadores completen el cuadro. La historia se construye entre todos."></span>
+      </aside>
+    </div>
+
+    <aside class="margen" aria-label="Notas al margen">
+      <div class="glifo-m" aria-hidden="true">
+        <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.1"><circle cx="17" cy="17" r="14" stroke-dasharray="3 2.4"/><path d="M17 7 27 17 17 27 7 17z"/></svg>
+      </div>
+      <div class="nota-m"><span class="num">1</span> · Sobre la relación entre ficción y mecánica, véase el Capítulo IV: la ficción conduce hasta los dados; los dados modifican la ficción.</div>
+      <div class="nota-m">Los murales de la Plaza Cambiante son ecos del Akasha: símbolos vivos que se disuelven y renacen con cada cambio en la ciudad.</div>
+    </aside>
+  </div>
+</article>
+
+<!-- ═══ Ficha: avance de /lap/character/ ═══ -->
+<section class="hoja" id="ficha" aria-label="Hoja de personaje — avance">
+  <p class="etq">Hoja de personaje · avance del Lector</p>
+  <div class="ficha">
+    <h3>Características físicas</h3>
+    <p class="sub">Escala 0–5 · los engranajes giran al fijar el valor · lista de competencias dinámica según Gremio, Facción y Especie</p>
+    <div class="linea-f"><span class="k">Fuerza</span><span class="engranajes" data-valor="3" aria-label="Fuerza: 3 de 5"></span></div>
+    <div class="linea-f"><span class="k">Movimiento</span><span class="engranajes" data-valor="2" aria-label="Movimiento: 2 de 5"></span></div>
+    <div class="linea-f"><span class="k">Tamaño</span><span class="engranajes" data-valor="4" aria-label="Tamaño: 4 de 5"></span></div>
+    <div class="linea-f"><span class="k">Constitución</span><span class="engranajes" data-valor="1" aria-label="Constitución: 1 de 5"></span></div>
+    <p class="sob">Tu personaje es tuyo: vive en este dispositivo y en los ficheros que te lleves. Nadie en Numinia guarda copia. — <a href="#">Exportar</a> · <a href="#">Importar</a></p>
+  </div>
+</section>
+
+<!-- ═══ El Umbral ═══ -->
+<section class="umbral" id="umbral" aria-label="El Umbral">
+  <div class="velo" aria-hidden="true">
+    <span class="num">Capítulo segundo</span>
+    <h3>Historia y leyendas de Numinia</h3>
+    <p>Antes de los distritos, antes incluso del primer amanecer simulado, existió el Tohu va-Bohu: la materia sin forma sobre la que los Prolegómenos trazaron el primer marco de acción. De aquella época solo quedan fragmentos: la génesis de los Khepris, la sombra de Athanasius, la máquina del cosmos que aún gira en algún sótano del Distrito…</p>
+  </div>
+  <div class="sello" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none" stroke="#7A5100" stroke-width="1.1">
+      <circle cx="16" cy="16" r="14" stroke-dasharray="3 2.4" opacity=".7"/>
+      <path d="M16 6 26 16 16 26 6 16z"/>
+      <circle cx="16" cy="16" r="2" fill="#EFA517" stroke="none"/>
+    </svg>
+  </div>
+  <h4>Aquí termina lo que la ciudad muestra a los viajeros.</h4>
+  <p class="p">Los seis capítulos restantes aguardan en el Lector. Cruza con tu identidad de ciudadano y el Códex recordará siempre tu página. El libro completo, además, siempre viaja libre:</p>
+  <div class="descargas">
+    <button class="dcard"><span class="f">.md</span><p class="d">La fuente. Texto plano, tuyo.</p></button>
+    <button class="dcard"><span class="f">pdf</span><p class="d">Para imprimir. Modo Diurno.</p></button>
+    <button class="dcard"><span class="f">epub</span><p class="d">Para tu Kindle o e-reader.</p></button>
+  </div>
+  <div class="acciones" style="margin-top:30px">
+    <button class="cbtn tinta"><span class="lbl">Cruzar el Umbral</span></button>
+    <button class="cbtn"><span class="lbl">¿Qué es el Umbral?</span></button>
+  </div>
+  <p class="nota">acceso con identidad soberana · el capítulo primero y las descargas son libres, siempre</p>
+</section>
+
+<!-- ═══ Cierre ═══ -->
+<section class="cierre">
+  <div class="hoja" id="glosario">
+    <p class="etq">Glosario · muestra</p>
+    <dl class="glosario">
+      <dt>Akasha</dt><dd>El código de memoria que moldea la realidad de Numinia; sus ecos se manifiestan como murales cambiantes y símbolos vivos.</dd>
+      <dt>Piezas del Conflicto</dt><dd>Fragmentos, sucesos, indicios o símbolos que los jugadores reúnen para construir su propia interpretación del nudo narrativo.</dd>
+      <dt>Velo (Aliento del)</dt><dd>La exhalación de lo eterno; la fuerza que separa lo que la ciudad es de lo que podría llegar a ser.</dd>
+    </dl>
+  </div>
+  <div class="hoja">
+    <p class="etq">Agradecimientos</p>
+    <p class="gracias">A quienes lanzaron el primer dado cuando la ciudad era solo una intención:</p>
+    <p class="gracias nombres">Paul Viejo · Daniel Alonso · Alicia · María García · Daniel Garrido · Carlo Udina · Clio Beruete</p>
+    <p class="gracias" style="margin-top:14px">Y a nuestras familias, por aguantarnos.</p>
+  </div>
+  <div class="colofon">
+    <div class="binaria" aria-hidden="true" id="binaria"></div>
+    <div class="marca-cierre" title="Sello de cierre — escarabajo canónico de Khepri (pendiente activo oficial)">✦</div>
+    <p>
+      Numinia · Manual del juego de rol · versión 0.6.0<br>
+      Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br>
+      © 2026 Numen Games S.L. · Texto e ilustraciones: todos los derechos reservados · <em>nota provisional</em><br>
+      Compuesto en Alegreya con el sistema Khepri · La fuente de verdad vive en Git
+    </p>
+    <p class="firma">numen games · leave things better than we found them</p>
+  </div>
+</section>
+</main>
+
+<footer class="pie" id="pief" role="contentinfo">
+  <span class="cap-actual" id="pie-cap">Portada</span>
+  <span class="sp"></span>
+  <button class="cbtn" id="btn-volver" style="display:none;font-size:.64rem;padding:4px 10px"><span class="lbl">Volver al marcapáginas</span></button>
+  <span class="luna" aria-label="Progreso de lectura">
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.4" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <path id="luna-fase" fill="currentColor" d=""/>
+    </svg>
+    <span id="luna-txt">luna nueva</span>
+  </span>
+</footer>
+
+<script>
+/* ── Conmutador Diurno/Nocturno del manual (independiente del LAP) ── */
+(function(){
+  var b=document.getElementById('btn-modo'),lbl=document.getElementById('modo-lbl');
+  var sol=document.getElementById('ico-sol'),luna=document.getElementById('ico-luna');
+  b.addEventListener('click',function(){
+    var noct=document.body.classList.toggle('nocturno');
+    b.setAttribute('aria-pressed',String(noct));
+    lbl.textContent=noct?'Diurno':'Nocturno';
+    sol.style.display=noct?'none':'';luna.style.display=noct?'':'none';
+    /* producción: persistir en localStorage, clave propia del manual */
+  });
+})();
+
+/* ── Tamaño de letra ── */
+document.querySelectorAll('.tams button').forEach(function(bt){
+  bt.addEventListener('click',function(){
+    document.body.dataset.tam=bt.dataset.tam;
+    document.querySelectorAll('.tams button').forEach(function(o){o.setAttribute('aria-pressed',String(o===bt))});
+  });
+});
+
+/* ── Cromo que se aparta al leer (ergonomía e-reader) ── */
+(function(){
+  var y=0,c=document.getElementById('cromo'),p=document.getElementById('pief');
+  addEventListener('scroll',function(){
+    var n=scrollY,abajo=n>y&&n>160;
+    c.classList.toggle('oculto',abajo);p.classList.toggle('oculto',abajo);
+    y=n;
+  },{passive:true});
+})();
+
+/* ── Progreso lunar — solo creciente; terminar es luna llena ── */
+(function(){
+  var fase=document.getElementById('luna-fase'),txt=document.getElementById('luna-txt');
+  var nombres=['luna nueva','creciente','cuarto creciente','gibosa creciente','casi llena','gibosa','vísperas del plenilunio','luna llena'];
+  function lunaPath(f){var r=8.4,cx=10,cy=10;
+    if(f<=0.02)return'';
+    if(f>=0.98)return'M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy+r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy-r);
+    var k=Math.cos(Math.PI*f),rx=Math.abs(k)*r,sw=f<0.5?0:1;
+    return'M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 0 1 '+cx+' '+(cy+r)+' A '+rx+' '+r+' 0 0 '+sw+' '+cx+' '+(cy-r)+' Z';}
+  var maxF=0;
+  function onScroll(){
+    var h=document.documentElement,pr=h.scrollTop/(h.scrollHeight-h.clientHeight);
+    if(pr>maxF)maxF=pr;
+    fase.setAttribute('d',lunaPath(maxF));
+    txt.textContent=nombres[Math.min(7,Math.floor(maxF*8))];
+    var secs=[['indice','Índice'],['cap1','Cap. I · Bienvenidos a Numinia'],['ficha','Hoja de personaje'],['umbral','El Umbral'],['glosario','Glosario y colofón']];
+    var actual='Portada';
+    for(var j=0;j<secs.length;j++){var e=document.getElementById(secs[j][0]);if(e&&e.getBoundingClientRect().top<150)actual=secs[j][1];}
+    document.getElementById('pie-cap').textContent=actual;
+  }
+  addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+
+/* ── Marcapáginas — mockup en memoria; producción: localStorage (D3) ── */
+(function(){
+  var btn=document.getElementById('btn-marca'),volver=document.getElementById('btn-volver');
+  var ancla=document.getElementById('ancla-marca'),puesto=false;
+  btn.addEventListener('click',function(){
+    puesto=!puesto;ancla.classList.toggle('activa',puesto);
+    btn.setAttribute('aria-pressed',String(puesto));
+    var l=btn.querySelector('.lbl');if(l)l.textContent=puesto?'Marcado':'Marcapáginas';
+    volver.style.display=puesto?'inline-flex':'none';
+  });
+  volver.addEventListener('click',function(){ancla.scrollIntoView({block:'center'})});
+  document.getElementById('btn-toc').addEventListener('click',function(){document.getElementById('indice').scrollIntoView()});
+})();
+
+/* ── Marcos que se dibujan al entrar en vista ── */
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var abre=document.getElementById('abre-cap');
+  abre.classList.remove('dibujado');
+  new IntersectionObserver(function(en,obs){
+    en.forEach(function(e){if(e.isIntersecting){abre.classList.add('dibujado');obs.disconnect()}});
+  },{threshold:.4}).observe(abre);
+})();
+
+/* ── Tecleo del aparte del DJ (bandera del catálogo; puntual) ── */
+(function(){
+  var ap=document.getElementById('aparte-dj'),sp=ap.querySelector('.tecleo'),txt=sp.dataset.texto;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){sp.textContent=txt;ap.classList.add('terminado');return}
+  var hecho=false;
+  new IntersectionObserver(function(en,obs){
+    en.forEach(function(e){
+      if(e.isIntersecting&&!hecho){hecho=true;obs.disconnect();
+        var i=0;(function paso(){
+          sp.textContent=txt.slice(0,++i);
+          if(i<txt.length)setTimeout(paso,14);else ap.classList.add('terminado');
+        })();
+      }
+    });
+  },{threshold:.5}).observe(ap);
+})();
+
+/* ── Engranajes de la ficha — control de valoración 0–5 ── */
+(function(){
+  var GEAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6zm0 5.6a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6z"/><path d="M12 1.6l1.3 2.6a8 8 0 0 1 2 .84l2.8-.9 1.76 1.76-.9 2.8a8 8 0 0 1 .84 2l2.6 1.3-2.6 1.3a8 8 0 0 1-.84 2l.9 2.8-1.76 1.76-2.8-.9a8 8 0 0 1-2 .84L12 22.4l-1.3-2.6a8 8 0 0 1-2-.84l-2.8.9-1.76-1.76.9-2.8a8 8 0 0 1-.84-2L1.6 12l2.6-1.3a8 8 0 0 1 .84-2l-.9-2.8L5.9 4.14l2.8.9a8 8 0 0 1 2-.84L12 1.6zm0 4.4a6 6 0 1 0 0 12 6 6 0 0 0 0-12z" opacity=".55"/></svg>';
+  document.querySelectorAll('.engranajes').forEach(function(cont){
+    var valor=parseInt(cont.dataset.valor||'0',10);
+    function pinta(){
+      cont.innerHTML='';
+      for(var i=1;i<=5;i++){
+        var b=document.createElement('button');
+        b.className='engranaje'+(i<=valor?' lleno':'');
+        b.innerHTML=GEAR;b.setAttribute('aria-label',i+' de 5');
+        (function(v){b.addEventListener('click',function(){valor=(valor===v?v-1:v);cont.dataset.valor=valor;pinta()})})(i);
+        cont.appendChild(b);
+      }
+    }
+    pinta();
+  });
+})();
+
+/* ── La binaria habla ── */
+(function(){
+  var frase='Numinia',cont=document.getElementById('binaria');
+  for(var i=0;i<frase.length;i++){
+    var bits=frase.charCodeAt(i).toString(2).padStart(8,'0');
+    for(var b=0;b<8;b++){var el=document.createElement('i');if(bits[b]==='1')el.className='uno';cont.appendChild(el)}
+  }
+})();
+</script>
+</body>
+</html>
