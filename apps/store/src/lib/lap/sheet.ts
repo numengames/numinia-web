@@ -22,7 +22,7 @@ import {
   SPECIES_IDS,
 } from '@numinia/domain';
 
-export const SHEET_FORMAT = 'numinia-sheet/v2';
+export const SHEET_FORMAT = 'numinia-sheet/v3';
 
 const IDENTITY_KEYS = [
   'name',
@@ -66,12 +66,21 @@ type TextKey = (typeof TEXT_KEYS)[number];
 type AttributeKey = (typeof ATTRIBUTE_KEYS)[number];
 type ValueKey = (typeof VALUE_KEYS)[number];
 
+/** The two special aptitudes chosen from the Posición (manual ch. 3 fr. 3):
+ * free-text names (their prose lives in the Codex, not here) plus the dice
+ * assigned from the affinity pool. */
+export interface LapAptitude {
+  name: string;
+  points: number;
+}
+
 export interface LapSheet {
   identity: Record<IdentityKey, string>;
   text: Record<TextKey, string>;
   attributes: Record<AttributeKey, number>;
   values: Record<ValueKey, number>;
   competences: Record<string, number>;
+  aptitudes: [LapAptitude, LapAptitude];
   notes: string;
 }
 
@@ -85,6 +94,10 @@ export function emptySheet(): LapSheet {
     attributes: record(ATTRIBUTE_KEYS, 0),
     values: { ...record(VALUE_KEYS, 0), threshold: 5 },
     competences: record(COMPETENCE_KEYS as readonly string[], 0),
+    aptitudes: [
+      { name: '', points: 0 },
+      { name: '', points: 0 },
+    ],
     notes: '',
   };
 }
@@ -125,6 +138,16 @@ export function sheetToMarkdown(sheet: LapSheet): string {
     '',
     '## Competences',
     table(COMPETENCE_KEYS.map((key) => [key, sheet.competences[key] ?? 0])),
+    '',
+    '## Aptitudes',
+    table(
+      sheet.aptitudes.flatMap(
+        (aptitude, index): ReadonlyArray<readonly [string, string | number]> => [
+          [`aptitude${index + 1}`, aptitude.name],
+          [`aptitude${index + 1}Points`, aptitude.points],
+        ],
+      ),
+    ),
     '',
     '## Profile',
     table(TEXT_KEYS.map((key) => [key, sheet.text[key]])),
@@ -180,6 +203,13 @@ export function sheetFromMarkdown(markdown: string): LapSheet {
   for (const key of COMPETENCE_KEYS) {
     if (competences[key] !== undefined) sheet.competences[key] = toScore(competences[key]);
   }
+  // v3 aptitudes; a v2 file simply keeps the empty pair.
+  const aptitudes = parseSection(markdown, 'Aptitudes');
+  sheet.aptitudes.forEach((aptitude, index) => {
+    aptitude.name = (aptitudes[`aptitude${index + 1}`] ?? '').trim();
+    const points = aptitudes[`aptitude${index + 1}Points`];
+    if (points !== undefined) aptitude.points = toScore(points);
+  });
   const profile = parseSection(markdown, 'Profile');
   for (const key of TEXT_KEYS) sheet.text[key] = (profile[key] ?? '').trim();
   const notesMatch = /## Notes\n\n?([\s\S]*)$/.exec(markdown);
