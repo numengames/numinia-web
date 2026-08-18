@@ -7,7 +7,7 @@
  * touches a character of it.
  */
 
-export type CodexAccess = 'public' | 'gated';
+type CodexAccess = 'public' | 'gated';
 
 export interface CodexChapter {
   readonly slug: string;

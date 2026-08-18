@@ -9,7 +9,7 @@ import type { LapSheet } from '../../../lib/lap/sheet';
 import type { SheetLabels } from './sheet-props';
 import { GearRating } from './GearRating';
 
-export interface GearRow {
+interface GearRow {
   readonly key: string;
   readonly label: string;
   readonly value: number;

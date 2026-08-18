@@ -12,7 +12,7 @@ import type { CodexChapter } from './parse.js';
  * travels in the manifest and the colophon, never in the URL). */
 export const MANUAL_VERSION = '0.6.0';
 
-export const CodexChapterMetaSchema = z.object({
+const CodexChapterMetaSchema = z.object({
   slug: z.string().min(1),
   title: z.string().min(1),
   number: z.number().int().min(1).max(7).nullable(),

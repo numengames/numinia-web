@@ -8,7 +8,7 @@
 import { isItalicLine, renderInline } from './inline.js';
 import { slugify, type CodexChapter } from './parse.js';
 
-export interface MarginNote {
+interface MarginNote {
   readonly number: string;
   readonly html: string;
 }

@@ -15,8 +15,6 @@ const PAGES = [
   '/es/lap/',
   '/es/lap/character/',
   '/es/lap/codex/',
-  '/es/lap/codex/bienvenidos-a-numinia/',
-  '/es/lap/codex/historia-y-leyendas-de-numinia/',
   '/es/lap/codex/glosario/',
   '/es/lap/stats/',
   '/es/lap/settings/',
@@ -53,6 +51,33 @@ for (const viewport of VIEWPORTS) {
       );
     });
   }
+}
+
+for (const viewport of VIEWPORTS) {
+  test(`${viewport.name} · no horizontal overflow: every codex chapter`, async ({ page }) => {
+    // Chapter slugs differ per corpus (CI builds hermetic on the fixture
+    // manual), so the sweep discovers them from the index — hardcoded
+    // real-corpus URLs silently 302'd to the cover and tested nothing.
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/es/lap/codex/');
+    const chapters = await page
+      .locator('.toc a')
+      .evaluateAll((links) =>
+        links.map((link) => (link as HTMLAnchorElement).getAttribute('href') ?? ''),
+      );
+    expect(chapters.length).toBeGreaterThan(0);
+    for (const href of chapters) {
+      await page.goto(href);
+      await page.waitForLoadState('networkidle');
+      const overflow = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }));
+      expect(overflow.scroll, `${href} overflows at ${viewport.width}px`).toBeLessThanOrEqual(
+        overflow.client + 1,
+      );
+    }
+  });
 }
 
 test('phone · primary controls meet the 44px touch target', async ({ page }) => {

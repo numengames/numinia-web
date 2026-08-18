@@ -69,7 +69,7 @@ type ValueKey = (typeof VALUE_KEYS)[number];
 /** The two special aptitudes chosen from the Posición (manual ch. 3 fr. 3):
  * free-text names (their prose lives in the Codex, not here) plus the dice
  * assigned from the affinity pool. */
-export interface LapAptitude {
+interface LapAptitude {
   name: string;
   points: number;
 }

@@ -1,14 +1,24 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignore": ["apps/store/scripts/**", "cucumber.js", "khepri/**"],
-  "ignoreDependencies": ["prettier", "secretlint", "@secretlint/secretlint-rule-preset-recommend"],
+  "ignoreDependencies": [
+    "@secretlint/secretlint-rule-preset-recommend",
+    "cloudflare",
+    "prettier",
+    "secretlint"
+  ],
   "ignoreBinaries": ["wrangler.jsonc"],
   "workspaces": {
     ".": {
       "entry": ["scripts/*.mjs", "features/steps/*.mjs"]
     },
     "apps/store": {
-      "entry": ["src/pages/**/*.{astro,ts}", "src/scripts/*.ts", "e2e/*.spec.ts"]
+      "entry": [
+        "src/pages/**/*.{astro,ts}",
+        "src/scripts/*.ts",
+        "e2e/*.spec.ts",
+        "src/lib/__tests__/*.test.ts"
+      ]
     },
     "apps/com": {
       "entry": ["src/pages/**/*.astro"]
