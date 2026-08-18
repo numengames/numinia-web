@@ -20,6 +20,7 @@ export async function loadCodexEngine(root) {
     `export { buildManifest, MANUAL_VERSION } from '${lib}/manifest.ts';`,
     `export { renderChapter, chapterPreview } from '${lib}/render.ts';`,
     `export { parseGlossary } from '${lib}/glossary.ts';`,
+    `export { glossaryVariants, linkGlossaryTerms } from '${lib}/terms.ts';`,
   ].join('\n');
   const result = await build({
     stdin: { contents: entry, resolveDir: path.resolve(root, 'apps', 'store'), loader: 'js' },

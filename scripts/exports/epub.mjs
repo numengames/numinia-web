@@ -37,6 +37,7 @@ h1, h2, h3 { font-family: 'Alegreya SC', 'Alegreya', serif; font-weight: 500; li
 .lamina { margin: 1.5em 0; text-align: center; }
 .lamina .arte-hueco { border: 1px dashed #c4b5a6; padding: 2em 1em; color: #75695e; font-size: 0.85em; }
 .lamina figcaption { font-size: 0.8em; color: #75695e; }
+a.termino { color: inherit; text-decoration: underline dotted #7a5100; }
 dt { font-weight: 700; margin-top: 1em; }
 dd { margin: 0.2em 0 0 1em; }
 dd .fuente { display: block; font-size: 0.85em; color: #75695e; }

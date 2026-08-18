@@ -48,12 +48,16 @@ const glossaryHtml =
   glossary
     .map(
       (entry) =>
-        `<dt>${escXml(entry.term)}</dt><dd>${escXml(entry.definition)}` +
+        `<dt id="${engine.slugify(entry.term)}">${escXml(entry.term)}</dt>` +
+        `<dd>${escXml(entry.definition)}` +
         (entry.source ? `<span class="fuente">${escXml(entry.source)}</span>` : '') +
         `</dd>`,
     )
     .join('') +
   `</dl>`;
+// The EPUB edition links each chapter's first term mention to the
+// glossary (§4.8), same engine as the site; print keeps plain ink.
+const termTargets = engine.glossaryVariants(glossary);
 
 const acknowledgmentsHtml = resolveDoc(root, 'agradecimientos')
   .text.replace(/^# .*\n/, '')
@@ -92,7 +96,10 @@ const epubSections = [
     file: `${chapter.slug}.xhtml`,
     title: chapter.title,
     eyebrow: chapter.eyebrow,
-    rendered: chapter.rendered,
+    rendered: {
+      ...chapter.rendered,
+      html: engine.linkGlossaryTerms(chapter.rendered.html, termTargets, 'glosario.xhtml'),
+    },
   })),
   {
     id: 'glosario',
