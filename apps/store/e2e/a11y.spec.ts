@@ -59,13 +59,25 @@ for (const mode of MODES) {
     for (const path of PAGES) {
       test(`WCAG A/AA: ${path}`, async ({ page }) => {
         await page.goto(path);
-        // Sistema §10-09: analyze the page after its orchestrated entry settles —
-        // axe blending mid-transition opacities reports phantom contrast ratios.
         await page.waitForLoadState('networkidle');
+        // Walk the whole page before measuring. Reveals fire on intersection,
+        // so at 1280×720 everything below the fold stays at opacity 0 and axe
+        // skips it silently — that is how two contrast defects reached
+        // production on /updates/, whose first card starts at y=735.
+        await page.evaluate(async () => {
+          const step = Math.round(window.innerHeight * 0.8);
+          for (let y = 0; y < document.body.scrollHeight; y += step) {
+            window.scrollTo(0, y);
+            await new Promise((resolve) => setTimeout(resolve, 60));
+          }
+          window.scrollTo(0, 0);
+        });
+        // Sistema §10-09: analyze after the orchestrated entry settles — axe
+        // blending mid-transition opacities reports phantom contrast ratios.
         await page
           .locator('.reveal:not(.visible)')
           .first()
-          .waitFor({ state: 'detached', timeout: 3000 })
+          .waitFor({ state: 'detached', timeout: 5000 })
           .catch(() => undefined);
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

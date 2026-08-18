@@ -169,7 +169,9 @@ const L = (es: string, en: string): string => (lang === 'es' ? es : en);
     font-size: 0.68rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--texto-3);
+    /* The motto sits inside the guild card (a surface): §19.4 keeps terciario
+       over the base background only. */
+    color: var(--texto-2);
     text-align: center;
   }
   .desc {

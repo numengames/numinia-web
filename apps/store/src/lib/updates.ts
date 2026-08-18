@@ -32,7 +32,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     entries: [
       {
         type: 'FIX',
-        text: 'Night was never measured: the accessibility gate now checks every page in both modes, and the five contrast failures it was hiding — badges, tags, pills, the destructive button and the footer signature — are fixed',
+        text: 'Night was never measured, and neither was anything below the fold: the accessibility gate now walks each page whole, in both modes, and the eight contrast failures it was hiding — badges, tags, pills, dates, mottos, ordinals, the destructive button and the footer signature — are fixed',
       },
       {
         type: 'UPD',

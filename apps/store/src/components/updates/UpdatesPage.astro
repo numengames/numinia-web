@@ -132,7 +132,8 @@ function formatDate(date: string): string {
   time {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    color: var(--texto-3);
+    /* The card is a surface: terciario is base-only (§19.4). */
+    color: var(--texto-2);
     font-size: 0.8rem;
     font-weight: 400;
   }
@@ -163,8 +164,13 @@ function formatDate(date: string): string {
     /* The turquoise is a fill, never text on a dark surface (§3, §9.1). */
     color: var(--enlace);
   }
+  /* Same rule as the destructive button: the color lives in the edge, the
+     label keeps readable ink. Grana as text reads 3.56:1 over the card at
+     night, and Coral has no text variant over paper — as a border it is a UI
+     component (3:1) and passes in both modes. */
   .tag-fix {
-    color: var(--grana);
+    color: var(--texto-2);
+    border-color: var(--grana);
   }
   /* Sistema §9.2: emphasis as outlined etiqueta — amber flips per mode, AA in both. */
   .tag-latest {
