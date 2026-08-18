@@ -26,6 +26,25 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.46.0',
+    date: '2026-08-18 13:15',
+    missions: ['MIS-086'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The real legal corpus reaches the platform: Terms and Privacy Policy now render the company documents verbatim, no longer placeholders — with an honest note about their scope and the language each one is written in',
+      },
+      {
+        type: 'NEW',
+        text: 'The door asks first: no session is opened without accepting the published corpus, and what you accepted travels inside your own session — the server refuses a login that names no acceptance',
+      },
+      {
+        type: 'UPD',
+        text: 'The cookie notice stops speaking latin: real copy in five languages naming exactly what the platform stores, and every acceptance of the old placeholder is asked again',
+      },
+    ],
+  },
+  {
     version: 'v0.45.0',
     date: '2026-08-18 00:27',
     missions: ['MIS-085'],
