@@ -1117,6 +1117,7 @@
   .codex .pie,
   .codex .umbral .acciones,
   .codex .descargas,
+  .codex .acciones-ficha,
   .codex .pager,
   .codex .baja {
     display: none !important;
