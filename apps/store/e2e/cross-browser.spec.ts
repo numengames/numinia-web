@@ -132,14 +132,25 @@ test('the book travels: PDF and EPUB editions download free (D6)', async ({ requ
   expect(bytes.subarray(30, 38).toString()).toBe('mimetype');
 });
 
+/** CI builds are hermetic: the fixture manual has its own chapter slugs, so
+ * codex tests resolve a REAL open chapter from the index instead of
+ * hardcoding one — the same path a reader walks. */
+async function gotoFirstChapter(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/es/lap/codex/');
+  const href = await page.locator('.toc a').first().getAttribute('href');
+  await page.goto(href!);
+  await page.waitForLoadState('networkidle');
+}
+
 test('the chrome compacts but never leaves; the final paragraph can be marked', async ({
   page,
 }) => {
-  await page.goto('/es/lap/codex/bienvenidos-a-numinia/');
-  await page.waitForLoadState('networkidle');
+  // A short viewport guarantees scroll room on the lean fixture corpus too.
+  await page.setViewportSize({ width: 1024, height: 500 });
+  await gotoFirstChapter(page);
   // Reading downward compacts the bar — it must NOT leave the screen
   // (Oracle amendment 2026-08-18: bookmark and index always one tap away).
-  await page.evaluate(() => window.scrollTo(0, 1200));
+  await page.evaluate(() => window.scrollTo(0, 400));
   await page.waitForFunction(() =>
     document.querySelector('.codex .chrome')?.classList.contains('compacta'),
   );
@@ -164,7 +175,7 @@ test('the chrome compacts but never leaves; the final paragraph can be marked', 
   await expect(page.locator('.pie [data-metric="codex-pie-next"]')).toBeVisible();
   await expect(page.locator('.pie [data-metric="codex-pie-prev"]')).toHaveAttribute(
     'href',
-    /introduccion|codex\/$/,
+    /\/lap\/codex\//,
   );
 });
 
@@ -207,7 +218,7 @@ test('el Narrador reads aloud and follows the sounding block', async ({ page }) 
     (window as { __narradorSynth?: unknown }).__narradorSynth = fake;
     (window as { SpeechSynthesisUtterance?: unknown }).SpeechSynthesisUtterance = FakeUtterance;
   });
-  await page.goto('/es/lap/codex/bienvenidos-a-numinia/');
+  await gotoFirstChapter(page);
   const narrator = page.locator('[data-codex-narrador]');
   await expect(narrator).toBeVisible();
   await narrator.click();
