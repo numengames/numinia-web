@@ -25,6 +25,10 @@ const BUDGETS: readonly Budget[] = [
   { path: '/gallery/', totalKB: 450, jsKB: 0, imgKB: 250 },
   { path: '/city/', totalKB: 420, jsKB: 0, imgKB: 160 },
   { path: '/lap/', totalKB: 260, jsKB: 30, imgKB: 10 },
+  // The book plane pays for its paper: four self-hosted Alegreya faces +
+  // Geist + the grain put the cover at ~706KB (measured 2026-08-18), all
+  // immutable-cached statics — while the reader itself stays at ~6KB JS.
+  { path: '/lap/codex/', totalKB: 780, jsKB: 30, imgKB: 10 },
   { path: '/lap/portals/', totalKB: 280, jsKB: 30, imgKB: 10 },
   // Raised 280→300 (2026-08-18, MIS-085 D): the v0.6.0 rules engine ships
   // with the island — enabling matrix, position mechanics (id-only facts,
