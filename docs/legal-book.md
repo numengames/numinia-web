@@ -26,8 +26,10 @@ A monorepo may mix these: declare per directory in `REUSE.toml`. Dependencies MU
 flow apps → packages, never the reverse.
 
 Every code file starts with:
+<!-- REUSE-IgnoreStart — example header, not a real license declaration -->
 // SPDX-FileCopyrightText: 2026 Numen Games S.L.
 // SPDX-License-Identifier: MIT (or the applicable ID)
+<!-- REUSE-IgnoreEnd -->
 
 **Consume:** MIT · ISC · BSD · Apache-2.0 · 0BSD · CC0-1.0 · CC-BY-4.0 freely.
 MPL-2.0 · EPL-2.0 · LGPL-3.0 with isolation. GPL/AGPL only in their own repo with a

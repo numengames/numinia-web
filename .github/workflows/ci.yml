@@ -38,6 +38,11 @@ jobs:
         env:
           # Hermetic: the committed fixture keeps CI independent of raw.githubusercontent
           DATA_SOURCE: fixture
+      - name: REUSE 3.3 (every file declares its license — canon C-005)
+        # Armed 2026-08-18, the day the repo first passed. Pinned version.
+        run: |
+          pipx install reuse==6.2.0
+          reuse lint
       - name: Acceptance (Gherkin)
         run: npm run test:acceptance
       - name: License guard (DEBT-001 — no ConsenSys code in dist/)
