@@ -1,9 +1,9 @@
 /**
- * Codex book plane (MIS-085, Khepri EXTENSIÓN §7 — Oracle-validated).
+ * Codex book plane (MIS-085 — canonized as the paper register, Sistema §13.12).
  * Adapted from the frozen mockup docs/design/codex_numinia_mockup_v2_diurno.html:
  * the look, rhythm and components there are the spec. Diurno by default,
  * paper grain in the background only, Alegreya for body, chrome stays sans.
- * Every hex comes from Khepri §19.3 or the signed extension palette.
+ * Every hex comes from Sistema §19.3 or the signed paper tokens (§6.5, §9.9).
  */
 
 @font-face {

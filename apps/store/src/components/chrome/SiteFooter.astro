@@ -2,9 +2,9 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { CURRENT_VERSION } from '../../lib/updates';
-// §8.5 / repertoire rule: Khepri closes every piece, never opens it — the
+// §8.5 / repertoire rule: the scarab closes every piece, never opens it — the
 // scarab's one canonical home on the site is the foot of the page.
-import khepriLogo from '../../../../../khepri/assets/Khepri_Logo.svg?raw';
+import scarab from '../../../../../design-system/assets/Khepri_Logo.svg?raw';
 
 interface Props {
   locale: SupportedLocale;
@@ -57,7 +57,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     </nav>
   </div>
   <div class="cierre">
-    <span class="khepri" set:html={khepriLogo} />
+    <span class="escarabajo" set:html={scarab} />
     <!-- Explicit string expressions: Astro collapses template whitespace
          around inline elements, which once glued "by" to the link. -->
     <p class="byline">
@@ -124,12 +124,12 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     padding-top: var(--s4);
     border-top: 1px solid var(--linea);
   }
-  .khepri {
+  .escarabajo {
     display: inline-flex;
     color: var(--texto-3);
     flex: none;
   }
-  .khepri :global(svg) {
+  .escarabajo :global(svg) {
     width: 28px;
     height: 28px;
   }

@@ -7,7 +7,7 @@
   "type": "module",
   "exports": {
     "./tokens.css": "./src/tokens.css",
-    "./khepri.css": "./src/khepri.css",
+    "./sistema.css": "./src/sistema.css",
     "./platform.css": "./src/platform.css"
   },
   "scripts": {

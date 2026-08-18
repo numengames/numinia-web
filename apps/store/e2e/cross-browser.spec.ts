@@ -3,7 +3,7 @@
  * WebKit (iPhone/Safari), Firefox and Chromium, at phone, tablet and desktop
  * widths. What it pins is engine-sensitive and layout-critical:
  *   - no horizontal overflow (a page wider than its viewport is a defect)
- *   - touch targets ≥44px on phones (WCAG 2.2 AA is 24, Khepri §12 asks 44)
+ *   - touch targets ≥44px on phones (WCAG 2.2 AA is 24, Sistema §12 asks 44)
  *   - both modes actually flip (data-modo drives every token)
  *   - the sheet's file round-trip works (Blob/URL/FileReader differ per engine)
  * Runs against the built server; the projects live in playwright.config.

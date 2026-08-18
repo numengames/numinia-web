@@ -1,8 +1,14 @@
 # Fila de changelog propuesta — plano libro (MIS-085 §7)
 
+> ⚰️ **SUPERADO el 2026-08-18 por el Sistema de Diseño v5.0.0.** El Oráculo no firmó
+> esta fila: canonizó el plano entero en la 5.0.0, que absorbe el papel vivo (§13.12),
+> el grano (§6.5), la tercera voz (§4.6), los componentes del libro (§9.9), sus iconos
+> (§7.5) y las animaciones 12–14. Se conserva como registro de lo que se propuso; para
+> saber qué rige hoy, lee el documento maestro. El bump propuesto (4.3.0) quedó sin uso.
+
 > **Para el Oráculo.** El brief de MIS-085 ordena: «el agente prepara el texto
 > del changelog; el Oráculo lo firma y lo committea». Esta es la fila lista
-> para pegar en `khepri/2026_08_15-Numen_Design_System-v4.2.0.md` §18
+> para pegar en `khepri/2026_08_15-Numen_Design_System-v4.2.0.md` §18 (hoy `design-system/`)
 > (Registro de versiones), con el bump de versión que el Oráculo decida
 > (propuesta: 4.3.0 — añade un plano, no rompe nada). Al firmarla, la
 > etiqueta del plano pasa de [EXTENSIÓN] a canon.

@@ -1,6 +1,6 @@
 /**
- * Numinia platform layer on top of the Khepri kit (khepri.css).
- * Everything here IMPLEMENTS the design .md — values come from Khepri
+ * Numinia platform layer on top of the design-system kit (sistema.css).
+ * Everything here IMPLEMENTS the design .md — values come from the Sistema
  * variables only; no new colors, no new durations, no new radii.
  * Sections referenced: §4.3 type scale · §5 space/elevation · §9 components
  * · §10 motion states · §13.2 menu · §13.11 platform decisions.

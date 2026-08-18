@@ -45,7 +45,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4321',
     viewport: { width: 1280, height: 720 },
-    // Khepri §10: with reduced motion everything is instant — deterministic
+    // Sistema §10: with reduced motion everything is instant — deterministic
     // pixels for baselines, and the accessibility path gets exercised.
     reducedMotion: 'reduce',
   },

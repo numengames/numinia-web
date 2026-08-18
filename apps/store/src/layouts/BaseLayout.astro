@@ -1,9 +1,9 @@
 ---
 import '@numinia/ui/tokens.css';
 import '@numinia/ui/platform.css';
-// Khepri motion (§13.1 kit + integration) ships INLINE: the landing budget
+// Kit motion (§13.1 + integration) ships INLINE: the landing budget
 // forbids external JS on Layer 0 pages, and the kit is ~2KB.
-import khepriMotion from '../scripts/khepri.js?raw';
+import kitMotion from '../scripts/sistema.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import SiteHeader from '../components/chrome/SiteHeader.astro';
 import SiteFooter from '../components/chrome/SiteFooter.astro';
@@ -56,7 +56,7 @@ const urlFor = (target: SupportedLocale): string =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script is:inline>
-      /* Khepri modes (§13.11): Diurno default, Nocturno by choice. Runs before
+      /* Sistema modes (§13.11): Diurno default, Nocturno by choice. Runs before
          first paint so a stored choice never flashes. localStorage is allowed
          here by decision D17 — this is chrome bootstrap, not component state. */
       /* Marks that JS is alive BEFORE first paint: the reveal animation may
@@ -92,7 +92,7 @@ const urlFor = (target: SupportedLocale): string =>
     <link rel="preload" href={geistMonoWoff} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={urlFor(locale)} />
-    {/* The share card (Khepri: Noche + relieve + wordmark + the 1920·2020·2120
+    {/* The share card (Sistema: Noche + relieve + wordmark + the 1920·2020·2120
         seal). Absolute URL: scrapers resolve nothing relative. */}
     <meta property="og:image" content={ogImage ?? `${site}/og.png`} />
     <meta name="twitter:card" content="summary_large_image" />
@@ -145,12 +145,12 @@ const urlFor = (target: SupportedLocale): string =>
         });
       })();
     </script>
-    <script is:inline set:html={khepriMotion} />
+    <script is:inline set:html={kitMotion} />
   </body>
 </html>
 
 <style>
-  /* Base surface and type come from the Khepri kit (body rule in khepri.css). */
+  /* Base surface and type come from the kit (body rule in sistema.css). */
   main {
     max-width: 60rem;
     margin: 0 auto;

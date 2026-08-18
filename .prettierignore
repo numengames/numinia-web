@@ -1,7 +1,6 @@
+# Design-system kit — installed as delivered, never modified (its LEEME + §13.1)
+design-system/
 
-
-# Khepri kit — installed as delivered, never modified (its LEEME + §13.1)
-khepri/
-
-# Verbatim copy of the generated Khepri kit — byte-identical by test
-packages/ui/src/khepri.css
+# Verbatim copies of the generated kit — byte-identical by test
+packages/ui/src/sistema.css
+apps/store/src/scripts/sistema.js

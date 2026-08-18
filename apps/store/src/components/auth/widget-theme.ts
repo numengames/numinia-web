@@ -1,7 +1,7 @@
 /**
- * Khepri dress for the thirdweb widget (Oracle 2026-08-16): the vendor modal
+ * Sistema dress for the thirdweb widget (Oracle 2026-08-16): the vendor modal
  * is the one surface our CSS cannot reach, so both modes are mirrored here
- * from the kit palette (khepri/kit/khepri.css) — never invent a color.
+ * from the kit palette (design-system/kit/sistema.css) — never invent a color.
  */
 
 import { useEffect, useState } from 'react';

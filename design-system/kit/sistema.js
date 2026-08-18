@@ -1,5 +1,5 @@
-/* GENERADO del §13.1 · Khepri v4.2.0 — no editar aquí: la fuente es el .md */
-/* Khepri · tecleo (01) y revelado (02), implementación de referencia accesible */
+/* GENERADO del §13.1 · Sistema de Diseño v5.0.0 — no editar aquí: la fuente es el .md */
+/* Sistema · tecleo (01) y revelado (02), implementación de referencia accesible */
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function tecleo(el, ms = 22){
   if (rm) return;                                   // reduce: el texto simplemente está
@@ -26,7 +26,7 @@ if (!rm && 'IntersectionObserver' in window){
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 } else document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
 
-/* Khepri · binaria(frase) → bits + sedimento (§6.1) */
+/* Sistema · binaria(frase) → bits + sedimento (§6.1) */
 const binaria = (frase, sed = 60) =>
   [...frase].map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join('') + 'x'.repeat(sed);
 // binaria('Leave things better than we found them.')

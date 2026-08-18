@@ -43,7 +43,7 @@ const PAGES = [
 for (const path of PAGES) {
   test(`WCAG A/AA: ${path}`, async ({ page }) => {
     await page.goto(path);
-    // Khepri §10-09: analyze the page after its orchestrated entry settles —
+    // Sistema §10-09: analyze the page after its orchestrated entry settles —
     // axe blending mid-transition opacities reports phantom contrast ratios.
     await page.waitForLoadState('networkidle');
     await page
@@ -53,7 +53,7 @@ for (const path of PAGES) {
       .catch(() => undefined);
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      // Khepri §6.1 binaria: texture-as-text, aria-hidden, deliberately faint.
+      // Sistema §6.1 binaria: texture-as-text, aria-hidden, deliberately faint.
       // WCAG 1.4.3 exempts pure decoration from contrast; axe cannot know.
       .exclude('.binaria')
       // The wallet widget is vendor markup (thirdweb ConnectEmbed): one of

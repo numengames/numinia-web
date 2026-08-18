@@ -86,7 +86,7 @@ const colofon =
   `Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br/>` +
   `© 2026 Numen Games S.L. · Texto e ilustraciones: todos los derechos reservados · ` +
   `<em>nota provisional</em><br/>` +
-  `Compuesto en Alegreya con el sistema Khepri · La fuente de verdad vive en Git</p>` +
+  `Compuesto en Alegreya con el Sistema · La fuente de verdad vive en Git</p>` +
   `<p class="firma">numen games · leave things better than we found them</p></div>`;
 
 const base = `Numinia_Manual_del_juego_de_rol_v${version.replaceAll('.', '_')}`;

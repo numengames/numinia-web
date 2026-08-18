@@ -1,28 +1,28 @@
 ---
-sistema: Numen Games · Design System
-nombre_clave: Khepri
-version: 4.2.0
-fecha: 2026-08-15
-estado: canon
-deriva_de: 2026_03_20-Numinia_Brand_and_Culture-v0.1.2
+sistema: Numen Games · Sistema de Diseño
+version: 5.0.0
+fecha: 2026-08-18
+estado: propuesto — consolidado sobre v4.2.0, pendiente de firma de Oráculo
+deriva_de: 2026_08_15-Numen_Design_System-v4_2_0 + 2026_03_20-Numinia_Brand_and_Culture-v0.1.2
+registros: "1 Umbral · 2 Velo · 3 Low-poly · 4 Píxel" 
 idioma_canonico: es-ES
 formato_tokens: W3C Design Tokens (DTCG) + CSS Custom Properties
 convenciones_normativas: RFC 2119 (DEBE / DEBERÍA / PUEDE)
 direccion: Solarpunk 40 · Steampunk 40 · Cyberpunk 20
-registro_pixel: Khepri-16 + Pixelify Sans + guía de producción 90s (herencia de aventuras gráficas)
-tipografia: Geist + Geist Mono (vercel.com/font, SIL OFL 1.1)
+registro_pixel: Píxel-16 + Pixelify Sans + guía de producción 90s (herencia de aventuras gráficas)
+tipografia: Geist + Geist Mono (vercel.com/font, SIL OFL 1.1) · tercera voz Alegreya solo libro [EXTENSIÓN — validar]
 iconografia: Phosphor Icons (phosphoricons.com, MIT)
 licencia: CC0 1.0 Universal (Legal by Design) · marcas excluidas
 revision: cada seis meses, junto al Brand & Culture
-presupuesto_lectura:  # aprox., generado por script al versionar — nunca a mano
-  documento: "~29.900–36.300 tokens"
-  contrato_s19: "~4.800–5.800 tokens"
-  fragmento_s19_5: "~1.300–1.500 tokens"
+presupuesto_lectura:  # generado por script al versionar — nunca a mano
+  documento: "pendiente de regeneración (5.0.0)"
+  contrato_s19: "pendiente de regeneración"
+  fragmento_s19_5: "pendiente de regeneración"
 ---
 
-# Numen Games · Design System
+# Numen Games · Sistema de Diseño
 
-**Nombre clave: «Khepri».**
+**Ya sin nombre clave.** El nombre de trabajo se retira en la 5.0.0 (§0.5); el sistema se llama por lo que es.
 Un único archivo maestro. Todo lo que se diseñe —webs, plataforma, presentaciones, documentos y facturas, juegos, cómics, libros, materiales de evento, activos digitales y mundos 3D— se deriva de aquí. La guía viva con todos los ejemplos renderizados es `index.html` (junto a `/assets/`).
 
 Este documento **no inventa la identidad**. La ejecuta. La identidad está en `Brand & Culture Numinia v0.1.2`; lo que falta ahí para producir se añade aquí y se marca como extensión.
@@ -44,7 +44,9 @@ Este documento **no inventa la identidad**. La ejecuta. La identidad está en `B
 
 ### 0.3 Uso por agentes de código (Claude Code y similares) [EXTENSIÓN — validar]
 
-Este documento está pensado para **ejecutarse**, no solo leerse. Un agente de código que reciba «hazlo con Khepri» DEBE seguir este orden:
+Este documento está pensado para **ejecutarse**, no solo leerse. Un agente de código que reciba «hazlo con el Sistema» DEBE seguir este orden:
+
+0. Identificar el **registro** (§2.8): Umbral, Velo, low-poly o píxel — antes que el medio.
 
 1. Cargar §19 (contrato) y §19.3 (tokens) como fuente única de valores; nada se inventa.
 2. Copiar el **kit de arranque** de §13.1 como base CSS/JS de toda web o documento HTML — se copia, no se reescribe de memoria.
@@ -52,11 +54,25 @@ Este documento está pensado para **ejecutarse**, no solo leerse. Un agente de c
 4. Escribir el copy con §11: nivel declarado, y léxico del mundo (§11, cápsula Numinia) solo si la pieza es nivel II.
 5. Pasar la checklist §19.4 antes de entregar.
 
-**El entregable para agentes es el kit (zip).** Es autosuficiente y autoexplicativo: `LEEME.md` en la raíz trae la orden de instalación, y `kit/` contiene `khepri.css`, `khepri.js` y `khepri.tokens.json` **generados de este documento al empaquetar** — se enlazan o copian, jamás se reescriben. El `.md` a solas PUEDE bastar para tareas de estilo y consulta; su degradación es explícita: sin el kit, las fuentes se obtienen de sus orígenes (§4.1, §14) y **las piezas con firma no se producen** — los wordmarks y activos de marca solo viven en el kit.
+**El entregable para agentes es el kit (zip).** Es autosuficiente y autoexplicativo: `LEEME.md` en la raíz trae la orden de instalación, y `kit/` contiene `sistema.css`, `sistema.js` y `sistema.tokens.json` **generados de este documento al empaquetar** — se enlazan o copian, jamás se reescriben. El `.md` a solas PUEDE bastar para tareas de estilo y consulta; su degradación es explícita: sin el kit, las fuentes se obtienen de sus orígenes (§4.1, §14) y **las piezas con firma no se producen** — los wordmarks y activos de marca solo viven en el kit.
 
 **Integración en repositorio:** el `CLAUDE.md` del proyecto DEBERÍA apuntar a este archivo y reproducir el fragmento §19.5. **Precedencia sobre material antiguo:** si el agente recibe además decks, PDFs o webs anteriores, este documento manda — lo que lo contradiga (p. ej., una serif de display en presentaciones antiguas) es legado a migrar, no referencia a imitar.
 
-### 0.4 Sobre los estándares
+### 0.4 El renombrado — tabla de equivalencias [CANON — decisión de dirección, 5.0.0]
+
+El nombre clave «Khepri» se retira del sistema. Motivo funcional: este manual es también la semilla del sabor por defecto de organizaciones ajenas (§2.8.2), y una semilla no viaja con nombre propio. Los agentes que encuentren el nombre antiguo en material previo aplican esta tabla; **ninguna regla cambia por el renombrado**:
+
+| Antes | Ahora |
+|---|---|
+| Khepri (el sistema) | el Sistema / Sistema de Diseño |
+| paleta Píxel-16 | paleta **Píxel-16** |
+| sprite de Khepri | sprite del escarabajo |
+| «Khepri cierra toda pieza» | «**el escarabajo** cierra toda pieza» |
+| `kit/khepri.{css,js,tokens.json}` | `kit/sistema.{css,js,tokens.json}` |
+
+**Lo que no se renombra:** el escarabajo (isotipo) es marca, no nombre del sistema; los archivos de activos (`Khepri_Logo.svg`, `pixel/khepri-sprite-24.png`) conservan su nombre físico hasta el rearmado del kit para no romper repositorios; el historial (§18) es append-only y no se reescribe. `[ORACLE — pendiente]`: si el escarabajo conserva su nombre mitológico como personaje de nivel II (el borrador asume que sí: solo el sistema se renombra).
+
+### 0.5 Sobre los estándares
 
 No existe un estándar universal de design systems. Existen: el formato de tokens **W3C DTCG** (estándar abierto real: `$value`, `$type`), los sistemas de referencia ajenos (Material, Carbon — se citan, no se cumplen) y **WCAG 2.2 AA** (norma con fuerza legal en la UE, EN 301 549 — obligatoria). Estrategia: prosa normativa + tablas + un bloque DTCG, los mismos valores tres veces. Un sistema solo-JSON no lo lee nadie; uno solo-prosa no lo aplica ninguna máquina.
 
@@ -95,17 +111,17 @@ El *SolarSteamCyberPunk* del Brand & Culture, con la dosis fijada:
 
 **Regla de mezcla.** La luz domina, la máquina estructura, la señal parpadea. **Test de dosis** (entrecerrando los ojos): ¿parece un jardín mediterráneo con maquinaria de bronce donde parpadea una señal? Correcto. ¿Parece Blade Runner? Sobra ciber. ¿Parece un catálogo de jardinería? Falta máquina.
 
-**La línea de los cien años [CANON].** Los tres hilos no son tres estéticas: son **tres décadas de la misma historia**, la de Numinia. **1920** — la ciudad material arde; queda la máquina: el bronce, el mecanismo, la medida, los Registros. **2020** — la década de la invocación; la señal atraviesa: los Oráculos llaman a la ciudad de vuelta. **2120** — la ciudad plena; el jardín: la tecnología al servicio de la vida. Siempre hablamos de décadas: los años 20 de tres siglos. El sistema no mezcla épocas — **atraviesa un viaje de dos siglos**, y Khepri es quien empuja el sol de uno al siguiente.
+**La línea de los cien años [CANON].** Los tres hilos no son tres estéticas: son **tres décadas de la misma historia**, la de Numinia. **1920** — la ciudad material arde; queda la máquina: el bronce, el mecanismo, la medida, los Registros. **2020** — la década de la invocación; la señal atraviesa: los Oráculos llaman a la ciudad de vuelta. **2120** — la ciudad plena; el jardín: la tecnología al servicio de la vida. Siempre hablamos de décadas: los años 20 de tres siglos. El sistema no mezcla épocas — **atraviesa un viaje de dos siglos**, y el escarabajo es quien empuja el sol de uno al siguiente.
 
-**El sello de las tres décadas.** La época se hace visible con un microcomponente: `1920 · 2020 · 2120` en `type.etiqueta` (Mono, versales no — son cifras), separado por puntos medios, siempre en orden cronológico. Acompaña al cierre de Khepri en piezas expresivas y portadas; la década **dominante** de una pieza PUEDE ir en Ámbar. No sustituye a fechas reales ni aparece en documentos de nivel III.
+**El sello de las tres décadas.** La época se hace visible con un microcomponente: `1920 · 2020 · 2120` en `type.etiqueta` (Mono, versales no — son cifras), separado por puntos medios, siempre en orden cronológico. Acompaña al cierre del escarabajo en piezas expresivas y portadas; la década **dominante** de una pieza PUEDE ir en Ámbar. No sustituye a fechas reales ni aparece en documentos de nivel III.
 
-**Guardrail: la época es sabor, no skin.** Una pieza no «se ambienta» en 1920 ni en 2120: la dosis 40/40/20 se mantiene siempre, y la época solo se enfatiza con los dispositivos sancionados — el sello, la pátina de imagen (§6.3) y el léxico de época (§11). Test: si retiras el sello y la fotografía, la pieza debe seguir siendo inconfundiblemente Khepri.
+**Guardrail: la época es sabor, no skin.** Una pieza no «se ambienta» en 1920 ni en 2120: la dosis 40/40/20 se mantiene siempre, y la época solo se enfatiza con los dispositivos sancionados — el sello, la pátina de imagen (§6.3) y el léxico de época (§11). Test: si retiras el sello y la fotografía, la pieza debe seguir siendo inconfundiblemente del Sistema.
 
-**Khepri** —el escarabajo solar: creación, ciclo, renacimiento— atraviesa los tres hilos y pone el cierre de toda pieza.
+**El escarabajo** —Khepri, el escarabajo solar: creación, ciclo, renacimiento; único lugar donde el nombre antiguo pervive, como origen de la marca— atraviesa los tres hilos y pone el cierre de toda pieza.
 
 ### 2.2 El repertorio de firma [EXTENSIÓN]
 
-Cinco elementos, y no hay más; todo lo demás es tipografía, espacio y color. (1) **El ciclo lunar** como marcador de secuencia y de progreso — la Luna es símbolo canónico y una fase es de verdad una secuencia; solo donde exista secuencia o progreso real, incluido el avance de lectura de un documento largo. (2) **La textura binaria** como separador: señal que se convierte en sedimento — y que además **habla**: codifica frases del canon en 8 bits (§6.1). (3) **El relieve de circuito** (§6): la materia. (4) **Khepri** como marca de cierre: cierra, nunca abre. (5) **El juego de marca** (§8.5): los tres glifos *space · people · connect* y el color sobre la marca — solo en registro expresivo, nunca en la firma.
+Cinco elementos, y no hay más; todo lo demás es tipografía, espacio y color. (1) **El ciclo lunar** como marcador de secuencia y de progreso — la Luna es símbolo canónico y una fase es de verdad una secuencia; solo donde exista secuencia o progreso real, incluido el avance de lectura de un documento largo. (2) **La textura binaria** como separador: señal que se convierte en sedimento — y que además **habla**: codifica frases del canon en 8 bits (§6.1). (3) **El relieve de circuito** (§6): la materia. (4) **El escarabajo** como marca de cierre: cierra, nunca abre. (5) **El juego de marca** (§8.5): los tres glifos *space · people · connect* y el color sobre la marca — solo en registro expresivo, nunca en la firma.
 
 ### 2.3 Arquitectura de marca [EXTENSIÓN — validar]
 
@@ -121,14 +137,14 @@ Cuando la narrativa lo pide, Numen habla en píxel: la herencia de **Monkey Isla
 **Las reglas del registro, en una vista** (cada una desarrollada donde se indica; este bloque es índice, no duplicado):
 
 - **Se entra y se sale por completo.** Una escena es píxel o no lo es; densidades mezcladas, prohibidas. Un sprite PUEDE vivir como contenido enmarcado dentro de una pieza del sistema, nunca fundido con vector o fotografía. Frontera de interfaz → §5.1.
-- **Paleta cerrada Khepri-16** con dominancia neutral ≥ 60 % → §3.7; rampas, clústeres y tramado → §3.7.1–3.7.2.
+- **Paleta cerrada Píxel-16** con dominancia neutral ≥ 60 % → §3.7; rampas, clústeres y tramado → §3.7.1–3.7.2.
 - **Gramática de dibujo** — silueta primero, luz única arriba-izquierda, escalones deliberados → §2.4.1; escalas y consistencia → §2.4.2; profundidad → §2.4.3.
 - **Contorno**: Noche separa la **silueta** del fondo activo (la legibilidad SCUMM y nuestro velo son la misma idea); **dentro** de la figura, las divisiones se resuelven con la rampa, nunca con contorno uniforme (§2.4.1). En sprites ≤ 12 px el contorno PUEDE cerrarse completo: a ese tamaño la silueta es todo lo que hay.
 - **Escalado solo entero** con `image-rendering: pixelated` → §5.1.
 - **El diálogo colorea por hablante** con el subconjunto aprobado (§3.7) y hereda el **tecleo** (§10.1-01): el registro píxel es el hábitat natural de la bandera del sistema. Composición del texto → §4.5.1; animación de sprites → §10.4.
-- **Sprite canónico de Khepri**: existe una única traducción píxel de la marca (`assets/pixel/khepri-sprite-24.png`), demostrada en la guía, como excepción cerrada a la regla de no redibujar (§8.3). Su estatus es [EXTENSIÓN — validar]: la consagración de toda traducción píxel de la marca la firma un Oráculo (§17); hasta entonces, es el único borrador autorizado y nadie pixela otro.
+- **Sprite canónico del escarabajo**: existe una única traducción píxel de la marca (`assets/pixel/khepri-sprite-24.png`), demostrada en la guía, como excepción cerrada a la regla de no redibujar (§8.3). Su estatus es [EXTENSIÓN — validar]: la consagración de toda traducción píxel de la marca la firma un Oráculo (§17); hasta entonces, es el único borrador autorizado y nadie pixela otro.
 - El registro debe seguir pasando el **test de dosis** (§2.1): el píxel cambia la resolución, no la mezcla.
-- **El registro píxel no tiene modo Diurno.** El índice Khepri-16 nace de la Noche: una escena píxel dentro de una pieza clara conserva su lienzo Nocturno, enmarcada — nunca se recolorea a claro.
+- **El registro píxel no tiene modo Diurno.** El índice Píxel-16 nace de la Noche: una escena píxel dentro de una pieza clara conserva su lienzo Nocturno, enmarcada — nunca se recolorea a claro.
 
 #### 2.4.1 Gramática visual · legibilidad antes que detalle [EXTENSIÓN — validar]
 
@@ -181,18 +197,19 @@ Un objeto interactivo DEBE poder localizarse por al menos dos vías: silueta + p
 
 Dónde vive el sistema, de un vistazo. Cada superficie tiene su modo por defecto, su nivel de lengua y su plano:
 
-| Superficie | Modo por defecto | Nivel | Plano |
-|---|---|---|---|
-| Web narrativa (numen.games) | Nocturno | II en home, I/III en internas | §13.2 |
-| **Plataforma** (numinia.store, paneles, tienda) | **Diurno, con Nocturno conmutable** | I | §13.11 |
-| Documento y factura | Diurno | III | §13.4 |
-| Presentación | Nocturno | II/III | §13.3 |
-| Evento físico | Diurno (soportes) | I/II | §13.5 |
-| Registro píxel | **Nocturno siempre** | II | §2.4, §13.9 |
-| Registro low-poly (3D) | el de su superficie anfitriona | — | §2.6, §13.7 |
-| Correo | claro del cliente | I/III | §13.8 |
-| Cómic / novela gráfica | Nocturno | II | pendiente — hereda registro píxel, pátinas §6.3 y voz §11 |
-| Libro / editorial largo | Diurno | II/III | pendiente — hereda §4, ritmo compacto §13.4 y pátinas |
+| Superficie | Modo por defecto | Nivel | Registro | Plano |
+|---|---|---|---|---|
+| Web narrativa (numen.games, numinia.com) | Nocturno | II en home, I/III en internas | Umbral | §13.2 |
+| **Plataforma** (paneles, tienda) | **Diurno, con Nocturno conmutable** | I | Umbral | §13.11 |
+| Documento y factura | Diurno | III | Umbral | §13.4 |
+| Presentación | Nocturno | II/III | Umbral | §13.3 |
+| Evento físico | Diurno (soportes) | I/II | Umbral | §13.5 |
+| **Archivo · Summa (numinia.org, visores NWOS)** | **Nocturno** | I/III | **Velo** | §2.7 |
+| **Libro · códex digital (el LAP)** | **Diurno** (papel), Nocturno conmutable | II/III | Umbral-papel; su marco de lectura, Velo | §13.12 |
+| Registro píxel | **Nocturno siempre** | II | Píxel | §2.4, §13.9 |
+| Registro low-poly (3D) | el de su superficie anfitriona | — | Low-poly | §2.6, §13.7 |
+| Correo | claro del cliente | I/III | Umbral | §13.8 |
+| Cómic / novela gráfica | Nocturno | II | Píxel (hereda) | pendiente — hereda registro píxel, pátinas §6.3 y voz §11 |
 
 La Plataforma es la **única superficie emitida donde Diurno manda**: es herramienta de trabajo prolongado sobre datos, y el papel cansa menos que la noche. La regla «emite = Nocturno» del §5 queda así matizada por esta tabla.
 
@@ -207,6 +224,81 @@ El hermano 3D del registro píxel, para entornos, props y personajes web (visor 
 - **Formatos**: GLB/glTF, los estándares que la Plataforma ya publica.
 - Relación entre registros: **el píxel es la memoria 2D del mundo; el low-poly es su cuerpo 3D** — misma economía de medios, distinta dimensión. Ninguno de los dos se mezcla con fotorrealismo en la misma escena.
 
+### 2.7 El registro del Velo [CANON — decisión de dirección, 5.0.0]
+
+**Qué es.** En el mundo, el Velo es la piel simbólica que sostiene la ciudad: la zona del Akasha donde vive el Summa y donde el conocimiento **se ordena al ser descubierto** (manual v0.6.0). En el sistema, el Velo es el **registro de la profundidad**: la atmósfera que se ve detrás y a través de las cosas. Ya vivía aquí sin nombre — el velo de imagen `rgba(20,17,15,.72)` que protege la marca (§8.2) y funda el modal (§9.8) fue siempre su primera pieza. La 5.0.0 le da el resto del cuerpo.
+
+**Dónde vive.** Archivo Summa y visores NWOS (`numinia.org`), el marco de lectura del LAP fuera del papel, superficies de descubrimiento (fichas al abrirse, revelaciones del Registro Akáshico). Y, por decisión de dirección, es la **semilla del sabor por defecto** de organizaciones sin sistema propio (§2.8.2).
+
+**La regla única del registro: el Velo no añade hexes — añade alfa.** Todo valor del Velo es un canónico con transparencia. Ningún hue nuevo entra al sistema por esta puerta.
+
+| Token | Valor | Origen | Papel |
+|---|---|---|---|
+| `velo.rejilla` | `rgba(166,218,213,.025)` · celda **40 px** | Verdemar al 2.5 % | La retícula del Akasha, apenas visible; la celda coincide con la fila de Plataforma (40 px) — el archivo y la herramienta comparten compás `[DERIVADO — verificado en producción, pablofm-web]` |
+| `velo.niebla` | `rgba(1,142,161,.06)` · radial desde abajo-izquierda | Turquesa al 6 % | La niebla de los corredores: la señal difusa del fondo `[DERIVADO — verificado en producción]` |
+| `velo.imagen` | `rgba(20,17,15,.72)` | Noche al 72 % | El velo fundacional (§8.2, §9.8, §13.3) — sin cambios; Jardín puede aligerar a `.60` (§6.3) |
+| `velo.cristal` | `rgba(30,26,23,.65)` + `backdrop-filter: blur(12px)` | Basalto al 65 % | Superficie de cristal: se lee a través `[EXTENSIÓN — validar]` |
+| `velo.cristal-borde` | `rgba(58,51,45,.5)` | Línea fuerte al 50 % | El canto del cristal `[EXTENSIÓN — validar]` |
+| `velo.cielo` | 175 estrellas · pesos `60/25/10/4/1` | **Escala de rareza §3.6** | El cielo del Velo (§2.7.1) — verificado en producción, numinia.org |
+| `velo.lectura` | `blur(2.2px)` + máscara `0→90 %` | — | Lo que está tras el Umbral se ve y no se lee (§2.7.2) |
+
+**Reglas duras del Velo:**
+
+- **Solo en Nocturno.** El papel es papel: en Diurno el Velo no existe (misma lógica que el relieve, §6.2).
+- **Intensidades techo:** rejilla ≤ 3 % de alfa, niebla ≤ 8 %. Más es decorado; el Velo se siente, no se mira.
+- **Detrás, nunca encima.** Rejilla y niebla son capa de fondo; jamás sobre texto de lectura ni dentro de tarjetas y superficies elevadas — esas siguen lisas (§6.2).
+- **El cristal exige atmósfera.** `velo.cristal` solo sobre fondos con rejilla, niebla o imagen velada detrás: desenfocar la nada es humo. Texto sobre cristal: mínimo el secundario; AA verificado contra el peor fondo posible.
+- **Materia y atmósfera no compiten.** El relieve de circuito (§6.2) es la máquina; el Velo es el Akasha. En una vista DEBERÍA dominar uno. La niebla PUEDE posarse sobre el relieve a la mitad de su alfa; **rejilla y relieve no conviven** — dos tramas pelean `[EXTENSIÓN — validar]`.
+- Contraste, foco y `prefers-reduced-motion`: las reglas generales mandan; el Velo no las matiza.
+
+#### 2.7.1 El cielo · la rareza hecha cosmos [CANON — decisión de dirección, 5.0.0]
+
+El fondo de estrellas de `numinia.org` no es decoración: **la distribución del cielo es la escala de rareza** (§3.6). Sesenta de cada cien estrellas son comunes y una es legendaria — quien mira el cielo lee la misma gramática con la que lee el botín, sin que nadie se lo explique. Es la **única aparición sancionada de la rareza fuera del juego**, y se autoriza porque el cielo *es* mundo: no colorea datos, precios ni plazos (§3.6 sigue intacta en eso).
+
+| Tier | Peso | Radio | Color canónico |
+|---|---:|---|---|
+| Común | 60 | 0.3–1.2 px | Arena `#F9EBDC` |
+| Poco común | 25 | 0.5–1.5 px | Verde `#8FC46B` |
+| Raro | 10 | 0.6–1.8 px | Azul templado `#5D9BD6` |
+| Épico | 4 | 0.8–2.5 px | Morado `#A98BE0` |
+| Legendario | 1 | 1.0–3.0 px | Ámbar `#EFA517` |
+
+Comportamiento (canonizado tal cual está en producción): **175 estrellas**; deriva de `±0.06 px` por fotograma con reaparición por el lado opuesto; **respiración de alfa** entre `.05` y `.85`, cada estrella a su ritmo (`.002–.006` por fotograma); resiembra al redimensionar. Reglas duras: solo Nocturno; **sin parallax y sin reacción al cursor o al scroll** — es fondo, no interacción; nunca bajo texto de lectura larga; con `prefers-reduced-motion` el cielo se detiene y las estrellas quedan fijas a alfa media.
+
+**Deriva detectada `[CORREGIR]`:** numinia.org dibuja hoy el cielo con hexes ajenos al sistema (`#22C55E`, `#3B82F6`, `#A855F7`, `#F97316` — valores por defecto de Tailwind). La regla queda escrita con los canónicos de §3.6; el recoloreo va a la hoja de ruta §16.
+
+#### 2.7.2 El velo de lectura · se ve, no se lee [CANON — decisión de dirección, 5.0.0]
+
+La frontera de sesión del códex, ya en producción: el capítulo cerrado **se muestra** desenfocado (`blur(2.2px)`) y disolviéndose hacia abajo con una máscara lineal de `0→90 %`. No es un muro que oculta — es un velo que promete; el embudo es blando por decisión (D2 del LAP). Reglas: el texto velado queda **inerte** (`user-select:none`, `pointer-events:none`, fuera del orden de foco); el sello del Umbral y su llamada flotan **nítidos por encima**; nunca se vela contenido que la persona ya tenía abierto.
+
+**Sus animaciones** viven en §10.1 (10–14). El catálogo 01–09 sigue disponible para Umbral y Velo por igual; 10–12 son exclusivas del Velo y del papel vivo (§13.12).
+
+### 2.8 Los cuatro registros — jerarquía y valores [CANON — decisión de dirección, 5.0.0]
+
+El Sistema habla en cuatro registros, ordenados por importancia. Cada pieza declara el suyo **antes que su medio** (§19.2). Como toda misión del NWOS, cada registro responde por su **valor epistémico** (qué enseña) y su **valor pragmático** (qué produce).
+
+**1 · El Umbral** — el registro general. El nombre viene del mundo: el Umbral es la frontera que cualquiera puede cruzar. Es el sistema base entero (§3–§13): webs, presentaciones, documentos, **facturas** (§13.4; pieza real 2026-A-014), interfaz, evento y correo.
+*Epistémico:* fija los priors de quien llega de fuera — el primer contacto enseña qué es Numen sin necesitar el mundo.
+*Pragmático:* produce toda pieza corporativa y de producto **sin decisiones nuevas**; es el registro que factura.
+
+**2 · El Velo** — el registro de la profundidad (§2.7). El Akasha visible: archivo, Summa, visores, descubrimiento.
+*Epistémico:* hace visible **cómo se ordena el conocimiento al descubrirse** — las capas de verdad como capas literales: fondo, niebla, cristal, contenido.
+*Pragmático:* viste los visores NWOS hoy y es la semilla del tema por defecto del template (§2.8.2) — la apuesta de las skins intercambiables, encarnada.
+
+**3 · Low-poly** — el cuerpo 3D del mundo (§2.6). Hyperfy, Oncyber y lo que Three.js levante: sillas, edificios, personajes.
+*Epistémico:* demuestra la honestidad material en tres dimensiones — la malla se muestra; la economía de medios se aprende mirando.
+*Pragmático:* produce assets GLB/glTF con presupuesto verificable para la tienda y los mundos.
+
+**4 · Píxel** — la memoria 2D del mundo (§2.4). Aventuras arcade, minijuegos, lore jugable.
+*Epistémico:* *Learn* hecho forma — la herencia de las aventuras gráficas, citada y nunca copiada.
+*Pragmático:* escenas, logros y sprites con pipeline y QA cerrados (§13.9–13.10).
+
+**Regla de fusión.** Los registros no se apilan: una pieza vive en uno y PUEDE **enmarcar** contenido de otro (un sprite dentro de una web del Umbral; un visor Velo mostrando un GLB low-poly). La frontera entre registros DEBE ser visible — la misma disciplina que rige la entrada y salida del píxel (§2.4).
+
+#### 2.8.2 El Velo como semilla del template [CANON — decisión de dirección, 5.0.0 · implementación pendiente]
+
+Decisión de Oráculo (2026-08-18): las organizaciones generadas por el NWOS que no aporten evidencia de marca no arrancan neutras — arrancan con **sabor Velo**. Implementación recomendada: el Velo se distribuye como **tema** (`theme/velo.tokens.json` en el mould) que `nwos-deploy` instala cuando los slots S1–S3 resuelven a `[DEFAULT]`; **el contrato del template no cambia** — la doctrina de contrato congelado + valores variables queda intacta y el Velo es la primera skin de la galería, no una mutación del mould. `[ORACLE — confirmar tema vs. defaults]`. Nota de frontera: el tema Velo usa alfas sobre los canónicos de la casa; es deliberado — el sabor por defecto **es** ADN de Numen, y la organización que derive su propio sistema lo reemplaza entero.
+
 ---
 
 ## 3. Color
@@ -217,7 +309,7 @@ El hermano 3D del registro píxel, para entornos, props y personajes web (visor 
 |---|---|---|---|
 | `#A6DAD5` | **Verdemar** | Solar | Confirmación, calma, tintes de superficie |
 | `#018EA1` | **Turquesa** | Cyber | Interacción: enlaces, foco, acentos (el relleno de acción es su sombra `#017C8D`, §9.1) |
-| `#EFA517` | **Ámbar** | Solar | Énfasis, valor, logro; el sol de Khepri |
+| `#EFA517` | **Ámbar** | Solar | Énfasis, valor, logro; el sol del escarabajo |
 | `#F9EBDC` | **Arena** | Solar | Neutral principal |
 | `#F35059` | **Coral** | Cyber | Aviso, tiempo real; destello, nunca ambiente |
 | `#D33440` | **Grana** | — | Crítico, gravedad |
@@ -260,7 +352,7 @@ Capa categórica para juego y producto (objetos, recompensas, Cartas de Navegaci
 
 Reglas: escala completa y en orden, sin peldaños inventados. **Tratamiento progresivo además del color**: pobre/común borde `linea.tenue`; poco común/raro borde de su color al 40 %; épico borde pleno; legendario borde pleno + halo `0 0 12px rgba(239,165,23,.25)` — **el único glow del sistema**. Nombre escrito en `type.etiqueta` la primera vez por vista. Vive en producto y juego; NUNCA en comunicación corporativa: un precio no es épico y un plazo no es legendario.
 
-### 3.7 Paleta Khepri-16 · el índice del registro píxel [CANON — decisión de dirección]
+### 3.7 Paleta Píxel-16 · el índice del registro píxel [CANON — decisión de dirección]
 
 Dieciséis colores, **cero hexes nuevos**: siete neutrales, los seis de marca y tres sombras ya definidas, más el verde de rareza. Todo sprite y toda escena píxel DEBE limitarse a este índice.
 
@@ -358,6 +450,18 @@ Reglas: autoalojada (`PixelifySans-Variable.woff2`, 22 KB, con su OFL en `/asset
 - El cursor de bloque acompaña al tecleo y se retira al terminar. No se deja parpadeando junto a texto ya finalizado.
 - El texto se compone sobre coordenadas enteras. Escala, `line-height`, traslación y caja NO DEBEN producir medias posiciones de píxel.
 
+### 4.6 La tercera voz — la serif que narra [EXTENSIÓN — validar · ORACLE]
+
+Sans afirma, Mono mide, **la serif narra**. El códex en producción ya la usa — colofón vivo: *«Compuesto en Alegreya con el Sistema»*. **Alegreya** (Juan Pablo del Peral, Huerta Tipográfica, SIL OFL 1.1) entra **entera**, porque el códex ya usa las tres cortes — auditado en el repositorio de producción:
+
+| Corte | Archivo | Papel en el libro |
+|---|---|---|
+| Redonda variable | `Alegreya-Variable.woff2` | Cuerpo de lectura larga |
+| Itálica variable | `Alegreya-Italic-Variable.woff2` | Apertura literaria, citas, epígrafes, términos del glosario |
+| **Small caps** (400/500) | `AlegreyaSC-{Regular,Medium}.woff2` | **Capitular**, títulos de capítulo, versalitas de sección |
+
+La **small caps es la pieza que faltaba registrar**: no es un efecto tipográfico simulado (`font-variant` sintético queda prohibido, como el falso bold de Pixelify en §4.5), es un corte propio con sus formas dibujadas. Voz **exclusiva del libro** (superficie Libro · códex, §13.12); autoalojada con su OFL en `/assets/fonts/`, pendiente de entrar al kit en el rearmado v5. **Jamás** en interfaz, deck (la guarda de legado §13.3 sigue intacta), documento corporativo ni factura. Hasta la firma del Oráculo, su uso queda acotado al LAP ya publicado.
+
 ---
 
 ## 5. Espacio, retícula, forma
@@ -376,7 +480,7 @@ La retícula web organiza la página; la retícula píxel organiza el contenido 
 - Cuando el viewport no admite una escala entera, la escena reduce al múltiplo inferior y completa el espacio restante con Noche. No se estira para llenar.
 - El filtrado es `nearest-neighbor`; en web, `image-rendering: pixelated`. Se desactivan suavizado y mipmaps cuando el motor pueda alterar el píxel a escala de juego.
 - Todos los fotogramas de una animación comparten celda, origen y caja de ocupación. El cambio de pose ocurre dentro de la celda, no moviendo accidentalmente el lienzo.
-- El HUD y la caja de diálogo PUEDEN pertenecer al registro píxel; navegación, formularios, ayudas extensas y controles del producto siguen el sistema vectorial de Khepri. La frontera entre ambos registros DEBE ser visible.
+- El HUD y la caja de diálogo PUEDEN pertenecer al registro píxel; navegación, formularios, ayudas extensas y controles del producto siguen el sistema vectorial del Sistema. La frontera entre ambos registros DEBE ser visible.
 - La prueba se realiza en tres vistas: ×1 para decisión, una escala entera de presentación y el viewport mínimo soportado. Si falla en ×1, no se corrige ampliando.
 
 ---
@@ -432,6 +536,18 @@ Semilla de la dirección de fotografía e ilustración: toda imagen se trata hac
 
 Reglas: una pátina por pieza; la pátina no cambia la paleta — la interpreta; retratos de personas siempre en Bronce o Jardín (la Señal deshumaniza); con texto encima, el velo vuelve a `.72` sea cual sea la pátina. Pendiente de validar con seis fotografías reales — entonces ascenderá a dirección completa.
 
+### 6.5 El gramaje — el grano del papel [CANON — decisión de dirección, 5.0.0]
+
+El códex en producción demuestra la cuarta materia, y es la del Diurno: **el grano**. Ruido fractal generado (`feTurbulence` `fractalNoise`, `baseFrequency 0.85`, `numOctaves 3`, teñido a `rgba(74,64,51,.045)` por matriz de color), fijo en el fondo, en un SVG embebido de 240² — sin descarga, sin imagen.
+
+**Por qué no contradice al §6.2.** Aquella regla —«nada de textura en Diurno»— prohíbe el **relieve de circuito** sobre el papel: la máquina no se imprime. El grano no es una textura *aplicada* al papel: **es** el papel. Reglas: máximo **5 %** de intensidad; solo capa de fondo, `position: fixed`, `pointer-events: none`; nunca en superficies elevadas ni bajo tablas de datos; en Nocturno el mismo grano **baja a la mitad** (el papel de noche es el mismo papel con menos luz); no se combina con relieve ni con rejilla del Velo — el papel no tiene circuito ni Akasha.
+
+Con esto, las materias son cuatro y cada una tiene su mundo: **la señal separa, el circuito da cuerpo, la atmósfera da profundidad, el grano da papel.**
+
+### 6.4 La atmósfera — el Velo como materia [CANON — decisión de dirección, 5.0.0]
+
+El §6 tenía dos texturas: la señal (lo que fluye) y el circuito (por donde fluye). La 5.0.0 nombra la tercera: **la atmósfera** — la rejilla y la niebla del Velo (§2.7), el medio donde lo descubierto se ordena. Las tres se reparten el fondo Nocturno —y el grano (§6.5) toma el Diurno—: **la señal separa, el circuito da cuerpo, la atmósfera da profundidad, el grano da papel.** Convivencia: reglas duras en §2.7 (una domina por vista; niebla sobre relieve a media alfa; rejilla y relieve no conviven). En Diurno no existe ninguna de las tres: el papel es papel.
+
 ---
 
 ## 7. Iconografía · Phosphor [CANON — decisión de dirección]
@@ -446,9 +562,19 @@ Sistema único: **[Phosphor Icons](https://phosphoricons.com)** — Helena Zhang
 
 **Sí:** acción, objeto y navegación, con etiqueta de texto en el primer uso por pieza; un concepto = un icono en todo el sistema; heredan `currentColor` y solo toman acento cuando el texto adyacente lo toma.
 **No:** como viñetas decorativas; mezclar pesos en una misma fila de interfaz; recolorearlos fuera del sistema; usarlos sin significado.
-Icono a medida solo si Phosphor no cubre el concepto; se dibuja en su rejilla y se propone aquí como extensión. **Khepri y la Luna no son iconos: son marcas** — las fases del marcador de secuencia se construyen como glifo geométrico propio, no con `moon` de Phosphor.
+Icono a medida solo si Phosphor no cubre el concepto; se dibuja en su rejilla y se propone aquí como extensión. **El escarabajo y la Luna no son iconos: son marcas** — las fases del marcador de secuencia se construyen como glifo geométrico propio, no con `moon` de Phosphor.
 
 ### 7.3 Implementación
+
+**El subconjunto de la casa [CANON — auditado en producción, 5.0.0].** De los ~1.500 glifos de Phosphor, la organización usa **veintiséis**, autoalojados en `packages/ui/src/icons/` y servidos como SVG inline con `currentColor`. Este es el vocabulario, no una muestra del catálogo ajeno: `archive · bell · book-open · caret-down · caret-left · chart-bar · download-simple · flame · flame-light · gear · github-logo · globe-hemisphere-west · globe-hemisphere-west-light · house · magnifying-glass · moon · moon-stars · music-notes · package · sign-out · sun · sword · sword-light · user · users · x-logo`. Ampliarlo es una decisión, no un descuido: un icono nuevo entra al subconjunto con su concepto declarado.
+
+### 7.4 El conmutador de modo [CANON — decisión de dirección, 5.0.0]
+
+El par `moon-stars` / `sun` es una pieza, no dos iconos sueltos. **Regla dura: el icono muestra el modo al que lleva un toque, no el modo en el que se está** — la luna con estrellas invita al Nocturno, el sol invita al Diurno. Solo uno visible a la vez, en `regular` 20 px, entre los utilitarios de la barra (§13.2). Comportamiento canonizado desde producción: mientras nadie elige, la página **sigue al sistema operativo** y cambia con él al anochecer; una elección explícita termina el seguimiento y se recuerda; la preferencia se aplica **antes de pintar** para que la página no parpadee. El estado se escribe en el documento como `data-modo`, y su **ausencia significa Nocturno** — el modo claro se declara siempre de forma explícita.
+
+### 7.5 Los iconos del libro [EXTENSIÓN — validar]
+
+El registro papel tiene su propio juego, **de trazo y no de masa**: rejilla `16`, `stroke 1.5`, terminación redonda, sin relleno. Piezas en producción: índice, marcapáginas, narrador, pausa, sol, luna, umbral (chevron) y el **filete** —el glifo hexagonal con tres nodos que separa las secciones del libro—. No compiten con Phosphor ni lo sustituyen: viven dentro del registro, igual que el píxel tiene su propia iconografía dentro del suyo (§9.6). Fuera del libro, manda Phosphor.
 
 En producción, **subconjunto autoalojado** (SVG inline o sprite), como hace la propia guía `index.html`. Para prototipos: `@phosphor-icons/web` en npm/unpkg. Fuente de los SVG oficiales: `github.com/phosphor-icons/core` (`assets/{peso}/{nombre}[-{peso}].svg`).
 
@@ -557,6 +683,25 @@ Estos componentes viven **dentro de una escena o experiencia píxel**. No sustit
 
 El foco del sistema (`2 px` Turquesa, offset `2 px`) permanece vectorial y visible incluso alrededor de un componente píxel. La accesibilidad tiene precedencia sobre la fidelidad histórica.
 
+### 9.9 Componentes del libro [EXTENSIÓN — auditados en producción]
+
+La carpintería editorial del códex. Viven **dentro del registro papel** (§13.12) y no sustituyen a los componentes de §9.1–9.5.
+
+| Componente | Construcción | Regla de uso |
+|---|---|---|
+| **Barra del libro** | 54 px, fondo del papel al 88 % + `blur(10px)`, hairline inferior; al leer **cede a 40 px** y esconde etiquetas y el control A·A·A | **Nunca desaparece**: marcapáginas, índice y narrador quedan siempre a un toque; la acción principal conserva su nombre — jamás se reduce a una flecha críptica |
+| **Capitular** | primera letra del capítulo en small caps a `4.4em`, flotada, color de estructura | Una por capítulo y solo en el primer párrafo; se retira en fichas imprimibles |
+| **Cuadro de lectura** | papel profundo, borde 1 px + filo solar de 3 px a la izquierda, radio `0 10px 10px 0`, etiqueta `LECTURA` cabalgando el borde superior | Cita larga, regla de mesa o aparte del autor; en cursiva, texto secundario |
+| **Lámina** | marco `marco`, hueco con tramado diagonal cuando la ilustración aún no existe, pie con descripción + ficha técnica en Mono | El hueco **se muestra**, no se disimula: un libro en obra lo dice |
+| **Tabla numerada** | `caption` en Mono versales («Tabla I · …»), cabecera en estructura, primera columna en cursiva, filas con hairline | La tabla del libro no es la de producto (§13.11): aquí manda la lectura, no la densidad |
+| **Nota al margen** | columna lateral de 200–220 px desde `1200 px`; por debajo, baja al pie del párrafo | **Nunca duplicada**: o margen, o pie. Llamada en Mono, superíndice en color interactivo |
+| **Filete** | glifo hexagonal centrado entre dos degradados de 96 px | Separador de secciones del libro; sustituye a la binaria dentro del papel |
+| **Sello del Umbral** | disco de 100 px, borde de estructura, halo `0 0 12px rgba(239,165,23,.25)` y degradado radial interior | El **único** uso del halo legendario fuera de la rareza: marca la frontera de sesión, no un objeto |
+| **Glosario** | `dt` en small caps cursiva sobre estructura + `dd` con la definición y su fuente; el término al que se llega desde un capítulo se marca con filo solar | **Las definiciones salen solo del texto del manual y cada una cita su fuente**: un glosario que inventa deja de ser glosario |
+| **Término en el cuerpo** | subrayado punteado en estructura, `text-underline-offset 3px`; al hover pasa a sólido e interactivo | Dice «esto está definido» sin robarle el color a la prosa; no se usa para enlaces normales |
+| **Tarjeta de descarga** | marco, formato en Mono versales sobre estructura + una frase de por qué | Las tres siempre juntas (.md, pdf, epub): el libro viaja libre o no viaja |
+| **Colofón** | binaria **de barras** (la palabra en bits, cada bit una barra de 5×12; el uno en estructura), sello circular, autoría, licencia y firma | Cierra el libro; la binaria de barras es la variante impresa de §6.1 — el mensaje sigue siendo texto real en el marcado |
+
 ### 9.7 Mensajes al usuario [CANON — decisión de dirección]
 
 Cómo habla la interfaz cuando pasa algo. Plantilla universal: **qué pasó + qué hacer**, en nivel I, sin drama y sin disculpa vacía. El error mudo («Algo salió mal», sin causa ni salida) está PROHIBIDO.
@@ -586,13 +731,15 @@ La carpintería que faltaba, unificada por una sola regla: **lo activo se viste 
 
 **Regla de selección del progreso:** ¿secuencia discreta o lectura? luna. ¿Espera corta sin medida? puntos. ¿Porcentaje real? barra. Tres formas, cero ambigüedad.
 
+**Matiz Velo (5.0.0):** en superficies del registro Velo, el modal PUEDE entrar por **cristalización** (§10.1-11) en lugar de revelado 02; el velo de fondo sigue siendo `velo.imagen` canónico y las reglas de foco no cambian. En el Umbral, el modal no cambia.
+
 ---
 
 ## 10. Movimiento y animación [CANON — decisión de dirección]
 
 El tecleo —la bandera— tiene **doble herencia de época**: es la máquina de escribir de 1920 y la terminal de 2020 a la vez; por eso es el movimiento más numiniano del catálogo. Principios (de *Curiosity*): nada se mueve donde el usuario actúa; el contenido se revela donde el usuario descubre; **un solo momento orquestado por pieza**; con `prefers-reduced-motion` todo aparece al instante (se conserva la opacidad, se elimina el desplazamiento); el movimiento no bloquea el scroll. Curva por defecto `cubic-bezier(.2,0,0,1)`.
 
-### 10.1 El catálogo — nueve animaciones, y ninguna más
+### 10.1 El catálogo — catorce animaciones, y ninguna más
 
 | # | Animación | Especificación | Dónde sí | Dónde no |
 |---|---|---|---|---|
@@ -601,12 +748,21 @@ El tecleo —la bandera— tiene **doble herencia de época**: es la máquina de
 | 03 | Barrido de señal | `8 s` lineal infinito; banda Turquesa recorriendo la binaria | **Máximo uno por vista** — la dosis cyber ambiental | Varios a la vez; sobre texto de lectura |
 | 04 | Elevación | `120 ms` · ciclo; sube un escalón de superficie, **sin desplazamiento** | Hover de superficies | Cualquier movimiento de posición |
 | 05 | Pulso legendario | `2.4 s` ease-in-out **× 2**; el halo respira | Solo el momento de obtención; después, halo estático | Loop ambiental; otros elementos |
-| 06 | Fase lunar | **Carga**: ciclo completo de las **ocho fases** —cuartos incluidos— a `900 ms`/fase con fundido ≤ `240 ms` (una vuelta ≈ 7,2 s, en armonía con el barrido de 8 s). **Progreso real y lectura**: solo fases crecientes, de nueva a llena — terminar es luna llena | Cargas largas, progreso de secuencia real, avance de lectura de un documento largo (la propia guía lo demuestra) | Esperas < 2 s; ciclo completo en progreso (menguar al avanzar confunde) |
+| 06 | Fase lunar | **Carga [cadencia corregida en 5.0.0]**: ciclo completo de las **ocho fases** —cuartos incluidos— a `1.400 ms`/fase con fundido ≤ `240 ms` (una vuelta ≈ 11,2 s). A 900 ms los cuartos no se llegaban a leer: **una fase que no da tiempo a reconocerse no es una fase**. La forma se calcula —limbo fijo + terminador elíptico—, no se conmutan dibujos sueltos: así la luna crece de verdad. **Progreso real y lectura**: solo fases crecientes, de nueva a llena — terminar es luna llena | Cargas largas, progreso de secuencia real, avance de lectura de un documento largo (la propia guía lo demuestra) | Esperas < 2 s; ciclo completo en progreso (menguar al avanzar confunde) |
 | 07 | Puntos de espera | `900 ms` · steps(3); `Cargando···` | Botones cargando | Texto corriente |
 | 08 | Cursor de bloque | `1 s` · steps(2) | Acompañando al tecleo o a un campo activo | Suelto, decorativo |
 | 09 | Momento orquestado | Tecleo del titular + revelados escalonados a `80 ms` | La entrada de la pieza — uno por pieza | Repetido; en cada sección |
+| **10** | **Afloramiento** — el conocimiento sale de la niebla [5.0.0] | `560 ms` · ciclo; opacidad 0→1 + `blur(8px)→0` + 8 px de ascenso; al entrar en viewport, una vez | Registro Velo: archivo, Summa, fichas al abrirse, revelaciones | Interfaz funcional; listas largas (el revelado 02 basta); Diurno; Umbral corporativo |
+| **11** | **Cristalización** — el cristal se materializa [5.0.0] | `320 ms` · ciclo; `backdrop-blur 0→12px` + borde 0→50 % + opacidad | Paneles y modales del Velo (§9.8) | Fuera del Velo; sobre fondos sin atmósfera |
+| **12** | **Paso de página** — el códex pasa hoja [5.0.0 · EXTENSIÓN] | `320 ms` · ciclo; deslizamiento horizontal corto + fundido — specs exactas por verificar contra el código del LAP (`numinia.com/lap/codex`) | Navegación entre capítulos del papel vivo (§13.12) | Navegación de interfaz general; scroll |
+| **13** | **Trazo** — las esquinas se dibujan solas [5.0.0 · en producción] | `1.6 s` · ease · `stroke-dashoffset: 340 → 0`; cuatro marcos de grabado escalonados a `120 ms` | Portada de libro y apertura de capítulo (§13.12) — **es** el momento orquestado de esa vista | Interfaz; re-disparo en scroll; junto a otro momento orquestado |
+| **14** | **Cielo** — el fondo del Velo respira [5.0.0 · en producción] | Deriva de `±0.06 px`/fotograma con reaparición por el lado opuesto + alfa oscilando entre `.05` y `.85` a ritmo propio (`.002–.006`) | Fondo del registro Velo (§2.7.1) — **única excepción sancionada** al veto de loops ambientales | Sobre lectura larga; con parallax; reaccionando al cursor o al scroll |
+
+Las tres primeras piezas de la 5.0.0 (10–12) son **transiciones, no loops** y **no inventan duraciones**: reutilizan `duration.largo` (560) y `duration.medio` (320). El **trazo** (13) llega medido desde producción con `1.6 s` propios — es la única duración nueva del catálogo, y se justifica porque dibujar cuatro esquinas más rápido las convierte en un parpadeo. El **cielo** (14) es la única excepción sancionada al veto de loops ambientales del §10.2: se autoriza porque es **fondo del registro**, no ornamento de una vista — y por eso no reacciona a nada. La **luna de lectura** del códex no es animación nueva: es la fase lunar (06) demostrada en producción. 10–12 pertenecen al registro Velo y al papel vivo; el catálogo 01–09 sirve a Umbral y Velo por igual. El momento orquestado sigue siendo **uno por pieza**. Con `prefers-reduced-motion`, afloramiento y cristalización aparecen al instante: se conserva la opacidad, se eliminan blur y desplazamiento.
 
 ### 10.2 Prohibido siempre
+
+*Enmienda 5.0.0: el cielo del Velo (§10.1-14) es la única excepción sancionada al veto de loops ambientales; sigue prohibido cualquier otro.*
 
 Parallax. **Glitch** (tentador con el cyber al 20 %: rompe la calma solar y la accesibilidad). Loops ambientales fuera del barrido. Animar el color del texto de lectura. Animar el foco. Autoplay con sonido.
 
@@ -648,7 +804,7 @@ La rotación de paleta de §3.7.3 y los ciclos de sprite no pueden competir en l
 
 **Léxico de época** — palabras que huelen a su década, para teñir el nivel II sin disfrazarlo: **1920** cenáculo · iniciados · registros · bronce · expedición · mecanismo · correspondencia. **2020** señal · invocación · terminal · red · destello · latido. **2120** jardín · cosecha · ágora plena · luz de mañana · florecer. Se usan como especias, no como plato: dos o tres por pieza bastan.
 
-**Léxico del mundo Numinia [CANON — fuente: Presentación Numinia v0.6.0]** — el vocabulario propio del nivel II; en nivel III se cita, no se narra. **Numinia**: la ciudad para el conocimiento, proyectada sobre un tablero de juego. **El Ágora**: su centro y lugar de convergencia. **Los cuatro distritos**: Vitruvian (educación) · Sycamore (arte) · Solomon (organización) · Ouroboros (juego). **Los Registros Akáshicos**: la memoria viva donde toda contribución deja huella. **La génesis**: cinco iniciados encabezados por **Holberins**; la ciudad física ardió en 1920 y renació un siglo después, invocada por los Oráculos. **Numínido**: todo lo que participa de la identidad de Numinia — no es un origen, es una forma de pertenecer. **Identidades**: las Especies responden a ¿quién eres?, los Gremios a ¿qué sabes?, las Facciones a ¿qué persigues?; las agrupaciones son Logias, Ligas y Hermandades. **Rituales**: Dark Council (deliberar, decidir) y Lunar Coven (imaginar, narrar, construir). Regla: estos nombres se escriben siempre así, no se traducen ni se les inventan parientes; su desarrollo completo vive en la Presentación Numinia, no aquí — esta cápsula existe para que ninguna pieza de nivel II hable del mundo con vocabulario inventado.
+**Léxico del mundo Numinia [CANON — fuente: Presentación Numinia v0.6.0]** — el vocabulario propio del nivel II; en nivel III se cita, no se narra. **Numinia**: la ciudad para el conocimiento, proyectada sobre un tablero de juego. **El Ágora**: su centro y lugar de convergencia. **Los cuatro distritos**: Vitruvian (educación) · Sycamore (arte) · Solomon (organización) · Ouroboros (juego). **Los Registros Akáshicos**: la memoria viva donde toda contribución deja huella. **El Velo**: la piel simbólica que sostiene la ciudad — la zona del Akasha donde vive el Summa y donde el conocimiento se ordena al descubrirse. **El Umbral**: la frontera que cualquiera puede cruzar; tras él, los corredores de niebla llevan al Archivo. **La génesis**: cinco iniciados encabezados por **Holberins**; la ciudad física ardió en 1920 y renació un siglo después, invocada por los Oráculos. **Numínido**: todo lo que participa de la identidad de Numinia — no es un origen, es una forma de pertenecer. **Identidades**: las Especies responden a ¿quién eres?, los Gremios a ¿qué sabes?, las Facciones a ¿qué persigues?; las agrupaciones son Logias, Ligas y Hermandades. **Rituales**: Dark Council (deliberar, decidir) y Lunar Coven (imaginar, narrar, construir). Regla: estos nombres se escriben siempre así, no se traducen ni se les inventan parientes; su desarrollo completo vive en la Presentación Numinia, no aquí — esta cápsula existe para que ninguna pieza de nivel II hable del mundo con vocabulario inventado.
 
 **Interfaz [DERIVADO]:** voz activa; el control dice exactamente qué ocurre y conserva el nombre en el flujo; el error explica qué pasó y cómo seguir, sin disculpa y sin vaguedad; la pantalla vacía invita a actuar; específico antes que ingenioso.
 
@@ -668,10 +824,10 @@ Cada medio tiene su **plano**: la regla en una línea, el esqueleto normativo y 
 
 ### 13.1 Kit de arranque (CSS y JS canónicos) [CANON — decisión de dirección]
 
-Base de toda web y documento HTML. Se **copia tal cual** — reescribirlo de memoria produce deriva de tokens. Rutas relativas a `/assets/`. Distribución: el kit incluye `kit/khepri.css` y `kit/khepri.js` **generados de estos bloques al empaquetar** — enlázalos o cópialos; editar los archivos sin tocar este § es deriva.
+Base de toda web y documento HTML. Se **copia tal cual** — reescribirlo de memoria produce deriva de tokens. Rutas relativas a `/assets/`. Distribución: el kit incluye `kit/sistema.css` y `kit/sistema.js` **generados de estos bloques al empaquetar** — enlázalos o cópialos; editar los archivos sin tocar este § es deriva.
 
 ```css
-/* Khepri v3.4.0 · kit de arranque */
+/* Sistema de Diseño v5.0.0 · kit de arranque */
 @font-face{font-family:'Geist';src:url('assets/fonts/Geist-Variable.woff2') format('woff2');font-weight:100 900;font-display:swap}
 @font-face{font-family:'Geist Mono';src:url('assets/fonts/GeistMono-Variable.woff2') format('woff2');font-weight:100 900;font-display:swap}
 :root{
@@ -723,7 +879,7 @@ h1{font-size:2.986rem;font-weight:500}
 ```
 
 ```js
-/* Khepri · tecleo (01) y revelado (02), implementación de referencia accesible */
+/* Sistema · tecleo (01) y revelado (02), implementación de referencia accesible */
 const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function tecleo(el, ms = 22){
   if (rm) return;                                   // reduce: el texto simplemente está
@@ -756,7 +912,7 @@ La animación de parpadeo del cursor: `@keyframes parpadeo{50%{opacity:0}}`.
 El generador de la binaria (§6.1) — cualquier frase del canon, en señal:
 
 ```js
-/* Khepri · binaria(frase) → bits + sedimento (§6.1) */
+/* Sistema · binaria(frase) → bits + sedimento (§6.1) */
 const binaria = (frase, sed = 60) =>
   [...frase].map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join('') + 'x'.repeat(sed);
 // binaria('Leave things better than we found them.')
@@ -770,7 +926,7 @@ Nocturno, 12 col ≤1280 px, hero = tesis con relieve al fondo y tecleo del titu
 
 ```html
 <section class="hero"><!-- background: var(--fondo) url(assets/textura-relieve-nocturno-768.webp) center/cover -->
-  <div class="marca"><!-- isotipo Khepri 44px + wordmark 20px, ambos en var(--arena) --></div>
+  <div class="marca"><!-- isotipo del escarabajo 44px + wordmark 20px, ambos en var(--arena) --></div>
   <h1 data-tecleo>La tesis en una frase, con <span style="color:var(--ambar)">una palabra</span> en Ámbar.</h1>
   <p class="sub"><!-- cuerpo.l, texto-2, máx 56ch, nivel II --></p>
   <a class="btn btn-primario" href="#"><!-- verbo exacto; ÚNICO primario de la vista --></a>
@@ -784,7 +940,7 @@ Secciones siguientes: `eyebrow` → `h2` → prosa/tarjetas con `.reveal`; un `b
 
 ### 13.3 Presentación
 
-1920×1080, Nocturno, márgenes 120 px; una idea por diapositiva; máx. 4 tarjetas; separadores binarios; cierre = contacto + pasos + Khepri. **Guarda de legado:** el display del deck es **Geist 500** — la serif de presentaciones anteriores (incluida la Presentación Numinia v0.6.0) es legado fuera de sistema y NO DEBE imitarse al generar diapositivas nuevas.
+1920×1080, Nocturno, márgenes 120 px; una idea por diapositiva; máx. 4 tarjetas; separadores binarios; cierre = contacto + pasos + escarabajo. **Guarda de legado:** el display del deck es **Geist 500** — la serif de presentaciones anteriores (incluida la Presentación Numinia v0.6.0) es legado fuera de sistema y NO DEBE imitarse al generar diapositivas nuevas.
 
 **Planos de diapositiva** (rejilla 12 col; medidas en px del lienzo):
 
@@ -805,7 +961,7 @@ TARJETAS (máx. 4)                      CIERRE
 │ Entradilla                   │      │ [personas: foto b/n + cargo + mono]   │
 │ ┌─────┐ ┌─────┐ ┌─────┐      │      │                                       │
 │ │icono│ │icono│ │icono│      │      │   Frase de marca con better en Ámbar  │
-│ │ h3  │ │ h3  │ │ h3  │      │      │              [Khepri]                 │
+│ │ h3  │ │ h3  │ │ h3  │      │      │            [escarabajo]               │
 │ └─────┘ └─────┘ └─────┘      │      └───────────────────────────────────────┘
 └──────────────────────────────┘
 ```
@@ -826,7 +982,7 @@ Diurno, A4, nivel III, sin textura; cifras Mono tabular; pie `AAAA_MM · Confide
 [base imponible / IVA / TOTAL]       ← derecha, 72mm; TOTAL única cifra display
 [forma de pago | IBAN]               ← banda en superficie
 [legal 8pt terciario]
-[Khepri 26px]……………………………[id de documento en mono 8pt]
+[escarabajo 26px]…………………………[id de documento en mono 8pt]
 ```
 
 ### 13.5 Evento físico
@@ -847,7 +1003,7 @@ Cuerpo en nivel I o III, texto plano o HTML mínimo; sin imágenes decorativas. 
 
 ### 13.9 Pipeline de producción de una escena píxel [EXTENSIÓN — validar]
 
-*El plano en una línea:* Nocturno, nivel II; índice Khepri-16 con dominancia neutral ≥60 %; sprites a rejilla 24/12/48 con contorno Noche; Pixelify a múltiplos; diálogo tecleado y coloreado por hablante; escalado entero con `pixelated`; se entra y se sale del registro por completo.
+*El plano en una línea:* Nocturno, nivel II; índice Píxel-16 con dominancia neutral ≥60 %; sprites a rejilla 24/12/48 con contorno Noche; Pixelify a múltiplos; diálogo tecleado y coloreado por hablante; escalado entero con `pixelated`; se entra y se sale del registro por completo.
 
 1. **Declarar función y nivel.** Escribir qué debe comprender, descubrir o hacer la persona; confirmar que el nivel II está justificado.
 2. **Elegir la rejilla.** Asignar `12×12`, `24×24` y módulos `48×48` antes de dibujar. Inventariar activos y estados.
@@ -858,13 +1014,13 @@ Cuerpo en nivel I o III, texto plano o HTML mínimo; sin imágenes decorativas. 
 7. **Construir clústeres.** Limpiar píxeles aislados, regular diagonales, aplicar contorno selectivo y usar tramado solo donde §3.7.2 lo permite.
 8. **Añadir interfaz y texto.** Integrar componentes de §9.6, contraste AA, foco visible y alternativa de movimiento reducido.
 9. **Animar desde poses clave.** Seleccionar 2–4 fotogramas y una cadencia de §10.4. Probar el ciclo a ×1 sin suavizado.
-10. **Exportar y validar.** Exportar maestro en PNG indexado; sprite sheets con celdas uniformes; comprobar paleta, transparencia, escala entera, peso, nombres y ausencia de colores fuera de Khepri-16.
+10. **Exportar y validar.** Exportar maestro en PNG indexado; sprite sheets con celdas uniformes; comprobar paleta, transparencia, escala entera, peso, nombres y ausencia de colores fuera de Píxel-16.
 
 ### 13.10 Entregables mínimos [EXTENSIÓN — validar]
 
 | Entregable | Debe contener |
 |---|---|
-| **Maestro editable** | modo indexado, paleta Khepri-16 ordenada, capas o grupos nombrados, fotogramas etiquetados |
+| **Maestro editable** | modo indexado, paleta Píxel-16 ordenada, capas o grupos nombrados, fotogramas etiquetados |
 | **PNG individual** | dimensiones nativas, transparencia binaria, sin suavizado ni reescalado |
 | **Sprite sheet** | celdas uniformes, mismo origen, secuencia documentada, sin margen accidental entre fotogramas |
 | **Ficha de activo** | función, rejilla, estados, rampa, duración, punto de anclaje, texto alternativo si aplica |
@@ -896,6 +1052,46 @@ Reglas: sidebar en `superficie`; ítems en texto secundario con icono Phosphor `
 
 **La tabla de plataforma (resuelta, con ordenación).** Cabecera en `type.etiqueta` Ámbar (tostado en Diurno); columna ordenable = botón con caret `bold` 12 px que aparece al hover y queda fijo en la columna activa (label a texto primario); `aria-sort` en el `th` activo; cifras en Mono tabular alineadas a la derecha; filas de 40 px, hover = escalón de superficie (§10-04); selección por casilla en primera columna; estado en píldora §9.2; vacío y error según §9.7. Demostrada ordenando en vivo en la guía.
 
+### 13.12 El papel vivo — plano del códex [EXTENSIÓN — validar contra el LAP]
+
+*El plano en una línea:* Diurno por defecto (es papel) con Nocturno conmutable como lectura nocturna real; la tercera voz narra el cuerpo (§4.6); el marco de lectura pertenece al Velo; el libro siempre se puede llevar.
+
+Todo papel de lectura larga (códex, libro, editorial digital) usa estas piezas, **verificadas en producción** en `numinia.com/lap/codex`:
+
+```
+PORTADA                                CAPÍTULO
+┌──────────────────────────────┐      ┌───────────────────────────────────────┐
+│  [quien] presenta            │      │ ← título del capítulo →   ○ luna      │
+│  TÍTULO display (serif)      │      │ eyebrow de sección                    │
+│  subtítulo nivel II          │      │ Apertura literaria en cursiva (II)    │
+│  autores · edición · versión │      │ Cuerpo en la tercera voz (II/III),    │
+│  «↓ abre el códex»           │      │ enlaces de glosario en línea          │
+└──────────────────────────────┘      └───────────────────────────────────────┘
+
+ÍNDICE                                 CIERRE DE LIBRO
+┌──────────────────────────────┐      ┌───────────────────────────────────────┐
+│ I   Capítulo …    abierto    │      │ «El libro viaja libre»                │
+│ II  Capítulo …    tras el    │      │ [.md] [pdf] [epub]  ← siempre visible │
+│                    Umbral    │      │ Agradecimientos                       │
+│ ✦   Anexos        abierto    │      │ Colofón: «Compuesto en [voz] con el   │
+│                              │      │ Sistema · La fuente de verdad vive    │
+│                              │      │ en Git» · [escarabajo]                │
+└──────────────────────────────┘      └───────────────────────────────────────┘
+```
+
+**Reglas del papel vivo:**
+
+- **Marco y página son registros distintos.** La página (el papel) es Umbral-Diurno con la tercera voz; el **marco de lectura** (barra del LAP, marcapáginas, controles A·A·A, conmutador) PUEDE vivir en Velo cuando el modo es Nocturno. La frontera se ve.
+- **La luna es el marcapáginas** (§10.1-06, fases crecientes): el avance de lectura se dice en luna, de nueva a llena — terminar es luna llena. La posición de lectura se persiste.
+- **A · A · A:** el tamaño de lectura es del lector, no del diseñador — tres pasos sobre la escala tipográfica (§4.3), sin romper la retícula.
+- **El estado de acceso se nombra en el mundo:** capítulos `abierto` / `tras el Umbral` — la frontera de sesión usa el léxico canónico (§11), nunca «login required».
+- **«El libro viaja libre» es principio, no feature:** las descargas (.md primero — File Over App hecho interfaz —, pdf Diurno para imprimir, epub) están siempre a un paso.
+- **La apertura literaria** en cursiva es el único nivel II dentro de un cuerpo II/III y no se funde con él.
+- **El colofón firma siempre:** voz tipográfica + Sistema + «La fuente de verdad vive en Git» + escarabajo. El pie de factura y el colofón de libro son la misma idea en dos papeles.
+- **El libro tiene su propio conmutador**, independiente del resto de la plataforma: alguien puede leer de noche sin apagar la ciudad entera. El Nocturno del libro es papel oscuro (`#14110F` / `#1E1A17`) con el grano a media intensidad, no el Nocturno de producto.
+- **Las piezas editoriales** (capitular, cuadro de lectura, lámina, tabla numerada, nota al margen, filete, sello, glosario, descargas, colofón) están especificadas en §9.9; los iconos del libro, en §7.5; el grano, en §6.5.
+- **La factura no lo hereda** (§13.4): el papel administrativo sigue siendo Geist puro, una página, total en Ámbar tostado; ni tercera voz ni marco Velo.
+
 ---
 
 ## 14. Referencias y créditos
@@ -905,6 +1101,7 @@ Reglas: sidebar en `superficie`; ítems en texto secundario con icono Phosphor `
 | **Geist · Geist Mono** | Vercel | SIL OFL 1.1 | [vercel.com/font](https://vercel.com/font) · npm `geist` · autoalojado en `/assets/fonts/` | Tipografía única (§4) |
 | **Phosphor Icons** | Helena Zhang · Tobias Fried | MIT | [phosphoricons.com](https://phosphoricons.com) · [github.com/phosphor-icons/core](https://github.com/phosphor-icons/core) · npm `@phosphor-icons/web` | Iconografía única (§7) |
 | **Pixelify Sans** | Stefie Justprince | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Pixelify+Sans) · autoalojada en `/assets/fonts/` | Tipografía del registro píxel (§4.5) |
+| **Alegreya · Alegreya SC** | Juan Pablo del Peral · Huerta Tipográfica | SIL OFL 1.1 | [Google Fonts](https://fonts.google.com/specimen/Alegreya) · redonda + itálica variables y small caps 400/500, autoalojadas (rearmado v5) | Tercera voz — libro y códex (§4.6) [EXTENSIÓN] |
 | **W3C Design Tokens (DTCG)** | W3C Community Group | Especificación abierta | [design-tokens.github.io/community-group/format](https://design-tokens.github.io/community-group/format/) | Formato de tokens (§19.3) |
 | **WCAG 2.2** | W3C | Norma (EN 301 549) | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) | Suelo de accesibilidad (§12) |
 | **Octalysis** | Yu-kai Chou | Marco conductual | [yukaichou.com](https://yukaichou.com/gamification-examples/octalysis-complete-gamification-framework/) | Diseño conductual de las propuestas |
@@ -919,13 +1116,13 @@ Reglas: sidebar en `superficie`; ítems en texto secundario con icono Phosphor `
 
 ## 15. Licencia · *Legal by Design* [DERIVADO]
 
-**CC0 1.0 Universal** para todo el sistema. **Excepción:** logotipo, isotipo Khepri, «Numen Games» y «Numinia» son identificadores de origen y quedan fuera. Se puede copiar el sistema; no se puede decir que se es Numen. Lo liberado usa formatos abiertos y licencias libres (OFL, MIT); los textos de licencia **acompañan a las fuentes** en `assets/fonts/` dentro del kit. Public Domain Day es el momento de liberar lo acumulado.
+**CC0 1.0 Universal** para todo el sistema. **Excepción:** logotipo, isotipo del escarabajo, «Numen Games» y «Numinia» son identificadores de origen y quedan fuera. Se puede copiar el sistema; no se puede decir que se es Numen. Lo liberado usa formatos abiertos y licencias libres (OFL, MIT); los textos de licencia **acompañan a las fuentes** en `assets/fonts/` dentro del kit. Public Domain Day es el momento de liberar lo acumulado.
 
 ---
 
 ## 16. Lo que falta · hoja de ruta [EXTENSIÓN]
 
-1. **Dirección de fotografía e ilustración** — germinada en §6.3 con las tres pátinas de época; falta validarla con seis fotografías reales y fijar encuadre y qué no fotografiar. 2. **Biblioteca Figma** con Variables sincronizadas al DTCG. 3. **Plantillas maestras** (deck, A4, propuesta). 4. **`@numen/khepri-css`** en npm, CC0. 5. **Set de aplicación** (favicon, app icons, OG, redes, firma email). 6. **Material 3D completo** (albedo, roughness, AO + guía de iluminación). 7. **Biblioteca de sprites** — la guía de producción ya define gramática, rampas, clústeres, componentes, animación, exportación y QA; faltan el set de trabajo y sus maestros editables (personajes 24 px con ciclos de 2–4 fotogramas, objetos 12 px, módulos de escena 48 px), **nombrar la guía de producción dentro del lore** (propuesta sobre la mesa: «La Escuela del Píxel») **y fijar qué Oráculo firma la validación de sprites canónicos** — sin dueño, la excepción cerrada de §2.4 no puede cerrarse. 8. **Biblioteca de movimiento** grabada (el catálogo §10 ya especifica; faltan capturas de referencia por medio). 9. **Glosario/lore versionado**. 10. **Identidad sonora** (logo sonoro, SFX de interfaz y su variante píxel — el tecleo pide su clic —, regla de silencio). 11. **Proceso de auditoría** semestral. 12. **Tema de Plataforma** (shadcn/Tailwind mapeado a tokens Khepri) — la tienda viva converge por sustitución de neutrales: blanco→papel, negro→tinta; los assets low-poly de la tienda validan el presupuesto §2.6; los controles, el modal, la paginación y la barra ya están especificados (§9.8) y la tabla resuelta (§13.11); al tema le queda solo el empaquetado. 13. **Planos editoriales** (cómic y libro): página, calle, bocadillo y rotulación para el cómic; caja tipográfica, folio y capitular para el libro — hoy heredan de §2.4/§6.3/§13.4, les falta su plano propio. 14. **Equivalencias de imprenta** (Pantone/CMYK de Ámbar, Turquesa y Arena): el evento físico iguala tintas, no pantallas — un telón mal igualado es el error de color más caro.
+1. **Dirección de fotografía e ilustración** — germinada en §6.3 con las tres pátinas de época; falta validarla con seis fotografías reales y fijar encuadre y qué no fotografiar. 2. **Biblioteca Figma** con Variables sincronizadas al DTCG. 3. **Plantillas maestras** (deck, A4, propuesta). 4. **`@numen/sistema-css`** en npm, CC0. 5. **Set de aplicación** (favicon, app icons, OG, redes, firma email). 6. **Material 3D completo** (albedo, roughness, AO + guía de iluminación). 7. **Biblioteca de sprites** — la guía de producción ya define gramática, rampas, clústeres, componentes, animación, exportación y QA; faltan el set de trabajo y sus maestros editables (personajes 24 px con ciclos de 2–4 fotogramas, objetos 12 px, módulos de escena 48 px), **nombrar la guía de producción dentro del lore** (propuesta sobre la mesa: «La Escuela del Píxel») **y fijar qué Oráculo firma la validación de sprites canónicos** — sin dueño, la excepción cerrada de §2.4 no puede cerrarse. 8. **Biblioteca de movimiento** grabada (el catálogo §10 ya especifica; faltan capturas de referencia por medio). 9. **Glosario/lore versionado**. 10. **Identidad sonora** (logo sonoro, SFX de interfaz y su variante píxel — el tecleo pide su clic —, regla de silencio). 11. **Proceso de auditoría** semestral. 12. **Tema de Plataforma** (shadcn/Tailwind mapeado a los tokens del Sistema) — la tienda viva converge por sustitución de neutrales: blanco→papel, negro→tinta; los assets low-poly de la tienda validan el presupuesto §2.6; los controles, el modal, la paginación y la barra ya están especificados (§9.8) y la tabla resuelta (§13.11); al tema le queda solo el empaquetado. 13. **Planos editoriales** (cómic y libro): página, calle, bocadillo y rotulación para el cómic; caja tipográfica, folio y capitular para el libro — hoy heredan de §2.4/§6.3/§13.4, les falta su plano propio. 14. **Equivalencias de imprenta** (Pantone/CMYK de Ámbar, Turquesa y Arena): el evento físico iguala tintas, no pantallas — un telón mal igualado es el error de color más caro. 15. **Validación del Velo (5.0.0)** — convivencia rejilla/relieve con piezas reales; specs del paso de página extraídas del código del LAP; empaquetado del **tema `velo.tokens.json`** para el mould NWOS (§2.8.2); Alegreya autoalojada con su OFL en el kit; consagración de la tercera voz y del alcance del renombrado por un Oráculo. 16. **Recoloreo del cielo** (§2.7.1): numinia.org usa hoy hexes por defecto de Tailwind en las estrellas; migrar a la escala §3.6 — y, en la misma pasada, auditar la deriva mayor de esa web (paleta propia con teal, terracota y ocre fuera del sistema).
 
 ---
 
@@ -939,6 +1136,7 @@ Semver: MAYOR ruptura/dirección · MENOR adiciones · PARCHE correcciones. Jera
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| **5.0.0** | 2026-08-18 | **Los cuatro registros y el Velo.** MAYOR por ruptura triple. (1) **Renombrado**: el nombre clave se retira; el sistema pasa a llamarse **Sistema de Diseño**; tabla de equivalencias §0.4; kit a `sistema.*` y claves de token renombradas (`paleta-pixel16`, `logo-escarabajo`, `sprite-escarabajo`); el historial no se reescribe. (2) **Jerarquía de registros** (§2.8): 1 Umbral · 2 Velo · 3 Low-poly · 4 Píxel, cada uno con valor epistémico y pragmático y regla de fusión por enmarcado; el algoritmo del agente gana el paso 1b. (3) **El registro del Velo** (§2.7): la profundidad como registro — regla «no añade hexes, añade alfa», tokens `velo.{rejilla,niebla,imagen,cristal,cristal-borde}` (rejilla = Verdemar 2.5 % a 40 px, niebla = Turquesa 6 %, verificados en producción en pablofm-web), techos de intensidad, cristal con atmósfera obligatoria, convivencia con el relieve (§6.4: la señal separa, el circuito da cuerpo, la atmósfera da profundidad); el velo de imagen `.72` reconocido como pieza fundacional. Además: **tercera voz** Alegreya solo-libro [EXTENSIÓN·ORACLE] (§4.6, verificada en el colofón vivo del LAP); **§13.12 papel vivo** — plano del códex desde la producción real (portada, índice con `abierto / tras el Umbral`, luna-marcapáginas, A·A·A, «el libro viaja libre», colofón; la factura no lo hereda); animaciones **10 Afloramiento · 11 Cristalización · 12 Paso de página** — transiciones sin duraciones nuevas, §10.2 intacta; mapa de superficies con columna Registro y filas Archivo/Summa y Libro/LAP (§2.5); **el Velo como semilla del tema por defecto** del template NWOS con contrato congelado (§2.8.2, implementación recomendada `theme/velo.tokens.json`); léxico del mundo con el Velo y el Umbral (§11); grupo `velo` y `fontFamily.serif` en tokens (§19.3); checklist y fragmento ampliados (§19.4–19.5); Alegreya en referencias (§14). **Segunda pasada — lo que ya estaba vivo entra al canon** (auditoría de los repositorios de producción `numinia-web` y `numinia-nwos`): **§2.7.1 el cielo** — el campo estelar de numinia.org canonizado, con su hallazgo de fondo: *la distribución del cielo es la escala de rareza* (pesos 60/25/10/4/1), única aparición sancionada de la rareza fuera del juego, con deriva de color detectada y marcada para corrección; **§2.7.2 el velo de lectura** (`blur 2.2px` + máscara) — lo que está tras el Umbral se ve y no se lee; **§4.6 ampliado**: Alegreya entra **entera** — redonda, itálica y **small caps**, la pieza que faltaba registrar (capitulares y títulos de capítulo); **§6.5 el gramaje**: el grano de papel como cuarta materia, con la enmienda explícita al §6.2 (el grano no es textura sobre el papel: es el papel); **§7.3 el subconjunto de la casa** — los 26 iconos Phosphor realmente autoalojados, listados; **§7.4 el conmutador de modo** — el par `moon-stars`/`sun`, con la regla dura «el icono muestra el modo al que lleva un toque», seguimiento del sistema operativo hasta la primera elección y aplicación pre-pintado; **§7.5 los iconos del libro** (rejilla 16, trazo 1.5) [EXTENSIÓN]; **§9.9 los componentes del libro** — doce piezas editoriales auditadas (barra que cede sin desaparecer, capitular, cuadro de lectura, lámina, tabla numerada, nota al margen, filete, sello del Umbral, glosario con fuente obligatoria, término punteado, tarjeta de descarga, colofón con binaria de barras); **animaciones 13 Trazo** (1.6 s, los marcos de grabado que se dibujan — única duración nueva del catálogo) **y 14 Cielo** (única excepción sancionada al veto de loops ambientales, §10.2 enmendada); **cadencia lunar corregida** 900 → 1.400 ms con forma calculada (limbo fijo + terminador elíptico) y las ocho fases legibles. Tokens nuevos: `velo.cielo`, `velo.lectura`, `papel.*`, `icon.subconjunto`, `icon.conmutador-modo`, `icon.libro`, `duration.trazo`. Guía: secciones Registros, Velo (con cielo en vivo), **Low-poly**, Papel vivo completo e iconografía reducida al set real. Consolidado sobre v4.2.0 a la espera de firma de Oráculo. | |
 | 4.2.0 | 2026-08-15 | **El kit de traspaso.** Decisión de distribución: *el .md es la ley; el kit es la mudanza con la ley dentro* — el entregable para agentes es el zip, autoexplicativo (`LEEME.md` con la orden de instalación y el bloque para `CLAUDE.md`) y sin ruido: el material 3D pesado (normal 4096² + alpha, ~10 MB) sale a un **paquete de materiales** aparte y el kit queda en ~1,5 MB de producción. Dentro: `kit/khepri.css`, `kit/khepri.js` y `kit/khepri.tokens.json` **generados del documento al empaquetar** (editarlos sin tocar la fuente es deriva), y las **licencias OFL acompañando a las fuentes** como exige Legal by Design. Degradación explícita del .md a solas: sirve para estilo y consulta; sin kit, las fuentes se obtienen de origen y las piezas con firma no se producen. |
 | 4.1.0 | 2026-08-15 | **La carpintería de producto** — respuesta directa a la simulación de tres perfiles del test de producción. **§9.8 Controles** [CANON] unificados por una sola regla: *lo activo se viste de tinta* (la píldora del sidebar extendida a casilla, opción, interruptor, selector, paginación y fila): casilla 18 con check en papel, interruptor 36×20, selector con panel elevado y opción-píldora, **modal que reutiliza el velo canónico `.72`** con foco atrapado, paginación Mono, y **barra de progreso** de 4 px en tinta con cifra Mono — solo determinate, con regla de selección luna/puntos/barra y la variante binaria-llenándose como EXTENSIÓN. **Tabla de plataforma resuelta** (§13.11): ordenación con caret, `aria-sort`, Mono tabular, hover por elevación — demostrada ordenando en vivo en la guía. Tokens `controles`; checklist y fragmento ampliados; la ruta 12 queda reducida al empaquetado del tema. |
 | 4.0.1 | 2026-08-15 | Ajuste fino tras la primera revisión de dirección. **Marco 10→8 px**: el 10 sobre hairline de 1 px leía a tarjeta de app; el 8 pule el bronce sin volverlo juguete. **Carga lunar recompuesta**: ciclo completo de las ocho fases —cuartos incluidos— a 900 ms/fase con fundido de 240 ms (una vuelta ≈ 7,2 s, en armonía con el barrido de 8 s); el *progreso* sigue siendo solo creciente porque terminar es luna llena. **Presupuesto de lectura** declarado en el YAML (documento · §19 · fragmento, en tokens aprox.), generado por script al versionar — un contador a mano sería una fábrica de fósiles. Hoja de ruta 12 nombra los pendientes de producto (controles de formulario, modal, paginación, barra de progreso). |
@@ -970,7 +1168,7 @@ Semver: MAYOR ruptura/dirección · MENOR adiciones · PARCHE correcciones. Jera
 ### 19.2 Algoritmo
 
 ```
-1 Medio (§13) → 2 Modo (emite=Nocturno | imprime=Diurno; el registro píxel no tiene Diurno) → 3 Nivel de lengua (§11)
+1 Medio (§13) → 1b Registro (§2.8): Umbral | Velo | Low-poly | Píxel — el Velo solo en Nocturno → 2 Modo (emite=Nocturno | imprime=Diurno; el registro píxel no tiene Diurno) → 3 Nivel de lengua (§11)
 → 4 Tokens (§19.3) → 5 Retícula (§5) → 6 Escala tipo (§4.3) → 7 Iconos Phosphor (§7.1) → 7b ¿Gráficas? paleta de datos (§3.8)
 → 8 ¿Juego? rareza (§3.6) → 8b ¿3D? registro low-poly (§2.6) → 9 ¿Registro píxel? producción (§2.4, §3.7, §4.5, §5.1, §9.6, §10.4, §13.9)
 → 10 ¿Movimiento? solo del catálogo (§10.1) → 11 Copy en el nivel fijado → 12 Checklist (§19.4)
@@ -980,11 +1178,11 @@ Un valor fuera de §19.3 NO DEBE inventarse.
 
 ### 19.3 Tokens canónicos (W3C DTCG)
 
-Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.json`, generado al empaquetar.
+Este bloque es la fuente; el kit lo distribuye además como `kit/sistema.tokens.json`, generado al empaquetar.
 
 ```json
 {
-  "$description": "Numen Games Design System · Khepri · v4.2.0 · Solar 40 / Steam 40 / Cyber 20",
+  "$description": "Numen Games · Sistema de Diseño · v5.0.0 · Solar 40 / Steam 40 / Cyber 20 · Registros: Umbral, Velo, Low-poly, Píxel",
   "color": {
     "$type": "color",
     "marca": {
@@ -1035,6 +1233,7 @@ Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.j
     "$type": "fontFamily",
     "sans": { "$value": ["Geist", "Inter", "Aptos", "Segoe UI", "Arial", "sans-serif"] },
     "mono": { "$value": ["Geist Mono", "Consolas", "Courier New", "monospace"] },
+    "serif": { "$value": ["Alegreya", "Georgia", "serif"], "$description": "Tercera voz · solo libro y códex (§4.6) [EXTENSIÓN — validar]" },
     "pixel": { "$value": ["Pixelify Sans", "Geist", "sans-serif"], "$description": "Solo registro píxel: diálogo, display de escena, HUD" }
   },
   "fontSize": {
@@ -1059,12 +1258,12 @@ Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.j
     "medio": { "$value": "320ms" }, "largo": { "$value": "560ms" },
     "tecleo-caracter": { "$value": "22ms" }, "cursor": { "$value": "1000ms" },
     "puntos-espera": { "$value": "900ms" }, "pulso": { "$value": "2400ms" },
-    "fase-lunar": { "$value": "900ms" }, "fundido-fase": { "$value": "240ms" }, "barrido": { "$value": "8000ms" },
+    "fase-lunar": { "$value": "1400ms" }, "fundido-fase": { "$value": "240ms" }, "barrido": { "$value": "8000ms" }, "trazo": { "$value": "1600ms" },
     "escalonado": { "$value": "80ms" }
   },
   "cubicBezier": { "$type": "cubicBezier", "ciclo": { "$value": [0.2, 0, 0, 1] } },
   "asset": {
-    "logo-khepri": { "$value": "Khepri_Logo.svg" }, "logo-khepri-ng": { "$value": "Khepri_NG_Logo.svg" },
+    "logo-escarabajo": { "$value": "Khepri_Logo.svg" }, "logo-escarabajo-ng": { "$value": "Khepri_NG_Logo.svg" },
     "logo-ng": { "$value": "NG_Logo.svg" }, "word-horizontal": { "$value": "Numen_Games_Horizontal_Word.svg" },
     "word-vertical": { "$value": "Numen_Games_Vertical_Word.svg" }, "word-numen": { "$value": "Numen_Word.svg" },
     "word-numinia": { "$value": "Numinia_Word.svg" },
@@ -1078,7 +1277,7 @@ Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.j
   },
   "pixel": {
     "$description": "Registro píxel y guía de producción · §2.4, §3.7, §4.5, §5.1, §9.6, §10.4, §13.9",
-    "paleta-khepri16": { "$value": ["#14110F","#1E1A17","#292420","#3A332D","#8A7D72","#C4B5A6","#F9EBDC","#A6DAD5","#018EA1","#016E7D","#EFA517","#7A5100","#F35059","#D33440","#B02330","#8FC46B"] },
+    "paleta-pixel16": { "$value": ["#14110F","#1E1A17","#292420","#3A332D","#8A7D72","#C4B5A6","#F9EBDC","#A6DAD5","#018EA1","#016E7D","#EFA517","#7A5100","#F35059","#D33440","#B02330","#8FC46B"] },
     "modo-color": { "$value": "indexed" },
     "dominancia-neutral-min": { "$value": "60%" },
     "dialogo-excluidos": { "$value": ["#D33440"] },
@@ -1093,11 +1292,38 @@ Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.j
     "duracion-fotograma": { "$value": ["120ms", "200ms", "320ms"] },
     "formato-maestro": { "$value": "indexed-png" },
     "transparencia": { "$value": "binary-alpha" },
-    "sprite-khepri": { "$value": "pixel/khepri-sprite-24.png" },
+    "sprite-escarabajo": { "$value": "pixel/khepri-sprite-24.png" },
     "sprite-moneda": { "$value": "pixel/moneda-12.png" },
     "sprite-moneda-giro": { "$value": "pixel/moneda-giro-12x4.png" },
     "sprite-cartografo": { "$value": "pixel/cartografo-24.png" },
     "fuente": { "$value": "fonts/PixelifySans-Variable.woff2" }
+  },
+  "velo": {
+    "$description": "Registro del Velo · §2.7 · solo alfa sobre canónicos · solo Nocturno · animaciones 10–12 con duration.largo y duration.medio",
+    "rejilla":       { "$value": "rgba(166,218,213,.025)", "$extensions": { "numen": { "celda": "40px", "alfaMax": ".03", "origen": "verdemar" } } },
+    "niebla":        { "$value": "rgba(1,142,161,.06)",    "$extensions": { "numen": { "alfaMax": ".08", "posicion": "abajo-izquierda", "origen": "turquesa" } } },
+    "imagen":        { "$value": "rgba(20,17,15,.72)",     "$extensions": { "numen": { "jardin": ".60", "origen": "noche" } } },
+    "cristal":       { "$value": "rgba(30,26,23,.65)",     "$extensions": { "numen": { "blur": "12px", "origen": "basalto" } } },
+    "cristal-borde": { "$value": "rgba(58,51,45,.5)",      "$extensions": { "numen": { "origen": "linea-fuerte" } } },
+    "cielo": {
+      "$description": "El cielo del Velo · la rareza hecha cosmos (§2.7.1) · colores = escala §3.6",
+      "$value": { "estrellas": 175, "pesos": [60, 25, 10, 4, 1], "alfa": [0.05, 0.85], "deriva": "0.06px/frame", "radios": [[0.3,1.2],[0.5,1.5],[0.6,1.8],[0.8,2.5],[1.0,3.0]] }
+    },
+    "lectura": { "$value": { "blur": "2.2px", "mascara": "linear-gradient(180deg,#000,transparent 90%)" }, "$description": "Velo de lectura §2.7.2 · lo velado queda inerte" },
+    "afloramiento":  { "$value": { "duracion": "{duration.largo}", "blur": "8px", "ascenso": "8px" } },
+    "cristalizacion":{ "$value": { "duracion": "{duration.medio}" } },
+    "paso-pagina":   { "$value": { "duracion": "{duration.medio}", "estado": "verificar contra LAP" } }
+  },
+  "papel": {
+    "$description": "Registro del libro · §6.5 grano, §4.6 tercera voz, §9.9 componentes",
+    "grano": { "$value": "feTurbulence fractalNoise · baseFrequency 0.85 · numOctaves 3 · rgba(74,64,51,.045)", "$extensions": { "numen": { "intensidadMax": "5%", "nocturno": "50% del valor" } } },
+    "capitular": { "$value": "4.4em" }, "medida": { "$value": "70ch" },
+    "tamanos-lector": { "$value": ["1rem", "1.125rem", "1.25rem"], "$description": "A · A · A" },
+    "barra": { "$value": "54px" }, "barra-compacta": { "$value": "40px" }
+  },
+  "registros": {
+    "$description": "Jerarquía canónica · §2.8",
+    "orden": { "$value": ["umbral", "velo", "low-poly", "pixel"] }
   },
   "controles": {
     "$description": "Carpintería de producto · §9.8 · lo activo se viste de tinta",
@@ -1140,43 +1366,54 @@ Este bloque es la fuente; el kit lo distribuye además como `kit/khepri.tokens.j
     "activo": { "$value": "fill" },
     "pequeno": { "$value": "bold", "$extensions": { "numen": { "umbral": "<16px" } } },
     "display": { "$value": "light", "$extensions": { "numen": { "umbral": ">=48px" } } },
-    "prohibidos": { "$value": ["thin", "duotone"] }
+    "prohibidos": { "$value": ["thin", "duotone"] },
+    "subconjunto": { "$description": "Los 26 iconos que la casa usa (§7.3)", "$value": ["archive","bell","book-open","caret-down","caret-left","chart-bar","download-simple","flame","flame-light","gear","github-logo","globe-hemisphere-west","globe-hemisphere-west-light","house","magnifying-glass","moon","moon-stars","music-notes","package","sign-out","sun","sword","sword-light","user","users","x-logo"] },
+    "conmutador-modo": { "$value": ["moon-stars", "sun"], "$description": "§7.4 · el icono muestra el modo al que lleva un toque" },
+    "libro": { "$value": { "rejilla": "16", "stroke": "1.5", "piezas": ["indice","marcapaginas","narrador","pausa","sol","luna","umbral","filete"] }, "$description": "§7.5 [EXTENSIÓN]" }
   }
 }
 ```
 
 ### 19.4 Checklist previa a la entrega
 
+- [ ] **Registro declarado antes que el medio** (§2.8): Umbral, Velo, low-poly o píxel; la frontera entre registros, visible.
 - [ ] Modo, nivel de lengua y **dosis 40/40/20** correctos (test de mezcla §2.1: ni Blade Runner ni catálogo de jardinería).
 - [ ] Colores solo de §19.3; máx. tres por composición; Coral y Grana no coexisten; variantes de texto sobre claro.
 - [ ] Espaciado en escala de 4; solo Geist Sans/Mono autoalojadas; un nivel de display; cifras Mono tabular.
-- [ ] Iconos Phosphor por peso; nunca thin/duotone; etiqueta en primer uso; sin mezclar pesos en fila; Khepri y Luna nunca como iconos.
+- [ ] Iconos Phosphor por peso; nunca thin/duotone; etiqueta en primer uso; sin mezclar pesos en fila; el escarabajo y la Luna nunca como iconos.
 - [ ] Rellenos con texto claro: fondo `#017C8D` y estados que **oscurecen** (hover turquesa-texto, active `#015866`; destructivo hover grana-texto). Terciario solo sobre fondo base. Datos con la paleta §3.8 y nunca con rareza.
 - [ ] Controles §9.8: lo activo en tinta; etiqueta siempre; modal con velo canónico y foco atrapado; tabla con `aria-sort`; barra solo con porcentaje real.
 - [ ] Forma: radio `control` en controles, `marco` en tarjetas y diálogos; rectos solo en píxel y tablas impresas. Mensajes según §9.7: causa + salida, nunca mudos.
 - [ ] Superficie identificada en el mapa §2.5; si es Plataforma: Diurno por defecto, primario de tinta, densidad compacta, wallets e importes en Mono. Si hay 3D: registro low-poly §2.6, color plano de paleta, sin texturas fotográficas.
-- [ ] Época solo por dispositivos sancionados: sello `1920 · 2020 · 2120`, pátina única (§6.3), léxico como especia; retirados, la pieza sigue siendo Khepri.
+- [ ] Época solo por dispositivos sancionados: sello `1920 · 2020 · 2120`, pátina única (§6.3), léxico como especia; retirados, la pieza sigue siendo del Sistema.
 - [ ] Registro de marca correcto: firma monocroma en lo corporativo; el color, los glifos y el mosaico solo en juego (§8.5), con etiqueta en primer uso y ≥3:1 si la marca es el único identificador.
 - [ ] Marca según §8: lockup correcto, Arena/Noche, respeto, zona de calma sobre textura; sin recolorear/rotar/sombrear/deformar; el escarabajo es el path de §8.4.
 - [ ] Textura solo en fondo Nocturno ≤6 %, `cover`, superficies elevadas lisas, nunca en Diurno.
 - [ ] Si hay juego: rareza completa con tratamiento progresivo y nombre; nunca en lo corporativo.
 - [ ] Movimiento solo del catálogo §10.1; un momento orquestado; un barrido máximo; pulso solo en obtención; nada de parallax/glitch; `prefers-reduced-motion` respetado; foco sin animar.
 - [ ] Botones: un primario por vista; destructivo con confirmación y lejos del primario; etiquetas = verbos, sin versales.
-- [ ] Contrastes AA; nada solo por color; medida ≤90; secuencias con fases lunares solo si hay secuencia real; cierre con Khepri en pieza mayor; nombre de archivo §11.
-- [ ] Si es registro píxel: solo Khepri-16, neutrales ≥60 %, Grana sin diálogo, rejilla 12/24/48, escalado entero con `pixelated`, contorno Noche, Pixelify a múltiplos, sprite de Khepri el canónico, entrada/salida completa del registro, y nunca en nivel III.
+- [ ] Contrastes AA; nada solo por color; medida ≤90; secuencias con fases lunares solo si hay secuencia real; cierre con el escarabajo en pieza mayor; nombre de archivo §11.
+- [ ] Si es registro píxel: solo Píxel-16, neutrales ≥60 %, Grana sin diálogo, rejilla 12/24/48, escalado entero con `pixelated`, contorno Noche, Pixelify a múltiplos, sprite del escarabajo el canónico, entrada/salida completa del registro, y nunca en nivel III.
 - [ ] Pixel Art producido a ×1: silueta legible, clústeres continuos, diagonales regulares, sin *pillow shading*, luz arriba-izquierda, máximo 2–4 colores por material, tramado solo entre colores adyacentes, sin píxeles aislados decorativos.
 - [ ] Sprites: celdas y anclajes estables, 2–4 fotogramas, duraciones 120/200/320 ms, sin interpolación ni subpíxel; movimiento reducido muestra la pose más informativa.
-- [ ] Exportación: PNG indexado, transparencia binaria, paleta Khepri-16 verificada, sprite sheet uniforme, prueba ×1 + escala entera + viewport mínimo.
+- [ ] Exportación: PNG indexado, transparencia binaria, paleta Píxel-16 verificada, sprite sheet uniforme, prueba ×1 + escala entera + viewport mínimo.
+- [ ] Si es registro Velo: solo alfas de canónicos (cero hexes nuevos); rejilla ≤3 % y niebla ≤8 %; atmósfera detrás del contenido, nunca en tarjetas ni superficies elevadas; cristal solo con atmósfera detrás y texto ≥ secundario; nada de Velo en Diurno; una materia dominante por vista (rejilla y relieve no conviven); animaciones 10–11 solo aquí; momento orquestado sigue siendo uno.
+- [ ] Si hay cielo (§2.7.1): pesos 60/25/10/4/1 con los colores de §3.6, sin parallax ni reacción al cursor, detenido con movimiento reducido; el grano (§6.5) solo en papel, ≤5 %, nunca con relieve ni rejilla.
+- [ ] Iconos del subconjunto §7.3; conmutador de modo mostrando el modo **destino**; los iconos del libro solo dentro del registro papel.
+- [ ] Si es papel vivo (§13.12): tercera voz solo en el libro (redonda cuerpo, SC capitular y títulos, itálica lore, sin versalitas sintéticas); barra que cede pero no desaparece; glosario con fuente por definición; luna como marcapáginas (fases crecientes); estados `abierto / tras el Umbral`; descargas .md/pdf/epub visibles; apertura literaria separada del cuerpo; colofón completo con escarabajo; la factura no hereda nada de esto.
 - [ ] Se ha retirado un elemento antes de entregar.
 
 ### 19.5 Fragmento de instrucción reutilizable
 
 ```
-Diseña con el Numen Games Design System «Khepri» v4.2.0.
+Diseña con el Sistema de Diseño de Numen Games v5.0.0.
+Registro antes que medio (§2.8): 1 Umbral (general: web, deck, documento, factura,
+interfaz) · 2 Velo (archivo, Summa, visores — la profundidad) · 3 Low-poly (3D) ·
+4 Píxel (2D). Los registros no se apilan: se enmarcan, con frontera visible.
 Kit de arranque CSS/JS y planos por medio: §13.1–13.10 — cópialos, no los reescribas.
 Dirección: Solarpunk 40 / Steampunk 40 / Cyberpunk 20. La luz domina, la máquina
-estructura, la señal parpadea. Ni Blade Runner ni catálogo de jardinería. Khepri
-(escarabajo solar) cierra toda pieza; nunca la abre.
+estructura, la señal parpadea. Ni Blade Runner ni catálogo de jardinería. El
+escarabajo cierra toda pieza; nunca la abre.
 Paleta: verdemar #A6DAD5, turquesa #018EA1 (interactivo), ámbar #EFA517 (énfasis/logro),
 arena #F9EBDC (neutral), coral #F35059 (aviso), grana #D33440 (crítico). Máx. 3 por
 composición; coral y grana no coexisten. Texto sobre claro: #016E7D #B02330 #7A5100.
@@ -1188,16 +1425,34 @@ poco común #8FC46B, raro #5D9BD6, épico #A98BE0, legendario #EFA517.
 Tipografía: solo Geist y Geist Mono (Vercel, autoalojadas). Sans afirma, Mono mide;
 etiquetas Mono versales +0.10em; cifras tabulares.
 Iconos: Phosphor. regular defecto, fill activo, bold <16px, light ≥48px; thin y duotone
-prohibidos; etiqueta en primer uso; Khepri y la Luna no son iconos.
+prohibidos; etiqueta en primer uso; el escarabajo y la Luna no son iconos.
 Materia: relieve de circuito solo en fondos Nocturno ≤6% cover sin repeat; binaria
 10100→xxx como separador; superficies elevadas lisas; nada de textura en Diurno.
-Animación, solo estas nueve: tecleo 22ms/car con cursor de bloque (titulares hero, lore,
+El Velo (§2.7) no añade hexes, añade alfa: rejilla rgba(166,218,213,.025) a 40px,
+niebla rgba(1,142,161,.06) abajo-izquierda, cristal rgba(30,26,23,.65)+blur 12px con
+borde rgba(58,51,45,.5); atmósfera DETRÁS del contenido, techos 3%/8%, solo Nocturno;
+cristal solo con atmósfera detrás y texto ≥ secundario; rejilla y relieve no conviven.
+El cielo del Velo (§2.7.1) es la rareza hecha cosmos: 175 estrellas con pesos
+60/25/10/4/1 y los colores de la escala §3.6, deriva lenta y alfa .05–.85, sin
+parallax; lo velado tras el Umbral se ve y no se lee (blur 2.2px + máscara, inerte).
+Tercera voz Alegreya SOLO libro/códex (§4.6, §13.12) y entera: redonda para el cuerpo,
+itálica para lore, small caps para capitular y títulos — nunca versalitas sintéticas.
+El papel lleva grano (§6.5: ruido fractal ≤5%, fondo, mitad en Nocturno), nunca
+relieve. El libro es Diurno con conmutador propio, la luna es el marcapáginas, estados
+«abierto / tras el Umbral», descargas .md/pdf/epub visibles, colofón con escarabajo;
+la factura no hereda nada de esto. Piezas editoriales en §9.9; iconos del libro en §7.5
+(rejilla 16, trazo 1.5) — fuera del libro manda Phosphor, subconjunto de §7.3, y el
+conmutador de modo muestra el modo AL QUE LLEVA un toque, no el actual.
+Animación, solo estas doce: tecleo 22ms/car con cursor de bloque (titulares hero, lore,
 cargas — la bandera, herencia de aventuras gráficas); revelado 320ms al entrar en
 viewport; barrido de señal 8s máx. uno; elevación 120ms sin desplazamiento; pulso
 legendario 2.4s ×2 solo al obtener; fase lunar 560ms/paso en cargas largas; puntos de
 espera 900ms en botones; cursor 1s; momento orquestado (tecleo + escalonado 80ms), uno
-por pieza. Prohibido: parallax, glitch, loops ambientales, animar foco o color de texto.
-prefers-reduced-motion: todo instantáneo.
+por pieza. Del Velo y el papel vivo (nunca en Umbral corporativo): afloramiento
+560ms (opacidad + blur 8→0 + 8px de ascenso, al descubrirse), cristalización 320ms
+(blur 0→12 + borde), paso de página 320ms (capítulos del códex; specs por verificar
+contra el LAP). Prohibido: parallax, glitch, loops ambientales, animar foco o color
+de texto. prefers-reduced-motion: todo instantáneo.
 Botones: relleno de acción #017C8D con blanco (uno por vista) y estados que OSCURECEN
 (hover #016E7D, active #015866; destructivo grana con hover #B02330, con confirmación y
 lejos del primario), fantasma, silencioso; radio 6px; etiquetas = verbos, sin versales.
@@ -1211,7 +1466,7 @@ sedimento x — cópiala de tokens binaria.bits o usa binaria() del kit; no inve
 Forma: dos radios — control 6px, marco 10px; el registro píxel conserva cantos rectos.
 Mensajes (§9.7): qué pasó + qué hacer, nivel I; el error mudo está prohibido; tooltip
 habla en el modo contrario; aviso 6s máx 3; destructivo nunca preenfocado.
-Entregable: el kit zip (LEEME.md en raíz); kit/khepri.{css,js,tokens.json} generados —
+Entregable: el kit zip (LEEME.md en raíz); kit/sistema.{css,js,tokens.json} generados —
 enlázalos, no los reescribas. Sin kit no hay marca: los wordmarks solo viven ahí.
 Controles (§9.8): lo activo se viste de tinta — casilla 18 marcada, interruptor 36×20
 encendido, opción del selector, página actual y fila: todos píldora/relleno tinta-papel.
@@ -1221,15 +1476,15 @@ Superficies: mapa en §2.5. Plataforma = Diurno por defecto, primario de TINTA
 (Noche/papel), sidebar 240, filas 40, wallets en Mono truncado. 3D = registro low-poly
 (§2.6): malla honesta, color plano de paleta, GLB/glTF, sin texturas fotográficas.
 Copy: cultivada, llana y clara; declara nivel I/II/III y mantenlo.
-Registro píxel (solo cuando la narrativa lo pide, nivel II): paleta cerrada Khepri-16,
+Registro píxel (solo cuando la narrativa lo pide, nivel II): paleta cerrada Píxel-16,
 neutrales ≥60%, Grana solo relleno; silueta primero y validación a ×1; luz
 arriba-izquierda; contorno Noche solo en silueta; 2–4 colores por material de rampas
 compartidas; sin pillow shading, antialias ni píxeles sueltos; tramado solo entre
 adyacentes; escalado entero pixelated y coordenadas enteras; Pixelify a múltiplos solo
 para diálogo/HUD; sprites de 2–4 fotogramas a 120/200/320ms sin tweening; PNG indexado y
 alpha binaria. El detalle normativo completo vive en §2.4, §3.7, §4.5.1, §5.1, §9.6,
-§10.4 y §13.9 — ante duda, esas secciones mandan sobre este resumen. El sprite de Khepri
-es el entregado, no se redibuja. Herencia: Monkey Island, DOTT, La Abadía — citada,
+§10.4 y §13.9 — ante duda, esas secciones mandan sobre este resumen. El sprite del
+escarabajo es el entregado, no se redibuja. Herencia: Monkey Island, DOTT, La Abadía — citada,
 nunca copiada.
 Marca: wordmark horizontal firma por defecto; Arena/Noche; nunca recolorear, rotar,
 sombrear ni deformar; Numinia solo para el mundo. El color sobre la marca existe solo

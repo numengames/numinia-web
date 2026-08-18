@@ -1,5 +1,5 @@
 /**
- * Gear rating control (MIS-085 D, Khepri EXTENSIÓN §7.5): gears as the
+ * Gear rating control (MIS-085 D, Sistema §7.5): gears as the
  * sheet's rating iconography, scale 0–5. The gears are presentation —
  * underneath it is a plain radio group, fully keyboard and AA accessible.
  * Set gears turn a quarter (CSS transition; prefers-reduced-motion turns

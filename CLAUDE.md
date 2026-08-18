@@ -11,7 +11,7 @@
 > Codex for digital agents (Claude Code, Copilot, etc.) and biological agents (developers).
 > Read this completely before touching any code.
 > All code comments in English. No exceptions.
-> Last updated: 2026-04-03 · Version: 0.2.0
+> Last updated: 2026-08-18 · Version: 0.3.0
 
 ---
 
@@ -153,11 +153,31 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 ## Sistema de diseño
 
-Todo diseño se rige por khepri/2026_08_15-Numen_Design_System-v4.2.0.md (Khepri v4.2.0).
-Precedencia (§0.3): ante contradicción con material antiguo, Khepri manda.
-Kit generado en khepri/kit/ (css, js, tokens.json): se enlaza o copia, jamás se reescribe.
-Presupuesto de lectura: fragmento §19.5 ~1,2k tokens (tarea rápida) · §19 ~5k (producción)
-· documento ~30k (auditoría). Antes de entregar: checklist §19.4.
+Todo diseño se rige por design-system/2026_08_18-Sistema_de_Diseno-v5_0_0.md
+(**Sistema de Diseño de Numen Games v5.0.0**). El nombre clave «Khepri» se retiró en la
+5.0.0 (§0.4): el sistema se llama por lo que es. **Ninguna regla cambió con el
+renombrado**; en material antiguo, aplica la tabla de equivalencias de §0.4. El escarabajo
+sigue siendo el escarabajo — es marca, no nombre del sistema, y por eso los ficheros de
+activos conservan su nombre físico (`Khepri_Logo.svg`, `pixel/khepri-sprite-24.png`).
+
+**Registro antes que medio (§2.8).** Los cuatro registros, por orden: 1 Umbral (general) ·
+2 Velo (profundidad: archivo, Summa, visores) · 3 Low-poly (3D) · 4 Píxel (2D).
+**numinia.com es Umbral** — decisión del Oráculo 2026-08-18. El Velo entra solo *enmarcado*
+y con frontera visible: el marco de lectura del códex en Nocturno y el velo de sesión
+(§2.7.2); nunca como registro base del sitio. numinia.org (visores NWOS) sí es Velo.
+La página del códex es papel: Umbral-Diurno con la tercera voz (§13.12).
+
+Precedencia (§0.3, §19.1): ante contradicción con material antiguo, este documento manda.
+Kit generado en design-system/kit/ (sistema.css, sistema.js, sistema.tokens.json): se
+enlaza o copia, **jamás se reescribe** — `packages/ui/src/sistema.css` y
+`apps/store/src/scripts/sistema.js` son copias byte a byte, guardadas por
+`design-system-bridge.test.ts`.
+Presupuesto de lectura: fragmento §19.5 ~2,1k tokens (tarea rápida) · §19 ~7,5k
+(producción) · documento ~46k (auditoría). Antes de entregar: checklist §19.4.
+
+Deriva conocida del documento v5.0.0 (pendiente de erratas, no de decisión): §19.5 dice
+«doce animaciones» y radio marco `10px`, cuando §10.1 son **catorce** y §5/§19.3 fijan
+`8px`. Ante duda, mandan §10.1 y §19.3.
 
 ---
 

@@ -1,8 +1,8 @@
 ---
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
-// Khepri brand asset (§8): wordmark travels as currentColor and dresses in ink.
-import wordmark from '../../../../../khepri/assets/Numinia_Word.svg?raw';
+// Brand asset (§8): wordmark travels as currentColor and dresses in ink.
+import wordmark from '../../../../../design-system/assets/Numinia_Word.svg?raw';
 import Icon from './Icon.astro';
 import LanguageMenu from './LanguageMenu.astro';
 
@@ -70,7 +70,7 @@ const NAV = [
 </header>
 
 <script>
-  /* Khepri mode toggle (§13.11: Diurno default, Nocturno by choice).
+  /* Mode toggle (§7.4 / §13.11: Diurno default, Nocturno by choice).
      Persistence via localStorage is decision D17 (chrome preference, not
      component state); the boot script in BaseLayout applies it pre-paint. */
   const root = document.documentElement;

@@ -1,21 +1,21 @@
 /**
- * Numinia token bridge — legacy `--numinia-*` names mapped onto Khepri v4.2.0.
+ * Numinia token bridge — legacy `--numinia-*` names mapped onto the Sistema v5.0.0.
  *
- * Khepri (khepri/2026_08_15-Numen_Design_System-v4.2.0.md) is the single
- * source of values; the canonical variables live in khepri.css (verbatim copy
- * of the generated kit — see the khepri-bridge test). This file only ALIASES
- * the legacy names so pre-Khepri surfaces keep working while they migrate.
- * New code uses the Khepri variables and classes directly.
+ * The design system (design-system/2026_08_18-Sistema_de_Diseno-v5_0_0.md) is the single
+ * source of values; the canonical variables live in sistema.css (verbatim copy
+ * of the generated kit — see the design-system-bridge test). This file only ALIASES
+ * the legacy names so surfaces built before the Sistema keep working while
+ * they migrate. New code uses the Sistema variables and classes directly.
  *
- * Modes: Khepri flips every value via [data-modo="diurno"] on <html>; these
+ * Modes: the kit flips every value via [data-modo="diurno"] on <html>; these
  * aliases inherit that flip for free. No prefers-color-scheme here — the
  * platform is Diurno by default with Nocturno toggled in the chrome (§13.11).
  */
 
-@import './khepri.css';
+@import './sistema.css';
 
 :root {
-  /* Palette aliases (canonical values live in khepri.css) */
+  /* Palette aliases (canonical values live in sistema.css) */
   --numinia-color-seafoam: var(--verdemar);
   --numinia-color-turquoise: var(--turquesa);
   --numinia-color-amber: var(--ambar);
@@ -23,7 +23,7 @@
   --numinia-color-coral: var(--coral);
   --numinia-color-darkred: var(--grana);
 
-  /* Semantic aliases — mode-aware through Khepri */
+  /* Semantic aliases — mode-aware through the kit */
   --numinia-color-background: var(--fondo);
   --numinia-color-surface: var(--superficie);
   --numinia-color-text: var(--texto);
@@ -37,7 +37,7 @@
   --numinia-font-sans: var(--sans);
   --numinia-font-mono: var(--mono);
 
-  /* Spacing aliases onto the Khepri scale (§5) */
+  /* Spacing aliases onto the Sistema scale (§5) */
   --numinia-space-1: var(--s1);
   --numinia-space-2: var(--s2);
   --numinia-space-3: var(--s4);

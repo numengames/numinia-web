@@ -132,3 +132,14 @@ Canon C-005 v1.1.0 is adopted. The Oracle issued four rulings for this repo
   ADR (which `@numinia/*` packages are edge and publish, which are core and
   never do — canon queue D-07), which must land **before Phase C and before
   any first publish**.
+
+---
+
+## Amendment 2026-08-18 — paths renamed, ruling unchanged
+
+The design-system directory moved from `khepri/` to `design-system/` when the Sistema
+de Diseño v5.0.0 retired the code name (§0.4). Every path this ADR names reads the same
+way under the new root (`design-system/assets/fonts/`, `design-system/assets/…`), the
+asset filenames are unchanged on purpose, and **no licensing ruling changes**: the
+system stays CC0-1.0, its brand assets stay reserved, its fonts stay OFL-1.1 — with
+Alegreya (Huerta Tipográfica) joining them as the third voice.

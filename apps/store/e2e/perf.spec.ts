@@ -1,6 +1,6 @@
 /**
  * Performance gate (MISSION-017): the numbers that made the city fast stay
- * pinned. Budgets follow Khepri §13.2 (<1MB initial) and the measured
+ * pinned. Budgets follow Sistema §13.2 (<1MB initial) and the measured
  * baseline of 2026-08-16 (archive 2.4MB→468KB after the thumbnail bake).
  * Layer 0/1 pages ship ZERO JavaScript — the constitution's SSG promise
  * made mechanical. CLS tolerates the typing headline (§10 flagship) but
