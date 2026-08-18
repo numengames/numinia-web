@@ -26,6 +26,25 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.45.0',
+    date: '2026-08-18 00:27',
+    missions: ['MIS-085'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Hoja de Personaje joins the Codex as a printable annex: read it, print it, take the .md — and one door leads to the living sheet. It travels inside the PDF and EPUB editions too',
+      },
+      {
+        type: 'NEW',
+        text: 'El Narrador learns two more rooms — the glossary reads entry by entry and the sheet annex reads like any chapter — and the EPUB terms now link home to the glossary as well',
+      },
+      {
+        type: 'UPD',
+        text: 'Order under the hood: every file in the repository now declares its license (REUSE 3.3, guarded by CI) and the responsive sweep walks every real chapter instead of trusting a fixed list',
+      },
+    ],
+  },
+  {
     version: 'v0.44.0',
     date: '2026-08-17 23:29',
     missions: ['MIS-085'],

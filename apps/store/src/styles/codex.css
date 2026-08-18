@@ -262,7 +262,8 @@
   letter-spacing: 0.06em;
 }
 .codex .cuerpo .narrando,
-.codex .cuerpo .lectura .narrando {
+.codex .cuerpo .lectura .narrando,
+.codex .glosario .narrando {
   background: var(--papel-prof);
   box-shadow: -4px 0 0 var(--solar);
   transition: background 0.3s;

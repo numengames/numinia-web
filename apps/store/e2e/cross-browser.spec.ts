@@ -260,9 +260,11 @@ test('el Narrador reads aloud and follows the sounding block', async ({ page }) 
   // Pause keeps the place and hands the button its next verb.
   await narrator.click();
   await expect(narrator).toHaveAttribute('aria-pressed', 'false');
-  // No prose, no narrator: the glossary offers no button (v1 reads chapters).
+  // The glossary narrates too: entry by entry, term then definition.
   await page.goto('/es/lap/codex/glosario/');
-  await expect(page.locator('[data-codex-narrador]')).toBeHidden();
+  await expect(page.locator('[data-codex-narrador]')).toBeVisible();
+  await page.locator('[data-codex-narrador]').click();
+  await expect(page.locator('.glosario dt.narrando')).toHaveCount(1);
 });
 
 test('management data is refused without a session', async ({ request }) => {

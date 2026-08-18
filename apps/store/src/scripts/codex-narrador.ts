@@ -12,13 +12,20 @@ const RATE_KEY = 'numinia-codex-ritmo';
 const RATES = [1, 1.25, 1.5, 0.8] as const;
 
 const codex = document.querySelector<HTMLElement>('.codex');
-const body = codex?.querySelector<HTMLElement>('.cuerpo');
+// Chapters and the ficha annex read their prose; the glossary reads its
+// term list, entry by entry.
+const body = codex?.querySelector<HTMLElement>('.cuerpo, .glosario');
 const button = codex?.querySelector<HTMLButtonElement>('[data-codex-narrador]');
 const rateButton = codex?.querySelector<HTMLButtonElement>('[data-codex-ritmo]');
 
 function blockText(block: HTMLElement): string {
   if (block.classList.contains('tabla-ancla')) {
     return block.querySelector('caption')?.textContent?.trim() ?? '';
+  }
+  if (block.tagName === 'DT') {
+    // A glossary entry sounds as «term: definition» — the dd rides along.
+    const definition = block.nextElementSibling?.textContent?.trim() ?? '';
+    return `${block.textContent?.trim() ?? ''}. ${definition}`;
   }
   return block.textContent?.trim() ?? '';
 }
