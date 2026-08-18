@@ -33,6 +33,11 @@ const FILES = [
     target: join('apps/store', '.lore', 'codex', 'agradecimientos.md'),
     marker: '# Agradecimientos',
   },
+  {
+    path: 'codex/hoja-de-personaje.md',
+    target: join('apps/store', '.lore', 'codex', 'hoja-de-personaje.md'),
+    marker: '# Hoja de Personaje',
+  },
 ];
 
 const token = process.env.LORE_TOKEN ?? process.env.GITHUB_TOKEN;

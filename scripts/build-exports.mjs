@@ -42,6 +42,20 @@ const rendered = chapters.map((chapter) => ({
   rendered: engine.renderChapter(chapter),
 }));
 
+// The character-sheet annex (§4.9) travels with every edition (D15: free).
+rendered.push({
+  slug: 'hoja-de-personaje',
+  title: 'Hoja de Personaje',
+  eyebrow: 'Anexo',
+  rendered: engine.renderChapter({
+    slug: 'hoja-de-personaje',
+    title: 'Hoja de Personaje',
+    number: null,
+    access: 'public',
+    raw: resolveDoc(root, 'hoja-de-personaje').text,
+  }),
+});
+
 const glossary = engine.parseGlossary(resolveDoc(root, 'glosario').text);
 const glossaryHtml =
   `<dl>` +

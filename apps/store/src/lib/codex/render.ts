@@ -30,9 +30,13 @@ function stripMarks(text: string): string {
 }
 
 function renderTable(lines: readonly string[], caption: string): string {
-  const rows = lines.map((line) =>
-    line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(renderInline),
-  );
+  // A cell holding only an escaped \*\*\* is the transcription's in-table
+  // filete (the printed sheet's little separator), never prose.
+  const cell = (text: string): string =>
+    text.trim() === '\\*\\*\\*'
+      ? '<span class="filete-celda" aria-hidden="true"></span>'
+      : renderInline(text);
+  const rows = lines.map((line) => line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell));
   const [head, ...body] = rows.filter((_, index) => index !== 1); // drop |---| row
   const headHtml = (head ?? []).map((cell) => `<th scope="col">${cell}</th>`).join('');
   const bodyHtml = body
@@ -131,10 +135,16 @@ export function renderChapter(chapter: CodexChapter): RenderedChapter {
     // included — the ids must align one-to-one with chapterAnchors.
     paragraph += 1;
     const id = `p-${paragraph}`;
+    // Filete separator (\*\*\* in the sheet transcription; absent from the
+    // manual itself). Keeps its anchor so the block count stays aligned.
+    if (group.length === 1 && /^(\\\*){3}$|^\*{3}$/.test(first.trim())) {
+      parts.push(`<hr id="${id}" class="filete-doc"/>`);
+      continue;
+    }
     if (group.every((line) => line.startsWith('|'))) {
       table += 1;
       parts.push(
-        `<div id="${id}" class="tabla-ancla">${renderTable(group, `Tabla ${chapterLabel}.${table}`)}</div>`,
+        `<div id="${id}" class="tabla-ancla">${renderTable(group, chapter.number === null ? `Tabla ${table}` : `Tabla ${chapterLabel}.${table}`)}</div>`,
       );
       continue;
     }

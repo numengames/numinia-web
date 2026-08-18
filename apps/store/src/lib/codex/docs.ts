@@ -16,7 +16,7 @@ const fixtureFiles = import.meta.glob('../../../fixtures/codex/*.md', {
   eager: true,
 }) as Record<string, string>;
 
-export type CodexDocName = 'glosario' | 'agradecimientos';
+export type CodexDocName = 'glosario' | 'agradecimientos' | 'hoja-de-personaje';
 
 function pick(files: Record<string, string>, name: CodexDocName): string | undefined {
   const entry = Object.entries(files).find(([path]) => path.endsWith(`/${name}.md`));

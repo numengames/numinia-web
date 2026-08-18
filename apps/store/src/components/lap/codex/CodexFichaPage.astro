@@ -1,0 +1,75 @@
+---
+/**
+ * Ficha imprimible (§4.9): the manual-annex character sheet, rendered from
+ * the canonical transcription in numinia-lore (Hoja_de_PJ_v0_6_0). Free
+ * like the interactive sheet (D15): read it, print it (Diurno print
+ * stylesheet), take the .md — and one door leads to the living sheet.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { loadCodexDoc } from '../../../lib/codex/docs';
+import { renderChapter } from '../../../lib/codex/render';
+import { viewerFrom } from '../../../lib/lap/gate';
+import CodexMarcos from './CodexMarcos.astro';
+import CodexShell from './CodexShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+const { locale } = Astro.props;
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const viewer = await viewerFrom(Astro.cookies);
+const rendered = renderChapter({
+  slug: 'ficha',
+  title: 'Hoja de Personaje',
+  number: null,
+  access: 'public',
+  raw: loadCodexDoc('hoja-de-personaje'),
+});
+---
+
+<CodexShell
+  locale={locale}
+  title="Hoja de Personaje — Códex de Numinia"
+  description="La hoja de personaje del manual v0.6.0, transcrita campo a campo: imprímela o llévatela en .md."
+  path="/ codex / ficha"
+  showGateCta={viewer === null}
+  capActual="Anexo · Hoja de Personaje"
+>
+  <article class="pliego" aria-label="Hoja de Personaje">
+    <header class="cap-abre dibujado" data-dibujable id="hoja-de-personaje">
+      <CodexMarcos />
+      <span class="num">Anexo</span>
+      <h2>Hoja de Personaje</h2>
+    </header>
+    <div class="pliego-int">
+      {/* sin-capitular: field labels are a form, not prose — no drop cap. */}
+      <div class="cuerpo sin-capitular" set:html={rendered.html} />
+    </div>
+    <div class="acciones-ficha">
+      <button class="cbtn" data-ficha-imprimir data-metric="codex-ficha-print">
+        <span class="lbl">Imprimir</span>
+      </button>
+      <a
+        class="cbtn"
+        href="/api/codex/ficha.md"
+        download="Numinia_Hoja_de_Personaje_v0_6_0.md"
+        data-metric="codex-ficha-md"
+      >
+        <span class="lbl">Descargar .md</span>
+      </a>
+      <a class="cbtn tinta" href={`${prefix}/lap/character/`} data-metric="codex-ficha-viva">
+        <span class="lbl">Abrir la ficha viva</span>
+      </a>
+    </div>
+    <nav class="pager" aria-label="Volver">
+      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">← Portada</a>
+    </nav>
+  </article>
+</CodexShell>
+
+<script>
+  // CSP forbids inline handlers; the print door binds here.
+  document
+    .querySelector('[data-ficha-imprimir]')
+    ?.addEventListener('click', () => window.print());
+</script>

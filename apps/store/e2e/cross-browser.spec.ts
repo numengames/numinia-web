@@ -155,6 +155,10 @@ test('the book travels: PDF and EPUB editions download free (D6)', async ({ requ
   // EPUB handshake: a zip whose FIRST entry is the stored `mimetype`.
   expect(bytes.subarray(0, 2).toString()).toBe('PK');
   expect(bytes.subarray(30, 38).toString()).toBe('mimetype');
+  // The character-sheet annex travels free too (§4.9 + D15).
+  const ficha = await request.get('/api/codex/ficha.md');
+  expect(ficha.status()).toBe(200);
+  expect(await ficha.text()).toContain('Hoja de Personaje');
 });
 
 /** CI builds are hermetic: the fixture manual has its own chapter slugs, so

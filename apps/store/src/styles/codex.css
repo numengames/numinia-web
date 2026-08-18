@@ -865,6 +865,37 @@
   color: var(--tinta-2);
   margin-top: 4px;
 }
+/* ─── Ficha imprimible (§4.9) ─── */
+.codex .cuerpo.sin-capitular > p:first-of-type::first-letter {
+  font-family: inherit;
+  font-size: inherit;
+  float: none;
+  line-height: inherit;
+  padding: 0;
+  color: inherit;
+}
+.codex .cuerpo .filete-celda {
+  display: block;
+  height: 1px;
+  max-width: 60px;
+  background: linear-gradient(90deg, transparent, var(--linea), transparent);
+}
+.codex .cuerpo .filete-doc {
+  border: 0;
+  height: 1px;
+  margin: 26px auto;
+  max-width: 200px;
+  background: linear-gradient(90deg, transparent, var(--estructura), transparent);
+}
+.codex .acciones-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 34px 0 10px;
+  font-family: var(--sans);
+}
+
 /* ─── Pager del capítulo ─── */
 .codex .pager {
   display: flex;

@@ -30,6 +30,8 @@ const PAGES = [
   '/es/lap/',
   '/es/lap/character/',
   '/es/lap/codex/', // gated: what axe sees is the door, which must be accessible too
+  '/es/lap/codex/glosario/',
+  '/es/lap/codex/ficha/',
   '/es/lap/portals/',
   '/es/lap/settings/',
   '/es/lap/session/',
