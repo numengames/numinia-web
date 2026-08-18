@@ -6,6 +6,7 @@
  * Guide copy inside the island is EN pending translation QA (D9).
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
 import { SETTINGS_UI } from '../../i18n/settings';
 import { LoginSpike } from '../auth/LoginSpike';
 import LapShell from './LapShell.astro';
@@ -16,7 +17,19 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = SETTINGS_UI[locale];
+const chrome = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
+// The gate is asked in the reader's language even though the login guide
+// inside the island is still EN (D9).
+const legal = {
+  label: t.acceptLabel,
+  read: t.acceptRead,
+  pending: t.acceptPending,
+  termsHref: `${prefix}/legal/terms/`,
+  termsLabel: chrome.legalTerms,
+  privacyHref: `${prefix}/legal/privacy/`,
+  privacyLabel: chrome.legalPrivacy,
+};
 ---
 
 <LapShell
@@ -32,10 +45,46 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <h1>{t.sessionTitle}</h1>
     <p class="intro">{t.sessionIntro}</p>
     <p class="nota">{t.sessionWhy}</p>
-    <LoginSpike client:load />
+    <LoginSpike legal={legal} client:load />
     <p class="dignidad">{t.sessionOpen}</p>
   </article>
 </LapShell>
+
+<style is:global>
+  /* The island renders client-side, outside Astro's scoped hashing. */
+  [data-legal-gate] {
+    margin: var(--s5) 0 var(--s3);
+    max-width: 56ch;
+  }
+  [data-legal-gate] label {
+    display: flex;
+    gap: var(--s2);
+    align-items: flex-start;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  [data-legal-gate] input {
+    /* 44px touch target without inflating the visual box (§9.8). */
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0.2rem 0;
+    accent-color: var(--ambar);
+    flex: none;
+  }
+  [data-legal-gate] p {
+    margin: var(--s2) 0 0 1.85rem;
+    font-size: 0.875rem;
+    color: var(--texto-3);
+  }
+  [data-legal-gate] a {
+    color: var(--enlace);
+  }
+  [data-legal-gate-pending] {
+    color: var(--texto-3);
+    font-size: 0.875rem;
+    max-width: 56ch;
+  }
+</style>
 
 <style>
   h1 {

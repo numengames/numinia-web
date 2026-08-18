@@ -92,6 +92,10 @@ jobs:
         run: npx turbo run build --filter=@numinia/store
         env:
           DATA_SOURCE: fixture
+          # A placeholder, never a real key: the login island refuses to mount
+          # without one, and the legal gate (MIS-086) must be testable. Nothing
+          # here can connect to a wallet — the gate spec never gets that far.
+          PUBLIC_THIRDWEB_CLIENT_ID: e2e-placeholder-client-id
       - name: Bake the export editions (PDF + EPUB, fixture corpus — MIS-085 C)
         run: npm run exports:codex
         env:

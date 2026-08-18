@@ -53,6 +53,29 @@ describe('session tokens (HMAC-SHA256, Web Crypto)', () => {
     expect(result).toEqual({ valid: true, payload });
   });
 
+  it('carries the accepted legal corpus, tamper-proof (MIS-086)', async () => {
+    const accepted = { ...payload, terms: 'terms@1.0.0+privacy@1.1.0' } as const;
+    const token = await createSessionToken(accepted, SECRET);
+    const result = await verifySessionToken(token, SECRET, () => NOW + 1000);
+    expect(result).toEqual({ valid: true, payload: accepted });
+  });
+
+  it('still verifies sessions issued before the gate existed', async () => {
+    // Optional on purpose: in-flight sessions must not be invalidated by the
+    // field landing — they expire on their own TTL instead.
+    const token = await createSessionToken(payload, SECRET);
+    const result = await verifySessionToken(token, SECRET, () => NOW + 1000);
+    expect(result).toEqual({ valid: true, payload });
+  });
+
+  it('rejects an empty acceptance string (fail closed)', async () => {
+    const token = await createSessionToken({ ...payload, terms: '' }, SECRET);
+    expect(await verifySessionToken(token, SECRET, () => NOW)).toEqual({
+      valid: false,
+      reason: 'payload',
+    });
+  });
+
   it('rejects a tampered payload (fail closed)', async () => {
     const token = await createSessionToken(payload, SECRET);
     const [v, body, sig] = token.split('.');

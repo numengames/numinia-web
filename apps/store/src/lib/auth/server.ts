@@ -173,14 +173,20 @@ export async function resolveRank(address: string): Promise<Rank> {
   }
 }
 
-/** Issues our own vendor-independent session after thirdweb verified the address. */
-export async function issueSession(address: string): Promise<string> {
+/**
+ * Issues our own vendor-independent session after thirdweb verified the
+ * address. `terms` is the legal corpus the citizen accepted at the door
+ * (MIS-086): it travels inside the signed payload, so an acceptance can be
+ * proven later without a database.
+ */
+export async function issueSession(address: string, terms: string): Promise<string> {
   const iat = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     sub: address,
     rank: await resolveRank(address),
     iat,
     exp: iat + SESSION_TTL_SECONDS,
+    terms,
   };
   return createSessionToken(payload, requireConfig().sessionSecret);
 }

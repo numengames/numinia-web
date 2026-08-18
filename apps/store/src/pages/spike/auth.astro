@@ -1,6 +1,20 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { LoginSpike } from '../../components/auth/LoginSpike';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { SETTINGS_UI } from '../../i18n/settings';
+
+const t = SETTINGS_UI.en;
+const chrome = CHROME_MESSAGES.en;
+const legal = {
+  label: t.acceptLabel,
+  read: t.acceptRead,
+  pending: t.acceptPending,
+  termsHref: '/legal/terms/',
+  termsLabel: chrome.legalTerms,
+  privacyHref: '/legal/privacy/',
+  privacyLabel: chrome.legalPrivacy,
+};
 ---
 
 <BaseLayout locale="en" title="Numinia — MISSION-002 auth spike" chrome={false}>
@@ -10,7 +24,7 @@ import { LoginSpike } from '../../components/auth/LoginSpike';
     verified server-side via SIWE. The session cookie is our own HMAC token (@numinia/auth) —
     thirdweb never issues trust here.
   </p>
-  <LoginSpike client:load />
+  <LoginSpike legal={legal} client:load />
   <p data-dignity-line>
     <strong>Digital ownership, not digital rental.</strong> On today's internet, the data you
     generate is controlled by a third party. In Numinia the keys — and everything you earn with

@@ -19,6 +19,13 @@ export interface SessionPayload {
   readonly rank: Rank;
   readonly iat: number;
   readonly exp: number;
+  /**
+   * Legal corpus the citizen accepted when this session was created
+   * (MIS-086), e.g. `terms@1.0.0+privacy@1.1.0`. Optional in the schema, not
+   * in practice: sessions issued before the gate landed still verify until
+   * their own TTL expires — every new one carries it.
+   */
+  readonly terms?: string | undefined;
 }
 
 const payloadSchema = z.strictObject({
@@ -26,6 +33,7 @@ const payloadSchema = z.strictObject({
   rank: z.enum(RANKS),
   iat: z.number().int().nonnegative(),
   exp: z.number().int().nonnegative(),
+  terms: z.string().min(1).optional(),
 });
 
 export type VerifyResult =
