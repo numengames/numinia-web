@@ -1,0 +1,20 @@
+{
+  "$comment": "Pinned design source. The Sistema de Diseño is NOT kept in this repo: it is governed by numinia-nwos. Nothing here may be edited by hand — see docs/decisions/ADR-022-design-source-of-truth.md.",
+  "source": {
+    "repo": "numengames/numinia-nwos",
+    "path": "standards/2026_08_18-Sistema_de_Diseno-v5.0.0.md",
+    "published": "https://numinia.org/corpus/standards/2026_08_18-sistema_de_diseno-v500.md",
+    "version": "5.0.0",
+    "sha256": "a075e2154aa648d44484d7df2bf8d573da044f7154c96464a1c1bd58680c107a"
+  },
+  "vendored": {
+    "packages/ui/src/sistema.css": {
+      "sha256": "2a9b73ccf68872e6ed8b495271dcf99e6540fda1385e45c8c645b58f751d6a9f",
+      "note": "kit CSS (§13.1) — the base layer every surface inherits"
+    },
+    "apps/store/src/scripts/sistema.js": {
+      "sha256": "77fc440982cae14cd5c15937bf81a65d89921f1d935b1dfe940d99b026ae8adc",
+      "note": "kit JS (§13.1) — typing + reveal, inlined by BaseLayout"
+    }
+  }
+}

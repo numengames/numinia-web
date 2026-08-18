@@ -1,13 +1,15 @@
 /**
- * Design-system bridge guarantees (MISSION-006 Phase A).
+ * Design-source guarantees (MISSION-006 Phase A · ADR-022).
  *
- * The kit is generated from the design .md and MUST NOT be rewritten (§13.1).
- * packages/ui carries a verbatim copy; this test fails the build the moment
- * the copy diverges from the canonical kit, and pins that the canonical
- * palette actually reaches the CSS the apps consume. The runtime copy of the
- * motion script travels the same way (BaseLayout inlines it).
+ * The Sistema de Diseño is NOT kept in this repository: numinia-nwos governs
+ * it and this repo only carries the kit files it actually ships, pinned in
+ * design-source.json. These tests fail the build the moment a vendored copy is
+ * edited by hand — the kit is generated from the .md and MUST NOT be rewritten
+ * (§13.1). Drift against the upstream document is a network check and lives in
+ * `npm run design:check`, out of the hermetic suite.
  */
 
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -15,17 +17,29 @@ import { describe, expect, it } from 'vitest';
 const root = join(process.cwd(), '..', '..');
 const read = (path: string): Promise<string> => readFile(join(root, path), 'utf8');
 
-describe('design-system kit copy', () => {
-  it('is byte-identical to the canonical generated kit', async () => {
-    const canonical = await read('design-system/kit/sistema.css');
-    const copy = await read('packages/ui/src/sistema.css');
-    expect(copy).toBe(canonical);
+interface DesignSource {
+  readonly source: { readonly version: string; readonly sha256: string; readonly repo: string };
+  readonly vendored: Readonly<Record<string, { readonly sha256: string }>>;
+}
+
+const manifest = async (): Promise<DesignSource> =>
+  JSON.parse(await read('design-source.json')) as DesignSource;
+
+describe('pinned design source', () => {
+  it('names the governing repo and a pinned version', async () => {
+    const { source } = await manifest();
+    expect(source.repo).toBe('numengames/numinia-nwos');
+    expect(source.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(source.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('is the same script the layout inlines at runtime', async () => {
-    const canonical = await read('design-system/kit/sistema.js');
-    const copy = await read('apps/store/src/scripts/sistema.js');
-    expect(copy).toBe(canonical);
+  it('every vendored kit file matches its recorded digest', async () => {
+    const { vendored } = await manifest();
+    expect(Object.keys(vendored).length).toBeGreaterThan(0);
+    for (const [path, { sha256 }] of Object.entries(vendored)) {
+      const bytes = await readFile(join(root, path));
+      expect(createHash('sha256').update(bytes).digest('hex'), path).toBe(sha256);
+    }
   });
 
   it('ships the fonts the kit @font-face rules expect', async () => {
@@ -40,15 +54,8 @@ describe('design-system kit copy', () => {
       ).resolves.toBeTruthy();
     }
   });
-});
 
-describe('design-system tokens', () => {
-  it('canonical palette values from tokens.json appear in the kit CSS', async () => {
-    const tokens = JSON.parse(await read('design-system/kit/sistema.tokens.json')) as Record<
-      string,
-      unknown
-    >;
-    expect(Object.keys(tokens).length).toBeGreaterThan(0);
+  it('the canonical palette reaches the CSS the apps consume', async () => {
     const css = await read('packages/ui/src/sistema.css');
     // The six canonical colors (§3.1) must reach the CSS verbatim.
     for (const hex of ['#A6DAD5', '#018EA1', '#EFA517', '#F9EBDC', '#F35059', '#D33440']) {

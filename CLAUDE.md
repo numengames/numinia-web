@@ -151,14 +151,33 @@ Both apps import from the same `packages/`. The domain model is shared and must 
 
 ---
 
-## Sistema de diseño
+## Sistema de diseño — gobernado fuera de este repo (ADR-022)
 
-Todo diseño se rige por design-system/2026_08_18-Sistema_de_Diseno-v5_0_0.md
-(**Sistema de Diseño de Numen Games v5.0.0**). El nombre clave «Khepri» se retiró en la
-5.0.0 (§0.4): el sistema se llama por lo que es. **Ninguna regla cambió con el
-renombrado**; en material antiguo, aplica la tabla de equivalencias de §0.4. El escarabajo
-sigue siendo el escarabajo — es marca, no nombre del sistema, y por eso los ficheros de
-activos conservan su nombre físico (`Khepri_Logo.svg`, `pixel/khepri-sprite-24.png`).
+**El Sistema de Diseño NO vive aquí.** Lo gobierna `numengames/numinia-nwos`
+(`standards/`), que es dueño del documento, de su historial, de su kit y de su
+publicación. Este repo **fija** la fuente en `design-source.json` (repo, ruta, URL
+publicada, versión y sha256) y solo conserva lo que el producto sirve: las copias del
+kit (`packages/ui/src/sistema.css`, `apps/store/src/scripts/sistema.js`), las fuentes con
+sus licencias, las texturas y las dos marcas que pinta el cromo
+(`packages/ui/src/assets/brand/`).
+
+**Dónde leerlo:** con el repo hermano, `../numinia-nwos/standards/2026_08_18-Sistema_de_Diseno-v5.0.0.md`;
+sin él, <https://numinia.org/corpus/standards/2026_08_18-sistema_de_diseno-v500.md>.
+Presupuesto de lectura: fragmento §19.5 ~2,1k tokens (tarea rápida) · §19 ~7,5k
+(producción) · documento ~46k (auditoría). Antes de entregar: checklist §19.4.
+
+**Reglas de trabajo, no negociables:**
+
+- El kit **se enlaza o se copia, jamás se reescribe** (§13.1). Las copias están fijadas
+  por digest: `design-system-bridge.test.ts` rompe el build si alguien las edita a mano.
+- **Aquí no se arregla nada de diseño.** ¿Contradicción, hueco o token que falta? Se
+  reporta a numinia-nwos y vuelve como versión nueva. El único cambio de diseño que hace
+  este repo es **re-fijar** (`npm run design:check` avisa de la deriva; usa red a
+  propósito y por eso queda fuera del CI hermético).
+- El nombre clave «Khepri» se retiró en la 5.0.0 (§0.4): el sistema se llama por lo que
+  es. Ninguna regla cambió con el renombrado. El escarabajo sigue siendo el escarabajo —
+  es marca, no nombre del sistema, y por eso los activos conservan su nombre físico
+  (`Khepri_Logo.svg`).
 
 **Registro antes que medio (§2.8).** Los cuatro registros, por orden: 1 Umbral (general) ·
 2 Velo (profundidad: archivo, Summa, visores) · 3 Low-poly (3D) · 4 Píxel (2D).
@@ -167,15 +186,7 @@ y con frontera visible: el marco de lectura del códex en Nocturno y el velo de 
 (§2.7.2); nunca como registro base del sitio. numinia.org (visores NWOS) sí es Velo.
 La página del códex es papel: Umbral-Diurno con la tercera voz (§13.12).
 
-Precedencia (§0.3, §19.1): ante contradicción con material antiguo, este documento manda.
-Kit generado en design-system/kit/ (sistema.css, sistema.js, sistema.tokens.json): se
-enlaza o copia, **jamás se reescribe** — `packages/ui/src/sistema.css` y
-`apps/store/src/scripts/sistema.js` son copias byte a byte, guardadas por
-`design-system-bridge.test.ts`.
-Presupuesto de lectura: fragmento §19.5 ~2,1k tokens (tarea rápida) · §19 ~7,5k
-(producción) · documento ~46k (auditoría). Antes de entregar: checklist §19.4.
-
-Deriva conocida del documento v5.0.0 (pendiente de erratas, no de decisión): §19.5 dice
+**Erratas conocidas de la v5.0.0** (reportadas a nwos, pendientes de versión): §19.5 dice
 «doce animaciones» y radio marco `10px`, cuando §10.1 son **catorce** y §5/§19.3 fijan
 `8px`. Ante duda, mandan §10.1 y §19.3.
 

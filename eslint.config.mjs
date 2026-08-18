@@ -6,8 +6,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     ignores: [
-      // Design-system kit copies ship as delivered (LEEME + §13.1) — never linted.
-      'design-system/**',
+      // Kit copies ship as generated upstream (§13.1) — never linted, never edited.
       'apps/store/src/scripts/sistema.js',
       '**/dist/**',
       '**/coverage/**',

@@ -8,7 +8,8 @@
   "exports": {
     "./tokens.css": "./src/tokens.css",
     "./sistema.css": "./src/sistema.css",
-    "./platform.css": "./src/platform.css"
+    "./platform.css": "./src/platform.css",
+    "./assets/brand/*": "./src/assets/brand/*"
   },
   "scripts": {
     "type-check": "echo 'no ts sources yet'",

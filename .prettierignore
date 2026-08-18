@@ -1,6 +1,3 @@
-# Design-system kit — installed as delivered, never modified (its LEEME + §13.1)
-design-system/
-
-# Verbatim copies of the generated kit — byte-identical by test
+# Verbatim copies of the generated kit — digest-pinned in design-source.json
 packages/ui/src/sistema.css
 apps/store/src/scripts/sistema.js

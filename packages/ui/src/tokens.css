@@ -1,8 +1,8 @@
 /**
  * Numinia token bridge — legacy `--numinia-*` names mapped onto the Sistema v5.0.0.
  *
- * The design system (design-system/2026_08_18-Sistema_de_Diseno-v5_0_0.md) is the single
- * source of values; the canonical variables live in sistema.css (verbatim copy
+ * The Sistema de Diseño (governed by numinia-nwos, pinned in design-source.json)
+ * is the single source of values; the canonical variables live in sistema.css (verbatim copy
  * of the generated kit — see the design-system-bridge test). This file only ALIASES
  * the legacy names so surfaces built before the Sistema keep working while
  * they migrate. New code uses the Sistema variables and classes directly.

@@ -30,7 +30,8 @@
     "test:mutation": "npm --workspace @numinia/domain run test:mutation && npm --workspace @numinia/analytics run test:mutation",
     "budget": "node scripts/bundle-budget.mjs",
     "lore:fetch": "node scripts/fetch-lore.mjs",
-    "links": "node scripts/link-check.mjs"
+    "links": "node scripts/link-check.mjs",
+    "design:check": "node scripts/check-design-source.mjs"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.1",
