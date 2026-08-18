@@ -418,6 +418,9 @@ Then('every sampled page carries the consent banner with its legal links', async
     );
     assert.ok(/href="[^"]*\/legal\/terms\/"/.test(banner[0]), `${page}: terms link missing`);
     assert.ok(/href="[^"]*\/legal\/cookies\/"/.test(banner[0]), `${page}: cookies link missing`);
+    assert.ok(/href="[^"]*\/legal\/privacy\/"/.test(banner[0]), `${page}: privacy link missing`);
+    // The placeholder wording must never reach a build again.
+    assert.ok(!/lorem ipsum/i.test(banner[0]), `${page}: consent copy is still lorem ipsum`);
   }
 });
 

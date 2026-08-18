@@ -44,8 +44,8 @@ export interface ChromeMessages {
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
-  /** Combined Terms + Cookies banner (D12). Body is lorem ipsum until the
-      Oracle delivers the real legal wording — labels are real. */
+  /** Combined Terms + Cookies banner (D12). Real copy since MIS-086: it
+      describes what the platform actually stores, nothing else. */
   readonly consentRegion: string;
   readonly consentText: string;
   readonly consentAccept: string;
@@ -76,7 +76,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerDataRepo: 'Repositorio de datos',
     consentRegion: 'Aviso legal',
     consentText:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — al usar la plataforma aceptas los Términos y condiciones y la Política de cookies.',
+      'Esta web guarda una cookie para recordar este aviso y, si entras, otra para tu sesión. Tus preferencias y tu ficha viven en tu navegador. Sin rastreo de terceros.',
     consentAccept: 'Aceptar',
   },
   en: {
@@ -103,7 +103,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerDataRepo: 'Data repository',
     consentRegion: 'Legal notice',
     consentText:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — by using the platform you accept the Terms and conditions and the Cookies policy.',
+      'This site stores one cookie to remember this notice and, if you sign in, one for your session. Your preferences and your character sheet live in your browser. No third-party tracking.',
     consentAccept: 'Accept',
   },
   ja: {
@@ -130,7 +130,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerDataRepo: 'データリポジトリ',
     consentRegion: '法的なお知らせ',
     consentText:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — プラットフォームの利用により、利用規約とクッキーポリシーに同意したことになります。',
+      'このサイトは、この通知を記憶するためのCookieと、ログインした場合はセッション用のCookieを保存します。設定とキャラクターシートはブラウザ内に保存されます。第三者による追跡はありません。',
     consentAccept: '同意する',
   },
   ko: {
@@ -157,7 +157,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerDataRepo: '데이터 저장소',
     consentRegion: '법적 고지',
     consentText:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — 플랫폼을 이용하면 이용약관과 쿠키 정책에 동의하는 것입니다.',
+      '이 사이트는 이 안내를 기억하기 위한 쿠키와, 로그인 시 세션 쿠키를 저장합니다. 환경설정과 캐릭터 시트는 브라우저에 저장됩니다. 제3자 추적은 없습니다.',
     consentAccept: '동의',
   },
   'pt-br': {
@@ -184,7 +184,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerDataRepo: 'Repositório de dados',
     consentRegion: 'Aviso legal',
     consentText:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit — ao usar a plataforma você aceita os Termos e condições e a Política de cookies.',
+      'Este site guarda um cookie para lembrar deste aviso e, se você entrar, outro para sua sessão. Suas preferências e sua ficha ficam no seu navegador. Sem rastreamento de terceiros.',
     consentAccept: 'Aceitar',
   },
 };

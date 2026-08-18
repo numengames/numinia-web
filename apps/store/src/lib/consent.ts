@@ -12,8 +12,12 @@
 
 export const CONSENT_COOKIE = 'numinia_consent';
 
-/** Date of the legal text the visitor accepts. Bump on every wording change. */
-export const CONSENT_VERSION = '2026-08-17';
+/**
+ * Date of the legal text the visitor accepts. Bump on every wording change.
+ * 2026-08-18 (MIS-086): the lorem ipsum body became real copy, so every
+ * acceptance recorded against the placeholder stopped counting.
+ */
+export const CONSENT_VERSION = '2026-08-18';
 
 /** Half a year — re-ask afterwards even if the text never changed. */
 export const CONSENT_MAX_AGE_S = 60 * 60 * 24 * 180;

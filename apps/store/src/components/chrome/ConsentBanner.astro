@@ -3,10 +3,10 @@
  * Combined Terms + Cookies acceptance banner (open-questions D12, slice 1).
  *
  * Non-blocking by Oracle decision (2026-08-17): Layer 0 stays browsable and
- * indexable; the banner sits at the viewport foot until accepted. Body copy
- * is LOREM IPSUM until the Oracle delivers the legal wording — bump
- * CONSENT_VERSION in lib/consent.ts when it lands, so every placeholder
- * acceptance is re-asked.
+ * indexable; the banner sits at the viewport foot until accepted. The copy
+ * became real with MIS-086 and names only what the platform actually stores;
+ * bump CONSENT_VERSION in lib/consent.ts on every wording change, so old
+ * acceptances stop counting and the banner asks again.
  *
  * No JS: the banner stays visible (conservative — the notice never hides
  * without a recorded acceptance). With JS: the inline script removes it for
@@ -36,6 +36,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   <p>{t.consentText}</p>
   <div class="actions">
     <a href={`${prefix}/legal/terms/`} data-metric="consent-terms">{t.legalTerms}</a>
+    <a href={`${prefix}/legal/privacy/`} data-metric="consent-privacy">{t.legalPrivacy}</a>
     <a href={`${prefix}/legal/cookies/`} data-metric="consent-cookies">{t.legalCookies}</a>
     <button type="button" class="btn-primario" data-metric="consent-accept">
       {t.consentAccept}
