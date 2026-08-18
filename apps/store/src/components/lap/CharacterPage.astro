@@ -127,9 +127,13 @@ const options: SheetOptions = {
       display: block !important;
       min-height: 0 !important;
     }
+    /* One house criterion for paper: the sheet prints like the book and like
+       the corpus PDFs — Arena paper, Noche ink (§3 Diurno, kit @media print).
+       Pure white and pure black were the only place the platform printed
+       outside the Sistema. */
     body {
-      background: #fff !important;
-      color: #000 !important;
+      background: #f9ebdc !important;
+      color: #14110f !important;
     }
   }
   [data-lap-sheet] .resultado {

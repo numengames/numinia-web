@@ -35,7 +35,9 @@ const CSP_SESSION =
   '; frame-src https:';
 
 function isSessionPath(pathname: string): boolean {
-  return /^\/(es\/|ja\/|ko\/|pt-br\/)?(lap\/session|spike\/auth)/.test(pathname);
+  // One door only: /spike/auth was retired with MIS-078 — the login lives in
+  // the L.A.P., and a second copy of it was a second surface to keep AA.
+  return /^\/(es\/|ja\/|ko\/|pt-br\/)?lap\/session/.test(pathname);
 }
 
 export function securityHeaders(

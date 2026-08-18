@@ -1,5 +1,5 @@
 /**
- * Login island for the MISSION-002 Step 0 spike (gate D14).
+ * Login island (MISSION-002 Step 0, gate D14 — promoted out of the spike).
  *
  * Exercises the full progressive path in one surface: social/email/passkey
  * (thirdweb In-App Wallet) and external wallets, all funneled through SIWE
@@ -159,7 +159,7 @@ function SpikeInner({
 
 export function LoginSpike({ legal }: { legal: LegalGateCopy }) {
   if (!clientId) {
-    // Fail loudly, not silently: the spike is useless without the client ID.
+    // Fail loudly, not silently: the login is useless without the client ID.
     return <p role="alert">PUBLIC_THIRDWEB_CLIENT_ID is not set — check apps/store/.env</p>;
   }
   return (

@@ -3,6 +3,27 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-08-18 16:40",
+    "entries": [
+      {
+        "text": "Night was never measured: the accessibility gate now checks every page in both modes, and the five contrast failures it was hiding — badges, tags, pills, the destructive button and the footer signature — are fixed",
+        "type": "FIX",
+      },
+      {
+        "text": "The design system is no longer copied into this repository: it is governed by the archive and pinned here by version and digest, so the platform can never quietly drift from the law it wears",
+        "type": "UPD",
+      },
+      {
+        "text": "One door and one paper: the duplicated login spike retires in favour of the L.A.P., and the printable sheet now prints on the house paper like the book and the corpus editions",
+        "type": "UPD",
+      },
+    ],
+    "missions": [
+      "MIS-078",
+    ],
+    "version": "v0.47.0",
+  },
+  {
     "date": "2026-08-18 13:15",
     "entries": [
       {

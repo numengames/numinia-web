@@ -26,6 +26,25 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.47.0',
+    date: '2026-08-18 16:40',
+    missions: ['MIS-078'],
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Night was never measured: the accessibility gate now checks every page in both modes, and the five contrast failures it was hiding — badges, tags, pills, the destructive button and the footer signature — are fixed',
+      },
+      {
+        type: 'UPD',
+        text: 'The design system is no longer copied into this repository: it is governed by the archive and pinned here by version and digest, so the platform can never quietly drift from the law it wears',
+      },
+      {
+        type: 'UPD',
+        text: 'One door and one paper: the duplicated login spike retires in favour of the L.A.P., and the printable sheet now prints on the house paper like the book and the corpus editions',
+      },
+    ],
+  },
+  {
     version: 'v0.46.0',
     date: '2026-08-18 13:15',
     missions: ['MIS-086'],
