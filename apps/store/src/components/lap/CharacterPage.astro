@@ -25,6 +25,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = LAP_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
 const L = (text: Readonly<Record<string, string>>): string => text[locale] ?? text['en'] ?? '';
 const opt = (items: ReadonlyArray<{ id: string; name: Readonly<Record<string, string>> }>) =>
   items.map((item) => ({ id: item.id, label: L(item.name) }));
@@ -61,6 +62,10 @@ const options: SheetOptions = {
   description={t.sheet.fileNote}
 >
   <h1>{t.sheet.title}</h1>
+  {/* The reciprocal door (§4.9): the living sheet points at the manual's. */}
+  <p class="anexo-enlace">
+    <a href={`${prefix}/lap/codex/ficha/`} data-metric="lap-sheet-annex">{t.sheet.annexLink}</a>
+  </p>
   <SheetIsland client:load options={options} labels={t.sheet} />
 </LapShell>
 
@@ -70,6 +75,10 @@ const options: SheetOptions = {
     font-weight: 600;
     letter-spacing: -0.02em;
     margin-top: 0;
+  }
+  .anexo-enlace {
+    margin: calc(-1 * var(--s2)) 0 var(--s3);
+    font-size: 0.875rem;
   }
 </style>
 

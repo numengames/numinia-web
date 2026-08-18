@@ -198,6 +198,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     sheet: {
       title: 'Ficha de personaje',
+      annexLink: 'Ver la hoja del manual en el Códex',
       fileNote:
         'Tu personaje es tuyo: vive en este dispositivo y en los ficheros que te lleves. Nadie en Numinia guarda copia.',
       edit: 'Editar ficha',
@@ -353,6 +354,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     sheet: {
       title: 'Character sheet',
+      annexLink: 'See the manual’s sheet in the Codex',
       fileNote:
         'Your character is yours: it lives on this device and in the files you take with you. No one in Numinia keeps a copy.',
       edit: 'Edit sheet',
@@ -505,6 +507,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     sheet: {
       title: 'キャラクターシート',
+      annexLink: 'コデックスでマニュアルのシートを見る',
       fileNote:
         'シートはあなたのファイルです。Markdownとして書き出し、好きな場所に保管できます。サーバーには何も保存されません。',
       edit: 'シートを編集',
@@ -652,6 +655,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     sheet: {
       title: '캐릭터 시트',
+      annexLink: '코덱스에서 매뉴얼 시트 보기',
       fileNote:
         '시트는 당신의 파일입니다. Markdown으로 내보내 어디든 보관하세요. 서버에는 아무것도 저장되지 않습니다.',
       edit: '시트 편집',
@@ -797,6 +801,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     sheet: {
       title: 'Ficha de personagem',
+      annexLink: 'Ver a ficha do manual no Códex',
       fileNote:
         'Seu personagem é seu: vive neste dispositivo e nos arquivos que você levar. Ninguém em Numinia guarda cópia.',
       edit: 'Editar ficha',

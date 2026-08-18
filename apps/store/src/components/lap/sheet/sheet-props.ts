@@ -32,6 +32,7 @@ export interface SheetOptions {
 
 export interface SheetLabels {
   readonly title: string;
+  readonly annexLink: string;
   readonly fileNote: string;
   readonly edit: string;
   readonly done: string;
