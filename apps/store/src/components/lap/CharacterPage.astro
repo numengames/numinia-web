@@ -334,14 +334,17 @@ const options: SheetOptions = {
     flex: 1;
     min-width: 0;
   }
-  /* Destructive door (§ data-loss warnings): Grana, never a primary. */
+  /* Destructive door (§9.1, data-loss): the danger lives in the edge and the
+     hover, not in the label — Grana as text reads 3.88:1 over Noche. The label
+     keeps primary ink so the button is legible in both modes; it is still never
+     a primary, and still asks for confirmation. */
   [data-lap-sheet] .btn-peligro {
-    color: var(--numinia-color-danger, #b02330);
-    border: 1px solid currentColor;
+    color: var(--texto);
+    border: 1px solid var(--grana);
     background: transparent;
   }
   [data-lap-sheet] .btn-peligro:hover,
   [data-lap-sheet] .btn-peligro:focus-visible {
-    background: color-mix(in srgb, currentColor 8%, transparent);
+    background: color-mix(in srgb, var(--grana) 8%, transparent);
   }
 </style>

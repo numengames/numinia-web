@@ -156,10 +156,12 @@ function formatDate(date: string): string {
     margin-right: var(--s2);
     border-radius: var(--radio-control);
     border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-    color: var(--texto-3);
+    /* Tags ride the version card (a surface): terciario is base-only (§19.4). */
+    color: var(--texto-2);
   }
   .tag-new {
-    color: var(--turquesa);
+    /* The turquoise is a fill, never text on a dark surface (§3, §9.1). */
+    color: var(--enlace);
   }
   .tag-fix {
     color: var(--grana);

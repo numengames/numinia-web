@@ -464,7 +464,8 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
     color: var(--verdemar);
   }
   .pildora[data-estado='locked'] {
-    color: var(--texto-3);
+    /* §19.4: terciario only over the base background — the pill sits on a surface. */
+    color: var(--texto-2);
   }
   .sesion .acciones {
     display: flex;

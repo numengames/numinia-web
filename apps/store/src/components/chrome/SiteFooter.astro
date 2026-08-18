@@ -144,13 +144,13 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   .version {
     margin-left: auto;
   }
+  /* A link inside running text must not rely on color alone (WCAG 1.4.1):
+     against the quiet byline ink the accent reads 2.58:1, so it stays
+     underlined at rest. */
   .byline a {
     color: var(--enlace);
-    text-decoration: none;
-  }
-  .byline a:hover,
-  .byline a:focus-visible {
     text-decoration: underline;
+    text-underline-offset: 3px;
   }
   .version {
     font-family: var(--mono);

@@ -81,10 +81,15 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     padding: 0.1rem 0.45rem;
     border-radius: var(--radio-control);
     border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-    color: var(--turquesa);
+    /* --enlace, not --turquesa: the turquoise is an interactive FILL; as text
+       on a Nocturno surface it reads 4.43:1. §3 keeps a mode-aware ink for
+       colored text — verdemar at night, #016E7D on paper. */
+    color: var(--enlace);
     margin-right: var(--s1);
   }
+  /* Secondary, not tertiary: §19.4 allows terciario ONLY over the base
+     background, and a card is a surface. */
   .badge-muted {
-    color: var(--texto-3);
+    color: var(--texto-2);
   }
 </style>

@@ -187,11 +187,12 @@ const byDistrict: ReadonlyArray<{
     background: var(--texto);
     flex: none;
   }
-  .nodo.apagado {
-    color: var(--texto-3);
-  }
+  /* Dormant node: the state lives in the hollow dot, not in a fainter ink —
+     the map is a tarjeta (surface) and §19.4 keeps terciario over the base
+     background only (it reads 4.32:1 here). */
   .nodo.apagado .punto {
-    background: var(--linea-f);
+    background: transparent;
+    border: 1px solid var(--linea-f);
   }
   .nodo.hub {
     color: var(--texto);
