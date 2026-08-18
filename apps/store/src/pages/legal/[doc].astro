@@ -1,6 +1,6 @@
 ---
 import LegalPage from '../../components/legal/LegalPage.astro';
-import { LEGAL_DOCS } from '../../i18n/legal';
+import { LEGAL_DOCS } from '../../lib/legal';
 
 export function getStaticPaths() {
   return LEGAL_DOCS.map((doc) => ({ params: { doc } }));

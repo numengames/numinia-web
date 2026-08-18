@@ -285,6 +285,9 @@ Then('the finder island data covers every public asset', async function () {
 // --- updates + legal (MISSION-003 P3) ---
 
 const LEGAL_DOCS = ['privacy', 'cookies', 'terms', 'legal-notice'];
+// terms + privacy carry the real corpus since MIS-086; the rest stay drafts.
+const PUBLISHED_LEGAL_DOCS = ['terms', 'privacy'];
+const DRAFT_LEGAL_DOCS = ['cookies', 'legal-notice'];
 
 Then('the updates page exists under every locale prefix', async function () {
   for (const prefix of LOCALE_PREFIXES) {
@@ -321,14 +324,70 @@ Then('every legal page exists under every locale prefix', async function () {
   }
 });
 
-Then('every legal page carries the draft banner', async function () {
+Then('every draft legal page carries the draft banner', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    for (const doc of LEGAL_DOCS) {
+    for (const doc of DRAFT_LEGAL_DOCS) {
       const html = await readFile(
         path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
         'utf8',
       );
       assert.ok(html.includes('data-legal-draft'), `legal/${doc} (${prefix || 'en'}) lacks banner`);
+    }
+  }
+});
+
+Then('the published legal pages render the corpus without the draft banner', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const doc of PUBLISHED_LEGAL_DOCS) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
+        'utf8',
+      );
+      // The attribute also appears in the route's CSS: assert on the element.
+      assert.ok(
+        !/<p[^>]*data-legal-draft/.test(html),
+        `legal/${doc} (${prefix || 'en'}) still shows the draft banner`,
+      );
+      assert.ok(html.includes(`data-legal-doc="${doc}"`), `legal/${doc} (${prefix || 'en'}) empty`);
+      assert.ok(
+        /data-legal-version="\d+\.\d+\.\d+"/.test(html),
+        `legal/${doc} (${prefix || 'en'}) does not stamp the master version`,
+      );
+      // A landmark section of each master, proving the real text shipped.
+      const landmark = doc === 'terms' ? 'Numen Games S.L' : 'LOPDGDD';
+      assert.ok(html.includes(landmark), `legal/${doc} (${prefix || 'en'}) misses "${landmark}"`);
+    }
+  }
+});
+
+Then('the published legal pages carry the scope note in every locale', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const doc of PUBLISHED_LEGAL_DOCS) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
+        'utf8',
+      );
+      assert.ok(
+        /<p[^>]*data-legal-scope/.test(html),
+        `legal/${doc} (${prefix || 'en'}) hides the scope note`,
+      );
+    }
+  }
+});
+
+Then('the published legal pages disclose the language they are written in', async function () {
+  // terms are EN-only, privacy ES-only: every other locale must say so.
+  const language = { terms: 'en', privacy: 'es' };
+  for (const prefix of LOCALE_PREFIXES) {
+    const locale = prefix || 'en';
+    for (const doc of PUBLISHED_LEGAL_DOCS) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
+        'utf8',
+      );
+      const notice = /<p[^>]*data-legal-lang-notice/.test(html);
+      const expected = locale !== language[doc];
+      assert.equal(notice, expected, `legal/${doc} (${locale}) language notice mismatch`);
     }
   }
 });

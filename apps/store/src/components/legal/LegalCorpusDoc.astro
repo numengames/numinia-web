@@ -1,0 +1,125 @@
+---
+/**
+ * A published legal document (MIS-086): the numinia-nwos master, rendered
+ * verbatim. Nothing here edits the text — the scope note and the language
+ * notice sit OUTSIDE the document, as page chrome (CON-004 / CON-005).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { LEGAL_UI } from '../../i18n/legal';
+import { LEGAL_DOC_LANGUAGE, type PublishedLegalDoc } from '../../lib/legal';
+import { legalEntry } from './content';
+
+interface Props {
+  locale: SupportedLocale;
+  doc: PublishedLegalDoc;
+}
+
+const { locale, doc } = Astro.props;
+const t = LEGAL_UI[locale];
+const entry = legalEntry(doc);
+const { Content } = entry.module;
+const language = LEGAL_DOC_LANGUAGE[doc];
+// The notice only makes sense to readers who did not ask for that language.
+const languageNotice =
+  locale === language ? undefined : language === 'en' ? t.onlyInEnglish : t.onlyInSpanish;
+const description = doc === 'terms' ? t.metaTerms : t.metaPrivacy;
+---
+
+<BaseLayout locale={locale} title={`${entry.title} — Numinia`} description={description}>
+  <article data-legal-doc={doc} data-legal-version={entry.version}>
+    <p class="scope" role="note" data-legal-scope>{t.scopeNote}</p>
+    {languageNotice && (
+      <p class="language-notice" lang={locale} data-legal-lang-notice>
+        {languageNotice}
+      </p>
+    )}
+    <p class="meta">
+      {entry.version && <span>{t.versionLabel} {entry.version}</span>}
+      {entry.updated && <span>{t.updatedLabel} {entry.updated.slice(0, 10)}</span>}
+    </p>
+    <div class="corpus" lang={language}>
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    line-height: 1.65;
+    max-width: 46rem;
+  }
+  /* Khepri §9.7 aviso: surface + amber edge; text keeps mode contrast. */
+  .scope {
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-left: 2px solid var(--ambar);
+    color: var(--texto);
+    padding: var(--numinia-space-2);
+    border-radius: var(--numinia-radius-sm);
+    font-size: 0.85rem;
+  }
+  .language-notice {
+    color: var(--texto-3);
+    font-size: 0.875rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--texto-3);
+    border-bottom: 1px solid var(--linea-f);
+    padding-bottom: var(--s2);
+  }
+  .corpus :global(h1) {
+    font-size: 2.074rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--texto);
+  }
+  .corpus :global(h2) {
+    font-size: 1.2rem;
+    color: var(--numinia-color-primary-strong);
+    margin-top: var(--s6);
+  }
+  .corpus :global(h3) {
+    font-size: 1rem;
+    margin-top: var(--s5);
+  }
+  .corpus :global(a) {
+    color: var(--enlace);
+    overflow-wrap: anywhere;
+  }
+  /* The master opens with an agent-facing summary block; it reads as a
+     standfirst here — quieter than the body, never hidden. */
+  .corpus :global(blockquote) {
+    border-left: 2px solid var(--linea-f);
+    padding-left: var(--s3);
+    margin: var(--s4) 0;
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+  .corpus :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--linea-f);
+    margin: var(--s5) 0;
+  }
+  .corpus :global(table) {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .corpus :global(th),
+  .corpus :global(td) {
+    border: 1px solid var(--linea);
+    padding: var(--s1) var(--s2);
+    text-align: left;
+    vertical-align: top;
+  }
+</style>

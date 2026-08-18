@@ -1,7 +1,14 @@
 ---
+/**
+ * Legal page dispatcher: `terms` and `privacy` render the real corpus
+ * (MIS-086); `cookies` and `legal-notice` are still Oracle drafts and keep
+ * saying so. No markup or styles of its own — each branch owns them, so a
+ * published page never even ships the draft banner's CSS.
+ */
 import type { SupportedLocale } from '@numinia/domain';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import { LEGAL_CONTENT, type LegalDoc } from '../../i18n/legal';
+import { isPublishedLegalDoc, type LegalDoc } from '../../lib/legal';
+import LegalCorpusDoc from './LegalCorpusDoc.astro';
+import LegalDraftDoc from './LegalDraftDoc.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -9,59 +16,12 @@ interface Props {
 }
 
 const { locale, doc } = Astro.props;
-// Legal content is authored es+en only (ADR-002); other locales read the EN text.
-const contentLocale = locale === 'es' ? 'es' : 'en';
-const content = LEGAL_CONTENT[doc][contentLocale];
-
-const DRAFT_BANNER: Record<'es' | 'en', string> = {
-  es: 'BORRADOR — pendiente de revisión del Oráculo. No vinculante hasta su aprobación.',
-  en: 'DRAFT — pending Oracle review. Not binding until approved.',
-};
-const LANGUAGE_NOTICE: Partial<Record<SupportedLocale, string>> = {
-  ja: 'このページは現在、英語のみで提供されています。',
-  ko: '이 페이지는 현재 영어로만 제공됩니다.',
-  'pt-br': 'Esta página está disponível apenas em inglês por enquanto.',
-};
 ---
 
-<BaseLayout locale={locale} title={`${content.title} — Numinia`} description={content.sections[0]?.body[0]}>
-  <p data-legal-draft role="note">{DRAFT_BANNER[contentLocale]}</p>
-  {LANGUAGE_NOTICE[locale] && <p class="language-notice">{LANGUAGE_NOTICE[locale]}</p>}
-  <h1>{content.title}</h1>
-  {
-    content.sections.map((section) => (
-      <section>
-        <h2>{section.heading}</h2>
-        {section.body.map((paragraph) => (
-          <p>{paragraph}</p>
-        ))}
-      </section>
-    ))
-  }
-</BaseLayout>
-
-<style>
-  /* Khepri §9.7 aviso: surface + amber edge; text keeps mode contrast. */
-  [data-legal-draft] {
-    background: var(--superficie);
-    border: 1px solid var(--linea-f);
-    border-left: 2px solid var(--ambar);
-    color: var(--texto);
-    padding: var(--numinia-space-2);
-    border-radius: var(--numinia-radius-sm);
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-  .language-notice {
-    color: var(--texto-3);
-    font-size: 0.875rem;
-  }
-  h2 {
-    font-size: 1rem;
-    color: var(--numinia-color-primary-strong);
-  }
-  p {
-    line-height: 1.6;
-    max-width: 46rem;
-  }
-</style>
+{
+  isPublishedLegalDoc(doc) ? (
+    <LegalCorpusDoc locale={locale} doc={doc} />
+  ) : (
+    <LegalDraftDoc locale={locale} doc={doc} />
+  )
+}

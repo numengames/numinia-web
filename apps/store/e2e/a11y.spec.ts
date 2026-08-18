@@ -22,6 +22,7 @@ const PAGES = [
   '/es/finder/',
   '/updates/',
   '/es/legal/privacy/',
+  '/legal/terms/', // real corpus (MIS-086): long-form markdown, not our markup
   '/es/docs/',
   '/docs/developers/',
   '/es/inspector/',
