@@ -1,7 +1,8 @@
 /**
- * Accessibility gate — the constitution's "Semantic HTML. WCAG AA" as an
- * executable check, not an aspiration. Every page added to the store must be
- * listed here (or covered by a glob route) and pass with zero violations.
+ * Accessibility gate — ARC-10 (numinia-nwos/standards/STD-005-engineering-
+ * standards.md, ADR-037) as an executable check, not an aspiration. Every
+ * page added to the store must be listed here (or covered by a glob route)
+ * and pass with zero violations.
  *
  * BOTH MODES (MIS-078, acceptance criterion 2): the platform is Diurno by
  * default and Nocturno by choice, so a gate that only measures one of them
