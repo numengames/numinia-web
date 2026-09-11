@@ -4,7 +4,7 @@
 >
 > **Epistemic value.** Resolves how the platform treats secrets, auth, and vulnerabilities — and how to report one.
 > **Pragmatic value.** Every security-touching change is checked against these commitments (fail closed, no silent degradation).
-> **In the system.** Observes: legacy audit lessons. Regulates: auth, secrets, deps. Coupled to: docs/reference/legacy-test-audit.md, packages/auth.
+> **In the system.** Observes: legacy audit lessons — the audit itself was deleted once its 3 security findings and 12 test rules were encoded into this repo's machinery (git holds it at 1014349). Regulates: auth, secrets, deps. Coupled to: packages/auth.
 >
 > _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
 

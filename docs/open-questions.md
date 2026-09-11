@@ -10,7 +10,7 @@
 
 > Every unresolved doubt, contradiction, or pending decision, consolidated for future themed sessions.
 > Rule: nothing here is decided silently. Each item names its sources, its blocking score (1–10), and the session type it needs.
-> Cross-references: `docs/onboarding-report.md` §c/§e (full audit trail), `docs/glossary.md` (⚠ items), ADR-013.
+> Cross-references: `docs/glossary.md` (⚠ items), ADR-013. The onboarding report that carried the full audit trail was deleted as spent archaeology; git holds it at 1014349.
 >
 > Last updated: 2026-08-14 · Maintained by: Claude (digital agent)
 
@@ -38,7 +38,7 @@
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | :-----------: |
 | C1  | **Seminal corpus went from 9 to 7 documents.** `README.md` (index) and `Platform_Role_System.md` (v2 rank/permission matrix; Oracle cap = 4; rank-detection table) were not carried into `docs/seminal/`. Consistent with ADR-011 (unbounded Oracle rank) — confirm the omission is deliberate and that `permission.ts` (22 permissions, 6 groups) fully supersedes the v2 matrix. | Legacy corpus vs `docs/seminal/`                                   |    Medium     |
 | C2  | **Recovered domain-v0.1 files.** If recovered, they go to `docs/reference/domain-v0.1/` as diff target only. Not yet present. When placed, run a systematic diff against the regenerated model and report divergences.                                                                                                                                                             | Oracle directive 2026-08-14                                        | Low (waiting) |
-| C3  | **Rebuild plan is stale on i18n** ("EN/JA/ES") — superseded by ADR-001 (5 languages). Treat `docs/numinia-rebuild-plan.md` as historical context, never as instruction source. Consider a superseded-notice header.                                                                                                                                                                | `docs/numinia-rebuild-plan.md` §3/§6                               |      Low      |
+| C3  | **RESOLVED 2026-09-11 — the stale rebuild plan was deleted.** It said "EN/JA/ES" against ADR-001's five languages; rather than add a superseded-notice header, the document was deleted as spent archaeology (nwos:ADR-030). Nothing can read it as an instruction source now. Git holds it at 1014349. | — (deleted) |   Resolved    |
 | C4  | **Ritual times contradict each other in the seminal corpus**: Dark Council / Lunar Coven at 10:00–12:00 (_Epistemic relations_) vs 22:00–00:00 (_Welcome_, _Brand & Culture_). Only matters if the platform ever surfaces the ritual calendar.                                                                                                                                     | Seminal corpus (immutable — needs an external ruling, not an edit) |      Low      |
 
 ## D. Product & architecture — dedicated sessions (from TODO.md plus onboarding findings)
