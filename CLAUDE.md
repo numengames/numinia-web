@@ -439,6 +439,11 @@ PUBLIC_SITE_URL=https://numinia.store
 - Colors: `#A6DAD5` (seafoam), `#018EA1` (turquoise), `#EFA517` (amber), `#F9EBDC` (beige), `#F35059` (coral), `#D33440` (dark red).
 - Typography: Geist Mono.
 
+### Accessibility
+
+- WCAG 2.2 AA on every public route; keyboard tab order matches visual order; focus ring always visible. Full rule and current CI coverage: `ARC-10`, `numinia-nwos/standards/STD-005-engineering-standards.md`.
+- Gate: `apps/store/e2e/a11y.spec.ts` (axe-core + Playwright). Coverage is partial — platform chrome only; corpus document routes are not yet covered (`numinia-nwos/debt/`, tracked separately).
+
 ### Testing
 
 - Domain model: 100% coverage.
