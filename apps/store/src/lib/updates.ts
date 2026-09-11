@@ -26,6 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.49.0',
+    date: '2026-09-11 16:50',
+    missions: [],
+    entries: [
+      {
+        type: 'UPD',
+        text: 'One archive, one series: the fourteen decision records this repository kept of its own are retired, because an ADR-006 here and an ADR-006 in the archive were different documents wearing the same name — the rules they carried now sit in the code they bind, where they cannot be read without being obeyed',
+      },
+    ],
+  },
+  {
     version: 'v0.48.0',
     date: '2026-09-11 12:05',
     missions: ['MIS-116'],

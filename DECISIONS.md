@@ -4,7 +4,7 @@
 >
 > **Epistemic value.** Resolves 'why is it like this?' for every structural choice, so agents stop re-deriving or re-litigating settled questions.
 > **Pragmatic value.** Blocks re-opening decided matters without a new Oracle session; each entry names what it forecloses.
-> **In the system.** Observes: sessions with the Oracle. Regulates: architecture. Coupled to: CLAUDE.md, docs/decisions/ADR-*.
+> **In the system.** Observes: sessions with the Oracle. Regulates: architecture. Coupled to: CLAUDE.md. The ADR series this pointed to was retired from the repo at f379869 — the archive owns that series now.
 >
 > _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
 
@@ -88,7 +88,7 @@ Conflating them would collapse the semiotic layers that Numinia is built on.
 
 ## ADR-006: Progressive authentication (Web2 → Web3)
 
-**Status:** Accepted in principle — **RESOLVED 2026-08-15**: see docs/decisions/ADR-006-progressive-auth-final.md (embedded wallet via thirdweb, conditional on evaluation spike; Pilgrim boundary provisional)
+**Status:** Accepted in principle — **RESOLVED 2026-08-15** (embedded wallet via thirdweb, conditional on evaluation spike; Pilgrim boundary provisional). The record that carried it was retired at f379869; the rule is enforced in `packages/auth`.
 
 **Definition:** Authentication is not wallet-only. The platform must support a progressive path from Web2 entry (email/social?) to Web3 sovereignty (SIWE wallet connection).
 

@@ -30,15 +30,6 @@ inference: documents are how this organism keeps its world-model and its actions
 | Document                                                                             | Rules on                               |
 | ------------------------------------------------------------------------------------ | -------------------------------------- |
 | [DECISIONS.md](../DECISIONS.md)                                                      | Architecture decisions (Peirce format) |
-| [docs/decisions/ADR-006](./decisions/ADR-006-progressive-auth-final.md)              | Progressive auth Web2→Web3             |
-| [docs/decisions/ADR-011](./decisions/ADR-011-oracle-lore-vs-oracle-rank.md)          | Oracle lore vs rank                    |
-| [docs/decisions/ADR-012](./decisions/ADR-012-canonical-taxonomy-and-glossary.md)     | Taxonomy + glossary authority          |
-| [docs/decisions/ADR-013](./decisions/ADR-013-gender-restricted-positions-as-data.md) | Restrictions as inert data             |
-| [docs/decisions/ADR-014](./decisions/ADR-014-permission-set-reconstruction.md)       | The 22 permissions                     |
-| [docs/decisions/ADR-015](./decisions/ADR-015-astro-7.md)                             | Astro 7                                |
-| [docs/decisions/ADR-016](./decisions/ADR-016-analytics-foundation.md)                | Analytics foundation                   |
-| [docs/decisions/ADR-017](./decisions/ADR-017-lineage-consolidation.md)               | Lineage consolidation                  |
-| [docs/decisions/ADR-018](./decisions/ADR-018-write-path.md)                          | The write path                         |
 
 ## State — where we are and what is unknown
 
@@ -58,7 +49,6 @@ inference: documents are how this organism keeps its world-model and its actions
 | [docs/Definition_of_Done_v0.2.0.md](./Definition_of_Done_v0.2.0.md)               | When work may close       |
 | [docs/remote-checklist.md](./remote-checklist.md)                                 | Push-day runbook          |
 | [docs/deploy-runbook.md](./deploy-runbook.md)                                     | How numinia.com ships     |
-| [docs/adr-write-path-dossier.md](./adr-write-path-dossier.md)                     | Write-path option map     |
 | [docs/key-rotation-runbook.md](./key-rotation-runbook.md)                         | Credential rotation       |
 
 ## Missions — what was promised and delivered

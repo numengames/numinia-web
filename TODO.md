@@ -102,7 +102,7 @@
 
 ## Quality & Process
 
-- [ ] Set up ADR template in `docs/decisions/` — 🤖 Digital
+- [x] ~~Set up ADR template in `docs/decisions/`~~ — obsolete: the series moved to `numinia-nwos`
 - [ ] Create Mission Template as a Huly template — 🧬 Biological
 - [ ] Define DoR (Definition of Ready) for missions — 🔀 Hybrid
 - [ ] Establish session cadence: themed sessions, not mega-sessions — 🧬 Biological (Pablo to schedule)
