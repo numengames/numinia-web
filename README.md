@@ -67,6 +67,6 @@ cd apps/store && npm run dev # store on :4321 (needs .env — see .env.example)
 ## Governance
 
 Decisions live in [DECISIONS.md](./DECISIONS.md) (ADR-001–010) and
-[docs/decisions/](./docs/decisions/) (ADR-011+). Open questions and their owners:
+`numinia-nwos`, the archive that owns the series. Open questions and their owners:
 [docs/open-questions.md](./docs/open-questions.md). Naming authority for every
 domain term: [docs/glossary.md](./docs/glossary.md).

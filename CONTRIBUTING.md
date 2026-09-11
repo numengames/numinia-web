@@ -31,7 +31,7 @@ summary; the constitution wins on any conflict.
 3. **Tracks**: `store` = spike/PoC, `com` = production. Shared `packages/*`
    are always `com`-grade. State the track in every commit.
 4. **Every interactive element carries `data-metric`** (docs/analytics.md).
-5. **Autonomous architectural decisions become ADRs** (`docs/decisions/`,
+5. **Autonomous architectural decisions become ADRs in `numinia-nwos`** (the archive owns the series,
    Peirce format: Definition · Epistemic value · Pragmatic value).
 6. **Report honestly**: completion reports list what was NOT done.
 7. **The legacy repository is condemned**: never read from it, never copy from

@@ -12,7 +12,7 @@
 - [ ] 100% per-file coverage holds on touched `packages/*`
 - [ ] New interactive elements carry `data-metric`
 - [ ] Domain terms untouched — or glossary updated FIRST (ADR-012)
-- [ ] Autonomous architectural decision? → ADR added in `docs/decisions/`
+- [ ] Autonomous architectural decision? → ADR proposed in `numinia-nwos`
 - [ ] Gherkin updated if acceptance behavior changed
 
 ## What was NOT done (Rule 8)

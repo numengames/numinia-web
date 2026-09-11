@@ -1,5 +1,5 @@
 {
-  "$comment": "Pinned design source. The Sistema de Diseño is NOT kept in this repo: it is governed by numinia-nwos. Nothing here may be edited by hand — see docs/decisions/ADR-022-design-source-of-truth.md.",
+  "$comment": "Pinned design source. The Sistema de Diseño is NOT kept in this repo: it is governed by numinia-nwos. Nothing here may be edited by hand — the rule that governs this pin is nwos:ADR-044 — consumers install packages, never copy.",
   "source": {
     "repo": "numengames/numinia-nwos",
     "path": "standards/2026_08_18-Sistema_de_Diseno-v5.0.0.md",

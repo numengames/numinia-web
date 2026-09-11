@@ -3,6 +3,17 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-11 16:50",
+    "entries": [
+      {
+        "text": "One archive, one series: the fourteen decision records this repository kept of its own are retired, because an ADR-006 here and an ADR-006 in the archive were different documents wearing the same name — the rules they carried now sit in the code they bind, where they cannot be read without being obeyed",
+        "type": "UPD",
+      },
+    ],
+    "missions": [],
+    "version": "v0.49.0",
+  },
+  {
     "date": "2026-09-11 12:05",
     "entries": [
       {
