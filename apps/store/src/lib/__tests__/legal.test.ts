@@ -44,12 +44,15 @@ describe('legal corpus', () => {
   });
 
   it('names both master versions in the acceptance string', () => {
-    expect(LEGAL_CORPUS_VERSION).toBe('terms@1.0.0+privacy@1.1.0');
+    expect(LEGAL_CORPUS_VERSION).toBe('terms@1.0.0+privacy@2.0.0');
   });
 
   it('only accepts the exact current corpus', () => {
     expect(isCurrentLegalAcceptance(LEGAL_CORPUS_VERSION)).toBe(true);
-    expect(isCurrentLegalAcceptance('terms@0.9.0+privacy@1.1.0')).toBe(false);
+    expect(isCurrentLegalAcceptance('terms@0.9.0+privacy@2.0.0')).toBe(false);
+    // Every acceptance of the Spanish v1.1.0 stops counting: the master went
+    // up a major, so the corpus a citizen signed is not the corpus we serve.
+    expect(isCurrentLegalAcceptance('terms@1.0.0+privacy@1.1.0')).toBe(false);
     expect(isCurrentLegalAcceptance('')).toBe(false);
     expect(isCurrentLegalAcceptance(true)).toBe(false);
     expect(isCurrentLegalAcceptance(undefined)).toBe(false);
@@ -63,6 +66,6 @@ describe('legal corpus', () => {
   });
 
   it('declares the language each master is authored in', () => {
-    expect(LEGAL_DOC_LANGUAGE).toEqual({ terms: 'en', privacy: 'es' });
+    expect(LEGAL_DOC_LANGUAGE).toEqual({ terms: 'en', privacy: 'en' });
   });
 });

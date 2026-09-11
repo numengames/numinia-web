@@ -24,19 +24,21 @@ export function isPublishedLegalDoc(doc: LegalDoc): doc is PublishedLegalDoc {
 }
 
 /**
- * Authored language of each master. The corpus is not monolingual (terms in
- * EN, privacy in ES) — FLAG-5 of the master leaves that for the lawyer, so
- * the platform discloses the language instead of translating on its own.
+ * Authored language of each master. The corpus is monolingual again since
+ * 2026-08-27: privacy joined the T&C in English when the Oracle resolved
+ * FLAG-5 (MIS-116) and declared English the master language — C-005 §5
+ * requires enforceable artifacts in English. The mapping stays because the
+ * page still discloses the authored language to readers of other locales.
  */
 export const LEGAL_DOC_LANGUAGE: Readonly<Record<PublishedLegalDoc, 'en' | 'es'>> = {
   terms: 'en',
-  privacy: 'es',
+  privacy: 'en',
 };
 
 /** Master versions, pinned. Kept in sync with the copies by a unit test. */
 export const LEGAL_DOC_VERSION: Readonly<Record<PublishedLegalDoc, string>> = {
   terms: '1.0.0',
-  privacy: '1.1.0',
+  privacy: '2.0.0',
 };
 
 /**

@@ -26,6 +26,21 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.48.0',
+    date: '2026-09-11 12:05',
+    missions: ['MIS-116'],
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The privacy policy is English and current: the archive resolved its language on 27 August and declared English the master, and the platform was still serving the superseded Spanish text fifteen days later — the copy is re-derived from the master, word for word, and now reads v2.0.0',
+      },
+      {
+        type: 'FIX',
+        text: 'Everyone accepts again: the corpus a citizen signed is identified by both master versions, and privacy went up a major — every acceptance recorded against the old text stops counting, by design, rather than letting a signature outlive the document it signed',
+      },
+    ],
+  },
+  {
     version: 'v0.47.0',
     date: '2026-08-18 16:40',
     missions: ['MIS-078'],

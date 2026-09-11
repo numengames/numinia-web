@@ -376,8 +376,12 @@ Then('the published legal pages carry the scope note in every locale', async fun
 });
 
 Then('the published legal pages disclose the language they are written in', async function () {
-  // terms are EN-only, privacy ES-only: every other locale must say so.
-  const language = { terms: 'en', privacy: 'es' };
+  // Both masters are EN since the archive resolved FLAG-5 (nwos:OPS-003 v2.0.0,
+  // MIS-116): every other locale must say so. Read from the platform's own
+  // mapping instead of restating it — a second copy of a fact drifts from it.
+  const { LEGAL_DOC_LANGUAGE: language } = await import(
+    '../../apps/store/src/lib/legal.ts'
+  );
   for (const prefix of LOCALE_PREFIXES) {
     const locale = prefix || 'en';
     for (const doc of PUBLISHED_LEGAL_DOCS) {
