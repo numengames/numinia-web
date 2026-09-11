@@ -77,4 +77,4 @@ MISSION-000…011, 030, 031). The board renders at
 ## Not law, but load-bearing
 
 `docs/seminal/` (immutable corpus — the source of the world), `docs/reference/`
-(extracted archaeology), `docs/onboarding-report.md` (how the rebuild began).
+(extracted archaeology).
