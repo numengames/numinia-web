@@ -10,6 +10,37 @@
 
 ---
 
+## DEBT-003 — Production advisories carried knowingly (audit gate made advisory)
+
+- **Opened:** 2026-09-11 · **Status:** OPEN
+- **What happened:** `npm audit --omit=dev --audit-level=high` blocked CI.
+  It was not blocking a bad change: commit `1014349` passed on 2026-08-18
+  and the same tree failed on 2026-09-11, with `package-lock.json` untouched
+  since 2026-08-17. The advisory database moved; the repository did not.
+  A blocking gate fed by a live external database decays on its own and ends
+  up measuring the calendar instead of the diff under review.
+- **Decision:** the audit still runs on every pull request and prints its
+  findings, but no longer blocks. The license gate — deterministic, same tree
+  same verdict — was split into its own job and keeps blocking.
+- **Carried knowingly (2026-09-11):** 30 advisories, 1 critical / 12 high /
+  17 moderate. Root causes:
+  - `astro@7.2.2` → `@astrojs/internal-helpers` → `js-yaml` (**critical**),
+  - `thirdweb` → `@walletconnect/sign-client` (high),
+  - `sharp` → libheif, `svgo`, `toml` (high).
+- **Why not fixed here:** `npm audit fix` resolves none of them without
+  `--force`, which downgrades `thirdweb` to 5.93.6 — a breaking change to the
+  authentication path. That is a dependency operation with its own testing,
+  not a line in a documentation cleanup.
+- **Exit conditions, ALL required:**
+  1. `astro` upgraded past the `js-yaml` advisory (clears the critical),
+  2. `thirdweb` upgraded, not downgraded, with the auth path re-tested
+     against SECURITY.md's fail-closed commitments,
+  3. `npm audit --omit=dev --audit-level=high` green, at which point this
+     entry closes and the gate may block again.
+- **Meanwhile:** the audit job's step summary carries the standing count on
+  every run. An advisory gate nobody reads is worse than no gate; if this
+  entry is still open when the count changes, the change is visible in CI.
+
 ## DEBT-002 — Lore opening deferred (extraction done, publication conditioned)
 
 - **Opened:** 2026-08-16 (Oracle direction: lore leaves the code repository) · **Status:** OPEN
