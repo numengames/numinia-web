@@ -44,6 +44,14 @@ export interface ChromeMessages {
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
+  readonly footerSocial: string;
+  /** The build line: licence · telemetry · version · commit (house footer). */
+  readonly footerLicence: string;
+  readonly footerLicenceTitle: string;
+  readonly footerTelemetry: string;
+  readonly footerTelemetryTitle: string;
+  readonly footerVersionTitle: string;
+  readonly footerCommitTitle: string;
   /** Combined Terms + Cookies banner (D12). Real copy since MIS-086: it
       describes what the platform actually stores, nothing else. */
   readonly consentRegion: string;
@@ -74,6 +82,13 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
+    footerSocial: 'Social',
+    footerLicence: 'Abierto por licencia, por fichero',
+    footerLicenceTitle: 'Código AGPL-3.0 · UI y dominio MIT · catálogo CC0 · marca reservada. El mapa por ruta está en REUSE.toml',
+    footerTelemetry: 'Telemetría',
+    footerTelemetryTitle: 'Medidas de este sitio — pendiente de publicar',
+    footerVersionTitle: 'Ver el registro de versiones',
+    footerCommitTitle: 'Ver este commit en GitHub',
     consentRegion: 'Aviso legal',
     consentText:
       'Esta web guarda una cookie para recordar este aviso y, si entras, otra para tu sesión. Tus preferencias y tu ficha viven en tu navegador. Sin rastreo de terceros.',
@@ -101,6 +116,13 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
+    footerSocial: 'Social',
+    footerLicence: 'Open by licence, per file',
+    footerLicenceTitle: 'Code AGPL-3.0 · UI and domain MIT · catalogue CC0 · brand reserved. The per-path map is REUSE.toml',
+    footerTelemetry: 'Telemetry',
+    footerTelemetryTitle: 'Measurements of this site — not yet published',
+    footerVersionTitle: 'See the version timeline',
+    footerCommitTitle: 'See this commit on GitHub',
     consentRegion: 'Legal notice',
     consentText:
       'This site stores one cookie to remember this notice and, if you sign in, one for your session. Your preferences and your character sheet live in your browser. No third-party tracking.',
@@ -128,6 +150,13 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
+    footerSocial: 'ソーシャル',
+    footerLicence: 'ファイルごとのライセンスで公開',
+    footerLicenceTitle: 'コード AGPL-3.0 · UI とドメイン MIT · カタログ CC0 · ブランドは留保。パスごとの対応表は REUSE.toml',
+    footerTelemetry: 'テレメトリー',
+    footerTelemetryTitle: 'このサイトの計測 — 未公開',
+    footerVersionTitle: 'バージョン履歴を見る',
+    footerCommitTitle: 'このコミットを GitHub で見る',
     consentRegion: '法的なお知らせ',
     consentText:
       'このサイトは、この通知を記憶するためのCookieと、ログインした場合はセッション用のCookieを保存します。設定とキャラクターシートはブラウザ内に保存されます。第三者による追跡はありません。',
@@ -155,6 +184,13 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
+    footerSocial: '소셜',
+    footerLicence: '파일별 라이선스로 공개',
+    footerLicenceTitle: '코드 AGPL-3.0 · UI와 도메인 MIT · 카탈로그 CC0 · 브랜드 보유. 경로별 지도는 REUSE.toml',
+    footerTelemetry: '텔레메트리',
+    footerTelemetryTitle: '이 사이트의 측정값 — 아직 공개되지 않음',
+    footerVersionTitle: '버전 기록 보기',
+    footerCommitTitle: 'GitHub에서 이 커밋 보기',
     consentRegion: '법적 고지',
     consentText:
       '이 사이트는 이 안내를 기억하기 위한 쿠키와, 로그인 시 세션 쿠키를 저장합니다. 환경설정과 캐릭터 시트는 브라우저에 저장됩니다. 제3자 추적은 없습니다.',
@@ -182,6 +218,13 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',
+    footerSocial: 'Social',
+    footerLicence: 'Aberto por licença, por arquivo',
+    footerLicenceTitle: 'Código AGPL-3.0 · UI e domínio MIT · catálogo CC0 · marca reservada. O mapa por caminho está em REUSE.toml',
+    footerTelemetry: 'Telemetria',
+    footerTelemetryTitle: 'Medições deste site — ainda não publicadas',
+    footerVersionTitle: 'Ver o histórico de versões',
+    footerCommitTitle: 'Ver este commit no GitHub',
     consentRegion: 'Aviso legal',
     consentText:
       'Este site guarda um cookie para lembrar deste aviso e, se você entrar, outro para sua sessão. Suas preferências e sua ficha ficam no seu navegador. Sem rastreamento de terceiros.',

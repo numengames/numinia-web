@@ -1,7 +1,8 @@
 ---
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
-import { CURRENT_VERSION } from '../../lib/updates';
+import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
+import { SOCIAL_LINKS } from '../../lib/social-links';
 // §8.5 / repertoire rule: the scarab closes every piece, never opens it — the
 // scarab's one canonical home on the site is the foot of the page.
 import scarab from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
@@ -39,8 +40,12 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <nav aria-label={t.footerResources}>
       <h2>{t.footerResources}</h2>
       <a href="https://numen.games" target="_blank" rel="noopener noreferrer" data-metric="footer-numen">Numen Games</a>
+      <!-- The catalogue still lives in a personal repository; the deploy
+           workflow reads it from there (GITHUB_REPO_OWNER=PabloFMM). The
+           footer points at the organisation until the data moves — a
+           personal account is not a house address. -->
       <a
-        href="https://github.com/PabloFMM/numinia-digital-goods-data"
+        href="https://github.com/numengames"
         target="_blank"
         rel="noopener noreferrer"
         data-metric="footer-data-repo"
@@ -55,6 +60,16 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
       <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
       <a href={`${prefix}/legal/legal-notice/`} data-metric="footer-legal-notice">{t.legalNotice}</a>
     </nav>
+    {SOCIAL_LINKS.length > 0 && (
+      <nav aria-label={t.footerSocial}>
+        <h2>{t.footerSocial}</h2>
+        {SOCIAL_LINKS.map((link) => (
+          <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="footer-social">
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    )}
   </div>
   <div class="cierre">
     <span class="escarabajo" set:html={scarab} />
@@ -68,9 +83,24 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
         data-metric="footer-numen-signature"
       >Numen Games</a>{' — we build for a better future.'}
     </p>
-    <a href={`${prefix}/updates/`} class="version" data-metric="footer-version">
-      {CURRENT_VERSION}
-    </a>
+    <!-- The build line, the same on the three sites: licence · telemetry ·
+         version · commit. The version keeps linking to /updates/ (the
+         human record); the commit links to GitHub (the exact artefact).
+         /telemetry has no page yet, on purpose: the link is the commitment,
+         the page is its own mission. -->
+    <p class="build">
+      <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer" title={t.footerLicenceTitle} data-metric="footer-licence">{t.footerLicence}</a>
+      {' · '}
+      <a href={`${prefix}/telemetry/`} title={t.footerTelemetryTitle} data-metric="footer-telemetry">{t.footerTelemetry}</a>
+      {' · '}
+      <a href={`${prefix}/updates/`} class="version" title={t.footerVersionTitle} data-metric="footer-version">{VERSION}</a>
+      {' · '}
+      {COMMIT_URL ? (
+        <a href={COMMIT_URL} target="_blank" rel="noopener noreferrer" title={t.footerCommitTitle} data-metric="footer-commit">{COMMIT_SHA}</a>
+      ) : (
+        <span data-metric="footer-commit">{COMMIT_SHA}</span>
+      )}
+    </p>
   </div>
 </footer>
 
@@ -141,8 +171,18 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   .byline {
     flex: 1;
   }
-  .version {
+  .build {
     margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+  .build a {
+    color: var(--texto-3);
+  }
+  .build a:hover,
+  .build a:focus-visible {
+    color: var(--enlace);
   }
   /* A link inside running text must not rely on color alone (WCAG 1.4.1):
      against the quiet byline ink the accent reads 2.58:1, so it stays
@@ -152,10 +192,18 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .version {
-    font-family: var(--mono);
+  .build .version {
     color: var(--enlace);
     font-weight: 600;
-    text-decoration: none;
+  }
+  @media (max-width: 640px) {
+    .cierre {
+      flex-wrap: wrap;
+    }
+    .build {
+      margin-left: 0;
+      white-space: normal;
+      flex-basis: 100%;
+    }
   }
 </style>
