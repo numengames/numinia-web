@@ -124,6 +124,10 @@ jobs:
           PUBLIC_SITE_URL: https://numinia.com
           GITHUB_REPO_OWNER: PabloFMM
           GITHUB_REPO_NAME: numinia-digital-goods-data
+          # The footer prints this SHA (src/lib/build-info.ts) — the same one
+          # /version.json is stamped with below, so the page and the seal
+          # never disagree. Declared in turbo.json globalEnv or turbo strips it.
+          WORKERS_CI_COMMIT_SHA: ${{ needs.guard.outputs.sha }}
           PUBLIC_THIRDWEB_CLIENT_ID: ${{ vars.PUBLIC_THIRDWEB_CLIENT_ID }}
       - name: Install Chromium (prints the PDF edition)
         run: npx playwright install --with-deps chromium

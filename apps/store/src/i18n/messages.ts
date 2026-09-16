@@ -44,6 +44,20 @@ export interface ChromeMessages {
   readonly footerNavigation: string;
   readonly footerResources: string;
   readonly footerDataRepo: string;
+  readonly footerSocial: string;
+  /** The build line: licence · telemetry · version · commit (house footer). */
+  readonly footerLicence: string;
+  readonly footerLicenceTitle: string;
+  readonly footerTelemetry: string;
+  readonly footerTelemetryTitle: string;
+  readonly footerVersionTitle: string;
+  readonly footerCommitTitle: string;
+  /** /telemetry — the placeholder page until the site measures itself. */
+  readonly telemetryTitle: string;
+  readonly telemetryIntro: string;
+  readonly telemetryPending: string;
+  readonly telemetryVersion: string;
+  readonly telemetryCommit: string;
   /** Combined Terms + Cookies banner (D12). Real copy since MIS-086: it
       describes what the platform actually stores, nothing else. */
   readonly consentRegion: string;
@@ -74,6 +88,18 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
+    footerSocial: 'Social',
+    footerLicence: 'Abierto por licencia, por fichero',
+    footerLicenceTitle: 'Código AGPL-3.0 · UI y dominio MIT · catálogo CC0 · marca reservada. El mapa por ruta está en REUSE.toml',
+    footerTelemetry: 'Telemetría',
+    footerTelemetryTitle: 'Medidas de este sitio — pendiente de publicar',
+    footerVersionTitle: 'Ver el registro de versiones',
+    footerCommitTitle: 'Ver este commit en GitHub',
+    telemetryTitle: 'Telemetría',
+    telemetryIntro: 'Lo que este sitio mide de sí mismo. Hoy, solo dos hechos sobre el artefacto que estás viendo; el resto está por construir.',
+    telemetryPending: 'Pendiente: interacción con la página (qué se pulsa, qué se lee), rendimiento y consentimiento. Cuando exista, se medirá aquí, no se afirmará.',
+    telemetryVersion: 'Versión',
+    telemetryCommit: 'Commit',
     consentRegion: 'Aviso legal',
     consentText:
       'Esta web guarda una cookie para recordar este aviso y, si entras, otra para tu sesión. Tus preferencias y tu ficha viven en tu navegador. Sin rastreo de terceros.',
@@ -101,6 +127,18 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
+    footerSocial: 'Social',
+    footerLicence: 'Open by licence, per file',
+    footerLicenceTitle: 'Code AGPL-3.0 · UI and domain MIT · catalogue CC0 · brand reserved. The per-path map is REUSE.toml',
+    footerTelemetry: 'Telemetry',
+    footerTelemetryTitle: 'Measurements of this site — not yet published',
+    footerVersionTitle: 'See the version timeline',
+    footerCommitTitle: 'See this commit on GitHub',
+    telemetryTitle: 'Telemetry',
+    telemetryIntro: 'What this site measures about itself. Today, only two facts about the artefact you are looking at; the rest is yet to be built.',
+    telemetryPending: 'Pending: interaction with the page (what is clicked, what is read), performance and consent. When it exists it will be measured here, not asserted.',
+    telemetryVersion: 'Version',
+    telemetryCommit: 'Commit',
     consentRegion: 'Legal notice',
     consentText:
       'This site stores one cookie to remember this notice and, if you sign in, one for your session. Your preferences and your character sheet live in your browser. No third-party tracking.',
@@ -128,6 +166,18 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
+    footerSocial: 'ソーシャル',
+    footerLicence: 'ファイルごとのライセンスで公開',
+    footerLicenceTitle: 'コード AGPL-3.0 · UI とドメイン MIT · カタログ CC0 · ブランドは留保。パスごとの対応表は REUSE.toml',
+    footerTelemetry: 'テレメトリー',
+    footerTelemetryTitle: 'このサイトの計測 — 未公開',
+    footerVersionTitle: 'バージョン履歴を見る',
+    footerCommitTitle: 'このコミットを GitHub で見る',
+    telemetryTitle: 'テレメトリー',
+    telemetryIntro: 'このサイトが自身について計測するもの。現在は閲覧中の成果物に関する 2 つの事実のみで、残りは未構築です。',
+    telemetryPending: '未実装: ページ操作（クリック、閲覧）、パフォーマンス、同意。実装後はここで計測され、主張ではなく数値で示されます。',
+    telemetryVersion: 'バージョン',
+    telemetryCommit: 'コミット',
     consentRegion: '法的なお知らせ',
     consentText:
       'このサイトは、この通知を記憶するためのCookieと、ログインした場合はセッション用のCookieを保存します。設定とキャラクターシートはブラウザ内に保存されます。第三者による追跡はありません。',
@@ -155,6 +205,18 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: '내비게이션',
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
+    footerSocial: '소셜',
+    footerLicence: '파일별 라이선스로 공개',
+    footerLicenceTitle: '코드 AGPL-3.0 · UI와 도메인 MIT · 카탈로그 CC0 · 브랜드 보유. 경로별 지도는 REUSE.toml',
+    footerTelemetry: '텔레메트리',
+    footerTelemetryTitle: '이 사이트의 측정값 — 아직 공개되지 않음',
+    footerVersionTitle: '버전 기록 보기',
+    footerCommitTitle: 'GitHub에서 이 커밋 보기',
+    telemetryTitle: '텔레메트리',
+    telemetryIntro: '이 사이트가 자신에 대해 측정하는 것. 오늘은 보고 있는 결과물에 대한 두 가지 사실만 있으며 나머지는 아직 만들어지지 않았습니다.',
+    telemetryPending: '예정: 페이지 상호작용(클릭, 읽기), 성능, 동의. 구현되면 주장이 아니라 여기서 측정됩니다.',
+    telemetryVersion: '버전',
+    telemetryCommit: '커밋',
     consentRegion: '법적 고지',
     consentText:
       '이 사이트는 이 안내를 기억하기 위한 쿠키와, 로그인 시 세션 쿠키를 저장합니다. 환경설정과 캐릭터 시트는 브라우저에 저장됩니다. 제3자 추적은 없습니다.',
@@ -182,6 +244,18 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',
+    footerSocial: 'Social',
+    footerLicence: 'Aberto por licença, por arquivo',
+    footerLicenceTitle: 'Código AGPL-3.0 · UI e domínio MIT · catálogo CC0 · marca reservada. O mapa por caminho está em REUSE.toml',
+    footerTelemetry: 'Telemetria',
+    footerTelemetryTitle: 'Medições deste site — ainda não publicadas',
+    footerVersionTitle: 'Ver o histórico de versões',
+    footerCommitTitle: 'Ver este commit no GitHub',
+    telemetryTitle: 'Telemetria',
+    telemetryIntro: 'O que este site mede sobre si mesmo. Hoje, apenas dois fatos sobre o artefato que você está vendo; o resto ainda está por construir.',
+    telemetryPending: 'Pendente: interação com a página (o que é clicado, o que é lido), desempenho e consentimento. Quando existir, será medido aqui, não afirmado.',
+    telemetryVersion: 'Versão',
+    telemetryCommit: 'Commit',
     consentRegion: 'Aviso legal',
     consentText:
       'Este site guarda um cookie para lembrar deste aviso e, se você entrar, outro para sua sessão. Suas preferências e sua ficha ficam no seu navegador. Sem rastreamento de terceiros.',
