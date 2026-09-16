@@ -183,9 +183,13 @@ const NAV = [
   .stack {
     gap: var(--s5);
   }
+  /* Two columns, filled top-to-bottom so the header's order survives:
+     the first five (the sections) down the left, the tools down the right. */
   .two {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(5, auto);
     gap: var(--s1) var(--s4);
   }
   h2 {
