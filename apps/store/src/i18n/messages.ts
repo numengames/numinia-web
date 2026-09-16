@@ -45,6 +45,11 @@ export interface ChromeMessages {
   readonly footerResources: string;
   readonly footerDataRepo: string;
   readonly footerSocial: string;
+  /** The house column: the four sites, this one marked. */
+  readonly footerHouse: string;
+  readonly footerThisSite: string;
+  /** Brand block: one line saying what this site is. */
+  readonly footerTagline: string;
   /** The build line: licence · telemetry · version · commit (house footer). */
   readonly footerLicence: string;
   readonly footerLicenceTitle: string;
@@ -89,6 +94,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerResources: 'Recursos',
     footerDataRepo: 'Repositorio de datos',
     footerSocial: 'Social',
+    footerHouse: 'Numen Games',
+    footerThisSite: 'estás aquí',
+    footerTagline: 'Una ciudad para el conocimiento, proyectada sobre un tablero de juego. Crónica, cultura material CC0 y el área de jugador.',
     footerLicence: 'Abierto por licencia, por fichero',
     footerLicenceTitle: 'Código AGPL-3.0 · UI y dominio MIT · catálogo CC0 · marca reservada. El mapa por ruta está en REUSE.toml',
     footerTelemetry: 'Telemetría',
@@ -128,6 +136,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerResources: 'Resources',
     footerDataRepo: 'Data repository',
     footerSocial: 'Social',
+    footerHouse: 'Numen Games',
+    footerThisSite: 'you are here',
+    footerTagline: 'A city for knowledge, projected onto a game board. Its chronicle, its CC0 material culture, and the player area.',
     footerLicence: 'Open by licence, per file',
     footerLicenceTitle: 'Code AGPL-3.0 · UI and domain MIT · catalogue CC0 · brand reserved. The per-path map is REUSE.toml',
     footerTelemetry: 'Telemetry',
@@ -167,6 +178,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerResources: 'リソース',
     footerDataRepo: 'データリポジトリ',
     footerSocial: 'ソーシャル',
+    footerHouse: 'Numen Games',
+    footerThisSite: '現在地',
+    footerTagline: '知識のための都市を、ゲーム盤の上に投影したもの。年代記、CC0 の物質文化、そしてプレイヤーエリア。',
     footerLicence: 'ファイルごとのライセンスで公開',
     footerLicenceTitle: 'コード AGPL-3.0 · UI とドメイン MIT · カタログ CC0 · ブランドは留保。パスごとの対応表は REUSE.toml',
     footerTelemetry: 'テレメトリー',
@@ -206,6 +220,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerResources: '리소스',
     footerDataRepo: '데이터 저장소',
     footerSocial: '소셜',
+    footerHouse: 'Numen Games',
+    footerThisSite: '현재 위치',
+    footerTagline: '게임판 위에 투영된 지식의 도시. 연대기, CC0 물질문화, 그리고 플레이어 구역.',
     footerLicence: '파일별 라이선스로 공개',
     footerLicenceTitle: '코드 AGPL-3.0 · UI와 도메인 MIT · 카탈로그 CC0 · 브랜드 보유. 경로별 지도는 REUSE.toml',
     footerTelemetry: '텔레메트리',
@@ -245,6 +262,9 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     footerResources: 'Recursos',
     footerDataRepo: 'Repositório de dados',
     footerSocial: 'Social',
+    footerHouse: 'Numen Games',
+    footerThisSite: 'você está aqui',
+    footerTagline: 'Uma cidade para o conhecimento, projetada sobre um tabuleiro de jogo. Sua crônica, sua cultura material CC0 e a área do jogador.',
     footerLicence: 'Aberto por licença, por arquivo',
     footerLicenceTitle: 'Código AGPL-3.0 · UI e domínio MIT · catálogo CC0 · marca reservada. O mapa por caminho está em REUSE.toml',
     footerTelemetry: 'Telemetria',

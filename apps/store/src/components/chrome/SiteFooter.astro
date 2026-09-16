@@ -1,8 +1,26 @@
 ---
+/**
+ * The house footer, the same shape on the four sites (numinia.org,
+ * numinia.com, numen.games, nwos.numen.games — Oracle instruction,
+ * 2026-09-16). Its job is to reduce uncertainty: where am I, where else can
+ * I go, what is this thing, which build am I reading.
+ *
+ *   brand + one line    Navigation       Numen Games      Legal
+ *                       (two columns)    (the four sites) Social
+ *   ─────────────────────────────────────────────────────────────
+ *   scarab  by Numen Games — we build for a better future.
+ *           licence · telemetry · version · commit
+ *
+ * No copyright line: licences are per file (REUSE.toml). The signature is
+ * brand voice and is never translated. Legal lists only the published
+ * texts — a link to a draft raises uncertainty instead of lowering it; the
+ * drafts (cookies, legal notice) stay reachable from the consent banner.
+ */
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
 import { SOCIAL_LINKS } from '../../lib/social-links';
+import { HOUSE_LINKS, THIS_SITE } from '../../lib/house-links';
 // §8.5 / repertoire rule: the scarab closes every piece, never opens it — the
 // scarab's one canonical home on the site is the foot of the page.
 import scarab from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
@@ -14,6 +32,21 @@ interface Props {
 const { locale } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
+
+// Navigation: the site's sections, in the header's order, then the asset
+// tools. Ten links — rendered in two columns, never stacked.
+const NAV = [
+  { href: `${prefix}/`, label: t.navHome, metric: 'footer-home' },
+  { href: `${prefix}/city/`, label: t.navCity, metric: 'footer-city' },
+  { href: `${prefix}/assets/`, label: t.navAssets, metric: 'footer-assets' },
+  { href: `${prefix}/lap/`, label: t.navLap, metric: 'footer-lap' },
+  { href: `${prefix}/updates/`, label: t.navUpdates, metric: 'footer-updates' },
+  { href: `${prefix}/gallery/`, label: t.navGallery, metric: 'footer-gallery' },
+  { href: `${prefix}/archive/`, label: t.navArchive, metric: 'footer-archive' },
+  { href: `${prefix}/finder/`, label: t.navFinder, metric: 'footer-finder' },
+  { href: `${prefix}/inspector/`, label: t.navInspector, metric: 'footer-inspector' },
+  { href: `${prefix}/docs/`, label: t.navDocs, metric: 'footer-docs' },
+];
 ---
 
 <footer>
@@ -21,86 +54,90 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     010011000110010101100001011101100110010100100000011101000110100001101001011011100110011101110011001000000110001001100101011101000111010001100101011100100010000001110100011010000110000101101110001000000111011101100101001000000110011001101111011101010110111001100100001000000111010001101000011001010110110100101110xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   </p>
   <div class="columns">
-    <nav aria-label={t.footerNavigation}>
+    <div class="brand">
+      <a href={`${prefix}/`} class="name" data-metric="footer-brand">Numinia</a>
+      <p>{t.footerTagline}</p>
+    </div>
+
+    <nav aria-label={t.footerNavigation} class="nav">
       <h2>{t.footerNavigation}</h2>
-      <a href={`${prefix}/`} data-metric="footer-home">{t.navHome}</a>
-      <a href={`${prefix}/city/`} data-metric="footer-city">{t.navCity}</a>
-      <a href={`${prefix}/assets/`} data-metric="footer-assets">{t.navAssets}</a>
-      <a href={`${prefix}/lap/`} data-metric="footer-lap">{t.navLap}</a>
-      <a href={`${prefix}/updates/`} data-metric="footer-updates">{t.navUpdates}</a>
-    </nav>
-    <nav aria-label={t.navAssets}>
-      <h2>{t.navAssets}</h2>
-      <a href={`${prefix}/gallery/`} data-metric="footer-gallery">{t.navGallery}</a>
-      <a href={`${prefix}/archive/`} data-metric="footer-archive">{t.navArchive}</a>
-      <a href={`${prefix}/finder/`} data-metric="footer-finder">{t.navFinder}</a>
-      <a href={`${prefix}/inspector/`} data-metric="footer-inspector">{t.navInspector}</a>
-      <a href={`${prefix}/docs/`} data-metric="footer-docs">{t.navDocs}</a>
-    </nav>
-    <nav aria-label={t.footerResources}>
-      <h2>{t.footerResources}</h2>
-      <a href="https://numen.games" target="_blank" rel="noopener noreferrer" data-metric="footer-numen">Numen Games</a>
-      <!-- The catalogue still lives in a personal repository; the deploy
-           workflow reads it from there (GITHUB_REPO_OWNER=PabloFMM). The
-           footer points at the organisation until the data moves — a
-           personal account is not a house address. -->
-      <a
-        href="https://github.com/numengames"
-        target="_blank"
-        rel="noopener noreferrer"
-        data-metric="footer-data-repo"
-      >
-        {t.footerDataRepo}
-      </a>
-    </nav>
-    <nav aria-label={t.footerLegal}>
-      <h2>{t.footerLegal}</h2>
-      <a href={`${prefix}/legal/privacy/`} data-metric="footer-privacy">{t.legalPrivacy}</a>
-      <a href={`${prefix}/legal/cookies/`} data-metric="footer-cookies">{t.legalCookies}</a>
-      <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
-      <a href={`${prefix}/legal/legal-notice/`} data-metric="footer-legal-notice">{t.legalNotice}</a>
-    </nav>
-    {SOCIAL_LINKS.length > 0 && (
-      <nav aria-label={t.footerSocial}>
-        <h2>{t.footerSocial}</h2>
-        {SOCIAL_LINKS.map((link) => (
-          <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="footer-social">
-            {link.label}
-          </a>
+      <div class="two">
+        {NAV.map((n) => (
+          <a href={n.href} data-metric={n.metric}>{n.label}</a>
         ))}
+      </div>
+    </nav>
+
+    <nav aria-label={t.footerHouse}>
+      <h2>{t.footerHouse}</h2>
+      {HOUSE_LINKS.map((site) =>
+        site.id === THIS_SITE ? (
+          <span class="here" aria-current="page">
+            {site.label} <small>{t.footerThisSite}</small>
+          </span>
+        ) : (
+          <a
+            href={site.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={site.what}
+            data-metric={`footer-house-${site.id}`}
+          >
+            {site.label}
+          </a>
+        ),
+      )}
+    </nav>
+
+    <div class="stack">
+      <nav aria-label={t.footerLegal}>
+        <h2>{t.footerLegal}</h2>
+        <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
+        <a href={`${prefix}/legal/privacy/`} data-metric="footer-privacy">{t.legalPrivacy}</a>
       </nav>
-    )}
+      {SOCIAL_LINKS.length > 0 && (
+        <nav aria-label={t.footerSocial}>
+          <h2>{t.footerSocial}</h2>
+          {SOCIAL_LINKS.map((link) => (
+            <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="footer-social">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      )}
+    </div>
   </div>
+
   <div class="cierre">
     <span class="escarabajo" set:html={scarab} />
-    <!-- Explicit string expressions: Astro collapses template whitespace
-         around inline elements, which once glued "by" to the link. -->
-    <p class="byline">
-      {'by '}<a
-        href="https://numen.games"
-        target="_blank"
-        rel="noopener noreferrer"
-        data-metric="footer-numen-signature"
-      >Numen Games</a>{' — we build for a better future.'}
-    </p>
-    <!-- The build line, the same on the three sites: licence · telemetry ·
-         version · commit. The version keeps linking to /updates/ (the
-         human record); the commit links to GitHub (the exact artefact).
-         /telemetry has no page yet, on purpose: the link is the commitment,
-         the page is its own mission. -->
-    <p class="build">
-      <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer" title={t.footerLicenceTitle} data-metric="footer-licence">{t.footerLicence}</a>
-      {' · '}
-      <a href={`${prefix}/telemetry/`} title={t.footerTelemetryTitle} data-metric="footer-telemetry">{t.footerTelemetry}</a>
-      {' · '}
-      <a href={`${prefix}/updates/`} class="version" title={t.footerVersionTitle} data-metric="footer-version">{VERSION}</a>
-      {' · '}
-      {COMMIT_URL ? (
-        <a href={COMMIT_URL} target="_blank" rel="noopener noreferrer" title={t.footerCommitTitle} data-metric="footer-commit">{COMMIT_SHA}</a>
-      ) : (
-        <span data-metric="footer-commit">{COMMIT_SHA}</span>
-      )}
-    </p>
+    <div class="firma">
+      <!-- Explicit string expressions: Astro collapses template whitespace
+           around inline elements, which once glued "by" to the link. -->
+      <p class="byline">
+        {'by '}<a
+          href="https://numen.games"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-metric="footer-numen-signature"
+        >Numen Games</a>{' — we build for a better future.'}
+      </p>
+      <!-- The build line: licence · telemetry · version · commit. The
+           version links to /updates/ (the human record); the commit to
+           GitHub (the exact artefact). -->
+      <p class="build">
+        <a href={LICENSE_URL} target="_blank" rel="noopener noreferrer" title={t.footerLicenceTitle} data-metric="footer-licence">{t.footerLicence}</a>
+        {' · '}
+        <a href={`${prefix}/telemetry/`} title={t.footerTelemetryTitle} data-metric="footer-telemetry">{t.footerTelemetry}</a>
+        {' · '}
+        <a href={`${prefix}/updates/`} class="version" title={t.footerVersionTitle} data-metric="footer-version">{VERSION}</a>
+        {' · '}
+        {COMMIT_URL ? (
+          <a href={COMMIT_URL} target="_blank" rel="noopener noreferrer" title={t.footerCommitTitle} data-metric="footer-commit">{COMMIT_SHA}</a>
+        ) : (
+          <span data-metric="footer-commit">{COMMIT_SHA}</span>
+        )}
+      </p>
+    </div>
   </div>
 </footer>
 
@@ -117,14 +154,39 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     margin: 0 0 var(--s5);
   }
   .columns {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s7);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s6);
   }
-  nav {
+  @media (min-width: 640px) {
+    .columns {
+      grid-template-columns: 1.4fr 1.4fr 1fr 1fr;
+      gap: var(--s6);
+    }
+  }
+  .brand .name {
+    font-family: var(--display, inherit);
+    font-size: 1.25rem;
+    color: var(--texto);
+  }
+  .brand p {
+    margin: var(--s2) 0 0;
+    max-width: 28ch;
+    color: var(--texto-3);
+  }
+  nav,
+  .stack {
     display: flex;
     flex-direction: column;
     gap: var(--s1);
+  }
+  .stack {
+    gap: var(--s5);
+  }
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s1) var(--s4);
   }
   h2 {
     font-family: var(--mono);
@@ -144,8 +206,19 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   a:focus-visible {
     color: var(--texto);
   }
+  .here {
+    color: var(--texto);
+  }
+  .here small {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--texto-3);
+    margin-left: var(--s1);
+  }
   /* The closing signature: hairline above, scarab in muted ink beside the
-     license line. Arena on Nocturno, Noche on Diurno — never in color (§8.2). */
+     signature and the build line. Never in color (§8.2). */
   .cierre {
     display: flex;
     align-items: center;
@@ -163,26 +236,9 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     width: 28px;
     height: 28px;
   }
-  .cierre p {
+  .firma p {
     margin: 0;
     color: var(--texto-3);
-  }
-  /* The house signature: brand voice, never translated, link in seafoam. */
-  .byline {
-    flex: 1;
-  }
-  .build {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    white-space: nowrap;
-  }
-  .build a {
-    color: var(--texto-3);
-  }
-  .build a:hover,
-  .build a:focus-visible {
-    color: var(--enlace);
   }
   /* A link inside running text must not rely on color alone (WCAG 1.4.1):
      against the quiet byline ink the accent reads 2.58:1, so it stays
@@ -192,18 +248,20 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+  .build {
+    margin-top: var(--s1);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+  .build a {
+    color: var(--texto-3);
+  }
+  .build a:hover,
+  .build a:focus-visible {
+    color: var(--enlace);
+  }
   .build .version {
     color: var(--enlace);
     font-weight: 600;
-  }
-  @media (max-width: 640px) {
-    .cierre {
-      flex-wrap: wrap;
-    }
-    .build {
-      margin-left: 0;
-      white-space: normal;
-      flex-basis: 100%;
-    }
   }
 </style>
