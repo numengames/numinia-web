@@ -1,12 +1,14 @@
 /**
- * The house's social accounts, the same on the three sites (numinia.org,
- * numinia.com, numen.games). Empty until the Oracle hands over the company
- * URLs (X, Discord, GitHub): with an empty list the footer draws no Social
- * column. Never personal accounts.
+ * The house's social accounts, the same list on the four sites (a copy per
+ * repository, no shared package yet). GitHub is the organisation's; X and
+ * Discord are added when the Oracle hands over the company URLs. Never
+ * personal accounts.
  */
 export interface SocialLink {
   readonly label: string;
   readonly href: string;
 }
 
-export const SOCIAL_LINKS: readonly SocialLink[] = [];
+export const SOCIAL_LINKS: readonly SocialLink[] = [
+  { label: 'GitHub', href: 'https://github.com/numengames' },
+];

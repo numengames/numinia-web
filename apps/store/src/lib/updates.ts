@@ -26,6 +26,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.49.0',
+    date: '2026-09-16 12:00',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The footer takes the house shape, the same on the four Numen Games sites: the name written and one line saying what Numinia is; Navigation in two columns; a Numen Games column naming numen.games, numinia.org and nwos.numen.games with this site marked; Legal reduced to the two published texts; Social with the GitHub organisation; the closing line — scarab, signature, licence · telemetry · version · commit',
+      },
+      {
+        type: 'NEW',
+        text: '/telemetry in the five locales: version and commit today, the measurements later — a footer link must have a destination',
+      },
+      {
+        type: 'NEW',
+        text: 'The version in the footer is enforced: a pull request that changes apps/store/src without adding an entry here and raising the number is refused by CI (scripts/check-version-bump.mjs)',
+      },
+      {
+        type: 'FIX',
+        text: 'The build line prints the deploy commit, linked to GitHub — the same SHA /version.json is stamped with; local builds print "dev"',
+      },
+    ],
+  },
+  {
     version: 'v0.48.0',
     date: '2026-09-11 12:05',
     missions: ['MIS-116'],
