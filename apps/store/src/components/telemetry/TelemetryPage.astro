@@ -1,0 +1,84 @@
+---
+/**
+ * /telemetry — the site's measurement of itself. Today it holds the two
+ * facts the footer already prints (version, commit) so the link has a
+ * destination and the internal-link gate holds; the page that measures
+ * interaction, performance and consent is its own mission. numinia.org has
+ * the full version of this idea (/telemetry over the corpus); this is the
+ * product's seat for the same thing.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { VERSION, COMMIT_SHA, COMMIT_URL } from '../../lib/build-info';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+---
+
+<BaseLayout locale={locale} title={`${t.telemetryTitle} — Numinia`} description={t.telemetryIntro}>
+  <header>
+    <h1>{t.telemetryTitle}</h1>
+    <p>{t.telemetryIntro}</p>
+  </header>
+
+  <dl data-telemetry>
+    <dt>{t.telemetryVersion}</dt>
+    <dd>{VERSION}</dd>
+    <dt>{t.telemetryCommit}</dt>
+    <dd>
+      {COMMIT_URL ? (
+        <a href={COMMIT_URL} target="_blank" rel="noopener noreferrer">{COMMIT_SHA}</a>
+      ) : (
+        COMMIT_SHA
+      )}
+    </dd>
+  </dl>
+
+  <p class="pending" role="note">{t.telemetryPending}</p>
+</BaseLayout>
+
+<style>
+  header {
+    max-width: 46rem;
+  }
+  header p {
+    color: var(--texto-2);
+  }
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--s2) var(--s5);
+    margin: var(--s6) 0;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+  }
+  dt {
+    color: var(--texto-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    align-self: baseline;
+  }
+  dd {
+    margin: 0;
+    color: var(--texto);
+  }
+  dd a {
+    color: var(--enlace);
+  }
+  .pending {
+    max-width: 46rem;
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-left: 2px solid var(--ambar);
+    padding: var(--numinia-space-2);
+    border-radius: var(--numinia-radius-sm);
+    font-size: 0.85rem;
+    color: var(--texto-2);
+  }
+</style>
