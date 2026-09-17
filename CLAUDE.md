@@ -4,7 +4,7 @@
 >
 > **Epistemic value.** Resolves who we are, what we build, and which layer/phase any task belongs to — the shared world-model that keeps every agent's predictions aligned.
 > **Pragmatic value.** Gates every action: naming, testing, i18n, security, and what NOT to do. If an action contradicts this file, the action is wrong.
-> **In the system.** Observes: seminal corpus (private `numinia-lore` repo, ADR-020), ADRs, glossary. Regulates: all code and docs. Coupled to: DECISIONS.md, docs/glossary.md, missions (centralized in numengames/numinia-nwos, MIS-072+).
+> **In the system.** Observes: seminal corpus (`numinia-nwos` `lore/`, since 2026-09-17; ADR-020 moved it out of here), ADRs, glossary. Regulates: all code and docs. Coupled to: DECISIONS.md, docs/glossary.md, missions (centralized in numengames/numinia-nwos, MIS-072+).
 >
 > _Part of the Law. Index: [docs/LEY.md](docs/LEY.md)_
 
@@ -203,7 +203,7 @@ La página del códex es papel: Umbral-Diurno con la tercera voz (§13.12).
 
 Interim map: `apps/*` → AGPL-3.0-only · `packages/*` → MIT · docs → CC-BY-4.0 ·
 design assets/data → CC0-1.0 · lore/brand → all rights reserved (the seminal
-corpus itself lives in the private `numinia-lore` repo — ADR-020: no lore in
+corpus itself lives in `numinia-nwos` under `lore/` (public repo, reserved regime; the `numinia-lore` repository retired 2026-09-17) — ADR-020: no lore in
 this monorepo). Dependencies flow apps → packages, never the reverse. `REUSE.toml`
 is the per-file truth; `LEGAL_DEBT.md` lists live exceptions with exit
 conditions. Consume: NEVER BUSL, SSPL, Elastic, Commons Clause, CC-NC, CC-ND,

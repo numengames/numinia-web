@@ -1,7 +1,7 @@
 /**
  * Creation rules — the v0.6.0 manual's character-creation facts as types
  * (MIS-085 D). Only hard mechanics live here (numbers, id associations);
- * the manual's prose stays in numinia-lore (ADR-020) and reaches citizens
+ * the manual's prose stays in numinia-nwos lore/ (ADR-020) and reaches citizens
  * through the Codex.
  */
 

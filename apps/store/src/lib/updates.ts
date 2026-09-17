@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.50.0',
+    date: '2026-09-17 12:50',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The Codex reads the manual from the archive: numinia-nwos lore/game/manual-v0.6.0.md and lore/codex/ — the game came home, the separate numinia-lore repository retires. Same text, byte for byte; the edition matter (glossary, acknowledgments, sheet) follows the same path',
+      },
+      {
+        type: 'FIX',
+        text: 'Deploys no longer send a GitHub token to read the lore: the archive is public and a stale LORE_TOKEN had turned a public read into HTTP 401, blocking every deploy since 16 September',
+      },
+    ],
+  },
+  {
     version: 'v0.49.0',
     date: '2026-09-16 12:00',
     entries: [
