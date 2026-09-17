@@ -216,7 +216,7 @@ SDK's ConsenSys license, tolerated ≤10k MAU, guarded out of dist/ by
 private `numinia-lore` repo and was scrubbed from history (second rewrite
 after ADR-017; backup bundle beside the repo). The Codex now builds from
 `npm run lore:fetch` (real corpus, gitignored) or the committed synthetic
-fixture (hermetic CI). Deploys REQUIRE the `LORE_TOKEN` secret — fail-closed.
+fixture (hermetic CI). Deploys fetch from the public archive, no token (2026-09-17; `LORE_TOKEN` retired) — fail-closed if unreachable.
 Lore opening deferred under DEBT-002 (updated manual + third-party rights
 review + signed D-03 amendment; likely CC BY-SA 4.0). Historical mentions of
 docs/seminal below this line describe the pre-rewrite lineage.

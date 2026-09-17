@@ -1,7 +1,7 @@
 /**
  * Creation rule facts (MIS-085 D) — extracted verbatim-faithful from the
  * v0.6.0 manual, ch. 3 fr. 4–5 + annex + the 15 position blocks. Numbers
- * and id associations only: rule prose stays in numinia-lore (ADR-020).
+ * and id associations only: rule prose stays in numinia-nwos lore/ (ADR-020).
  * Known divergences are catalogued in docs/reference/sheet-rules-findings.md
  * and must be resolved by the Oracle, not silently fixed here.
  */

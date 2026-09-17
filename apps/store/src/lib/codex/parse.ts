@@ -1,6 +1,6 @@
 /**
  * Codex pipeline (MIS-085 Phase A): build-time chapter split of the v0.6.0
- * manual. The manual is ONE canonical file in numinia-lore (File Over App,
+ * manual. The manual is ONE canonical file in numinia-nwos lore/game/ (File Over App,
  * Oracle amendment 2026-08-17); chapters exist only here, as segments of the
  * source string. The sacred invariant: joining every segment reconstructs
  * the source byte-exactly — the parser adds structure around the text, never
