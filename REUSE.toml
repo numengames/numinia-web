@@ -56,6 +56,15 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
 
+# The free editions of the manual (PDF + EPUB), baked by exports.yml from
+# numinia-nwos lore/ and committed so Cloudflare serves them as statics.
+# They ARE the manual: reserved, like the lore they are printed from.
+[[annotations]]
+path = "apps/store/public/descargas/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
+
 # Pinned copy of the design-system kit script (byte-identical, never edited).
 [[annotations]]
 path = "apps/store/src/scripts/sistema.js"

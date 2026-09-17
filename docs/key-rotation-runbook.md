@@ -10,12 +10,15 @@
 
 ## Inventory and steps (in execution order)
 
-### 1. `CLOUDFLARE_API_TOKEN` (GitHub repo secret — INHERITED from the old repo, the standing risk)
+### 1. `CLOUDFLARE_API_TOKEN` — RETIRED 2026-09-17, nothing to rotate
 
-1. Cloudflare dash → My Profile → API Tokens → Create Token → template **"Edit Cloudflare Workers"** (scopes: Account · Workers Scripts · Edit + Account Settings · Read + Zone · Workers Routes · Edit for the zone). Name: `numinia-web-deploy-YYYYMM`. TTL: 90 days.
-2. GitHub repo → Settings → Secrets and variables → Actions → `CLOUDFLARE_API_TOKEN` → Update.
-3. Verify: Actions → "Deploy to Cloudflare" → Run workflow → green smoke test.
-4. Cloudflare dash → delete the OLD token. Done when the old token is dead, not before.
+Deploys run inside Cloudflare (Workers Builds, see deploy-runbook.md); no
+token leaves Cloudflare. The standing risk closes by deletion, not rotation:
+
+1. GitHub repo → Settings → Secrets and variables → Actions → delete
+   `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `LORE_TOKEN`.
+2. Cloudflare dash → My Profile → API Tokens → delete the inherited token.
+   Done when it is dead, not before.
 
 ### 2. `AUTH_SESSION_SECRET` (Worker secret — now a graceful lever, MISSION-027)
 

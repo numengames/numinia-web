@@ -13,6 +13,16 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "numinia-web",
   "main": "apps/store/dist/server/entry.mjs",
+  // The build lives HERE, not in the Cloudflare panel. Workers Builds runs
+  // `npm ci`, then `npx wrangler deploy`; wrangler runs this command before
+  // uploading. One script, versioned and reviewable, does what the retired
+  // GitHub workflow did: env → fetch the lore → turbo build → seal
+  // /version.json. The panel's "Build command" field stays empty. The one
+  // input it cannot carry is PUBLIC_THIRDWEB_CLIENT_ID (a public client id,
+  // per environment): a build variable in the Worker's Settings → Builds.
+  "build": {
+    "command": "node scripts/build-cloudflare.mjs"
+  },
   "compatibility_date": "2026-08-15",
   // Astro's Cloudflare adapter also writes apps/store/dist/server/wrangler.json
   // (bindings it needs). This file is the DEPLOY config: domains + vars.

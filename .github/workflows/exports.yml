@@ -1,0 +1,58 @@
+# The free editions of the manual (PDF + EPUB) need Chromium to print, and
+# the Workers Builds image has no browser. So they are baked HERE, on a
+# GitHub runner, and committed to apps/store/public/descargas/ — from where
+# Cloudflare serves them as statics on the next deploy. Run it when the
+# manual changes (numinia-nwos lore/game/manual-v0.6.0.md) or the codex
+# stylesheet does; it opens a PR with the two files, never pushes to main.
+name: Bake the free editions
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC — catches a manual edit within a week
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Fetch the manual from the archive (public, no token)
+        run: npm run lore:fetch
+      - name: Build (the export pipeline reads the built codex modules)
+        run: npx turbo run build --filter=@numinia/store
+        env:
+          DEPLOY_TARGET: cloudflare
+          PUBLIC_SITE_URL: https://numinia.com
+          GITHUB_REPO_OWNER: PabloFMM
+          GITHUB_REPO_NAME: numinia-digital-goods-data
+          DATA_SOURCE: fixture
+          PUBLIC_THIRDWEB_CLIENT_ID: bake-placeholder
+      - name: Install Chromium (prints the PDF edition)
+        run: npx playwright install --with-deps chromium
+      - name: Bake PDF + EPUB
+        run: npm run exports:codex
+      - name: Copy into public/descargas (what Cloudflare serves)
+        run: |
+          mkdir -p apps/store/public/descargas
+          cp apps/store/dist/client/descargas/*.pdf apps/store/dist/client/descargas/*.epub apps/store/public/descargas/
+          ls -la apps/store/public/descargas
+      - name: Open a PR if the editions changed
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          branch: chore/bake-editions
+          title: 'chore(codex): re-bake the free editions (PDF + EPUB)'
+          commit-message: 'chore(codex): re-bake the free editions from the current manual'
+          body: |
+            The manual or the print stylesheet changed; the PDF and EPUB in
+            `apps/store/public/descargas/` are regenerated from the current
+            `numinia-nwos lore/game/manual-v0.6.0.md`. Merge to publish them
+            on the next Cloudflare deploy.
+          add-paths: apps/store/public/descargas/*
+          delete-branch: true
