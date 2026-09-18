@@ -94,6 +94,11 @@ jobs:
         if: steps.browser-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium firefox webkit
         working-directory: apps/store
+      # DSN-014 (STD-008): a link presents itself. Draws the favicon set and
+      # the 1200×630 share card into apps/store/public before the build (in
+      # production, build-cloudflare.mjs does the same), then proves them.
+      - name: Share card
+        run: node scripts/share-card.mjs && node scripts/share-card.mjs --check
       - name: Build store (hermetic catalog)
         # Through turbo so workspace packages build first (dist/ exports).
         run: npx turbo run build --filter=@numinia/store

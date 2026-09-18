@@ -36,6 +36,7 @@
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.1",
     "@eslint/js": "^9.39.2",
+    "@resvg/resvg-js": "^2.6.2",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.4",
     "esbuild": "^0.28.1",
     "eslint": "^9.39.2",
@@ -48,6 +49,7 @@
     "turbo": "^2.6.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
+    "wawoff2": "^2.0.1",
     "wrangler": "^4.123.0"
   },
   "overrides": {

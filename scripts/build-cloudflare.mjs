@@ -51,6 +51,9 @@ if (!process.env.PUBLIC_THIRDWEB_CLIENT_ID) {
 // 2. lore
 run('node scripts/fetch-lore.mjs');
 
+// 2b. the favicon set and the share card (STD-023 §19) into public/
+run('node scripts/share-card.mjs');
+
 // 3. build
 run('npx turbo run build --filter=@numinia/store', env);
 

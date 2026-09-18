@@ -1,7 +1,7 @@
 ---
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { LANDING_MESSAGES } from '../i18n/messages';
+import { CHROME_MESSAGES, LANDING_MESSAGES } from '../i18n/messages';
 
 interface Props {
   locale: SupportedLocale;
@@ -9,6 +9,9 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = LANDING_MESSAGES[locale];
+// STD-023 §19 — the site's one line is the page description too, so the
+// footer, the head and the share card say the same thing.
+const chrome = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
 /** §6.1 — the canonical binary phrase; copied from §19.3, never invented. */
@@ -23,7 +26,7 @@ const PILLARS = [
 ];
 ---
 
-<BaseLayout locale={locale} title="Numinia" description={t.heroSub}>
+<BaseLayout locale={locale} title="Numinia" description={chrome.footerTagline}>
   <!-- §13.2 hero: the thesis, relief behind it (Nocturno only), the single
        orchestrated moment of the piece — typing + staggered reveals. -->
   <section class="hero" data-materia="relieve" data-escalonado>
