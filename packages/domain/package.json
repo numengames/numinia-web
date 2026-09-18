@@ -21,7 +21,7 @@
     "test:mutation": "stryker run"
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^10.0.0",
