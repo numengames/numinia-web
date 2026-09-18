@@ -1,6 +1,6 @@
 /**
  * Guild constants — 4 guilds × 2 branches × 2 houses, five locales each.
- * Names per docs/glossary.md §1–3. ES is canonical; JA/KO/PT-BR pending native
+ * Names per numinia-nwos CAN-003/CAN-004. ES is canonical; JA/KO/PT-BR pending native
  * QA (open-questions D9).
  */
 
@@ -306,7 +306,7 @@ const healers: House = {
   },
 };
 
-// "Guides" was a trait, not a house — the Explorers guide citizens (ADR-012).
+// "Guides" was a trait, not a house — the Explorers guide citizens.
 const explorers: House = {
   id: 'explorers',
   branchId: 'archangels',
@@ -387,7 +387,7 @@ const chroniclers: Branch = {
   houses: [logographers, bards],
 };
 
-// Hierophants first, Thaumaturges second — Oracle resolution 3 (ADR-012).
+// Hierophants first, Thaumaturges second — Oracle resolution 3.
 const scholars: Branch = {
   id: 'scholars',
   guildId: 'exegetes',

@@ -1,5 +1,5 @@
 /**
- * Drift guard for the design source (ADR-022).
+ * Drift guard for the design source.
  *
  * The Sistema de Diseño lives in numinia-nwos; this repo pins its version and
  * digest in design-source.json. This script fetches the published master and

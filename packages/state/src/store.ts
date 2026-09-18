@@ -1,5 +1,5 @@
 /**
- * GitStateStore — git as the database (ADR-018, option A).
+ * GitStateStore — git as the database.
  * One JSON file per entity in a private repo, read and written through the
  * GitHub contents API. Every write is SHA-conditional (blind overwrites are
  * impossible) and carries the acting wallet in the commit trailer, so the

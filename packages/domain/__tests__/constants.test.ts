@@ -105,7 +105,7 @@ describe('five-locale completeness (MISSION-000 acceptance)', () => {
   });
 });
 
-describe('positions (ADR-013 — lore restrictions as inert data)', () => {
+describe('positions', () => {
   it('covers the fifteen position ids in manual order', () => {
     expect(POSITIONS.map((p) => p.id)).toEqual([...POSITION_IDS]);
   });
@@ -123,7 +123,7 @@ describe('positions (ADR-013 — lore restrictions as inert data)', () => {
   });
 });
 
-describe('structural integrity (glossary as authority, ADR-012)', () => {
+describe('structural integrity', () => {
   it('covers every id exactly once', () => {
     expect(GUILDS.map((g) => g.id).sort()).toEqual([...GUILD_IDS].sort());
     expect(GUILDS.flatMap((g) => g.branches.map((b) => b.id)).sort()).toEqual(
@@ -194,7 +194,7 @@ describe('structural integrity (glossary as authority, ADR-012)', () => {
     });
   });
 
-  it('rank levels ascend 0..5 with no cardinality metadata (ADR-011)', () => {
+  it('rank levels ascend 0..5 with no cardinality metadata', () => {
     expect(RANK_DEFINITIONS.map((r) => r.level)).toEqual([0, 1, 2, 3, 4, 5]);
     for (const rank of RANK_DEFINITIONS) {
       expect(Object.keys(rank).sort()).toEqual(['description', 'id', 'level', 'name']);

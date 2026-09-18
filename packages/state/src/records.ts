@@ -1,5 +1,5 @@
 /**
- * Entity records — the shapes the state repo holds (ADR-018).
+ * Entity records — the shapes the state repo holds.
  * The census is public data (D19); moderation is private. Both are strict:
  * unknown keys, unknown ranks, or malformed wallets never enter the record.
  */

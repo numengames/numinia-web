@@ -1,7 +1,7 @@
 /**
  * Position constants — the fifteen stable functions (glossary §S2; RPG manual
  * ch. 3 fr. 3). Gender restrictions are recorded verbatim as inert data
- * (ADR-013): application code MUST NOT branch on `loreRestriction`.
+ *: application code MUST NOT branch on `loreRestriction`.
  */
 
 import type { Position } from '../types/position.js';

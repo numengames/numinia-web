@@ -5,7 +5,7 @@
  */
 
 // Committed record: imported, not read from disk (runtime-portable).
-import legacyChangelog from '../../../../docs/reference/legacy-changelog.md?raw';
+import legacyChangelog from '../content/legacy-changelog.md?raw';
 
 type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
 
@@ -25,6 +25,16 @@ export interface UpdateVersion {
 
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
+  {
+    version: 'v0.51.0',
+    date: '2026-09-18 11:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The repository keeps code only: its own constitution, decision log, backlog and session records are retired — the rules, the vocabulary and the decisions of the house live in numinia-nwos (numinia.org). Nothing changes on the site; the legacy version history this page shows moved with the site content',
+      },
+    ],
+  },
   {
     version: 'v0.50.0',
     date: '2026-09-17 12:50',

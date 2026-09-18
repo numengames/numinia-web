@@ -1,5 +1,5 @@
 /**
- * resolveRank (ADR-018): the allowlist Oracle wins; otherwise the census
+ * resolveRank: the allowlist Oracle wins; otherwise the census
  * remembers; everything else — outage, absence, poison — lands on Nomad.
  * Privilege fails closed: no path grants more than what is provable.
  */
@@ -67,7 +67,7 @@ describe('resolveRank', () => {
     expect(await resolveRank(CITIZEN)).toBe('nomad');
   });
 
-  it('a poisoned census can never mint an Oracle (ADR-011: allowlist only)', async () => {
+  it('a poisoned census can never mint an Oracle', async () => {
     readMock.mockResolvedValueOnce(censusRecord('oracle'));
     const { resolveRank } = await import('../auth/server');
     expect(await resolveRank(CITIZEN)).toBe('nomad');

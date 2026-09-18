@@ -1,6 +1,6 @@
 /**
  * Equipment — relics and weapons (RPG manual, chapter 6).
- * Deep-lore tier: names and effects are LoreString (ES+EN only, ADR-002).
+ * Deep-lore tier: names and effects are LoreString.
  */
 
 import type { LoreString } from './i18n.js';

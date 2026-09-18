@@ -1,6 +1,5 @@
 /**
- * The Web2→Web3 boundary — ONE configurable constant by decree (ADR-006 §3,
- * open-questions D13: "provisional, may change after QA"). Changing the
+ * The Web2→Web3 boundary — ONE configurable constant by decree. Changing the
  * boundary is a one-line change here and nowhere else.
  */
 

@@ -1,8 +1,8 @@
 /**
  * Creation rule facts (MIS-085 D) — extracted verbatim-faithful from the
  * v0.6.0 manual, ch. 3 fr. 4–5 + annex + the 15 position blocks. Numbers
- * and id associations only: rule prose stays in numinia-nwos lore/ (ADR-020).
- * Known divergences are catalogued in docs/reference/sheet-rules-findings.md
+ * and id associations only: rule prose stays in numinia-nwos lore/.
+ * Known divergences from the manual are marked inline
  * and must be resolved by the Oracle, not silently fixed here.
  */
 
@@ -212,7 +212,7 @@ export const POSITION_MECHANICS: Readonly<Record<PositionId, PositionMechanics>>
   ethnarch: {
     // The manual grants "+1 en Intelecto" (line 6045) — not one of the
     // eight attributes. Recorded as intelligence; divergence #4 in
-    // docs/reference/sheet-rules-findings.md awaits the Oracle.
+    // a divergence from the manual that awaits the Oracle.
     bonusAttribute: 'intelligence',
     initialUmbral: 3,
     initiative: 1,

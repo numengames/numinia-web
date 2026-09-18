@@ -1,5 +1,5 @@
 /**
- * Assets — seven-format digital goods (ADR-003) and their storage layers.
+ * Assets — seven-format digital goods and their storage layers.
  *
  * Phase 0 mirrors the REAL data-repo JSON shape (snake_case records written by
  * the legacy platform). Schema migration to richer i18n metadata is Phase 1.

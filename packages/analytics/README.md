@@ -1,7 +1,7 @@
 # @numinia/analytics
 
 Typed funnel events, consent-gated, transport-pluggable, **zero runtime
-dependencies** (ADR-016). Taxonomy and conventions: [docs/analytics.md](../../docs/analytics.md).
+dependencies**. Taxonomy and conventions: `src/events.ts`.
 
 ```ts
 import {

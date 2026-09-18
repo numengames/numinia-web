@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-18 11:30",
+    "entries": [
+      {
+        "text": "The repository keeps code only: its own constitution, decision log, backlog and session records are retired — the rules, the vocabulary and the decisions of the house live in numinia-nwos (numinia.org). Nothing changes on the site; the legacy version history this page shows moved with the site content",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.51.0",
+  },
+  {
     "date": "2026-09-17 12:50",
     "entries": [
       {

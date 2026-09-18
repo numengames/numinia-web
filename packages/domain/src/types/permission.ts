@@ -3,7 +3,7 @@
  *
  * The constitution names the groups and 19 of the 22; the remaining three
  * (`delete-own-assets`, `ban-users`, `promote-vernacular`) are reconstructed
- * from the legacy v2 permission matrix. Recorded in ADR-014.
+ * from the legacy v2 permission matrix..
  */
 
 export const PERMISSION_GROUPS = [

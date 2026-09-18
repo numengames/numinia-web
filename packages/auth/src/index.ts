@@ -1,5 +1,5 @@
 /**
- * @numinia/auth — vendor-independent, fail-closed auth core (ADR-006).
+ * @numinia/auth — vendor-independent, fail-closed auth core.
  * The thirdweb integration layer (MISSION-002, gate D14) builds on top of
  * these primitives; nothing here depends on any vendor.
  */

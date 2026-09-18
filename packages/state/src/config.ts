@@ -1,6 +1,5 @@
 /**
- * State configuration — fail closed at boot (ADR-018, same doctrine as
- * @numinia/auth). A missing variable crashes naming itself; no fallback.
+ * State configuration — fail closed at boot. A missing variable crashes naming itself; no fallback.
  * The token is the crown jewel: fine-grained, scoped to the ONE state repo.
  */
 

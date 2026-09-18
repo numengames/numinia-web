@@ -13,7 +13,7 @@ import {
 import { REWARD_TRACKS, SEASON_STATUSES } from '../src/types/season.js';
 import { ATTACK_TYPES } from '../src/types/equipment.js';
 
-describe('glossary id pins (ADR-012 — changing these means changing the glossary first)', () => {
+describe('glossary id pins', () => {
   it('attributes are 4 physical + 4 psychic', () => {
     expect(PHYSICAL_ATTRIBUTES).toEqual(['strength', 'movement', 'size', 'constitution']);
     expect(PSYCHIC_ATTRIBUTES).toEqual(['intelligence', 'wisdom', 'perception', 'charisma']);

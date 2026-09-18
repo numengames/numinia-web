@@ -1,11 +1,11 @@
 /**
- * Analytics event taxonomy — the funnel backbone (ADR-016).
+ * Analytics event taxonomy — the funnel backbone.
  *
  * Rules:
  * - Every event is declared here with a strict props spec. Undeclared props
  *   do not travel (privacy by design; wallet addresses are never a prop).
  * - Names are frozen: dashboards and funnels break silently when names drift,
- *   so changing one requires updating docs/analytics.md first.
+ *   so changing one changes dashboards: rename deliberately.
  *
  * Validation is hand-rolled on purpose: events are internally produced (the
  * compiler already types them), so runtime guards only need to be strict and

@@ -1,8 +1,6 @@
 // Fetch the manual and the Codex matter from the archive into the
 // gitignored apps/store/.lore/ directory. The lore lives in
-// numengames/numinia-nwos under lore/ (Oracle, 2026-09-17: the separate
-// numinia-lore repository retires; before that, 2026-08-16, it had left
-// this code repo — ADR-020 here). Production deploys run this before
+// numengames/numinia-nwos under lore/. Production deploys run this before
 // building so the Codex ships the real corpus; hermetic/CI builds skip it
 // and use the fixtures. Fails loud: a deploy that cannot reach the lore
 // must not silently ship the synthetic manual to citizens.

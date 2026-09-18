@@ -1,6 +1,6 @@
 /**
  * Guilds — Basic Level Theory hierarchy (4 guilds × 2 branches × 2 houses).
- * Ids are frozen by docs/glossary.md §1–3 (ADR-012).
+ * Names per numinia-nwos CAN-003/CAN-004; ids are their English in lower case.
  */
 
 import type { LocalizedString } from './i18n.js';

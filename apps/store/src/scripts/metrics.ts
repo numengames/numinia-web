@@ -1,6 +1,6 @@
 /**
  * Page metrics bootstrap — one delegated listener for every data-metric
- * element plus an automatic page_view (funnel foundation, ADR-016).
+ * element plus an automatic page_view.
  *
  * Consent now comes from the combined Terms+Cookies banner (D12 slice 1):
  * granted only when the versioned acceptance cookie is present, or the

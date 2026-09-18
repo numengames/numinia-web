@@ -1,5 +1,5 @@
 /**
- * Server-side state wiring (ADR-018): git as the database, lazily configured.
+ * Server-side state wiring: git as the database, lazily configured.
  * Same doctrine as auth: a missing env answers "not configured" on the
  * endpoint (503, fail closed) instead of crashing at module scope. Until the
  * Oracle creates the private state repo and mints its token (D23), every

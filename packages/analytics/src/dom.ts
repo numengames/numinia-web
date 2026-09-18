@@ -1,7 +1,7 @@
 /**
  * DOM wiring — one delegated click listener for the whole page.
  *
- * Convention (ADR-016): every interactive element carries `data-metric="<id>"`.
+ * Convention: every interactive element carries `data-metric="<id>"`.
  * Buttons ship zero extra JavaScript; the single listener reads the attribute
  * and emits `cta_click`. Structural typing keeps this package DOM-lib-free
  * and the binding testable without jsdom.

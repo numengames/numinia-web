@@ -1,5 +1,5 @@
 /**
- * Attestations (ADR-018, option C) — permanent signed statements the citizen
+ * Attestations — permanent signed statements the citizen
  * keeps in their own file: a seal earned, a rank granted, a threshold
  * crossed. The platform verifies by signature, never by lookup.
  *
@@ -16,7 +16,7 @@ import { fromBase64Url, timingSafeEqualBytes, toBase64Url } from './encoding.js'
 
 const VERSION = 'na1';
 
-/** One wallet, one spelling: lowercase hex, like the census (ADR-018). */
+/** One wallet, one spelling: lowercase hex, like the census. */
 const wallet = z.string().regex(/^0x[0-9a-f]{40}$/);
 
 const payloadSchema = z.discriminatedUnion('typ', [
@@ -29,7 +29,7 @@ const payloadSchema = z.discriminatedUnion('typ', [
   z.strictObject({
     typ: z.literal('rank-granted'),
     sub: wallet,
-    // An Oracle is never attestable: the allowlist is its only source (ADR-011).
+    // An Oracle is never attestable: the allowlist is its only source.
     rank: z.enum(RANKS.filter((rank) => rank !== 'oracle') as [string, ...string[]]),
     iat: z.number().int().nonnegative(),
   }),

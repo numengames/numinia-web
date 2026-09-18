@@ -1,5 +1,5 @@
 /**
- * Design-source guarantees (MISSION-006 Phase A · ADR-022).
+ * Design-source guarantees.
  *
  * The Sistema de Diseño is NOT kept in this repository: numinia-nwos governs
  * it and this repo only carries the kit files it actually ships, pinned in

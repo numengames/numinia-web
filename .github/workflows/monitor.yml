@@ -59,7 +59,7 @@ jobs:
           if [ -n "$open" ]; then
             gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "Still failing — $body"
           else
-            full=$(printf 'The night watch found the city dark. %s\n\nDiagnosis starts at docs/deploy-runbook.md (verify from OUTSIDE Spain-on-match-day networks first).' "$body")
+            full=$(printf 'The night watch found the city dark. %s\n\nDiagnosis: verify from OUTSIDE Spain-on-match-day networks first).' "$body")
             gh issue create --repo "$GITHUB_REPOSITORY" --label night-watch \
               --title "numinia.com is failing its probes" \
               --body "$full"

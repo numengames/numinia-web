@@ -1,6 +1,6 @@
 /**
  * Missions — operational work units of the Operating System layer.
- * Missions are NOT Adventures (ADR-005): work in Huly, not game in Hyperfy.
+ * Missions are NOT Adventures: work in Huly, not game in Hyperfy.
  */
 
 import type { GuildId } from './guild.js';
@@ -17,7 +17,7 @@ export type MissionEffort = (typeof MISSION_EFFORTS)[number];
 export const MISSION_STATUSES = ['backlog', 'in-progress', 'in-review', 'done'] as const;
 export type MissionStatus = (typeof MISSION_STATUSES)[number];
 
-/** Gherkin triplet — dual-agent readable acceptance (ADR-004). */
+/** Gherkin triplet — dual-agent readable acceptance. */
 export interface AcceptanceCriterion {
   readonly given: string;
   readonly when: string;

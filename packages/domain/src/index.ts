@@ -1,6 +1,6 @@
 /**
  * @numinia/domain — the Functional Model of Numinia.
- * Framework-agnostic (ADR-009). Naming authority: docs/glossary.md (ADR-012).
+ * Framework-agnostic. Naming authority: numinia-nwos CAN-003/CAN-004.
  */
 
 export * from './types/i18n.js';
