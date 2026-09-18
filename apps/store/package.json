@@ -7,7 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node ../../scripts/share-card.mjs && astro build",
     "preview": "astro preview",
     "type-check": "astro check",
     "lint": "eslint src --no-error-on-unmatched-pattern",
