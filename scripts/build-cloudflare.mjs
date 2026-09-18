@@ -50,6 +50,9 @@ if (!process.env.PUBLIC_THIRDWEB_CLIENT_ID) {
 
 // 2. lore
 run('node scripts/fetch-lore.mjs');
+// (the favicon set and the share card, STD-023 §19, are drawn by the
+// store's own build script — apps/store/package.json — so every path that
+// builds the store gets them: this one, CI's, and a plain `npm run build`.)
 
 // 3. build
 run('npx turbo run build --filter=@numinia/store', env);

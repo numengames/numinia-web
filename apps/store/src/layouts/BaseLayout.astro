@@ -94,8 +94,14 @@ const urlFor = (target: SupportedLocale): string =>
     <meta property="og:url" content={urlFor(locale)} />
     {/* The share card (Sistema: Noche + relieve + wordmark + the 1920·2020·2120
         seal). Absolute URL: scrapers resolve nothing relative. */}
-    <meta property="og:image" content={ogImage ?? `${site}/og.png`} />
+    <meta property="og:image" content={ogImage ?? `${site}/og-card.png`} />
+    <meta property="og:site_name" content="Numinia — Numen Games" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage ?? `${site}/og-card.png`} />
+    <meta name="theme-color" content="#14110F" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta property="og:locale" content={OG_LOCALES[locale]} />
     <link rel="canonical" href={urlFor(locale)} />
     {SUPPORTED_LOCALES.map((alt) => (

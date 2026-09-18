@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.52.0',
+    date: '2026-09-18 14:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A link to this site presents itself (DSN-014): the scarab as favicon — the site had none —, one line in the five languages that says what Numinia is (the same line in the footer, the page description and the share card), and a 1200×630 share card drawn at build from the house type and colours. The old og.png (the wordmark and three years) retires',
+      },
+    ],
+  },
+  {
     version: 'v0.51.0',
     date: '2026-09-18 11:30',
     entries: [

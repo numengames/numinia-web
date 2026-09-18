@@ -103,6 +103,10 @@ jobs:
           # without one, and the legal gate (MIS-086) must be testable. Nothing
           # here can connect to a wallet — the gate spec never gets that far.
           PUBLIC_THIRDWEB_CLIENT_ID: e2e-placeholder-client-id
+      # DSN-014 (STD-008): a link presents itself. The store's build script
+      # drew the favicon set and the 1200×630 share card; this proves them.
+      - name: Share card
+        run: node scripts/share-card.mjs --check
       - name: Bake the export editions (PDF + EPUB, fixture corpus — MIS-085 C)
         run: npm run exports:codex
         env:
