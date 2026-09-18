@@ -4,8 +4,7 @@
  * `terms` and `privacy` are served from the real corpus (verbatim copies of
  * the numinia-nwos masters, rendered by components/legal/) — only `cookies`
  * and `legal-notice` remain DRAFTS pending Oracle review (MISSION-003 P3).
- * Drafts are authored in ES + EN only (ADR-002: legal text needs qualified
- * translation, not coverage); other locales render the EN text behind a
+ * Drafts are authored in ES + EN only; other locales render the EN text behind a
  * language notice. Placeholders marked [PENDING] must be filled by the Oracle.
  */
 

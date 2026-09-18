@@ -2,7 +2,7 @@
  * Structured telemetry (MISSION-021) — one JSON line per event, consumed by
  * Workers Logs (observability.enabled in wrangler.jsonc). No PII by design:
  * wallets are truncated, messages are size-capped, and nothing here ever
- * feeds analytics — this is operations, not measurement (ADR-016 stays).
+ * feeds analytics — this is operations, not measurement.
  */
 
 const MESSAGE_CAP = 500;

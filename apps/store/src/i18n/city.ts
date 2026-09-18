@@ -1,6 +1,6 @@
 /**
  * La Ciudad — locale plumbing for the chapter scroller. The narrative itself
- * lives in city-landing.ts (numinia.com canon, ES+EN per ADR-002); other
+ * lives in city-landing.ts; other
  * locales read EN behind a language notice.
  */
 

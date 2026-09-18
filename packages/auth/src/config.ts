@@ -1,5 +1,5 @@
 /**
- * Auth configuration — fail closed at boot (ADR-006 non-negotiable §2).
+ * Auth configuration — fail closed at boot.
  * A missing or weak secret crashes naming the variable; there is no fallback.
  */
 

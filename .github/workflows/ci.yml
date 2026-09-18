@@ -52,7 +52,7 @@ jobs:
           reuse lint
       - name: Acceptance (Gherkin)
         run: npm run test:acceptance
-      - name: License guard (DEBT-001 — no ConsenSys code in dist/)
+      - name: License guard
         run: npm run licenses:guard
       - name: Coverage artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -195,7 +195,7 @@ jobs:
   # them do. Adding a gate here means adding it to `needs`, or the ruleset
   # keeps protecting yesterday's list.
   #
-  # The audit is deliberately absent: it reports, it does not block (DEBT-003).
+  # The audit is deliberately absent: it reports, it does not block.
   build:
     name: build
     runs-on: ubuntu-latest

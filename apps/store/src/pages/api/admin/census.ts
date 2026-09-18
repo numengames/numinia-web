@@ -1,5 +1,5 @@
 /**
- * The census API (ADR-018, MISSION-016) — rank management as governed acts.
+ * The census API — rank management as governed acts.
  * GET reads a citizen's public census record; POST grants a rank. Both are
  * gated on the REAL session and the permission ladder; every write lands as
  * a commit in the private state repo with the acting wallet in its trailer.
@@ -7,7 +7,7 @@
  * Governance rules encoded here, not in the UI:
  *  - `manage-users` opens the census; granting ARCHON needs `promote-archon`.
  *  - The census can never mint an Oracle — that rank lives only in the
- *    ADMIN_WALLET_ADDRESSES allowlist (ADR-011).
+ *    ADMIN_WALLET_ADDRESSES allowlist.
  *  - Without the state repo configured (D23 pending), everything is 503.
  */
 
@@ -52,7 +52,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
 
 const grantSchema = z.object({
   wallet: z.string().regex(WALLET, 'wallet must be a 0x-prefixed address'),
-  // 'oracle' is deliberately not grantable here (ADR-011: allowlist only).
+  // 'oracle' is deliberately not grantable here.
   rank: z.enum(RANKS.filter((rank) => rank !== 'oracle') as [Rank, ...Rank[]]),
 });
 

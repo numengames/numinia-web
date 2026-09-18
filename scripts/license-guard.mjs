@@ -1,4 +1,4 @@
-// License guard (ADR-019 / LEGAL_DEBT DEBT-001): the ConsenSys-licensed
+// License guard: the ConsenSys-licensed
 // MetaMask SDK may exist in node_modules (transitive via thirdweb) but must
 // NEVER be distributed — its notice-propagating restrictions are incompatible
 // with the AGPL-3.0-only apps.
@@ -8,8 +8,7 @@
 // cannot be trusted alone (minifiers strip license comments), so the string
 // sweep below is only a second net, never the proof.
 //
-// Severity follows EXPOSURE, not directory names (ADR-019 calibration,
-// Oracle-signed 2026-08-16): the app the deploy config actually ships gets
+// Severity follows EXPOSURE, not directory names: the app the deploy config actually ships gets
 // errors; an undeployed app gets warnings; an undeterminable deploy config
 // fails closed — everything is an error, same as a missing manifest.
 // Exception: the ConsenSys forbidden packages are an error EVERYWHERE — their
@@ -97,7 +96,7 @@ for (const app of APPS) {
 
       if (FORBIDDEN_PACKAGES.includes(pkg)) {
         // Error in every app: the uncompliable AGPL state exists the moment
-        // this enters a bundle, served or not (DEBT-001 exit trigger).
+        // this enters a bundle, served or not.
         report(app, `${app} [${bucket}] bundles forbidden package ${pkg} (${moduleId})`, {
           always: true,
         });
@@ -188,8 +187,8 @@ for (const warning of [...new Set(warnings)]) console.warn(`LICENSE GUARD WARNIN
 if (errors.length > 0) {
   console.error('LICENSE GUARD FAILED:');
   for (const failure of [...new Set(errors)]) console.error(`  - ${failure}`);
-  console.error('If a ConsenSys/MetaMask finding fired, that is the DEBT-001 exit trigger');
-  console.error('(docs → LEGAL_DEBT.md): remove the MetaMask SDK connector (EIP-6963 +');
+  console.error('If a ConsenSys/MetaMask finding fired, the SDK reached the bundle:');
+  console.error('remove the MetaMask SDK connector (EIP-6963 +');
   console.error('WalletConnect path). For Apache findings, write or update NOTICE.');
   process.exit(1);
 }

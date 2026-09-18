@@ -11,7 +11,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { buildTriangleGlb } from './support/triangle-glb';
 
 // Baselines are rendered inside the CI image (mcr playwright:noble via
-// podman — see docs/remote-checklist.md item 12, closed 2026-08-16) and
+// podman) and
 // verified to pass on dev machines within the antialiasing ratio below.
 // Regenerate with: podman run --rm --security-opt label=disable \
 //   -v $REPO:/work -w /work/apps/store -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \

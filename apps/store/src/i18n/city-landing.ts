@@ -2,7 +2,7 @@
  * The City one-pager content — CANON, carried over verbatim from
  * numengames/numinia-web `src/content/landing.ts` (the live numinia.com
  * copy, itself derived from the Numinia deck v0.6.0). Lore languages only
- * (ES canonical + EN), per ADR-002. Do not rewrite copy here without the
+ * (ES canonical + EN), . Do not rewrite copy here without the
  * Oracle: structure may evolve, the words are his.
  */
 

@@ -1,5 +1,5 @@
 /**
- * The census desk (MISSION-016, ADR-018): look a wallet up in the public
+ * The census desk: look a wallet up in the public
  * census, grant it a rank. Every state is honest — refusal without rank,
  * "not configured" while D23 pends (503), absence as an answer — and every
  * grant the server accepts became an audited commit before this island

@@ -6,7 +6,7 @@ import {
   isSupportedLocale,
 } from '../src/types/i18n.js';
 
-describe('i18n foundations (ADR-001, ADR-002)', () => {
+describe('i18n foundations', () => {
   it('supports exactly the five ratified UI locales', () => {
     expect(SUPPORTED_LOCALES).toEqual(['es', 'en', 'ja', 'ko', 'pt-br']);
   });

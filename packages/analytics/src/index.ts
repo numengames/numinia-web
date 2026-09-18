@@ -1,6 +1,6 @@
 /**
  * @numinia/analytics — typed funnel events, consent-gated, transport-pluggable.
- * Taxonomy and conventions: docs/analytics.md (ADR-016).
+ * Taxonomy and conventions: events.ts in this package.
  */
 
 export * from './events.js';

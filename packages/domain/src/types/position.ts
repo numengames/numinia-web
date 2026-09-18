@@ -1,7 +1,7 @@
 /**
  * Positions — the fifteen stable functions of Numinia (glossary §S2).
  *
- * ADR-013: `loreRestriction` records the manual's gender restrictions as inert
+ * `loreRestriction` records the manual's gender restrictions as inert
  * data. Application code MUST NOT branch on it; the product policy is an open
  * Oracle decision.
  */

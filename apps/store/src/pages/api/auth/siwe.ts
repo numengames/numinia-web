@@ -4,7 +4,7 @@
  * only in httpOnly cookies. Fails closed on any malformed or invalid input.
  *
  * Spike scope: EOA signatures via local recovery (no RPC). Contract-wallet
- * support (EIP-1271) belongs to the ADR-006 auth session.
+ * support (EIP-1271) is pending.
  */
 
 import type { APIRoute } from 'astro';

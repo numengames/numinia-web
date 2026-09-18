@@ -1,7 +1,7 @@
 /**
  * Creation rules — the v0.6.0 manual's character-creation facts as types
  * (MIS-085 D). Only hard mechanics live here (numbers, id associations);
- * the manual's prose stays in numinia-nwos lore/ (ADR-020) and reaches citizens
+ * the manual's prose stays in numinia-nwos lore/ and reaches citizens
  * through the Codex.
  */
 
@@ -35,7 +35,7 @@ export interface PositionMechanics {
   /** Starting Umbral points (2–4, per-position block). */
   readonly initialUmbral: number;
   /** Initiative value (1–4). The manual assigns it but defines no consuming
-   * rule (divergence #7, docs/reference/sheet-rules-findings.md). */
+   * rule — a known divergence from the manual, awaiting the Oracle. */
   readonly initiative: number;
   readonly affinity: PositionAffinityTiers;
 }

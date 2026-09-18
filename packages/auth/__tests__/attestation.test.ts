@@ -1,5 +1,5 @@
 /**
- * Attestations (ADR-018, option C): permanent signed statements the citizen
+ * Attestations: permanent signed statements the citizen
  * keeps. Unlike sessions they never expire — the city said it, the citizen
  * carries it. Domain separation is load-bearing: an attestation must never
  * verify as a session nor a session as an attestation, secret sharing or not.
@@ -141,7 +141,7 @@ describe('attestations — fail closed', () => {
     expect(await verifyAttestation(token, SECRET)).toEqual({ valid: false, reason: 'structure' });
   });
 
-  it('an oracle rank is not attestable — the allowlist is its only source (ADR-011)', async () => {
+  it('an oracle rank is not attestable — the allowlist is its only source', async () => {
     const payload = { typ: 'rank-granted', sub: WALLET, rank: 'oracle', iat: 1 };
     await expect(
       createAttestation(payload as unknown as AttestationPayload, SECRET),

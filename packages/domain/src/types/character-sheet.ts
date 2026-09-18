@@ -3,8 +3,7 @@
  * and Ranks). Progressive by design: a Nomad's sheet is mostly empty; fields
  * fill as the citizen advances (guild/faction at Session Zero, etc.).
  *
- * `walletAddress` is optional (ADR-006: auth is progressive, wallet is not
- * the entry requirement) and MUST never leak into analytics.
+ * `walletAddress` is optional and MUST never leak into analytics.
  */
 
 import type { Rank } from './rank.js';

@@ -35,7 +35,7 @@ function storeWith(fetchImpl: typeof fetch): GitStateStore {
   return new GitStateStore(parseStateEnv(ENV), fetchImpl);
 }
 
-describe('config — fail closed at boot (ADR-018, same doctrine as auth)', () => {
+describe('config — fail closed at boot', () => {
   it('parses a complete environment and defaults the branch to main', () => {
     const env = parseStateEnv(ENV);
     expect(env.owner).toBe('numengames');

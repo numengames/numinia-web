@@ -1,5 +1,5 @@
 /**
- * i18n foundations (ADR-001, ADR-002).
+ * i18n foundations.
  *
  * `LocalizedString` has five REQUIRED fields — a constant with a missing
  * translation does not compile. `LoreString` restricts deep narrative content

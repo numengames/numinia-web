@@ -1,6 +1,6 @@
 # Trademarks — Numen Games S.L.
 
-> Stub mandated by canon C-005 (ADR-019). Registration status pending legal
+> Stub mandated by canon C-005. Registration status pending legal
 > review — no mark below is claimed as registered (®) until that review lands.
 
 ## Claimed marks (™, unregistered)

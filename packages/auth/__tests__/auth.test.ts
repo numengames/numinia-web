@@ -14,7 +14,7 @@ import { WEB3_BOUNDARY_RANK, walletRequiredFor } from '../src/boundary.js';
 const SECRET = 's'.repeat(32);
 const NOW = 1_755_000_000_000;
 
-describe('auth config (fail closed — ADR-006 non-negotiable)', () => {
+describe('auth config', () => {
   it('accepts a strong secret', () => {
     expect(parseAuthEnv({ AUTH_SESSION_SECRET: SECRET }).sessionSecret).toBe(SECRET);
   });

@@ -1,6 +1,6 @@
 /**
  * Rank constants — descriptions from the Compendium of Attributes and Ranks.
- * ADR-011: no Oracle cardinality anywhere in this file.
+ * no Oracle cardinality anywhere in this file.
  */
 
 import type { RankDefinition } from '../types/rank.js';

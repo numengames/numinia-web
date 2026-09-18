@@ -1,6 +1,6 @@
 /**
  * Permission constants — the cumulative rank → permission ladder.
- * 22 permissions in 6 groups (ADR-014 documents the three reconstructed ones).
+ * 22 permissions in 6 groups.
  */
 
 import type { Permission, ResolvedPermissions } from '../types/permission.js';

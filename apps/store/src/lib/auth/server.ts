@@ -1,7 +1,7 @@
 /**
  * Server-side auth wiring for the MISSION-002 Step 0 spike (gate D14).
  *
- * Layering per ADR-006: thirdweb only PROVES wallet ownership (SIWE payload
+ * Layering per thirdweb only PROVES wallet ownership (SIWE payload
  * verification, incl. smart accounts via RPC). The session itself is ours —
  * an HMAC token from @numinia/auth, so the vendor never holds our trust root.
  *
@@ -34,7 +34,7 @@ const envSchema = z.object({
 
 /**
  * Config is read LAZILY: a missing secret must answer "not configured" on the
- * endpoint (fail closed, ADR-006) instead of throwing at module scope on
+ * endpoint instead of throwing at module scope on
  * every request — which crashed the route and logged a stack per visit.
  */
 let cached: {
@@ -153,7 +153,7 @@ export function rankForAddress(address: string): Rank {
 }
 
 /**
- * Full rank resolution (ADR-018): the allowlist Oracle wins; otherwise the
+ * Full rank resolution: the allowlist Oracle wins; otherwise the
  * public census remembers what the city granted. Fail closed in privilege
  * terms — a census outage or absent record grants nothing above Nomad, and
  * a census can never mint an Oracle (that stays in the env allowlist).

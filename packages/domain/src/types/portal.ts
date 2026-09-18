@@ -1,6 +1,6 @@
 /**
  * Portals — spatial navigation into the districts' virtual worlds
- * (14 portals across the 4 districts in the legacy map, ADR-010).
+ *.
  */
 
 import type { LocalizedString } from './i18n.js';

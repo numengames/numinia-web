@@ -1,4 +1,4 @@
-// DEBT-001 metafile (LEGAL_DEBT.md): minifiers strip license comments, so a
+// Licence metafile: minifiers strip license comments, so a
 // string scan of dist/ has false negatives. This plugin records the REAL
 // module list of every bundle into dist/.license-modules.json, which
 // scripts/license-guard.mjs audits — module paths, not strings.

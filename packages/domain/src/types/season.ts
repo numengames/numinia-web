@@ -1,7 +1,6 @@
 /**
- * Seasons — temporal progression (Battle-Pass shape from the legacy design,
- * ADR-010). Adventures are Narrative Projection (game, Hyperfy); they are NOT
- * missions (ADR-005).
+ * Seasons — temporal progression. Adventures are Narrative Projection (game, Hyperfy); they are NOT
+ * missions.
  */
 
 import type { LocalizedString } from './i18n.js';

@@ -1,20 +1,17 @@
-## What & why
+## Qué cambia
 
-<!-- One paragraph. Link the mission/issue. -->
+<!-- Qué se ve distinto en la web, un punto por elemento. -->
 
-## Track
+## Cómo comprobarlo
 
-- [ ] `store` (spike/PoC) — or — [ ] `com` (production; review required)
+<!-- Dónde hacer clic en la preview. -->
 
-## Gates (mirror of the DoD — check honestly)
+## Verificado en local
 
-- [ ] Tests written first; `npm run verify` green locally
-- [ ] 100% per-file coverage holds on touched `packages/*`
-- [ ] New interactive elements carry `data-metric`
-- [ ] Domain terms untouched — or glossary updated FIRST (ADR-012)
-- [ ] Autonomous architectural decision? → ADR added in `docs/decisions/`
-- [ ] Gherkin updated if acceptance behavior changed
+<!-- Las puertas que se han pasado, una línea. -->
 
-## What was NOT done (Rule 8)
+## Pendiente, fuera de esta PR
 
-<!-- Deferred items, known gaps, uncertainty. Empty = suspicious. -->
+<!-- Lo que se deja fuera a sabiendas. -->
+
+- [ ] Entrada en `apps/store/src/lib/updates.ts` y versión subida (si cambia `apps/store/src/**`)

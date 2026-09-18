@@ -1,4 +1,4 @@
-# REUSE.toml — per-directory license map (canon C-005, ADR-019).
+# REUSE.toml — per-directory license map.
 # When several annotations match a file, the LAST one wins; order runs
 # general → specific. `precedence = "closest"` lets a future in-file SPDX
 # header (Phase C) override its directory default.
@@ -15,15 +15,15 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "MIT"
 
-# ── Documentation: root .md files, docs/, missions, Gherkin specs ────────────
+# ── Documentation: root .md files, Gherkin specs ─────────────────────────────
 [[annotations]]
-path = ["*.md", "docs/**", "missions/**", "features/**"]
+path = ["*.md", "features/**"]
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
 # The seminal corpus no longer lives here: moved to the private lore repo
-# (Oracle order 2026-08-16, ADR-020) and scrubbed from history. Lore that
+# and scrubbed from history. Lore that
 # remains embedded in code (city-landing.ts) keeps its reserved annotation.
 
 # ── Apps: deployable platform that decides (identity, progression, billing) ──
@@ -72,7 +72,7 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC0-1.0"
 
-# Deep lore embedded in app code (ADR-019 finding): code is AGPL, the
+# Deep lore embedded in app code: code is AGPL, the
 # narrative text it carries stays reserved.
 [[annotations]]
 path = "apps/store/src/i18n/city-landing.ts"
@@ -114,7 +114,7 @@ SPDX-FileCopyrightText = [
 SPDX-License-Identifier = "OFL-1.1"
 
 # ── Design source ────────────────────────────────────────────────────────────
-# The Sistema de Diseño itself is NOT in this repo (ADR-022): numinia-nwos
+# The Sistema de Diseño itself is NOT in this repo: numinia-nwos
 # governs it. What stays here is what the product ships — the kit copies
 # (CC0, above) and the two brand marks below, which are reserved.
 [[annotations]]
