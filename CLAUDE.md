@@ -2,7 +2,7 @@
 
 This repository serves **numinia.com**, the game's site. The rules, the
 vocabulary and the architecture of Numen Games live in one place,
-`numengames/numinia-nwos` (numinia.org): read its `AGENTS.md` first,
+`numengames/numinia-archive` (numinia.org): read its `AGENTS.md` first,
 transition regime included. This file only says what is specific here.
 
 ## What this is

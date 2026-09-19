@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.52.1',
+    date: '2026-09-19 20:20',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The archive this site reads from is numengames/numinia-archive — the name the repository has had since 2026-09-17. The lore fetched at build, the pinned design source and the links in the README said numinia-nwos and worked only because GitHub redirects the old name',
+      },
+    ],
+  },
+  {
     version: 'v0.52.0',
     date: '2026-09-18 14:30',
     entries: [
