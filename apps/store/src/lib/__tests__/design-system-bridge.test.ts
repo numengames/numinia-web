@@ -28,7 +28,7 @@ const manifest = async (): Promise<DesignSource> =>
 describe('pinned design source', () => {
   it('names the governing repo and a pinned version', async () => {
     const { source } = await manifest();
-    expect(source.repo).toBe('numengames/numinia-nwos');
+    expect(source.repo).toBe('numengames/numinia-archive');
     expect(source.version).toMatch(/^\d+\.\d+\.\d+$/);
     expect(source.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
