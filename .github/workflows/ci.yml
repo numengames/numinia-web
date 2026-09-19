@@ -1,3 +1,37 @@
+# SPDX-FileCopyrightText: 2026 Numen Games S.L.
+# SPDX-License-Identifier: MIT
+#
+# This workflow is the repository's feedback loop: it is where a rule stops
+# being prose and starts refusing merges. Each step below says what it
+# checks and how to fix it when it turns red.
+#
+# Two kinds of job, told apart by the archive's ENG-067 (STD-005):
+#
+#   · ARTEFACT jobs verify the thing under review — it compiles, the tests
+#     pass, the acceptance scenarios hold, the VRM island renders, no
+#     forbidden licence reaches dist/. They fail the build whatever any
+#     standard says, because a page that does not build is broken.
+#   · RULE jobs verify a practice from STD-015 (files that must exist, the
+#     pointer CLAUDE.md must carry). While that register is `draft` they
+#     LOOK BUT DO NOT BITE: they print every finding, in the log and in the
+#     job summary, and exit 0. Promoting STD-015 to `active` is what turns
+#     them into failures — not an edit here. The dependency audit reports
+#     for a different reason (it measures the calendar, see below), and
+#     REUSE lint bites here because it has been green since 2026-08-18 and
+#     was armed on purpose that day.
+#
+# One required check, literally named `build` (STD-015 § The family
+# pipeline): the branch ruleset can only require a check by NAME, so the
+# name means the same in every Numen repository. Here the work is split
+# across jobs, so `build` is the conjunction of the artefact jobs and
+# depends on nothing that only reports.
+#
+# Security (STD-015): third-party actions pinned by commit SHA, never by a
+# movable tag (SEC-007); the workflow token is read-only and no job asks for
+# more (SEC-008); no secret is read by the build — the catalogue comes from
+# a committed fixture, the wallet client id is a placeholder, and
+# publication is Cloudflare's Workers Builds, connected in its panel
+# (SEC-004).
 name: CI
 
 on:
@@ -5,55 +39,87 @@ on:
     branches: [main]
   pull_request:
 
+permissions: read-all
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Where the store's catalogue lives. The data repository is still in a
+# personal account; moving it into the organisation is a plan step, not a
+# defect of this workflow. CI never reads it live: DATA_SOURCE=fixture below.
 env:
   GITHUB_REPO_OWNER: PabloFMM
   GITHUB_REPO_NAME: numinia-digital-goods-data
 
 jobs:
+  # ── ARTEFACT ────────────────────────────────────────────────────────────
+  # ARC-001 (STD-015): the same pipeline in every repository —
+  # type-check → lint → test → build — run through turbo so the workspace
+  # packages build before the store. Then the gates only this repository
+  # has: REUSE, Gherkin acceptance, the licence guard over dist/.
   quality:
     name: Pipeline + acceptance
     runs-on: ubuntu-latest
     steps:
+      # Checkout of the PR head, pinned by SHA.
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      # Node from .nvmrc — the same version Workers Builds uses to publish.
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: npm
+      # turbo's task cache, keyed on the commit: a package whose inputs did
+      # not change is not rebuilt. Not a check.
       - name: Turbo cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-${{ runner.os }}-
+      # Dependencies from the lockfile, exactly. Not a check.
       - name: Install (reproducible)
         run: npm ci
       # A change to the site must say what it changed: any diff under
       # apps/store/src/ needs a new entry (and version) in
-      # apps/store/src/lib/updates.ts. The footer prints that version.
+      # apps/store/src/lib/updates.ts. The footer prints that version and
+      # links to /updates. Same script in every Numen repository; only the
+      # path constants differ.
       - name: Version bump (the footer's number moves with the site)
         run: |
           git fetch --no-tags --depth=200 origin "${{ github.base_ref || 'main' }}"
           node scripts/check-version-bump.mjs --base "origin/${{ github.base_ref || 'main' }}"
+      # `npm run ci` = turbo: type-check → lint → test → build over every
+      # workspace. Coverage is per file on apps/store/src/lib/*.ts (100 %
+      # lines, functions, statements; 95 % branches): a new lib file
+      # without its test fails here. Red names the package and the file.
       - name: Pipeline (type-check → lint → test → build)
         run: npm run ci
         env:
           # Hermetic: the committed fixture keeps CI independent of raw.githubusercontent
           DATA_SOURCE: fixture
+      # ARC-003 (STD-015): REUSE 3.3 — every file names its licence, in a
+      # header or through REUSE.toml, and LICENSES/ holds every text named.
+      # Bites here: armed 2026-08-18, the day the repo first passed, and
+      # green since. Pinned version, the one the other repositories run.
       - name: REUSE 3.3 (every file declares its license — canon C-005)
-        # Armed 2026-08-18, the day the repo first passed. Pinned version.
         run: |
           pipx install reuse==6.2.0
           reuse lint
+      # Gherkin scenarios (features/) run with Cucumber against the built
+      # store: what a visitor can do, in the words the mission cards use.
+      # One of them asserts the footer's version links /updates.
       - name: Acceptance (Gherkin)
         run: npm run test:acceptance
+      # scripts/license-guard.mjs reads the bundler's module manifest for
+      # dist/: a package whose licence may sit in node_modules (the
+      # ConsenSys-licensed MetaMask SDK, transitive via thirdweb) must never
+      # reach the served bundle. Red names the module path.
       - name: License guard
         run: npm run licenses:guard
+      # lcov reports for reading, kept 90 days by GitHub. Not a check.
       - name: Coverage artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -61,6 +127,11 @@ jobs:
           path: packages/*/coverage/lcov.info
           if-no-files-found: warn
 
+  # ── ARTEFACT ────────────────────────────────────────────────────────────
+  # The browser gates: the store built hermetically, the share card drawn,
+  # the export editions baked and validated, and Playwright over the VRM
+  # island and the full-page visual baselines (any chrome change needs
+  # regenerated PNGs inside the CI image — see CLAUDE.md).
   e2e:
     name: DECISION GATE e2e (VRM island)
     runs-on: ubuntu-latest
@@ -119,9 +190,12 @@ jobs:
       - name: VRM rendering gate
         run: npm run e2e
 
+  # ── ARTEFACT ────────────────────────────────────────────────────────────
   # Two gates, split because they answer to different clocks.
   #
-  # The license gate is deterministic: same tree, same verdict, forever. It blocks.
+  # The license gate is deterministic: same tree, same verdict, forever. It
+  # blocks: license-checker over the installed tree, strong copyleft
+  # refused, LGPL allowed as a reviewed exception (sharp/libvips).
   #
   # The audit is not. `npm audit` queries a live advisory database, so the same
   # lockfile flips from pass to fail with no commit in between — which is exactly
@@ -184,9 +258,68 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  # The single required check, named `build` in every Numen repository.
+  # ── RULE (looks, does not bite) ────────────────────────────────────────
+  # STD-015's repository checklist: the files every Numen repository
+  # carries, and the pointer at the archive that CLAUDE.md must open with
+  # (the rules live in numinia-archive, not here). Every finding is printed
+  # here and in the job summary; the job exits 0 while STD-015 is `draft`
+  # (ENG-067). Fix a finding by adding the file or the pointer — never by
+  # editing the list to match the tree. The same list runs in every Numen
+  # repository, so a file this repository chose not to keep (CHANGELOG.md,
+  # replaced by /updates) shows up here as a finding for the Oracle to
+  # rule on, not as an error.
+  checklist:
+    name: Repository checklist (reports, does not block)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Files the standards require, and the CLAUDE.md pointer
+        run: |
+          findings=()
+          for f in README.md CLAUDE.md SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md \
+                   CHANGELOG.md TRADEMARKS.md LICENSE REUSE.toml \
+                   .editorconfig .env.example \
+                   .github/CODEOWNERS .github/dependabot.yml; do
+            [ -f "$f" ] || findings+=("missing file: $f — required by the repository checklist (STD-015)")
+          done
+          # GitHub accepts either case for the PR template; the checklist accepts both.
+          [ -f .github/PULL_REQUEST_TEMPLATE.md ] || [ -f .github/pull_request_template.md ] \
+            || findings+=("missing file: .github/PULL_REQUEST_TEMPLATE.md")
+          [ -d LICENSES ] || findings+=("missing directory: LICENSES/ — REUSE needs the text of every licence REUSE.toml names")
+          grep -qE "numinia-archive|numinia-nwos" CLAUDE.md \
+            || findings+=("CLAUDE.md does not point at the archive (numinia-archive — the rules live there)")
+
+          if [ "${#findings[@]}" -eq 0 ]; then
+            echo "Repository checklist: every required file is present."
+            echo "Repository checklist: clean." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Findings are warnings, not errors: STD-015 is draft, so this
+          # guard looks but does not bite (ENG-067).
+          {
+            echo "### Repository checklist — ${#findings[@]} finding(s), not blocking while STD-015 is draft"
+            echo
+            for x in "${findings[@]}"; do echo "- $x"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+          for x in "${findings[@]}"; do echo "::warning::$x"; done
+          exit 0
+
+      # TRC-007 (STD-015): what the checklist does not see.
+      - name: What this guard does not see
+        if: always()
+        run: |
+          echo "This guard does NOT check:"
+          echo "  - whether the files say anything true (only that they exist)"
+          echo "  - licence declarations per file (the REUSE step in the quality job does, and bites)"
+          echo "  - whether the site is published (Workers Builds, outside this repo; numinia.com/version.json tells)"
+
+  # ── THE REQUIRED CHECK ─────────────────────────────────────────────────
+  # The single required check, named `build` in every Numen repository
+  # (STD-015 § The family pipeline).
   #
-  # Branch protection is written once, in numinia-nwos
+  # Branch protection is written once, in numinia-archive
   # (.github/rulesets/protect-main.json), and copied verbatim to each repo. A
   # ruleset can only require a check by NAME, so the name has to mean the same
   # thing everywhere — otherwise the rule looks identical and protects
@@ -196,10 +329,11 @@ jobs:
   #
   # This repo does not have one gate, it has three. So `build` is not a fourth
   # piece of work — it is their conjunction, and it cannot pass unless all of
-  # them do. Adding a gate here means adding it to `needs`, or the ruleset
-  # keeps protecting yesterday's list.
+  # them do. Adding a gate here means adding it to `needs` AND to the loop
+  # below, or the ruleset keeps protecting yesterday's list.
   #
-  # The audit is deliberately absent: it reports, it does not block.
+  # `audit` and `checklist` are deliberately absent: they report, they do
+  # not block.
   build:
     name: build
     runs-on: ubuntu-latest
