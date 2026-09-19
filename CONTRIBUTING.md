@@ -1,6 +1,6 @@
 # Contributing
 
-The rules live in [`numengames/numinia-nwos`](https://github.com/numengames/numinia-nwos)
+The rules live in [`numengames/numinia-archive`](https://github.com/numengames/numinia-archive)
 (`AGENTS.md`, transition regime included). Here, only what is specific to
 this code:
 

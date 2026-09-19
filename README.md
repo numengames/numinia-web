@@ -4,7 +4,7 @@ The site of the game: **[numinia.com](https://numinia.com)** — the city, the
 CC0 catalogue of digital goods, the Codex, and the citizen's platform.
 
 The rules of the house, its vocabulary and its decisions live in
-[`numengames/numinia-nwos`](https://github.com/numengames/numinia-nwos)
+[`numengames/numinia-archive`](https://github.com/numengames/numinia-archive)
 (numinia.org). This repository holds code only.
 
 ## Layout

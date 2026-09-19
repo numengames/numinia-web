@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-19 20:20",
+    "entries": [
+      {
+        "text": "The archive this site reads from is numengames/numinia-archive — the name the repository has had since 2026-09-17. The lore fetched at build, the pinned design source and the links in the README said numinia-nwos and worked only because GitHub redirects the old name",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.52.1",
+  },
+  {
     "date": "2026-09-18 14:30",
     "entries": [
       {

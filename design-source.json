@@ -1,7 +1,7 @@
 {
-  "$comment": "Pinned design source. The Sistema de Diseño is NOT kept in this repo: it is governed by numinia-nwos. Nothing here may be edited by hand: re-pin with scripts/check-design-source.mjs.",
+  "$comment": "Pinned design source. The Sistema de Diseño is NOT kept in this repo: it is governed by numinia-archive. Nothing here may be edited by hand: re-pin with scripts/check-design-source.mjs.",
   "source": {
-    "repo": "numengames/numinia-nwos",
+    "repo": "numengames/numinia-archive",
     "path": "standards/2026_08_18-Sistema_de_Diseno-v5.0.0.md",
     "published": "https://numinia.org/corpus/standards/2026_08_18-sistema_de_diseno-v500.md",
     "version": "5.0.0",

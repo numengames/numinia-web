@@ -1,6 +1,6 @@
 // Fetch the manual and the Codex matter from the archive into the
 // gitignored apps/store/.lore/ directory. The lore lives in
-// numengames/numinia-nwos under lore/. Production deploys run this before
+// numengames/numinia-archive under lore/. Production deploys run this before
 // building so the Codex ships the real corpus; hermetic/CI builds skip it
 // and use the fixtures. Fails loud: a deploy that cannot reach the lore
 // must not silently ship the synthetic manual to citizens.
@@ -14,7 +14,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const LORE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-nwos';
+const LORE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-archive';
 const LORE_REF = process.env.LORE_REF ?? 'main';
 
 // The v0.6.0 manual feeds the Codex pipeline (MIS-085); the codex/ docs are
