@@ -1,0 +1,163 @@
+---
+/**
+ * Summa entity card (experiment, 2026-09-20): rendered BESIDE a legacy
+ * record whose id has a card in the archive's objects/. The legacy record
+ * above is untouched; this block shows what the card adds — status,
+ * description and history, each form with its own licence and rights
+ * holder, the copies with their count, a download from the depot (the copy
+ * the card declares and the archive's check hashed) and a link to the card
+ * on numinia.org. Nothing here is fetched at runtime: catalogue and body
+ * are read at build (lib/summa.ts).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import Icon from '../chrome/Icon.astro';
+import { ARCHIVE_MESSAGES } from '../../i18n/messages';
+import { cardBody, depotDownloadUrl, SUMMA_SITE, type SummaCard } from '../../lib/summa';
+
+interface Props {
+  card: SummaCard;
+  locale: SupportedLocale;
+}
+
+const { card, locale } = Astro.props;
+const t = ARCHIVE_MESSAGES[locale];
+const sections = (await cardBody(card.slug)) ?? [];
+const download = depotDownloadUrl(card);
+const copies = card.forms.reduce((n, f) => n + f.copies.length, 0);
+const statusLabel = card.status === 'active' ? t.summaStatusActive : card.status === 'draft' ? t.summaStatusDraft : card.status;
+const cardUrl = `${SUMMA_SITE}/corpus/${card.path.replace(/\.md$/, '')}`;
+---
+
+<section class="summa" aria-labelledby="summa-title" data-summa-card={card.slug} data-summa-status={card.status}>
+  <h2 id="summa-title">{t.summaTitle}</h2>
+  <p class="intro">{t.summaIntro}</p>
+
+  <dl>
+    <dt>{t.summaStatus}</dt>
+    <dd><span class="badge" data-status={card.status}>{statusLabel}</span></dd>
+  </dl>
+
+  {sections.map((s) => (
+    <div class="section">
+      <h3>{s.title}</h3>
+      <div set:html={s.html} />
+    </div>
+  ))}
+
+  <h3>{t.summaForms}</h3>
+  <ul class="forms">
+    {card.forms.map((form) => (
+      <li>
+        <span class="badge">{form.role}</span>
+        <span class="badge badge-muted">{form.format.toUpperCase()}</span>
+        <span class="mono">{form.license}</span>
+        <span class="dim">· {t.summaRightsHolder}: {form.rights_holder}</span>
+        {form.embedded_license && (
+          <span class="dim">· {t.summaEmbedded}: {form.embedded_license}</span>
+        )}
+      </li>
+    ))}
+  </ul>
+
+  <h3>{t.summaCopies}</h3>
+  <p class="dim">{t.summaCopiesCount.replace('{n}', String(copies))}</p>
+
+  <p class="actions">
+    {download && (
+      <a href={download} download target="_blank" rel="noopener noreferrer" class="btn" data-metric="summa-download">
+        <Icon name="download-simple" size={16} />
+        {t.summaDownloadDepot}
+      </a>
+    )}
+    <a href={cardUrl} target="_blank" rel="noopener noreferrer" data-metric="summa-card-link">
+      {t.summaReadCard} ↗
+    </a>
+  </p>
+</section>
+
+<style>
+  .summa {
+    margin-top: var(--s6);
+    padding-top: var(--s5);
+    border-top: 1px solid var(--borde);
+  }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    font-weight: 500;
+    margin: var(--s4) 0 var(--s2);
+  }
+  .intro,
+  .dim {
+    color: var(--texto-2);
+  }
+  .section :global(p) {
+    margin: 0 0 var(--s2);
+  }
+  dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--s2) var(--s4);
+    margin: var(--s3) 0;
+  }
+  dt {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    font-weight: 500;
+    align-self: center;
+  }
+  dd {
+    margin: 0;
+  }
+  .forms {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .forms li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s2);
+    align-items: center;
+    margin-bottom: var(--s2);
+  }
+  .mono {
+    font-family: var(--mono);
+    color: var(--texto-2);
+  }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radio-control);
+    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+    color: var(--enlace);
+  }
+  .badge-muted,
+  .badge[data-status='draft'] {
+    color: var(--texto-2);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    align-items: center;
+    margin-top: var(--s4);
+  }
+  .actions .btn {
+    text-decoration: none;
+  }
+</style>

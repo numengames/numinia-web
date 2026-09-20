@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-20 12:30",
+    "entries": [
+      {
+        "text": "The first card of the Summa, beside its legacy record: the Avocado avatar now shows, under the record it always had, what the Numinia archive registers about it — its status (a draft: the registry is being defined from real cards), its description and history, each form with its own licence and rights holder, how many copies of its bytes are declared, a download from the depot (numengames/numinia-assets, pinned to the commit the archive checked) and a link to the card on numinia.org. In the archive index a small amber mark says which goods have a card. The 31 other goods do not change. The cards are read from the archive at build, like the lore",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.53.0",
+  },
+  {
     "date": "2026-09-19 20:20",
     "entries": [
       {
