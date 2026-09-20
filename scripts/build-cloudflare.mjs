@@ -12,7 +12,8 @@
  *                 them. All PUBLIC: the deploy target, the site URL, the
  *                 data repository. Nothing secret exists in this build.
  *   2. lore     — fetch the manual and the Codex matter from the archive
- *                 (numinia-nwos lore/). Fails loud: a deploy must not ship
+ *                 (numinia-archive lore/) and the Summa's entity cards
+ *                 (objects/). Fails loud: a deploy must not ship
  *                 the synthetic fixture to citizens.
  *   3. build    — turbo builds the workspace packages, then the store.
  *   4. seal     — /version.json with the commit Workers Builds injects as
@@ -50,6 +51,9 @@ if (!process.env.PUBLIC_THIRDWEB_CLIENT_ID) {
 
 // 2. lore
 run('node scripts/fetch-lore.mjs');
+// 2b. the Summa's entity cards (objects/catalogue.json + card bodies) —
+// same two-source pattern; the legacy catalogue is untouched.
+run('node scripts/fetch-summa.mjs');
 // (the favicon set and the share card, STD-023 §19, are drawn by the
 // store's own build script — apps/store/package.json — so every path that
 // builds the store gets them: this one, CI's, and a plain `npm run build`.)

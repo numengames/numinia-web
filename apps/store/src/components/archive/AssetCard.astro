@@ -1,6 +1,8 @@
 ---
 import type { SupportedLocale } from '@numinia/domain';
 import type { CatalogedAsset } from '../../lib/data';
+import { ARCHIVE_MESSAGES } from '../../i18n/messages';
+import { findCard, loadSumma } from '../../lib/summa';
 import { thumbSrc } from '../../lib/thumbs';
 
 interface Props {
@@ -11,6 +13,9 @@ interface Props {
 const { entry, locale } = Astro.props;
 const { asset, category } = entry;
 const prefix = locale === 'en' ? '' : `/${locale}`;
+// Summa experiment: a discreet mark on the legacy ids that have a card.
+const card = findCard(await loadSumma(), asset.id);
+const t = ARCHIVE_MESSAGES[locale];
 ---
 
 <a
@@ -19,6 +24,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
   data-name={asset.name.toLowerCase()}
   data-format={asset.format}
   data-metric="archive-card"
+  data-summa={card ? card.status : undefined}
 >
   <article class="tarjeta reveal">
     {
@@ -34,6 +40,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     <p>
       <span class="badge">{asset.format.toUpperCase()}</span>
       <span class="badge badge-muted">{category}</span>
+      {card && <span class="badge badge-summa" title={t.summaMark}>◈</span>}
     </p>
   </article>
 </a>
@@ -91,5 +98,10 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
      background, and a card is a surface. */
   .badge-muted {
     color: var(--texto-2);
+  }
+  /* The Summa mark: one glyph, amber like the labels — it says "this one
+     has a card", nothing more; the card itself is on the detail page. */
+  .badge-summa {
+    color: var(--ambar);
   }
 </style>

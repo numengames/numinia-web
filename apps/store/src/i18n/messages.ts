@@ -19,6 +19,20 @@ export interface ArchiveMessages {
   readonly format: string;
   readonly license: string;
   readonly worldFileNote: string;
+  /** Summa entity card (experiment): the block shown beside a legacy record that has a card. */
+  readonly summaTitle: string;
+  readonly summaIntro: string;
+  readonly summaStatus: string;
+  readonly summaStatusDraft: string;
+  readonly summaStatusActive: string;
+  readonly summaForms: string;
+  readonly summaRightsHolder: string;
+  readonly summaEmbedded: string;
+  readonly summaCopies: string;
+  readonly summaCopiesCount: string;
+  readonly summaDownloadDepot: string;
+  readonly summaReadCard: string;
+  readonly summaMark: string;
 }
 
 /** Site chrome: header nav, language selector, footer. */
@@ -825,6 +839,19 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: 'Formato',
     license: 'Licencia',
     worldFileNote: 'Archivo de mundo para Hyperfy. Descárgalo para usarlo en tu espacio.',
+    summaTitle: 'Ficha en el Suma',
+    summaIntro: 'Este bien tiene una ficha en el archivo de Numinia: qué es, su historia, cada forma con su licencia y su titular, y dónde están sus bytes con su huella.',
+    summaStatus: 'Estado',
+    summaStatusDraft: 'borrador — no admitida todavía',
+    summaStatusActive: 'activa',
+    summaForms: 'Formas',
+    summaRightsHolder: 'titular',
+    summaEmbedded: 'licencia dentro del fichero',
+    summaCopies: 'Copias',
+    summaCopiesCount: '{n} copias declaradas, huella y tamaño en la ficha',
+    summaDownloadDepot: 'Descargar del depósito',
+    summaReadCard: 'Leer la ficha en numinia.org',
+    summaMark: 'Ficha en el Suma',
   },
   en: {
     archiveTitle: 'Archive',
@@ -840,6 +867,19 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: 'Format',
     license: 'License',
     worldFileNote: 'A world file for Hyperfy. Download it to use it in your space.',
+    summaTitle: 'Card in the Summa',
+    summaIntro: 'This good has a card in the Numinia archive: what it is, its history, each form with its licence and rights holder, and where its bytes are, with their hash.',
+    summaStatus: 'Status',
+    summaStatusDraft: 'draft — not admitted yet',
+    summaStatusActive: 'active',
+    summaForms: 'Forms',
+    summaRightsHolder: 'rights holder',
+    summaEmbedded: 'licence inside the file',
+    summaCopies: 'Copies',
+    summaCopiesCount: '{n} copies declared, hash and size in the card',
+    summaDownloadDepot: 'Download from the depot',
+    summaReadCard: 'Read the card on numinia.org',
+    summaMark: 'Card in the Summa',
   },
   ja: {
     archiveTitle: 'アーカイブ',
@@ -856,6 +896,19 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: 'フォーマット',
     license: 'ライセンス',
     worldFileNote: 'Hyperfy用ワールドファイル。ダウンロードしてスペースで使えます。',
+    summaTitle: 'スンマの記録カード',
+    summaIntro: 'このグッズにはヌミニア・アーカイブの記録カードがあります：それが何か、その来歴、各形態のライセンスと権利者、そしてバイトの所在とハッシュ。',
+    summaStatus: '状態',
+    summaStatusDraft: '下書き — 未承認',
+    summaStatusActive: '有効',
+    summaForms: '形態',
+    summaRightsHolder: '権利者',
+    summaEmbedded: 'ファイル内のライセンス',
+    summaCopies: 'コピー',
+    summaCopiesCount: '{n} 件のコピーを宣言、ハッシュとサイズはカードに記載',
+    summaDownloadDepot: 'デポからダウンロード',
+    summaReadCard: 'numinia.org でカードを読む',
+    summaMark: 'スンマの記録カード',
   },
   ko: {
     archiveTitle: '아카이브',
@@ -871,6 +924,19 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: '포맷',
     license: '라이선스',
     worldFileNote: 'Hyperfy용 월드 파일입니다. 내려받아 내 공간에서 사용하세요.',
+    summaTitle: '수마의 기록 카드',
+    summaIntro: '이 굿즈에는 누미니아 아카이브의 기록 카드가 있습니다: 무엇인지, 그 내력, 각 형태의 라이선스와 권리자, 그리고 바이트의 위치와 해시.',
+    summaStatus: '상태',
+    summaStatusDraft: '초안 — 아직 승인되지 않음',
+    summaStatusActive: '활성',
+    summaForms: '형태',
+    summaRightsHolder: '권리자',
+    summaEmbedded: '파일 안의 라이선스',
+    summaCopies: '사본',
+    summaCopiesCount: '{n}개의 사본 선언, 해시와 크기는 카드에',
+    summaDownloadDepot: '보관소에서 다운로드',
+    summaReadCard: 'numinia.org에서 카드 읽기',
+    summaMark: '수마의 기록 카드',
   },
   'pt-br': {
     archiveTitle: 'Arquivo',
@@ -886,5 +952,18 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: 'Formato',
     license: 'Licença',
     worldFileNote: 'Arquivo de mundo para o Hyperfy. Baixe para usar no seu espaço.',
+    summaTitle: 'Ficha na Summa',
+    summaIntro: 'Este bem tem uma ficha no arquivo de Numinia: o que é, sua história, cada forma com sua licença e titular, e onde estão seus bytes, com o hash.',
+    summaStatus: 'Estado',
+    summaStatusDraft: 'rascunho — ainda não admitida',
+    summaStatusActive: 'ativa',
+    summaForms: 'Formas',
+    summaRightsHolder: 'titular',
+    summaEmbedded: 'licença dentro do arquivo',
+    summaCopies: 'Cópias',
+    summaCopiesCount: '{n} cópias declaradas, hash e tamanho na ficha',
+    summaDownloadDepot: 'Baixar do depósito',
+    summaReadCard: 'Ler a ficha em numinia.org',
+    summaMark: 'Ficha na Summa',
   },
 };

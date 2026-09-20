@@ -6,6 +6,8 @@ import { ModelViewer } from '../viewer/ModelViewer';
 import { ARCHIVE_MESSAGES } from '../../i18n/messages';
 import { downloadUrl } from '../../lib/archive';
 import type { CatalogedAsset } from '../../lib/data';
+import { findCard, loadSumma } from '../../lib/summa';
+import SummaCard from './SummaCard.astro';
 
 interface Props {
   entry: CatalogedAsset;
@@ -18,6 +20,9 @@ const t = ARCHIVE_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const binaryUrl = downloadUrl(asset);
 const description = asset.description || `${asset.format.toUpperCase()} · CC0 · Numinia`;
+// Summa experiment: a legacy id with a card in the archive gets the card
+// rendered beside its record; the record itself does not change.
+const card = findCard(await loadSumma(), asset.id);
 ---
 
 <BaseLayout
@@ -86,6 +91,8 @@ const description = asset.description || `${asset.format.toUpperCase()} · CC0 �
         <p data-download-unavailable>{t.downloadUnavailable}</p>
       )
     }
+
+    {card && <SummaCard card={card} locale={locale} />}
   </article>
 </BaseLayout>
 

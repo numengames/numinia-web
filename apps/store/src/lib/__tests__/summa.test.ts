@@ -6,7 +6,7 @@
  * legacy model is not changed; the card is an overlay.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   cardBody,
   depotDownloadUrl,
@@ -146,5 +146,28 @@ describe('cardBody', () => {
     expect(body).not.toBeNull();
     expect(body!.some((s) => s.title === 'Description')).toBe(true);
     expect(await cardBody('no-such-card')).toBeNull();
+  });
+});
+
+describe('two sources, as the lore', () => {
+  it('DATA_SOURCE=fixture reads the committed snapshot even when the real files exist', async () => {
+    vi.stubEnv('DATA_SOURCE', 'fixture');
+    vi.resetModules();
+    const fresh = await import('../summa');
+    const summa = await fresh.loadSumma();
+    expect(fresh.findCard(summa, AVOCADO)?.slug).toBe('avocado');
+    expect(await fresh.cardBody('avocado')).not.toBeNull();
+    vi.unstubAllEnvs();
+  });
+
+  it('without the fixture flag the real files are preferred and the fixture is the fallback', async () => {
+    vi.stubEnv('DATA_SOURCE', 'network');
+    vi.resetModules();
+    const fresh = await import('../summa');
+    const summa = await fresh.loadSumma();
+    // No .lore/summa/ in a hermetic checkout: the fixture answers.
+    expect(fresh.findCard(summa, AVOCADO)?.slug).toBe('avocado');
+    expect(await fresh.cardBody('avocado')).not.toBeNull();
+    vi.unstubAllEnvs();
   });
 });
