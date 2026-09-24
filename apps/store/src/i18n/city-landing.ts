@@ -586,7 +586,7 @@ export const content: Record<Lang, LandingContent> = {
     footer: {
       tagline: 'Una ciudad para el conocimiento.',
       by: 'Un proyecto de Numen Games',
-      rights: 'Todos los derechos reservados.',
+      rights: 'Textos del mundo en dominio público (CC0). Numinia es una marca de Numen Games.',
     },
   },
 
@@ -1060,7 +1060,7 @@ export const content: Record<Lang, LandingContent> = {
     footer: {
       tagline: 'A city for knowledge.',
       by: 'A Numen Games project',
-      rights: 'All rights reserved.',
+      rights: 'World texts in the public domain (CC0). Numinia is a trademark of Numen Games.',
     },
   },
 };

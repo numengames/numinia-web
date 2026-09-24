@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-24 12:30",
+    "entries": [
+      {
+        "text": "The Codex is public domain. The Numinia RPG manual and its world are CC0 1.0 from today: the colophon on the site, the free PDF and the EPUB now say so instead of "all rights reserved", and the landing footer no longer claims rights over texts anyone may now copy, adapt and publish. Only the names Numinia, Numen Games and Khepri stay protected as trademarks. Numen Games holds the rights and its authors agree",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.54.0",
+  },
+  {
     "date": "2026-09-20 12:30",
     "entries": [
       {

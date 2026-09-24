@@ -57,13 +57,13 @@ SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
 
 # The free editions of the manual (PDF + EPUB), baked by exports.yml from
-# numinia-nwos lore/ and committed so Cloudflare serves them as statics.
-# They ARE the manual: reserved, like the lore they are printed from.
+# numinia-archive lore/ and committed so Cloudflare serves them as statics.
+# They ARE the manual: CC0, like the lore they are printed from (2026-09-24).
 [[annotations]]
 path = "apps/store/public/descargas/**"
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
-SPDX-License-Identifier = "LicenseRef-Numen-AllRightsReserved"
+SPDX-License-Identifier = "CC0-1.0"
 
 # Pinned copy of the design-system kit script (byte-identical, never edited).
 [[annotations]]
@@ -72,13 +72,13 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC0-1.0"
 
-# Deep lore embedded in app code: code is AGPL, the
-# narrative text it carries stays reserved.
+# Lore embedded in app code: code is AGPL, the narrative text it carries is
+# CC0 at its source (numinia-archive lore/, 2026-09-24).
 [[annotations]]
 path = "apps/store/src/i18n/city-landing.ts"
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
-SPDX-License-Identifier = "AGPL-3.0-only AND LicenseRef-Numen-AllRightsReserved"
+SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"
 
 # ── Packages: libraries, SDKs, types, tokens ─────────────────────────────────
 [[annotations]]

@@ -1,8 +1,8 @@
 /**
  * EPUB 3 assembly (MIS-085 C, D6): the canonical manual as a Kindle-ready
  * book — hand-built zip (mimetype stored first, per spec), per-chapter nav,
- * Alegreya embedded under its SIL OFL license, reserved-rights metadata
- * (D10 provisional wording). No pandoc: the chapter XHTML comes from the
+ * Alegreya embedded under its SIL OFL license, CC0 rights metadata
+ * (the lore is public domain since 2026-09-24). No pandoc: the chapter XHTML comes from the
  * site's own render engine, so web and EPUB can never drift apart.
  */
 import { readFileSync } from 'node:fs';
@@ -18,7 +18,7 @@ const FONTS = [
 ];
 
 const RIGHTS =
-  '© 2026 Numen Games S.L. · Texto e ilustraciones: todos los derechos reservados (nota provisional)';
+  'Dominio público — CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/). Numinia, Numen Games y Khepri son marcas de Numen Games S.L.';
 
 const CSS = `
 @font-face { font-family: 'Alegreya'; src: url('../fonts/Alegreya-Variable.woff2') format('woff2'); font-weight: 400 900; font-style: normal; }

@@ -1,7 +1,7 @@
 /**
  * Codex export editions (MIS-085 C, D6): the book always travels free.
  * One canonical MD → PDF (print stylesheet, Diurno) + EPUB (Kindle-ready,
- * Alegreya embedded, reserved-rights metadata), produced by the site's own
+ * Alegreya embedded, CC0 rights metadata), produced by the site's own
  * render engine and dropped into the built client dir as static downloads.
  *
  * Usage: node scripts/build-exports.mjs   (requires apps/store/dist to exist;
@@ -80,12 +80,11 @@ const acknowledgmentsHtml = resolveDoc(root, 'agradecimientos')
   .map((block) => `<p>${escXml(block.replaceAll('\n', ' '))}</p>`)
   .join('\n');
 
-// PROVISIONAL legal wording (D10) — same text the site's colophon carries.
+// Same text the site's colophon carries: the lore is CC0 (2026-09-24).
 const colofon =
   `<div class="colofon"><p>Numinia · Manual del juego de rol · versión ${version}<br/>` +
   `Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br/>` +
-  `© 2026 Numen Games S.L. · Texto e ilustraciones: todos los derechos reservados · ` +
-  `<em>nota provisional</em><br/>` +
+  `Dominio público (CC0 1.0) · Numen Games S.L. y sus autores renuncian a sus derechos · Numinia, Numen Games y Khepri son marcas<br/>` +
   `Compuesto en Alegreya con el Sistema · La fuente de verdad vive en Git</p>` +
   `<p class="firma">numen games · leave things better than we found them</p></div>`;
 
