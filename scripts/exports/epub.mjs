@@ -17,8 +17,27 @@ const FONTS = [
   'AlegreyaSC-Medium.woff2',
 ];
 
-const RIGHTS =
-  'Dominio público — CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/). Numinia, Numen Games y Khepri son marcas de Numen Games S.L.';
+/** Book-level words of each edition: the Spanish original and the English. */
+const BOOK = {
+  es: {
+    title: 'Numinia. El juego de rol',
+    rights:
+      'Dominio público — CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/). Numinia, Numen Games y Khepri son marcas de Numen Games S.L.',
+    toc: 'Índice',
+    landmarks: 'Hitos',
+    cover: 'Cubierta',
+    start: 'Comienzo',
+  },
+  en: {
+    title: 'Numinia. The Roleplaying Game',
+    rights:
+      'Public domain — CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/). Numinia, Numen Games and Khepri are trademarks of Numen Games S.L.',
+    toc: 'Contents',
+    landmarks: 'Landmarks',
+    cover: 'Cover',
+    start: 'Beginning',
+  },
+};
 
 const CSS = `
 @font-face { font-family: 'Alegreya'; src: url('../fonts/Alegreya-Variable.woff2') format('woff2'); font-weight: 400 900; font-style: normal; }
@@ -60,34 +79,39 @@ function esc(text) {
 
 /** Chapter body: portadilla + the render engine's HTML (already XHTML-safe:
  * every tag it emits is paired and every text node escaped). */
-function chapterXhtml(meta, rendered, eyebrow) {
+function chapterXhtml(meta, rendered, eyebrow, lang) {
   const body =
     `<section epub:type="chapter" aria-label="${esc(meta.title)}">\n` +
     `<header class="portadilla"><span class="num">${esc(eyebrow)}</span>` +
     `<h1>${esc(meta.title)}</h1></header>\n${rendered.html}\n</section>`;
-  return xhtml(esc(meta.title), body);
+  return xhtml(esc(meta.title), body, lang);
 }
 
-function navXhtml(entries) {
+function navXhtml(entries, lang) {
+  const t = BOOK[lang];
   const items = entries
     .map((entry) => `<li><a href="text/${entry.file}">${esc(entry.title)}</a></li>`)
     .join('\n');
   const body =
-    `<nav epub:type="toc" aria-label="Índice"><h1>Índice</h1><ol>\n${items}\n</ol></nav>\n` +
-    `<nav epub:type="landmarks" aria-label="Hitos" hidden=""><ol>` +
-    `<li><a epub:type="cover" href="text/cover.xhtml">Cubierta</a></li>` +
-    `<li><a epub:type="bodymatter" href="text/${entries[1].file}">Comienzo</a></li>` +
+    `<nav epub:type="toc" aria-label="${t.toc}"><h1>${t.toc}</h1><ol>\n${items}\n</ol></nav>\n` +
+    `<nav epub:type="landmarks" aria-label="${t.landmarks}" hidden=""><ol>` +
+    `<li><a epub:type="cover" href="text/cover.xhtml">${t.cover}</a></li>` +
+    `<li><a epub:type="bodymatter" href="text/${entries[1].file}">${t.start}</a></li>` +
     `</ol></nav>`;
   return (
     `<?xml version="1.0" encoding="utf-8"?>\n<!DOCTYPE html>\n` +
     `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" ` +
-    `lang="es" xml:lang="es">\n<head><meta charset="utf-8"/><title>Índice</title>` +
+    `lang="${lang}" xml:lang="${lang}">\n<head><meta charset="utf-8"/><title>${t.toc}</title>` +
     `<link rel="stylesheet" type="text/css" href="styles/codex.css"/></head>\n` +
     `<body>\n${body}\n</body>\n</html>\n`
   );
 }
 
-function contentOpf(version, entries, modified) {
+function contentOpf(version, entries, modified, lang) {
+  const t = BOOK[lang];
+  // The Spanish original keeps its identifier; the English edition is its own book.
+  const id =
+    lang === 'es' ? `urn:numinia:manual:${version}` : `urn:numinia:manual:${version}:${lang}`;
   const manifest = [
     `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>`,
     `<item id="css" href="styles/codex.css" media-type="text/css"/>`,
@@ -102,15 +126,15 @@ function contentOpf(version, entries, modified) {
   ].join('\n    ');
   const spine = entries.map((entry) => `<itemref idref="${entry.id}"/>`).join('\n    ');
   return `<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" xml:lang="es">
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" xml:lang="${lang}">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="pub-id">urn:numinia:manual:${version}</dc:identifier>
-    <dc:title>Numinia. El juego de rol</dc:title>
-    <dc:language>es</dc:language>
+    <dc:identifier id="pub-id">${id}</dc:identifier>
+    <dc:title>${t.title}</dc:title>
+    <dc:language>${lang}</dc:language>
     <dc:creator id="aut1">Christian Märtens</dc:creator>
     <dc:creator id="aut2">Pablo Fernández-Maquieira Martínez</dc:creator>
     <dc:publisher>Numen Games S.L.</dc:publisher>
-    <dc:rights>${RIGHTS}</dc:rights>
+    <dc:rights>${t.rights}</dc:rights>
     <dc:date>2026</dc:date>
     <meta property="dcterms:modified">${modified}</meta>
     <meta name="cover" content="cover-img"/>
@@ -138,15 +162,15 @@ const CONTAINER = `<?xml version="1.0" encoding="utf-8"?>
  * sections: [{id, file, title, body?, rendered?, eyebrow?}] — either a
  * ready XHTML `body` or a render-engine `rendered` chapter.
  */
-export function buildEpub(root, { version, sections, coverJpeg }) {
+export function buildEpub(root, { version, sections, coverJpeg, lang = 'es' }) {
   const files = {
     // The spec's handshake: first entry, stored, exact bytes.
     mimetype: [strToU8('application/epub+zip'), { level: 0 }],
     'META-INF/container.xml': strToU8(CONTAINER),
     'OEBPS/content.opf': strToU8(
-      contentOpf(version, sections, new Date().toISOString().replace(/\.\d+Z$/, 'Z')),
+      contentOpf(version, sections, new Date().toISOString().replace(/\.\d+Z$/, 'Z'), lang),
     ),
-    'OEBPS/nav.xhtml': strToU8(navXhtml(sections)),
+    'OEBPS/nav.xhtml': strToU8(navXhtml(sections, lang)),
     'OEBPS/styles/codex.css': strToU8(CSS),
     'OEBPS/cover.jpg': [new Uint8Array(coverJpeg), { level: 0 }],
   };
@@ -162,8 +186,8 @@ export function buildEpub(root, { version, sections, coverJpeg }) {
   );
   for (const section of sections) {
     const doc = section.rendered
-      ? chapterXhtml(section, section.rendered, section.eyebrow ?? '')
-      : xhtml(esc(section.title), section.body ?? '');
+      ? chapterXhtml(section, section.rendered, section.eyebrow ?? '', lang)
+      : xhtml(esc(section.title), section.body ?? '', lang);
     files[`OEBPS/text/${section.file}`] = strToU8(doc);
   }
   return zipSync(files, { level: 9, mtime: new Date() });

@@ -18,15 +18,15 @@ export interface TermTarget {
 
 /**
  * Surface forms of each entry: the plain term, both halves of a
- * «X (Y)» pair, and «X, El» read as «El X». Longest first, so compound
- * terms always win over their fragments.
+ * «X (Y)» pair, and «X, El» read as «El X» (English: «X, The» as «The X»).
+ * Longest first, so compound terms always win over their fragments.
  */
 export function glossaryVariants(entries: readonly GlossaryEntry[]): readonly TermTarget[] {
   const targets: TermTarget[] = [];
   for (const entry of entries) {
     const slug = slugify(entry.term);
     const parenthetical = /^(.+?)\s*\((.+)\)$/.exec(entry.term);
-    const inverted = /^(.+), (El|La|Los|Las)$/.exec(entry.term);
+    const inverted = /^(.+), (El|La|Los|Las|The)$/.exec(entry.term);
     const forms = parenthetical
       ? [parenthetical[1]!, parenthetical[2]!]
       : inverted

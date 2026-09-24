@@ -8,6 +8,8 @@
  * Everything honors prefers-reduced-motion.
  */
 
+import { codexClientUi } from './codex-ui';
+
 interface Bookmark {
   readonly version: 1;
   readonly chapterSlug: string;
@@ -62,6 +64,7 @@ function initReader(codex: HTMLElement): void {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const slug = codex.dataset.slug ?? '';
   const prefix = codex.dataset.prefix ?? '';
+  const ui = codexClientUi(codex);
 
   /* ── Modo del manual (D13) ── */
   const modeButton = codex.querySelector<HTMLButtonElement>('[data-codex-modo]');
@@ -69,7 +72,7 @@ function initReader(codex: HTMLElement): void {
     const night = codex.classList.contains('nocturno');
     modeButton?.setAttribute('aria-pressed', String(night));
     const label = modeButton?.querySelector('.lbl');
-    if (label) label.textContent = night ? 'Diurno' : 'Nocturno';
+    if (label) label.textContent = night ? ui.day : ui.night;
     codex
       .querySelector<SVGElement>('[data-ico-sol]')
       ?.style.setProperty('display', night ? 'none' : '');
@@ -126,16 +129,7 @@ function initReader(codex: HTMLElement): void {
   /* ── Progreso lunar — solo creciente; terminar es luna llena ── */
   const phase = codex.querySelector<SVGPathElement>('[data-luna-fase]');
   const phaseText = codex.querySelector<HTMLElement>('[data-luna-txt]');
-  const names = [
-    'luna nueva',
-    'creciente',
-    'cuarto creciente',
-    'gibosa creciente',
-    'casi llena',
-    'gibosa',
-    'vísperas del plenilunio',
-    'luna llena',
-  ];
+  const names = ui.phases;
   const lunaPath = (fraction: number): string => {
     const r = 8.4;
     const cx = 10;
@@ -168,7 +162,7 @@ function initReader(codex: HTMLElement): void {
     const here = mark !== null && mark.chapterSlug === slug && slug !== '';
     markButton?.setAttribute('aria-pressed', String(here));
     const label = markButton?.querySelector('.lbl');
-    if (label) label.textContent = here ? 'Marcado' : 'Marcapáginas';
+    if (label) label.textContent = here ? ui.bookmarked : ui.bookmark;
     document.querySelector('.marcado')?.classList.remove('marcado');
     if (here && mark) document.getElementById(mark.blockId)?.classList.add('marcado');
     if (returnButton instanceof HTMLAnchorElement) {

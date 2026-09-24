@@ -5,8 +5,12 @@
  * Umbral CTA shows only to visitors without a session — the gate is a
  * funnel, not a wall (D2).
  */
+import { CODEX_UI } from '../../../i18n/codex';
+import type { CodexLang } from '../../../lib/codex/source';
+
 interface Props {
   prefix: string;
+  lang: CodexLang;
   path: string;
   showGateCta: boolean;
   /** Mid-reading chapter navigation in the running footer (Oracle
@@ -17,38 +21,39 @@ interface Props {
   nextHref?: string | undefined;
   nextLabel?: string | undefined;
 }
-const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = Astro.props;
+const { prefix, lang, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = Astro.props;
+const t = CODEX_UI[lang].chrome;
 ---
 
 <header class="chrome" role="banner">
   <a class="wm" href={`${prefix}/lap/`} data-metric="codex-lap-back">LAP</a>
   <span class="path">{path}</span>
   <span class="sp"></span>
-  <a class="cbtn" href={`${prefix}/lap/codex/#indice`} aria-label="Índice" data-metric="codex-toc">
+  <a class="cbtn" href={`${prefix}/lap/codex/#indice`} aria-label={t.index} data-metric="codex-toc">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
       ><path d="M2 4h12M2 8h12M2 12h8"></path></svg
     >
-    <span class="lbl">Índice</span>
+    <span class="lbl">{t.index}</span>
   </a>
   <button
     class="cbtn"
     data-codex-marca
     aria-pressed="false"
-    aria-label="Marcapáginas"
+    aria-label={t.bookmark}
     data-metric="codex-bookmark"
   >
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
       ><path d="M4 2h8v12l-4-3-4 3V2z"></path></svg
     >
-    <span class="lbl">Marcapáginas</span>
+    <span class="lbl">{t.bookmark}</span>
   </button>
   <button
     class="cbtn"
     data-codex-narrador
     aria-pressed="false"
-    aria-label="Narrador"
+    aria-label={t.narrator}
     hidden
-    title="El Narrador lee el capítulo en voz alta"
+    title={t.narratorTitle}
     data-metric="codex-narrator"
   >
     <svg data-ico-lee viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -62,18 +67,18 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
       stroke-width="1.5"
       style="display:none"><path d="M6 3v10M10 3v10"></path></svg
     >
-    <span class="lbl">Narrador</span>
+    <span class="lbl">{t.narrator}</span>
   </button>
   <button
     class="cbtn"
     data-codex-ritmo
     hidden
-    title="Ritmo de lectura del Narrador"
+    title={t.paceTitle}
     data-metric="codex-narrator-rate"
   >
     <span class="ritmo mono">×1</span>
   </button>
-  <div class="tams" role="group" aria-label="Tamaño de letra">
+  <div class="tams" role="group" aria-label={t.textSize}>
     <button data-tam="s" aria-pressed="false" data-metric="codex-size">A</button>
     <button data-tam="m" aria-pressed="true" data-metric="codex-size">A</button>
     <button data-tam="l" aria-pressed="false" data-metric="codex-size">A</button>
@@ -82,8 +87,8 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
     class="cbtn"
     data-codex-modo
     aria-pressed="false"
-    aria-label="Modo del manual"
-    title="Modo del manual — independiente del resto del LAP"
+    aria-label={t.mode}
+    title={t.modeTitle}
     data-metric="codex-mode"
   >
     <svg data-ico-sol viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -99,12 +104,12 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
       stroke-width="1.5"
       style="display:none"><path d="M13 9.5A6 6 0 0 1 6.5 3 6 6 0 1 0 13 9.5z"></path></svg
     >
-    <span class="lbl">Nocturno</span>
+    <span class="lbl">{t.night}</span>
   </button>
   {
     showGateCta && (
       <a class="cbtn tinta" href={`${prefix}/lap/session/`} data-metric="codex-gate-enter">
-        <span class="lbl">Cruzar el Umbral</span>
+        <span class="lbl">{t.cross}</span>
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M6 3l5 5-5 5" />
         </svg>
@@ -120,7 +125,7 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
         class="salto"
         href={prevHref}
         rel="prev"
-        aria-label={`Capítulo anterior: ${prevLabel}`}
+        aria-label={`${t.prevChapter}: ${prevLabel}`}
         title={prevLabel}
         data-metric="codex-pie-prev"
       >
@@ -135,7 +140,7 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
         class="salto"
         href={nextHref}
         rel="next"
-        aria-label={`Capítulo siguiente: ${nextLabel}`}
+        aria-label={`${t.nextChapter}: ${nextLabel}`}
         title={nextLabel}
         data-metric="codex-pie-next"
       >
@@ -151,14 +156,14 @@ const { prefix, path, showGateCta, prevHref, prevLabel, nextHref, nextLabel } = 
     href={`${prefix}/lap/codex/`}
     data-metric="codex-bookmark-return"
   >
-    <span class="lbl">Volver al marcapáginas</span>
+    <span class="lbl">{t.backToBookmark}</span>
   </a>
-  <span class="luna" aria-label="Progreso de lectura">
+  <span class="luna" aria-label={t.progress}>
     <svg viewBox="0 0 20 20" aria-hidden="true">
       <circle cx="10" cy="10" r="8.4" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"
       ></circle>
       <path data-luna-fase fill="currentColor" d=""></path>
     </svg>
-    <span data-luna-txt>luna nueva</span>
+    <span data-luna-txt>{t.moonPhases[0]}</span>
   </span>
 </footer>

@@ -8,6 +8,8 @@
  * read cell by cell is noise, not narration.
  */
 
+import { codexClientUi } from './codex-ui';
+
 const RATE_KEY = 'numinia-codex-ritmo';
 const RATES = [1, 1.25, 1.5, 0.8] as const;
 
@@ -43,6 +45,8 @@ function initNarrator(
   pace: HTMLButtonElement,
 ): void {
   const synth = (window as SynthWindow).__narradorSynth ?? window.speechSynthesis;
+  const ui = codexClientUi(root);
+  const tongue = ui.voice.slice(0, 2);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const blocks = [...prose.querySelectorAll<HTMLElement>('[id]')].filter(
     (block) => blockText(block) !== '',
@@ -67,8 +71,8 @@ function initNarrator(
   let voice: SpeechSynthesisVoice | undefined;
   let warmed = false;
   const pickVoice = (): void => {
-    const voices = synth.getVoices().filter((option) => option.lang.startsWith('es'));
-    voice = voices.find((option) => option.lang === 'es-ES') ?? voices[0];
+    const voices = synth.getVoices().filter((option) => option.lang.startsWith(tongue));
+    voice = voices.find((option) => option.lang === ui.voice) ?? voices[0];
   };
   const warm = (): void => {
     if (warmed) return;
@@ -82,7 +86,7 @@ function initNarrator(
     toggle.setAttribute('aria-pressed', String(state === 'reading'));
     if (label) {
       label.textContent =
-        state === 'reading' ? 'Pausa' : state === 'paused' ? 'Seguir' : 'Narrador';
+        state === 'reading' ? ui.pause : state === 'paused' ? ui.resume : ui.narrator;
     }
     toggle
       .querySelector<SVGElement>('[data-ico-lee]')
@@ -123,7 +127,7 @@ function initNarrator(
     index = start;
     const block = blocks[start] as HTMLElement;
     const utterance = new SpeechSynthesisUtterance(blockText(block));
-    utterance.lang = 'es-ES';
+    utterance.lang = ui.voice;
     if (voice) utterance.voice = voice;
     utterance.rate = rate;
     utterance.onstart = () => highlight(block);

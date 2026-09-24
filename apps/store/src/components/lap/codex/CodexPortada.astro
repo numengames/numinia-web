@@ -3,15 +3,22 @@
  * Portada del Códex: the cover of the web edition. Self-drawing corner
  * frames are THE one orchestrated moment of this view (§3 motion catalog).
  */
+import { CODEX_UI } from '../../../i18n/codex';
 import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+import type { CodexLang } from '../../../lib/codex/source';
 import CodexMarcos from './CodexMarcos.astro';
+
+interface Props {
+  lang: CodexLang;
+}
+const t = CODEX_UI[Astro.props.lang].portada;
 ---
 
-<section class="portada dibujado" data-dibujable aria-label="Portada">
+<section class="portada dibujado" data-dibujable aria-label={t.label}>
   <CodexMarcos />
-  <p class="ed">Numen Games presenta</p>
+  <p class="ed">{t.presents}</p>
   <h1>Numi<span>n</span>ia</h1>
-  <p class="sub">El juego de rol de la ciudad escrita entre vapor y código</p>
+  <p class="sub">{t.subtitle}</p>
   <div class="filete" aria-hidden="true">
     <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2">
       <path d="M16 3 28 10v12L16 29 4 22V10z"></path>
@@ -22,6 +29,6 @@ import CodexMarcos from './CodexMarcos.astro';
     </svg>
   </div>
   <p class="aut">Christian Märtens <b>·</b> Pablo Fernández-Maquieira Martínez</p>
-  <p class="ver">manual del juego de rol · v{MANUAL_VERSION} · edición del Lector Akáshico</p>
-  <p class="baja">↓ abre el códex</p>
+  <p class="ver">{t.edition(MANUAL_VERSION)}</p>
+  <p class="baja">{t.scroll}</p>
 </section>

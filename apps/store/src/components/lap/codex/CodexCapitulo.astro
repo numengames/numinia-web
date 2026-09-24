@@ -5,35 +5,45 @@
  * and the footnotes, everything collapsing inline on mobile. The corner
  * frames draw themselves once on chapter open — THE orchestrated moment.
  */
+import { CODEX_UI } from '../../../i18n/codex';
 import type { CodexChapterMeta } from '../../../lib/codex/manifest';
 import { loadCodexDoc } from '../../../lib/codex/docs';
 import { parseGlossary } from '../../../lib/codex/glossary';
 import { slugify, type CodexChapter } from '../../../lib/codex/parse';
 import { renderChapter } from '../../../lib/codex/render';
+import type { CodexLang } from '../../../lib/codex/source';
 import { glossaryVariants, linkGlossaryTerms } from '../../../lib/codex/terms';
 import CodexMarcos from './CodexMarcos.astro';
 
 // §4.8: chapter prose links its glossary terms (first occurrence only).
-// Module-level: the variant list is the same for every chapter render.
-const TERM_TARGETS = glossaryVariants(parseGlossary(loadCodexDoc('glosario')));
+// Module-level: one variant list per edition, the same for every chapter.
+const TERM_TARGETS = {
+  es: glossaryVariants(parseGlossary(loadCodexDoc('glosario', 'es'))),
+  en: glossaryVariants(parseGlossary(loadCodexDoc('glosario', 'en'))),
+};
 
 interface Props {
   prefix: string;
+  lang: CodexLang;
   chapter: CodexChapter;
   prev: CodexChapterMeta | undefined;
   next: CodexChapterMeta | undefined;
 }
-const { prefix, chapter, prev, next } = Astro.props;
+const { prefix, lang, chapter, prev, next } = Astro.props;
+const t = CODEX_UI[lang];
 const rendered = renderChapter(chapter);
-const bodyHtml = linkGlossaryTerms(rendered.html, TERM_TARGETS, `${prefix}/lap/codex/glosario/`);
+const bodyHtml = linkGlossaryTerms(
+  rendered.html,
+  TERM_TARGETS[lang],
+  `${prefix}/lap/codex/glosario/`,
+);
 
-const ORDINALS = ['primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo'];
 const eyebrow =
   chapter.number !== null
-    ? `Capítulo ${ORDINALS[chapter.number - 1] ?? chapter.number}`
+    ? t.chapterKicker(chapter.number)
     : chapter.slug === 'el-espejo-roto' || chapter.slug === 'the-broken-mirror'
-      ? 'Módulo'
-      : 'Introducción';
+      ? t.moduleKicker
+      : t.introKicker;
 ---
 
 <article class="pliego" aria-label={chapter.title} data-codex-chapter={chapter.slug}>
@@ -45,7 +55,7 @@ const eyebrow =
 
   <div class="pliego-int">
     <div class="cuerpo" set:html={bodyHtml} />
-    <aside class="margen" aria-label="Notas al margen">
+    <aside class="margen" aria-label={t.marginNotes}>
       <div class="glifo-m" aria-hidden="true">
         <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.1">
           <circle cx="17" cy="17" r="14" stroke-dasharray="3 2.4"></circle>
@@ -62,7 +72,7 @@ const eyebrow =
     </aside>
   </div>
 
-  <nav class="pager" aria-label="Anterior / Siguiente">
+  <nav class="pager" aria-label={t.prevNext}>
     {
       prev ? (
         <a href={`${prefix}/lap/codex/${prev.slug}/`} rel="prev" data-metric="codex-prev">
@@ -70,7 +80,7 @@ const eyebrow =
         </a>
       ) : (
         <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">
-          ← Portada
+          {t.backToCover}
         </a>
       )
     }

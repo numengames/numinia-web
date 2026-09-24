@@ -4,31 +4,34 @@
  * still link — to the chapter page, where the Umbral receives the visitor.
  * The gate is a funnel, not a wall (D2): nothing here hides the map.
  */
+import { CODEX_UI } from '../../../i18n/codex';
 import type { CodexChapterMeta } from '../../../lib/codex/manifest';
+import type { CodexLang } from '../../../lib/codex/source';
 
 interface Props {
   prefix: string;
+  lang: CodexLang;
   chapters: readonly CodexChapterMeta[];
   hasSession: boolean;
 }
-const { prefix, chapters, hasSession } = Astro.props;
+const { prefix, lang, chapters, hasSession } = Astro.props;
+const t = CODEX_UI[lang].index;
+const intro = CODEX_UI[lang].introPrefix;
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 const numeral = (chapter: CodexChapterMeta): string =>
   chapter.number === null ? '—' : (ROMAN[chapter.number - 1] ?? String(chapter.number));
 const veiled = (chapter: CodexChapterMeta): boolean => chapter.access === 'gated' && !hasSession;
 const title = (chapter: CodexChapterMeta): string =>
-  chapter.slug === 'introduccion'
-    ? `Introducción · ${chapter.title}`
-    : chapter.slug === 'introduction'
-      ? `Introduction · ${chapter.title}`
-      : chapter.title;
+  chapter.slug === 'introduccion' || chapter.slug === 'introduction'
+    ? `${intro} · ${chapter.title}`
+    : chapter.title;
 const isModule = (chapter: CodexChapterMeta): boolean =>
   chapter.slug === 'el-espejo-roto' || chapter.slug === 'the-broken-mirror';
 ---
 
-<section class="hoja" id="indice" aria-label="Índice">
-  <p class="etq">Índice del Códex</p>
+<section class="hoja" id="indice" aria-label={t.label}>
+  <p class="etq">{t.heading}</p>
   <ol class="toc">
     {
       chapters.map((chapter) => (
@@ -42,10 +45,10 @@ const isModule = (chapter: CodexChapterMeta): boolean =>
                   <rect x="3" y="7" width="10" height="7" rx="1" />
                   <path d="M5 7V5a3 3 0 0 1 6 0v2" />
                 </svg>
-                tras el Umbral
+                {t.veiled}
               </span>
             ) : (
-              <span class="st">abierto</span>
+              <span class="st">{t.open}</span>
             )}
           </a>
         </li>
@@ -54,15 +57,15 @@ const isModule = (chapter: CodexChapterMeta): boolean =>
     <li>
       <a href={`${prefix}/lap/codex/glosario/`} data-metric="codex-glossary">
         <span class="n">✦</span>
-        <span class="t">Glosario</span>
-        <span class="st">abierto</span>
+        <span class="t">{t.glossary}</span>
+        <span class="st">{t.open}</span>
       </a>
     </li>
     <li>
       <a href={`${prefix}/lap/codex/ficha/`} data-metric="codex-ficha">
         <span class="n">⚙</span>
-        <span class="t">Hoja de Personaje</span>
-        <span class="st">abierto</span>
+        <span class="t">{t.sheet}</span>
+        <span class="st">{t.open}</span>
       </a>
     </li>
   </ol>

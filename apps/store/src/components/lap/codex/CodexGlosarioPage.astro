@@ -5,9 +5,11 @@
  * document itself says so in numinia-lore.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CODEX_UI } from '../../../i18n/codex';
 import { loadCodexDoc } from '../../../lib/codex/docs';
 import { parseGlossary } from '../../../lib/codex/glossary';
 import { slugify } from '../../../lib/codex/parse';
+import { codexLang } from '../../../lib/codex/source';
 import { viewerFrom } from '../../../lib/lap/gate';
 import CodexShell from './CodexShell.astro';
 
@@ -17,19 +19,22 @@ interface Props {
 const { locale } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const viewer = await viewerFrom(Astro.cookies);
-const entries = parseGlossary(loadCodexDoc('glosario'));
+const lang = codexLang(locale);
+const t = CODEX_UI[lang].glossary;
+const entries = parseGlossary(loadCodexDoc('glosario', lang));
 ---
 
 <CodexShell
   locale={locale}
-  title="Glosario — Códex de Numinia"
-  description="Los términos del mundo de Numinia, definidos exclusivamente desde el texto del manual."
-  path="/ codex / glosario"
+  lang={lang}
+  title={t.title}
+  description={t.description}
+  path={t.path}
   showGateCta={viewer === null}
-  capActual="Glosario"
+  capActual={t.name}
 >
-  <section class="hoja" aria-label="Glosario">
-    <p class="etq">Glosario del Códex</p>
+  <section class="hoja" aria-label={t.name}>
+    <p class="etq">{t.heading}</p>
     <dl class="glosario">
       {
         entries.map((entry) => (
@@ -44,8 +49,10 @@ const entries = parseGlossary(loadCodexDoc('glosario'));
         ))
       }
     </dl>
-    <nav class="pager" aria-label="Volver">
-      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">← Portada</a>
+    <nav class="pager" aria-label={CODEX_UI[lang].back}>
+      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">
+        {CODEX_UI[lang].backToCover}
+      </a>
     </nav>
   </section>
 </CodexShell>

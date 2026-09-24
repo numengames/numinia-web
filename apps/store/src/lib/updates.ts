@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.56.0',
+    date: '2026-09-24 15:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Codex speaks English around the manual too. Outside Spanish, everything that frames the Numinia RPG manual now reads in English: the cover, the contents, the chapter headings, the bookmark, the Narrator (who now reads in an English voice), the reading moon, the Threshold, the downloads and the colophon. The free downloads offer the English edition — the whole book as .md, a PDF and an EPUB — and the glossary, acknowledgments and character sheet switch to English as soon as their translations land in the archive; until then they read in Spanish. /es/lap/codex/ stays exactly as it was',
+      },
+    ],
+  },
+  {
     version: 'v0.55.0',
     date: '2026-09-24 14:15',
     entries: [
