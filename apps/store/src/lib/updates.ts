@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.58.0',
+    date: '2026-09-24 21:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: "The footer says which commit of the site you are looking at, as the other three sites do. It printed 'dev' on the live site: the page is prerendered inside a Worker that does not see the build's commit, so the commit is now handed to it at build time like the other public build values. /version.json already had it right.",
+      },
+    ],
+  },
+  {
     version: 'v0.57.0',
     date: '2026-09-24 18:00',
     entries: [
