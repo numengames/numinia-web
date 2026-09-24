@@ -5,8 +5,8 @@
 // and use the fixtures. Fails loud: a deploy that cannot reach the lore
 // must not silently ship the synthetic manual to citizens.
 //
-// The archive is a PUBLIC repository (its lore/ is all rights reserved —
-// readable is not licensed), so NO token is needed. None is sent, either:
+// The archive is a PUBLIC repository (its lore/ is CC0 since 2026-09-24),
+// so NO token is needed. None is sent, either:
 // on 2026-09-16 a stale LORE_TOKEN turned a public read into HTTP 401 and
 // blocked every deploy for a day. Unauthenticated GitHub API allows 60
 // requests/hour per IP; this script makes four.
