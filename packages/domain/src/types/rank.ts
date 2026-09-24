@@ -4,7 +4,7 @@
  * the `oracle` rank carries NO cardinality constraint. The five
  * founding Oracles are lore (Narrative Projection), not a rank invariant.
  *
- * Provenance (the manual, numinia-nwos lore/game/manual-v0.6.0.md): it only
+ * Provenance (the manual, numinia-archive lore/game/manual/es/): it only
  * grounds citizenship, the Vernaculars (Concordia observers) and the
  * Oracles. The full six-step ladder is a PLATFORM design (Operating
  * System), not manual canon — legitimate, and declared as such.
