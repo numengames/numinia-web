@@ -11,7 +11,7 @@ export const POSITIONS: readonly Position[] = [
     id: 'guardian-of-the-gates',
     name: {
       es: 'Guardián de las Puertas',
-      en: 'Guardian of the Gates',
+      en: 'Gatekeeper',
       ja: '門の守護者',
       ko: '문의 수호자',
       'pt-br': 'Guardião dos Portões',
