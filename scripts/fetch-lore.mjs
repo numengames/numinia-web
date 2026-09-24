@@ -70,17 +70,14 @@ const MANUAL_PARTS = [
 ];
 
 // The module, read from the archive's tabletop shelf (lore/adventures/
-// tabletop/, since the adventures split into tabletop and virtual-worlds).
-// Until that move lands in the archive, the old path still answers: each
-// module is tried at its new path first and at the old one on HTTP 404, so
-// the two repositories can merge in either order. Drop the old paths once
-// the archive's move is on main.
+// tabletop/): the adventures live in two folders, tabletop and
+// virtual-worlds, and the Codex's module is a tabletop one.
 const MODULE_ES = {
-  paths: ['lore/adventures/tabletop/el-espejo-roto.md', 'lore/adventures/el-espejo-roto.md'],
+  paths: ['lore/adventures/tabletop/el-espejo-roto.md'],
   marker: 'EL ESPEJO ROTO',
 };
 const MODULE_EN_PATHS = {
-  paths: ['lore/adventures/tabletop/the-broken-mirror.md', 'lore/adventures/the-broken-mirror.md'],
+  paths: ['lore/adventures/tabletop/the-broken-mirror.md'],
   marker: 'THE BROKEN MIRROR',
 };
 
