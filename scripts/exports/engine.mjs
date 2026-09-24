@@ -71,6 +71,22 @@ export function resolveManual(root, lang = 'es') {
   );
 }
 
+/** Drop HTML comments (the files' SPDX licence headers) from the edition
+ * matter. A position cut, not a regex: CodeQL reads a `<!--…-->` regex as an
+ * incomplete HTML sanitiser, and this is not one — these are our own files. */
+function withoutComments(text) {
+  let out = '';
+  let at = 0;
+  for (;;) {
+    const open = text.indexOf('<!--', at);
+    if (open === -1) return out + text.slice(at);
+    const close = text.indexOf('-->', open + 4);
+    out += text.slice(at, open);
+    if (close === -1) return out;
+    at = close + 3;
+  }
+}
+
 /** English file names of the edition matter (lore/codex/en/), as in docs.ts. */
 const DOC_EN = {
   glosario: 'glossary',
@@ -88,7 +104,7 @@ export function resolveDoc(root, name, lang = 'es') {
     if (existsSync(english)) {
       const text = readFileSync(english, 'utf8');
       return {
-        text: text.replaceAll(/<!--[\s\S]*?-->/g, '').trim(),
+        text: withoutComments(text).trim(),
         fromFixture: dir.includes('fixtures'),
       };
     }
@@ -100,5 +116,5 @@ export function resolveDoc(root, name, lang = 'es') {
     name,
   );
   // Authoring comments never reach an edition — same rule as docs.ts.
-  return { text: text.replaceAll(/<!--[\s\S]*?-->/g, '').trim(), fromFixture };
+  return { text: withoutComments(text).trim(), fromFixture };
 }
