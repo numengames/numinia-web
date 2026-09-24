@@ -1,11 +1,12 @@
 ---
 import CodexCapituloPage from '../../../../components/lap/codex/CodexCapituloPage.astro';
 import { resolveCodexRoute } from '../../../../lib/codex/routes';
+import { codexLang } from '../../../../lib/codex/source';
 
 export const prerender = false;
 
 const prefix = '/pt-br';
-const route = resolveCodexRoute(Astro.params.chapter ?? '', prefix);
+const route = resolveCodexRoute(Astro.params.chapter ?? '', prefix, codexLang('pt-br'));
 if (route.kind === 'redirect') {
   return Astro.redirect(route.to, route.permanent ? 301 : 302);
 }

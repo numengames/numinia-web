@@ -18,13 +18,16 @@ const LORE_REF = process.env.LORE_REF ?? 'main';
 
 // Plain file reads from raw.githubusercontent.com: the archive is public,
 // and these do not spend the API's 60-requests/hour budget (this script
-// reads twelve files).
+// reads twenty-one files).
 const rawUrl = (path) => `https://raw.githubusercontent.com/${LORE_REPO}/${LORE_REF}/${path}`;
 
-async function read(path, marker) {
+// `optional`: an HTTP 404 returns null instead of failing, for the one file
+// that may not have landed in the archive yet (see MANUAL_PARTS_EN).
+async function read(path, marker, { optional = false } = {}) {
   const response = await fetch(rawUrl(path), {
     headers: { 'user-agent': 'numinia-web-lore-fetch' },
   });
+  if (optional && response.status === 404) return null;
   if (!response.ok) {
     console.error(`fetch-lore: ${LORE_REPO}/${path}@${LORE_REF} → HTTP ${response.status}.`);
     process.exit(1);
@@ -67,6 +70,24 @@ const MANUAL_PARTS = [
   ['lore/adventures/el-espejo-roto.md', 'EL ESPEJO ROTO'],
 ];
 
+// The English edition (lore/game/manual/en/), joined the same way into
+// .lore/manual-v0_6_0.en.md: numinia.com reads the manual in English on
+// every locale but /es, which keeps the Spanish original. The Broken Mirror
+// is still being translated: until lore/adventures/the-broken-mirror.md
+// exists (HTTP 404) the English manual carries the Spanish module, with a
+// warning. Any other missing file is fatal.
+const MANUAL_PARTS_EN = [
+  ['lore/game/manual/en/00-introduction.md', 'INTRODUCTION'],
+  ['lore/game/manual/en/01-welcome-to-numinia.md', 'CHAPTER 1'],
+  ['lore/game/manual/en/02-history-and-legends-of-numinia.md', 'CHAPTER 2'],
+  ['lore/game/manual/en/03-character-creation.md', 'CHAPTER 3'],
+  ['lore/game/manual/en/04-game-system.md', 'CHAPTER 4'],
+  ['lore/game/manual/en/05-geography-and-culture-of-numinia.md', 'CHAPTER 5'],
+  ['lore/game/manual/en/06-inventory-and-bestiary.md', 'CHAPTER 6'],
+  ['lore/game/manual/en/07-building-the-adventure.md', 'CHAPTER 7'],
+];
+const MODULE_EN = ['lore/adventures/the-broken-mirror.md', 'THE BROKEN MIRROR'];
+
 // The codex/ docs are the edition matter (glossary, acknowledgments,
 // character sheet) rendered around the manual.
 const FILES = [
@@ -95,6 +116,25 @@ write(
   join('apps/store', '.lore', 'manual-v0_6_0.md'),
   `${parts.join('\n\n\n')}\n`,
   `${MANUAL_PARTS.length} files, ${LORE_REPO}@${LORE_REF}`,
+);
+
+const partsEn = [];
+for (const [path, marker] of MANUAL_PARTS_EN) {
+  partsEn.push(withoutSpdx(await read(path, marker)).replace(/\n+$/, ''));
+}
+const moduleEn = await read(MODULE_EN[0], MODULE_EN[1], { optional: true });
+if (moduleEn === null) {
+  console.warn(
+    `fetch-lore: ${MODULE_EN[0]} not in the archive yet (HTTP 404); the English manual carries the Spanish module.`,
+  );
+  partsEn.push(parts.at(-1));
+} else {
+  partsEn.push(withoutSpdx(moduleEn).replace(/\n+$/, ''));
+}
+write(
+  join('apps/store', '.lore', 'manual-v0_6_0.en.md'),
+  `${partsEn.join('\n\n\n')}\n`,
+  `${partsEn.length} files, ${LORE_REPO}@${LORE_REF}`,
 );
 
 for (const file of FILES) {

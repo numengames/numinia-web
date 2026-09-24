@@ -65,6 +65,37 @@ describe('splitManual', () => {
   });
 });
 
+describe('splitManual — the English edition', () => {
+  // The fixture with the English markers and two English titles: the same
+  // structure the archive's lore/game/manual/en/ joins into.
+  const english = fixture
+    .replace('# **INTRODUCCIÓN**', '# **INTRODUCTION**')
+    .replaceAll(/# \*\*CAPÍTULO (\d)\*\*/g, '# **CHAPTER $1**')
+    .replace('# **LA FORMA DE UN CAPÍTULO**', '# **WELCOME TO NUMINIA**')
+    .replace('# **EL ESPEJO ROTO**', '# **THE BROKEN MIRROR**');
+  const chapters = splitManual(english);
+
+  it('reconstructs the source byte-exactly from the chapter segments', () => {
+    expect(chapters.map((chapter) => chapter.raw).join('')).toBe(english);
+  });
+
+  it('finds INTRODUCTION, the seven CHAPTERs and THE BROKEN MIRROR, with English slugs', () => {
+    expect(chapters.map((chapter) => chapter.number)).toEqual([null, 1, 2, 3, 4, 5, 6, 7, null]);
+    expect(chapters[0]?.slug).toBe('introduction');
+    expect(chapters[1]?.slug).toBe('welcome-to-numinia');
+    expect(chapters.at(-1)?.slug).toBe('the-broken-mirror');
+    expect(chapters.at(-1)?.title).toBe('THE BROKEN MIRROR');
+    expect(() => buildManifest(chapters)).not.toThrow();
+  });
+
+  it('accepts the Spanish module inside the English manual (translation pending)', () => {
+    const mixed = english.replace('# **THE BROKEN MIRROR**', '# **EL ESPEJO ROTO**');
+    const split = splitManual(mixed);
+    expect(split.map((chapter) => chapter.raw).join('')).toBe(mixed);
+    expect(split.at(-1)?.slug).toBe('el-espejo-roto');
+  });
+});
+
 describe('chapterAnchors', () => {
   const chapters = splitManual(fixture);
 
