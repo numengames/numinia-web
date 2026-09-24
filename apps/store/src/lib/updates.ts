@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.57.0',
+    date: '2026-09-24 18:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The English names of the world are the ones its authors chose. Guild houses and branches: Draftsmen (was Projectors), Automatons (Automata), Legal Rabbits (Legal Counsels), Stewards (Intendants), Handcrafters (Artisans), Trustees (Syndics), Seraphs (Seraphim). The Humanitas are the Humanites in English, and the first Position is the Gatekeeper. The LAP keeps its name, which in English stands for Lore Akashic Processor. The city page also spells Cyanites, Hermeticists and Neo-Atlantists as the manual does.',
+      },
+    ],
+  },
+  {
     version: 'v0.56.0',
     date: '2026-09-24 15:00',
     entries: [

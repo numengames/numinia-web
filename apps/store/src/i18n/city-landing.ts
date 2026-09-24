@@ -770,7 +770,7 @@ export const content: Record<Lang, LandingContent> = {
       ],
       items: [
         {
-          name: 'Humanitas',
+          name: 'Humanites',
           projection: 'Humanistic Disciplines',
           character: 'The Idealist',
           field: 'Culture',
@@ -778,7 +778,7 @@ export const content: Record<Lang, LandingContent> = {
           motto: 'Custodians of meaning',
         },
         {
-          name: 'Cyanitas',
+          name: 'Cyanites',
           projection: 'Social Sciences',
           character: 'The Dialectician',
           field: 'Knowledge',
@@ -824,8 +824,8 @@ export const content: Record<Lang, LandingContent> = {
           seal: '/images/seals/alquimistas.webp',
           desc: 'Creative, scientific and artistic minds; builders and developers.',
           branches: [
-            { name: 'Craftsmen', houses: ['Designers', 'Aesthetes'] },
-            { name: 'Engineers', houses: ['Architects', 'Automata'] },
+            { name: 'Handcrafters', houses: ['Draftsmen', 'Aesthetes'] },
+            { name: 'Engineers', houses: ['Architects', 'Automatons'] },
           ],
         },
         {
@@ -842,8 +842,8 @@ export const content: Record<Lang, LandingContent> = {
           seal: '/images/seals/procuradores.webp',
           desc: 'Pragmatic minds; managers, administrators and lawmakers.',
           branches: [
-            { name: 'Legates', houses: ['Legal Counsels', 'Heralds'] },
-            { name: 'Syndics', houses: ['Mercurials', 'Intendants'] },
+            { name: 'Legates', houses: ['Legal Rabbits', 'Heralds'] },
+            { name: 'Trustees', houses: ['Mercurials', 'Stewards'] },
           ],
         },
         {
@@ -851,7 +851,7 @@ export const content: Record<Lang, LandingContent> = {
           seal: '/images/seals/centinelas.webp',
           desc: 'Moderators, custodians, peacekeepers and caretakers.',
           branches: [
-            { name: 'Seraphim', houses: ['Captains', 'Guardians'] },
+            { name: 'Seraphs', houses: ['Captains', 'Guardians'] },
             { name: 'Archangels', houses: ['Healers', 'Explorers'] },
           ],
         },
@@ -866,7 +866,7 @@ export const content: Record<Lang, LandingContent> = {
       ],
       items: [
         {
-          name: 'Hermetists',
+          name: 'Hermeticists',
           seal: '/images/seals/vitruvian.webp',
           district: 'Vitruvian',
           desc: 'Guardians of wisdom and erudition.',
@@ -893,7 +893,7 @@ export const content: Record<Lang, LandingContent> = {
           principles: 'Order, strategy, governance',
         },
         {
-          name: 'Neo-Atlanteans',
+          name: 'Neo-Atlantists',
           seal: '/images/seals/sycamore.webp',
           district: 'Sycamore',
           desc: 'Visionaries who transform reality through art.',

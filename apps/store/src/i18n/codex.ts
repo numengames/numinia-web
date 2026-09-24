@@ -263,7 +263,7 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
     home: {
       title: 'Codex of Numinia — The Roleplaying Game Manual',
       description:
-        'The Numinia roleplaying game manual, read in the Personal Akashic Reader. Chapter One is open; the whole book is always free to download.',
+        'The Numinia roleplaying game manual, read in the Lore Akashic Processor. Chapter One is open; the whole book is always free to download.',
       path: '/ codex / roleplaying-game-manual',
       downloadsLabel: 'Downloads',
       downloadsHeading: 'The book travels free',

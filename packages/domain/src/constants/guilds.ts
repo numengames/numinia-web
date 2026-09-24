@@ -12,7 +12,7 @@ const projectors: House = {
   guildId: 'alchemists',
   name: {
     es: 'Proyectistas',
-    en: 'Projectors',
+    en: 'Draftsmen',
     ja: '設計士',
     ko: '설계사',
     'pt-br': 'Projetistas',
@@ -72,7 +72,7 @@ const automata: House = {
   guildId: 'alchemists',
   name: {
     es: 'Autómatas',
-    en: 'Automata',
+    en: 'Automatons',
     ja: 'オートマタ',
     ko: '오토마타',
     'pt-br': 'Autômatos',
@@ -172,7 +172,7 @@ const legalCounsels: House = {
   guildId: 'procurators',
   name: {
     es: 'Conejos Legales',
-    en: 'Legal Counsels',
+    en: 'Legal Rabbits',
     ja: '法律顧問',
     ko: '법률 고문',
     'pt-br': 'Conselheiros Legais',
@@ -232,7 +232,7 @@ const intendants: House = {
   guildId: 'procurators',
   name: {
     es: 'Intendentes',
-    en: 'Intendants',
+    en: 'Stewards',
     ja: '内務官',
     ko: '내무관',
     'pt-br': 'Intendentes',
@@ -332,7 +332,7 @@ const artisans: Branch = {
   guildId: 'alchemists',
   name: {
     es: 'Menestrales',
-    en: 'Artisans',
+    en: 'Handcrafters',
     ja: '職人衆',
     ko: '장인단',
     'pt-br': 'Artesãos',
@@ -433,7 +433,7 @@ const syndics: Branch = {
   guildId: 'procurators',
   name: {
     es: 'Síndicos',
-    en: 'Syndics',
+    en: 'Trustees',
     ja: 'シンディック',
     ko: '신디크',
     'pt-br': 'Síndicos',
@@ -453,7 +453,7 @@ const seraphim: Branch = {
   guildId: 'sentinels',
   name: {
     es: 'Serafines',
-    en: 'Seraphim',
+    en: 'Seraphs',
     ja: '熾天使',
     ko: '세라핌',
     'pt-br': 'Serafins',

@@ -41,7 +41,7 @@ export const SPECIES: readonly Species[] = [
     id: 'humanitas',
     name: {
       es: 'Humanitas',
-      en: 'Humanitas',
+      en: 'Humanites',
       ja: 'フマニタス',
       ko: '후마니타스',
       'pt-br': 'Humanitas',
