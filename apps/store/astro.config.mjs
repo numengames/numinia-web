@@ -26,6 +26,12 @@ const env = parseEnv(process.env);
  * compiled into the bundle, which is exactly what must never happen.
  */
 const PUBLIC_BUILD_KEYS = [
+  // The deploy's commit, for the footer build line and /telemetry
+  // (src/lib/build-info.ts). Workers Builds injects it into the build's
+  // process.env, but the prerender Worker does not inherit it: without this
+  // entry the live footer printed "dev" while /version.json, written by
+  // scripts/build-cloudflare.mjs outside the prerender, had the real SHA.
+  'WORKERS_CI_COMMIT_SHA',
   'GITHUB_REPO_OWNER',
   'GITHUB_REPO_NAME',
   'GITHUB_BRANCH',
