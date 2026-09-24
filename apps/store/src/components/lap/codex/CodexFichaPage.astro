@@ -6,8 +6,10 @@
  * stylesheet), take the .md — and one door leads to the living sheet.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CODEX_UI } from '../../../i18n/codex';
 import { loadCodexDoc } from '../../../lib/codex/docs';
 import { renderChapter } from '../../../lib/codex/render';
+import { codexLang } from '../../../lib/codex/source';
 import { viewerFrom } from '../../../lib/lap/gate';
 import CodexMarcos from './CodexMarcos.astro';
 import CodexShell from './CodexShell.astro';
@@ -18,28 +20,33 @@ interface Props {
 const { locale } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const viewer = await viewerFrom(Astro.cookies);
+const lang = codexLang(locale);
+const ui = CODEX_UI[lang];
+const t = ui.sheet;
 const rendered = renderChapter({
   slug: 'ficha',
-  title: 'Hoja de Personaje',
+  title: t.name,
   number: null,
   access: 'public',
-  raw: loadCodexDoc('hoja-de-personaje'),
+  raw: loadCodexDoc('hoja-de-personaje', lang),
 });
+const sheetHref = lang === 'en' ? '/api/codex/ficha.en.md' : '/api/codex/ficha.md';
 ---
 
 <CodexShell
   locale={locale}
-  title="Hoja de Personaje — Códex de Numinia"
-  description="La hoja de personaje del manual v0.6.0, transcrita campo a campo: imprímela o llévatela en .md."
-  path="/ codex / ficha"
+  lang={lang}
+  title={t.title}
+  description={t.description}
+  path={t.path}
   showGateCta={viewer === null}
-  capActual="Anexo · Hoja de Personaje"
+  capActual={t.footer}
 >
-  <article class="pliego" aria-label="Hoja de Personaje">
+  <article class="pliego" aria-label={t.name}>
     <header class="cap-abre dibujado" data-dibujable id="hoja-de-personaje">
       <CodexMarcos />
-      <span class="num">Anexo</span>
-      <h2>Hoja de Personaje</h2>
+      <span class="num">{ui.annex}</span>
+      <h2>{t.name}</h2>
     </header>
     <div class="pliego-int">
       {/* sin-capitular: field labels are a form, not prose — no drop cap. */}
@@ -47,22 +54,22 @@ const rendered = renderChapter({
     </div>
     <div class="acciones-ficha">
       <button class="cbtn" data-ficha-imprimir data-metric="codex-ficha-print">
-        <span class="lbl">Imprimir</span>
+        <span class="lbl">{t.print}</span>
       </button>
       <a
         class="cbtn"
-        href="/api/codex/ficha.md"
-        download="Numinia_Hoja_de_Personaje_v0_6_0.md"
+        href={sheetHref}
+        download={t.downloadFile}
         data-metric="codex-ficha-md"
       >
-        <span class="lbl">Descargar .md</span>
+        <span class="lbl">{t.download}</span>
       </a>
       <a class="cbtn tinta" href={`${prefix}/lap/character/`} data-metric="codex-ficha-viva">
-        <span class="lbl">Abrir la ficha viva</span>
+        <span class="lbl">{t.living}</span>
       </a>
     </div>
-    <nav class="pager" aria-label="Volver">
-      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">← Portada</a>
+    <nav class="pager" aria-label={ui.back}>
+      <a href={`${prefix}/lap/codex/`} rel="up" data-metric="codex-index">{ui.backToCover}</a>
     </nav>
   </article>
 </CodexShell>

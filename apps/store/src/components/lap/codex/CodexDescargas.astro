@@ -3,27 +3,28 @@
  * Download cards (D6): the book always travels free — no login, ever.
  * .md straight from the canonical file; PDF and EPUB are the print/Kindle
  * editions the export pipeline (scripts/build-exports.mjs) drops into
- * /descargas/ at build time.
+ * /descargas/ at build time. Each edition offers its own book: the Spanish
+ * original on /es, the English edition everywhere else.
  */
+import { CODEX_UI, codexBookBase } from '../../../i18n/codex';
 import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+import type { CodexLang } from '../../../lib/codex/source';
 
 interface Props {
+  lang: CodexLang;
   /** Chapter slug for a per-chapter download card; omit for book-only. */
   slug?: string | undefined;
 }
-const { slug } = Astro.props;
-const base = `Numinia_Manual_del_juego_de_rol_v${MANUAL_VERSION.replaceAll('.', '_')}`;
+const { lang, slug } = Astro.props;
+const t = CODEX_UI[lang].downloads;
+const base = codexBookBase(lang, MANUAL_VERSION);
+const bookHref = lang === 'en' ? '/api/codex/manual.en.md' : '/api/codex/manual.md';
 ---
 
 <div class="descargas">
-  <a
-    class="dcard"
-    href="/api/codex/manual.md"
-    download="Numinia_Manual_del_juego_de_rol_v0_6_0.md"
-    data-metric="codex-download-md"
-  >
-    <span class="f">.md</span>
-    <p class="d">El libro entero. Texto plano, tuyo.</p>
+  <a class="dcard" href={bookHref} download={`${base}.md`} data-metric="codex-download-md">
+    <span class="f">{t.bookFile}</span>
+    <p class="d">{t.book}</p>
   </a>
   {
     slug && (
@@ -33,8 +34,8 @@ const base = `Numinia_Manual_del_juego_de_rol_v${MANUAL_VERSION.replaceAll('.', 
         download={`Numinia_${slug}.md`}
         data-metric="codex-download-chapter-md"
       >
-        <span class="f">.md · capítulo</span>
-        <p class="d">Solo este capítulo.</p>
+        <span class="f">{t.chapterFormat}</span>
+        <p class="d">{t.chapter}</p>
       </a>
     )
   }
@@ -45,7 +46,7 @@ const base = `Numinia_Manual_del_juego_de_rol_v${MANUAL_VERSION.replaceAll('.', 
     data-metric="codex-download-pdf"
   >
     <span class="f">pdf</span>
-    <p class="d">Para imprimir. Edición Diurno.</p>
+    <p class="d">{t.pdf}</p>
   </a>
   <a
     class="dcard"
@@ -54,6 +55,6 @@ const base = `Numinia_Manual_del_juego_de_rol_v${MANUAL_VERSION.replaceAll('.', 
     data-metric="codex-download-epub"
   >
     <span class="f">epub</span>
-    <p class="d">Para tu Kindle o lector.</p>
+    <p class="d">{t.epub}</p>
   </a>
 </div>

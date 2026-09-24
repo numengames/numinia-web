@@ -43,22 +43,51 @@ const BOOK_EXTRA = `
 }
 `;
 
-function portadaHtml(version) {
+/** Book-level words of each edition: the Spanish original and the English. */
+const BOOK = {
+  es: {
+    presents: 'Numen Games presenta',
+    subtitle: 'Un juego de rol entre planos: vapor, cobre y código.',
+    edition: (version) => `manual del juego de rol · v${version} · edición impresa`,
+    title: (version) => `Numinia. El juego de rol — v${version}`,
+    header: 'Numinia · Manual del juego de rol',
+    toc: 'Índice',
+    glossary: 'Glosario',
+    acknowledgments: 'Agradecimientos',
+  },
+  en: {
+    presents: 'Numen Games presents',
+    subtitle: 'A roleplaying game between planes: steam, copper and code.',
+    edition: (version) => `the roleplaying game manual · v${version} · print edition`,
+    title: (version) => `Numinia. The Roleplaying Game — v${version}`,
+    header: 'Numinia · The Roleplaying Game Manual',
+    toc: 'Contents',
+    glossary: 'Glossary',
+    acknowledgments: 'Acknowledgments',
+  },
+};
+
+function portadaHtml(version, lang) {
+  const t = BOOK[lang];
   return (
     `<header class="portada portada-libro dibujado">${marcos}` +
-    `<p class="ed">Numen Games presenta</p>` +
+    `<p class="ed">${t.presents}</p>` +
     `<h1>Numi<span>n</span>ia</h1>` +
-    `<p class="sub"><em>Un juego de rol entre planos: vapor, cobre y código.</em></p>` +
+    `<p class="sub"><em>${t.subtitle}</em></p>` +
     `<div class="filete"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.1">` +
     `<circle cx="16" cy="16" r="14" stroke-dasharray="3 2.4"></circle><path d="M16 6 26 16 16 26 6 16z"></path></svg></div>` +
     `<p class="aut">Christian Märtens · Pablo Fernández-Maquieira Martínez</p>` +
-    `<p class="ver">manual del juego de rol · v${version} · edición impresa</p>` +
+    `<p class="ver">${t.edition(version)}</p>` +
     `</header>`
   );
 }
 
 /** Assemble the full book as one printable HTML document. */
-export function bookHtml(root, { version, chapters, glossaryHtml, acknowledgmentsHtml, colofon }) {
+export function bookHtml(
+  root,
+  { version, chapters, glossaryHtml, acknowledgmentsHtml, colofon, lang = 'es' },
+) {
+  const t = BOOK[lang];
   const toc = chapters
     .map((chapter) => `<li><span class="n">${chapter.eyebrow}</span> · ${chapter.title}</li>`)
     .join('\n');
@@ -71,15 +100,15 @@ export function bookHtml(root, { version, chapters, glossaryHtml, acknowledgment
     )
     .join('\n');
   return (
-    `<!doctype html><html lang="es"><head><meta charset="utf-8"/>` +
-    `<title>Numinia. El juego de rol — v${version}</title>` +
+    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/>` +
+    `<title>${t.title(version)}</title>` +
     `<style>${siteCss(root)}</style><style>${BOOK_EXTRA}</style></head>` +
     `<body><div class="codex"><main class="lienzo">` +
-    portadaHtml(version) +
-    `<section class="hoja"><p class="etq">Índice</p><ul class="toc-libro">${toc}</ul></section>` +
+    portadaHtml(version, lang) +
+    `<section class="hoja"><p class="etq">${t.toc}</p><ul class="toc-libro">${toc}</ul></section>` +
     body +
-    `<section class="hoja"><p class="etq">Glosario</p>${glossaryHtml}</section>` +
-    `<section class="hoja"><p class="etq">Agradecimientos</p>${acknowledgmentsHtml}</section>` +
+    `<section class="hoja"><p class="etq">${t.glossary}</p>${glossaryHtml}</section>` +
+    `<section class="hoja"><p class="etq">${t.acknowledgments}</p>${acknowledgmentsHtml}</section>` +
     `<section class="hoja">${colofon}</section>` +
     `</main></div></body></html>`
   );
@@ -94,7 +123,7 @@ async function chromiumFrom(root) {
 }
 
 /** Print the book HTML to PDF bytes (A4, Diurno, headers + page numbers). */
-export async function printPdf(root, html) {
+export async function printPdf(root, html, lang = 'es') {
   const { chromium } = await chromiumFrom(root);
   const scratch = mkdtempSync(path.join(tmpdir(), 'codex-pdf-'));
   const file = path.join(scratch, 'libro.html');
@@ -112,7 +141,7 @@ export async function printPdf(root, html) {
       margin: { top: '20mm', bottom: '18mm', left: '17mm', right: '17mm' },
       printBackground: true,
       displayHeaderFooter: true,
-      headerTemplate: template(`<span>Numinia · Manual del juego de rol</span>`),
+      headerTemplate: template(`<span>${BOOK[lang].header}</span>`),
       footerTemplate: template(
         `<span style="float:right"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`,
       ),
@@ -123,13 +152,13 @@ export async function printPdf(root, html) {
 }
 
 /** Screenshot the portada as the EPUB cover (portrait, 1600×2560). */
-export async function coverJpeg(root, version) {
+export async function coverJpeg(root, version, lang = 'es') {
   const { chromium } = await chromiumFrom(root);
   const html =
-    `<!doctype html><html lang="es"><head><meta charset="utf-8"/>` +
+    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/>` +
     `<style>${siteCss(root)}</style>` +
     `<style>html,body{margin:0} .codex .portada{min-height:100vh}</style></head>` +
-    `<body><div class="codex">${portadaHtml(version)}</div></body></html>`;
+    `<body><div class="codex">${portadaHtml(version, lang)}</div></body></html>`;
   const scratch = mkdtempSync(path.join(tmpdir(), 'codex-cover-'));
   const file = path.join(scratch, 'cubierta.html');
   writeFileSync(file, html);

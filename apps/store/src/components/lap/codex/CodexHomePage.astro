@@ -5,6 +5,7 @@
  * veil begins inside the gated chapters.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CODEX_UI } from '../../../i18n/codex';
 import { loadCodexDoc } from '../../../lib/codex/docs';
 import { codexLang, loadCodex } from '../../../lib/codex/source';
 import { viewerFrom } from '../../../lib/lap/gate';
@@ -20,9 +21,11 @@ interface Props {
 const { locale } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const viewer = await viewerFrom(Astro.cookies);
-const { manifest } = loadCodex(codexLang(locale));
+const lang = codexLang(locale);
+const t = CODEX_UI[lang].home;
+const { manifest } = loadCodex(lang);
 
-const gracias = loadCodexDoc('agradecimientos')
+const gracias = loadCodexDoc('agradecimientos', lang)
   .split('\n')
   .map((line) => line.trim())
   .filter((line) => line !== '' && !line.startsWith('#'));
@@ -30,27 +33,28 @@ const gracias = loadCodexDoc('agradecimientos')
 
 <CodexShell
   locale={locale}
-  title="Códex de Numinia — Manual del juego de rol"
-  description="El manual del juego de rol de Numinia, leído en el Lector Akáshico Personal. Capítulo primero abierto; el libro entero, siempre libre de descargar."
-  path="/ codex / manual-del-juego-de-rol"
+  lang={lang}
+  title={t.title}
+  description={t.description}
+  path={t.path}
   showGateCta={viewer === null}
-  capActual="Portada"
+  capActual={CODEX_UI[lang].cover}
 >
-  <CodexPortada />
-  <CodexIndice prefix={prefix} chapters={manifest.chapters} hasSession={viewer !== null} />
-  <section class="hoja" aria-label="Descargas">
-    <p class="etq">El libro viaja libre</p>
-    <CodexDescargas />
+  <CodexPortada lang={lang} />
+  <CodexIndice prefix={prefix} lang={lang} chapters={manifest.chapters} hasSession={viewer !== null} />
+  <section class="hoja" aria-label={t.downloadsLabel}>
+    <p class="etq">{t.downloadsHeading}</p>
+    <CodexDescargas lang={lang} />
   </section>
   <section class="cierre">
-    <div class="hoja" aria-label="Agradecimientos">
-      <p class="etq">Agradecimientos</p>
+    <div class="hoja" aria-label={t.acknowledgments}>
+      <p class="etq">{t.acknowledgments}</p>
       {
         gracias.map((line) => (
           <p class={line.includes('·') ? 'gracias nombres' : 'gracias'}>{line}</p>
         ))
       }
     </div>
-    <CodexColofon />
+    <CodexColofon lang={lang} />
   </section>
 </CodexShell>

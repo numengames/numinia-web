@@ -6,6 +6,7 @@
  * view. Legacy capitulo-N ids redirect to the new slugs.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CODEX_UI } from '../../../i18n/codex';
 import { codexLang, loadCodex } from '../../../lib/codex/source';
 import { chapterPreview } from '../../../lib/codex/render';
 import { viewerFrom } from '../../../lib/lap/gate';
@@ -19,7 +20,9 @@ interface Props {
 }
 const { locale, slug } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const { chapters, manifest } = loadCodex(codexLang(locale));
+const lang = codexLang(locale);
+const t = CODEX_UI[lang];
+const { chapters, manifest } = loadCodex(lang);
 
 // The page already resolved the route (redirects live there — only pages
 // may return a Response in Astro); an unknown slug here is a bug.
@@ -36,33 +39,44 @@ const nextVeiled = next !== undefined && next.access === 'gated' && viewer === n
 const ORDINALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 const capActual =
   chapter.number !== null
-    ? `Cap. ${ORDINALS[chapter.number - 1]} · ${chapter.title}`
+    ? `${t.chapterShort} ${ORDINALS[chapter.number - 1]} · ${chapter.title}`
     : chapter.title;
 ---
 
 <CodexShell
   locale={locale}
-  title={`${chapter.title} — Códex de Numinia`}
-  description={`${capActual} · Manual del juego de rol de Numinia, edición del Lector Akáshico.`}
+  lang={lang}
+  title={`${chapter.title} — ${t.chapterPage.titleSuffix}`}
+  description={t.chapterPage.description(capActual)}
   slug={chapter.slug}
   path={`/ codex / ${chapter.slug}`}
   showGateCta={viewer === null}
   capActual={capActual}
   prevHref={prev ? `${prefix}/lap/codex/${prev.slug}/` : `${prefix}/lap/codex/`}
-  prevLabel={prev ? prev.title : 'Portada'}
+  prevLabel={prev ? prev.title : t.cover}
   nextHref={next ? `${prefix}/lap/codex/${next.slug}/` : undefined}
   nextLabel={next?.title}
 >
   {
     veiled ? (
       <div class="pliego">
-        <CodexUmbral prefix={prefix} next={manifest.chapters[index]!} preview={chapterPreview(chapter)} />
+        <CodexUmbral
+          prefix={prefix}
+          lang={lang}
+          next={manifest.chapters[index]!}
+          preview={chapterPreview(chapter)}
+        />
       </div>
     ) : (
       <>
-        <CodexCapitulo prefix={prefix} chapter={chapter} prev={prev} next={next} />
+        <CodexCapitulo prefix={prefix} lang={lang} chapter={chapter} prev={prev} next={next} />
         {nextVeiled && next && (
-          <CodexUmbral prefix={prefix} next={next} preview={chapterPreview(chapters[index + 1]!)} />
+          <CodexUmbral
+            prefix={prefix}
+            lang={lang}
+            next={next}
+            preview={chapterPreview(chapters[index + 1]!)}
+          />
         )}
       </>
     )

@@ -7,7 +7,9 @@
  * first paint from the manual's own localStorage keys (D13).
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { CODEX_UI } from '../../../i18n/codex';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import type { CodexLang } from '../../../lib/codex/source';
 import CodexChrome from './CodexChrome.astro';
 import '../../../styles/codex.css';
 
@@ -16,6 +18,8 @@ import alegreyaScWoff from '../../../../../../packages/ui/src/assets/fonts/Alegr
 
 interface Props {
   locale: SupportedLocale;
+  /** The manual's language: the chrome speaks it too. */
+  lang: CodexLang;
   title: string;
   description: string;
   /** Chapter slug when reading one; '' on the cover/index surfaces. */
@@ -31,6 +35,7 @@ interface Props {
 }
 const {
   locale,
+  lang,
   title,
   description,
   slug = '',
@@ -43,6 +48,23 @@ const {
   nextLabel,
 } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
+// The client scripts' live labels. Spanish is their built-in default, so
+// the attribute only travels with the English edition.
+const chrome = CODEX_UI[lang].chrome;
+const clientUi =
+  lang === 'es'
+    ? undefined
+    : JSON.stringify({
+        bookmark: chrome.bookmark,
+        bookmarked: chrome.bookmarked,
+        narrator: chrome.narrator,
+        pause: chrome.narratorPause,
+        resume: chrome.narratorResume,
+        day: chrome.day,
+        night: chrome.night,
+        phases: chrome.moonPhases,
+        voice: chrome.voice,
+      });
 ---
 
 <BaseLayout locale={locale} title={title} description={description} chrome={false} wide>
@@ -62,7 +84,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     type="font/woff2"
     crossorigin
   />
-  <div class="codex" data-tam="m" data-slug={slug} data-prefix={prefix}>
+  <div class="codex" data-tam="m" data-slug={slug} data-prefix={prefix} data-ui={clientUi}>
     <script is:inline>
       /* The manual's own mode and size, restored before its first paint —
          independent of the LAP chrome by decision D13. */
@@ -78,6 +100,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     </script>
     <CodexChrome
       prefix={prefix}
+      lang={lang}
       path={path}
       showGateCta={showGateCta}
       prevHref={prevHref}

@@ -4,7 +4,14 @@
  * note (D10 — the Oracle will revise the wording; keep it marked), version.
  * The binaria spells «Numinia» in bits, computed at build — no client JS.
  */
+import { CODEX_UI } from '../../../i18n/codex';
 import { MANUAL_VERSION } from '../../../lib/codex/manifest';
+import type { CodexLang } from '../../../lib/codex/source';
+
+interface Props {
+  lang: CodexLang;
+}
+const t = CODEX_UI[Astro.props.lang].colophon;
 
 const WORD = 'Numinia';
 const bits = [...WORD].flatMap((char) =>
@@ -16,13 +23,13 @@ const bits = [...WORD].flatMap((char) =>
   <div class="binaria" aria-hidden="true">
     {bits.map((bit) => <i class={bit === '1' ? 'uno' : undefined}></i>)}
   </div>
-  <div class="marca-cierre" title="Sello de cierre">✦</div>
+  <div class="marca-cierre" title={t.seal}>✦</div>
   <p>
-    Numinia · Manual del juego de rol · versión {MANUAL_VERSION}<br />
+    {t.line1(MANUAL_VERSION)}<br />
     {/* The lore is CC0 since 2026-09-24 (numinia-archive lore/codex/legal.md). */}
-    Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br />
-    Dominio público (CC0 1.0) · Numen Games S.L. y sus autores renuncian a sus derechos · Numinia, Numen Games y Khepri son marcas<br />
-    Compuesto en Alegreya con el Sistema · La fuente de verdad vive en Git
+    {t.line2}<br />
+    {t.line3}<br />
+    {t.line4}
   </p>
   <p class="firma">numen games · leave things better than we found them</p>
 </div>

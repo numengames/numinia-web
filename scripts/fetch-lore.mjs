@@ -10,7 +10,7 @@
 // on 2026-09-16 a stale LORE_TOKEN turned a public read into HTTP 401 and
 // blocked every deploy for a day.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const LORE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-archive';
@@ -18,11 +18,11 @@ const LORE_REF = process.env.LORE_REF ?? 'main';
 
 // Plain file reads from raw.githubusercontent.com: the archive is public,
 // and these do not spend the API's 60-requests/hour budget (this script
-// reads twenty-one files).
+// reads twenty-four files).
 const rawUrl = (path) => `https://raw.githubusercontent.com/${LORE_REPO}/${LORE_REF}/${path}`;
 
-// `optional`: an HTTP 404 returns null instead of failing, for the one file
-// that may not have landed in the archive yet (see MANUAL_PARTS_EN).
+// `optional`: an HTTP 404 returns null instead of failing, for the files
+// that may not have landed in the archive yet (MODULE_EN, FILES_EN).
 async function read(path, marker, { optional = false } = {}) {
   const response = await fetch(rawUrl(path), {
     headers: { 'user-agent': 'numinia-web-lore-fetch' },
@@ -108,6 +108,28 @@ const FILES = [
   },
 ];
 
+// The English edition matter (lore/codex/en/), read by every locale but
+// /es. It is still being translated: a file not in the archive yet (HTTP
+// 404) is skipped with a warning and the English pages carry the Spanish
+// document until it lands (see apps/store/src/lib/codex/docs.ts).
+const FILES_EN = [
+  {
+    path: 'lore/codex/en/glossary.md',
+    target: join('apps/store', '.lore', 'codex', 'en', 'glossary.md'),
+    marker: '# Glossary',
+  },
+  {
+    path: 'lore/codex/en/acknowledgments.md',
+    target: join('apps/store', '.lore', 'codex', 'en', 'acknowledgments.md'),
+    marker: '# Acknowledgments',
+  },
+  {
+    path: 'lore/codex/en/character-sheet.md',
+    target: join('apps/store', '.lore', 'codex', 'en', 'character-sheet.md'),
+    marker: '# Character Sheet',
+  },
+];
+
 const parts = [];
 for (const [path, marker] of MANUAL_PARTS) {
   parts.push(withoutSpdx(await read(path, marker)).replace(/\n+$/, ''));
@@ -139,4 +161,17 @@ write(
 
 for (const file of FILES) {
   write(file.target, await read(file.path, file.marker), `${LORE_REPO}@${LORE_REF}`);
+}
+
+for (const file of FILES_EN) {
+  const text = await read(file.path, file.marker, { optional: true });
+  if (text === null) {
+    // A stale copy from an earlier fetch must not outlive its source.
+    rmSync(file.target, { force: true });
+    console.warn(
+      `fetch-lore: ${file.path} not in the archive yet (HTTP 404); the English edition carries the Spanish document.`,
+    );
+    continue;
+  }
+  write(file.target, text, `${LORE_REPO}@${LORE_REF}`);
 }

@@ -4,6 +4,12 @@
  * Alegreya embedded, CC0 rights metadata), produced by the site's own
  * render engine and dropped into the built client dir as static downloads.
  *
+ * Two editions, like the reader: the Spanish original
+ * (Numinia_Manual_del_juego_de_rol_v…) and the English edition
+ * (Numinia_The_Roleplaying_Game_Manual_v…), each with its own glossary,
+ * acknowledgments and character sheet. An English source that has not
+ * landed yet falls back to the Spanish one, as on the site.
+ *
  * Usage: node scripts/build-exports.mjs   (requires apps/store/dist to exist;
  * run after `astro build`, before deploy/e2e. DATA_SOURCE=fixture builds the
  * hermetic edition for gates; deploys build from the fetched .lore corpus.)
@@ -22,127 +28,157 @@ if (!existsSync(path.join(root, 'apps', 'store', 'dist', 'client'))) {
 }
 
 const engine = await loadCodexEngine(root);
-const manual = resolveManual(root);
-const chapters = engine.splitManual(manual.text);
-engine.buildManifest(chapters); // loud structural validation, same as the site
 const version = engine.MANUAL_VERSION;
-
-const ORDINALS = ['primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 'séptimo'];
-const eyebrowOf = (chapter) =>
-  chapter.number !== null
-    ? `Capítulo ${ORDINALS[chapter.number - 1] ?? chapter.number}`
-    : chapter.slug === 'el-espejo-roto'
-      ? 'Módulo'
-      : 'Introducción';
-
-const rendered = chapters.map((chapter) => ({
-  slug: chapter.slug,
-  title: chapter.title,
-  eyebrow: eyebrowOf(chapter),
-  rendered: engine.renderChapter(chapter),
-}));
-
-// The character-sheet annex (§4.9) travels with every edition (D15: free).
-rendered.push({
-  slug: 'hoja-de-personaje',
-  title: 'Hoja de Personaje',
-  eyebrow: 'Anexo',
-  rendered: engine.renderChapter({
-    slug: 'hoja-de-personaje',
-    title: 'Hoja de Personaje',
-    number: null,
-    access: 'public',
-    raw: resolveDoc(root, 'hoja-de-personaje').text,
-  }),
-});
-
-const glossary = engine.parseGlossary(resolveDoc(root, 'glosario').text);
-const glossaryHtml =
-  `<dl>` +
-  glossary
-    .map(
-      (entry) =>
-        `<dt id="${engine.slugify(entry.term)}">${escXml(entry.term)}</dt>` +
-        `<dd>${escXml(entry.definition)}` +
-        (entry.source ? `<span class="fuente">${escXml(entry.source)}</span>` : '') +
-        `</dd>`,
-    )
-    .join('') +
-  `</dl>`;
-// The EPUB edition links each chapter's first term mention to the
-// glossary (§4.8), same engine as the site; print keeps plain ink.
-const termTargets = engine.glossaryVariants(glossary);
-
-const acknowledgmentsHtml = resolveDoc(root, 'agradecimientos')
-  .text.replace(/^# .*\n/, '')
-  .trim()
-  .split(/\n\s*\n/)
-  .map((block) => `<p>${escXml(block.replaceAll('\n', ' '))}</p>`)
-  .join('\n');
-
-// Same text the site's colophon carries: the lore is CC0 (2026-09-24).
-const colofon =
-  `<div class="colofon"><p>Numinia · Manual del juego de rol · versión ${version}<br/>` +
-  `Autoría: Christian Märtens (80 %) · Pablo Fernández-Maquieira Martínez (20 %)<br/>` +
-  `Dominio público (CC0 1.0) · Numen Games S.L. y sus autores renuncian a sus derechos · Numinia, Numen Games y Khepri son marcas<br/>` +
-  `Compuesto en Alegreya con el Sistema · La fuente de verdad vive en Git</p>` +
-  `<p class="firma">numen games · leave things better than we found them</p></div>`;
-
-const base = `Numinia_Manual_del_juego_de_rol_v${version.replaceAll('.', '_')}`;
 mkdirSync(outDir, { recursive: true });
 
-console.log(
-  `build-exports: manual v${version}, ${chapters.length} chapters, ` +
-    `${glossary.length} glossary terms${manual.fromFixture ? ' [FIXTURE edition]' : ''}`,
-);
-
-const cover = await coverJpeg(root, version);
-const epubSections = [
-  {
-    id: 'cover',
-    file: 'cover.xhtml',
-    title: 'Cubierta',
-    body: `<figure style="margin:0"><img src="../cover.jpg" alt="Numinia. El juego de rol — cubierta"/></figure>`,
+/** Words of the exported book that the reader's chrome does not carry. */
+const EXPORT = {
+  es: {
+    coverTitle: 'Cubierta',
+    coverAlt: 'Numinia. El juego de rol — cubierta',
+    colophon: 'Colofón',
+    glossaryFile: 'glosario',
+    acknowledgmentsFile: 'agradecimientos',
+    sheetSlug: 'hoja-de-personaje',
   },
-  ...rendered.map((chapter) => ({
-    id: `c-${chapter.slug}`,
-    file: `${chapter.slug}.xhtml`,
+  en: {
+    coverTitle: 'Cover',
+    coverAlt: 'Numinia. The Roleplaying Game — cover',
+    colophon: 'Colophon',
+    glossaryFile: 'glossary',
+    acknowledgmentsFile: 'acknowledgments',
+    sheetSlug: 'character-sheet',
+  },
+};
+
+async function exportEdition(lang) {
+  const ui = engine.CODEX_UI[lang];
+  const words = EXPORT[lang];
+  const manual = resolveManual(root, lang);
+  const chapters = engine.splitManual(manual.text);
+  engine.buildManifest(chapters); // loud structural validation, same as the site
+
+  const eyebrowOf = (chapter) =>
+    chapter.number !== null
+      ? ui.chapterKicker(chapter.number)
+      : chapter.slug === 'el-espejo-roto' || chapter.slug === 'the-broken-mirror'
+        ? ui.moduleKicker
+        : ui.introKicker;
+
+  const rendered = chapters.map((chapter) => ({
+    slug: chapter.slug,
     title: chapter.title,
-    eyebrow: chapter.eyebrow,
-    rendered: {
-      ...chapter.rendered,
-      html: engine.linkGlossaryTerms(chapter.rendered.html, termTargets, 'glosario.xhtml'),
-    },
-  })),
-  {
-    id: 'glosario',
-    file: 'glosario.xhtml',
-    title: 'Glosario',
-    body: `<h1>Glosario</h1>${glossaryHtml}`,
-  },
-  {
-    id: 'agradecimientos',
-    file: 'agradecimientos.xhtml',
-    title: 'Agradecimientos',
-    body: `<h1>Agradecimientos</h1>${acknowledgmentsHtml}`,
-  },
-  { id: 'colofon', file: 'colofon.xhtml', title: 'Colofón', body: colofon },
-];
-const epub = buildEpub(root, { version, sections: epubSections, coverJpeg: cover });
-writeFileSync(path.join(outDir, `${base}.epub`), epub);
-console.log(`build-exports: ${base}.epub — ${(epub.length / 1024).toFixed(0)}KB`);
+    eyebrow: eyebrowOf(chapter),
+    rendered: engine.renderChapter(chapter),
+  }));
 
-const html = bookHtml(root, {
-  version,
-  chapters: rendered.map((chapter) => ({
-    eyebrow: chapter.eyebrow,
-    title: escXml(chapter.title),
-    html: chapter.rendered.html,
-  })),
-  glossaryHtml,
-  acknowledgmentsHtml,
-  colofon,
-});
-const pdf = await printPdf(root, html);
-writeFileSync(path.join(outDir, `${base}.pdf`), pdf);
-console.log(`build-exports: ${base}.pdf — ${(pdf.length / 1024).toFixed(0)}KB`);
+  // The character-sheet annex (§4.9) travels with every edition (D15: free).
+  rendered.push({
+    slug: words.sheetSlug,
+    title: ui.sheet.name,
+    eyebrow: ui.annex,
+    rendered: engine.renderChapter({
+      slug: words.sheetSlug,
+      title: ui.sheet.name,
+      number: null,
+      access: 'public',
+      raw: resolveDoc(root, 'hoja-de-personaje', lang).text,
+    }),
+  });
+
+  const glossary = engine.parseGlossary(resolveDoc(root, 'glosario', lang).text);
+  const glossaryHtml =
+    `<dl>` +
+    glossary
+      .map(
+        (entry) =>
+          `<dt id="${engine.slugify(entry.term)}">${escXml(entry.term)}</dt>` +
+          `<dd>${escXml(entry.definition)}` +
+          (entry.source ? `<span class="fuente">${escXml(entry.source)}</span>` : '') +
+          `</dd>`,
+      )
+      .join('') +
+    `</dl>`;
+  // The EPUB edition links each chapter's first term mention to the
+  // glossary (§4.8), same engine as the site; print keeps plain ink.
+  const termTargets = engine.glossaryVariants(glossary);
+  const glossaryFile = `${words.glossaryFile}.xhtml`;
+
+  const acknowledgmentsHtml = resolveDoc(root, 'agradecimientos', lang)
+    .text.replace(/^# .*\n/, '')
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => `<p>${escXml(block.replaceAll('\n', ' '))}</p>`)
+    .join('\n');
+
+  // Same text the site's colophon carries: the lore is CC0 (2026-09-24).
+  const c = ui.colophon;
+  const colofon =
+    `<div class="colofon"><p>${escXml(c.line1(version))}<br/>` +
+    `${escXml(c.line2)}<br/>` +
+    `${escXml(c.line3)}<br/>` +
+    `${escXml(c.line4)}</p>` +
+    `<p class="firma">numen games · leave things better than we found them</p></div>`;
+
+  const base = engine.codexBookBase(lang, version);
+
+  console.log(
+    `build-exports [${lang}]: manual v${version}, ${chapters.length} chapters, ` +
+      `${glossary.length} glossary terms${manual.fromFixture ? ' [FIXTURE edition]' : ''}`,
+  );
+
+  const cover = await coverJpeg(root, version, lang);
+  const epubSections = [
+    {
+      id: 'cover',
+      file: 'cover.xhtml',
+      title: words.coverTitle,
+      body: `<figure style="margin:0"><img src="../cover.jpg" alt="${escXml(words.coverAlt)}"/></figure>`,
+    },
+    ...rendered.map((chapter) => ({
+      id: `c-${chapter.slug}`,
+      file: `${chapter.slug}.xhtml`,
+      title: chapter.title,
+      eyebrow: chapter.eyebrow,
+      rendered: {
+        ...chapter.rendered,
+        html: engine.linkGlossaryTerms(chapter.rendered.html, termTargets, glossaryFile),
+      },
+    })),
+    {
+      id: words.glossaryFile,
+      file: glossaryFile,
+      title: ui.glossary.name,
+      body: `<h1>${escXml(ui.glossary.name)}</h1>${glossaryHtml}`,
+    },
+    {
+      id: words.acknowledgmentsFile,
+      file: `${words.acknowledgmentsFile}.xhtml`,
+      title: ui.home.acknowledgments,
+      body: `<h1>${escXml(ui.home.acknowledgments)}</h1>${acknowledgmentsHtml}`,
+    },
+    { id: 'colofon', file: 'colofon.xhtml', title: words.colophon, body: colofon },
+  ];
+  const epub = buildEpub(root, { version, sections: epubSections, coverJpeg: cover, lang });
+  writeFileSync(path.join(outDir, `${base}.epub`), epub);
+  console.log(`build-exports: ${base}.epub — ${(epub.length / 1024).toFixed(0)}KB`);
+
+  const html = bookHtml(root, {
+    version,
+    lang,
+    chapters: rendered.map((chapter) => ({
+      eyebrow: chapter.eyebrow,
+      title: escXml(chapter.title),
+      html: chapter.rendered.html,
+    })),
+    glossaryHtml,
+    acknowledgmentsHtml,
+    colofon,
+  });
+  const pdf = await printPdf(root, html, lang);
+  writeFileSync(path.join(outDir, `${base}.pdf`), pdf);
+  console.log(`build-exports: ${base}.pdf — ${(pdf.length / 1024).toFixed(0)}KB`);
+}
+
+await exportEdition('es');
+await exportEdition('en');
