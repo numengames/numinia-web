@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.55.0',
+    date: '2026-09-24 14:15',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Codex reads the manual in English; Spanish keeps the original. On numinia.com the Numinia RPG manual now opens in its English edition — introduction, the seven chapters, English chapter addresses — on every language but Spanish, where /es/lap/codex/ reads the original text exactly as before. The old capitulo-N links still land on the right chapter everywhere, and a Spanish chapter link opened in English lands on the same chapter in English. The Broken Mirror module follows in English as soon as its translation lands; until then it reads in Spanish',
+      },
+    ],
+  },
+  {
     version: 'v0.54.0',
     date: '2026-09-24 12:30',
     entries: [

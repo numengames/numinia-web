@@ -6,7 +6,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { loadCodexDoc } from '../../../lib/codex/docs';
-import { loadCodex } from '../../../lib/codex/source';
+import { codexLang, loadCodex } from '../../../lib/codex/source';
 import { viewerFrom } from '../../../lib/lap/gate';
 import CodexColofon from './CodexColofon.astro';
 import CodexDescargas from './CodexDescargas.astro';
@@ -20,7 +20,7 @@ interface Props {
 const { locale } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const viewer = await viewerFrom(Astro.cookies);
-const { manifest } = loadCodex();
+const { manifest } = loadCodex(codexLang(locale));
 
 const gracias = loadCodexDoc('agradecimientos')
   .split('\n')

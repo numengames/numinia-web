@@ -31,7 +31,7 @@ const ORDINALS = ['primero', 'segundo', 'tercero', 'cuarto', 'quinto', 'sexto', 
 const eyebrow =
   chapter.number !== null
     ? `Capítulo ${ORDINALS[chapter.number - 1] ?? chapter.number}`
-    : chapter.slug === 'el-espejo-roto'
+    : chapter.slug === 'el-espejo-roto' || chapter.slug === 'the-broken-mirror'
       ? 'Módulo'
       : 'Introducción';
 ---

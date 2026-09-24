@@ -27,9 +27,10 @@ export interface CodexAnchor {
   readonly line: number;
 }
 
-const INTRO_RE = /^# \*\*INTRODUCCIÓN\*\*\s*$/;
-const CHAPTER_RE = /^# \*\*CAPÍTULO (\d+)\*\*\s*$/;
-const MODULE_RE = /^# \*\*EL ESPEJO ROTO\*\*\s*$/;
+// Spanish original and English edition: same structure, translated markers.
+const INTRO_RE = /^# \*\*(?:INTRODUCCIÓN|INTRODUCTION)\*\*\s*$/;
+const CHAPTER_RE = /^# \*\*(?:CAPÍTULO|CHAPTER) (\d+)\*\*\s*$/;
+const MODULE_RE = /^# \*\*(?:EL ESPEJO ROTO|THE BROKEN MIRROR)\*\*\s*$/;
 const HEADING_RE = /^(#{1,6}) (.+?)\s*$/;
 const DISPLAY_H1_RE = /^# \*\*(.+)\*\*\s*$/;
 
@@ -86,17 +87,15 @@ export function splitManual(raw: string): readonly CodexChapter[] {
     const end = next ? (offsets[next.lineIndex] as number) : raw.length;
     const segment = raw.slice(start, end);
 
+    const marker = lines[boundary.lineIndex]!.replace(/^# |\*\*/g, '').trim();
     const title =
       boundary.kind === 'module'
-        ? 'EL ESPEJO ROTO'
-        : (displayTitle(lines, boundary.lineIndex, next?.lineIndex ?? lines.length) ??
-          lines[boundary.lineIndex]!.replace(/^# |\*\*/g, ''));
-    const slug =
-      boundary.kind === 'intro'
-        ? 'introduccion'
-        : boundary.kind === 'module'
-          ? 'el-espejo-roto'
-          : slugify(title);
+        ? marker
+        : (displayTitle(lines, boundary.lineIndex, next?.lineIndex ?? lines.length) ?? marker);
+    // The intro slugs its marker, chapters and the module their title — in
+    // the manual's own language: introduccion / introduction, el-espejo-roto
+    // / the-broken-mirror, and English chapter titles give English slugs.
+    const slug = boundary.kind === 'intro' ? slugify(marker) : slugify(title);
 
     return {
       slug,

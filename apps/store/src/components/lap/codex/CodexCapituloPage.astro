@@ -6,7 +6,7 @@
  * view. Legacy capitulo-N ids redirect to the new slugs.
  */
 import type { SupportedLocale } from '@numinia/domain';
-import { loadCodex } from '../../../lib/codex/source';
+import { codexLang, loadCodex } from '../../../lib/codex/source';
 import { chapterPreview } from '../../../lib/codex/render';
 import { viewerFrom } from '../../../lib/lap/gate';
 import CodexCapitulo from './CodexCapitulo.astro';
@@ -19,7 +19,7 @@ interface Props {
 }
 const { locale, slug } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const { chapters, manifest } = loadCodex();
+const { chapters, manifest } = loadCodex(codexLang(locale));
 
 // The page already resolved the route (redirects live there — only pages
 // may return a Response in Astro); an unknown slug here is a bug.

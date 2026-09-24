@@ -18,7 +18,13 @@ const numeral = (chapter: CodexChapterMeta): string =>
   chapter.number === null ? '—' : (ROMAN[chapter.number - 1] ?? String(chapter.number));
 const veiled = (chapter: CodexChapterMeta): boolean => chapter.access === 'gated' && !hasSession;
 const title = (chapter: CodexChapterMeta): string =>
-  chapter.slug === 'introduccion' ? `Introducción · ${chapter.title}` : chapter.title;
+  chapter.slug === 'introduccion'
+    ? `Introducción · ${chapter.title}`
+    : chapter.slug === 'introduction'
+      ? `Introduction · ${chapter.title}`
+      : chapter.title;
+const isModule = (chapter: CodexChapterMeta): boolean =>
+  chapter.slug === 'el-espejo-roto' || chapter.slug === 'the-broken-mirror';
 ---
 
 <section class="hoja" id="indice" aria-label="Índice">
@@ -28,7 +34,7 @@ const title = (chapter: CodexChapterMeta): string =>
       chapters.map((chapter) => (
         <li class={veiled(chapter) ? 'cerrado' : undefined}>
           <a href={`${prefix}/lap/codex/${chapter.slug}/`} data-metric="codex-chapter">
-            <span class="n">{chapter.slug === 'el-espejo-roto' ? '✦' : numeral(chapter)}</span>
+            <span class="n">{isModule(chapter) ? '✦' : numeral(chapter)}</span>
             <span class="t">{title(chapter)}</span>
             {veiled(chapter) ? (
               <span class="st">

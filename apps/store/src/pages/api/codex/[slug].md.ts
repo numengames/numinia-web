@@ -8,7 +8,10 @@ import { loadCodex } from '../../../lib/codex/source';
 export const prerender = false;
 
 export const GET: APIRoute = ({ params }) => {
-  const chapter = loadCodex().chapters.find((entry) => entry.slug === params.slug);
+  // Spanish first (the original); English slugs resolve to the English cut.
+  const chapter = [...loadCodex('es').chapters, ...loadCodex('en').chapters].find(
+    (entry) => entry.slug === params.slug,
+  );
   if (!chapter) return new Response('No such chapter', { status: 404 });
   return new Response(chapter.raw, {
     headers: {
