@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.62.0',
+    date: '2026-09-29 16:50',
+    entries: [
+      {
+        type: 'FIX',
+        text: "The Summa is written with two m's in every language: the Spanish label of an object's card now reads «Ficha en el Summa».",
+      },
+    ],
+  },
+  {
     version: 'v0.61.0',
     date: '2026-09-29 16:30',
     entries: [

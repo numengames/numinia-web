@@ -822,7 +822,7 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     format: 'Formato',
     license: 'Licencia',
     worldFileNote: 'Archivo de mundo para Hyperfy. Descárgalo para usarlo en tu espacio.',
-    summaTitle: 'Ficha en el Suma',
+    summaTitle: 'Ficha en el Summa',
     summaIntro:
       'Este bien tiene una ficha en el archivo de Numinia: qué es, su historia, cada forma con su licencia y su titular, y dónde están sus bytes con su huella.',
     summaStatus: 'Estado',
@@ -835,7 +835,7 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n} copias declaradas, huella y tamaño en la ficha',
     summaDownloadDepot: 'Descargar del depósito',
     summaReadCard: 'Leer la ficha en numinia.org',
-    summaMark: 'Ficha en el Suma',
+    summaMark: 'Ficha en el Summa',
   },
   en: {
     archiveTitle: 'Archive',
