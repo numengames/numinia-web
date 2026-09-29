@@ -47,9 +47,9 @@
   --inter: #016e7d;
   --inter-viva: #018ea1;
   --linea: #c4b5a6;
-  --linea-tenue: #e4d6c4;
+  --linea-tenue: #e2d3c2;
   --grana: #b02330;
-  --serif: 'Alegreya', 'Iowan Old Style', Palatino, Georgia, serif;
+  --serif: 'Alegreya', 'Iowan Old Style', Palatino, serif;
   --sc: 'Alegreya SC', 'Alegreya', serif;
   --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -634,7 +634,7 @@
   border: 1px solid var(--linea);
   border-left: 3px solid var(--solar);
   background: var(--papel-prof);
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 8px 8px 0;
   padding: 26px 30px;
   margin: 36px 0;
   font-style: italic;
@@ -662,7 +662,7 @@
 .codex .lamina {
   margin: 50px 0;
   border: 1px solid var(--linea);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--papel-prof);
 }
@@ -842,7 +842,7 @@
 }
 .codex .dcard {
   border: 1px solid var(--linea);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 14px 20px;
   min-width: 150px;
   text-align: left;
@@ -982,7 +982,7 @@
 .codex .binaria i {
   width: 5px;
   height: 12px;
-  border-radius: 1px;
+  border-radius: 0;
   background: var(--linea);
 }
 .codex .binaria i.uno {
@@ -1107,7 +1107,7 @@
     --solar: #efa517;
     --inter: #016e7d;
     --linea: #c4b5a6;
-    --linea-tenue: #e4d6c4;
+    --linea-tenue: #e2d3c2;
     background: #fff;
     font-size: 11pt;
     line-height: 1.5;

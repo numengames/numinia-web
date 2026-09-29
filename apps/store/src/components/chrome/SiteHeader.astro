@@ -17,11 +17,13 @@ const t = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
 const isActive = (section: string): boolean => basePath.startsWith(`/${section}/`);
+// Each entry carries its Phosphor icon (regular, 14 px) before the word, as
+// numinia.org's bar does.
 const NAV = [
-  { section: 'city', href: `${prefix}/city/`, label: t.navCity, metric: 'nav-city' },
-  { section: 'assets', href: `${prefix}/assets/`, label: t.navAssets, metric: 'nav-assets' },
-  { section: 'lap', href: `${prefix}/lap/`, label: t.navLap, metric: 'nav-lap' },
-];
+  { section: 'city', href: `${prefix}/city/`, label: t.navCity, metric: 'nav-city', icon: 'buildings' },
+  { section: 'assets', href: `${prefix}/assets/`, label: t.navAssets, metric: 'nav-assets', icon: 'package' },
+  { section: 'lap', href: `${prefix}/lap/`, label: t.navLap, metric: 'nav-lap', icon: 'game-controller' },
+] as const;
 ---
 
 <header>
@@ -33,7 +35,7 @@ const NAV = [
       aria-label="Numinia"
       set:html={wordmark}
     />
-    <nav aria-label={t.footerNavigation}>
+    <nav id="menu-movil" aria-label={t.footerNavigation} class="entries">
       {
         NAV.map((item) => (
           <a
@@ -41,6 +43,7 @@ const NAV = [
             data-metric={item.metric}
             aria-current={isActive(item.section) ? 'page' : undefined}
           >
+            <Icon name={item.icon} size={14} />
             {item.label}
           </a>
         ))
@@ -65,9 +68,25 @@ const NAV = [
       >
         <Icon name="user" size={20} />
       </a>
+      <!-- Phones: one 44px button opens the full-screen panel below. -->
+      <button
+        type="button"
+        class="menu-btn"
+        data-menu-btn
+        data-metric="chrome-menu"
+        aria-controls="menu-movil"
+        aria-expanded="false"
+        aria-label={t.menuOpen}
+        data-label-open={t.menuOpen}
+        data-label-close={t.menuClose}
+      >
+        <span data-icon-open><Icon name="list" size={20} /></span>
+        <span data-icon-close hidden><Icon name="x" size={20} /></span>
+      </button>
     </div>
   </div>
 </header>
+
 
 <script>
   /* Mode toggle (§7.4 / §13.11: Diurno default, Nocturno by choice).
@@ -96,46 +115,96 @@ const NAV = [
       /* private mode: the choice simply lives for this page */
     }
   });
+
+  /* Phones: the menu button turns the bar's own entries into the
+     full-screen panel (header[data-open]), swaps its glyph and its name, and
+     locks the page scroll while open. Esc closes it. */
+  const menuBtn = document.querySelector<HTMLButtonElement>('[data-menu-btn]');
+  const bar = menuBtn?.closest('header');
+  if (menuBtn && bar) {
+    const openIcon = menuBtn.querySelector<HTMLElement>('[data-icon-open]');
+    const closeIcon = menuBtn.querySelector<HTMLElement>('[data-icon-close]');
+    const isOpen = (): boolean => bar.hasAttribute('data-open');
+    const setOpen = (open: boolean): void => {
+      bar.toggleAttribute('data-open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.setAttribute(
+        'aria-label',
+        (open ? menuBtn.dataset['labelClose'] : menuBtn.dataset['labelOpen']) ?? '',
+      );
+      if (openIcon) openIcon.hidden = open;
+      if (closeIcon) closeIcon.hidden = !open;
+      root.style.overflow = open ? 'hidden' : '';
+    };
+    menuBtn.addEventListener('click', () => setOpen(!isOpen()));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isOpen()) setOpen(false);
+    });
+    matchMedia('(min-width: 48.0625rem)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
 </script>
 
 <style>
+  /* The bar as numinia.org draws it (BLU-009 §12, STD-023 §23): sticky,
+     56px, the page seen through at 85% with a 24px blur, a half hairline. */
   header {
-    border-bottom: 1px solid var(--linea-f);
-    background: var(--superficie);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid color-mix(in srgb, var(--linea-f) 50%, transparent);
+  }
+  /* The glass lives on a pseudo-element: a backdrop-filter on the header
+     itself would make it the containing block of the fixed phone panel. */
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--fondo) 85%, transparent);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
   }
   .inner {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: var(--s4);
-    max-width: 60rem;
+    height: 56px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: var(--s3) var(--s4);
+    padding: 0 var(--s5);
   }
   .brand {
     color: var(--texto);
     display: inline-flex;
     align-items: center;
+    min-height: 44px;
+    transition: color 120ms var(--ciclo);
+  }
+  .brand:hover,
+  .brand:focus-visible {
+    color: var(--enlace);
   }
   .brand :global(svg) {
     height: 20px;
     width: auto;
     display: block;
   }
-  /* §13.2 menu: entries in Mono etiqueta caps; active = 2px amber underline. */
-  nav {
-    display: flex;
-    gap: var(--s1);
-    flex-wrap: wrap;
-  }
+  /* §13.2 menu: entries in Mono 0.7rem caps, tracked 0.15em, a 14px
+     Phosphor icon before the word; active = 2px Turquesa underline. */
   nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
     font-family: var(--mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
     color: var(--texto-2);
     text-decoration: none;
-    padding: 6px var(--s2);
+    padding: 0 var(--s3);
     border-bottom: 2px solid transparent;
     transition: color 120ms var(--ciclo);
   }
@@ -145,33 +214,26 @@ const NAV = [
   }
   nav a[aria-current='page'] {
     color: var(--texto);
-    border-bottom-color: var(--ambar);
+    border-bottom-color: var(--turquesa);
+  }
+  .entries {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    height: 100%;
+  }
+  .entries a {
+    height: 100%;
   }
   .tools {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: var(--s3);
+    gap: var(--s2);
   }
-  .entrar {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    color: var(--texto-2);
-    border: 1px solid var(--linea-f);
-    border-radius: var(--radio-control);
-    transition:
-      color 120ms var(--ciclo),
-      border-color 120ms var(--ciclo);
-  }
-  .entrar:hover,
-  .entrar:focus-visible {
-    border-color: var(--verdemar);
-    color: var(--texto);
-  }
-  .mode {
+  .entrar,
+  .mode,
+  .menu-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -187,10 +249,17 @@ const NAV = [
       color 120ms var(--ciclo),
       border-color 120ms var(--ciclo);
   }
+  .entrar:hover,
+  .entrar:focus-visible,
   .mode:hover,
-  .mode:focus-visible {
+  .mode:focus-visible,
+  .menu-btn:hover,
+  .menu-btn:focus-visible {
     border-color: var(--verdemar);
     color: var(--texto);
+  }
+  .menu-btn {
+    display: none;
   }
   /* Pure-CSS swap keyed on the html mode attribute: no flash, no JS paint. */
   :global(html:not([data-modo='diurno'])) .mode :global(.solo-diurno) {
@@ -199,37 +268,56 @@ const NAV = [
   :global(html[data-modo='diurno']) .mode :global(.solo-nocturno) {
     display: none;
   }
-  /* Phones: the chrome sprawled into three loose rows (~154px before any
-     content). Two tight rows instead — brand + utilities share the first,
-     the nav takes the second at full width, entries grown to 44px targets. */
+  /* Phones: wordmark, utilities and one menu button share the 56px row;
+     the entries move into the panel. */
   @media (max-width: 48rem) {
     .inner {
-      gap: 0 var(--s3);
-      padding: var(--s2) var(--s4);
-    }
-    .brand {
-      order: 1;
-      margin-right: auto;
+      gap: var(--s2);
+      padding: 0 var(--s4);
     }
     /* The wordmark sheds 4px so brand and utilities truly share the row. */
     .brand :global(svg) {
       height: 16px;
     }
     .tools {
-      order: 2;
-      margin-left: 0;
       gap: var(--s1);
     }
-    nav {
-      order: 3;
-      flex-basis: 100%;
-      gap: var(--s2);
-    }
-    nav a {
+    /* With JS: one 44px button; the entries wait in the full-screen panel,
+       fixed below the bar so the wordmark and the close button stay where
+       the reader left them. Same entries as the bar, nothing else. */
+    :global(html[data-js='on']) .menu-btn {
       display: inline-flex;
-      align-items: center;
-      min-height: 44px;
-      padding: 0 var(--s2);
+    }
+    :global(html[data-js='on']) .entries {
+      display: none;
+    }
+    :global(html[data-js='on']) header[data-open] .entries {
+      position: fixed;
+      inset: 56px 0 0;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--s1);
+      height: auto;
+      overflow-y: auto;
+      padding: var(--s4) var(--s5);
+      background: color-mix(in srgb, var(--fondo) 95%, transparent);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+    }
+    :global(html[data-js='on']) header[data-open] .entries a {
+      height: auto;
+      padding: 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--linea-f) 50%, transparent);
+    }
+    :global(html[data-js='on']) header[data-open] .entries a[aria-current='page'] {
+      border-bottom-color: var(--turquesa);
+    }
+    /* Without JS the button could not open anything: the entries stay in
+       the bar as a row that scrolls sideways. */
+    :global(html:not([data-js='on'])) .entries {
+      overflow-x: auto;
     }
   }
 </style>

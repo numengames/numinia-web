@@ -54,6 +54,9 @@ export interface ChromeMessages {
   readonly legalNotice: string;
   readonly languageSelector: string;
   readonly modeToggle: string;
+  /** The phone menu button (one 44 px button opening the full-screen panel). */
+  readonly menuOpen: string;
+  readonly menuClose: string;
   readonly signIn: string;
   readonly footerNavigation: string;
   readonly footerResources: string;
@@ -102,6 +105,8 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de color',
+    menuOpen: 'Abrir el menú',
+    menuClose: 'Cerrar el menú',
     signIn: 'Entrar en Numinia',
     footerNavigation: 'Navegación',
     footerResources: 'Recursos',
@@ -145,6 +150,8 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Legal notice',
     languageSelector: 'Language',
     modeToggle: 'Color mode',
+    menuOpen: 'Open the menu',
+    menuClose: 'Close the menu',
     signIn: 'Enter Numinia',
     footerNavigation: 'Navigation',
     footerResources: 'Resources',
@@ -188,6 +195,8 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '法的通知',
     languageSelector: '言語',
     modeToggle: 'カラーモード',
+    menuOpen: 'メニューを開く',
+    menuClose: 'メニューを閉じる',
     signIn: 'ヌミニアに入る',
     footerNavigation: 'ナビゲーション',
     footerResources: 'リソース',
@@ -230,6 +239,8 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '법적 고지사항',
     languageSelector: '언어',
     modeToggle: '색상 모드',
+    menuOpen: '메뉴 열기',
+    menuClose: '메뉴 닫기',
     signIn: '누미니아 입장',
     footerNavigation: '내비게이션',
     footerResources: '리소스',
@@ -272,6 +283,8 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de cor',
+    menuOpen: 'Abrir o menu',
+    menuClose: 'Fechar o menu',
     signIn: 'Entrar em Numinia',
     footerNavigation: 'Navegação',
     footerResources: 'Recursos',

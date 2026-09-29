@@ -22,8 +22,15 @@ const BUDGETS = {
       returning acceptors never see a flash — legally required chrome, not
       feature creep; it shipped past the gate because only local `verify`
       runs budgets. Landing sits at 9322B. The next raise needs its own
-      paragraph. */
-  landingInlineScriptBytes: 9_500,
+      paragraph.
+      Raised 9500→11000 on 2026-09-29: the Oracle ordered the four sites to
+      look as numinia.org draws them, and that includes the night sky
+      (STD-023 velo.cielo, ~1.5KB minified: 175 stars, rarity weights,
+      still under reduced motion) and the phone menu button (~0.3KB). Both
+      are chrome the design system requires, not feature creep; the sky is
+      a bundled module, minified, still inline (no external JS). Landing
+      sits at ~10.8KB. */
+  landingInlineScriptBytes: 11_000,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -33,8 +40,11 @@ const BUDGETS = {
       solely when someone chooses to enter. Layer 0/1 pages never reach it —
       their strict budget below still guards everything they do. */
   identityOnlyChunkBytes: 1_500_000,
-  /** Whole-page HTML weight for the landing. */
-  landingHtmlBytes: 30_000,
+  /** Whole-page HTML weight for the landing. Raised 30000→33000 on
+      2026-09-29 for the same order as the inline raise above: the sky, the
+      phone menu, and one Phosphor icon before each bar entry (STD-023 §11,
+      ~2KB of inline SVG). Landing sits at ~31.7KB. */
+  landingHtmlBytes: 33_000,
 };
 
 const failures = [];
@@ -92,7 +102,7 @@ while (queue.length > 0) {
   const chunk = queue.pop();
   if (publiclyReachable.has(chunk)) continue;
   publiclyReachable.add(chunk);
-  let source = '';
+  let source;
   try {
     source = await readFile(path.join(astroDir, chunk), 'utf8');
   } catch {

@@ -8,6 +8,7 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numini
 import SiteHeader from '../components/chrome/SiteHeader.astro';
 import SiteFooter from '../components/chrome/SiteFooter.astro';
 import CookieNotice from '../components/chrome/CookieNotice.astro';
+import Starfield from '../components/chrome/Starfield.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -111,6 +112,9 @@ const urlFor = (target: SupportedLocale): string =>
     <slot name="head" />
   </head>
   <body>
+    {/* The sky belongs to the site chrome: the chromeless book plane (Codex)
+        keeps its paper, the internal spike keeps its one WebGL canvas. */}
+    {chrome && <Starfield />}
     {chrome && <SiteHeader locale={locale} basePath={basePath} />}
     <main data-wide={wide ? '' : undefined}>
       <slot />
@@ -160,11 +164,18 @@ const urlFor = (target: SupportedLocale): string =>
 
 <style>
   /* Base surface and type come from the kit (body rule in sistema.css). */
+  /* The reading column numinia.org uses: 1100px, 24px sides. */
   main {
-    max-width: 60rem;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: var(--numinia-space-5) var(--numinia-space-3);
+    padding: var(--numinia-space-5) var(--s5);
   }
+  /* A fixed decorative canvas must never widen the page: clip, not hidden
+     (hidden on <html> would kill the sticky bar). */
+  :global(html) {
+    overflow-x: clip;
+  }
+
   /* Platform surfaces use the room they have — no vw hacks (Firefox counts
      the scrollbar in 50vw and the page would overflow). */
   main[data-wide] {

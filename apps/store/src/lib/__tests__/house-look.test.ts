@@ -20,6 +20,7 @@ const read = (path: string): Promise<string> => readFile(join(root, path), 'utf8
 const HEADER = 'apps/store/src/components/chrome/SiteHeader.astro';
 const FOOTER = 'apps/store/src/components/chrome/SiteFooter.astro';
 const LAYOUT = 'apps/store/src/layouts/BaseLayout.astro';
+const STARFIELD = 'apps/store/src/components/chrome/Starfield.astro';
 const LANDING = 'apps/store/src/components/Landing.astro';
 const PLATFORM = 'packages/ui/src/platform.css';
 const CODEX = 'apps/store/src/styles/codex.css';
@@ -91,13 +92,15 @@ describe('the page', () => {
 
   it('draws the night sky: 175 stars by rarity, still under reduced motion, none by day', async () => {
     const layout = await read(LAYOUT);
-    expect(layout).toMatch(/<canvas[^>]*id="starfield"[^>]*aria-hidden="true"/);
-    expect(layout).toContain('STAR_COUNT = 175');
+    expect(layout).toContain('{chrome && <Starfield />}');
+    const sky = await read(STARFIELD);
+    expect(sky).toMatch(/<canvas[^>]*id="starfield"[^>]*aria-hidden="true"/);
+    expect(sky).toContain('STAR_COUNT = 175');
     for (const weight of ['60', '25', '10', '4', '1']) {
-      expect(layout).toMatch(new RegExp(`weight: ${weight}\\b`));
+      expect(sky).toMatch(new RegExp(`weight: ${weight}\\b`));
     }
-    expect(layout).toContain('prefers-reduced-motion: reduce');
-    expect(layout).toMatch(/html\[data-modo='diurno'\]\) #starfield[^{]*\{\s*display:\s*none/);
+    expect(sky).toContain('prefers-reduced-motion: reduce');
+    expect(sky).toMatch(/html\[data-modo='diurno'\]\) #starfield[^{]*\{\s*display:\s*none/);
   });
 
   it('opens with the entrance: label, headline, line, 600 ms, 100 ms apart', async () => {

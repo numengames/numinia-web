@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-29 21:10",
+    "entries": [
+      {
+        "text": "numinia.com now looks like the rest of its family, drawn after numinia.org. The top bar stays with you as you scroll: thinner (56 px), the page showing faintly through it, a fine line under it. Each entry has a small icon before its name, and the page you are on is underlined in turquoise. On a phone one menu button opens the entries full-screen. Pages read in a wider column, headlines are lighter, the small labels above sections are sea-green, and the main button of a page is the house turquoise with white letters.",
+        "type": "UPD",
+      },
+      {
+        "text": "At night a slow sky of stars sits behind every page, the same one numinia.org has: common stars in sand, rarer ones in green, blue, violet and, very rarely, amber. It stays still if your device asks for reduced motion, and it is not there by day. The top of the home page rises in gently as it opens.",
+        "type": "NEW",
+      },
+      {
+        "text": "The footer uses the same wide column and quiet headings as the other sites, and the Codex lost a few corner and line values that were not in the design system.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.63.0",
+  },
+  {
     "date": "2026-09-29 16:50",
     "entries": [
       {
