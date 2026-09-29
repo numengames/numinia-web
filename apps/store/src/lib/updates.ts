@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.61.0',
+    date: '2026-09-29 16:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The cookie notice shows Accept all and Reject all side by side and the same size on every screen, as on the other three sites of Numen Games. They were stacked one above the other.',
+      },
+      {
+        type: 'UPD',
+        text: "Pending, at the top of this page: the cookie notice in Japanese and Korean still shows English, and the Brazilian Portuguese one awaits a native reader. A legal text is not machine-translated. The legal notice is version 0.2.0: it gives the company's entry in the Mercantile Registry of Madrid (volume 46518, folio 130, sheet M-816810, entry 1) and the postal code of its registered address, 28290 Las Rozas de Madrid. The cookie policy is 2.1.0: it adds a key numinia.org keeps; nothing changes on this site.",
+      },
+    ],
+  },
+  {
     version: 'v0.60.0',
     date: '2026-09-29 13:30',
     entries: [
@@ -814,9 +828,20 @@ async function readRecord(): Promise<string> {
   return legacyChangelog;
 }
 
-/** The legacy "Incoming" roadmap, as displayed by the original LAP/updates page. */
+/**
+ * Pending work of the rebuild, shown above the legacy roadmap. An item
+ * leaves this list in the pull request that does it.
+ */
+export const PENDING: readonly RoadmapItem[] = [
+  {
+    item: 'Cookie notice in Japanese and Korean: today it shows the English text. The Brazilian Portuguese text has not been read by a native speaker. Both need a human translation before they count as legal text; no machine translation.',
+    status: 'planned',
+  },
+];
+
+/** The pending work, then the legacy "Incoming" roadmap as the original LAP/updates page showed it. */
 export async function loadRoadmap(): Promise<readonly RoadmapItem[]> {
-  return parseRoadmap(await readRecord());
+  return [...PENDING, ...parseRoadmap(await readRecord())];
 }
 
 const VERSION_HEADING = /^## (v\d+\.\d+\.\d+) — (.+)$/;

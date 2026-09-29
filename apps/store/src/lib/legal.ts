@@ -41,9 +41,9 @@ export const LEGAL_DOC_LANGUAGE: Readonly<Record<LegalDoc, 'en'>> = {
 
 /** Master versions, pinned. Kept in sync with the copies by a unit test. */
 export const LEGAL_DOC_VERSION: Readonly<Record<LegalDoc, string>> = {
-  notice: '0.1.0',
+  notice: '0.2.0',
   privacy: '2.1.0',
-  cookies: '2.0.0',
+  cookies: '2.1.0',
   terms: '1.0.1',
 };
 
