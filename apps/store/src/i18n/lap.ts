@@ -1,5 +1,5 @@
 /**
- * L.A.P. UI strings (MISSION-008) — shell sections, the character sheet,
+ * LAP UI strings (MISSION-008) — shell sections, the character sheet,
  * and honest empty states. Five locales like every UI string;
  * identity option NAMES come localized from @numinia/domain, not from here.
  */

@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.59.0',
+    date: '2026-09-29 14:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The LAP is written LAP everywhere, without dots. In Spanish it stands for Lector Akáshico Personal and in English for Lore Akashic Processor: the acronym is kept in both languages although the words differ, because the sense is the same. The Codex edition line no longer says Akashic Reader.',
+      },
+    ],
+  },
+  {
     version: 'v0.58.0',
     date: '2026-09-24 21:00',
     entries: [

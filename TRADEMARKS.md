@@ -19,7 +19,7 @@ None yet. Marks move here only after registration is confirmed.
 
 ## Explicitly not claimed
 
-- **L.A.P.** — not claimed as a trademark (Oracle ruling, 2026-08-16).
+- **LAP** — not claimed as a trademark (Oracle ruling, 2026-08-16).
 - Guild, faction, district, and rank names as generic vocabulary (Alchemists,
   Exegetes, Procurators, Sentinels, etc.) — they are lore, protected by
   copyright where applicable, but not claimed as trademarks.

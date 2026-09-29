@@ -5,7 +5,7 @@
  * reads the English edition, so its chrome is English too (see
  * codexLang() in lib/codex/source.ts). Numinia terms follow the archive's
  * translation glossary (lore/game/manual/glossary-es-en.md): Umbral →
- * Threshold, Códice → Codex, Lector Akáshico → Akashic Reader.
+ * Threshold, Códice → Codex, LAP → LAP (Lector Akáshico Personal in Spanish, Lore Akashic Processor in English).
  *
  * Plain data, no Vite APIs: the export pipeline (scripts/build-exports.mjs)
  * bundles this module too, so the PDF/EPUB editions say the same words.
@@ -156,7 +156,7 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
     chapterPage: {
       titleSuffix: 'Códex de Numinia',
       description: (capActual) =>
-        `${capActual} · Manual del juego de rol de Numinia, edición del Lector Akáshico.`,
+        `${capActual} · Manual del juego de rol de Numinia, edición del Lector Akáshico Personal.`,
     },
     index: {
       label: 'Índice',
@@ -244,7 +244,8 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
       label: 'Portada',
       presents: 'Numen Games presenta',
       subtitle: 'El juego de rol de la ciudad escrita entre vapor y código',
-      edition: (version) => `manual del juego de rol · v${version} · edición del Lector Akáshico`,
+      edition: (version) =>
+        `manual del juego de rol · v${version} · edición del Lector Akáshico Personal`,
       scroll: '↓ abre el códex',
     },
   },
@@ -272,7 +273,7 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
     chapterPage: {
       titleSuffix: 'Codex of Numinia',
       description: (capActual) =>
-        `${capActual} · The Numinia roleplaying game manual, Akashic Reader edition.`,
+        `${capActual} · The Numinia roleplaying game manual, Lore Akashic Processor edition.`,
     },
     index: {
       label: 'Contents',
@@ -359,7 +360,8 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
       label: 'Cover',
       presents: 'Numen Games presents',
       subtitle: 'The roleplaying game of the city written between steam and code',
-      edition: (version) => `the roleplaying game manual · v${version} · Akashic Reader edition`,
+      edition: (version) =>
+        `the roleplaying game manual · v${version} · Lore Akashic Processor edition`,
       scroll: '↓ open the codex',
     },
   },
