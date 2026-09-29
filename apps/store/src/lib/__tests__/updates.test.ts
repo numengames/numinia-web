@@ -120,8 +120,14 @@ describe('loadRoadmap / CURRENT_VERSION', () => {
     }
   });
 
+  it('lists the unreviewed cookie-notice translations as pending, first', async () => {
+    const [first] = await loadRoadmap();
+    expect(first?.item).toMatch(/Japanese and Korean/);
+    expect(first?.item).toMatch(/no machine translation/);
+  });
+
   it('advertises the newest rebuild version', () => {
-    expect(CURRENT_VERSION).toBe('v0.60.0');
+    expect(CURRENT_VERSION).toBe('v0.61.0');
     expect(newestVersion([])).toBe('v0.0.0');
     expect(CURRENT_VERSION).toBe(REBUILD_UPDATES[0]!.version);
     expect(CURRENT_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);
