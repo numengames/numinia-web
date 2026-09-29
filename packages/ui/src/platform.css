@@ -56,6 +56,54 @@
   line-height: 1.35;
 }
 
+/* ---- Headlines and eyebrows, as numinia.org sets them (STD-023 §8) -- */
+/* The page headline is Geist 400 at -0.025em; the section label above a
+   headline is Mono 0.7rem, tracked 0.25em, in Verdemar (the link voice:
+   #A6DAD5 by night, #016E7D by day). Ámbar stays for emphasis. */
+h1,
+.display-l,
+.display-m {
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+.etiqueta {
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  color: var(--enlace);
+}
+
+/* ---- The entrance (STD-023 §14, animation 16) ------------------------ */
+/* The top of a page rises in: label, headline, line — opacity 0→1 and 24px
+   of rise, 600ms on the house curve, 100ms apart. Instant under reduced
+   motion (the elements are simply there). Pure CSS: no JS needed. */
+@media (prefers-reduced-motion: no-preference) {
+  .entrada,
+  .entrada-1,
+  .entrada-2,
+  .entrada-3 {
+    animation: entrada 600ms var(--ciclo) both;
+  }
+  .entrada-1 {
+    animation-delay: 100ms;
+  }
+  .entrada-2 {
+    animation-delay: 200ms;
+  }
+  .entrada-3 {
+    animation-delay: 300ms;
+  }
+}
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* [hidden] must always win: any `display` from a component class silently
    defeats the attribute, and a control meant to be absent then shows up. */
 [hidden] {
@@ -156,25 +204,10 @@ a:focus-visible > .tarjeta,
   color: var(--texto-3);
 }
 
-/* ---- §13.11 Platform decision: the primary dresses in ink ------------ */
-/* #017C8D stays the product-game/marketing primary; on the platform the
-   main action is the same ink pill as every active state. */
-/* Ink cannot darken any further, and §9.1 forbids LIGHTENING a fill that
-   carries light text: the fill holds and interaction reads as an inner
-   Verdemar ring instead. */
-.btn-primario {
-  background: var(--texto);
-  color: var(--fondo);
-  box-shadow: inset 0 0 0 1px transparent;
-  transition: box-shadow 120ms var(--ciclo);
-}
-.btn-primario:hover,
-.btn-primario:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--verdemar);
-}
-.btn-primario:active {
-  box-shadow: inset 0 0 0 2px var(--verdemar);
-}
+/* ---- Buttons (BLU-009 §7): the system primary ---------------------- */
+/* numinia.org leads the design (the Oracle, 2026-09-29): the primary is the
+   kit's own — #017C8D, white label, hover #016E7D, active #015866, one per
+   view (sistema.css). The platform's former ink fill is retired. */
 
 /* ---- Active dresses in ink (§9.8): shared pill for current things ---- */
 .tinta-activa {
@@ -191,11 +224,11 @@ html:not([data-modo='diurno']) [data-materia='relieve'] {
   background-size: cover;
 }
 
-/* ---- §13.2 Menu: entries in Mono etiqueta, active = 2px amber -------- */
+/* ---- §13.2 Menu: entries in Mono 0.7rem, active = 2px Turquesa ------ */
 .menu-entrada {
   font-family: var(--mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--texto-2);
   text-decoration: none;
@@ -209,7 +242,7 @@ html:not([data-modo='diurno']) [data-materia='relieve'] {
 }
 .menu-entrada[aria-current] {
   color: var(--texto);
-  border-bottom-color: var(--ambar);
+  border-bottom-color: var(--turquesa);
 }
 
 /* ---- §10-03 Signal sweep over the binaria (max one per view) --------- */

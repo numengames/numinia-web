@@ -28,11 +28,12 @@ const PILLARS = [
 
 <BaseLayout locale={locale} title="Numinia" description={chrome.footerTagline}>
   <!-- §13.2 hero: the thesis, relief behind it (Nocturno only), the single
-       orchestrated moment of the piece — typing + staggered reveals. -->
-  <section class="hero" data-materia="relieve" data-escalonado>
-    <h1 class="display-m" data-tecleo>{t.heroTitle}</h1>
-    <p class="sub cuerpo-l reveal">{t.heroSub}</p>
-    <div class="ctas reveal">
+       orchestrated moment of the piece — the entrance (STD-023 §14):
+       headline, line, actions rising in 100ms apart, as numinia.org opens. -->
+  <section class="hero" data-materia="relieve">
+    <h1 class="display-m entrada">{t.heroTitle}</h1>
+    <p class="sub cuerpo-l entrada-1">{t.heroSub}</p>
+    <div class="ctas entrada-2">
       <a href={`${prefix}/city/`} class="btn btn-primario" data-metric="landing-city">
         {t.ctaCity}
       </a>
@@ -62,11 +63,13 @@ const PILLARS = [
 <style>
   .hero {
     padding: var(--s8) var(--s5) var(--s6);
-    margin: 0 calc(-1 * var(--s4));
+    margin: 0 calc(-1 * var(--s5));
     text-align: center;
     border-radius: var(--radio-marco);
   }
+  /* The page headline at numinia.org's size: 3–3.75rem, Geist 400. */
   .hero h1 {
+    font-size: clamp(2.25rem, 2.5vw + 1.75rem, 3.75rem);
     color: var(--texto);
     margin: 0 auto var(--s4);
     max-width: 24ch;

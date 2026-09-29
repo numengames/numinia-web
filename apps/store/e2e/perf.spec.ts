@@ -33,7 +33,10 @@ const BUDGETS: readonly Budget[] = [
   // Raised 280→300 (2026-08-18, MIS-085 D): the v0.6.0 rules engine ships
   // with the island — enabling matrix, position mechanics (id-only facts,
   // ~4KB) and the gear control. Feature weight with a name, not creep.
-  { path: '/lap/character/', totalKB: 480, jsKB: 300, imgKB: 10 },
+  // Raised 480→495 (2026-09-29): the house look as numinia.org draws it —
+  // the night sky, the phone menu and a Phosphor icon per bar entry — rides
+  // on every chromed page; this one sat closest to its line (485KB).
+  { path: '/lap/character/', totalKB: 495, jsKB: 300, imgKB: 10 },
   // The login page carries the wallet vendor — the one sanctioned heavy page,
   // still under the 1MB line. It grows past it only with a written reason.
   { path: '/lap/session/', totalKB: 1024, jsKB: 900, imgKB: 10 },
