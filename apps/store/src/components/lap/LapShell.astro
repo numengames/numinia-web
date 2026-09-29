@@ -1,6 +1,6 @@
 ---
 /**
- * L.A.P. platform shell (§13.11): sidebar on surface, 40px rows with
+ * LAP platform shell (§13.11): sidebar on surface, 40px rows with
  * Phosphor regular 18px icons, the active section dressed in ink, and a
  * collapse toggle — folded, the rail keeps icons and tooltips (legacy LAP
  * pattern, redrawn with the Sistema). Open to Nomads (D16): no wall, ever.
@@ -75,9 +75,9 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
 
 <BaseLayout locale={locale} title={title} description={description} wide>
   <div class="lap" data-lap-shell data-canvas={fullCanvas ? '' : undefined}>
-    <nav aria-label="L.A.P.">
+    <nav aria-label="LAP">
       <div class="cabecera">
-        <p class="etiqueta">L.A.P.</p>
+        <p class="etiqueta">LAP</p>
           <button
           type="button"
           class="plegar"
@@ -186,7 +186,7 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
 
 <style>
   /* Width scale (Oracle 2026-08-16): prose reads at 60rem site-wide; the
-     L.A.P. is a tool and works at 85rem, centered so its margins keep the
+     LAP is a tool and works at 85rem, centered so its margins keep the
      rhythm of the rest of the city; the full canvas is per-view, granted
      only where the content demands it (data-canvas). */
   .lap {

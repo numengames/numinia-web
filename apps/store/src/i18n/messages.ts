@@ -89,7 +89,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Inicio',
     navCity: 'La Ciudad',
     navAssets: 'Assets',
-    navLap: 'L.A.P.',
+    navLap: 'LAP',
     navGallery: 'Galería',
     navArchive: 'Archivo',
     navFinder: 'Finder',
@@ -135,7 +135,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Home',
     navCity: 'The City',
     navAssets: 'Assets',
-    navLap: 'L.A.P.',
+    navLap: 'LAP',
     navGallery: 'Gallery',
     navArchive: 'Archive',
     navFinder: 'Finder',
@@ -181,7 +181,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'ホーム',
     navCity: '都市',
     navAssets: 'アセット',
-    navLap: 'L.A.P.',
+    navLap: 'LAP',
     navGallery: 'ギャラリー',
     navArchive: 'アーカイブ',
     navFinder: 'Finder',
@@ -226,7 +226,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: '홈',
     navCity: '도시',
     navAssets: '에셋',
-    navLap: 'L.A.P.',
+    navLap: 'LAP',
     navGallery: '갤러리',
     navArchive: '아카이브',
     navFinder: 'Finder',
@@ -271,7 +271,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     navHome: 'Início',
     navCity: 'A Cidade',
     navAssets: 'Assets',
-    navLap: 'L.A.P.',
+    navLap: 'LAP',
     navGallery: 'Galeria',
     navArchive: 'Arquivo',
     navFinder: 'Finder',
@@ -340,7 +340,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     pillarAssets:
       'Assets: bienes digitales CC0 en formatos abiertos para construir mundos — galería, archivo, finder e inspector.',
     pillarLap:
-      'L.A.P.: el área del jugador — tu puerta al juego virtual y a tu información de ciudadano.',
+      'LAP: el área del jugador — tu puerta al juego virtual y a tu información de ciudadano.',
   },
   en: {
     heroTitle: 'Numinia: a city for knowledge, projected onto a game board',
@@ -353,8 +353,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
       'The City: what Numinia is — its history, its districts, its inhabitants, and the game that builds it.',
     pillarAssets:
       'Assets: CC0 digital goods in open formats for building worlds — gallery, archive, finder, and inspector.',
-    pillarLap:
-      'L.A.P.: the player area — your door to the virtual game and your citizen information.',
+    pillarLap: 'LAP: the player area — your door to the virtual game and your citizen information.',
   },
   ja: {
     heroTitle: 'ヌミニア:ゲーム盤の上に描かれた、知のための都市',
@@ -366,7 +365,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     pillarCity: '都市:ヌミニアとは — その歴史、地区、住民、そして都市を築くゲーム。',
     pillarAssets:
       'アセット:世界を作るためのCC0デジタルグッズ — ギャラリー、アーカイブ、Finder、インスペクター。',
-    pillarLap: 'L.A.P.:プレイヤーエリア — 仮想ゲームと市民情報への入り口。',
+    pillarLap: 'LAP:プレイヤーエリア — 仮想ゲームと市民情報への入り口。',
   },
   ko: {
     heroTitle: '누미니아: 게임 보드 위에 그려진, 지식을 위한 도시',
@@ -377,7 +376,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
     pillarsTitle: '세 개의 문',
     pillarCity: '도시: 누미니아란 — 역사, 구역, 주민, 그리고 도시를 만드는 게임.',
     pillarAssets: '에셋: 월드를 만들기 위한 CC0 디지털 굿즈 — 갤러리, 아카이브, Finder, 인스펙터.',
-    pillarLap: 'L.A.P.: 플레이어 구역 — 가상 게임과 시민 정보로 가는 문.',
+    pillarLap: 'LAP: 플레이어 구역 — 가상 게임과 시민 정보로 가는 문.',
   },
   'pt-br': {
     heroTitle: 'Numinia: uma cidade para o conhecimento, projetada sobre um tabuleiro de jogo',
@@ -390,7 +389,7 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
       'A Cidade: o que é Numinia — sua história, seus distritos, seus habitantes e o jogo que a constrói.',
     pillarAssets:
       'Assets: bens digitais CC0 em formatos abertos para construir mundos — galeria, arquivo, finder e inspetor.',
-    pillarLap: 'L.A.P.: a área do jogador — sua porta para o jogo virtual e suas informações.',
+    pillarLap: 'LAP: a área do jogador — sua porta para o jogo virtual e suas informações.',
   },
 };
 
@@ -840,7 +839,8 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     license: 'Licencia',
     worldFileNote: 'Archivo de mundo para Hyperfy. Descárgalo para usarlo en tu espacio.',
     summaTitle: 'Ficha en el Suma',
-    summaIntro: 'Este bien tiene una ficha en el archivo de Numinia: qué es, su historia, cada forma con su licencia y su titular, y dónde están sus bytes con su huella.',
+    summaIntro:
+      'Este bien tiene una ficha en el archivo de Numinia: qué es, su historia, cada forma con su licencia y su titular, y dónde están sus bytes con su huella.',
     summaStatus: 'Estado',
     summaStatusDraft: 'borrador — no admitida todavía',
     summaStatusActive: 'activa',
@@ -868,7 +868,8 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     license: 'License',
     worldFileNote: 'A world file for Hyperfy. Download it to use it in your space.',
     summaTitle: 'Card in the Summa',
-    summaIntro: 'This good has a card in the Numinia archive: what it is, its history, each form with its licence and rights holder, and where its bytes are, with their hash.',
+    summaIntro:
+      'This good has a card in the Numinia archive: what it is, its history, each form with its licence and rights holder, and where its bytes are, with their hash.',
     summaStatus: 'Status',
     summaStatusDraft: 'draft — not admitted yet',
     summaStatusActive: 'active',
@@ -897,7 +898,8 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     license: 'ライセンス',
     worldFileNote: 'Hyperfy用ワールドファイル。ダウンロードしてスペースで使えます。',
     summaTitle: 'スンマの記録カード',
-    summaIntro: 'このグッズにはヌミニア・アーカイブの記録カードがあります：それが何か、その来歴、各形態のライセンスと権利者、そしてバイトの所在とハッシュ。',
+    summaIntro:
+      'このグッズにはヌミニア・アーカイブの記録カードがあります：それが何か、その来歴、各形態のライセンスと権利者、そしてバイトの所在とハッシュ。',
     summaStatus: '状態',
     summaStatusDraft: '下書き — 未承認',
     summaStatusActive: '有効',
@@ -925,7 +927,8 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     license: '라이선스',
     worldFileNote: 'Hyperfy용 월드 파일입니다. 내려받아 내 공간에서 사용하세요.',
     summaTitle: '수마의 기록 카드',
-    summaIntro: '이 굿즈에는 누미니아 아카이브의 기록 카드가 있습니다: 무엇인지, 그 내력, 각 형태의 라이선스와 권리자, 그리고 바이트의 위치와 해시.',
+    summaIntro:
+      '이 굿즈에는 누미니아 아카이브의 기록 카드가 있습니다: 무엇인지, 그 내력, 각 형태의 라이선스와 권리자, 그리고 바이트의 위치와 해시.',
     summaStatus: '상태',
     summaStatusDraft: '초안 — 아직 승인되지 않음',
     summaStatusActive: '활성',
@@ -953,7 +956,8 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     license: 'Licença',
     worldFileNote: 'Arquivo de mundo para o Hyperfy. Baixe para usar no seu espaço.',
     summaTitle: 'Ficha na Summa',
-    summaIntro: 'Este bem tem uma ficha no arquivo de Numinia: o que é, sua história, cada forma com sua licença e titular, e onde estão seus bytes, com o hash.',
+    summaIntro:
+      'Este bem tem uma ficha no arquivo de Numinia: o que é, sua história, cada forma com sua licença e titular, e onde estão seus bytes, com o hash.',
     summaStatus: 'Estado',
     summaStatusDraft: 'rascunho — ainda não admitida',
     summaStatusActive: 'ativa',

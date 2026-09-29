@@ -1,5 +1,5 @@
 Feature: Three pillars (MISSION-004)
-  The site is organized as La Ciudad, Assets, and L.A.P. — the header shows
+  The site is organized as La Ciudad, Assets, and LAP — the header shows
   exactly those three doors, the new sections exist in every locale, and no
   internal link is broken. Verified against the build output.
 
