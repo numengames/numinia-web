@@ -1,38 +1,104 @@
 /**
- * Combined Terms + Cookies acceptance (open-questions D12, first slice).
+ * The cookie notice's record (LEG-003 §3.1 and §4) — pure helpers shared by
+ * the notice loader, the metrics bootstrap and the storage-inventory test.
  *
- * One first-party cookie records that the visitor accepted the Terms and
- * the Cookies policy from the banner. The value is the VERSION of the legal
- * text (a date): when the wording changes, bump CONSENT_VERSION and every
- * previous acceptance stops counting — the banner asks again. The cookie is
- * set client-side by the banner and read client-side by the metrics
- * bootstrap (analytics consent stays 'unknown' until accepted — events are
- * dropped, never buffered).
+ * The notice is vanilla-cookieconsent. It writes ONE first-party cookie,
+ * `numinia_consent`, whose value is URI-encoded JSON carrying the accepted
+ * categories and the policy revision. The Terms are NOT accepted here: they
+ * are accepted at sign-in (components/auth/LegalConsentGate.tsx, checked by
+ * api/auth/login.ts against LEGAL_CORPUS_VERSION).
+ *
+ * Measurement counts only when the `analytics` category is in that cookie
+ * for the CURRENT revision. Raising POLICY_REVISION asks every visitor again.
  */
 
+/** The cookie that records the choice (LEG-003 §3.1, first row). */
 export const CONSENT_COOKIE = 'numinia_consent';
 
+/** LEG-003's major version. Raising it asks every visitor again. */
+export const POLICY_REVISION = 2;
+
+/** Half a year, as LEG-003 §3.1 says ("6 months"). */
+export const CONSENT_DAYS = 182;
+
+/** The one optional category: counting clicks, in memory, on the device. */
+export const ANALYTICS_CATEGORY = 'analytics';
+
 /**
- * Date of the legal text the visitor accepts. Bump on every wording change.
- * 2026-08-18 (MIS-086): the lorem ipsum body became real copy, so every
- * acceptance recorded against the placeholder stopped counting.
+ * Every key this site writes itself, as LEG-003 §3.1 names it. A test scans
+ * the source and fails when the code stores a key this list (and the
+ * policy) does not name. The sign-in widget's own keys (thirdweb:*,
+ * walletToken-*…) are written from node_modules; the policy lists them as a
+ * family.
  */
-export const CONSENT_VERSION = '2026-08-18';
+export const STORED_KEYS = [
+  'numinia_consent',
+  'numinia_session',
+  'siwe_nonce',
+  'numinia-lang',
+  'numinia-modo',
+  'numinia-lap-nav',
+  'numinia-lap-hidden',
+  'numinia-codex-modo',
+  'numinia-codex-tam',
+  'numinia-codex-marca',
+  'numinia-codex-ritmo',
+  'numinia-lap-personaje',
+] as const;
 
-/** Half a year — re-ask afterwards even if the text never changed. */
-export const CONSENT_MAX_AGE_S = 60 * 60 * 24 * 180;
-
-/** True when the cookie header/jar carries an acceptance of the CURRENT text. */
-export function parseConsent(cookieHeader: string | null | undefined): boolean {
-  if (!cookieHeader) return false;
-  return cookieHeader.split(';').some((part) => {
-    const eq = part.indexOf('=');
-    if (eq === -1) return false;
-    return part.slice(0, eq).trim() === CONSENT_COOKIE && part.slice(eq + 1) === CONSENT_VERSION;
-  });
+export interface ConsentRecord {
+  readonly revision: number;
+  readonly categories: readonly string[];
 }
 
-/** The exact string the banner assigns to document.cookie on accept. */
-export function consentCookieValue(): string {
-  return `${CONSENT_COOKIE}=${CONSENT_VERSION}; Max-Age=${CONSENT_MAX_AGE_S}; Path=/; SameSite=Lax`;
+/** The raw value of the consent cookie in a cookie header/jar, or null. */
+function rawConsent(cookieHeader: string): string | null {
+  for (const part of cookieHeader.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() === CONSENT_COOKIE) return part.slice(eq + 1).trim();
+  }
+  return null;
+}
+
+/**
+ * The visitor's recorded answer for the CURRENT policy revision, or null
+ * when there is none (no cookie, the old date-stamped format, a stale
+ * revision, garbage). Never throws: a malformed cookie counts as no answer.
+ */
+export function parseConsent(cookieHeader: string | null | undefined): ConsentRecord | null {
+  if (!cookieHeader) return null;
+  const raw = rawConsent(cookieHeader);
+  if (!raw) return null;
+  let value: unknown;
+  try {
+    value = JSON.parse(decodeURIComponent(raw));
+  } catch {
+    return null;
+  }
+  if (typeof value !== 'object' || value === null) return null;
+  const { revision, categories } = value as { revision?: unknown; categories?: unknown };
+  if (revision !== POLICY_REVISION || !Array.isArray(categories)) return null;
+  return {
+    revision,
+    categories: categories.filter((c): c is string => typeof c === 'string'),
+  };
+}
+
+/**
+ * What the metrics bootstrap does with a cookie jar: count only when
+ * Measurement was accepted; `denied` after a rejection; `unknown` (drop
+ * everything) while the visitor has not answered.
+ */
+export function measurementConsent(
+  cookieHeader: string | null | undefined,
+): 'granted' | 'denied' | 'unknown' {
+  const record = parseConsent(cookieHeader);
+  if (!record) return 'unknown';
+  return record.categories.includes(ANALYTICS_CATEGORY) ? 'granted' : 'denied';
+}
+
+/** True while the visitor has not answered the current notice. */
+export function needsNotice(cookieHeader: string | null | undefined): boolean {
+  return parseConsent(cookieHeader) === null;
 }

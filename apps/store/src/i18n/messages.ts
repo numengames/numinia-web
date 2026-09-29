@@ -79,9 +79,8 @@ export interface ChromeMessages {
   readonly telemetryCommit: string;
   /** Combined Terms + Cookies banner (D12). Real copy since MIS-086: it
       describes what the platform actually stores, nothing else. */
-  readonly consentRegion: string;
-  readonly consentText: string;
-  readonly consentAccept: string;
+  /** The footer button that reopens the cookie notice's preferences. */
+  readonly legalCookieChoice: string;
 }
 
 export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> = {
@@ -126,10 +125,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
       'Pendiente: interacción con la página (qué se pulsa, qué se lee), rendimiento y consentimiento. Cuando exista, se medirá aquí, no se afirmará.',
     telemetryVersion: 'Versión',
     telemetryCommit: 'Commit',
-    consentRegion: 'Aviso legal',
-    consentText:
-      'Esta web guarda una cookie para recordar este aviso y, si entras, otra para tu sesión. Tus preferencias y tu ficha viven en tu navegador. Sin rastreo de terceros.',
-    consentAccept: 'Aceptar',
+    legalCookieChoice: 'Cambiar mi elección de cookies',
   },
   en: {
     navHome: 'Home',
@@ -172,10 +168,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
       'Pending: interaction with the page (what is clicked, what is read), performance and consent. When it exists it will be measured here, not asserted.',
     telemetryVersion: 'Version',
     telemetryCommit: 'Commit',
-    consentRegion: 'Legal notice',
-    consentText:
-      'This site stores one cookie to remember this notice and, if you sign in, one for your session. Your preferences and your character sheet live in your browser. No third-party tracking.',
-    consentAccept: 'Accept',
+    legalCookieChoice: 'Change my cookie choice',
   },
   ja: {
     navHome: 'ホーム',
@@ -217,10 +210,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
       '未実装: ページ操作（クリック、閲覧）、パフォーマンス、同意。実装後はここで計測され、主張ではなく数値で示されます。',
     telemetryVersion: 'バージョン',
     telemetryCommit: 'コミット',
-    consentRegion: '法的なお知らせ',
-    consentText:
-      'このサイトは、この通知を記憶するためのCookieと、ログインした場合はセッション用のCookieを保存します。設定とキャラクターシートはブラウザ内に保存されます。第三者による追跡はありません。',
-    consentAccept: '同意する',
+    legalCookieChoice: 'クッキーの選択を変更',
   },
   ko: {
     navHome: '홈',
@@ -262,10 +252,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
       '예정: 페이지 상호작용(클릭, 읽기), 성능, 동의. 구현되면 주장이 아니라 여기서 측정됩니다.',
     telemetryVersion: '버전',
     telemetryCommit: '커밋',
-    consentRegion: '법적 고지',
-    consentText:
-      '이 사이트는 이 안내를 기억하기 위한 쿠키와, 로그인 시 세션 쿠키를 저장합니다. 환경설정과 캐릭터 시트는 브라우저에 저장됩니다. 제3자 추적은 없습니다.',
-    consentAccept: '동의',
+    legalCookieChoice: '쿠키 선택 변경',
   },
   'pt-br': {
     navHome: 'Início',
@@ -308,10 +295,7 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
       'Pendente: interação com a página (o que é clicado, o que é lido), desempenho e consentimento. Quando existir, será medido aqui, não afirmado.',
     telemetryVersion: 'Versão',
     telemetryCommit: 'Commit',
-    consentRegion: 'Aviso legal',
-    consentText:
-      'Este site guarda um cookie para lembrar deste aviso e, se você entrar, outro para sua sessão. Suas preferências e sua ficha ficam no seu navegador. Sem rastreamento de terceiros.',
-    consentAccept: 'Aceitar',
+    legalCookieChoice: 'Alterar minha escolha de cookies',
   },
 };
 

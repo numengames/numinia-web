@@ -7,7 +7,7 @@ import kitMotion from '../scripts/sistema.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import SiteHeader from '../components/chrome/SiteHeader.astro';
 import SiteFooter from '../components/chrome/SiteFooter.astro';
-import ConsentBanner from '../components/chrome/ConsentBanner.astro';
+import CookieNotice from '../components/chrome/CookieNotice.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -116,8 +116,11 @@ const urlFor = (target: SupportedLocale): string =>
       <slot />
     </main>
     {chrome && <SiteFooter locale={locale} />}
-    {chrome && <ConsentBanner locale={locale} />}
+    {/* Every page asks, the chromeless Codex included (LEG-003 §4). */}
+    <CookieNotice />
     <script>
+      // One module, inlined: the cookie notice's loader and the metrics it gates.
+      import '../scripts/cookie-notice';
       import '../scripts/metrics';
     </script>
     <script is:inline>

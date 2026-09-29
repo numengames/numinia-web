@@ -1,0 +1,61 @@
+---
+/**
+ * The cookie notice (LEG-003 §4): the library's stylesheet dressed in the
+ * site's own Sistema tokens, day and night. Rendered on EVERY page by
+ * BaseLayout — the Codex (chrome=false) included, because the Codex also
+ * runs metrics. The loader (scripts/cookie-notice.ts) rides in BaseLayout's
+ * one inline module, next to the metrics it gates.
+ */
+---
+
+<style is:global>
+  #cc-main {
+    --cc-font-family: var(--sans, inherit);
+    --cc-bg: var(--elevada);
+    --cc-primary-color: var(--texto);
+    --cc-secondary-color: var(--texto-2);
+    --cc-link-color: var(--enlace);
+    --cc-separator-border-color: var(--linea-f);
+    --cc-footer-bg: var(--superficie);
+    --cc-footer-color: var(--texto-2);
+    --cc-footer-border-color: var(--linea-f);
+    --cc-modal-border-radius: var(--radio-marco, 8px);
+    --cc-btn-border-radius: var(--radio-control, 6px);
+    /* Accept and Reject wear the same dress (equal weight). */
+    --cc-btn-primary-bg: var(--texto);
+    --cc-btn-primary-color: var(--fondo);
+    --cc-btn-primary-border-color: var(--texto);
+    --cc-btn-primary-hover-bg: var(--texto-2);
+    --cc-btn-primary-hover-color: var(--fondo);
+    --cc-btn-primary-hover-border-color: var(--texto-2);
+    --cc-btn-secondary-bg: var(--superficie);
+    --cc-btn-secondary-color: var(--texto);
+    --cc-btn-secondary-border-color: var(--linea-f);
+    --cc-btn-secondary-hover-bg: var(--fondo);
+    --cc-btn-secondary-hover-color: var(--texto);
+    --cc-btn-secondary-hover-border-color: var(--texto-3);
+    --cc-toggle-on-bg: var(--enlace);
+    --cc-toggle-off-bg: var(--texto-3);
+    --cc-toggle-on-knob-bg: var(--elevada);
+    --cc-toggle-off-knob-bg: var(--elevada);
+    --cc-toggle-readonly-bg: var(--linea-f);
+    --cc-toggle-readonly-knob-bg: var(--elevada);
+    --cc-toggle-readonly-knob-icon-color: var(--texto-3);
+    --cc-cookie-category-block-bg: var(--superficie);
+    --cc-cookie-category-block-border: var(--linea-f);
+    --cc-cookie-category-block-hover-bg: var(--fondo);
+    --cc-cookie-category-block-hover-border: var(--linea-f);
+    --cc-cookie-category-expanded-block-bg: var(--superficie);
+    --cc-cookie-category-expanded-block-hover-bg: var(--fondo);
+    --cc-overlay-bg: rgba(0, 0, 0, 0.6);
+  }
+  #cc-main a {
+    text-decoration: underline;
+  }
+  /* 44 px touch targets, the house minimum for main controls. The extra
+     class out-ranks the library sheet, which is linked after this one. */
+  #cc-main .cm .cm__btn,
+  #cc-main .pm .pm__btn {
+    min-height: 44px;
+  }
+</style>

@@ -8,6 +8,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { CODEX_UI } from '../../../i18n/codex';
+import { CHROME_MESSAGES } from '../../../i18n/messages';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import type { CodexLang } from '../../../lib/codex/source';
 import CodexChrome from './CodexChrome.astro';
@@ -48,6 +49,9 @@ const {
   nextLabel,
 } = Astro.props;
 const prefix = locale === 'en' ? '' : `/${locale}`;
+// The Codex has no site footer (chrome=false): a discreet legal line at the
+// foot of the paper keeps the four texts and the cookie choice one tap away.
+const legal = CHROME_MESSAGES[locale];
 // The client scripts' live labels. Spanish is their built-in default, so
 // the attribute only travels with the English edition.
 const chrome = CODEX_UI[lang].chrome;
@@ -112,6 +116,15 @@ const clientUi =
     </CodexChrome>
     <div class="lienzo">
       <slot />
+      <nav class="legal-pie" aria-label={legal.footerLegal}>
+        <a href={`${prefix}/legal/legal-notice/`} data-metric="codex-legal-notice">{legal.legalNotice}</a>
+        <a href={`${prefix}/legal/privacy/`} data-metric="codex-legal-privacy">{legal.legalPrivacy}</a>
+        <a href={`${prefix}/legal/cookies/`} data-metric="codex-legal-cookies">{legal.legalCookies}</a>
+        <a href={`${prefix}/legal/terms/`} data-metric="codex-legal-terms">{legal.legalTerms}</a>
+        <button type="button" data-cookie-choice data-metric="codex-cookie-choice">
+          {legal.legalCookieChoice}
+        </button>
+      </nav>
     </div>
   </div>
   <script>

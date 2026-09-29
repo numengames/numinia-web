@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-09-29 13:30",
+    "entries": [
+      {
+        "text": "A real cookie notice. On your first visit a small box says what the site keeps in your browser and offers Accept all and Reject all, side by side and the same size, plus Preferences. The one optional thing is Measurement — counting what is clicked, kept in the tab and never sent anywhere — and it stays off unless you accept it. Rejecting leaves the site working exactly the same. The Terms are no longer accepted from this box: you accept them when you sign in. Change your mind any time with 'Change my cookie choice' in the footer, or at the foot of every Codex page.",
+        "type": "NEW",
+      },
+      {
+        "text": "The four legal texts are the new versions from the archive, published in full: Legal notice (new), Privacy 2.1.0, Cookies 2.0.0 (new, listing every key the site stores) and Terms 1.0.1. The footer lists all four, and the Codex reader now links them at the foot of its pages. Because the Terms and Privacy changed, you will be asked to accept them again the next time you sign in. /legal/notice/ also leads to the legal notice.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.60.0",
+  },
+  {
     "date": "2026-09-29 14:00",
     "entries": [
       {

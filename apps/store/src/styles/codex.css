@@ -1168,3 +1168,41 @@
     min-height: 90px;
   }
 }
+
+/* ─── Pie legal: the four texts and the cookie choice, quiet, at the foot
+   of the paper (the Codex renders without the site footer). ─── */
+.codex .legal-pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 18px;
+  max-width: var(--medida);
+  margin: 0 auto;
+  padding: 18px 24px 8px;
+  border-top: 1px solid var(--linea-tenue);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+}
+.codex .legal-pie a,
+.codex .legal-pie button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--tinta-3);
+  text-decoration: none;
+}
+.codex .legal-pie button {
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.codex .legal-pie a:hover,
+.codex .legal-pie a:focus-visible,
+.codex .legal-pie button:hover,
+.codex .legal-pie button:focus-visible {
+  color: var(--inter);
+}
