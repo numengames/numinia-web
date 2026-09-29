@@ -1,8 +1,8 @@
 Feature: Updates timeline and legal pages (MISSION-003 P3)
-  The platform history from v0.1.0 onward, and the four legal pages: terms
-  and privacy carry the real corpus (MIS-086), cookies and legal-notice are
-  drafts that must announce themselves as such until the Oracle approves the
-  wording. Verified against the build output.
+  The platform history from v0.1.0 onward, and the four legal pages: each
+  one carries its numinia-archive master (LEG-001 to LEG-004) verbatim,
+  without the review machinery of the frontmatter. Verified against the
+  build output.
 
   Scenario: The updates timeline lists the whole version history
     Given the store application has been built
@@ -10,20 +10,22 @@ Feature: Updates timeline and legal pages (MISSION-003 P3)
     And the updates page lists every version from "1" to "15"
     And the updates page lists version "v0.16.0" and "v0.27.0"
 
-  Scenario: Legal pages exist and declare their draft status
+  Scenario: The four legal pages exist in every locale
     Given the store application has been built
     Then every legal page exists under every locale prefix
-    And every draft legal page carries the draft banner
+    And the legal notice is also reachable at its short address
 
-  Scenario: The real legal corpus is published (MIS-086)
+  Scenario: The real legal corpus is published
     Given the store application has been built
-    Then the published legal pages render the corpus without the draft banner
-    And the published legal pages carry the scope note in every locale
-    And the published legal pages disclose the language they are written in
+    Then the legal pages render the corpus without draft or review markers
+    And the legal pages carry no scope note
+    And the legal pages disclose the language they are written in
 
-  Scenario: Every page offers the combined consent banner
+  Scenario: Every page links the legal texts and the cookie choice
     Given the store application has been built
-    Then every sampled page carries the consent banner with its legal links
+    Then every sampled page footer links the four legal texts and the cookie choice
+    And every sampled page loads the cookie notice
+    And the Codex links the four legal texts and the cookie choice
 
   Scenario: The footer advertises the current version linking to the timeline
     Given the store application has been built

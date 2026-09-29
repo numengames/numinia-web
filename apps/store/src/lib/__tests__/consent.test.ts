@@ -1,53 +1,105 @@
 /**
- * Combined Terms + Cookies acceptance (D12 first slice): the cookie is the
- * single record of acceptance, versioned by legal-text date — when the text
- * changes, CONSENT_VERSION bumps and every old acceptance stops counting.
+ * The cookie notice's record (LEG-003 §3.1): vanilla-cookieconsent writes
+ * `numinia_consent` as URI-encoded JSON. Measurement counts only when the
+ * `analytics` category is in it for the CURRENT policy revision; the old
+ * date-stamped Terms+Cookies cookie counts as no answer.
  */
 
 import { describe, expect, it } from 'vitest';
-import { CONSENT_COOKIE, CONSENT_VERSION, consentCookieValue, parseConsent } from '../consent';
+import {
+  ANALYTICS_CATEGORY,
+  CONSENT_COOKIE,
+  CONSENT_DAYS,
+  POLICY_REVISION,
+  measurementConsent,
+  needsNotice,
+  parseConsent,
+} from '../consent';
+
+/** A cookie exactly as the library serializes it. */
+function jar(value: unknown): string {
+  return `${CONSENT_COOKIE}=${encodeURIComponent(JSON.stringify(value))}`;
+}
+
+const accepted = jar({ categories: ['necessary', 'analytics'], revision: POLICY_REVISION });
+const rejected = jar({ categories: ['necessary'], revision: POLICY_REVISION });
 
 describe('parseConsent', () => {
-  it('accepts a cookie header carrying the current version', () => {
-    expect(parseConsent(`${CONSENT_COOKIE}=${CONSENT_VERSION}`)).toBe(true);
-    expect(parseConsent(`a=b; ${CONSENT_COOKIE}=${CONSENT_VERSION}; c=d`)).toBe(true);
-    expect(parseConsent(`a=b;   ${CONSENT_COOKIE}=${CONSENT_VERSION}`)).toBe(true);
+  it('reads the categories and revision the notice recorded', () => {
+    expect(parseConsent(accepted)).toEqual({
+      revision: POLICY_REVISION,
+      categories: ['necessary', 'analytics'],
+    });
+    expect(parseConsent(`a=b;  ${rejected}; c=d`)?.categories).toEqual(['necessary']);
   });
 
-  it('rejects absence, emptiness and foreign cookies', () => {
-    expect(parseConsent(null)).toBe(false);
-    expect(parseConsent(undefined)).toBe(false);
-    expect(parseConsent('')).toBe(false);
-    expect(parseConsent('numinia_session=abc; other=1')).toBe(false);
+  it('is null without an answer', () => {
+    expect(parseConsent(null)).toBeNull();
+    expect(parseConsent(undefined)).toBeNull();
+    expect(parseConsent('')).toBeNull();
+    expect(parseConsent('numinia_session=abc; other=1')).toBeNull();
+    expect(parseConsent('garbage')).toBeNull();
+    expect(parseConsent(`${CONSENT_COOKIE}=`)).toBeNull();
   });
 
-  it('ignores malformed jar fragments without an equals sign', () => {
-    expect(parseConsent('garbage')).toBe(false);
-    expect(parseConsent(`garbage; ${CONSENT_COOKIE}=${CONSENT_VERSION}`)).toBe(true);
+  it('treats the retired Terms+Cookies cookie as no answer', () => {
+    expect(parseConsent(`${CONSENT_COOKIE}=2026-08-18`)).toBeNull();
   });
 
-  it('rejects stale versions — a legal-text change re-asks', () => {
-    expect(parseConsent(`${CONSENT_COOKIE}=2020-01-01`)).toBe(false);
-    expect(parseConsent(`${CONSENT_COOKIE}=`)).toBe(false);
+  it('never throws on malformed values', () => {
+    expect(parseConsent(`${CONSENT_COOKIE}=%E0%A4%A`)).toBeNull();
+    expect(parseConsent(`${CONSENT_COOKIE}=${encodeURIComponent('null')}`)).toBeNull();
+    expect(parseConsent(`${CONSENT_COOKIE}=${encodeURIComponent('"x"')}`)).toBeNull();
+    expect(parseConsent(jar({ revision: POLICY_REVISION }))).toBeNull();
+    expect(parseConsent(jar({ revision: POLICY_REVISION, categories: 'analytics' }))).toBeNull();
+  });
+
+  it('asks again after a policy revision', () => {
+    expect(
+      parseConsent(jar({ categories: ['analytics'], revision: POLICY_REVISION - 1 })),
+    ).toBeNull();
+    expect(parseConsent(jar({ categories: ['analytics'] }))).toBeNull();
+  });
+
+  it('keeps only string categories', () => {
+    expect(
+      parseConsent(jar({ categories: ['necessary', 3, null], revision: POLICY_REVISION }))
+        ?.categories,
+    ).toEqual(['necessary']);
   });
 
   it('never matches on name prefixes or suffixes', () => {
-    expect(parseConsent(`x${CONSENT_COOKIE}=${CONSENT_VERSION}`)).toBe(false);
-    expect(parseConsent(`${CONSENT_COOKIE}x=${CONSENT_VERSION}`)).toBe(false);
+    expect(parseConsent(`x${accepted}`)).toBeNull();
+    expect(parseConsent(accepted.replace('=', 'x='))).toBeNull();
   });
 });
 
-describe('consentCookieValue', () => {
-  it('serializes name, version, half-year expiry, site path and Lax', () => {
-    const value = consentCookieValue();
-    expect(value).toContain(`${CONSENT_COOKIE}=${CONSENT_VERSION}`);
-    expect(value).toContain(`Max-Age=${60 * 60 * 24 * 180}`);
-    expect(value).toContain('Path=/');
-    expect(value).toContain('SameSite=Lax');
+describe('measurementConsent', () => {
+  it('grants only when Measurement was accepted', () => {
+    expect(measurementConsent(accepted)).toBe('granted');
   });
+  it('denies after Reject all or a choice without Measurement', () => {
+    expect(measurementConsent(rejected)).toBe('denied');
+  });
+  it('stays unknown — counting nothing — until the visitor answers', () => {
+    expect(measurementConsent('')).toBe('unknown');
+    expect(measurementConsent(`${CONSENT_COOKIE}=2026-08-18`)).toBe('unknown');
+  });
+});
 
-  it('round-trips through the parser', () => {
-    const jar = consentCookieValue().split(';')[0]!;
-    expect(parseConsent(jar)).toBe(true);
+describe('needsNotice', () => {
+  it('shows the notice until there is an answer for this revision', () => {
+    expect(needsNotice(undefined)).toBe(true);
+    expect(needsNotice(rejected)).toBe(false);
+    expect(needsNotice(accepted)).toBe(false);
+  });
+});
+
+describe('constants', () => {
+  it('keeps the policy facts: name, half a year, the analytics category', () => {
+    expect(CONSENT_COOKIE).toBe('numinia_consent');
+    expect(CONSENT_DAYS).toBe(182);
+    expect(ANALYTICS_CATEGORY).toBe('analytics');
+    expect(POLICY_REVISION).toBe(2);
   });
 });

@@ -284,10 +284,22 @@ Then('the finder island data covers every public asset', async function () {
 
 // --- updates + legal (MISSION-003 P3) ---
 
-const LEGAL_DOCS = ['privacy', 'cookies', 'terms', 'legal-notice'];
-// terms + privacy carry the real corpus since MIS-086; the rest stay drafts.
-const PUBLISHED_LEGAL_DOCS = ['terms', 'privacy'];
-const DRAFT_LEGAL_DOCS = ['cookies', 'legal-notice'];
+// Route slugs of the four legal texts, in the footer order.
+const LEGAL_DOCS = ['legal-notice', 'privacy', 'cookies', 'terms'];
+// What each page's data-legal-doc names it (lib/legal.ts LegalDoc).
+const LEGAL_DOC_ID = {
+  'legal-notice': 'notice',
+  privacy: 'privacy',
+  cookies: 'cookies',
+  terms: 'terms',
+};
+// A landmark of each master, proving the real text shipped.
+const LEGAL_LANDMARK = {
+  'legal-notice': 'Legal Notice',
+  privacy: 'LOPDGDD',
+  cookies: 'numinia_consent',
+  terms: 'Numen Games S.L',
+};
 
 Then('the updates page exists under every locale prefix', async function () {
   for (const prefix of LOCALE_PREFIXES) {
@@ -324,73 +336,72 @@ Then('every legal page exists under every locale prefix', async function () {
   }
 });
 
-Then('every draft legal page carries the draft banner', async function () {
+Then('the legal notice is also reachable at its short address', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    for (const doc of DRAFT_LEGAL_DOCS) {
-      const html = await readFile(
-        path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
-        'utf8',
-      );
-      assert.ok(html.includes('data-legal-draft'), `legal/${doc} (${prefix || 'en'}) lacks banner`);
-    }
+    const html = await readFile(
+      path.join(this.distDir, prefix, 'legal', 'notice', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.ok(html, `missing legal/notice redirect for ${prefix || 'en'}`);
+    assert.ok(
+      html.includes(`${prefix ? `/${prefix}` : ''}/legal/legal-notice/`),
+      `legal/notice (${prefix || 'en'}) does not lead to the legal notice`,
+    );
   }
 });
 
-Then('the published legal pages render the corpus without the draft banner', async function () {
+Then('the legal pages render the corpus without draft or review markers', async function () {
+  const { LEGAL_FORBIDDEN_STRINGS: forbidden } = await import('../../apps/store/src/lib/legal.ts');
   for (const prefix of LOCALE_PREFIXES) {
-    for (const doc of PUBLISHED_LEGAL_DOCS) {
+    for (const doc of LEGAL_DOCS) {
       const html = await readFile(
         path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
         'utf8',
       );
-      // The attribute also appears in the route's CSS: assert on the element.
-      assert.ok(
-        !/<p[^>]*data-legal-draft/.test(html),
-        `legal/${doc} (${prefix || 'en'}) still shows the draft banner`,
-      );
-      assert.ok(html.includes(`data-legal-doc="${doc}"`), `legal/${doc} (${prefix || 'en'}) empty`);
+      const where = `legal/${doc} (${prefix || 'en'})`;
+      assert.ok(html.includes(`data-legal-doc="${LEGAL_DOC_ID[doc]}"`), `${where} empty`);
       assert.ok(
         /data-legal-version="\d+\.\d+\.\d+"/.test(html),
-        `legal/${doc} (${prefix || 'en'}) does not stamp the master version`,
+        `${where} does not stamp the master version`,
       );
-      // A landmark section of each master, proving the real text shipped.
-      const landmark = doc === 'terms' ? 'Numen Games S.L' : 'LOPDGDD';
-      assert.ok(html.includes(landmark), `legal/${doc} (${prefix || 'en'}) misses "${landmark}"`);
+      assert.ok(html.includes(LEGAL_LANDMARK[doc]), `${where} misses "${LEGAL_LANDMARK[doc]}"`);
+      for (const needle of forbidden) {
+        assert.ok(!html.includes(needle), `${where} shows "${needle}"`);
+      }
+      const emails = new Set(html.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g) ?? []);
+      for (const email of emails) {
+        assert.equal(email, 'legal@numengames.com', `${where} prints ${email}`);
+      }
     }
   }
 });
 
-Then('the published legal pages carry the scope note in every locale', async function () {
+Then('the legal pages carry no scope note', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    for (const doc of PUBLISHED_LEGAL_DOCS) {
+    for (const doc of LEGAL_DOCS) {
       const html = await readFile(
         path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
         'utf8',
       );
-      assert.ok(
-        /<p[^>]*data-legal-scope/.test(html),
-        `legal/${doc} (${prefix || 'en'}) hides the scope note`,
-      );
+      assert.ok(!html.includes('data-legal-scope'), `legal/${doc} (${prefix || 'en'}) scope note`);
+      assert.ok(!html.includes('under review'), `legal/${doc} (${prefix || 'en'}) "under review"`);
     }
   }
 });
 
-Then('the published legal pages disclose the language they are written in', async function () {
-  // Both masters are EN since the archive resolved FLAG-5 (nwos:OPS-003 v2.0.0,
-  // MIS-116): every other locale must say so. Read from the platform's own
-  // mapping instead of restating it — a second copy of a fact drifts from it.
-  const { LEGAL_DOC_LANGUAGE: language } = await import(
-    '../../apps/store/src/lib/legal.ts'
-  );
+Then('the legal pages disclose the language they are written in', async function () {
+  // Every master is English: every other locale must say so. Read from the
+  // platform's own mapping instead of restating it.
+  const { LEGAL_DOC_LANGUAGE: language } = await import('../../apps/store/src/lib/legal.ts');
   for (const prefix of LOCALE_PREFIXES) {
     const locale = prefix || 'en';
-    for (const doc of PUBLISHED_LEGAL_DOCS) {
+    for (const doc of LEGAL_DOCS) {
       const html = await readFile(
         path.join(this.distDir, prefix, 'legal', doc, 'index.html'),
         'utf8',
       );
       const notice = /<p[^>]*data-legal-lang-notice/.test(html);
-      const expected = locale !== language[doc];
+      const expected = locale !== language[LEGAL_DOC_ID[doc]];
       assert.equal(notice, expected, `legal/${doc} (${locale}) language notice mismatch`);
     }
   }
@@ -406,26 +417,69 @@ Then('every page footer shows the current version linking to the updates page', 
   }
 });
 
-Then('every sampled page carries the consent banner with its legal links', async function () {
-  for (const page of [
-    'index.html',
-    'gallery/index.html',
-    'es/archive/index.html',
-    'ja/index.html',
-  ]) {
+const SAMPLED_PAGES = [
+  'index.html',
+  'gallery/index.html',
+  'es/archive/index.html',
+  'ja/index.html',
+];
+
+Then(
+  'every sampled page footer links the four legal texts and the cookie choice',
+  async function () {
+    for (const page of SAMPLED_PAGES) {
+      const html = await readFile(path.join(this.distDir, page), 'utf8');
+      const footer = /<footer[\s\S]*?<\/footer>/.exec(html);
+      assert.ok(footer, `${page}: footer missing`);
+      const prefix = page.startsWith('es/') ? '/es' : page.startsWith('ja/') ? '/ja' : '';
+      const hrefs = [...footer[0].matchAll(/href="([^"]*\/legal\/[^"]*)"/g)].map((m) => m[1]);
+      assert.deepEqual(
+        hrefs,
+        LEGAL_DOCS.map((doc) => `${prefix}/legal/${doc}/`),
+        `${page}: footer legal links out of order or missing`,
+      );
+      assert.ok(footer[0].includes('data-cookie-choice'), `${page}: cookie choice button missing`);
+    }
+  },
+);
+
+Then('every sampled page loads the cookie notice', async function () {
+  for (const page of SAMPLED_PAGES) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
-    const banner = /<aside[^>]*data-consent-version="[^"]+"[\s\S]*?<\/aside>/.exec(html);
-    assert.ok(banner, `${page}: consent banner missing`);
-    assert.ok(
-      banner[0].includes('data-metric="consent-accept"'),
-      `${page}: accept control missing`,
-    );
-    assert.ok(/href="[^"]*\/legal\/terms\/"/.test(banner[0]), `${page}: terms link missing`);
-    assert.ok(/href="[^"]*\/legal\/cookies\/"/.test(banner[0]), `${page}: cookies link missing`);
-    assert.ok(/href="[^"]*\/legal\/privacy\/"/.test(banner[0]), `${page}: privacy link missing`);
-    // The placeholder wording must never reach a build again.
-    assert.ok(!/lorem ipsum/i.test(banner[0]), `${page}: consent copy is still lorem ipsum`);
+    // The old combined Terms+Cookies banner must never come back.
+    assert.ok(!html.includes('data-consent-version'), `${page}: old consent banner`);
+    assert.ok(!html.includes('consent-accept'), `${page}: old accept button`);
   }
+  // The notice's bootstrap reaches every page through one module chunk that
+  // names the consent cookie.
+  const html = await readFile(path.join(this.distDir, 'index.html'), 'utf8');
+  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  const srcs = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]);
+  let found = scripts.some((body) => body.includes('numinia_consent'));
+  for (const src of srcs) {
+    if (found) break;
+    const body = await readFile(path.join(this.distDir, src), 'utf8').catch(() => '');
+    found = body.includes('numinia_consent');
+  }
+  assert.ok(found, 'index.html: cookie notice bootstrap missing');
+});
+
+Then('the Codex links the four legal texts and the cookie choice', async function () {
+  const shell = await readFile(
+    path.join(repoRoot, 'apps', 'store', 'src', 'components', 'lap', 'codex', 'CodexShell.astro'),
+    'utf8',
+  );
+  // The Codex is rendered on demand (session-gated), so its source is the
+  // artefact: the legal line and the notice ride on every Codex page.
+  for (const doc of LEGAL_DOCS) {
+    assert.ok(shell.includes(`/legal/${doc}/`), `Codex misses /legal/${doc}/`);
+  }
+  assert.ok(shell.includes('data-cookie-choice'), 'Codex misses the cookie choice');
+  const layout = await readFile(
+    path.join(repoRoot, 'apps', 'store', 'src', 'layouts', 'BaseLayout.astro'),
+    'utf8',
+  );
+  assert.ok(/^\s*<CookieNotice \/>/m.test(layout), 'the notice must render without chrome too');
 });
 
 Then('the updates page shows the incoming roadmap', async function () {

@@ -2,12 +2,14 @@
  * Page metrics bootstrap — one delegated listener for every data-metric
  * element plus an automatic page_view.
  *
- * Consent now comes from the combined Terms+Cookies banner (D12 slice 1):
- * granted only when the versioned acceptance cookie is present, or the
- * moment the visitor accepts (the banner dispatches the event below).
- * Pre-consent events are DROPPED, never buffered (@numinia/analytics
- * design). Transport stays memory — nothing leaves the device; the
- * transport decision is the remaining half of D12.
+ * Consent comes from the cookie notice (LEG-003 §3.1 "Measurement"):
+ * granted ONLY when the `analytics` category is accepted in the notice's
+ * cookie for the current policy revision; `denied` after a rejection;
+ * `unknown` until the visitor answers. The notice announces every answer
+ * and every change with `cc:onConsent` / `cc:onChange` on window, and the
+ * state follows it both ways. Pre-consent events are DROPPED, never
+ * buffered (@numinia/analytics design). Transport stays memory — nothing
+ * leaves the device.
  */
 
 import {
@@ -18,11 +20,13 @@ import {
   trackPageView,
   type AnalyticsContext,
 } from '@numinia/analytics';
-import { parseConsent } from '../lib/consent';
+import { measurementConsent } from '../lib/consent';
 
 const transport = memoryTransport();
-const consent = createConsent(parseConsent(document.cookie) ? 'granted' : 'unknown');
-document.addEventListener('numinia:consent-granted', () => consent.set('granted'));
+const consent = createConsent(measurementConsent(document.cookie));
+const follow = (): void => consent.set(measurementConsent(document.cookie));
+window.addEventListener('cc:onConsent', follow);
+window.addEventListener('cc:onChange', follow);
 const analytics = createAnalytics({ transport, consent });
 
 const lang = document.documentElement.lang;

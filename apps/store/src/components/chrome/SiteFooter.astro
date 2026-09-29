@@ -12,9 +12,9 @@
  *           licence · telemetry · version · commit
  *
  * No copyright line: licences are per file (REUSE.toml). The signature is
- * brand voice and is never translated. Legal lists only the published
- * texts — a link to a draft raises uncertainty instead of lowering it; the
- * drafts (cookies, legal notice) stay reachable from the consent banner.
+ * brand voice and is never translated. Legal lists the four published
+ * texts in the house order (Legal notice · Privacy · Cookies · Terms), then
+ * the button that reopens the cookie notice (scripts/cookie-notice.ts).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
@@ -92,8 +92,13 @@ const NAV = [
     <div class="stack">
       <nav aria-label={t.footerLegal}>
         <h2>{t.footerLegal}</h2>
-        <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
+        <a href={`${prefix}/legal/legal-notice/`} data-metric="footer-notice">{t.legalNotice}</a>
         <a href={`${prefix}/legal/privacy/`} data-metric="footer-privacy">{t.legalPrivacy}</a>
+        <a href={`${prefix}/legal/cookies/`} data-metric="footer-cookies">{t.legalCookies}</a>
+        <a href={`${prefix}/legal/terms/`} data-metric="footer-terms">{t.legalTerms}</a>
+        <button type="button" class="cookie-choice" data-cookie-choice data-metric="footer-cookie-choice">
+          {t.legalCookieChoice}
+        </button>
       </nav>
       {SOCIAL_LINKS.length > 0 && (
         <nav aria-label={t.footerSocial}>
@@ -211,6 +216,23 @@ const NAV = [
     color: var(--texto);
   }
   .here {
+    color: var(--texto);
+  }
+  /* Reads as the links above it: a quiet text control, not a call to action. */
+  .cookie-choice {
+    font: inherit;
+    color: var(--texto-2);
+    background: none;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 120ms var(--ciclo);
+  }
+  .cookie-choice:hover,
+  .cookie-choice:focus-visible {
     color: var(--texto);
   }
   .here small {
