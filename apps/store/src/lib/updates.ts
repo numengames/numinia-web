@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.67.0',
+    date: '2026-09-30 14:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The season now reads like a game pass. The eight doors stand in a row joined by a path; above each one, two boxes: the gold reward of the pass and the free reward. A door you have crossed lights up, the next one glows, and the ones after it wait in the fog with their names hidden. The eighth door, The Veil, carries a padlock: only pass holders enter, and its address is given to them alone.',
+      },
+      {
+        type: 'NEW',
+        text: 'Your progress is what you hold. Sign in with your wallet and every free reward in it counts as a door crossed, and the pass token as the pass. Nothing to type, nobody marks it by hand. Until the rewards are minted every door shows, and the fog appears by itself as they are.',
+      },
+      {
+        type: 'NEW',
+        text: 'Buying stays on the same page, one button with the price in euros, no cart. When the pass goes on sale, a separate box asks you to confirm you want it now and lose the 14 days to withdraw, as European law requires for digital content.',
+      },
+    ],
+  },
+  {
     version: 'v0.66.0',
     date: '2026-09-30 13:00',
     entries: [

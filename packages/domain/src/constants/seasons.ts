@@ -2,8 +2,9 @@
  * Season I — The Awakening of the Veil. Eight escape-room adventures in
  * worlds on oncyber, moved from numinia.store (data/seasons/season-001.json
  * in numinia-digital-goods-data) with its Spanish names restored as Spanish
- * and three more locales written. Every adventure is open to everyone; the
- * season pass adds the premium reward of each (archive record OPS-016).
+ * and three more locales written. The first seven doors are open to
+ * everyone; the eighth is the pass holders' (archive record OPS-016), and its
+ * address is not in this file — the server gives it to pass holders only.
  * ja/ko renderings pending native QA (D9 queue), like the rest of the domain.
  *
  * The price is NOT here: sites read it from the offer record (STD-033 PAY-003).
@@ -38,6 +39,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'Cruze o limiar do templo egípcio. Decifre os hieróglifos antigos para abrir o primeiro selo.',
     },
     worldUrl: 'https://oncyber.io/door_of_anubis',
+    requiresPass: false,
     durationMinutes: 25,
     difficulty: 4,
     puzzle: 'hieroglyph',
@@ -100,6 +102,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'O deus falcão observa. Resolva os enigmas de lógica refletidos nos espelhos partidos de Hórus.',
     },
     worldUrl: 'https://oncyber.io/door_of_horus',
+    requiresPass: false,
     durationMinutes: 12,
     difficulty: 2,
     puzzle: 'logic',
@@ -156,6 +159,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'A biblioteca de Imhotep guarda a chave. Resolva os quebra-cabeças tecidos nas raízes do saber antigo.',
     },
     worldUrl: 'https://oncyber.io/door_of_imhotep',
+    requiresPass: false,
     durationMinutes: 20,
     difficulty: 3,
     puzzle: 'brain-puzzle',
@@ -211,6 +215,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
       'pt-br': 'Ísis comanda as marés. Treine o olhar para enxergar através das ilusões do abismo.',
     },
     worldUrl: 'https://oncyber.io/door_of_isis',
+    requiresPass: false,
     durationMinutes: 15,
     difficulty: 2,
     puzzle: 'visual-acuity',
@@ -267,6 +272,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'A balança de Maat pesa sua alma. Escape da sala do julgamento antes que as chamas consumam tudo.',
     },
     worldUrl: 'https://oncyber.io/door_of_maat',
+    requiresPass: false,
     durationMinutes: 15,
     difficulty: 3,
     puzzle: 'escape-room',
@@ -323,6 +329,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'As flechas de Neith se escondem pelo templo. Encontre os segredos espalhados por seu domínio.',
     },
     worldUrl: 'https://oncyber.io/door_of_neith',
+    requiresPass: false,
     durationMinutes: 10,
     difficulty: 1,
     puzzle: 'easter-egg',
@@ -379,6 +386,7 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
         'A deusa leoa guarda o labirinto. Percorra o labirinto de Sacmis até encontrar o ponto de nexo.',
     },
     worldUrl: 'https://oncyber.io/door_of_sacmis',
+    requiresPass: false,
     durationMinutes: 8,
     difficulty: 1,
     puzzle: 'maze',
@@ -434,7 +442,8 @@ export const SEASON_ONE_ADVENTURES: readonly Adventure[] = [
       'pt-br':
         'A última porta. Thoth, guardião do conhecimento, testa seu domínio de tudo o que veio antes.',
     },
-    worldUrl: 'https://oo.oncyber.io/door_of_thoth',
+    worldUrl: null,
+    requiresPass: true,
     durationMinutes: 20,
     difficulty: 4,
     puzzle: 'logic',

@@ -31,12 +31,24 @@ describe('Season I — The Awakening of the Veil', () => {
     }
   });
 
-  it('has eight doors in order, every one open to everyone with a world to enter', () => {
+  it('has eight doors in order: seven open with a world to enter, the last behind the pass', () => {
     expect(SEASON_ONE.adventures).toHaveLength(8);
     expect(SEASON_ONE.adventures.map((a) => a.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(SEASON_ONE.adventures.map((a) => a.requiresPass)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+    ]);
     for (const adventure of SEASON_ONE.adventures) {
       expect(adventure.seasonId).toBe(SEASON_ONE.id);
-      expect(adventure.worldUrl).toMatch(/^https:\/\//);
+      // A gated door never carries its address in the shared domain.
+      if (adventure.requiresPass) expect(adventure.worldUrl).toBeNull();
+      else expect(adventure.worldUrl).toMatch(/^https:\/\//);
       expect(PUZZLE_TYPES).toContain(adventure.puzzle);
       expect(adventure.difficulty).toBeGreaterThanOrEqual(1);
       expect(adventure.difficulty).toBeLessThanOrEqual(5);

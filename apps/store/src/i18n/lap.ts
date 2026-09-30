@@ -116,6 +116,15 @@ export interface LapMessages {
     readonly comingSoon: string;
     readonly datesPending: string;
     readonly record: string;
+    readonly freeTrack: string;
+    readonly passTrack: string;
+    readonly progress: string;
+    readonly noPass: string;
+    readonly passActive: string;
+    readonly locked: string;
+    readonly fog: string;
+    readonly signIn: string;
+    readonly withdrawal: string;
   };
   readonly codexTitle: string;
   readonly codexIntro: string;
@@ -346,7 +355,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptySeasons: 'Temporada I: ocho puertas abiertas a todos y un pase con el botín premium.',
     season: {
       intro:
-        'Ocho puertas, ocho enigmas. Todas están abiertas para cualquiera, y cada una da un botín al cruzarla. El pase de temporada añade el botín premium de las ocho.',
+        'Ocho puertas, ocho enigmas. Cada puerta que cruzas te da su botín y destapa la siguiente. La última solo se abre con el pase de temporada, que además suma el botín dorado de todas.',
       doors: 'Puertas',
       minutes: 'Minutos de juego',
       play: 'Entrar en la puerta',
@@ -356,12 +365,23 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       passTitle: 'El pase de temporada',
       passDelivers: 'Qué te llevas',
       passGives:
-        'El botín premium de las ocho aventuras y un token del pase de la Temporada I, acuñado en la wallet con la que entras. Las aventuras y su botín gratis siguen abiertos para todos.',
+        'El botín dorado de las ocho puertas, la entrada a la octava —El Velo— y un token del pase de la Temporada I en la wallet con la que entras.',
       vatIncluded: 'IVA incluido · pago único',
       buy: 'Comprar el pase',
       comingSoon: 'Próximamente',
       datesPending: 'Las fechas de la temporada aún no están fijadas.',
       record: 'El precio y lo que entrega salen de su ficha en el archivo',
+      freeTrack: 'Gratis',
+      passTrack: 'Pase',
+      progress: '{n} de {t} puertas cruzadas',
+      noPass: 'Sin pase',
+      passActive: 'Pase activo',
+      locked: 'Solo con el pase',
+      fog: 'Aún en la niebla',
+      signIn:
+        'Entra con tu wallet para ver tu avance: cada botín que tengas cuenta como puerta cruzada.',
+      withdrawal:
+        'Quiero el contenido ya y entiendo que pierdo los 14 días para desistir de la compra.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:
@@ -518,7 +538,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptySeasons: 'Season I: eight doors open to all, and a pass with the premium rewards.',
     season: {
       intro:
-        'Eight doors, eight puzzles. Every one is open to anyone, and each gives a reward when you cross it. The season pass adds the premium reward of all eight.',
+        'Eight doors, eight puzzles. Each door you cross gives you its reward and reveals the next. The last one opens only with the season pass, which also adds the gold reward of every door.',
       doors: 'Doors',
       minutes: 'Minutes of play',
       play: 'Enter the door',
@@ -528,12 +548,23 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       passTitle: 'The season pass',
       passDelivers: 'What you take away',
       passGives:
-        'The premium reward of all eight adventures, and a Season I pass token minted to the wallet you sign in with. The adventures and their free rewards stay open to everyone.',
+        'The gold reward of all eight doors, entry to the eighth — The Veil — and a Season I pass token in the wallet you sign in with.',
       vatIncluded: 'VAT included · one-off payment',
       buy: 'Buy the pass',
       comingSoon: 'Coming soon',
       datesPending: 'The season’s dates are not set yet.',
       record: 'The price and what it delivers come from its record in the archive',
+      freeTrack: 'Free',
+      passTrack: 'Pass',
+      progress: '{n} of {t} doors crossed',
+      noPass: 'No pass',
+      passActive: 'Pass active',
+      locked: 'Pass holders only',
+      fog: 'Still in the fog',
+      signIn:
+        'Sign in with your wallet to see your progress: every reward you hold counts as a door crossed.',
+      withdrawal:
+        'I want the content now and understand I lose the 14 days to withdraw from the purchase.',
     },
     codexTitle: 'Codex of identities',
     codexIntro:
@@ -686,7 +717,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptySeasons: 'シーズンI:誰にでも開かれた8つの扉と、プレミアム報酬付きのパス。',
     season: {
       intro:
-        '8つの扉、8つの謎。どの扉も誰にでも開かれており、くぐるたびに報酬がもらえる。シーズンパスは8つすべてのプレミアム報酬を加える。',
+        '8つの扉、8つの謎。扉をくぐるたびに報酬が手に入り、次の扉が現れる。最後の扉はシーズンパスでのみ開き、パスはすべての扉の金の報酬も加える。',
       doors: '扉',
       minutes: 'プレイ時間(分)',
       play: '扉に入る',
@@ -696,12 +727,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       passTitle: 'シーズンパス',
       passDelivers: '手に入るもの',
       passGives:
-        '8つの冒険すべてのプレミアム報酬と、サインインしたウォレットに発行されるシーズンIパストークン。冒険と無料報酬は誰にでも開かれたまま。',
+        '8つの扉すべての金の報酬、8番目の扉「ヴェール」への入場、そしてサインインしたウォレットへのシーズンIパストークン。',
       vatIncluded: '税込 · 一回払い',
       buy: 'パスを購入',
       comingSoon: '近日公開',
       datesPending: 'シーズンの日程はまだ決まっていない。',
       record: '価格と内容はアーカイブの記録から読み込まれる',
+      freeTrack: '無料',
+      passTrack: 'パス',
+      progress: '{t}の扉のうち{n}を通過',
+      noPass: 'パスなし',
+      passActive: 'パス有効',
+      locked: 'パス保有者のみ',
+      fog: 'まだ霧の中',
+      signIn:
+        'ウォレットでサインインすると進行状況が見られる。持っている報酬ごとに扉を通過したことになる。',
+      withdrawal: '今すぐコンテンツを受け取り、購入を撤回できる14日間を失うことを理解している。',
     },
     codexTitle: 'アイデンティティのコデックス',
     codexIntro: 'ヌミニアに属する形:あなたは誰か、何を知るか、何を追うか。',
@@ -851,7 +892,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptySeasons: '시즌 I: 누구에게나 열린 여덟 개의 문과 프리미엄 보상이 담긴 패스.',
     season: {
       intro:
-        '여덟 개의 문, 여덟 개의 수수께끼. 모든 문은 누구에게나 열려 있고, 문을 지날 때마다 보상을 준다. 시즌 패스는 여덟 문 모두의 프리미엄 보상을 더한다.',
+        '여덟 개의 문, 여덟 개의 수수께끼. 문을 지날 때마다 보상을 받고 다음 문이 드러난다. 마지막 문은 시즌 패스로만 열리며, 패스는 모든 문의 황금 보상도 더한다.',
       doors: '문',
       minutes: '플레이 시간(분)',
       play: '문으로 들어가기',
@@ -861,12 +902,23 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       passTitle: '시즌 패스',
       passDelivers: '얻는 것',
       passGives:
-        '여덟 모험 모두의 프리미엄 보상과, 로그인한 지갑으로 발행되는 시즌 I 패스 토큰. 모험과 무료 보상은 모두에게 계속 열려 있다.',
+        '여덟 문 모두의 황금 보상, 여덟 번째 문 «베일» 입장, 그리고 로그인한 지갑으로 받는 시즌 I 패스 토큰.',
       vatIncluded: '부가세 포함 · 일회 결제',
       buy: '패스 구매',
       comingSoon: '곧 출시',
       datesPending: '시즌 일정은 아직 정해지지 않았다.',
       record: '가격과 제공 내용은 아카이브의 기록에서 읽어 온다',
+      freeTrack: '무료',
+      passTrack: '패스',
+      progress: '{t}개 중 {n}개 문 통과',
+      noPass: '패스 없음',
+      passActive: '패스 활성',
+      locked: '패스 보유자 전용',
+      fog: '아직 안개 속',
+      signIn:
+        '지갑으로 로그인하면 진행 상황을 볼 수 있다. 보유한 보상마다 문을 통과한 것으로 친다.',
+      withdrawal:
+        '지금 바로 콘텐츠를 받기를 원하며, 구매를 철회할 수 있는 14일을 잃는다는 것을 이해한다.',
     },
     codexTitle: '정체성 코덱스',
     codexIntro: '누미니아에 속하는 방법: 당신은 누구인지, 무엇을 아는지, 무엇을 추구하는지.',
@@ -1055,7 +1107,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptySeasons: 'Temporada I: oito portas abertas a todos e um passe com as recompensas premium.',
     season: {
       intro:
-        'Oito portas, oito enigmas. Todas estão abertas para qualquer pessoa, e cada uma dá uma recompensa ao ser atravessada. O passe de temporada acrescenta a recompensa premium das oito.',
+        'Oito portas, oito enigmas. Cada porta que você atravessa lhe dá sua recompensa e revela a seguinte. A última só se abre com o passe de temporada, que também soma a recompensa dourada de todas.',
       doors: 'Portas',
       minutes: 'Minutos de jogo',
       play: 'Entrar na porta',
@@ -1065,12 +1117,22 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       passTitle: 'O passe de temporada',
       passDelivers: 'O que você leva',
       passGives:
-        'A recompensa premium das oito aventuras e um token do passe da Temporada I, cunhado na carteira com que você entra. As aventuras e suas recompensas grátis continuam abertas a todos.',
+        'A recompensa dourada das oito portas, a entrada na oitava — O Véu — e um token do passe da Temporada I na carteira com que você entra.',
       vatIncluded: 'IVA incluído · pagamento único',
       buy: 'Comprar o passe',
       comingSoon: 'Em breve',
       datesPending: 'As datas da temporada ainda não foram definidas.',
       record: 'O preço e o que ele entrega vêm do seu registro no arquivo',
+      freeTrack: 'Grátis',
+      passTrack: 'Passe',
+      progress: '{n} de {t} portas atravessadas',
+      noPass: 'Sem passe',
+      passActive: 'Passe ativo',
+      locked: 'Só com o passe',
+      fog: 'Ainda na névoa',
+      signIn:
+        'Entre com sua carteira para ver seu avanço: cada recompensa que você tiver conta como porta atravessada.',
+      withdrawal: 'Quero o conteúdo agora e entendo que perco os 14 dias para desistir da compra.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:
