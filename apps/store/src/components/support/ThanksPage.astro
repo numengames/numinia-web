@@ -16,6 +16,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../chrome/Icon.astro';
 import { THANKS_UI } from '../../i18n/thanks';
 
 interface Props {
@@ -44,7 +45,7 @@ const STARS = Array.from({ length: 24 }, (_, i) => ({
   <section class="celebra" aria-labelledby="th-title" data-thanks="backer">
     <div class="taza" aria-hidden="true">
       <span class="vapor v1"></span><span class="vapor v2"></span><span class="vapor v3"></span>
-      <span class="cafe">☕</span>
+      <span class="cafe"><Icon name="coffee" size={72} /></span>
       {STARS.map((s) => (
         <span
           class={`estrella ${s.color}`}

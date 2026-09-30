@@ -19,6 +19,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { SUPPORT_UI } from '../../i18n/support';
+import Icon from './Icon.astro';
 import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
 import { SOCIAL_LINKS } from '../../lib/social-links';
 import { HOUSE_LINKS, THIS_SITE } from '../../lib/house-links';
@@ -62,7 +63,7 @@ const NAV = [
       <!-- STD-037 SIT-001: the house footer invites support on every site, in
            plain sight (the Oracle, 2026-09-30: nobody found the hidden cup). -->
       <a href={`${prefix}/support/`} class="apoyo" data-metric="footer-support">
-        <span aria-hidden="true">☕</span> {support.footerLink}
+        <Icon name="coffee" size={18} /> {support.footerLink}
       </a>
     </div>
 

@@ -35,7 +35,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       },
       {
         type: 'UPD',
-        text: 'Supporting Numinia is now easy to find: the footer of every page carries a button, ☕ Support Numinia, under the line that says what the site is. The small hidden cup after the signature is gone. The same button is in the footer of numinia.org, numen.games and nwos.numen.games.',
+        text: 'Supporting Numinia is now easy to find: the footer of every page carries a button with a coffee cup, Support Numinia, under the line that says what the site is. The small hidden cup after the signature is gone. The same button is in the footer of numinia.org, numen.games and nwos.numen.games.',
       },
     ],
   },
