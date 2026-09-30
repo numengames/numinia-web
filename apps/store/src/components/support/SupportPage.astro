@@ -1,0 +1,213 @@
+---
+/**
+ * /support — the ways to help keep Numinia going. Reached from the footer's
+ * steaming coffee (a quiet door, not a banner). One page: why we ask, the
+ * Backer's coffee for 5 EUR, the three Sponsor levels, what whoever pays
+ * gets, and where the money goes.
+ *
+ * Prices and links come from SUPPORT_GOODS (i18n/support.ts), which mirrors
+ * the record OPS-014 in numinia-archive. No card number is ever typed here:
+ * the button leaves for the processor's own page (STD-033 PAY-005). A good
+ * without a link shows "Coming soon".
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SUPPORT_GOODS, SUPPORT_UI } from '../../i18n/support';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = SUPPORT_UI[locale];
+const NUMBER_LOCALE: Record<SupportedLocale, string> = {
+  en: 'en-GB',
+  es: 'es-ES',
+  'pt-br': 'pt-BR',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+};
+const eur = (n: number): string =>
+  new Intl.NumberFormat(NUMBER_LOCALE[locale], {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(n);
+
+const backer = SUPPORT_GOODS.find((g) => g.id === 'backer');
+const sponsors = SUPPORT_GOODS.filter((g) => g.id !== 'backer');
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
+  <header class="cabeza">
+    <p class="etiqueta entrada" aria-hidden="true">☕</p>
+    <h1 class="entrada-1">{t.title}</h1>
+    <p class="lead entrada-2">{t.lead}</p>
+  </header>
+
+  {backer && (
+    <section class="tarjeta backer" aria-labelledby="sp-backer" data-good="backer">
+      <p class="etiqueta">{t.backerKind}</p>
+      <h2 id="sp-backer">{t.backerName}</h2>
+      <p class="linea">{t.backerLine}</p>
+      <p class="precio"><b>{eur(backer.amount)}</b> <span>{t.once}</span></p>
+      {backer.link ? (
+        <>
+          <a
+            href={backer.link.href}
+            class="btn btn-primario"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-metric="support-backer-pay"
+            data-support-pay
+          >
+            {t.pay}
+          </a>
+          {backer.link.test && <p class="nota" role="note">{t.testNote}</p>}
+        </>
+      ) : (
+        <button type="button" class="btn" disabled>{t.soon}</button>
+      )}
+    </section>
+  )}
+
+  <section class="sponsors" aria-labelledby="sp-sponsors">
+    <h2 id="sp-sponsors">{t.sponsorTitle}</h2>
+    <p class="sub">{t.sponsorLine}</p>
+    <ul>
+      {sponsors.map((g) => (
+        <li class="tarjeta" data-good={g.id}>
+          <span class="nivel">{t.levels[g.id as keyof typeof t.levels]}</span>
+          <b>{eur(g.amount)}</b>
+          {g.link ? (
+            <a href={g.link.href} class="btn" target="_blank" rel="noopener noreferrer" data-metric={`support-${g.id}-pay`}>
+              {t.pay}
+            </a>
+          ) : (
+            <span class="pronto">{t.soon}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+    <p class="nota">{t.monthlySoon}</p>
+  </section>
+
+  <section class="texto" aria-labelledby="sp-why">
+    <h2 id="sp-why">{t.whyTitle}</h2>
+    {t.why.map((p) => <p>{p}</p>)}
+  </section>
+
+  <section class="texto" aria-labelledby="sp-gift">
+    <h2 id="sp-gift">{t.giftTitle}</h2>
+    {t.gift.map((p) => <p>{p}</p>)}
+  </section>
+
+  <section class="texto" aria-labelledby="sp-where">
+    <h2 id="sp-where">{t.whereTitle}</h2>
+    <p>
+      {t.where}{' '}
+      <a href="https://numinia.org/system/open-books/" target="_blank" rel="noopener noreferrer" data-metric="support-open-books">{t.whereLink}</a>
+    </p>
+  </section>
+</BaseLayout>
+
+<style>
+  .cabeza {
+    max-width: 46rem;
+  }
+  .cabeza .etiqueta {
+    font-size: 1.5rem;
+    letter-spacing: 0;
+    margin: 0;
+  }
+  .lead {
+    color: var(--texto-2);
+  }
+  h2 {
+    font-weight: 400;
+    margin: 0 0 var(--s2);
+  }
+  .backer {
+    max-width: 30rem;
+    margin: var(--s6) 0;
+    padding: var(--s5);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+    background: var(--superficie);
+  }
+  .backer .etiqueta {
+    margin: 0 0 var(--s1);
+  }
+  .linea {
+    color: var(--texto-2);
+    margin: 0 0 var(--s4);
+  }
+  .precio {
+    margin: 0 0 var(--s4);
+    font-family: var(--mono);
+    color: var(--texto-3);
+  }
+  .precio b {
+    font-size: 2rem;
+    font-weight: 500;
+    color: var(--texto);
+  }
+  .nota {
+    margin: var(--s3) 0 0;
+    font-size: 0.8125rem;
+    color: var(--texto-3);
+    max-width: 46rem;
+  }
+  .sponsors {
+    margin: var(--s6) 0;
+  }
+  .sub {
+    color: var(--texto-2);
+    margin: 0 0 var(--s4);
+  }
+  .sponsors ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--s3);
+  }
+  .sponsors li {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+    background: var(--superficie);
+  }
+  .nivel {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--texto-3);
+  }
+  .sponsors b {
+    font-family: var(--mono);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--texto);
+  }
+  .pronto {
+    font-size: 0.8125rem;
+    color: var(--texto-3);
+  }
+  .texto {
+    max-width: 46rem;
+    margin: var(--s6) 0 0;
+  }
+  .texto p {
+    color: var(--texto-2);
+  }
+  .texto a {
+    color: var(--enlace);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>

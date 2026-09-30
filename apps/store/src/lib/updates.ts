@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.64.0',
+    date: '2026-09-30 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: "Support Numinia, at /support. At the very end of every page, after the signature, a small coffee cup leads to it. The page says why we ask, offers the Backer's coffee for 5 EUR paid once on Stripe's own page, and shows the three Sponsor levels (Bronze from 200, Silver from 2,000, Gold from 10,000 EUR) as coming soon. Today the coffee is a test payment: nothing is charged. Whoever pays will get a supporter's badge; delivering it is the next step.",
+      },
+    ],
+  },
+  {
     version: 'v0.63.0',
     date: '2026-09-29 21:10',
     entries: [
