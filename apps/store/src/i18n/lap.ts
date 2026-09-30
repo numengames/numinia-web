@@ -125,6 +125,7 @@ export interface LapMessages {
     readonly fog: string;
     readonly signIn: string;
     readonly withdrawal: string;
+    readonly testNote: string;
   };
   readonly codexTitle: string;
   readonly codexIntro: string;
@@ -382,6 +383,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Entra con tu wallet para ver tu avance: cada botín que tengas cuenta como puerta cruzada.',
       withdrawal:
         'Quiero el contenido ya y entiendo que pierdo los 14 días para desistir de la compra.',
+      testNote:
+        'Modo de prueba: no se cobra nada. Para probarlo usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. La página de pago muestra aún el producto del café.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:
@@ -565,6 +568,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Sign in with your wallet to see your progress: every reward you hold counts as a door crossed.',
       withdrawal:
         'I want the content now and understand I lose the 14 days to withdraw from the purchase.',
+      testNote:
+        'Test mode: nothing is charged. To try it, use the card 4242 4242 4242 4242, any future date and any CVC. The payment page still shows the coffee’s product.',
     },
     codexTitle: 'Codex of identities',
     codexIntro:
@@ -743,6 +748,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signIn:
         'ウォレットでサインインすると進行状況が見られる。持っている報酬ごとに扉を通過したことになる。',
       withdrawal: '今すぐコンテンツを受け取り、購入を撤回できる14日間を失うことを理解している。',
+      testNote:
+        'テストモード:料金は発生しない。試すにはカード 4242 4242 4242 4242、任意の将来の日付、任意のCVCを使う。支払いページにはまだコーヒーの商品が表示される。',
     },
     codexTitle: 'アイデンティティのコデックス',
     codexIntro: 'ヌミニアに属する形:あなたは誰か、何を知るか、何を追うか。',
@@ -919,6 +926,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         '지갑으로 로그인하면 진행 상황을 볼 수 있다. 보유한 보상마다 문을 통과한 것으로 친다.',
       withdrawal:
         '지금 바로 콘텐츠를 받기를 원하며, 구매를 철회할 수 있는 14일을 잃는다는 것을 이해한다.',
+      testNote:
+        '테스트 모드: 요금이 청구되지 않는다. 카드 4242 4242 4242 4242, 미래의 아무 날짜, 아무 CVC로 시험해 보라. 결제 페이지에는 아직 커피 상품이 표시된다.',
     },
     codexTitle: '정체성 코덱스',
     codexIntro: '누미니아에 속하는 방법: 당신은 누구인지, 무엇을 아는지, 무엇을 추구하는지.',
@@ -1133,6 +1142,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signIn:
         'Entre com sua carteira para ver seu avanço: cada recompensa que você tiver conta como porta atravessada.',
       withdrawal: 'Quero o conteúdo agora e entendo que perco os 14 dias para desistir da compra.',
+      testNote:
+        'Modo de teste: nada é cobrado. Para testar, use o cartão 4242 4242 4242 4242, qualquer data futura e qualquer CVC. A página de pagamento ainda mostra o produto do café.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:
