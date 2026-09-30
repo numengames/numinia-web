@@ -196,3 +196,22 @@ for (const file of FILES_EN) {
   }
   write(file.target, text, `${LORE_REPO}@${LORE_REF}`);
 }
+
+// The offer record of the season pass (operations/OPS-016), read by
+// /lap/seasons for its price and its payment link (STD-033 PAY-003: sites
+// read the price from the record). Optional while the record has not landed
+// on the archive's main: a 404 keeps the committed copy in fixtures/offers/.
+const OFFER = {
+  path: 'operations/OPS-016-season-pass-the-offer.md',
+  target: join('apps/store', '.lore', 'offers', 'OPS-016-season-pass-the-offer.md'),
+  marker: 'goods:',
+};
+const offer = await read(OFFER.path, OFFER.marker, { optional: true });
+if (offer === null) {
+  rmSync(OFFER.target, { force: true });
+  console.warn(
+    `fetch-lore: ${OFFER.path} not in the archive yet (HTTP 404); the season page reads the committed copy.`,
+  );
+} else {
+  write(OFFER.target, offer, `${LORE_REPO}@${LORE_REF}`);
+}
