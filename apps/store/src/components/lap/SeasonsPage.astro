@@ -1,0 +1,215 @@
+---
+/**
+ * Seasons (LAP): the current season's eight doors, the free and the premium
+ * reward of each, and the season pass. Every door is open to everyone; the
+ * pass sells only what it can deliver — the premium rewards and a token
+ * (archive record OPS-016). The price and the payment link are read from
+ * that record (STD-033 PAY-003) through lib/season-pass; what it delivers
+ * is the record's sentence, said in each locale here; the button is
+ * "Coming soon" until the record is on sale with a link.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { SEASON_ONE, rewardOn, seasonMinutes } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import { formatEur, loadSeasonPass, OFFER_URL, onSale } from '../../lib/season-pass';
+import Icon from '../chrome/Icon.astro';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const s = t.season;
+const season = SEASON_ONE;
+const pass = loadSeasonPass();
+const payable = onSale(pass);
+const intl = locale === 'pt-br' ? 'pt-BR' : locale;
+---
+
+<LapShell
+  locale={locale}
+  current="seasons"
+  title={`${season.name[locale]} — LAP — Numinia`}
+  description={season.description[locale]}
+>
+  <article data-lap-seasons>
+    <p class="etiqueta">{t.sections.seasons}</p>
+    <h1>{season.name[locale]}</h1>
+    <p class="intro">{season.description[locale]}</p>
+    <p class="intro">{s.intro}</p>
+    {season.startsAt === null && <p class="fechas">{s.datesPending}</p>}
+
+    <div class="sondas">
+      <div class="kpi reveal">
+        <p class="dato-xl mono">{season.adventures.length}</p>
+        <p class="etiqueta">{s.doors}</p>
+      </div>
+      <div class="kpi reveal">
+        <p class="dato-xl mono">{seasonMinutes(season)}</p>
+        <p class="etiqueta">{s.minutes}</p>
+      </div>
+    </div>
+
+    <section class="tarjeta reveal pase" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
+      <p class="etiqueta">{s.passTitle}</p>
+      <h2>{season.name[locale]}</h2>
+      <p class="precio">
+        <span class="dato-xl">{formatEur(pass.priceEur, intl)}</span>
+        <span class="letra">{s.vatIncluded}</span>
+      </p>
+      <p class="desc"><strong>{s.passDelivers}:</strong> {s.passGives}</p>
+      {
+        payable ? (
+          <a class="btn btn-primario" href={pass.link} target="_blank" rel="noopener noreferrer" data-metric="season-pass-buy">
+            {s.buy}
+          </a>
+        ) : (
+          <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
+            {s.comingSoon}
+          </button>
+        )
+      }
+      <p class="letra">
+        <a href={OFFER_URL} target="_blank" rel="noopener noreferrer" data-metric="season-pass-record">{s.record}</a>
+      </p>
+    </section>
+
+    <ol class="puertas">
+      {
+        season.adventures.map((adventure) => {
+          const free = rewardOn(adventure, 'free');
+          const premium = rewardOn(adventure, 'premium');
+          return (
+            <li class="tarjeta reveal" data-adventure={adventure.id}>
+              <p class="etiqueta mono">
+                {String(adventure.order).padStart(2, '0')} · {adventure.durationMinutes} min · {s.difficulty}{' '}
+                <span aria-label={`${adventure.difficulty}/5`}>{'●'.repeat(adventure.difficulty)}{'○'.repeat(5 - adventure.difficulty)}</span>
+              </p>
+              <h3>{adventure.name[locale]}</h3>
+              <p class="desc">{adventure.description[locale]}</p>
+              <dl class="botin">
+                {free && (
+                  <div>
+                    <dt class="etiqueta">{s.free}</dt>
+                    <dd>{free.name[locale]}</dd>
+                  </div>
+                )}
+                {premium && (
+                  <div>
+                    <dt class="etiqueta">{s.premium}</dt>
+                    <dd>{premium.name[locale]}</dd>
+                  </div>
+                )}
+              </dl>
+              <a
+                class="btn btn-fantasma"
+                href={adventure.worldUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="season-door-enter"
+              >
+                {s.play}
+                <Icon name="globe" size={18} />
+              </a>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </article>
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    margin: var(--s1) 0 var(--s3);
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+  }
+  .fechas {
+    color: var(--texto-2);
+    font-style: italic;
+  }
+  .sondas {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    margin: var(--s5) 0;
+  }
+  .kpi .dato-xl {
+    margin: 0;
+    color: var(--texto);
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .etiqueta {
+    margin: var(--s1) 0 0;
+  }
+  .pase h2 {
+    margin: var(--s1) 0 var(--s2);
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  .precio {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0 0 var(--s3);
+  }
+  .letra {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    margin: var(--s3) 0 0;
+  }
+  .precio .letra {
+    margin: 0;
+  }
+  .puertas {
+    list-style: none;
+    margin: var(--s6) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  }
+  .puertas h3 {
+    margin: var(--s1) 0 var(--s2);
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .desc {
+    color: var(--texto-2);
+    line-height: 1.55;
+    margin: 0 0 var(--s3);
+  }
+  .botin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s2);
+    margin: 0 0 var(--s3);
+  }
+  .botin dt {
+    margin: 0;
+  }
+  .botin dd {
+    margin: 0;
+    color: var(--texto);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .btn[disabled] {
+    cursor: not-allowed;
+  }
+</style>

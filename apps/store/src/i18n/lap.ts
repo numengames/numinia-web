@@ -100,6 +100,23 @@ export interface LapMessages {
   readonly emptyPortals: string;
   readonly emptyLoot: string;
   readonly emptySeasons: string;
+  readonly season: {
+    readonly intro: string;
+    readonly doors: string;
+    readonly minutes: string;
+    readonly play: string;
+    readonly difficulty: string;
+    readonly free: string;
+    readonly premium: string;
+    readonly passTitle: string;
+    readonly passDelivers: string;
+    readonly passGives: string;
+    readonly vatIncluded: string;
+    readonly buy: string;
+    readonly comingSoon: string;
+    readonly datesPending: string;
+    readonly record: string;
+  };
   readonly codexTitle: string;
   readonly codexIntro: string;
   readonly codexGroups: {
@@ -326,7 +343,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptyPortals:
       'Los portales se cartografían con la Fase 5. El mapa llegará antes que la niebla.',
     emptyLoot: 'El botín llega con las Temporadas (Fase 3). Lo que ganes, será tuyo.',
-    emptySeasons: 'Las Temporadas encienden la Fase 3: aventuras, rituales y recompensas.',
+    emptySeasons: 'Temporada I: ocho puertas abiertas a todos y un pase con el botín premium.',
+    season: {
+      intro:
+        'Ocho puertas, ocho enigmas. Todas están abiertas para cualquiera, y cada una da un botín al cruzarla. El pase de temporada añade el botín premium de las ocho.',
+      doors: 'Puertas',
+      minutes: 'Minutos de juego',
+      play: 'Entrar en la puerta',
+      difficulty: 'Dificultad',
+      free: 'Botín gratis',
+      premium: 'Botín premium',
+      passTitle: 'El pase de temporada',
+      passDelivers: 'Qué te llevas',
+      passGives:
+        'El botín premium de las ocho aventuras y un token del pase de la Temporada I, acuñado en la wallet con la que entras. Las aventuras y su botín gratis siguen abiertos para todos.',
+      vatIncluded: 'IVA incluido · pago único',
+      buy: 'Comprar el pase',
+      comingSoon: 'Próximamente',
+      datesPending: 'Las fechas de la temporada aún no están fijadas.',
+      record: 'El precio y lo que entrega salen de su ficha en el archivo',
+    },
     codexTitle: 'Códice de identidades',
     codexIntro:
       'Las formas de pertenecer a Numinia: quién eres, qué sabes, qué persigues — tal y como las registra el modelo de la ciudad.',
@@ -479,7 +515,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptyTitle: 'Nothing here yet',
     emptyPortals: 'Portals are charted in Phase 5. The map arrives before the fog.',
     emptyLoot: 'Loot arrives with the Seasons (Phase 3). What you earn will be yours.',
-    emptySeasons: 'Seasons light up Phase 3: adventures, rituals and rewards.',
+    emptySeasons: 'Season I: eight doors open to all, and a pass with the premium rewards.',
+    season: {
+      intro:
+        'Eight doors, eight puzzles. Every one is open to anyone, and each gives a reward when you cross it. The season pass adds the premium reward of all eight.',
+      doors: 'Doors',
+      minutes: 'Minutes of play',
+      play: 'Enter the door',
+      difficulty: 'Difficulty',
+      free: 'Free reward',
+      premium: 'Premium reward',
+      passTitle: 'The season pass',
+      passDelivers: 'What you take away',
+      passGives:
+        'The premium reward of all eight adventures, and a Season I pass token minted to the wallet you sign in with. The adventures and their free rewards stay open to everyone.',
+      vatIncluded: 'VAT included · one-off payment',
+      buy: 'Buy the pass',
+      comingSoon: 'Coming soon',
+      datesPending: 'The season’s dates are not set yet.',
+      record: 'The price and what it delivers come from its record in the archive',
+    },
     codexTitle: 'Codex of identities',
     codexIntro:
       'The ways of belonging to Numinia: who you are, what you know, what you pursue — as the city model records them.',
@@ -628,7 +683,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptyTitle: 'まだ何もありません',
     emptyPortals: 'ポータルはフェーズ5で地図化されます。',
     emptyLoot: '戦利品はシーズン(フェーズ3)とともに届きます。',
-    emptySeasons: 'シーズンはフェーズ3で始まります:冒険、儀式、報酬。',
+    emptySeasons: 'シーズンI:誰にでも開かれた8つの扉と、プレミアム報酬付きのパス。',
+    season: {
+      intro:
+        '8つの扉、8つの謎。どの扉も誰にでも開かれており、くぐるたびに報酬がもらえる。シーズンパスは8つすべてのプレミアム報酬を加える。',
+      doors: '扉',
+      minutes: 'プレイ時間(分)',
+      play: '扉に入る',
+      difficulty: '難易度',
+      free: '無料報酬',
+      premium: 'プレミアム報酬',
+      passTitle: 'シーズンパス',
+      passDelivers: '手に入るもの',
+      passGives:
+        '8つの冒険すべてのプレミアム報酬と、サインインしたウォレットに発行されるシーズンIパストークン。冒険と無料報酬は誰にでも開かれたまま。',
+      vatIncluded: '税込 · 一回払い',
+      buy: 'パスを購入',
+      comingSoon: '近日公開',
+      datesPending: 'シーズンの日程はまだ決まっていない。',
+      record: '価格と内容はアーカイブの記録から読み込まれる',
+    },
     codexTitle: 'アイデンティティのコデックス',
     codexIntro: 'ヌミニアに属する形:あなたは誰か、何を知るか、何を追うか。',
     codexGroups: {
@@ -774,7 +848,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptyTitle: '아직 아무것도 없습니다',
     emptyPortals: '포털은 5단계에서 지도화됩니다.',
     emptyLoot: '전리품은 시즌(3단계)과 함께 옵니다.',
-    emptySeasons: '시즌은 3단계에서 시작됩니다: 모험, 의식, 보상.',
+    emptySeasons: '시즌 I: 누구에게나 열린 여덟 개의 문과 프리미엄 보상이 담긴 패스.',
+    season: {
+      intro:
+        '여덟 개의 문, 여덟 개의 수수께끼. 모든 문은 누구에게나 열려 있고, 문을 지날 때마다 보상을 준다. 시즌 패스는 여덟 문 모두의 프리미엄 보상을 더한다.',
+      doors: '문',
+      minutes: '플레이 시간(분)',
+      play: '문으로 들어가기',
+      difficulty: '난이도',
+      free: '무료 보상',
+      premium: '프리미엄 보상',
+      passTitle: '시즌 패스',
+      passDelivers: '얻는 것',
+      passGives:
+        '여덟 모험 모두의 프리미엄 보상과, 로그인한 지갑으로 발행되는 시즌 I 패스 토큰. 모험과 무료 보상은 모두에게 계속 열려 있다.',
+      vatIncluded: '부가세 포함 · 일회 결제',
+      buy: '패스 구매',
+      comingSoon: '곧 출시',
+      datesPending: '시즌 일정은 아직 정해지지 않았다.',
+      record: '가격과 제공 내용은 아카이브의 기록에서 읽어 온다',
+    },
     codexTitle: '정체성 코덱스',
     codexIntro: '누미니아에 속하는 방법: 당신은 누구인지, 무엇을 아는지, 무엇을 추구하는지.',
     codexGroups: {
@@ -959,7 +1052,26 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     emptyTitle: 'Ainda não há nada aqui',
     emptyPortals: 'Os portais são cartografados na Fase 5.',
     emptyLoot: 'O espólio chega com as Temporadas (Fase 3). O que você ganhar será seu.',
-    emptySeasons: 'As Temporadas acendem a Fase 3: aventuras, rituais e recompensas.',
+    emptySeasons: 'Temporada I: oito portas abertas a todos e um passe com as recompensas premium.',
+    season: {
+      intro:
+        'Oito portas, oito enigmas. Todas estão abertas para qualquer pessoa, e cada uma dá uma recompensa ao ser atravessada. O passe de temporada acrescenta a recompensa premium das oito.',
+      doors: 'Portas',
+      minutes: 'Minutos de jogo',
+      play: 'Entrar na porta',
+      difficulty: 'Dificuldade',
+      free: 'Recompensa grátis',
+      premium: 'Recompensa premium',
+      passTitle: 'O passe de temporada',
+      passDelivers: 'O que você leva',
+      passGives:
+        'A recompensa premium das oito aventuras e um token do passe da Temporada I, cunhado na carteira com que você entra. As aventuras e suas recompensas grátis continuam abertas a todos.',
+      vatIncluded: 'IVA incluído · pagamento único',
+      buy: 'Comprar o passe',
+      comingSoon: 'Em breve',
+      datesPending: 'As datas da temporada ainda não foram definidas.',
+      record: 'O preço e o que ele entrega vêm do seu registro no arquivo',
+    },
     codexTitle: 'Códice de identidades',
     codexIntro:
       'As formas de pertencer a Numinia: quem você é, o que sabe, o que persegue — como o modelo da cidade as registra.',

@@ -42,6 +42,7 @@ const PAGES = [
   '/es/lap/codex/glosario/',
   '/es/lap/codex/ficha/',
   '/es/lap/portals/',
+  '/es/lap/seasons/',
   '/es/lap/settings/',
   '/es/lap/session/',
   '/es/lap/admin/assets/',

@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.65.0',
+    date: '2026-09-30 12:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Seasons are open in the LAP. Season I, The Awakening of the Veil, shows its eight doors: each with its puzzle, how long it takes, how hard it is, the free reward and the premium one, and a button that takes you into its world. Every door is open to everyone.',
+      },
+      {
+        type: 'NEW',
+        text: 'The season pass comes over from numinia.store: the premium reward of all eight doors and a pass token in your wallet, for €9.99 with VAT, paid once. The price and what it delivers are read from its record in the archive. The button says Coming soon until the pass goes on sale.',
+      },
+    ],
+  },
+  {
     version: 'v0.64.0',
     date: '2026-09-30 12:00',
     entries: [
