@@ -1,0 +1,222 @@
+---
+/**
+ * /support/thanks/backer — where a Backer's payment returns (numinia-archive
+ * STD-044, Every purchase ends in thanks). Set as the payment link's
+ * confirmation page in Stripe.
+ *
+ * Thanks first, the good named; what happens next; where the receipt is;
+ * help in one step; one way on. The celebration is a steaming cup and one
+ * burst of stars in the sky's colours — CSS only, played once, and absent
+ * under reduced motion (CEL-011).
+ *
+ * The page PROVES NOTHING and KEEPS NOTHING (CEL-008, CEL-009): anyone can
+ * open this address, so it delivers no badge, reads no query string and
+ * shows no amount, name or email. It is kept out of search (CEL-010):
+ * noindex here, out of the sitemap in astro.config.mjs.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { THANKS_UI } from '../../i18n/thanks';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = THANKS_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+// The burst: 24 stars on a circle, each with its own angle, distance and
+// colour from the sky's palette (sand common, green/blue/violet rarer, one amber).
+const COLORS = ['arena', 'arena', 'arena', 'verde', 'azul', 'violeta', 'arena', 'verde', 'ambar'];
+const STARS = Array.from({ length: 24 }, (_, i) => ({
+  angle: Math.round((360 / 24) * i + ((i * 37) % 11)),
+  distance: 90 + ((i * 53) % 90),
+  size: 4 + ((i * 7) % 5),
+  delay: (i % 5) * 40,
+  color: COLORS[i % COLORS.length],
+}));
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
+  <meta slot="head" name="robots" content="noindex" />
+
+  <section class="celebra" aria-labelledby="th-title" data-thanks="backer">
+    <div class="taza" aria-hidden="true">
+      <span class="vapor v1"></span><span class="vapor v2"></span><span class="vapor v3"></span>
+      <span class="cafe">☕</span>
+      {STARS.map((s) => (
+        <span
+          class={`estrella ${s.color}`}
+          style={`--a:${s.angle}deg;--d:${s.distance}px;--s:${s.size}px;--t:${s.delay}ms`}
+        />
+      ))}
+    </div>
+    <h1 id="th-title" class="entrada-1">{t.headline}</h1>
+    <p class="lead entrada-2">{t.lead}</p>
+  </section>
+
+  <section class="bloque" aria-labelledby="th-next">
+    <h2 id="th-next">{t.nextTitle}</h2>
+    {t.next.map((p) => <p>{p}</p>)}
+  </section>
+
+  <section class="bloque" aria-labelledby="th-receipt">
+    <h2 id="th-receipt">{t.receiptTitle}</h2>
+    <p>{t.receipt}</p>
+  </section>
+
+  <section class="bloque" aria-labelledby="th-help">
+    <h2 id="th-help">{t.helpTitle}</h2>
+    <p>{t.help}</p>
+  </section>
+
+  <p class="acciones">
+    <a href={`${prefix}/lap/`} class="btn btn-primario" data-metric="thanks-backer-profile">{t.onward}</a>
+    <a href={`${prefix}/`} class="btn btn-fantasma" data-metric="thanks-backer-home">{t.back}</a>
+  </p>
+</BaseLayout>
+
+<style>
+  .celebra {
+    max-width: 46rem;
+    text-align: left;
+  }
+  .taza {
+    position: relative;
+    width: 96px;
+    height: 110px;
+    margin: var(--s4) 0 var(--s3);
+  }
+  .cafe {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    font-size: 72px;
+    line-height: 1;
+  }
+  /* Three wisps of steam over the cup, rising and fading in turn. */
+  .vapor {
+    position: absolute;
+    bottom: 70px;
+    width: 6px;
+    height: 26px;
+    border-radius: 6px;
+    background: var(--texto-3);
+    opacity: 0;
+  }
+  .v1 {
+    left: 26px;
+  }
+  .v2 {
+    left: 38px;
+  }
+  .v3 {
+    left: 50px;
+  }
+  /* The burst: every star starts at the cup and leaves along its angle. */
+  .estrella {
+    position: absolute;
+    left: 36px;
+    top: 50px;
+    width: var(--s);
+    height: var(--s);
+    border-radius: 50%;
+    opacity: 0;
+  }
+  .arena {
+    background: #e8dcc4;
+  }
+  .verde {
+    background: #7fd1a8;
+  }
+  .azul {
+    background: #7fb2e5;
+  }
+  .violeta {
+    background: #b39ddb;
+  }
+  .ambar {
+    background: var(--ambar);
+  }
+  [data-modo='diurno'] .arena {
+    background: #b8a47c;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .vapor {
+      animation: vapor 2.4s ease-in-out infinite;
+    }
+    .v2 {
+      animation-delay: 0.8s;
+    }
+    .v3 {
+      animation-delay: 1.6s;
+    }
+    .cafe {
+      animation: llega 600ms var(--ciclo) both;
+    }
+    .estrella {
+      animation: estalla 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      animation-delay: calc(350ms + var(--t));
+    }
+  }
+  @keyframes vapor {
+    0% {
+      opacity: 0;
+      transform: translateY(8px) scaleY(0.6);
+    }
+    40% {
+      opacity: 0.55;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-22px) scaleY(1.1);
+    }
+  }
+  @keyframes llega {
+    from {
+      transform: scale(0.6) rotate(-8deg);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes estalla {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--a)) translateX(0) scale(0.4);
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--a)) translateX(var(--d)) scale(1);
+    }
+  }
+
+  .lead {
+    color: var(--texto-2);
+    font-size: 1.125rem;
+  }
+  h2 {
+    font-weight: 400;
+    margin: 0 0 var(--s2);
+  }
+  .bloque {
+    max-width: 46rem;
+    margin: var(--s6) 0 0;
+  }
+  .bloque p {
+    color: var(--texto-2);
+  }
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    margin: var(--s6) 0 0;
+  }
+</style>

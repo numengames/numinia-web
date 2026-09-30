@@ -94,7 +94,9 @@ export default defineConfig({
       filter: (page) =>
         !page.includes('/spike/') &&
         !/\/city\/(inhabitants|districts|the-game)\//.test(page) &&
-        !/\/legal\/notice\/$/.test(page),
+        !/\/legal\/notice\/$/.test(page) &&
+        // STD-044 CEL-010: a thanks page is reached by paying, never by search.
+        !/\/support\/thanks\//.test(page),
     }),
   ],
   markdown: {

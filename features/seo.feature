@@ -17,3 +17,7 @@ Feature: SEO plumbing
   Scenario: Every indexed section declares a meta description and OG basics
     Given the store application has been built
     Then key pages declare meta description and open graph tags
+
+  Scenario: A thanks page is reached by paying, never by search (STD-044 CEL-010)
+    Given the store application has been built
+    Then every thanks page asks not to be indexed and stays out of the sitemap

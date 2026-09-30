@@ -59,6 +59,11 @@ const NAV = [
     <div class="brand">
       <a href={`${prefix}/`} class="name" data-metric="footer-brand">Numinia</a>
       <p>{t.footerTagline}</p>
+      <!-- STD-037 SIT-001: the house footer invites support on every site, in
+           plain sight (the Oracle, 2026-09-30: nobody found the hidden cup). -->
+      <a href={`${prefix}/support/`} class="apoyo" data-metric="footer-support">
+        <span aria-hidden="true">☕</span> {support.footerLink}
+      </a>
     </div>
 
     <nav aria-label={t.footerNavigation} class="nav">
@@ -126,13 +131,7 @@ const NAV = [
           target="_blank"
           rel="noopener noreferrer"
           data-metric="footer-numen-signature"
-        >Numen Games</a>{' — we build for a better future.'}{' '}<a
-          href={`${prefix}/support/`}
-          class="cafe"
-          title={support.footerLink}
-          aria-label={support.footerLink}
-          data-metric="footer-support"
-        ><span aria-hidden="true">☕</span></a>
+        >Numen Games</a>{' — we build for a better future.'}
       </p>
       <!-- The build line: licence · telemetry · version · commit. The
            version links to /updates/ (the human record); the commit to
@@ -187,6 +186,30 @@ const NAV = [
     margin: var(--s2) 0 0;
     max-width: 28ch;
     color: var(--texto-3);
+  }
+  /* The support button: outlined in the house turquoise, under the line
+     that says what the site is. Visible, never loud. */
+  .apoyo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-top: var(--s3);
+    min-height: 40px;
+    padding: 0 var(--s3);
+    border: 1px solid var(--turquesa);
+    border-radius: 6px;
+    color: var(--texto);
+    font-weight: 500;
+  }
+  .apoyo:hover,
+  .apoyo:focus-visible {
+    background: color-mix(in srgb, var(--turquesa) 14%, transparent);
+    color: var(--texto);
+  }
+  @media (max-width: 1023px) {
+    .apoyo {
+      min-height: 44px;
+    }
   }
   nav,
   .stack {
@@ -284,33 +307,6 @@ const NAV = [
     color: var(--enlace);
     text-decoration: underline;
     text-underline-offset: 3px;
-  }
-  /* The support door: a small steaming coffee after the signature — found by
-     whoever reads to the end, never a banner. It rises on hover. */
-  .byline .cafe {
-    display: inline-block;
-    text-decoration: none;
-    filter: grayscale(1);
-    opacity: 0.7;
-    transition:
-      transform 120ms var(--ciclo),
-      opacity 120ms var(--ciclo),
-      filter 120ms var(--ciclo);
-  }
-  .byline .cafe:hover,
-  .byline .cafe:focus-visible {
-    filter: none;
-    opacity: 1;
-    transform: translateY(-2px);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .byline .cafe {
-      transition: none;
-    }
-    .byline .cafe:hover,
-    .byline .cafe:focus-visible {
-      transform: none;
-    }
   }
   .build {
     margin-top: var(--s1);
