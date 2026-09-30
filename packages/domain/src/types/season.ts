@@ -22,6 +22,17 @@ export const PUZZLE_TYPES = [
 ] as const;
 export type PuzzleType = (typeof PUZZLE_TYPES)[number];
 
+/**
+ * Where a reward lives once it is minted: one ERC-1155 token id in one
+ * contract. Holding the free reward of a door is how the city knows the door
+ * was crossed — the wallet is the proof, not a form.
+ */
+export interface RewardToken {
+  readonly chainId: number;
+  readonly contract: `0x${string}`;
+  readonly tokenId: string;
+}
+
 export interface Reward {
   readonly id: string;
   readonly track: RewardTrack;
@@ -29,6 +40,8 @@ export interface Reward {
   readonly description: LocalizedString;
   /** Asset granted by this reward, when it is a digital good. */
   readonly assetId?: string;
+  /** The token that proves it is held; absent until the reward is minted. */
+  readonly token?: RewardToken;
 }
 
 export interface Adventure {
@@ -37,8 +50,13 @@ export interface Adventure {
   readonly order: number;
   readonly name: LocalizedString;
   readonly description: LocalizedString;
-  /** The world the adventure is played in. Every adventure is open to everyone. */
-  readonly worldUrl: string;
+  /**
+   * The world the adventure is played in, or null when the door is behind the
+   * pass: its address is then given by the server to pass holders only.
+   */
+  readonly worldUrl: string | null;
+  /** Only pass holders enter (the season's last door). */
+  readonly requiresPass: boolean;
   /** Estimated minutes to finish. */
   readonly durationMinutes: number;
   /** 1 (gentle) to 5 (hard). */

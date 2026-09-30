@@ -14,7 +14,6 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 
 const OFFER_FILE = 'OPS-016-season-pass-the-offer.md';
-export const OFFER_URL = 'https://numinia.org/operations/ops-016-season-pass-the-offer';
 export const SEASON_ONE_PASS_ID = 'season-001-pass';
 
 const GoodSchema = z.object({

@@ -1,17 +1,26 @@
 ---
 /**
- * Seasons (LAP): the current season's eight doors, the free and the premium
- * reward of each, and the season pass. Every door is open to everyone; the
- * pass sells only what it can deliver — the premium rewards and a token
- * (archive record OPS-016). The price and the payment link are read from
- * that record (STD-033 PAY-003) through lib/season-pass; what it delivers
- * is the record's sentence, said in each locale here; the button is
- * "Coming soon" until the record is on sale with a link.
+ * Seasons (LAP): the season drawn as a game's pass track. One row of doors
+ * joined by a path; above each door two reward boxes — the pass's gold one
+ * and the free one. A crossed door is lit; the next one is open; the ones
+ * after it wait in the fog; the last carries a padlock until you hold the pass.
+ *
+ * What a wallet has crossed is read from what it HOLDS (each door's free
+ * reward, the pass token) by /api/seasons/progress; this page renders the
+ * newcomer's view and the script redraws it for the signed-in wallet. The
+ * gated door's address is never in this HTML: the API hands it to pass
+ * holders only.
+ *
+ * Price and payment link come from the archive record OPS-016 (STD-033
+ * PAY-003). Buying is one button on this page — no cart. Before it, the
+ * separate withdrawal acknowledgement EU consumer law asks for immediate
+ * digital content (CRD art. 16(m); CPC key principles on in-game purchases).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { SEASON_ONE, rewardOn, seasonMinutes } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
-import { formatEur, loadSeasonPass, OFFER_URL, onSale } from '../../lib/season-pass';
+import { formatEur, loadSeasonPass, onSale } from '../../lib/season-pass';
+import { doorStates, NOBODY } from '../../lib/season-progress';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
 
@@ -23,9 +32,13 @@ const { locale } = Astro.props;
 const t = LAP_UI[locale];
 const s = t.season;
 const season = SEASON_ONE;
+const doors = [...season.adventures].sort((a, b) => a.order - b.order);
+const states = doorStates(season, NOBODY);
 const pass = loadSeasonPass();
 const payable = onSale(pass);
 const intl = locale === 'pt-br' ? 'pt-BR' : locale;
+const total = doors.length;
+const price = formatEur(pass.priceEur, intl);
 ---
 
 <LapShell
@@ -34,94 +47,226 @@ const intl = locale === 'pt-br' ? 'pt-BR' : locale;
   title={`${season.name[locale]} — LAP — Numinia`}
   description={season.description[locale]}
 >
-  <article data-lap-seasons>
-    <p class="etiqueta">{t.sections.seasons}</p>
-    <h1>{season.name[locale]}</h1>
-    <p class="intro">{season.description[locale]}</p>
-    <p class="intro">{s.intro}</p>
-    {season.startsAt === null && <p class="fechas">{s.datesPending}</p>}
+  <article
+    data-lap-seasons
+    data-pass="false"
+    data-progress-template={s.progress}
+    data-total={total}
+    data-label-pass={s.passActive}
+    data-label-nopass={s.noPass}
+  >
+    <header class="cabeza">
+      <div>
+        <p class="etiqueta">{t.sections.seasons}</p>
+        <h1>{season.name[locale]}</h1>
+        <p class="intro">{s.intro}</p>
+        <p class="letra">
+          {`${total} ${s.doors.toLowerCase()}`} · {seasonMinutes(season)} min{season.startsAt === null && <> · {s.datesPending}</>}
+        </p>
+      </div>
 
-    <div class="sondas">
-      <div class="kpi reveal">
-        <p class="dato-xl mono">{season.adventures.length}</p>
-        <p class="etiqueta">{s.doors}</p>
-      </div>
-      <div class="kpi reveal">
-        <p class="dato-xl mono">{seasonMinutes(season)}</p>
-        <p class="etiqueta">{s.minutes}</p>
-      </div>
+      <section class="compra tarjeta" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
+        <p class="etiqueta">{s.passTitle}</p>
+        <p class="precio">{price}</p>
+        <p class="letra">{s.vatIncluded}</p>
+        <p class="desc">{s.passGives}</p>
+        <div data-buy>
+          {
+            payable ? (
+              <>
+                <label class="desiste">
+                  <input type="checkbox" data-withdrawal />
+                  <span>{s.withdrawal}</span>
+                </label>
+                <a
+                  class="btn btn-primario"
+                  href={pass.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-disabled="true"
+                  data-buy-link
+                  data-metric="season-pass-buy"
+                >
+                  {s.buy} · {price}
+                </a>
+              </>
+            ) : (
+              <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
+                {s.comingSoon}
+              </button>
+            )
+          }
+        </div>
+        <p class="activo" data-pass-active hidden>✓ {s.passActive}</p>
+      </section>
+    </header>
+
+    <div class="estado">
+      <p class="letra" data-progress>{s.progress.replace('{n}', '0').replace('{t}', String(total))}</p>
+      <div class="barra" aria-hidden="true"><i data-bar></i></div>
+      <p class="letra" data-pass-label>{s.noPass}</p>
     </div>
+    <p class="letra" data-signin-hint>{s.signIn}</p>
 
-    <section class="tarjeta reveal pase" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
-      <p class="etiqueta">{s.passTitle}</p>
-      <h2>{season.name[locale]}</h2>
-      <p class="precio">
-        <span class="dato-xl">{formatEur(pass.priceEur, intl)}</span>
-        <span class="letra">{s.vatIncluded}</span>
-      </p>
-      <p class="desc"><strong>{s.passDelivers}:</strong> {s.passGives}</p>
-      {
-        payable ? (
-          <a class="btn btn-primario" href={pass.link} target="_blank" rel="noopener noreferrer" data-metric="season-pass-buy">
-            {s.buy}
-          </a>
-        ) : (
-          <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
-            {s.comingSoon}
-          </button>
-        )
-      }
-      <p class="letra">
-        <a href={OFFER_URL} target="_blank" rel="noopener noreferrer" data-metric="season-pass-record">{s.record}</a>
-      </p>
-    </section>
-
-    <ol class="puertas">
-      {
-        season.adventures.map((adventure) => {
-          const free = rewardOn(adventure, 'free');
-          const premium = rewardOn(adventure, 'premium');
-          return (
-            <li class="tarjeta reveal" data-adventure={adventure.id}>
-              <p class="etiqueta mono">
-                {String(adventure.order).padStart(2, '0')} · {adventure.durationMinutes} min · {s.difficulty}{' '}
-                <span aria-label={`${adventure.difficulty}/5`}>{'●'.repeat(adventure.difficulty)}{'○'.repeat(5 - adventure.difficulty)}</span>
-              </p>
-              <h3>{adventure.name[locale]}</h3>
-              <p class="desc">{adventure.description[locale]}</p>
-              <dl class="botin">
-                {free && (
-                  <div>
-                    <dt class="etiqueta">{s.free}</dt>
-                    <dd>{free.name[locale]}</dd>
-                  </div>
-                )}
-                {premium && (
-                  <div>
-                    <dt class="etiqueta">{s.premium}</dt>
-                    <dd>{premium.name[locale]}</dd>
-                  </div>
-                )}
-              </dl>
-              <a
-                class="btn btn-fantasma"
-                href={adventure.worldUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-metric="season-door-enter"
-              >
-                {s.play}
-                <Icon name="globe" size={18} />
-              </a>
-            </li>
-          );
-        })
-      }
-    </ol>
+    <div class="pista" role="region" aria-label={season.name[locale]} tabindex="0">
+      <ol class="rejilla" style={`--n:${total}`}>
+        {
+          doors.map((door, i) => {
+            const free = rewardOn(door, 'free');
+            const premium = rewardOn(door, 'premium');
+            return (
+              <li class="columna" data-door={door.id} data-state={states[i]}>
+                <div class="caja oro" data-reward={premium?.id} data-earned="false" title={premium?.description[locale]}>
+                  <span class="lado">{s.passTrack}</span>
+                  <span class="glifo" aria-hidden="true">
+                    ✦
+                  </span>
+                  <span class="nombre-botin">{premium?.name[locale]}</span>
+                  <span class="candado" aria-hidden="true">
+                    🔒
+                  </span>
+                </div>
+                <div class="caja libre" data-reward={free?.id} data-earned="false" title={free?.description[locale]}>
+                  <span class="lado">{s.freeTrack}</span>
+                  <span class="glifo" aria-hidden="true">
+                    ◆
+                  </span>
+                  <span class="nombre-botin">{free?.name[locale]}</span>
+                </div>
+                <div class="nodo">
+                  <span class="circulo">
+                    <span class="n">{door.order}</span>
+                    <span class="hecho" aria-hidden="true">
+                      ✓
+                    </span>
+                    <span class="cerrado" aria-hidden="true">
+                      🔒
+                    </span>
+                    <span class="niebla" aria-hidden="true">
+                      ?
+                    </span>
+                  </span>
+                </div>
+                <h2 class="puerta">{door.name[locale]}</h2>
+                <p class="meta">
+                  {door.durationMinutes} min ·{' '}
+                  <span aria-label={`${s.difficulty} ${door.difficulty}/5`}>
+                    {'●'.repeat(door.difficulty)}
+                    {'○'.repeat(5 - door.difficulty)}
+                  </span>
+                </p>
+                <p class="bloqueo">{s.locked}</p>
+                <p class="enniebla">{s.fog}</p>
+                <a
+                  class="btn btn-fantasma entrar"
+                  href={door.worldUrl ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-enter
+                  data-gated={door.requiresPass ? 'true' : undefined}
+                  hidden={door.requiresPass}
+                  data-metric="season-door-enter"
+                  title={door.description[locale]}
+                >
+                  {s.play}
+                  <Icon name="globe" size={16} />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ol>
+    </div>
   </article>
 </LapShell>
 
+<script>
+  interface Progress {
+    signedIn: boolean;
+    hasPass: boolean;
+    held: string[];
+    doors: { id: string; state: string }[];
+    gated: Record<string, string>;
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-lap-seasons]');
+
+  function draw(p: Progress): void {
+    if (!root) return;
+    const held = new Set(p.held);
+    let crossed = 0;
+    for (const { id, state } of p.doors) {
+      const col = root.querySelector<HTMLElement>(`[data-door="${id}"]`);
+      if (!col) continue;
+      col.dataset.state = state;
+      if (state === 'done') crossed += 1;
+      const enter = col.querySelector<HTMLAnchorElement>('[data-enter]');
+      if (enter && enter.dataset.gated === 'true') {
+        const url = p.gated[id];
+        if (url) enter.href = url;
+        enter.hidden = !url;
+      }
+    }
+    root.querySelectorAll<HTMLElement>('[data-reward]').forEach((box) => {
+      box.dataset.earned = held.has(box.dataset.reward ?? '') ? 'true' : 'false';
+    });
+    root.dataset.pass = p.hasPass ? 'true' : 'false';
+    const total = Number(root.dataset.total ?? '0');
+    const progress = root.querySelector('[data-progress]');
+    if (progress) {
+      progress.textContent = (root.dataset.progressTemplate ?? '')
+        .replace('{n}', String(crossed))
+        .replace('{t}', String(total));
+    }
+    const bar = root.querySelector<HTMLElement>('[data-bar]');
+    if (bar) bar.style.width = `${total ? (crossed / total) * 100 : 0}%`;
+    const label = root.querySelector('[data-pass-label]');
+    if (label) label.textContent = (p.hasPass ? root.dataset.labelPass : root.dataset.labelNopass) ?? '';
+    const hint = root.querySelector<HTMLElement>('[data-signin-hint]');
+    if (hint) hint.hidden = p.signedIn;
+    const buy = root.querySelector<HTMLElement>('[data-buy]');
+    if (buy) buy.hidden = p.hasPass;
+    const active = root.querySelector<HTMLElement>('[data-pass-active]');
+    if (active) active.hidden = !p.hasPass;
+  }
+
+  // Buying: the link stays inert until the withdrawal acknowledgement is ticked.
+  const tick = document.querySelector<HTMLInputElement>('[data-withdrawal]');
+  const link = document.querySelector<HTMLAnchorElement>('[data-buy-link]');
+  if (tick && link) {
+    const sync = (): void => link.setAttribute('aria-disabled', tick.checked ? 'false' : 'true');
+    tick.addEventListener('change', sync);
+    link.addEventListener('click', (event) => {
+      if (!tick.checked) {
+        event.preventDefault();
+        tick.focus();
+      }
+    });
+    sync();
+  }
+
+  void fetch('/api/seasons/progress', { credentials: 'same-origin' })
+    .then((response) => (response.ok ? (response.json() as Promise<Progress>) : null))
+    .then((progress) => {
+      if (progress) draw(progress);
+    })
+    .catch(() => {
+      /* No API (static preview) or offline: the newcomer's view stays. */
+    });
+</script>
+
 <style>
+  .cabeza {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  @media (min-width: 60rem) {
+    .cabeza {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+    }
+  }
   h1 {
     font-size: 2.074rem;
     font-weight: 400;
@@ -130,86 +275,278 @@ const intl = locale === 'pt-br' ? 'pt-BR' : locale;
   }
   .intro {
     color: var(--texto-2);
-    max-width: 65ch;
+    max-width: 60ch;
     line-height: 1.55;
-  }
-  .fechas {
-    color: var(--texto-2);
-    font-style: italic;
-  }
-  .sondas {
-    display: grid;
-    gap: var(--s3);
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    margin: var(--s5) 0;
-  }
-  .kpi .dato-xl {
-    margin: 0;
-    color: var(--texto);
-    font-variant-numeric: tabular-nums;
-  }
-  .kpi .etiqueta {
-    margin: var(--s1) 0 0;
-  }
-  .pase h2 {
-    margin: var(--s1) 0 var(--s2);
-    font-size: 1.44rem;
-    font-weight: 600;
-  }
-  .precio {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: var(--s2);
-    margin: 0 0 var(--s3);
+    margin: 0 0 var(--s2);
   }
   .letra {
     color: var(--texto-2);
     font-size: 0.875rem;
-    margin: var(--s3) 0 0;
-  }
-  .precio .letra {
     margin: 0;
   }
-  .puertas {
-    list-style: none;
-    margin: var(--s6) 0 0;
-    padding: 0;
-    display: grid;
-    gap: var(--s3);
-    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  .compra .precio {
+    font-size: 2rem;
+    margin: var(--s1) 0 0;
+    font-variant-numeric: tabular-nums;
   }
-  .puertas h3 {
-    margin: var(--s1) 0 var(--s2);
-    font-size: 1.2rem;
-    font-weight: 600;
-  }
-  .desc {
+  .compra .desc {
     color: var(--texto-2);
-    line-height: 1.55;
-    margin: 0 0 var(--s3);
+    line-height: 1.5;
+    margin: var(--s3) 0;
+    font-size: 0.9rem;
   }
-  .botin {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .desiste {
+    display: flex;
     gap: var(--s2);
+    align-items: flex-start;
+    font-size: 0.8rem;
+    color: var(--texto-2);
     margin: 0 0 var(--s3);
+    line-height: 1.4;
   }
-  .botin dt {
-    margin: 0;
-  }
-  .botin dd {
-    margin: 0;
-    color: var(--texto);
+  .desiste input {
+    margin-top: 2px;
+    min-width: 18px;
+    min-height: 18px;
   }
   .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--s2);
     min-height: 44px;
     text-decoration: none;
   }
-  .btn[disabled] {
+  .compra .btn {
+    width: 100%;
+  }
+  .btn[disabled],
+  .btn[aria-disabled='true'] {
     cursor: not-allowed;
+  }
+  .activo {
+    margin: 0;
+    color: var(--turquesa);
+    font-weight: 600;
+  }
+
+  .estado {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    margin: var(--s5) 0 var(--s2);
+  }
+  .barra {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--linea);
+    overflow: hidden;
+  }
+  .barra i {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: var(--turquesa);
+    transition: width 0.3s;
+  }
+
+  /* ── The track ─────────────────────────────────────────────────── */
+  .pista {
+    overflow-x: auto;
+    margin-top: var(--s4);
+    padding: var(--s4) var(--s2) var(--s3);
+    border: 1px solid var(--linea);
+    border-radius: 8px;
+    background: var(--superficie);
+  }
+  .rejilla {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(6.5rem, 1fr));
+    gap: var(--s2);
+    min-width: calc(var(--n) * 6.5rem + (var(--n) - 1) * var(--s2));
+  }
+  .columna {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--s1);
+  }
+  .caja {
+    width: 100%;
+    min-height: 5.5rem;
+    border: 1px solid var(--linea-f);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--s1);
+    position: relative;
+    transition:
+      background 0.25s,
+      border-color 0.25s;
+  }
+  .caja .lado {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .caja .glifo {
+    font-size: 1.1rem;
+  }
+  .nombre-botin {
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: var(--texto);
+  }
+  .oro {
+    border-color: var(--ambar);
+    background: color-mix(in srgb, var(--ambar) 8%, transparent);
+  }
+  .oro .glifo {
+    color: var(--ambar);
+  }
+  .libre .glifo {
+    color: var(--turquesa);
+  }
+  .candado {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-size: 0.7rem;
+  }
+  [data-pass='true'] .candado {
+    display: none;
+  }
+  .libre[data-earned='true'] {
+    border-color: var(--turquesa);
+    background: color-mix(in srgb, var(--turquesa) 14%, transparent);
+  }
+  [data-pass='true'] [data-state='done'] .oro {
+    background: color-mix(in srgb, var(--ambar) 22%, transparent);
+  }
+
+  /* The path: a dashed line through the circles, solid up to the last crossed door. */
+  .nodo {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    margin: var(--s2) 0 var(--s1);
+  }
+  .nodo::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: calc(-1 * var(--s2));
+    right: 0;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--linea-f) 0 6px, transparent 6px 11px);
+  }
+  .columna:first-child .nodo::before {
+    left: 50%;
+  }
+  .columna:last-child .nodo::before {
+    right: 50%;
+  }
+  [data-state='done'] .nodo::before {
+    background: var(--turquesa);
+  }
+  .circulo {
+    position: relative;
+    z-index: 1;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--linea-f);
+    background: var(--superficie);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    transition:
+      background 0.25s,
+      border-color 0.25s;
+  }
+  .circulo > span:not(.n) {
+    display: none;
+  }
+  [data-state='done'] .circulo {
+    background: var(--turquesa);
+    border-color: var(--turquesa);
+    color: #fff;
+  }
+  [data-state='done'] .circulo .n,
+  [data-state='locked'] .circulo .n,
+  [data-state='fog'] .circulo .n {
+    display: none;
+  }
+  [data-state='done'] .circulo .hecho,
+  [data-state='locked'] .circulo .cerrado,
+  [data-state='fog'] .circulo .niebla {
+    display: inline;
+  }
+  [data-state='current'] .circulo {
+    border-color: var(--turquesa);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--turquesa) 18%, transparent);
+  }
+  [data-state='locked'] .circulo {
+    border-color: var(--ambar);
+  }
+  [data-state='fog'] .circulo {
+    border-style: dashed;
+    color: var(--texto-2);
+  }
+  .puerta {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: var(--s1) 0 0;
+  }
+  .meta {
+    font-size: 0.75rem;
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .entrar {
+    font-size: 0.8rem;
+    padding-inline: var(--s2);
+    margin-top: var(--s1);
+  }
+  .bloqueo,
+  .enniebla {
+    display: none;
+    margin: var(--s1) 0 0;
+    font-size: 0.75rem;
+    color: var(--texto-2);
+  }
+  [data-state='locked'] .bloqueo {
+    display: block;
+    color: var(--ambar);
+  }
+  [data-state='locked'] .entrar {
+    display: none;
+  }
+
+  /* The fog: the door is there; its name and rewards are not, yet. */
+  [data-state='fog'] .enniebla {
+    display: block;
+  }
+  [data-state='fog'] .puerta,
+  [data-state='fog'] .meta,
+  [data-state='fog'] .nombre-botin,
+  [data-state='fog'] .entrar {
+    visibility: hidden;
+  }
+  [data-state='fog'] .caja {
+    border-style: dashed;
+    background: transparent;
   }
 </style>
