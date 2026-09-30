@@ -19,7 +19,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { SEASON_ONE, rewardOn, seasonMinutes } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
-import { formatEur, loadSeasonPass, onSale } from '../../lib/season-pass';
+import { formatEur, isTestLink, loadSeasonPass, onSale } from '../../lib/season-pass';
 import { doorStates, NOBODY } from '../../lib/season-progress';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
@@ -36,6 +36,7 @@ const doors = [...season.adventures].sort((a, b) => a.order - b.order);
 const states = doorStates(season, NOBODY);
 const pass = loadSeasonPass();
 const payable = onSale(pass);
+const testMode = payable && isTestLink(pass);
 const intl = locale === 'pt-br' ? 'pt-BR' : locale;
 const total = doors.length;
 const price = formatEur(pass.priceEur, intl);
@@ -89,6 +90,11 @@ const price = formatEur(pass.priceEur, intl);
                 >
                   {s.buy} · {price}
                 </a>
+                {testMode && (
+                  <p class="nota" role="note" data-test-note>
+                    {s.testNote}
+                  </p>
+                )}
               </>
             ) : (
               <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
@@ -323,6 +329,12 @@ const price = formatEur(pass.priceEur, intl);
   .btn[disabled],
   .btn[aria-disabled='true'] {
     cursor: not-allowed;
+  }
+  .nota {
+    margin: var(--s2) 0 0;
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    line-height: 1.4;
   }
   .activo {
     margin: 0;

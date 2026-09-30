@@ -69,9 +69,18 @@ export function parseOfferRecord(markdown: string): readonly PassGood[] {
   }));
 }
 
-/** On sale means a payment link exists AND the record says so. */
+/**
+ * Payable means a payment link exists AND the record says so: `on sale`, or
+ * `test` while the whole path is walked in the processor's test mode
+ * (PRO-020 step 7).
+ */
 export function onSale(good: PassGood): boolean {
-  return good.state === 'on sale' && /^https:\/\//.test(good.link);
+  return (good.state === 'on sale' || good.state === 'test') && /^https:\/\//.test(good.link);
+}
+
+/** A processor test link charges nothing; the page says so beside the button. */
+export function isTestLink(good: PassGood): boolean {
+  return good.state === 'test' || /^https:\/\/buy\.stripe\.com\/test_/.test(good.link);
 }
 
 /** The price as a reader of that locale writes euros. */

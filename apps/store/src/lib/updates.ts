@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.68.0',
+    date: '2026-09-30 15:50',
+    entries: [
+      {
+        type: 'NEW',
+        text: "The season pass can be tried. Tick the box that you want it now, press Buy the pass and Stripe's own page opens in test mode: nothing is charged, and the note under the button gives the test card. It is the same test link the coffee uses, so Stripe's page still shows the coffee; the pass's own product comes when it goes on sale for real. The rewards on the track are still figurative: named and drawn, not yet tokens.",
+      },
+    ],
+  },
+  {
     version: 'v0.67.0',
     date: '2026-09-30 14:30',
     entries: [

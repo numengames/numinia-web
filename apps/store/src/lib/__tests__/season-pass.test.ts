@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatEur,
+  isTestLink,
   loadSeasonPass,
   OfferRecordError,
   onSale,
@@ -75,6 +76,19 @@ describe('onSale', () => {
     expect(onSale({ ...base, link: 'https://buy.stripe.com/x' })).toBe(false);
     expect(onSale({ ...base, state: 'on sale', link: 'http://buy.stripe.com/x' })).toBe(false);
     expect(onSale({ ...base, state: 'on sale', link: 'https://buy.stripe.com/x' })).toBe(true);
+    expect(onSale({ ...base, state: 'test', link: 'https://buy.stripe.com/test_x' })).toBe(true);
+    expect(onSale({ ...base, state: 'test' })).toBe(false);
+  });
+
+  it('knows a test link, by the record or by the processor’s prefix', () => {
+    expect(isTestLink(base)).toBe(false);
+    expect(isTestLink({ ...base, state: 'test' })).toBe(true);
+    expect(isTestLink({ ...base, state: 'on sale', link: 'https://buy.stripe.com/test_x' })).toBe(
+      true,
+    );
+    expect(isTestLink({ ...base, state: 'on sale', link: 'https://buy.stripe.com/live' })).toBe(
+      false,
+    );
   });
 });
 
@@ -90,11 +104,12 @@ describe('pickGood / loadSeasonPass', () => {
     expect(() => pickGood([], 'nope')).toThrow(/nope/);
   });
 
-  it('loads the Season I pass from the committed record, not on sale yet', () => {
+  it('loads the Season I pass from the committed record: payable, in test mode', () => {
     const pass = loadSeasonPass();
     expect(pass.id).toBe(SEASON_ONE_PASS_ID);
     expect(pass.priceEur).toBe(9.99);
-    expect(onSale(pass)).toBe(false);
+    expect(onSale(pass)).toBe(true);
+    expect(isTestLink(pass)).toBe(true);
   });
 });
 
