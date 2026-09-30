@@ -44,7 +44,6 @@ const STARS = Array.from({ length: 24 }, (_, i) => ({
 
   <section class="celebra" aria-labelledby="th-title" data-thanks="backer">
     <div class="taza" aria-hidden="true">
-      <span class="vapor v1"></span><span class="vapor v2"></span><span class="vapor v3"></span>
       <span class="cafe"><Icon name="coffee" size={72} /></span>
       {STARS.map((s) => (
         <span
@@ -96,25 +95,6 @@ const STARS = Array.from({ length: 24 }, (_, i) => ({
     font-size: 72px;
     line-height: 1;
   }
-  /* Three wisps of steam over the cup, rising and fading in turn. */
-  .vapor {
-    position: absolute;
-    bottom: 70px;
-    width: 6px;
-    height: 26px;
-    border-radius: 6px;
-    background: var(--texto-3);
-    opacity: 0;
-  }
-  .v1 {
-    left: 26px;
-  }
-  .v2 {
-    left: 38px;
-  }
-  .v3 {
-    left: 50px;
-  }
   /* The burst: every star starts at the cup and leaves along its angle. */
   .estrella {
     position: absolute;
@@ -145,34 +125,12 @@ const STARS = Array.from({ length: 24 }, (_, i) => ({
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .vapor {
-      animation: vapor 2.4s ease-in-out infinite;
-    }
-    .v2 {
-      animation-delay: 0.8s;
-    }
-    .v3 {
-      animation-delay: 1.6s;
-    }
     .cafe {
       animation: llega 600ms var(--ciclo) both;
     }
     .estrella {
       animation: estalla 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
       animation-delay: calc(350ms + var(--t));
-    }
-  }
-  @keyframes vapor {
-    0% {
-      opacity: 0;
-      transform: translateY(8px) scaleY(0.6);
-    }
-    40% {
-      opacity: 0.55;
-    }
-    100% {
-      opacity: 0;
-      transform: translateY(-22px) scaleY(1.1);
     }
   }
   @keyframes llega {
