@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.66.0',
+    date: '2026-09-30 13:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: "After buying a coffee, you come back to Numinia instead of Stripe's page: a thank-you page with a steaming cup and a burst of stars (still if your device asks for reduced motion). It names what you bought, says your supporter's badge is on its way and how it reaches you, where your receipt is and how to get help. It proves nothing and keeps nothing about you, and search engines do not index it.",
+      },
+      {
+        type: 'UPD',
+        text: 'Supporting Numinia is now easy to find: the footer of every page carries a button with a coffee cup, Support Numinia, under the line that says what the site is. The small hidden cup after the signature is gone. The same button is in the footer of numinia.org, numen.games and nwos.numen.games.',
+      },
+    ],
+  },
+  {
     version: 'v0.65.0',
     date: '2026-09-30 12:30',
     entries: [

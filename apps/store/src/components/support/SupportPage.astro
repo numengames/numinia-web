@@ -12,6 +12,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../chrome/Icon.astro';
 import { SUPPORT_GOODS, SUPPORT_UI } from '../../i18n/support';
 
 interface Props {
@@ -40,7 +41,7 @@ const sponsors = SUPPORT_GOODS.filter((g) => g.id !== 'backer');
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
   <header class="cabeza">
-    <p class="etiqueta entrada" aria-hidden="true">☕</p>
+    <p class="etiqueta entrada"><Icon name="coffee" size={32} /></p>
     <h1 class="entrada-1">{t.title}</h1>
     <p class="lead entrada-2">{t.lead}</p>
   </header>
