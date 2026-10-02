@@ -11,6 +11,7 @@ import {
   CONSENT_COOKIE,
   CONSENT_DAYS,
   POLICY_REVISION,
+  hasLegacyConsent,
   measurementConsent,
   needsNotice,
   parseConsent,
@@ -68,6 +69,20 @@ describe('parseConsent', () => {
     ).toEqual(['necessary']);
   });
 
+  /* The retired banner's host-only cookie and the library's domain cookie
+     coexist in a returning visitor's jar, the old one listed first: the
+     answer is the first VALID record, wherever it sits. */
+  it('reads the valid record past a retired duplicate', () => {
+    expect(parseConsent(`${CONSENT_COOKIE}=2026-08-18; ${accepted}`)?.categories).toEqual([
+      'necessary',
+      'analytics',
+    ]);
+    expect(parseConsent(`a=b; ${CONSENT_COOKIE}=2026-08-18; ${rejected}`)?.categories).toEqual([
+      'necessary',
+    ]);
+    expect(parseConsent(`${CONSENT_COOKIE}=2026-08-18; ${CONSENT_COOKIE}=`)).toBeNull();
+  });
+
   it('never matches on name prefixes or suffixes', () => {
     expect(parseConsent(`x${accepted}`)).toBeNull();
     expect(parseConsent(accepted.replace('=', 'x='))).toBeNull();
@@ -84,6 +99,37 @@ describe('measurementConsent', () => {
   it('stays unknown — counting nothing — until the visitor answers', () => {
     expect(measurementConsent('')).toBe('unknown');
     expect(measurementConsent(`${CONSENT_COOKIE}=2026-08-18`)).toBe('unknown');
+  });
+});
+
+describe('measurementConsent with the retired cookie still in the jar', () => {
+  it('follows the valid answer, not the retired one', () => {
+    expect(measurementConsent(`${CONSENT_COOKIE}=2026-08-18; ${accepted}`)).toBe('granted');
+    expect(measurementConsent(`${CONSENT_COOKIE}=2026-08-18; ${rejected}`)).toBe('denied');
+  });
+});
+
+describe('hasLegacyConsent', () => {
+  it('spots a consent cookie that is not the notice record', () => {
+    expect(hasLegacyConsent(`${CONSENT_COOKIE}=2026-08-18`)).toBe(true);
+    expect(hasLegacyConsent(`${CONSENT_COOKIE}=2026-08-18; ${accepted}`)).toBe(true);
+    expect(hasLegacyConsent(`a=b; ${CONSENT_COOKIE}=%E0%A4%A`)).toBe(true);
+    expect(hasLegacyConsent(`${CONSENT_COOKIE}=${encodeURIComponent('null')}`)).toBe(true);
+    expect(hasLegacyConsent(`${CONSENT_COOKIE}=`)).toBe(true);
+  });
+
+  it('leaves the notice record alone, whatever its revision', () => {
+    expect(hasLegacyConsent(accepted)).toBe(false);
+    expect(hasLegacyConsent(`a=b; ${rejected}`)).toBe(false);
+    expect(hasLegacyConsent(jar({ categories: ['analytics'], revision: 1 }))).toBe(false);
+  });
+
+  it('is false without a consent cookie', () => {
+    expect(hasLegacyConsent(null)).toBe(false);
+    expect(hasLegacyConsent(undefined)).toBe(false);
+    expect(hasLegacyConsent('')).toBe(false);
+    expect(hasLegacyConsent('numinia_session=abc; garbage')).toBe(false);
+    expect(hasLegacyConsent(`x${CONSENT_COOKIE}=2026-08-18`)).toBe(false);
   });
 });
 

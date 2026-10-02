@@ -56,12 +56,7 @@ describe('storage inventory', () => {
   const section = policySection();
 
   it('finds the keys the site is known to store (the scan works)', () => {
-    for (const known of [
-      'numinia-modo',
-      'numinia-lap-personaje',
-      'numinia_session',
-      'siwe_nonce',
-    ]) {
+    for (const known of ['numinia-modo', 'numinia-lap-personaje', 'numinia_session']) {
       expect(keys).toContain(known);
     }
   });
@@ -73,5 +68,28 @@ describe('storage inventory', () => {
 
   it.each([...STORED_KEYS])('%s in STORED_KEYS is named by LEG-003 §3.1', (key) => {
     expect(section).toContain(`\`${key}\``);
+  });
+
+  /* A key the code no longer writes must leave STORED_KEYS too: the list
+     describes what the site stores today, not what it once did. */
+  it.each([...STORED_KEYS])('%s in STORED_KEYS is still stored by the code', (key) => {
+    expect(keys).toContain(key);
+  });
+});
+
+/* One door issues the session: api/auth/login.ts, with the signed token
+   (lib/auth/server.ts issueSession). The retired SIWE spike wrote the raw
+   wallet address into the same cookie, which signed a real citizen out. */
+describe('the session cookie', () => {
+  const API = join(SRC, 'pages/api');
+
+  it('is issued only by the real login', () => {
+    const issuers = sources(API)
+      .filter((file) => {
+        const text = readFileSync(file, 'utf8');
+        return /cookies\.set\(\s*SESSION_COOKIE\b/.test(text) || text.includes("'numinia_session'");
+      })
+      .map((file) => file.slice(API.length + 1));
+    expect(issuers).toEqual(['auth/login.ts']);
   });
 });

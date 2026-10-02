@@ -43,7 +43,7 @@ export const LEGAL_DOC_LANGUAGE: Readonly<Record<LegalDoc, 'en'>> = {
 export const LEGAL_DOC_VERSION: Readonly<Record<LegalDoc, string>> = {
   notice: '0.2.0',
   privacy: '2.1.0',
-  cookies: '2.1.0',
+  cookies: '2.1.1',
   terms: '1.0.1',
 };
 
