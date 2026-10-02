@@ -15,6 +15,10 @@ on:
         description: "Worker version ID to restore (blank = the previous version)"
         required: false
 
+# Least privilege (OpenSSF Scorecard, Token-Permissions): the job talks to
+# Cloudflare with its own token and never uses the GitHub one.
+permissions: read-all
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false

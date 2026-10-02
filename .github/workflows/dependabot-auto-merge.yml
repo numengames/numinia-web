@@ -10,14 +10,17 @@
 name: Dependabot auto-merge
 on: pull_request
 
-permissions:
-  contents: write
-  pull-requests: write
+# Least privilege (OpenSSF Scorecard, Token-Permissions): the workflow
+# token is read-only; only the job that approves and merges may write.
+permissions: read-all
 
 jobs:
   auto-merge:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Dependabot metadata
         id: metadata

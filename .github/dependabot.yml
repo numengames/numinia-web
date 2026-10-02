@@ -17,6 +17,11 @@ updates:
         patterns: ["astro", "@astrojs/*"]
       dev-tooling:
         dependency-type: development
+    ignore:
+      # astro check and typescript-eslint do not support TypeScript 7 yet;
+      # remove when they do.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
