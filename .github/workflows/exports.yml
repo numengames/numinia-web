@@ -9,12 +9,15 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC — catches a manual edit within a week
-permissions:
-  contents: write
-  pull-requests: write
+# Least privilege (OpenSSF Scorecard, Token-Permissions): read-only by
+# default; the bake job writes because it opens the PR with the editions.
+permissions: read-all
 jobs:
   bake:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
