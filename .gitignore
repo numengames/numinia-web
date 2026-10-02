@@ -25,8 +25,8 @@ apps/store/test-results/
 # Wrangler build artefacts (generated on every deploy build)
 .wrangler/
 
-# The real seminal manual, fetched from the private lore repo (npm run
-# lore:fetch). Lore never re-enters this repository's git tree.
+# The manual and the Codex matter, fetched from numinia-archive's lore/
+# (npm run lore:fetch). Lore never re-enters this repository's git tree.
 apps/store/.lore/
 
 # Local wrangler dev secrets (never committed)

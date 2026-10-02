@@ -1,6 +1,6 @@
 /**
  * The character-sheet annex as plain markdown — free like the sheet itself
- * (D15): the canonical transcription of Hoja_de_PJ_v0_6_0, to take away.
+ * (D15): the canonical transcription of the character sheet, to take away.
  */
 import type { APIRoute } from 'astro';
 import { loadCodexDoc } from '../../../lib/codex/docs';

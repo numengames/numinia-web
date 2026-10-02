@@ -1,6 +1,6 @@
 /**
  * Codex edition documents (MIS-085): glossary and acknowledgments live in
- * numinia-lore/codex/ and arrive via `npm run lore:fetch`, same two-source
+ * numinia-archive lore/codex/ and arrive via `npm run lore:fetch`, same two-source
  * pattern as the manual — committed fixtures keep hermetic builds honest.
  * Authoring comments (HTML comments in the MD) never reach the page.
  *

@@ -22,8 +22,7 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
-# The seminal corpus no longer lives here: moved to the private lore repo
-# and scrubbed from history. Lore that
+# The lore no longer lives here: it is in numinia-archive's lore/. Lore that
 # remains embedded in code (city-landing.ts) keeps its reserved annotation.
 
 # ── Apps: deployable platform that decides (identity, progression, billing) ──

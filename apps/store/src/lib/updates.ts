@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.69.0',
+    date: '2026-10-02 18:00',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The old separate lore repository is gone for good: the Codex has read the manual from the archive since v0.50.0, and nothing pointed at it any more. The notes in the code that still named it now name the archive.',
+      },
+    ],
+  },
+  {
     version: 'v0.68.1',
     date: '2026-10-02 10:45',
     entries: [
@@ -271,7 +281,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     entries: [
       {
         type: 'UPD',
-        text: 'The Codex reads the manual from the archive: numinia-nwos lore/game/manual-v0.6.0.md and lore/codex/ — the game came home, the separate numinia-lore repository retires. Same text, byte for byte; the edition matter (glossary, acknowledgments, sheet) follows the same path',
+        text: 'The Codex reads the manual from the archive: numinia-nwos lore/game/manual-v0.6.0.md and lore/codex/ — the game came home, the separate lore repository retires. Same text, byte for byte; the edition matter (glossary, acknowledgments, sheet) follows the same path',
       },
       {
         type: 'FIX',
