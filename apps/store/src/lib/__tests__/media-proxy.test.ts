@@ -44,6 +44,36 @@ describe('isProxyableMediaUrl', () => {
   });
 });
 
+describe('isProxyableMediaUrl on raw.githubusercontent.com', () => {
+  /* Anyone can push a file to their own GitHub repo, so the host alone is not
+     the storage chain: only the data repository and the studio's own repos. */
+  it('passes the data repository and the numengames repos, owner in any case', () => {
+    for (const url of [
+      'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data/main/data/avatars/numinia-avatars.json',
+      'https://raw.githubusercontent.com/pablofmm/numinia-digital-goods-data/main/content/models/x.glb',
+      'https://raw.githubusercontent.com/numengames/numinia-assets/56b2830/content/avatars/x.vrm',
+      'https://raw.githubusercontent.com/NumenGames/numinia-nwos/main/lore/x.png',
+    ]) {
+      expect(isProxyableMediaUrl(url), url).toBe(true);
+    }
+  });
+
+  it('refuses any other repository, owner or escape from the allowed prefix', () => {
+    for (const url of [
+      'https://raw.githubusercontent.com/evil/payload/main/x.glb',
+      'https://raw.githubusercontent.com/PabloFMM/other-repo/main/x.glb',
+      'https://raw.githubusercontent.com/PabloFMM/numinia-digital-goods-data-fork/main/x.glb',
+      'https://raw.githubusercontent.com/numengamesevil/repo/main/x.glb',
+      'https://raw.githubusercontent.com/numengames/../evil/repo/main/x.glb',
+      'https://raw.githubusercontent.com/numengames/%2e%2e/evil/repo/main/x.glb',
+      'https://raw.githubusercontent.com/numengames',
+      'https://raw.githubusercontent.com/',
+    ]) {
+      expect(isProxyableMediaUrl(url), url).toBe(false);
+    }
+  });
+});
+
 describe('viewerProxyUrl', () => {
   it('wraps a direct URL into the same-origin route', () => {
     expect(viewerProxyUrl('https://pub-a.r2.dev/m/x.glb')).toBe(
