@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.68.1',
+    date: '2026-10-02 10:45',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The cookie notice no longer comes back on every page. If you had accepted the old banner before 29 September, your browser kept its old cookie next to the new one, the site read the old one first and asked you again and again. The old cookie is now cleared on your next visit, and your answer sticks.',
+      },
+      {
+        type: 'FIX',
+        text: "The 3D viewer's file relay now only passes models, pictures, sound and video, and only from the places the game keeps its files: our storage, and on GitHub only the game's own repositories. Anything else, a web page or a drawing that could carry a script, is refused instead of being shown as if it came from numinia.com, and what does pass is sealed so a browser can never run it.",
+      },
+      {
+        type: 'FIX',
+        text: "An old test door for wallet sign-in, left open since the first experiments, is closed. Using it could sign a citizen out of the player area by replacing the session with something the site does not accept. Signing in works as before, through the LAP. The cookie policy is 2.1.1: it no longer lists that door's cookie; nothing else changes, and nobody is asked again.",
+      },
+    ],
+  },
+  {
     version: 'v0.68.0',
     date: '2026-09-30 15:50',
     entries: [
