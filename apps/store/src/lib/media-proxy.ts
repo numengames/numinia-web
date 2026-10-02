@@ -13,11 +13,16 @@ const ALLOWED_HOST_SUFFIXES: readonly string[] = [
   '.dweb.link',
   '.ipfs.io',
 ];
-const ALLOWED_HOSTS: readonly string[] = [
-  'arweave.net',
-  'dweb.link',
-  'ipfs.io',
-  'raw.githubusercontent.com',
+const ALLOWED_HOSTS: readonly string[] = ['arweave.net', 'dweb.link', 'ipfs.io'];
+
+/* raw.githubusercontent.com serves ANY public repo, so the host alone is not
+   the storage chain (2026-10-02): only the data repository and the studio's
+   own repos pass. Compared lower-cased — GitHub owners and repos are
+   case-insensitive. The URL parser has already resolved dot segments. */
+const GITHUB_RAW_HOST = 'raw.githubusercontent.com';
+const GITHUB_RAW_PATH_PREFIXES: readonly string[] = [
+  '/pablofmm/numinia-digital-goods-data/',
+  '/numengames/',
 ];
 
 /** True only for https URLs on the storage chain's hosts. */
@@ -30,6 +35,10 @@ export function isProxyableMediaUrl(raw: string): boolean {
   }
   if (url.protocol !== 'https:') return false;
   const host = url.hostname.toLowerCase();
+  if (host === GITHUB_RAW_HOST) {
+    const path = url.pathname.toLowerCase();
+    return GITHUB_RAW_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+  }
   return (
     ALLOWED_HOSTS.includes(host) || ALLOWED_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))
   );
