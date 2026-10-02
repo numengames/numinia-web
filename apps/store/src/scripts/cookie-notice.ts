@@ -17,7 +17,7 @@
 // `?worker&url` only borrows Vite's standalone-bundle mode: the file is a
 // self-contained classic script (no imports), loaded on the main thread.
 import noticeUrl from './cookie-notice-run?worker&url';
-import { needsNotice } from '../lib/consent';
+import { hasLegacyConsent, needsNotice } from '../lib/consent';
 
 declare global {
   interface Window {
@@ -43,6 +43,15 @@ function open(preferences: boolean): void {
   script.src = noticeUrl;
   script.async = true;
   document.head.append(script);
+}
+
+/* The banner retired in v0.60.0 left `numinia_consent=<date>` HOST-ONLY;
+   the notice writes its record on the site's domain. Both coexist, the old
+   one is read first (by the library too), and the notice came back on every
+   page. Expiring without a Domain attribute removes only the host-only
+   cookie: the notice's own record is never touched. Nothing new is stored. */
+if (hasLegacyConsent(document.cookie)) {
+  document.cookie = 'numinia_consent=; Max-Age=0; Path=/';
 }
 
 if (needsNotice(document.cookie) && !isBot()) open(false);

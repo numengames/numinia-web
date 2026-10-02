@@ -51,25 +51,19 @@ export interface ConsentRecord {
   readonly categories: readonly string[];
 }
 
-/** The raw value of the consent cookie in a cookie header/jar, or null. */
-function rawConsent(cookieHeader: string): string | null {
+/** Every raw value of the consent cookie in a cookie header/jar, in order. */
+function rawConsents(cookieHeader: string): string[] {
+  const values: string[] = [];
   for (const part of cookieHeader.split(';')) {
     const eq = part.indexOf('=');
     if (eq === -1) continue;
-    if (part.slice(0, eq).trim() === CONSENT_COOKIE) return part.slice(eq + 1).trim();
+    if (part.slice(0, eq).trim() === CONSENT_COOKIE) values.push(part.slice(eq + 1).trim());
   }
-  return null;
+  return values;
 }
 
-/**
- * The visitor's recorded answer for the CURRENT policy revision, or null
- * when there is none (no cookie, the old date-stamped format, a stale
- * revision, garbage). Never throws: a malformed cookie counts as no answer.
- */
-export function parseConsent(cookieHeader: string | null | undefined): ConsentRecord | null {
-  if (!cookieHeader) return null;
-  const raw = rawConsent(cookieHeader);
-  if (!raw) return null;
+/** One raw value read as the notice's record (any revision), or null. */
+function parseRecord(raw: string): { revision: unknown; categories: readonly unknown[] } | null {
   let value: unknown;
   try {
     value = JSON.parse(decodeURIComponent(raw));
@@ -78,11 +72,42 @@ export function parseConsent(cookieHeader: string | null | undefined): ConsentRe
   }
   if (typeof value !== 'object' || value === null) return null;
   const { revision, categories } = value as { revision?: unknown; categories?: unknown };
-  if (revision !== POLICY_REVISION || !Array.isArray(categories)) return null;
-  return {
-    revision,
-    categories: categories.filter((c): c is string => typeof c === 'string'),
-  };
+  if (!Array.isArray(categories)) return null;
+  return { revision, categories };
+}
+
+/**
+ * The visitor's recorded answer for the CURRENT policy revision, or null
+ * when there is none (no cookie, the old date-stamped format, a stale
+ * revision, garbage). Never throws: a malformed cookie counts as no answer.
+ *
+ * A returning visitor may carry TWO `numinia_consent` cookies: the retired
+ * banner's host-only date stamp and the notice's record on the site's
+ * domain; browsers list the older first. The answer is the first VALID
+ * record, wherever it sits.
+ */
+export function parseConsent(cookieHeader: string | null | undefined): ConsentRecord | null {
+  if (!cookieHeader) return null;
+  for (const raw of rawConsents(cookieHeader)) {
+    const record = parseRecord(raw);
+    if (record?.revision !== POLICY_REVISION) continue;
+    return {
+      revision: POLICY_REVISION,
+      categories: record.categories.filter((c): c is string => typeof c === 'string'),
+    };
+  }
+  return null;
+}
+
+/**
+ * True when the jar holds a `numinia_consent` that is not the notice's
+ * record — the retired banner's date stamp (host-only, written before
+ * v0.60.0) or garbage. The notice loader expires it before reading the jar,
+ * because the library itself reads only the first cookie of that name.
+ */
+export function hasLegacyConsent(cookieHeader: string | null | undefined): boolean {
+  if (!cookieHeader) return false;
+  return rawConsents(cookieHeader).some((raw) => parseRecord(raw) === null);
 }
 
 /**
