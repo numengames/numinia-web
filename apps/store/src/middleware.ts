@@ -65,7 +65,6 @@ const RATE_RULES: ReadonlyArray<{
   limit: number;
 }> = [
   { test: (m, p) => m === 'POST' && p === '/api/auth/login', key: 'login', limit: 20 },
-  { test: (m, p) => m === 'POST' && p === '/api/auth/siwe', key: 'siwe', limit: 20 },
   { test: (m, p) => m === 'POST' && p === '/api/admin/census', key: 'census-write', limit: 20 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },

@@ -17,7 +17,6 @@ npm run build && node dist/server/entry.mjs
 - `/`, `/es/`, `/ja/`, `/ko/`, `/pt-br/` — localized landing, each with its own `<html lang>`.
 - `/spike/` — Phase 0.7 evidence: real data-repo catalog validated with Zod at
   build time + a VRM avatar rendering in a `client:visible` React island.
-- `/api/auth/siwe` — SIWE spike. Exercise it end-to-end: `node scripts/spike-siwe.mjs` (server running).
 - `e2e/` — Playwright DECISION GATE test (`npx playwright test`): island
   hydration + real framebuffer pixels.
 - Every page auto-emits `page_view`; interactive elements must carry

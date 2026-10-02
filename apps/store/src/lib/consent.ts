@@ -34,7 +34,6 @@ export const ANALYTICS_CATEGORY = 'analytics';
 export const STORED_KEYS = [
   'numinia_consent',
   'numinia_session',
-  'siwe_nonce',
   'numinia-lang',
   'numinia-modo',
   'numinia-lap-nav',
