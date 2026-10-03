@@ -1,5 +1,5 @@
 /**
- * /support/thanks/backer — the page a Backer's payment returns to, five
+ * /back/thanks/backer — the page a Backer's payment returns to, five
  * locales. Its rules are numinia-archive STD-044 "Every purchase ends in
  * thanks": thanks first and the good named, what happens next, where the
  * receipt is, help in one step, one way on. It proves nothing (only the

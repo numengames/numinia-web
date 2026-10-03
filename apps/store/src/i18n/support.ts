@@ -1,5 +1,6 @@
 /**
- * /support — the ways to help keep Numinia going, five locales.
+ * /back — the ways to back Numinia (patronage; moved off /support, which is
+ * now the help page, Oracle 2026-10-03), five locales.
  *
  * The goods and their prices are the record in numinia-archive,
  * `operations/OPS-014-supporting-numinia-the-offer.md` (STD-033 PAY-003):
@@ -64,8 +65,8 @@ export interface SupportMessages {
 }
 
 const EN: SupportMessages = {
-  footerLink: 'Support Numinia',
-  title: 'Support Numinia',
+  footerLink: 'Back Numinia',
+  title: 'Back Numinia',
   description:
     'Help keep Numinia going: a coffee for 5 EUR, or sponsor it from 200 EUR. Paid on Stripe, with a gift for those who sign in.',
   lead: 'Numinia is made in the open and stays open: the archive, the chronicle and the objects are free to read and to use. If it is worth something to you, you can buy us a coffee.',

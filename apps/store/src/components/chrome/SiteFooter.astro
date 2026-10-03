@@ -8,13 +8,17 @@
  *   brand + one line    Navigation       Numen Games      Legal
  *                       (two columns)    (the four sites) Social
  *   ─────────────────────────────────────────────────────────────
- *   scarab  by Numen Games — we build for a better future.
+ *   scarab  by Numen Games — we build for a better future.        skull
  *           licence · telemetry · version · commit
  *
  * No copyright line: licences are per file (REUSE.toml). The signature is
  * brand voice and is never translated. Legal lists the four published
  * texts in the house order (Legal notice · Privacy · Cookies · Terms), then
  * the button that reopens the cookie notice (scripts/cookie-notice.ts).
+ *
+ * The skull closes the closing line: a button that shows the epitaph
+ * (canon CAN-002 — the manifesto closes on it). English on every locale,
+ * like the signature; "did not let us alone" is literal on purpose.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
@@ -35,6 +39,11 @@ const { locale } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const support = SUPPORT_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
+
+// CAN-002: the manifesto closes on the epitaph. Never translated, never
+// "fixed" — the wording is the Oracle's, literal on purpose.
+const EPITAPH =
+  'They dreamed and experimented life, they imagined and took action. They were part of the fight to change the model, they did not let us alone, they built a game with which to create a better world.';
 
 // Navigation: the site's sections, in the header's order, then the asset
 // tools. Ten links — rendered in two columns, never stacked.
@@ -61,8 +70,9 @@ const NAV = [
       <a href={`${prefix}/`} class="name" data-metric="footer-brand">Numinia</a>
       <p>{t.footerTagline}</p>
       <!-- STD-037 SIT-001: the house footer invites support on every site, in
-           plain sight (the Oracle, 2026-09-30: nobody found the hidden cup). -->
-      <a href={`${prefix}/support/`} class="apoyo" data-metric="footer-support">
+           plain sight (the Oracle, 2026-09-30: nobody found the hidden cup).
+           Patronage lives at /back since v0.70.0; /support is the help page. -->
+      <a href={`${prefix}/back/`} class="apoyo" data-metric="footer-back">
         <Icon name="coffee" size={18} /> {support.footerLink}
       </a>
     </div>
@@ -151,8 +161,54 @@ const NAV = [
         )}
       </p>
     </div>
+    <!-- The epitaph (CAN-002): hover or focus shows it, a tap toggles it,
+         Escape closes it. No page, no navigation. -->
+    <div class="epitafio" data-epitaph>
+      <button
+        type="button"
+        class="calavera"
+        aria-label="Epitaph"
+        aria-expanded="false"
+        aria-describedby="footer-epitaph"
+        data-metric="footer-epitaph"
+      >
+        <Icon name="skull" size={20} />
+      </button>
+      <p id="footer-epitaph" class="bocadillo" role="tooltip" lang="en">{EPITAPH}</p>
+    </div>
   </div>
 </footer>
+
+<script>
+  // The epitaph: click/tap toggles it (aria-expanded), Escape closes it and
+  // keeps it hushed until the pointer or the focus leaves the skull.
+  document.querySelectorAll<HTMLElement>('[data-epitaph]').forEach((box) => {
+    const button = box.querySelector<HTMLButtonElement>('button');
+    if (!button) return;
+    const set = (open: boolean): void => {
+      button.setAttribute('aria-expanded', String(open));
+      box.toggleAttribute('data-open', open);
+    };
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      box.removeAttribute('data-hushed');
+      set(open);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (box.hasAttribute('data-open') || box.matches(':hover, :focus-within')) {
+        set(false);
+        box.setAttribute('data-hushed', '');
+      }
+    });
+    const unhush = (): void => box.removeAttribute('data-hushed');
+    box.addEventListener('mouseleave', unhush);
+    box.addEventListener('focusout', unhush);
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !box.contains(event.target)) set(false);
+    });
+  });
+</script>
 
 <style>
   /* The house column (1100px, 24px sides), as numinia.org's footer. */
@@ -324,5 +380,92 @@ const NAV = [
   .build .version {
     color: var(--enlace);
     font-weight: 600;
+  }
+  /* The skull ends the closing line (right on desktop, after the build line
+     when the row wraps): muted ink like the scarab, never in colour. */
+  .cierre {
+    flex-wrap: wrap;
+  }
+  /* Phones: the skull takes its own line, centred under the build line, and
+     the popover is centred over it — anchored right it would be clipped off
+     the left edge (found on numinia.org at 390px). From 640px the skull ends
+     the row on the right and the popover is anchored to that edge. */
+  .epitafio {
+    position: relative;
+    flex: 1 0 100%;
+    display: flex;
+    justify-content: center;
+  }
+  @media (min-width: 640px) {
+    .epitafio {
+      flex: none;
+      margin-left: auto;
+    }
+  }
+  .calavera {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    color: var(--texto-3);
+    cursor: pointer;
+  }
+  .calavera:hover,
+  .calavera:focus-visible {
+    color: var(--texto-2);
+  }
+  @media (max-width: 1023px) {
+    .calavera {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+  .bocadillo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(100% + var(--s2));
+    z-index: 10;
+    width: max-content;
+    max-width: min(32ch, 80vw);
+    margin: 0;
+    padding: var(--s3);
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+    color: var(--texto-2);
+    font-style: italic;
+    line-height: 1.5;
+    visibility: hidden;
+    opacity: 0;
+  }
+  @media (min-width: 640px) {
+    .bocadillo {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+  }
+  .epitafio:hover .bocadillo,
+  .epitafio:focus-within .bocadillo,
+  .epitafio[data-open] .bocadillo {
+    visibility: visible;
+    opacity: 1;
+  }
+  .epitafio[data-hushed] .bocadillo {
+    visibility: hidden;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .bocadillo {
+      transition:
+        opacity 120ms var(--ciclo),
+        visibility 120ms var(--ciclo);
+    }
   }
 </style>

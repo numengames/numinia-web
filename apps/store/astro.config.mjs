@@ -96,7 +96,8 @@ export default defineConfig({
         !/\/city\/(inhabitants|districts|the-game)\//.test(page) &&
         !/\/legal\/notice\/$/.test(page) &&
         // STD-044 CEL-010: a thanks page is reached by paying, never by search.
-        !/\/support\/thanks\//.test(page),
+        // /support/thanks/ holds the redirect stubs to /back/thanks/ (v0.70.0).
+        !/\/(back|support)\/thanks\//.test(page),
     }),
   ],
   markdown: {

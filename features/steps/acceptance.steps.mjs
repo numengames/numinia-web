@@ -663,20 +663,21 @@ Then('every external link opens in a new tab', async function () {
 // noindex, is out of the sitemap, and keeps nothing about the buyer.
 Then('every thanks page asks not to be indexed and stays out of the sitemap', async function () {
   const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
-  assert.ok(!sitemap.includes('/support/thanks/'), 'sitemap lists a thanks page');
+  assert.ok(!sitemap.includes('/back/thanks/'), 'sitemap lists a thanks page');
+  assert.ok(!sitemap.includes('/support/thanks/'), 'sitemap lists a thanks redirect stub');
   for (const prefix of ['', 'es/', 'ja/', 'ko/', 'pt-br/']) {
     const html = await readFile(
-      path.join(this.distDir, `${prefix}support/thanks/backer/index.html`),
+      path.join(this.distDir, `${prefix}back/thanks/backer/index.html`),
       'utf8',
     );
     assert.match(
       html,
       /<meta name="robots" content="noindex"/,
-      `${prefix}support/thanks/backer has no noindex`,
+      `${prefix}back/thanks/backer has no noindex`,
     );
     assert.ok(
       !/location\.search|URLSearchParams/.test(html),
-      `${prefix}support/thanks/backer reads its address`,
+      `${prefix}back/thanks/backer reads its address`,
     );
   }
 });
