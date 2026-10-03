@@ -1,5 +1,7 @@
 ---
-import ThanksPage from "../../../../../components/support/ThanksPage.astro";
+// The Stripe test payment link still returns here; the Oracle moves it to
+// /back/thanks/backer/ later. Until then this stub forwards the Backer.
+import RedirectStub from "../../../../../components/RedirectStub.astro";
 ---
 
-<ThanksPage locale="es" />
+<RedirectStub to="/es/back/thanks/backer/" />

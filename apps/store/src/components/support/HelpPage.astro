@@ -1,0 +1,100 @@
+---
+/**
+ * /support — how to get help (Oracle, 2026-10-03; patronage moved to /back).
+ * Short and plain: one heading per channel, each with its status, then one
+ * line pointing at /back. The site's normal page layout, no new design.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { DISCORD_INVITE, HELLO_EMAIL, HELP_UI } from '../../i18n/help';
+import { LEGAL_EMAIL } from '../../lib/legal';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = HELP_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
+  <header class="cabeza">
+    <h1 class="entrada-1">{t.title}</h1>
+    <p class="lead entrada-2">{t.lead}</p>
+  </header>
+
+  {t.channels.map((c) => (
+    <section class="canal" aria-labelledby={`help-${c.id}`} data-channel={c.id}>
+      <h2 id={`help-${c.id}`}>{c.title}</h2>
+      <p class="estado">{c.status}</p>
+      <p>
+        {c.text}
+        {c.id === 'discord' && (
+          <>
+            {' '}
+            <a href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" data-metric="help-discord">
+              discord.gg/ASwwdd24pp
+            </a>
+          </>
+        )}
+        {c.id === 'email' && (
+          <>
+            {' '}
+            <a href={`mailto:${HELLO_EMAIL}`} data-metric="help-email">{HELLO_EMAIL}</a>
+          </>
+        )}
+        {c.id === 'data' && (
+          <>
+            {' '}
+            <a href={`mailto:${LEGAL_EMAIL}`} data-metric="help-data">{LEGAL_EMAIL}</a>
+          </>
+        )}
+      </p>
+    </section>
+  ))}
+
+  <p class="volver">
+    {t.backLine}{' '}
+    <a href={`${prefix}/back/`} data-metric="help-back">→ {t.backLink}</a>
+  </p>
+</BaseLayout>
+
+<style>
+  .cabeza {
+    max-width: 46rem;
+  }
+  .lead {
+    color: var(--texto-2);
+  }
+  h2 {
+    font-weight: 400;
+    margin: 0 0 var(--s1);
+  }
+  .canal {
+    max-width: 46rem;
+    margin: var(--s6) 0 0;
+  }
+  .canal p {
+    color: var(--texto-2);
+    margin: 0 0 var(--s2);
+  }
+  .canal .estado {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--texto-3);
+  }
+  .canal a,
+  .volver a {
+    color: var(--enlace);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .volver {
+    max-width: 46rem;
+    margin: var(--s6) 0 0;
+    color: var(--texto-2);
+  }
+</style>

@@ -3,6 +3,28 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-03 13:45",
+    "entries": [
+      {
+        "text": "A small skull now ends the last line of every page, after the build line. Point at it, focus it or tap it and it shows the epitaph that closes the manifesto: "They dreamed and experimented life, they imagined and took action. They were part of the fight to change the model, they did not let us alone, they built a game with which to create a better world." Escape closes it. The same skull is at the foot of numinia.org, numen.games and nwos.numen.games.",
+        "type": "NEW",
+      },
+      {
+        "text": "The coffee button in the footer now reads Back Numinia, and the page it opens has moved from /support to /back, in all five languages; the thanks page after paying is now /back/thanks/backer. The old thanks address still works and forwards you there.",
+        "type": "UPD",
+      },
+      {
+        "text": "/support is now the Help page: how to get help, one channel per heading, each saying whether it is open. Discord, the community, open today; email at hola@numengames.com, where a person answers; legal@numengames.com for your personal data; and an agent that answers at any hour, coming soon. Its last line points to /back for anyone who came to back Numinia.",
+        "type": "NEW",
+      },
+      {
+        "text": "The Social column of the footer now lists Discord, after GitHub: the Numinia server.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.70.0",
+  },
+  {
     "date": "2026-10-02 18:00",
     "entries": [
       {

@@ -47,6 +47,7 @@ const PAGES = [
   '/es/lap/session/',
   '/es/lap/admin/assets/',
   '/es/lap/admin/census/',
+  '/support/', // the help page (v0.70.0)
 ];
 
 const MODES = [

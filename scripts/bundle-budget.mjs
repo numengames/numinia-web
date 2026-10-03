@@ -29,8 +29,13 @@ const BUDGETS = {
       still under reduced motion) and the phone menu button (~0.3KB). Both
       are chrome the design system requires, not feature creep; the sky is
       a bundled module, minified, still inline (no external JS). Landing
-      sits at ~10.8KB. */
-  landingInlineScriptBytes: 11_000,
+      sits at ~10.8KB.
+      Raised 11000→12000 on 2026-10-03: main already sat at 11053B (over,
+      unnoticed — only local `verify` runs budgets), and the Oracle ordered
+      the epitaph skull at the foot of the four sites (CAN-002), whose
+      toggle/Escape handler is ~0.7KB. House chrome, not feature creep.
+      Landing sits at ~11.7KB. */
+  landingInlineScriptBytes: 12_000,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -43,8 +48,12 @@ const BUDGETS = {
   /** Whole-page HTML weight for the landing. Raised 30000→33000 on
       2026-09-29 for the same order as the inline raise above: the sky, the
       phone menu, and one Phosphor icon before each bar entry (STD-023 §11,
-      ~2KB of inline SVG). Landing sits at ~31.7KB. */
-  landingHtmlBytes: 33_000,
+      ~2KB of inline SVG). Landing sits at ~31.7KB.
+      Raised 33000→36000 on 2026-10-03 for the epitaph skull (Oracle order,
+      the four sites): the Phosphor skull SVG, the epitaph text, its button,
+      popover styles and handler (~2.3KB), plus Discord in the Social column.
+      Landing sits at ~35.2KB. */
+  landingHtmlBytes: 36_000,
 };
 
 const failures = [];
