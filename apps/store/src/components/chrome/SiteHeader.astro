@@ -51,10 +51,10 @@ const NAV = [
     </nav>
     <div class="tools">
       <!-- §13.2 utilities as Phosphor regular 20px: the icon shows the mode
-           a tap takes you to — moon invites Nocturno, sun invites Diurno. -->
+           you are in — moon with stars at night, sun by day. -->
       <button type="button" class="mode" data-metric="chrome-mode" aria-label={t.modeToggle}>
-        <Icon name="moon-stars" size={20} class="solo-diurno" />
-        <Icon name="sun" size={20} class="solo-nocturno" />
+        <Icon name="moon-stars" size={20} class="solo-nocturno" />
+        <Icon name="sun" size={20} class="solo-diurno" />
       </button>
       <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
       <!-- The door is always in sight (§13.2 utilities): a Nomad can enter
