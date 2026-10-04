@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-04 08:31",
+    "entries": [
+      {
+        "text": "The day and night switch at the top of every page shows the mode you are in: the moon with stars at night, the sun by day. It showed the other way round until now.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.71.0",
+  },
+  {
     "date": "2026-10-03 13:45",
     "entries": [
       {

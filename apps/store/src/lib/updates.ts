@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.71.0',
+    date: '2026-10-04 08:31',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The day and night switch at the top of every page shows the mode you are in: the moon with stars at night, the sun by day. It showed the other way round until now.',
+      },
+    ],
+  },
+  {
     version: 'v0.70.0',
     date: '2026-10-03 13:45',
     entries: [
