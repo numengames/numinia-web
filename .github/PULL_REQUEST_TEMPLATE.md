@@ -1,17 +1,28 @@
-## Qué cambia
+<!--
+SPDX-FileCopyrightText: 2026 Numen Games S.L.
+SPDX-License-Identifier: CC0-1.0
+-->
 
-<!-- Qué se ve distinto en la web, un punto por elemento. -->
+## What
 
-## Cómo comprobarlo
+<!-- One paragraph: what this PR changes. -->
 
-<!-- Dónde hacer clic en la preview. -->
+## Why
 
-## Verificado en local
+<!-- The mission, decision, or incident that motivates it. Reference
+practice IDs from standards/STD-015-engineering-checks.md when applicable
+(e.g. SEC-007, LIC-007). -->
 
-<!-- Las puertas que se han pasado, una línea. -->
+## How to verify
 
-## Pendiente, fuera de esta PR
+<!-- Commands or URLs a reviewer can use, and the evidence it works: the
+tests run and their result; before and after for anything visible. -->
 
-<!-- Lo que se deja fuera a sabiendas. -->
+## Definition of Done
 
-- [ ] Entrada en `apps/store/src/lib/updates.ts` y versión subida (si cambia `apps/store/src/**`)
+- [ ] CI green (licence guard + build)
+- [ ] The test commit precedes the code commit, and the test failed before the code existed (DEV-008)
+- [ ] No content weakened a check to pass (§7.2.6)
+- [ ] Every new file declares its own licence (SPDX comment in the file; `license:` too if it has a header; REUSE.toml only for files that cannot hold a comment)
+- [ ] Mission execution log updated, if this PR executes a mission
+- [ ] Nothing irreversible done without Oracle sign-off (§7.3)

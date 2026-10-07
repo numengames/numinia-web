@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Numen Games S.L.
+# SPDX-License-Identifier: MIT
+#
+# The secret scanner's configuration (STD-015 SEC-004, STD-022 KEY-054),
+# read by .github/workflows/secrets.yml. The default rule set stays on. Each
+# allowance below names what it lets through and why that is not a secret;
+# an allowance without a reason is how a real leak gets waved through.
+#
+# No allowance names a path: a path allowance makes the scanner skip the
+# whole file, so a real token written next to an asset name would pass
+# unseen. Each one matches only the value, and only for the generic rule
+# that guessed wrong; the specific rules (GitHub, cloud keys, private
+# keys...) still read every file.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+# Verified 2026-10-07: the only finding in the full history (570 commits)
+# was commit fa7b4ae (initial commit), src/lib/arweaveMapping.ts — a
+# generated map from avatar asset file names to public Arweave transaction
+# ids. The generic rule took the next key, the file name
+# '151_LupLup_thumbnail.gif', for the value of a key. A file name is never a key.
+description = "Asset file names (letters, digits, _ and -, ending in an image or model extension), as the avatar-to-Arweave map lists them: never a key"
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+regexes = ['''^[A-Za-z0-9_-]+\.(png|gif|jpg|jpeg|webp|glb|vrm)$''']
