@@ -6,6 +6,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
+import { WORLDS_UI } from '../../../i18n/worlds';
 import LapShell from '../LapShell.astro';
 import { WorldsPanel } from './WorldsPanel';
 
@@ -18,10 +19,7 @@ const t = LAP_UI[locale];
 const labels = {
   forbidden: t.admin.forbidden,
   forbiddenNote: t.worlds.forbiddenNote,
-  loading: t.admin.loading,
   signedAs: t.worlds.signedAs,
-  empty: t.worlds.empty,
-  failed: t.census.failed,
 };
 ---
 
@@ -35,7 +33,7 @@ const labels = {
     <h1>{t.worlds.title}</h1>
     <p class="intro">{t.worlds.intro}</p>
   </header>
-  <WorldsPanel client:load labels={labels} />
+  <WorldsPanel client:load labels={labels} room={WORLDS_UI[locale]} />
 </LapShell>
 
 <style>
@@ -57,27 +55,642 @@ const labels = {
 </style>
 
 <style is:global>
+  /* The room after the Alchemists' Tower: figures, controls, three views,
+     dialogs. Everything scoped under the island's own attribute. */
   [data-worlds-panel] .estado {
     color: var(--texto-2);
   }
-  [data-worlds-panel] .aviso {
+  [data-worlds-panel] .estado.fallo {
     border-left: 2px solid var(--ambar);
     padding-left: var(--s3);
   }
-  [data-worlds-panel] dl {
-    display: flex;
-    gap: var(--s6);
-    flex-wrap: wrap;
-    margin: 0 0 var(--s4);
-  }
-  [data-worlds-panel] dt {
-    margin: 0 0 var(--s1);
-  }
-  [data-worlds-panel] dd {
-    margin: 0;
-    color: var(--texto);
+  [data-worlds-panel] .estado.fallo p {
+    margin: 0 0 var(--s3);
   }
   [data-worlds-panel] .refuso p {
     margin: 0 0 var(--s2);
+  }
+  [data-worlds-panel] .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Toggles (views, filters, card picker) — the actions use the house .btn */
+  [data-worlds-panel] button:not(.btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    font: inherit;
+    font-size: 0.875rem;
+    min-height: 36px;
+    padding: 6px var(--s3);
+    color: var(--texto);
+    background: transparent;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    cursor: pointer;
+    transition:
+      background 120ms var(--ciclo),
+      border-color 120ms var(--ciclo),
+      color 120ms var(--ciclo);
+  }
+  [data-worlds-panel] button:not(.btn):not([aria-pressed='true']):hover:not(:disabled) {
+    background: var(--elevada);
+  }
+  [data-worlds-panel] a.btn {
+    text-decoration: none;
+  }
+  [data-worlds-panel] .btn.peligro {
+    color: var(--coral);
+  }
+  [data-worlds-panel] .btn.peligro:hover:not(:disabled) {
+    border-color: var(--coral);
+    color: var(--coral);
+  }
+  [data-worlds-panel] .nota {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  [data-worlds-panel] .fallo {
+    color: var(--coral);
+  }
+
+  /* Header strip and figures */
+  [data-worlds-panel] .barra-sala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+  }
+  [data-worlds-panel] .sesion {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .llave {
+    border-left: 2px solid var(--turquesa);
+    padding-left: var(--s3);
+    max-width: 65ch;
+  }
+  [data-worlds-panel] .cifras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--s3);
+    margin: var(--s4) 0;
+  }
+  [data-worlds-panel] .cifra {
+    padding: var(--s3) var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  [data-worlds-panel] .cifra dt {
+    margin: 0 0 var(--s1);
+  }
+  [data-worlds-panel] .cifra dd {
+    margin: 0;
+    font-size: 1.728rem;
+    color: var(--texto);
+  }
+  [data-worlds-panel] [data-figure='running'] dd {
+    color: var(--verdemar);
+  }
+  [data-worlds-panel] [data-figure='problems'] dd {
+    color: var(--coral);
+  }
+
+  /* Controls */
+  [data-worlds-panel] .controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+  }
+  [data-worlds-panel] .buscar {
+    flex: 1 1 16rem;
+  }
+  [data-worlds-panel] input[type='search'],
+  [data-worlds-panel] select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px var(--s4);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .vistas {
+    display: inline-flex;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    overflow: hidden;
+  }
+  [data-worlds-panel] .vistas button {
+    min-height: 42px;
+    border: none;
+    border-radius: 0;
+  }
+  [data-worlds-panel] .vistas button + button {
+    border-left: 1px solid var(--linea-f);
+  }
+  [data-worlds-panel] .vistas button[aria-pressed='true'],
+  [data-worlds-panel] .filtros button[aria-pressed='true'] {
+    color: var(--fondo);
+    background: var(--texto);
+    border-color: var(--texto);
+  }
+  [data-worlds-panel] .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin-bottom: var(--s4);
+  }
+  [data-worlds-panel] .filtros button {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    min-height: 32px;
+    padding: 4px var(--s3);
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .vacio {
+    padding: var(--s5) 0;
+    text-align: center;
+  }
+
+  /* Status pill: the house §9.2 pill (dot in currentColor), tinted by state */
+  [data-worlds-panel] .estado-mundo {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .estado-mundo[data-status='running'] {
+    color: var(--verdemar);
+  }
+  [data-worlds-panel] .estado-mundo[data-status='unreachable'] {
+    color: var(--coral);
+  }
+  [data-worlds-panel] .estado-mundo[data-status='requested'] {
+    color: var(--ambar);
+  }
+  [data-worlds-panel] .estado-mundo[data-status='unknown'] {
+    color: var(--turquesa);
+  }
+
+  /* Cards with cover */
+  [data-worlds-panel] .rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    gap: var(--s4);
+  }
+  [data-worlds-panel] .mundo {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    transition: border-color 120ms var(--ciclo);
+  }
+  [data-worlds-panel] .mundo:hover {
+    border-color: var(--linea-f);
+  }
+  [data-worlds-panel] .mundo[data-status='unreachable'] {
+    border-color: var(--coral);
+  }
+  [data-worlds-panel] .marco-caratula {
+    position: relative;
+  }
+  /* Over the cover the pill keeps the night palette whatever the mode:
+     it sits on the picture, not on the page. */
+  [data-worlds-panel] .marco-caratula .estado-mundo {
+    position: absolute;
+    top: var(--s2);
+    left: var(--s2);
+    color: #d8cbbe;
+    background: rgba(20, 17, 15, 0.8);
+    backdrop-filter: blur(6px);
+  }
+  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='running'] {
+    color: #a6dad5;
+  }
+  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='unreachable'] {
+    color: #f35059;
+  }
+  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='requested'] {
+    color: #efa517;
+  }
+  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='unknown'] {
+    color: #4fc6d4;
+  }
+  [data-worlds-panel] .caratula {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(239, 165, 23, 0.18), transparent 60%),
+      radial-gradient(circle at 80% 90%, rgba(1, 142, 161, 0.22), transparent 55%),
+      var(--elevada);
+  }
+  [data-worlds-panel] .caratula img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  [data-worlds-panel] .mundo[data-status='stopped'] .caratula img {
+    filter: grayscale(1) brightness(0.65);
+  }
+  [data-worlds-panel] .sin-caratula {
+    font-size: 3rem;
+    font-weight: 300;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--s2);
+    padding: var(--s3) var(--s4) var(--s4);
+  }
+  [data-worlds-panel] .cuerpo h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+  [data-worlds-panel] .motivo {
+    display: block;
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  [data-worlds-panel] .datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s2) var(--s4);
+    margin: 0;
+  }
+  /* The address gets its own line: it is the longest value and the one people copy. */
+  [data-worlds-panel] .datos > div:first-child {
+    grid-column: 1 / -1;
+  }
+  [data-worlds-panel] .datos dt,
+  [data-worlds-panel] .datos dd {
+    margin: 0;
+  }
+  [data-worlds-panel] .datos dd {
+    font-size: 0.8rem;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+  }
+  [data-worlds-panel] .datos a {
+    color: inherit;
+  }
+  [data-worlds-panel] .marcas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  [data-worlds-panel] .marca {
+    padding: 2px 8px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--texto-2);
+    border: 1px solid var(--linea-f);
+    border-radius: 999px;
+    text-decoration: none;
+  }
+  [data-worlds-panel] .marca.sin-ficha {
+    color: var(--ambar);
+    border-color: var(--ambar);
+  }
+  [data-worlds-panel] .marca.pedido {
+    color: var(--turquesa);
+    border-color: var(--turquesa);
+  }
+  [data-worlds-panel] .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin-top: auto;
+    padding-top: var(--s2);
+  }
+  [data-worlds-panel] .acciones .btn {
+    min-height: 32px;
+    padding: 4px var(--s3);
+    font-size: 0.8rem;
+  }
+  [data-worlds-panel] .acciones .abrir {
+    color: var(--verdemar);
+    border-color: var(--verdemar);
+  }
+  [data-worlds-panel] .mas {
+    align-self: center;
+  }
+
+  /* List */
+  [data-worlds-panel] .tabla-envoltura {
+    overflow-x: auto;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  [data-worlds-panel] table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  [data-worlds-panel] th {
+    padding: var(--s2) var(--s4);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ambar);
+    border-bottom: 1px solid var(--linea-f);
+  }
+  [data-worlds-panel] td {
+    padding: var(--s2) var(--s4);
+    vertical-align: middle;
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-worlds-panel] tbody tr:hover {
+    background: var(--elevada);
+  }
+  [data-worlds-panel] td .motivo {
+    margin-top: var(--s1);
+    font-size: 0.75rem;
+  }
+  [data-worlds-panel] td .direccion,
+  [data-worlds-panel] td .detalle {
+    display: block;
+  }
+  [data-worlds-panel] td .detalle {
+    margin-top: var(--s1);
+    font-size: 0.75rem;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] td .acciones {
+    margin: 0;
+    padding: 0;
+    flex-wrap: nowrap;
+  }
+  [data-worlds-panel] .fila-mundo {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+  }
+  [data-worlds-panel] .fila-mundo .caratula {
+    flex: none;
+    width: 88px;
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .fila-mundo .sin-caratula {
+    font-size: 1.2rem;
+  }
+  [data-worlds-panel] .nombre {
+    display: block;
+    font-weight: 500;
+    color: var(--texto);
+  }
+  [data-worlds-panel] .id {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .secundario {
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    white-space: nowrap;
+  }
+
+  /* By server */
+  [data-worlds-panel] .grupos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s5);
+  }
+  [data-worlds-panel] .cabeza-grupo {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    margin: 0 0 var(--s3);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .cabeza-grupo::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--linea);
+  }
+  [data-worlds-panel] .cabeza-grupo .cuenta {
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .mas {
+    margin: var(--s3) auto 0;
+  }
+  [data-worlds-panel] .grupo {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Rule-breaking orders and history */
+  [data-worlds-panel] .invalidas,
+  [data-worlds-panel] .historial {
+    margin-top: var(--s6);
+  }
+  [data-worlds-panel] .invalidas ul,
+  [data-worlds-panel] .historial ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    margin: var(--s3) 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-worlds-panel] .invalidas li {
+    font-size: 0.875rem;
+    color: var(--coral);
+  }
+  [data-worlds-panel] .historial li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s3);
+  }
+  [data-worlds-panel] .historial time,
+  [data-worlds-panel] .historial .autor {
+    font-size: 0.8rem;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .historial .todo {
+    font-size: 0.875rem;
+  }
+
+  /* Dialogs */
+  [data-worlds-panel] .dialogo {
+    width: min(44rem, calc(100% - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    color: var(--texto);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  [data-worlds-panel] .dialogo::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  [data-worlds-panel] .cabeza-dialogo {
+    padding: var(--s4) var(--s5);
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-worlds-panel] .dialogo h2 {
+    margin: 0 0 var(--s2);
+    font-size: 1.44rem;
+    font-weight: 400;
+  }
+  [data-worlds-panel] .pasos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--texto-3);
+    counter-reset: paso;
+  }
+  [data-worlds-panel] .pasos li::before {
+    counter-increment: paso;
+    content: counter(paso) '. ';
+  }
+  [data-worlds-panel] .pasos li[data-done='true'] {
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .pasos li[aria-current='step'] {
+    color: var(--ambar);
+  }
+  [data-worlds-panel] .contenido,
+  [data-worlds-panel] .resultado {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding: var(--s4) var(--s5) var(--s5);
+  }
+  [data-worlds-panel] .contenido p {
+    margin: 0;
+  }
+  [data-worlds-panel] .campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+  }
+  [data-worlds-panel] .campo input {
+    min-height: 40px;
+    padding: 8px var(--s3);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .campo input.mono {
+    font-family: var(--mono);
+    font-size: 0.875rem;
+  }
+  [data-worlds-panel] .campo input[aria-invalid='true'] {
+    border-color: var(--coral);
+  }
+  [data-worlds-panel] .pista {
+    font-size: 0.8rem;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .trio {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s3);
+  }
+  [data-worlds-panel] .fichas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    gap: var(--s2);
+  }
+  [data-worlds-panel] .ficha-mundo {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--s1);
+    text-align: left;
+  }
+  [data-worlds-panel] .ficha-mundo .caratula {
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .ficha-mundo[aria-pressed='true'] {
+    border-color: var(--ambar);
+    box-shadow: 0 0 0 1px var(--ambar);
+  }
+  [data-worlds-panel] .confirmacion {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: var(--s4);
+    align-items: start;
+  }
+  [data-worlds-panel] .confirmacion .caratula {
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .orden {
+    margin: var(--s2) 0 0;
+    padding: var(--s3);
+    overflow-x: auto;
+    font-size: 0.75rem;
+    background: var(--fondo);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .pasos-cierre {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--s2);
+    margin-top: var(--s2);
+    padding-top: var(--s3);
+    border-top: 1px solid var(--linea);
+  }
+
+  @media (max-width: 40rem) {
+    [data-worlds-panel] .confirmacion,
+    [data-worlds-panel] .trio {
+      grid-template-columns: 1fr;
+    }
+    [data-worlds-panel] .vistas {
+      width: 100%;
+    }
+    [data-worlds-panel] .vistas button {
+      flex: 1;
+      justify-content: center;
+    }
   }
 </style>

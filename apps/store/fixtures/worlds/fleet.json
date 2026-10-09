@@ -1,0 +1,112 @@
+{
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary servers, covering every state the room shows. Never read in production, where the room reads numinia-assets open-worlds/ and the Summa's world cards.",
+  "orders": [
+    {
+      "id": "agora-plaza",
+      "card": "agora-plaza",
+      "state": "running",
+      "server": "open-1",
+      "domain": "agora.numen.games",
+      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+      "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+    },
+    {
+      "id": "atlantis-library",
+      "card": "atlantis-library",
+      "state": "running",
+      "server": "open-1",
+      "domain": "atlantis.numen.games",
+      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+      "limits": { "memory": "2g", "cpus": "1", "maxUploadMb": 50 }
+    },
+    {
+      "id": "alchemists-tower",
+      "card": "alchemists-tower",
+      "state": "running",
+      "server": "open-1",
+      "domain": "tower.numen.games",
+      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-5091ad9f08234d7342d14f9f0beb175bf1c5d8fc",
+      "limits": { "memory": "1g", "cpus": "1", "maxUploadMb": 20 }
+    },
+    {
+      "id": "forge",
+      "card": "forge",
+      "state": "running",
+      "server": "open-2",
+      "domain": "forge.numen.games",
+      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+      "limits": { "memory": "4g", "cpus": "2", "maxUploadMb": 100 }
+    },
+    {
+      "id": "akasha-museum",
+      "card": "akasha-museum",
+      "state": "stopped",
+      "server": "open-2",
+      "domain": "akasha.numen.games",
+      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+      "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+    }
+  ],
+  "invalid": [{ "file": "old-plaza.json", "problems": ["image"] }],
+  "cards": [
+    { "slug": "agora-plaza", "title": "Agora Plaza", "cover": "/images/art/city.webp" },
+    { "slug": "akasha-museum", "title": "Akasha Museum", "cover": "/images/art/cosmos.webp" },
+    {
+      "slug": "atlantis-library",
+      "title": "Atlantis Library",
+      "cover": "/images/art/genesis.webp"
+    },
+    { "slug": "forge", "title": "The Forge", "cover": "/images/art/builder.webp" },
+    { "slug": "scenic-circle", "title": "Scenic Circle", "cover": "/images/art/interpret.webp" }
+  ],
+  "probes": {
+    "agora-plaza": { "ok": true, "users": 7, "uptime": 12000, "commit": "0e20453" },
+    "atlantis-library": { "ok": true, "users": 0, "uptime": 190800, "commit": "0e20453" },
+    "alchemists-tower": { "ok": true, "users": 1, "uptime": 2700, "commit": "5091ad9" },
+    "forge": { "ok": false, "reason": "http", "status": 502 }
+  },
+  "pending": [
+    {
+      "id": "scenic-circle",
+      "action": "create",
+      "number": 14,
+      "url": "https://github.com/numengames/numinia-assets/pull/14"
+    },
+    {
+      "id": "forge",
+      "action": "stop",
+      "number": 13,
+      "url": "https://github.com/numengames/numinia-assets/pull/13"
+    }
+  ],
+  "history": [
+    {
+      "sha": "a1b2c3d",
+      "subject": "chore(open-worlds): stop the world akasha-museum",
+      "author": "PabloFMM",
+      "date": "2026-10-08T17:42:00Z",
+      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
+    },
+    {
+      "sha": "b2c3d4e",
+      "subject": "feat(open-worlds): order the world forge",
+      "author": "PabloFMM",
+      "date": "2026-10-07T10:05:00Z",
+      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
+    },
+    {
+      "sha": "c3d4e5f",
+      "subject": "feat(open-worlds): order the world atlantis-library",
+      "author": "MariaGarciaJordan",
+      "date": "2026-10-05T09:30:00Z",
+      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
+    },
+    {
+      "sha": "d4e5f6a",
+      "subject": "feat(open-worlds): order the world agora-plaza",
+      "author": "PabloFMM",
+      "date": "2026-10-04T12:00:00Z",
+      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
+    }
+  ]
+}

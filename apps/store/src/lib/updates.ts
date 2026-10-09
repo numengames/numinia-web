@@ -26,6 +26,21 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.73.0',
+    date: '2026-10-09 19:10',
+    missions: ['ADR-069', 'MIS-156'],
+    entries: [
+      {
+        type: 'NEW',
+        text: "The Worlds room becomes the fleet's console, modelled on the Alchemists' Tower. On top, four figures: total, running, stopped and with problems. Below, a search, filters by state and server, and three views: cards, list and by server. Each card shows the world's cover, which is the same picture the world shows while it loads. It also shows its state and why: how many people are inside and for how long, or why it does not answer.",
+      },
+      {
+        type: 'NEW',
+        text: "An Oracle can ask for a new world with a four-step wizard (card, place, engine, confirm) that shows the address and the exact order before sending it. They can also stop, start or close a world; closing asks you to type its name. Every change is a pull request on the fleet's order book in numinia-assets, and nothing is written anywhere else. Without the room's key, the same change opens on GitHub under the Oracle's own account. Below the views, the fleet's history.",
+      },
+    ],
+  },
+  {
     version: 'v0.72.0',
     date: '2026-10-09 18:30',
     missions: ['ADR-069', 'MIS-156'],
