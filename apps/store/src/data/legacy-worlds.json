@@ -1,0 +1,14 @@
+{
+  "$comment": "Worlds that run outside the order book: set up by hand on the old OVH machine before the fleet existed (found 2026-10-09 by certificate transparency + DNS + each world's public /status). The Worlds room watches them and never changes them. A world leaves this list when its order is merged in numinia-assets open-worlds/ (the room already hides it once an order holds its id or address).",
+  "worlds": [
+    { "id": "demo", "domain": "demo.numinia.com", "server": "vps-76aa7afe" },
+    { "id": "portfolio", "domain": "portfolio.numinia.com", "server": "vps-76aa7afe" },
+    { "id": "test", "domain": "test.numinia.com", "server": "vps-76aa7afe" },
+    {
+      "id": "theculturalcyberhive",
+      "domain": "theculturalcyberhive.numinia.com",
+      "server": "vps-76aa7afe"
+    },
+    { "id": "vic", "domain": "vic.numinia.com", "server": "vps-76aa7afe" }
+  ]
+}

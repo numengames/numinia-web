@@ -19,6 +19,7 @@ import {
   DEPOT_BRANCH,
   FLEET_DIR,
   REVIEWERS,
+  buildRows,
   changeBranch,
   orderPath,
   parseChangeBranch,
@@ -33,7 +34,11 @@ import {
   type OrderProblem,
   type PendingChange,
   type Probe,
+  type LegacyWorld,
+  type WorldCardInfo,
+  type WorldFace,
   type WorldOrder,
+  type WorldRow,
 } from './worlds';
 
 const API = `https://api.github.com/repos/${DEPOT}`;
@@ -204,13 +209,199 @@ export async function probeFleet(
   orders: readonly WorldOrder[],
   timeoutMs = 3000,
 ): Promise<Record<string, Probe>> {
-  const running = orders.filter((order) => order.state === 'running');
+  return probeWorlds(
+    fetchImpl,
+    orders.filter((order) => order.state === 'running'),
+    timeoutMs,
+  );
+}
+
+/** Probe any list of worlds by address, in parallel (the legacy list has no state to filter on). */
+export async function probeWorlds(
+  fetchImpl: Fetch,
+  worlds: readonly { readonly id: string; readonly domain: string }[],
+  timeoutMs = 3000,
+): Promise<Record<string, Probe>> {
   const answers = await Promise.all(
-    running.map(
-      async (order) => [order.id, await probeWorld(fetchImpl, order.domain, timeoutMs)] as const,
+    worlds.map(
+      async (world) => [world.id, await probeWorld(fetchImpl, world.domain, timeoutMs)] as const,
     ),
   );
   return Object.fromEntries(answers);
+}
+
+// ---------------------------------------------------------------------------
+// A world's face: what its own page says it is (title and loading picture)
+// ---------------------------------------------------------------------------
+
+const ENTITIES: Readonly<Record<string, string>> = {
+  '&amp;': '&',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&lt;': '<',
+  '&gt;': '>',
+};
+
+const unescape = (text: string): string =>
+  text.replace(/&(?:amp|quot|#39|lt|gt);/g, (entity) => ENTITIES[entity] as string);
+
+function meta(html: string, property: string): string | null {
+  const match = new RegExp(`<meta\\s+property="${property}"\\s+content="([^"]*)"`, 'i').exec(html);
+  const value = unescape(match?.[1] ?? '').trim();
+  return value === '' ? null : value;
+}
+
+/**
+ * The engine serves each world's title and its Settings image as og: tags —
+ * the same picture the world shows while it loads. Only a picture served by
+ * the world itself is kept.
+ */
+export function parseFace(html: string, domain: string): WorldFace {
+  const titleTag = /<title>([^<]*)<\/title>/i.exec(html)?.[1];
+  const title = meta(html, 'og:title') ?? (unescape(titleTag ?? '').trim() || null);
+  const image = meta(html, 'og:image');
+  return { title, image: image?.startsWith(`https://${domain}/`) ? image : null };
+}
+
+/** Read a world's page like a visitor; null when it does not answer. Never throws. */
+export async function readFace(
+  fetchImpl: Fetch,
+  domain: string,
+  timeoutMs = 3000,
+): Promise<WorldFace | null> {
+  try {
+    const response = await fetchImpl(`https://${domain}/`, {
+      headers: { accept: 'text/html', 'user-agent': 'numinia-worlds-room' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) return null;
+    return parseFace((await response.text()).slice(0, 200_000), domain);
+  } catch {
+    return null;
+  }
+}
+
+/** The faces of several worlds, in parallel; a world that does not answer is left out. */
+export async function readFaces(
+  fetchImpl: Fetch,
+  worlds: readonly { readonly id: string; readonly domain: string }[],
+  timeoutMs = 3000,
+): Promise<Record<string, WorldFace>> {
+  const answers = await Promise.all(
+    worlds.map(
+      async (world) => [world.id, await readFace(fetchImpl, world.domain, timeoutMs)] as const,
+    ),
+  );
+  return Object.fromEntries(
+    answers.filter((entry): entry is readonly [string, WorldFace] => entry[1] !== null),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reading from the Oracle's own browser
+// ---------------------------------------------------------------------------
+
+const RAW = `https://raw.githubusercontent.com/${DEPOT}/${DEPOT_BRANCH}/${FLEET_DIR}`;
+const WORLD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_PROBES = 50;
+
+/** How the worlds look from outside: their /status and, without a card, their own page. */
+export interface Watch {
+  readonly probes: Readonly<Record<string, Probe>>;
+  readonly faces: Readonly<Record<string, WorldFace>>;
+}
+
+/**
+ * Watch the running worlds named by id. Each domain comes from the world's
+ * order in the depot, read raw, never from the caller: the Worker only ever
+ * asks a host that an approved order names. Invalid or unknown ids are
+ * skipped. A world whose card is not in `carded` is also read for its face.
+ */
+export async function watchByIds(
+  fetchImpl: Fetch,
+  ids: readonly string[],
+  carded: ReadonlySet<string>,
+  timeoutMs = 3000,
+): Promise<Watch> {
+  const wanted = [...new Set(ids)].filter((id) => WORLD_ID.test(id)).slice(0, MAX_PROBES);
+  const found = await Promise.all(
+    wanted.map(async (id): Promise<WorldOrder | null> => {
+      try {
+        const raw = await fetchImpl(`${RAW}/${id}.json`);
+        if (!raw.ok) return null;
+        const parsed = parseOrder(await raw.text(), id);
+        return 'order' in parsed ? parsed.order : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const running = found.filter(
+    (order): order is WorldOrder => order !== null && order.state === 'running',
+  );
+  const [probes, faces] = await Promise.all([
+    probeWorlds(fetchImpl, running, timeoutMs),
+    readFaces(
+      fetchImpl,
+      running.filter((order) => !carded.has(order.card)),
+      timeoutMs,
+    ),
+  ]);
+  return { probes, faces };
+}
+
+/** What the Worker answers when it holds no key: who asks, the cards, and the legacy worlds watched. */
+export interface KeylessAnswer extends Watch {
+  readonly rank: string;
+  readonly canPropose: boolean;
+  readonly cards: readonly WorldCardInfo[];
+  readonly legacy: readonly LegacyWorld[];
+}
+
+export interface RoomFleet {
+  readonly rank: string;
+  readonly canPropose: boolean;
+  readonly cards: readonly WorldCardInfo[];
+  readonly rows: readonly WorldRow[];
+  readonly invalid: readonly InvalidOrder[];
+  readonly history: readonly HistoryEntry[];
+}
+
+/**
+ * The order book read by the Oracle's own browser. The depot is public, and
+ * GitHub answers a person's own address where it refuses anonymous readers
+ * on Cloudflare's shared ones, so the room needs no key to read. The Worker
+ * adds only what needs a server: watching the running worlds.
+ */
+export async function readFleetHere(
+  fetchImpl: Fetch,
+  answer: KeylessAnswer,
+  watchUrl = '/api/admin/worlds?probe=',
+): Promise<RoomFleet> {
+  const snapshot = await readFleet(fetchImpl, null);
+  const running = snapshot.orders
+    .filter((order) => order.state === 'running')
+    .map((order) => order.id);
+  let watch: Partial<Watch> = {};
+  if (running.length > 0) {
+    const response = await fetchImpl(`${watchUrl}${running.join(',')}`);
+    if (response.ok) watch = (await response.json()) as Partial<Watch>;
+  }
+  return {
+    rank: answer.rank,
+    canPropose: answer.canPropose,
+    cards: answer.cards,
+    rows: buildRows({
+      orders: snapshot.orders,
+      cards: answer.cards,
+      probes: { ...answer.probes, ...watch.probes },
+      pending: snapshot.pending,
+      legacy: answer.legacy,
+      faces: { ...answer.faces, ...watch.faces },
+    }),
+    invalid: snapshot.invalid,
+    history: snapshot.history,
+  };
 }
 
 // ---------------------------------------------------------------------------

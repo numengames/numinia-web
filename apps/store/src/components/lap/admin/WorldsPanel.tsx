@@ -21,6 +21,7 @@ import {
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
+import { readFleetHere, type KeylessAnswer } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { ChangeDialog, NewWorldDialog } from './WorldDialogs';
 import { CardsView, ListView, ServersView, type WorldAction } from './WorldViews';
@@ -80,11 +81,26 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       .then(async (response) => {
         if (!alive) return;
         if (response.status === 403) return setPanel({ at: 'forbidden' });
-        const data = (await response.json().catch(() => ({}))) as Partial<Fleet> & {
-          status?: number;
-        };
+        const data = (await response.json().catch(() => ({}))) as Partial<Fleet> &
+          Partial<KeylessAnswer> & {
+            status?: number;
+            readHere?: boolean;
+          };
         if (!response.ok)
           return setPanel({ at: 'error', detail: `${response.status}/${data.status ?? '?'}` });
+        if (data.readHere) {
+          // The Worker holds no key: this browser reads the public order book.
+          const fleet = await readFleetHere(fetch, {
+            rank: data.rank ?? '',
+            canPropose: false,
+            cards: data.cards ?? [],
+            legacy: data.legacy ?? [],
+            probes: data.probes ?? {},
+            faces: data.faces ?? {},
+          });
+          if (alive) setPanel({ at: 'ready', fleet });
+          return;
+        }
         setPanel({ at: 'ready', fleet: data as Fleet });
       })
       .catch((error: unknown) => {

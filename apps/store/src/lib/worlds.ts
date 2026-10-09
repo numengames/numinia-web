@@ -392,17 +392,37 @@ export function fleetHistoryUrl(): string {
 
 export type WorldStatus = 'running' | 'stopped' | 'unreachable' | 'unknown' | 'requested';
 
+/**
+ * A world that runs outside the order book: set up by hand on the old
+ * machine, before the fleet existed. The room watches it (the Tower's
+ * "legacy" mark) and never changes it; it joins the book only when an order
+ * for it is merged, and from then on the order wins.
+ */
+export interface LegacyWorld {
+  readonly id: string;
+  readonly domain: string;
+  readonly server: string;
+}
+
+/** What a world shows of itself: its page title and its loading picture. */
+export interface WorldFace {
+  readonly title: string | null;
+  readonly image: string | null;
+}
+
 export interface WorldRow {
   readonly id: string;
   readonly title: string;
   readonly cover: string | null;
-  /** The order names a card the Summa does not have (the Tower's "legacy" mark). */
+  /** The order names a card the Summa does not have. */
   readonly missingCard: boolean;
   readonly status: WorldStatus;
   readonly probe: Probe | null;
   readonly pending: PendingChange | null;
   /** Null while the world is only asked for (its order is still in a pull request). */
   readonly order: WorldOrder | null;
+  /** Set for a world the room only watches (no order: nothing to stop, start or close). */
+  readonly legacy: LegacyWorld | null;
 }
 
 export interface RowsInput {
@@ -410,10 +430,17 @@ export interface RowsInput {
   readonly cards: readonly WorldCardInfo[];
   readonly probes: Readonly<Record<string, Probe>>;
   readonly pending: readonly PendingChange[];
+  readonly legacy?: readonly LegacyWorld[];
+  /** Read from each world's own page when the Summa has no card for it. */
+  readonly faces?: Readonly<Record<string, WorldFace>>;
 }
 
 function statusOf(order: WorldOrder, probe: Probe | undefined): WorldStatus {
   if (order.state === 'stopped') return 'stopped';
+  return seen(probe);
+}
+
+function seen(probe: Probe | undefined): WorldStatus {
   if (!probe) return 'unknown';
   return probe.ok ? 'running' : 'unreachable';
 }
@@ -422,23 +449,28 @@ function statusOf(order: WorldOrder, probe: Probe | undefined): WorldStatus {
  * The Tower's trick: what was asked for crossed with what is seen running.
  * An order is "running" only when its world answers; a world still waiting
  * in a pull request shows up as "requested", like the Tower's provisioning
- * rows.
+ * rows. Without a card, a world is named and pictured by its own page (the
+ * picture it shows while loading). A legacy world is listed after the
+ * orders, unless an order already holds its id or its address.
  */
 export function buildRows(input: RowsInput): WorldRow[] {
   const cards = new Map(input.cards.map((card) => [card.slug, card]));
+  const faces = input.faces ?? {};
   const pendingById = new Map(input.pending.map((change) => [change.id, change]));
   const rows: WorldRow[] = input.orders.map((order) => {
     const card = cards.get(order.card);
+    const face = faces[order.id];
     const probe = input.probes[order.id];
     return {
       id: order.id,
-      title: card?.title ?? order.id,
-      cover: card?.cover ?? null,
+      title: card?.title ?? face?.title ?? order.id,
+      cover: card?.cover ?? face?.image ?? null,
       missingCard: card === undefined,
       status: statusOf(order, probe),
       probe: probe ?? null,
       pending: pendingById.get(order.id) ?? null,
       order,
+      legacy: null,
     };
   });
   const ordered = new Set(input.orders.map((order) => order.id));
@@ -454,9 +486,34 @@ export function buildRows(input: RowsInput): WorldRow[] {
       probe: null,
       pending: change,
       order: null,
+      legacy: null,
+    });
+  }
+  const addresses = new Set(input.orders.map((order) => order.domain));
+  for (const world of input.legacy ?? []) {
+    if (ordered.has(world.id) || addresses.has(world.domain)) continue;
+    const face = faces[world.id];
+    const probe = input.probes[world.id];
+    rows.push({
+      id: world.id,
+      title: face?.title ?? world.id,
+      cover: face?.image ?? null,
+      missingCard: false,
+      status: seen(probe),
+      probe: probe ?? null,
+      pending: null,
+      order: null,
+      legacy: world,
     });
   }
   return rows.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
+}
+
+/** Where a row's world lives — from its order, or from the legacy list; null while only asked for. */
+export function rowPlace(
+  row: WorldRow,
+): { readonly server: string; readonly domain: string } | null {
+  return row.order ?? row.legacy;
 }
 
 export interface FleetStats {
@@ -491,10 +548,11 @@ export interface RowFilter {
 export function filterRows(rows: readonly WorldRow[], filter: RowFilter): WorldRow[] {
   const needle = filter.query.trim().toLowerCase();
   return rows.filter((row) => {
+    const place = rowPlace(row);
     if (filter.status !== 'all' && row.status !== filter.status) return false;
-    if (filter.server !== '' && row.order?.server !== filter.server) return false;
+    if (filter.server !== '' && place?.server !== filter.server) return false;
     if (needle === '') return true;
-    const haystack = [row.id, row.title, row.order?.card, row.order?.domain, row.order?.server]
+    const haystack = [row.id, row.title, row.order?.card, place?.domain, place?.server]
       .filter((part): part is string => part !== undefined)
       .join(' ')
       .toLowerCase();
@@ -502,11 +560,12 @@ export function filterRows(rows: readonly WorldRow[], filter: RowFilter): WorldR
   });
 }
 
-/** Every server some order names, sorted. */
+/** Every server some order (or the legacy list) names, sorted. */
 export function fleetServers(rows: readonly WorldRow[]): string[] {
   const names = new Set<string>();
   for (const row of rows) {
-    if (row.order) names.add(row.order.server);
+    const place = rowPlace(row);
+    if (place) names.add(place.server);
   }
   return [...names].sort();
 }
@@ -521,7 +580,7 @@ export interface ServerGroup {
 export function groupByServer(rows: readonly WorldRow[]): ServerGroup[] {
   const groups = new Map<string | null, WorldRow[]>();
   for (const row of rows) {
-    const key = row.order?.server ?? null;
+    const key = rowPlace(row)?.server ?? null;
     const list = groups.get(key) ?? [];
     list.push(row);
     groups.set(key, list);

@@ -13,6 +13,7 @@ import {
   fill,
   groupByServer,
   orderFileUrl,
+  rowPlace,
   type WorldRow,
 } from '../../../lib/worlds';
 
@@ -40,9 +41,14 @@ function StatusPill({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) 
 
 function Badges({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
   const showPending = row.pending && row.status !== 'requested';
-  if (!row.missingCard && !showPending) return null;
+  if (!row.missingCard && !showPending && !row.legacy) return null;
   return (
     <span className="marcas">
+      {row.legacy && (
+        <span className="marca legado" title={room.badges.legacyNote}>
+          {room.badges.legacy}
+        </span>
+      )}
       {row.missingCard && <span className="marca sin-ficha">{room.badges.missingCard}</span>}
       {showPending && row.pending && (
         <a
@@ -72,6 +78,17 @@ function Actions({
   const busy = row.pending !== null;
   return (
     <div className="acciones">
+      {row.legacy && (
+        <a
+          className="btn btn-fantasma abrir"
+          href={`https://${row.legacy.domain}/`}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-metric="worlds-open"
+        >
+          {room.actions.open}
+        </a>
+      )}
       {order && order.state === 'running' && (
         <a
           className="btn btn-fantasma abrir"
@@ -164,6 +181,7 @@ function WorldCard({
   onAction: ViewProps['onAction'];
 }) {
   const order = row.order;
+  const place = rowPlace(row);
   return (
     <article className="mundo" data-status={row.status} data-world={row.id}>
       <div className="marco-caratula">
@@ -174,29 +192,31 @@ function WorldCard({
         <h3>{row.title}</h3>
         <Badges row={row} room={room} />
         <p className="motivo">{describeStatus(row, room.reasons)}</p>
-        {order && (
+        {place && (
           <dl className="datos">
             <div>
               <dt className="etiqueta">{room.fields.address}</dt>
-              <dd className="mono">{order.domain}</dd>
+              <dd className="mono">{place.domain}</dd>
             </div>
             <div>
               <dt className="etiqueta">{room.fields.server}</dt>
-              <dd className="mono">{order.server}</dd>
+              <dd className="mono">{place.server}</dd>
             </div>
-            <div>
-              <dt className="etiqueta">{room.fields.build}</dt>
-              <dd className="mono">
-                <a
-                  href={orderFileUrl(row.id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-metric="worlds-order"
-                >
-                  {buildTag(order.image)}
-                </a>
-              </dd>
-            </div>
+            {order && (
+              <div>
+                <dt className="etiqueta">{room.fields.build}</dt>
+                <dd className="mono">
+                  <a
+                    href={orderFileUrl(row.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-metric="worlds-order"
+                  >
+                    {buildTag(order.image)}
+                  </a>
+                </dd>
+              </div>
+            )}
           </dl>
         )}
         <Actions row={row} room={room} onAction={onAction} />
@@ -253,6 +273,11 @@ export function ListView({ rows, room, onAction }: ViewProps) {
                     <span className="detalle">
                       {`${row.order.server} · ${buildTag(row.order.image)} · ${row.order.limits.memory} · ${row.order.limits.cpus} CPU · ${row.order.limits.maxUploadMb} MB`}
                     </span>
+                  </>
+                ) : row.legacy ? (
+                  <>
+                    <span className="direccion">{row.legacy.domain}</span>
+                    <span className="detalle">{row.legacy.server}</span>
                   </>
                 ) : (
                   '—'

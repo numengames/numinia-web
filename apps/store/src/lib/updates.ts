@@ -26,6 +26,21 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.74.0',
+    date: '2026-10-09 19:20',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The five worlds the old machine runs by hand (demo, portfolio, test, The Cultural Cyber Hive and vic, at numinia.com) appear in the room marked Legacy: live state, address and an Open button, but no stop, start or close, because nothing on that machine reads the order book. A world without a card is named and pictured by its own page: its title, and the picture it shows while it loads.',
+      },
+      {
+        type: 'FIX',
+        text: "The Worlds room reads the fleet's order book from the Oracle's own browser, with no key to configure. The order book is public, but GitHub refuses anonymous readers on Cloudflare's shared servers, so the room only showed an error. The server now only asks each running world how it is, at the address its approved order names.",
+      },
+    ],
+  },
+  {
     version: 'v0.73.0',
     date: '2026-10-09 19:10',
     missions: ['ADR-069', 'MIS-156'],
