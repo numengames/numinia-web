@@ -30,9 +30,9 @@ describe('resolvePermissions (cumulative ladder)', () => {
     }
   });
 
-  it('oracle holds exactly the 22 declared permissions — no more, no less, none renamed', () => {
+  it('oracle holds exactly the 23 declared permissions — no more, no less, none renamed', () => {
     expect([...resolvePermissions('oracle')].sort()).toEqual([...PERMISSIONS].sort());
-    expect(PERMISSIONS).toHaveLength(22);
+    expect(PERMISSIONS).toHaveLength(23);
   });
 
   it('each rank grants exactly its declared permissions (full ladder pin)', () => {
@@ -55,7 +55,7 @@ describe('resolvePermissions (cumulative ladder)', () => {
         'ban-users',
         'promote-vernacular',
       ],
-      oracle: ['promote-archon', 'edit-rank-permissions', 'edit-system-config'],
+      oracle: ['promote-archon', 'edit-rank-permissions', 'edit-system-config', 'manage-worlds'],
     };
     for (let i = 0; i < RANKS.length; i++) {
       const rank = RANKS[i];

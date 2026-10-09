@@ -1,0 +1,83 @@
+---
+/**
+ * The worlds room (numinia-archive ADR-069). The page is static; every
+ * answer comes from the session-gated endpoint, which only an Oracle
+ * passes — anyone else receives the refusal, never a world.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import LapShell from '../LapShell.astro';
+import { WorldsPanel } from './WorldsPanel';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const labels = {
+  forbidden: t.admin.forbidden,
+  forbiddenNote: t.worlds.forbiddenNote,
+  loading: t.admin.loading,
+  signedAs: t.worlds.signedAs,
+  empty: t.worlds.empty,
+  failed: t.census.failed,
+};
+---
+
+<LapShell
+  locale={locale}
+  current="admin-worlds"
+  title={`${t.worlds.title} — LAP — Numinia`}
+  description={t.worlds.intro}
+>
+  <header class="cabecera">
+    <h1>{t.worlds.title}</h1>
+    <p class="intro">{t.worlds.intro}</p>
+  </header>
+  <WorldsPanel client:load labels={labels} />
+</LapShell>
+
+<style>
+  .cabecera {
+    margin-bottom: var(--s5);
+  }
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    margin: 0 0 var(--s2);
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+</style>
+
+<style is:global>
+  [data-worlds-panel] .estado {
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .aviso {
+    border-left: 2px solid var(--ambar);
+    padding-left: var(--s3);
+  }
+  [data-worlds-panel] dl {
+    display: flex;
+    gap: var(--s6);
+    flex-wrap: wrap;
+    margin: 0 0 var(--s4);
+  }
+  [data-worlds-panel] dt {
+    margin: 0 0 var(--s1);
+  }
+  [data-worlds-panel] dd {
+    margin: 0;
+    color: var(--texto);
+  }
+  [data-worlds-panel] .refuso p {
+    margin: 0 0 var(--s2);
+  }
+</style>

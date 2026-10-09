@@ -26,6 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.72.0',
+    date: '2026-10-09 18:30',
+    missions: ['ADR-069', 'MIS-156'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The LAP gains a Worlds room for the public worlds fleet. Only Oracles see it in the management zone, and only an Oracle session gets an answer from it; anyone else gets the refusal. It opens empty: the fleet has no worlds yet.',
+      },
+    ],
+  },
+  {
     version: 'v0.71.0',
     date: '2026-10-04 08:31',
     entries: [

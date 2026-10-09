@@ -6,7 +6,7 @@ Zod is the only runtime dependency; no React, Astro, or viem imports.
 
 - **Types** (`src/types/`): guilds (4×2×2), factions, districts, ranks, species (+hybrids), attributes, competences,
   archetypes, humors, positions,
-  Session Zero seals, assets, 22 permissions.
+  Session Zero seals, assets, 23 permissions.
 - **Constants** (`src/constants/`): every entity localized in the five UI
   locales (es canonical · en · ja · ko · pt-br — JA/KO/PT-BR pending native QA).
 - **Validators** (`src/validators/`): fail-closed env parsing; loud asset-catalog
