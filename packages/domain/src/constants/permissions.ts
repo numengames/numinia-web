@@ -1,6 +1,6 @@
 /**
  * Permission constants — the cumulative rank → permission ladder.
- * 22 permissions in 6 groups.
+ * 23 permissions in 6 groups.
  */
 
 import type { Permission, ResolvedPermissions } from '../types/permission.js';
@@ -26,7 +26,7 @@ const RANK_GRANTS: Readonly<Record<Rank, readonly Permission[]>> = {
     'ban-users',
     'promote-vernacular',
   ],
-  oracle: ['promote-archon', 'edit-rank-permissions', 'edit-system-config'],
+  oracle: ['promote-archon', 'edit-rank-permissions', 'edit-system-config', 'manage-worlds'],
 };
 
 export function rankLevel(rank: Rank): RankLevel {

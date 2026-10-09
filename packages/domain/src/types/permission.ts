@@ -45,6 +45,7 @@ export const PERMISSIONS = [
   'promote-archon',
   'edit-rank-permissions',
   'edit-system-config',
+  'manage-worlds',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 

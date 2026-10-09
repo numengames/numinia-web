@@ -37,6 +37,13 @@ export interface LapMessages {
     readonly count: string;
     readonly readOnly: string;
   };
+  readonly worlds: {
+    readonly title: string;
+    readonly intro: string;
+    readonly forbiddenNote: string;
+    readonly signedAs: string;
+    readonly empty: string;
+  };
   readonly census: {
     readonly title: string;
     readonly intro: string;
@@ -286,6 +293,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       readOnly:
         'Solo lectura: escribir en el repositorio de datos necesita su propia decisión (ADR de escritura).',
     },
+    worlds: {
+      title: 'Mundos',
+      intro:
+        'La flota de mundos públicos: qué mundos hay, dónde corren y en qué estado. Solo los Oráculos ven esta sala.',
+      forbiddenNote:
+        'Esta sala es solo para Oráculos. Entra con la cartera que lo es y volverá a abrirse.',
+      signedAs: 'Has entrado como',
+      empty:
+        'Todavía no hay mundos en la flota. Cada mundo nace con su ficha en la Summa y su orden en numinia-assets (ADR-069).',
+    },
     census: {
       title: 'Censo',
       intro:
@@ -473,6 +490,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       readOnly:
         'Read-only: writing to the data repository needs its own decision (write-path ADR).',
     },
+    worlds: {
+      title: 'Worlds',
+      intro:
+        'The public worlds fleet: which worlds exist, where they run and in what state. Only Oracles see this room.',
+      forbiddenNote:
+        'This room is for Oracles only. Sign in with the wallet that is one and it will open again.',
+      signedAs: 'Signed in as',
+      empty:
+        'No worlds in the fleet yet. Each world is born with its card in the Summa and its order in numinia-assets (ADR-069).',
+    },
     census: {
       title: 'Census',
       intro:
@@ -656,6 +683,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       count: 'アセット',
       readOnly: '読み取り専用:データリポジトリへの書き込みには独自の決定が必要です。',
     },
+    worlds: {
+      title: 'ワールド',
+      intro:
+        '公開ワールドのフリート：どのワールドがあり、どこで動き、どんな状態か。この部屋はオラクルだけが見られます。',
+      forbiddenNote:
+        'この部屋はオラクル専用です。オラクルのウォレットでサインインすると再び開きます。',
+      signedAs: 'サインイン中のランク',
+      empty:
+        'フリートにはまだワールドがありません。各ワールドはSummaのカードとnuminia-assetsのオーダーから生まれます（ADR-069）。',
+    },
     census: {
       title: '市民名簿',
       intro:
@@ -832,6 +869,15 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       created: '생성일',
       count: '에셋',
       readOnly: '읽기 전용: 데이터 저장소 쓰기에는 별도의 결정이 필요합니다.',
+    },
+    worlds: {
+      title: '월드',
+      intro:
+        '공개 월드 플릿: 어떤 월드가 있고, 어디서 실행되며, 어떤 상태인지. 이 방은 오라클만 볼 수 있습니다.',
+      forbiddenNote: '이 방은 오라클 전용입니다. 오라클 지갑으로 로그인하면 다시 열립니다.',
+      signedAs: '로그인한 등급',
+      empty:
+        '플릿에 아직 월드가 없습니다. 각 월드는 Summa의 카드와 numinia-assets의 오더로 태어납니다(ADR-069).',
     },
     census: {
       title: '시민 명부',
@@ -1047,6 +1093,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       created: 'Criado',
       count: 'assets',
       readOnly: 'Somente leitura: escrever no repositório de dados precisa de sua própria decisão.',
+    },
+    worlds: {
+      title: 'Mundos',
+      intro:
+        'A frota de mundos públicos: quais mundos existem, onde rodam e em que estado. Só os Oráculos veem esta sala.',
+      forbiddenNote:
+        'Esta sala é só para Oráculos. Entre com a carteira que é de um e ela volta a abrir.',
+      signedAs: 'Você entrou como',
+      empty:
+        'Ainda não há mundos na frota. Cada mundo nasce com sua ficha na Summa e sua ordem em numinia-assets (ADR-069).',
     },
     census: {
       title: 'Censo',

@@ -20,7 +20,8 @@ export type LapSection =
   | 'stats'
   | 'settings'
   | 'admin-assets'
-  | 'admin-census';
+  | 'admin-census'
+  | 'admin-worlds';
 
 interface Props {
   locale: SupportedLocale;
@@ -47,7 +48,8 @@ type IconName =
   | 'bell'
   | 'gear'
   | 'package'
-  | 'users';
+  | 'users'
+  | 'planet';
 const ITEMS: ReadonlyArray<{
   id: LapSection | 'updates';
   href: string;
@@ -70,6 +72,12 @@ const ITEMS: ReadonlyArray<{
 const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: IconName }> = [
   { id: 'admin-assets', href: `${prefix}/lap/admin/assets/`, label: t.admin.assets, icon: 'package' },
   { id: 'admin-census', href: `${prefix}/lap/admin/census/`, label: t.census.title, icon: 'users' },
+];
+
+/** Oracle-only rooms inside the management zone (ADR-069): signposted only
+    for the Oracle rank; the endpoint behind each one is the lock. */
+const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: IconName }> = [
+  { id: 'admin-worlds', href: `${prefix}/lap/admin/worlds/`, label: t.worlds.title, icon: 'planet' },
 ];
 ---
 
@@ -127,6 +135,22 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
               </li>
             ))
           }
+          {
+            ORACLE.map((item) => (
+              <li data-oracle-only hidden>
+                <a
+                  href={item.href}
+                  data-section={item.id}
+                  aria-current={item.id === current ? 'page' : undefined}
+                  title={item.label}
+                  data-metric={`lap-nav-${item.id}`}
+                >
+                  <Icon name={item.icon} size={18} />
+                  <span class="texto">{item.label}</span>
+                </a>
+              </li>
+            ))
+          }
         </ul>
       </div>
     </nav>
@@ -165,6 +189,11 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
     .then((session: { rank: string } | null) => {
       if (session && ['archon', 'oracle'].includes(session.rank)) {
         document.querySelector('[data-admin-zone]')?.removeAttribute('hidden');
+      }
+      if (session?.rank === 'oracle') {
+        document
+          .querySelectorAll('[data-oracle-only]')
+          .forEach((item) => item.removeAttribute('hidden'));
       }
     })
     .catch(() => undefined);
