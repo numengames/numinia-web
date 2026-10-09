@@ -179,6 +179,34 @@ describe('readFleet', () => {
     const pulls = fakeFetch(bookRoutes({ [`${API}/pulls?state=open&per_page=100`]: fail(429) }));
     await expect(readFleet(pulls.fetch, null)).rejects.toThrow('GitHub answered 429 on pulls');
   });
+
+  it('fails loud when GitHub answers in a shape it does not expect', async () => {
+    const DIR = `${API}/contents/open-worlds?ref=main`;
+    const PULLS = `${API}/pulls?state=open&per_page=100`;
+    const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
+    const commit = {
+      sha: 'abc1234',
+      html_url: 'u',
+      author: null,
+      commit: { message: 'm', author: { name: 'n', date: 'd' } },
+    };
+    const cases: Record<string, Response>[] = [
+      { [DIR]: ok({}) },
+      { [DIR]: ok(['x']) },
+      { [DIR]: ok([null]) },
+      { [DIR]: ok([{ name: 'a.json', type: 'file', download_url: 7 }]) },
+      { [DIR]: ok([{ name: 1, type: 'file', download_url: null }]) },
+      { [PULLS]: ok([{ number: '7', html_url: 'u', head: { ref: 'r' } }]) },
+      { [PULLS]: ok([{ number: 7, html_url: 'u', head: null }]) },
+      { [COMMITS]: ok([{ ...commit, author: { login: 3 } }]) },
+      { [COMMITS]: ok([{ ...commit, commit: { message: 'm' } }]) },
+      { [COMMITS]: ok([{ ...commit, sha: null }]) },
+    ];
+    for (const overrides of cases) {
+      const { fetch } = fakeFetch(bookRoutes(overrides));
+      await expect(readFleet(fetch, null)).rejects.toMatchObject({ name: 'FleetError', status: 0 });
+    }
+  });
 });
 
 describe('probeWorld — like a visitor', () => {

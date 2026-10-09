@@ -81,23 +81,72 @@ async function getJson(
   return response.json();
 }
 
-const DirShape = z.array(
-  z.object({ name: z.string(), type: z.string(), download_url: z.string().nullable() }),
-);
-const PullsShape = z.array(
-  z.object({ number: z.number(), html_url: z.string(), head: z.object({ ref: z.string() }) }),
-);
-const CommitsShape = z.array(
-  z.object({
-    sha: z.string(),
-    html_url: z.string(),
-    author: z.object({ login: z.string() }).nullable(),
-    commit: z.object({
-      message: z.string(),
-      author: z.object({ name: z.string(), date: z.string() }),
-    }),
-  }),
-);
+// The read path also runs in the Oracle's browser (readFleetHere), so it
+// checks GitHub's answers by hand: zod there would move into a chunk shared
+// with every other island, and the pages that never open the room would pay.
+type Obj = Readonly<Record<string, unknown>>;
+
+const unexpected = (what: string): FleetError => new FleetError(0, `${what} (unexpected shape)`);
+
+function obj(value: unknown, what: string): Obj {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw unexpected(what);
+  return value as Obj;
+}
+
+function list(value: unknown, what: string): readonly unknown[] {
+  if (!Array.isArray(value)) throw unexpected(what);
+  return value;
+}
+
+function str(from: Obj, key: string, what: string): string {
+  const value = from[key];
+  if (typeof value !== 'string') throw unexpected(what);
+  return value;
+}
+
+interface DirEntry {
+  readonly name: string;
+  readonly type: string;
+  readonly download_url: string | null;
+}
+
+function dirEntries(value: unknown): DirEntry[] {
+  return list(value, 'dir').map((item) => {
+    const entry = obj(item, 'dir');
+    const url = entry['download_url'];
+    if (url !== null && typeof url !== 'string') throw unexpected('dir');
+    return { name: str(entry, 'name', 'dir'), type: str(entry, 'type', 'dir'), download_url: url };
+  });
+}
+
+function pulls(value: unknown): { number: number; url: string; ref: string }[] {
+  return list(value, 'pulls').map((item) => {
+    const pull = obj(item, 'pulls');
+    if (typeof pull['number'] !== 'number') throw unexpected('pulls');
+    return {
+      number: pull['number'],
+      url: str(pull, 'html_url', 'pulls'),
+      ref: str(obj(pull['head'], 'pulls'), 'ref', 'pulls'),
+    };
+  });
+}
+
+function commits(value: unknown): HistoryEntry[] {
+  return list(value, 'commits').map((item) => {
+    const entry = obj(item, 'commits');
+    const commit = obj(entry['commit'], 'commits');
+    const author = obj(commit['author'], 'commits');
+    const login =
+      entry['author'] === null ? null : str(obj(entry['author'], 'commits'), 'login', 'commits');
+    return {
+      sha: str(entry, 'sha', 'commits').slice(0, 7),
+      subject: str(commit, 'message', 'commits').split('\n')[0] as string,
+      author: login ?? str(author, 'name', 'commits'),
+      date: str(author, 'date', 'commits'),
+      url: str(entry, 'html_url', 'commits'),
+    };
+  });
+}
 
 export interface HistoryEntry {
   readonly sha: string;
@@ -129,7 +178,7 @@ async function readOrders(
   // No folder yet is an empty fleet, not an error.
   if (response.status === 404) return { orders: [], invalid: [] };
   if (!response.ok) throw new FleetError(response.status, `${FLEET_DIR}/`);
-  const entries = DirShape.parse(await response.json()).filter(
+  const entries = dirEntries(await response.json()).filter(
     (entry) => entry.type === 'file' && entry.name.endsWith('.json') && entry.download_url,
   );
   const files = await Promise.all(
@@ -151,7 +200,7 @@ async function readOrders(
 
 /** The whole order book as the room needs it: orders, open proposals, recent history. */
 export async function readFleet(fetchImpl: Fetch, token: string | null): Promise<FleetSnapshot> {
-  const [book, pulls, commits] = await Promise.all([
+  const [book, openPulls, recent] = await Promise.all([
     readOrders(fetchImpl, token),
     getJson(fetchImpl, `${API}/pulls?state=open&per_page=100`, token, 'pulls'),
     getJson(
@@ -162,18 +211,11 @@ export async function readFleet(fetchImpl: Fetch, token: string | null): Promise
     ),
   ]);
   const pending: PendingChange[] = [];
-  for (const pull of PullsShape.parse(pulls)) {
-    const change = parseChangeBranch(pull.head.ref);
-    if (change) pending.push({ ...change, number: pull.number, url: pull.html_url });
+  for (const pull of pulls(openPulls)) {
+    const change = parseChangeBranch(pull.ref);
+    if (change) pending.push({ ...change, number: pull.number, url: pull.url });
   }
-  const history = CommitsShape.parse(commits).map((entry) => ({
-    sha: entry.sha.slice(0, 7),
-    subject: entry.commit.message.split('\n')[0] as string,
-    author: entry.author?.login ?? entry.commit.author.name,
-    date: entry.commit.author.date,
-    url: entry.html_url,
-  }));
-  return { ...book, pending, history };
+  return { ...book, pending, history: commits(recent) };
 }
 
 /** Ask a world's public `/status`, like a visitor. Never throws. */
@@ -429,9 +471,10 @@ export interface Proposal {
   readonly url: string;
 }
 
-const RefShape = z.object({ object: z.object({ sha: z.string() }) });
-const FileShape = z.object({ sha: z.string(), content: z.string() });
-const PullShape = z.object({ number: z.number(), html_url: z.string() });
+// Built on use, so a bundle that never proposes (the browser's read path) drops zod.
+const RefShape = () => z.object({ object: z.object({ sha: z.string() }) });
+const FileShape = () => z.object({ sha: z.string(), content: z.string() });
+const PullShape = () => z.object({ number: z.number(), html_url: z.string() });
 
 function decodeBase64(content: string): string {
   const binary = atob(content.replace(/\s/g, ''));
@@ -481,7 +524,7 @@ export async function proposeChange(
   const action: ChangeAction = change.action;
   const path = orderPath(id);
 
-  const ref = RefShape.parse(
+  const ref = RefShape().parse(
     await expectOk(
       await fetchImpl(`${API}/git/ref/heads/${DEPOT_BRANCH}`, { headers: headers(token) }),
     ),
@@ -493,7 +536,7 @@ export async function proposeChange(
   if (action === 'create' && current.ok) throw new ProposalError('exists', 409);
   if (action !== 'create' && current.status === 404) throw new ProposalError('missing', 404);
   if (!current.ok && current.status !== 404) throw new ProposalError('github', current.status);
-  const file = current.ok ? FileShape.parse(await current.json()) : null;
+  const file = current.ok ? FileShape().parse(await current.json()) : null;
 
   const branch = changeBranch(id, action, stamp);
   await expectOk(
@@ -535,7 +578,7 @@ export async function proposeChange(
     );
   }
 
-  const pull = PullShape.parse(
+  const pull = PullShape().parse(
     await expectOk(
       await send(fetchImpl, token, 'POST', `${API}/pulls`, {
         title: proposalTitle(action, id),
