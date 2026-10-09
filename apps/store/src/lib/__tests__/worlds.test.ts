@@ -35,6 +35,7 @@ import {
   proposalTitle,
   readProbe,
   renderOrder,
+  rowPlace,
   suggestDomain,
   withState,
   worldCards,
@@ -426,6 +427,90 @@ describe('buildRows — what was asked for, crossed with what answers', () => {
       pending: [],
     });
     expect(rows.map((row) => row.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('legacy worlds and faces — watched, never changed', () => {
+  const hive = { id: 'hive', domain: 'hive.numinia.com', server: 'old-1' };
+  const quiet = { id: 'quiet', domain: 'quiet.numinia.com', server: 'old-1' };
+  const moved = { id: 'moved', domain: 'agora.numen.games', server: 'old-1' };
+
+  function legacyRows(): WorldRow[] {
+    return buildRows({
+      orders: [order('agora'), order('bare')],
+      cards: [{ slug: 'agora', title: 'Agora', cover: '/a.webp' }],
+      probes: {
+        hive: { ok: true, users: 2, uptime: 60, commit: '0e20453' },
+        quiet: { ok: false, reason: 'timeout' },
+      },
+      pending: [],
+      legacy: [hive, quiet, moved, { ...moved, id: 'agora', domain: 'elsewhere.numinia.com' }],
+      faces: {
+        hive: { title: 'The Hive', image: 'https://hive.numinia.com/assets/x.jpeg' },
+        bare: { title: 'Bare World', image: null },
+        agora: { title: 'Ignored: the card wins', image: '/ignored.webp' },
+      },
+    });
+  }
+
+  it('lists a legacy world with its own face and live status, and no order', () => {
+    const rows = legacyRows();
+    const by = (id: string): WorldRow => rows.find((row) => row.id === id) as WorldRow;
+    expect(by('hive')).toMatchObject({
+      title: 'The Hive',
+      cover: 'https://hive.numinia.com/assets/x.jpeg',
+      status: 'running',
+      order: null,
+      pending: null,
+      missingCard: false,
+      legacy: hive,
+    });
+    expect(by('quiet')).toMatchObject({ title: 'quiet', cover: null, status: 'unreachable' });
+  });
+
+  it('drops a legacy world once an order holds its id or its address', () => {
+    const ids = legacyRows().map((row) => row.id);
+    expect(ids).not.toContain('moved');
+    expect(ids.filter((id) => id === 'agora')).toHaveLength(1);
+  });
+
+  it('names and pictures an ordered world without a card by its own page; the card wins', () => {
+    const rows = legacyRows();
+    expect(rows.find((row) => row.id === 'bare')).toMatchObject({
+      title: 'Bare World',
+      cover: null,
+      missingCard: true,
+      legacy: null,
+    });
+    expect(rows.find((row) => row.id === 'agora')).toMatchObject({
+      title: 'Agora',
+      cover: '/a.webp',
+    });
+  });
+
+  it('knows nothing of a legacy world that was never probed', () => {
+    const [row] = buildRows({ orders: [], cards: [], probes: {}, pending: [], legacy: [hive] });
+    expect(row).toMatchObject({ status: 'unknown', title: 'hive', probe: null });
+  });
+
+  it('places, filters and groups a legacy world by its server', () => {
+    const rows = legacyRows();
+    const hiveRow = rows.find((row) => row.id === 'hive') as WorldRow;
+    expect(rowPlace(hiveRow)).toEqual(hive);
+    expect(rowPlace(rows.find((row) => row.id === 'agora') as WorldRow)).toMatchObject({
+      server: 'open-1',
+      domain: 'agora.numen.games',
+    });
+    expect(fleetServers(rows)).toEqual(['old-1', 'open-1']);
+    const all = { query: '', status: 'all', server: '' } as const;
+    expect(filterRows(rows, { ...all, server: 'old-1' }).map((row) => row.id)).toEqual([
+      'quiet',
+      'hive',
+    ]);
+    expect(filterRows(rows, { ...all, query: 'hive.numinia' }).map((row) => row.id)).toEqual([
+      'hive',
+    ]);
+    expect(groupByServer(rows).map((group) => group.server)).toEqual(['old-1', 'open-1']);
   });
 });
 

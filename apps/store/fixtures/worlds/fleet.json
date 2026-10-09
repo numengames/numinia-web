@@ -48,6 +48,14 @@
     }
   ],
   "invalid": [{ "file": "old-plaza.json", "problems": ["image"] }],
+  "legacy": [
+    { "id": "hive", "domain": "hive.numen.games", "server": "legacy-1" },
+    { "id": "sandbox", "domain": "sandbox.numen.games", "server": "legacy-1" }
+  ],
+  "faces": {
+    "hive": { "title": "The Hive", "image": "/images/art/citizens.webp" },
+    "sandbox": { "title": "World", "image": null }
+  },
   "cards": [
     { "slug": "agora-plaza", "title": "Agora Plaza", "cover": "/images/art/city.webp" },
     { "slug": "akasha-museum", "title": "Akasha Museum", "cover": "/images/art/cosmos.webp" },
@@ -60,6 +68,8 @@
     { "slug": "scenic-circle", "title": "Scenic Circle", "cover": "/images/art/interpret.webp" }
   ],
   "probes": {
+    "hive": { "ok": true, "users": 2, "uptime": 3302758, "commit": "0e20453" },
+    "sandbox": { "ok": true, "users": 0, "uptime": 1417827, "commit": "0e20453" },
     "agora-plaza": { "ok": true, "users": 7, "uptime": 12000, "commit": "0e20453" },
     "atlantis-library": { "ok": true, "users": 0, "uptime": 190800, "commit": "0e20453" },
     "alchemists-tower": { "ok": true, "users": 1, "uptime": 2700, "commit": "5091ad9" },

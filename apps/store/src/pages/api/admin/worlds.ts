@@ -6,6 +6,10 @@
  *
  * GET  reads the fleet: orders and proposals from numinia-assets, cards and
  *      covers from the Summa, liveness from each world's public /status.
+ *      Without WORLDS_GITHUB_TOKEN it answers who asks and the cards, and
+ *      the Oracle's browser reads the public order book itself (GitHub
+ *      refuses anonymous readers on Cloudflare's shared addresses);
+ *      `?probe=` then asks the running worlds from here.
  * POST proposes ONE change as a pull request on the order book — never a
  *      write anywhere else. Without WORLDS_GITHUB_TOKEN it answers 503 and
  *      the room opens the same change on GitHub, under the Oracle's account.
@@ -14,6 +18,7 @@
 import type { APIRoute } from 'astro';
 import { hasPermission, type Rank } from '@numinia/domain';
 import { z } from 'zod';
+import legacyBook from '../../../data/legacy-worlds.json';
 import fixtureFleet from '../../../../fixtures/worlds/fleet.json';
 import { authConfigured, SESSION_COOKIE, verifySession } from '../../../lib/auth/server';
 import { runtimeEnv } from '../../../lib/runtime-env';
@@ -22,16 +27,21 @@ import {
   buildRows,
   draftToOrder,
   worldCards,
+  type LegacyWorld,
   type PendingChange,
   type Probe,
   type WorldCardInfo,
+  type WorldFace,
 } from '../../../lib/worlds';
 import {
   FleetError,
   probeFleet,
+  probeWorlds,
   ProposalError,
   proposeChange,
+  readFaces,
   readFleet,
+  watchByIds,
   worldsToken,
   type Change,
   type FleetSnapshot,
@@ -58,8 +68,12 @@ const useFixture = (): boolean => process.env.DATA_SOURCE === 'fixture';
 interface Fixture extends FleetSnapshot {
   readonly cards: readonly WorldCardInfo[];
   readonly probes: Readonly<Record<string, Probe>>;
+  readonly legacy: readonly LegacyWorld[];
+  readonly faces: Readonly<Record<string, WorldFace>>;
 }
 const FIXTURE = fixtureFleet as unknown as Fixture;
+// The worlds the old machine runs by hand: watched, never changed.
+const LEGACY = (legacyBook as unknown as { readonly worlds: readonly LegacyWorld[] }).worlds;
 
 // One read of the order book per minute per isolate: GitHub's unauthenticated
 // quota is small and shared, and the fleet does not change by the second.
@@ -79,19 +93,58 @@ const unreadable = (error: unknown): Response =>
     { status: 502 },
   );
 
-export const GET: APIRoute = async ({ cookies }) => {
+export const GET: APIRoute = async ({ cookies, url }) => {
   const session = await sessionOf(cookies.get(SESSION_COOKIE)?.value);
   // Fail closed: no session, or a rank without the permission, sees nothing.
   if (!session || !hasPermission(session.rank, 'manage-worlds')) return forbidden();
+
+  // ?probe=a,b — the running worlds' /status (and face, without a card),
+  // asked from here because a browser cannot: each domain is read from its
+  // order, never from the query.
+  const probe = url.searchParams.get('probe');
+  if (probe !== null) {
+    const watch = useFixture()
+      ? { probes: FIXTURE.probes, faces: FIXTURE.faces }
+      : await watchByIds(
+          fetch,
+          probe.split(','),
+          new Set(worldCards((await loadSumma()).entities).map((card) => card.slug)),
+        );
+    return Response.json(watch, { headers: { 'cache-control': 'no-store' } });
+  }
 
   const token = useFixture() ? null : worldsToken(runtimeEnv());
   let snapshot: FleetSnapshot;
   let cards: readonly WorldCardInfo[];
   let probes: Readonly<Record<string, Probe>>;
+  let legacy: readonly LegacyWorld[];
+  let faces: Readonly<Record<string, WorldFace>>;
   if (useFixture()) {
     snapshot = FIXTURE;
     cards = FIXTURE.cards;
     probes = FIXTURE.probes;
+    legacy = FIXTURE.legacy;
+    faces = FIXTURE.faces;
+  } else if (token === null) {
+    // No key: GitHub refuses anonymous readers on Cloudflare's shared
+    // addresses, so the Oracle's browser reads the public order book itself.
+    // The legacy worlds need no book: they are watched from here.
+    const [watched, read] = await Promise.all([
+      probeWorlds(fetch, LEGACY),
+      readFaces(fetch, LEGACY),
+    ]);
+    return Response.json(
+      {
+        rank: session.rank,
+        canPropose: false,
+        cards: worldCards((await loadSumma()).entities),
+        legacy: LEGACY,
+        probes: watched,
+        faces: read,
+        readHere: true,
+      },
+      { headers: { 'cache-control': 'no-store' } },
+    );
   } else {
     try {
       snapshot = await fleet(token);
@@ -99,14 +152,34 @@ export const GET: APIRoute = async ({ cookies }) => {
       return unreadable(error);
     }
     cards = worldCards((await loadSumma()).entities);
-    probes = await probeFleet(fetch, snapshot.orders);
+    legacy = LEGACY;
+    // A world without a card is named and pictured by its own page.
+    const carded = new Set(cards.map((card) => card.slug));
+    const bare = [
+      ...snapshot.orders.filter((order) => order.state === 'running' && !carded.has(order.card)),
+      ...legacy,
+    ];
+    const [ordered, watched, read] = await Promise.all([
+      probeFleet(fetch, snapshot.orders),
+      probeWorlds(fetch, legacy),
+      readFaces(fetch, bare),
+    ]);
+    probes = { ...watched, ...ordered };
+    faces = read;
   }
 
   return Response.json(
     {
       rank: session.rank,
       canPropose: token !== null,
-      rows: buildRows({ orders: snapshot.orders, cards, probes, pending: snapshot.pending }),
+      rows: buildRows({
+        orders: snapshot.orders,
+        cards,
+        probes,
+        pending: snapshot.pending,
+        legacy,
+        faces,
+      }),
       cards,
       invalid: snapshot.invalid,
       history: snapshot.history,

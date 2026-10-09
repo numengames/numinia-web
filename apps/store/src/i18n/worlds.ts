@@ -53,6 +53,8 @@ export interface WorldsRoomMessages {
   readonly badges: {
     readonly missingCard: string;
     readonly pending: string;
+    readonly legacy: string;
+    readonly legacyNote: string;
   };
   readonly fields: {
     readonly world: string;
@@ -178,7 +180,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       requested: 'pedido en la propuesta #{n}',
       unknown: 'todavía sin comprobar',
     },
-    badges: { missingCard: 'Sin ficha', pending: 'Cambio pedido · #{n}' },
+    badges: {
+      missingCard: 'Sin ficha',
+      pending: 'Cambio pedido · #{n}',
+      legacy: 'Legado',
+      legacyNote:
+        'Corre en la máquina antigua, montada a mano antes de la flota: la sala lo vigila, pero no lo cambia.',
+    },
     fields: {
       world: 'Mundo',
       address: 'Dirección',
@@ -312,7 +320,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       requested: 'requested in proposal #{n}',
       unknown: 'not checked yet',
     },
-    badges: { missingCard: 'No card', pending: 'Change requested · #{n}' },
+    badges: {
+      missingCard: 'No card',
+      pending: 'Change requested · #{n}',
+      legacy: 'Legacy',
+      legacyNote:
+        'Runs on the old machine, set up by hand before the fleet: the room watches it but does not change it.',
+    },
     fields: {
       world: 'World',
       address: 'Address',
@@ -445,7 +459,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       requested: '提案 #{n} で申請中',
       unknown: 'まだ確認していません',
     },
-    badges: { missingCard: 'カードなし', pending: '変更申請中 · #{n}' },
+    badges: {
+      missingCard: 'カードなし',
+      pending: '変更申請中 · #{n}',
+      legacy: 'レガシー',
+      legacyNote:
+        'フリート以前に手作業で構築した旧マシンで稼働中。このルームは見守るだけで、変更はしません。',
+    },
     fields: {
       world: 'ワールド',
       address: 'アドレス',
@@ -577,7 +597,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       requested: '제안 #{n}에서 요청됨',
       unknown: '아직 확인하지 않음',
     },
-    badges: { missingCard: '카드 없음', pending: '변경 요청됨 · #{n}' },
+    badges: {
+      missingCard: '카드 없음',
+      pending: '변경 요청됨 · #{n}',
+      legacy: '레거시',
+      legacyNote:
+        '플릿 이전에 수작업으로 구성한 이전 서버에서 실행 중입니다. 이 방은 지켜보기만 하고 바꾸지 않습니다.',
+    },
     fields: {
       world: '월드',
       address: '주소',
@@ -713,7 +739,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       requested: 'pedido na proposta #{n}',
       unknown: 'ainda não verificado',
     },
-    badges: { missingCard: 'Sem ficha', pending: 'Mudança pedida · #{n}' },
+    badges: {
+      missingCard: 'Sem ficha',
+      pending: 'Mudança pedida · #{n}',
+      legacy: 'Legado',
+      legacyNote:
+        'Roda na máquina antiga, montada à mão antes da frota: a sala o acompanha, mas não o altera.',
+    },
     fields: {
       world: 'Mundo',
       address: 'Endereço',

@@ -9,10 +9,16 @@ import { renderOrder, type WorldOrder } from '../worlds';
 import {
   FleetError,
   ProposalError,
+  watchByIds,
   probeFleet,
   probeWorld,
+  probeWorlds,
   proposeChange,
+  parseFace,
+  readFace,
+  readFaces,
   readFleet,
+  readFleetHere,
   worldsToken,
 } from '../worlds-source';
 
@@ -173,6 +179,34 @@ describe('readFleet', () => {
     const pulls = fakeFetch(bookRoutes({ [`${API}/pulls?state=open&per_page=100`]: fail(429) }));
     await expect(readFleet(pulls.fetch, null)).rejects.toThrow('GitHub answered 429 on pulls');
   });
+
+  it('fails loud when GitHub answers in a shape it does not expect', async () => {
+    const DIR = `${API}/contents/open-worlds?ref=main`;
+    const PULLS = `${API}/pulls?state=open&per_page=100`;
+    const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
+    const commit = {
+      sha: 'abc1234',
+      html_url: 'u',
+      author: null,
+      commit: { message: 'm', author: { name: 'n', date: 'd' } },
+    };
+    const cases: Record<string, Response>[] = [
+      { [DIR]: ok({}) },
+      { [DIR]: ok(['x']) },
+      { [DIR]: ok([null]) },
+      { [DIR]: ok([{ name: 'a.json', type: 'file', download_url: 7 }]) },
+      { [DIR]: ok([{ name: 1, type: 'file', download_url: null }]) },
+      { [PULLS]: ok([{ number: '7', html_url: 'u', head: { ref: 'r' } }]) },
+      { [PULLS]: ok([{ number: 7, html_url: 'u', head: null }]) },
+      { [COMMITS]: ok([{ ...commit, author: { login: 3 } }]) },
+      { [COMMITS]: ok([{ ...commit, commit: { message: 'm' } }]) },
+      { [COMMITS]: ok([{ ...commit, sha: null }]) },
+    ];
+    for (const overrides of cases) {
+      const { fetch } = fakeFetch(bookRoutes(overrides));
+      await expect(readFleet(fetch, null)).rejects.toMatchObject({ name: 'FleetError', status: 0 });
+    }
+  });
 });
 
 describe('probeWorld — like a visitor', () => {
@@ -227,6 +261,75 @@ describe('probeWorld — like a visitor', () => {
     );
     expect(Object.keys(probes)).toEqual(['agora']);
     expect(calls).toHaveLength(1);
+  });
+
+  it('asks every world of a list it is given (the legacy list has no state)', async () => {
+    const { fetch, calls } = fakeFetch(() => ok({ uptime: 1, connectedUsers: [] }));
+    const probes = await probeWorlds(fetch, [
+      { id: 'vic', domain: 'vic.numinia.com' },
+      { id: 'demo', domain: 'demo.numinia.com' },
+    ]);
+    expect(Object.keys(probes)).toEqual(['vic', 'demo']);
+    expect(calls.map((call) => call.url)).toEqual([
+      'https://vic.numinia.com/status',
+      'https://demo.numinia.com/status',
+    ]);
+  });
+});
+
+const PAGE = `<!DOCTYPE html><html><head>
+<title>The Cultural Cyber Hive</title>
+<meta property="og:title" content="The Cultural Cyber Hive &amp; Friends">
+<meta property="og:description" content="A Little Playground for Digital Art">
+<meta property="og:image" content="https://hive.numinia.com/assets/fe6b.jpeg">
+</head></html>`;
+
+describe('a world’s face — its own title and loading picture', () => {
+  it('reads the og: title and image the engine serves', () => {
+    expect(parseFace(PAGE, 'hive.numinia.com')).toEqual({
+      title: 'The Cultural Cyber Hive & Friends',
+      image: 'https://hive.numinia.com/assets/fe6b.jpeg',
+    });
+  });
+
+  it('falls back to the <title>, and keeps only a picture the world itself serves', () => {
+    const page =
+      '<title>Escenario del crimen</title><meta property="og:title" content=""><meta property="og:image" content="https://elsewhere.com/x.jpeg">';
+    expect(parseFace(page, 'demo.numinia.com')).toEqual({
+      title: 'Escenario del crimen',
+      image: null,
+    });
+    expect(parseFace('<meta property="og:image" content="">', 'x.numinia.com')).toEqual({
+      title: null,
+      image: null,
+    });
+    expect(parseFace('<title> &lt;World&gt; &quot;1&quot; &#39;2&#39; </title>', 'x')).toEqual({
+      title: '<World> "1" \'2\'',
+      image: null,
+    });
+  });
+
+  it('asks the page like a visitor, and gives up quietly', async () => {
+    const page = fakeFetch(() => text(PAGE));
+    expect(await readFace(page.fetch, 'hive.numinia.com')).toMatchObject({
+      title: expect.any(String),
+    });
+    expect(page.calls[0]?.url).toBe('https://hive.numinia.com/');
+    expect(await readFace(fakeFetch(() => fail(502)).fetch, 'hive.numinia.com')).toBeNull();
+    expect(
+      await readFace(fakeFetch(() => Promise.reject(new TypeError('dns'))).fetch, 'x'),
+    ).toBeNull();
+  });
+
+  it('reads several faces and leaves out the worlds that do not answer', async () => {
+    const { fetch } = fakeFetch((call) =>
+      call.url === 'https://hive.numinia.com/' ? text(PAGE) : fail(404),
+    );
+    const faces = await readFaces(fetch, [
+      { id: 'hive', domain: 'hive.numinia.com' },
+      { id: 'gone', domain: 'gone.numinia.com' },
+    ]);
+    expect(Object.keys(faces)).toEqual(['hive']);
   });
 });
 
@@ -373,5 +476,113 @@ describe('proposeChange — one branch, one commit, one pull request', () => {
       number: 21,
       url: 'https://github.com/x/pull/21',
     });
+  });
+});
+
+const LIVE = { uptime: 30, connectedUsers: [{ name: 'x' }], commitHash: 'abcdef123' };
+const SEEN = { ok: true, users: 1, uptime: 30, commit: 'abcdef1' } as const;
+
+describe('watchByIds — the Worker asks only hosts an order names', () => {
+  const live = (call: Call): Response | undefined => {
+    if (call.url === `${RAW}/agora.json`) return text(renderOrder(ORDER));
+    if (call.url === 'https://agora.numen.games/status') return ok(LIVE);
+    if (call.url === 'https://agora.numen.games/') return text('<title>Agora</title>');
+    return undefined;
+  };
+
+  it('reads each order raw, probes the running world and reads its face when it has no card', async () => {
+    const { fetch, calls } = fakeFetch(live);
+    expect(await watchByIds(fetch, ['agora', 'agora'], new Set())).toEqual({
+      probes: { agora: SEEN },
+      faces: { agora: { title: 'Agora', image: null } },
+    });
+    expect(calls.map((call) => call.url).sort()).toEqual(
+      [
+        `${RAW}/agora.json`,
+        'https://agora.numen.games/',
+        'https://agora.numen.games/status',
+      ].sort(),
+    );
+  });
+
+  it('does not read the face of a world that has its card', async () => {
+    const { fetch, calls } = fakeFetch(live);
+    expect(await watchByIds(fetch, ['agora'], new Set(['agora']))).toEqual({
+      probes: { agora: SEEN },
+      faces: {},
+    });
+    expect(calls.some((call) => call.url === 'https://agora.numen.games/')).toBe(false);
+  });
+
+  it('skips ids that are not slugs, missing or broken orders, failed reads and stopped worlds', async () => {
+    const rest = { ...ORDER, id: 'rest', card: 'rest', state: 'stopped' as const };
+    const { fetch, calls } = fakeFetch((call) => {
+      if (call.url === `${RAW}/missing.json`) return fail(404);
+      if (call.url === `${RAW}/broken.json`) return text('{}');
+      if (call.url === `${RAW}/rest.json`) return text(renderOrder(rest));
+      return undefined;
+    });
+    expect(
+      await watchByIds(
+        fetch,
+        ['../etc', 'evil.com/x', 'missing', 'broken', 'boom', 'rest'],
+        new Set(),
+      ),
+    ).toEqual({ probes: {}, faces: {} });
+    expect(calls.map((call) => call.url)).toEqual([
+      `${RAW}/missing.json`,
+      `${RAW}/broken.json`,
+      `${RAW}/boom.json`,
+      `${RAW}/rest.json`,
+    ]);
+  });
+});
+
+describe('readFleetHere — the order book read by the Oracle’s browser', () => {
+  const VIC = { id: 'vic', domain: 'vic.numinia.com', server: 'vps-76aa7afe' };
+  const ANSWER = {
+    rank: 'oracle',
+    canPropose: false,
+    cards: [],
+    legacy: [VIC],
+    probes: { vic: SEEN },
+    faces: { vic: { title: 'Vic', image: null } },
+  };
+  const WATCH = '/api/admin/worlds?probe=agora';
+  const statuses = (rows: readonly { id: string; status: string; title: string }[]) =>
+    rows.map((row) => [row.id, row.status, row.title]);
+
+  it('reads without a key, asks the Worker to watch the running worlds and keeps the legacy ones', async () => {
+    const { fetch, calls } = fakeFetch((call) =>
+      call.url === WATCH
+        ? ok({ probes: { agora: SEEN }, faces: { agora: { title: 'Agora', image: null } } })
+        : bookRoutes()(call),
+    );
+    const fleet = await readFleetHere(fetch, ANSWER);
+    expect(fleet.rank).toBe('oracle');
+    expect(fleet.canPropose).toBe(false);
+    expect(statuses(fleet.rows)).toEqual([
+      ['agora', 'running', 'Agora'],
+      ['vic', 'running', 'Vic'],
+    ]);
+    expect(fleet.invalid).toEqual([{ file: 'broken.json', problems: ['image'] }]);
+    expect(fleet.history).toHaveLength(2);
+    expect(calls.every((call) => call.auth === null)).toBe(true);
+  });
+
+  it('leaves a world unknown when the Worker cannot watch it', async () => {
+    for (const answer of [fail(500), ok({})]) {
+      const { fetch } = fakeFetch((call) => (call.url === WATCH ? answer : bookRoutes()(call)));
+      const fleet = await readFleetHere(fetch, { ...ANSWER, legacy: [] });
+      expect(statuses(fleet.rows)).toEqual([['agora', 'unknown', 'agora']]);
+    }
+  });
+
+  it('does not call the Worker when no world is running', async () => {
+    const stopped = text(renderOrder({ ...ORDER, state: 'stopped' }));
+    const { fetch, calls } = fakeFetch(bookRoutes({ [`${RAW}/agora.json`]: stopped }));
+    const fleet = await readFleetHere(fetch, { ...ANSWER, legacy: [] });
+    expect(statuses(fleet.rows)).toEqual([['agora', 'stopped', 'agora']]);
+    expect(calls.some((call) => call.url.startsWith('/api/'))).toBe(false);
   });
 });

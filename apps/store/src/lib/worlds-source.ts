@@ -19,6 +19,7 @@ import {
   DEPOT_BRANCH,
   FLEET_DIR,
   REVIEWERS,
+  buildRows,
   changeBranch,
   orderPath,
   parseChangeBranch,
@@ -33,7 +34,11 @@ import {
   type OrderProblem,
   type PendingChange,
   type Probe,
+  type LegacyWorld,
+  type WorldCardInfo,
+  type WorldFace,
   type WorldOrder,
+  type WorldRow,
 } from './worlds';
 
 const API = `https://api.github.com/repos/${DEPOT}`;
@@ -76,23 +81,72 @@ async function getJson(
   return response.json();
 }
 
-const DirShape = z.array(
-  z.object({ name: z.string(), type: z.string(), download_url: z.string().nullable() }),
-);
-const PullsShape = z.array(
-  z.object({ number: z.number(), html_url: z.string(), head: z.object({ ref: z.string() }) }),
-);
-const CommitsShape = z.array(
-  z.object({
-    sha: z.string(),
-    html_url: z.string(),
-    author: z.object({ login: z.string() }).nullable(),
-    commit: z.object({
-      message: z.string(),
-      author: z.object({ name: z.string(), date: z.string() }),
-    }),
-  }),
-);
+// The read path also runs in the Oracle's browser (readFleetHere), so it
+// checks GitHub's answers by hand: zod there would move into a chunk shared
+// with every other island, and the pages that never open the room would pay.
+type Obj = Readonly<Record<string, unknown>>;
+
+const unexpected = (what: string): FleetError => new FleetError(0, `${what} (unexpected shape)`);
+
+function obj(value: unknown, what: string): Obj {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw unexpected(what);
+  return value as Obj;
+}
+
+function list(value: unknown, what: string): readonly unknown[] {
+  if (!Array.isArray(value)) throw unexpected(what);
+  return value;
+}
+
+function str(from: Obj, key: string, what: string): string {
+  const value = from[key];
+  if (typeof value !== 'string') throw unexpected(what);
+  return value;
+}
+
+interface DirEntry {
+  readonly name: string;
+  readonly type: string;
+  readonly download_url: string | null;
+}
+
+function dirEntries(value: unknown): DirEntry[] {
+  return list(value, 'dir').map((item) => {
+    const entry = obj(item, 'dir');
+    const url = entry['download_url'];
+    if (url !== null && typeof url !== 'string') throw unexpected('dir');
+    return { name: str(entry, 'name', 'dir'), type: str(entry, 'type', 'dir'), download_url: url };
+  });
+}
+
+function pulls(value: unknown): { number: number; url: string; ref: string }[] {
+  return list(value, 'pulls').map((item) => {
+    const pull = obj(item, 'pulls');
+    if (typeof pull['number'] !== 'number') throw unexpected('pulls');
+    return {
+      number: pull['number'],
+      url: str(pull, 'html_url', 'pulls'),
+      ref: str(obj(pull['head'], 'pulls'), 'ref', 'pulls'),
+    };
+  });
+}
+
+function commits(value: unknown): HistoryEntry[] {
+  return list(value, 'commits').map((item) => {
+    const entry = obj(item, 'commits');
+    const commit = obj(entry['commit'], 'commits');
+    const author = obj(commit['author'], 'commits');
+    const login =
+      entry['author'] === null ? null : str(obj(entry['author'], 'commits'), 'login', 'commits');
+    return {
+      sha: str(entry, 'sha', 'commits').slice(0, 7),
+      subject: str(commit, 'message', 'commits').split('\n')[0] as string,
+      author: login ?? str(author, 'name', 'commits'),
+      date: str(author, 'date', 'commits'),
+      url: str(entry, 'html_url', 'commits'),
+    };
+  });
+}
 
 export interface HistoryEntry {
   readonly sha: string;
@@ -124,7 +178,7 @@ async function readOrders(
   // No folder yet is an empty fleet, not an error.
   if (response.status === 404) return { orders: [], invalid: [] };
   if (!response.ok) throw new FleetError(response.status, `${FLEET_DIR}/`);
-  const entries = DirShape.parse(await response.json()).filter(
+  const entries = dirEntries(await response.json()).filter(
     (entry) => entry.type === 'file' && entry.name.endsWith('.json') && entry.download_url,
   );
   const files = await Promise.all(
@@ -146,7 +200,7 @@ async function readOrders(
 
 /** The whole order book as the room needs it: orders, open proposals, recent history. */
 export async function readFleet(fetchImpl: Fetch, token: string | null): Promise<FleetSnapshot> {
-  const [book, pulls, commits] = await Promise.all([
+  const [book, openPulls, recent] = await Promise.all([
     readOrders(fetchImpl, token),
     getJson(fetchImpl, `${API}/pulls?state=open&per_page=100`, token, 'pulls'),
     getJson(
@@ -157,18 +211,11 @@ export async function readFleet(fetchImpl: Fetch, token: string | null): Promise
     ),
   ]);
   const pending: PendingChange[] = [];
-  for (const pull of PullsShape.parse(pulls)) {
-    const change = parseChangeBranch(pull.head.ref);
-    if (change) pending.push({ ...change, number: pull.number, url: pull.html_url });
+  for (const pull of pulls(openPulls)) {
+    const change = parseChangeBranch(pull.ref);
+    if (change) pending.push({ ...change, number: pull.number, url: pull.url });
   }
-  const history = CommitsShape.parse(commits).map((entry) => ({
-    sha: entry.sha.slice(0, 7),
-    subject: entry.commit.message.split('\n')[0] as string,
-    author: entry.author?.login ?? entry.commit.author.name,
-    date: entry.commit.author.date,
-    url: entry.html_url,
-  }));
-  return { ...book, pending, history };
+  return { ...book, pending, history: commits(recent) };
 }
 
 /** Ask a world's public `/status`, like a visitor. Never throws. */
@@ -204,13 +251,199 @@ export async function probeFleet(
   orders: readonly WorldOrder[],
   timeoutMs = 3000,
 ): Promise<Record<string, Probe>> {
-  const running = orders.filter((order) => order.state === 'running');
+  return probeWorlds(
+    fetchImpl,
+    orders.filter((order) => order.state === 'running'),
+    timeoutMs,
+  );
+}
+
+/** Probe any list of worlds by address, in parallel (the legacy list has no state to filter on). */
+export async function probeWorlds(
+  fetchImpl: Fetch,
+  worlds: readonly { readonly id: string; readonly domain: string }[],
+  timeoutMs = 3000,
+): Promise<Record<string, Probe>> {
   const answers = await Promise.all(
-    running.map(
-      async (order) => [order.id, await probeWorld(fetchImpl, order.domain, timeoutMs)] as const,
+    worlds.map(
+      async (world) => [world.id, await probeWorld(fetchImpl, world.domain, timeoutMs)] as const,
     ),
   );
   return Object.fromEntries(answers);
+}
+
+// ---------------------------------------------------------------------------
+// A world's face: what its own page says it is (title and loading picture)
+// ---------------------------------------------------------------------------
+
+const ENTITIES: Readonly<Record<string, string>> = {
+  '&amp;': '&',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&lt;': '<',
+  '&gt;': '>',
+};
+
+const unescape = (text: string): string =>
+  text.replace(/&(?:amp|quot|#39|lt|gt);/g, (entity) => ENTITIES[entity] as string);
+
+function meta(html: string, property: string): string | null {
+  const match = new RegExp(`<meta\\s+property="${property}"\\s+content="([^"]*)"`, 'i').exec(html);
+  const value = unescape(match?.[1] ?? '').trim();
+  return value === '' ? null : value;
+}
+
+/**
+ * The engine serves each world's title and its Settings image as og: tags —
+ * the same picture the world shows while it loads. Only a picture served by
+ * the world itself is kept.
+ */
+export function parseFace(html: string, domain: string): WorldFace {
+  const titleTag = /<title>([^<]*)<\/title>/i.exec(html)?.[1];
+  const title = meta(html, 'og:title') ?? (unescape(titleTag ?? '').trim() || null);
+  const image = meta(html, 'og:image');
+  return { title, image: image?.startsWith(`https://${domain}/`) ? image : null };
+}
+
+/** Read a world's page like a visitor; null when it does not answer. Never throws. */
+export async function readFace(
+  fetchImpl: Fetch,
+  domain: string,
+  timeoutMs = 3000,
+): Promise<WorldFace | null> {
+  try {
+    const response = await fetchImpl(`https://${domain}/`, {
+      headers: { accept: 'text/html', 'user-agent': 'numinia-worlds-room' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) return null;
+    return parseFace((await response.text()).slice(0, 200_000), domain);
+  } catch {
+    return null;
+  }
+}
+
+/** The faces of several worlds, in parallel; a world that does not answer is left out. */
+export async function readFaces(
+  fetchImpl: Fetch,
+  worlds: readonly { readonly id: string; readonly domain: string }[],
+  timeoutMs = 3000,
+): Promise<Record<string, WorldFace>> {
+  const answers = await Promise.all(
+    worlds.map(
+      async (world) => [world.id, await readFace(fetchImpl, world.domain, timeoutMs)] as const,
+    ),
+  );
+  return Object.fromEntries(
+    answers.filter((entry): entry is readonly [string, WorldFace] => entry[1] !== null),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reading from the Oracle's own browser
+// ---------------------------------------------------------------------------
+
+const RAW = `https://raw.githubusercontent.com/${DEPOT}/${DEPOT_BRANCH}/${FLEET_DIR}`;
+const WORLD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_PROBES = 50;
+
+/** How the worlds look from outside: their /status and, without a card, their own page. */
+export interface Watch {
+  readonly probes: Readonly<Record<string, Probe>>;
+  readonly faces: Readonly<Record<string, WorldFace>>;
+}
+
+/**
+ * Watch the running worlds named by id. Each domain comes from the world's
+ * order in the depot, read raw, never from the caller: the Worker only ever
+ * asks a host that an approved order names. Invalid or unknown ids are
+ * skipped. A world whose card is not in `carded` is also read for its face.
+ */
+export async function watchByIds(
+  fetchImpl: Fetch,
+  ids: readonly string[],
+  carded: ReadonlySet<string>,
+  timeoutMs = 3000,
+): Promise<Watch> {
+  const wanted = [...new Set(ids)].filter((id) => WORLD_ID.test(id)).slice(0, MAX_PROBES);
+  const found = await Promise.all(
+    wanted.map(async (id): Promise<WorldOrder | null> => {
+      try {
+        const raw = await fetchImpl(`${RAW}/${id}.json`);
+        if (!raw.ok) return null;
+        const parsed = parseOrder(await raw.text(), id);
+        return 'order' in parsed ? parsed.order : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const running = found.filter(
+    (order): order is WorldOrder => order !== null && order.state === 'running',
+  );
+  const [probes, faces] = await Promise.all([
+    probeWorlds(fetchImpl, running, timeoutMs),
+    readFaces(
+      fetchImpl,
+      running.filter((order) => !carded.has(order.card)),
+      timeoutMs,
+    ),
+  ]);
+  return { probes, faces };
+}
+
+/** What the Worker answers when it holds no key: who asks, the cards, and the legacy worlds watched. */
+export interface KeylessAnswer extends Watch {
+  readonly rank: string;
+  readonly canPropose: boolean;
+  readonly cards: readonly WorldCardInfo[];
+  readonly legacy: readonly LegacyWorld[];
+}
+
+export interface RoomFleet {
+  readonly rank: string;
+  readonly canPropose: boolean;
+  readonly cards: readonly WorldCardInfo[];
+  readonly rows: readonly WorldRow[];
+  readonly invalid: readonly InvalidOrder[];
+  readonly history: readonly HistoryEntry[];
+}
+
+/**
+ * The order book read by the Oracle's own browser. The depot is public, and
+ * GitHub answers a person's own address where it refuses anonymous readers
+ * on Cloudflare's shared ones, so the room needs no key to read. The Worker
+ * adds only what needs a server: watching the running worlds.
+ */
+export async function readFleetHere(
+  fetchImpl: Fetch,
+  answer: KeylessAnswer,
+  watchUrl = '/api/admin/worlds?probe=',
+): Promise<RoomFleet> {
+  const snapshot = await readFleet(fetchImpl, null);
+  const running = snapshot.orders
+    .filter((order) => order.state === 'running')
+    .map((order) => order.id);
+  let watch: Partial<Watch> = {};
+  if (running.length > 0) {
+    const response = await fetchImpl(`${watchUrl}${running.join(',')}`);
+    if (response.ok) watch = (await response.json()) as Partial<Watch>;
+  }
+  return {
+    rank: answer.rank,
+    canPropose: answer.canPropose,
+    cards: answer.cards,
+    rows: buildRows({
+      orders: snapshot.orders,
+      cards: answer.cards,
+      probes: { ...answer.probes, ...watch.probes },
+      pending: snapshot.pending,
+      legacy: answer.legacy,
+      faces: { ...answer.faces, ...watch.faces },
+    }),
+    invalid: snapshot.invalid,
+    history: snapshot.history,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -238,9 +471,10 @@ export interface Proposal {
   readonly url: string;
 }
 
-const RefShape = z.object({ object: z.object({ sha: z.string() }) });
-const FileShape = z.object({ sha: z.string(), content: z.string() });
-const PullShape = z.object({ number: z.number(), html_url: z.string() });
+// Built on use, so a bundle that never proposes (the browser's read path) drops zod.
+const RefShape = () => z.object({ object: z.object({ sha: z.string() }) });
+const FileShape = () => z.object({ sha: z.string(), content: z.string() });
+const PullShape = () => z.object({ number: z.number(), html_url: z.string() });
 
 function decodeBase64(content: string): string {
   const binary = atob(content.replace(/\s/g, ''));
@@ -290,7 +524,7 @@ export async function proposeChange(
   const action: ChangeAction = change.action;
   const path = orderPath(id);
 
-  const ref = RefShape.parse(
+  const ref = RefShape().parse(
     await expectOk(
       await fetchImpl(`${API}/git/ref/heads/${DEPOT_BRANCH}`, { headers: headers(token) }),
     ),
@@ -302,7 +536,7 @@ export async function proposeChange(
   if (action === 'create' && current.ok) throw new ProposalError('exists', 409);
   if (action !== 'create' && current.status === 404) throw new ProposalError('missing', 404);
   if (!current.ok && current.status !== 404) throw new ProposalError('github', current.status);
-  const file = current.ok ? FileShape.parse(await current.json()) : null;
+  const file = current.ok ? FileShape().parse(await current.json()) : null;
 
   const branch = changeBranch(id, action, stamp);
   await expectOk(
@@ -344,7 +578,7 @@ export async function proposeChange(
     );
   }
 
-  const pull = PullShape.parse(
+  const pull = PullShape().parse(
     await expectOk(
       await send(fetchImpl, token, 'POST', `${API}/pulls`, {
         title: proposalTitle(action, id),
