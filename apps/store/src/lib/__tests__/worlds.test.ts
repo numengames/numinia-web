@@ -9,9 +9,14 @@ import { describe, expect, it } from 'vitest';
 import type { SummaCard } from '../summa';
 import {
   DEFAULT_IMAGE,
+  DEFAULT_SERVER,
+  FLEET_MACHINES,
+  WORLD_ZONES,
+  addressOwner,
   buildRows,
   buildTag,
   changeBranch,
+  compareDns,
   deleteOrderUrl,
   describeStatus,
   draftToOrder,
@@ -24,19 +29,24 @@ import {
   fleetStats,
   formatUptime,
   groupByServer,
+  inHouseZone,
+  joinDomain,
+  machineChoices,
+  machineHost,
   newOrderUrl,
   orderFileUrl,
   orderProblems,
   parseChangeBranch,
   parseOrder,
+  placeAllowed,
   problemFields,
   proposalBody,
   proposalCommit,
   proposalTitle,
+  readDohAnswer,
   readProbe,
   renderOrder,
   rowPlace,
-  suggestDomain,
   withState,
   worldCards,
   type PendingChange,
@@ -148,9 +158,16 @@ describe('the wizard draft', () => {
     expect(emptyDraft().server).toBe('open-1');
   });
 
-  it('suggests an address under numen.games', () => {
-    expect(suggestDomain('trg-2026')).toBe('trg-2026.numen.games');
-    expect(suggestDomain('')).toBe('');
+  it('joins a name and a zone into the address, lowercased', () => {
+    expect(joinDomain(' TRG-2026 ', 'numinia.com')).toBe('trg-2026.numinia.com');
+    expect(joinDomain('trg', 'numen.games')).toBe('trg.numen.games');
+    expect(joinDomain('  ', 'numinia.com')).toBe('');
+  });
+
+  it('offers numinia.com first and open-1 as the fleet’s first machine', () => {
+    expect(WORLD_ZONES).toEqual(['numinia.com', 'numen.games']);
+    expect(FLEET_MACHINES[0]?.alias).toBe(DEFAULT_SERVER);
+    expect(FLEET_MACHINES.every((machine) => !/^[0-9.]+$/.test(machine.host))).toBe(true);
   });
 
   it('becomes an order when the depot rules accept it — trimmed and lowercased', () => {
@@ -511,6 +528,94 @@ describe('legacy worlds and faces — watched, never changed', () => {
       'hive',
     ]);
     expect(groupByServer(rows).map((group) => group.server)).toEqual(['old-1', 'open-1']);
+  });
+});
+
+describe('the place: machine, address and whether it is free', () => {
+  const agora = { ...VALID, id: 'agora', card: 'agora', domain: 'agora.numinia.com' };
+  const forge = {
+    ...VALID,
+    id: 'forge',
+    card: 'forge',
+    server: 'open-2',
+    domain: 'forge.numen.games',
+  };
+  const rows = buildRows({
+    orders: [agora, forge, { ...agora, id: 'again', card: 'again', domain: 'again.numinia.com' }],
+    cards: [],
+    probes: {},
+    pending: [{ id: 'circle', action: 'create', number: 4, url: 'https://x/4' }],
+    legacy: [{ id: 'vic', domain: 'vic.numinia.com', server: 'vps-legacy' }],
+  });
+
+  it('keeps an address to one name under a house zone', () => {
+    expect(inHouseZone('p1.numinia.com')).toBe(true);
+    expect(inHouseZone('p1.numen.games')).toBe(true);
+    expect(inHouseZone('a.b.numinia.com')).toBe(false);
+    expect(inHouseZone('numinia.com')).toBe(false);
+    expect(inHouseZone('.numinia.com')).toBe(false);
+    expect(inHouseZone('-p1.numinia.com')).toBe(false);
+    expect(inHouseZone('P1.numinia.com')).toBe(false);
+    expect(inHouseZone('p1.evil.example')).toBe(false);
+    expect(inHouseZone('')).toBe(false);
+  });
+
+  it('refuses a draft whose address the machine would refuse, naming the field once', () => {
+    const outside = draftToOrder({ ...emptyDraft(), id: 'x', card: 'x', domain: 'x.example.com' });
+    expect('problems' in outside && outside.problems).toEqual(['domain']);
+    const broken = draftToOrder({ ...emptyDraft(), id: 'x', card: 'x', domain: 'not a host' });
+    expect('problems' in broken && broken.problems.filter((p) => p === 'domain')).toHaveLength(1);
+  });
+
+  it('offers the fleet’s machines and those orders name, never the legacy one', () => {
+    expect(machineChoices(rows)).toEqual(['open-1', 'open-2']);
+    expect(machineChoices([])).toEqual(['open-1']);
+    expect(machineHost('open-1')).toBe('vps-39c7f315.vps.ovh.net');
+    expect(machineHost('open-9')).toBeNull();
+  });
+
+  it('knows which world already answers at an address', () => {
+    expect(addressOwner(' Agora.numinia.com ', rows)).toEqual({ id: 'agora', legacy: false });
+    expect(addressOwner('vic.numinia.com', rows)).toEqual({ id: 'vic', legacy: true });
+    expect(addressOwner('free.numinia.com', rows)).toBeNull();
+    expect(addressOwner('', rows)).toBeNull();
+  });
+
+  it('reads a DNS-over-HTTPS answer: A records only, no such name is empty, a failure is null', () => {
+    expect(readDohAnswer(null)).toBeNull();
+    expect(readDohAnswer({ Status: 2 })).toBeNull();
+    expect(readDohAnswer({ Status: 3 })).toEqual([]);
+    expect(
+      readDohAnswer({
+        Status: 0,
+        Answer: [
+          { type: 5, data: 'target.example.' },
+          { type: 1, data: '192.0.2.1' },
+          { type: 1, data: 7 },
+          'junk',
+        ],
+      }),
+    ).toEqual(['192.0.2.1']);
+  });
+
+  it('compares where an address points with the machine', () => {
+    expect(compareDns([], ['192.0.2.1'])).toBe('none');
+    expect(compareDns(['192.0.2.1'], [])).toBe('unknown');
+    expect(compareDns(['192.0.2.9', '192.0.2.1'], ['192.0.2.1'])).toBe('machine');
+    expect(compareDns(['198.51.100.7'], ['192.0.2.1'])).toBe('elsewhere');
+  });
+
+  it('lets the wizard go on only with a free address, or a legacy world being moved', () => {
+    const order = { legacy: false };
+    const legacy = { legacy: true };
+    expect(placeAllowed('a.b.numinia.com', null, 'machine')).toBe(false);
+    expect(placeAllowed('p1.numinia.com', null, 'checking')).toBe(false);
+    expect(placeAllowed('p1.numinia.com', order, 'machine')).toBe(false);
+    expect(placeAllowed('p1.numinia.com', legacy, 'elsewhere')).toBe(true);
+    expect(placeAllowed('p1.numinia.com', null, 'elsewhere')).toBe(false);
+    expect(placeAllowed('p1.numinia.com', null, 'machine')).toBe(true);
+    expect(placeAllowed('p1.numinia.com', null, 'none')).toBe(true);
+    expect(placeAllowed('p1.numinia.com', null, 'unknown')).toBe(true);
   });
 });
 

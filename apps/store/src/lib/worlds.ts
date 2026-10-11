@@ -22,7 +22,28 @@ import type { SummaCard } from './summa';
 export const DEPOT = 'numengames/numinia-assets';
 export const DEPOT_BRANCH = 'main';
 export const FLEET_DIR = 'open-worlds';
-export const DOMAIN_SUFFIX = 'numen.games';
+/**
+ * The zones a world's address hangs from: one name under either. They mirror
+ * the machine's own list (numinia-assets `open-worlds/machine/reconcile.py`,
+ * HOUSE_ZONES), which is what refuses an order in the end; the first is the
+ * one the wizard proposes.
+ */
+export const WORLD_ZONES = ['numinia.com', 'numen.games'] as const;
+
+/** A machine of the public fleet: the alias orders name, and its provider's public host name. */
+export interface FleetMachine {
+  readonly alias: string;
+  /** Never an IP and never in the order book: only how the room checks where an address points. */
+  readonly host: string;
+}
+
+/**
+ * The fleet's machines, in the order the wizard offers them. A new machine
+ * is a line here, plus its bootstrap line on the machine itself.
+ */
+export const FLEET_MACHINES: readonly FleetMachine[] = [
+  { alias: 'open-1', host: 'vps-39c7f315.vps.ovh.net' },
+];
 /** The engine build the wizard proposes: numinia-hyperfy2 `dev`, pinned. */
 export const DEFAULT_IMAGE =
   'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3';
@@ -197,15 +218,29 @@ export function emptyDraft(server: string = DEFAULT_SERVER): OrderDraft {
   };
 }
 
-/** The address the wizard suggests for a world id. */
-export function suggestDomain(id: string): string {
-  return id === '' ? '' : `${id}.${DOMAIN_SUFFIX}`;
+/** The address for a name under a zone; '' while the name is empty. */
+export function joinDomain(label: string, zone: string): string {
+  const name = label.trim().toLowerCase();
+  return name === '' ? '' : `${name}.${zone}`;
+}
+
+const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+/** Exactly one name under one of the house zones — what a fleet machine accepts. */
+export function inHouseZone(domain: string): boolean {
+  const dot = domain.indexOf('.');
+  if (dot < 1) return false;
+  const zones: readonly string[] = WORLD_ZONES;
+  return LABEL.test(domain.slice(0, dot)) && zones.includes(domain.slice(dot + 1));
 }
 
 export type DraftResult =
   { readonly order: WorldOrder } | { readonly problems: readonly OrderProblem[] };
 
-/** A draft becomes an order only if the depot's own rules accept it. */
+/**
+ * A draft becomes an order only if the depot's own rules accept it and its
+ * address is one name under a house zone, which is all the machine serves.
+ */
 export function draftToOrder(draft: OrderDraft): DraftResult {
   const clean = (value: string): string => value.trim().toLowerCase();
   const upload = Number(draft.maxUploadMb.trim());
@@ -223,7 +258,86 @@ export function draftToOrder(draft: OrderDraft): DraftResult {
     },
   };
   const problems = orderProblems(renderOrder(order), order.id);
+  if (!inHouseZone(order.domain) && !problems.includes('domain')) problems.push('domain');
   return problems.length > 0 ? { problems } : { order };
+}
+
+// ---------------------------------------------------------------------------
+// Place: which machine, which address, and whether the address is free
+// ---------------------------------------------------------------------------
+
+/**
+ * The machines the wizard offers: the fleet's own first, then any other an
+ * order already names. Never the old machine of the legacy worlds — it
+ * reads no orders, so a world sent there would never start.
+ */
+export function machineChoices(rows: readonly WorldRow[]): string[] {
+  const names = FLEET_MACHINES.map((machine) => machine.alias);
+  for (const row of rows) {
+    if (row.order && !names.includes(row.order.server)) names.push(row.order.server);
+  }
+  return names;
+}
+
+/** The public host name of a fleet machine, to compare addresses with; null if unknown. */
+export function machineHost(alias: string): string | null {
+  return FLEET_MACHINES.find((machine) => machine.alias === alias)?.host ?? null;
+}
+
+/** The world already at this address: an order (a clash) or a legacy world (a move). */
+export function addressOwner(
+  domain: string,
+  rows: readonly WorldRow[],
+): { readonly id: string; readonly legacy: boolean } | null {
+  const wanted = domain.trim().toLowerCase();
+  if (wanted === '') return null;
+  const row = rows.find((candidate) => rowPlace(candidate)?.domain === wanted);
+  return row ? { id: row.id, legacy: row.legacy !== null } : null;
+}
+
+/**
+ * Where an address points in public DNS, against the machine chosen for it:
+ * at that machine, somewhere else, nowhere yet, or it could not be told.
+ */
+export type AddressDns = 'machine' | 'elsewhere' | 'none' | 'unknown';
+
+/**
+ * A DNS-over-HTTPS JSON answer → its IPv4 addresses. A name that does not
+ * exist is an empty list; an answer that is not one (or a failed lookup)
+ * is null.
+ */
+export function readDohAnswer(body: unknown): string[] | null {
+  if (!isRecord(body)) return null;
+  // 0 = answered, 3 = no such name; anything else means the lookup failed.
+  if (body.Status !== 0 && body.Status !== 3) return null;
+  const answer = Array.isArray(body.Answer) ? body.Answer : [];
+  return answer
+    .filter(isRecord)
+    .filter((record) => record.type === 1 && typeof record.data === 'string')
+    .map((record) => record.data as string);
+}
+
+/** The address's IPv4s against the machine's: does it already point there? */
+export function compareDns(address: readonly string[], machine: readonly string[]): AddressDns {
+  if (address.length === 0) return 'none';
+  if (machine.length === 0) return 'unknown';
+  return address.some((ip) => machine.includes(ip)) ? 'machine' : 'elsewhere';
+}
+
+/**
+ * Whether the wizard may go on with this address. An order already there,
+ * or a DNS record that sends it to another machine, stops it — unless the
+ * world there is a legacy one being moved into the fleet, whose record
+ * still points at the old machine until its data has moved.
+ */
+export function placeAllowed(
+  domain: string,
+  owner: { readonly legacy: boolean } | null,
+  dns: AddressDns | 'checking',
+): boolean {
+  if (!inHouseZone(domain) || dns === 'checking') return false;
+  if (owner) return owner.legacy;
+  return dns !== 'elsewhere';
 }
 
 // ---------------------------------------------------------------------------

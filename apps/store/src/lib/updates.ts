@@ -26,6 +26,21 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.75.0',
+    date: '2026-10-11 09:37',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The new-world wizard asks where the world lives in two choices: the fleet machine it runs on (open-1 today), and its address as a name plus a zone, numinia.com or numen.games. While you type, the room asks public DNS where that address points and says it in one line: already at the chosen machine, at another machine (choose another name), not in DNS yet (create its record first), or a legacy world being moved into the fleet. An address another world already uses cannot be ordered.',
+      },
+      {
+        type: 'FIX',
+        text: 'The wizard no longer proposes the old machine of the legacy worlds as the place for a new one. That machine reads no orders, so a world sent there would never have started; the wizard now offers only the fleet’s machines.',
+      },
+    ],
+  },
+  {
     version: 'v0.74.0',
     date: '2026-10-09 19:20',
     missions: ['MIS-156'],
