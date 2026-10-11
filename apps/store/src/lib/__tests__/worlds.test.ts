@@ -30,6 +30,8 @@ import {
   formatUptime,
   groupByServer,
   inHouseZone,
+  indexPath,
+  indexWith,
   joinDomain,
   machineChoices,
   machineHost,
@@ -37,6 +39,7 @@ import {
   orderFileUrl,
   orderProblems,
   parseChangeBranch,
+  parseIndex,
   parseOrder,
   placeAllowed,
   problemFields,
@@ -45,6 +48,7 @@ import {
   proposalTitle,
   readDohAnswer,
   readProbe,
+  renderIndex,
   renderOrder,
   rowPlace,
   withState,
@@ -111,6 +115,43 @@ describe('orderProblems — the depot test, one rule at a time', () => {
   it('accepts a digest-pinned image', () => {
     const digest = `ghcr.io/numengames/numinia-hyperfy2@sha256:${'a'.repeat(64)}`;
     expect(orderProblems(json({ ...VALID, image: digest }), 'example-world')).toEqual([]);
+  });
+
+  it('refuses the depot’s reserved ids, the index and the machine’s front service', () => {
+    for (const id of ['index', 'caddy']) {
+      expect(orderProblems(json({ ...VALID, id, card: id }), id)).toEqual(['id']);
+    }
+  });
+});
+
+describe('the index — the sorted ids of every order', () => {
+  it('lives beside the orders', () => {
+    expect(indexPath()).toBe('open-worlds/index.json');
+  });
+
+  it('reads the ids and drops anything that is not a world id', () => {
+    expect(parseIndex('{"orders": ["b", "a", "index", "caddy", "Bad", "../x", 7, null]}')).toEqual([
+      'b',
+      'a',
+    ]);
+    expect(parseIndex('{"orders": []}')).toEqual([]);
+  });
+
+  it('is null when the file is not an index', () => {
+    for (const bad of ['{', '[]', 'null', '{"orders": {}}', '{"orders": [], "x": 1}', '{}']) {
+      expect(parseIndex(bad)).toBeNull();
+    }
+  });
+
+  it('renders as the depot’s test wants it: sorted, unique, two spaces, one trailing newline', () => {
+    expect(renderIndex(['b', 'a', 'b'])).toBe('{\n  "orders": [\n    "a",\n    "b"\n  ]\n}\n');
+    expect(renderIndex([])).toBe('{\n  "orders": []\n}\n');
+  });
+
+  it('adds an ordered world and strikes a closed one', () => {
+    expect(JSON.parse(indexWith(['b'], 'a', true))).toEqual({ orders: ['a', 'b'] });
+    expect(JSON.parse(indexWith(['a', 'b'], 'a', false))).toEqual({ orders: ['b'] });
+    expect(JSON.parse(indexWith(['a'], 'a', true))).toEqual({ orders: ['a'] });
   });
 });
 

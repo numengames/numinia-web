@@ -26,6 +26,21 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.75.1',
+    date: '2026-10-11 14:30',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The Worlds room opens every time. It read the order book through GitHub’s API, which allows an address only 60 keyless reads an hour; a morning of QA spent them and the room showed only “GitHub answered 403”. Now the book has an index (open-worlds/index.json in numinia-assets) and the room reads it and each order as plain files, which have no such quota; the API is asked only for what the room can show without — the open proposals and the fleet history — and when GitHub refuses those, the room shows the worlds and says in plain words which part is missing and when the window reopens.',
+      },
+      {
+        type: 'UPD',
+        text: 'A proposal that orders or closes a world also updates the book’s index: with the room’s key, as a second commit on the same pull request; without it, the room shows the index as it must read, to paste into the pull request GitHub opens.',
+      },
+    ],
+  },
+  {
     version: 'v0.75.0',
     date: '2026-10-11 09:37',
     missions: ['MIS-156'],

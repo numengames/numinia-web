@@ -11,7 +11,12 @@ import type { SupportedLocale } from '@numinia/domain';
 export interface WorldsRoomMessages {
   readonly loading: string;
   readonly failed: string;
+  /** GitHub's keyless quota (60 reads an hour per address) is spent; `{time}` is when it reopens. */
+  readonly quota: string;
   readonly retry: string;
+  /** The book was read, but the open proposals and/or the history were refused this time. */
+  readonly missingNote: string;
+  readonly missingParts: { readonly pulls: string; readonly history: string };
   readonly empty: string;
   readonly noMatch: string;
   readonly keyless: string;
@@ -118,6 +123,8 @@ export interface WorldsRoomMessages {
     readonly resultAfter: string;
     readonly manualTitle: string;
     readonly manualNote: string;
+    /** Shown with the index the PR must also carry (create and close). */
+    readonly manualIndex: string;
     readonly manualEdit: string;
     readonly openGithub: string;
     readonly done: string;
@@ -158,7 +165,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   es: {
     loading: 'Leyendo la flota…',
     failed: 'No se pudo leer el libro de órdenes ({detail}).',
+    quota:
+      'GitHub solo deja 60 lecturas por hora sin llave desde tu dirección, y se han gastado. Vuelve a abrir a las {time}.',
     retry: 'Reintentar',
+    missingParts: { pulls: 'las propuestas abiertas', history: 'el historial' },
+    missingNote:
+      'Esta vez GitHub no ha dejado leer {what}: el libro se muestra sin esa parte. Al recargar más tarde vuelve.',
     empty:
       'Todavía no hay mundos en la flota. Cada mundo nace con su ficha en la Summa y su orden en numinia-assets.',
     noMatch: 'Ningún mundo coincide con los filtros.',
@@ -264,6 +276,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Ábrelo en GitHub',
       manualNote:
         'GitHub abrirá el cambio ya escrito; elige «Create a new branch and start a pull request» para proponerlo.',
+      manualIndex:
+        'La misma propuesta debe tocar también el índice del libro, open-worlds/index.json, y dejarlo así (en la rama de la propuesta, antes de pedir la revisión; si no, las pruebas del depósito la rechazan):',
       manualEdit:
         'GitHub abrirá la orden: cambia «state» a «{state}» y elige «Create a new branch and start a pull request».',
       openGithub: 'Abrir en GitHub',
@@ -309,7 +323,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   en: {
     loading: 'Reading the fleet…',
     failed: 'The order book could not be read ({detail}).',
+    quota:
+      'GitHub allows 60 keyless reads an hour from your address, and they are spent. It reopens at {time}.',
     retry: 'Try again',
+    missingParts: { pulls: 'the open proposals', history: 'the history' },
+    missingNote:
+      'This time GitHub refused to serve {what}: the book is shown without that part. Reload later and it is back.',
     empty:
       'No worlds in the fleet yet. Each world is born with its card in the Summa and its order in numinia-assets.',
     noMatch: 'No world matches the filters.',
@@ -414,6 +433,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Open it on GitHub',
       manualNote:
         'GitHub opens the change already written; choose “Create a new branch and start a pull request” to propose it.',
+      manualIndex:
+        'The same proposal must also touch the book’s index, open-worlds/index.json, and leave it like this (on the proposal’s branch, before asking for review; otherwise the depot’s tests refuse it):',
       manualEdit:
         'GitHub opens the order: change “state” to “{state}” and choose “Create a new branch and start a pull request”.',
       openGithub: 'Open on GitHub',
@@ -459,7 +480,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   ja: {
     loading: 'フリートを読み込み中…',
     failed: 'オーダーブックを読み込めませんでした（{detail}）。',
+    quota:
+      'GitHub はキーなしの読み取りを 1 時間に 60 回までしか許可せず、使い切りました。{time} に再開します。',
     retry: '再試行',
+    missingParts: { pulls: '未処理の提案', history: '履歴' },
+    missingNote:
+      '今回 GitHub は{what}を返しませんでした。その部分なしでブックを表示しています。後で再読み込みすると戻ります。',
     empty:
       'フリートにはまだワールドがありません。各ワールドはスンマのカードと numinia-assets のオーダーから生まれます。',
     noMatch: 'フィルターに一致するワールドはありません。',
@@ -564,6 +590,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'GitHub で開く',
       manualNote:
         'GitHub が変更を書き込んだ状態で開きます。「Create a new branch and start a pull request」を選んで提案してください。',
+      manualIndex:
+        '同じ提案で、ブックの索引 open-worlds/index.json も変更し、次の内容にしてください（提案のブランチ上で、レビュー依頼の前に。そうしないとデポのテストが拒否します）：',
       manualEdit:
         'GitHub がオーダーを開きます。「state」を「{state}」に変え、「Create a new branch and start a pull request」を選んでください。',
       openGithub: 'GitHub で開く',
@@ -608,7 +636,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   ko: {
     loading: '플릿을 읽는 중…',
     failed: '주문 장부를 읽을 수 없습니다 ({detail}).',
+    quota:
+      'GitHub는 키 없이 한 시간에 60회만 읽기를 허용하며, 모두 소진되었습니다. {time}에 다시 열립니다.',
     retry: '다시 시도',
+    missingParts: { pulls: '열린 제안', history: '기록' },
+    missingNote:
+      '이번에는 GitHub가 {what}을(를) 제공하지 않았습니다. 그 부분 없이 장부를 표시합니다. 나중에 새로 고치면 돌아옵니다.',
     empty:
       '아직 플릿에 월드가 없습니다. 각 월드는 숨마의 카드와 numinia-assets의 주문으로 태어납니다.',
     noMatch: '필터에 맞는 월드가 없습니다.',
@@ -712,6 +745,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'GitHub에서 열기',
       manualNote:
         'GitHub가 변경을 미리 작성한 채로 엽니다. “Create a new branch and start a pull request”를 골라 제안하세요.',
+      manualIndex:
+        '같은 제안에서 장부의 색인 open-worlds/index.json도 수정해 다음과 같이 두세요(제안 브랜치에서, 검토 요청 전에. 그렇지 않으면 저장소 테스트가 거부합니다):',
       manualEdit:
         'GitHub가 주문을 엽니다. “state”를 “{state}”(으)로 바꾸고 “Create a new branch and start a pull request”를 고르세요.',
       openGithub: 'GitHub에서 열기',
@@ -756,7 +791,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   'pt-br': {
     loading: 'Lendo a frota…',
     failed: 'Não foi possível ler o livro de ordens ({detail}).',
+    quota:
+      'O GitHub só permite 60 leituras por hora sem chave a partir do teu endereço, e esgotaram-se. Volta a abrir às {time}.',
     retry: 'Tentar de novo',
+    missingParts: { pulls: 'as propostas abertas', history: 'o histórico' },
+    missingNote:
+      'Desta vez o GitHub não deixou ler {what}: o livro mostra-se sem essa parte. Ao recarregar mais tarde volta.',
     empty:
       'Ainda não há mundos na frota. Cada mundo nasce com sua ficha na Summa e sua ordem em numinia-assets.',
     noMatch: 'Nenhum mundo corresponde aos filtros.',
@@ -866,6 +906,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Abra no GitHub',
       manualNote:
         'O GitHub abre a mudança já escrita; escolha “Create a new branch and start a pull request” para propô-la.',
+      manualIndex:
+        'A mesma proposta deve tocar também o índice do livro, open-worlds/index.json, e deixá-lo assim (no ramo da proposta, antes de pedir a revisão; senão os testes do depósito recusam-na):',
       manualEdit:
         'O GitHub abre a ordem: mude “state” para “{state}” e escolha “Create a new branch and start a pull request”.',
       openGithub: 'Abrir no GitHub',

@@ -15,6 +15,7 @@ import {
   WORLD_ZONES,
   addressOwner,
   deleteOrderUrl,
+  indexWith,
   draftToOrder,
   editOrderUrl,
   emptyDraft,
@@ -34,11 +35,21 @@ import {
 import { checkAddress } from '../../../lib/worlds-source';
 import { Cover, type WorldAction } from './WorldViews';
 
+/** The ids the book holds today: the rows that carry an order (legacy rows have none). */
+const orderIds = (rows: readonly WorldRow[]): string[] =>
+  rows.filter((row) => row.order !== null).map((row) => row.id);
+
 type Outcome =
   | { readonly at: 'idle' }
   | { readonly at: 'sending' }
   | { readonly at: 'done'; readonly number: number; readonly url: string }
-  | { readonly at: 'manual'; readonly url: string; readonly note: string }
+  | {
+      readonly at: 'manual';
+      readonly url: string;
+      readonly note: string;
+      /** The index as it must read after this change, when the change needs it (create, close). */
+      readonly index?: string;
+    }
   | { readonly at: 'error'; readonly detail: string; readonly url?: string };
 
 type Body =
@@ -48,7 +59,7 @@ type Body =
 /** Ask the Worker to open the pull request; fall back to GitHub when it has no key. */
 async function propose(
   body: Body,
-  manual: { url: string; note: string },
+  manual: { url: string; note: string; index?: string },
   room: WorldsRoomMessages,
 ): Promise<Outcome> {
   try {
@@ -146,6 +157,14 @@ function Result({
       <div className="resultado">
         <h2>{room.wizard.manualTitle}</h2>
         <p className="nota">{outcome.note}</p>
+        {outcome.index !== undefined && (
+          <>
+            <p className="nota">{room.wizard.manualIndex}</p>
+            <pre className="mono" data-index>
+              {outcome.index}
+            </pre>
+          </>
+        )}
         <div className="pie">
           <button
             type="button"
@@ -346,7 +365,11 @@ export function NewWorldDialog({
 
   const submit = async (): Promise<void> => {
     if (!('order' in result)) return;
-    const manual = { url: newOrderUrl(result.order), note: room.wizard.manualNote };
+    const manual = {
+      url: newOrderUrl(result.order),
+      note: room.wizard.manualNote,
+      index: indexWith(orderIds(rows), result.order.id, true),
+    };
     if (!canPropose) {
       setOutcome({ at: 'manual', ...manual });
       return;
@@ -619,12 +642,14 @@ export function ChangeDialog({
   onClose,
   onProposed,
   room,
+  rows,
   canPropose,
 }: {
   readonly change: { readonly row: WorldRow; readonly action: WorldAction } | null;
   readonly onClose: () => void;
   readonly onProposed: () => void;
   readonly room: WorldsRoomMessages;
+  readonly rows: readonly WorldRow[];
   readonly canPropose: boolean;
 }) {
   const [typed, setTyped] = useState('');
@@ -651,9 +676,15 @@ export function ChangeDialog({
     : '';
   const confirmed = action !== 'close' || typed.trim() === row?.id;
 
-  const manual = (): { url: string; note: string } => {
+  const manual = (): { url: string; note: string; index?: string } => {
     const id = row?.id ?? '';
-    if (action === 'close') return { url: deleteOrderUrl(id), note: room.wizard.manualNote };
+    if (action === 'close') {
+      return {
+        url: deleteOrderUrl(id),
+        note: room.wizard.manualNote,
+        index: indexWith(orderIds(rows), id, false),
+      };
+    }
     return {
       url: editOrderUrl(id),
       note: fill(room.wizard.manualEdit, { state: action === 'stop' ? 'stopped' : 'running' }),

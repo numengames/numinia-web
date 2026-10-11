@@ -1,12 +1,17 @@
 /**
  * The worlds room's reads and proposals — everything that leaves the Worker.
  *
- * Reads: the order book (numinia-assets `open-worlds/`), its open pull
- * requests and its recent history, all public; plus each running world's
- * public `/status`, asked like any visitor would. Writes: none to a server,
- * ever. A change is a branch, one commit and a pull request on the order
- * book, reviewed like any other — the Tower's single-commit, reuse-the-PR
- * changeset, minus its keys to the rest of the infrastructure.
+ * Reads: the order book (numinia-assets `open-worlds/`) as plain files —
+ * its index, then each order — from raw.githubusercontent.com, which serves
+ * a public repository with no keyless quota worth naming (the Worker reads
+ * the catalogue the same way). GitHub's API, which allows an address only
+ * 60 keyless reads an hour, is asked only for what the room can show
+ * without: the open pull requests and the recent history. Plus each running
+ * world's public `/status`, asked like any visitor would. Writes: none to a
+ * server, ever. A change is a branch, a commit on the order file (and one
+ * on the index when a world is ordered or closed) and a pull request on the
+ * order book, reviewed like any other — the Tower's changeset, minus its
+ * keys to the rest of the infrastructure.
  *
  * The token (WORLDS_GITHUB_TOKEN) is optional and scoped to the depot alone.
  * Without it the room still reads, and proposals fall back to GitHub's own
@@ -18,12 +23,15 @@ import {
   DEPOT,
   DEPOT_BRANCH,
   FLEET_DIR,
+  INDEX_FILE,
   REVIEWERS,
-  buildRows,
   changeBranch,
   compareDns,
+  indexPath,
+  indexWith,
   machineHost,
   orderPath,
+  parseIndex,
   parseChangeBranch,
   parseOrder,
   proposalBody,
@@ -38,14 +46,12 @@ import {
   type OrderProblem,
   type PendingChange,
   type Probe,
-  type LegacyWorld,
-  type WorldCardInfo,
   type WorldFace,
   type WorldOrder,
-  type WorldRow,
 } from './worlds';
 
 const API = `https://api.github.com/repos/${DEPOT}`;
+const RAW = `https://raw.githubusercontent.com/${DEPOT}/${DEPOT_BRANCH}/${FLEET_DIR}`;
 
 type Fetch = typeof fetch;
 
@@ -56,12 +62,22 @@ export function worldsToken(env: Readonly<Record<string, string | undefined>>): 
 }
 
 export class FleetError extends Error {
+  /** True when GitHub refused for want of quota, not because of the request. */
+  readonly quota: boolean;
+  /** When GitHub's hourly window reopens (epoch ms), if it said so. */
+  readonly resetAt: number | null;
+
   constructor(
     readonly status: number,
     what: string,
+    answer?: Pick<Response, 'headers'>,
   ) {
     super(`GitHub answered ${status} on ${what}`);
     this.name = 'FleetError';
+    const remaining = answer?.headers.get('x-ratelimit-remaining');
+    const reset = Number(answer?.headers.get('x-ratelimit-reset'));
+    this.quota = (status === 403 || status === 429) && remaining === '0';
+    this.resetAt = this.quota && Number.isFinite(reset) && reset > 0 ? reset * 1000 : null;
   }
 }
 
@@ -81,11 +97,11 @@ async function getJson(
   what: string,
 ): Promise<unknown> {
   const response = await fetchImpl(url, { headers: headers(token) });
-  if (!response.ok) throw new FleetError(response.status, what);
+  if (!response.ok) throw new FleetError(response.status, what, response);
   return response.json();
 }
 
-// The read path also runs in the Oracle's browser (readFleetHere), so it
+// The extras read also runs in the Oracle's browser (readExtras), so it
 // checks GitHub's answers by hand: zod there would move into a chunk shared
 // with every other island, and the pages that never open the room would pay.
 type Obj = Readonly<Record<string, unknown>>;
@@ -106,21 +122,6 @@ function str(from: Obj, key: string, what: string): string {
   const value = from[key];
   if (typeof value !== 'string') throw unexpected(what);
   return value;
-}
-
-interface DirEntry {
-  readonly name: string;
-  readonly type: string;
-  readonly download_url: string | null;
-}
-
-function dirEntries(value: unknown): DirEntry[] {
-  return list(value, 'dir').map((item) => {
-    const entry = obj(item, 'dir');
-    const url = entry['download_url'];
-    if (url !== null && typeof url !== 'string') throw unexpected('dir');
-    return { name: str(entry, 'name', 'dir'), type: str(entry, 'type', 'dir'), download_url: url };
-  });
 }
 
 function pulls(value: unknown): { number: number; url: string; ref: string }[] {
@@ -165,61 +166,106 @@ export interface InvalidOrder {
   readonly problems: readonly OrderProblem[];
 }
 
-export interface FleetSnapshot {
+export interface FleetSnapshot extends Extras {
   readonly orders: readonly WorldOrder[];
   readonly invalid: readonly InvalidOrder[];
-  readonly pending: readonly PendingChange[];
-  readonly history: readonly HistoryEntry[];
+}
+
+/** The raw file of the book, read like any visitor; no quota, no key, cached a few minutes by GitHub. */
+async function readRaw(fetchImpl: Fetch, name: string): Promise<Response> {
+  return fetchImpl(`${RAW}/${name}`, { headers: { 'user-agent': 'numinia-worlds-room' } });
 }
 
 async function readOrders(
   fetchImpl: Fetch,
-  token: string | null,
 ): Promise<{ orders: WorldOrder[]; invalid: InvalidOrder[] }> {
-  const response = await fetchImpl(`${API}/contents/${FLEET_DIR}?ref=${DEPOT_BRANCH}`, {
-    headers: headers(token),
-  });
-  // No folder yet is an empty fleet, not an error.
-  if (response.status === 404) return { orders: [], invalid: [] };
-  if (!response.ok) throw new FleetError(response.status, `${FLEET_DIR}/`);
-  const entries = dirEntries(await response.json()).filter(
-    (entry) => entry.type === 'file' && entry.name.endsWith('.json') && entry.download_url,
-  );
+  const index = await readRaw(fetchImpl, INDEX_FILE);
+  // No index yet is an empty fleet, not an error.
+  if (index.status === 404) return { orders: [], invalid: [] };
+  if (!index.ok) throw new FleetError(index.status, indexPath(), index);
+  const ids = parseIndex(await index.text());
+  if (ids === null) throw unexpected(indexPath());
   const files = await Promise.all(
-    entries.map(async (entry) => {
-      const raw = await fetchImpl(entry.download_url as string);
-      if (!raw.ok) throw new FleetError(raw.status, `${FLEET_DIR}/${entry.name}`);
-      return { name: entry.name, source: await raw.text() };
+    ids.map(async (id) => {
+      const raw = await readRaw(fetchImpl, `${id}.json`);
+      if (!raw.ok) throw new FleetError(raw.status, orderPath(id), raw);
+      return { id, source: await raw.text() };
     }),
   );
   const orders: WorldOrder[] = [];
   const invalid: InvalidOrder[] = [];
   for (const file of files) {
-    const parsed = parseOrder(file.source, file.name.slice(0, -'.json'.length));
+    const parsed = parseOrder(file.source, file.id);
     if ('order' in parsed) orders.push(parsed.order);
-    else invalid.push({ file: file.name, problems: parsed.problems });
+    else invalid.push({ file: `${file.id}.json`, problems: parsed.problems });
   }
   return { orders, invalid };
 }
 
-/** The whole order book as the room needs it: orders, open proposals, recent history. */
-export async function readFleet(fetchImpl: Fetch, token: string | null): Promise<FleetSnapshot> {
-  const [book, openPulls, recent] = await Promise.all([
-    readOrders(fetchImpl, token),
-    getJson(fetchImpl, `${API}/pulls?state=open&per_page=100`, token, 'pulls'),
-    getJson(
-      fetchImpl,
-      `${API}/commits?path=${FLEET_DIR}&sha=${DEPOT_BRANCH}&per_page=15`,
-      token,
-      'commits',
-    ),
+export type Extra = 'pulls' | 'history';
+
+/** What the API adds to the book: the open proposals and the recent history, each optional. */
+export interface Extras {
+  readonly pending: readonly PendingChange[];
+  readonly history: readonly HistoryEntry[];
+  /** What GitHub refused this time; the room shows the book and says these are missing. */
+  readonly missing: readonly Extra[];
+  /** When a spent quota reopens (epoch ms), if that is why, and GitHub said. */
+  readonly resetAt: number | null;
+}
+
+const PULLS_URL = `${API}/pulls?state=open&per_page=100`;
+const COMMITS_URL = `${API}/commits?path=${FLEET_DIR}&sha=${DEPOT_BRANCH}&per_page=15`;
+
+/**
+ * Ask the API for the extras named in `wanted`, best effort: a refused read
+ * leaves its part empty and in `missing`. One spent quota (60 keyless reads
+ * an hour per address) never hides the fleet, only its proposals and history.
+ */
+export async function readExtras(
+  fetchImpl: Fetch,
+  token: string | null,
+  wanted: readonly Extra[] = ['pulls', 'history'],
+): Promise<Extras> {
+  // Each extra is read and checked on its own; anything that goes wrong —
+  // a refusal, the network, an unexpected shape — is that extra missing.
+  const ask = async <T>(extra: Extra, url: string, parse: (value: unknown) => T) => {
+    if (!wanted.includes(extra)) return { value: null, error: null };
+    try {
+      return { value: parse(await getJson(fetchImpl, url, token, extra)), error: null };
+    } catch (error) {
+      return { value: null, error: error instanceof FleetError ? error : new FleetError(0, extra) };
+    }
+  };
+  const [openPulls, recent] = await Promise.all([
+    ask('pulls', PULLS_URL, pulls),
+    ask('history', COMMITS_URL, commits),
   ]);
+  const missing: Extra[] = [];
+  let resetAt: number | null = null;
+  for (const [extra, answer] of [
+    ['pulls', openPulls],
+    ['history', recent],
+  ] as const) {
+    if (answer.value !== null || !wanted.includes(extra)) continue;
+    missing.push(extra);
+    if (answer.error?.quota) resetAt = resetAt ?? answer.error.resetAt;
+  }
   const pending: PendingChange[] = [];
-  for (const pull of pulls(openPulls)) {
+  for (const pull of openPulls.value ?? []) {
     const change = parseChangeBranch(pull.ref);
     if (change) pending.push({ ...change, number: pull.number, url: pull.url });
   }
-  return { ...book, pending, history: commits(recent) };
+  return { pending, history: recent.value ?? [], missing, resetAt };
+}
+
+/**
+ * The whole order book as the room needs it: the orders (a must, read as
+ * plain files) and, when GitHub allows, the open proposals and the history.
+ */
+export async function readFleet(fetchImpl: Fetch, token: string | null): Promise<FleetSnapshot> {
+  const [book, extras] = await Promise.all([readOrders(fetchImpl), readExtras(fetchImpl, token)]);
+  return { ...book, ...extras };
 }
 
 /** Ask a world's public `/status`, like a visitor. Never throws. */
@@ -386,113 +432,6 @@ export async function readFaces(
 }
 
 // ---------------------------------------------------------------------------
-// Reading from the Oracle's own browser
-// ---------------------------------------------------------------------------
-
-const RAW = `https://raw.githubusercontent.com/${DEPOT}/${DEPOT_BRANCH}/${FLEET_DIR}`;
-const WORLD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const MAX_PROBES = 50;
-
-/** How the worlds look from outside: their /status and, without a card, their own page. */
-export interface Watch {
-  readonly probes: Readonly<Record<string, Probe>>;
-  readonly faces: Readonly<Record<string, WorldFace>>;
-}
-
-/**
- * Watch the running worlds named by id. Each domain comes from the world's
- * order in the depot, read raw, never from the caller: the Worker only ever
- * asks a host that an approved order names. Invalid or unknown ids are
- * skipped. A world whose card is not in `carded` is also read for its face.
- */
-export async function watchByIds(
-  fetchImpl: Fetch,
-  ids: readonly string[],
-  carded: ReadonlySet<string>,
-  timeoutMs = 3000,
-): Promise<Watch> {
-  const wanted = [...new Set(ids)].filter((id) => WORLD_ID.test(id)).slice(0, MAX_PROBES);
-  const found = await Promise.all(
-    wanted.map(async (id): Promise<WorldOrder | null> => {
-      try {
-        const raw = await fetchImpl(`${RAW}/${id}.json`);
-        if (!raw.ok) return null;
-        const parsed = parseOrder(await raw.text(), id);
-        return 'order' in parsed ? parsed.order : null;
-      } catch {
-        return null;
-      }
-    }),
-  );
-  const running = found.filter(
-    (order): order is WorldOrder => order !== null && order.state === 'running',
-  );
-  const [probes, faces] = await Promise.all([
-    probeWorlds(fetchImpl, running, timeoutMs),
-    readFaces(
-      fetchImpl,
-      running.filter((order) => !carded.has(order.card)),
-      timeoutMs,
-    ),
-  ]);
-  return { probes, faces };
-}
-
-/** What the Worker answers when it holds no key: who asks, the cards, and the legacy worlds watched. */
-export interface KeylessAnswer extends Watch {
-  readonly rank: string;
-  readonly canPropose: boolean;
-  readonly cards: readonly WorldCardInfo[];
-  readonly legacy: readonly LegacyWorld[];
-}
-
-export interface RoomFleet {
-  readonly rank: string;
-  readonly canPropose: boolean;
-  readonly cards: readonly WorldCardInfo[];
-  readonly rows: readonly WorldRow[];
-  readonly invalid: readonly InvalidOrder[];
-  readonly history: readonly HistoryEntry[];
-}
-
-/**
- * The order book read by the Oracle's own browser. The depot is public, and
- * GitHub answers a person's own address where it refuses anonymous readers
- * on Cloudflare's shared ones, so the room needs no key to read. The Worker
- * adds only what needs a server: watching the running worlds.
- */
-export async function readFleetHere(
-  fetchImpl: Fetch,
-  answer: KeylessAnswer,
-  watchUrl = '/api/admin/worlds?probe=',
-): Promise<RoomFleet> {
-  const snapshot = await readFleet(fetchImpl, null);
-  const running = snapshot.orders
-    .filter((order) => order.state === 'running')
-    .map((order) => order.id);
-  let watch: Partial<Watch> = {};
-  if (running.length > 0) {
-    const response = await fetchImpl(`${watchUrl}${running.join(',')}`);
-    if (response.ok) watch = (await response.json()) as Partial<Watch>;
-  }
-  return {
-    rank: answer.rank,
-    canPropose: answer.canPropose,
-    cards: answer.cards,
-    rows: buildRows({
-      orders: snapshot.orders,
-      cards: answer.cards,
-      probes: { ...answer.probes, ...watch.probes },
-      pending: snapshot.pending,
-      legacy: answer.legacy,
-      faces: { ...answer.faces, ...watch.faces },
-    }),
-    invalid: snapshot.invalid,
-    history: snapshot.history,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Proposals
 // ---------------------------------------------------------------------------
 
@@ -555,9 +494,11 @@ async function expectOk(response: Response): Promise<unknown> {
 }
 
 /**
- * Open the pull request for one change: a branch from main, ONE commit on
- * the order file, the PR, then the house's reviewers one by one (a rejected
- * reviewer never sinks a proposal that already exists).
+ * Open the pull request for one change: a branch from main, one commit on
+ * the order file — plus one on the index when a world is ordered or closed,
+ * because the depot's test wants the index equal to the folder — the PR,
+ * then the house's reviewers one by one (a rejected reviewer never sinks a
+ * proposal that already exists).
  */
 export async function proposeChange(
   fetchImpl: Fetch,
@@ -619,6 +560,28 @@ export async function proposeChange(
         message,
         content: encodeBase64(renderOrder(next)),
         sha: existing.sha,
+        branch,
+      }),
+    );
+  }
+
+  if (change.action === 'create' || change.action === 'close') {
+    // The index names every order: add this one, or strike it. Read on the
+    // branch just made, so the sha matches what the commit replaces.
+    const current = FileShape().parse(
+      await expectOk(
+        await fetchImpl(`${API}/contents/${indexPath()}?ref=${branch}`, {
+          headers: headers(token),
+        }),
+      ),
+    );
+    const known = parseIndex(decodeBase64(current.content));
+    if (known === null) throw new ProposalError('github', 422);
+    await expectOk(
+      await send(fetchImpl, token, 'PUT', `${API}/contents/${indexPath()}`, {
+        message: `${message}\n\n(index)`,
+        content: encodeBase64(indexWith(known, id, change.action === 'create')),
+        sha: current.sha,
         branch,
       }),
     );

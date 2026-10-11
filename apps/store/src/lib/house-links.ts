@@ -15,7 +15,12 @@ export interface HouseLink {
 export const HOUSE_LINKS: readonly HouseLink[] = [
   { id: 'company', label: 'Numen Games', what: 'the company', href: 'https://numen.games' },
   { id: 'game', label: 'Numinia', what: 'the game', href: 'https://numinia.com' },
-  { id: 'archive', label: 'NWOS', what: 'the archive, built in public', href: 'https://numinia.org' },
+  {
+    id: 'archive',
+    label: 'NWOS',
+    what: 'the archive, built in public',
+    href: 'https://numinia.org',
+  },
   {
     id: 'service',
     label: 'NWOS for your organisation',
