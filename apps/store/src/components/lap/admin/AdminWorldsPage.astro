@@ -610,6 +610,8 @@ const labels = {
     gap: var(--s1);
   }
   [data-worlds-panel] .campo input {
+    width: 100%;
+    min-width: 0;
     min-height: 40px;
     padding: 8px var(--s3);
     font: inherit;
@@ -631,7 +633,7 @@ const labels = {
   }
   [data-worlds-panel] .trio {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--s3);
   }
   [data-worlds-panel] .fichas {
