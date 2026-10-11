@@ -3,6 +3,19 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-11 13:30",
+    "entries": [
+      {
+        "text": "GitHub allows an address 60 keyless reads an hour, and a morning of opening the Worlds room spent them: the room then showed only "GitHub answered 403". Now it says so in plain words, with the time the window reopens; and when GitHub refuses only the open proposals or the fleet history, the room still shows the worlds and names the part that is missing instead of hiding the whole fleet.",
+        "type": "FIX",
+      },
+    ],
+    "missions": [
+      "MIS-156",
+    ],
+    "version": "v0.75.1",
+  },
+  {
     "date": "2026-10-11 09:37",
     "entries": [
       {

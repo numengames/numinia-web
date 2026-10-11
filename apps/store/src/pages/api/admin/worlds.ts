@@ -183,6 +183,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
       cards,
       invalid: snapshot.invalid,
       history: snapshot.history,
+      missing: snapshot.missing,
       readAt: new Date().toISOString(),
     },
     { headers: { 'cache-control': 'no-store' } },
@@ -231,10 +232,13 @@ export const POST: APIRoute = async ({ cookies, request }) => {
   }
   const id = change.action === 'create' ? change.order.id : change.id;
 
-  // The Tower's rule: one change per world at a time.
+  // The Tower's rule: one change per world at a time. Without the open
+  // proposals the rule cannot be checked: refuse, never guess.
   let pending: readonly PendingChange[];
   try {
-    pending = (await fleet(token, true)).pending;
+    const snapshot = await fleet(token, true);
+    if (snapshot.missing.includes('pulls')) throw new FleetError(0, 'pulls');
+    pending = snapshot.pending;
   } catch (error) {
     return unreadable(error);
   }

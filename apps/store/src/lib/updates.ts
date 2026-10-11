@@ -26,6 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.75.1',
+    date: '2026-10-11 13:30',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'FIX',
+        text: 'GitHub allows an address 60 keyless reads an hour, and a morning of opening the Worlds room spent them: the room then showed only "GitHub answered 403". Now it says so in plain words, with the time the window reopens; and when GitHub refuses only the open proposals or the fleet history, the room still shows the worlds and names the part that is missing instead of hiding the whole fleet.',
+      },
+    ],
+  },
+  {
     version: 'v0.75.0',
     date: '2026-10-11 09:37',
     missions: ['MIS-156'],

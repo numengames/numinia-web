@@ -22,7 +22,7 @@ import {
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
-import { readFleetHere, type KeylessAnswer } from '../../../lib/worlds-source';
+import { FleetError, readFleetHere, type KeylessAnswer } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { ChangeDialog, NewWorldDialog } from './WorldDialogs';
 import { CardsView, ListView, ServersView, type WorldAction } from './WorldViews';
@@ -48,15 +48,21 @@ interface Fleet {
   readonly cards: readonly WorldCardInfo[];
   readonly invalid: readonly { readonly file: string; readonly problems: readonly string[] }[];
   readonly history: readonly HistoryEntry[];
+  readonly missing?: readonly ('pulls' | 'history')[];
 }
 
 type Panel =
   | { readonly at: 'loading' }
   | { readonly at: 'forbidden' }
   | { readonly at: 'error'; readonly detail: string }
+  | { readonly at: 'quota'; readonly resetAt: number | null }
   | { readonly at: 'ready'; readonly fleet: Fleet };
 
 type View = 'cards' | 'list' | 'servers';
+
+/** When GitHub's window reopens, as a clock time in the reader's locale; "?" when it did not say. */
+const clockTime = (at: number | null): string =>
+  at === null ? '?' : new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 const VIEWS: readonly View[] = ['cards', 'list', 'servers'];
 const STATUS_ORDER: readonly WorldStatus[] = [
@@ -105,7 +111,10 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         setPanel({ at: 'ready', fleet: data as Fleet });
       })
       .catch((error: unknown) => {
-        if (alive) setPanel({ at: 'error', detail: error instanceof Error ? error.message : '?' });
+        if (!alive) return;
+        if (error instanceof FleetError && error.quota)
+          return setPanel({ at: 'quota', resetAt: error.resetAt });
+        setPanel({ at: 'error', detail: error instanceof Error ? error.message : '?' });
       });
     return () => {
       alive = false;
@@ -145,11 +154,15 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       </div>
     );
   }
-  if (panel.at === 'error') {
+  if (panel.at === 'error' || panel.at === 'quota') {
+    const message =
+      panel.at === 'quota'
+        ? fill(room.quota, { time: clockTime(panel.resetAt) })
+        : fill(room.failed, { detail: panel.detail });
     return (
       <div data-worlds-panel>
         <div className="estado fallo" role="alert">
-          <p>{fill(room.failed, { detail: panel.detail })}</p>
+          <p>{message}</p>
           <button
             type="button"
             className="btn btn-fantasma"
@@ -194,6 +207,13 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         </button>
       </div>
       {!fleet.canPropose && <p className="nota llave">{room.keyless}</p>}
+      {fleet.missing && fleet.missing.length > 0 && (
+        <p className="nota llave" data-missing={fleet.missing.join(' ')}>
+          {fill(room.missingNote, {
+            what: fleet.missing.map((part) => room.missingParts[part]).join(' · '),
+          })}
+        </p>
+      )}
 
       <dl className="cifras">
         {(

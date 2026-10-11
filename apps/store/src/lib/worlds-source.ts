@@ -56,12 +56,22 @@ export function worldsToken(env: Readonly<Record<string, string | undefined>>): 
 }
 
 export class FleetError extends Error {
+  /** True when GitHub refused for want of quota, not because of the request. */
+  readonly quota: boolean;
+  /** When GitHub's hourly window reopens (epoch ms), if it said so. */
+  readonly resetAt: number | null;
+
   constructor(
     readonly status: number,
     what: string,
+    answer?: Pick<Response, 'headers'>,
   ) {
     super(`GitHub answered ${status} on ${what}`);
     this.name = 'FleetError';
+    const remaining = answer?.headers.get('x-ratelimit-remaining');
+    const reset = Number(answer?.headers.get('x-ratelimit-reset'));
+    this.quota = (status === 403 || status === 429) && remaining === '0';
+    this.resetAt = this.quota && Number.isFinite(reset) && reset > 0 ? reset * 1000 : null;
   }
 }
 
@@ -81,8 +91,22 @@ async function getJson(
   what: string,
 ): Promise<unknown> {
   const response = await fetchImpl(url, { headers: headers(token) });
-  if (!response.ok) throw new FleetError(response.status, what);
+  if (!response.ok) throw new FleetError(response.status, what, response);
   return response.json();
+}
+
+/** The same read, but any failure is an empty answer: for what the room can do without. */
+async function getJsonOrNothing(
+  fetchImpl: Fetch,
+  url: string,
+  token: string | null,
+  what: string,
+): Promise<unknown | null> {
+  try {
+    return await getJson(fetchImpl, url, token, what);
+  } catch {
+    return null;
+  }
 }
 
 // The read path also runs in the Oracle's browser (readFleetHere), so it
@@ -170,6 +194,8 @@ export interface FleetSnapshot {
   readonly invalid: readonly InvalidOrder[];
   readonly pending: readonly PendingChange[];
   readonly history: readonly HistoryEntry[];
+  /** What GitHub refused this time; the room shows the book and says these are missing. */
+  readonly missing: readonly ('pulls' | 'history')[];
 }
 
 async function readOrders(
@@ -181,14 +207,14 @@ async function readOrders(
   });
   // No folder yet is an empty fleet, not an error.
   if (response.status === 404) return { orders: [], invalid: [] };
-  if (!response.ok) throw new FleetError(response.status, `${FLEET_DIR}/`);
+  if (!response.ok) throw new FleetError(response.status, `${FLEET_DIR}/`, response);
   const entries = dirEntries(await response.json()).filter(
     (entry) => entry.type === 'file' && entry.name.endsWith('.json') && entry.download_url,
   );
   const files = await Promise.all(
     entries.map(async (entry) => {
       const raw = await fetchImpl(entry.download_url as string);
-      if (!raw.ok) throw new FleetError(raw.status, `${FLEET_DIR}/${entry.name}`);
+      if (!raw.ok) throw new FleetError(raw.status, `${FLEET_DIR}/${entry.name}`, raw);
       return { name: entry.name, source: await raw.text() };
     }),
   );
@@ -202,24 +228,34 @@ async function readOrders(
   return { orders, invalid };
 }
 
-/** The whole order book as the room needs it: orders, open proposals, recent history. */
+/**
+ * The whole order book as the room needs it: orders, open proposals, recent
+ * history. Only the orders are a must; a refused pulls or commits read
+ * leaves its part empty and named in `missing`, so one spent quota (GitHub
+ * gives an address 60 keyless reads an hour) does not hide the fleet.
+ */
 export async function readFleet(fetchImpl: Fetch, token: string | null): Promise<FleetSnapshot> {
   const [book, openPulls, recent] = await Promise.all([
     readOrders(fetchImpl, token),
-    getJson(fetchImpl, `${API}/pulls?state=open&per_page=100`, token, 'pulls'),
-    getJson(
+    getJsonOrNothing(fetchImpl, `${API}/pulls?state=open&per_page=100`, token, 'pulls'),
+    getJsonOrNothing(
       fetchImpl,
       `${API}/commits?path=${FLEET_DIR}&sha=${DEPOT_BRANCH}&per_page=15`,
       token,
       'commits',
     ),
   ]);
+  const missing: ('pulls' | 'history')[] = [];
   const pending: PendingChange[] = [];
-  for (const pull of pulls(openPulls)) {
-    const change = parseChangeBranch(pull.ref);
-    if (change) pending.push({ ...change, number: pull.number, url: pull.url });
+  if (openPulls === null) missing.push('pulls');
+  else {
+    for (const pull of pulls(openPulls)) {
+      const change = parseChangeBranch(pull.ref);
+      if (change) pending.push({ ...change, number: pull.number, url: pull.url });
+    }
   }
-  return { ...book, pending, history: commits(recent) };
+  if (recent === null) missing.push('history');
+  return { ...book, pending, history: recent === null ? [] : commits(recent), missing };
 }
 
 /** Ask a world's public `/status`, like a visitor. Never throws. */
@@ -453,6 +489,7 @@ export interface RoomFleet {
   readonly rows: readonly WorldRow[];
   readonly invalid: readonly InvalidOrder[];
   readonly history: readonly HistoryEntry[];
+  readonly missing: FleetSnapshot['missing'];
 }
 
 /**
@@ -489,6 +526,7 @@ export async function readFleetHere(
     }),
     invalid: snapshot.invalid,
     history: snapshot.history,
+    missing: snapshot.missing,
   };
 }
 

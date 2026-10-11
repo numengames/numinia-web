@@ -11,7 +11,12 @@ import type { SupportedLocale } from '@numinia/domain';
 export interface WorldsRoomMessages {
   readonly loading: string;
   readonly failed: string;
+  /** GitHub's keyless quota (60 reads an hour per address) is spent; `{time}` is when it reopens. */
+  readonly quota: string;
   readonly retry: string;
+  /** The book was read, but the open proposals and/or the history were refused this time. */
+  readonly missingNote: string;
+  readonly missingParts: { readonly pulls: string; readonly history: string };
   readonly empty: string;
   readonly noMatch: string;
   readonly keyless: string;
@@ -158,7 +163,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   es: {
     loading: 'Leyendo la flota…',
     failed: 'No se pudo leer el libro de órdenes ({detail}).',
+    quota:
+      'GitHub solo deja 60 lecturas por hora sin llave desde tu dirección, y se han gastado. Vuelve a abrir a las {time}.',
     retry: 'Reintentar',
+    missingParts: { pulls: 'las propuestas abiertas', history: 'el historial' },
+    missingNote:
+      'Esta vez GitHub no ha dejado leer {what}: el libro se muestra sin esa parte. Al recargar más tarde vuelve.',
     empty:
       'Todavía no hay mundos en la flota. Cada mundo nace con su ficha en la Summa y su orden en numinia-assets.',
     noMatch: 'Ningún mundo coincide con los filtros.',
@@ -309,7 +319,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   en: {
     loading: 'Reading the fleet…',
     failed: 'The order book could not be read ({detail}).',
+    quota:
+      'GitHub allows 60 keyless reads an hour from your address, and they are spent. It reopens at {time}.',
     retry: 'Try again',
+    missingParts: { pulls: 'the open proposals', history: 'the history' },
+    missingNote:
+      'This time GitHub refused to serve {what}: the book is shown without that part. Reload later and it is back.',
     empty:
       'No worlds in the fleet yet. Each world is born with its card in the Summa and its order in numinia-assets.',
     noMatch: 'No world matches the filters.',
@@ -459,7 +474,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   ja: {
     loading: 'フリートを読み込み中…',
     failed: 'オーダーブックを読み込めませんでした（{detail}）。',
+    quota:
+      'GitHub はキーなしの読み取りを 1 時間に 60 回までしか許可せず、使い切りました。{time} に再開します。',
     retry: '再試行',
+    missingParts: { pulls: '未処理の提案', history: '履歴' },
+    missingNote:
+      '今回 GitHub は{what}を返しませんでした。その部分なしでブックを表示しています。後で再読み込みすると戻ります。',
     empty:
       'フリートにはまだワールドがありません。各ワールドはスンマのカードと numinia-assets のオーダーから生まれます。',
     noMatch: 'フィルターに一致するワールドはありません。',
@@ -608,7 +628,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   ko: {
     loading: '플릿을 읽는 중…',
     failed: '주문 장부를 읽을 수 없습니다 ({detail}).',
+    quota:
+      'GitHub는 키 없이 한 시간에 60회만 읽기를 허용하며, 모두 소진되었습니다. {time}에 다시 열립니다.',
     retry: '다시 시도',
+    missingParts: { pulls: '열린 제안', history: '기록' },
+    missingNote:
+      '이번에는 GitHub가 {what}을(를) 제공하지 않았습니다. 그 부분 없이 장부를 표시합니다. 나중에 새로 고치면 돌아옵니다.',
     empty:
       '아직 플릿에 월드가 없습니다. 각 월드는 숨마의 카드와 numinia-assets의 주문으로 태어납니다.',
     noMatch: '필터에 맞는 월드가 없습니다.',
@@ -756,7 +781,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   'pt-br': {
     loading: 'Lendo a frota…',
     failed: 'Não foi possível ler o livro de ordens ({detail}).',
+    quota:
+      'O GitHub só permite 60 leituras por hora sem chave a partir do teu endereço, e esgotaram-se. Volta a abrir às {time}.',
     retry: 'Tentar de novo',
+    missingParts: { pulls: 'as propostas abertas', history: 'o histórico' },
+    missingNote:
+      'Desta vez o GitHub não deixou ler {what}: o livro mostra-se sem essa parte. Ao recarregar mais tarde volta.',
     empty:
       'Ainda não há mundos na frota. Cada mundo nasce com sua ficha na Summa e sua ordem em numinia-assets.',
     noMatch: 'Nenhum mundo corresponde aos filtros.',

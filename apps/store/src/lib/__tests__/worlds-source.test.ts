@@ -169,16 +169,56 @@ describe('readFleet', () => {
     expect(fleet.invalid).toEqual([]);
   });
 
-  it('fails loud when GitHub refuses the folder, a file or the pulls', async () => {
+  it('fails loud when GitHub refuses the folder or a file', async () => {
     const folder = fakeFetch(bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: fail(403) }));
     await expect(readFleet(folder.fetch, null)).rejects.toMatchObject({
       name: 'FleetError',
       status: 403,
+      quota: false,
+      resetAt: null,
     });
     const file = fakeFetch(bookRoutes({ [`${RAW}/agora.json`]: fail(500) }));
     await expect(readFleet(file.fetch, null)).rejects.toBeInstanceOf(FleetError);
-    const pulls = fakeFetch(bookRoutes({ [`${API}/pulls?state=open&per_page=100`]: fail(429) }));
-    await expect(readFleet(pulls.fetch, null)).rejects.toThrow('GitHub answered 429 on pulls');
+  });
+
+  it('names a spent keyless quota and when it reopens', async () => {
+    const spent = (reset: string): Response =>
+      new Response('{}', {
+        status: 403,
+        headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': reset },
+      });
+    const { fetch } = fakeFetch(
+      bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: spent('1791728465') }),
+    );
+    await expect(readFleet(fetch, null)).rejects.toMatchObject({
+      quota: true,
+      resetAt: 1791728465000,
+    });
+    const unsaid = fakeFetch(bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: spent('') }));
+    await expect(readFleet(unsaid.fetch, null)).rejects.toMatchObject({
+      quota: true,
+      resetAt: null,
+    });
+    // A 403 with quota left is a refusal of the request, not of the address.
+    const refused = new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '7' } });
+    expect(new FleetError(403, 'x', refused).quota).toBe(false);
+  });
+
+  it('shows the book without the proposals or the history when GitHub refuses those alone', async () => {
+    const PULLS = `${API}/pulls?state=open&per_page=100`;
+    const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
+    const pulls = fakeFetch(bookRoutes({ [PULLS]: fail(429) }));
+    const withoutPulls = await readFleet(pulls.fetch, null);
+    expect(withoutPulls.orders.map((order) => order.id)).toEqual(['agora']);
+    expect(withoutPulls.pending).toEqual([]);
+    expect(withoutPulls.history).toHaveLength(2);
+    expect(withoutPulls.missing).toEqual(['pulls']);
+    const both = fakeFetch(bookRoutes({ [PULLS]: fail(403), [COMMITS]: fail(403) }));
+    const bare = await readFleet(both.fetch, null);
+    expect(bare.history).toEqual([]);
+    expect(bare.missing).toEqual(['pulls', 'history']);
+    const whole = await readFleet(fakeFetch(bookRoutes()).fetch, null);
+    expect(whole.missing).toEqual([]);
   });
 
   it('fails loud when GitHub answers in a shape it does not expect', async () => {
