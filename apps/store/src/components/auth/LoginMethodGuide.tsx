@@ -56,7 +56,7 @@ const METHODS: readonly MethodCopy[] = [
 ];
 
 /**
- * Infers which method a click/focus inside the vendor widget refers to.
+ * Infers which method a tap inside the vendor widget refers to.
  * ConnectEmbed exposes no selection callback, so we listen at the container
  * (capture phase) and classify the actionable element by its visible text /
  * labels. Heuristic and spike-grade by design: a miss just means the guide

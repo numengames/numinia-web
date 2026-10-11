@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.76.1',
+    date: '2026-10-11 19:57',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Signing in shows at once what your rank opens. The LAP’s management zone — and, for an Oracle, the Worlds room — appeared in the side menu only after reloading the page you had signed in on. The sign-in now tells the menu, which shows those rooms straight away and hides them again when you sign out.',
+      },
+      {
+        type: 'FIX',
+        text: 'One press on “Connect a Wallet” opens the list of wallets. The step guide appeared on the press itself and pushed the sign-in box down, so the release landed beside the button and it took a second press.',
+      },
+    ],
+  },
+  {
     version: 'v0.76.0',
     date: '2026-10-11 15:00',
     missions: ['MIS-156'],
