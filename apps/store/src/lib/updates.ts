@@ -26,6 +26,25 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.76.0',
+    date: '2026-10-11 15:00',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The new-world wizard asks for the world’s name once. The name, the order file and the card in the Summa were three answers to the same question, so they are now one field; choosing a card still fills it in.',
+      },
+      {
+        type: 'FIX',
+        text: 'The wizard keeps what you typed. Closing it no longer empties the form: the draft waits until the world has been proposed, and an explicit “Start again” clears it. The screen that hands the change over to GitHub has a Back, so you can correct the world and hand it over again, and the browser’s Back button now closes the wizard instead of leaving the room.',
+      },
+      {
+        type: 'FIX',
+        text: 'The engine step no longer scrolls sideways. Its three boxes — memory, processors and upload limit — shrink with the dialog instead of pushing it wider than the screen.',
+      },
+    ],
+  },
+  {
     version: 'v0.75.1',
     date: '2026-10-11 14:30',
     missions: ['MIS-156'],

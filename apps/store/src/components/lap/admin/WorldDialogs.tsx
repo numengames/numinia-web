@@ -107,11 +107,26 @@ function Modal({
   readonly children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
+  }, [open]);
+  // An open dialog owns one history entry, so the browser's Back closes it
+  // instead of leaving the room (and losing what was typed).
+  useEffect(() => {
+    if (!open) return;
+    window.history.pushState({ worldsDialog: true }, '');
+    const onPop = (): void => close.current();
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      const state = window.history.state as { worldsDialog?: boolean } | null;
+      if (state?.worldsDialog === true) window.history.back();
+    };
   }, [open]);
   return (
     <dialog ref={ref} className="dialogo" aria-label={label} onClose={onClose}>
@@ -124,10 +139,13 @@ function Result({
   outcome,
   room,
   onClose,
+  onBack,
 }: {
   outcome: Outcome;
   room: WorldsRoomMessages;
   onClose: () => void;
+  /** Back to the wizard, keeping what was typed; absent when there is nothing to go back to. */
+  onBack?: (() => void) | undefined;
 }) {
   if (outcome.at === 'done') {
     return (
@@ -166,6 +184,16 @@ function Result({
           </>
         )}
         <div className="pie">
+          {onBack !== undefined && (
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={onBack}
+              data-metric="worlds-wizard-back"
+            >
+              {room.wizard.back}
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-fantasma"
@@ -316,14 +344,31 @@ export function NewWorldDialog({
   const [dns, setDns] = useState<DnsState>('checking');
   const [outcome, setOutcome] = useState<Outcome>({ at: 'idle' });
 
-  useEffect(() => {
-    if (!open) return;
+  const clear = (): void => {
     setStep(0);
     setDraft(emptyDraft(machines[0]));
     setLabel('');
     setZone(WORLD_ZONES[0]);
     setOutcome({ at: 'idle' });
-  }, [open, machines]);
+  };
+
+  // Nothing typed is ever thrown away: closing the wizard keeps the draft, and
+  // only a proposal already handed over (or Start again) empties it. A draft
+  // never touched still takes the machine the room ended up loading.
+  const pristine = draft.id.trim() === '' && label.trim() === '';
+  useEffect(() => {
+    if (!open || !pristine) return;
+    setDraft((current) =>
+      machines[0] === undefined || current.server === machines[0]
+        ? current
+        : { ...current, server: machines[0] },
+    );
+  }, [open, pristine, machines]);
+
+  const finish = (): void => {
+    clear();
+    onClose();
+  };
 
   const domain = joinDomain(label, zone);
   const owner = addressOwner(domain, rows);
@@ -354,7 +399,7 @@ export function NewWorldDialog({
   const chosen = cards.find((card) => card.slug === draft.card.trim()) ?? null;
 
   const canNext =
-    (step === 0 && draft.id.trim() !== '' && draft.card.trim() !== '') ||
+    (step === 0 && draft.id.trim() !== '') ||
     (step === 1 && draft.server.trim() !== '' && placeAllowed(domain, owner, dns)) ||
     (step === 2 && draft.image.trim() !== '');
 
@@ -402,7 +447,12 @@ export function NewWorldDialog({
       </header>
 
       {finished ? (
-        <Result outcome={outcome} room={room} onClose={onClose} />
+        <Result
+          outcome={outcome}
+          room={room}
+          onClose={finish}
+          onBack={outcome.at === 'manual' ? () => setOutcome({ at: 'idle' }) : undefined}
+        />
       ) : (
         <div className="contenido">
           {step === 0 && (
@@ -422,10 +472,7 @@ export function NewWorldDialog({
                         setDraft((current) => ({
                           ...current,
                           card: card.slug,
-                          id:
-                            current.id === '' || current.id === current.card
-                              ? card.slug
-                              : current.id,
+                          id: card.slug,
                         }))
                       }
                       data-metric="worlds-wizard-card"
@@ -441,16 +488,10 @@ export function NewWorldDialog({
                 label={room.wizard.idLabel}
                 hint={room.wizard.idHint}
                 value={draft.id}
-                invalid={marked.has('id')}
-                onChange={set('id')}
-              />
-              <Field
-                id="mundo-ficha"
-                label={room.wizard.cardLabel}
-                hint={room.wizard.cardHint}
-                value={draft.card}
-                invalid={marked.has('card')}
-                onChange={set('card')}
+                invalid={marked.has('id') || marked.has('card')}
+                onChange={(value) =>
+                  setDraft((current) => ({ ...current, id: value, card: value }))
+                }
               />
             </>
           )}
@@ -599,6 +640,16 @@ export function NewWorldDialog({
             >
               {room.wizard.cancel}
             </button>
+            {!pristine && (
+              <button
+                type="button"
+                className="btn btn-fantasma"
+                onClick={clear}
+                data-metric="worlds-wizard-restart"
+              >
+                {room.wizard.restart}
+              </button>
+            )}
             {step > 0 && (
               <button
                 type="button"

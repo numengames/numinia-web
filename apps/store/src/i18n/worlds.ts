@@ -92,7 +92,6 @@ export interface WorldsRoomMessages {
     readonly idLabel: string;
     readonly idHint: string;
     readonly cardLabel: string;
-    readonly cardHint: string;
     readonly serverLabel: string;
     readonly serverHint: string;
     readonly domainLabel: string;
@@ -116,6 +115,8 @@ export interface WorldsRoomMessages {
     readonly next: string;
     readonly back: string;
     readonly cancel: string;
+    /** Empties the wizard: the draft is kept otherwise, even when it is closed. */
+    readonly restart: string;
     readonly propose: string;
     readonly proposing: string;
     readonly resultTitle: string;
@@ -239,9 +240,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardNone:
         'La Summa todavía no tiene fichas de mundos: escribe el nombre que tendrá la ficha.',
       idLabel: 'Nombre del mundo',
-      idHint: 'Minúsculas, números y guiones. Es también el nombre del fichero de la orden.',
+      idHint: 'Minúsculas, números y guiones. Nombra a la vez el mundo, el fichero de su orden y su ficha en la Summa.',
       cardLabel: 'Ficha en la Summa',
-      cardHint: 'El nombre del fichero de la ficha en objects/, sin .md.',
       serverLabel: 'Servidor',
       serverHint: 'La máquina de la flota donde correrá el mundo.',
       domainLabel: 'Dirección',
@@ -267,6 +267,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       next: 'Siguiente',
       back: 'Atrás',
       cancel: 'Cancelar',
+      restart: 'Empezar de nuevo',
       propose: 'Proponer',
       proposing: 'Abriendo la propuesta…',
       resultTitle: 'Propuesta abierta',
@@ -396,9 +397,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Every world has its card in the Summa: it says what the world is and carries the cover, the same picture people see while it loads.',
       cardNone: 'The Summa has no world cards yet: type the name the card will have.',
       idLabel: 'World name',
-      idHint: 'Lowercase letters, digits and hyphens. It also names the order file.',
+      idHint: 'Lowercase letters, digits and hyphens. It names the world, its order file and its card in the Summa alike.',
       cardLabel: 'Card in the Summa',
-      cardHint: 'The card’s file name in objects/, without .md.',
       serverLabel: 'Server',
       serverHint: 'The fleet machine the world will run on.',
       domainLabel: 'Address',
@@ -424,6 +424,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       next: 'Next',
       back: 'Back',
       cancel: 'Cancel',
+      restart: 'Start again',
       propose: 'Propose',
       proposing: 'Opening the proposal…',
       resultTitle: 'Proposal opened',
@@ -553,9 +554,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '各ワールドはスンマにカードを持ちます。何のワールドかを示し、読み込み中に表示されるのと同じカバー画像を持ちます。',
       cardNone: 'スンマにはまだワールドのカードがありません。カードの名前を入力してください。',
       idLabel: 'ワールド名',
-      idHint: '小文字・数字・ハイフン。オーダーファイルの名前にもなります。',
+      idHint: '小文字・数字・ハイフン。ワールド名であり、オーダーファイル名であり、スンマのカード名でもあります。',
       cardLabel: 'スンマのカード',
-      cardHint: 'objects/ にあるカードのファイル名（.md なし）。',
       serverLabel: 'サーバー',
       serverHint: 'ワールドを動かすフリートのマシン。',
       domainLabel: 'アドレス',
@@ -581,6 +581,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       next: '次へ',
       back: '戻る',
       cancel: 'キャンセル',
+      restart: '最初からやり直す',
       propose: '提案する',
       proposing: '提案を作成中…',
       resultTitle: '提案を作成しました',
@@ -709,9 +710,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '모든 월드는 숨마에 카드가 있습니다. 월드가 무엇인지 말하고, 로딩 중에 보이는 것과 같은 커버 이미지를 담습니다.',
       cardNone: '숨마에 아직 월드 카드가 없습니다. 카드가 가질 이름을 입력하세요.',
       idLabel: '월드 이름',
-      idHint: '소문자, 숫자, 하이픈. 주문 파일의 이름이기도 합니다.',
+      idHint: '소문자, 숫자, 하이픈. 월드 이름이자 주문 파일 이름이자 숨마 카드 이름입니다.',
       cardLabel: '숨마의 카드',
-      cardHint: 'objects/에 있는 카드 파일 이름(.md 제외).',
       serverLabel: '서버',
       serverHint: '월드가 실행될 플릿의 머신.',
       domainLabel: '주소',
@@ -737,6 +737,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       next: '다음',
       back: '뒤로',
       cancel: '취소',
+      restart: '처음부터 다시',
       propose: '제안하기',
       proposing: '제안을 여는 중…',
       resultTitle: '제안을 열었습니다',
@@ -869,9 +870,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Cada mundo tem sua ficha na Summa: diz o que ele é e leva a capa, a mesma imagem que quem entra vê enquanto carrega.',
       cardNone: 'A Summa ainda não tem fichas de mundos: escreva o nome que a ficha terá.',
       idLabel: 'Nome do mundo',
-      idHint: 'Minúsculas, números e hífens. Também é o nome do arquivo da ordem.',
+      idHint: 'Minúsculas, números e hífens. Nomeia ao mesmo tempo o mundo, o arquivo da ordem e a ficha na Summa.',
       cardLabel: 'Ficha na Summa',
-      cardHint: 'O nome do arquivo da ficha em objects/, sem .md.',
       serverLabel: 'Servidor',
       serverHint: 'A máquina da frota onde o mundo vai rodar.',
       domainLabel: 'Endereço',
@@ -897,6 +897,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       next: 'Seguinte',
       back: 'Voltar',
       cancel: 'Cancelar',
+      restart: 'Começar de novo',
       propose: 'Propor',
       proposing: 'Abrindo a proposta…',
       resultTitle: 'Proposta aberta',
