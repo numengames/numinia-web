@@ -22,6 +22,9 @@ import type { SummaCard } from './summa';
 export const DEPOT = 'numengames/numinia-assets';
 export const DEPOT_BRANCH = 'main';
 export const FLEET_DIR = 'open-worlds';
+/** The book's table of contents: the ids of every order. Reserved, never a world. */
+export const INDEX_FILE = 'index.json';
+export const RESERVED_IDS: readonly string[] = ['index', 'caddy'];
 /**
  * The zones a world's address hangs from: one name under either. They mirror
  * the machine's own list (numinia-assets `open-worlds/machine/reconcile.py`,
@@ -129,6 +132,8 @@ export function orderProblems(source: string, stem: string): OrderProblem[] {
   for (const key of ['id', 'card', 'server'] as const) {
     if (!SLUG.test(text(order[key]))) found.push(key);
   }
+  // The depot's reserved names: the index itself and the machine's front service.
+  if (SLUG.test(text(order.id)) && RESERVED_IDS.includes(text(order.id))) found.push('id');
   if (order.state !== 'running' && order.state !== 'stopped') found.push('state');
   if (!DOMAIN.test(text(order.domain))) found.push('domain');
   if (!IMAGE.test(text(order.image))) found.push('image');
@@ -476,6 +481,44 @@ const GITHUB = `https://github.com/${DEPOT}`;
 
 export function orderPath(id: string): string {
   return `${FLEET_DIR}/${id}.json`;
+}
+
+export function indexPath(): string {
+  return `${FLEET_DIR}/${INDEX_FILE}`;
+}
+
+// ---------------------------------------------------------------------------
+// The index: the sorted ids of every order, the one list the room needs
+// ---------------------------------------------------------------------------
+
+/**
+ * The ids an index names, or null when the file is not an index. The depot
+ * keeps `{ "orders": [ids] }` sorted and nothing else; anything that is not
+ * a world id is dropped here, never trusted.
+ */
+export function parseIndex(source: string): string[] | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(source);
+  } catch {
+    return null;
+  }
+  if (!isRecord(value) || !sameKeys(value, ['orders']) || !Array.isArray(value['orders'])) {
+    return null;
+  }
+  return value['orders'].filter(
+    (id): id is string => typeof id === 'string' && SLUG.test(id) && !RESERVED_IDS.includes(id),
+  );
+}
+
+/** The index as the depot's test wants it: sorted, unique, two-space JSON, one trailing newline. */
+export function renderIndex(ids: readonly string[]): string {
+  return `${JSON.stringify({ orders: [...new Set(ids)].sort() }, null, 2)}\n`;
+}
+
+/** The index after a world is ordered (`present`) or closed (not). */
+export function indexWith(ids: readonly string[], id: string, present: boolean): string {
+  return renderIndex(present ? [...ids, id] : ids.filter((known) => known !== id));
 }
 
 /** GitHub's "new file" page with the order already written in. */

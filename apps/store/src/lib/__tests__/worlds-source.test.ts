@@ -1,30 +1,33 @@
 /**
  * The worlds room's I/O against a fake GitHub and fake worlds: reading the
- * order book (orders, proposals, history), probing each world's public
- * /status, and opening a proposal as one branch, one commit and one PR.
+ * order book as plain files (its index, then each order), the API's extras
+ * (proposals, history) as best effort, probing each world's public /status,
+ * and opening a proposal as one branch, its commits and one PR.
  */
 
 import { describe, expect, it } from 'vitest';
-import { renderOrder, type WorldOrder } from '../worlds';
+import { renderIndex, renderOrder, type WorldOrder } from '../worlds';
 import {
   FleetError,
   ProposalError,
   checkAddress,
-  watchByIds,
   probeFleet,
   probeWorld,
   probeWorlds,
   proposeChange,
   parseFace,
+  readExtras,
   readFace,
   readFaces,
   readFleet,
-  readFleetHere,
   worldsToken,
 } from '../worlds-source';
 
 const API = 'https://api.github.com/repos/numengames/numinia-assets';
 const RAW = 'https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds';
+const INDEX = `${RAW}/index.json`;
+const PULLS = `${API}/pulls?state=open&per_page=100`;
+const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
 
 const ORDER: WorldOrder = {
   id: 'agora',
@@ -79,18 +82,12 @@ describe('worldsToken', () => {
 function bookRoutes(overrides: Partial<Record<string, Response>> = {}): Route {
   return (call) => {
     if (call.url in overrides) return overrides[call.url];
-    if (call.url === `${API}/contents/open-worlds?ref=main`) {
-      return ok([
-        { name: 'README.md', type: 'file', download_url: `${RAW}/README.md` },
-        { name: 'agora.json', type: 'file', download_url: `${RAW}/agora.json` },
-        { name: 'broken.json', type: 'file', download_url: `${RAW}/broken.json` },
-        { name: 'nested', type: 'dir', download_url: null },
-      ]);
-    }
+    // The index may name what is not a world id: dropped, never fetched.
+    if (call.url === INDEX) return text('{"orders": ["agora", "broken", "index", "../x", 7]}');
     if (call.url === `${RAW}/agora.json`) return text(renderOrder(ORDER));
     if (call.url === `${RAW}/broken.json`)
       return text(JSON.stringify({ ...ORDER, id: 'broken', image: 'x:latest' }));
-    if (call.url === `${API}/pulls?state=open&per_page=100`) {
+    if (call.url === PULLS) {
       return ok([
         {
           number: 7,
@@ -104,7 +101,7 @@ function bookRoutes(overrides: Partial<Record<string, Response>> = {}): Route {
         },
       ]);
     }
-    if (call.url === `${API}/commits?path=open-worlds&sha=main&per_page=15`) {
+    if (call.url === COMMITS) {
       return ok([
         {
           sha: '0123456789abcdef',
@@ -149,9 +146,15 @@ describe('readFleet', () => {
       },
       expect.objectContaining({ sha: 'fedcba9', author: 'Someone' }),
     ]);
-    // The API calls carry the token; the raw file downloads do not need it.
+    expect(fleet.missing).toEqual([]);
+    // The API calls carry the token; the raw file reads do not need it.
     expect(calls.find((call) => call.url.startsWith(API))?.auth).toMatch(/^Bearer token-/);
-    expect(calls.find((call) => call.url.startsWith(RAW))?.auth).toBeNull();
+    const raw = calls.filter((call) => call.url.startsWith(RAW));
+    expect(raw.every((call) => call.auth === null)).toBe(true);
+    // The book is read as plain files: the index, then only the orders it names.
+    expect(raw.map((call) => call.url)).toEqual([INDEX, `${RAW}/agora.json`, `${RAW}/broken.json`]);
+    // Listing the folder through the API — the read GitHub rations — is never asked.
+    expect(calls.some((call) => call.url.includes('/contents/'))).toBe(false);
   });
 
   it('reads without a token too', async () => {
@@ -160,92 +163,64 @@ describe('readFleet', () => {
     expect(calls.every((call) => call.auth === null)).toBe(true);
   });
 
-  it('treats a missing folder as an empty fleet', async () => {
-    const { fetch } = fakeFetch(
-      bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: fail(404) }),
-    );
+  it('treats a missing index as an empty fleet', async () => {
+    const { fetch } = fakeFetch(bookRoutes({ [INDEX]: fail(404) }));
     const fleet = await readFleet(fetch, null);
     expect(fleet.orders).toEqual([]);
     expect(fleet.invalid).toEqual([]);
   });
 
-  it('fails loud when GitHub refuses the folder or a file', async () => {
-    const folder = fakeFetch(bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: fail(403) }));
-    await expect(readFleet(folder.fetch, null)).rejects.toMatchObject({
+  it('fails loud when the index or an order cannot be read, or the index is not one', async () => {
+    const index = fakeFetch(bookRoutes({ [INDEX]: fail(500) }));
+    await expect(readFleet(index.fetch, null)).rejects.toMatchObject({
       name: 'FleetError',
-      status: 403,
+      status: 500,
       quota: false,
       resetAt: null,
     });
-    const file = fakeFetch(bookRoutes({ [`${RAW}/agora.json`]: fail(500) }));
-    await expect(readFleet(file.fetch, null)).rejects.toBeInstanceOf(FleetError);
+    const file = fakeFetch(bookRoutes({ [`${RAW}/agora.json`]: fail(404) }));
+    await expect(readFleet(file.fetch, null)).rejects.toThrow('404 on open-worlds/agora.json');
+    for (const bad of ['{', '[]', '{"orders": {}}', '{"orders": [], "x": 1}']) {
+      const shape = fakeFetch(bookRoutes({ [INDEX]: text(bad) }));
+      await expect(readFleet(shape.fetch, null)).rejects.toThrow('unexpected shape');
+    }
   });
 
-  it('names a spent keyless quota and when it reopens', async () => {
-    const spent = (reset: string): Response =>
-      new Response('{}', {
-        status: 403,
-        headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': reset },
-      });
-    const { fetch } = fakeFetch(
-      bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: spent('1791728465') }),
-    );
-    await expect(readFleet(fetch, null)).rejects.toMatchObject({
-      quota: true,
-      resetAt: 1791728465000,
-    });
-    const unsaid = fakeFetch(bookRoutes({ [`${API}/contents/open-worlds?ref=main`]: spent('') }));
-    await expect(readFleet(unsaid.fetch, null)).rejects.toMatchObject({
-      quota: true,
-      resetAt: null,
-    });
-    // A 403 with quota left is a refusal of the request, not of the address.
-    const refused = new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '7' } });
-    expect(new FleetError(403, 'x', refused).quota).toBe(false);
-  });
-
-  it('shows the book without the proposals or the history when GitHub refuses those alone', async () => {
-    const PULLS = `${API}/pulls?state=open&per_page=100`;
-    const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
+  it('shows the book without the proposals or the history when GitHub refuses those', async () => {
     const pulls = fakeFetch(bookRoutes({ [PULLS]: fail(429) }));
     const withoutPulls = await readFleet(pulls.fetch, null);
     expect(withoutPulls.orders.map((order) => order.id)).toEqual(['agora']);
     expect(withoutPulls.pending).toEqual([]);
     expect(withoutPulls.history).toHaveLength(2);
     expect(withoutPulls.missing).toEqual(['pulls']);
+    expect(withoutPulls.resetAt).toBeNull();
     const both = fakeFetch(bookRoutes({ [PULLS]: fail(403), [COMMITS]: fail(403) }));
     const bare = await readFleet(both.fetch, null);
     expect(bare.history).toEqual([]);
     expect(bare.missing).toEqual(['pulls', 'history']);
-    const whole = await readFleet(fakeFetch(bookRoutes()).fetch, null);
-    expect(whole.missing).toEqual([]);
   });
 
-  it('fails loud when GitHub answers in a shape it does not expect', async () => {
-    const DIR = `${API}/contents/open-worlds?ref=main`;
-    const PULLS = `${API}/pulls?state=open&per_page=100`;
-    const COMMITS = `${API}/commits?path=open-worlds&sha=main&per_page=15`;
+  it('treats an API answer in a shape it does not expect as that extra missing', async () => {
     const commit = {
       sha: 'abc1234',
       html_url: 'u',
       author: null,
       commit: { message: 'm', author: { name: 'n', date: 'd' } },
     };
-    const cases: Record<string, Response>[] = [
-      { [DIR]: ok({}) },
-      { [DIR]: ok(['x']) },
-      { [DIR]: ok([null]) },
-      { [DIR]: ok([{ name: 'a.json', type: 'file', download_url: 7 }]) },
-      { [DIR]: ok([{ name: 1, type: 'file', download_url: null }]) },
-      { [PULLS]: ok([{ number: '7', html_url: 'u', head: { ref: 'r' } }]) },
-      { [PULLS]: ok([{ number: 7, html_url: 'u', head: null }]) },
-      { [COMMITS]: ok([{ ...commit, author: { login: 3 } }]) },
-      { [COMMITS]: ok([{ ...commit, commit: { message: 'm' } }]) },
-      { [COMMITS]: ok([{ ...commit, sha: null }]) },
+    const cases: [Record<string, Response>, string][] = [
+      [{ [PULLS]: ok({}) }, 'pulls'],
+      [{ [PULLS]: ok([null]) }, 'pulls'],
+      [{ [PULLS]: ok([{ number: '7', html_url: 'u', head: { ref: 'r' } }]) }, 'pulls'],
+      [{ [PULLS]: ok([{ number: 7, html_url: 'u', head: null }]) }, 'pulls'],
+      [{ [COMMITS]: ok([{ ...commit, author: { login: 3 } }]) }, 'history'],
+      [{ [COMMITS]: ok([{ ...commit, commit: { message: 'm' } }]) }, 'history'],
+      [{ [COMMITS]: ok([{ ...commit, sha: null }]) }, 'history'],
     ];
-    for (const overrides of cases) {
+    for (const [overrides, extra] of cases) {
       const { fetch } = fakeFetch(bookRoutes(overrides));
-      await expect(readFleet(fetch, null)).rejects.toMatchObject({ name: 'FleetError', status: 0 });
+      const fleet = await readFleet(fetch, null);
+      expect(fleet.orders).toEqual([ORDER]);
+      expect(fleet.missing).toEqual([extra]);
     }
   });
 });
@@ -442,6 +417,10 @@ function proposalRoutes(
     if (key === `POST ${API}/git/refs`) return ok({}, 201);
     if (key === `PUT ${API}/contents/open-worlds/agora.json`) return ok({}, 201);
     if (key === `DELETE ${API}/contents/open-worlds/agora.json`) return ok({});
+    // The index on the branch just made: it names the world only when the order exists.
+    if (key.startsWith(`GET ${API}/contents/open-worlds/index.json?ref=open-worlds/agora/`))
+      return indexFile(existing ? ['agora', 'plaza'] : ['plaza']);
+    if (key === `PUT ${API}/contents/open-worlds/index.json`) return ok({}, 201);
     if (key === `POST ${API}/pulls`)
       return ok({ number: 21, html_url: 'https://github.com/x/pull/21' }, 201);
     if (key.startsWith(`POST ${API}/pulls/21/requested_reviewers`)) return ok({}, 201);
@@ -457,8 +436,17 @@ const existingFile = (order: unknown): Response =>
       .replace(/(.{60})/g, '$1\n'),
   });
 
-describe('proposeChange — one branch, one commit, one pull request', () => {
-  it('orders a new world and asks the house’s reviewers one by one', async () => {
+const indexFile = (ids: string[]): Response =>
+  ok({ sha: 'index-sha', content: Buffer.from(renderIndex(ids)).toString('base64') });
+
+const decoded = (body: unknown): string =>
+  Buffer.from((body as { content: string }).content, 'base64').toString('utf8');
+
+const putsTo = (calls: Call[], path: string): Call[] =>
+  calls.filter((call) => call.method === 'PUT' && call.url === `${API}/contents/${path}`);
+
+describe('proposeChange — one branch, its commits, one pull request', () => {
+  it('orders a new world, lists it in the index, and asks the house’s reviewers one by one', async () => {
     const { fetch, calls } = fakeFetch(proposalRoutes(null));
     const proposal = await proposeChange(
       fetch,
@@ -470,11 +458,16 @@ describe('proposeChange — one branch, one commit, one pull request', () => {
     expect(proposal).toEqual({ number: 21, url: 'https://github.com/x/pull/21' });
     const ref = calls.find((call) => call.url === `${API}/git/refs`);
     expect(ref?.body).toEqual({ ref: 'refs/heads/open-worlds/agora/create-lz1', sha: 'base-sha' });
-    const put = calls.find((call) => call.method === 'PUT');
+    const put = putsTo(calls, 'open-worlds/agora.json')[0];
     const putBody = put?.body as { message: string; content: string; branch: string };
     expect(putBody.branch).toBe('open-worlds/agora/create-lz1');
     expect(putBody.message).toContain('Acting-Wallet: 0xabc');
-    expect(Buffer.from(putBody.content, 'base64').toString('utf8')).toBe(renderOrder(ORDER));
+    expect(decoded(putBody)).toBe(renderOrder(ORDER));
+    // The depot's test wants the index equal to the folder: same branch, right after.
+    const index = putsTo(calls, 'open-worlds/index.json')[0];
+    expect(index?.body).toMatchObject({ sha: 'index-sha', branch: 'open-worlds/agora/create-lz1' });
+    expect(decoded(index?.body)).toBe(renderIndex(['agora', 'plaza']));
+    expect(calls.indexOf(put as Call)).toBeLessThan(calls.indexOf(index as Call));
     const pull = calls.find((call) => call.url === `${API}/pulls`);
     expect(pull?.body).toMatchObject({ head: 'open-worlds/agora/create-lz1', base: 'main' });
     const reviewers = calls.filter((call) => call.url.endsWith('/requested_reviewers'));
@@ -496,18 +489,13 @@ describe('proposeChange — one branch, one commit, one pull request', () => {
     });
   });
 
-  it('stops a world by rewriting only its state, against the file’s sha', async () => {
+  it('stops a world by rewriting only its state, against the file’s sha; the index is left alone', async () => {
     const { fetch, calls } = fakeFetch(proposalRoutes(existingFile(ORDER)));
     await proposeChange(fetch, TOKEN, { action: 'stop', id: 'agora' }, '0xabc', 'lz2');
-    const put = calls.find((call) => call.method === 'PUT')?.body as {
-      content: string;
-      sha: string;
-    };
+    const put = putsTo(calls, 'open-worlds/agora.json')[0]?.body as { sha: string };
     expect(put.sha).toBe('file-sha');
-    expect(JSON.parse(Buffer.from(put.content, 'base64').toString('utf8'))).toEqual({
-      ...ORDER,
-      state: 'stopped',
-    });
+    expect(JSON.parse(decoded(put))).toEqual({ ...ORDER, state: 'stopped' });
+    expect(calls.some((call) => call.url.includes('index.json'))).toBe(false);
   });
 
   it('starts a stopped world', async () => {
@@ -515,16 +503,32 @@ describe('proposeChange — one branch, one commit, one pull request', () => {
       proposalRoutes(existingFile({ ...ORDER, state: 'stopped' })),
     );
     await proposeChange(fetch, TOKEN, { action: 'start', id: 'agora' }, '0xabc', 'lz3');
-    const put = calls.find((call) => call.method === 'PUT')?.body as { content: string };
-    expect(JSON.parse(Buffer.from(put.content, 'base64').toString('utf8')).state).toBe('running');
+    const put = putsTo(calls, 'open-worlds/agora.json')[0]?.body;
+    expect(JSON.parse(decoded(put)).state).toBe('running');
   });
 
-  it('closes a world by deleting its order — nothing else', async () => {
+  it('closes a world by deleting its order and striking it from the index — nothing else', async () => {
     const { fetch, calls } = fakeFetch(proposalRoutes(existingFile(ORDER)));
     await proposeChange(fetch, TOKEN, { action: 'close', id: 'agora' }, '0xabc', 'lz4');
     const deleted = calls.find((call) => call.method === 'DELETE');
     expect(deleted?.body).toMatchObject({ sha: 'file-sha', branch: 'open-worlds/agora/close-lz4' });
-    expect(calls.some((call) => call.method === 'PUT')).toBe(false);
+    expect(putsTo(calls, 'open-worlds/agora.json')).toEqual([]);
+    const index = putsTo(calls, 'open-worlds/index.json')[0];
+    expect(decoded(index?.body)).toBe(renderIndex(['plaza']));
+  });
+
+  it('refuses to touch an index that is not one, or that GitHub will not give', async () => {
+    const INDEX_ON_BRANCH = `GET ${API}/contents/open-worlds/index.json?ref=open-worlds/agora/create-lz1`;
+    const broken = fakeFetch(
+      proposalRoutes(null, { [INDEX_ON_BRANCH]: ok({ sha: 'x', content: btoa('{"x": 1}') }) }),
+    );
+    await expect(
+      proposeChange(broken.fetch, TOKEN, { action: 'create', order: ORDER }, '0xabc', 'lz1'),
+    ).rejects.toMatchObject({ code: 'github', status: 422 });
+    const gone = fakeFetch(proposalRoutes(null, { [INDEX_ON_BRANCH]: fail(404) }));
+    await expect(
+      proposeChange(gone.fetch, TOKEN, { action: 'create', order: ORDER }, '0xabc', 'lz1'),
+    ).rejects.toMatchObject({ code: 'github', status: 404 });
   });
 
   it('cannot change a world that has no order', async () => {
@@ -574,110 +578,46 @@ describe('proposeChange — one branch, one commit, one pull request', () => {
   });
 });
 
-const LIVE = { uptime: 30, connectedUsers: [{ name: 'x' }], commitHash: 'abcdef123' };
-const SEEN = { ok: true, users: 1, uptime: 30, commit: 'abcdef1' } as const;
-
-describe('watchByIds — the Worker asks only hosts an order names', () => {
-  const live = (call: Call): Response | undefined => {
-    if (call.url === `${RAW}/agora.json`) return text(renderOrder(ORDER));
-    if (call.url === 'https://agora.numen.games/status') return ok(LIVE);
-    if (call.url === 'https://agora.numen.games/') return text('<title>Agora</title>');
-    return undefined;
-  };
-
-  it('reads each order raw, probes the running world and reads its face when it has no card', async () => {
-    const { fetch, calls } = fakeFetch(live);
-    expect(await watchByIds(fetch, ['agora', 'agora'], new Set())).toEqual({
-      probes: { agora: SEEN },
-      faces: { agora: { title: 'Agora', image: null } },
+describe('readExtras — the API’s part, best effort, from the Worker or the Oracle’s browser', () => {
+  const spent = (reset: string): Response =>
+    new Response('{}', {
+      status: 403,
+      headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': reset },
     });
-    expect(calls.map((call) => call.url).sort()).toEqual(
-      [
-        `${RAW}/agora.json`,
-        'https://agora.numen.games/',
-        'https://agora.numen.games/status',
-      ].sort(),
-    );
+
+  it('asks only for what is wanted', async () => {
+    const { fetch, calls } = fakeFetch(bookRoutes());
+    const extras = await readExtras(fetch, null, ['history']);
+    expect(extras.pending).toEqual([]);
+    expect(extras.history).toHaveLength(2);
+    expect(extras.missing).toEqual([]);
+    expect(calls.map((call) => call.url)).toEqual([COMMITS]);
+    const none = await readExtras(fakeFetch(bookRoutes()).fetch, null, []);
+    expect(none).toEqual({ pending: [], history: [], missing: [], resetAt: null });
   });
 
-  it('does not read the face of a world that has its card', async () => {
-    const { fetch, calls } = fakeFetch(live);
-    expect(await watchByIds(fetch, ['agora'], new Set(['agora']))).toEqual({
-      probes: { agora: SEEN },
-      faces: {},
-    });
-    expect(calls.some((call) => call.url === 'https://agora.numen.games/')).toBe(false);
+  it('names a spent keyless quota and when it reopens', async () => {
+    const { fetch } = fakeFetch(bookRoutes({ [PULLS]: spent('1791728465'), [COMMITS]: fail(500) }));
+    const extras = await readExtras(fetch, null);
+    expect(extras.missing).toEqual(['pulls', 'history']);
+    expect(extras.resetAt).toBe(1791728465000);
+    const unsaid = fakeFetch(bookRoutes({ [PULLS]: spent('') }));
+    expect((await readExtras(unsaid.fetch, null)).resetAt).toBeNull();
+    // A 403 with quota left is a refusal of the request, not of the address.
+    const refused = new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '7' } });
+    expect(new FleetError(403, 'x', refused).quota).toBe(false);
+    expect(new FleetError(403, 'x').quota).toBe(false);
   });
 
-  it('skips ids that are not slugs, missing or broken orders, failed reads and stopped worlds', async () => {
-    const rest = { ...ORDER, id: 'rest', card: 'rest', state: 'stopped' as const };
-    const { fetch, calls } = fakeFetch((call) => {
-      if (call.url === `${RAW}/missing.json`) return fail(404);
-      if (call.url === `${RAW}/broken.json`) return text('{}');
-      if (call.url === `${RAW}/rest.json`) return text(renderOrder(rest));
+  it('treats a network failure and a wrong shape like a refusal', async () => {
+    const { fetch } = fakeFetch((call) => {
+      if (call.url === PULLS) return Promise.reject(new Error('offline'));
+      if (call.url === COMMITS) return ok({ not: 'a list' });
       return undefined;
     });
-    expect(
-      await watchByIds(
-        fetch,
-        ['../etc', 'evil.com/x', 'missing', 'broken', 'boom', 'rest'],
-        new Set(),
-      ),
-    ).toEqual({ probes: {}, faces: {} });
-    expect(calls.map((call) => call.url)).toEqual([
-      `${RAW}/missing.json`,
-      `${RAW}/broken.json`,
-      `${RAW}/boom.json`,
-      `${RAW}/rest.json`,
-    ]);
-  });
-});
-
-describe('readFleetHere — the order book read by the Oracle’s browser', () => {
-  const VIC = { id: 'vic', domain: 'vic.numinia.com', server: 'vps-76aa7afe' };
-  const ANSWER = {
-    rank: 'oracle',
-    canPropose: false,
-    cards: [],
-    legacy: [VIC],
-    probes: { vic: SEEN },
-    faces: { vic: { title: 'Vic', image: null } },
-  };
-  const WATCH = '/api/admin/worlds?probe=agora';
-  const statuses = (rows: readonly { id: string; status: string; title: string }[]) =>
-    rows.map((row) => [row.id, row.status, row.title]);
-
-  it('reads without a key, asks the Worker to watch the running worlds and keeps the legacy ones', async () => {
-    const { fetch, calls } = fakeFetch((call) =>
-      call.url === WATCH
-        ? ok({ probes: { agora: SEEN }, faces: { agora: { title: 'Agora', image: null } } })
-        : bookRoutes()(call),
-    );
-    const fleet = await readFleetHere(fetch, ANSWER);
-    expect(fleet.rank).toBe('oracle');
-    expect(fleet.canPropose).toBe(false);
-    expect(statuses(fleet.rows)).toEqual([
-      ['agora', 'running', 'Agora'],
-      ['vic', 'running', 'Vic'],
-    ]);
-    expect(fleet.invalid).toEqual([{ file: 'broken.json', problems: ['image'] }]);
-    expect(fleet.history).toHaveLength(2);
-    expect(calls.every((call) => call.auth === null)).toBe(true);
-  });
-
-  it('leaves a world unknown when the Worker cannot watch it', async () => {
-    for (const answer of [fail(500), ok({})]) {
-      const { fetch } = fakeFetch((call) => (call.url === WATCH ? answer : bookRoutes()(call)));
-      const fleet = await readFleetHere(fetch, { ...ANSWER, legacy: [] });
-      expect(statuses(fleet.rows)).toEqual([['agora', 'unknown', 'agora']]);
-    }
-  });
-
-  it('does not call the Worker when no world is running', async () => {
-    const stopped = text(renderOrder({ ...ORDER, state: 'stopped' }));
-    const { fetch, calls } = fakeFetch(bookRoutes({ [`${RAW}/agora.json`]: stopped }));
-    const fleet = await readFleetHere(fetch, { ...ANSWER, legacy: [] });
-    expect(statuses(fleet.rows)).toEqual([['agora', 'stopped', 'agora']]);
-    expect(calls.some((call) => call.url.startsWith('/api/'))).toBe(false);
+    const extras = await readExtras(fetch, null);
+    expect(extras.missing).toEqual(['pulls', 'history']);
+    expect(extras.pending).toEqual([]);
+    expect(extras.history).toEqual([]);
   });
 });

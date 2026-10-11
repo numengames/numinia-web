@@ -4,12 +4,14 @@
  * and checked against the permission ladder (@numinia/domain), never from a
  * header or a query the caller controls. Only Oracles hold `manage-worlds`.
  *
- * GET  reads the fleet: orders and proposals from numinia-assets, cards and
- *      covers from the Summa, liveness from each world's public /status.
- *      Without WORLDS_GITHUB_TOKEN it answers who asks and the cards, and
- *      the Oracle's browser reads the public order book itself (GitHub
- *      refuses anonymous readers on Cloudflare's shared addresses);
- *      `?probe=` then asks the running worlds from here.
+ * GET  reads the fleet: the orders from numinia-assets as plain files (its
+ *      index, then each order, from raw.githubusercontent.com — no key, no
+ *      quota worth naming), cards and covers from the Summa, liveness from
+ *      each world's public /status. The open proposals and the history come
+ *      from GitHub's API, best effort: without WORLDS_GITHUB_TOKEN that API
+ *      refuses Cloudflare's shared addresses, so the answer names them in
+ *      `missing` and the Oracle's browser asks for them itself (60 keyless
+ *      reads an hour per address — enough for what is optional).
  * POST proposes ONE change as a pull request on the order book — never a
  *      write anywhere else. Without WORLDS_GITHUB_TOKEN it answers 503 and
  *      the room opens the same change on GitHub, under the Oracle's account.
@@ -41,7 +43,6 @@ import {
   proposeChange,
   readFaces,
   readFleet,
-  watchByIds,
   worldsToken,
   type Change,
   type FleetSnapshot,
@@ -93,25 +94,10 @@ const unreadable = (error: unknown): Response =>
     { status: 502 },
   );
 
-export const GET: APIRoute = async ({ cookies, url }) => {
+export const GET: APIRoute = async ({ cookies }) => {
   const session = await sessionOf(cookies.get(SESSION_COOKIE)?.value);
   // Fail closed: no session, or a rank without the permission, sees nothing.
   if (!session || !hasPermission(session.rank, 'manage-worlds')) return forbidden();
-
-  // ?probe=a,b — the running worlds' /status (and face, without a card),
-  // asked from here because a browser cannot: each domain is read from its
-  // order, never from the query.
-  const probe = url.searchParams.get('probe');
-  if (probe !== null) {
-    const watch = useFixture()
-      ? { probes: FIXTURE.probes, faces: FIXTURE.faces }
-      : await watchByIds(
-          fetch,
-          probe.split(','),
-          new Set(worldCards((await loadSumma()).entities).map((card) => card.slug)),
-        );
-    return Response.json(watch, { headers: { 'cache-control': 'no-store' } });
-  }
 
   const token = useFixture() ? null : worldsToken(runtimeEnv());
   let snapshot: FleetSnapshot;
@@ -125,26 +111,6 @@ export const GET: APIRoute = async ({ cookies, url }) => {
     probes = FIXTURE.probes;
     legacy = FIXTURE.legacy;
     faces = FIXTURE.faces;
-  } else if (token === null) {
-    // No key: GitHub refuses anonymous readers on Cloudflare's shared
-    // addresses, so the Oracle's browser reads the public order book itself.
-    // The legacy worlds need no book: they are watched from here.
-    const [watched, read] = await Promise.all([
-      probeWorlds(fetch, LEGACY),
-      readFaces(fetch, LEGACY),
-    ]);
-    return Response.json(
-      {
-        rank: session.rank,
-        canPropose: false,
-        cards: worldCards((await loadSumma()).entities),
-        legacy: LEGACY,
-        probes: watched,
-        faces: read,
-        readHere: true,
-      },
-      { headers: { 'cache-control': 'no-store' } },
-    );
   } else {
     try {
       snapshot = await fleet(token);
@@ -180,7 +146,13 @@ export const GET: APIRoute = async ({ cookies, url }) => {
         legacy,
         faces,
       }),
+      // The ingredients too: with the extras missing, the browser asks GitHub
+      // for them itself and builds the rows again.
+      orders: snapshot.orders,
       cards,
+      probes,
+      legacy,
+      faces,
       invalid: snapshot.invalid,
       history: snapshot.history,
       missing: snapshot.missing,

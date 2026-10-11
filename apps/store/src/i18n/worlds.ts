@@ -123,6 +123,8 @@ export interface WorldsRoomMessages {
     readonly resultAfter: string;
     readonly manualTitle: string;
     readonly manualNote: string;
+    /** Shown with the index the PR must also carry (create and close). */
+    readonly manualIndex: string;
     readonly manualEdit: string;
     readonly openGithub: string;
     readonly done: string;
@@ -274,6 +276,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Ábrelo en GitHub',
       manualNote:
         'GitHub abrirá el cambio ya escrito; elige «Create a new branch and start a pull request» para proponerlo.',
+      manualIndex:
+        'La misma propuesta debe tocar también el índice del libro, open-worlds/index.json, y dejarlo así (en la rama de la propuesta, antes de pedir la revisión; si no, las pruebas del depósito la rechazan):',
       manualEdit:
         'GitHub abrirá la orden: cambia «state» a «{state}» y elige «Create a new branch and start a pull request».',
       openGithub: 'Abrir en GitHub',
@@ -429,6 +433,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Open it on GitHub',
       manualNote:
         'GitHub opens the change already written; choose “Create a new branch and start a pull request” to propose it.',
+      manualIndex:
+        'The same proposal must also touch the book’s index, open-worlds/index.json, and leave it like this (on the proposal’s branch, before asking for review; otherwise the depot’s tests refuse it):',
       manualEdit:
         'GitHub opens the order: change “state” to “{state}” and choose “Create a new branch and start a pull request”.',
       openGithub: 'Open on GitHub',
@@ -584,6 +590,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'GitHub で開く',
       manualNote:
         'GitHub が変更を書き込んだ状態で開きます。「Create a new branch and start a pull request」を選んで提案してください。',
+      manualIndex:
+        '同じ提案で、ブックの索引 open-worlds/index.json も変更し、次の内容にしてください（提案のブランチ上で、レビュー依頼の前に。そうしないとデポのテストが拒否します）：',
       manualEdit:
         'GitHub がオーダーを開きます。「state」を「{state}」に変え、「Create a new branch and start a pull request」を選んでください。',
       openGithub: 'GitHub で開く',
@@ -737,6 +745,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'GitHub에서 열기',
       manualNote:
         'GitHub가 변경을 미리 작성한 채로 엽니다. “Create a new branch and start a pull request”를 골라 제안하세요.',
+      manualIndex:
+        '같은 제안에서 장부의 색인 open-worlds/index.json도 수정해 다음과 같이 두세요(제안 브랜치에서, 검토 요청 전에. 그렇지 않으면 저장소 테스트가 거부합니다):',
       manualEdit:
         'GitHub가 주문을 엽니다. “state”를 “{state}”(으)로 바꾸고 “Create a new branch and start a pull request”를 고르세요.',
       openGithub: 'GitHub에서 열기',
@@ -896,6 +906,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manualTitle: 'Abra no GitHub',
       manualNote:
         'O GitHub abre a mudança já escrita; escolha “Create a new branch and start a pull request” para propô-la.',
+      manualIndex:
+        'A mesma proposta deve tocar também o índice do livro, open-worlds/index.json, e deixá-lo assim (no ramo da proposta, antes de pedir a revisão; senão os testes do depósito recusam-na):',
       manualEdit:
         'O GitHub abre a ordem: mude “state” para “{state}” e escolha “Create a new branch and start a pull request”.',
       openGithub: 'Abrir no GitHub',

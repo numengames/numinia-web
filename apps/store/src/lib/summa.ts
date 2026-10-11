@@ -154,7 +154,10 @@ export function parseCardBody(markdown: string): readonly CardSection[] {
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter((p) => p !== '' && !p.startsWith('>') && p !== '---');
-    return { title, html: paragraphs.map((p) => `<p>${inline(p.replaceAll('\n', ' '))}</p>`).join('') };
+    return {
+      title,
+      html: paragraphs.map((p) => `<p>${inline(p.replaceAll('\n', ' '))}</p>`).join(''),
+    };
   });
 }
 

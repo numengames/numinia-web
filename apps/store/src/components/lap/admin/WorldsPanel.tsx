@@ -11,18 +11,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
+  buildRows,
   fill,
   filterRows,
   fleetHistoryUrl,
   fleetServers,
   fleetStats,
   machineChoices,
+  type LegacyWorld,
+  type Probe,
   type StatusFilter,
   type WorldCardInfo,
+  type WorldFace,
+  type WorldOrder,
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
-import { FleetError, readFleetHere, type KeylessAnswer } from '../../../lib/worlds-source';
+import { readExtras, type Extra } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { ChangeDialog, NewWorldDialog } from './WorldDialogs';
 import { CardsView, ListView, ServersView, type WorldAction } from './WorldViews';
@@ -48,21 +53,63 @@ interface Fleet {
   readonly cards: readonly WorldCardInfo[];
   readonly invalid: readonly { readonly file: string; readonly problems: readonly string[] }[];
   readonly history: readonly HistoryEntry[];
-  readonly missing?: readonly ('pulls' | 'history')[];
+  /** The extras GitHub refused, after this browser tried too. */
+  readonly missing: readonly Extra[];
+  /** When a spent quota reopens, if that is why they are missing. */
+  readonly resetAt: number | null;
+}
+
+/** What the Worker answers: the rows, and their ingredients for building them again. */
+interface Answer extends Omit<Fleet, 'resetAt'> {
+  readonly orders: readonly WorldOrder[];
+  readonly probes: Readonly<Record<string, Probe>>;
+  readonly legacy: readonly LegacyWorld[];
+  readonly faces: Readonly<Record<string, WorldFace>>;
+}
+
+/**
+ * The Worker holds no key, so GitHub's API refuses it the proposals and the
+ * history; this browser has its own 60 keyless reads an hour, enough for
+ * those two. The rows are built again when the proposals arrive, so a world
+ * waiting in a pull request shows as requested.
+ */
+async function completeHere(answer: Answer): Promise<Fleet> {
+  const extras = await readExtras(fetch, null, answer.missing);
+  const pending = answer.missing.includes('pulls') ? extras.pending : [];
+  const rows =
+    pending.length > 0
+      ? buildRows({
+          orders: answer.orders,
+          cards: answer.cards,
+          probes: answer.probes,
+          pending,
+          legacy: answer.legacy,
+          faces: answer.faces,
+        })
+      : answer.rows;
+  return {
+    rank: answer.rank,
+    canPropose: answer.canPropose,
+    rows,
+    cards: answer.cards,
+    invalid: answer.invalid,
+    history: answer.missing.includes('history') ? extras.history : answer.history,
+    missing: extras.missing,
+    resetAt: extras.resetAt,
+  };
 }
 
 type Panel =
   | { readonly at: 'loading' }
   | { readonly at: 'forbidden' }
   | { readonly at: 'error'; readonly detail: string }
-  | { readonly at: 'quota'; readonly resetAt: number | null }
   | { readonly at: 'ready'; readonly fleet: Fleet };
 
 type View = 'cards' | 'list' | 'servers';
 
-/** When GitHub's window reopens, as a clock time in the reader's locale; "?" when it did not say. */
-const clockTime = (at: number | null): string =>
-  at === null ? '?' : new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+/** When GitHub's window reopens, as a clock time in the reader's locale. */
+const clockTime = (at: number): string =>
+  new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 const VIEWS: readonly View[] = ['cards', 'list', 'servers'];
 const STATUS_ORDER: readonly WorldStatus[] = [
@@ -88,33 +135,18 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       .then(async (response) => {
         if (!alive) return;
         if (response.status === 403) return setPanel({ at: 'forbidden' });
-        const data = (await response.json().catch(() => ({}))) as Partial<Fleet> &
-          Partial<KeylessAnswer> & {
-            status?: number;
-            readHere?: boolean;
-          };
+        const data = (await response.json().catch(() => ({}))) as Partial<Answer> & {
+          status?: number;
+        };
         if (!response.ok)
           return setPanel({ at: 'error', detail: `${response.status}/${data.status ?? '?'}` });
-        if (data.readHere) {
-          // The Worker holds no key: this browser reads the public order book.
-          const fleet = await readFleetHere(fetch, {
-            rank: data.rank ?? '',
-            canPropose: false,
-            cards: data.cards ?? [],
-            legacy: data.legacy ?? [],
-            probes: data.probes ?? {},
-            faces: data.faces ?? {},
-          });
-          if (alive) setPanel({ at: 'ready', fleet });
-          return;
-        }
-        setPanel({ at: 'ready', fleet: data as Fleet });
+        const answer = { ...data, missing: data.missing ?? [] } as Answer;
+        const fleet =
+          answer.missing.length > 0 ? await completeHere(answer) : { ...answer, resetAt: null };
+        if (alive) setPanel({ at: 'ready', fleet });
       })
       .catch((error: unknown) => {
-        if (!alive) return;
-        if (error instanceof FleetError && error.quota)
-          return setPanel({ at: 'quota', resetAt: error.resetAt });
-        setPanel({ at: 'error', detail: error instanceof Error ? error.message : '?' });
+        if (alive) setPanel({ at: 'error', detail: error instanceof Error ? error.message : '?' });
       });
     return () => {
       alive = false;
@@ -154,15 +186,11 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       </div>
     );
   }
-  if (panel.at === 'error' || panel.at === 'quota') {
-    const message =
-      panel.at === 'quota'
-        ? fill(room.quota, { time: clockTime(panel.resetAt) })
-        : fill(room.failed, { detail: panel.detail });
+  if (panel.at === 'error') {
     return (
       <div data-worlds-panel>
         <div className="estado fallo" role="alert">
-          <p>{message}</p>
+          <p>{fill(room.failed, { detail: panel.detail })}</p>
           <button
             type="button"
             className="btn btn-fantasma"
@@ -207,11 +235,12 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         </button>
       </div>
       {!fleet.canPropose && <p className="nota llave">{room.keyless}</p>}
-      {fleet.missing && fleet.missing.length > 0 && (
+      {fleet.missing.length > 0 && (
         <p className="nota llave" data-missing={fleet.missing.join(' ')}>
           {fill(room.missingNote, {
             what: fleet.missing.map((part) => room.missingParts[part]).join(' · '),
           })}
+          {fleet.resetAt !== null && <> {fill(room.quota, { time: clockTime(fleet.resetAt) })}</>}
         </p>
       )}
 
@@ -374,6 +403,7 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         onClose={() => setChange(null)}
         onProposed={refresh}
         room={room}
+        rows={rows}
         canPropose={fleet.canPropose}
       />
     </div>
