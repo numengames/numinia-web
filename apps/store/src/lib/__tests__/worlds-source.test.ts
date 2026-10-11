@@ -9,6 +9,7 @@ import { renderOrder, type WorldOrder } from '../worlds';
 import {
   FleetError,
   ProposalError,
+  checkAddress,
   watchByIds,
   probeFleet,
   probeWorld,
@@ -283,6 +284,60 @@ const PAGE = `<!DOCTYPE html><html><head>
 <meta property="og:description" content="A Little Playground for Digital Art">
 <meta property="og:image" content="https://hive.numinia.com/assets/fe6b.jpeg">
 </head></html>`;
+
+describe('checkAddress — where an address points, asked of public DNS', () => {
+  const DOH = 'https://cloudflare-dns.com/dns-query';
+  const HOST = 'vps-39c7f315.vps.ovh.net';
+  const answer = (...ips: string[]): Response =>
+    ok({ Status: 0, Answer: ips.map((data) => ({ type: 1, data })) });
+  const dns = (table: Record<string, Response | 'throw'>) =>
+    fakeFetch((call) => {
+      const name = new URL(call.url).searchParams.get('name') ?? '';
+      const entry = table[name];
+      if (entry === 'throw') throw new Error('offline');
+      return entry;
+    });
+
+  it('asks Cloudflare’s DNS for the address and the machine, as JSON', async () => {
+    const { fetch, calls } = dns({
+      'p1.numinia.com': answer('192.0.2.1'),
+      [HOST]: answer('192.0.2.1'),
+    });
+    expect(await checkAddress(fetch, 'p1.numinia.com', 'open-1')).toBe('machine');
+    expect(calls.map((call) => call.url).sort()).toEqual([
+      `${DOH}?name=p1.numinia.com&type=A`,
+      `${DOH}?name=${HOST}&type=A`,
+    ]);
+  });
+
+  it('tells another machine, a name not yet in DNS, and what it cannot tell', async () => {
+    // A Response body is read once: each lookup gets its own.
+    const machine = (): Response => answer('192.0.2.1');
+    const check = (name: string, table: Record<string, Response | 'throw'>): Promise<string> =>
+      checkAddress(dns(table).fetch, name, 'open-1');
+    expect(
+      await check('vic.numinia.com', {
+        'vic.numinia.com': answer('198.51.100.7'),
+        [HOST]: machine(),
+      }),
+    ).toBe('elsewhere');
+    expect(
+      await check('new.numen.games', { 'new.numen.games': ok({ Status: 3 }), [HOST]: machine() }),
+    ).toBe('none');
+    expect(await check('p1.numinia.com', { 'p1.numinia.com': fail(502), [HOST]: machine() })).toBe(
+      'unknown',
+    );
+    expect(await check('p1.numinia.com', { 'p1.numinia.com': machine(), [HOST]: 'throw' })).toBe(
+      'unknown',
+    );
+  });
+
+  it('asks nothing for a machine the room does not know', async () => {
+    const { fetch, calls } = dns({});
+    expect(await checkAddress(fetch, 'p1.numinia.com', 'open-9')).toBe('unknown');
+    expect(calls).toHaveLength(0);
+  });
+});
 
 describe('a world’s face — its own title and loading picture', () => {
   it('reads the og: title and image the engine serves', () => {

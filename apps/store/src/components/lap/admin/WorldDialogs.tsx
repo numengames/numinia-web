@@ -12,20 +12,26 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
+  WORLD_ZONES,
+  addressOwner,
   deleteOrderUrl,
   draftToOrder,
   editOrderUrl,
   emptyDraft,
   fill,
+  inHouseZone,
+  joinDomain,
   newOrderUrl,
+  placeAllowed,
   problemFields,
   renderOrder,
-  suggestDomain,
+  type AddressDns,
   type DraftField,
   type OrderDraft,
   type WorldCardInfo,
   type WorldRow,
 } from '../../../lib/worlds';
+import { checkAddress } from '../../../lib/worlds-source';
 import { Cover, type WorldAction } from './WorldViews';
 
 type Outcome =
@@ -205,13 +211,72 @@ function Field({
 
 const STEPS = ['stepCard', 'stepPlace', 'stepEngine', 'stepConfirm'] as const;
 
+type DnsState = AddressDns | 'checking';
+
+/** One line under the address: whose it is, or where public DNS sends it. */
+function AddressLine({
+  domain,
+  machine,
+  owner,
+  dns,
+  room,
+}: {
+  readonly domain: string;
+  readonly machine: string;
+  readonly owner: { readonly id: string; readonly legacy: boolean } | null;
+  readonly dns: DnsState;
+  readonly room: WorldsRoomMessages;
+}) {
+  const words = room.wizard;
+  if (domain === '') return null;
+  if (!inHouseZone(domain)) {
+    return (
+      <p className="linea-dns" data-tono="mal">
+        {words.labelInvalid}
+      </p>
+    );
+  }
+  if (owner) {
+    // An order already there is a clash; a legacy world there is a move into the fleet.
+    return (
+      <p className="linea-dns" data-tono={owner.legacy ? 'aviso' : 'mal'} role="alert">
+        {fill(owner.legacy ? words.legacyMove : words.addressTaken, {
+          d: domain,
+          w: owner.id,
+          m: machine,
+        })}
+      </p>
+    );
+  }
+  const text: Readonly<Record<DnsState, string>> = {
+    checking: words.dnsChecking,
+    machine: words.dnsMachine,
+    elsewhere: words.dnsElsewhere,
+    none: words.dnsNone,
+    unknown: words.dnsUnknown,
+  };
+  const tone: Readonly<Record<DnsState, string>> = {
+    checking: 'neutro',
+    machine: 'bien',
+    elsewhere: 'mal',
+    none: 'aviso',
+    unknown: 'aviso',
+  };
+  return (
+    <p className="linea-dns" data-tono={tone[dns]} aria-live="polite">
+      {fill(text[dns], { d: domain, m: machine })}
+    </p>
+  );
+}
+
 export function NewWorldDialog({
   open,
   onClose,
   onProposed,
   room,
   cards,
-  servers,
+  machines,
+  rows,
   canPropose,
 }: {
   readonly open: boolean;
@@ -219,21 +284,49 @@ export function NewWorldDialog({
   readonly onProposed: () => void;
   readonly room: WorldsRoomMessages;
   readonly cards: readonly WorldCardInfo[];
-  readonly servers: readonly string[];
+  /** The machines to choose from: the fleet's own first (machineChoices). */
+  readonly machines: readonly string[];
+  /** Every world the room shows, to see whether an address is already taken. */
+  readonly rows: readonly WorldRow[];
   readonly canPropose: boolean;
 }) {
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(servers[0]));
+  const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(machines[0]));
+  const [label, setLabel] = useState('');
+  const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
+  const [dns, setDns] = useState<DnsState>('checking');
   const [outcome, setOutcome] = useState<Outcome>({ at: 'idle' });
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
-    setDraft(emptyDraft(servers[0]));
+    setDraft(emptyDraft(machines[0]));
+    setLabel('');
+    setZone(WORLD_ZONES[0]);
     setOutcome({ at: 'idle' });
-  }, [open, servers]);
+  }, [open, machines]);
 
-  const result = useMemo(() => draftToOrder(draft), [draft]);
+  const domain = joinDomain(label, zone);
+  const owner = addressOwner(domain, rows);
+
+  // Where the address points, asked of public DNS a moment after the last keystroke.
+  useEffect(() => {
+    if (step !== 1 || !inHouseZone(domain) || (owner && !owner.legacy)) return;
+    let alive = true;
+    setDns('checking');
+    const timer = setTimeout(() => {
+      void checkAddress(fetch, domain, draft.server).then((answer) => {
+        if (alive) setDns(answer);
+      });
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [step, domain, draft.server, owner?.id, owner?.legacy]);
+
+  const full = useMemo(() => ({ ...draft, domain }), [draft, domain]);
+  const result = useMemo(() => draftToOrder(full), [full]);
   const marked: ReadonlySet<DraftField> = new Set(
     'problems' in result && step === 3 ? problemFields(result.problems) : [],
   );
@@ -243,16 +336,11 @@ export function NewWorldDialog({
 
   const canNext =
     (step === 0 && draft.id.trim() !== '' && draft.card.trim() !== '') ||
-    (step === 1 && draft.server.trim() !== '' && draft.domain.trim() !== '') ||
+    (step === 1 && draft.server.trim() !== '' && placeAllowed(domain, owner, dns)) ||
     (step === 2 && draft.image.trim() !== '');
 
   const next = (): void => {
-    if (step === 0 && draft.domain.trim() === '') {
-      setDraft((current) => ({
-        ...current,
-        domain: suggestDomain(current.id.trim().toLowerCase()),
-      }));
-    }
+    if (step === 0 && label.trim() === '') setLabel(draft.id.trim().toLowerCase());
     setStep((current) => current + 1);
   };
 
@@ -264,7 +352,7 @@ export function NewWorldDialog({
       return;
     }
     setOutcome({ at: 'sending' });
-    const answer = await propose({ action: 'create', draft }, manual, room);
+    const answer = await propose({ action: 'create', draft: full }, manual, room);
     setOutcome(answer);
     if (answer.at === 'done') onProposed();
   };
@@ -345,28 +433,63 @@ export function NewWorldDialog({
           )}
           {step === 1 && (
             <>
-              <Field
-                id="mundo-servidor"
-                label={room.wizard.serverLabel}
-                hint={room.wizard.serverHint}
-                value={draft.server}
-                invalid={marked.has('server')}
-                onChange={set('server')}
-                list="mundo-servidores"
-              />
-              <datalist id="mundo-servidores">
-                {servers.map((server) => (
-                  <option key={server} value={server} />
-                ))}
-              </datalist>
-              <Field
-                id="mundo-dominio"
-                label={room.wizard.domainLabel}
-                hint={room.wizard.domainHint}
-                value={draft.domain}
-                invalid={marked.has('domain')}
-                onChange={set('domain')}
-              />
+              <label className="campo" htmlFor="mundo-servidor">
+                <span className="etiqueta">{room.wizard.serverLabel}</span>
+                <select
+                  id="mundo-servidor"
+                  value={draft.server}
+                  onChange={(event) => set('server')(event.target.value)}
+                  data-metric="worlds-field"
+                >
+                  {machines.map((machine) => (
+                    <option key={machine} value={machine}>
+                      {machine}
+                    </option>
+                  ))}
+                </select>
+                <span className="pista">{room.wizard.serverHint}</span>
+              </label>
+              <div className="campo">
+                <label className="etiqueta" htmlFor="mundo-dominio">
+                  {room.wizard.domainLabel}
+                </label>
+                <div className="direccion-campo">
+                  <input
+                    id="mundo-dominio"
+                    className="mono"
+                    value={label}
+                    aria-invalid={label !== '' && !inHouseZone(domain)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    onChange={(event) => setLabel(event.target.value)}
+                    data-metric="worlds-field"
+                  />
+                  <span className="mono zona-punto" aria-hidden="true">
+                    .
+                  </span>
+                  <select
+                    aria-label={room.wizard.zoneLabel}
+                    className="mono"
+                    value={zone}
+                    onChange={(event) => setZone(event.target.value)}
+                    data-metric="worlds-field"
+                  >
+                    {WORLD_ZONES.map((candidate) => (
+                      <option key={candidate} value={candidate}>
+                        {candidate}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="pista">{room.wizard.domainHint}</span>
+                <AddressLine
+                  domain={domain}
+                  machine={draft.server}
+                  owner={owner}
+                  dns={dns}
+                  room={room}
+                />
+              </div>
             </>
           )}
           {step === 2 && (

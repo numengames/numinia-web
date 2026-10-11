@@ -16,6 +16,7 @@ import {
   fleetHistoryUrl,
   fleetServers,
   fleetStats,
+  machineChoices,
   type StatusFilter,
   type WorldCardInfo,
   type WorldRow,
@@ -116,6 +117,7 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
   const rows = panel.at === 'ready' ? panel.fleet.rows : [];
   const stats = useMemo(() => fleetStats(rows), [rows]);
   const servers = useMemo(() => fleetServers(rows), [rows]);
+  const machines = useMemo(() => machineChoices(rows), [rows]);
   const visible = useMemo(
     () => filterRows(rows, { query, status, server }),
     [rows, query, status, server],
@@ -343,7 +345,8 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         onProposed={refresh}
         room={room}
         cards={fleet.cards}
-        servers={servers}
+        machines={machines}
+        rows={rows}
         canPropose={fleet.canPropose}
       />
       <ChangeDialog

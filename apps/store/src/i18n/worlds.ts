@@ -92,6 +92,15 @@ export interface WorldsRoomMessages {
     readonly serverHint: string;
     readonly domainLabel: string;
     readonly domainHint: string;
+    readonly zoneLabel: string;
+    readonly labelInvalid: string;
+    readonly addressTaken: string;
+    readonly legacyMove: string;
+    readonly dnsChecking: string;
+    readonly dnsMachine: string;
+    readonly dnsElsewhere: string;
+    readonly dnsNone: string;
+    readonly dnsUnknown: string;
     readonly imageLabel: string;
     readonly imageHint: string;
     readonly memoryLabel: string;
@@ -222,9 +231,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardLabel: 'Ficha en la Summa',
       cardHint: 'El nombre del fichero de la ficha en objects/, sin .md.',
       serverLabel: 'Servidor',
-      serverHint: 'El alias del servidor, nunca su IP.',
+      serverHint: 'La máquina de la flota donde correrá el mundo.',
       domainLabel: 'Dirección',
-      domainHint: 'Debe apuntar al servidor antes de que el mundo arranque.',
+      domainHint: 'El nombre y la zona: el mundo se abrirá en esa dirección.',
+      zoneLabel: 'Zona',
+      labelInvalid: 'Una sola palabra: minúsculas, números y guiones, sin puntos.',
+      addressTaken: '{d} ya es la dirección de {w}: elige otro nombre.',
+      legacyMove:
+        '{d} es hoy {w}, en la máquina antigua. La orden lo traerá a {m}: copia antes sus datos y apunta su registro DNS a {m}.',
+      dnsChecking: 'Mirando a dónde apunta {d}…',
+      dnsMachine: '{d} ya apunta a {m}: listo.',
+      dnsElsewhere: '{d} ya apunta a otra máquina: elige otro nombre.',
+      dnsNone:
+        '{d} aún no existe en el DNS: crea un registro A hacia {m} (solo DNS) antes de aprobar la propuesta.',
+      dnsUnknown: 'No se pudo comprobar a dónde apunta {d}; revísalo antes de aprobar.',
       imageLabel: 'Motor',
       imageHint: 'Una versión fijada del motor: etiqueta sha- o digest, nunca latest.',
       memoryLabel: 'Memoria',
@@ -361,9 +381,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardLabel: 'Card in the Summa',
       cardHint: 'The card’s file name in objects/, without .md.',
       serverLabel: 'Server',
-      serverHint: 'The server’s alias, never its IP.',
+      serverHint: 'The fleet machine the world will run on.',
       domainLabel: 'Address',
-      domainHint: 'It must point at the server before the world starts.',
+      domainHint: 'A name and a zone: the world opens at that address.',
+      zoneLabel: 'Zone',
+      labelInvalid: 'One word: lowercase letters, digits and hyphens, no dots.',
+      addressTaken: '{d} is already the address of {w}: choose another name.',
+      legacyMove:
+        '{d} is {w} today, on the old machine. The order brings it to {m}: copy its data first and point its DNS record at {m}.',
+      dnsChecking: 'Looking up where {d} points…',
+      dnsMachine: '{d} already points at {m}: ready.',
+      dnsElsewhere: '{d} already points at another machine: choose another name.',
+      dnsNone:
+        '{d} is not in DNS yet: create an A record to {m} (DNS only) before approving the proposal.',
+      dnsUnknown: 'Could not check where {d} points; check it before approving.',
       imageLabel: 'Engine',
       imageHint: 'A pinned engine build: a sha- tag or a digest, never latest.',
       memoryLabel: 'Memory',
@@ -500,9 +531,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardLabel: 'スンマのカード',
       cardHint: 'objects/ にあるカードのファイル名（.md なし）。',
       serverLabel: 'サーバー',
-      serverHint: 'サーバーの別名。IP は書きません。',
+      serverHint: 'ワールドを動かすフリートのマシン。',
       domainLabel: 'アドレス',
-      domainHint: 'ワールドの起動前にサーバーを指している必要があります。',
+      domainHint: '名前とゾーン。ワールドはそのアドレスで開きます。',
+      zoneLabel: 'ゾーン',
+      labelInvalid: '1 語のみ：小文字・数字・ハイフン。ドットは使えません。',
+      addressTaken: '{d} はすでに {w} のアドレスです。別の名前を選んでください。',
+      legacyMove:
+        '{d} は現在、旧マシン上の {w} です。このオーダーで {m} に移ります。先にデータをコピーし、DNS レコードを {m} に向けてください。',
+      dnsChecking: '{d} の向き先を確認中…',
+      dnsMachine: '{d} はすでに {m} を指しています。準備完了。',
+      dnsElsewhere: '{d} は別のマシンを指しています。別の名前を選んでください。',
+      dnsNone:
+        '{d} はまだ DNS にありません。提案を承認する前に {m} への A レコード（DNS のみ）を作成してください。',
+      dnsUnknown: '{d} の向き先を確認できませんでした。承認前に確認してください。',
       imageLabel: 'エンジン',
       imageHint: '固定されたエンジンのビルド：sha- タグかダイジェスト。latest は不可。',
       memoryLabel: 'メモリ',
@@ -638,9 +680,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardLabel: '숨마의 카드',
       cardHint: 'objects/에 있는 카드 파일 이름(.md 제외).',
       serverLabel: '서버',
-      serverHint: '서버의 별칭. IP는 쓰지 않습니다.',
+      serverHint: '월드가 실행될 플릿의 머신.',
       domainLabel: '주소',
-      domainHint: '월드가 시작되기 전에 서버를 가리켜야 합니다.',
+      domainHint: '이름과 존: 월드는 그 주소에서 열립니다.',
+      zoneLabel: '존',
+      labelInvalid: '한 단어만: 소문자, 숫자, 하이픈. 점은 쓸 수 없습니다.',
+      addressTaken: '{d}은(는) 이미 {w}의 주소입니다. 다른 이름을 고르세요.',
+      legacyMove:
+        '{d}은(는) 지금 옛 머신의 {w}입니다. 이 주문으로 {m}(으)로 옮겨집니다. 먼저 데이터를 복사하고 DNS 레코드를 {m}(으)로 돌리세요.',
+      dnsChecking: '{d}이(가) 가리키는 곳을 확인하는 중…',
+      dnsMachine: '{d}은(는) 이미 {m}을(를) 가리킵니다. 준비 완료.',
+      dnsElsewhere: '{d}은(는) 다른 머신을 가리킵니다. 다른 이름을 고르세요.',
+      dnsNone:
+        '{d}은(는) 아직 DNS에 없습니다. 제안을 승인하기 전에 {m}(으)로 향하는 A 레코드(DNS 전용)를 만드세요.',
+      dnsUnknown: '{d}이(가) 가리키는 곳을 확인하지 못했습니다. 승인 전에 확인하세요.',
       imageLabel: '엔진',
       imageHint: '고정된 엔진 빌드: sha- 태그나 다이제스트, latest는 안 됩니다.',
       memoryLabel: '메모리',
@@ -780,9 +833,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardLabel: 'Ficha na Summa',
       cardHint: 'O nome do arquivo da ficha em objects/, sem .md.',
       serverLabel: 'Servidor',
-      serverHint: 'O apelido do servidor, nunca o seu IP.',
+      serverHint: 'A máquina da frota onde o mundo vai rodar.',
       domainLabel: 'Endereço',
-      domainHint: 'Deve apontar para o servidor antes de o mundo iniciar.',
+      domainHint: 'Um nome e uma zona: o mundo abre nesse endereço.',
+      zoneLabel: 'Zona',
+      labelInvalid: 'Uma só palavra: minúsculas, números e hífens, sem pontos.',
+      addressTaken: '{d} já é o endereço de {w}: escolha outro nome.',
+      legacyMove:
+        '{d} é hoje {w}, na máquina antiga. A ordem o traz para {m}: copie antes os seus dados e aponte o seu registro DNS para {m}.',
+      dnsChecking: 'Verificando para onde {d} aponta…',
+      dnsMachine: '{d} já aponta para {m}: pronto.',
+      dnsElsewhere: '{d} já aponta para outra máquina: escolha outro nome.',
+      dnsNone:
+        '{d} ainda não existe no DNS: crie um registro A para {m} (só DNS) antes de aprovar a proposta.',
+      dnsUnknown: 'Não foi possível verificar para onde {d} aponta; confira antes de aprovar.',
       imageLabel: 'Motor',
       imageHint: 'Uma versão fixa do motor: etiqueta sha- ou digest, nunca latest.',
       memoryLabel: 'Memória',

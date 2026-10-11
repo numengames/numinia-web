@@ -21,15 +21,19 @@ import {
   REVIEWERS,
   buildRows,
   changeBranch,
+  compareDns,
+  machineHost,
   orderPath,
   parseChangeBranch,
   parseOrder,
   proposalBody,
   proposalCommit,
   proposalTitle,
+  readDohAnswer,
   readProbe,
   renderOrder,
   withState,
+  type AddressDns,
   type ChangeAction,
   type OrderProblem,
   type PendingChange,
@@ -256,6 +260,48 @@ export async function probeFleet(
     orders.filter((order) => order.state === 'running'),
     timeoutMs,
   );
+}
+
+// Public DNS over HTTPS (CORS `*`), the same lookup any visitor's browser makes.
+const DOH = 'https://cloudflare-dns.com/dns-query';
+
+/** A name's IPv4 addresses; null when the lookup could not be made or read. */
+async function resolveA(
+  fetchImpl: Fetch,
+  name: string,
+  timeoutMs: number,
+): Promise<string[] | null> {
+  try {
+    const response = await fetchImpl(`${DOH}?name=${encodeURIComponent(name)}&type=A`, {
+      headers: { accept: 'application/dns-json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) return null;
+    return readDohAnswer(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where a world's address points in public DNS, compared with the machine
+ * chosen for it. Asked from the Oracle's browser while the wizard is open;
+ * nothing is written anywhere. Never throws.
+ */
+export async function checkAddress(
+  fetchImpl: Fetch,
+  domain: string,
+  machine: string,
+  timeoutMs = 3000,
+): Promise<AddressDns> {
+  const host = machineHost(machine);
+  if (host === null) return 'unknown';
+  const [address, own] = await Promise.all([
+    resolveA(fetchImpl, domain, timeoutMs),
+    resolveA(fetchImpl, host, timeoutMs),
+  ]);
+  if (address === null || own === null) return 'unknown';
+  return compareDns(address, own);
 }
 
 /** Probe any list of worlds by address, in parallel (the legacy list has no state to filter on). */
