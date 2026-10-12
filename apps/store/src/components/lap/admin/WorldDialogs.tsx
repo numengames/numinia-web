@@ -25,6 +25,7 @@ import {
   placeAllowed,
   problemFields,
   rowPlace,
+  worldUrl,
   type AddressDns,
   type DraftField,
   type OrderDraft,
@@ -399,7 +400,7 @@ export function NewWorldDialog({
             {flow.at === 'done' && (
               <a
                 className="btn btn-primario"
-                href={`https://${order.domain}/`}
+                href={worldUrl(order.domain)}
                 target="_blank"
                 rel="noopener noreferrer"
                 data-metric="worlds-open"

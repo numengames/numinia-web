@@ -13,6 +13,7 @@ import {
   fill,
   groupByServer,
   rowPlace,
+  worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
 
@@ -70,7 +71,7 @@ function Actions({
       {open !== null && (
         <a
           className="btn btn-fantasma abrir"
-          href={`https://${open}/`}
+          href={worldUrl(open)}
           target="_blank"
           rel="noopener noreferrer"
           data-metric="worlds-open"

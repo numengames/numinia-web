@@ -631,6 +631,16 @@ export function groupByServer(rows: readonly WorldRow[]): ServerGroup[] {
 // Small display helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * A world's address as a link. The host is encoded: an address reaches the
+ * page from what someone typed or what a machine answered, and encoding it
+ * here means no text can turn into markup or a script URL, whatever checks
+ * it passed before. A real host name comes out unchanged.
+ */
+export function worldUrl(domain: string): string {
+  return `https://${encodeURIComponent(domain)}/`;
+}
+
 /** The engine build, short: `sha-0e20453` or `sha256:1a2b3c4d5e6f`. */
 export function buildTag(image: string): string {
   const tag = /:sha-([0-9a-f]{7,40})$/.exec(image);

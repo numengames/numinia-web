@@ -37,6 +37,7 @@ import {
   renderOrder,
   rowPlace,
   worldCards,
+  worldUrl,
   type ReasonWords,
   type WorldOrder,
   type WorldRow,
@@ -668,6 +669,12 @@ describe('describeStatus — the reason, in one line', () => {
 });
 
 describe('display helpers', () => {
+  it('links a world by its address, encoding anything that is not a host', () => {
+    expect(worldUrl('agora.numinia.com')).toBe('https://agora.numinia.com/');
+    expect(worldUrl('x"><img src=y>')).toBe('https://x%22%3E%3Cimg%20src%3Dy%3E/');
+    expect(worldUrl('javascript:alert(1)')).toBe('https://javascript%3Aalert(1)/');
+  });
+
   it('shortens the engine build', () => {
     expect(buildTag(DEFAULT_IMAGE)).toBe('sha-0e20453');
     expect(buildTag(`x@sha256:${'b'.repeat(64)}`)).toBe('sha256:bbbbbbbbbbbb');
