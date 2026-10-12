@@ -161,6 +161,8 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
 </BaseLayout>
 
 <script>
+  import { onSessionChange } from '../../lib/session-signal';
+
   /* Sidebar fold — a chrome preference like the mode (decision D17):
      localStorage only, applied by the BaseLayout boot script pre-paint. */
   const root = document.documentElement;
@@ -183,20 +185,26 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
     rail.scrollLeft = active.offsetLeft - (rail.clientWidth - active.offsetWidth) / 2;
   }
   updateFades();
-  /* The management zone appears when the session carries the rank. */
-  void fetch('/api/auth/session')
-    .then((response) => (response.ok ? response.json() : null))
-    .then((session: { rank: string } | null) => {
-      if (session && ['archon', 'oracle'].includes(session.rank)) {
-        document.querySelector('[data-admin-zone]')?.removeAttribute('hidden');
-      }
-      if (session?.rank === 'oracle') {
-        document
-          .querySelectorAll('[data-oracle-only]')
-          .forEach((item) => item.removeAttribute('hidden'));
-      }
-    })
-    .catch(() => undefined);
+  /* The management zone appears when the session carries the rank — read at
+     load, and again whenever the sign-in island reports a sign-in or a
+     sign-out, so the Oracle's rooms show up (and go) without a reload. */
+  const showZones = (session: { rank: string } | null): void => {
+    const rank = session?.rank ?? '';
+    document
+      .querySelector('[data-admin-zone]')
+      ?.toggleAttribute('hidden', !['archon', 'oracle'].includes(rank));
+    document
+      .querySelectorAll('[data-oracle-only]')
+      .forEach((item) => item.toggleAttribute('hidden', rank !== 'oracle'));
+  };
+  const readSession = (): void => {
+    void fetch('/api/auth/session')
+      .then((response) => (response.ok ? response.json() : null))
+      .then(showZones)
+      .catch(() => undefined);
+  };
+  readSession();
+  onSessionChange(window, readSession);
 
   const foldButton = document.querySelector('[data-lap-fold]');
   foldButton?.setAttribute('aria-expanded', String(root.dataset['lapNav'] !== 'plegado'));

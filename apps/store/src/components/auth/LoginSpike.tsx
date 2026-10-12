@@ -31,6 +31,7 @@ import {
 } from './LoginMethodGuide';
 import { WIDGET_THEMES, useModo } from './widget-theme';
 import { LEGAL_CORPUS_VERSION } from '../../lib/legal';
+import { announceSessionChange } from '../../lib/session-signal';
 
 const clientId = import.meta.env.PUBLIC_THIRDWEB_CLIENT_ID as string | undefined;
 
@@ -88,15 +89,26 @@ function SpikeInner({
 
   useEffect(refresh, [refresh]);
 
+  // After a sign-in or a sign-out the rest of the page must know too: the
+  // LAP shell shows or hides the management zone and the Oracle's rooms
+  // without waiting for a reload.
+  const sessionChanged = useCallback(() => {
+    refresh();
+    announceSessionChange(window);
+  }, [refresh]);
+
   // Dropping the cookie is not enough: in-app wallets (Google/email/passkey)
   // sign silently, so a still-connected wallet re-authenticates immediately.
   // Logout therefore disconnects the wallet BEFORE clearing the session.
   const handleLogout = useCallback(() => {
     if (activeWallet) disconnect(activeWallet);
-    void fetch('/api/auth/logout', { method: 'POST' }).then(refresh);
-  }, [activeWallet, disconnect, refresh]);
+    void fetch('/api/auth/logout', { method: 'POST' }).then(sessionChanged);
+  }, [activeWallet, disconnect, sessionChanged]);
 
-  // "Listen to thirdweb": taps/focus inside the closed widget drive the guide.
+  // "Listen to thirdweb": taps inside the closed widget drive the guide.
+  // Taps only, never focus: focus arrives on the press, the guide then
+  // appears above the widget and pushes it down, and the release lands
+  // beside the button — the first tap on "Connect a Wallet" was lost.
   const handleWidgetInteraction = useCallback((event: SyntheticEvent) => {
     const method = methodFromWidgetTarget(event.target);
     if (method) setSelectedMethod(method);
@@ -112,11 +124,7 @@ function SpikeInner({
       {!accepted && session.status !== 'authenticated' ? (
         <p data-legal-gate-pending>{legal.pending}</p>
       ) : (
-        <div
-          data-metric="auth-connect"
-          onClickCapture={handleWidgetInteraction}
-          onFocusCapture={handleWidgetInteraction}
-        >
+        <div data-metric="auth-connect" onClickCapture={handleWidgetInteraction}>
           <ConnectEmbed
             client={client}
             wallets={wallets}
@@ -135,7 +143,7 @@ function SpikeInner({
                   body: JSON.stringify({ payload, signature, terms: LEGAL_CORPUS_VERSION }),
                 });
                 if (!response.ok) throw new Error('Login rejected');
-                refresh();
+                sessionChanged();
               },
               isLoggedIn: async (address) => {
                 const current = await fetchSession();
@@ -146,7 +154,7 @@ function SpikeInner({
               },
               doLogout: async () => {
                 await fetch('/api/auth/logout', { method: 'POST' });
-                refresh();
+                sessionChanged();
               },
             }}
           />
