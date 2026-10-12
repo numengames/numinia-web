@@ -3,12 +3,14 @@
  * new world (card → place → engine → confirm) that shows exactly what the
  * wallet will sign, a dialog for stop, start, download and delete — delete
  * warns that it cannot be undone, offers a copy first and asks you to type
- * the world's address — and one that shows a machine's admin code.
+ * the world's address — and one that shows or changes a world's own admin
+ * code.
  *
  * Nothing here holds a key. Each action is one request the Oracle's wallet
  * signs and the machine checks itself (lib/fleet.ts). Once the machine takes
- * it, a dialog closes (a create keeps the admin code on screen) and the
- * world's card shows the rest; only a download waits here for its zip.
+ * it, a dialog closes (a create keeps the new world's admin code on screen)
+ * and the world's card shows the rest; only a download waits here for its
+ * zip, and a code dialog stays open to show the code.
  */
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
@@ -36,7 +38,7 @@ import {
 import { checkAddress } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { busy, problemText, stepText, useFleetAction, type Step } from './fleet-action';
-import { Cover, type WorldAction } from './WorldViews';
+import { Cover, type CodeMode, type WorldAction } from './WorldViews';
 
 function Modal({
   open,
@@ -429,7 +431,7 @@ export function NewWorldDialog({
 
       {handedOver && order ? (
         // The machine has the world: it is born on its own and the card shows it.
-        // The dialog only hands over the admin code, the one thing the card cannot show.
+        // The dialog only hands over its own admin code, the one thing the card cannot show.
         <div className="resultado" data-created={order.id}>
           <h2>{fill(room.wizard.resultTitle, { t: title })}</h2>
           <p className="nota">
@@ -437,7 +439,7 @@ export function NewWorldDialog({
           </p>
           {(flow.at === 'accepted' || flow.at === 'done') && flow.code !== null && (
             <>
-              <p className="etiqueta">{room.code.shown}</p>
+              <p className="etiqueta">{fill(room.code.shown, { t: title })}</p>
               <CodeBox code={flow.code} room={room} />
               <p className="nota">{fill(room.code.chat, { code: flow.code })}</p>
             </>
@@ -915,49 +917,91 @@ export function ActionDialog({
   );
 }
 
-export function CodeDialog({
-  machine,
+export function WorldCodeDialog({
+  ask,
   onClose,
+  onChanged,
   room,
   wallet,
   sessionHref,
+  warning,
   listens,
 }: {
-  /** The machine whose code to show; null keeps the dialog closed. */
-  readonly machine: string | null;
+  /** The world whose own code to show or change, and which; null keeps the dialog closed. */
+  readonly ask: { readonly row: WorldRow; readonly mode: CodeMode } | null;
   readonly onClose: () => void;
+  /** The fleet changed: read it again (after a code is changed: its world restarts). */
+  readonly onChanged: () => void;
   readonly room: WorldsRoomMessages;
   readonly wallet: string | null;
   readonly sessionHref: string;
+  /** Said before signing: the machine does not know these requests yet, or is not obeying. */
+  readonly warning: string | null;
   /** Whether a machine's door takes the room's beacons. */
   readonly listens: (alias: string) => boolean;
 }) {
   const { step, run, reset } = useFleetAction(wallet, listens);
+  const mode = ask?.mode ?? 'show';
+  useOnProgress(step, mode === 'rotate' ? onChanged : () => undefined);
   useEffect(() => {
     reset();
-  }, [machine, reset]);
-  const alias = machine ?? '';
-  const title = fill(room.code.title, { m: alias });
+  }, [ask, reset]);
+
+  const row = ask?.row ?? null;
+  const place = row ? rowPlace(row) : null;
+  const machine = place?.server ?? '';
+  const t = row?.title ?? '';
+  const words = room.code;
+  // A stopped world takes a new code when it starts; a running one restarts now.
+  const stopped = row?.order?.state === 'stopped';
+  const kind = mode === 'show' ? 'ShowWorldCode' : 'RotateWorldCode';
+  const title = fill(mode === 'show' ? words.showTitle : words.rotateTitle, { t });
+  const sending = busy(step);
+  const code = step.at === 'done' ? step.code : null;
+
   const close = (): void => {
     reset();
     onClose();
   };
+  const submit = (): void => {
+    if (!row || !place) return;
+    void run({ kind, machine: place.server, world: row.id });
+  };
+
+  const intro =
+    mode === 'show' ? words.showIntro : stopped ? words.rotateStopped : words.rotateIntro;
   return (
-    <Modal open={machine !== null} label={title} onClose={close} dismissable={!busy(step)}>
+    <Modal open={ask !== null} label={title} onClose={close} dismissable={!sending}>
       <header className="cabeza-dialogo">
         <h2>{title}</h2>
+        {/* Which world, unmistakably: its address and its machine. */}
+        {place !== null && (
+          <p className="nota mono donde" data-where>
+            {place.domain} · {place.server}
+          </p>
+        )}
       </header>
-      <div className="contenido">
-        {step.at === 'done' && step.code !== null ? (
+      <div className="contenido" data-request={kind}>
+        {code !== null ? (
           <>
-            <p className="etiqueta">{room.code.shown}</p>
-            <CodeBox code={step.code} room={room} />
-            <p className="nota">{fill(room.code.chat, { code: step.code })}</p>
+            <p className="etiqueta">{fill(mode === 'show' ? words.shown : words.rotated, { t })}</p>
+            <CodeBox code={code} room={room} />
+            {mode === 'rotate' && (
+              <p className="nota" data-applies={stopped ? 'on-start' : 'on-restart'}>
+                {fill(stopped ? words.rotatedStopped : words.rotatedNote, { m: machine, t })}
+              </p>
+            )}
+            <p className="nota">{fill(words.chat, { code })}</p>
           </>
         ) : (
           <>
-            <p>{fill(room.code.intro, { m: alias })}</p>
-            <StepLine step={step} machine={alias} room={room} sessionHref={sessionHref} />
+            <p>{fill(intro, { t })}</p>
+            {warning !== null && step.at !== 'failed' && (
+              <p className="aviso-maquina" data-tono="aviso" role="note">
+                {warning}
+              </p>
+            )}
+            <StepLine step={step} machine={machine} room={room} sessionHref={sessionHref} />
           </>
         )}
         <div className="pie">
@@ -965,19 +1009,19 @@ export function CodeDialog({
             type="button"
             className="btn btn-fantasma"
             onClick={close}
-            data-metric="worlds-done"
+            data-metric={code === null ? 'worlds-code-cancel' : 'worlds-done'}
           >
-            {room.wizard.done}
+            {code === null ? room.wizard.cancel : room.wizard.done}
           </button>
-          {step.at !== 'done' && (
+          {code === null && (
             <button
               type="button"
               className="btn btn-primario"
-              disabled={busy(step)}
-              onClick={() => void run({ kind: 'ShowAdminCode', machine: alias })}
-              data-metric="worlds-code"
+              disabled={sending || place === null}
+              onClick={submit}
+              data-metric={`worlds-code-${mode}-sign`}
             >
-              {room.code.confirm}
+              {mode === 'show' ? words.showConfirm : words.rotateConfirm}
             </button>
           )}
         </div>

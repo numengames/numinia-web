@@ -98,7 +98,10 @@ export interface WorldsRoomMessages {
     readonly connect: string;
     readonly copy: string;
     readonly copied: string;
-    readonly adminCode: string;
+    /** The commit it was installed from: `{r}`, seven hex digits. */
+    readonly recipe: string;
+    /** It runs another recipe than the room's, or says none: `{m}`; its line follows. */
+    readonly oldRecipe: string;
     /** Whether its reconciler keeps up: `{m}` machine, then `{t}` ago, `{n}` requests. */
     readonly slow: string;
     readonly failing: string;
@@ -133,6 +136,8 @@ export interface WorldsRoomMessages {
     readonly otherMachine: string;
     readonly slowDown: string;
     readonly noAdminCode: string;
+    /** That world is still being created, or its code changed: the machine takes one at a time. */
+    readonly busy: string;
     readonly origin: string;
     readonly unreachable: string;
     readonly machine: string;
@@ -186,13 +191,31 @@ export interface WorldsRoomMessages {
     readonly done: string;
     readonly close: string;
   };
-  /** The machine's admin code, shown to a signed Oracle. */
+  /**
+   * Each world's own admin code, on its card: shown, or changed, with one
+   * signature. `{t}` the world's title, `{m}` its machine, `{code}` the code.
+   */
   readonly code: {
-    readonly title: string;
-    readonly intro: string;
-    readonly confirm: string;
+    readonly label: string;
+    readonly show: string;
+    readonly rotate: string;
+    readonly showTitle: string;
+    readonly rotateTitle: string;
+    readonly showIntro: string;
+    /** Changing the code of a running world: it restarts. */
+    readonly rotateIntro: string;
+    /** Changing the code of a stopped world: it takes it when it starts. */
+    readonly rotateStopped: string;
+    readonly showConfirm: string;
+    readonly rotateConfirm: string;
+    /** Above the code: also the wizard's last screen, for a world just created. */
     readonly shown: string;
+    readonly rotated: string;
+    readonly rotatedNote: string;
+    readonly rotatedStopped: string;
     readonly chat: string;
+    /** Before signing, when the machine's door says no recipe: it does not know these requests yet. */
+    readonly notYet: string;
   };
   readonly change: {
     readonly stopTitle: string;
@@ -320,7 +343,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Si es nueva, o todavía no conoce tu cartera, entra una vez en ella y ejecuta esta línea; lleva tu cartera dentro:',
       copy: 'Copiar',
       copied: 'Copiado',
-      adminCode: 'Código de administración',
+      recipe: 'receta {r}',
+      oldRecipe: '{m} usa una receta anterior: relanza su línea.',
       slow: '{m} va con retraso.',
       failing: '{m} no obedece: no pudo aplicar los cambios. Lo reintenta cada minuto.',
       silent: '{m} no obedece: no da señales. Si sigue así, avisa a Ursa.',
@@ -354,7 +378,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '{m} no acepta esa orden: el motor, la dirección o los límites se salen de sus reglas.',
       otherMachine: 'Esa petición era para otra máquina.',
       slowDown: 'Demasiadas peticiones seguidas: espera un par de minutos.',
-      noAdminCode: '{m} todavía no tiene código de administración.',
+      noAdminCode: '{m} todavía no tiene un código de administración para ese mundo.',
+      busy: '{m} todavía está creando ese mundo o cambiando su código: espera un minuto y vuelve a intentarlo.',
       origin: '{m} no acepta peticiones desde esta página.',
       unreachable: 'No se pudo hablar con {m}: no responde.',
       machine: '{m} lo intentó y no pudo ({rule}).',
@@ -414,11 +439,26 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       close: 'Cerrar',
     },
     code: {
-      title: 'Código de administración de {m}',
-      intro: 'Es el mismo para todos los mundos de {m}. Tu cartera te pedirá firmar para verlo.',
-      confirm: 'Firmar y ver',
-      shown: 'Código de administración:',
+      label: 'Código de administración',
+      show: 'Mostrar',
+      rotate: 'Cambiar código',
+      showTitle: 'Código de administración de {t}',
+      rotateTitle: 'Cambiar el código de {t}',
+      showIntro:
+        'Solo vale para {t}: cada mundo tiene el suyo. Tu cartera te pedirá firmar para verlo.',
+      rotateIntro:
+        'La máquina hace un código nuevo para {t} y reinicia el mundo: quien esté dentro se desconecta unos segundos. El código de ahora deja de valer, pero quien ya se hizo administrador con él lo sigue siendo: el mundo lo recuerda.',
+      rotateStopped:
+        '{t} está parado: el código nuevo valdrá en cuanto arranque. El de ahora deja de valer, pero quien ya se hizo administrador con él lo sigue siendo: el mundo lo recuerda.',
+      showConfirm: 'Firmar y ver',
+      rotateConfirm: 'Firmar y cambiar',
+      shown: 'Código de administración de {t}:',
+      rotated: 'Código nuevo de {t}:',
+      rotatedNote: '{m} reinicia {t} en menos de un minuto; desde entonces solo vale este código.',
+      rotatedStopped: '{t} está parado: este código valdrá en cuanto arranque.',
       chat: 'En el chat del mundo escribe /admin {code} y quedarás como administrador en ese navegador.',
+      notYet:
+        '{m} todavía no da un código por mundo: relanza su línea (en Máquinas) y vuelve a intentarlo.',
     },
     change: {
       stopTitle: 'Parar {t}',
@@ -462,7 +502,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         StopWorld: 'paró',
         StartWorld: 'arrancó',
         DownloadWorld: 'copió',
-        ShowAdminCode: 'mostró el código',
+        ShowAdminCode: 'mostró el código de la máquina',
+        ShowWorldCode: 'mostró el código de {w}',
+        RotateWorldCode: 'cambió el código de {w}',
       },
     },
     fieldNames: {
@@ -553,7 +595,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'If it is new, or does not know your wallet yet, log in to it once and run this line; it carries your wallet:',
       copy: 'Copy',
       copied: 'Copied',
-      adminCode: 'Admin code',
+      recipe: 'recipe {r}',
+      oldRecipe: '{m} runs an older recipe: run its line again.',
       slow: '{m} is running late.',
       failing: '{m} is not obeying: it could not apply the changes. It tries again every minute.',
       silent: '{m} is not obeying: no sign of life. If this goes on, tell Ursa.',
@@ -587,7 +630,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '{m} does not accept that order: the engine, the address or the limits are outside its rules.',
       otherMachine: 'That request was for another machine.',
       slowDown: 'Too many requests in a row: wait a couple of minutes.',
-      noAdminCode: '{m} has no admin code yet.',
+      noAdminCode: '{m} has no admin code for that world yet.',
+      busy: '{m} is still creating that world or changing its code: wait a minute and try again.',
       origin: '{m} does not accept requests from this page.',
       unreachable: 'Could not reach {m}: it is not answering.',
       machine: '{m} tried and could not ({rule}).',
@@ -647,11 +691,26 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       close: 'Close',
     },
     code: {
-      title: 'Admin code of {m}',
-      intro: 'It is the same for every world on {m}. Your wallet will ask you to sign to see it.',
-      confirm: 'Sign and see',
-      shown: 'Admin code:',
+      label: 'Admin code',
+      show: 'Show',
+      rotate: 'Change code',
+      showTitle: 'Admin code of {t}',
+      rotateTitle: 'Change the code of {t}',
+      showIntro:
+        'It only works for {t}: each world has its own. Your wallet will ask you to sign to see it.',
+      rotateIntro:
+        'The machine makes a new code for {t} and restarts the world: anyone inside is disconnected for a few seconds. The current code stops working, but whoever already became an admin with it stays one: the world remembers.',
+      rotateStopped:
+        '{t} is stopped: the new code works as soon as it starts. The current one stops working, but whoever already became an admin with it stays one: the world remembers.',
+      showConfirm: 'Sign and see',
+      rotateConfirm: 'Sign and change',
+      shown: 'Admin code of {t}:',
+      rotated: 'New code of {t}:',
+      rotatedNote: '{m} restarts {t} within a minute; from then on only this code works.',
+      rotatedStopped: '{t} is stopped: this code works as soon as it starts.',
       chat: 'Type /admin {code} in the world’s chat and you are its admin in that browser.',
+      notYet:
+        '{m} does not give a code per world yet: run its line again (under Machines) and try once more.',
     },
     change: {
       stopTitle: 'Stop {t}',
@@ -696,7 +755,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         StopWorld: 'stopped',
         StartWorld: 'started',
         DownloadWorld: 'copied',
-        ShowAdminCode: 'showed the code',
+        ShowAdminCode: 'showed the machine’s code',
+        ShowWorldCode: 'showed the code of {w}',
+        RotateWorldCode: 'changed the code of {w}',
       },
     },
     fieldNames: {
@@ -788,7 +849,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '新しいマシンの場合、またはまだあなたのウォレットを知らない場合は、一度ログインしてこの行を実行してください（あなたのウォレットが含まれています）：',
       copy: 'コピー',
       copied: 'コピーしました',
-      adminCode: '管理コード',
+      recipe: 'レシピ {r}',
+      oldRecipe: '{m} は以前のレシピを使っています。その行をもう一度実行してください。',
       slow: '{m} は遅れています。',
       failing:
         '{m} は指示どおりに動いていません：変更を適用できませんでした。1 分ごとに再試行します。',
@@ -824,7 +886,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '{m} はそのオーダーを受け付けません。エンジン、アドレス、または上限がルールの範囲外です。',
       otherMachine: 'そのリクエストは別のマシン宛てでした。',
       slowDown: 'リクエストが続きすぎています。数分お待ちください。',
-      noAdminCode: '{m} にはまだ管理コードがありません。',
+      noAdminCode: '{m} にはまだそのワールドの管理コードがありません。',
+      busy: '{m} はそのワールドをまだ作成中か、コードを変更中です。1 分ほど待ってから、もう一度お試しください。',
       origin: '{m} はこのページからのリクエストを受け付けません。',
       unreachable: '{m} と通信できませんでした。応答がありません。',
       machine: '{m} は試みましたが、できませんでした（{rule}）。',
@@ -882,11 +945,26 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       close: '閉じる',
     },
     code: {
-      title: '{m} の管理コード',
-      intro: '{m} のすべてのワールドで共通です。表示するにはウォレットで署名します。',
-      confirm: '署名して表示',
-      shown: '管理コード：',
+      label: '管理コード',
+      show: '表示',
+      rotate: 'コードを変更',
+      showTitle: '{t} の管理コード',
+      rotateTitle: '{t} のコードを変更',
+      showIntro:
+        '{t} だけで使えるコードです。ワールドごとに別のコードがあります。表示するにはウォレットで署名します。',
+      rotateIntro:
+        'マシンが {t} の新しいコードを作り、ワールドを再起動します。中にいる人は数秒間切断されます。今のコードは使えなくなりますが、すでにそのコードで管理者になった人は管理者のままです（ワールドが覚えています）。',
+      rotateStopped:
+        '{t} は停止中です。新しいコードは起動したときから有効になります。今のコードは使えなくなりますが、すでにそのコードで管理者になった人は管理者のままです（ワールドが覚えています）。',
+      showConfirm: '署名して表示',
+      rotateConfirm: '署名して変更',
+      shown: '{t} の管理コード：',
+      rotated: '{t} の新しいコード：',
+      rotatedNote: '{m} が 1 分以内に {t} を再起動します。それ以降はこのコードだけが有効です。',
+      rotatedStopped: '{t} は停止中です。このコードは起動したときから有効になります。',
       chat: 'ワールドのチャットで /admin {code} と入力すると、そのブラウザで管理者になります。',
+      notYet:
+        '{m} はまだワールドごとのコードを出せません。「マシン」にあるその行をもう一度実行してから、やり直してください。',
     },
     change: {
       stopTitle: '{t} を停止',
@@ -929,7 +1007,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         StopWorld: '停止',
         StartWorld: '起動',
         DownloadWorld: 'コピー',
-        ShowAdminCode: 'コード表示',
+        ShowAdminCode: 'マシンのコードを表示',
+        ShowWorldCode: '{w} のコードを表示',
+        RotateWorldCode: '{w} のコードを変更',
       },
     },
     fieldNames: {
@@ -1020,7 +1100,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '새 머신이거나 아직 당신의 지갑을 모른다면, 한 번 접속해서 이 줄을 실행하세요. 당신의 지갑이 들어 있습니다:',
       copy: '복사',
       copied: '복사됨',
-      adminCode: '관리 코드',
+      recipe: '레시피 {r}',
+      oldRecipe: '{m}은(는) 이전 레시피를 쓰고 있습니다. 그 줄을 다시 실행하세요.',
       slow: '{m}이(가) 늦어지고 있습니다.',
       failing:
         '{m}이(가) 명령을 따르지 않습니다: 변경을 적용하지 못했습니다. 1분마다 다시 시도합니다.',
@@ -1055,7 +1136,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       refused: '{m}은(는) 그 주문을 받지 않습니다. 엔진, 주소 또는 한도가 규칙을 벗어납니다.',
       otherMachine: '그 요청은 다른 머신용이었습니다.',
       slowDown: '요청이 너무 연달아 왔습니다. 몇 분 기다리세요.',
-      noAdminCode: '{m}에는 아직 관리 코드가 없습니다.',
+      noAdminCode: '{m}에는 아직 그 월드의 관리 코드가 없습니다.',
+      busy: '{m}이(가) 아직 그 월드를 만들거나 코드를 바꾸는 중입니다. 1분쯤 기다린 뒤 다시 시도하세요.',
       origin: '{m}은(는) 이 페이지의 요청을 받지 않습니다.',
       unreachable: '{m}에 연결할 수 없습니다. 응답이 없습니다.',
       machine: '{m}이(가) 시도했지만 할 수 없었습니다 ({rule}).',
@@ -1113,11 +1195,27 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       close: '닫기',
     },
     code: {
-      title: '{m}의 관리 코드',
-      intro: '{m}의 모든 월드에 같은 코드입니다. 보려면 지갑으로 서명합니다.',
-      confirm: '서명하고 보기',
-      shown: '관리 코드:',
+      label: '관리 코드',
+      show: '보기',
+      rotate: '코드 변경',
+      showTitle: '{t}의 관리 코드',
+      rotateTitle: '{t}의 코드 변경',
+      showIntro:
+        '{t}에서만 쓰는 코드입니다. 월드마다 코드가 따로 있습니다. 보려면 지갑으로 서명합니다.',
+      rotateIntro:
+        '머신이 {t}의 새 코드를 만들고 월드를 다시 시작합니다. 안에 있는 사람은 몇 초 동안 연결이 끊깁니다. 지금 코드는 더 이상 쓸 수 없지만, 이미 그 코드로 관리자가 된 사람은 계속 관리자입니다. 월드가 기억합니다.',
+      rotateStopped:
+        '{t}은(는) 정지되어 있습니다. 새 코드는 시작하는 순간부터 쓸 수 있습니다. 지금 코드는 더 이상 쓸 수 없지만, 이미 그 코드로 관리자가 된 사람은 계속 관리자입니다. 월드가 기억합니다.',
+      showConfirm: '서명하고 보기',
+      rotateConfirm: '서명하고 변경',
+      shown: '{t}의 관리 코드:',
+      rotated: '{t}의 새 코드:',
+      rotatedNote:
+        '{m}이(가) 1분 안에 {t}을(를) 다시 시작합니다. 그때부터는 이 코드만 쓸 수 있습니다.',
+      rotatedStopped: '{t}은(는) 정지되어 있습니다. 이 코드는 시작하는 순간부터 쓸 수 있습니다.',
       chat: '월드 채팅에 /admin {code}을(를) 입력하면 그 브라우저에서 관리자가 됩니다.',
+      notYet:
+        '{m}은(는) 아직 월드마다 코드를 주지 못합니다. 머신 목록에 있는 그 줄을 다시 실행한 뒤 다시 시도하세요.',
     },
     change: {
       stopTitle: '{t} 정지',
@@ -1161,7 +1259,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         StopWorld: '정지함',
         StartWorld: '시작함',
         DownloadWorld: '복사함',
-        ShowAdminCode: '코드 표시',
+        ShowAdminCode: '머신 코드 표시',
+        ShowWorldCode: '{w}의 코드 표시',
+        RotateWorldCode: '{w}의 코드 변경',
       },
     },
     fieldNames: {
@@ -1257,7 +1357,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Se for nova, ou ainda não conhecer a sua carteira, entre nela uma vez e rode esta linha; ela leva a sua carteira:',
       copy: 'Copiar',
       copied: 'Copiado',
-      adminCode: 'Código de administração',
+      recipe: 'receita {r}',
+      oldRecipe: '{m} usa uma receita anterior: rode a linha dela de novo.',
       slow: '{m} está atrasada.',
       failing: '{m} não obedece: não conseguiu aplicar as mudanças. Tenta de novo a cada minuto.',
       silent: '{m} não obedece: não dá sinais. Se continuar assim, avise a Ursa.',
@@ -1290,7 +1391,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       refused: '{m} não aceita essa ordem: o motor, o endereço ou os limites saem das suas regras.',
       otherMachine: 'Esse pedido era para outra máquina.',
       slowDown: 'Pedidos demais seguidos: espere uns minutos.',
-      noAdminCode: '{m} ainda não tem código de administração.',
+      noAdminCode: '{m} ainda não tem código de administração para esse mundo.',
+      busy: '{m} ainda está criando esse mundo ou trocando o código dele: espere um minuto e tente de novo.',
       origin: '{m} não aceita pedidos a partir desta página.',
       unreachable: 'Não foi possível falar com {m}: não responde.',
       machine: '{m} tentou e não conseguiu ({rule}).',
@@ -1348,12 +1450,26 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       close: 'Fechar',
     },
     code: {
-      title: 'Código de administração de {m}',
-      intro:
-        'É o mesmo para todos os mundos de {m}. Sua carteira vai pedir que você assine para vê-lo.',
-      confirm: 'Assinar e ver',
-      shown: 'Código de administração:',
+      label: 'Código de administração',
+      show: 'Mostrar',
+      rotate: 'Trocar código',
+      showTitle: 'Código de administração de {t}',
+      rotateTitle: 'Trocar o código de {t}',
+      showIntro:
+        'Só vale para {t}: cada mundo tem o seu. Sua carteira vai pedir que você assine para vê-lo.',
+      rotateIntro:
+        'A máquina cria um código novo para {t} e reinicia o mundo: quem estiver dentro é desconectado por alguns segundos. O código atual deixa de valer, mas quem já virou administrador com ele continua sendo: o mundo lembra.',
+      rotateStopped:
+        '{t} está parado: o código novo vale assim que ele for iniciado. O atual deixa de valer, mas quem já virou administrador com ele continua sendo: o mundo lembra.',
+      showConfirm: 'Assinar e ver',
+      rotateConfirm: 'Assinar e trocar',
+      shown: 'Código de administração de {t}:',
+      rotated: 'Código novo de {t}:',
+      rotatedNote: '{m} reinicia {t} em menos de um minuto; a partir daí só vale este código.',
+      rotatedStopped: '{t} está parado: este código vale assim que ele for iniciado.',
       chat: 'No chat do mundo escreva /admin {code} e você fica como administrador nesse navegador.',
+      notYet:
+        '{m} ainda não dá um código por mundo: rode a linha dela de novo (em Máquinas) e tente outra vez.',
     },
     change: {
       stopTitle: 'Parar {t}',
@@ -1397,7 +1513,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         StopWorld: 'parou',
         StartWorld: 'iniciou',
         DownloadWorld: 'copiou',
-        ShowAdminCode: 'mostrou o código',
+        ShowAdminCode: 'mostrou o código da máquina',
+        ShowWorldCode: 'mostrou o código de {w}',
+        RotateWorldCode: 'trocou o código de {w}',
       },
     },
     fieldNames: {

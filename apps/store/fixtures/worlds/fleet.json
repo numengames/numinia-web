@@ -1,5 +1,5 @@
 {
-  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary machines whose doors answer and a third whose door does not, covering every phase the room shows. Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary machines whose doors answer and a third whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and open-2 before recipes were pinned, so its door names none. Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
   "machines": [
     {
       "alias": "open-1",
@@ -66,6 +66,26 @@
       "log": [
         {
           "machine": "open-1",
+          "at": "2026-10-12T09:43:10Z",
+          "type": "RotateWorldCode",
+          "world": "agora-plaza",
+          "by": "0x42e6…ca26",
+          "state": "done",
+          "rule": null,
+          "took": 14
+        },
+        {
+          "machine": "open-1",
+          "at": "2026-10-12T09:42:20Z",
+          "type": "ShowWorldCode",
+          "world": "atlantis-library",
+          "by": "0x42e6…ca26",
+          "state": "done",
+          "rule": null,
+          "took": 1
+        },
+        {
+          "machine": "open-1",
           "at": "2026-10-12T09:41:00Z",
           "type": "DeleteWorld",
           "world": "old-plaza",
@@ -100,7 +120,8 @@
         "lastRun": { "at": "2026-10-12T09:44:30Z", "ok": true, "rule": null },
         "waiting": { "requests": 1, "since": "2026-10-12T09:44:50Z" }
       },
-      "listens": ["events"]
+      "listens": ["events"],
+      "recipe": "2ca8e2c1372b2ea4d5207d4bbc35c9a8973639d9"
     },
     {
       "alias": "open-2",
@@ -176,7 +197,8 @@
         "lastRun": { "at": "2026-10-12T09:20:00Z", "ok": true, "rule": null },
         "waiting": { "requests": 1, "since": "2026-10-12T09:21:00Z" }
       },
-      "listens": []
+      "listens": [],
+      "recipe": null
     },
     { "alias": "open-3", "open": false, "reason": "timeout" }
   ],

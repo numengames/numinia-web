@@ -275,6 +275,12 @@ export interface MachineSummary {
   readonly heartbeat: Heartbeat | null;
   /** What its door listens to besides requests: `events` = it takes the room's beacons. */
   readonly listens: readonly DoorFeature[];
+  /**
+   * The numinia-assets commit it was installed from, as its door says (40
+   * hex); null when its door says none, or does not answer. Against the room's
+   * own (lib/fleet.ts `staleRecipe`), it says whether its line must run again.
+   */
+  readonly recipe: string | null;
 }
 
 /**
@@ -706,6 +712,17 @@ export function fill(template: string, values: Readonly<Record<string, string | 
   return template.replace(/\{(\w+)\}/g, (whole, key: string) =>
     key in values ? String(values[key]) : whole,
   );
+}
+
+/**
+ * A sentence cut around its one `{key}` slot, so the value can sit in its own
+ * markup wherever each language puts it: [before, after]. A sentence without
+ * the slot takes the value at its end.
+ */
+export function slot(template: string, key: string): readonly [string, string] {
+  const mark = `{${key}}`;
+  const at = template.indexOf(mark);
+  return at < 0 ? [`${template} `, ''] : [template.slice(0, at), template.slice(at + mark.length)];
 }
 
 /** The wizard field each broken rule points at; `other` = the order's format itself. */

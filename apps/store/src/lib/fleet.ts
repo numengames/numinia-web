@@ -29,9 +29,17 @@ export const FLEET_DOMAIN = { name: 'Numinia Fleet', version: '1' } as const;
  * minutes ahead; ten leaves room for a browser clock five minutes off.
  */
 export const REQUEST_SECONDS = 600;
-/** The recipe each machine is made from, and updated with. */
-export const BOOTSTRAP_URL =
-  'https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh';
+/**
+ * The one reviewed commit of numinia-assets every machine is installed from:
+ * the merge of the machine's pull request this room was built against
+ * (numengames/numinia-assets#21, each world's own admin code). A machine run
+ * with this line installs exactly this commit, never whatever is on `main` at
+ * the time. Moving it is a release of the room: the machine's pull request
+ * merges first, then this constant and the fixture's open-1 move together.
+ */
+export const FLEET_REF: string = '2ca8e2c1372b2ea4d5207d4bbc35c9a8973639d9';
+/** The recipe each machine is made from, and updated with: pinned to FLEET_REF. */
+export const BOOTSTRAP_URL = `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`;
 
 export interface TypeField {
   readonly name: string;
@@ -58,7 +66,12 @@ export const REQUEST_TYPES = {
   StopWorld: [text('machine'), text('world'), text('nonce'), whole('expires')],
   StartWorld: [text('machine'), text('world'), text('nonce'), whole('expires')],
   DownloadWorld: [text('machine'), text('world'), text('nonce'), whole('expires')],
+  /** Legacy: the machine-wide code. Machines still take it; this room no longer asks for it. */
   ShowAdminCode: [text('machine'), text('nonce'), whole('expires')],
+  /** One world's own admin code. */
+  ShowWorldCode: [text('machine'), text('world'), text('nonce'), whole('expires')],
+  /** A new admin code for one world: the machine makes it, answers it, and restarts that world. */
+  RotateWorldCode: [text('machine'), text('world'), text('nonce'), whole('expires')],
 } as const satisfies Readonly<Record<string, readonly TypeField[]>>;
 
 export type RequestKind = keyof typeof REQUEST_TYPES;
@@ -82,11 +95,19 @@ export type Ask =
       readonly domain: string;
     }
   | {
-      readonly kind: 'StopWorld' | 'StartWorld' | 'DownloadWorld';
+      readonly kind:
+        'StopWorld' | 'StartWorld' | 'DownloadWorld' | 'ShowWorldCode' | 'RotateWorldCode';
       readonly machine: string;
       readonly world: string;
     }
   | { readonly kind: 'ShowAdminCode'; readonly machine: string };
+
+/** The requests whose answer is an admin code, the one thing the Oracle asked for. */
+export const CODE_KINDS: readonly RequestKind[] = [
+  'ShowAdminCode',
+  'ShowWorldCode',
+  'RotateWorldCode',
+];
 
 export type MessageValue = string | number;
 
@@ -155,9 +176,18 @@ export function copyFileUrl(alias: string, copy: string): string {
   return doorUrl(alias, `copies/${copy}/file`);
 }
 
-/** The one line that makes a server a machine of the fleet, or updates one, with this Oracle's wallet. */
+/**
+ * The one line that makes a server a machine of the fleet, or updates one,
+ * with this Oracle's wallet. It fetches the bootstrap of FLEET_REF and tells
+ * it to install that same commit.
+ */
 export function bootstrapLine(alias: string, wallet: string): string {
-  return `curl -fsSL ${BOOTSTRAP_URL} | sudo bash -s -- ${alias} ${wallet}`;
+  return `curl -fsSL ${BOOTSTRAP_URL} | sudo FLEET_REF=${FLEET_REF} bash -s -- ${alias} ${wallet}`;
+}
+
+/** A commit, short: its first seven hex digits, as git shows it. */
+export function shortSha(sha: string): string {
+  return sha.slice(0, 7);
 }
 
 /** `0x42e6…ca26`: enough of a wallet to recognise it. */
@@ -188,9 +218,12 @@ const isObj = (value: unknown): value is Obj =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const HEX32 = /^[0-9a-f]{32}$/;
+const SHA1 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HOST = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+/** An admin code as the machine makes and checks it (reconcile.py ADMIN_CODE). */
+const ADMIN_CODE = /^[A-Za-z0-9_-]{8,64}$/;
 
 /** Every refusal the door can give. */
 export const DOOR_ERRORS = [
@@ -211,6 +244,7 @@ export const DOOR_ERRORS = [
   'too-large',
   'slow-down',
   'no-admin-code',
+  'busy',
   'origin',
 ] as const;
 
@@ -221,7 +255,11 @@ export type Accepted =
   | {
       readonly ok: true;
       readonly request: string;
-      /** The machine's admin code, given to the Oracle who signed a create or asked for it. */
+      /**
+       * An admin code, only to the Oracle who signed for it: a new world's own
+       * code (CreateWorld), the code of the world asked for (ShowWorldCode),
+       * that world's new one (RotateWorldCode), or the legacy machine-wide one.
+       */
       readonly adminCode: string | null;
       /** The copy's number, for a download. */
       readonly copy: string | null;
@@ -238,7 +276,7 @@ export function readAccepted(status: number, body: unknown): Accepted {
     return {
       ok: true,
       request,
-      adminCode: typeof code === 'string' && code !== '' ? code : null,
+      adminCode: typeof code === 'string' && ADMIN_CODE.test(code) ? code : null,
       copy: typeof copy === 'string' && HEX32.test(copy) ? copy : null,
     };
   }
@@ -392,6 +430,30 @@ export function formatAgo(seconds: number): string {
   if (s < 3600) return `${Math.round(s / 60)} min`;
   if (s < 172_800) return `${Math.round(s / 3600)} h`;
   return `${Math.round(s / 86_400)} d`;
+}
+
+// ---------------------------------------------------------------------------
+// Which recipe a machine was installed from
+// ---------------------------------------------------------------------------
+
+/**
+ * A door's `/machine` → the numinia-assets commit its machine was installed
+ * from (`recipe`, 40 hex); null when it says none — a machine installed
+ * before the recipe was pinned — or says something else.
+ */
+export function readRecipe(body: unknown): string | null {
+  if (!isObj(body)) return null;
+  const recipe = body['recipe'];
+  return typeof recipe === 'string' && SHA1.test(recipe) ? recipe : null;
+}
+
+/**
+ * Whether a machine whose door answers runs another recipe than the one this
+ * room hands out (FLEET_REF), or says none: its line must be run again. A
+ * machine whose door does not answer already shows its line.
+ */
+export function staleRecipe(machine: Pick<MachineSummary, 'open' | 'recipe'>): boolean {
+  return machine.open && machine.recipe !== FLEET_REF;
 }
 
 // ---------------------------------------------------------------------------
@@ -628,6 +690,8 @@ export type MachineView =
       readonly heartbeat: Heartbeat | null;
       /** What its door listens to besides requests (readListens). */
       readonly listens: readonly DoorFeature[];
+      /** The numinia-assets commit it was installed from (readRecipe); null when its door says none. */
+      readonly recipe: string | null;
     }
   | {
       readonly alias: string;
@@ -661,6 +725,7 @@ export async function readMachine(
     log: log.ok ? readDoorLog(log.body, alias) : [],
     heartbeat: machine.ok ? readHeartbeat(machine.body) : null,
     listens: machine.ok ? readListens(machine.body) : [],
+    recipe: machine.ok ? readRecipe(machine.body) : null,
   };
 }
 
@@ -707,6 +772,7 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
           : `${view.reason} ${view.status}`,
       heartbeat: view.open ? view.heartbeat : null,
       listens: view.open ? view.listens : [],
+      recipe: view.open ? view.recipe : null,
     })),
     orders,
     phases,

@@ -5,11 +5,14 @@
  * checked, and the calls, which never throw.
  */
 
-import { hashTypedData, recoverTypedDataAddress } from 'viem';
+import { hashTypedData, keccak256, recoverTypedDataAddress, stringToBytes } from 'viem';
 import { describe, expect, it } from 'vitest';
+import fixtureFleet from '../../../fixtures/worlds/fleet.json';
 import {
   BEACON_MAX_EVENTS,
   BOOTSTRAP_URL,
+  CODE_KINDS,
+  FLEET_REF,
   REQUEST_SECONDS,
   REQUEST_TYPES,
   SILENT_AFTER_S,
@@ -35,12 +38,15 @@ import {
   readHeartbeat,
   readListens,
   readMachine,
+  readRecipe,
   readRequest,
   readRequestResult,
   sendBeacon,
   sendRequest,
   settled,
+  shortSha,
   shortWallet,
+  staleRecipe,
   typedData,
   waitFor,
   type BeaconEvent,
@@ -53,9 +59,14 @@ import type { WorldOrder } from '../worlds';
 
 const IMAGE = 'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3';
 const EXPIRES = 1893456000;
-const SIGNER = '0xc6e2ba381ace7dd1d3a6dbfeeacf42c746f96f12';
-
-/** Copied from numinia-assets tests/fleet_vectors.json, all six kinds: what the machine verifies. */
+/**
+ * Copied verbatim from the fleet's shared vectors (numinia-assets
+ * tests/fleet_vectors.json, made with viem by two throwaway keys of which only
+ * the public half is kept): every request kind with its digest, its signature
+ * and its signer, a stranger's signature, and the keccak checks. The machine
+ * verifies the same file.
+ */
+const ORACLE = '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357';
 const VECTORS = [
   {
     type: 'CreateWorld',
@@ -63,16 +74,17 @@ const VECTORS = [
       machine: 'open-1',
       world: 'plaza',
       domain: 'plaza.numinia.com',
-      image: IMAGE,
+      image: 'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3',
       memory: '2g',
       cpus: '1.5',
       maxUploadMb: 50,
       nonce: '0123456789abcdef0123456789abcdef',
-      expires: EXPIRES,
+      expires: 1893456000,
     },
     digest: '0x6390352cb3395b9e08c31daaec3288413a5800cef65a6569164809637382ca1d',
     signature:
-      '0x98e42891013b9c61fa1a0707f9abf30309eb3684062d3f75a57d8ec14dd898aa195c3861cd07d171da44ec49daba180880949644e5cd8e605e793b9c68d18a821b',
+      '0x0163a3be4285af3dc2bfc5894c3d785af6e826c19e168ed68ee144212b70d1ac61894f6234d6394db325d56685639798723ee752be2217f023636f7f30dc17e31b',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
   },
   {
     type: 'DeleteWorld',
@@ -81,11 +93,12 @@ const VECTORS = [
       world: 'plaza',
       domain: 'plaza.numinia.com',
       nonce: '1123456789abcdef0123456789abcdef',
-      expires: EXPIRES,
+      expires: 1893456000,
     },
     digest: '0x4a05422e004fb6b333ed98bbc3d487bdbd231f0ebbf1e6d12516123f4f890a67',
     signature:
-      '0x453411454d0c4959030fde4744932fc42deb55940cb609be14809e120e786c66479ff7f9c2baade4c40ff492126a008d0e892a914f53f43567a8b647e49b57a71b',
+      '0x29042d5fe3a43e6d6c1505a1321b0697735eb1f6457d0bc3acac3cb8f908a4bc31d7162e9f6189378cdede779a841999eabea5f7f55a7522882d4ccdf5339edc1b',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
   },
   {
     type: 'StopWorld',
@@ -93,11 +106,12 @@ const VECTORS = [
       machine: 'open-1',
       world: 'plaza',
       nonce: '2123456789abcdef0123456789abcdef',
-      expires: EXPIRES,
+      expires: 1893456000,
     },
     digest: '0xcce8832bb8c525e8a94356bd6e02d9d3e39d4fa88b0d9cf49eff9e7eaf8965d1',
     signature:
-      '0xc587c0cb42dd9d36e0c4609f2e59336ef5c678527697f37c3ce1fa0cfc152ec86d2b5827ef3a8209345bf3b3b0c3aae9434698b55aa69b6360ab6b0e1d31602b1c',
+      '0x6d55b4b416eff77aea30f35b52f6c432c291bb4c87b3ad124d7165b294cd855375d2ca149e7c358eedf93cac3dd1e4c1c2d020ef943c79deaadbc3064b5f57e51b',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
   },
   {
     type: 'StartWorld',
@@ -105,11 +119,12 @@ const VECTORS = [
       machine: 'open-1',
       world: 'plaza',
       nonce: '3123456789abcdef0123456789abcdef',
-      expires: EXPIRES,
+      expires: 1893456000,
     },
     digest: '0xd84f2ea0aea5ef8176282fb8b08b92dfdc169109ed22205f2271d8c372d82a26',
     signature:
-      '0x3f2253feae91261b27b0607cd3ad8e9bb7e4009724fa86cdbdc742ca8cc3b43d13515c02a25be5407170ee78d5e47269db551460c2624c301cb2302b825f58321b',
+      '0xc2c2c679cdaa44d0c13a4db8933d28d169cc34021c892876962f1fc92ea61e824b17fa875eae23b42df971373e94fb3208532288979e4a95f3d079ae5477f9e61c',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
   },
   {
     type: 'DownloadWorld',
@@ -117,32 +132,100 @@ const VECTORS = [
       machine: 'open-1',
       world: 'plaza',
       nonce: '4123456789abcdef0123456789abcdef',
-      expires: EXPIRES,
+      expires: 1893456000,
     },
     digest: '0xe03580fe93dd2192b20cd5fe6cba48e25020390d9e46e608440cfd5ec2651a27',
     signature:
-      '0x46c4d29055fdfef8f33fe351b6856ee5597f40e539dfe8eeaf08c3f0424383515c6685d43a149c1971720458e7bc34789ce1a69ca1d42d77225fdd3c33f223701c',
+      '0x3d53bd6492f9ce6c640e84e96402d027ae04c9f543f71b6d1ff1c2857b2ad631358ae84b2520c393d470df6dd045ab37130b3f5f5da74bd42598f76cda50e1601c',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
   },
   {
     type: 'ShowAdminCode',
-    message: { machine: 'open-1', nonce: '5123456789abcdef0123456789abcdef', expires: EXPIRES },
+    message: { machine: 'open-1', nonce: '5123456789abcdef0123456789abcdef', expires: 1893456000 },
     digest: '0x026533a50e419d03f37105c6f319572c0500f9b65237935ac8670b8dd46ecfe9',
     signature:
-      '0xc228770e517934ab79d4e1caf53b5978e1d4c441c43c5b6998158c8bedc2373309b8bc2462ef73314bfe07e12a0541bfd2385b2cafc26738252e1ea022a561211c',
+      '0x226bc1c63d9efa737ec4d26c1ec5ce46fe426ddb42a2a1271cf0ee56c68afe5b0b19e89e0c85961885d58e48043bad8fd289a8022954313f134758d4ce96a8431c',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+  },
+  {
+    type: 'ShowWorldCode',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      nonce: '6123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xf69173093218a76e67036e4059ad590d73a16d98de0532caf0ab55464aae3dfd',
+    signature:
+      '0x6433d6a86cc6ee7c2e36e40d774bb4523f51e0faa080534763724242e95034df2e947a5ef3554c3b8aabbe20c74edac34801c98c10c0a6985366eb9412c7fdf01c',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+  },
+  {
+    type: 'RotateWorldCode',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      nonce: '7123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x167365fbf09a8fbe0cd684c20bce0ea5e0ceb682a44775f09ebd45137ba1ed82',
+    signature:
+      '0xcf02e91be201d87d40c7c91dfe35a470e03bfa0c2bf005a918208b1eaae289f127ea8a575a33205d8efae2ee83327f3df716b3b6d9bac7c0ca70300685719c7b1c',
+    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+  },
+] as const;
+const STRANGER = {
+  type: 'StopWorld',
+  message: {
+    machine: 'open-1',
+    world: 'plaza',
+    nonce: '2123456789abcdef0123456789abcdef',
+    expires: 1893456000,
+  },
+  signature:
+    '0xaed9d07df6f3b548e54f315cfa2d6b0c731ab1244c423db0272e9fa935792c8b4ee3a6c08ff9f9c103139bc1f29517ca00027f54b5ad4fe14316b7100ff0b6481b',
+  signer: '0x52c3cea5a0d53727d775a1dff8d994b1083a42ac',
+} as const;
+const KECCAK = [
+  { input: '', hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470' },
+  { input: 'abc', hex: '0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45' },
+  {
+    input: 'Numinia Fleet',
+    hex: '0xb16b402dbf9c3f6bbba1d461e221c2198f91541497686217ec102aaa34590238',
+  },
+  {
+    input: 'x'.repeat(200),
+    hex: '0x3c3800defb6a25a70a2737e0716eeb5d270559ad3cad8f6abddac58802d7158e',
   },
 ] as const;
 
 const NOW_MS = (EXPIRES - REQUEST_SECONDS) * 1000;
 
 describe('the requests the room builds', () => {
-  it('hashes exactly as the machine does, and the machine’s signatures recover to their signer', async () => {
+  it('hashes every kind exactly as the machine does, and each signature recovers to its signer', async () => {
+    expect(VECTORS.map((vector) => vector.type)).toEqual(Object.keys(REQUEST_TYPES));
     for (const vector of VECTORS) {
       const request: FleetRequest = { type: vector.type, message: vector.message };
       const data = typedData(request) as unknown as Parameters<typeof hashTypedData>[0];
       expect(hashTypedData(data)).toBe(vector.digest);
       const signer = await recoverTypedDataAddress({ ...data, signature: vector.signature });
-      expect(signer.toLowerCase()).toBe(SIGNER);
+      expect(signer.toLowerCase()).toBe(vector.signer);
+      expect(vector.signer).toBe(ORACLE);
     }
+  });
+
+  it('recovers a stranger’s signature to the stranger, never to the Oracle', async () => {
+    const request: FleetRequest = { type: STRANGER.type, message: STRANGER.message };
+    const data = typedData(request) as unknown as Parameters<typeof hashTypedData>[0];
+    // The very request the Oracle signed in the StopWorld vector, signed by someone else.
+    expect(hashTypedData(data)).toBe(VECTORS[2].digest);
+    const signer = await recoverTypedDataAddress({ ...data, signature: STRANGER.signature });
+    expect(signer.toLowerCase()).toBe(STRANGER.signer);
+    expect(signer.toLowerCase()).not.toBe(ORACLE);
+  });
+
+  it('hashes text with the keccak the machine checks its own against', () => {
+    for (const { input, hex } of KECCAK) expect(keccak256(stringToBytes(input))).toBe(hex);
   });
 
   it('writes each request with the machine’s fields, in the type’s order, good for ten minutes', () => {
@@ -178,6 +261,23 @@ describe('the requests the room builds', () => {
         Object.keys(buildRequest({ kind, machine: 'open-1', world: 'w' }, 'n', NOW_MS).message),
       ).toEqual(['machine', 'world', 'nonce', 'expires']);
     }
+    // A world's own code, shown or changed: the machine, the world, the number, the expiry.
+    const show = buildRequest(
+      { kind: 'ShowWorldCode', machine: 'open-1', world: 'plaza' },
+      VECTORS[6].message.nonce,
+      NOW_MS,
+    );
+    expect(show).toEqual({ type: 'ShowWorldCode', message: VECTORS[6].message });
+    expect(Object.keys(show.message)).toEqual(REQUEST_TYPES.ShowWorldCode.map((f) => f.name));
+    const rotate = buildRequest(
+      { kind: 'RotateWorldCode', machine: 'open-1', world: 'plaza' },
+      VECTORS[7].message.nonce,
+      NOW_MS,
+    );
+    expect(rotate).toEqual({ type: 'RotateWorldCode', message: VECTORS[7].message });
+    expect(Object.keys(rotate.message)).toEqual(['machine', 'world', 'nonce', 'expires']);
+    // The answers that are a code: what the room waits for after the machine takes them.
+    expect(CODE_KINDS).toEqual(['ShowAdminCode', 'ShowWorldCode', 'RotateWorldCode']);
   });
 
   it('gives the wallet whole numbers as bigints and everything else as text', () => {
@@ -207,14 +307,20 @@ describe('addresses and small words', () => {
     );
   });
 
-  it('writes the bootstrap line with the Oracle’s wallet', () => {
-    expect(bootstrapLine('open-2', '0xabc')).toBe(
-      `curl -fsSL ${BOOTSTRAP_URL} | sudo bash -s -- open-2 0xabc`,
+  it('pins the bootstrap line to one commit of the recipe, and carries the Oracle’s wallet', () => {
+    expect(FLEET_REF).toMatch(/^[0-9a-f]{40}$/);
+    expect(BOOTSTRAP_URL).toBe(
+      `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`,
     );
+    expect(bootstrapLine('open-2', '0xabc')).toBe(
+      `curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh | sudo FLEET_REF=${FLEET_REF} bash -s -- open-2 0xabc`,
+    );
+    expect(bootstrapLine('open-2', '0xabc')).not.toContain('/main/');
+    expect(shortSha('f3de8ddc621bc23fa3aac5b460f0b0d2a62cb388')).toBe('f3de8dd');
   });
 
   it('shortens a wallet, leaves a short text alone, and sizes files', () => {
-    expect(shortWallet(SIGNER)).toBe('0xc6e2…6f12');
+    expect(shortWallet(ORACLE)).toBe('0x3687…1357');
     expect(shortWallet('0x1234')).toBe('0x1234');
     expect(formatBytes(840)).toBe('840 B');
     expect(formatBytes(12_700)).toBe('12.4 KB');
@@ -241,6 +347,15 @@ describe('what the door answers, checked before it is believed', () => {
       copy: 'b'.repeat(32),
     });
     expect(readAccepted(202, { request: NONCE, copy: '../x' })).toMatchObject({ copy: null });
+    // A world's code as the machine makes it (16 hex) is shown; anything off its rule is not.
+    expect(readAccepted(202, { request: NONCE, adminCode: '9f2c4e6a8b0d1f37' })).toMatchObject({
+      adminCode: '9f2c4e6a8b0d1f37',
+    });
+    for (const odd of ['short', 'with space 1234', 'x'.repeat(65), 'line\nbreak1234', 7]) {
+      expect(readAccepted(202, { request: NONCE, adminCode: odd })).toMatchObject({
+        adminCode: null,
+      });
+    }
   });
 
   it('names a refusal it knows, and calls anything else unexpected', () => {
@@ -249,6 +364,8 @@ describe('what the door answers, checked before it is believed', () => {
       error: 'not-an-oracle-here',
       status: 403,
     });
+    // Another change of the same world's code is still waiting on the machine.
+    expect(readAccepted(409, { error: 'busy' })).toEqual({ ok: false, error: 'busy', status: 409 });
     expect(readAccepted(500, { error: 'boom' })).toMatchObject({ error: 'unexpected' });
     expect(readAccepted(202, { request: 'short' })).toMatchObject({ ok: false, status: 202 });
     expect(readAccepted(502, null)).toMatchObject({ error: 'unexpected', status: 502 });
@@ -381,6 +498,14 @@ describe('a machine’s worlds and its log', () => {
             rule: 'ignored when done',
             took: -1,
           },
+          {
+            at: '2026-10-12T07:20:00Z',
+            type: 'RotateWorldCode',
+            world: 'plaza',
+            by: '0x3687…1357',
+            state: 'done',
+            took: 13,
+          },
           { at: '2026-10-12T07:00:00Z', type: 'RebootMachine', state: 'done' },
           { at: 7, type: 'StopWorld', state: 'done' },
           { at: '2026-10-12T06:00:00Z', type: 'StopWorld', world: '../x', state: 'working' },
@@ -419,6 +544,16 @@ describe('a machine’s worlds and its log', () => {
         state: 'done',
         rule: null,
         took: null,
+      },
+      {
+        machine: 'open-1',
+        at: '2026-10-12T07:20:00Z',
+        type: 'RotateWorldCode',
+        world: 'plaza',
+        by: '0x3687…1357',
+        state: 'done',
+        rule: null,
+        took: 13,
       },
     ]);
     expect(readDoorLog({ entries: {} }, 'open-1')).toEqual([]);
@@ -486,9 +621,10 @@ describe('reading a machine', () => {
     waiting: { requests: 0, since: null },
     at: '2026-10-12T09:45:00Z',
     listens: ['events', 'something-later'],
+    recipe: 'f3de8ddc621bc23fa3aac5b460f0b0d2a62cb388',
   };
 
-  it('reads its worlds, its log and its heartbeat through its door', async () => {
+  it('reads its worlds, its log, its heartbeat and its recipe through its door', async () => {
     const door = fakeFetch((url) => {
       if (url === WORLDS) return json({ machine: 'open-1', worlds: [listed('plaza', 'running')] });
       if (url === MACHINE) return json(BEAT);
@@ -506,6 +642,7 @@ describe('reading a machine', () => {
       waiting: BEAT.waiting,
     });
     expect(view.open && view.listens).toEqual(['events']);
+    expect(view.open && view.recipe).toBe(BEAT.recipe);
     expect(door.urls.sort()).toEqual([LOG, MACHINE, WORLDS]);
   });
 
@@ -520,6 +657,7 @@ describe('reading a machine', () => {
       log: [],
       heartbeat: null,
       listens: [],
+      recipe: null,
     });
   });
 
@@ -567,6 +705,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         ],
         heartbeat: HEARTBEAT,
         listens: ['events'],
+        recipe: FLEET_REF,
       },
       {
         alias: 'open-2',
@@ -588,16 +727,38 @@ describe('gatherFleet — several doors, one fleet', () => {
         log: [],
         heartbeat: null,
         listens: [],
+        recipe: null,
       },
       { alias: 'open-3', open: false, reason: 'http', status: 502 },
       { alias: 'open-4', open: false, reason: 'timeout' },
     ];
     const fleet = gatherFleet(views);
     expect(fleet.machines).toEqual([
-      { alias: 'open-1', open: true, reason: null, heartbeat: HEARTBEAT, listens: ['events'] },
-      { alias: 'open-2', open: true, reason: null, heartbeat: null, listens: [] },
-      { alias: 'open-3', open: false, reason: 'http 502', heartbeat: null, listens: [] },
-      { alias: 'open-4', open: false, reason: 'timeout', heartbeat: null, listens: [] },
+      {
+        alias: 'open-1',
+        open: true,
+        reason: null,
+        heartbeat: HEARTBEAT,
+        listens: ['events'],
+        recipe: FLEET_REF,
+      },
+      { alias: 'open-2', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
+      {
+        alias: 'open-3',
+        open: false,
+        reason: 'http 502',
+        heartbeat: null,
+        listens: [],
+        recipe: null,
+      },
+      {
+        alias: 'open-4',
+        open: false,
+        reason: 'timeout',
+        heartbeat: null,
+        listens: [],
+        recipe: null,
+      },
     ]);
     // A name belongs to the first machine that holds it.
     expect(fleet.orders.map((o) => `${o.id}@${o.server}`)).toEqual(['plaza@open-1', 'foro@open-2']);
@@ -846,6 +1007,43 @@ describe('whether a machine obeys — its door’s heartbeat', () => {
     expect(formatAgo(1500)).toBe('25 min');
     expect(formatAgo(7200)).toBe('2 h');
     expect(formatAgo(4 * 86_400)).toBe('4 d');
+  });
+});
+
+describe('which recipe a machine was installed from', () => {
+  const OLDER = 'f3de8ddc621bc23fa3aac5b460f0b0d2a62cb388';
+
+  it('reads the commit a door says, and nothing that is not one', () => {
+    expect(readRecipe({ machine: 'open-1', recipe: OLDER })).toBe(OLDER);
+    expect(readRecipe({ recipe: OLDER.toUpperCase() })).toBeNull();
+    expect(readRecipe({ recipe: OLDER.slice(0, 7) })).toBeNull();
+    expect(readRecipe({ recipe: `${OLDER}\n` })).toBeNull();
+    expect(readRecipe({ recipe: 'main' })).toBeNull();
+    expect(readRecipe({ recipe: null })).toBeNull();
+    // A door older than the pinned recipe says nothing at all.
+    expect(readRecipe({ machine: 'open-1', door: 'fleetd/1' })).toBeNull();
+    expect(readRecipe(null)).toBeNull();
+  });
+
+  it('asks for a machine’s line again unless it runs the room’s own recipe', () => {
+    expect(staleRecipe({ open: true, recipe: FLEET_REF })).toBe(false);
+    expect(staleRecipe({ open: true, recipe: OLDER })).toBe(true);
+    expect(staleRecipe({ open: true, recipe: null })).toBe(true);
+    // A machine whose door does not answer already shows its line.
+    expect(staleRecipe({ open: false, recipe: null })).toBe(false);
+  });
+
+  it('keeps the hermetic fleet in step: open-1 runs the room’s own recipe, open-2 one from before the pin', () => {
+    // FLEET_REF and the fixture's open-1 recipe move together.
+    const views = (fixtureFleet as unknown as { readonly machines: readonly MachineView[] })
+      .machines;
+    const machines = gatherFleet(views).machines;
+    expect(machines.map((machine) => [machine.alias, machine.recipe])).toEqual([
+      ['open-1', FLEET_REF],
+      ['open-2', null],
+      ['open-3', null],
+    ]);
+    expect(machines.map((machine) => staleRecipe(machine))).toEqual([false, true, false]);
   });
 });
 
