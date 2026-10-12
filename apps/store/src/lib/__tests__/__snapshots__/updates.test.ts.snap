@@ -3,6 +3,27 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-13 01:40",
+    "entries": [
+      {
+        "text": "A world comes back from its zip. In the Worlds room, Bring from a zip — beside + New world — opens your files, and a zip dropped anywhere on the room does the same. Before anything is signed, the room reads the zip in your browser: what it is (a fleet copy of which world and from when, or a world’s folder and how many files it holds) and anything its machine would refuse, in plain words. Then one dialog, Place and Sign: the world’s name (its own, or the next one free), the machine, the address; the engine is the fleet’s. One signature covers the world, its address, the machine, the engine and the zip’s exact size and fingerprint, so the machine takes that zip and no other.",
+        "type": "NEW",
+      },
+      {
+        "text": "The zip travels from your browser straight to its machine, never through numinia.com. The dialog closes as soon as the machine takes the request; the new world’s card comes first, whatever the filters say, and carries the upload — how much has arrived, with a bar, and Stop the upload — then Checking… while the machine opens it. It always lands stopped, with Start first, and its own admin code is shown once on its card; if the card is out of sight, a notice says the world has arrived.",
+        "type": "NEW",
+      },
+      {
+        "text": "A dropped connection says how far the upload got: Upload again sends the same zip to the same place without a new signature, and Discard lets it go. After a reload the room asks for the same zip again and checks it is the same one. Every refusal has its own words — a zip too big for its machine, no room left, a password, paths that leave the folder, links, a zip bomb, no world inside, a database copied while the world was running, a damaged one — and names the file inside the zip that broke the rule; a world its machine refused shows no admin code. What the machines did names the new request: brought back a world.",
+        "type": "UPD",
+      },
+    ],
+    "missions": [
+      "MIS-164",
+    ],
+    "version": "v0.80.0",
+  },
+  {
     "date": "2026-10-12 19:32",
     "entries": [
       {

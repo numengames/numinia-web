@@ -7,7 +7,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-import type { RequestKind } from '../lib/fleet';
+import type { ImportRule, RequestKind } from '../lib/fleet';
 
 export interface WorldsRoomMessages {
   readonly loading: string;
@@ -46,6 +46,9 @@ export interface WorldsRoomMessages {
     readonly stopping: string;
     readonly starting: string;
     readonly deleting: string;
+    /** A world from its zip: the zip on its way, then its machine checking it. */
+    readonly uploading: string;
+    readonly importing: string;
   };
   /** In place of a busy card's buttons. */
   readonly busyNote: string;
@@ -62,6 +65,8 @@ export interface WorldsRoomMessages {
     readonly stopping: string;
     readonly starting: string;
     readonly deleting: string;
+    readonly uploading: string;
+    readonly importing: string;
     readonly unknown: string;
   };
   readonly badges: {
@@ -84,6 +89,8 @@ export interface WorldsRoomMessages {
     readonly delete: string;
     readonly download: string;
     readonly newWorld: string;
+    /** Opens the system's file picker for a world's zip. */
+    readonly importZip: string;
     readonly more: string;
     readonly less: string;
   };
@@ -245,6 +252,81 @@ export interface WorldsRoomMessages {
     readonly fingerprint: string;
     readonly expires: string;
   };
+  /**
+   * A world brought back from its zip (ImportWorld): picked or dropped, read
+   * here, signed once, uploaded from its card, born stopped. `{m}` the
+   * machine, `{w}` the world, `{f}` a file, `{s}`/`{max}` sizes, `{n}` a
+   * count, `{p}` per cent.
+   */
+  readonly import: {
+    /** No machine's door says it takes zips. */
+    readonly noMachine: string;
+    /** The overlay while a file is dragged over the room. */
+    readonly dropTitle: string;
+    readonly dropNote: string;
+    readonly dropCap: string;
+    readonly dropOne: string;
+    readonly title: string;
+    readonly stepPlace: string;
+    readonly stepSign: string;
+    readonly reading: string;
+    /** What the zip is: `{d}` the copy's date. */
+    readonly copyOf: string;
+    readonly copyOfUndated: string;
+    readonly folder: string;
+    readonly engineImage: string;
+    readonly keysNote: string;
+    readonly machineLabel: string;
+    /** The engine, one line: `{b}` its build. */
+    readonly engineNote: string;
+    /** `{b}` the exact byte count. */
+    readonly zipLine: string;
+    /** `{h}` the short fingerprint. */
+    readonly fingerprint: string;
+    readonly hashing: string;
+    /** The zip could not be read to make its fingerprint. */
+    readonly unreadable: string;
+    readonly signNote: string;
+    readonly sign: string;
+    readonly pickAnother: string;
+    /** On the world's card: `{sent}` of `{total}`. */
+    readonly uploading: string;
+    readonly keepOpen: string;
+    readonly stop: string;
+    readonly checking: string;
+    readonly cutPill: string;
+    readonly cut: string;
+    readonly stopped: string;
+    readonly retry: string;
+    readonly discard: string;
+    /** After a reload: the same zip again, or not the same zip. */
+    readonly halfDone: string;
+    readonly pickSame: string;
+    readonly notSame: string;
+    /** A zip on its way that this tab is not sending. */
+    readonly elsewhere: string;
+    readonly failedPill: string;
+    /** The notice when it lands off-screen. */
+    readonly landed: string;
+    readonly landedClose: string;
+    /** A landed world's reason line, on its card. */
+    readonly fromZip: string;
+    /** Before signing: what the room's own reading found, with its details (`{r}` a ratio). */
+    readonly before: {
+      readonly empty: string;
+      readonly several: string;
+      readonly folder: string;
+      readonly tooManyFiles: string;
+      readonly fileTooBig: string;
+      readonly ratio: string;
+      readonly unpackedTooBig: string;
+      readonly unexpected: string;
+    };
+    /** Each rule a machine names, in Pablo's words: `{m}`, `{f}` the zip's name, `{s}` its size, `{max}` its machine's cap. */
+    readonly rules: Readonly<Record<ImportRule, string>>;
+    /** After a machine's rule, the zip entry it names: `{f}`. */
+    readonly entry: string;
+  };
   readonly history: {
     readonly title: string;
     readonly empty: string;
@@ -292,6 +374,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'Parando…',
       starting: 'Arrancando…',
       deleting: 'Borrando…',
+      uploading: 'Subiendo…',
+      importing: 'Revisando…',
     },
     busyNote: 'Suele tardar un minuto.',
     reasons: {
@@ -307,6 +391,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'su máquina lo está parando',
       starting: 'su máquina lo está arrancando',
       deleting: 'su máquina lo está borrando',
+      uploading: 'su zip está llegando a su máquina',
+      importing: 'su máquina está revisando su zip',
       unknown: 'todavía sin comprobar',
     },
     badges: {
@@ -330,6 +416,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       delete: 'Borrar',
       download: 'Descargar',
       newWorld: 'Nuevo mundo',
+      importZip: 'Traer de un zip',
       more: 'Ver {n} más',
       less: 'Ver menos',
     },
@@ -491,6 +578,88 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       fingerprint: 'Huella SHA-256: {h}',
       expires: 'El enlace caduca: {when}.',
     },
+    import: {
+      noMachine: 'Ninguna máquina responde: ahora no se pueden traer mundos.',
+      dropTitle: 'Suelta el zip para traer un mundo',
+      dropNote: 'Nada se sube hasta que firmes.',
+      dropCap: 'un solo .zip · hasta {max}',
+      dropOne: 'Suelta un solo zip',
+      title: 'Traer un mundo',
+      stepPlace: 'Lugar',
+      stepSign: 'Firmar',
+      reading: 'Leyendo el zip…',
+      copyOf: 'Copia de {w} del {d} · {s}',
+      copyOfUndated: 'Copia de {w} · {s}',
+      folder: 'Carpeta de un mundo · db.sqlite y {n} archivos · {s}',
+      engineImage: 'Lleva también una imagen del motor ({s}) que no se usa: subirá igual.',
+      keysNote:
+        'Del zip se usan su base de datos y sus archivos; sus claves y su docker-compose no: {m} hace claves nuevas.',
+      machineLabel: 'Máquina',
+      engineNote: '{b} · el motor de la flota',
+      zipLine: 'Zip: {f} · {s} ({b} bytes)',
+      fingerprint: 'Huella: {h}',
+      hashing: 'Calculando la huella del zip… {p} %',
+      unreadable: 'No se pudo leer el zip: elige el archivo otra vez.',
+      signNote:
+        'Tu cartera te pedirá firmar el mundo, su dirección, la máquina, el motor, el tamaño exacto del zip y su huella. {m} solo aceptará este zip.',
+      sign: 'Firmar y subir',
+      pickAnother: 'Elegir otro zip',
+      uploading: 'Subiendo a {m} · {sent} de {total}',
+      keepOpen: 'No cierres esta pestaña hasta que termine.',
+      stop: 'Detener la subida',
+      checking: '{m} está revisando el zip.',
+      cutPill: 'Subida cortada',
+      cut: 'Se cortó la conexión con {m} a los {sent} de {total}.',
+      stopped: 'Detuviste la subida a los {sent} de {total}.',
+      retry: 'Volver a subir',
+      discard: 'Descartar',
+      halfDone: 'La subida quedó a medias. Elige otra vez el mismo zip.',
+      pickSame: 'Elegir el zip',
+      notSame: 'Ese no es el mismo zip: su huella no coincide.',
+      entry: 'Archivo: {f}.',
+      elsewhere:
+        'Lo está subiendo otra pestaña, o la subida quedó a medias: si nadie la termina, {m} la descarta en menos de una hora.',
+      failedPill: 'No se pudo traer',
+      landed: '{w} ya está en {m}, parado.',
+      landedClose: 'Cerrar',
+      fromZip: 'traído de un zip',
+      before: {
+        empty: 'El archivo está vacío.',
+        several: 'Has soltado {n} archivos: trae uno solo.',
+        folder: 'Eso es una carpeta: comprímela en un zip.',
+        tooManyFiles: 'El zip trae {n} archivos y {m} acepta hasta {max}.',
+        fileTooBig: '{f} pesa {s}: más de lo que {m} acepta por archivo ({max}).',
+        ratio: 'El zip crecería demasiado al abrirlo (×{r}): así son las «bombas zip». No se abre.',
+        unpackedTooBig: 'Abierto ocuparía {s}, más de lo que {m} acepta ({max}).',
+        unexpected: 'El zip trae algo que un mundo no lleva: {f}.',
+      },
+      rules: {
+        'zip-too-big': 'El zip pesa {s} y {m} acepta hasta {max}.',
+        'no-room': '{m} no tiene sitio para este zip. Borra un mundo o elige otra máquina.',
+        'slot-expired': 'La subida caducó. Vuelve a firmar para subirlo.',
+        'wrong-size': 'La subida llegó incompleta: vuelve a subirlo.',
+        cut: 'La subida llegó incompleta: vuelve a subirlo.',
+        fingerprint:
+          'Lo que llegó no es el zip que firmaste: la huella no coincide. Vuelve a subirlo.',
+        'not-a-zip': '«{f}» no es un zip.',
+        encrypted: 'El zip tiene contraseña: guárdalo sin ella.',
+        'too-many-files': 'El zip trae más archivos de los que {m} acepta.',
+        'zip-slip':
+          'El zip trae rutas que salen de su carpeta («..» o «/»): {m} no lo abre, por seguridad.',
+        link: 'El zip trae enlaces en vez de archivos: {m} no lo abre, por seguridad.',
+        'file-too-big': 'Un archivo del zip pesa más de lo que {m} acepta por archivo.',
+        ratio: 'El zip crecería demasiado al abrirlo: así son las «bombas zip». No se abre.',
+        'unpacked-too-big': 'Abierto ocuparía más de lo que {m} acepta.',
+        'not-a-world': 'En el zip no hay un mundo: falta db.sqlite.',
+        unexpected: 'El zip trae algo que un mundo no lleva.',
+        'db-open':
+          'La base de datos se copió con el mundo en marcha: descárgalo con Descargar o páralo antes de comprimirlo.',
+        manifest:
+          'Un archivo no coincide con su huella en world.json: el zip se estropeó o lo cambiaron. Descárgalo otra vez.',
+        'db-broken': 'La base de datos del zip está dañada: no pasa la comprobación.',
+        'db-foreign': 'db.sqlite no es la base de datos de un mundo: no tiene sus tablas.',
+      },
+    },
     history: {
       title: 'Lo que han hecho las máquinas',
       empty: 'Las máquinas todavía no han hecho nada.',
@@ -505,6 +674,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowAdminCode: 'mostró el código de la máquina',
         ShowWorldCode: 'mostró el código de {w}',
         RotateWorldCode: 'cambió el código de {w}',
+        ImportWorld: 'trajo {w}',
       },
     },
     fieldNames: {
@@ -544,6 +714,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'Stopping…',
       starting: 'Starting…',
       deleting: 'Deleting…',
+      uploading: 'Uploading…',
+      importing: 'Checking…',
     },
     busyNote: 'This usually takes about a minute.',
     reasons: {
@@ -559,6 +731,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'its machine is stopping it',
       starting: 'its machine is starting it',
       deleting: 'its machine is deleting it',
+      uploading: 'its zip is reaching its machine',
+      importing: 'its machine is checking its zip',
       unknown: 'not checked yet',
     },
     badges: {
@@ -582,6 +756,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       delete: 'Delete',
       download: 'Download',
       newWorld: 'New world',
+      importZip: 'Bring from a zip',
       more: 'Show {n} more',
       less: 'Show less',
     },
@@ -744,6 +919,91 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       fingerprint: 'SHA-256 fingerprint: {h}',
       expires: 'The link expires: {when}.',
     },
+    import: {
+      noMachine: 'No machine is answering: worlds cannot be brought back right now.',
+      dropTitle: 'Drop the zip to bring a world back',
+      dropNote: 'Nothing is uploaded until you sign.',
+      dropCap: 'one .zip · up to {max}',
+      dropOne: 'Drop a single zip',
+      title: 'Bring a world back',
+      stepPlace: 'Place',
+      stepSign: 'Sign',
+      reading: 'Reading the zip…',
+      copyOf: 'Copy of {w} from {d} · {s}',
+      copyOfUndated: 'Copy of {w} · {s}',
+      folder: 'A world’s folder · db.sqlite and {n} files · {s}',
+      engineImage:
+        'It also carries an engine image ({s}) that is not used: it will be uploaded all the same.',
+      keysNote:
+        'Only the zip’s database and files are used; its keys and its docker-compose are not: {m} makes new keys.',
+      machineLabel: 'Machine',
+      engineNote: '{b} · the fleet’s engine',
+      zipLine: 'Zip: {f} · {s} ({b} bytes)',
+      fingerprint: 'Fingerprint: {h}',
+      hashing: 'Computing the zip’s fingerprint… {p} %',
+      unreadable: 'The zip could not be read: choose the file again.',
+      signNote:
+        'Your wallet will ask you to sign the world, its address, the machine, the engine, the zip’s exact size and its fingerprint. {m} will take this zip and no other.',
+      sign: 'Sign and upload',
+      pickAnother: 'Choose another zip',
+      uploading: 'Uploading to {m} · {sent} of {total}',
+      keepOpen: 'Do not close this tab until it finishes.',
+      stop: 'Stop the upload',
+      checking: '{m} is checking the zip.',
+      cutPill: 'Upload cut',
+      cut: 'The connection with {m} dropped at {sent} of {total}.',
+      stopped: 'You stopped the upload at {sent} of {total}.',
+      retry: 'Upload again',
+      discard: 'Discard',
+      halfDone: 'The upload was left half done. Choose the same zip again.',
+      pickSame: 'Choose the zip',
+      notSame: 'That is not the same zip: its fingerprint does not match.',
+      entry: 'File: {f}.',
+      elsewhere:
+        'Another tab is uploading it, or it was left half done: if nobody finishes it, {m} drops it within the hour.',
+      failedPill: 'Could not bring it back',
+      landed: '{w} is now on {m}, stopped.',
+      landedClose: 'Close',
+      fromZip: 'brought back from a zip',
+      before: {
+        empty: 'The file is empty.',
+        several: 'You dropped {n} files: bring just one.',
+        folder: 'That is a folder: zip it first.',
+        tooManyFiles: 'The zip carries {n} files and {m} takes up to {max}.',
+        fileTooBig: '{f} weighs {s}: more than {m} takes per file ({max}).',
+        ratio:
+          'The zip would grow too much when opened (×{r}): that is what “zip bombs” do. It is not opened.',
+        unpackedTooBig: 'Opened, it would take {s}, more than {m} accepts ({max}).',
+        unexpected: 'The zip carries something a world does not: {f}.',
+      },
+      rules: {
+        'zip-too-big': 'The zip weighs {s} and {m} takes up to {max}.',
+        'no-room': '{m} has no room for this zip. Delete a world or choose another machine.',
+        'slot-expired': 'The upload expired. Sign again to upload it.',
+        'wrong-size': 'The upload arrived incomplete: upload it again.',
+        cut: 'The upload arrived incomplete: upload it again.',
+        fingerprint:
+          'What arrived is not the zip you signed: the fingerprint does not match. Upload it again.',
+        'not-a-zip': '“{f}” is not a zip.',
+        encrypted: 'The zip has a password: save it without one.',
+        'too-many-files': 'The zip carries more files than {m} takes.',
+        'zip-slip':
+          'The zip carries paths that leave its folder (“..” or “/”): {m} will not open it, for safety.',
+        link: 'The zip carries links instead of files: {m} will not open it, for safety.',
+        'file-too-big': 'A file in the zip weighs more than {m} takes per file.',
+        ratio:
+          'The zip would grow too much when opened: that is what “zip bombs” do. It is not opened.',
+        'unpacked-too-big': 'Opened, it would take more than {m} accepts.',
+        'not-a-world': 'There is no world in the zip: db.sqlite is missing.',
+        unexpected: 'The zip carries something a world does not.',
+        'db-open':
+          'The database was copied while the world was running: get it with Download, or stop the world before zipping it.',
+        manifest:
+          'A file does not match its fingerprint in world.json: the zip was damaged or changed. Download it again.',
+        'db-broken': 'The zip’s database is damaged: it fails the check.',
+        'db-foreign': 'db.sqlite is not a world’s database: it lacks its tables.',
+      },
+    },
     history: {
       title: 'What the machines did',
       empty: 'The machines have done nothing yet.',
@@ -758,6 +1018,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowAdminCode: 'showed the machine’s code',
         ShowWorldCode: 'showed the code of {w}',
         RotateWorldCode: 'changed the code of {w}',
+        ImportWorld: 'brought back {w}',
       },
     },
     fieldNames: {
@@ -798,6 +1059,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: '停止中…',
       starting: '起動中…',
       deleting: '削除中…',
+      uploading: 'アップロード中…',
+      importing: '確認中…',
     },
     busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
@@ -813,6 +1076,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'マシンが停止中',
       starting: 'マシンが起動中',
       deleting: 'マシンが削除中',
+      uploading: 'zip がマシンに届いているところ',
+      importing: 'マシンが zip を確認中',
       unknown: 'まだ確認していません',
     },
     badges: {
@@ -836,6 +1101,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       delete: '削除',
       download: 'ダウンロード',
       newWorld: '新しいワールド',
+      importZip: 'zip から戻す',
       more: 'さらに {n} 件',
       less: '表示を減らす',
     },
@@ -996,6 +1262,93 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       fingerprint: 'SHA-256 フィンガープリント：{h}',
       expires: 'リンクの有効期限：{when}。',
     },
+    import: {
+      noMachine: '応答するマシンがありません。今はワールドを戻せません。',
+      dropTitle: 'zip をドロップしてワールドを戻す',
+      dropNote: '署名するまで何もアップロードされません。',
+      dropCap: '.zip 1 つ · 最大 {max}',
+      dropOne: 'zip を 1 つだけドロップしてください',
+      title: 'ワールドを戻す',
+      stepPlace: '場所',
+      stepSign: '署名',
+      reading: 'zip を読んでいます…',
+      copyOf: '{w} のコピー（{d}）· {s}',
+      copyOfUndated: '{w} のコピー · {s}',
+      folder: 'ワールドのフォルダ · db.sqlite とファイル {n} 個 · {s}',
+      engineImage:
+        '使われないエンジンのイメージ（{s}）も含まれています。そのままアップロードされます。',
+      keysNote:
+        'zip からはデータベースとファイルだけを使い、鍵と docker-compose は使いません。{m} が新しい鍵を作ります。',
+      machineLabel: 'マシン',
+      engineNote: '{b} · フリートのエンジン',
+      zipLine: 'zip：{f} · {s}（{b} バイト）',
+      fingerprint: 'フィンガープリント：{h}',
+      hashing: 'zip のフィンガープリントを計算中… {p} %',
+      unreadable: 'zip を読めませんでした。ファイルをもう一度選んでください。',
+      signNote:
+        'ウォレットが、ワールド、アドレス、マシン、エンジン、zip の正確なサイズとフィンガープリントへの署名を求めます。{m} はこの zip だけを受け付けます。',
+      sign: '署名してアップロード',
+      pickAnother: '別の zip を選ぶ',
+      uploading: '{m} にアップロード中 · {sent} / {total}',
+      keepOpen: '終わるまでこのタブを閉じないでください。',
+      stop: 'アップロードを止める',
+      checking: '{m} が zip を確認しています。',
+      cutPill: 'アップロード中断',
+      cut: '{m} との接続が {sent} / {total} の時点で切れました。',
+      stopped: '{sent} / {total} の時点でアップロードを止めました。',
+      retry: 'もう一度アップロード',
+      discard: '破棄',
+      halfDone: 'アップロードが途中で止まっています。同じ zip をもう一度選んでください。',
+      pickSame: 'zip を選ぶ',
+      notSame: '同じ zip ではありません。フィンガープリントが一致しません。',
+      entry: 'ファイル：{f}',
+      elsewhere:
+        '別のタブがアップロード中か、途中で止まっています。誰も終えなければ、{m} が 1 時間以内に破棄します。',
+      failedPill: '戻せませんでした',
+      landed: '{w} は {m} に戻りました（停止中）。',
+      landedClose: '閉じる',
+      fromZip: 'zip から戻したワールド',
+      before: {
+        empty: 'ファイルが空です。',
+        several: '{n} 個のファイルがドロップされました。1 つだけにしてください。',
+        folder: 'それはフォルダです。zip に圧縮してください。',
+        tooManyFiles: 'zip には {n} 個のファイルがあり、{m} が受け付けるのは {max} 個までです。',
+        fileTooBig: '{f} は {s} あり、{m} が 1 ファイルあたりに受け付ける {max} を超えています。',
+        ratio: '展開すると大きくなりすぎます（×{r}）。「zip 爆弾」の手口です。開きません。',
+        unpackedTooBig: '展開すると {s} になり、{m} が受け付ける {max} を超えます。',
+        unexpected: 'zip にワールドには含まれないものがあります：{f}',
+      },
+      rules: {
+        'zip-too-big': 'zip は {s} で、{m} が受け付けるのは {max} までです。',
+        'no-room':
+          '{m} にはこの zip を置く場所がありません。ワールドを削除するか、別のマシンを選んでください。',
+        'slot-expired':
+          'アップロードの期限が切れました。もう一度署名してアップロードしてください。',
+        'wrong-size': 'アップロードが不完全なまま届きました。もう一度アップロードしてください。',
+        cut: 'アップロードが不完全なまま届きました。もう一度アップロードしてください。',
+        fingerprint:
+          '届いたのは署名した zip ではありません。フィンガープリントが一致しません。もう一度アップロードしてください。',
+        'not-a-zip': '「{f}」は zip ではありません。',
+        encrypted: 'zip にパスワードがかかっています。パスワードなしで保存してください。',
+        'too-many-files': 'zip のファイル数が {m} の上限を超えています。',
+        'zip-slip':
+          'zip にフォルダの外へ出るパス（「..」や「/」）があります。安全のため {m} は開きません。',
+        link: 'zip にファイルではなくリンクがあります。安全のため {m} は開きません。',
+        'file-too-big':
+          'zip の中に、{m} が 1 ファイルあたりに受け付けるサイズを超えるファイルがあります。',
+        ratio: '展開すると大きくなりすぎます。「zip 爆弾」の手口です。開きません。',
+        'unpacked-too-big': '展開すると {m} が受け付ける容量を超えます。',
+        'not-a-world': 'zip にワールドがありません。db.sqlite がありません。',
+        unexpected: 'zip にワールドには含まれないものがあります。',
+        'db-open':
+          'ワールドの稼働中にデータベースがコピーされています。「ダウンロード」で取得するか、停止してから圧縮してください。',
+        manifest:
+          'world.json のフィンガープリントと一致しないファイルがあります。zip が壊れたか変更されています。もう一度ダウンロードしてください。',
+        'db-broken': 'zip のデータベースが壊れています。検査に通りません。',
+        'db-foreign':
+          'db.sqlite はワールドのデータベースではありません。必要なテーブルがありません。',
+      },
+    },
     history: {
       title: 'マシンの作業履歴',
       empty: 'マシンはまだ何もしていません。',
@@ -1010,6 +1363,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowAdminCode: 'マシンのコードを表示',
         ShowWorldCode: '{w} のコードを表示',
         RotateWorldCode: '{w} のコードを変更',
+        ImportWorld: '{w} を zip から戻した',
       },
     },
     fieldNames: {
@@ -1049,6 +1403,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: '정지하는 중…',
       starting: '시작하는 중…',
       deleting: '삭제하는 중…',
+      uploading: '업로드하는 중…',
+      importing: '확인하는 중…',
     },
     busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
@@ -1064,6 +1420,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: '머신이 정지하는 중',
       starting: '머신이 시작하는 중',
       deleting: '머신이 삭제하는 중',
+      uploading: 'zip이 머신에 도착하는 중',
+      importing: '머신이 zip을 확인하는 중',
       unknown: '아직 확인하지 않음',
     },
     badges: {
@@ -1087,6 +1445,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       delete: '삭제',
       download: '다운로드',
       newWorld: '새 월드',
+      importZip: 'zip에서 가져오기',
       more: '{n}개 더 보기',
       less: '접기',
     },
@@ -1248,6 +1607,88 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       fingerprint: 'SHA-256 지문: {h}',
       expires: '링크 만료: {when}.',
     },
+    import: {
+      noMachine: '응답하는 머신이 없습니다. 지금은 월드를 가져올 수 없습니다.',
+      dropTitle: 'zip을 놓아 월드를 가져오세요',
+      dropNote: '서명하기 전에는 아무것도 업로드되지 않습니다.',
+      dropCap: '.zip 하나 · 최대 {max}',
+      dropOne: 'zip을 하나만 놓으세요',
+      title: '월드 가져오기',
+      stepPlace: '위치',
+      stepSign: '서명',
+      reading: 'zip을 읽는 중…',
+      copyOf: '{w}의 사본 ({d}) · {s}',
+      copyOfUndated: '{w}의 사본 · {s}',
+      folder: '월드 폴더 · db.sqlite와 파일 {n}개 · {s}',
+      engineImage: '사용하지 않는 엔진 이미지({s})도 들어 있습니다. 그대로 업로드됩니다.',
+      keysNote:
+        'zip에서는 데이터베이스와 파일만 사용하고, 키와 docker-compose는 사용하지 않습니다. {m}이(가) 새 키를 만듭니다.',
+      machineLabel: '머신',
+      engineNote: '{b} · 플릿의 엔진',
+      zipLine: 'zip: {f} · {s} ({b}바이트)',
+      fingerprint: '지문: {h}',
+      hashing: 'zip의 지문을 계산하는 중… {p}%',
+      unreadable: 'zip을 읽을 수 없습니다. 파일을 다시 선택하세요.',
+      signNote:
+        '지갑이 월드, 주소, 머신, 엔진, zip의 정확한 크기와 지문에 서명하라고 요청합니다. {m}은(는) 이 zip만 받습니다.',
+      sign: '서명하고 업로드',
+      pickAnother: '다른 zip 선택',
+      uploading: '{m}에 업로드하는 중 · {sent} / {total}',
+      keepOpen: '끝날 때까지 이 탭을 닫지 마세요.',
+      stop: '업로드 중지',
+      checking: '{m}이(가) zip을 확인하고 있습니다.',
+      cutPill: '업로드 끊김',
+      cut: '{m}과(와)의 연결이 {sent} / {total} 지점에서 끊겼습니다.',
+      stopped: '{sent} / {total} 지점에서 업로드를 중지했습니다.',
+      retry: '다시 업로드',
+      discard: '버리기',
+      halfDone: '업로드가 중간에 멈췄습니다. 같은 zip을 다시 선택하세요.',
+      pickSame: 'zip 선택',
+      notSame: '같은 zip이 아닙니다. 지문이 일치하지 않습니다.',
+      entry: '파일: {f}',
+      elsewhere:
+        '다른 탭에서 업로드하는 중이거나 중간에 멈췄습니다. 아무도 끝내지 않으면 {m}이(가) 1시간 안에 버립니다.',
+      failedPill: '가져오지 못함',
+      landed: '{w}이(가) {m}에 왔습니다. 정지 상태입니다.',
+      landedClose: '닫기',
+      fromZip: 'zip에서 가져옴',
+      before: {
+        empty: '파일이 비어 있습니다.',
+        several: '파일 {n}개를 놓았습니다. 하나만 가져오세요.',
+        folder: '폴더입니다. zip으로 압축하세요.',
+        tooManyFiles: 'zip에 파일이 {n}개 있고, {m}은(는) {max}개까지 받습니다.',
+        fileTooBig: '{f}은(는) {s}로, {m}이(가) 파일 하나당 받는 {max}보다 큽니다.',
+        ratio: '열면 너무 커집니다(×{r}). “zip 폭탄”의 방식입니다. 열지 않습니다.',
+        unpackedTooBig: '열면 {s}가 되어 {m}이(가) 받는 {max}를 넘습니다.',
+        unexpected: 'zip에 월드에 없는 것이 들어 있습니다: {f}',
+      },
+      rules: {
+        'zip-too-big': 'zip은 {s}이고, {m}은(는) {max}까지 받습니다.',
+        'no-room': '{m}에 이 zip을 둘 공간이 없습니다. 월드를 삭제하거나 다른 머신을 선택하세요.',
+        'slot-expired': '업로드 기한이 지났습니다. 다시 서명해 업로드하세요.',
+        'wrong-size': '업로드가 완전히 도착하지 않았습니다. 다시 업로드하세요.',
+        cut: '업로드가 완전히 도착하지 않았습니다. 다시 업로드하세요.',
+        fingerprint:
+          '도착한 것은 서명한 zip이 아닙니다. 지문이 일치하지 않습니다. 다시 업로드하세요.',
+        'not-a-zip': '“{f}”은(는) zip이 아닙니다.',
+        encrypted: 'zip에 비밀번호가 있습니다. 비밀번호 없이 저장하세요.',
+        'too-many-files': 'zip의 파일 수가 {m}이(가) 받는 한도를 넘습니다.',
+        'zip-slip':
+          'zip에 폴더 밖으로 나가는 경로(“..” 또는 “/”)가 있습니다. 안전을 위해 {m}은(는) 열지 않습니다.',
+        link: 'zip에 파일 대신 링크가 있습니다. 안전을 위해 {m}은(는) 열지 않습니다.',
+        'file-too-big': 'zip 안에 {m}이(가) 파일 하나당 받는 크기보다 큰 파일이 있습니다.',
+        ratio: '열면 너무 커집니다. “zip 폭탄”의 방식입니다. 열지 않습니다.',
+        'unpacked-too-big': '열면 {m}이(가) 받는 용량을 넘습니다.',
+        'not-a-world': 'zip에 월드가 없습니다. db.sqlite가 없습니다.',
+        unexpected: 'zip에 월드에 없는 것이 들어 있습니다.',
+        'db-open':
+          '월드가 실행 중일 때 데이터베이스가 복사되었습니다. 다운로드로 받거나, 월드를 정지한 뒤 압축하세요.',
+        manifest:
+          'world.json의 지문과 맞지 않는 파일이 있습니다. zip이 손상되었거나 바뀌었습니다. 다시 다운로드하세요.',
+        'db-broken': 'zip의 데이터베이스가 손상되었습니다. 검사를 통과하지 못합니다.',
+        'db-foreign': 'db.sqlite는 월드의 데이터베이스가 아닙니다. 필요한 테이블이 없습니다.',
+      },
+    },
     history: {
       title: '머신이 한 일',
       empty: '머신이 아직 아무것도 하지 않았습니다.',
@@ -1262,6 +1703,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowAdminCode: '머신 코드 표시',
         ShowWorldCode: '{w}의 코드 표시',
         RotateWorldCode: '{w}의 코드 변경',
+        ImportWorld: '{w}을(를) zip에서 가져옴',
       },
     },
     fieldNames: {
@@ -1306,6 +1748,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'Parando…',
       starting: 'Iniciando…',
       deleting: 'Apagando…',
+      uploading: 'Enviando…',
+      importing: 'Revisando…',
     },
     busyNote: 'Costuma levar um minuto.',
     reasons: {
@@ -1321,6 +1765,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopping: 'sua máquina está parando',
       starting: 'sua máquina está iniciando',
       deleting: 'sua máquina está apagando',
+      uploading: 'o zip está chegando à máquina',
+      importing: 'a máquina está revisando o zip',
       unknown: 'ainda não verificado',
     },
     badges: {
@@ -1344,6 +1790,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       delete: 'Apagar',
       download: 'Baixar',
       newWorld: 'Novo mundo',
+      importZip: 'Trazer de um zip',
       more: 'Ver mais {n}',
       less: 'Ver menos',
     },
@@ -1502,6 +1949,91 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       fingerprint: 'Impressão SHA-256: {h}',
       expires: 'O link vence: {when}.',
     },
+    import: {
+      noMachine: 'Nenhuma máquina responde: agora não é possível trazer mundos.',
+      dropTitle: 'Solte o zip para trazer um mundo',
+      dropNote: 'Nada é enviado até você assinar.',
+      dropCap: 'um só .zip · até {max}',
+      dropOne: 'Solte um só zip',
+      title: 'Trazer um mundo',
+      stepPlace: 'Lugar',
+      stepSign: 'Assinar',
+      reading: 'Lendo o zip…',
+      copyOf: 'Cópia de {w} de {d} · {s}',
+      copyOfUndated: 'Cópia de {w} · {s}',
+      folder: 'Pasta de um mundo · db.sqlite e {n} arquivos · {s}',
+      engineImage:
+        'Também traz uma imagem do motor ({s}) que não é usada: será enviada mesmo assim.',
+      keysNote:
+        'Do zip usam-se o banco de dados e os arquivos; as chaves e o docker-compose, não: {m} cria chaves novas.',
+      machineLabel: 'Máquina',
+      engineNote: '{b} · o motor da frota',
+      zipLine: 'Zip: {f} · {s} ({b} bytes)',
+      fingerprint: 'Impressão: {h}',
+      hashing: 'Calculando a impressão do zip… {p} %',
+      unreadable: 'Não foi possível ler o zip: escolha o arquivo de novo.',
+      signNote:
+        'Sua carteira vai pedir que você assine o mundo, o endereço, a máquina, o motor, o tamanho exato do zip e a sua impressão. {m} só aceitará este zip.',
+      sign: 'Assinar e enviar',
+      pickAnother: 'Escolher outro zip',
+      uploading: 'Enviando para {m} · {sent} de {total}',
+      keepOpen: 'Não feche esta aba até terminar.',
+      stop: 'Parar o envio',
+      checking: '{m} está revisando o zip.',
+      cutPill: 'Envio interrompido',
+      cut: 'A conexão com {m} caiu aos {sent} de {total}.',
+      stopped: 'Você parou o envio aos {sent} de {total}.',
+      retry: 'Enviar de novo',
+      discard: 'Descartar',
+      halfDone: 'O envio ficou pela metade. Escolha de novo o mesmo zip.',
+      pickSame: 'Escolher o zip',
+      notSame: 'Esse não é o mesmo zip: a impressão não confere.',
+      entry: 'Arquivo: {f}.',
+      elsewhere:
+        'Outra aba está enviando, ou o envio ficou pela metade: se ninguém o terminar, {m} o descarta em menos de uma hora.',
+      failedPill: 'Não foi possível trazer',
+      landed: '{w} já está em {m}, parado.',
+      landedClose: 'Fechar',
+      fromZip: 'trazido de um zip',
+      before: {
+        empty: 'O arquivo está vazio.',
+        several: 'Você soltou {n} arquivos: traga só um.',
+        folder: 'Isso é uma pasta: compacte-a em um zip.',
+        tooManyFiles: 'O zip traz {n} arquivos e {m} aceita até {max}.',
+        fileTooBig: '{f} pesa {s}: mais do que {m} aceita por arquivo ({max}).',
+        ratio:
+          'O zip cresceria demais ao ser aberto (×{r}): é assim que funcionam as “bombas zip”. Não é aberto.',
+        unpackedTooBig: 'Aberto, ocuparia {s}, mais do que {m} aceita ({max}).',
+        unexpected: 'O zip traz algo que um mundo não leva: {f}.',
+      },
+      rules: {
+        'zip-too-big': 'O zip pesa {s} e {m} aceita até {max}.',
+        'no-room': '{m} não tem espaço para este zip. Apague um mundo ou escolha outra máquina.',
+        'slot-expired': 'O envio expirou. Assine de novo para enviá-lo.',
+        'wrong-size': 'O envio chegou incompleto: envie de novo.',
+        cut: 'O envio chegou incompleto: envie de novo.',
+        fingerprint:
+          'O que chegou não é o zip que você assinou: a impressão não confere. Envie de novo.',
+        'not-a-zip': '“{f}” não é um zip.',
+        encrypted: 'O zip tem senha: salve-o sem ela.',
+        'too-many-files': 'O zip traz mais arquivos do que {m} aceita.',
+        'zip-slip':
+          'O zip traz caminhos que saem da sua pasta (“..” ou “/”): {m} não o abre, por segurança.',
+        link: 'O zip traz links em vez de arquivos: {m} não o abre, por segurança.',
+        'file-too-big': 'Um arquivo do zip pesa mais do que {m} aceita por arquivo.',
+        ratio:
+          'O zip cresceria demais ao ser aberto: é assim que funcionam as “bombas zip”. Não é aberto.',
+        'unpacked-too-big': 'Aberto, ocuparia mais do que {m} aceita.',
+        'not-a-world': 'Não há um mundo no zip: falta o db.sqlite.',
+        unexpected: 'O zip traz algo que um mundo não leva.',
+        'db-open':
+          'O banco de dados foi copiado com o mundo em funcionamento: baixe-o com Baixar ou pare-o antes de compactá-lo.',
+        manifest:
+          'Um arquivo não confere com a sua impressão em world.json: o zip se danificou ou foi alterado. Baixe-o de novo.',
+        'db-broken': 'O banco de dados do zip está danificado: não passa na verificação.',
+        'db-foreign': 'db.sqlite não é o banco de dados de um mundo: faltam as suas tabelas.',
+      },
+    },
     history: {
       title: 'O que as máquinas fizeram',
       empty: 'As máquinas ainda não fizeram nada.',
@@ -1516,6 +2048,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowAdminCode: 'mostrou o código da máquina',
         ShowWorldCode: 'mostrou o código de {w}',
         RotateWorldCode: 'trocou o código de {w}',
+        ImportWorld: 'trouxe {w}',
       },
     },
     fieldNames: {

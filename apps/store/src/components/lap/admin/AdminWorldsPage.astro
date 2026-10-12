@@ -876,6 +876,109 @@ const sessionHref = `${prefix}/lap/session/`;
     border-top: 1px solid var(--linea);
   }
 
+  /* A world from its zip: the two buttons of the header strip, "+ Nuevo mundo" still the only primary */
+  [data-worlds-panel] .botones-sala {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  /* A file dragged over the room: static (no pulse), never over a dialog, never taking the pointer */
+  [data-worlds-panel] .capa-zip {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: var(--s2);
+    background: color-mix(in srgb, var(--fondo) 90%, transparent);
+    pointer-events: none;
+  }
+  [data-worlds-panel] .capa-zip > div {
+    display: grid;
+    place-content: center;
+    gap: var(--s2);
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: var(--s5);
+    text-align: center;
+    font-family: var(--sans);
+    border: 2px dashed var(--turquesa);
+    border-radius: var(--radio-marco);
+  }
+  [data-worlds-panel] .capa-zip p {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .capa-zip .titulo-capa {
+    font-size: 1.44rem;
+    color: var(--texto);
+  }
+  /* What the zip is, in the dialog */
+  [data-worlds-panel] .linea-zip {
+    overflow-wrap: anywhere;
+  }
+  /* The upload on its card: §9.8's 4 px capsule, ink fill, its figure beside in mono */
+  [data-worlds-panel] .subida {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    margin-top: auto;
+  }
+  [data-worlds-panel] .subida p {
+    margin: 0;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  [data-worlds-panel] .barra-fila {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+  }
+  [data-worlds-panel] .barra-subida {
+    flex: 1;
+    min-width: 0;
+    height: 4px;
+    border-radius: var(--radio-completo);
+    background: var(--linea-f);
+    overflow: hidden;
+  }
+  [data-worlds-panel] .barra-subida span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radio-completo);
+    background: var(--texto);
+  }
+  [data-worlds-panel] .cifra-subida {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--texto);
+  }
+  /* The admin code a world from its zip was born with, on its card */
+  [data-worlds-panel] .codigo-nuevo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    padding: var(--s3);
+    border-left: 2px solid var(--turquesa);
+    background: var(--fondo);
+  }
+  [data-worlds-panel] .codigo-nuevo p {
+    margin: 0;
+  }
+  /* The landing notice: the house's toast (.aviso), above the cards */
+  [data-worlds-panel] .aviso {
+    z-index: 20;
+  }
+  [data-worlds-panel] .aviso p {
+    margin: 0 0 var(--s2);
+  }
+  [data-worlds-panel] .aviso .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
   @media (max-width: 40rem) {
     [data-worlds-panel] .direccion-campo {
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

@@ -11,6 +11,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
   CODE_KINDS,
+  IMPORT_RULES,
   buildRequest,
   copyDone,
   newNonce,
@@ -26,6 +27,7 @@ import {
   type BeaconStep,
   type CopyStatus,
   type DoorError,
+  type ImportRule,
 } from '../../../lib/fleet';
 import { fill } from '../../../lib/worlds';
 import { signWithWallet, type SignProblem } from './fleet-wallet';
@@ -37,8 +39,12 @@ export type Step =
   | { readonly at: 'idle' }
   | { readonly at: 'signing' }
   | { readonly at: 'sending' }
-  /** The machine took it and does it on its own; a create carries the new world's own admin code. */
-  | { readonly at: 'accepted'; readonly code: string | null }
+  /**
+   * The machine took it and does it on its own; a create carries the new
+   * world's own admin code, and every request its number (a world from its
+   * zip: the slot its zip goes to).
+   */
+  | { readonly at: 'accepted'; readonly code: string | null; readonly request: string }
   | { readonly at: 'preparing' }
   | {
       /** A code shown or changed (its code), or a copy ready (its zip). */
@@ -139,7 +145,13 @@ export function useFleetAction(sessionWallet: string | null, listens: (alias: st
           }
           return;
         }
-        set({ at: 'accepted', code: accepted.adminCode });
+        // A world from its zip: a door that took it must say where the zip goes.
+        if (ask.kind === 'ImportWorld' && accepted.upload === null) {
+          note('refused', 'unexpected');
+          set({ at: 'failed', problem: 'unexpected', detail: '202' });
+          return;
+        }
+        set({ at: 'accepted', code: accepted.adminCode, request: accepted.request });
       } finally {
         if (listens(ask.machine)) sendBeacon(ask.machine, seen, beaconSender());
       }
@@ -173,12 +185,32 @@ const PROBLEM_WORDS: Readonly<Partial<Record<Problem, keyof WorldsRoomMessages['
   late: 'late',
 };
 
-/** What went wrong, in the room's words; anything without words of its own says its code. */
+/** Whether a door's refusal is one of a world's zip's rules, which have words of their own. */
+export const isImportRule = (problem: string): problem is ImportRule =>
+  (IMPORT_RULES as readonly string[]).includes(problem);
+
+/**
+ * What went wrong, in the room's words; anything without words of its own
+ * says its code. `values` fills a zip rule's own blanks (`{f}` the zip's
+ * name, `{s}` its size, `{max}` its machine's cap). From a door, `unexpected`
+ * is an answer the room could not read: the machine's own rule of that name
+ * only ever comes back in a request's result, never in a refusal.
+ */
 export function problemText(
   step: Extract<Step, { at: 'failed' }>,
   machine: string,
   room: WorldsRoomMessages,
+  values: Readonly<Record<string, string | number>> = {},
 ): string {
+  if (step.problem !== 'unexpected' && isImportRule(step.problem)) {
+    return fill(room.import.rules[step.problem], {
+      f: '?',
+      s: '?',
+      max: '?',
+      ...values,
+      m: machine,
+    });
+  }
   const key = PROBLEM_WORDS[step.problem] ?? 'generic';
   return fill(room.problems[key], {
     m: machine,

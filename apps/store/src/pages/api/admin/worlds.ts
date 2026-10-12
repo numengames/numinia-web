@@ -112,6 +112,7 @@ export const GET: APIRoute = async ({ cookies }) => {
         orders: fleet.orders,
         phases: fleet.phases,
         leaving: fleet.leaving,
+        arriving: fleet.arriving,
         cards,
         probes,
         legacy,
