@@ -11,8 +11,11 @@
 //
 // The archive is PUBLIC: no token is sent (a stale token turned a public
 // read into HTTP 401 on 2026-09-16 and blocked every deploy for a day).
-// Unauthenticated GitHub allows 60 requests/hour per IP; this makes one
-// per card plus one.
+// Plain file reads from raw.githubusercontent.com, like fetch-lore.mjs —
+// not GitHub's contents API, which allows 60 keyless requests an hour per
+// address: Cloudflare's builders share addresses with other builds, so the
+// API answered 403 and failed the deploy of v0.78.0 on 2026-10-12 while the
+// same build's raw reads went through.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,13 +24,9 @@ const ARCHIVE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-archive';
 const ARCHIVE_REF = process.env.LORE_REF ?? 'main';
 const OUT = join('apps/store', '.lore', 'summa');
 
-const headers = {
-  accept: 'application/vnd.github.raw+json',
-  'user-agent': 'numinia-web-summa-fetch',
-};
+const headers = { 'user-agent': 'numinia-web-summa-fetch' };
 
-const rawUrl = (path) =>
-  `https://api.github.com/repos/${ARCHIVE_REPO}/contents/${path}?ref=${ARCHIVE_REF}`;
+const rawUrl = (path) => `https://raw.githubusercontent.com/${ARCHIVE_REPO}/${ARCHIVE_REF}/${path}`;
 
 const catalogueResponse = await fetch(rawUrl('objects/catalogue.json'), { headers });
 if (!catalogueResponse.ok) {
@@ -57,7 +56,9 @@ console.log(
 for (const card of catalogue.entities) {
   const response = await fetch(rawUrl(card.path), { headers });
   if (!response.ok) {
-    console.warn(`fetch-summa: ${card.path} → HTTP ${response.status}; the card renders without its body.`);
+    console.warn(
+      `fetch-summa: ${card.path} → HTTP ${response.status}; the card renders without its body.`,
+    );
     continue;
   }
   const text = await response.text();
