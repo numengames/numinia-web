@@ -12,12 +12,12 @@ import {
   describeStatus,
   fill,
   groupByServer,
-  orderFileUrl,
   rowPlace,
+  worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
 
-export type WorldAction = 'stop' | 'start' | 'close';
+export type WorldAction = 'stop' | 'start' | 'delete' | 'download';
 
 interface ViewProps {
   readonly rows: readonly WorldRow[];
@@ -40,8 +40,7 @@ function StatusPill({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) 
 }
 
 function Badges({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
-  const showPending = row.pending && row.status !== 'requested';
-  if (!row.missingCard && !showPending && !row.legacy) return null;
+  if (!row.missingCard && !row.legacy) return null;
   return (
     <span className="marcas">
       {row.legacy && (
@@ -50,17 +49,6 @@ function Badges({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
         </span>
       )}
       {row.missingCard && <span className="marca sin-ficha">{room.badges.missingCard}</span>}
-      {showPending && row.pending && (
-        <a
-          className="marca pedido"
-          href={row.pending.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-metric="worlds-pending"
-        >
-          {fill(room.badges.pending, { n: row.pending.number })}
-        </a>
-      )}
     </span>
   );
 }
@@ -75,24 +63,15 @@ function Actions({
   onAction: ViewProps['onAction'];
 }) {
   const order = row.order;
-  const busy = row.pending !== null;
+  // While its machine is creating, stopping, starting or deleting it, one thing at a time.
+  const busy = row.status === 'changing';
+  const open = row.legacy?.domain ?? (order?.state === 'running' ? order.domain : null);
   return (
     <div className="acciones">
-      {row.legacy && (
+      {open !== null && (
         <a
           className="btn btn-fantasma abrir"
-          href={`https://${row.legacy.domain}/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-metric="worlds-open"
-        >
-          {room.actions.open}
-        </a>
-      )}
-      {order && order.state === 'running' && (
-        <a
-          className="btn btn-fantasma abrir"
-          href={`https://${order.domain}/`}
+          href={worldUrl(open)}
           target="_blank"
           rel="noopener noreferrer"
           data-metric="worlds-open"
@@ -125,24 +104,24 @@ function Actions({
       {order && (
         <button
           type="button"
-          className="btn btn-fantasma peligro"
+          className="btn btn-fantasma"
           disabled={busy}
-          onClick={() => onAction(row, 'close')}
-          data-metric="worlds-close"
+          onClick={() => onAction(row, 'download')}
+          data-metric="worlds-download"
         >
-          {room.actions.close}
+          {room.actions.download}
         </button>
       )}
-      {row.status === 'requested' && row.pending && (
-        <a
-          className="btn btn-fantasma"
-          href={row.pending.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-metric="worlds-pending"
+      {order && (
+        <button
+          type="button"
+          className="btn btn-fantasma peligro"
+          disabled={busy}
+          onClick={() => onAction(row, 'delete')}
+          data-metric="worlds-delete"
         >
-          {fill(room.wizard.resultPr, { n: row.pending.number })}
-        </a>
+          {room.actions.delete}
+        </button>
       )}
     </div>
   );
@@ -205,15 +184,8 @@ function WorldCard({
             {order && (
               <div>
                 <dt className="etiqueta">{room.fields.build}</dt>
-                <dd className="mono">
-                  <a
-                    href={orderFileUrl(row.id)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-metric="worlds-order"
-                  >
-                    {buildTag(order.image)}
-                  </a>
+                <dd className="mono" title={order.image}>
+                  {buildTag(order.image)}
                 </dd>
               </div>
             )}
@@ -250,44 +222,44 @@ export function ListView({ rows, room, onAction }: ViewProps) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.id} data-world={row.id}>
-              <td>
-                <div className="fila-mundo">
-                  <Cover src={row.cover} title={row.title} room={room} />
-                  <span>
-                    <span className="nombre">{row.title}</span>
-                    <span className="id mono">{row.id}</span>
-                    <Badges row={row} room={room} />
-                  </span>
-                </div>
-              </td>
-              <td>
-                <StatusPill row={row} room={room} />
-                <span className="motivo">{describeStatus(row, room.reasons)}</span>
-              </td>
-              <td className="mono secundario">
-                {row.order ? (
-                  <>
-                    <span className="direccion">{row.order.domain}</span>
-                    <span className="detalle">
-                      {`${row.order.server} · ${buildTag(row.order.image)} · ${row.order.limits.memory} · ${row.order.limits.cpus} CPU · ${row.order.limits.maxUploadMb} MB`}
+          {rows.map((row) => {
+            const place = rowPlace(row);
+            return (
+              <tr key={row.id} data-world={row.id}>
+                <td>
+                  <div className="fila-mundo">
+                    <Cover src={row.cover} title={row.title} room={room} />
+                    <span>
+                      <span className="nombre">{row.title}</span>
+                      <span className="id mono">{row.id}</span>
+                      <Badges row={row} room={room} />
                     </span>
-                  </>
-                ) : row.legacy ? (
-                  <>
-                    <span className="direccion">{row.legacy.domain}</span>
-                    <span className="detalle">{row.legacy.server}</span>
-                  </>
-                ) : (
-                  '—'
-                )}
-              </td>
-              <td>
-                <Actions row={row} room={room} onAction={onAction} />
-              </td>
-            </tr>
-          ))}
+                  </div>
+                </td>
+                <td>
+                  <StatusPill row={row} room={room} />
+                  <span className="motivo">{describeStatus(row, room.reasons)}</span>
+                </td>
+                <td className="mono secundario">
+                  {place ? (
+                    <>
+                      <span className="direccion">{place.domain}</span>
+                      <span className="detalle">
+                        {row.order
+                          ? `${place.server} · ${buildTag(row.order.image)} · ${row.order.limits.memory} · ${row.order.limits.cpus} CPU · ${row.order.limits.maxUploadMb} MB`
+                          : place.server}
+                      </span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td>
+                  <Actions row={row} room={room} onAction={onAction} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

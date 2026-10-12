@@ -12,8 +12,10 @@ import { capMessage, logEvent } from './lib/telemetry';
 
 /* MISSION-025: the walls. Static pages get these via public/_headers (the
    assets layer serves them before the Worker); SSR responses get them here.
-   The login page keeps a relaxed connect/frame set: wallet SDKs talk to
-   vendor hosts and user-configured RPCs that no allowlist survives. */
+   The pages where a wallet signs keep a relaxed connect/frame set: wallet
+   SDKs talk to vendor hosts and user-configured RPCs that no allowlist
+   survives. Those are the login and the worlds room, where an Oracle signs
+   each request to a fleet machine. */
 const CSP_STRICT = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -36,8 +38,9 @@ const CSP_SESSION =
 
 function isSessionPath(pathname: string): boolean {
   // One door only: /spike/auth was retired with MIS-078 — the login lives in
-  // the LAP, and a second copy of it was a second surface to keep AA.
-  return /^\/(es\/|ja\/|ko\/|pt-br\/)?lap\/session/.test(pathname);
+  // the LAP, and a second copy of it was a second surface to keep AA. The
+  // worlds room signs with the same wallet, so it gets the same walls.
+  return /^\/(es\/|ja\/|ko\/|pt-br\/)?lap\/(session|admin\/worlds)/.test(pathname);
 }
 
 export function securityHeaders(

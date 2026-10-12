@@ -20,7 +20,6 @@ import {
   useActiveWallet,
   useDisconnect,
 } from 'thirdweb/react';
-import { createWallet, inAppWallet, type Wallet } from 'thirdweb/wallets';
 import { LegalConsentGate, type LegalGateCopy } from './LegalConsentGate';
 import { fetchSession, SessionPanel, type SessionState } from './SessionPanel';
 import {
@@ -29,19 +28,14 @@ import {
   type LoginMethod,
   type LoginPhase,
 } from './LoginMethodGuide';
+import { houseWallets } from './wallets';
 import { WIDGET_THEMES, useModo } from './widget-theme';
 import { LEGAL_CORPUS_VERSION } from '../../lib/legal';
 import { announceSessionChange } from '../../lib/session-signal';
 
 const clientId = import.meta.env.PUBLIC_THIRDWEB_CLIENT_ID as string | undefined;
 
-// Widening cast: thirdweb's per-id Wallet<"..."> generics don't unify under
-// exactOptionalPropertyTypes; the runtime shape is exactly Wallet[].
-const wallets = [
-  inAppWallet({ auth: { options: ['google', 'email', 'passkey'] } }),
-  createWallet('io.metamask'),
-  createWallet('walletConnect'),
-] as Wallet[];
+const wallets = houseWallets();
 
 /** Inner component so thirdweb hooks run under ThirdwebProvider. */
 function SpikeInner({

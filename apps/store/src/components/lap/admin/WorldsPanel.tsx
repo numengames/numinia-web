@@ -2,34 +2,30 @@
  * The worlds room: asks the session-gated endpoint and shows only what it
  * answers. Without the Oracle rank it shows the refusal, never a world.
  *
- * Shaped after the Alchemists' Tower dashboard: the figures on top, search
- * and filters that combine, three views (cards with their cover, a list,
- * by server), a wizard to ask for a new world, stop/start/close by
- * proposal, the orders that break the depot's rule, and the fleet's history.
+ * Shaped after the Alchemists' Tower dashboard: the figures on top, the
+ * machines, search and filters that combine, three views (cards with their
+ * cover, a list, by server), a wizard for a new world, stop/start/download/
+ * delete — each one request the Oracle's wallet signs and the machine checks
+ * itself — and what the machines did.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
+import { bootstrapLine, shortWallet, type DoorLogEntry } from '../../../lib/fleet';
 import {
-  buildRows,
   fill,
   filterRows,
-  fleetHistoryUrl,
   fleetServers,
   fleetStats,
   machineChoices,
-  type LegacyWorld,
-  type Probe,
+  type MachineSummary,
   type StatusFilter,
   type WorldCardInfo,
-  type WorldFace,
-  type WorldOrder,
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
-import { readExtras, type Extra } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
-import { ChangeDialog, NewWorldDialog } from './WorldDialogs';
+import { ActionDialog, CodeDialog, NewWorldDialog } from './WorldDialogs';
 import { CardsView, ListView, ServersView, type WorldAction } from './WorldViews';
 
 export interface WorldsLabels {
@@ -38,65 +34,15 @@ export interface WorldsLabels {
   readonly signedAs: string;
 }
 
-interface HistoryEntry {
-  readonly sha: string;
-  readonly subject: string;
-  readonly author: string;
-  readonly date: string;
-  readonly url: string;
-}
-
+/** What the Worker answers. */
 interface Fleet {
   readonly rank: string;
-  readonly canPropose: boolean;
+  /** The session's wallet: it must be the one that signs. */
+  readonly wallet: string | null;
+  readonly machines: readonly MachineSummary[];
   readonly rows: readonly WorldRow[];
   readonly cards: readonly WorldCardInfo[];
-  readonly invalid: readonly { readonly file: string; readonly problems: readonly string[] }[];
-  readonly history: readonly HistoryEntry[];
-  /** The extras GitHub refused, after this browser tried too. */
-  readonly missing: readonly Extra[];
-  /** When a spent quota reopens, if that is why they are missing. */
-  readonly resetAt: number | null;
-}
-
-/** What the Worker answers: the rows, and their ingredients for building them again. */
-interface Answer extends Omit<Fleet, 'resetAt'> {
-  readonly orders: readonly WorldOrder[];
-  readonly probes: Readonly<Record<string, Probe>>;
-  readonly legacy: readonly LegacyWorld[];
-  readonly faces: Readonly<Record<string, WorldFace>>;
-}
-
-/**
- * The Worker holds no key, so GitHub's API refuses it the proposals and the
- * history; this browser has its own 60 keyless reads an hour, enough for
- * those two. The rows are built again when the proposals arrive, so a world
- * waiting in a pull request shows as requested.
- */
-async function completeHere(answer: Answer): Promise<Fleet> {
-  const extras = await readExtras(fetch, null, answer.missing);
-  const pending = answer.missing.includes('pulls') ? extras.pending : [];
-  const rows =
-    pending.length > 0
-      ? buildRows({
-          orders: answer.orders,
-          cards: answer.cards,
-          probes: answer.probes,
-          pending,
-          legacy: answer.legacy,
-          faces: answer.faces,
-        })
-      : answer.rows;
-  return {
-    rank: answer.rank,
-    canPropose: answer.canPropose,
-    rows,
-    cards: answer.cards,
-    invalid: answer.invalid,
-    history: answer.missing.includes('history') ? extras.history : answer.history,
-    missing: extras.missing,
-    resetAt: extras.resetAt,
-  };
+  readonly history: readonly DoorLogEntry[];
 }
 
 type Panel =
@@ -107,18 +53,88 @@ type Panel =
 
 type View = 'cards' | 'list' | 'servers';
 
-/** When GitHub's window reopens, as a clock time in the reader's locale. */
-const clockTime = (at: number): string =>
-  new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
 const VIEWS: readonly View[] = ['cards', 'list', 'servers'];
 const STATUS_ORDER: readonly WorldStatus[] = [
   'running',
   'unreachable',
   'stopped',
-  'requested',
+  'changing',
   'unknown',
 ];
+/** While a machine is changing a world, the room reads the fleet again this often. */
+const CHANGING_REFRESH_MS = 10_000;
+
+/** A line to copy: a machine's bootstrap line. */
+function CopyLine({ line, room }: { readonly line: string; readonly room: WorldsRoomMessages }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="linea-copiar">
+      <pre className="mono">{line}</pre>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => {
+          void navigator.clipboard
+            ?.writeText(line)
+            .then(() => setCopied(true))
+            .catch(() => undefined);
+        }}
+        data-metric="worlds-copy"
+      >
+        {copied ? room.machines.copied : room.machines.copy}
+      </button>
+    </div>
+  );
+}
+
+function Machines({
+  fleet,
+  room,
+  onCode,
+}: {
+  readonly fleet: Fleet;
+  readonly room: WorldsRoomMessages;
+  readonly onCode: (alias: string) => void;
+}) {
+  return (
+    <section className="maquinas" aria-label={room.machines.title}>
+      <h2 className="etiqueta">{room.machines.title}</h2>
+      <ul>
+        {fleet.machines.map((machine) => (
+          <li key={machine.alias} data-machine={machine.alias} data-open={machine.open}>
+            {machine.open ? (
+              <>
+                <span className="punto-maquina" aria-hidden="true" />
+                <span>{fill(room.machines.open, { m: machine.alias })}</span>
+                <button
+                  type="button"
+                  className="btn btn-fantasma"
+                  onClick={() => onCode(machine.alias)}
+                  data-metric="worlds-admin-code"
+                >
+                  {room.machines.adminCode}
+                </button>
+              </>
+            ) : (
+              <div className="maquina-cerrada">
+                <p>
+                  <span className="punto-maquina" aria-hidden="true" />{' '}
+                  {fill(room.machines.closed, { m: machine.alias, why: machine.reason ?? '?' })}
+                </p>
+                {fleet.wallet !== null && (
+                  <>
+                    <p className="nota">{room.machines.connect}</p>
+                    <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
+                  </>
+                )}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: WorldsRoomMessages }) {
   const [panel, setPanel] = useState<Panel>({ at: 'loading' });
@@ -128,6 +144,7 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
   const [server, setServer] = useState('');
   const [wizard, setWizard] = useState(false);
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
+  const [codeOf, setCodeOf] = useState<string | null>(null);
 
   const load = useCallback(() => {
     let alive = true;
@@ -135,14 +152,19 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       .then(async (response) => {
         if (!alive) return;
         if (response.status === 403) return setPanel({ at: 'forbidden' });
-        const data = (await response.json().catch(() => ({}))) as Partial<Answer> & {
+        const data = (await response.json().catch(() => ({}))) as Partial<Fleet> & {
           status?: number;
         };
         if (!response.ok)
           return setPanel({ at: 'error', detail: `${response.status}/${data.status ?? '?'}` });
-        const answer = { ...data, missing: data.missing ?? [] } as Answer;
-        const fleet =
-          answer.missing.length > 0 ? await completeHere(answer) : { ...answer, resetAt: null };
+        const fleet: Fleet = {
+          rank: data.rank ?? '?',
+          wallet: typeof data.wallet === 'string' ? data.wallet : null,
+          machines: data.machines ?? [],
+          rows: data.rows ?? [],
+          cards: data.cards ?? [],
+          history: data.history ?? [],
+        };
         if (alive) setPanel({ at: 'ready', fleet });
       })
       .catch((error: unknown) => {
@@ -158,12 +180,23 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
   const rows = panel.at === 'ready' ? panel.fleet.rows : [];
   const stats = useMemo(() => fleetStats(rows), [rows]);
   const servers = useMemo(() => fleetServers(rows), [rows]);
-  const machines = useMemo(() => machineChoices(rows), [rows]);
+  const machines = useMemo(
+    () => machineChoices(panel.at === 'ready' ? panel.fleet.machines : []),
+    [panel],
+  );
   const visible = useMemo(
     () => filterRows(rows, { query, status, server }),
     [rows, query, status, server],
   );
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));
+
+  // While a machine creates, stops, starts or deletes a world, keep the room current.
+  const changing = rows.some((row) => row.status === 'changing');
+  useEffect(() => {
+    if (!changing) return;
+    const timer = setInterval(() => load(), CHANGING_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [changing, load]);
 
   if (panel.at === 'loading') {
     return (
@@ -223,26 +256,21 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
       <div className="barra-sala">
         <p className="sesion">
           <span className="etiqueta">{labels.signedAs}</span>{' '}
-          <span className="mono">{fleet.rank}</span>
+          <span className="mono" data-wallet>
+            {fleet.wallet === null ? fleet.rank : `${shortWallet(fleet.wallet)} · ${fleet.rank}`}
+          </span>
         </p>
         <button
           type="button"
           className="btn btn-primario"
+          disabled={machines.length === 0}
           onClick={() => setWizard(true)}
           data-metric="worlds-new"
         >
           + {room.actions.newWorld}
         </button>
       </div>
-      {!fleet.canPropose && <p className="nota llave">{room.keyless}</p>}
-      {fleet.missing.length > 0 && (
-        <p className="nota llave" data-missing={fleet.missing.join(' ')}>
-          {fill(room.missingNote, {
-            what: fleet.missing.map((part) => room.missingParts[part]).join(' · '),
-          })}
-          {fleet.resetAt !== null && <> {fill(room.quota, { time: clockTime(fleet.resetAt) })}</>}
-        </p>
-      )}
+      {machines.length === 0 && <p className="nota llave">{room.noMachine}</p>}
 
       <dl className="cifras">
         {(
@@ -259,6 +287,8 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
           </div>
         ))}
       </dl>
+
+      <Machines fleet={fleet} room={room} onCode={setCodeOf} />
 
       <div className="controles">
         <label className="buscar">
@@ -340,19 +370,6 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         <ServersView rows={visible} room={room} onAction={onAction} />
       )}
 
-      {fleet.invalid.length > 0 && (
-        <section className="invalidas" aria-label={room.invalidTitle}>
-          <h2 className="etiqueta">{room.invalidTitle}</h2>
-          <ul>
-            {fleet.invalid.map((entry) => (
-              <li key={entry.file} className="mono">
-                {entry.file} — {entry.problems.join(', ')}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <section className="historial" aria-label={room.history.title}>
         <h2 className="etiqueta">{room.history.title}</h2>
         {fleet.history.length === 0 ? (
@@ -360,51 +377,48 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         ) : (
           <ol>
             {fleet.history.map((entry) => (
-              <li key={entry.sha}>
-                <time className="mono" dateTime={entry.date}>
-                  {entry.date.slice(0, 10)}
+              <li
+                key={`${entry.machine}-${entry.at}-${entry.type}-${entry.world ?? ''}`}
+                data-state={entry.state}
+              >
+                <time className="mono" dateTime={entry.at}>
+                  {entry.at.slice(0, 16).replace('T', ' ')}
                 </time>
-                <a
-                  href={entry.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-metric="worlds-history"
-                >
-                  {entry.subject}
-                </a>
-                <span className="autor mono">{entry.author}</span>
+                <span>
+                  <span className="mono">{entry.machine}</span> {room.history.kinds[entry.type]}{' '}
+                  {entry.world !== null && <span className="mono">{entry.world}</span>}
+                  {entry.state === 'failed' && <> — {room.history.failed}</>}
+                </span>
+                {entry.by !== null && <span className="autor mono">{entry.by}</span>}
               </li>
             ))}
           </ol>
         )}
-        <a
-          className="todo"
-          href={fleetHistoryUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-metric="worlds-history"
-        >
-          {room.history.all}
-        </a>
       </section>
 
       <NewWorldDialog
         open={wizard}
         onClose={() => setWizard(false)}
-        onProposed={refresh}
+        onChanged={refresh}
         room={room}
         cards={fleet.cards}
         machines={machines}
         rows={rows}
-        canPropose={fleet.canPropose}
+        wallet={fleet.wallet}
       />
-      <ChangeDialog
+      <ActionDialog
         change={change}
         onClose={() => setChange(null)}
-        onProposed={refresh}
+        onChanged={refresh}
+        onDownloadFirst={(row) => setChange({ row, action: 'download' })}
         room={room}
-        rows={rows}
-        canPropose={fleet.canPropose}
+        wallet={fleet.wallet}
+      />
+      <CodeDialog
+        machine={codeOf}
+        onClose={() => setCodeOf(null)}
+        room={room}
+        wallet={fleet.wallet}
       />
     </div>
   );

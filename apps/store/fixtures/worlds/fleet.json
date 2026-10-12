@@ -1,60 +1,171 @@
 {
-  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary servers, covering every state the room shows. Never read in production, where the room reads numinia-assets open-worlds/ and the Summa's world cards.",
-  "orders": [
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary machines whose doors answer and a third whose door does not, covering every phase the room shows. Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
+  "machines": [
     {
-      "id": "agora-plaza",
-      "card": "agora-plaza",
-      "state": "running",
-      "server": "open-1",
-      "domain": "agora.numen.games",
-      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
-      "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+      "alias": "open-1",
+      "open": true,
+      "worlds": [
+        {
+          "id": "agora-plaza",
+          "phase": "running",
+          "domain": "agora.numen.games",
+          "order": {
+            "id": "agora-plaza",
+            "card": "agora-plaza",
+            "state": "running",
+            "server": "open-1",
+            "domain": "agora.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        },
+        {
+          "id": "atlantis-library",
+          "phase": "running",
+          "domain": "atlantis.numen.games",
+          "order": {
+            "id": "atlantis-library",
+            "card": "atlantis-library",
+            "state": "running",
+            "server": "open-1",
+            "domain": "atlantis.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "2g", "cpus": "1", "maxUploadMb": 50 }
+          }
+        },
+        {
+          "id": "alchemists-tower",
+          "phase": "running",
+          "domain": "tower.numen.games",
+          "order": {
+            "id": "alchemists-tower",
+            "card": "alchemists-tower",
+            "state": "running",
+            "server": "open-1",
+            "domain": "tower.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-5091ad9f08234d7342d14f9f0beb175bf1c5d8fc",
+            "limits": { "memory": "1g", "cpus": "1", "maxUploadMb": 20 }
+          }
+        },
+        {
+          "id": "scenic-circle",
+          "phase": "creating",
+          "domain": "scenic.numinia.com",
+          "order": {
+            "id": "scenic-circle",
+            "card": "scenic-circle",
+            "state": "running",
+            "server": "open-1",
+            "domain": "scenic.numinia.com",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        },
+        { "id": "old-plaza", "phase": "deleting", "domain": "old-plaza.numinia.com", "order": null }
+      ],
+      "log": [
+        {
+          "machine": "open-1",
+          "at": "2026-10-12T09:41:00Z",
+          "type": "DeleteWorld",
+          "world": "old-plaza",
+          "by": "0x42e6…ca26",
+          "state": "done"
+        },
+        {
+          "machine": "open-1",
+          "at": "2026-10-12T09:30:00Z",
+          "type": "DownloadWorld",
+          "world": "old-plaza",
+          "by": "0x42e6…ca26",
+          "state": "done"
+        },
+        {
+          "machine": "open-1",
+          "at": "2026-10-11T18:12:00Z",
+          "type": "CreateWorld",
+          "world": "alchemists-tower",
+          "by": "0x42e6…ca26",
+          "state": "done"
+        }
+      ]
     },
     {
-      "id": "atlantis-library",
-      "card": "atlantis-library",
-      "state": "running",
-      "server": "open-1",
-      "domain": "atlantis.numen.games",
-      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
-      "limits": { "memory": "2g", "cpus": "1", "maxUploadMb": 50 }
+      "alias": "open-2",
+      "open": true,
+      "worlds": [
+        {
+          "id": "forge",
+          "phase": "stopping",
+          "domain": "forge.numen.games",
+          "order": {
+            "id": "forge",
+            "card": "forge",
+            "state": "running",
+            "server": "open-2",
+            "domain": "forge.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "4g", "cpus": "2", "maxUploadMb": 100 }
+          }
+        },
+        {
+          "id": "akasha-museum",
+          "phase": "stopped",
+          "domain": "akasha.numen.games",
+          "order": {
+            "id": "akasha-museum",
+            "card": "akasha-museum",
+            "state": "stopped",
+            "server": "open-2",
+            "domain": "akasha.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        },
+        {
+          "id": "cosmos-gate",
+          "phase": "running",
+          "domain": "cosmos.numen.games",
+          "order": {
+            "id": "cosmos-gate",
+            "card": "cosmos-gate",
+            "state": "running",
+            "server": "open-2",
+            "domain": "cosmos.numen.games",
+            "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        }
+      ],
+      "log": [
+        {
+          "machine": "open-2",
+          "at": "2026-10-12T08:05:00Z",
+          "type": "StopWorld",
+          "world": "akasha-museum",
+          "by": "0x42e6…ca26",
+          "state": "done"
+        },
+        {
+          "machine": "open-2",
+          "at": "2026-10-10T16:20:00Z",
+          "type": "CreateWorld",
+          "world": "forge",
+          "by": "0x42e6…ca26",
+          "state": "failed"
+        }
+      ]
     },
-    {
-      "id": "alchemists-tower",
-      "card": "alchemists-tower",
-      "state": "running",
-      "server": "open-1",
-      "domain": "tower.numen.games",
-      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-5091ad9f08234d7342d14f9f0beb175bf1c5d8fc",
-      "limits": { "memory": "1g", "cpus": "1", "maxUploadMb": 20 }
-    },
-    {
-      "id": "forge",
-      "card": "forge",
-      "state": "running",
-      "server": "open-2",
-      "domain": "forge.numen.games",
-      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
-      "limits": { "memory": "4g", "cpus": "2", "maxUploadMb": 100 }
-    },
-    {
-      "id": "akasha-museum",
-      "card": "akasha-museum",
-      "state": "stopped",
-      "server": "open-2",
-      "domain": "akasha.numen.games",
-      "image": "ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3",
-      "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
-    }
+    { "alias": "open-3", "open": false, "reason": "timeout" }
   ],
-  "invalid": [{ "file": "old-plaza.json", "problems": ["image"] }],
   "legacy": [
     { "id": "hive", "domain": "hive.numen.games", "server": "legacy-1" },
     { "id": "sandbox", "domain": "sandbox.numen.games", "server": "legacy-1" }
   ],
   "faces": {
     "hive": { "title": "The Hive", "image": "/images/art/citizens.webp" },
-    "sandbox": { "title": "World", "image": null }
+    "sandbox": { "title": "World", "image": null },
+    "cosmos-gate": { "title": "Cosmos Gate", "image": null }
   },
   "cards": [
     { "slug": "agora-plaza", "title": "Agora Plaza", "cover": "/images/art/city.webp" },
@@ -73,51 +184,7 @@
     "agora-plaza": { "ok": true, "users": 7, "uptime": 12000, "commit": "0e20453" },
     "atlantis-library": { "ok": true, "users": 0, "uptime": 190800, "commit": "0e20453" },
     "alchemists-tower": { "ok": true, "users": 1, "uptime": 2700, "commit": "5091ad9" },
-    "forge": { "ok": false, "reason": "http", "status": 502 }
-  },
-  "pending": [
-    {
-      "id": "scenic-circle",
-      "action": "create",
-      "number": 14,
-      "url": "https://github.com/numengames/numinia-assets/pull/14"
-    },
-    {
-      "id": "forge",
-      "action": "stop",
-      "number": 13,
-      "url": "https://github.com/numengames/numinia-assets/pull/13"
-    }
-  ],
-  "missing": [],
-  "history": [
-    {
-      "sha": "a1b2c3d",
-      "subject": "chore(open-worlds): stop the world akasha-museum",
-      "author": "PabloFMM",
-      "date": "2026-10-08T17:42:00Z",
-      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
-    },
-    {
-      "sha": "b2c3d4e",
-      "subject": "feat(open-worlds): order the world forge",
-      "author": "PabloFMM",
-      "date": "2026-10-07T10:05:00Z",
-      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
-    },
-    {
-      "sha": "c3d4e5f",
-      "subject": "feat(open-worlds): order the world atlantis-library",
-      "author": "MariaGarciaJordan",
-      "date": "2026-10-05T09:30:00Z",
-      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
-    },
-    {
-      "sha": "d4e5f6a",
-      "subject": "feat(open-worlds): order the world agora-plaza",
-      "author": "PabloFMM",
-      "date": "2026-10-04T12:00:00Z",
-      "url": "https://github.com/numengames/numinia-assets/commits/main/open-worlds"
-    }
-  ]
+    "forge": { "ok": true, "users": 0, "uptime": 86400, "commit": "0e20453" },
+    "cosmos-gate": { "ok": false, "reason": "http", "status": 502 }
+  }
 }
