@@ -10,6 +10,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
+  CODE_KINDS,
   buildRequest,
   copyDone,
   newNonce,
@@ -36,10 +37,11 @@ export type Step =
   | { readonly at: 'idle' }
   | { readonly at: 'signing' }
   | { readonly at: 'sending' }
-  /** The machine took it and does it on its own; a create carries the admin code. */
+  /** The machine took it and does it on its own; a create carries the new world's own admin code. */
   | { readonly at: 'accepted'; readonly code: string | null }
   | { readonly at: 'preparing' }
   | {
+      /** A code shown or changed (its code), or a copy ready (its zip). */
       readonly at: 'done';
       readonly code: string | null;
       readonly copy: { readonly id: string; readonly status: CopyStatus } | null;
@@ -107,8 +109,14 @@ export function useFleetAction(sessionWallet: string | null, listens: (alias: st
           return;
         }
         note('accepted');
-        if (ask.kind === 'ShowAdminCode') {
-          set({ at: 'done', code: accepted.adminCode, copy: null });
+        if (CODE_KINDS.includes(ask.kind)) {
+          // The code is what the Oracle came for: a door that took the request
+          // without one it can show has given none.
+          if (accepted.adminCode === null) {
+            set({ at: 'failed', problem: 'no-admin-code', detail: '' });
+          } else {
+            set({ at: 'done', code: accepted.adminCode, copy: null });
+          }
           return;
         }
         if (ask.kind === 'DownloadWorld' && accepted.copy !== null) {
@@ -158,6 +166,7 @@ const PROBLEM_WORDS: Readonly<Partial<Record<Problem, keyof WorldsRoomMessages['
   'other-machine': 'otherMachine',
   'slow-down': 'slowDown',
   'no-admin-code': 'noAdminCode',
+  busy: 'busy',
   origin: 'origin',
   unreachable: 'unreachable',
   machine: 'machine',

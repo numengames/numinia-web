@@ -26,6 +26,29 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.79.0',
+    date: '2026-10-12 19:32',
+    missions: ['MIS-170', 'MIS-173'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Each world has its own admin code. Its card in the Worlds room shows it — Show, one signature — and changes it — Change code, one signature: the machine makes a new code and restarts that world, so whoever is inside is disconnected for a few seconds and from then on only the new code works. A stopped world takes its new code when it starts. Until now every world on a machine shared one code, so a client’s code would have opened the house’s worlds too; a leaked code now stops working within a minute, for that world alone. Whoever already became an admin with the old code stays one, because the world remembers its admins. Worlds made before keep the shared code they had until someone changes it.',
+      },
+      {
+        type: 'UPD',
+        text: 'A machine’s line no longer shows a code for all its worlds. It says which recipe the machine was installed from — “recipe” and the first seven characters of its commit — and, when that is not the recipe the room hands out, warns that the machine runs an older recipe and shows its line to run again.',
+      },
+      {
+        type: 'UPD',
+        text: 'The line that makes a server a machine of the fleet installs one exact, reviewed commit of the machine’s recipe instead of whatever its main branch holds at that moment, so a change merged there later reaches no machine until the room hands out a new line.',
+      },
+      {
+        type: 'UPD',
+        text: 'A world just created shows its own admin code on the wizard’s last screen. What the machines did names the new requests: showed the code of a world, changed the code of a world.',
+      },
+    ],
+  },
+  {
     version: 'v0.78.0',
     date: '2026-10-12 13:55',
     missions: ['MIS-156'],

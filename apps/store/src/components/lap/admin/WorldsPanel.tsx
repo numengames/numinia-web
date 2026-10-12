@@ -3,9 +3,11 @@
  * answers. Without the Oracle rank it shows the refusal, never a world.
  *
  * Shaped after the Alchemists' Tower dashboard: the figures on top, the
- * machines — each saying whether it obeys, from its door's heartbeat — search
- * and filters that combine, three views (cards with their cover, a list, by
- * server), a wizard for a new world, stop/start/download/delete — each one
+ * machines — each saying whether it obeys, from its door's heartbeat, and
+ * which recipe it was installed from, with its line to run again when that
+ * is not the room's — search and filters that combine, three views (cards
+ * with their cover, a list, by server), a wizard for a new world,
+ * stop/start/download/delete and each world's own admin code — each one
  * request the Oracle's wallet signs and the machine checks itself — and what
  * the machines did. A world being deleted leaves the list the moment its
  * machine takes the delete; the machine's line says it is still being freed.
@@ -17,7 +19,9 @@ import {
   bootstrapLine,
   formatAgo,
   machineHealth,
+  shortSha,
   shortWallet,
+  staleRecipe,
   type DoorLogEntry,
   type MachineHealth,
 } from '../../../lib/fleet';
@@ -29,6 +33,7 @@ import {
   listedRows,
   machineChoices,
   rowPlace,
+  slot,
   type MachineSummary,
   type StatusFilter,
   type WorldCardInfo,
@@ -36,8 +41,8 @@ import {
   type WorldStatus,
 } from '../../../lib/worlds';
 import { LunaEspera } from '../../chrome/LunaEspera';
-import { ActionDialog, CodeDialog, NewWorldDialog } from './WorldDialogs';
-import { CardsView, ListView, ServersView, type WorldAction } from './WorldViews';
+import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
+import { CardsView, ListView, ServersView, type CodeMode, type WorldAction } from './WorldViews';
 
 export interface WorldsLabels {
   readonly forbidden: string;
@@ -119,15 +124,7 @@ function CopyLine({ line, room }: { readonly line: string; readonly room: Worlds
   );
 }
 
-function Machines({
-  fleet,
-  room,
-  onCode,
-}: {
-  readonly fleet: Fleet;
-  readonly room: WorldsRoomMessages;
-  readonly onCode: (alias: string) => void;
-}) {
+function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: WorldsRoomMessages }) {
   return (
     <section className="maquinas" aria-label={room.machines.title}>
       <h2 className="etiqueta">{room.machines.title}</h2>
@@ -135,6 +132,8 @@ function Machines({
         {fleet.machines.map((machine) => {
           const health = machineHealth(machine.heartbeat);
           const line = machine.open ? healthLine(machine.alias, health, room) : null;
+          // Installed from another recipe than the room hands out, or one that says none.
+          const stale = staleRecipe(machine);
           // Deleted worlds whose folder and keys this machine has not removed yet.
           const freeing = fleet.rows.filter(
             (row) => row.phase === 'deleting' && rowPlace(row)?.server === machine.alias,
@@ -145,19 +144,17 @@ function Machines({
               data-machine={machine.alias}
               data-open={machine.open}
               data-health={machine.open ? health.kind : undefined}
+              data-recipe={machine.open ? (stale ? 'stale' : 'pinned') : undefined}
             >
               {machine.open ? (
                 <>
                   <span className="punto-maquina" aria-hidden="true" />
                   <span>{fill(room.machines.open, { m: machine.alias })}</span>
-                  <button
-                    type="button"
-                    className="btn btn-fantasma"
-                    onClick={() => onCode(machine.alias)}
-                    data-metric="worlds-admin-code"
-                  >
-                    {room.machines.adminCode}
-                  </button>
+                  {typeof machine.recipe === 'string' && (
+                    <span className="mono receta" title={machine.recipe}>
+                      {fill(room.machines.recipe, { r: shortSha(machine.recipe) })}
+                    </span>
+                  )}
                   {line !== null && (
                     <p
                       className="salud-maquina"
@@ -172,6 +169,16 @@ function Machines({
                         </>
                       )}
                     </p>
+                  )}
+                  {stale && (
+                    <div className="receta-vieja">
+                      <p className="aviso-maquina" role="note">
+                        {fill(room.machines.oldRecipe, { m: machine.alias })}
+                      </p>
+                      {fleet.wallet !== null && (
+                        <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
+                      )}
+                    </div>
                   )}
                   {freeing.map((row) => (
                     <p key={row.id} className="estado liberando" data-freeing={row.id}>
@@ -219,7 +226,7 @@ export function WorldsPanel({
   const [server, setServer] = useState('');
   const [wizard, setWizard] = useState(false);
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
-  const [codeOf, setCodeOf] = useState<string | null>(null);
+  const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
 
   const load = useCallback(() => {
     let alive = true;
@@ -323,6 +330,7 @@ export function WorldsPanel({
     load();
   };
   const onAction = (row: WorldRow, action: WorldAction): void => setChange({ row, action });
+  const onCode = (row: WorldRow, mode: CodeMode): void => setCodeAsk({ row, mode });
   const viewName: Readonly<Record<View, string>> = {
     cards: room.views.cards,
     list: room.views.list,
@@ -337,6 +345,17 @@ export function WorldsPanel({
       : null;
   };
   const changeMachine = change === null ? null : (rowPlace(change.row)?.server ?? null);
+  // Before signing for a world's code: a machine whose door says no recipe is
+  // older than per-world codes and refuses them; a change waits for a machine that obeys.
+  const codeWarning = (ask: { readonly row: WorldRow; readonly mode: CodeMode }): string | null => {
+    const alias = rowPlace(ask.row)?.server;
+    if (alias === undefined) return null;
+    const summary = fleet.machines.find((machine) => machine.alias === alias);
+    if (summary?.open === true && summary.recipe === null) {
+      return fill(room.code.notYet, { m: alias });
+    }
+    return ask.mode === 'rotate' ? notObeying(alias) : null;
+  };
   // Only a door that says it takes the room's beacons hears what happened in the browser.
   const listens = (alias: string): boolean =>
     fleet.machines.some((machine) => machine.alias === alias && machine.listens.includes('events'));
@@ -378,7 +397,7 @@ export function WorldsPanel({
         ))}
       </dl>
 
-      <Machines fleet={fleet} room={room} onCode={setCodeOf} />
+      <Machines fleet={fleet} room={room} />
 
       <div className="controles">
         <label className="buscar">
@@ -451,13 +470,13 @@ export function WorldsPanel({
       {rows.length === 0 && <p className="estado vacio">{room.empty}</p>}
       {rows.length > 0 && visible.length === 0 && <p className="estado vacio">{room.noMatch}</p>}
       {visible.length > 0 && view === 'cards' && (
-        <CardsView rows={visible} room={room} onAction={onAction} />
+        <CardsView rows={visible} room={room} onAction={onAction} onCode={onCode} />
       )}
       {visible.length > 0 && view === 'list' && (
         <ListView rows={visible} room={room} onAction={onAction} />
       )}
       {visible.length > 0 && view === 'servers' && (
-        <ServersView rows={visible} room={room} onAction={onAction} />
+        <ServersView rows={visible} room={room} onAction={onAction} onCode={onCode} />
       )}
 
       <section className="historial" aria-label={room.history.title}>
@@ -466,31 +485,36 @@ export function WorldsPanel({
           <p className="estado">{room.history.empty}</p>
         ) : (
           <ol>
-            {fleet.history.map((entry) => (
-              <li
-                key={`${entry.machine}-${entry.at}-${entry.type}-${entry.world ?? ''}`}
-                data-state={entry.state}
-              >
-                <time className="mono" dateTime={entry.at}>
-                  {localTime(entry.at)}
-                </time>
-                <span>
-                  <span className="mono">{entry.machine}</span> {room.history.kinds[entry.type]}{' '}
-                  {entry.world !== null && <span className="mono">{entry.world}</span>}
-                  {entry.took !== null && (
-                    <> {fill(room.history.took, { t: formatAgo(entry.took) })}</>
-                  )}
-                  {entry.state === 'failed' && <> — {room.history.failed}</>}
-                  {entry.rule !== null && (
-                    <>
-                      {' '}
-                      <span className="mono regla">«{entry.rule}»</span>
-                    </>
-                  )}
-                </span>
-                {entry.by !== null && <span className="autor mono">{entry.by}</span>}
-              </li>
-            ))}
+            {fleet.history.map((entry) => {
+              // The world sits where each language puts it (`{w}`), or after the verb.
+              const [before, after] = slot(room.history.kinds[entry.type], 'w');
+              return (
+                <li
+                  key={`${entry.machine}-${entry.at}-${entry.type}-${entry.world ?? ''}`}
+                  data-state={entry.state}
+                >
+                  <time className="mono" dateTime={entry.at}>
+                    {localTime(entry.at)}
+                  </time>
+                  <span>
+                    <span className="mono">{entry.machine}</span> {before}
+                    {entry.world !== null && <span className="mono">{entry.world}</span>}
+                    {after}
+                    {entry.took !== null && (
+                      <> {fill(room.history.took, { t: formatAgo(entry.took) })}</>
+                    )}
+                    {entry.state === 'failed' && <> — {room.history.failed}</>}
+                    {entry.rule !== null && (
+                      <>
+                        {' '}
+                        <span className="mono regla">«{entry.rule}»</span>
+                      </>
+                    )}
+                  </span>
+                  {entry.by !== null && <span className="autor mono">{entry.by}</span>}
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>
@@ -518,12 +542,14 @@ export function WorldsPanel({
         warning={changeMachine === null ? null : notObeying(changeMachine)}
         listens={listens}
       />
-      <CodeDialog
-        machine={codeOf}
-        onClose={() => setCodeOf(null)}
+      <WorldCodeDialog
+        ask={codeAsk}
+        onClose={() => setCodeAsk(null)}
+        onChanged={refresh}
         room={room}
         wallet={fleet.wallet}
         sessionHref={sessionHref}
+        warning={codeAsk === null ? null : codeWarning(codeAsk)}
         listens={listens}
       />
     </div>

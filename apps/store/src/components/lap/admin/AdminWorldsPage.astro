@@ -416,6 +416,26 @@ const sessionHref = `${prefix}/lap/session/`;
     color: var(--verdemar);
     border-color: var(--verdemar);
   }
+  /* Each world's own admin code, on its card, above its actions */
+  [data-worlds-panel] .codigo-mundo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    margin-top: auto;
+    padding-top: var(--s2);
+  }
+  [data-worlds-panel] .codigo-mundo .etiqueta {
+    flex-basis: 100%;
+  }
+  [data-worlds-panel] .codigo-mundo .btn {
+    min-height: 32px;
+    padding: 4px var(--s3);
+    font-size: 0.8rem;
+  }
+  [data-worlds-panel] .codigo-mundo + .acciones {
+    margin-top: 0;
+  }
   [data-worlds-panel] .mas {
     align-self: center;
   }
@@ -595,6 +615,22 @@ const sessionHref = `${prefix}/lap/session/`;
   [data-worlds-panel] .maquina-cerrada p {
     margin: 0;
   }
+  /* The recipe a machine was installed from; its line again when it is not the room's */
+  [data-worlds-panel] .receta {
+    font-size: 0.8rem;
+    color: var(--texto-3);
+  }
+  [data-worlds-panel] .receta-vieja {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    width: 100%;
+    min-width: 0;
+  }
+  [data-worlds-panel] .receta-vieja p {
+    margin: 0;
+    font-size: 0.85rem;
+  }
   [data-worlds-panel] .linea-copiar,
   [data-worlds-panel] .codigo {
     display: flex;
@@ -612,10 +648,15 @@ const sessionHref = `${prefix}/lap/session/`;
     border: 1px solid var(--linea);
     border-radius: var(--radio-control);
   }
+  [data-worlds-panel] .codigo {
+    flex-wrap: wrap;
+  }
   [data-worlds-panel] .codigo code {
+    min-width: 0;
     padding: var(--s2) var(--s3);
     font-size: 1.2rem;
     letter-spacing: 0.08em;
+    overflow-wrap: anywhere;
     background: var(--fondo);
     border: 1px solid var(--linea-f);
     border-radius: var(--radio-control);

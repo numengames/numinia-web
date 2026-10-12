@@ -2,7 +2,8 @@
  * The worlds room's three ways of looking at the fleet: cards with their
  * cover (the same picture the world shows while it loads), a compact list,
  * and the cards grouped by server — the Tower grouped by organisation, with
- * "show N more" after six.
+ * "show N more" after six. Each card of a world of the fleet carries its own
+ * admin code: Show and Change code, one signature each.
  */
 
 import { useState } from 'react';
@@ -19,11 +20,14 @@ import {
 import { LunaEspera } from '../../chrome/LunaEspera';
 
 export type WorldAction = 'stop' | 'start' | 'delete' | 'download';
+/** What the Oracle asks of a world's own admin code: to see it, or to change it. */
+export type CodeMode = 'show' | 'rotate';
 
 interface ViewProps {
   readonly rows: readonly WorldRow[];
   readonly room: WorldsRoomMessages;
   readonly onAction: (row: WorldRow, action: WorldAction) => void;
+  readonly onCode: (row: WorldRow, mode: CodeMode) => void;
 }
 
 const PER_GROUP = 6;
@@ -162,14 +166,59 @@ export function Cover({
   );
 }
 
+/**
+ * A world's own admin code, on its card: see it, or change it, each with one
+ * signature. Only a world of the fleet that is not being changed has one to
+ * show; a legacy world's code is not the room's to give.
+ */
+function CodeLine({
+  row,
+  room,
+  onCode,
+}: {
+  row: WorldRow;
+  room: WorldsRoomMessages;
+  onCode: ViewProps['onCode'];
+}) {
+  if (row.order === null || row.status === 'changing') return null;
+  return (
+    <div
+      className="codigo-mundo"
+      role="group"
+      aria-label={fill(room.code.showTitle, { t: row.title })}
+      data-code-for={row.id}
+    >
+      <span className="etiqueta">{room.code.label}</span>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => onCode(row, 'show')}
+        data-metric="worlds-code-show"
+      >
+        {room.code.show}
+      </button>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => onCode(row, 'rotate')}
+        data-metric="worlds-code-rotate"
+      >
+        {room.code.rotate}
+      </button>
+    </div>
+  );
+}
+
 function WorldCard({
   row,
   room,
   onAction,
+  onCode,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
   onAction: ViewProps['onAction'];
+  onCode: ViewProps['onCode'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
@@ -203,23 +252,24 @@ function WorldCard({
             )}
           </dl>
         )}
+        <CodeLine row={row} room={room} onCode={onCode} />
         <Actions row={row} room={room} onAction={onAction} />
       </div>
     </article>
   );
 }
 
-export function CardsView({ rows, room, onAction }: ViewProps) {
+export function CardsView({ rows, room, onAction, onCode }: ViewProps) {
   return (
     <div className="rejilla">
       {rows.map((row) => (
-        <WorldCard key={row.id} row={row} room={room} onAction={onAction} />
+        <WorldCard key={row.id} row={row} room={room} onAction={onAction} onCode={onCode} />
       ))}
     </div>
   );
 }
 
-export function ListView({ rows, room, onAction }: ViewProps) {
+export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
   return (
     <div className="tabla-envoltura">
       <table>
@@ -278,7 +328,7 @@ export function ListView({ rows, room, onAction }: ViewProps) {
   );
 }
 
-export function ServersView({ rows, room, onAction }: ViewProps) {
+export function ServersView({ rows, room, onAction, onCode }: ViewProps) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const toggle = (key: string): void =>
     setOpen((current) => {
@@ -300,7 +350,7 @@ export function ServersView({ rows, room, onAction }: ViewProps) {
               <span className="mono">{group.server ?? room.unplaced}</span>
               <span className="cuenta mono">{group.rows.length}</span>
             </h2>
-            <CardsView rows={visible} room={room} onAction={onAction} />
+            <CardsView rows={visible} room={room} onAction={onAction} onCode={onCode} />
             {group.rows.length > PER_GROUP && (
               <button
                 type="button"

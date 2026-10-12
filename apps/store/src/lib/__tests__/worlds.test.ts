@@ -39,6 +39,7 @@ import {
   readProbe,
   renderOrder,
   rowPlace,
+  slot,
   worldCards,
   worldUrl,
   type ReasonWords,
@@ -546,9 +547,16 @@ describe('the place: machine, address and whether it is free', () => {
   it('offers only the machines whose door answers, in the fleet’s order', () => {
     expect(
       machineChoices([
-        { alias: 'open-1', open: true, reason: null, heartbeat: null, listens: [] },
-        { alias: 'open-2', open: false, reason: 'timeout', heartbeat: null, listens: [] },
-        { alias: 'open-3', open: true, reason: null, heartbeat: null, listens: [] },
+        { alias: 'open-1', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
+        {
+          alias: 'open-2',
+          open: false,
+          reason: 'timeout',
+          heartbeat: null,
+          listens: [],
+          recipe: null,
+        },
+        { alias: 'open-3', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
       ]),
     ).toEqual(['open-1', 'open-3']);
     expect(machineChoices([])).toEqual([]);
@@ -760,5 +768,12 @@ describe('display helpers', () => {
 
   it('fills placeholders and leaves unknown ones alone', () => {
     expect(fill('{n} of {m} — {x}', { n: 1, m: 'two' })).toBe('1 of two — {x}');
+  });
+
+  it('cuts a sentence around its slot, wherever the language puts it', () => {
+    expect(slot('mostró el código de {w}', 'w')).toEqual(['mostró el código de ', '']);
+    expect(slot('{w} のコードを表示', 'w')).toEqual(['', ' のコードを表示']);
+    // A sentence without the slot takes the value after it.
+    expect(slot('creó', 'w')).toEqual(['creó ', '']);
   });
 });
