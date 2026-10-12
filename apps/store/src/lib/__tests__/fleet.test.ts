@@ -8,17 +8,23 @@
 import { hashTypedData, recoverTypedDataAddress } from 'viem';
 import { describe, expect, it } from 'vitest';
 import {
+  BEACON_MAX_EVENTS,
   BOOTSTRAP_URL,
   REQUEST_SECONDS,
   REQUEST_TYPES,
+  SILENT_AFTER_S,
+  SLOW_AFTER_S,
+  beaconBody,
   bootstrapLine,
   buildRequest,
   copyDone,
   copyFileUrl,
   doorHost,
   doorUrl,
+  formatAgo,
   formatBytes,
   gatherFleet,
+  machineHealth,
   mergeLogs,
   newNonce,
   readAccepted,
@@ -26,16 +32,21 @@ import {
   readCopyStatus,
   readDoorLog,
   readDoorWorlds,
+  readHeartbeat,
+  readListens,
   readMachine,
   readRequest,
   readRequestResult,
+  sendBeacon,
   sendRequest,
   settled,
   shortWallet,
   typedData,
   waitFor,
+  type BeaconEvent,
   type DoorLogEntry,
   type FleetRequest,
+  type Heartbeat,
   type MachineView,
 } from '../fleet';
 import type { WorldOrder } from '../worlds';
@@ -358,6 +369,17 @@ describe('a machine’s worlds and its log', () => {
             world: null,
             by: null,
             state: 'failed',
+            rule: 'not an Oracle of this machine',
+            took: 2,
+          },
+          {
+            at: '2026-10-12T07:30:00Z',
+            type: 'StopWorld',
+            world: 'plaza',
+            by: null,
+            state: 'done',
+            rule: 'ignored when done',
+            took: -1,
           },
           { at: '2026-10-12T07:00:00Z', type: 'RebootMachine', state: 'done' },
           { at: 7, type: 'StopWorld', state: 'done' },
@@ -375,6 +397,8 @@ describe('a machine’s worlds and its log', () => {
         world: 'plaza',
         by: '0x42e6…ca26',
         state: 'done',
+        rule: null,
+        took: null,
       },
       {
         machine: 'open-1',
@@ -383,6 +407,18 @@ describe('a machine’s worlds and its log', () => {
         world: null,
         by: null,
         state: 'failed',
+        rule: 'not an Oracle of this machine',
+        took: 2,
+      },
+      {
+        machine: 'open-1',
+        at: '2026-10-12T07:30:00Z',
+        type: 'StopWorld',
+        world: 'plaza',
+        by: null,
+        state: 'done',
+        rule: null,
+        took: null,
       },
     ]);
     expect(readDoorLog({ entries: {} }, 'open-1')).toEqual([]);
@@ -397,6 +433,8 @@ describe('a machine’s worlds and its log', () => {
       world: 'w',
       by: null,
       state: 'done',
+      rule: null,
+      took: null,
     });
     const merged = mergeLogs(
       [
@@ -431,26 +469,47 @@ const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status });
 const named = (name: string): Error => Object.assign(new Error(name), { name });
 
+/** A heartbeat as readHeartbeat returns it: the door's clock, its last run, what waits. */
+const HEARTBEAT: Heartbeat = {
+  at: '2026-10-12T09:45:00Z',
+  lastRun: { at: '2026-10-12T09:44:30Z', ok: true, rule: null },
+  waiting: { requests: 0, since: null },
+};
+
 describe('reading a machine', () => {
   const WORLDS = 'https://open-1.numinia.com/fleet/v1/worlds';
   const LOG = 'https://open-1.numinia.com/fleet/v1/log';
+  const MACHINE = 'https://open-1.numinia.com/fleet/v1/machine';
+  const BEAT = {
+    machine: 'open-1',
+    lastRun: { at: '2026-10-12T09:44:30Z', ok: true, rule: null },
+    waiting: { requests: 0, since: null },
+    at: '2026-10-12T09:45:00Z',
+    listens: ['events', 'something-later'],
+  };
 
-  it('reads its worlds and its log through its door', async () => {
-    const door = fakeFetch((url) =>
-      url === WORLDS
-        ? json({ machine: 'open-1', worlds: [listed('plaza', 'running')] })
-        : json({
-            entries: [{ at: 'now', type: 'StopWorld', world: 'plaza', by: null, state: 'done' }],
-          }),
-    );
+  it('reads its worlds, its log and its heartbeat through its door', async () => {
+    const door = fakeFetch((url) => {
+      if (url === WORLDS) return json({ machine: 'open-1', worlds: [listed('plaza', 'running')] });
+      if (url === MACHINE) return json(BEAT);
+      return json({
+        entries: [{ at: 'now', type: 'StopWorld', world: 'plaza', by: null, state: 'done' }],
+      });
+    });
     const view = await readMachine(door.fetch, 'open-1');
     expect(view).toMatchObject({ alias: 'open-1', open: true });
     expect(view.open && view.worlds.map((world) => world.id)).toEqual(['plaza']);
     expect(view.open && view.log).toHaveLength(1);
-    expect(door.urls.sort()).toEqual([LOG, WORLDS]);
+    expect(view.open && view.heartbeat).toEqual({
+      at: BEAT.at,
+      lastRun: BEAT.lastRun,
+      waiting: BEAT.waiting,
+    });
+    expect(view.open && view.listens).toEqual(['events']);
+    expect(door.urls.sort()).toEqual([LOG, MACHINE, WORLDS]);
   });
 
-  it('keeps its worlds when only the log cannot be read', async () => {
+  it('keeps its worlds when only the log and the heartbeat cannot be read', async () => {
     const door = fakeFetch((url) =>
       url === WORLDS ? json({ worlds: [] }) : new Response('nope', { status: 500 }),
     );
@@ -459,6 +518,8 @@ describe('reading a machine', () => {
       open: true,
       worlds: [],
       log: [],
+      heartbeat: null,
+      listens: [],
     });
   });
 
@@ -500,8 +561,12 @@ describe('gatherFleet — several doors, one fleet', () => {
             world: 'plaza',
             by: null,
             state: 'done',
+            rule: null,
+            took: 12,
           },
         ],
+        heartbeat: HEARTBEAT,
+        listens: ['events'],
       },
       {
         alias: 'open-2',
@@ -521,16 +586,18 @@ describe('gatherFleet — several doors, one fleet', () => {
           },
         ],
         log: [],
+        heartbeat: null,
+        listens: [],
       },
       { alias: 'open-3', open: false, reason: 'http', status: 502 },
       { alias: 'open-4', open: false, reason: 'timeout' },
     ];
     const fleet = gatherFleet(views);
     expect(fleet.machines).toEqual([
-      { alias: 'open-1', open: true, reason: null },
-      { alias: 'open-2', open: true, reason: null },
-      { alias: 'open-3', open: false, reason: 'http 502' },
-      { alias: 'open-4', open: false, reason: 'timeout' },
+      { alias: 'open-1', open: true, reason: null, heartbeat: HEARTBEAT, listens: ['events'] },
+      { alias: 'open-2', open: true, reason: null, heartbeat: null, listens: [] },
+      { alias: 'open-3', open: false, reason: 'http 502', heartbeat: null, listens: [] },
+      { alias: 'open-4', open: false, reason: 'timeout', heartbeat: null, listens: [] },
     ]);
     // A name belongs to the first machine that holds it.
     expect(fleet.orders.map((o) => `${o.id}@${o.server}`)).toEqual(['plaza@open-1', 'foro@open-2']);
@@ -658,5 +725,182 @@ describe('waitFor — asking again until the machine is done', () => {
     );
     expect(answer).toBe('working');
     expect(asked).toBe(2);
+  });
+});
+
+describe('whether a machine obeys — its door’s heartbeat', () => {
+  const AT = '2026-10-12T10:00:00Z';
+  /** A heartbeat `run` seconds after the last run (null: none), `waited` seconds after the oldest request. */
+  const beat = (
+    run: number | null,
+    { ok = true, requests = 0, waited = 0, rule = null as string | null } = {},
+  ): Heartbeat => ({
+    at: AT,
+    lastRun:
+      run === null ? null : { at: new Date(Date.parse(AT) - run * 1000).toISOString(), ok, rule },
+    waiting: {
+      requests,
+      since: requests > 0 ? new Date(Date.parse(AT) - waited * 1000).toISOString() : null,
+    },
+  });
+
+  it('reads the door’s heartbeat, and nothing from a door that publishes none', () => {
+    expect(
+      readHeartbeat({
+        machine: 'open-1',
+        lastRun: { at: '2026-10-12T09:59:30Z', ok: false, rule: 'x'.repeat(300) },
+        waiting: { requests: 2, since: '2026-10-12T09:58:00Z' },
+        at: AT,
+      }),
+    ).toEqual({
+      at: AT,
+      lastRun: { at: '2026-10-12T09:59:30Z', ok: false, rule: 'x'.repeat(200) },
+      waiting: { requests: 2, since: '2026-10-12T09:58:00Z' },
+    });
+    // A run without a rule, an odd run and an odd `since` are read as nothing.
+    expect(
+      readHeartbeat({
+        lastRun: { at: '2026-10-12T09:59:30.123Z', ok: true, rule: '' },
+        waiting: { requests: 0, since: 'yesterday' },
+        at: AT,
+      }),
+    ).toEqual({
+      at: AT,
+      lastRun: { at: '2026-10-12T09:59:30.123Z', ok: true, rule: null },
+      waiting: { requests: 0, since: null },
+    });
+    expect(
+      readHeartbeat({ lastRun: { at: 'now', ok: true }, waiting: { requests: 0 }, at: AT })
+        ?.lastRun,
+    ).toBeNull();
+    expect(
+      readHeartbeat({ lastRun: { at: AT, ok: 'yes' }, waiting: { requests: 0 }, at: AT })?.lastRun,
+    ).toBeNull();
+    // A door older than the heartbeat (no `at`, no `waiting`) says nothing at all.
+    expect(readHeartbeat({ machine: 'open-1', door: 'fleetd/1', oracles: 1 })).toBeNull();
+    expect(readHeartbeat({ at: AT, waiting: null })).toBeNull();
+    expect(readHeartbeat({ at: AT, waiting: { requests: -1 } })).toBeNull();
+    expect(readHeartbeat({ at: AT, waiting: { requests: 1.5 } })).toBeNull();
+    expect(readHeartbeat({ at: AT, waiting: { requests: '1' } })).toBeNull();
+    expect(readHeartbeat(null)).toBeNull();
+  });
+
+  it('says a machine obeys while it runs every minute and takes what waits', () => {
+    expect(machineHealth(null)).toEqual({ kind: 'unknown' });
+    expect(machineHealth(beat(30))).toEqual({ kind: 'ok', ago: 30 });
+    expect(machineHealth(beat(30, { requests: 1, waited: 20 }))).toEqual({ kind: 'ok', ago: 30 });
+    // A run stamped a moment after the door's own clock is not a negative age.
+    expect(machineHealth(beat(-2))).toEqual({ kind: 'ok', ago: 0 });
+  });
+
+  it('says it is late after three minutes, and not obeying after ten', () => {
+    expect(machineHealth(beat(SLOW_AFTER_S + 60))).toEqual({
+      kind: 'slow',
+      ago: SLOW_AFTER_S + 60,
+      waiting: 0,
+    });
+    // It ran a moment ago, but a request has waited four minutes.
+    expect(machineHealth(beat(20, { requests: 2, waited: 240 }))).toEqual({
+      kind: 'slow',
+      ago: 20,
+      waiting: 2,
+    });
+    expect(machineHealth(beat(SILENT_AFTER_S + 900, { requests: 1, waited: 60 }))).toEqual({
+      kind: 'silent',
+      ago: SILENT_AFTER_S + 900,
+      waiting: 1,
+    });
+    // Silence wins over a failed last run: what matters is that it stopped.
+    expect(machineHealth(beat(SILENT_AFTER_S + 1, { ok: false }))).toMatchObject({
+      kind: 'silent',
+    });
+  });
+
+  it('says it is failing when its last run could not apply the book', () => {
+    expect(machineHealth(beat(40, { ok: false, rule: 'docker did not take the book' }))).toEqual({
+      kind: 'failing',
+      ago: 40,
+      rule: 'docker did not take the book',
+    });
+  });
+
+  it('judges a machine with no run on record by what waits for it alone', () => {
+    expect(machineHealth(beat(null))).toEqual({ kind: 'unknown' });
+    expect(machineHealth(beat(null, { requests: 1, waited: 60 }))).toEqual({ kind: 'unknown' });
+    expect(machineHealth(beat(null, { requests: 1, waited: 300 }))).toEqual({
+      kind: 'slow',
+      ago: null,
+      waiting: 1,
+    });
+    expect(machineHealth(beat(null, { requests: 3, waited: 3600 }))).toEqual({
+      kind: 'silent',
+      ago: null,
+      waiting: 3,
+    });
+  });
+
+  it('writes a span of seconds short', () => {
+    expect(formatAgo(45.4)).toBe('45 s');
+    expect(formatAgo(-3)).toBe('0 s');
+    expect(formatAgo(180)).toBe('3 min');
+    expect(formatAgo(1500)).toBe('25 min');
+    expect(formatAgo(7200)).toBe('2 h');
+    expect(formatAgo(4 * 86_400)).toBe('4 d');
+  });
+});
+
+describe('what the room tells a machine about the browser’s side', () => {
+  it('reads what a door listens to, and nothing it does not know', () => {
+    expect(readListens({ listens: ['events', 'later', 7] })).toEqual(['events']);
+    expect(readListens({ listens: [] })).toEqual([]);
+    expect(readListens({ listens: 'events' })).toEqual([]);
+    expect(readListens({ machine: 'open-1' })).toEqual([]);
+    expect(readListens(null)).toEqual([]);
+  });
+  const event = (
+    step: BeaconEvent['step'],
+    ms: number,
+    problem: string | null = null,
+  ): BeaconEvent => ({
+    step,
+    type: 'StopWorld',
+    problem,
+    ms,
+  });
+
+  it('writes steps as names and whole milliseconds, never more than the door takes', () => {
+    expect(
+      JSON.parse(beaconBody([event('asked', 0), event('wallet-refused', 812.6, 'no-wallet')])),
+    ).toEqual({
+      events: [
+        { step: 'asked', type: 'StopWorld', problem: null, ms: 0 },
+        { step: 'wallet-refused', type: 'StopWorld', problem: 'no-wallet', ms: 813 },
+      ],
+    });
+    const many = Array.from({ length: BEACON_MAX_EVENTS + 5 }, (_, n) => event('asked', n));
+    expect(JSON.parse(beaconBody(many)).events).toHaveLength(BEACON_MAX_EVENTS);
+    const odd = JSON.parse(beaconBody([event('late', -5), event('late', 1e12)])).events;
+    expect(odd.map((e: { ms: number }) => e.ms)).toEqual([0, 86_400_000]);
+  });
+
+  it('hands them to the machine’s door as one text beacon, and never throws', async () => {
+    const sent: { url: string; body: Blob }[] = [];
+    const send = (url: string, body: Blob): boolean => {
+      sent.push({ url, body });
+      return true;
+    };
+    expect(sendBeacon('open-1', [event('asked', 0), event('accepted', 900)], send)).toBe(true);
+    expect(sent[0]?.url).toBe('https://open-1.numinia.com/fleet/v1/events');
+    expect(sent[0]?.body.type).toBe('text/plain');
+    expect(JSON.parse((await sent[0]?.body.text()) ?? '').events).toHaveLength(2);
+    // Nothing to say, no beacon in this browser, or a beacon that throws: nothing breaks.
+    expect(sendBeacon('open-1', [], send)).toBe(false);
+    expect(sendBeacon('open-1', [event('asked', 0)], null)).toBe(false);
+    expect(
+      sendBeacon('open-1', [event('asked', 0)], () => {
+        throw new Error('blocked');
+      }),
+    ).toBe(false);
+    expect(sent).toHaveLength(1);
   });
 });

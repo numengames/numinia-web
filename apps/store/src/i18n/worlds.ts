@@ -40,6 +40,15 @@ export interface WorldsRoomMessages {
     readonly unknown: string;
     readonly changing: string;
   };
+  /** A world being changed, on its card: what is happening now, as a verb. */
+  readonly phases: {
+    readonly creating: string;
+    readonly stopping: string;
+    readonly starting: string;
+    readonly deleting: string;
+  };
+  /** In place of a busy card's buttons. */
+  readonly busyNote: string;
   readonly reasons: {
     readonly users: string;
     readonly uptime: string;
@@ -90,17 +99,26 @@ export interface WorldsRoomMessages {
     readonly copy: string;
     readonly copied: string;
     readonly adminCode: string;
+    /** Whether its reconciler keeps up: `{m}` machine, then `{t}` ago, `{n}` requests. */
+    readonly slow: string;
+    readonly failing: string;
+    readonly silent: string;
+    readonly lastRun: string;
+    readonly waiting: string;
+    /** A world it is deleting, gone from the list: `{d}` its address. */
+    readonly freeing: string;
   };
   /** One signed request on its way: `{m}` is the machine. */
   readonly steps: {
     readonly signing: string;
     readonly sending: string;
-    readonly working: string;
     readonly preparing: string;
   };
   /** Why a signed request did not go through: `{m}` machine, `{w}` wallet, `{rule}`, `{code}`. */
   readonly problems: {
     readonly noWallet: string;
+    /** Under noWallet: opens Session in another tab. */
+    readonly noWalletLink: string;
     readonly otherWallet: string;
     readonly declined: string;
     readonly notOracle: string;
@@ -108,6 +126,7 @@ export interface WorldsRoomMessages {
     readonly replayed: string;
     readonly exists: string;
     readonly addressTaken: string;
+    readonly stillDeleting: string;
     readonly missing: string;
     readonly addressMismatch: string;
     readonly refused: string;
@@ -137,6 +156,11 @@ export interface WorldsRoomMessages {
     readonly domainHint: string;
     readonly zoneLabel: string;
     readonly labelInvalid: string;
+    /** `{w}` the world that has the name. */
+    readonly nameTaken: string;
+    readonly nameFreeing: string;
+    /** `{d}` the address. */
+    readonly addressFreeing: string;
     readonly addressTaken: string;
     readonly legacyMove: string;
     readonly dnsChecking: string;
@@ -159,8 +183,8 @@ export interface WorldsRoomMessages {
     readonly create: string;
     readonly resultTitle: string;
     readonly resultNote: string;
-    readonly openWorld: string;
     readonly done: string;
+    readonly close: string;
   };
   /** The machine's admin code, shown to a signed Oracle. */
   readonly code: {
@@ -188,9 +212,8 @@ export interface WorldsRoomMessages {
     readonly startConfirm: string;
     readonly deleteConfirm: string;
     readonly downloadConfirm: string;
-    readonly stopped: string;
-    readonly started: string;
-    readonly deleted: string;
+    /** Before signing, when the machine is not obeying: `{m}`. */
+    readonly notObeying: string;
   };
   /** A ready copy: `{f}` file name, `{s}` size, `{h}` fingerprint, `{when}` expiry. */
   readonly copy: {
@@ -203,6 +226,8 @@ export interface WorldsRoomMessages {
     readonly title: string;
     readonly empty: string;
     readonly failed: string;
+    /** How long the machine took: `{t}`. */
+    readonly took: string;
     readonly kinds: Readonly<Record<RequestKind, string>>;
   };
   readonly fieldNames: {
@@ -237,8 +262,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Parado',
       unreachable: 'No responde',
       unknown: 'Sin comprobar',
-      changing: 'Cambiando',
+      changing: 'En curso',
     },
+    phases: {
+      creating: 'Creando…',
+      stopping: 'Parando…',
+      starting: 'Arrancando…',
+      deleting: 'Borrando…',
+    },
+    busyNote: 'Suele tardar un minuto.',
     reasons: {
       users: '{n} dentro',
       uptime: 'encendido hace {t}',
@@ -289,16 +321,22 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copiar',
       copied: 'Copiado',
       adminCode: 'Código de administración',
+      slow: '{m} va con retraso.',
+      failing: '{m} no obedece: no pudo aplicar los cambios. Lo reintenta cada minuto.',
+      silent: '{m} no obedece: no da señales. Si sigue así, avisa a Ursa.',
+      lastRun: 'Su último trabajo terminó hace {t}.',
+      waiting: 'Peticiones en espera: {n}.',
+      freeing: 'Borrando {d}…',
     },
     steps: {
       signing: 'Tu cartera te pide firmar…',
       sending: 'Enviando la petición a {m}…',
-      working: '{m} lo está haciendo…',
       preparing: '{m} está preparando el zip…',
     },
     problems: {
       noWallet:
-        'No encuentro en este navegador la cartera con la que entraste. Vuelve a Sesión, conéctala y repite.',
+        'No encuentro en este navegador la cartera con la que entraste; tu sesión sigue abierta. Conéctala en Sesión y vuelve a firmar aquí.',
+      noWalletLink: 'Abrir Sesión en otra pestaña',
       otherWallet:
         'La cartera conectada ({w}) no es la de tu sesión. Cambia de cuenta en la cartera o vuelve a entrar.',
       declined: 'Has cancelado la firma: no se ha enviado nada.',
@@ -308,6 +346,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       replayed: 'Esa petición ya se había enviado.',
       exists: 'Ya hay un mundo con ese nombre en {m}.',
       addressTaken: 'Esa dirección ya es de otro mundo de {m}.',
+      stillDeleting:
+        '{m} aún está borrando un mundo con ese nombre o esa dirección. Prueba en un minuto.',
       missing: 'Ese mundo ya no está en {m}; recarga la sala.',
       addressMismatch: 'La dirección no coincide con la del mundo; recarga la sala.',
       refused:
@@ -340,6 +380,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       domainHint: 'El nombre y la zona: el mundo se abrirá en esa dirección.',
       zoneLabel: 'Zona',
       labelInvalid: 'Una sola palabra: minúsculas, números y guiones, sin puntos.',
+      nameTaken: 'Ya hay un mundo que se llama {w}: elige otro nombre.',
+      nameFreeing:
+        '{w} se está liberando: su máquina aún borra el mundo anterior. Prueba en un minuto.',
+      addressFreeing:
+        '{d} se está liberando: su máquina aún borra el mundo anterior. Prueba en un minuto.',
       addressTaken: '{d} ya es la dirección de {w}: elige otro nombre.',
       legacyMove:
         '{d} es hoy {w}, en la máquina antigua. Al crearlo aquí pasará a {m}: copia antes sus datos y apunta su registro DNS a {m}.',
@@ -365,8 +410,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       resultTitle: '{t} está naciendo',
       resultNote:
         '{m} ha creado el mundo. Se abre en {d} en cuanto arranque, en menos de un minuto.',
-      openWorld: 'Abrir el mundo',
       done: 'Hecho',
+      close: 'Cerrar',
     },
     code: {
       title: 'Código de administración de {m}',
@@ -393,14 +438,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       downloadFirst: 'Descargar una copia',
       downloadIntro:
         'La máquina prepara un zip con el mundo entero: su base de datos y sus archivos, un docker-compose para abrirlo en tu ordenador (localhost:3000) con claves nuevas, y una guía. El enlace dura un día.',
-      typeToConfirm: 'Escribe {id} para confirmar.',
+      typeToConfirm: 'Para confirmar, escribe su dirección:',
       stopConfirm: 'Firmar y parar',
       startConfirm: 'Firmar y arrancar',
-      deleteConfirm: 'Borrar para siempre',
+      deleteConfirm: 'Firmar y borrar',
       downloadConfirm: 'Firmar y preparar',
-      stopped: '{t} está parado.',
-      started: '{t} vuelve a estar en marcha.',
-      deleted: '{t} ya no existe.',
+      notObeying: '{m} no obedece ahora mismo: tu petición esperará en su cola hasta que vuelva.',
     },
     copy: {
       ready: 'Listo: {f} · {s}',
@@ -412,6 +455,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       title: 'Lo que han hecho las máquinas',
       empty: 'Las máquinas todavía no han hecho nada.',
       failed: 'falló',
+      took: 'en {t}',
       kinds: {
         CreateWorld: 'creó',
         DeleteWorld: 'borró',
@@ -451,8 +495,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Stopped',
       unreachable: 'Not answering',
       unknown: 'Unchecked',
-      changing: 'Changing',
+      changing: 'In progress',
     },
+    phases: {
+      creating: 'Creating…',
+      stopping: 'Stopping…',
+      starting: 'Starting…',
+      deleting: 'Deleting…',
+    },
+    busyNote: 'This usually takes about a minute.',
     reasons: {
       users: '{n} inside',
       uptime: 'up for {t}',
@@ -503,16 +554,22 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copy',
       copied: 'Copied',
       adminCode: 'Admin code',
+      slow: '{m} is running late.',
+      failing: '{m} is not obeying: it could not apply the changes. It tries again every minute.',
+      silent: '{m} is not obeying: no sign of life. If this goes on, tell Ursa.',
+      lastRun: 'Its last job ended {t} ago.',
+      waiting: 'Requests waiting: {n}.',
+      freeing: 'Deleting {d}…',
     },
     steps: {
       signing: 'Your wallet asks you to sign…',
       sending: 'Sending the request to {m}…',
-      working: '{m} is doing it…',
       preparing: '{m} is preparing the zip…',
     },
     problems: {
       noWallet:
-        'The wallet you signed in with is not connected in this browser. Go back to Session, connect it and try again.',
+        'This browser does not have the wallet you signed in with; your session is still open. Connect it in Session and sign here again.',
+      noWalletLink: 'Open Session in another tab',
       otherWallet:
         'The connected wallet ({w}) is not your session’s. Switch accounts in the wallet or sign in again.',
       declined: 'You cancelled the signature: nothing was sent.',
@@ -522,6 +579,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       replayed: 'That request had already been sent.',
       exists: '{m} already has a world with that name.',
       addressTaken: 'That address already belongs to another world on {m}.',
+      stillDeleting:
+        '{m} is still deleting a world with that name or address. Try again in a minute.',
       missing: 'That world is no longer on {m}; reload the room.',
       addressMismatch: 'The address does not match the world’s; reload the room.',
       refused:
@@ -554,6 +613,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       domainHint: 'A name and a zone: the world opens at that address.',
       zoneLabel: 'Zone',
       labelInvalid: 'One word: lowercase letters, digits and hyphens, no dots.',
+      nameTaken: 'There is already a world called {w}: choose another name.',
+      nameFreeing:
+        '{w} is being freed: its machine is still deleting the previous world. Try again in a minute.',
+      addressFreeing:
+        '{d} is being freed: its machine is still deleting the previous world. Try again in a minute.',
       addressTaken: '{d} is already the address of {w}: choose another name.',
       legacyMove:
         '{d} is {w} today, on the old machine. Creating it here moves it to {m}: copy its data first and point its DNS record at {m}.',
@@ -579,8 +643,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       resultTitle: '{t} is being born',
       resultNote:
         '{m} has created the world. It opens at {d} as soon as it starts, in under a minute.',
-      openWorld: 'Open the world',
       done: 'Done',
+      close: 'Close',
     },
     code: {
       title: 'Admin code of {m}',
@@ -607,14 +671,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       downloadFirst: 'Download a copy',
       downloadIntro:
         'The machine prepares a zip with the whole world: its database and files, a docker-compose to open it on your computer (localhost:3000) with fresh keys, and a short guide. The link lasts a day.',
-      typeToConfirm: 'Type {id} to confirm.',
+      typeToConfirm: 'To confirm, type its address:',
       stopConfirm: 'Sign and stop',
       startConfirm: 'Sign and start',
-      deleteConfirm: 'Delete forever',
+      deleteConfirm: 'Sign and delete',
       downloadConfirm: 'Sign and prepare',
-      stopped: '{t} is stopped.',
-      started: '{t} is running again.',
-      deleted: '{t} no longer exists.',
+      notObeying:
+        '{m} is not obeying right now: your request will wait in its queue until it comes back.',
     },
     copy: {
       ready: 'Ready: {f} · {s}',
@@ -626,6 +689,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       title: 'What the machines did',
       empty: 'The machines have done nothing yet.',
       failed: 'failed',
+      took: 'in {t}',
       kinds: {
         CreateWorld: 'created',
         DeleteWorld: 'deleted',
@@ -666,8 +730,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: '停止中',
       unreachable: '応答なし',
       unknown: '未確認',
-      changing: '変更中',
+      changing: '処理中',
     },
+    phases: {
+      creating: '作成中…',
+      stopping: '停止中…',
+      starting: '起動中…',
+      deleting: '削除中…',
+    },
+    busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
       users: '{n} 人が滞在中',
       uptime: '起動から {t}',
@@ -718,16 +789,24 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'コピー',
       copied: 'コピーしました',
       adminCode: '管理コード',
+      slow: '{m} は遅れています。',
+      failing:
+        '{m} は指示どおりに動いていません：変更を適用できませんでした。1 分ごとに再試行します。',
+      silent:
+        '{m} は指示どおりに動いていません：応答がありません。続くようなら Ursa に知らせてください。',
+      lastRun: '最後の作業が終わったのは {t} 前です。',
+      waiting: '待機中のリクエスト：{n}。',
+      freeing: '{d} を削除中…',
     },
     steps: {
       signing: 'ウォレットが署名を求めています…',
       sending: '{m} にリクエストを送信中…',
-      working: '{m} が処理中…',
       preparing: '{m} が zip を準備中…',
     },
     problems: {
       noWallet:
-        'ログインに使ったウォレットがこのブラウザで接続されていません。セッションに戻って接続し、もう一度お試しください。',
+        'ログインに使ったウォレットがこのブラウザにありません。セッションは開いたままです。「セッション」で接続して、ここでもう一度署名してください。',
+      noWalletLink: '別のタブで「セッション」を開く',
       otherWallet:
         '接続中のウォレット（{w}）はセッションのものではありません。ウォレットのアカウントを切り替えるか、ログインし直してください。',
       declined: '署名をキャンセルしました。何も送信されていません。',
@@ -737,6 +816,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       replayed: 'そのリクエストはすでに送信済みです。',
       exists: '{m} にはすでにその名前のワールドがあります。',
       addressTaken: 'そのアドレスは {m} の別のワールドが使っています。',
+      stillDeleting:
+        '{m} はその名前かアドレスのワールドをまだ削除しています。1 分後にもう一度お試しください。',
       missing: 'そのワールドはもう {m} にありません。ルームを再読み込みしてください。',
       addressMismatch: 'アドレスがワールドのものと一致しません。ルームを再読み込みしてください。',
       refused:
@@ -768,6 +849,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       domainHint: '名前とゾーン。ワールドはそのアドレスで開きます。',
       zoneLabel: 'ゾーン',
       labelInvalid: '1 語のみ：小文字・数字・ハイフン。ドットは使えません。',
+      nameTaken: '{w} という名前のワールドがすでにあります。別の名前を選んでください。',
+      nameFreeing:
+        '{w} は解放中です：そのマシンが前のワールドをまだ削除しています。1 分後にお試しください。',
+      addressFreeing:
+        '{d} は解放中です：そのマシンが前のワールドをまだ削除しています。1 分後にお試しください。',
       addressTaken: '{d} はすでに {w} のアドレスです。別の名前を選んでください。',
       legacyMove:
         '{d} は現在、旧マシン上の {w} です。ここで作成すると {m} に移ります。先にデータをコピーし、DNS レコードを {m} に向けてください。',
@@ -792,8 +878,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       create: '署名して作成',
       resultTitle: '{t} が誕生しています',
       resultNote: '{m} がワールドを作成しました。起動しだい、1 分以内に {d} で開きます。',
-      openWorld: 'ワールドを開く',
       done: '完了',
+      close: '閉じる',
     },
     code: {
       title: '{m} の管理コード',
@@ -819,14 +905,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       downloadFirst: 'コピーをダウンロード',
       downloadIntro:
         'マシンがワールド全体の zip を用意します：データベースとファイル、新しい鍵でパソコン上（localhost:3000）で開くための docker-compose、短いガイド。リンクの有効期限は 1 日です。',
-      typeToConfirm: '確認のため {id} と入力してください。',
+      typeToConfirm: '確認のため、アドレスを入力してください：',
       stopConfirm: '署名して停止',
       startConfirm: '署名して起動',
-      deleteConfirm: '完全に削除',
+      deleteConfirm: '署名して削除',
       downloadConfirm: '署名して準備',
-      stopped: '{t} は停止しました。',
-      started: '{t} は再び稼働中です。',
-      deleted: '{t} はもう存在しません。',
+      notObeying: '{m} はいま指示どおりに動いていません：リクエストは戻るまでキューで待ちます。',
     },
     copy: {
       ready: '準備完了：{f} · {s}',
@@ -838,6 +922,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       title: 'マシンの作業履歴',
       empty: 'マシンはまだ何もしていません。',
       failed: '失敗',
+      took: '（{t}）',
       kinds: {
         CreateWorld: '作成',
         DeleteWorld: '削除',
@@ -877,8 +962,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: '정지됨',
       unreachable: '응답 없음',
       unknown: '미확인',
-      changing: '변경 중',
+      changing: '진행 중',
     },
+    phases: {
+      creating: '만드는 중…',
+      stopping: '정지하는 중…',
+      starting: '시작하는 중…',
+      deleting: '삭제하는 중…',
+    },
+    busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
       users: '{n}명 접속 중',
       uptime: '{t} 동안 켜짐',
@@ -929,16 +1021,24 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: '복사',
       copied: '복사됨',
       adminCode: '관리 코드',
+      slow: '{m}이(가) 늦어지고 있습니다.',
+      failing:
+        '{m}이(가) 명령을 따르지 않습니다: 변경을 적용하지 못했습니다. 1분마다 다시 시도합니다.',
+      silent:
+        '{m}이(가) 명령을 따르지 않습니다: 아무 신호가 없습니다. 계속되면 Ursa에게 알려 주세요.',
+      lastRun: '마지막 작업은 {t} 전에 끝났습니다.',
+      waiting: '대기 중인 요청: {n}.',
+      freeing: '{d} 삭제 중…',
     },
     steps: {
       signing: '지갑이 서명을 요청합니다…',
       sending: '{m}(으)로 요청을 보내는 중…',
-      working: '{m}이(가) 처리하는 중…',
       preparing: '{m}이(가) zip을 준비하는 중…',
     },
     problems: {
       noWallet:
-        '로그인할 때 쓴 지갑이 이 브라우저에 연결되어 있지 않습니다. 세션으로 돌아가 연결한 뒤 다시 시도하세요.',
+        '로그인할 때 쓴 지갑이 이 브라우저에 없습니다. 세션은 아직 열려 있습니다. 세션에서 연결한 뒤 여기서 다시 서명하세요.',
+      noWalletLink: '다른 탭에서 세션 열기',
       otherWallet:
         '연결된 지갑({w})이 세션의 지갑이 아닙니다. 지갑에서 계정을 바꾸거나 다시 로그인하세요.',
       declined: '서명을 취소했습니다. 아무것도 보내지 않았습니다.',
@@ -948,6 +1048,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       replayed: '그 요청은 이미 보냈습니다.',
       exists: '{m}에 이미 그 이름의 월드가 있습니다.',
       addressTaken: '그 주소는 이미 {m}의 다른 월드가 쓰고 있습니다.',
+      stillDeleting:
+        '{m}이(가) 그 이름이나 주소의 월드를 아직 삭제하고 있습니다. 1분 뒤에 다시 시도하세요.',
       missing: '그 월드는 더 이상 {m}에 없습니다. 방을 새로 고치세요.',
       addressMismatch: '주소가 월드의 주소와 맞지 않습니다. 방을 새로 고치세요.',
       refused: '{m}은(는) 그 주문을 받지 않습니다. 엔진, 주소 또는 한도가 규칙을 벗어납니다.',
@@ -978,6 +1080,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       domainHint: '이름과 존: 월드는 그 주소에서 열립니다.',
       zoneLabel: '존',
       labelInvalid: '한 단어만: 소문자, 숫자, 하이픈. 점은 쓸 수 없습니다.',
+      nameTaken: '{w}(이)라는 월드가 이미 있습니다. 다른 이름을 고르세요.',
+      nameFreeing:
+        '{w}은(는) 비워지는 중입니다: 그 머신이 이전 월드를 아직 삭제하고 있습니다. 1분 뒤에 시도하세요.',
+      addressFreeing:
+        '{d}은(는) 비워지는 중입니다: 그 머신이 이전 월드를 아직 삭제하고 있습니다. 1분 뒤에 시도하세요.',
       addressTaken: '{d}은(는) 이미 {w}의 주소입니다. 다른 이름을 고르세요.',
       legacyMove:
         '{d}은(는) 지금 옛 머신의 {w}입니다. 여기서 만들면 {m}(으)로 옮겨집니다. 먼저 데이터를 복사하고 DNS 레코드를 {m}(으)로 돌리세요.',
@@ -1002,8 +1109,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       create: '서명하고 만들기',
       resultTitle: '{t}이(가) 태어나는 중',
       resultNote: '{m}이(가) 월드를 만들었습니다. 시작되는 대로 1분 안에 {d}에서 열립니다.',
-      openWorld: '월드 열기',
       done: '완료',
+      close: '닫기',
     },
     code: {
       title: '{m}의 관리 코드',
@@ -1029,14 +1136,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       downloadFirst: '사본 다운로드',
       downloadIntro:
         '머신이 월드 전체를 담은 zip을 준비합니다: 데이터베이스와 파일, 새 키로 컴퓨터(localhost:3000)에서 여는 docker-compose, 짧은 안내서. 링크는 하루 동안 유효합니다.',
-      typeToConfirm: '확인하려면 {id}을(를) 입력하세요.',
+      typeToConfirm: '확인하려면 주소를 입력하세요:',
       stopConfirm: '서명하고 정지',
       startConfirm: '서명하고 시작',
-      deleteConfirm: '영구 삭제',
+      deleteConfirm: '서명하고 삭제',
       downloadConfirm: '서명하고 준비',
-      stopped: '{t}이(가) 정지되었습니다.',
-      started: '{t}이(가) 다시 실행 중입니다.',
-      deleted: '{t}은(는) 더 이상 없습니다.',
+      notObeying:
+        '{m}이(가) 지금 명령을 따르지 않습니다: 요청은 돌아올 때까지 대기열에서 기다립니다.',
     },
     copy: {
       ready: '준비 완료: {f} · {s}',
@@ -1048,6 +1154,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       title: '머신이 한 일',
       empty: '머신이 아직 아무것도 하지 않았습니다.',
       failed: '실패',
+      took: '({t})',
       kinds: {
         CreateWorld: '만듦',
         DeleteWorld: '삭제함',
@@ -1092,8 +1199,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Parado',
       unreachable: 'Não responde',
       unknown: 'Não verificado',
-      changing: 'Mudando',
+      changing: 'Em curso',
     },
+    phases: {
+      creating: 'Criando…',
+      stopping: 'Parando…',
+      starting: 'Iniciando…',
+      deleting: 'Apagando…',
+    },
+    busyNote: 'Costuma levar um minuto.',
     reasons: {
       users: '{n} dentro',
       uptime: 'ligado há {t}',
@@ -1144,16 +1258,22 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copiar',
       copied: 'Copiado',
       adminCode: 'Código de administração',
+      slow: '{m} está atrasada.',
+      failing: '{m} não obedece: não conseguiu aplicar as mudanças. Tenta de novo a cada minuto.',
+      silent: '{m} não obedece: não dá sinais. Se continuar assim, avise a Ursa.',
+      lastRun: 'Seu último trabalho terminou há {t}.',
+      waiting: 'Pedidos em espera: {n}.',
+      freeing: 'Apagando {d}…',
     },
     steps: {
       signing: 'Sua carteira pede que você assine…',
       sending: 'Enviando o pedido para {m}…',
-      working: '{m} está fazendo…',
       preparing: '{m} está preparando o zip…',
     },
     problems: {
       noWallet:
-        'A carteira com que você entrou não está conectada neste navegador. Volte a Sessão, conecte-a e repita.',
+        'Não encontro neste navegador a carteira com que você entrou; sua sessão continua aberta. Conecte-a em Sessão e assine aqui de novo.',
+      noWalletLink: 'Abrir Sessão em outra aba',
       otherWallet:
         'A carteira conectada ({w}) não é a da sua sessão. Troque de conta na carteira ou entre de novo.',
       declined: 'Você cancelou a assinatura: nada foi enviado.',
@@ -1163,6 +1283,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       replayed: 'Esse pedido já tinha sido enviado.',
       exists: 'Já existe um mundo com esse nome em {m}.',
       addressTaken: 'Esse endereço já é de outro mundo de {m}.',
+      stillDeleting:
+        '{m} ainda está apagando um mundo com esse nome ou endereço. Tente de novo em um minuto.',
       missing: 'Esse mundo já não está em {m}; recarregue a sala.',
       addressMismatch: 'O endereço não coincide com o do mundo; recarregue a sala.',
       refused: '{m} não aceita essa ordem: o motor, o endereço ou os limites saem das suas regras.',
@@ -1193,6 +1315,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       domainHint: 'Um nome e uma zona: o mundo abre nesse endereço.',
       zoneLabel: 'Zona',
       labelInvalid: 'Uma só palavra: minúsculas, números e hífens, sem pontos.',
+      nameTaken: 'Já existe um mundo chamado {w}: escolha outro nome.',
+      nameFreeing:
+        '{w} está sendo liberado: sua máquina ainda apaga o mundo anterior. Tente em um minuto.',
+      addressFreeing:
+        '{d} está sendo liberado: sua máquina ainda apaga o mundo anterior. Tente em um minuto.',
       addressTaken: '{d} já é o endereço de {w}: escolha outro nome.',
       legacyMove:
         '{d} é hoje {w}, na máquina antiga. Criá-lo aqui o leva para {m}: copie antes os seus dados e aponte o seu registro DNS para {m}.',
@@ -1217,8 +1344,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       create: 'Assinar e criar',
       resultTitle: '{t} está nascendo',
       resultNote: '{m} criou o mundo. Ele abre em {d} assim que arrancar, em menos de um minuto.',
-      openWorld: 'Abrir o mundo',
       done: 'Feito',
+      close: 'Fechar',
     },
     code: {
       title: 'Código de administração de {m}',
@@ -1246,14 +1373,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       downloadFirst: 'Baixar uma cópia',
       downloadIntro:
         'A máquina prepara um zip com o mundo inteiro: sua base de dados e seus arquivos, um docker-compose para abri-lo no seu computador (localhost:3000) com chaves novas, e um guia. O link dura um dia.',
-      typeToConfirm: 'Escreva {id} para confirmar.',
+      typeToConfirm: 'Para confirmar, escreva o endereço:',
       stopConfirm: 'Assinar e parar',
       startConfirm: 'Assinar e iniciar',
-      deleteConfirm: 'Apagar para sempre',
+      deleteConfirm: 'Assinar e apagar',
       downloadConfirm: 'Assinar e preparar',
-      stopped: '{t} está parado.',
-      started: '{t} voltou a rodar.',
-      deleted: '{t} já não existe.',
+      notObeying: '{m} não obedece agora: seu pedido vai esperar na fila até ela voltar.',
     },
     copy: {
       ready: 'Pronto: {f} · {s}',
@@ -1265,6 +1390,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       title: 'O que as máquinas fizeram',
       empty: 'As máquinas ainda não fizeram nada.',
       failed: 'falhou',
+      took: 'em {t}',
       kinds: {
         CreateWorld: 'criou',
         DeleteWorld: 'apagou',

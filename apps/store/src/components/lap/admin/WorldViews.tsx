@@ -16,6 +16,7 @@ import {
   worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
+import { LunaEspera } from '../../chrome/LunaEspera';
 
 export type WorldAction = 'stop' | 'start' | 'delete' | 'download';
 
@@ -27,14 +28,28 @@ interface ViewProps {
 
 const PER_GROUP = 6;
 
+/** What a world is doing, in one verb: the settled states as they are, a change as what is happening now. */
 function StatusPill({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
+  const phase = row.phase;
+  const doing =
+    row.status === 'changing' &&
+    (phase === 'creating' || phase === 'stopping' || phase === 'starting' || phase === 'deleting')
+      ? room.phases[phase]
+      : null;
   return (
     <span
       className="pildora estado-mundo"
       data-status={row.status}
+      data-phase={doing === null ? undefined : phase}
       title={describeStatus(row, room.reasons)}
     >
-      {room.status[row.status]}
+      {doing === null ? (
+        room.status[row.status]
+      ) : (
+        <>
+          <LunaEspera /> {doing}
+        </>
+      )}
     </span>
   );
 }
@@ -63,8 +78,9 @@ function Actions({
   onAction: ViewProps['onAction'];
 }) {
   const order = row.order;
-  // While its machine is creating, stopping, starting or deleting it, one thing at a time.
-  const busy = row.status === 'changing';
+  // While its machine creates, stops, starts or deletes it, there is nothing to press:
+  // the pill says what is happening, and a world not born yet has nothing to open.
+  if (row.status === 'changing') return <p className="nota espera">{room.busyNote}</p>;
   const open = row.legacy?.domain ?? (order?.state === 'running' ? order.domain : null);
   return (
     <div className="acciones">
@@ -83,7 +99,6 @@ function Actions({
         <button
           type="button"
           className="btn btn-fantasma"
-          disabled={busy}
           onClick={() => onAction(row, 'stop')}
           data-metric="worlds-stop"
         >
@@ -94,7 +109,6 @@ function Actions({
         <button
           type="button"
           className="btn btn-fantasma"
-          disabled={busy}
           onClick={() => onAction(row, 'start')}
           data-metric="worlds-start"
         >
@@ -105,7 +119,6 @@ function Actions({
         <button
           type="button"
           className="btn btn-fantasma"
-          disabled={busy}
           onClick={() => onAction(row, 'download')}
           data-metric="worlds-download"
         >
@@ -116,7 +129,6 @@ function Actions({
         <button
           type="button"
           className="btn btn-fantasma peligro"
-          disabled={busy}
           onClick={() => onAction(row, 'delete')}
           data-metric="worlds-delete"
         >

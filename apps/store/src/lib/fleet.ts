@@ -200,6 +200,7 @@ export const DOOR_ERRORS = [
   'replayed',
   'exists',
   'address-taken',
+  'still-deleting',
   'missing',
   'address-mismatch',
   'refused',
@@ -304,6 +305,175 @@ export function readCopyStatus(body: unknown): CopyStatus | null {
 /** A copy the machine has finished with, one way or the other. */
 export const copyDone = (copy: CopyStatus): boolean => copy.state !== 'preparing';
 
+// ---------------------------------------------------------------------------
+// Whether a machine obeys: its door's heartbeat
+// ---------------------------------------------------------------------------
+
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+const isIso = (value: unknown): value is string => typeof value === 'string' && ISO_UTC.test(value);
+
+/** When a machine's reconciler last ran, how that ended, and what still waits for it. */
+export interface Heartbeat {
+  /** The door's own clock when it answered: ages are measured against it, never the browser's. */
+  readonly at: string;
+  readonly lastRun: {
+    readonly at: string;
+    readonly ok: boolean;
+    readonly rule: string | null;
+  } | null;
+  readonly waiting: { readonly requests: number; readonly since: string | null };
+}
+
+/** A door's `/machine` → its heartbeat; null when the door publishes none (one older than the floor). */
+export function readHeartbeat(body: unknown): Heartbeat | null {
+  if (!isObj(body) || !isIso(body['at']) || !isObj(body['waiting'])) return null;
+  const requests = body['waiting']['requests'];
+  if (typeof requests !== 'number' || !Number.isInteger(requests) || requests < 0) return null;
+  const since = body['waiting']['since'];
+  const run = body['lastRun'];
+  let lastRun: Heartbeat['lastRun'] = null;
+  if (isObj(run) && isIso(run['at']) && typeof run['ok'] === 'boolean') {
+    const rule = run['rule'];
+    lastRun = {
+      at: run['at'],
+      ok: run['ok'],
+      rule: typeof rule === 'string' && rule !== '' ? rule.slice(0, 200) : null,
+    };
+  }
+  return { at: body['at'], lastRun, waiting: { requests, since: isIso(since) ? since : null } };
+}
+
+/**
+ * A machine's reconciler runs every minute and on each request, and records
+ * when each run ends. Three minutes without one, or a request waiting that
+ * long, is a delay (a long create can take that); ten is a machine that is
+ * not obeying.
+ */
+export const SLOW_AFTER_S = 180;
+export const SILENT_AFTER_S = 600;
+
+export type MachineHealth =
+  /** Its door publishes no heartbeat, or nothing to judge yet: nothing to say. */
+  | { readonly kind: 'unknown' }
+  | { readonly kind: 'ok'; readonly ago: number }
+  /** It works, late: `ago` since its last run (null: none on record), `waiting` requests queued. */
+  | { readonly kind: 'slow'; readonly ago: number | null; readonly waiting: number }
+  /** It runs, but its last run could not apply the book. */
+  | { readonly kind: 'failing'; readonly ago: number; readonly rule: string | null }
+  /** It has stopped working: `ago` since its last run (null: none on record), `waiting` requests queued. */
+  | { readonly kind: 'silent'; readonly ago: number | null; readonly waiting: number };
+
+/** Whether a machine obeys, from its heartbeat alone (the door's clock against the door's clock). */
+export function machineHealth(heartbeat: Heartbeat | null): MachineHealth {
+  if (heartbeat === null) return { kind: 'unknown' };
+  const now = Date.parse(heartbeat.at);
+  const { requests, since } = heartbeat.waiting;
+  const waited = requests > 0 && since !== null ? Math.max(0, (now - Date.parse(since)) / 1000) : 0;
+  const run = heartbeat.lastRun;
+  if (run === null) {
+    // No run on record yet: only a request left waiting says something.
+    if (waited > SILENT_AFTER_S) return { kind: 'silent', ago: null, waiting: requests };
+    if (waited > SLOW_AFTER_S) return { kind: 'slow', ago: null, waiting: requests };
+    return { kind: 'unknown' };
+  }
+  const ago = Math.max(0, Math.round((now - Date.parse(run.at)) / 1000));
+  // How long it has gone without doing what it is there for: running, and taking what waits.
+  const quiet = Math.max(ago, waited);
+  if (quiet > SILENT_AFTER_S) return { kind: 'silent', ago, waiting: requests };
+  if (!run.ok) return { kind: 'failing', ago, rule: run.rule };
+  if (quiet > SLOW_AFTER_S) return { kind: 'slow', ago, waiting: requests };
+  return { kind: 'ok', ago };
+}
+
+/** A span of seconds, short: `45 s`, `3 min`, `2 h`, `4 d`. */
+export function formatAgo(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return `${s} s`;
+  if (s < 3600) return `${Math.round(s / 60)} min`;
+  if (s < 172_800) return `${Math.round(s / 3600)} h`;
+  return `${Math.round(s / 86_400)} d`;
+}
+
+// ---------------------------------------------------------------------------
+// What the room tells a machine about the browser's side of a request
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a signed request got to in the browser. The machine sees only what
+ * reaches its door; a wallet that was not found, a signature cancelled or a
+ * door that could not be reached never get there unless the room says so.
+ */
+export type BeaconStep =
+  | 'asked'
+  | 'signed'
+  | 'wallet-refused'
+  | 'accepted'
+  | 'refused'
+  | 'unreachable'
+  | 'copy-ready'
+  | 'copy-failed'
+  | 'late';
+
+/** One step, as the door takes it: names from closed lists and a number, never a wallet, a name or an address. */
+export interface BeaconEvent {
+  readonly step: BeaconStep;
+  readonly type: RequestKind;
+  readonly problem: string | null;
+  /** Milliseconds since the Oracle pressed the button. */
+  readonly ms: number;
+}
+
+/** The most a door takes in one beacon, and the longest a step may claim to have taken. */
+export const BEACON_MAX_EVENTS = 20;
+const BEACON_MAX_MS = 86_400_000;
+
+/** What a door may listen to besides signed requests: `events`, the room's beacons. */
+export type DoorFeature = 'events';
+const DOOR_FEATURES: readonly DoorFeature[] = ['events'];
+
+/**
+ * What a door says it listens to, from its `/machine` (`listens: [...]`): the
+ * room sends a beacon only to a door that says it takes them, so a machine
+ * older than the beacons never sees one.
+ */
+export function readListens(body: unknown): DoorFeature[] {
+  if (!isObj(body) || !Array.isArray(body['listens'])) return [];
+  const said: readonly unknown[] = body['listens'];
+  return DOOR_FEATURES.filter((feature) => said.includes(feature));
+}
+
+/** A beacon's body: `{"events": [...]}`, at most BEACON_MAX_EVENTS, each `ms` a whole number in range. */
+export function beaconBody(events: readonly BeaconEvent[]): string {
+  return JSON.stringify({
+    events: events.slice(0, BEACON_MAX_EVENTS).map((event) => ({
+      step: event.step,
+      type: event.type,
+      problem: event.problem,
+      ms: Math.min(BEACON_MAX_MS, Math.max(0, Math.round(event.ms))),
+    })),
+  });
+}
+
+export type BeaconSender = (url: string, body: Blob) => boolean;
+
+/**
+ * Hand a machine's door what happened in the browser, without waiting for an
+ * answer (a beacon, as text, so the browser asks no preflight). Never throws:
+ * a lost beacon costs a count, never a request.
+ */
+export function sendBeacon(
+  alias: string,
+  events: readonly BeaconEvent[],
+  send: BeaconSender | null,
+): boolean {
+  if (send === null || events.length === 0) return false;
+  try {
+    return send(doorUrl(alias, 'events'), new Blob([beaconBody(events)], { type: 'text/plain' }));
+  } catch {
+    return false;
+  }
+}
+
 /** Where a world is, as its machine says: settled, or on its way somewhere. */
 export type DoorPhase = 'running' | 'stopped' | 'creating' | 'stopping' | 'starting' | 'deleting';
 
@@ -375,6 +545,10 @@ export interface DoorLogEntry {
   /** The short wallet that signed it, as the machine logs it. */
   readonly by: string | null;
   readonly state: 'done' | 'failed';
+  /** The rule the machine found broken, when it failed (a door older than the metrics says none). */
+  readonly rule: string | null;
+  /** Whole seconds from the door taking the request to the machine finishing it; null when not said. */
+  readonly took: number | null;
 }
 
 /** A machine's `/log` → what it did, newest first, as it says; lines it does not recognise are dropped. */
@@ -382,7 +556,7 @@ export function readDoorLog(body: unknown, alias: string): DoorLogEntry[] {
   if (!isObj(body) || !Array.isArray(body['entries'])) return [];
   const kinds: readonly string[] = Object.keys(REQUEST_TYPES);
   return (body['entries'] as readonly unknown[]).filter(isObj).flatMap((entry) => {
-    const { at, type, world, by, state } = entry;
+    const { at, type, world, by, state, rule, took } = entry;
     if (typeof at !== 'string' || typeof type !== 'string' || !kinds.includes(type)) return [];
     if (state !== 'done' && state !== 'failed') return [];
     return [
@@ -393,6 +567,9 @@ export function readDoorLog(body: unknown, alias: string): DoorLogEntry[] {
         world: typeof world === 'string' && SLUG.test(world) ? world : null,
         by: typeof by === 'string' ? by : null,
         state,
+        rule:
+          state === 'failed' && typeof rule === 'string' && rule !== '' ? rule.slice(0, 200) : null,
+        took: typeof took === 'number' && Number.isInteger(took) && took >= 0 ? took : null,
       },
     ];
   });
@@ -447,6 +624,10 @@ export type MachineView =
       readonly open: true;
       readonly worlds: readonly DoorWorld[];
       readonly log: readonly DoorLogEntry[];
+      /** Whether its reconciler keeps up; null when its door publishes no heartbeat. */
+      readonly heartbeat: Heartbeat | null;
+      /** What its door listens to besides requests (readListens). */
+      readonly listens: readonly DoorFeature[];
     }
   | {
       readonly alias: string;
@@ -461,9 +642,10 @@ export async function readMachine(
   alias: string,
   timeoutMs = 4000,
 ): Promise<MachineView> {
-  const [worlds, log] = await Promise.all([
+  const [worlds, log, machine] = await Promise.all([
     readJson(fetchImpl, doorUrl(alias, 'worlds'), timeoutMs),
     readJson(fetchImpl, doorUrl(alias, 'log'), timeoutMs),
+    readJson(fetchImpl, doorUrl(alias, 'machine'), timeoutMs),
   ]);
   if (!worlds.ok) {
     return worlds.status === undefined
@@ -472,7 +654,14 @@ export async function readMachine(
   }
   const read = readDoorWorlds(worlds.body, alias);
   if (read === null) return { alias, open: false, reason: 'shape' };
-  return { alias, open: true, worlds: read, log: log.ok ? readDoorLog(log.body, alias) : [] };
+  return {
+    alias,
+    open: true,
+    worlds: read,
+    log: log.ok ? readDoorLog(log.body, alias) : [],
+    heartbeat: machine.ok ? readHeartbeat(machine.body) : null,
+    listens: machine.ok ? readListens(machine.body) : [],
+  };
 }
 
 /** The fleet as its machines tell it, ready for the room's rows. */
@@ -516,6 +705,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
         : view.status === undefined
           ? view.reason
           : `${view.reason} ${view.status}`,
+      heartbeat: view.open ? view.heartbeat : null,
+      listens: view.open ? view.listens : [],
     })),
     orders,
     phases,
