@@ -17,7 +17,7 @@
  * asks for an order the machine would refuse.
  */
 
-import type { DoorPhase } from './fleet';
+import type { DoorFeature, DoorPhase, Heartbeat } from './fleet';
 import type { SummaCard } from './summa';
 
 /** Names a world may not take: the machine's front service, and the old book's table of contents. */
@@ -271,6 +271,10 @@ export interface MachineSummary {
   readonly open: boolean;
   /** Why its door could not be read (`timeout`, `http 502`…); null when it was. */
   readonly reason: string | null;
+  /** Whether its reconciler keeps up (lib/fleet.ts `machineHealth`); null when its door says nothing. */
+  readonly heartbeat: Heartbeat | null;
+  /** What its door listens to besides requests: `events` = it takes the room's beacons. */
+  readonly listens: readonly DoorFeature[];
 }
 
 /**
@@ -286,15 +290,33 @@ export function machineHost(alias: string): string | null {
   return FLEET_MACHINES.find((machine) => machine.alias === alias)?.host ?? null;
 }
 
-/** The world already at this address: one of the fleet's (a clash) or a legacy world (a move). */
+/** Who already holds this address: a world of the fleet (a clash), one being deleted (it frees soon) or a legacy world (a move). */
 export function addressOwner(
   domain: string,
   rows: readonly WorldRow[],
-): { readonly id: string; readonly legacy: boolean } | null {
+): { readonly id: string; readonly legacy: boolean; readonly leaving: boolean } | null {
   const wanted = domain.trim().toLowerCase();
   if (wanted === '') return null;
   const row = rows.find((candidate) => rowPlace(candidate)?.domain === wanted);
-  return row ? { id: row.id, legacy: row.legacy !== null } : null;
+  return row
+    ? { id: row.id, legacy: row.legacy !== null, leaving: row.phase === 'deleting' }
+    : null;
+}
+
+/**
+ * Who already holds this name among the fleet's worlds: one that exists, or
+ * one being deleted, whose folder and keys are not gone yet (the machine
+ * answers `still-deleting` until they are). A legacy world's name is free:
+ * the old machine reads no book.
+ */
+export function nameOwner(
+  id: string,
+  rows: readonly WorldRow[],
+): { readonly id: string; readonly leaving: boolean } | null {
+  const wanted = id.trim().toLowerCase();
+  if (wanted === '') return null;
+  const row = rows.find((candidate) => candidate.legacy === null && candidate.id === wanted);
+  return row ? { id: row.id, leaving: row.phase === 'deleting' } : null;
 }
 
 /**
@@ -470,6 +492,15 @@ function seen(probe: Probe | undefined): WorldStatus {
   return probe.ok ? 'running' : 'unreachable';
 }
 
+/** The titles the engine gives a world nobody named: a page titled so says nothing about the world. */
+const ENGINE_TITLES: readonly string[] = ['world'];
+
+/** A world's own page title, unless it is empty or the engine's default (then the room says its name). */
+export function ownTitle(title: string | null | undefined): string | null {
+  const clean = (title ?? '').trim();
+  return clean === '' || ENGINE_TITLES.includes(clean.toLowerCase()) ? null : clean;
+}
+
 function statusOf(phase: DoorPhase, probe: Probe | undefined): WorldStatus {
   if (phase === 'stopped') return 'stopped';
   if (phase === 'running') return seen(probe);
@@ -496,7 +527,7 @@ export function buildRows(input: RowsInput): WorldRow[] {
     const phase = phases[order.id] ?? order.state;
     return {
       id: order.id,
-      title: card?.title ?? face?.title ?? order.id,
+      title: card?.title ?? ownTitle(face?.title) ?? order.id,
       cover: card?.cover ?? face?.image ?? null,
       missingCard: card === undefined,
       status: statusOf(phase, probe),
@@ -534,7 +565,7 @@ export function buildRows(input: RowsInput): WorldRow[] {
     const probe = input.probes[world.id];
     rows.push({
       id: world.id,
-      title: face?.title ?? world.id,
+      title: ownTitle(face?.title) ?? world.id,
       cover: face?.image ?? null,
       missingCard: false,
       status: seen(probe),
@@ -551,6 +582,15 @@ export function buildRows(input: RowsInput): WorldRow[] {
 /** Where a row's world lives; null when not even its address is known any more. */
 export function rowPlace(row: WorldRow): WorldPlace | null {
   return row.place;
+}
+
+/**
+ * The worlds the room lists: every one but those being deleted, which leave
+ * the list the moment their machine takes the delete. The room still keeps
+ * them, to say that their name and address are being freed.
+ */
+export function listedRows(rows: readonly WorldRow[]): WorldRow[] {
+  return rows.filter((row) => row.phase !== 'deleting');
 }
 
 export interface FleetStats {

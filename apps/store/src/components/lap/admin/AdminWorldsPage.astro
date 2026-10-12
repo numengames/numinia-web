@@ -21,6 +21,9 @@ const labels = {
   forbiddenNote: t.worlds.forbiddenNote,
   signedAs: t.worlds.signedAs,
 };
+// Where a wallet that the room cannot find is connected again.
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const sessionHref = `${prefix}/lap/session/`;
 ---
 
 <LapShell
@@ -33,7 +36,12 @@ const labels = {
     <h1>{t.worlds.title}</h1>
     <p class="intro">{t.worlds.intro}</p>
   </header>
-  <WorldsPanel client:load labels={labels} room={WORLDS_UI[locale]} />
+  <WorldsPanel
+    client:load
+    labels={labels}
+    room={WORLDS_UI[locale]}
+    sessionHref={sessionHref}
+  />
 </LapShell>
 
 <style>
@@ -245,6 +253,18 @@ const labels = {
   }
   [data-worlds-panel] .estado-mundo[data-status='unknown'] {
     color: var(--turquesa);
+  }
+  /* A world being changed: the waiting moon, at the pill's size, before the verb */
+  [data-worlds-panel] .estado-mundo svg,
+  [data-worlds-panel] .liberando svg {
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: middle;
+  }
+  [data-worlds-panel] .nota.espera {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--texto-2);
   }
 
   /* Cards with cover */
@@ -541,6 +561,31 @@ const labels = {
   [data-worlds-panel] .maquinas li[data-open='false'] .punto-maquina {
     background: var(--coral);
   }
+  /* Whether a machine obeys: its door's heartbeat, under its line */
+  [data-worlds-panel] .maquinas li[data-health='slow'] .punto-maquina {
+    background: var(--ambar);
+  }
+  [data-worlds-panel] .maquinas li[data-health='failing'] .punto-maquina,
+  [data-worlds-panel] .maquinas li[data-health='silent'] .punto-maquina {
+    background: var(--coral);
+  }
+  [data-worlds-panel] .salud-maquina,
+  [data-worlds-panel] .liberando {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+  [data-worlds-panel] .salud-maquina[data-tono='aviso'],
+  [data-worlds-panel] .aviso-maquina {
+    color: var(--ambar);
+  }
+  [data-worlds-panel] .salud-maquina[data-tono='mal'] {
+    color: var(--coral);
+  }
+  [data-worlds-panel] .regla {
+    font-size: 0.8rem;
+    color: var(--texto-2);
+  }
   [data-worlds-panel] .maquina-cerrada {
     display: flex;
     flex-direction: column;
@@ -770,6 +815,15 @@ const labels = {
   }
   [data-worlds-panel] .linea-dns[data-tono='mal'] {
     color: var(--coral);
+  }
+  /* Which world a dialog acts on, under its title */
+  [data-worlds-panel] .donde {
+    margin: var(--s1) 0 0;
+    color: var(--texto-2);
+  }
+  /* The delete confirmation: a sentence in the page's own case, the address in mono */
+  [data-worlds-panel] .texto-confirmar {
+    font-size: 0.9rem;
   }
   [data-worlds-panel] .pie {
     display: flex;

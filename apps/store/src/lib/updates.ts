@@ -26,6 +26,37 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.78.0',
+    date: '2026-10-12 13:55',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Signing twice in one visit works. After the first signature, every later one in the Worlds room said your wallet could not be found, though your session was still open: the wallet library answers its first connection only once per page. The room now keeps the wallet it found; if it truly cannot find it, it says your session is still open and links to Session in another tab.',
+      },
+      {
+        type: 'UPD',
+        text: 'A dialog closes as soon as the machine takes the request. Stopping, starting or deleting a world is one signature, and then the world’s card says what is happening — Creating…, Stopping…, Starting… or Deleting…, with the waiting moon and no buttons until it is done. A deleted world leaves the list at once, and its machine’s line says its address is being freed. Only a download still waits in the dialog, for its zip.',
+      },
+      {
+        type: 'UPD',
+        text: 'Deleting a world is confirmed by typing its whole address as it is written, in normal case. Every dialog shows the world’s address and machine under its title. While your wallet or the machine is being asked, a click outside or Esc no longer closes it by mistake; before that, a click outside closes it.',
+      },
+      {
+        type: 'NEW',
+        text: 'Each machine says whether it obeys. Its line under Machines reads its heartbeat: late after three minutes without finishing its work, not obeying after ten, or failing when its last attempt could not apply the changes — with how long ago it last worked and how many requests wait. Signing for a machine that is not obeying first warns that the request will wait in its queue.',
+      },
+      {
+        type: 'FIX',
+        text: 'A name or an address freed by a delete is not offered again until its machine has removed the old world: the wizard says it is being freed instead of calling it taken. A world whose page carries only the default title is named by its own name. What the machines did is shown in your own time, with how long each request took and, when one failed, the machine’s reason.',
+      },
+      {
+        type: 'NEW',
+        text: 'The room tells each machine how a request went on the browser’s side — asked, signed, refused by the wallet, accepted, unreachable — and how long each step took: names and numbers, never a wallet or a world. Machines that do not listen yet simply ignore it.',
+      },
+    ],
+  },
+  {
     version: 'v0.77.0',
     date: '2026-10-12 08:36',
     missions: ['MIS-156'],

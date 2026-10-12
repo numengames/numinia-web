@@ -70,7 +70,9 @@
           "type": "DeleteWorld",
           "world": "old-plaza",
           "by": "0x42e6…ca26",
-          "state": "done"
+          "state": "done",
+          "rule": null,
+          "took": 48
         },
         {
           "machine": "open-1",
@@ -78,7 +80,9 @@
           "type": "DownloadWorld",
           "world": "old-plaza",
           "by": "0x42e6…ca26",
-          "state": "done"
+          "state": "done",
+          "rule": null,
+          "took": 21
         },
         {
           "machine": "open-1",
@@ -86,9 +90,17 @@
           "type": "CreateWorld",
           "world": "alchemists-tower",
           "by": "0x42e6…ca26",
-          "state": "done"
+          "state": "done",
+          "rule": null,
+          "took": null
         }
-      ]
+      ],
+      "heartbeat": {
+        "at": "2026-10-12T09:45:00Z",
+        "lastRun": { "at": "2026-10-12T09:44:30Z", "ok": true, "rule": null },
+        "waiting": { "requests": 1, "since": "2026-10-12T09:44:50Z" }
+      },
+      "listens": ["events"]
     },
     {
       "alias": "open-2",
@@ -144,7 +156,9 @@
           "type": "StopWorld",
           "world": "akasha-museum",
           "by": "0x42e6…ca26",
-          "state": "done"
+          "state": "done",
+          "rule": null,
+          "took": 14
         },
         {
           "machine": "open-2",
@@ -152,9 +166,17 @@
           "type": "CreateWorld",
           "world": "forge",
           "by": "0x42e6…ca26",
-          "state": "failed"
+          "state": "failed",
+          "rule": "another world already has this address",
+          "took": 3
         }
-      ]
+      ],
+      "heartbeat": {
+        "at": "2026-10-12T09:45:00Z",
+        "lastRun": { "at": "2026-10-12T09:20:00Z", "ok": true, "rule": null },
+        "waiting": { "requests": 1, "since": "2026-10-12T09:21:00Z" }
+      },
+      "listens": []
     },
     { "alias": "open-3", "open": false, "reason": "timeout" }
   ],

@@ -3,14 +3,15 @@
  * new world (card → place → engine → confirm) that shows exactly what the
  * wallet will sign, a dialog for stop, start, download and delete — delete
  * warns that it cannot be undone, offers a copy first and asks you to type
- * the world's name — and one that shows a machine's admin code.
+ * the world's address — and one that shows a machine's admin code.
  *
  * Nothing here holds a key. Each action is one request the Oracle's wallet
- * signs and the machine checks itself (lib/fleet.ts); the dialog follows it
- * until the machine says it is done.
+ * signs and the machine checks itself (lib/fleet.ts). Once the machine takes
+ * it, a dialog closes (a create keeps the admin code on screen) and the
+ * world's card shows the rest; only a download waits here for its zip.
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { copyFileUrl, formatBytes } from '../../../lib/fleet';
 import {
@@ -22,10 +23,10 @@ import {
   fill,
   inHouseZone,
   joinDomain,
+  nameOwner,
   placeAllowed,
   problemFields,
   rowPlace,
-  worldUrl,
   type AddressDns,
   type DraftField,
   type OrderDraft,
@@ -41,11 +42,14 @@ function Modal({
   open,
   label,
   onClose,
+  dismissable = true,
   children,
 }: {
   readonly open: boolean;
   readonly label: string;
   readonly onClose: () => void;
+  /** A click outside the dialog closes it — not while the wallet or the machine is being asked. */
+  readonly dismissable?: boolean;
   readonly children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -70,19 +74,42 @@ function Modal({
       if (state?.worldsDialog === true) window.history.back();
     };
   }, [open]);
+  // A native modal ignores clicks on its backdrop; a click that lands on the
+  // dialog element itself, outside its box, is one.
+  const onBackdrop = (event: MouseEvent<HTMLDialogElement>): void => {
+    const dialog = ref.current;
+    if (!dismissable || !dialog || event.target !== dialog) return;
+    const box = dialog.getBoundingClientRect();
+    const inside =
+      event.clientX >= box.left &&
+      event.clientX <= box.right &&
+      event.clientY >= box.top &&
+      event.clientY <= box.bottom;
+    if (!inside) onClose();
+  };
   return (
-    <dialog ref={ref} className="dialogo" aria-label={label} onClose={onClose}>
+    <dialog
+      ref={ref}
+      className="dialogo"
+      aria-label={label}
+      onClose={onClose}
+      onCancel={(event) => {
+        // Esc does nothing while the wallet or the machine is being asked.
+        if (!dismissable) event.preventDefault();
+      }}
+      onClick={onBackdrop}
+    >
       {open && children}
     </dialog>
   );
 }
 
-/** Calls `effect` each time a signed request reaches `working` or `done`: the room reads the fleet again. */
+/** Calls `effect` each time a signed request is taken or finished: the room reads the fleet again. */
 function useOnProgress(step: Step, effect: () => void): void {
   const latest = useRef(effect);
   latest.current = effect;
   useEffect(() => {
-    if (step.at === 'working' || step.at === 'done') latest.current();
+    if (step.at === 'accepted' || step.at === 'done') latest.current();
   }, [step.at]);
 }
 
@@ -91,15 +118,26 @@ function StepLine({
   step,
   machine,
   room,
+  sessionHref,
 }: {
   readonly step: Step;
   readonly machine: string;
   readonly room: WorldsRoomMessages;
+  /** Where the wallet is connected again, when the room cannot find it. */
+  readonly sessionHref: string;
 }) {
   if (step.at === 'failed') {
     return (
       <p className="fallo" role="alert" data-problem={step.problem}>
         {problemText(step, machine, room)}
+        {step.problem === 'no-wallet' && (
+          <>
+            {' '}
+            <a href={sessionHref} target="_blank" rel="noopener" data-metric="worlds-session">
+              {room.problems.noWalletLink}
+            </a>
+          </>
+        )}
       </p>
     );
   }
@@ -189,7 +227,11 @@ function AddressLine({
 }: {
   readonly domain: string;
   readonly machine: string;
-  readonly owner: { readonly id: string; readonly legacy: boolean } | null;
+  readonly owner: {
+    readonly id: string;
+    readonly legacy: boolean;
+    readonly leaving: boolean;
+  } | null;
   readonly dns: DnsState;
   readonly room: WorldsRoomMessages;
 }) {
@@ -199,6 +241,14 @@ function AddressLine({
     return (
       <p className="linea-dns" data-tono="mal">
         {words.labelInvalid}
+      </p>
+    );
+  }
+  if (owner?.leaving) {
+    // A world deleted a moment ago keeps its address until its folder and keys are gone.
+    return (
+      <p className="linea-dns" data-tono="aviso" role="alert">
+        {fill(words.addressFreeing, { d: domain })}
       </p>
     );
   }
@@ -244,6 +294,8 @@ export function NewWorldDialog({
   machines,
   rows,
   wallet,
+  sessionHref,
+  listens,
 }: {
   readonly open: boolean;
   readonly onClose: () => void;
@@ -253,17 +305,20 @@ export function NewWorldDialog({
   readonly cards: readonly WorldCardInfo[];
   /** The machines to choose from: those whose door answers (machineChoices). */
   readonly machines: readonly string[];
-  /** Every world the room shows, to see whether an address is already taken. */
+  /** Every world the room knows, those being deleted included, to see whether a name or an address is taken. */
   readonly rows: readonly WorldRow[];
   /** The session's wallet: the one that must sign. */
   readonly wallet: string | null;
+  readonly sessionHref: string;
+  /** Whether a machine's door takes the room's beacons. */
+  readonly listens: (alias: string) => boolean;
 }) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(machines[0]));
   const [label, setLabel] = useState('');
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
-  const { step: flow, run, reset } = useFleetAction(wallet);
+  const { step: flow, run, reset } = useFleetAction(wallet, listens);
   useOnProgress(flow, onChanged);
 
   const clear = (): void => {
@@ -288,7 +343,7 @@ export function NewWorldDialog({
   }, [open, pristine, machines]);
 
   // Once the machine has taken the world, the draft has done its job.
-  const handedOver = flow.at === 'working' || flow.at === 'done';
+  const handedOver = flow.at === 'accepted' || flow.at === 'done';
   const close = (): void => {
     if (handedOver) clear();
     else reset();
@@ -297,6 +352,7 @@ export function NewWorldDialog({
 
   const domain = joinDomain(label, zone);
   const owner = addressOwner(domain, rows);
+  const taken = nameOwner(draft.id, rows);
 
   // Where the address points, asked of public DNS a moment after the last keystroke.
   useEffect(() => {
@@ -324,7 +380,7 @@ export function NewWorldDialog({
   const chosen = cards.find((card) => card.slug === draft.card.trim()) ?? null;
 
   const canNext =
-    (step === 0 && draft.id.trim() !== '') ||
+    (step === 0 && draft.id.trim() !== '' && taken === null) ||
     (step === 1 && draft.server.trim() !== '' && placeAllowed(domain, owner, dns)) ||
     (step === 2 && draft.image.trim() !== '');
 
@@ -353,7 +409,7 @@ export function NewWorldDialog({
   const sending = busy(flow);
 
   return (
-    <Modal open={open} label={room.wizard.title} onClose={close}>
+    <Modal open={open} label={room.wizard.title} onClose={close} dismissable={!sending}>
       <header className="cabeza-dialogo">
         <h2>{room.wizard.title}</h2>
         {!handedOver && (
@@ -372,16 +428,14 @@ export function NewWorldDialog({
       </header>
 
       {handedOver && order ? (
+        // The machine has the world: it is born on its own and the card shows it.
+        // The dialog only hands over the admin code, the one thing the card cannot show.
         <div className="resultado" data-created={order.id}>
           <h2>{fill(room.wizard.resultTitle, { t: title })}</h2>
-          {flow.at === 'working' ? (
-            <StepLine step={flow} machine={order.server} room={room} />
-          ) : (
-            <p className="nota">
-              {fill(room.wizard.resultNote, { m: order.server, d: order.domain })}
-            </p>
-          )}
-          {(flow.at === 'working' || flow.at === 'done') && flow.code !== null && (
+          <p className="nota">
+            {fill(room.wizard.resultNote, { m: order.server, d: order.domain })}
+          </p>
+          {(flow.at === 'accepted' || flow.at === 'done') && flow.code !== null && (
             <>
               <p className="etiqueta">{room.code.shown}</p>
               <CodeBox code={flow.code} room={room} />
@@ -391,23 +445,12 @@ export function NewWorldDialog({
           <div className="pie">
             <button
               type="button"
-              className="btn btn-fantasma"
+              className="btn btn-primario"
               onClick={close}
               data-metric="worlds-done"
             >
               {room.wizard.done}
             </button>
-            {flow.at === 'done' && (
-              <a
-                className="btn btn-primario"
-                href={worldUrl(order.domain)}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-metric="worlds-open"
-              >
-                {room.wizard.openWorld}
-              </a>
-            )}
           </div>
         </div>
       ) : (
@@ -445,11 +488,18 @@ export function NewWorldDialog({
                 label={room.wizard.idLabel}
                 hint={room.wizard.idHint}
                 value={draft.id}
-                invalid={marked.has('id') || marked.has('card')}
+                invalid={marked.has('id') || marked.has('card') || taken !== null}
                 onChange={(value) =>
                   setDraft((current) => ({ ...current, id: value, card: value }))
                 }
               />
+              {taken !== null && (
+                <p className="linea-dns" data-tono={taken.leaving ? 'aviso' : 'mal'} role="alert">
+                  {fill(taken.leaving ? room.wizard.nameFreeing : room.wizard.nameTaken, {
+                    w: taken.id,
+                  })}
+                </p>
+              )}
             </>
           )}
           {step === 1 && (
@@ -592,7 +642,7 @@ export function NewWorldDialog({
                   })}
                 </p>
               )}
-              <StepLine step={flow} machine={draft.server} room={room} />
+              <StepLine step={flow} machine={draft.server} room={room} sessionHref={sessionHref} />
             </>
           )}
           <div className="pie">
@@ -662,6 +712,9 @@ export function ActionDialog({
   onDownloadFirst,
   room,
   wallet,
+  sessionHref,
+  warning,
+  listens,
 }: {
   readonly change: { readonly row: WorldRow; readonly action: WorldAction } | null;
   readonly onClose: () => void;
@@ -671,9 +724,14 @@ export function ActionDialog({
   readonly onDownloadFirst: (row: WorldRow) => void;
   readonly room: WorldsRoomMessages;
   readonly wallet: string | null;
+  readonly sessionHref: string;
+  /** The machine is not obeying right now: said before signing; null when it obeys. */
+  readonly warning: string | null;
+  /** Whether a machine's door takes the room's beacons. */
+  readonly listens: (alias: string) => boolean;
 }) {
   const [typed, setTyped] = useState('');
-  const { step, run, reset } = useFleetAction(wallet);
+  const { step, run, reset } = useFleetAction(wallet, listens);
   useOnProgress(step, onChanged);
 
   useEffect(() => {
@@ -699,13 +757,23 @@ export function ActionDialog({
     download: words.downloadConfirm,
   };
   const title = row ? fill(titles[action], { t: row.title }) : '';
-  const confirmed = action !== 'delete' || typed.trim() === row?.id;
+  // A delete is confirmed by typing the world's whole address, as it is written.
+  const confirmed =
+    action !== 'delete' || (place !== null && typed.trim().toLowerCase() === place.domain);
   const sending = busy(step);
 
   const close = (): void => {
     reset();
     onClose();
   };
+
+  // Once the machine has taken a stop, a start or a delete, the dialog has
+  // done its job: the machine does the rest and the card shows it.
+  const closeNow = useRef(close);
+  closeNow.current = close;
+  useEffect(() => {
+    if (step.at === 'accepted') closeNow.current();
+  }, [step.at]);
 
   const submit = (): void => {
     if (!row || !place || !confirmed) return;
@@ -716,42 +784,37 @@ export function ActionDialog({
     else void run({ kind: 'DownloadWorld', ...world });
   };
 
-  const doneText: Readonly<Record<Exclude<WorldAction, 'download'>, string>> = {
-    stop: words.stopped,
-    start: words.started,
-    delete: words.deleted,
-  };
-
   return (
-    <Modal open={change !== null} label={title} onClose={close}>
+    <Modal open={change !== null} label={title} onClose={close} dismissable={!sending}>
       <header className="cabeza-dialogo">
         <h2>{title}</h2>
+        {/* Which world, unmistakably: its address and its machine. */}
+        {place !== null && (
+          <p className="nota mono donde" data-where>
+            {place.domain} · {place.server}
+          </p>
+        )}
       </header>
-      {step.at === 'done' && row ? (
+      {step.at === 'done' && row && step.copy ? (
+        // Only a download waits in the dialog: its zip is what the Oracle came for.
         <div className="resultado" data-done={action}>
-          {action === 'download' && step.copy ? (
-            <>
-              <p>
-                {fill(room.copy.ready, {
-                  f: step.copy.status.filename ?? `${row.id}.zip`,
-                  s: step.copy.status.bytes === null ? '?' : formatBytes(step.copy.status.bytes),
-                })}
-              </p>
-              {step.copy.status.sha256 !== null && (
-                <p className="nota mono huella">
-                  {fill(room.copy.fingerprint, { h: step.copy.status.sha256 })}
-                </p>
-              )}
-              {step.copy.status.expiresAt !== null && (
-                <p className="nota">
-                  {fill(room.copy.expires, {
-                    when: new Date(step.copy.status.expiresAt).toLocaleString(),
-                  })}
-                </p>
-              )}
-            </>
-          ) : (
-            <p>{action === 'download' ? title : fill(doneText[action], { t: row.title })}</p>
+          <p>
+            {fill(room.copy.ready, {
+              f: step.copy.status.filename ?? `${row.id}.zip`,
+              s: step.copy.status.bytes === null ? '?' : formatBytes(step.copy.status.bytes),
+            })}
+          </p>
+          {step.copy.status.sha256 !== null && (
+            <p className="nota mono huella">
+              {fill(room.copy.fingerprint, { h: step.copy.status.sha256 })}
+            </p>
+          )}
+          {step.copy.status.expiresAt !== null && (
+            <p className="nota">
+              {fill(room.copy.expires, {
+                when: new Date(step.copy.status.expiresAt).toLocaleString(),
+              })}
+            </p>
           )}
           <div className="pie">
             <button
@@ -762,16 +825,14 @@ export function ActionDialog({
             >
               {room.wizard.done}
             </button>
-            {action === 'download' && step.copy && (
-              <a
-                className="btn btn-primario"
-                href={copyFileUrl(machine, step.copy.id)}
-                download={step.copy.status.filename ?? `${row.id}.zip`}
-                data-metric="worlds-zip"
-              >
-                {room.copy.save}
-              </a>
-            )}
+            <a
+              className="btn btn-primario"
+              href={copyFileUrl(machine, step.copy.id)}
+              download={step.copy.status.filename ?? `${row.id}.zip`}
+              data-metric="worlds-zip"
+            >
+              {room.copy.save}
+            </a>
           </div>
         </div>
       ) : (
@@ -779,14 +840,14 @@ export function ActionDialog({
           {action === 'stop' && <p>{words.stopIntro}</p>}
           {action === 'start' && <p>{words.startIntro}</p>}
           {action === 'download' && <p>{words.downloadIntro}</p>}
-          {action === 'delete' && row && (
+          {action === 'delete' && row && place && (
             <>
               <p className="aviso-peligro" role="note">
                 <strong>{words.deleteWarning}</strong>
               </p>
               <ul className="pasos-cierre">
                 {words.deleteSteps.map((line) => (
-                  <li key={line}>{fill(line, { d: place?.domain ?? row.id })}</li>
+                  <li key={line}>{fill(line, { d: place.domain })}</li>
                 ))}
               </ul>
               <p className="nota">
@@ -801,16 +862,33 @@ export function ActionDialog({
                   {words.downloadFirst}
                 </button>
               </p>
-              <Field
-                id="mundo-confirmar"
-                label={fill(words.typeToConfirm, { id: row.id })}
-                value={typed}
-                invalid={typed !== '' && !confirmed}
-                onChange={setTyped}
-              />
+              {/* The label is a sentence in the page's own case, the address to type in mono. */}
+              <label className="campo confirmar" htmlFor="mundo-confirmar">
+                <span className="texto-confirmar">
+                  {words.typeToConfirm} <span className="mono">{place.domain}</span>
+                </span>
+                <input
+                  id="mundo-confirmar"
+                  className="mono"
+                  value={typed}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  onChange={(event) => setTyped(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && confirmed && !sending) submit();
+                  }}
+                  data-metric="worlds-field"
+                />
+              </label>
             </>
           )}
-          <StepLine step={step} machine={machine} room={room} />
+          {warning !== null && step.at !== 'failed' && (
+            <p className="aviso-maquina" data-tono="aviso" role="note">
+              {warning}
+            </p>
+          )}
+          <StepLine step={step} machine={machine} room={room} sessionHref={sessionHref} />
           <div className="pie">
             <button
               type="button"
@@ -818,7 +896,8 @@ export function ActionDialog({
               onClick={close}
               data-metric="worlds-change-cancel"
             >
-              {room.wizard.cancel}
+              {/* While a copy is being made the request is already taken: closing undoes nothing. */}
+              {step.at === 'preparing' ? room.wizard.close : room.wizard.cancel}
             </button>
             <button
               type="button"
@@ -841,14 +920,19 @@ export function CodeDialog({
   onClose,
   room,
   wallet,
+  sessionHref,
+  listens,
 }: {
   /** The machine whose code to show; null keeps the dialog closed. */
   readonly machine: string | null;
   readonly onClose: () => void;
   readonly room: WorldsRoomMessages;
   readonly wallet: string | null;
+  readonly sessionHref: string;
+  /** Whether a machine's door takes the room's beacons. */
+  readonly listens: (alias: string) => boolean;
 }) {
-  const { step, run, reset } = useFleetAction(wallet);
+  const { step, run, reset } = useFleetAction(wallet, listens);
   useEffect(() => {
     reset();
   }, [machine, reset]);
@@ -859,7 +943,7 @@ export function CodeDialog({
     onClose();
   };
   return (
-    <Modal open={machine !== null} label={title} onClose={close}>
+    <Modal open={machine !== null} label={title} onClose={close} dismissable={!busy(step)}>
       <header className="cabeza-dialogo">
         <h2>{title}</h2>
       </header>
@@ -873,7 +957,7 @@ export function CodeDialog({
         ) : (
           <>
             <p>{fill(room.code.intro, { m: alias })}</p>
-            <StepLine step={step} machine={alias} room={room} />
+            <StepLine step={step} machine={alias} room={room} sessionHref={sessionHref} />
           </>
         )}
         <div className="pie">

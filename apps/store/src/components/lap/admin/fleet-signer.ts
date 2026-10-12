@@ -10,15 +10,26 @@ import { createThirdwebClient } from 'thirdweb';
 import { autoConnect, type Account, type Wallet } from 'thirdweb/wallets';
 import { houseWallets } from '../../auth/wallets';
 
+/**
+ * The wallet the first auto-connection of this page found. thirdweb keeps the
+ * result of its first `autoConnect` for the whole page: a later call answers
+ * "connected" at once and never calls `onConnect` again (its autoConnectCore
+ * returns early). The room signs several times in one visit, so it keeps the
+ * wallet itself — without this, every signature after the first one said
+ * "no wallet" while the session was alive.
+ */
+let remembered: Wallet | null = null;
+
 /** The account connected at the login, or null when this browser remembers none. Throws if thirdweb fails. */
 export async function rememberedAccount(clientId: string): Promise<Account | null> {
-  const found: { wallet: Wallet | null } = { wallet: null };
+  const known = remembered?.getAccount();
+  if (known) return known;
   await autoConnect({
     client: createThirdwebClient({ clientId }),
     wallets: houseWallets(),
     onConnect: (wallet) => {
-      found.wallet = wallet;
+      remembered = wallet;
     },
   });
-  return found.wallet?.getAccount() ?? null;
+  return remembered?.getAccount() ?? null;
 }

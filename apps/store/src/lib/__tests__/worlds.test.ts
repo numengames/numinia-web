@@ -26,9 +26,12 @@ import {
   groupByServer,
   inHouseZone,
   joinDomain,
+  listedRows,
   machineChoices,
   machineHost,
+  nameOwner,
   orderProblems,
+  ownTitle,
   parseOrder,
   placeAllowed,
   problemFields,
@@ -454,6 +457,26 @@ describe('legacy worlds and faces — watched, never changed', () => {
     expect(row).toMatchObject({ status: 'unknown', title: 'hive', probe: null });
   });
 
+  it('names a world by its id when its page carries only the engine’s default title', () => {
+    expect(ownTitle('World')).toBeNull();
+    expect(ownTitle(' world ')).toBeNull();
+    expect(ownTitle('   ')).toBeNull();
+    expect(ownTitle(null)).toBeNull();
+    expect(ownTitle(undefined)).toBeNull();
+    expect(ownTitle(' The Hive ')).toBe('The Hive');
+    const rows = buildRows({
+      orders: [order('plain')],
+      cards: [],
+      probes: {},
+      legacy: [{ id: 'sandbox', domain: 'sandbox.numen.games', server: 'old-1' }],
+      faces: {
+        plain: { title: 'World', image: null },
+        sandbox: { title: 'World', image: null },
+      },
+    });
+    expect(rows.map((row) => row.title).sort()).toEqual(['plain', 'sandbox']);
+  });
+
   it('places, filters and groups a legacy world by its server', () => {
     const rows = legacyRows();
     const hiveRow = rows.find((row) => row.id === 'hive') as WorldRow;
@@ -485,8 +508,17 @@ describe('the place: machine, address and whether it is free', () => {
     domain: 'forge.numen.games',
   };
   const rows = buildRows({
-    orders: [agora, forge, { ...agora, id: 'again', card: 'again', domain: 'again.numinia.com' }],
-    leaving: [{ id: 'circle', server: 'open-1', domain: null }],
+    orders: [
+      agora,
+      forge,
+      { ...agora, id: 'again', card: 'again', domain: 'again.numinia.com' },
+      { ...agora, id: 'gone', card: 'gone', domain: 'gone.numinia.com' },
+    ],
+    phases: { gone: 'deleting' },
+    leaving: [
+      { id: 'circle', server: 'open-1', domain: null },
+      { id: 'old', server: 'open-1', domain: 'old.numinia.com' },
+    ],
     cards: [],
     probes: {},
     legacy: [{ id: 'vic', domain: 'vic.numinia.com', server: 'vps-legacy' }],
@@ -514,9 +546,9 @@ describe('the place: machine, address and whether it is free', () => {
   it('offers only the machines whose door answers, in the fleet’s order', () => {
     expect(
       machineChoices([
-        { alias: 'open-1', open: true, reason: null },
-        { alias: 'open-2', open: false, reason: 'timeout' },
-        { alias: 'open-3', open: true, reason: null },
+        { alias: 'open-1', open: true, reason: null, heartbeat: null, listens: [] },
+        { alias: 'open-2', open: false, reason: 'timeout', heartbeat: null, listens: [] },
+        { alias: 'open-3', open: true, reason: null, heartbeat: null, listens: [] },
       ]),
     ).toEqual(['open-1', 'open-3']);
     expect(machineChoices([])).toEqual([]);
@@ -524,11 +556,48 @@ describe('the place: machine, address and whether it is free', () => {
     expect(machineHost('open-9')).toBeNull();
   });
 
-  it('knows which world already answers at an address', () => {
-    expect(addressOwner(' Agora.numinia.com ', rows)).toEqual({ id: 'agora', legacy: false });
-    expect(addressOwner('vic.numinia.com', rows)).toEqual({ id: 'vic', legacy: true });
+  it('knows which world already answers at an address, and which one is still leaving it', () => {
+    expect(addressOwner(' Agora.numinia.com ', rows)).toEqual({
+      id: 'agora',
+      legacy: false,
+      leaving: false,
+    });
+    expect(addressOwner('vic.numinia.com', rows)).toEqual({
+      id: 'vic',
+      legacy: true,
+      leaving: false,
+    });
+    // A deleted world keeps its address until its machine has removed it.
+    expect(addressOwner('gone.numinia.com', rows)).toEqual({
+      id: 'gone',
+      legacy: false,
+      leaving: true,
+    });
+    expect(addressOwner('old.numinia.com', rows)).toEqual({
+      id: 'old',
+      legacy: false,
+      leaving: true,
+    });
     expect(addressOwner('free.numinia.com', rows)).toBeNull();
     expect(addressOwner('', rows)).toBeNull();
+  });
+
+  it('knows which name is taken among the fleet’s worlds, and which one is being freed', () => {
+    expect(nameOwner(' Agora ', rows)).toEqual({ id: 'agora', leaving: false });
+    expect(nameOwner('gone', rows)).toEqual({ id: 'gone', leaving: true });
+    expect(nameOwner('circle', rows)).toEqual({ id: 'circle', leaving: true });
+    // A legacy world's name is free: the old machine reads no book.
+    expect(nameOwner('vic', rows)).toBeNull();
+    expect(nameOwner('new-one', rows)).toBeNull();
+    expect(nameOwner('  ', rows)).toBeNull();
+  });
+
+  it('lists every world but those being deleted', () => {
+    const ids = listedRows(rows).map((row) => row.id);
+    expect(ids).toEqual(expect.arrayContaining(['agora', 'forge', 'again', 'vic']));
+    expect(ids).not.toContain('gone');
+    expect(ids).not.toContain('circle');
+    expect(ids).not.toContain('old');
   });
 
   it('reads a DNS-over-HTTPS answer: A records only, no such name is empty, a failure is null', () => {

@@ -3,21 +3,32 @@
  * answers. Without the Oracle rank it shows the refusal, never a world.
  *
  * Shaped after the Alchemists' Tower dashboard: the figures on top, the
- * machines, search and filters that combine, three views (cards with their
- * cover, a list, by server), a wizard for a new world, stop/start/download/
- * delete — each one request the Oracle's wallet signs and the machine checks
- * itself — and what the machines did.
+ * machines — each saying whether it obeys, from its door's heartbeat — search
+ * and filters that combine, three views (cards with their cover, a list, by
+ * server), a wizard for a new world, stop/start/download/delete — each one
+ * request the Oracle's wallet signs and the machine checks itself — and what
+ * the machines did. A world being deleted leaves the list the moment its
+ * machine takes the delete; the machine's line says it is still being freed.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
-import { bootstrapLine, shortWallet, type DoorLogEntry } from '../../../lib/fleet';
+import {
+  bootstrapLine,
+  formatAgo,
+  machineHealth,
+  shortWallet,
+  type DoorLogEntry,
+  type MachineHealth,
+} from '../../../lib/fleet';
 import {
   fill,
   filterRows,
   fleetServers,
   fleetStats,
+  listedRows,
   machineChoices,
+  rowPlace,
   type MachineSummary,
   type StatusFilter,
   type WorldCardInfo,
@@ -64,6 +75,27 @@ const STATUS_ORDER: readonly WorldStatus[] = [
 /** While a machine is changing a world, the room reads the fleet again this often. */
 const CHANGING_REFRESH_MS = 10_000;
 
+/** What a machine's heartbeat says, in the room's words; null when there is nothing to say. */
+function healthLine(alias: string, health: MachineHealth, room: WorldsRoomMessages): string | null {
+  if (health.kind === 'unknown' || health.kind === 'ok') return null;
+  const words = room.machines;
+  const parts = [fill(words[health.kind], { m: alias })];
+  if (health.ago !== null) parts.push(fill(words.lastRun, { t: formatAgo(health.ago) }));
+  if (health.kind !== 'failing' && health.waiting > 0) {
+    parts.push(fill(words.waiting, { n: health.waiting }));
+  }
+  return parts.join(' ');
+}
+
+/** A time from a machine (UTC) in the reader's own clock and language. */
+function localTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const lang =
+    typeof document === 'undefined' ? undefined : document.documentElement.lang || undefined;
+  return date.toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' });
+}
+
 /** A line to copy: a machine's bootstrap line. */
 function CopyLine({ line, room }: { readonly line: string; readonly room: WorldsRoomMessages }) {
   const [copied, setCopied] = useState(false);
@@ -100,43 +132,86 @@ function Machines({
     <section className="maquinas" aria-label={room.machines.title}>
       <h2 className="etiqueta">{room.machines.title}</h2>
       <ul>
-        {fleet.machines.map((machine) => (
-          <li key={machine.alias} data-machine={machine.alias} data-open={machine.open}>
-            {machine.open ? (
-              <>
-                <span className="punto-maquina" aria-hidden="true" />
-                <span>{fill(room.machines.open, { m: machine.alias })}</span>
-                <button
-                  type="button"
-                  className="btn btn-fantasma"
-                  onClick={() => onCode(machine.alias)}
-                  data-metric="worlds-admin-code"
-                >
-                  {room.machines.adminCode}
-                </button>
-              </>
-            ) : (
-              <div className="maquina-cerrada">
-                <p>
-                  <span className="punto-maquina" aria-hidden="true" />{' '}
-                  {fill(room.machines.closed, { m: machine.alias, why: machine.reason ?? '?' })}
-                </p>
-                {fleet.wallet !== null && (
-                  <>
-                    <p className="nota">{room.machines.connect}</p>
-                    <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
-                  </>
-                )}
-              </div>
-            )}
-          </li>
-        ))}
+        {fleet.machines.map((machine) => {
+          const health = machineHealth(machine.heartbeat);
+          const line = machine.open ? healthLine(machine.alias, health, room) : null;
+          // Deleted worlds whose folder and keys this machine has not removed yet.
+          const freeing = fleet.rows.filter(
+            (row) => row.phase === 'deleting' && rowPlace(row)?.server === machine.alias,
+          );
+          return (
+            <li
+              key={machine.alias}
+              data-machine={machine.alias}
+              data-open={machine.open}
+              data-health={machine.open ? health.kind : undefined}
+            >
+              {machine.open ? (
+                <>
+                  <span className="punto-maquina" aria-hidden="true" />
+                  <span>{fill(room.machines.open, { m: machine.alias })}</span>
+                  <button
+                    type="button"
+                    className="btn btn-fantasma"
+                    onClick={() => onCode(machine.alias)}
+                    data-metric="worlds-admin-code"
+                  >
+                    {room.machines.adminCode}
+                  </button>
+                  {line !== null && (
+                    <p
+                      className="salud-maquina"
+                      data-tono={health.kind === 'slow' ? 'aviso' : 'mal'}
+                      role="status"
+                    >
+                      {line}
+                      {health.kind === 'failing' && health.rule !== null && (
+                        <>
+                          {' '}
+                          <span className="mono regla">«{health.rule}»</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  {freeing.map((row) => (
+                    <p key={row.id} className="estado liberando" data-freeing={row.id}>
+                      <LunaEspera />{' '}
+                      {fill(room.machines.freeing, { d: rowPlace(row)?.domain ?? row.id })}
+                    </p>
+                  ))}
+                </>
+              ) : (
+                <div className="maquina-cerrada">
+                  <p>
+                    <span className="punto-maquina" aria-hidden="true" />{' '}
+                    {fill(room.machines.closed, { m: machine.alias, why: machine.reason ?? '?' })}
+                  </p>
+                  {fleet.wallet !== null && (
+                    <>
+                      <p className="nota">{room.machines.connect}</p>
+                      <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
+                    </>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
 }
 
-export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: WorldsRoomMessages }) {
+export function WorldsPanel({
+  labels,
+  room,
+  sessionHref,
+}: {
+  labels: WorldsLabels;
+  room: WorldsRoomMessages;
+  /** The LAP's Session page in this locale: where the wallet is connected again. */
+  sessionHref: string;
+}) {
   const [panel, setPanel] = useState<Panel>({ at: 'loading' });
   const [view, setView] = useState<View>('cards');
   const [query, setQuery] = useState('');
@@ -177,7 +252,10 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
 
   useEffect(() => load(), [load]);
 
-  const rows = panel.at === 'ready' ? panel.fleet.rows : [];
+  // Every world the room knows, those being deleted included (a name or an
+  // address is not free until they are gone); the list shows the others.
+  const known = panel.at === 'ready' ? panel.fleet.rows : [];
+  const rows = useMemo(() => listedRows(known), [known]);
   const stats = useMemo(() => fleetStats(rows), [rows]);
   const servers = useMemo(() => fleetServers(rows), [rows]);
   const machines = useMemo(
@@ -191,7 +269,7 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));
 
   // While a machine creates, stops, starts or deletes a world, keep the room current.
-  const changing = rows.some((row) => row.status === 'changing');
+  const changing = known.some((row) => row.status === 'changing');
   useEffect(() => {
     if (!changing) return;
     const timer = setInterval(() => load(), CHANGING_REFRESH_MS);
@@ -250,6 +328,18 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
     list: room.views.list,
     servers: room.views.servers,
   };
+  // Before signing for a machine that is not obeying, say so: the request will wait in its queue.
+  const notObeying = (alias: string): string | null => {
+    const summary = fleet.machines.find((machine) => machine.alias === alias);
+    const health = machineHealth(summary?.heartbeat ?? null);
+    return health.kind === 'failing' || health.kind === 'silent'
+      ? fill(room.change.notObeying, { m: alias })
+      : null;
+  };
+  const changeMachine = change === null ? null : (rowPlace(change.row)?.server ?? null);
+  // Only a door that says it takes the room's beacons hears what happened in the browser.
+  const listens = (alias: string): boolean =>
+    fleet.machines.some((machine) => machine.alias === alias && machine.listens.includes('events'));
 
   return (
     <div data-worlds-panel>
@@ -382,12 +472,21 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
                 data-state={entry.state}
               >
                 <time className="mono" dateTime={entry.at}>
-                  {entry.at.slice(0, 16).replace('T', ' ')}
+                  {localTime(entry.at)}
                 </time>
                 <span>
                   <span className="mono">{entry.machine}</span> {room.history.kinds[entry.type]}{' '}
                   {entry.world !== null && <span className="mono">{entry.world}</span>}
+                  {entry.took !== null && (
+                    <> {fill(room.history.took, { t: formatAgo(entry.took) })}</>
+                  )}
                   {entry.state === 'failed' && <> — {room.history.failed}</>}
+                  {entry.rule !== null && (
+                    <>
+                      {' '}
+                      <span className="mono regla">«{entry.rule}»</span>
+                    </>
+                  )}
                 </span>
                 {entry.by !== null && <span className="autor mono">{entry.by}</span>}
               </li>
@@ -403,8 +502,10 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         room={room}
         cards={fleet.cards}
         machines={machines}
-        rows={rows}
+        rows={known}
         wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        listens={listens}
       />
       <ActionDialog
         change={change}
@@ -413,12 +514,17 @@ export function WorldsPanel({ labels, room }: { labels: WorldsLabels; room: Worl
         onDownloadFirst={(row) => setChange({ row, action: 'download' })}
         room={room}
         wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        warning={changeMachine === null ? null : notObeying(changeMachine)}
+        listens={listens}
       />
       <CodeDialog
         machine={codeOf}
         onClose={() => setCodeOf(null)}
         room={room}
         wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        listens={listens}
       />
     </div>
   );
