@@ -1,31 +1,30 @@
 /**
  * The worlds room's dialogs, after the Tower's: a four-step wizard for a
- * new world (card → place → engine → confirm) that shows the address and
- * the exact order before anything is sent, and a change dialog for stop,
- * start and close — close asks you to type the world's name.
+ * new world (card → place → engine → confirm) that shows exactly what the
+ * wallet will sign, a dialog for stop, start, download and delete — delete
+ * warns that it cannot be undone, offers a copy first and asks you to type
+ * the world's name — and one that shows a machine's admin code.
  *
- * Nothing here writes to a server. With the room's key, the proposal is a
- * pull request opened by the Worker; without it, the same change opens on
- * GitHub, already written, under the Oracle's own account.
+ * Nothing here holds a key. Each action is one request the Oracle's wallet
+ * signs and the machine checks itself (lib/fleet.ts); the dialog follows it
+ * until the machine says it is done.
  */
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
+import { copyFileUrl, formatBytes } from '../../../lib/fleet';
 import {
   WORLD_ZONES,
   addressOwner,
-  deleteOrderUrl,
-  indexWith,
+  buildTag,
   draftToOrder,
-  editOrderUrl,
   emptyDraft,
   fill,
   inHouseZone,
   joinDomain,
-  newOrderUrl,
   placeAllowed,
   problemFields,
-  renderOrder,
+  rowPlace,
   type AddressDns,
   type DraftField,
   type OrderDraft,
@@ -33,67 +32,9 @@ import {
   type WorldRow,
 } from '../../../lib/worlds';
 import { checkAddress } from '../../../lib/worlds-source';
+import { LunaEspera } from '../../chrome/LunaEspera';
+import { busy, problemText, stepText, useFleetAction, type Step } from './fleet-action';
 import { Cover, type WorldAction } from './WorldViews';
-
-/** The ids the book holds today: the rows that carry an order (legacy rows have none). */
-const orderIds = (rows: readonly WorldRow[]): string[] =>
-  rows.filter((row) => row.order !== null).map((row) => row.id);
-
-type Outcome =
-  | { readonly at: 'idle' }
-  | { readonly at: 'sending' }
-  | { readonly at: 'done'; readonly number: number; readonly url: string }
-  | {
-      readonly at: 'manual';
-      readonly url: string;
-      readonly note: string;
-      /** The index as it must read after this change, when the change needs it (create, close). */
-      readonly index?: string;
-    }
-  | { readonly at: 'error'; readonly detail: string; readonly url?: string };
-
-type Body =
-  | { readonly action: 'create'; readonly draft: OrderDraft }
-  | { readonly action: WorldAction; readonly id: string };
-
-/** Ask the Worker to open the pull request; fall back to GitHub when it has no key. */
-async function propose(
-  body: Body,
-  manual: { url: string; note: string; index?: string },
-  room: WorldsRoomMessages,
-): Promise<Outcome> {
-  try {
-    const response = await fetch('/api/admin/worlds', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = (await response.json().catch(() => ({}))) as {
-      number?: number;
-      url?: string;
-      error?: string;
-    };
-    if (response.status === 201 && data.number !== undefined && data.url !== undefined) {
-      return { at: 'done', number: data.number, url: data.url };
-    }
-    if (response.status === 503 && data.error === 'not-configured')
-      return { at: 'manual', ...manual };
-    if (response.status === 409 && data.error === 'pending') {
-      return data.url !== undefined
-        ? { at: 'error', detail: room.wizard.pendingExists, url: data.url }
-        : { at: 'error', detail: room.wizard.pendingExists };
-    }
-    return {
-      at: 'error',
-      detail: fill(room.wizard.error, { detail: `${response.status} ${data.error ?? ''}`.trim() }),
-    };
-  } catch (error) {
-    return {
-      at: 'error',
-      detail: fill(room.wizard.error, { detail: error instanceof Error ? error.message : '?' }),
-    };
-  }
-}
 
 function Modal({
   open,
@@ -135,87 +76,64 @@ function Modal({
   );
 }
 
-function Result({
-  outcome,
+/** Calls `effect` each time a signed request reaches `working` or `done`: the room reads the fleet again. */
+function useOnProgress(step: Step, effect: () => void): void {
+  const latest = useRef(effect);
+  latest.current = effect;
+  useEffect(() => {
+    if (step.at === 'working' || step.at === 'done') latest.current();
+  }, [step.at]);
+}
+
+/** Where the request is while it travels, or what went wrong once it stopped. */
+function StepLine({
+  step,
+  machine,
   room,
-  onClose,
-  onBack,
 }: {
-  outcome: Outcome;
-  room: WorldsRoomMessages;
-  onClose: () => void;
-  /** Back to the wizard, keeping what was typed; absent when there is nothing to go back to. */
-  onBack?: (() => void) | undefined;
+  readonly step: Step;
+  readonly machine: string;
+  readonly room: WorldsRoomMessages;
 }) {
-  if (outcome.at === 'done') {
+  if (step.at === 'failed') {
     return (
-      <div className="resultado">
-        <h2>{room.wizard.resultTitle}</h2>
-        <p>
-          <a href={outcome.url} target="_blank" rel="noopener noreferrer" data-metric="worlds-pr">
-            {fill(room.wizard.resultPr, { n: outcome.number })}
-          </a>
-        </p>
-        <p className="nota">{room.wizard.resultAfter}</p>
-        <div className="pie">
-          <button
-            type="button"
-            className="btn btn-primario"
-            onClick={onClose}
-            data-metric="worlds-done"
-          >
-            {room.wizard.done}
-          </button>
-        </div>
-      </div>
+      <p className="fallo" role="alert" data-problem={step.problem}>
+        {problemText(step, machine, room)}
+      </p>
     );
   }
-  if (outcome.at === 'manual') {
-    return (
-      <div className="resultado">
-        <h2>{room.wizard.manualTitle}</h2>
-        <p className="nota">{outcome.note}</p>
-        {outcome.index !== undefined && (
-          <>
-            <p className="nota">{room.wizard.manualIndex}</p>
-            <pre className="mono" data-index>
-              {outcome.index}
-            </pre>
-          </>
-        )}
-        <div className="pie">
-          {onBack !== undefined && (
-            <button
-              type="button"
-              className="btn btn-fantasma"
-              onClick={onBack}
-              data-metric="worlds-wizard-back"
-            >
-              {room.wizard.back}
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn btn-fantasma"
-            onClick={onClose}
-            data-metric="worlds-done"
-          >
-            {room.wizard.done}
-          </button>
-          <a
-            className="btn btn-primario"
-            href={outcome.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-metric="worlds-github"
-          >
-            {room.wizard.openGithub}
-          </a>
-        </div>
-      </div>
-    );
-  }
-  return null;
+  const line = stepText(step, machine, room);
+  if (line === null) return null;
+  return (
+    <p className="estado paso-firma" aria-live="polite" data-step={step.at}>
+      <LunaEspera /> {line}
+    </p>
+  );
+}
+
+/** A code to read and copy: the admin code. */
+function CodeBox({ code, room }: { readonly code: string; readonly room: WorldsRoomMessages }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="codigo">
+      <code className="mono" data-admin-code>
+        {code}
+      </code>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => {
+          void navigator.clipboard
+            ?.writeText(code)
+            .then(() => setCopied(true))
+            .catch(() => undefined);
+        }}
+        data-metric="worlds-copy"
+      >
+        {copied ? room.machines.copied : room.machines.copy}
+      </button>
+    </div>
+  );
 }
 
 function Field({
@@ -284,7 +202,7 @@ function AddressLine({
     );
   }
   if (owner) {
-    // An order already there is a clash; a legacy world there is a move into the fleet.
+    // A world of the fleet already there is a clash; a legacy world there is a move into the fleet.
     return (
       <p className="linea-dns" data-tono={owner.legacy ? 'aviso' : 'mal'} role="alert">
         {fill(owner.legacy ? words.legacyMove : words.addressTaken, {
@@ -319,42 +237,45 @@ function AddressLine({
 export function NewWorldDialog({
   open,
   onClose,
-  onProposed,
+  onChanged,
   room,
   cards,
   machines,
   rows,
-  canPropose,
+  wallet,
 }: {
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly onProposed: () => void;
+  /** The fleet changed: read it again. */
+  readonly onChanged: () => void;
   readonly room: WorldsRoomMessages;
   readonly cards: readonly WorldCardInfo[];
-  /** The machines to choose from: the fleet's own first (machineChoices). */
+  /** The machines to choose from: those whose door answers (machineChoices). */
   readonly machines: readonly string[];
   /** Every world the room shows, to see whether an address is already taken. */
   readonly rows: readonly WorldRow[];
-  readonly canPropose: boolean;
+  /** The session's wallet: the one that must sign. */
+  readonly wallet: string | null;
 }) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(machines[0]));
   const [label, setLabel] = useState('');
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
-  const [outcome, setOutcome] = useState<Outcome>({ at: 'idle' });
+  const { step: flow, run, reset } = useFleetAction(wallet);
+  useOnProgress(flow, onChanged);
 
   const clear = (): void => {
     setStep(0);
     setDraft(emptyDraft(machines[0]));
     setLabel('');
     setZone(WORLD_ZONES[0]);
-    setOutcome({ at: 'idle' });
+    reset();
   };
 
   // Nothing typed is ever thrown away: closing the wizard keeps the draft, and
-  // only a proposal already handed over (or Start again) empties it. A draft
-  // never touched still takes the machine the room ended up loading.
+  // only a world on its way (or Start again) empties it. A draft never touched
+  // still takes the machine the room ended up loading.
   const pristine = draft.id.trim() === '' && label.trim() === '';
   useEffect(() => {
     if (!open || !pristine) return;
@@ -365,8 +286,11 @@ export function NewWorldDialog({
     );
   }, [open, pristine, machines]);
 
-  const finish = (): void => {
-    clear();
+  // Once the machine has taken the world, the draft has done its job.
+  const handedOver = flow.at === 'working' || flow.at === 'done';
+  const close = (): void => {
+    if (handedOver) clear();
+    else reset();
     onClose();
   };
 
@@ -408,30 +332,30 @@ export function NewWorldDialog({
     setStep((current) => current + 1);
   };
 
-  const submit = async (): Promise<void> => {
+  const create = (): void => {
     if (!('order' in result)) return;
-    const manual = {
-      url: newOrderUrl(result.order),
-      note: room.wizard.manualNote,
-      index: indexWith(orderIds(rows), result.order.id, true),
-    };
-    if (!canPropose) {
-      setOutcome({ at: 'manual', ...manual });
-      return;
-    }
-    setOutcome({ at: 'sending' });
-    const answer = await propose({ action: 'create', draft: full }, manual, room);
-    setOutcome(answer);
-    if (answer.at === 'done') onProposed();
+    const order = result.order;
+    void run({
+      kind: 'CreateWorld',
+      machine: order.server,
+      world: order.id,
+      domain: order.domain,
+      image: order.image,
+      memory: order.limits.memory,
+      cpus: order.limits.cpus,
+      maxUploadMb: order.limits.maxUploadMb,
+    });
   };
 
-  const finished = outcome.at === 'done' || outcome.at === 'manual';
+  const order = 'order' in result ? result.order : null;
+  const title = chosen?.title ?? order?.id ?? draft.id;
+  const sending = busy(flow);
 
   return (
-    <Modal open={open} label={room.wizard.title} onClose={onClose}>
+    <Modal open={open} label={room.wizard.title} onClose={close}>
       <header className="cabeza-dialogo">
         <h2>{room.wizard.title}</h2>
-        {!finished && (
+        {!handedOver && (
           <ol className="pasos">
             {STEPS.map((name, index) => (
               <li
@@ -446,13 +370,45 @@ export function NewWorldDialog({
         )}
       </header>
 
-      {finished ? (
-        <Result
-          outcome={outcome}
-          room={room}
-          onClose={finish}
-          onBack={outcome.at === 'manual' ? () => setOutcome({ at: 'idle' }) : undefined}
-        />
+      {handedOver && order ? (
+        <div className="resultado" data-created={order.id}>
+          <h2>{fill(room.wizard.resultTitle, { t: title })}</h2>
+          {flow.at === 'working' ? (
+            <StepLine step={flow} machine={order.server} room={room} />
+          ) : (
+            <p className="nota">
+              {fill(room.wizard.resultNote, { m: order.server, d: order.domain })}
+            </p>
+          )}
+          {(flow.at === 'working' || flow.at === 'done') && flow.code !== null && (
+            <>
+              <p className="etiqueta">{room.code.shown}</p>
+              <CodeBox code={flow.code} room={room} />
+              <p className="nota">{fill(room.code.chat, { code: flow.code })}</p>
+            </>
+          )}
+          <div className="pie">
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={close}
+              data-metric="worlds-done"
+            >
+              {room.wizard.done}
+            </button>
+            {flow.at === 'done' && (
+              <a
+                className="btn btn-primario"
+                href={`https://${order.domain}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="worlds-open"
+              >
+                {room.wizard.openWorld}
+              </a>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="contenido">
           {step === 0 && (
@@ -593,54 +549,61 @@ export function NewWorldDialog({
           )}
           {step === 3 && (
             <>
-              {'order' in result ? (
+              {order ? (
                 <div className="confirmacion">
-                  <Cover
-                    src={chosen?.cover ?? null}
-                    title={chosen?.title ?? result.order.id}
-                    room={room}
-                  />
+                  <Cover src={chosen?.cover ?? null} title={title} room={room} />
                   <div>
                     <p className="nota">{room.wizard.confirmIntro}</p>
-                    <pre className="orden mono">{renderOrder(result.order)}</pre>
+                    <dl className="datos firma" data-request="CreateWorld">
+                      <div>
+                        <dt className="etiqueta">{room.fields.world}</dt>
+                        <dd className="mono">{order.id}</dd>
+                      </div>
+                      <div>
+                        <dt className="etiqueta">{room.fields.address}</dt>
+                        <dd className="mono">{order.domain}</dd>
+                      </div>
+                      <div>
+                        <dt className="etiqueta">{room.fields.server}</dt>
+                        <dd className="mono">{order.server}</dd>
+                      </div>
+                      <div>
+                        <dt className="etiqueta">{room.fields.build}</dt>
+                        <dd className="mono" title={order.image}>
+                          {buildTag(order.image)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="etiqueta">{room.fields.limits}</dt>
+                        <dd className="mono">
+                          {`${order.limits.memory} · ${order.limits.cpus} CPU · ${order.limits.maxUploadMb} MB`}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
                 </div>
               ) : (
                 <p className="fallo" role="alert">
                   {fill(room.wizard.invalid, {
-                    fields: problemFields(result.problems)
+                    fields: problemFields('problems' in result ? result.problems : [])
                       .map((field) => room.fieldNames[field])
                       .join(', '),
                   })}
                 </p>
               )}
-              {outcome.at === 'error' && (
-                <p className="fallo" role="alert">
-                  {outcome.detail}{' '}
-                  {outcome.url !== undefined && (
-                    <a
-                      href={outcome.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-metric="worlds-pending"
-                    >
-                      {outcome.url}
-                    </a>
-                  )}
-                </p>
-              )}
+              <StepLine step={flow} machine={draft.server} room={room} />
             </>
           )}
           <div className="pie">
             <button
               type="button"
               className="btn btn-fantasma"
-              onClick={onClose}
+              onClick={close}
               data-metric="worlds-wizard-cancel"
             >
               {room.wizard.cancel}
             </button>
-            {!pristine && (
+            {!pristine && !sending && (
               <button
                 type="button"
                 className="btn btn-fantasma"
@@ -650,11 +613,14 @@ export function NewWorldDialog({
                 {room.wizard.restart}
               </button>
             )}
-            {step > 0 && (
+            {step > 0 && !sending && (
               <button
                 type="button"
                 className="btn btn-fantasma"
-                onClick={() => setStep((current) => current - 1)}
+                onClick={() => {
+                  reset();
+                  setStep((current) => current - 1);
+                }}
                 data-metric="worlds-wizard-back"
               >
                 {room.wizard.back}
@@ -674,11 +640,11 @@ export function NewWorldDialog({
               <button
                 type="button"
                 className="btn btn-primario"
-                disabled={!('order' in result) || outcome.at === 'sending'}
-                onClick={() => void submit()}
-                data-metric="worlds-wizard-propose"
+                disabled={order === null || sending}
+                onClick={create}
+                data-metric="worlds-wizard-create"
               >
-                {outcome.at === 'sending' ? room.wizard.proposing : room.wizard.propose}
+                {room.wizard.create}
               </button>
             )}
           </div>
@@ -688,142 +654,249 @@ export function NewWorldDialog({
   );
 }
 
-export function ChangeDialog({
+export function ActionDialog({
   change,
   onClose,
-  onProposed,
+  onChanged,
+  onDownloadFirst,
   room,
-  rows,
-  canPropose,
+  wallet,
 }: {
   readonly change: { readonly row: WorldRow; readonly action: WorldAction } | null;
   readonly onClose: () => void;
-  readonly onProposed: () => void;
+  /** The fleet changed: read it again. */
+  readonly onChanged: () => void;
+  /** From the delete warning: download a copy of this world first. */
+  readonly onDownloadFirst: (row: WorldRow) => void;
   readonly room: WorldsRoomMessages;
-  readonly rows: readonly WorldRow[];
-  readonly canPropose: boolean;
+  readonly wallet: string | null;
 }) {
   const [typed, setTyped] = useState('');
-  const [outcome, setOutcome] = useState<Outcome>({ at: 'idle' });
+  const { step, run, reset } = useFleetAction(wallet);
+  useOnProgress(step, onChanged);
 
   useEffect(() => {
     setTyped('');
-    setOutcome({ at: 'idle' });
-  }, [change]);
+    reset();
+  }, [change, reset]);
 
-  const row = change?.row;
+  const row = change?.row ?? null;
   const action = change?.action ?? 'stop';
-  const title = row
-    ? fill(
-        action === 'stop'
-          ? room.change.stopTitle
-          : action === 'start'
-            ? room.change.startTitle
-            : room.change.closeTitle,
-        {
-          t: row.title,
-        },
-      )
-    : '';
-  const confirmed = action !== 'close' || typed.trim() === row?.id;
+  const place = row ? rowPlace(row) : null;
+  const machine = place?.server ?? '';
+  const words = room.change;
+  const titles: Readonly<Record<WorldAction, string>> = {
+    stop: words.stopTitle,
+    start: words.startTitle,
+    delete: words.deleteTitle,
+    download: words.downloadTitle,
+  };
+  const confirms: Readonly<Record<WorldAction, string>> = {
+    stop: words.stopConfirm,
+    start: words.startConfirm,
+    delete: words.deleteConfirm,
+    download: words.downloadConfirm,
+  };
+  const title = row ? fill(titles[action], { t: row.title }) : '';
+  const confirmed = action !== 'delete' || typed.trim() === row?.id;
+  const sending = busy(step);
 
-  const manual = (): { url: string; note: string; index?: string } => {
-    const id = row?.id ?? '';
-    if (action === 'close') {
-      return {
-        url: deleteOrderUrl(id),
-        note: room.wizard.manualNote,
-        index: indexWith(orderIds(rows), id, false),
-      };
-    }
-    return {
-      url: editOrderUrl(id),
-      note: fill(room.wizard.manualEdit, { state: action === 'stop' ? 'stopped' : 'running' }),
-    };
+  const close = (): void => {
+    reset();
+    onClose();
   };
 
-  const submit = async (): Promise<void> => {
-    if (!row || !confirmed) return;
-    if (!canPropose) {
-      setOutcome({ at: 'manual', ...manual() });
-      return;
-    }
-    setOutcome({ at: 'sending' });
-    const answer = await propose({ action, id: row.id }, manual(), room);
-    setOutcome(answer);
-    if (answer.at === 'done') onProposed();
+  const submit = (): void => {
+    if (!row || !place || !confirmed) return;
+    const world = { machine: place.server, world: row.id };
+    if (action === 'delete') void run({ kind: 'DeleteWorld', ...world, domain: place.domain });
+    else if (action === 'stop') void run({ kind: 'StopWorld', ...world });
+    else if (action === 'start') void run({ kind: 'StartWorld', ...world });
+    else void run({ kind: 'DownloadWorld', ...world });
   };
 
-  const finished = outcome.at === 'done' || outcome.at === 'manual';
+  const doneText: Readonly<Record<Exclude<WorldAction, 'download'>, string>> = {
+    stop: words.stopped,
+    start: words.started,
+    delete: words.deleted,
+  };
 
   return (
-    <Modal open={change !== null} label={title} onClose={onClose}>
+    <Modal open={change !== null} label={title} onClose={close}>
       <header className="cabeza-dialogo">
         <h2>{title}</h2>
       </header>
-      {finished ? (
-        <Result outcome={outcome} room={room} onClose={onClose} />
+      {step.at === 'done' && row ? (
+        <div className="resultado" data-done={action}>
+          {action === 'download' && step.copy ? (
+            <>
+              <p>
+                {fill(room.copy.ready, {
+                  f: step.copy.status.filename ?? `${row.id}.zip`,
+                  s: step.copy.status.bytes === null ? '?' : formatBytes(step.copy.status.bytes),
+                })}
+              </p>
+              {step.copy.status.sha256 !== null && (
+                <p className="nota mono huella">
+                  {fill(room.copy.fingerprint, { h: step.copy.status.sha256 })}
+                </p>
+              )}
+              {step.copy.status.expiresAt !== null && (
+                <p className="nota">
+                  {fill(room.copy.expires, {
+                    when: new Date(step.copy.status.expiresAt).toLocaleString(),
+                  })}
+                </p>
+              )}
+            </>
+          ) : (
+            <p>{action === 'download' ? title : fill(doneText[action], { t: row.title })}</p>
+          )}
+          <div className="pie">
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={close}
+              data-metric="worlds-done"
+            >
+              {room.wizard.done}
+            </button>
+            {action === 'download' && step.copy && (
+              <a
+                className="btn btn-primario"
+                href={copyFileUrl(machine, step.copy.id)}
+                download={step.copy.status.filename ?? `${row.id}.zip`}
+                data-metric="worlds-zip"
+              >
+                {room.copy.save}
+              </a>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="contenido">
-          <p>
-            {action === 'stop'
-              ? room.change.stopIntro
-              : action === 'start'
-                ? room.change.startIntro
-                : room.change.closeIntro}
-          </p>
-          {action === 'close' && row && (
+          {action === 'stop' && <p>{words.stopIntro}</p>}
+          {action === 'start' && <p>{words.startIntro}</p>}
+          {action === 'download' && <p>{words.downloadIntro}</p>}
+          {action === 'delete' && row && (
             <>
+              <p className="aviso-peligro" role="note">
+                <strong>{words.deleteWarning}</strong>
+              </p>
               <ul className="pasos-cierre">
-                {room.change.closeSteps.map((line) => (
-                  <li key={line}>{line}</li>
+                {words.deleteSteps.map((line) => (
+                  <li key={line}>{fill(line, { d: place?.domain ?? row.id })}</li>
                 ))}
               </ul>
+              <p className="nota">
+                {words.deleteCopyFirst}{' '}
+                <button
+                  type="button"
+                  className="btn btn-fantasma"
+                  disabled={sending}
+                  onClick={() => onDownloadFirst(row)}
+                  data-metric="worlds-download-first"
+                >
+                  {words.downloadFirst}
+                </button>
+              </p>
               <Field
                 id="mundo-confirmar"
-                label={fill(room.change.typeToConfirm, { id: row.id })}
+                label={fill(words.typeToConfirm, { id: row.id })}
                 value={typed}
                 invalid={typed !== '' && !confirmed}
                 onChange={setTyped}
               />
             </>
           )}
-          {outcome.at === 'error' && (
-            <p className="fallo" role="alert">
-              {outcome.detail}{' '}
-              {outcome.url !== undefined && (
-                <a
-                  href={outcome.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-metric="worlds-pending"
-                >
-                  {outcome.url}
-                </a>
-              )}
-            </p>
-          )}
+          <StepLine step={step} machine={machine} room={room} />
           <div className="pie">
             <button
               type="button"
               className="btn btn-fantasma"
-              onClick={onClose}
+              onClick={close}
               data-metric="worlds-change-cancel"
             >
               {room.wizard.cancel}
             </button>
             <button
               type="button"
-              className={action === 'close' ? 'btn btn-destructivo' : 'btn btn-primario'}
-              disabled={!confirmed || outcome.at === 'sending'}
-              onClick={() => void submit()}
+              className={action === 'delete' ? 'btn btn-destructivo' : 'btn btn-primario'}
+              disabled={!confirmed || sending}
+              onClick={submit}
               data-metric={`worlds-change-${action}`}
             >
-              {outcome.at === 'sending' ? room.wizard.proposing : room.change.confirm}
+              {confirms[action]}
             </button>
           </div>
         </div>
       )}
+    </Modal>
+  );
+}
+
+export function CodeDialog({
+  machine,
+  onClose,
+  room,
+  wallet,
+}: {
+  /** The machine whose code to show; null keeps the dialog closed. */
+  readonly machine: string | null;
+  readonly onClose: () => void;
+  readonly room: WorldsRoomMessages;
+  readonly wallet: string | null;
+}) {
+  const { step, run, reset } = useFleetAction(wallet);
+  useEffect(() => {
+    reset();
+  }, [machine, reset]);
+  const alias = machine ?? '';
+  const title = fill(room.code.title, { m: alias });
+  const close = (): void => {
+    reset();
+    onClose();
+  };
+  return (
+    <Modal open={machine !== null} label={title} onClose={close}>
+      <header className="cabeza-dialogo">
+        <h2>{title}</h2>
+      </header>
+      <div className="contenido">
+        {step.at === 'done' && step.code !== null ? (
+          <>
+            <p className="etiqueta">{room.code.shown}</p>
+            <CodeBox code={step.code} room={room} />
+            <p className="nota">{fill(room.code.chat, { code: step.code })}</p>
+          </>
+        ) : (
+          <>
+            <p>{fill(room.code.intro, { m: alias })}</p>
+            <StepLine step={step} machine={alias} room={room} />
+          </>
+        )}
+        <div className="pie">
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            onClick={close}
+            data-metric="worlds-done"
+          >
+            {room.wizard.done}
+          </button>
+          {step.at !== 'done' && (
+            <button
+              type="button"
+              className="btn btn-primario"
+              disabled={busy(step)}
+              onClick={() => void run({ kind: 'ShowAdminCode', machine: alias })}
+              data-metric="worlds-code"
+            >
+              {room.code.confirm}
+            </button>
+          )}
+        </div>
+      </div>
     </Modal>
   );
 }

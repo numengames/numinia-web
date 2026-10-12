@@ -2,41 +2,37 @@
  * The worlds room's model (numinia-archive ADR-069), shaped after the
  * Alchemists' Tower — the console César built for the EKS worlds: a strip
  * of figures, search and filters, cards with a status pill that says why,
- * a create wizard, a close that asks you to type the name, a history.
+ * a create wizard, a delete that asks you to type the name, a history.
  *
  * What differs is the plumbing, on purpose. The Tower held keys to the
  * whole infrastructure; this room holds none. A world is three things in
- * three places: its card in the Summa (what it is, its cover), its order in
- * numinia-assets `open-worlds/` (where and how it runs) and its keys, which
- * never leave its server. The room reads the first two, asks each world's
- * public `/status` like any visitor would, and changes things only by
- * proposing a pull request on the order book.
+ * three places: its card in the Summa (what it is, its cover), its order on
+ * its machine (where and how it runs) and its keys, which never leave the
+ * machine. The room reads the cards, each machine's door (lib/fleet.ts) and
+ * each world's public `/status` like any visitor would; it changes things
+ * only by handing a machine a request the Oracle's wallet signed.
  *
- * Pure: no fetch, no env. The order rules mirror numinia-assets
- * `tests/test_open_worlds.py` one for one, so the console never proposes
- * an order the depot's own test would refuse.
+ * Pure: no fetch, no env. The order rules mirror the machine's own checks
+ * (numinia-assets `open-worlds/machine/reconcile.py`), so the room never
+ * asks for an order the machine would refuse.
  */
 
+import type { DoorPhase } from './fleet';
 import type { SummaCard } from './summa';
 
-export const DEPOT = 'numengames/numinia-assets';
-export const DEPOT_BRANCH = 'main';
-export const FLEET_DIR = 'open-worlds';
-/** The book's table of contents: the ids of every order. Reserved, never a world. */
-export const INDEX_FILE = 'index.json';
+/** Names a world may not take: the machine's front service, and the old book's table of contents. */
 export const RESERVED_IDS: readonly string[] = ['index', 'caddy'];
 /**
  * The zones a world's address hangs from: one name under either. They mirror
- * the machine's own list (numinia-assets `open-worlds/machine/reconcile.py`,
- * HOUSE_ZONES), which is what refuses an order in the end; the first is the
- * one the wizard proposes.
+ * the machine's own list (HOUSE_ZONES), which is what refuses an order in
+ * the end; the first is the one the wizard proposes.
  */
 export const WORLD_ZONES = ['numinia.com', 'numen.games'] as const;
 
 /** A machine of the public fleet: the alias orders name, and its provider's public host name. */
 export interface FleetMachine {
   readonly alias: string;
-  /** Never an IP and never in the order book: only how the room checks where an address points. */
+  /** Never an IP: only how the room checks where an address points. */
   readonly host: string;
 }
 
@@ -52,8 +48,6 @@ export const DEFAULT_IMAGE =
   'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3';
 export const DEFAULT_LIMITS = { memory: '2g', cpus: '1.5', maxUploadMb: 50 } as const;
 export const DEFAULT_SERVER = 'open-1';
-/** The house's reviewers, asked on every proposal. */
-export const REVIEWERS = ['PabloFMM', 'MariaGarciaJordan', 'Christian-Numen'] as const;
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DOMAIN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
@@ -115,8 +109,8 @@ function sameKeys(value: Record<string, unknown>, keys: readonly string[]): bool
 const text = (value: unknown): string => (typeof value === 'string' ? value : '');
 
 /**
- * Every rule an order file breaks; empty means valid. `stem` is the file
- * name without `.json` — the id must equal it.
+ * Every rule an order breaks; empty means valid. `stem` is the name the
+ * order goes by — the id must equal it.
  */
 export function orderProblems(source: string, stem: string): OrderProblem[] {
   let order: unknown;
@@ -132,7 +126,7 @@ export function orderProblems(source: string, stem: string): OrderProblem[] {
   for (const key of ['id', 'card', 'server'] as const) {
     if (!SLUG.test(text(order[key]))) found.push(key);
   }
-  // The depot's reserved names: the index itself and the machine's front service.
+  // The reserved names: the machine's front service, and the old book's index.
   if (SLUG.test(text(order.id)) && RESERVED_IDS.includes(text(order.id))) found.push('id');
   if (order.state !== 'running' && order.state !== 'stopped') found.push('state');
   if (!DOMAIN.test(text(order.domain))) found.push('domain');
@@ -156,7 +150,7 @@ export function orderProblems(source: string, stem: string): OrderProblem[] {
 export type ParsedOrder =
   { readonly order: WorldOrder } | { readonly problems: readonly OrderProblem[] };
 
-/** An order file read from the depot: the order, or what is wrong with it. */
+/** An order's text: the order, or what is wrong with it. */
 export function parseOrder(source: string, stem: string): ParsedOrder {
   const problems = orderProblems(source, stem);
   if (problems.length > 0) return { problems };
@@ -179,7 +173,7 @@ export function parseOrder(source: string, stem: string): ParsedOrder {
   };
 }
 
-/** The file exactly as the depot keeps it: fixed key order, two spaces, final newline. */
+/** An order as text, in its fixed key order, two spaces, final newline. */
 export function renderOrder(order: WorldOrder): string {
   const ordered = {
     id: order.id,
@@ -243,7 +237,7 @@ export type DraftResult =
   { readonly order: WorldOrder } | { readonly problems: readonly OrderProblem[] };
 
 /**
- * A draft becomes an order only if the depot's own rules accept it and its
+ * A draft becomes an order only if the order's rules accept it and its
  * address is one name under a house zone, which is all the machine serves.
  */
 export function draftToOrder(draft: OrderDraft): DraftResult {
@@ -271,17 +265,20 @@ export function draftToOrder(draft: OrderDraft): DraftResult {
 // Place: which machine, which address, and whether the address is free
 // ---------------------------------------------------------------------------
 
+/** A machine of the fleet as the room found it: its door answering, or not and why. */
+export interface MachineSummary {
+  readonly alias: string;
+  readonly open: boolean;
+  /** Why its door could not be read (`timeout`, `http 502`…); null when it was. */
+  readonly reason: string | null;
+}
+
 /**
- * The machines the wizard offers: the fleet's own first, then any other an
- * order already names. Never the old machine of the legacy worlds — it
- * reads no orders, so a world sent there would never start.
+ * The machines the wizard offers: those whose door answers, in the fleet's
+ * order. A world sent to a machine with no door would never be created.
  */
-export function machineChoices(rows: readonly WorldRow[]): string[] {
-  const names = FLEET_MACHINES.map((machine) => machine.alias);
-  for (const row of rows) {
-    if (row.order && !names.includes(row.order.server)) names.push(row.order.server);
-  }
-  return names;
+export function machineChoices(machines: readonly MachineSummary[]): string[] {
+  return machines.filter((machine) => machine.open).map((machine) => machine.alias);
 }
 
 /** The public host name of a fleet machine, to compare addresses with; null if unknown. */
@@ -289,7 +286,7 @@ export function machineHost(alias: string): string | null {
   return FLEET_MACHINES.find((machine) => machine.alias === alias)?.host ?? null;
 }
 
-/** The world already at this address: an order (a clash) or a legacy world (a move). */
+/** The world already at this address: one of the fleet's (a clash) or a legacy world (a move). */
 export function addressOwner(
   domain: string,
   rows: readonly WorldRow[],
@@ -330,10 +327,10 @@ export function compareDns(address: readonly string[], machine: readonly string[
 }
 
 /**
- * Whether the wizard may go on with this address. An order already there,
- * or a DNS record that sends it to another machine, stops it — unless the
- * world there is a legacy one being moved into the fleet, whose record
- * still points at the old machine until its data has moved.
+ * Whether the wizard may go on with this address. A world of the fleet
+ * already there, or a DNS record that sends it to another machine, stops
+ * it — unless the world there is a legacy one being moved into the fleet,
+ * whose record still points at the old machine until its data has moved.
  */
 export function placeAllowed(
   domain: string,
@@ -402,158 +399,17 @@ export function readProbe(body: unknown): Probe {
 }
 
 // ---------------------------------------------------------------------------
-// Proposals: changes asked for by pull request
+// Rows: order × phase × card × probe → what the room shows
 // ---------------------------------------------------------------------------
 
-export const CHANGE_ACTIONS = ['create', 'stop', 'start', 'close'] as const;
-export type ChangeAction = (typeof CHANGE_ACTIONS)[number];
-
-export interface PendingChange {
-  readonly id: string;
-  readonly action: ChangeAction;
-  readonly number: number;
-  readonly url: string;
-}
-
-const BRANCH = /^open-worlds\/([a-z0-9]+(?:-[a-z0-9]+)*)\/(create|stop|start|close)-[a-z0-9]+$/;
-
-/** The branch a proposal is opened from; the room recognises its own by it. */
-export function changeBranch(id: string, action: ChangeAction, stamp: string): string {
-  return `${FLEET_DIR}/${id}/${action}-${stamp}`;
-}
-
-/** A pull request's head branch → the world and change it asks for, if it is the room's. */
-export function parseChangeBranch(ref: string): { id: string; action: ChangeAction } | null {
-  const match = BRANCH.exec(ref);
-  if (!match) return null;
-  return { id: match[1] as string, action: match[2] as ChangeAction };
-}
-
-/** The order after a stop or a start. */
-export function withState(order: WorldOrder, state: OrderState): WorldOrder {
-  return { ...order, state };
-}
-
-const SUBJECTS: Readonly<Record<ChangeAction, string>> = {
-  create: 'feat(open-worlds): order the world',
-  stop: 'chore(open-worlds): stop the world',
-  start: 'chore(open-worlds): start the world',
-  close: 'chore(open-worlds): close the world',
-};
-
-/** Pull request title (and commit subject) for a change. */
-export function proposalTitle(action: ChangeAction, id: string): string {
-  return `${SUBJECTS[action]} ${id}`;
-}
-
-/** Commit message: the subject plus the wallet that asked, as a trailer. */
-export function proposalCommit(action: ChangeAction, id: string, actor: string): string {
-  return `${proposalTitle(action, id)}\n\nActing-Wallet: ${actor}`;
-}
-
-const AFTER: Readonly<Record<ChangeAction, string>> = {
-  create: 'On merge, the public fleet starts this world on its server.',
-  stop: 'On merge, the server stops the container. Data, copies and card stay.',
-  start: 'On merge, the server starts the container again.',
-  close:
-    'On merge, the order leaves the fleet and the server stops the world. Its card, its copies and its data stay; nothing is deleted.',
-};
-
-/** Pull request body: what is asked, what happens on merge, who asked. */
-export function proposalBody(action: ChangeAction, id: string, actor: string): string {
-  return [
-    `Proposed from the worlds room on numinia.com (ADR-069).`,
-    '',
-    `- **World:** \`${id}\``,
-    `- **Change:** ${action}`,
-    `- **Order file:** \`${FLEET_DIR}/${id}.json\``,
-    `- **Asked by wallet:** \`${actor}\``,
-    '',
-    AFTER[action],
-  ].join('\n');
-}
-
-// ---------------------------------------------------------------------------
-// GitHub links: the same changes, opened by hand when the room has no key
-// ---------------------------------------------------------------------------
-
-const GITHUB = `https://github.com/${DEPOT}`;
-
-export function orderPath(id: string): string {
-  return `${FLEET_DIR}/${id}.json`;
-}
-
-export function indexPath(): string {
-  return `${FLEET_DIR}/${INDEX_FILE}`;
-}
-
-// ---------------------------------------------------------------------------
-// The index: the sorted ids of every order, the one list the room needs
-// ---------------------------------------------------------------------------
+/** `changing`: its machine is creating, stopping, starting or deleting it right now. */
+export type WorldStatus = 'running' | 'stopped' | 'unreachable' | 'unknown' | 'changing';
 
 /**
- * The ids an index names, or null when the file is not an index. The depot
- * keeps `{ "orders": [ids] }` sorted and nothing else; anything that is not
- * a world id is dropped here, never trusted.
- */
-export function parseIndex(source: string): string[] | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(source);
-  } catch {
-    return null;
-  }
-  if (!isRecord(value) || !sameKeys(value, ['orders']) || !Array.isArray(value['orders'])) {
-    return null;
-  }
-  return value['orders'].filter(
-    (id): id is string => typeof id === 'string' && SLUG.test(id) && !RESERVED_IDS.includes(id),
-  );
-}
-
-/** The index as the depot's test wants it: sorted, unique, two-space JSON, one trailing newline. */
-export function renderIndex(ids: readonly string[]): string {
-  return `${JSON.stringify({ orders: [...new Set(ids)].sort() }, null, 2)}\n`;
-}
-
-/** The index after a world is ordered (`present`) or closed (not). */
-export function indexWith(ids: readonly string[], id: string, present: boolean): string {
-  return renderIndex(present ? [...ids, id] : ids.filter((known) => known !== id));
-}
-
-/** GitHub's "new file" page with the order already written in. */
-export function newOrderUrl(order: WorldOrder): string {
-  const query = new URLSearchParams({ filename: `${order.id}.json`, value: renderOrder(order) });
-  return `${GITHUB}/new/${DEPOT_BRANCH}/${FLEET_DIR}?${query.toString()}`;
-}
-
-export function editOrderUrl(id: string): string {
-  return `${GITHUB}/edit/${DEPOT_BRANCH}/${orderPath(id)}`;
-}
-
-export function deleteOrderUrl(id: string): string {
-  return `${GITHUB}/delete/${DEPOT_BRANCH}/${orderPath(id)}`;
-}
-
-export function orderFileUrl(id: string): string {
-  return `${GITHUB}/blob/${DEPOT_BRANCH}/${orderPath(id)}`;
-}
-
-export function fleetHistoryUrl(): string {
-  return `${GITHUB}/commits/${DEPOT_BRANCH}/${FLEET_DIR}`;
-}
-
-// ---------------------------------------------------------------------------
-// Rows: order × card × probe × pending change → what the room shows
-// ---------------------------------------------------------------------------
-
-export type WorldStatus = 'running' | 'stopped' | 'unreachable' | 'unknown' | 'requested';
-
-/**
- * A world that runs outside the order book: set up by hand on the old
- * machine, before the fleet existed. The room watches it (the Tower's
- * "legacy" mark) and never changes it; it joins the book only when an order
- * for it is merged, and from then on the order wins.
+ * A world that runs outside the fleet: set up by hand on the old machine,
+ * before the fleet existed. The room watches it (the Tower's "legacy"
+ * mark) and never changes it; once a world of the fleet takes its id or its
+ * address, the fleet's wins.
  */
 export interface LegacyWorld {
   readonly id: string;
@@ -567,34 +423,46 @@ export interface WorldFace {
   readonly image: string | null;
 }
 
+export interface WorldPlace {
+  readonly server: string;
+  readonly domain: string;
+}
+
 export interface WorldRow {
   readonly id: string;
   readonly title: string;
   readonly cover: string | null;
-  /** The order names a card the Summa does not have. */
+  /** The world names a card the Summa does not have. */
   readonly missingCard: boolean;
   readonly status: WorldStatus;
   readonly probe: Probe | null;
-  readonly pending: PendingChange | null;
-  /** Null while the world is only asked for (its order is still in a pull request). */
+  /** What its machine says is happening to it; null for a legacy world. */
+  readonly phase: DoorPhase | null;
+  /** Null for a world being deleted (its order is gone) and for a legacy world. */
   readonly order: WorldOrder | null;
-  /** Set for a world the room only watches (no order: nothing to stop, start or close). */
+  /** Set for a world the room only watches (nothing to stop, start, download or delete). */
   readonly legacy: LegacyWorld | null;
+  /** Where it lives; null only when not even its address is known any more. */
+  readonly place: WorldPlace | null;
+}
+
+/** A world its machine is deleting after its order already went. */
+export interface LeavingWorld {
+  readonly id: string;
+  readonly server: string;
+  readonly domain: string | null;
 }
 
 export interface RowsInput {
   readonly orders: readonly WorldOrder[];
+  /** What each order's machine says is happening to it; an order missing here is settled. */
+  readonly phases?: Readonly<Record<string, DoorPhase>>;
+  readonly leaving?: readonly LeavingWorld[];
   readonly cards: readonly WorldCardInfo[];
   readonly probes: Readonly<Record<string, Probe>>;
-  readonly pending: readonly PendingChange[];
   readonly legacy?: readonly LegacyWorld[];
   /** Read from each world's own page when the Summa has no card for it. */
   readonly faces?: Readonly<Record<string, WorldFace>>;
-}
-
-function statusOf(order: WorldOrder, probe: Probe | undefined): WorldStatus {
-  if (order.state === 'stopped') return 'stopped';
-  return seen(probe);
 }
 
 function seen(probe: Probe | undefined): WorldStatus {
@@ -602,53 +470,66 @@ function seen(probe: Probe | undefined): WorldStatus {
   return probe.ok ? 'running' : 'unreachable';
 }
 
+function statusOf(phase: DoorPhase, probe: Probe | undefined): WorldStatus {
+  if (phase === 'stopped') return 'stopped';
+  if (phase === 'running') return seen(probe);
+  return 'changing';
+}
+
 /**
  * The Tower's trick: what was asked for crossed with what is seen running.
- * An order is "running" only when its world answers; a world still waiting
- * in a pull request shows up as "requested", like the Tower's provisioning
- * rows. Without a card, a world is named and pictured by its own page (the
- * picture it shows while loading). A legacy world is listed after the
- * orders, unless an order already holds its id or its address.
+ * A world is "running" only when its machine runs it and it answers; one on
+ * its way somewhere (created, stopped, started, deleted) shows as changing,
+ * like the Tower's provisioning rows. Without a card, a world is named and
+ * pictured by its own page (the picture it shows while loading). A legacy
+ * world is listed after the fleet's, unless one of them already holds its
+ * id or its address.
  */
 export function buildRows(input: RowsInput): WorldRow[] {
   const cards = new Map(input.cards.map((card) => [card.slug, card]));
   const faces = input.faces ?? {};
-  const pendingById = new Map(input.pending.map((change) => [change.id, change]));
+  const phases = input.phases ?? {};
   const rows: WorldRow[] = input.orders.map((order) => {
     const card = cards.get(order.card);
     const face = faces[order.id];
     const probe = input.probes[order.id];
+    const phase = phases[order.id] ?? order.state;
     return {
       id: order.id,
       title: card?.title ?? face?.title ?? order.id,
       cover: card?.cover ?? face?.image ?? null,
       missingCard: card === undefined,
-      status: statusOf(order, probe),
+      status: statusOf(phase, probe),
       probe: probe ?? null,
-      pending: pendingById.get(order.id) ?? null,
+      phase,
       order,
       legacy: null,
+      place: { server: order.server, domain: order.domain },
     };
   });
-  const ordered = new Set(input.orders.map((order) => order.id));
-  for (const change of input.pending) {
-    if (change.action !== 'create' || ordered.has(change.id)) continue;
-    const card = cards.get(change.id);
+  const taken = new Set(input.orders.map((order) => order.id));
+  for (const world of input.leaving ?? []) {
+    if (taken.has(world.id)) continue;
+    taken.add(world.id);
+    const card = cards.get(world.id);
     rows.push({
-      id: change.id,
-      title: card?.title ?? change.id,
+      id: world.id,
+      title: card?.title ?? world.id,
       cover: card?.cover ?? null,
       missingCard: false,
-      status: 'requested',
+      status: 'changing',
       probe: null,
-      pending: change,
+      phase: 'deleting',
       order: null,
       legacy: null,
+      place: world.domain === null ? null : { server: world.server, domain: world.domain },
     });
   }
-  const addresses = new Set(input.orders.map((order) => order.domain));
+  const addresses = new Set(
+    rows.map((row) => row.place?.domain).filter((domain) => domain !== undefined),
+  );
   for (const world of input.legacy ?? []) {
-    if (ordered.has(world.id) || addresses.has(world.domain)) continue;
+    if (taken.has(world.id) || addresses.has(world.domain)) continue;
     const face = faces[world.id];
     const probe = input.probes[world.id];
     rows.push({
@@ -658,19 +539,18 @@ export function buildRows(input: RowsInput): WorldRow[] {
       missingCard: false,
       status: seen(probe),
       probe: probe ?? null,
-      pending: null,
+      phase: null,
       order: null,
       legacy: world,
+      place: { server: world.server, domain: world.domain },
     });
   }
   return rows.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
 }
 
-/** Where a row's world lives — from its order, or from the legacy list; null while only asked for. */
-export function rowPlace(
-  row: WorldRow,
-): { readonly server: string; readonly domain: string } | null {
-  return row.order ?? row.legacy;
+/** Where a row's world lives; null when not even its address is known any more. */
+export function rowPlace(row: WorldRow): WorldPlace | null {
+  return row.place;
 }
 
 export interface FleetStats {
@@ -678,7 +558,7 @@ export interface FleetStats {
   readonly running: number;
   readonly stopped: number;
   readonly problems: number;
-  readonly requested: number;
+  readonly changing: number;
 }
 
 export function fleetStats(rows: readonly WorldRow[]): FleetStats {
@@ -688,7 +568,7 @@ export function fleetStats(rows: readonly WorldRow[]): FleetStats {
     running: count('running'),
     stopped: count('stopped'),
     problems: count('unreachable'),
-    requested: count('requested'),
+    changing: count('changing'),
   };
 }
 
@@ -717,7 +597,7 @@ export function filterRows(rows: readonly WorldRow[], filter: RowFilter): WorldR
   });
 }
 
-/** Every server some order (or the legacy list) names, sorted. */
+/** Every server some world names, sorted. */
 export function fleetServers(rows: readonly WorldRow[]): string[] {
   const names = new Set<string>();
   for (const row of rows) {
@@ -728,7 +608,7 @@ export function fleetServers(rows: readonly WorldRow[]): string[] {
 }
 
 export interface ServerGroup {
-  /** null = worlds still only asked for, with no server yet. */
+  /** null = worlds whose place is no longer known. */
   readonly server: string | null;
   readonly rows: readonly WorldRow[];
 }
@@ -815,7 +695,10 @@ export interface ReasonWords {
   readonly http: string;
   readonly shape: string;
   readonly stopped: string;
-  readonly requested: string;
+  readonly creating: string;
+  readonly stopping: string;
+  readonly starting: string;
+  readonly deleting: string;
   readonly unknown: string;
 }
 
@@ -835,6 +718,10 @@ export function describeStatus(row: WorldRow, words: ReasonWords): string {
     return words[probe.reason];
   }
   if (row.status === 'stopped') return words.stopped;
-  if (row.status === 'requested') return fill(words.requested, { n: row.pending?.number ?? '?' });
+  if (row.status === 'changing') {
+    const phase = row.phase;
+    if (phase === 'creating' || phase === 'stopping' || phase === 'starting') return words[phase];
+    return words.deleting;
+  }
   return words.unknown;
 }

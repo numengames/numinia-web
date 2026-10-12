@@ -240,7 +240,7 @@ const labels = {
   [data-worlds-panel] .estado-mundo[data-status='unreachable'] {
     color: var(--coral);
   }
-  [data-worlds-panel] .estado-mundo[data-status='requested'] {
+  [data-worlds-panel] .estado-mundo[data-status='changing'] {
     color: var(--ambar);
   }
   [data-worlds-panel] .estado-mundo[data-status='unknown'] {
@@ -287,7 +287,7 @@ const labels = {
   [data-worlds-panel] .marco-caratula .estado-mundo[data-status='unreachable'] {
     color: #f35059;
   }
-  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='requested'] {
+  [data-worlds-panel] .marco-caratula .estado-mundo[data-status='changing'] {
     color: #efa517;
   }
   [data-worlds-panel] .marco-caratula .estado-mundo[data-status='unknown'] {
@@ -379,10 +379,6 @@ const labels = {
     color: var(--texto-2);
     border-color: var(--linea-f);
     cursor: help;
-  }
-  [data-worlds-panel] .marca.pedido {
-    color: var(--turquesa);
-    border-color: var(--turquesa);
   }
   [data-worlds-panel] .acciones {
     display: flex;
@@ -516,12 +512,74 @@ const labels = {
     flex-direction: column;
   }
 
-  /* Rule-breaking orders and history */
-  [data-worlds-panel] .invalidas,
+  /* The machines, each through its door */
+  [data-worlds-panel] .maquinas {
+    margin-bottom: var(--s5);
+  }
+  [data-worlds-panel] .maquinas ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    margin: var(--s2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-worlds-panel] .maquinas li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    font-size: 0.9rem;
+  }
+  [data-worlds-panel] .punto-maquina {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--verdemar);
+  }
+  [data-worlds-panel] .maquinas li[data-open='false'] .punto-maquina {
+    background: var(--coral);
+  }
+  [data-worlds-panel] .maquina-cerrada {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    width: 100%;
+  }
+  [data-worlds-panel] .maquina-cerrada p {
+    margin: 0;
+  }
+  [data-worlds-panel] .linea-copiar,
+  [data-worlds-panel] .codigo {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s2);
+  }
+  [data-worlds-panel] .linea-copiar pre {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: var(--s3);
+    overflow-x: auto;
+    font-size: 0.75rem;
+    background: var(--fondo);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .codigo code {
+    padding: var(--s2) var(--s3);
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+  }
+
+  /* What the machines did */
   [data-worlds-panel] .historial {
     margin-top: var(--s6);
   }
-  [data-worlds-panel] .invalidas ul,
   [data-worlds-panel] .historial ol {
     display: flex;
     flex-direction: column;
@@ -530,23 +588,19 @@ const labels = {
     padding: 0;
     list-style: none;
   }
-  [data-worlds-panel] .invalidas li {
-    font-size: 0.875rem;
-    color: var(--coral);
-  }
   [data-worlds-panel] .historial li {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--s3);
   }
+  [data-worlds-panel] .historial li[data-state='failed'] {
+    color: var(--coral);
+  }
   [data-worlds-panel] .historial time,
   [data-worlds-panel] .historial .autor {
     font-size: 0.8rem;
     color: var(--texto-3);
-  }
-  [data-worlds-panel] .historial .todo {
-    font-size: 0.875rem;
   }
 
   /* Dialogs */
@@ -663,14 +717,24 @@ const labels = {
   [data-worlds-panel] .confirmacion .caratula {
     border-radius: var(--radio-control);
   }
-  [data-worlds-panel] .orden {
-    margin: var(--s2) 0 0;
+  [data-worlds-panel] .firma {
+    margin-top: var(--s2);
+  }
+  [data-worlds-panel] .aviso-peligro {
     padding: var(--s3);
-    overflow-x: auto;
-    font-size: 0.75rem;
-    background: var(--fondo);
-    border: 1px solid var(--linea);
+    color: var(--coral);
+    border: 1px solid var(--coral);
     border-radius: var(--radio-control);
+  }
+  [data-worlds-panel] .paso-firma {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .huella {
+    overflow-wrap: anywhere;
+    font-size: 0.75rem;
   }
   [data-worlds-panel] .pasos-cierre {
     margin: 0;

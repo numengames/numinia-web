@@ -1,25 +1,22 @@
 /**
  * The worlds room's words (LAP › Worlds), five locales. The room's frame
  * (title, intro, refusal) stays in lap.ts with the rest of the LAP; these
- * are the console's own: figures, filters, views, cards, the wizard, the
- * change dialogs and the history. `{name}` placeholders are filled by
- * `fill()` in lib/worlds.ts.
+ * are the console's own: figures, filters, views, cards, the machines, the
+ * wizard, the signed actions and the history. `{name}` placeholders are
+ * filled by `fill()` in lib/worlds.ts.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import type { RequestKind } from '../lib/fleet';
 
 export interface WorldsRoomMessages {
   readonly loading: string;
   readonly failed: string;
-  /** GitHub's keyless quota (60 reads an hour per address) is spent; `{time}` is when it reopens. */
-  readonly quota: string;
   readonly retry: string;
-  /** The book was read, but the open proposals and/or the history were refused this time. */
-  readonly missingNote: string;
-  readonly missingParts: { readonly pulls: string; readonly history: string };
   readonly empty: string;
   readonly noMatch: string;
-  readonly keyless: string;
+  /** No machine's door answers: nothing can be created right now. */
+  readonly noMachine: string;
   readonly stats: {
     readonly total: string;
     readonly running: string;
@@ -41,7 +38,7 @@ export interface WorldsRoomMessages {
     readonly stopped: string;
     readonly unreachable: string;
     readonly unknown: string;
-    readonly requested: string;
+    readonly changing: string;
   };
   readonly reasons: {
     readonly users: string;
@@ -52,12 +49,14 @@ export interface WorldsRoomMessages {
     readonly http: string;
     readonly shape: string;
     readonly stopped: string;
-    readonly requested: string;
+    readonly creating: string;
+    readonly stopping: string;
+    readonly starting: string;
+    readonly deleting: string;
     readonly unknown: string;
   };
   readonly badges: {
     readonly missingCard: string;
-    readonly pending: string;
     readonly legacy: string;
     readonly legacyNote: string;
   };
@@ -73,14 +72,54 @@ export interface WorldsRoomMessages {
     readonly open: string;
     readonly stop: string;
     readonly start: string;
-    readonly close: string;
+    readonly delete: string;
+    readonly download: string;
     readonly newWorld: string;
     readonly more: string;
     readonly less: string;
-    readonly order: string;
   };
   readonly unplaced: string;
   readonly coverAlt: string;
+  /** The fleet's machines, each through its door. */
+  readonly machines: {
+    readonly title: string;
+    readonly open: string;
+    readonly closed: string;
+    /** Above the bootstrap line, which carries the Oracle's own wallet. */
+    readonly connect: string;
+    readonly copy: string;
+    readonly copied: string;
+    readonly adminCode: string;
+  };
+  /** One signed request on its way: `{m}` is the machine. */
+  readonly steps: {
+    readonly signing: string;
+    readonly sending: string;
+    readonly working: string;
+    readonly preparing: string;
+  };
+  /** Why a signed request did not go through: `{m}` machine, `{w}` wallet, `{rule}`, `{code}`. */
+  readonly problems: {
+    readonly noWallet: string;
+    readonly otherWallet: string;
+    readonly declined: string;
+    readonly notOracle: string;
+    readonly expired: string;
+    readonly replayed: string;
+    readonly exists: string;
+    readonly addressTaken: string;
+    readonly missing: string;
+    readonly addressMismatch: string;
+    readonly refused: string;
+    readonly otherMachine: string;
+    readonly slowDown: string;
+    readonly noAdminCode: string;
+    readonly origin: string;
+    readonly unreachable: string;
+    readonly machine: string;
+    readonly late: string;
+    readonly generic: string;
+  };
   readonly wizard: {
     readonly title: string;
     readonly stepCard: string;
@@ -117,38 +156,55 @@ export interface WorldsRoomMessages {
     readonly cancel: string;
     /** Empties the wizard: the draft is kept otherwise, even when it is closed. */
     readonly restart: string;
-    readonly propose: string;
-    readonly proposing: string;
+    readonly create: string;
     readonly resultTitle: string;
-    readonly resultPr: string;
-    readonly resultAfter: string;
-    readonly manualTitle: string;
-    readonly manualNote: string;
-    /** Shown with the index the PR must also carry (create and close). */
-    readonly manualIndex: string;
-    readonly manualEdit: string;
-    readonly openGithub: string;
+    readonly resultNote: string;
+    readonly openWorld: string;
     readonly done: string;
-    readonly error: string;
-    readonly pendingExists: string;
+  };
+  /** The machine's admin code, shown to a signed Oracle. */
+  readonly code: {
+    readonly title: string;
+    readonly intro: string;
+    readonly confirm: string;
+    readonly shown: string;
+    readonly chat: string;
   };
   readonly change: {
     readonly stopTitle: string;
     readonly startTitle: string;
-    readonly closeTitle: string;
+    readonly deleteTitle: string;
+    readonly downloadTitle: string;
     readonly stopIntro: string;
     readonly startIntro: string;
-    readonly closeIntro: string;
-    readonly closeSteps: readonly string[];
+    readonly deleteWarning: string;
+    /** `{d}` is the world's address. */
+    readonly deleteSteps: readonly string[];
+    readonly deleteCopyFirst: string;
+    readonly downloadFirst: string;
+    readonly downloadIntro: string;
     readonly typeToConfirm: string;
-    readonly confirm: string;
+    readonly stopConfirm: string;
+    readonly startConfirm: string;
+    readonly deleteConfirm: string;
+    readonly downloadConfirm: string;
+    readonly stopped: string;
+    readonly started: string;
+    readonly deleted: string;
+  };
+  /** A ready copy: `{f}` file name, `{s}` size, `{h}` fingerprint, `{when}` expiry. */
+  readonly copy: {
+    readonly ready: string;
+    readonly save: string;
+    readonly fingerprint: string;
+    readonly expires: string;
   };
   readonly history: {
     readonly title: string;
     readonly empty: string;
-    readonly all: string;
+    readonly failed: string;
+    readonly kinds: Readonly<Record<RequestKind, string>>;
   };
-  readonly invalidTitle: string;
   readonly fieldNames: {
     readonly id: string;
     readonly card: string;
@@ -165,18 +221,11 @@ export interface WorldsRoomMessages {
 export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = {
   es: {
     loading: 'Leyendo la flota…',
-    failed: 'No se pudo leer el libro de órdenes ({detail}).',
-    quota:
-      'GitHub solo deja 60 lecturas por hora sin llave desde tu dirección, y se han gastado. Vuelve a abrir a las {time}.',
+    failed: 'No se pudo leer la flota ({detail}).',
     retry: 'Reintentar',
-    missingParts: { pulls: 'las propuestas abiertas', history: 'el historial' },
-    missingNote:
-      'Esta vez GitHub no ha dejado leer {what}: el libro se muestra sin esa parte. Al recargar más tarde vuelve.',
-    empty:
-      'Todavía no hay mundos en la flota. Cada mundo nace con su ficha en la Summa y su orden en numinia-assets.',
+    empty: 'Todavía no hay mundos en la flota. Crea el primero con «Nuevo mundo».',
     noMatch: 'Ningún mundo coincide con los filtros.',
-    keyless:
-      'La sala aún no tiene llave para abrir propuestas: cada cambio se abre en GitHub, con tu cuenta.',
+    noMachine: 'Ninguna máquina responde ahora mismo: no se pueden crear mundos.',
     stats: { total: 'Total', running: 'En marcha', stopped: 'Parados', problems: 'Con problemas' },
     search: 'Buscar por nombre, dirección o servidor…',
     allStates: 'Todos',
@@ -188,7 +237,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Parado',
       unreachable: 'No responde',
       unknown: 'Sin comprobar',
-      requested: 'Pedido',
+      changing: 'Cambiando',
     },
     reasons: {
       users: '{n} dentro',
@@ -198,13 +247,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       network: 'no se pudo conectar',
       http: 'respondió {s}',
       shape: 'contestó algo que no es un mundo',
-      stopped: 'parado por su orden',
-      requested: 'pedido en la propuesta #{n}',
+      stopped: 'parado',
+      creating: 'su máquina lo está creando',
+      stopping: 'su máquina lo está parando',
+      starting: 'su máquina lo está arrancando',
+      deleting: 'su máquina lo está borrando',
       unknown: 'todavía sin comprobar',
     },
     badges: {
       missingCard: 'Sin ficha',
-      pending: 'Cambio pedido · #{n}',
       legacy: 'Legado',
       legacyNote:
         'Corre en la máquina antigua, montada a mano antes de la flota: la sala lo vigila, pero no lo cambia.',
@@ -221,14 +272,55 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       open: 'Abrir',
       stop: 'Parar',
       start: 'Arrancar',
-      close: 'Cerrar',
+      delete: 'Borrar',
+      download: 'Descargar',
       newWorld: 'Nuevo mundo',
       more: 'Ver {n} más',
       less: 'Ver menos',
-      order: 'Ver la orden',
     },
-    unplaced: 'Sin servidor todavía',
+    unplaced: 'Sin lugar conocido',
     coverAlt: 'Carátula de {t}',
+    machines: {
+      title: 'Máquinas',
+      open: '{m} responde',
+      closed: '{m} no responde ({why}).',
+      connect:
+        'Si es nueva, o todavía no conoce tu cartera, entra una vez en ella y ejecuta esta línea; lleva tu cartera dentro:',
+      copy: 'Copiar',
+      copied: 'Copiado',
+      adminCode: 'Código de administración',
+    },
+    steps: {
+      signing: 'Tu cartera te pide firmar…',
+      sending: 'Enviando la petición a {m}…',
+      working: '{m} lo está haciendo…',
+      preparing: '{m} está preparando el zip…',
+    },
+    problems: {
+      noWallet:
+        'No encuentro en este navegador la cartera con la que entraste. Vuelve a Sesión, conéctala y repite.',
+      otherWallet:
+        'La cartera conectada ({w}) no es la de tu sesión. Cambia de cuenta en la cartera o vuelve a entrar.',
+      declined: 'Has cancelado la firma: no se ha enviado nada.',
+      notOracle:
+        '{m} no tiene tu cartera en su lista de Oráculos. Ejecuta en la máquina su línea de arranque con tu cartera.',
+      expired: 'La firma llegó caducada: revisa la hora de tu ordenador y repite.',
+      replayed: 'Esa petición ya se había enviado.',
+      exists: 'Ya hay un mundo con ese nombre en {m}.',
+      addressTaken: 'Esa dirección ya es de otro mundo de {m}.',
+      missing: 'Ese mundo ya no está en {m}; recarga la sala.',
+      addressMismatch: 'La dirección no coincide con la del mundo; recarga la sala.',
+      refused:
+        '{m} no acepta esa orden: el motor, la dirección o los límites se salen de sus reglas.',
+      otherMachine: 'Esa petición era para otra máquina.',
+      slowDown: 'Demasiadas peticiones seguidas: espera un par de minutos.',
+      noAdminCode: '{m} todavía no tiene código de administración.',
+      origin: '{m} no acepta peticiones desde esta página.',
+      unreachable: 'No se pudo hablar con {m}: no responde.',
+      machine: '{m} lo intentó y no pudo ({rule}).',
+      late: '{m} lo ha recibido, pero aún no ha terminado. Mira la sala en un minuto.',
+      generic: '{m} no aceptó la petición ({code}).',
+    },
     wizard: {
       title: 'Nuevo mundo',
       stepCard: 'Ficha',
@@ -240,7 +332,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       cardNone:
         'La Summa todavía no tiene fichas de mundos: escribe el nombre que tendrá la ficha.',
       idLabel: 'Nombre del mundo',
-      idHint: 'Minúsculas, números y guiones. Nombra a la vez el mundo, el fichero de su orden y su ficha en la Summa.',
+      idHint: 'Minúsculas, números y guiones. Nombra a la vez el mundo y su ficha en la Summa.',
       cardLabel: 'Ficha en la Summa',
       serverLabel: 'Servidor',
       serverHint: 'La máquina de la flota donde correrá el mundo.',
@@ -250,65 +342,85 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       labelInvalid: 'Una sola palabra: minúsculas, números y guiones, sin puntos.',
       addressTaken: '{d} ya es la dirección de {w}: elige otro nombre.',
       legacyMove:
-        '{d} es hoy {w}, en la máquina antigua. La orden lo traerá a {m}: copia antes sus datos y apunta su registro DNS a {m}.',
+        '{d} es hoy {w}, en la máquina antigua. Al crearlo aquí pasará a {m}: copia antes sus datos y apunta su registro DNS a {m}.',
       dnsChecking: 'Mirando a dónde apunta {d}…',
       dnsMachine: '{d} ya apunta a {m}: listo.',
       dnsElsewhere: '{d} ya apunta a otra máquina: elige otro nombre.',
       dnsNone:
-        '{d} aún no existe en el DNS: crea un registro A hacia {m} (solo DNS) antes de aprobar la propuesta.',
-      dnsUnknown: 'No se pudo comprobar a dónde apunta {d}; revísalo antes de aprobar.',
+        '{d} aún no existe en el DNS: crea un registro A hacia {m} (solo DNS); hasta entonces el mundo no se abrirá.',
+      dnsUnknown: 'No se pudo comprobar a dónde apunta {d}; revísalo si el mundo no se abre.',
       imageLabel: 'Motor',
       imageHint: 'Una versión fijada del motor: etiqueta sha- o digest, nunca latest.',
       memoryLabel: 'Memoria',
       cpusLabel: 'CPU',
       uploadLabel: 'Subida máxima (MB)',
-      confirmIntro: 'Esta es la orden que se propondrá en el libro de la flota:',
+      confirmIntro:
+        'Tu cartera te pedirá firmar esta petición. La máquina comprueba la firma y crea el mundo; nadie más tiene que aprobar nada.',
       invalid: 'Revisa: {fields}.',
       next: 'Siguiente',
       back: 'Atrás',
       cancel: 'Cancelar',
       restart: 'Empezar de nuevo',
-      propose: 'Proponer',
-      proposing: 'Abriendo la propuesta…',
-      resultTitle: 'Propuesta abierta',
-      resultPr: 'Pull request #{n}',
-      resultAfter:
-        'Cuando se apruebe, el servidor de la flota la leerá y hará el cambio. La sala lo mostrará en cuanto ocurra.',
-      manualTitle: 'Ábrelo en GitHub',
-      manualNote:
-        'GitHub abrirá el cambio ya escrito; elige «Create a new branch and start a pull request» para proponerlo.',
-      manualIndex:
-        'La misma propuesta debe tocar también el índice del libro, open-worlds/index.json, y dejarlo así (en la rama de la propuesta, antes de pedir la revisión; si no, las pruebas del depósito la rechazan):',
-      manualEdit:
-        'GitHub abrirá la orden: cambia «state» a «{state}» y elige «Create a new branch and start a pull request».',
-      openGithub: 'Abrir en GitHub',
+      create: 'Firmar y crear',
+      resultTitle: '{t} está naciendo',
+      resultNote:
+        '{m} ha creado el mundo. Se abre en {d} en cuanto arranque, en menos de un minuto.',
+      openWorld: 'Abrir el mundo',
       done: 'Hecho',
-      error: 'No se pudo abrir la propuesta ({detail}).',
-      pendingExists: 'Ya hay una propuesta abierta para este mundo.',
+    },
+    code: {
+      title: 'Código de administración de {m}',
+      intro: 'Es el mismo para todos los mundos de {m}. Tu cartera te pedirá firmar para verlo.',
+      confirm: 'Firmar y ver',
+      shown: 'Código de administración:',
+      chat: 'En el chat del mundo escribe /admin {code} y quedarás como administrador en ese navegador.',
     },
     change: {
       stopTitle: 'Parar {t}',
       startTitle: 'Arrancar {t}',
-      closeTitle: 'Cerrar {t}',
+      deleteTitle: 'Borrar {t}',
+      downloadTitle: 'Descargar {t}',
       stopIntro:
-        'Se propondrá cambiar su orden a «parado». Al aprobarse, el servidor apaga el mundo; sus datos, su copia y su ficha se quedan.',
-      startIntro:
-        'Se propondrá cambiar su orden a «en marcha». Al aprobarse, el servidor lo vuelve a encender.',
-      closeIntro: 'Se propondrá quitar su orden de la flota. Al aprobarse:',
-      closeSteps: [
-        'el servidor apaga el mundo y deja de servir su dirección;',
-        'su ficha en la Summa, sus copias y sus datos se quedan: no se borra nada;',
-        'volver a abrirlo es proponer una orden nueva.',
+        'La máquina apaga el mundo. Sus datos se quedan: puedes volver a arrancarlo cuando quieras.',
+      startIntro: 'La máquina lo vuelve a encender, con sus datos.',
+      deleteWarning: 'Esto no se puede deshacer.',
+      deleteSteps: [
+        'la máquina apaga el mundo y deja de servir {d};',
+        'se borran su base de datos, sus archivos, sus claves y las copias que había en la máquina;',
+        'su ficha en la Summa se queda.',
       ],
+      deleteCopyFirst: '¿Quieres conservarlo? Descarga antes una copia.',
+      downloadFirst: 'Descargar una copia',
+      downloadIntro:
+        'La máquina prepara un zip con el mundo entero: su base de datos y sus archivos, un docker-compose para abrirlo en tu ordenador (localhost:3000) con claves nuevas, y una guía. El enlace dura un día.',
       typeToConfirm: 'Escribe {id} para confirmar.',
-      confirm: 'Proponer',
+      stopConfirm: 'Firmar y parar',
+      startConfirm: 'Firmar y arrancar',
+      deleteConfirm: 'Borrar para siempre',
+      downloadConfirm: 'Firmar y preparar',
+      stopped: '{t} está parado.',
+      started: '{t} vuelve a estar en marcha.',
+      deleted: '{t} ya no existe.',
+    },
+    copy: {
+      ready: 'Listo: {f} · {s}',
+      save: 'Descargar el zip',
+      fingerprint: 'Huella SHA-256: {h}',
+      expires: 'El enlace caduca: {when}.',
     },
     history: {
-      title: 'Historial de la flota',
-      empty: 'El libro de órdenes aún no tiene historia.',
-      all: 'Todo el historial en GitHub',
+      title: 'Lo que han hecho las máquinas',
+      empty: 'Las máquinas todavía no han hecho nada.',
+      failed: 'falló',
+      kinds: {
+        CreateWorld: 'creó',
+        DeleteWorld: 'borró',
+        StopWorld: 'paró',
+        StartWorld: 'arrancó',
+        DownloadWorld: 'copió',
+        ShowAdminCode: 'mostró el código',
+      },
     },
-    invalidTitle: 'Órdenes que no cumplen la regla del depósito',
     fieldNames: {
       id: 'nombre',
       card: 'ficha',
@@ -323,18 +435,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   },
   en: {
     loading: 'Reading the fleet…',
-    failed: 'The order book could not be read ({detail}).',
-    quota:
-      'GitHub allows 60 keyless reads an hour from your address, and they are spent. It reopens at {time}.',
+    failed: 'The fleet could not be read ({detail}).',
     retry: 'Try again',
-    missingParts: { pulls: 'the open proposals', history: 'the history' },
-    missingNote:
-      'This time GitHub refused to serve {what}: the book is shown without that part. Reload later and it is back.',
-    empty:
-      'No worlds in the fleet yet. Each world is born with its card in the Summa and its order in numinia-assets.',
+    empty: 'No worlds in the fleet yet. Create the first one with “New world”.',
     noMatch: 'No world matches the filters.',
-    keyless:
-      'The room has no key to open proposals yet: each change opens on GitHub, under your own account.',
+    noMachine: 'No machine is answering right now: worlds cannot be created.',
     stats: { total: 'Total', running: 'Running', stopped: 'Stopped', problems: 'Problems' },
     search: 'Search by name, address or server…',
     allStates: 'All',
@@ -346,7 +451,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Stopped',
       unreachable: 'Not answering',
       unknown: 'Unchecked',
-      requested: 'Requested',
+      changing: 'Changing',
     },
     reasons: {
       users: '{n} inside',
@@ -356,13 +461,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       network: 'could not connect',
       http: 'answered {s}',
       shape: 'answered something that is not a world',
-      stopped: 'stopped by its order',
-      requested: 'requested in proposal #{n}',
+      stopped: 'stopped',
+      creating: 'its machine is creating it',
+      stopping: 'its machine is stopping it',
+      starting: 'its machine is starting it',
+      deleting: 'its machine is deleting it',
       unknown: 'not checked yet',
     },
     badges: {
       missingCard: 'No card',
-      pending: 'Change requested · #{n}',
       legacy: 'Legacy',
       legacyNote:
         'Runs on the old machine, set up by hand before the fleet: the room watches it but does not change it.',
@@ -379,14 +486,55 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       open: 'Open',
       stop: 'Stop',
       start: 'Start',
-      close: 'Close',
+      delete: 'Delete',
+      download: 'Download',
       newWorld: 'New world',
       more: 'Show {n} more',
       less: 'Show less',
-      order: 'See the order',
     },
-    unplaced: 'No server yet',
+    unplaced: 'No known place',
     coverAlt: 'Cover of {t}',
+    machines: {
+      title: 'Machines',
+      open: '{m} is answering',
+      closed: '{m} is not answering ({why}).',
+      connect:
+        'If it is new, or does not know your wallet yet, log in to it once and run this line; it carries your wallet:',
+      copy: 'Copy',
+      copied: 'Copied',
+      adminCode: 'Admin code',
+    },
+    steps: {
+      signing: 'Your wallet asks you to sign…',
+      sending: 'Sending the request to {m}…',
+      working: '{m} is doing it…',
+      preparing: '{m} is preparing the zip…',
+    },
+    problems: {
+      noWallet:
+        'The wallet you signed in with is not connected in this browser. Go back to Session, connect it and try again.',
+      otherWallet:
+        'The connected wallet ({w}) is not your session’s. Switch accounts in the wallet or sign in again.',
+      declined: 'You cancelled the signature: nothing was sent.',
+      notOracle:
+        '{m} does not list your wallet as an Oracle. Run the machine’s bootstrap line on it with your wallet.',
+      expired: 'The signature arrived expired: check your computer’s clock and try again.',
+      replayed: 'That request had already been sent.',
+      exists: '{m} already has a world with that name.',
+      addressTaken: 'That address already belongs to another world on {m}.',
+      missing: 'That world is no longer on {m}; reload the room.',
+      addressMismatch: 'The address does not match the world’s; reload the room.',
+      refused:
+        '{m} does not accept that order: the engine, the address or the limits are outside its rules.',
+      otherMachine: 'That request was for another machine.',
+      slowDown: 'Too many requests in a row: wait a couple of minutes.',
+      noAdminCode: '{m} has no admin code yet.',
+      origin: '{m} does not accept requests from this page.',
+      unreachable: 'Could not reach {m}: it is not answering.',
+      machine: '{m} tried and could not ({rule}).',
+      late: '{m} received it but has not finished yet. Look at the room in a minute.',
+      generic: '{m} did not accept the request ({code}).',
+    },
     wizard: {
       title: 'New world',
       stepCard: 'Card',
@@ -397,7 +545,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Every world has its card in the Summa: it says what the world is and carries the cover, the same picture people see while it loads.',
       cardNone: 'The Summa has no world cards yet: type the name the card will have.',
       idLabel: 'World name',
-      idHint: 'Lowercase letters, digits and hyphens. It names the world, its order file and its card in the Summa alike.',
+      idHint:
+        'Lowercase letters, digits and hyphens. It names the world and its card in the Summa alike.',
       cardLabel: 'Card in the Summa',
       serverLabel: 'Server',
       serverHint: 'The fleet machine the world will run on.',
@@ -407,65 +556,85 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       labelInvalid: 'One word: lowercase letters, digits and hyphens, no dots.',
       addressTaken: '{d} is already the address of {w}: choose another name.',
       legacyMove:
-        '{d} is {w} today, on the old machine. The order brings it to {m}: copy its data first and point its DNS record at {m}.',
+        '{d} is {w} today, on the old machine. Creating it here moves it to {m}: copy its data first and point its DNS record at {m}.',
       dnsChecking: 'Looking up where {d} points…',
       dnsMachine: '{d} already points at {m}: ready.',
       dnsElsewhere: '{d} already points at another machine: choose another name.',
       dnsNone:
-        '{d} is not in DNS yet: create an A record to {m} (DNS only) before approving the proposal.',
-      dnsUnknown: 'Could not check where {d} points; check it before approving.',
+        '{d} is not in DNS yet: create an A record to {m} (DNS only); until then the world will not open.',
+      dnsUnknown: 'Could not check where {d} points; check it if the world does not open.',
       imageLabel: 'Engine',
       imageHint: 'A pinned engine build: a sha- tag or a digest, never latest.',
       memoryLabel: 'Memory',
       cpusLabel: 'CPU',
       uploadLabel: 'Largest upload (MB)',
-      confirmIntro: 'This is the order that will be proposed in the fleet’s book:',
+      confirmIntro:
+        'Your wallet will ask you to sign this request. The machine checks the signature and creates the world; nobody else has to approve anything.',
       invalid: 'Check: {fields}.',
       next: 'Next',
       back: 'Back',
       cancel: 'Cancel',
       restart: 'Start again',
-      propose: 'Propose',
-      proposing: 'Opening the proposal…',
-      resultTitle: 'Proposal opened',
-      resultPr: 'Pull request #{n}',
-      resultAfter:
-        'Once approved, the fleet’s server reads it and makes the change. The room shows it as soon as it happens.',
-      manualTitle: 'Open it on GitHub',
-      manualNote:
-        'GitHub opens the change already written; choose “Create a new branch and start a pull request” to propose it.',
-      manualIndex:
-        'The same proposal must also touch the book’s index, open-worlds/index.json, and leave it like this (on the proposal’s branch, before asking for review; otherwise the depot’s tests refuse it):',
-      manualEdit:
-        'GitHub opens the order: change “state” to “{state}” and choose “Create a new branch and start a pull request”.',
-      openGithub: 'Open on GitHub',
+      create: 'Sign and create',
+      resultTitle: '{t} is being born',
+      resultNote:
+        '{m} has created the world. It opens at {d} as soon as it starts, in under a minute.',
+      openWorld: 'Open the world',
       done: 'Done',
-      error: 'The proposal could not be opened ({detail}).',
-      pendingExists: 'This world already has an open proposal.',
+    },
+    code: {
+      title: 'Admin code of {m}',
+      intro: 'It is the same for every world on {m}. Your wallet will ask you to sign to see it.',
+      confirm: 'Sign and see',
+      shown: 'Admin code:',
+      chat: 'Type /admin {code} in the world’s chat and you are its admin in that browser.',
     },
     change: {
       stopTitle: 'Stop {t}',
       startTitle: 'Start {t}',
-      closeTitle: 'Close {t}',
+      deleteTitle: 'Delete {t}',
+      downloadTitle: 'Download {t}',
       stopIntro:
-        'This proposes setting its order to “stopped”. Once approved, the server switches the world off; its data, copy and card stay.',
-      startIntro:
-        'This proposes setting its order to “running”. Once approved, the server switches it on again.',
-      closeIntro: 'This proposes removing its order from the fleet. Once approved:',
-      closeSteps: [
-        'the server switches the world off and stops serving its address;',
-        'its card in the Summa, its copies and its data stay: nothing is deleted;',
-        'reopening it means proposing a new order.',
+        'The machine switches the world off. Its data stays: you can start it again whenever you like.',
+      startIntro: 'The machine switches it on again, with its data.',
+      deleteWarning: 'This cannot be undone.',
+      deleteSteps: [
+        'the machine switches the world off and stops serving {d};',
+        'its database, its files, its keys and the copies on the machine are deleted;',
+        'its card in the Summa stays.',
       ],
+      deleteCopyFirst: 'Want to keep it? Download a copy first.',
+      downloadFirst: 'Download a copy',
+      downloadIntro:
+        'The machine prepares a zip with the whole world: its database and files, a docker-compose to open it on your computer (localhost:3000) with fresh keys, and a short guide. The link lasts a day.',
       typeToConfirm: 'Type {id} to confirm.',
-      confirm: 'Propose',
+      stopConfirm: 'Sign and stop',
+      startConfirm: 'Sign and start',
+      deleteConfirm: 'Delete forever',
+      downloadConfirm: 'Sign and prepare',
+      stopped: '{t} is stopped.',
+      started: '{t} is running again.',
+      deleted: '{t} no longer exists.',
+    },
+    copy: {
+      ready: 'Ready: {f} · {s}',
+      save: 'Download the zip',
+      fingerprint: 'SHA-256 fingerprint: {h}',
+      expires: 'The link expires: {when}.',
     },
     history: {
-      title: 'Fleet history',
-      empty: 'The order book has no history yet.',
-      all: 'Full history on GitHub',
+      title: 'What the machines did',
+      empty: 'The machines have done nothing yet.',
+      failed: 'failed',
+      kinds: {
+        CreateWorld: 'created',
+        DeleteWorld: 'deleted',
+        StopWorld: 'stopped',
+        StartWorld: 'started',
+        DownloadWorld: 'copied',
+        ShowAdminCode: 'showed the code',
+      },
     },
-    invalidTitle: 'Orders that break the depot’s rule',
     fieldNames: {
       id: 'name',
       card: 'card',
@@ -480,18 +649,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   },
   ja: {
     loading: 'フリートを読み込み中…',
-    failed: 'オーダーブックを読み込めませんでした（{detail}）。',
-    quota:
-      'GitHub はキーなしの読み取りを 1 時間に 60 回までしか許可せず、使い切りました。{time} に再開します。',
+    failed: 'フリートを読み込めませんでした（{detail}）。',
     retry: '再試行',
-    missingParts: { pulls: '未処理の提案', history: '履歴' },
-    missingNote:
-      '今回 GitHub は{what}を返しませんでした。その部分なしでブックを表示しています。後で再読み込みすると戻ります。',
     empty:
-      'フリートにはまだワールドがありません。各ワールドはスンマのカードと numinia-assets のオーダーから生まれます。',
+      'フリートにはまだワールドがありません。「新しいワールド」で最初のワールドを作成してください。',
     noMatch: 'フィルターに一致するワールドはありません。',
-    keyless:
-      'この部屋にはまだ提案を開く鍵がありません。変更はあなたのアカウントで GitHub 上に開かれます。',
+    noMachine: '現在応答しているマシンがありません。ワールドを作成できません。',
     stats: { total: '合計', running: '稼働中', stopped: '停止中', problems: '問題あり' },
     search: '名前・アドレス・サーバーで検索…',
     allStates: 'すべて',
@@ -503,7 +666,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: '停止中',
       unreachable: '応答なし',
       unknown: '未確認',
-      requested: '申請中',
+      changing: '変更中',
     },
     reasons: {
       users: '{n} 人が滞在中',
@@ -513,13 +676,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       network: '接続できませんでした',
       http: '{s} を返しました',
       shape: 'ワールドではない応答でした',
-      stopped: 'オーダーにより停止',
-      requested: '提案 #{n} で申請中',
+      stopped: '停止中',
+      creating: 'マシンが作成中',
+      stopping: 'マシンが停止中',
+      starting: 'マシンが起動中',
+      deleting: 'マシンが削除中',
       unknown: 'まだ確認していません',
     },
     badges: {
       missingCard: 'カードなし',
-      pending: '変更申請中 · #{n}',
       legacy: 'レガシー',
       legacyNote:
         'フリート以前に手作業で構築した旧マシンで稼働中。このルームは見守るだけで、変更はしません。',
@@ -536,14 +701,55 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       open: '開く',
       stop: '停止',
       start: '起動',
-      close: '閉じる',
+      delete: '削除',
+      download: 'ダウンロード',
       newWorld: '新しいワールド',
       more: 'さらに {n} 件',
       less: '表示を減らす',
-      order: 'オーダーを見る',
     },
-    unplaced: 'サーバー未定',
+    unplaced: '場所不明',
     coverAlt: '{t} のカバー',
+    machines: {
+      title: 'マシン',
+      open: '{m} は応答しています',
+      closed: '{m} は応答していません（{why}）。',
+      connect:
+        '新しいマシンの場合、またはまだあなたのウォレットを知らない場合は、一度ログインしてこの行を実行してください（あなたのウォレットが含まれています）：',
+      copy: 'コピー',
+      copied: 'コピーしました',
+      adminCode: '管理コード',
+    },
+    steps: {
+      signing: 'ウォレットが署名を求めています…',
+      sending: '{m} にリクエストを送信中…',
+      working: '{m} が処理中…',
+      preparing: '{m} が zip を準備中…',
+    },
+    problems: {
+      noWallet:
+        'ログインに使ったウォレットがこのブラウザで接続されていません。セッションに戻って接続し、もう一度お試しください。',
+      otherWallet:
+        '接続中のウォレット（{w}）はセッションのものではありません。ウォレットのアカウントを切り替えるか、ログインし直してください。',
+      declined: '署名をキャンセルしました。何も送信されていません。',
+      notOracle:
+        '{m} はあなたのウォレットをオラクルとして登録していません。あなたのウォレットを付けてマシンの起動行を実行してください。',
+      expired: '署名の期限が切れていました。コンピューターの時刻を確認してもう一度お試しください。',
+      replayed: 'そのリクエストはすでに送信済みです。',
+      exists: '{m} にはすでにその名前のワールドがあります。',
+      addressTaken: 'そのアドレスは {m} の別のワールドが使っています。',
+      missing: 'そのワールドはもう {m} にありません。ルームを再読み込みしてください。',
+      addressMismatch: 'アドレスがワールドのものと一致しません。ルームを再読み込みしてください。',
+      refused:
+        '{m} はそのオーダーを受け付けません。エンジン、アドレス、または上限がルールの範囲外です。',
+      otherMachine: 'そのリクエストは別のマシン宛てでした。',
+      slowDown: 'リクエストが続きすぎています。数分お待ちください。',
+      noAdminCode: '{m} にはまだ管理コードがありません。',
+      origin: '{m} はこのページからのリクエストを受け付けません。',
+      unreachable: '{m} と通信できませんでした。応答がありません。',
+      machine: '{m} は試みましたが、できませんでした（{rule}）。',
+      late: '{m} は受け取りましたが、まだ終わっていません。1 分後にルームを確認してください。',
+      generic: '{m} はリクエストを受け付けませんでした（{code}）。',
+    },
     wizard: {
       title: '新しいワールド',
       stepCard: 'カード',
@@ -554,7 +760,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '各ワールドはスンマにカードを持ちます。何のワールドかを示し、読み込み中に表示されるのと同じカバー画像を持ちます。',
       cardNone: 'スンマにはまだワールドのカードがありません。カードの名前を入力してください。',
       idLabel: 'ワールド名',
-      idHint: '小文字・数字・ハイフン。ワールド名であり、オーダーファイル名であり、スンマのカード名でもあります。',
+      idHint: '小文字・数字・ハイフン。ワールド名であり、スンマのカード名でもあります。',
       cardLabel: 'スンマのカード',
       serverLabel: 'サーバー',
       serverHint: 'ワールドを動かすフリートのマシン。',
@@ -564,64 +770,83 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       labelInvalid: '1 語のみ：小文字・数字・ハイフン。ドットは使えません。',
       addressTaken: '{d} はすでに {w} のアドレスです。別の名前を選んでください。',
       legacyMove:
-        '{d} は現在、旧マシン上の {w} です。このオーダーで {m} に移ります。先にデータをコピーし、DNS レコードを {m} に向けてください。',
+        '{d} は現在、旧マシン上の {w} です。ここで作成すると {m} に移ります。先にデータをコピーし、DNS レコードを {m} に向けてください。',
       dnsChecking: '{d} の向き先を確認中…',
       dnsMachine: '{d} はすでに {m} を指しています。準備完了。',
       dnsElsewhere: '{d} は別のマシンを指しています。別の名前を選んでください。',
       dnsNone:
-        '{d} はまだ DNS にありません。提案を承認する前に {m} への A レコード（DNS のみ）を作成してください。',
-      dnsUnknown: '{d} の向き先を確認できませんでした。承認前に確認してください。',
+        '{d} はまだ DNS にありません。{m} への A レコード（DNS のみ）を作成してください。それまでワールドは開きません。',
+      dnsUnknown: '{d} の向き先を確認できませんでした。ワールドが開かない場合は確認してください。',
       imageLabel: 'エンジン',
       imageHint: '固定されたエンジンのビルド：sha- タグかダイジェスト。latest は不可。',
       memoryLabel: 'メモリ',
       cpusLabel: 'CPU',
       uploadLabel: '最大アップロード (MB)',
-      confirmIntro: 'フリートの台帳に提案されるオーダーはこちらです：',
+      confirmIntro:
+        'ウォレットがこのリクエストへの署名を求めます。マシンが署名を確認してワールドを作成します。ほかの誰の承認も要りません。',
       invalid: '確認してください：{fields}。',
       next: '次へ',
       back: '戻る',
       cancel: 'キャンセル',
       restart: '最初からやり直す',
-      propose: '提案する',
-      proposing: '提案を作成中…',
-      resultTitle: '提案を作成しました',
-      resultPr: 'プルリクエスト #{n}',
-      resultAfter:
-        '承認されるとフリートのサーバーがそれを読み、変更を実行します。部屋にはすぐに反映されます。',
-      manualTitle: 'GitHub で開く',
-      manualNote:
-        'GitHub が変更を書き込んだ状態で開きます。「Create a new branch and start a pull request」を選んで提案してください。',
-      manualIndex:
-        '同じ提案で、ブックの索引 open-worlds/index.json も変更し、次の内容にしてください（提案のブランチ上で、レビュー依頼の前に。そうしないとデポのテストが拒否します）：',
-      manualEdit:
-        'GitHub がオーダーを開きます。「state」を「{state}」に変え、「Create a new branch and start a pull request」を選んでください。',
-      openGithub: 'GitHub で開く',
+      create: '署名して作成',
+      resultTitle: '{t} が誕生しています',
+      resultNote: '{m} がワールドを作成しました。起動しだい、1 分以内に {d} で開きます。',
+      openWorld: 'ワールドを開く',
       done: '完了',
-      error: '提案を作成できませんでした（{detail}）。',
-      pendingExists: 'このワールドにはすでに未処理の提案があります。',
+    },
+    code: {
+      title: '{m} の管理コード',
+      intro: '{m} のすべてのワールドで共通です。表示するにはウォレットで署名します。',
+      confirm: '署名して表示',
+      shown: '管理コード：',
+      chat: 'ワールドのチャットで /admin {code} と入力すると、そのブラウザで管理者になります。',
     },
     change: {
       stopTitle: '{t} を停止',
       startTitle: '{t} を起動',
-      closeTitle: '{t} を閉じる',
-      stopIntro:
-        'オーダーを「停止」にする提案をします。承認されるとサーバーがワールドを止めます。データ、コピー、カードは残ります。',
-      startIntro: 'オーダーを「稼働」にする提案をします。承認されるとサーバーが再び起動します。',
-      closeIntro: 'フリートからオーダーを外す提案をします。承認されると：',
-      closeSteps: [
-        'サーバーがワールドを止め、アドレスの提供をやめます。',
-        'スンマのカード、コピー、データは残ります。何も削除されません。',
-        '再開するには新しいオーダーを提案します。',
+      deleteTitle: '{t} を削除',
+      downloadTitle: '{t} をダウンロード',
+      stopIntro: 'マシンがワールドを停止します。データは残り、いつでも再び起動できます。',
+      startIntro: 'マシンがデータそのままで再び起動します。',
+      deleteWarning: 'この操作は元に戻せません。',
+      deleteSteps: [
+        'マシンがワールドを停止し、{d} の提供をやめます。',
+        'データベース、ファイル、鍵、マシン上のコピーが削除されます。',
+        'スンマのカードは残ります。',
       ],
+      deleteCopyFirst: '残しておきたい場合は、先にコピーをダウンロードしてください。',
+      downloadFirst: 'コピーをダウンロード',
+      downloadIntro:
+        'マシンがワールド全体の zip を用意します：データベースとファイル、新しい鍵でパソコン上（localhost:3000）で開くための docker-compose、短いガイド。リンクの有効期限は 1 日です。',
       typeToConfirm: '確認のため {id} と入力してください。',
-      confirm: '提案する',
+      stopConfirm: '署名して停止',
+      startConfirm: '署名して起動',
+      deleteConfirm: '完全に削除',
+      downloadConfirm: '署名して準備',
+      stopped: '{t} は停止しました。',
+      started: '{t} は再び稼働中です。',
+      deleted: '{t} はもう存在しません。',
+    },
+    copy: {
+      ready: '準備完了：{f} · {s}',
+      save: 'zip をダウンロード',
+      fingerprint: 'SHA-256 フィンガープリント：{h}',
+      expires: 'リンクの有効期限：{when}。',
     },
     history: {
-      title: 'フリートの履歴',
-      empty: 'オーダーブックにはまだ履歴がありません。',
-      all: 'GitHub ですべての履歴を見る',
+      title: 'マシンの作業履歴',
+      empty: 'マシンはまだ何もしていません。',
+      failed: '失敗',
+      kinds: {
+        CreateWorld: '作成',
+        DeleteWorld: '削除',
+        StopWorld: '停止',
+        StartWorld: '起動',
+        DownloadWorld: 'コピー',
+        ShowAdminCode: 'コード表示',
+      },
     },
-    invalidTitle: '保管庫のルールに合わないオーダー',
     fieldNames: {
       id: '名前',
       card: 'カード',
@@ -636,18 +861,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   },
   ko: {
     loading: '플릿을 읽는 중…',
-    failed: '주문 장부를 읽을 수 없습니다 ({detail}).',
-    quota:
-      'GitHub는 키 없이 한 시간에 60회만 읽기를 허용하며, 모두 소진되었습니다. {time}에 다시 열립니다.',
+    failed: '플릿을 읽을 수 없습니다 ({detail}).',
     retry: '다시 시도',
-    missingParts: { pulls: '열린 제안', history: '기록' },
-    missingNote:
-      '이번에는 GitHub가 {what}을(를) 제공하지 않았습니다. 그 부분 없이 장부를 표시합니다. 나중에 새로 고치면 돌아옵니다.',
-    empty:
-      '아직 플릿에 월드가 없습니다. 각 월드는 숨마의 카드와 numinia-assets의 주문으로 태어납니다.',
+    empty: '아직 플릿에 월드가 없습니다. “새 월드”로 첫 월드를 만드세요.',
     noMatch: '필터에 맞는 월드가 없습니다.',
-    keyless:
-      '이 방에는 아직 제안을 열 열쇠가 없습니다. 각 변경은 당신의 계정으로 GitHub에서 열립니다.',
+    noMachine: '지금 응답하는 머신이 없습니다. 월드를 만들 수 없습니다.',
     stats: { total: '전체', running: '실행 중', stopped: '정지됨', problems: '문제 있음' },
     search: '이름, 주소, 서버로 검색…',
     allStates: '전체',
@@ -659,7 +877,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: '정지됨',
       unreachable: '응답 없음',
       unknown: '미확인',
-      requested: '요청됨',
+      changing: '변경 중',
     },
     reasons: {
       users: '{n}명 접속 중',
@@ -669,13 +887,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       network: '연결할 수 없음',
       http: '{s} 응답',
       shape: '월드가 아닌 응답',
-      stopped: '주문에 따라 정지됨',
-      requested: '제안 #{n}에서 요청됨',
+      stopped: '정지됨',
+      creating: '머신이 만드는 중',
+      stopping: '머신이 정지하는 중',
+      starting: '머신이 시작하는 중',
+      deleting: '머신이 삭제하는 중',
       unknown: '아직 확인하지 않음',
     },
     badges: {
       missingCard: '카드 없음',
-      pending: '변경 요청됨 · #{n}',
       legacy: '레거시',
       legacyNote:
         '플릿 이전에 수작업으로 구성한 이전 서버에서 실행 중입니다. 이 방은 지켜보기만 하고 바꾸지 않습니다.',
@@ -692,14 +912,54 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       open: '열기',
       stop: '정지',
       start: '시작',
-      close: '닫기',
+      delete: '삭제',
+      download: '다운로드',
       newWorld: '새 월드',
       more: '{n}개 더 보기',
       less: '접기',
-      order: '주문 보기',
     },
-    unplaced: '아직 서버 없음',
+    unplaced: '알려진 장소 없음',
     coverAlt: '{t}의 커버',
+    machines: {
+      title: '머신',
+      open: '{m} 응답 중',
+      closed: '{m} 응답 없음 ({why}).',
+      connect:
+        '새 머신이거나 아직 당신의 지갑을 모른다면, 한 번 접속해서 이 줄을 실행하세요. 당신의 지갑이 들어 있습니다:',
+      copy: '복사',
+      copied: '복사됨',
+      adminCode: '관리 코드',
+    },
+    steps: {
+      signing: '지갑이 서명을 요청합니다…',
+      sending: '{m}(으)로 요청을 보내는 중…',
+      working: '{m}이(가) 처리하는 중…',
+      preparing: '{m}이(가) zip을 준비하는 중…',
+    },
+    problems: {
+      noWallet:
+        '로그인할 때 쓴 지갑이 이 브라우저에 연결되어 있지 않습니다. 세션으로 돌아가 연결한 뒤 다시 시도하세요.',
+      otherWallet:
+        '연결된 지갑({w})이 세션의 지갑이 아닙니다. 지갑에서 계정을 바꾸거나 다시 로그인하세요.',
+      declined: '서명을 취소했습니다. 아무것도 보내지 않았습니다.',
+      notOracle:
+        '{m}의 오라클 목록에 당신의 지갑이 없습니다. 당신의 지갑으로 머신의 시작 줄을 실행하세요.',
+      expired: '서명이 만료된 채 도착했습니다. 컴퓨터 시계를 확인하고 다시 시도하세요.',
+      replayed: '그 요청은 이미 보냈습니다.',
+      exists: '{m}에 이미 그 이름의 월드가 있습니다.',
+      addressTaken: '그 주소는 이미 {m}의 다른 월드가 쓰고 있습니다.',
+      missing: '그 월드는 더 이상 {m}에 없습니다. 방을 새로 고치세요.',
+      addressMismatch: '주소가 월드의 주소와 맞지 않습니다. 방을 새로 고치세요.',
+      refused: '{m}은(는) 그 주문을 받지 않습니다. 엔진, 주소 또는 한도가 규칙을 벗어납니다.',
+      otherMachine: '그 요청은 다른 머신용이었습니다.',
+      slowDown: '요청이 너무 연달아 왔습니다. 몇 분 기다리세요.',
+      noAdminCode: '{m}에는 아직 관리 코드가 없습니다.',
+      origin: '{m}은(는) 이 페이지의 요청을 받지 않습니다.',
+      unreachable: '{m}에 연결할 수 없습니다. 응답이 없습니다.',
+      machine: '{m}이(가) 시도했지만 할 수 없었습니다 ({rule}).',
+      late: '{m}이(가) 받았지만 아직 끝나지 않았습니다. 1분 뒤에 방을 보세요.',
+      generic: '{m}이(가) 요청을 받지 않았습니다 ({code}).',
+    },
     wizard: {
       title: '새 월드',
       stepCard: '카드',
@@ -710,7 +970,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         '모든 월드는 숨마에 카드가 있습니다. 월드가 무엇인지 말하고, 로딩 중에 보이는 것과 같은 커버 이미지를 담습니다.',
       cardNone: '숨마에 아직 월드 카드가 없습니다. 카드가 가질 이름을 입력하세요.',
       idLabel: '월드 이름',
-      idHint: '소문자, 숫자, 하이픈. 월드 이름이자 주문 파일 이름이자 숨마 카드 이름입니다.',
+      idHint: '소문자, 숫자, 하이픈. 월드 이름이자 숨마 카드 이름입니다.',
       cardLabel: '숨마의 카드',
       serverLabel: '서버',
       serverHint: '월드가 실행될 플릿의 머신.',
@@ -720,63 +980,83 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       labelInvalid: '한 단어만: 소문자, 숫자, 하이픈. 점은 쓸 수 없습니다.',
       addressTaken: '{d}은(는) 이미 {w}의 주소입니다. 다른 이름을 고르세요.',
       legacyMove:
-        '{d}은(는) 지금 옛 머신의 {w}입니다. 이 주문으로 {m}(으)로 옮겨집니다. 먼저 데이터를 복사하고 DNS 레코드를 {m}(으)로 돌리세요.',
+        '{d}은(는) 지금 옛 머신의 {w}입니다. 여기서 만들면 {m}(으)로 옮겨집니다. 먼저 데이터를 복사하고 DNS 레코드를 {m}(으)로 돌리세요.',
       dnsChecking: '{d}이(가) 가리키는 곳을 확인하는 중…',
       dnsMachine: '{d}은(는) 이미 {m}을(를) 가리킵니다. 준비 완료.',
       dnsElsewhere: '{d}은(는) 다른 머신을 가리킵니다. 다른 이름을 고르세요.',
       dnsNone:
-        '{d}은(는) 아직 DNS에 없습니다. 제안을 승인하기 전에 {m}(으)로 향하는 A 레코드(DNS 전용)를 만드세요.',
-      dnsUnknown: '{d}이(가) 가리키는 곳을 확인하지 못했습니다. 승인 전에 확인하세요.',
+        '{d}은(는) 아직 DNS에 없습니다. {m}(으)로 향하는 A 레코드(DNS 전용)를 만드세요. 그때까지 월드는 열리지 않습니다.',
+      dnsUnknown: '{d}이(가) 가리키는 곳을 확인하지 못했습니다. 월드가 열리지 않으면 확인하세요.',
       imageLabel: '엔진',
       imageHint: '고정된 엔진 빌드: sha- 태그나 다이제스트, latest는 안 됩니다.',
       memoryLabel: '메모리',
       cpusLabel: 'CPU',
       uploadLabel: '최대 업로드 (MB)',
-      confirmIntro: '플릿 장부에 제안될 주문입니다:',
+      confirmIntro:
+        '지갑이 이 요청에 서명하라고 합니다. 머신이 서명을 확인하고 월드를 만듭니다. 다른 누구의 승인도 필요 없습니다.',
       invalid: '확인하세요: {fields}.',
       next: '다음',
       back: '뒤로',
       cancel: '취소',
       restart: '처음부터 다시',
-      propose: '제안하기',
-      proposing: '제안을 여는 중…',
-      resultTitle: '제안을 열었습니다',
-      resultPr: '풀 리퀘스트 #{n}',
-      resultAfter: '승인되면 플릿 서버가 이를 읽고 변경을 실행합니다. 방에는 바로 반영됩니다.',
-      manualTitle: 'GitHub에서 열기',
-      manualNote:
-        'GitHub가 변경을 미리 작성한 채로 엽니다. “Create a new branch and start a pull request”를 골라 제안하세요.',
-      manualIndex:
-        '같은 제안에서 장부의 색인 open-worlds/index.json도 수정해 다음과 같이 두세요(제안 브랜치에서, 검토 요청 전에. 그렇지 않으면 저장소 테스트가 거부합니다):',
-      manualEdit:
-        'GitHub가 주문을 엽니다. “state”를 “{state}”(으)로 바꾸고 “Create a new branch and start a pull request”를 고르세요.',
-      openGithub: 'GitHub에서 열기',
+      create: '서명하고 만들기',
+      resultTitle: '{t}이(가) 태어나는 중',
+      resultNote: '{m}이(가) 월드를 만들었습니다. 시작되는 대로 1분 안에 {d}에서 열립니다.',
+      openWorld: '월드 열기',
       done: '완료',
-      error: '제안을 열 수 없습니다 ({detail}).',
-      pendingExists: '이 월드에는 이미 열린 제안이 있습니다.',
+    },
+    code: {
+      title: '{m}의 관리 코드',
+      intro: '{m}의 모든 월드에 같은 코드입니다. 보려면 지갑으로 서명합니다.',
+      confirm: '서명하고 보기',
+      shown: '관리 코드:',
+      chat: '월드 채팅에 /admin {code}을(를) 입력하면 그 브라우저에서 관리자가 됩니다.',
     },
     change: {
       stopTitle: '{t} 정지',
       startTitle: '{t} 시작',
-      closeTitle: '{t} 닫기',
-      stopIntro:
-        '주문을 “정지”로 바꾸는 제안을 합니다. 승인되면 서버가 월드를 끕니다. 데이터, 사본, 카드는 남습니다.',
-      startIntro: '주문을 “실행”으로 바꾸는 제안을 합니다. 승인되면 서버가 다시 켭니다.',
-      closeIntro: '플릿에서 주문을 빼는 제안을 합니다. 승인되면:',
-      closeSteps: [
-        '서버가 월드를 끄고 주소 제공을 멈춥니다.',
-        '숨마의 카드, 사본, 데이터는 남습니다. 아무것도 지우지 않습니다.',
-        '다시 열려면 새 주문을 제안합니다.',
+      deleteTitle: '{t} 삭제',
+      downloadTitle: '{t} 다운로드',
+      stopIntro: '머신이 월드를 끕니다. 데이터는 남으며 언제든 다시 시작할 수 있습니다.',
+      startIntro: '머신이 데이터 그대로 다시 켭니다.',
+      deleteWarning: '이 작업은 되돌릴 수 없습니다.',
+      deleteSteps: [
+        '머신이 월드를 끄고 {d} 제공을 멈춥니다.',
+        '데이터베이스, 파일, 키, 머신에 있던 사본이 삭제됩니다.',
+        '숨마의 카드는 남습니다.',
       ],
+      deleteCopyFirst: '보관하고 싶나요? 먼저 사본을 다운로드하세요.',
+      downloadFirst: '사본 다운로드',
+      downloadIntro:
+        '머신이 월드 전체를 담은 zip을 준비합니다: 데이터베이스와 파일, 새 키로 컴퓨터(localhost:3000)에서 여는 docker-compose, 짧은 안내서. 링크는 하루 동안 유효합니다.',
       typeToConfirm: '확인하려면 {id}을(를) 입력하세요.',
-      confirm: '제안하기',
+      stopConfirm: '서명하고 정지',
+      startConfirm: '서명하고 시작',
+      deleteConfirm: '영구 삭제',
+      downloadConfirm: '서명하고 준비',
+      stopped: '{t}이(가) 정지되었습니다.',
+      started: '{t}이(가) 다시 실행 중입니다.',
+      deleted: '{t}은(는) 더 이상 없습니다.',
+    },
+    copy: {
+      ready: '준비 완료: {f} · {s}',
+      save: 'zip 다운로드',
+      fingerprint: 'SHA-256 지문: {h}',
+      expires: '링크 만료: {when}.',
     },
     history: {
-      title: '플릿 기록',
-      empty: '주문 장부에 아직 기록이 없습니다.',
-      all: 'GitHub에서 전체 기록 보기',
+      title: '머신이 한 일',
+      empty: '머신이 아직 아무것도 하지 않았습니다.',
+      failed: '실패',
+      kinds: {
+        CreateWorld: '만듦',
+        DeleteWorld: '삭제함',
+        StopWorld: '정지함',
+        StartWorld: '시작함',
+        DownloadWorld: '복사함',
+        ShowAdminCode: '코드 표시',
+      },
     },
-    invalidTitle: '보관소 규칙에 맞지 않는 주문',
     fieldNames: {
       id: '이름',
       card: '카드',
@@ -791,18 +1071,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
   },
   'pt-br': {
     loading: 'Lendo a frota…',
-    failed: 'Não foi possível ler o livro de ordens ({detail}).',
-    quota:
-      'O GitHub só permite 60 leituras por hora sem chave a partir do teu endereço, e esgotaram-se. Volta a abrir às {time}.',
+    failed: 'Não foi possível ler a frota ({detail}).',
     retry: 'Tentar de novo',
-    missingParts: { pulls: 'as propostas abertas', history: 'o histórico' },
-    missingNote:
-      'Desta vez o GitHub não deixou ler {what}: o livro mostra-se sem essa parte. Ao recarregar mais tarde volta.',
-    empty:
-      'Ainda não há mundos na frota. Cada mundo nasce com sua ficha na Summa e sua ordem em numinia-assets.',
+    empty: 'Ainda não há mundos na frota. Crie o primeiro com “Novo mundo”.',
     noMatch: 'Nenhum mundo corresponde aos filtros.',
-    keyless:
-      'A sala ainda não tem chave para abrir propostas: cada mudança abre no GitHub, com a sua conta.',
+    noMachine: 'Nenhuma máquina está respondendo agora: não é possível criar mundos.',
     stats: {
       total: 'Total',
       running: 'Em execução',
@@ -819,7 +1092,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       stopped: 'Parado',
       unreachable: 'Não responde',
       unknown: 'Não verificado',
-      requested: 'Pedido',
+      changing: 'Mudando',
     },
     reasons: {
       users: '{n} dentro',
@@ -829,13 +1102,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       network: 'não foi possível conectar',
       http: 'respondeu {s}',
       shape: 'respondeu algo que não é um mundo',
-      stopped: 'parado pela sua ordem',
-      requested: 'pedido na proposta #{n}',
+      stopped: 'parado',
+      creating: 'sua máquina está criando',
+      stopping: 'sua máquina está parando',
+      starting: 'sua máquina está iniciando',
+      deleting: 'sua máquina está apagando',
       unknown: 'ainda não verificado',
     },
     badges: {
       missingCard: 'Sem ficha',
-      pending: 'Mudança pedida · #{n}',
       legacy: 'Legado',
       legacyNote:
         'Roda na máquina antiga, montada à mão antes da frota: a sala o acompanha, mas não o altera.',
@@ -852,14 +1127,54 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       open: 'Abrir',
       stop: 'Parar',
       start: 'Iniciar',
-      close: 'Fechar',
+      delete: 'Apagar',
+      download: 'Baixar',
       newWorld: 'Novo mundo',
       more: 'Ver mais {n}',
       less: 'Ver menos',
-      order: 'Ver a ordem',
     },
-    unplaced: 'Ainda sem servidor',
+    unplaced: 'Sem lugar conhecido',
     coverAlt: 'Capa de {t}',
+    machines: {
+      title: 'Máquinas',
+      open: '{m} responde',
+      closed: '{m} não responde ({why}).',
+      connect:
+        'Se for nova, ou ainda não conhecer a sua carteira, entre nela uma vez e rode esta linha; ela leva a sua carteira:',
+      copy: 'Copiar',
+      copied: 'Copiado',
+      adminCode: 'Código de administração',
+    },
+    steps: {
+      signing: 'Sua carteira pede que você assine…',
+      sending: 'Enviando o pedido para {m}…',
+      working: '{m} está fazendo…',
+      preparing: '{m} está preparando o zip…',
+    },
+    problems: {
+      noWallet:
+        'A carteira com que você entrou não está conectada neste navegador. Volte a Sessão, conecte-a e repita.',
+      otherWallet:
+        'A carteira conectada ({w}) não é a da sua sessão. Troque de conta na carteira ou entre de novo.',
+      declined: 'Você cancelou a assinatura: nada foi enviado.',
+      notOracle:
+        '{m} não tem a sua carteira na lista de Oráculos. Rode na máquina a linha de arranque com a sua carteira.',
+      expired: 'A assinatura chegou vencida: confira o relógio do seu computador e repita.',
+      replayed: 'Esse pedido já tinha sido enviado.',
+      exists: 'Já existe um mundo com esse nome em {m}.',
+      addressTaken: 'Esse endereço já é de outro mundo de {m}.',
+      missing: 'Esse mundo já não está em {m}; recarregue a sala.',
+      addressMismatch: 'O endereço não coincide com o do mundo; recarregue a sala.',
+      refused: '{m} não aceita essa ordem: o motor, o endereço ou os limites saem das suas regras.',
+      otherMachine: 'Esse pedido era para outra máquina.',
+      slowDown: 'Pedidos demais seguidos: espere uns minutos.',
+      noAdminCode: '{m} ainda não tem código de administração.',
+      origin: '{m} não aceita pedidos a partir desta página.',
+      unreachable: 'Não foi possível falar com {m}: não responde.',
+      machine: '{m} tentou e não conseguiu ({rule}).',
+      late: '{m} recebeu, mas ainda não terminou. Olhe a sala daqui a um minuto.',
+      generic: '{m} não aceitou o pedido ({code}).',
+    },
     wizard: {
       title: 'Novo mundo',
       stepCard: 'Ficha',
@@ -870,7 +1185,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'Cada mundo tem sua ficha na Summa: diz o que ele é e leva a capa, a mesma imagem que quem entra vê enquanto carrega.',
       cardNone: 'A Summa ainda não tem fichas de mundos: escreva o nome que a ficha terá.',
       idLabel: 'Nome do mundo',
-      idHint: 'Minúsculas, números e hífens. Nomeia ao mesmo tempo o mundo, o arquivo da ordem e a ficha na Summa.',
+      idHint: 'Minúsculas, números e hífens. Nomeia ao mesmo tempo o mundo e a sua ficha na Summa.',
       cardLabel: 'Ficha na Summa',
       serverLabel: 'Servidor',
       serverHint: 'A máquina da frota onde o mundo vai rodar.',
@@ -880,65 +1195,85 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       labelInvalid: 'Uma só palavra: minúsculas, números e hífens, sem pontos.',
       addressTaken: '{d} já é o endereço de {w}: escolha outro nome.',
       legacyMove:
-        '{d} é hoje {w}, na máquina antiga. A ordem o traz para {m}: copie antes os seus dados e aponte o seu registro DNS para {m}.',
+        '{d} é hoje {w}, na máquina antiga. Criá-lo aqui o leva para {m}: copie antes os seus dados e aponte o seu registro DNS para {m}.',
       dnsChecking: 'Verificando para onde {d} aponta…',
       dnsMachine: '{d} já aponta para {m}: pronto.',
       dnsElsewhere: '{d} já aponta para outra máquina: escolha outro nome.',
       dnsNone:
-        '{d} ainda não existe no DNS: crie um registro A para {m} (só DNS) antes de aprovar a proposta.',
-      dnsUnknown: 'Não foi possível verificar para onde {d} aponta; confira antes de aprovar.',
+        '{d} ainda não existe no DNS: crie um registro A para {m} (só DNS); até lá o mundo não abre.',
+      dnsUnknown: 'Não foi possível verificar para onde {d} aponta; confira se o mundo não abrir.',
       imageLabel: 'Motor',
       imageHint: 'Uma versão fixa do motor: etiqueta sha- ou digest, nunca latest.',
       memoryLabel: 'Memória',
       cpusLabel: 'CPU',
       uploadLabel: 'Envio máximo (MB)',
-      confirmIntro: 'Esta é a ordem que será proposta no livro da frota:',
+      confirmIntro:
+        'Sua carteira vai pedir que você assine este pedido. A máquina confere a assinatura e cria o mundo; ninguém mais precisa aprovar nada.',
       invalid: 'Revise: {fields}.',
       next: 'Seguinte',
       back: 'Voltar',
       cancel: 'Cancelar',
       restart: 'Começar de novo',
-      propose: 'Propor',
-      proposing: 'Abrindo a proposta…',
-      resultTitle: 'Proposta aberta',
-      resultPr: 'Pull request #{n}',
-      resultAfter:
-        'Quando for aprovada, o servidor da frota a lê e faz a mudança. A sala mostra assim que acontecer.',
-      manualTitle: 'Abra no GitHub',
-      manualNote:
-        'O GitHub abre a mudança já escrita; escolha “Create a new branch and start a pull request” para propô-la.',
-      manualIndex:
-        'A mesma proposta deve tocar também o índice do livro, open-worlds/index.json, e deixá-lo assim (no ramo da proposta, antes de pedir a revisão; senão os testes do depósito recusam-na):',
-      manualEdit:
-        'O GitHub abre a ordem: mude “state” para “{state}” e escolha “Create a new branch and start a pull request”.',
-      openGithub: 'Abrir no GitHub',
+      create: 'Assinar e criar',
+      resultTitle: '{t} está nascendo',
+      resultNote: '{m} criou o mundo. Ele abre em {d} assim que arrancar, em menos de um minuto.',
+      openWorld: 'Abrir o mundo',
       done: 'Feito',
-      error: 'Não foi possível abrir a proposta ({detail}).',
-      pendingExists: 'Este mundo já tem uma proposta aberta.',
+    },
+    code: {
+      title: 'Código de administração de {m}',
+      intro:
+        'É o mesmo para todos os mundos de {m}. Sua carteira vai pedir que você assine para vê-lo.',
+      confirm: 'Assinar e ver',
+      shown: 'Código de administração:',
+      chat: 'No chat do mundo escreva /admin {code} e você fica como administrador nesse navegador.',
     },
     change: {
       stopTitle: 'Parar {t}',
       startTitle: 'Iniciar {t}',
-      closeTitle: 'Fechar {t}',
+      deleteTitle: 'Apagar {t}',
+      downloadTitle: 'Baixar {t}',
       stopIntro:
-        'Será proposto mudar sua ordem para “parado”. Ao ser aprovada, o servidor desliga o mundo; seus dados, sua cópia e sua ficha ficam.',
-      startIntro:
-        'Será proposto mudar sua ordem para “em execução”. Ao ser aprovada, o servidor o liga de novo.',
-      closeIntro: 'Será proposto tirar sua ordem da frota. Ao ser aprovada:',
-      closeSteps: [
-        'o servidor desliga o mundo e deixa de servir seu endereço;',
-        'sua ficha na Summa, suas cópias e seus dados ficam: nada é apagado;',
-        'reabri-lo é propor uma ordem nova.',
+        'A máquina desliga o mundo. Os dados ficam: você pode iniciá-lo de novo quando quiser.',
+      startIntro: 'A máquina o liga de novo, com os seus dados.',
+      deleteWarning: 'Isto não pode ser desfeito.',
+      deleteSteps: [
+        'a máquina desliga o mundo e deixa de servir {d};',
+        'apagam-se a sua base de dados, os seus arquivos, as suas chaves e as cópias que havia na máquina;',
+        'a sua ficha na Summa fica.',
       ],
+      deleteCopyFirst: 'Quer guardá-lo? Baixe antes uma cópia.',
+      downloadFirst: 'Baixar uma cópia',
+      downloadIntro:
+        'A máquina prepara um zip com o mundo inteiro: sua base de dados e seus arquivos, um docker-compose para abri-lo no seu computador (localhost:3000) com chaves novas, e um guia. O link dura um dia.',
       typeToConfirm: 'Escreva {id} para confirmar.',
-      confirm: 'Propor',
+      stopConfirm: 'Assinar e parar',
+      startConfirm: 'Assinar e iniciar',
+      deleteConfirm: 'Apagar para sempre',
+      downloadConfirm: 'Assinar e preparar',
+      stopped: '{t} está parado.',
+      started: '{t} voltou a rodar.',
+      deleted: '{t} já não existe.',
+    },
+    copy: {
+      ready: 'Pronto: {f} · {s}',
+      save: 'Baixar o zip',
+      fingerprint: 'Impressão SHA-256: {h}',
+      expires: 'O link vence: {when}.',
     },
     history: {
-      title: 'Histórico da frota',
-      empty: 'O livro de ordens ainda não tem histórico.',
-      all: 'Todo o histórico no GitHub',
+      title: 'O que as máquinas fizeram',
+      empty: 'As máquinas ainda não fizeram nada.',
+      failed: 'falhou',
+      kinds: {
+        CreateWorld: 'criou',
+        DeleteWorld: 'apagou',
+        StopWorld: 'parou',
+        StartWorld: 'iniciou',
+        DownloadWorld: 'copiou',
+        ShowAdminCode: 'mostrou o código',
+      },
     },
-    invalidTitle: 'Ordens que não cumprem a regra do depósito',
     fieldNames: {
       id: 'nome',
       card: 'ficha',

@@ -26,6 +26,29 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.77.0',
+    date: '2026-10-12 08:36',
+    missions: ['MIS-156'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A world is created from the Worlds room alone. Choose its name, its address and its engine, press Create and sign once with your wallet: the fleet machine checks the signature itself and the world answers at its address in about a minute. No pull request, no one logging in to the machine. The room then shows the machine’s admin code, to build in the world, and only to the Oracle who signed.',
+      },
+      {
+        type: 'NEW',
+        text: 'Any world of the fleet can be downloaded as a zip, as the Alchemists’ Tower did: a consistent copy of its database and files, a compose file to run it at localhost:3000 and fresh keys of its own. The machine keeps the copy for a day; the dialog shows its size and its SHA-256 fingerprint, and the button to save it.',
+      },
+      {
+        type: 'NEW',
+        text: 'Deleting a world asks before it acts. It says what will be lost and that it cannot be undone, offers to download a copy first, and goes ahead only once you type the world’s name. Stopping and starting a world are one signature each.',
+      },
+      {
+        type: 'UPD',
+        text: 'The room reads each machine directly: its worlds and what is happening to them (being created, stopped, started or deleted), and what it did, when and signed by whom. A machine whose door does not answer is shown with the one line that connects it, already carrying your wallet. Only the wallet you signed in with can sign, and the room keeps no key.',
+      },
+    ],
+  },
+  {
     version: 'v0.76.1',
     date: '2026-10-11 19:57',
     entries: [

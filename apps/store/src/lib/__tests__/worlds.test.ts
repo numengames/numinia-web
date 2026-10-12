@@ -1,8 +1,7 @@
 /**
- * The worlds room's model: the order rules (mirroring numinia-assets'
- * own test one for one), the wizard's draft, the rows the room shows
- * (order × card × probe × proposal), the filters, the views' grouping and
- * the GitHub fallbacks.
+ * The worlds room's model: the order rules (mirroring the fleet machine's
+ * own checks), the wizard's draft, the rows the room shows (order × phase ×
+ * card × probe), the filters and the views' grouping.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -15,45 +14,29 @@ import {
   addressOwner,
   buildRows,
   buildTag,
-  changeBranch,
   compareDns,
-  deleteOrderUrl,
   describeStatus,
   draftToOrder,
-  editOrderUrl,
   emptyDraft,
   fill,
   filterRows,
-  fleetHistoryUrl,
   fleetServers,
   fleetStats,
   formatUptime,
   groupByServer,
   inHouseZone,
-  indexPath,
-  indexWith,
   joinDomain,
   machineChoices,
   machineHost,
-  newOrderUrl,
-  orderFileUrl,
   orderProblems,
-  parseChangeBranch,
-  parseIndex,
   parseOrder,
   placeAllowed,
   problemFields,
-  proposalBody,
-  proposalCommit,
-  proposalTitle,
   readDohAnswer,
   readProbe,
-  renderIndex,
   renderOrder,
   rowPlace,
-  withState,
   worldCards,
-  type PendingChange,
   type ReasonWords,
   type WorldOrder,
   type WorldRow,
@@ -121,37 +104,6 @@ describe('orderProblems — the depot test, one rule at a time', () => {
     for (const id of ['index', 'caddy']) {
       expect(orderProblems(json({ ...VALID, id, card: id }), id)).toEqual(['id']);
     }
-  });
-});
-
-describe('the index — the sorted ids of every order', () => {
-  it('lives beside the orders', () => {
-    expect(indexPath()).toBe('open-worlds/index.json');
-  });
-
-  it('reads the ids and drops anything that is not a world id', () => {
-    expect(parseIndex('{"orders": ["b", "a", "index", "caddy", "Bad", "../x", 7, null]}')).toEqual([
-      'b',
-      'a',
-    ]);
-    expect(parseIndex('{"orders": []}')).toEqual([]);
-  });
-
-  it('is null when the file is not an index', () => {
-    for (const bad of ['{', '[]', 'null', '{"orders": {}}', '{"orders": [], "x": 1}', '{}']) {
-      expect(parseIndex(bad)).toBeNull();
-    }
-  });
-
-  it('renders as the depot’s test wants it: sorted, unique, two spaces, one trailing newline', () => {
-    expect(renderIndex(['b', 'a', 'b'])).toBe('{\n  "orders": [\n    "a",\n    "b"\n  ]\n}\n');
-    expect(renderIndex([])).toBe('{\n  "orders": []\n}\n');
-  });
-
-  it('adds an ordered world and strikes a closed one', () => {
-    expect(JSON.parse(indexWith(['b'], 'a', true))).toEqual({ orders: ['a', 'b'] });
-    expect(JSON.parse(indexWith(['a', 'b'], 'a', false))).toEqual({ orders: ['b'] });
-    expect(JSON.parse(indexWith(['a'], 'a', true))).toEqual({ orders: ['a'] });
   });
 });
 
@@ -329,69 +281,12 @@ describe('readProbe — counts only, never names', () => {
   });
 });
 
-describe('proposals', () => {
-  it('names its branches so the room recognises its own, and nothing else', () => {
-    const branch = changeBranch('trg-2026', 'stop', 'lz8k2');
-    expect(branch).toBe('open-worlds/trg-2026/stop-lz8k2');
-    expect(parseChangeBranch(branch)).toEqual({ id: 'trg-2026', action: 'stop' });
-    expect(parseChangeBranch('dependabot/npm/foo')).toBeNull();
-    expect(parseChangeBranch('open-worlds/trg-2026/delete-lz8k2')).toBeNull();
-  });
-
-  it('flips the state and nothing else', () => {
-    expect(withState(VALID, 'stopped')).toEqual({ ...VALID, state: 'stopped' });
-  });
-
-  it('writes the title, the commit with the acting wallet, and the body', () => {
-    expect(proposalTitle('create', 'trg')).toBe('feat(open-worlds): order the world trg');
-    expect(proposalTitle('close', 'trg')).toBe('chore(open-worlds): close the world trg');
-    expect(proposalCommit('stop', 'trg', '0xabc')).toBe(
-      'chore(open-worlds): stop the world trg\n\nActing-Wallet: 0xabc',
-    );
-    const body = proposalBody('close', 'trg', '0xabc');
-    expect(body).toContain('`open-worlds/trg.json`');
-    expect(body).toContain('`0xabc`');
-    expect(body).toContain('nothing is deleted');
-  });
-});
-
-describe('GitHub fallbacks', () => {
-  it('prefills the new-file page with the order', () => {
-    const url = new URL(newOrderUrl(VALID));
-    expect(url.pathname).toBe('/numengames/numinia-assets/new/main/open-worlds');
-    expect(url.searchParams.get('filename')).toBe('example-world.json');
-    expect(url.searchParams.get('value')).toBe(renderOrder(VALID));
-  });
-
-  it('points at the order file to edit, delete or read, and at the history', () => {
-    expect(editOrderUrl('x')).toBe(
-      'https://github.com/numengames/numinia-assets/edit/main/open-worlds/x.json',
-    );
-    expect(deleteOrderUrl('x')).toBe(
-      'https://github.com/numengames/numinia-assets/delete/main/open-worlds/x.json',
-    );
-    expect(orderFileUrl('x')).toBe(
-      'https://github.com/numengames/numinia-assets/blob/main/open-worlds/x.json',
-    );
-    expect(fleetHistoryUrl()).toBe(
-      'https://github.com/numengames/numinia-assets/commits/main/open-worlds',
-    );
-  });
-});
-
 const order = (id: string, extra: Partial<WorldOrder> = {}): WorldOrder => ({
   ...VALID,
   id,
   card: id,
   domain: `${id}.numen.games`,
   ...extra,
-});
-
-const pending = (id: string, action: PendingChange['action'], number: number): PendingChange => ({
-  id,
-  action,
-  number,
-  url: `https://github.com/numengames/numinia-assets/pull/${number}`,
 });
 
 function sampleRows(): WorldRow[] {
@@ -402,28 +297,27 @@ function sampleRows(): WorldRow[] {
       order('akasha', { state: 'stopped', server: 'open-2' }),
       order('orphan', { card: 'no-card' }),
       order('silent'),
+      order('circle'),
     ],
+    phases: { circle: 'creating', forge: 'running' },
+    leaving: [{ id: 'gone', server: 'open-2', domain: 'gone.numen.games' }],
     cards: [
       { slug: 'agora', title: 'Agora', cover: '/a.webp' },
       { slug: 'forge', title: 'Forge', cover: null },
       { slug: 'akasha', title: 'Akasha', cover: '/k.webp' },
       { slug: 'circle', title: 'Circle', cover: '/c.webp' },
+      { slug: 'gone', title: 'Gone', cover: '/g.webp' },
     ],
     probes: {
       agora: { ok: true, users: 3, uptime: 7200, commit: 'abc1234' },
       forge: { ok: false, reason: 'http', status: 502 },
       orphan: { ok: true, users: 0, uptime: 60, commit: null },
     },
-    pending: [
-      pending('circle', 'create', 14),
-      pending('forge', 'stop', 13),
-      pending('agora', 'create', 15),
-    ],
   });
 }
 
 describe('buildRows — what was asked for, crossed with what answers', () => {
-  it('derives every status and keeps the card, cover and proposal', () => {
+  it('derives every status from the machine’s phase and the probe, and keeps the card and cover', () => {
     const rows = sampleRows();
     const by = (id: string): WorldRow => rows.find((row) => row.id === id) as WorldRow;
     expect(rows.map((row) => row.id)).toEqual([
@@ -431,17 +325,20 @@ describe('buildRows — what was asked for, crossed with what answers', () => {
       'akasha',
       'circle',
       'forge',
+      'gone',
       'orphan',
       'silent',
     ]);
     expect(by('agora')).toMatchObject({
       status: 'running',
+      phase: 'running',
       title: 'Agora',
       cover: '/a.webp',
       missingCard: false,
+      place: { server: 'open-1', domain: 'agora.numen.games' },
     });
-    expect(by('forge')).toMatchObject({ status: 'unreachable', pending: { number: 13 } });
-    expect(by('akasha')).toMatchObject({ status: 'stopped', probe: null });
+    expect(by('forge')).toMatchObject({ status: 'unreachable' });
+    expect(by('akasha')).toMatchObject({ status: 'stopped', phase: 'stopped', probe: null });
     expect(by('orphan')).toMatchObject({
       status: 'running',
       title: 'orphan',
@@ -450,28 +347,35 @@ describe('buildRows — what was asked for, crossed with what answers', () => {
     });
     expect(by('silent')).toMatchObject({ status: 'unknown', missingCard: true });
     expect(by('circle')).toMatchObject({
-      status: 'requested',
-      order: null,
+      status: 'changing',
+      phase: 'creating',
       title: 'Circle',
       cover: '/c.webp',
     });
+    expect(by('gone')).toMatchObject({
+      status: 'changing',
+      phase: 'deleting',
+      order: null,
+      legacy: null,
+      title: 'Gone',
+      cover: '/g.webp',
+      place: { server: 'open-2', domain: 'gone.numen.games' },
+    });
   });
 
-  it('shows a requested world even before its card exists', () => {
+  it('shows a world being deleted once, even when its address is no longer known', () => {
     const rows = buildRows({
-      orders: [],
+      orders: [order('kept')],
+      leaving: [
+        { id: 'kept', server: 'open-1', domain: null },
+        { id: 'lost', server: 'open-1', domain: null },
+        { id: 'lost', server: 'open-1', domain: null },
+      ],
       cards: [],
       probes: {},
-      pending: [pending('new-one', 'create', 3)],
     });
-    expect(rows).toEqual([
-      expect.objectContaining({
-        id: 'new-one',
-        title: 'new-one',
-        cover: null,
-        status: 'requested',
-      }),
-    ]);
+    expect(rows.map((row) => row.id)).toEqual(['kept', 'lost']);
+    expect(rows[1]).toMatchObject({ title: 'lost', cover: null, place: null, status: 'changing' });
   });
 
   it('breaks title ties by id', () => {
@@ -482,7 +386,6 @@ describe('buildRows — what was asked for, crossed with what answers', () => {
         { slug: 'b', title: 'Same', cover: null },
       ],
       probes: {},
-      pending: [],
     });
     expect(rows.map((row) => row.id)).toEqual(['a', 'b']);
   });
@@ -501,7 +404,6 @@ describe('legacy worlds and faces — watched, never changed', () => {
         hive: { ok: true, users: 2, uptime: 60, commit: '0e20453' },
         quiet: { ok: false, reason: 'timeout' },
       },
-      pending: [],
       legacy: [hive, quiet, moved, { ...moved, id: 'agora', domain: 'elsewhere.numinia.com' }],
       faces: {
         hive: { title: 'The Hive', image: 'https://hive.numinia.com/assets/x.jpeg' },
@@ -519,20 +421,20 @@ describe('legacy worlds and faces — watched, never changed', () => {
       cover: 'https://hive.numinia.com/assets/x.jpeg',
       status: 'running',
       order: null,
-      pending: null,
+      phase: null,
       missingCard: false,
       legacy: hive,
     });
     expect(by('quiet')).toMatchObject({ title: 'quiet', cover: null, status: 'unreachable' });
   });
 
-  it('drops a legacy world once an order holds its id or its address', () => {
+  it('drops a legacy world once a world of the fleet holds its id or its address', () => {
     const ids = legacyRows().map((row) => row.id);
     expect(ids).not.toContain('moved');
     expect(ids.filter((id) => id === 'agora')).toHaveLength(1);
   });
 
-  it('names and pictures an ordered world without a card by its own page; the card wins', () => {
+  it('names and pictures a world without a card by its own page; the card wins', () => {
     const rows = legacyRows();
     expect(rows.find((row) => row.id === 'bare')).toMatchObject({
       title: 'Bare World',
@@ -547,14 +449,14 @@ describe('legacy worlds and faces — watched, never changed', () => {
   });
 
   it('knows nothing of a legacy world that was never probed', () => {
-    const [row] = buildRows({ orders: [], cards: [], probes: {}, pending: [], legacy: [hive] });
+    const [row] = buildRows({ orders: [], cards: [], probes: {}, legacy: [hive] });
     expect(row).toMatchObject({ status: 'unknown', title: 'hive', probe: null });
   });
 
   it('places, filters and groups a legacy world by its server', () => {
     const rows = legacyRows();
     const hiveRow = rows.find((row) => row.id === 'hive') as WorldRow;
-    expect(rowPlace(hiveRow)).toEqual(hive);
+    expect(rowPlace(hiveRow)).toEqual({ server: 'old-1', domain: 'hive.numinia.com' });
     expect(rowPlace(rows.find((row) => row.id === 'agora') as WorldRow)).toMatchObject({
       server: 'open-1',
       domain: 'agora.numen.games',
@@ -583,9 +485,9 @@ describe('the place: machine, address and whether it is free', () => {
   };
   const rows = buildRows({
     orders: [agora, forge, { ...agora, id: 'again', card: 'again', domain: 'again.numinia.com' }],
+    leaving: [{ id: 'circle', server: 'open-1', domain: null }],
     cards: [],
     probes: {},
-    pending: [{ id: 'circle', action: 'create', number: 4, url: 'https://x/4' }],
     legacy: [{ id: 'vic', domain: 'vic.numinia.com', server: 'vps-legacy' }],
   });
 
@@ -608,9 +510,15 @@ describe('the place: machine, address and whether it is free', () => {
     expect('problems' in broken && broken.problems.filter((p) => p === 'domain')).toHaveLength(1);
   });
 
-  it('offers the fleet’s machines and those orders name, never the legacy one', () => {
-    expect(machineChoices(rows)).toEqual(['open-1', 'open-2']);
-    expect(machineChoices([])).toEqual(['open-1']);
+  it('offers only the machines whose door answers, in the fleet’s order', () => {
+    expect(
+      machineChoices([
+        { alias: 'open-1', open: true, reason: null },
+        { alias: 'open-2', open: false, reason: 'timeout' },
+        { alias: 'open-3', open: true, reason: null },
+      ]),
+    ).toEqual(['open-1', 'open-3']);
+    expect(machineChoices([])).toEqual([]);
     expect(machineHost('open-1')).toBe('vps-39c7f315.vps.ovh.net');
     expect(machineHost('open-9')).toBeNull();
   });
@@ -647,11 +555,11 @@ describe('the place: machine, address and whether it is free', () => {
   });
 
   it('lets the wizard go on only with a free address, or a legacy world being moved', () => {
-    const order = { legacy: false };
+    const taken = { legacy: false };
     const legacy = { legacy: true };
     expect(placeAllowed('a.b.numinia.com', null, 'machine')).toBe(false);
     expect(placeAllowed('p1.numinia.com', null, 'checking')).toBe(false);
-    expect(placeAllowed('p1.numinia.com', order, 'machine')).toBe(false);
+    expect(placeAllowed('p1.numinia.com', taken, 'machine')).toBe(false);
     expect(placeAllowed('p1.numinia.com', legacy, 'elsewhere')).toBe(true);
     expect(placeAllowed('p1.numinia.com', null, 'elsewhere')).toBe(false);
     expect(placeAllowed('p1.numinia.com', null, 'machine')).toBe(true);
@@ -661,26 +569,27 @@ describe('the place: machine, address and whether it is free', () => {
 });
 
 describe('the figures, the filters and the views', () => {
-  it('counts the Tower’s four figures plus the requested', () => {
+  it('counts the Tower’s four figures plus the worlds changing', () => {
     expect(fleetStats(sampleRows())).toEqual({
-      total: 6,
+      total: 7,
       running: 2,
       stopped: 1,
       problems: 1,
-      requested: 1,
+      changing: 2,
     });
   });
 
   it('filters by status, server and a search over name, card, address and server', () => {
     const rows = sampleRows();
     const all = { query: '', status: 'all', server: '' } as const;
-    expect(filterRows(rows, all)).toHaveLength(6);
+    expect(filterRows(rows, all)).toHaveLength(7);
     expect(filterRows(rows, { ...all, status: 'stopped' }).map((row) => row.id)).toEqual([
       'akasha',
     ]);
     expect(filterRows(rows, { ...all, server: 'open-2' }).map((row) => row.id)).toEqual([
       'akasha',
       'forge',
+      'gone',
     ]);
     expect(filterRows(rows, { ...all, query: ' AGORA.numen ' }).map((row) => row.id)).toEqual([
       'agora',
@@ -694,18 +603,21 @@ describe('the figures, the filters and the views', () => {
     const rows = sampleRows();
     expect(fleetServers(rows)).toEqual(['open-1', 'open-2']);
     const groups = groupByServer(rows);
-    expect(groups.map((group) => group.server)).toEqual(['open-1', 'open-2', null]);
-    expect(groups[0]?.rows.map((row) => row.id)).toEqual(['agora', 'orphan', 'silent']);
-    expect(groups[2]?.rows.map((row) => row.id)).toEqual(['circle']);
+    expect(groups.map((group) => group.server)).toEqual(['open-1', 'open-2']);
+    expect(groups[0]?.rows.map((row) => row.id)).toEqual(['agora', 'circle', 'orphan', 'silent']);
     const [first] = groupByServer([...rows].reverse());
     expect(first?.server).toBe('open-1');
     const unplacedFirst = buildRows({
       orders: [order('zzz')],
+      leaving: [{ id: 'aaa', server: 'open-1', domain: null }],
       cards: [],
       probes: {},
-      pending: [pending('aaa', 'create', 1)],
     });
     expect(groupByServer(unplacedFirst).map((group) => group.server)).toEqual(['open-1', null]);
+    expect(groupByServer([...unplacedFirst].reverse()).map((group) => group.server)).toEqual([
+      'open-1',
+      null,
+    ]);
   });
 });
 
@@ -718,7 +630,10 @@ const WORDS: ReasonWords = {
   http: 'answered {s}',
   shape: 'shape',
   stopped: 'stopped',
-  requested: 'requested in #{n}',
+  creating: 'creating',
+  stopping: 'stopping',
+  starting: 'starting',
+  deleting: 'deleting',
   unknown: 'unknown',
 };
 
@@ -730,8 +645,15 @@ describe('describeStatus — the reason, in one line', () => {
     expect(describeStatus(by('orphan'), WORDS)).toBe('0 inside · up for 1 min');
     expect(describeStatus(by('forge'), WORDS)).toBe('answered 502');
     expect(describeStatus(by('akasha'), WORDS)).toBe('stopped');
-    expect(describeStatus(by('circle'), WORDS)).toBe('requested in #14');
+    expect(describeStatus(by('circle'), WORDS)).toBe('creating');
+    expect(describeStatus(by('gone'), WORDS)).toBe('deleting');
     expect(describeStatus(by('silent'), WORDS)).toBe('unknown');
+  });
+
+  it('says what its machine is doing to a world on its way', () => {
+    const base = sampleRows().find((row) => row.id === 'circle') as WorldRow;
+    expect(describeStatus({ ...base, phase: 'stopping' }, WORDS)).toBe('stopping');
+    expect(describeStatus({ ...base, phase: 'starting' }, WORDS)).toBe('starting');
   });
 
   it('names a failure that is not HTTP, and an HTTP failure without a status', () => {
@@ -741,9 +663,6 @@ describe('describeStatus — the reason, in one line', () => {
     );
     expect(describeStatus({ ...base, probe: { ok: false, reason: 'http' } }, WORDS)).toBe(
       'answered ?',
-    );
-    expect(describeStatus({ ...base, status: 'requested', pending: null }, WORDS)).toBe(
-      'requested in #?',
     );
   });
 });
