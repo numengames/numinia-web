@@ -9,7 +9,9 @@ transition regime included. This file only says what is specific here.
 
 A Turborepo monorepo. `apps/store` is the site in production at
 numinia.com (the folder keeps the name of the legacy numinia.store line;
-renaming it is a pending cut). `apps/com` is an empty skeleton. Shared
+renaming it is a pending cut). `apps/com` is an empty skeleton. `apps/till`
+is the till (ADR-070): a Worker of its own with its own D1 database — the
+prepaid ledger and the nightly close (MIS-177, MIS-178). Shared
 packages: `packages/domain` (the game's types, constants in five locales,
 Zod validators — 100 % coverage per file), `analytics`, `auth`, `state`,
 `ui`. `features/` holds Gherkin acceptance criteria run against the built

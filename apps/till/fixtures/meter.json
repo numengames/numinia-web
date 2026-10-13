@@ -1,0 +1,59 @@
+{
+  "about": "The pretend meter's readings (MIS-178): what a fleet machine will say about each world's UTC day once machines count their days (MIS-185). TILL_METER=fake reads this file. Every UTC day has 1440 minutes, 2026-10-25 and 2027-03-28 (the days Spain changes its clock) included; w-leo-friends has no reading for 2026-10-26 (its machine did not answer), so that day stays pending.",
+  "readings": [
+    {
+      "worldId": "w-lumen-plaza",
+      "machine": "vps-2-a",
+      "day": "2026-10-24",
+      "size": "2g",
+      "minutesRunning": 1440,
+      "minutesStopped": 0,
+      "endState": "running"
+    },
+    {
+      "worldId": "w-lumen-plaza",
+      "machine": "vps-2-a",
+      "day": "2026-10-25",
+      "size": "2g",
+      "minutesRunning": 1440,
+      "minutesStopped": 0,
+      "endState": "running"
+    },
+    {
+      "worldId": "w-lumen-plaza",
+      "machine": "vps-2-a",
+      "day": "2026-10-26",
+      "size": "2g",
+      "minutesRunning": 720,
+      "minutesStopped": 720,
+      "endState": "stopped"
+    },
+    {
+      "worldId": "w-leo-friends",
+      "machine": "vps-2-a",
+      "day": "2026-10-24",
+      "size": "2g",
+      "minutesRunning": 0,
+      "minutesStopped": 1440,
+      "endState": "stopped"
+    },
+    {
+      "worldId": "w-leo-friends",
+      "machine": "vps-2-a",
+      "day": "2026-10-25",
+      "size": "2g",
+      "minutesRunning": 0,
+      "minutesStopped": 1440,
+      "endState": "stopped"
+    },
+    {
+      "worldId": "w-lumen-plaza",
+      "machine": "vps-2-b",
+      "day": "2027-03-28",
+      "size": "2g",
+      "minutesRunning": 1440,
+      "minutesStopped": 0,
+      "endState": "running"
+    }
+  ]
+}

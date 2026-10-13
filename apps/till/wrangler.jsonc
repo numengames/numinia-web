@@ -1,0 +1,31 @@
+{
+  // The till (ADR-070, MIS-177, MIS-178): its own Worker and its own D1
+  // database, apart from numinia.com. No routes and no secrets in this build:
+  // it answers GET /health and runs the nightly close.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "numinia-till",
+  "main": "src/worker.ts",
+  // The same date as the site's Worker (root wrangler.jsonc).
+  "compatibility_date": "2026-08-15",
+  "send_metrics": false,
+  "d1_databases": [
+    {
+      "binding": "TILL_DB",
+      "database_name": "numinia-till",
+      // An Oracle creates the database (`wrangler d1 create numinia-till`) and
+      // writes its id here at deploy time; then `wrangler d1 migrations apply
+      // numinia-till --remote`. Until then this placeholder binds nothing real.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "triggers": {
+    // Cron is UTC, the till's reference time (ADR-070): at 00:30 UTC every
+    // night the run closes the UTC day that has just ended.
+    "crons": ["30 0 * * *"],
+  },
+  "vars": {
+    // `none`: no meter, every day pending. `fake`: fixtures/meter.json.
+    "TILL_METER": "none",
+  },
+}
