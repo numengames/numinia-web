@@ -17,7 +17,13 @@
  * checked by hand.
  */
 
-import { orderProblems, type LeavingWorld, type MachineSummary, type WorldOrder } from './worlds';
+import {
+  orderProblems,
+  type ArrivingWorld,
+  type LeavingWorld,
+  type MachineSummary,
+  type WorldOrder,
+} from './worlds';
 
 type Fetch = typeof fetch;
 
@@ -37,7 +43,7 @@ export const REQUEST_SECONDS = 600;
  * the time. Moving it is a release of the room: the machine's pull request
  * merges first, then this constant and the fixture's open-1 move together.
  */
-export const FLEET_REF: string = '2ca8e2c1372b2ea4d5207d4bbc35c9a8973639d9';
+export const FLEET_REF: string = '9eb226f0bb94db898527fae14699800996da7036';
 /** The recipe each machine is made from, and updated with: pinned to FLEET_REF. */
 export const BOOTSTRAP_URL = `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`;
 
@@ -72,6 +78,24 @@ export const REQUEST_TYPES = {
   ShowWorldCode: [text('machine'), text('world'), text('nonce'), whole('expires')],
   /** A new admin code for one world: the machine makes it, answers it, and restarts that world. */
   RotateWorldCode: [text('machine'), text('world'), text('nonce'), whole('expires')],
+  /**
+   * A world brought back from its zip: CreateWorld's fields plus the zip's
+   * exact size and SHA-256, so the machine takes that zip and no other. It is
+   * always born stopped.
+   */
+  ImportWorld: [
+    text('machine'),
+    text('world'),
+    text('domain'),
+    text('image'),
+    text('memory'),
+    text('cpus'),
+    whole('maxUploadMb'),
+    whole('zipBytes'),
+    text('zipSha256'),
+    text('nonce'),
+    whole('expires'),
+  ],
 } as const satisfies Readonly<Record<string, readonly TypeField[]>>;
 
 export type RequestKind = keyof typeof REQUEST_TYPES;
@@ -100,7 +124,20 @@ export type Ask =
       readonly machine: string;
       readonly world: string;
     }
-  | { readonly kind: 'ShowAdminCode'; readonly machine: string };
+  | { readonly kind: 'ShowAdminCode'; readonly machine: string }
+  | {
+      readonly kind: 'ImportWorld';
+      readonly machine: string;
+      readonly world: string;
+      readonly domain: string;
+      readonly image: string;
+      readonly memory: string;
+      readonly cpus: string;
+      readonly maxUploadMb: number;
+      /** The zip's exact size in bytes, and its SHA-256 (64 lowercase hex). */
+      readonly zipBytes: number;
+      readonly zipSha256: string;
+    };
 
 /** The requests whose answer is an admin code, the one thing the Oracle asked for. */
 export const CODE_KINDS: readonly RequestKind[] = [
@@ -208,6 +245,29 @@ export function formatBytes(bytes: number): string {
   return `${value.toFixed(1)} ${units[unit] as string}`;
 }
 
+/**
+ * A size in bytes, short and in the reader's language: `48 MB`, `1,1 GB`
+ * (es), `412 MB`. Binary units, at most one decimal; `lang` is the page's
+ * language (none or '' = the browser's).
+ */
+export function formatSize(bytes: number, lang?: string): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
+  let value = Math.max(0, bytes);
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const digits = unit === 0 ? 0 : 1;
+  const figure = new Intl.NumberFormat(lang || undefined, { maximumFractionDigits: digits });
+  return `${figure.format(value)} ${units[unit] as string}`;
+}
+
+/** A whole number in the reader's language: `50.331.648` (es), `50,331,648` (en). */
+export function formatCount(count: number, lang?: string): string {
+  return new Intl.NumberFormat(lang || undefined, { maximumFractionDigits: 0 }).format(count);
+}
+
 // ---------------------------------------------------------------------------
 // What the door answers
 // ---------------------------------------------------------------------------
@@ -225,7 +285,7 @@ const HOST = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}
 /** An admin code as the machine makes and checks it (reconcile.py ADMIN_CODE). */
 const ADMIN_CODE = /^[A-Za-z0-9_-]{8,64}$/;
 
-/** Every refusal the door can give. */
+/** Every refusal the door can give, and every rule a machine names when it cannot bring a world back from its zip. */
 export const DOOR_ERRORS = [
   'not-an-oracle-here',
   'bad-signature',
@@ -246,10 +306,75 @@ export const DOOR_ERRORS = [
   'no-admin-code',
   'busy',
   'origin',
+  // A request with no length (411): the door's name for it, POST or PUT.
+  'length',
+  // A world from its zip (ImportWorld): the door's, before and while the zip arrives…
+  'zip-too-big',
+  'no-room',
+  'slot-expired',
+  'wrong-size',
+  'cut',
+  'fingerprint',
+  // …and the machine's, once it opens it.
+  'not-a-zip',
+  'encrypted',
+  'too-many-files',
+  'zip-slip',
+  'link',
+  'file-too-big',
+  'ratio',
+  'unpacked-too-big',
+  'not-a-world',
+  'unexpected',
+  'db-open',
+  'manifest',
+  'db-broken',
+  'db-foreign',
 ] as const;
 
 /** A refusal, or one of the two ways the room meets on the road: no answer, or an answer it cannot read. */
 export type DoorError = (typeof DOOR_ERRORS)[number] | 'unreachable' | 'unexpected';
+
+/** The rules a world's zip can break, at the door or once its machine opens it. */
+export const IMPORT_RULES = [
+  'zip-too-big',
+  'no-room',
+  'slot-expired',
+  'wrong-size',
+  'cut',
+  'fingerprint',
+  'not-a-zip',
+  'encrypted',
+  'too-many-files',
+  'zip-slip',
+  'link',
+  'file-too-big',
+  'ratio',
+  'unpacked-too-big',
+  'not-a-world',
+  'unexpected',
+  'db-open',
+  'manifest',
+  'db-broken',
+  'db-foreign',
+] as const satisfies readonly DoorError[];
+
+export type ImportRule = (typeof IMPORT_RULES)[number];
+
+/**
+ * A machine's rule, as it logs it (`zip-slip`, or `unexpected: world/notes.txt`)
+ * → which import rule, and what it adds; null when it is not one of them.
+ */
+export function readImportRule(
+  rule: string | null,
+): { readonly rule: ImportRule; readonly detail: string | null } | null {
+  if (rule === null) return null;
+  const match = /^([a-z-]+)(?::\s*(.*))?$/s.exec(rule.trim());
+  const known: readonly string[] = IMPORT_RULES;
+  if (!match || !known.includes(match[1] as string)) return null;
+  const detail = match[2]?.trim().slice(0, 200) ?? '';
+  return { rule: match[1] as ImportRule, detail: detail === '' ? null : detail };
+}
 
 export type Accepted =
   | {
@@ -257,14 +382,30 @@ export type Accepted =
       readonly request: string;
       /**
        * An admin code, only to the Oracle who signed for it: a new world's own
-       * code (CreateWorld), the code of the world asked for (ShowWorldCode),
-       * that world's new one (RotateWorldCode), or the legacy machine-wide one.
+       * code (CreateWorld, ImportWorld), the code of the world asked for
+       * (ShowWorldCode), that world's new one (RotateWorldCode), or the legacy
+       * machine-wide one.
        */
       readonly adminCode: string | null;
       /** The copy's number, for a download. */
       readonly copy: string | null;
+      /** Where the zip goes, for a world from its zip: `uploads/<the request's number>`. */
+      readonly upload: string | null;
     }
   | { readonly ok: false; readonly error: DoorError; readonly status: number };
+
+const UPLOAD = /^uploads\/[0-9a-f]{32}$/;
+
+/** Why the door refused, from its answer: a refusal it knows, else `unexpected`. */
+function readRefusal(status: number, body: unknown): Extract<Accepted, { ok: false }> {
+  const known: readonly string[] = DOOR_ERRORS;
+  const error = isObj(body) ? body['error'] : undefined;
+  return {
+    ok: false,
+    error: typeof error === 'string' && known.includes(error) ? (error as DoorError) : 'unexpected',
+    status,
+  };
+}
 
 /** The door's answer to a request: taken (202, with its number) or refused, and why. */
 export function readAccepted(status: number, body: unknown): Accepted {
@@ -273,38 +414,43 @@ export function readAccepted(status: number, body: unknown): Accepted {
   if (status === 202 && typeof request === 'string' && HEX32.test(request)) {
     const code = answer['adminCode'];
     const copy = answer['copy'];
+    const upload = answer['upload'];
     return {
       ok: true,
       request,
       adminCode: typeof code === 'string' && ADMIN_CODE.test(code) ? code : null,
       copy: typeof copy === 'string' && HEX32.test(copy) ? copy : null,
+      upload: typeof upload === 'string' && UPLOAD.test(upload) ? upload : null,
     };
   }
-  const known: readonly string[] = DOOR_ERRORS;
-  const error = answer['error'];
-  return {
-    ok: false,
-    error: typeof error === 'string' && known.includes(error) ? (error as DoorError) : 'unexpected',
-    status,
-  };
+  return readRefusal(status, body);
 }
 
-export type RequestState = 'pending' | 'working' | 'done' | 'failed';
+export type RequestState = 'uploading' | 'pending' | 'working' | 'done' | 'failed';
 
 export interface RequestResult {
   readonly state: RequestState;
   /** Which rule the machine found broken, when it refused. */
   readonly rule: string | null;
+  /** The zip entry that broke it, when the machine names one (`world/notes.txt`). */
+  readonly entry: string | null;
 }
 
-const REQUEST_STATES: readonly string[] = ['pending', 'working', 'done', 'failed'];
+const REQUEST_STATES: readonly string[] = ['uploading', 'pending', 'working', 'done', 'failed'];
+/** A zip entry's name as a machine reports it: printable, at most 200 characters. */
+const ENTRY = /^[^\p{Cc}]{1,200}$/u;
 
 export function readRequestResult(body: unknown): RequestResult | null {
   if (!isObj(body)) return null;
   const state = body['state'];
   if (typeof state !== 'string' || !REQUEST_STATES.includes(state)) return null;
   const rule = body['rule'];
-  return { state: state as RequestState, rule: typeof rule === 'string' ? rule : null };
+  const entry = body['entry'];
+  return {
+    state: state as RequestState,
+    rule: typeof rule === 'string' ? rule : null,
+    entry: typeof entry === 'string' && ENTRY.test(entry) ? entry : null,
+  };
 }
 
 /** A request the machine has finished with, one way or the other. */
@@ -504,6 +650,24 @@ export function readListens(body: unknown): DoorFeature[] {
   return DOOR_FEATURES.filter((feature) => said.includes(feature));
 }
 
+/** What a door says about worlds brought back from their zip: the biggest zip it takes. */
+export interface Imports {
+  readonly zipMaxBytes: number;
+}
+
+/**
+ * A door's `/machine` → whether its machine brings worlds back from their
+ * zip (`imports: {zipMaxBytes}`); null when it says nothing (a machine
+ * older than the import, which the room never offers one).
+ */
+export function readImports(body: unknown): Imports | null {
+  if (!isObj(body) || !isObj(body['imports'])) return null;
+  const max = body['imports']['zipMaxBytes'];
+  return typeof max === 'number' && Number.isSafeInteger(max) && max > 0
+    ? { zipMaxBytes: max }
+    : null;
+}
+
 /** A beacon's body: `{"events": [...]}`, at most BEACON_MAX_EVENTS, each `ms` a whole number in range. */
 export function beaconBody(events: readonly BeaconEvent[]): string {
   return JSON.stringify({
@@ -537,7 +701,17 @@ export function sendBeacon(
 }
 
 /** Where a world is, as its machine says: settled, or on its way somewhere. */
-export type DoorPhase = 'running' | 'stopped' | 'creating' | 'stopping' | 'starting' | 'deleting';
+export type DoorPhase =
+  | 'running'
+  | 'stopped'
+  | 'creating'
+  | 'stopping'
+  | 'starting'
+  | 'deleting'
+  /** A world from its zip: its zip is on its way to the machine… */
+  | 'uploading'
+  /** …or the machine is checking and unpacking it. */
+  | 'importing';
 
 const PHASES: readonly string[] = [
   'running',
@@ -546,21 +720,43 @@ const PHASES: readonly string[] = [
   'stopping',
   'starting',
   'deleting',
+  'uploading',
+  'importing',
 ];
+
+/** How much of a zip its machine has: `bytes` of `of`. */
+export interface UploadProgress {
+  readonly bytes: number;
+  readonly of: number;
+}
 
 export interface DoorWorld {
   readonly id: string;
   readonly phase: DoorPhase;
-  /** Null for a world being deleted whose order is already gone. */
+  /** Null for a world being deleted whose order is already gone, and for one still arriving from its zip. */
   readonly order: WorldOrder | null;
   readonly domain: string | null;
+  /** For a world whose zip is on its way: how much of it the machine has; null otherwise. */
+  readonly upload: UploadProgress | null;
+}
+
+const isCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0;
+
+/** A door's `bytes`/`of` → how much of a zip it has; null unless both are whole and in order. */
+function readProgress(item: Obj): UploadProgress | null {
+  const bytes = item['bytes'];
+  const of = item['of'];
+  return isCount(bytes) && isCount(of) && of > 0 && bytes <= of ? { bytes, of } : null;
 }
 
 /**
  * A machine's `/worlds` → its worlds. Each one is checked against the
  * order's own rules before the room believes it; anything else is dropped,
  * never trusted. The text-wide checks for an IP or a key word are left to
- * the files they were written for: here each field is already checked.
+ * the files they were written for: here each field is already checked. A
+ * world still arriving from its zip has no order yet: only its name, its
+ * address and, while its zip travels, how much of it the machine has.
  */
 export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null {
   if (!isObj(body) || !Array.isArray(body['worlds'])) return null;
@@ -571,12 +767,21 @@ export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null
     const phase = item['phase'];
     if (typeof id !== 'string' || !SLUG.test(id)) continue;
     if (typeof phase !== 'string' || !PHASES.includes(phase)) continue;
+    const domain = item['domain'];
+    const host = typeof domain === 'string' && HOST.test(domain) ? domain : null;
+    if (phase === 'uploading' || phase === 'importing') {
+      if (host !== null) {
+        const upload = phase === 'uploading' ? readProgress(item) : null;
+        worlds.push({ id, phase, order: null, domain: host, upload });
+      }
+      continue;
+    }
     const source = JSON.stringify({
       id,
       card: id,
       state: item['state'],
       server: alias,
-      domain: item['domain'],
+      domain,
       image: item['image'],
       limits: item['limits'],
     });
@@ -585,15 +790,9 @@ export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null
     );
     if (problems.length === 0) {
       const order = JSON.parse(source) as WorldOrder;
-      worlds.push({ id, phase: phase as DoorPhase, order, domain: order.domain });
+      worlds.push({ id, phase: phase as DoorPhase, order, domain: order.domain, upload: null });
     } else if (phase === 'deleting') {
-      const domain = item['domain'];
-      worlds.push({
-        id,
-        phase,
-        order: null,
-        domain: typeof domain === 'string' && HOST.test(domain) ? domain : null,
-      });
+      worlds.push({ id, phase, order: null, domain: host, upload: null });
     }
   }
   return worlds;
@@ -692,6 +891,8 @@ export type MachineView =
       readonly listens: readonly DoorFeature[];
       /** The numinia-assets commit it was installed from (readRecipe); null when its door says none. */
       readonly recipe: string | null;
+      /** Whether it brings worlds back from their zip, and how big a zip it takes (readImports). */
+      readonly imports: Imports | null;
     }
   | {
       readonly alias: string;
@@ -726,6 +927,7 @@ export async function readMachine(
     heartbeat: machine.ok ? readHeartbeat(machine.body) : null,
     listens: machine.ok ? readListens(machine.body) : [],
     recipe: machine.ok ? readRecipe(machine.body) : null,
+    imports: machine.ok ? readImports(machine.body) : null,
   };
 }
 
@@ -735,18 +937,22 @@ export interface GatheredFleet {
   readonly orders: readonly WorldOrder[];
   readonly phases: Readonly<Record<string, DoorPhase>>;
   readonly leaving: readonly LeavingWorld[];
+  /** Worlds on their way back from their zip: no order yet. */
+  readonly arriving: readonly ArrivingWorld[];
   readonly history: readonly DoorLogEntry[];
 }
 
 /**
  * Several machines' doors → one fleet: each machine and whether it
  * answered, every world with its phase (a name is the first machine's that
- * holds it), the worlds leaving, and one history, newest first.
+ * holds it), the worlds leaving, those arriving from their zip, and one
+ * history, newest first.
  */
 export function gatherFleet(views: readonly MachineView[], historyLines = 30): GatheredFleet {
   const orders: WorldOrder[] = [];
   const phases: Record<string, DoorPhase> = {};
   const leaving: LeavingWorld[] = [];
+  const arriving: ArrivingWorld[] = [];
   const taken = new Set<string>();
   for (const view of views) {
     if (!view.open) continue;
@@ -756,6 +962,15 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       if (world.order) {
         orders.push(world.order);
         phases[world.id] = world.phase;
+      } else if (world.phase === 'uploading' || world.phase === 'importing') {
+        arriving.push({
+          id: world.id,
+          server: view.alias,
+          // readDoorWorlds keeps an arriving world only with its address.
+          domain: world.domain as string,
+          phase: world.phase,
+          upload: world.upload ?? null,
+        });
       } else {
         leaving.push({ id: world.id, server: view.alias, domain: world.domain });
       }
@@ -773,10 +988,12 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       heartbeat: view.open ? view.heartbeat : null,
       listens: view.open ? view.listens : [],
       recipe: view.open ? view.recipe : null,
+      imports: view.open ? (view.imports ?? null) : null,
     })),
     orders,
     phases,
     leaving,
+    arriving,
     history: mergeLogs(
       views.map((view) => (view.open ? view.log : [])),
       historyLines,
@@ -825,6 +1042,132 @@ export async function readCopy(
 ): Promise<CopyStatus | null> {
   const answer = await readJson(fetchImpl, doorUrl(alias, `copies/${copy}`), timeoutMs);
   return answer.ok ? readCopyStatus(answer.body) : null;
+}
+
+// ---------------------------------------------------------------------------
+// A world from its zip: the zip itself, straight to its machine
+// ---------------------------------------------------------------------------
+
+/** How an upload ended: the machine has the whole zip, or why not. */
+export type Uploaded =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      /** `stopped`: the Oracle stopped it; `cut`: the connection dropped part-way. */
+      readonly error: DoorError | 'stopped';
+      readonly status: number;
+      /** How many bytes had left the browser when it ended. */
+      readonly sent: number;
+    };
+
+/**
+ * One zip, sent whole to the slot its machine opened for it (`PUT
+ * /fleet/v1/uploads/<nonce>`) in ONE XMLHttpRequest: the browser's own
+ * upload, with progress events (a streamed fetch body needs HTTP/2 both
+ * ways). The machine stops at the signed size and checks the signed
+ * fingerprint; a wrong one leaves the slot open for the same zip again, with
+ * no new signature. `signal` stops it. Never throws.
+ */
+export function uploadZip(
+  alias: string,
+  nonce: string,
+  file: Blob,
+  onProgress: (sent: number) => void,
+  xhrFactory: () => XMLHttpRequest = () => new XMLHttpRequest(),
+  signal?: AbortSignal,
+): Promise<Uploaded> {
+  return new Promise((resolve) => {
+    let sent = 0;
+    let stop: (() => void) | null = null;
+    const finish = (result: Uploaded): void => {
+      if (stop !== null) signal?.removeEventListener('abort', stop);
+      resolve(result);
+    };
+    const failed = (error: DoorError | 'stopped', status: number): void =>
+      finish({ ok: false, error, status, sent });
+    if (signal?.aborted) return failed('stopped', 0);
+    try {
+      const request = xhrFactory();
+      stop = () => request.abort();
+      request.upload.onprogress = (event) => {
+        sent = event.loaded;
+        onProgress(sent);
+      };
+      request.onload = () => {
+        if (request.status === 202) {
+          onProgress(file.size);
+          return finish({ ok: true });
+        }
+        let body: unknown;
+        try {
+          body = JSON.parse(request.responseText);
+        } catch {
+          body = null;
+        }
+        const error = readRefusal(request.status, body).error;
+        // A zip that arrived with no length is, for the Oracle, one that arrived incomplete.
+        failed(error === 'length' ? 'wrong-size' : error, request.status);
+      };
+      // No answer at all: the door was never reached, or the connection dropped part-way.
+      request.onerror = () => failed(sent > 0 ? 'cut' : 'unreachable', 0);
+      request.onabort = () => failed('stopped', 0);
+      signal?.addEventListener('abort', stop, { once: true });
+      request.open('PUT', doorUrl(alias, `uploads/${nonce}`));
+      request.send(file);
+    } catch {
+      failed('unreachable', 0);
+    }
+  });
+}
+
+/**
+ * What the room keeps of an upload so that a reload of the same tab can
+ * finish it: the slot and what was signed — never the admin code. It lives
+ * in the tab's own history entry (`history.state`), as the dialogs' entry
+ * does: nothing of the site's storage, and gone with the tab.
+ */
+export interface ImportTicket {
+  readonly machine: string;
+  readonly world: string;
+  readonly domain: string;
+  /** The request's number, which names its slot: `uploads/<nonce>`. */
+  readonly nonce: string;
+  /** The zip's exact size and SHA-256, as signed. */
+  readonly bytes: number;
+  readonly sha256: string;
+  /** The zip's file name, to ask for the same one again. */
+  readonly name: string;
+}
+
+/** The field of the tab's history entry that holds the room's unfinished uploads. */
+const TICKETS_FIELD = 'worldsImports';
+
+/** The unfinished uploads a history entry holds, each checked field by field; none when it holds none. */
+export function readTickets(state: unknown): ImportTicket[] {
+  if (!isObj(state) || !Array.isArray(state[TICKETS_FIELD])) return [];
+  return (state[TICKETS_FIELD] as readonly unknown[]).flatMap((item) => {
+    if (!isObj(item)) return [];
+    const { machine, world, domain, nonce, bytes, sha256, name } = item;
+    if (typeof machine !== 'string' || !SLUG.test(machine)) return [];
+    if (typeof world !== 'string' || !SLUG.test(world)) return [];
+    if (typeof domain !== 'string' || !HOST.test(domain)) return [];
+    if (typeof nonce !== 'string' || !HEX32.test(nonce)) return [];
+    if (!isCount(bytes) || bytes === 0) return [];
+    if (typeof sha256 !== 'string' || !SHA256.test(sha256)) return [];
+    if (typeof name !== 'string' || name.length > 255) return [];
+    return [{ machine, world, domain, nonce, bytes, sha256, name }];
+  });
+}
+
+/** A history entry's state with these unfinished uploads (none: the field goes), the rest kept. */
+export function withTickets(
+  state: unknown,
+  tickets: readonly ImportTicket[],
+): Record<string, unknown> {
+  const next: Record<string, unknown> = isObj(state) ? { ...state } : {};
+  if (tickets.length === 0) delete next[TICKETS_FIELD];
+  else next[TICKETS_FIELD] = tickets.map((ticket) => ({ ...ticket }));
+  return next;
 }
 
 export interface Waiting {

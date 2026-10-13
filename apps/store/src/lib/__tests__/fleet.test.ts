@@ -12,7 +12,9 @@ import {
   BEACON_MAX_EVENTS,
   BOOTSTRAP_URL,
   CODE_KINDS,
+  DOOR_ERRORS,
   FLEET_REF,
+  IMPORT_RULES,
   REQUEST_SECONDS,
   REQUEST_TYPES,
   SILENT_AFTER_S,
@@ -26,6 +28,8 @@ import {
   doorUrl,
   formatAgo,
   formatBytes,
+  formatCount,
+  formatSize,
   gatherFleet,
   machineHealth,
   mergeLogs,
@@ -36,11 +40,14 @@ import {
   readDoorLog,
   readDoorWorlds,
   readHeartbeat,
+  readImportRule,
+  readImports,
   readListens,
   readMachine,
   readRecipe,
   readRequest,
   readRequestResult,
+  readTickets,
   sendBeacon,
   sendRequest,
   settled,
@@ -48,11 +55,14 @@ import {
   shortWallet,
   staleRecipe,
   typedData,
+  uploadZip,
   waitFor,
+  withTickets,
   type BeaconEvent,
   type DoorLogEntry,
   type FleetRequest,
   type Heartbeat,
+  type ImportTicket,
   type MachineView,
 } from '../fleet';
 import type { WorldOrder } from '../worlds';
@@ -66,7 +76,7 @@ const EXPIRES = 1893456000;
  * and its signer, a stranger's signature, and the keccak checks. The machine
  * verifies the same file.
  */
-const ORACLE = '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357';
+const ORACLE = '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2';
 const VECTORS = [
   {
     type: 'CreateWorld',
@@ -83,8 +93,8 @@ const VECTORS = [
     },
     digest: '0x6390352cb3395b9e08c31daaec3288413a5800cef65a6569164809637382ca1d',
     signature:
-      '0x0163a3be4285af3dc2bfc5894c3d785af6e826c19e168ed68ee144212b70d1ac61894f6234d6394db325d56685639798723ee752be2217f023636f7f30dc17e31b',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0x53979b23b47d9e026169bf8185e378af8b05b9d237b5c7ce32e610e5be2de6c4661dfc877ceba01a0c99f57c731fd4ead5422c899c7f96928d1527dd6c9d742a1c',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'DeleteWorld',
@@ -97,8 +107,8 @@ const VECTORS = [
     },
     digest: '0x4a05422e004fb6b333ed98bbc3d487bdbd231f0ebbf1e6d12516123f4f890a67',
     signature:
-      '0x29042d5fe3a43e6d6c1505a1321b0697735eb1f6457d0bc3acac3cb8f908a4bc31d7162e9f6189378cdede779a841999eabea5f7f55a7522882d4ccdf5339edc1b',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0xe9de07eedac06515febd4397056a61540bdba5b71296fdce91768c98eba477330365818120877ecbfe23d1a97185b3e76f9b05a1bf938541ff3e802e1bb1ef551b',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'StopWorld',
@@ -110,8 +120,8 @@ const VECTORS = [
     },
     digest: '0xcce8832bb8c525e8a94356bd6e02d9d3e39d4fa88b0d9cf49eff9e7eaf8965d1',
     signature:
-      '0x6d55b4b416eff77aea30f35b52f6c432c291bb4c87b3ad124d7165b294cd855375d2ca149e7c358eedf93cac3dd1e4c1c2d020ef943c79deaadbc3064b5f57e51b',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0xb691149d215c3cc80f2234cb07ec9b1d461e37918e3ebde0664c6c05067bfe7169973ae463811559b9adf9eed9639177ed34ae518c4f183df02d8216650e2c0a1c',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'StartWorld',
@@ -123,8 +133,8 @@ const VECTORS = [
     },
     digest: '0xd84f2ea0aea5ef8176282fb8b08b92dfdc169109ed22205f2271d8c372d82a26',
     signature:
-      '0xc2c2c679cdaa44d0c13a4db8933d28d169cc34021c892876962f1fc92ea61e824b17fa875eae23b42df971373e94fb3208532288979e4a95f3d079ae5477f9e61c',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0x2f4a365ce32260dea3b843d2a216d8dd7405f62d04b56ecab76529494e1ed43328c2debd5314de9cf7e3821a16fbc5e0564b442a2eb8cec6e9885494eec3aa791b',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'DownloadWorld',
@@ -136,16 +146,16 @@ const VECTORS = [
     },
     digest: '0xe03580fe93dd2192b20cd5fe6cba48e25020390d9e46e608440cfd5ec2651a27',
     signature:
-      '0x3d53bd6492f9ce6c640e84e96402d027ae04c9f543f71b6d1ff1c2857b2ad631358ae84b2520c393d470df6dd045ab37130b3f5f5da74bd42598f76cda50e1601c',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0xcba02d75d27431cde75fc3c0b570eda353ee5b9193c918c6bb3727bf63b2a16942faa7df519d9a01f90991588020c985431295ba1eb04f62bc0279f7aa6a91481c',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'ShowAdminCode',
     message: { machine: 'open-1', nonce: '5123456789abcdef0123456789abcdef', expires: 1893456000 },
     digest: '0x026533a50e419d03f37105c6f319572c0500f9b65237935ac8670b8dd46ecfe9',
     signature:
-      '0x226bc1c63d9efa737ec4d26c1ec5ce46fe426ddb42a2a1271cf0ee56c68afe5b0b19e89e0c85961885d58e48043bad8fd289a8022954313f134758d4ce96a8431c',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0x877379c62c69cda4ac45e9071eb5d832ad67e0c73060d5daeb3e31d43d9cf11d4dfd84b119c708243e9cf1519675f0de1b7d36c898fd2ecd9775d3e63fdecde31b',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'ShowWorldCode',
@@ -157,8 +167,8 @@ const VECTORS = [
     },
     digest: '0xf69173093218a76e67036e4059ad590d73a16d98de0532caf0ab55464aae3dfd',
     signature:
-      '0x6433d6a86cc6ee7c2e36e40d774bb4523f51e0faa080534763724242e95034df2e947a5ef3554c3b8aabbe20c74edac34801c98c10c0a6985366eb9412c7fdf01c',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0x8fc423400677904312b9062779a200695bc7daf3264785adeac3efeb918d1eaf5808b27a54be5e9d948750a9f3b2a7c8e578fa68e32a59b98a90050fede442851b',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
   {
     type: 'RotateWorldCode',
@@ -170,8 +180,28 @@ const VECTORS = [
     },
     digest: '0x167365fbf09a8fbe0cd684c20bce0ea5e0ceb682a44775f09ebd45137ba1ed82',
     signature:
-      '0xcf02e91be201d87d40c7c91dfe35a470e03bfa0c2bf005a918208b1eaae289f127ea8a575a33205d8efae2ee83327f3df716b3b6d9bac7c0ca70300685719c7b1c',
-    signer: '0x3687b68889a1eb8a16461ff170b5ebfcf3fa1357',
+      '0xaff183e4fe6ec36b74b1598736ac446e4232258c4e336032ff0df351c2f6fd6372fbb63e531941a3862910f988a9a60a73aa1d7d1436d9550f2ff9125618b0861b',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+  },
+  {
+    type: 'ImportWorld',
+    message: {
+      machine: 'open-1',
+      world: 'plaza-copia',
+      domain: 'plaza-copia.numinia.com',
+      image: 'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3',
+      memory: '2g',
+      cpus: '1.5',
+      maxUploadMb: 50,
+      zipBytes: 50331648,
+      zipSha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      nonce: '8123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x772dc4f6286f22eca4f7eb4bcfc2d0211b060fb1417a9a19415feed1a4999ebe',
+    signature:
+      '0xfac462000daffcd32a6c56adf3c1f1303f9f9969f7bb2642c2b7aaea2c8f4abb2b0d67fcb7e4d460de2fae3625ce76066f28753716ab4df1cce6c298261f0eb61c',
+    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
   },
 ] as const;
 const STRANGER = {
@@ -183,8 +213,8 @@ const STRANGER = {
     expires: 1893456000,
   },
   signature:
-    '0xaed9d07df6f3b548e54f315cfa2d6b0c731ab1244c423db0272e9fa935792c8b4ee3a6c08ff9f9c103139bc1f29517ca00027f54b5ad4fe14316b7100ff0b6481b',
-  signer: '0x52c3cea5a0d53727d775a1dff8d994b1083a42ac',
+    '0x07170a0a71f26014f3f089602c419bc0c29315459dc61594ff1f85cb8a79f35a28d99c448c247a57a63561627109fb21f8685bbfc7efd5a1df3f6800297dbcea1b',
+  signer: '0x21b92566387cea4b5ac4f76f5944248d39729467',
 } as const;
 const KECCAK = [
   { input: '', hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470' },
@@ -276,6 +306,40 @@ describe('the requests the room builds', () => {
     );
     expect(rotate).toEqual({ type: 'RotateWorldCode', message: VECTORS[7].message });
     expect(Object.keys(rotate.message)).toEqual(['machine', 'world', 'nonce', 'expires']);
+    // A world from its zip: CreateWorld's fields, then the zip's exact size and fingerprint.
+    const zip = buildRequest(
+      {
+        kind: 'ImportWorld',
+        machine: 'open-1',
+        world: 'plaza-copia',
+        domain: 'plaza-copia.numinia.com',
+        image: IMAGE,
+        memory: '2g',
+        cpus: '1.5',
+        maxUploadMb: 50,
+        zipBytes: 50331648,
+        zipSha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      },
+      VECTORS[8].message.nonce,
+      NOW_MS,
+    );
+    expect(zip).toEqual({ type: 'ImportWorld', message: VECTORS[8].message });
+    expect(Object.keys(zip.message)).toEqual([
+      'machine',
+      'world',
+      'domain',
+      'image',
+      'memory',
+      'cpus',
+      'maxUploadMb',
+      'zipBytes',
+      'zipSha256',
+      'nonce',
+      'expires',
+    ]);
+    const zipData = typedData(zip);
+    expect(zipData.message['zipBytes']).toBe(50331648n);
+    expect(zipData.message['zipSha256']).toBe(VECTORS[8].message.zipSha256);
     // The answers that are a code: what the room waits for after the machine takes them.
     expect(CODE_KINDS).toEqual(['ShowAdminCode', 'ShowWorldCode', 'RotateWorldCode']);
   });
@@ -320,7 +384,7 @@ describe('addresses and small words', () => {
   });
 
   it('shortens a wallet, leaves a short text alone, and sizes files', () => {
-    expect(shortWallet(ORACLE)).toBe('0x3687…1357');
+    expect(shortWallet(ORACLE)).toBe('0x7e76…13c2');
     expect(shortWallet('0x1234')).toBe('0x1234');
     expect(formatBytes(840)).toBe('840 B');
     expect(formatBytes(12_700)).toBe('12.4 KB');
@@ -339,12 +403,14 @@ describe('what the door answers, checked before it is believed', () => {
       request: NONCE,
       adminCode: 'code1234',
       copy: null,
+      upload: null,
     });
     expect(readAccepted(202, { request: NONCE, copy: 'b'.repeat(32), adminCode: '' })).toEqual({
       ok: true,
       request: NONCE,
       adminCode: null,
       copy: 'b'.repeat(32),
+      upload: null,
     });
     expect(readAccepted(202, { request: NONCE, copy: '../x' })).toMatchObject({ copy: null });
     // A world's code as the machine makes it (16 hex) is shown; anything off its rule is not.
@@ -371,18 +437,70 @@ describe('what the door answers, checked before it is believed', () => {
     expect(readAccepted(502, null)).toMatchObject({ error: 'unexpected', status: 502 });
   });
 
+  it('reads a world from its zip taken: where its zip goes, and the new world’s own code', () => {
+    expect(
+      readAccepted(202, { request: NONCE, upload: `uploads/${NONCE}`, adminCode: 'code1234' }),
+    ).toEqual({
+      ok: true,
+      request: NONCE,
+      adminCode: 'code1234',
+      copy: null,
+      upload: `uploads/${NONCE}`,
+    });
+    // Only `uploads/<32 hex>`: never a path the door did not mean.
+    for (const odd of [`uploads/${NONCE}/../x`, '/etc/passwd', `upload/${NONCE}`, 7]) {
+      expect(readAccepted(202, { request: NONCE, upload: odd })).toMatchObject({ upload: null });
+    }
+    // Each rule a world's zip can break is a refusal the room knows by name.
+    for (const rule of IMPORT_RULES) {
+      expect(readAccepted(400, { error: rule })).toEqual({ ok: false, error: rule, status: 400 });
+    }
+  });
+
+  it('names the rule a machine logs for a zip, with what it adds, and nothing else', () => {
+    expect(readImportRule('zip-slip')).toEqual({ rule: 'zip-slip', detail: null });
+    expect(readImportRule(' unexpected: world/notes.txt ')).toEqual({
+      rule: 'unexpected',
+      detail: 'world/notes.txt',
+    });
+    expect(readImportRule('manifest:   ')).toEqual({ rule: 'manifest', detail: null });
+    expect(readImportRule(`ratio: ${'x'.repeat(300)}`)?.detail).toHaveLength(200);
+    expect(readImportRule('expired')).toBeNull();
+    expect(readImportRule('Zip-Slip')).toBeNull();
+    expect(readImportRule(null)).toBeNull();
+  });
+
   it('reads how a request went', () => {
-    expect(readRequestResult({ state: 'done', rule: null })).toEqual({ state: 'done', rule: null });
+    expect(readRequestResult({ state: 'done', rule: null })).toEqual({
+      state: 'done',
+      rule: null,
+      entry: null,
+    });
     expect(readRequestResult({ state: 'failed', rule: 'expired' })).toEqual({
       state: 'failed',
       rule: 'expired',
+      entry: null,
     });
     expect(readRequestResult({ state: 'lost' })).toBeNull();
     expect(readRequestResult({ state: 3 })).toBeNull();
     expect(readRequestResult('done')).toBeNull();
-    expect(settled({ state: 'done', rule: null })).toBe(true);
-    expect(settled({ state: 'failed', rule: 'x' })).toBe(true);
-    expect(settled({ state: 'working', rule: null })).toBe(false);
+    // A world's zip still on its way to its slot is not settled.
+    expect(readRequestResult({ state: 'uploading', bytes: 1, of: 2 })).toEqual({
+      state: 'uploading',
+      rule: null,
+      entry: null,
+    });
+    // The zip entry that broke a rule travels beside it, printable and short, or not at all.
+    expect(
+      readRequestResult({ state: 'failed', rule: 'unexpected', entry: 'world/notes.txt' }),
+    ).toEqual({ state: 'failed', rule: 'unexpected', entry: 'world/notes.txt' });
+    for (const entry of ['', 'a\nb', 'x'.repeat(201), 7, null]) {
+      expect(readRequestResult({ state: 'failed', rule: 'unexpected', entry })?.entry).toBeNull();
+    }
+    expect(settled({ state: 'uploading', rule: null, entry: null })).toBe(false);
+    expect(settled({ state: 'done', rule: null, entry: null })).toBe(true);
+    expect(settled({ state: 'failed', rule: 'x', entry: null })).toBe(true);
+    expect(settled({ state: 'working', rule: null, entry: null })).toBe(false);
   });
 
   it('reads a copy, keeping only what has its shape', () => {
@@ -453,20 +571,78 @@ describe('a machine’s worlds and its log', () => {
       'open-1',
     );
     expect(worlds).toEqual([
-      { id: 'plaza', phase: 'running', order: order('plaza'), domain: 'plaza.numinia.com' },
-      { id: 'foro', phase: 'stopping', order: order('foro'), domain: 'foro.numinia.com' },
+      {
+        id: 'plaza',
+        phase: 'running',
+        order: order('plaza'),
+        domain: 'plaza.numinia.com',
+        upload: null,
+      },
+      {
+        id: 'foro',
+        phase: 'stopping',
+        order: order('foro'),
+        domain: 'foro.numinia.com',
+        upload: null,
+      },
       // A name that looks like a key word is still a world: each field was checked one by one.
       {
         id: 'token-hall',
         phase: 'creating',
         order: order('token-hall'),
         domain: 'token-hall.numinia.com',
+        upload: null,
       },
-      { id: 'vieja', phase: 'deleting', order: null, domain: 'vieja.numinia.com' },
-      { id: 'rota', phase: 'deleting', order: null, domain: null },
+      { id: 'vieja', phase: 'deleting', order: null, domain: 'vieja.numinia.com', upload: null },
+      { id: 'rota', phase: 'deleting', order: null, domain: null, upload: null },
     ]);
     expect(readDoorWorlds({ worlds: 'none' }, 'open-1')).toBeNull();
     expect(readDoorWorlds(null, 'open-1')).toBeNull();
+  });
+
+  it('reads a world on its way back from its zip: its address, and how much of the zip has arrived', () => {
+    const worlds = readDoorWorlds(
+      {
+        worlds: [
+          { id: 'copia', domain: 'copia.numinia.com', phase: 'uploading', bytes: 412, of: 1200 },
+          { id: 'sin-cuenta', domain: 'sin-cuenta.numinia.com', phase: 'uploading' },
+          { id: 'de-mas', domain: 'de-mas.numinia.com', phase: 'uploading', bytes: 9, of: 3 },
+          { id: 'vacia', domain: 'vacia.numinia.com', phase: 'uploading', bytes: 0, of: 0 },
+          { id: 'medio', domain: 'medio.numinia.com', phase: 'uploading', bytes: 1.5, of: 3 },
+          { id: 'abriendo', domain: 'abriendo.numinia.com', phase: 'importing', bytes: 3, of: 3 },
+          // Without its address a world from its zip says nothing the room can show.
+          { id: 'sin-sitio', phase: 'importing' },
+          { id: 'mal-sitio', domain: 'not a host', phase: 'uploading', bytes: 1, of: 2 },
+        ],
+      },
+      'open-1',
+    );
+    expect(worlds).toEqual([
+      {
+        id: 'copia',
+        phase: 'uploading',
+        order: null,
+        domain: 'copia.numinia.com',
+        upload: { bytes: 412, of: 1200 },
+      },
+      {
+        id: 'sin-cuenta',
+        phase: 'uploading',
+        order: null,
+        domain: 'sin-cuenta.numinia.com',
+        upload: null,
+      },
+      { id: 'de-mas', phase: 'uploading', order: null, domain: 'de-mas.numinia.com', upload: null },
+      { id: 'vacia', phase: 'uploading', order: null, domain: 'vacia.numinia.com', upload: null },
+      { id: 'medio', phase: 'uploading', order: null, domain: 'medio.numinia.com', upload: null },
+      {
+        id: 'abriendo',
+        phase: 'importing',
+        order: null,
+        domain: 'abriendo.numinia.com',
+        upload: null,
+      },
+    ]);
   });
 
   it('reads what the machine did, and drops lines it does not recognise', () => {
@@ -658,7 +834,18 @@ describe('reading a machine', () => {
       heartbeat: null,
       listens: [],
       recipe: null,
+      imports: null,
     });
+  });
+
+  it('says whether its machine brings worlds back from their zip, and how big a zip it takes', async () => {
+    const door = fakeFetch((url) => {
+      if (url === WORLDS) return json({ worlds: [] });
+      if (url === MACHINE) return json({ ...BEAT, imports: { zipMaxBytes: 2147483648 } });
+      return json({ entries: [] });
+    });
+    const view = await readMachine(door.fetch, 'open-1');
+    expect(view.open && view.imports).toEqual({ zipMaxBytes: 2147483648 });
   });
 
   it('says why a door could not be read', async () => {
@@ -688,8 +875,21 @@ describe('gatherFleet — several doors, one fleet', () => {
         alias: 'open-1',
         open: true,
         worlds: [
-          { id: 'plaza', phase: 'stopping', order: order('plaza'), domain: 'plaza.numinia.com' },
-          { id: 'vieja', phase: 'deleting', order: null, domain: null },
+          {
+            id: 'plaza',
+            phase: 'stopping',
+            order: order('plaza'),
+            domain: 'plaza.numinia.com',
+            upload: null,
+          },
+          { id: 'vieja', phase: 'deleting', order: null, domain: null, upload: null },
+          {
+            id: 'copia',
+            phase: 'uploading',
+            order: null,
+            domain: 'copia.numinia.com',
+            upload: { bytes: 10, of: 100 },
+          },
         ],
         log: [
           {
@@ -706,6 +906,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         heartbeat: HEARTBEAT,
         listens: ['events'],
         recipe: FLEET_REF,
+        imports: { zipMaxBytes: 2147483648 },
       },
       {
         alias: 'open-2',
@@ -716,18 +917,22 @@ describe('gatherFleet — several doors, one fleet', () => {
             phase: 'running',
             order: order('plaza', { server: 'open-2' }),
             domain: 'plaza.numinia.com',
+            upload: null,
           },
           {
             id: 'foro',
             phase: 'running',
             order: order('foro', { server: 'open-2' }),
             domain: 'foro.numinia.com',
+            upload: null,
           },
+          { id: 'otra', phase: 'importing', order: null, domain: 'otra.numinia.com', upload: null },
         ],
         log: [],
         heartbeat: null,
         listens: [],
         recipe: null,
+        imports: null,
       },
       { alias: 'open-3', open: false, reason: 'http', status: 502 },
       { alias: 'open-4', open: false, reason: 'timeout' },
@@ -741,8 +946,17 @@ describe('gatherFleet — several doors, one fleet', () => {
         heartbeat: HEARTBEAT,
         listens: ['events'],
         recipe: FLEET_REF,
+        imports: { zipMaxBytes: 2147483648 },
       },
-      { alias: 'open-2', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
+      {
+        alias: 'open-2',
+        open: true,
+        reason: null,
+        heartbeat: null,
+        listens: [],
+        recipe: null,
+        imports: null,
+      },
       {
         alias: 'open-3',
         open: false,
@@ -750,6 +964,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         heartbeat: null,
         listens: [],
         recipe: null,
+        imports: null,
       },
       {
         alias: 'open-4',
@@ -758,12 +973,30 @@ describe('gatherFleet — several doors, one fleet', () => {
         heartbeat: null,
         listens: [],
         recipe: null,
+        imports: null,
       },
     ]);
     // A name belongs to the first machine that holds it.
     expect(fleet.orders.map((o) => `${o.id}@${o.server}`)).toEqual(['plaza@open-1', 'foro@open-2']);
     expect(fleet.phases).toEqual({ plaza: 'stopping', foro: 'running' });
     expect(fleet.leaving).toEqual([{ id: 'vieja', server: 'open-1', domain: null }]);
+    // The worlds on their way back from their zip: no order yet, their address, their upload.
+    expect(fleet.arriving).toEqual([
+      {
+        id: 'copia',
+        server: 'open-1',
+        domain: 'copia.numinia.com',
+        phase: 'uploading',
+        upload: { bytes: 10, of: 100 },
+      },
+      {
+        id: 'otra',
+        server: 'open-2',
+        domain: 'otra.numinia.com',
+        phase: 'importing',
+        upload: null,
+      },
+    ]);
     expect(fleet.history).toHaveLength(1);
     expect(gatherFleet(views, 0).history).toEqual([]);
   });
@@ -787,6 +1020,7 @@ describe('the calls', () => {
       request: NONCE,
       adminCode: null,
       copy: null,
+      upload: null,
     });
     expect(door.urls).toEqual(['https://open-1.numinia.com/fleet/v1/actions']);
     expect(door.bodies).toEqual([
@@ -818,6 +1052,7 @@ describe('the calls', () => {
     expect(await readRequest(door.fetch, 'open-1', NONCE)).toEqual({
       state: 'working',
       rule: null,
+      entry: null,
     });
     expect(await readCopy(door.fetch, 'open-1', 'c'.repeat(32))).toMatchObject({
       state: 'preparing',
@@ -1100,5 +1335,230 @@ describe('what the room tells a machine about the browser’s side', () => {
       }),
     ).toBe(false);
     expect(sent).toHaveLength(1);
+  });
+});
+
+describe('a world from its zip — sizes, the doors that take zips, the upload, a reload', () => {
+  it('knows every rule a world’s zip can break as a refusal of the door', () => {
+    for (const rule of IMPORT_RULES) expect(DOOR_ERRORS).toContain(rule);
+    expect(IMPORT_RULES).toHaveLength(20);
+  });
+
+  it('writes a size short, in binary units and the reader’s language, at most one decimal', () => {
+    expect(formatSize(0, 'en')).toBe('0 B');
+    expect(formatSize(-3, 'en')).toBe('0 B');
+    expect(formatSize(512, 'en')).toBe('512 B');
+    expect(formatSize(50331648, 'es')).toBe('48 MB');
+    expect(formatSize(432013312, 'es')).toBe('412 MB');
+    expect(formatSize(1288490189, 'es')).toBe('1,2 GB');
+    expect(formatSize(1288490189, 'en')).toBe('1.2 GB');
+    expect(formatSize(3 * 1024 ** 5, 'en')).toBe('3,072 TB');
+    // No language said: the browser's own.
+    expect(formatSize(1536, '')).toMatch(/^1[.,]5 KB$/);
+    expect(formatSize(1536)).toMatch(/^1[.,]5 KB$/);
+    expect(formatCount(50331648, 'es')).toBe('50.331.648');
+    expect(formatCount(50331648, 'en')).toBe('50,331,648');
+    expect(formatCount(7)).toBe('7');
+  });
+
+  it('reads whether a door takes zips, and the biggest it takes; nothing from a door that says otherwise', () => {
+    expect(readImports({ imports: { zipMaxBytes: 2147483648 } })).toEqual({
+      zipMaxBytes: 2147483648,
+    });
+    for (const odd of [0, -1, 1.5, '2147483648', 2 ** 60, null]) {
+      expect(readImports({ imports: { zipMaxBytes: odd } })).toBeNull();
+    }
+    expect(readImports({ imports: 'yes' })).toBeNull();
+    expect(readImports({ imports: [] })).toBeNull();
+    expect(readImports({ recipe: FLEET_REF })).toBeNull();
+    expect(readImports(null)).toBeNull();
+  });
+
+  /** A browser's XMLHttpRequest, as much of it as the upload uses, played by a script. */
+  class FakeXhr {
+    method = '';
+    url = '';
+    body: unknown = null;
+    status = 0;
+    responseText = '';
+    aborted = false;
+    readonly upload: { onprogress: ((event: { loaded: number }) => void) | null } = {
+      onprogress: null,
+    };
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    onabort: (() => void) | null = null;
+    constructor(private readonly script: (xhr: FakeXhr) => void) {}
+    open(method: string, url: string): void {
+      this.method = method;
+      this.url = url;
+    }
+    send(body: unknown): void {
+      this.body = body;
+      this.script(this);
+    }
+    abort(): void {
+      this.aborted = true;
+      this.onabort?.();
+    }
+    progress(loaded: number): void {
+      this.upload.onprogress?.({ loaded });
+    }
+    answer(status: number, text = ''): void {
+      this.status = status;
+      this.responseText = text;
+      this.onload?.();
+    }
+  }
+
+  const NONCE = 'c'.repeat(32);
+  const ZIP = new Blob([new Uint8Array(20)]);
+
+  function door(script: (xhr: FakeXhr) => void) {
+    const made: FakeXhr[] = [];
+    const sent: number[] = [];
+    return {
+      made,
+      sent,
+      onProgress: (bytes: number) => sent.push(bytes),
+      factory: () => {
+        const xhr = new FakeXhr(script);
+        made.push(xhr);
+        return xhr as unknown as XMLHttpRequest;
+      },
+    };
+  }
+
+  it('sends the zip whole, in one PUT to its slot, saying how much has left', async () => {
+    const fake = door((xhr) => {
+      xhr.progress(8);
+      xhr.progress(16);
+      xhr.answer(202, JSON.stringify({ request: NONCE }));
+    });
+    expect(await uploadZip('open-1', NONCE, ZIP, fake.onProgress, fake.factory)).toEqual({
+      ok: true,
+    });
+    expect(fake.made).toHaveLength(1);
+    expect(fake.made[0]?.method).toBe('PUT');
+    expect(fake.made[0]?.url).toBe(`https://open-1.numinia.com/fleet/v1/uploads/${NONCE}`);
+    expect(fake.made[0]?.body).toBe(ZIP);
+    expect(fake.sent).toEqual([8, 16, 20]);
+  });
+
+  it('names what the door refused: a wrong zip, a slot gone, an answer it cannot read', async () => {
+    const cases: [number, string, string][] = [
+      [400, JSON.stringify({ error: 'fingerprint' }), 'fingerprint'],
+      [400, JSON.stringify({ error: 'wrong-size' }), 'wrong-size'],
+      // No length at all (411): for the Oracle, a zip that arrived incomplete.
+      [411, JSON.stringify({ error: 'length' }), 'wrong-size'],
+      [410, JSON.stringify({ error: 'slot-expired' }), 'slot-expired'],
+      [404, JSON.stringify({ error: 'missing' }), 'missing'],
+      [409, JSON.stringify({ error: 'busy' }), 'busy'],
+      [502, '<html>bad gateway</html>', 'unexpected'],
+    ];
+    for (const [status, text, error] of cases) {
+      const fake = door((xhr) => {
+        xhr.progress(20);
+        xhr.answer(status, text);
+      });
+      expect(await uploadZip('open-1', NONCE, ZIP, fake.onProgress, fake.factory)).toEqual({
+        ok: false,
+        error,
+        status,
+        sent: 20,
+      });
+    }
+  });
+
+  it('tells a door never reached from a connection cut part-way', async () => {
+    const never = door((xhr) => xhr.onerror?.());
+    expect(await uploadZip('open-1', NONCE, ZIP, never.onProgress, never.factory)).toEqual({
+      ok: false,
+      error: 'unreachable',
+      status: 0,
+      sent: 0,
+    });
+    const cut = door((xhr) => {
+      xhr.progress(7);
+      xhr.onerror?.();
+    });
+    expect(await uploadZip('open-1', NONCE, ZIP, cut.onProgress, cut.factory)).toEqual({
+      ok: false,
+      error: 'cut',
+      status: 0,
+      sent: 7,
+    });
+  });
+
+  it('stops when the Oracle stops it, and never starts when already stopped', async () => {
+    const controller = new AbortController();
+    const fake = door((xhr) => {
+      xhr.progress(3);
+      controller.abort();
+    });
+    expect(
+      await uploadZip('open-1', NONCE, ZIP, fake.onProgress, fake.factory, controller.signal),
+    ).toEqual({ ok: false, error: 'stopped', status: 0, sent: 3 });
+    expect(fake.made[0]?.aborted).toBe(true);
+    const late = door(() => undefined);
+    expect(
+      await uploadZip('open-1', NONCE, ZIP, late.onProgress, late.factory, controller.signal),
+    ).toEqual({ ok: false, error: 'stopped', status: 0, sent: 0 });
+    expect(late.made).toHaveLength(0);
+    // A signal that never fires is let go once the upload ends.
+    const calm = new AbortController();
+    const done = door((xhr) => xhr.answer(202, '{}'));
+    expect(
+      await uploadZip('open-1', NONCE, ZIP, done.onProgress, done.factory, calm.signal),
+    ).toEqual({ ok: true });
+  });
+
+  it('never throws: a browser that cannot make the request is a door never reached', async () => {
+    const broken = (): XMLHttpRequest => {
+      throw new Error('no XMLHttpRequest here');
+    };
+    expect(await uploadZip('open-1', NONCE, ZIP, () => undefined, broken)).toEqual({
+      ok: false,
+      error: 'unreachable',
+      status: 0,
+      sent: 0,
+    });
+    // The browser's own request, where there is none (this test's runtime): the same.
+    expect(await uploadZip('open-1', NONCE, ZIP, () => undefined)).toMatchObject({
+      error: 'unreachable',
+    });
+  });
+
+  const TICKET: ImportTicket = {
+    machine: 'open-1',
+    world: 'plaza-copia',
+    domain: 'plaza-copia.numinia.com',
+    nonce: NONCE,
+    bytes: 50331648,
+    sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+    name: 'plaza-20261012-0930.zip',
+  };
+
+  it('keeps an unfinished upload in the tab’s history entry, and reads back only what has its shape', () => {
+    const state = withTickets({ worldsDialog: true }, [TICKET]);
+    expect(state).toMatchObject({ worldsDialog: true });
+    expect(readTickets(state)).toEqual([TICKET]);
+    expect(withTickets({ worldsImports: [TICKET], keep: 1 }, [])).toEqual({ keep: 1 });
+    expect(withTickets(null, [])).toEqual({});
+    expect(readTickets(null)).toEqual([]);
+    expect(readTickets({ worldsImports: 'x' })).toEqual([]);
+    const odd: unknown[] = [
+      'junk',
+      { ...TICKET, machine: 'Open 1' },
+      { ...TICKET, world: '../x' },
+      { ...TICKET, domain: 'not a host' },
+      { ...TICKET, nonce: 'short' },
+      { ...TICKET, bytes: 0 },
+      { ...TICKET, bytes: 1.5 },
+      { ...TICKET, sha256: 'f'.repeat(63) },
+      { ...TICKET, name: 'x'.repeat(256) },
+      { ...TICKET, name: 7 },
+    ];
+    expect(readTickets({ worldsImports: [...odd, TICKET] })).toEqual([TICKET]);
   });
 });

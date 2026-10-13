@@ -20,6 +20,7 @@
     "@astrojs/node": "^11.1.6",
     "@astrojs/react": "^7.0.0",
     "@astrojs/sitemap": "^3.7.4",
+    "@noble/hashes": "1.7.2",
     "@numinia/analytics": "*",
     "@numinia/auth": "*",
     "@numinia/domain": "*",

@@ -24,6 +24,7 @@ import {
   fleetStats,
   formatUptime,
   groupByServer,
+  importMachines,
   inHouseZone,
   joinDomain,
   listedRows,
@@ -35,11 +36,13 @@ import {
   parseOrder,
   placeAllowed,
   problemFields,
+  proposeName,
   readDohAnswer,
   readProbe,
   renderOrder,
   rowPlace,
   slot,
+  slugify,
   worldCards,
   worldUrl,
   type ReasonWords,
@@ -381,6 +384,73 @@ describe('buildRows — what was asked for, crossed with what answers', () => {
     });
     expect(rows.map((row) => row.id)).toEqual(['kept', 'lost']);
     expect(rows[1]).toMatchObject({ title: 'lost', cover: null, place: null, status: 'changing' });
+    // A world whose place is no longer known names no server.
+    expect(fleetServers(rows)).toEqual(['open-1']);
+  });
+
+  it('shows a world on its way back from its zip, with how much of its zip has arrived', () => {
+    const rows = buildRows({
+      orders: [order('kept')],
+      leaving: [{ id: 'leaving', server: 'open-1', domain: null }],
+      arriving: [
+        {
+          id: 'copia',
+          server: 'open-1',
+          domain: 'copia.numinia.com',
+          phase: 'uploading',
+          upload: { bytes: 412, of: 1200 },
+        },
+        {
+          id: 'tower',
+          server: 'open-2',
+          domain: 'tower.numinia.com',
+          phase: 'importing',
+          upload: null,
+        },
+        // A name the fleet already shows, as a world or one leaving, is shown once.
+        {
+          id: 'kept',
+          server: 'open-1',
+          domain: 'kept.numinia.com',
+          phase: 'importing',
+          upload: null,
+        },
+        {
+          id: 'leaving',
+          server: 'open-1',
+          domain: 'x.numinia.com',
+          phase: 'uploading',
+          upload: null,
+        },
+      ],
+      cards: [{ slug: 'tower', title: 'The Tower', cover: '/t.webp' }],
+      probes: {},
+    });
+    expect(rows.map((row) => row.id)).toEqual(['copia', 'kept', 'leaving', 'tower']);
+    const by = (id: string): WorldRow => rows.find((row) => row.id === id) as WorldRow;
+    expect(by('copia')).toEqual({
+      id: 'copia',
+      title: 'copia',
+      cover: null,
+      missingCard: false,
+      status: 'changing',
+      probe: null,
+      phase: 'uploading',
+      order: null,
+      legacy: null,
+      place: { server: 'open-1', domain: 'copia.numinia.com' },
+      upload: { bytes: 412, of: 1200 },
+    });
+    expect(by('tower')).toMatchObject({
+      title: 'The Tower',
+      cover: '/t.webp',
+      phase: 'importing',
+      upload: null,
+    });
+    expect(by('kept')).toMatchObject({ phase: 'running', upload: null });
+    expect(by('leaving')).toMatchObject({ phase: 'deleting' });
+    // Nothing to count yet: a world from its zip is changing until it lands, stopped.
+    expect(fleetStats(rows)).toMatchObject({ total: 4 });
   });
 
   it('breaks title ties by id', () => {
@@ -545,9 +615,10 @@ describe('the place: machine, address and whether it is free', () => {
   });
 
   it('offers only the machines whose door answers, in the fleet’s order', () => {
+    const open = { open: true, reason: null, heartbeat: null, listens: [], recipe: null };
     expect(
       machineChoices([
-        { alias: 'open-1', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
+        { alias: 'open-1', ...open, imports: null },
         {
           alias: 'open-2',
           open: false,
@@ -555,13 +626,65 @@ describe('the place: machine, address and whether it is free', () => {
           heartbeat: null,
           listens: [],
           recipe: null,
+          imports: null,
         },
-        { alias: 'open-3', open: true, reason: null, heartbeat: null, listens: [], recipe: null },
+        { alias: 'open-3', ...open, imports: null },
       ]),
     ).toEqual(['open-1', 'open-3']);
     expect(machineChoices([])).toEqual([]);
     expect(machineHost('open-1')).toBe('vps-39c7f315.vps.ovh.net');
     expect(machineHost('open-9')).toBeNull();
+  });
+
+  it('brings worlds back from their zip only to machines whose door says it takes them', () => {
+    const open = { open: true, reason: null, heartbeat: null, listens: [], recipe: null };
+    expect(
+      importMachines([
+        { alias: 'open-1', ...open, imports: { zipMaxBytes: 2147483648 } },
+        // A machine older than the import says nothing: never offered.
+        { alias: 'open-2', ...open, imports: null },
+        { alias: 'open-3', ...open, open: false, imports: { zipMaxBytes: 1024 } },
+        { alias: 'open-4', ...open, imports: { zipMaxBytes: 1024 } },
+      ]),
+    ).toEqual([
+      { alias: 'open-1', zipMaxBytes: 2147483648 },
+      { alias: 'open-4', zipMaxBytes: 1024 },
+    ]);
+    expect(importMachines([])).toEqual([]);
+  });
+
+  it('makes a name of any text, as an order’s id must be', () => {
+    expect(slugify('Plaza Mayor — Copia (2)')).toBe('plaza-mayor-copia-2');
+    expect(slugify('Ágora del Café')).toBe('agora-del-cafe');
+    expect(slugify('--pablofm__20261012.zip--')).toBe('pablofm-20261012-zip');
+    expect(slugify('世界')).toBe('');
+    expect(slugify(`${'a'.repeat(39)}-b`)).toBe('a'.repeat(39));
+    expect(slugify('x'.repeat(50))).toHaveLength(40);
+  });
+
+  it('proposes a world’s own name for its zip, or the first free one after it', () => {
+    // agora exists, gone is being deleted, vic's address belongs to a legacy world.
+    expect(proposeName('Plaza Nueva', rows, 'numinia.com')).toBe('plaza-nueva');
+    expect(proposeName('agora', rows, 'numinia.com')).toBe('agora-2');
+    expect(proposeName('gone', rows, 'numinia.com')).toBe('gone-2');
+    expect(proposeName('vic', rows, 'numinia.com')).toBe('vic-2');
+    expect(proposeName('vic', rows, 'numen.games')).toBe('vic');
+    expect(proposeName('index', rows, 'numinia.com')).toBe('index-2');
+    expect(proposeName('世界', rows, 'numinia.com')).toBe('world');
+    const crowded = buildRows({
+      orders: ['plaza', 'plaza-2', 'plaza-3'].map((id) => ({
+        id,
+        card: id,
+        state: 'running' as const,
+        server: 'open-1',
+        domain: `${id}.numinia.com`,
+        image: 'ghcr.io/numengames/numinia-hyperfy2:sha-0e20453',
+        limits: { memory: '2g', cpus: '1.5', maxUploadMb: 50 },
+      })),
+      cards: [],
+      probes: {},
+    });
+    expect(proposeName('Plaza', crowded, 'numinia.com')).toBe('plaza-4');
   });
 
   it('knows which world already answers at an address, and which one is still leaving it', () => {
@@ -712,6 +835,8 @@ const WORDS: ReasonWords = {
   stopping: 'stopping',
   starting: 'starting',
   deleting: 'deleting',
+  uploading: 'uploading',
+  importing: 'importing',
   unknown: 'unknown',
 };
 
@@ -732,6 +857,8 @@ describe('describeStatus — the reason, in one line', () => {
     const base = sampleRows().find((row) => row.id === 'circle') as WorldRow;
     expect(describeStatus({ ...base, phase: 'stopping' }, WORDS)).toBe('stopping');
     expect(describeStatus({ ...base, phase: 'starting' }, WORDS)).toBe('starting');
+    expect(describeStatus({ ...base, phase: 'uploading' }, WORDS)).toBe('uploading');
+    expect(describeStatus({ ...base, phase: 'importing' }, WORDS)).toBe('importing');
   });
 
   it('names a failure that is not HTTP, and an HTTP failure without a status', () => {

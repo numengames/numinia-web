@@ -38,9 +38,9 @@ import {
 import { checkAddress } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { busy, problemText, stepText, useFleetAction, type Step } from './fleet-action';
-import { Cover, type CodeMode, type WorldAction } from './WorldViews';
+import { CodeBox, Cover, type CodeMode, type WorldAction } from './WorldViews';
 
-function Modal({
+export function Modal({
   open,
   label,
   onClose,
@@ -116,22 +116,25 @@ function useOnProgress(step: Step, effect: () => void): void {
 }
 
 /** Where the request is while it travels, or what went wrong once it stopped. */
-function StepLine({
+export function StepLine({
   step,
   machine,
   room,
   sessionHref,
+  values,
 }: {
   readonly step: Step;
   readonly machine: string;
   readonly room: WorldsRoomMessages;
   /** Where the wallet is connected again, when the room cannot find it. */
   readonly sessionHref: string;
+  /** A zip rule's own blanks (`{f}`, `{s}`, `{max}`), for a world brought back from its zip. */
+  readonly values?: Readonly<Record<string, string | number>> | undefined;
 }) {
   if (step.at === 'failed') {
     return (
       <p className="fallo" role="alert" data-problem={step.problem}>
-        {problemText(step, machine, room)}
+        {problemText(step, machine, room, values)}
         {step.problem === 'no-wallet' && (
           <>
             {' '}
@@ -152,32 +155,7 @@ function StepLine({
   );
 }
 
-/** A code to read and copy: the admin code. */
-function CodeBox({ code, room }: { readonly code: string; readonly room: WorldsRoomMessages }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="codigo">
-      <code className="mono" data-admin-code>
-        {code}
-      </code>
-      <button
-        type="button"
-        className="btn btn-fantasma"
-        onClick={() => {
-          void navigator.clipboard
-            ?.writeText(code)
-            .then(() => setCopied(true))
-            .catch(() => undefined);
-        }}
-        data-metric="worlds-copy"
-      >
-        {copied ? room.machines.copied : room.machines.copy}
-      </button>
-    </div>
-  );
-}
-
-function Field({
+export function Field({
   id,
   label,
   hint,
@@ -217,10 +195,10 @@ function Field({
 
 const STEPS = ['stepCard', 'stepPlace', 'stepEngine', 'stepConfirm'] as const;
 
-type DnsState = AddressDns | 'checking';
+export type DnsState = AddressDns | 'checking';
 
 /** One line under the address: whose it is, or where public DNS sends it. */
-function AddressLine({
+export function AddressLine({
   domain,
   machine,
   owner,

@@ -3,11 +3,14 @@
  * cover (the same picture the world shows while it loads), a compact list,
  * and the cards grouped by server — the Tower grouped by organisation, with
  * "show N more" after six. Each card of a world of the fleet carries its own
- * admin code: Show and Change code, one signature each.
+ * admin code: Show and Change code, one signature each. A world coming back
+ * from its zip carries its upload on its card: how much of the zip its
+ * machine has, a way to stop it or send it again, and its new admin code.
  */
 
 import { useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
+import { formatSize } from '../../../lib/fleet';
 import {
   buildTag,
   describeStatus,
@@ -23,28 +26,130 @@ export type WorldAction = 'stop' | 'start' | 'delete' | 'download';
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
+/** A zip this tab is bringing back as a world, as its card shows it. */
+export interface TransferView {
+  /**
+   * `sending` its bytes, the machine `checking` it, `cut` or `stopped` on the
+   * way, `failed` (a refusal), `half` done before a reload, `matching` a zip
+   * picked again against the signed fingerprint, `landed` stopped.
+   */
+  readonly state:
+    'sending' | 'checking' | 'cut' | 'stopped' | 'failed' | 'half' | 'matching' | 'landed';
+  readonly machine: string;
+  /** Bytes sent, of the zip's `total`. */
+  readonly sent: number;
+  readonly total: number;
+  /** While a zip picked again is hashed: the share done, 0 to 1. */
+  readonly matching: number;
+  /** What went wrong, in the room's words; null when nothing did. */
+  readonly problem: string | null;
+  /** Whether "Volver a subir" can send the same zip into the same slot, with no new signature. */
+  readonly retry: boolean;
+  /** The new world's own admin code, from its machine's 202: shown on its card, never kept. */
+  readonly code: string | null;
+}
+
+export type TransferAction = 'stop' | 'retry' | 'discard' | 'pick';
+
 interface ViewProps {
   readonly rows: readonly WorldRow[];
   readonly room: WorldsRoomMessages;
   readonly onAction: (row: WorldRow, action: WorldAction) => void;
   readonly onCode: (row: WorldRow, mode: CodeMode) => void;
+  /** The uploads this tab runs, by world. */
+  readonly transfers?: ReadonlyMap<string, TransferView> | undefined;
+  readonly onTransfer?: ((row: WorldRow, action: TransferAction) => void) | undefined;
 }
 
 const PER_GROUP = 6;
 
+/** The page's language, for sizes and numbers; none = the browser's. */
+export function pageLang(): string | undefined {
+  return typeof document === 'undefined' ? undefined : document.documentElement.lang || undefined;
+}
+
+/** A code to read and copy: an admin code. */
+export function CodeBox({
+  code,
+  room,
+}: {
+  readonly code: string;
+  readonly room: WorldsRoomMessages;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="codigo">
+      <code className="mono" data-admin-code>
+        {code}
+      </code>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => {
+          void navigator.clipboard
+            ?.writeText(code)
+            .then(() => setCopied(true))
+            .catch(() => undefined);
+        }}
+        data-metric="worlds-copy"
+      >
+        {copied ? room.machines.copied : room.machines.copy}
+      </button>
+    </div>
+  );
+}
+
 /** What a world is doing, in one verb: the settled states as they are, a change as what is happening now. */
-function StatusPill({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
-  const phase = row.phase;
+function StatusPill({
+  row,
+  room,
+  transfer,
+}: {
+  row: WorldRow;
+  room: WorldsRoomMessages;
+  transfer: TransferView | undefined;
+}) {
+  // An upload this tab runs says its own state: on its way, cut, or refused.
+  const stuck =
+    transfer?.state === 'failed'
+      ? room.import.failedPill
+      : transfer?.state === 'cut' || transfer?.state === 'stopped' || transfer?.state === 'half'
+        ? room.import.cutPill
+        : null;
+  if (stuck !== null) {
+    return (
+      <span
+        className="pildora estado-mundo"
+        data-status="unreachable"
+        data-transfer={transfer?.state}
+      >
+        {stuck}
+      </span>
+    );
+  }
+  const phase =
+    transfer?.state === 'sending' || transfer?.state === 'matching'
+      ? 'uploading'
+      : transfer?.state === 'checking'
+        ? 'importing'
+        : row.phase;
+  const changing =
+    row.status === 'changing' || (transfer !== undefined && transfer.state !== 'landed');
   const doing =
-    row.status === 'changing' &&
-    (phase === 'creating' || phase === 'stopping' || phase === 'starting' || phase === 'deleting')
+    changing &&
+    (phase === 'creating' ||
+      phase === 'stopping' ||
+      phase === 'starting' ||
+      phase === 'deleting' ||
+      phase === 'uploading' ||
+      phase === 'importing')
       ? room.phases[phase]
       : null;
   return (
     <span
       className="pildora estado-mundo"
-      data-status={row.status}
-      data-phase={doing === null ? undefined : phase}
+      data-status={doing === null ? row.status : 'changing'}
+      data-phase={doing === null ? undefined : (phase ?? undefined)}
       title={describeStatus(row, room.reasons)}
     >
       {doing === null ? (
@@ -72,6 +177,124 @@ function Badges({ row, room }: { row: WorldRow; room: WorldsRoomMessages }) {
   );
 }
 
+/** §9.8's 4 px capsule with its figure beside, in mono: how much of a zip its machine has. */
+function UploadBar({
+  sent,
+  total,
+  label,
+}: {
+  readonly sent: number;
+  readonly total: number;
+  readonly label: string;
+}) {
+  const share = total > 0 ? Math.min(100, Math.floor((sent / total) * 100)) : 0;
+  return (
+    <div className="barra-fila">
+      <div
+        className="barra-subida"
+        role="progressbar"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={share}
+      >
+        <span style={{ width: `${share}%` }} />
+      </div>
+      <span className="mono cifra-subida">{share} %</span>
+    </div>
+  );
+}
+
+/** A world's upload, on its card, while this tab runs it: progress, then what to do when it stops. */
+function TransferBox({
+  row,
+  transfer,
+  room,
+  onTransfer,
+}: {
+  row: WorldRow;
+  transfer: TransferView;
+  room: WorldsRoomMessages;
+  onTransfer: NonNullable<ViewProps['onTransfer']>;
+}) {
+  const words = room.import;
+  const lang = pageLang();
+  const sizes = {
+    m: transfer.machine,
+    sent: formatSize(transfer.sent, lang),
+    total: formatSize(transfer.total, lang),
+  };
+  const button = (action: TransferAction, label: string) => (
+    <button
+      type="button"
+      className="btn btn-fantasma"
+      onClick={() => onTransfer(row, action)}
+      data-metric={`worlds-import-${action}`}
+    >
+      {label}
+    </button>
+  );
+  const state = transfer.state;
+  if (state === 'landed') return null;
+  if (state === 'sending') {
+    return (
+      <div className="subida" data-transfer={state}>
+        <p className="nota" aria-live="polite">
+          {fill(words.uploading, sizes)}
+        </p>
+        <UploadBar
+          sent={transfer.sent}
+          total={transfer.total}
+          label={fill(words.uploading, sizes)}
+        />
+        <p className="nota espera">{words.keepOpen}</p>
+        <div className="acciones">{button('stop', words.stop)}</div>
+      </div>
+    );
+  }
+  if (state === 'checking') {
+    return (
+      <div className="subida" data-transfer={state}>
+        <p className="nota espera">{fill(words.checking, sizes)}</p>
+      </div>
+    );
+  }
+  if (state === 'matching') {
+    return (
+      <div className="subida" data-transfer={state}>
+        <p className="nota espera">
+          <LunaEspera /> {fill(words.hashing, { p: Math.floor(transfer.matching * 100) })}
+        </p>
+      </div>
+    );
+  }
+  const said =
+    state === 'cut'
+      ? fill(words.cut, sizes)
+      : state === 'stopped'
+        ? fill(words.stopped, sizes)
+        : state === 'half'
+          ? words.halfDone
+          : (transfer.problem ?? words.failedPill);
+  return (
+    <div className="subida" data-transfer={state}>
+      <p className={state === 'stopped' || state === 'half' ? 'nota' : 'fallo'} role="status">
+        {said}
+      </p>
+      {state === 'half' && transfer.problem !== null && (
+        <p className="fallo" role="alert">
+          {transfer.problem}
+        </p>
+      )}
+      <div className="acciones">
+        {state === 'half' && button('pick', words.pickSame)}
+        {state !== 'half' && transfer.retry && button('retry', words.retry)}
+        {button('discard', words.discard)}
+      </div>
+    </div>
+  );
+}
+
 function Actions({
   row,
   room,
@@ -84,7 +307,28 @@ function Actions({
   const order = row.order;
   // While its machine creates, stops, starts or deletes it, there is nothing to press:
   // the pill says what is happening, and a world not born yet has nothing to open.
-  if (row.status === 'changing') return <p className="nota espera">{room.busyNote}</p>;
+  if (row.status === 'changing') {
+    const machine = rowPlace(row)?.server ?? '?';
+    // A zip on its way that this tab is not sending: another tab's, or one left half done.
+    if (row.phase === 'uploading') {
+      return (
+        <div className="subida" data-transfer="elsewhere">
+          {row.upload !== null && (
+            <UploadBar
+              sent={row.upload.bytes}
+              total={row.upload.of}
+              label={describeStatus(row, room.reasons)}
+            />
+          )}
+          <p className="nota espera">{fill(room.import.elsewhere, { m: machine })}</p>
+        </div>
+      );
+    }
+    if (row.phase === 'importing') {
+      return <p className="nota espera">{fill(room.import.checking, { m: machine })}</p>;
+    }
+    return <p className="nota espera">{room.busyNote}</p>;
+  }
   const open = row.legacy?.domain ?? (order?.state === 'running' ? order.domain : null);
   return (
     <div className="acciones">
@@ -141,6 +385,26 @@ function Actions({
       )}
     </div>
   );
+}
+
+/** What a card does at its foot: its upload while this tab runs one, else its actions. */
+function Foot({
+  row,
+  room,
+  onAction,
+  transfer,
+  onTransfer,
+}: {
+  row: WorldRow;
+  room: WorldsRoomMessages;
+  onAction: ViewProps['onAction'];
+  transfer: TransferView | undefined;
+  onTransfer: ViewProps['onTransfer'];
+}) {
+  if (transfer !== undefined && transfer.state !== 'landed' && onTransfer !== undefined) {
+    return <TransferBox row={row} transfer={transfer} room={room} onTransfer={onTransfer} />;
+  }
+  return <Actions row={row} room={room} onAction={onAction} />;
 }
 
 /** The cover, or the world's initial on the house's night when the card has none yet. */
@@ -209,29 +473,70 @@ function CodeLine({
   );
 }
 
+/** The admin code a world brought back from its zip was born with: on its card, once. */
+function NewCode({ row, code, room }: { row: WorldRow; code: string; room: WorldsRoomMessages }) {
+  return (
+    <div className="codigo-nuevo" data-new-code={row.id}>
+      <p className="etiqueta">{fill(room.code.shown, { t: row.title })}</p>
+      <CodeBox code={code} room={room} />
+      <p className="nota">{fill(room.code.chat, { code })}</p>
+    </div>
+  );
+}
+
+/**
+ * What a world says under its name: where a world just landed came from;
+ * nothing while an upload that stopped says why at the card's foot; else its state.
+ */
+function reasonOf(
+  row: WorldRow,
+  transfer: TransferView | undefined,
+  room: WorldsRoomMessages,
+): string | null {
+  if (transfer?.state === 'landed' && row.status === 'stopped') return room.import.fromZip;
+  const stuck = transfer?.state;
+  if (stuck === 'cut' || stuck === 'stopped' || stuck === 'half' || stuck === 'failed') return null;
+  return describeStatus(row, room.reasons);
+}
+
+/** A code for a world its machine will never make (refused, or its slot gone) is not shown. */
+const codeOf = (transfer: TransferView | undefined): string | null =>
+  transfer === undefined || (transfer.state === 'failed' && !transfer.retry) ? null : transfer.code;
+
 function WorldCard({
   row,
   room,
   onAction,
   onCode,
+  transfer,
+  onTransfer,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
   onAction: ViewProps['onAction'];
   onCode: ViewProps['onCode'];
+  transfer: TransferView | undefined;
+  onTransfer: ViewProps['onTransfer'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
+  const reason = reasonOf(row, transfer, room);
+  const code = codeOf(transfer);
   return (
-    <article className="mundo" data-status={row.status} data-world={row.id}>
+    <article
+      className="mundo"
+      data-status={row.status}
+      data-world={row.id}
+      data-transfer={transfer?.state}
+    >
       <div className="marco-caratula">
         <Cover src={row.cover} title={row.title} room={room} />
-        <StatusPill row={row} room={room} />
+        <StatusPill row={row} room={room} transfer={transfer} />
       </div>
       <div className="cuerpo">
         <h3>{row.title}</h3>
         <Badges row={row} room={room} />
-        <p className="motivo">{describeStatus(row, room.reasons)}</p>
+        {reason !== null && <p className="motivo">{reason}</p>}
         {place && (
           <dl className="datos">
             <div>
@@ -252,24 +557,45 @@ function WorldCard({
             )}
           </dl>
         )}
+        {code !== null && <NewCode row={row} code={code} room={room} />}
         <CodeLine row={row} room={room} onCode={onCode} />
-        <Actions row={row} room={room} onAction={onAction} />
+        <Foot
+          row={row}
+          room={room}
+          onAction={onAction}
+          transfer={transfer}
+          onTransfer={onTransfer}
+        />
       </div>
     </article>
   );
 }
 
-export function CardsView({ rows, room, onAction, onCode }: ViewProps) {
+export function CardsView({ rows, room, onAction, onCode, transfers, onTransfer }: ViewProps) {
   return (
     <div className="rejilla">
       {rows.map((row) => (
-        <WorldCard key={row.id} row={row} room={room} onAction={onAction} onCode={onCode} />
+        <WorldCard
+          key={row.id}
+          row={row}
+          room={room}
+          onAction={onAction}
+          onCode={onCode}
+          transfer={transfers?.get(row.id)}
+          onTransfer={onTransfer}
+        />
       ))}
     </div>
   );
 }
 
-export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
+export function ListView({
+  rows,
+  room,
+  onAction,
+  transfers,
+  onTransfer,
+}: Omit<ViewProps, 'onCode'>) {
   return (
     <div className="tabla-envoltura">
       <table>
@@ -286,8 +612,10 @@ export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
         <tbody>
           {rows.map((row) => {
             const place = rowPlace(row);
+            const transfer = transfers?.get(row.id);
+            const reason = reasonOf(row, transfer, room);
             return (
-              <tr key={row.id} data-world={row.id}>
+              <tr key={row.id} data-world={row.id} data-transfer={transfer?.state}>
                 <td>
                   <div className="fila-mundo">
                     <Cover src={row.cover} title={row.title} room={room} />
@@ -299,8 +627,8 @@ export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
                   </div>
                 </td>
                 <td>
-                  <StatusPill row={row} room={room} />
-                  <span className="motivo">{describeStatus(row, room.reasons)}</span>
+                  <StatusPill row={row} room={room} transfer={transfer} />
+                  {reason !== null && <span className="motivo">{reason}</span>}
                 </td>
                 <td className="mono secundario">
                   {place ? (
@@ -317,7 +645,13 @@ export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
                   )}
                 </td>
                 <td>
-                  <Actions row={row} room={room} onAction={onAction} />
+                  <Foot
+                    row={row}
+                    room={room}
+                    onAction={onAction}
+                    transfer={transfer}
+                    onTransfer={onTransfer}
+                  />
                 </td>
               </tr>
             );
@@ -328,7 +662,7 @@ export function ListView({ rows, room, onAction }: Omit<ViewProps, 'onCode'>) {
   );
 }
 
-export function ServersView({ rows, room, onAction, onCode }: ViewProps) {
+export function ServersView({ rows, room, onAction, onCode, transfers, onTransfer }: ViewProps) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const toggle = (key: string): void =>
     setOpen((current) => {
@@ -350,7 +684,14 @@ export function ServersView({ rows, room, onAction, onCode }: ViewProps) {
               <span className="mono">{group.server ?? room.unplaced}</span>
               <span className="cuenta mono">{group.rows.length}</span>
             </h2>
-            <CardsView rows={visible} room={room} onAction={onAction} onCode={onCode} />
+            <CardsView
+              rows={visible}
+              room={room}
+              onAction={onAction}
+              onCode={onCode}
+              transfers={transfers}
+              onTransfer={onTransfer}
+            />
             {group.rows.length > PER_GROUP && (
               <button
                 type="button"

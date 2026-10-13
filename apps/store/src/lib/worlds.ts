@@ -17,7 +17,7 @@
  * asks for an order the machine would refuse.
  */
 
-import type { DoorFeature, DoorPhase, Heartbeat } from './fleet';
+import type { DoorFeature, DoorPhase, Heartbeat, Imports, UploadProgress } from './fleet';
 import type { SummaCard } from './summa';
 
 /** Names a world may not take: the machine's front service, and the old book's table of contents. */
@@ -281,6 +281,12 @@ export interface MachineSummary {
    * own (lib/fleet.ts `staleRecipe`), it says whether its line must run again.
    */
   readonly recipe: string | null;
+  /**
+   * Whether it brings worlds back from their zip, and the biggest zip it
+   * takes, as its door says; null when its door says nothing (an older
+   * machine) or does not answer.
+   */
+  readonly imports: Imports | null;
 }
 
 /**
@@ -289,6 +295,17 @@ export interface MachineSummary {
  */
 export function machineChoices(machines: readonly MachineSummary[]): string[] {
   return machines.filter((machine) => machine.open).map((machine) => machine.alias);
+}
+
+/** The machines a world can be brought back to from its zip: those whose door says it takes zips. */
+export function importMachines(
+  machines: readonly MachineSummary[],
+): { readonly alias: string; readonly zipMaxBytes: number }[] {
+  return machines.flatMap((machine) =>
+    machine.open && machine.imports !== null
+      ? [{ alias: machine.alias, zipMaxBytes: machine.imports.zipMaxBytes }]
+      : [],
+  );
 }
 
 /** The public host name of a fleet machine, to compare addresses with; null if unknown. */
@@ -323,6 +340,40 @@ export function nameOwner(
   if (wanted === '') return null;
   const row = rows.find((candidate) => candidate.legacy === null && candidate.id === wanted);
   return row ? { id: row.id, leaving: row.phase === 'deleting' } : null;
+}
+
+/**
+ * A name made from any text (a zip's `world.json`, its file name):
+ * lowercase letters, digits and single hyphens, as an order's id must be, at
+ * most 40 characters; '' when nothing is left.
+ */
+export function slugify(text: string): string {
+  return text
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+/, '')
+    .slice(0, 40)
+    .replace(/-+$/, '');
+}
+
+/**
+ * The name the room proposes for a world brought back from a zip: its own,
+ * made a name, unless a world of the fleet — one being deleted included —
+ * holds it or its address under `zone`; then the first free `<name>-2`,
+ * `<name>-3`…
+ */
+export function proposeName(source: string, rows: readonly WorldRow[], zone: string): string {
+  const base = slugify(source) || 'world';
+  const free = (name: string): boolean =>
+    !RESERVED_IDS.includes(name) &&
+    nameOwner(name, rows) === null &&
+    addressOwner(joinDomain(name, zone), rows) === null;
+  if (free(base)) return base;
+  let n = 2;
+  while (!free(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
 }
 
 /**
@@ -472,6 +523,8 @@ export interface WorldRow {
   readonly legacy: LegacyWorld | null;
   /** Where it lives; null only when not even its address is known any more. */
   readonly place: WorldPlace | null;
+  /** For a world whose zip is on its way to its machine: how much of it the machine has. */
+  readonly upload: UploadProgress | null;
 }
 
 /** A world its machine is deleting after its order already went. */
@@ -481,11 +534,21 @@ export interface LeavingWorld {
   readonly domain: string | null;
 }
 
+/** A world on its way back from its zip: its zip travelling (`uploading`) or being opened (`importing`). */
+export interface ArrivingWorld {
+  readonly id: string;
+  readonly server: string;
+  readonly domain: string;
+  readonly phase: 'uploading' | 'importing';
+  readonly upload: UploadProgress | null;
+}
+
 export interface RowsInput {
   readonly orders: readonly WorldOrder[];
   /** What each order's machine says is happening to it; an order missing here is settled. */
   readonly phases?: Readonly<Record<string, DoorPhase>>;
   readonly leaving?: readonly LeavingWorld[];
+  readonly arriving?: readonly ArrivingWorld[];
   readonly cards: readonly WorldCardInfo[];
   readonly probes: Readonly<Record<string, Probe>>;
   readonly legacy?: readonly LegacyWorld[];
@@ -516,11 +579,11 @@ function statusOf(phase: DoorPhase, probe: Probe | undefined): WorldStatus {
 /**
  * The Tower's trick: what was asked for crossed with what is seen running.
  * A world is "running" only when its machine runs it and it answers; one on
- * its way somewhere (created, stopped, started, deleted) shows as changing,
- * like the Tower's provisioning rows. Without a card, a world is named and
- * pictured by its own page (the picture it shows while loading). A legacy
- * world is listed after the fleet's, unless one of them already holds its
- * id or its address.
+ * its way somewhere (created, stopped, started, deleted, brought back from
+ * its zip) shows as changing, like the Tower's provisioning rows. Without a
+ * card, a world is named and pictured by its own page (the picture it shows
+ * while loading). A legacy world is listed after the fleet's, unless one of
+ * them already holds its id or its address.
  */
 export function buildRows(input: RowsInput): WorldRow[] {
   const cards = new Map(input.cards.map((card) => [card.slug, card]));
@@ -542,6 +605,7 @@ export function buildRows(input: RowsInput): WorldRow[] {
       order,
       legacy: null,
       place: { server: order.server, domain: order.domain },
+      upload: null,
     };
   });
   const taken = new Set(input.orders.map((order) => order.id));
@@ -560,6 +624,26 @@ export function buildRows(input: RowsInput): WorldRow[] {
       order: null,
       legacy: null,
       place: world.domain === null ? null : { server: world.server, domain: world.domain },
+      upload: null,
+    });
+  }
+  // A world on its way back from its zip: nothing to press until its machine has it, stopped.
+  for (const world of input.arriving ?? []) {
+    if (taken.has(world.id)) continue;
+    taken.add(world.id);
+    const card = cards.get(world.id);
+    rows.push({
+      id: world.id,
+      title: card?.title ?? world.id,
+      cover: card?.cover ?? null,
+      missingCard: false,
+      status: 'changing',
+      probe: null,
+      phase: world.phase,
+      order: null,
+      legacy: null,
+      place: { server: world.server, domain: world.domain },
+      upload: world.upload,
     });
   }
   const addresses = new Set(
@@ -580,6 +664,7 @@ export function buildRows(input: RowsInput): WorldRow[] {
       order: null,
       legacy: world,
       place: { server: world.server, domain: world.domain },
+      upload: null,
     });
   }
   return rows.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
@@ -766,6 +851,9 @@ export interface ReasonWords {
   readonly stopping: string;
   readonly starting: string;
   readonly deleting: string;
+  /** A world from its zip: its zip on its way to its machine, then being opened there. */
+  readonly uploading: string;
+  readonly importing: string;
   readonly unknown: string;
 }
 
@@ -788,6 +876,7 @@ export function describeStatus(row: WorldRow, words: ReasonWords): string {
   if (row.status === 'changing') {
     const phase = row.phase;
     if (phase === 'creating' || phase === 'stopping' || phase === 'starting') return words[phase];
+    if (phase === 'uploading' || phase === 'importing') return words[phase];
     return words.deleting;
   }
   return words.unknown;

@@ -11,18 +11,33 @@
  * request the Oracle's wallet signs and the machine checks itself — and what
  * the machines did. A world being deleted leaves the list the moment its
  * machine takes the delete; the machine's line says it is still being freed.
+ *
+ * A world also comes back from its zip, picked or dropped on the room: one
+ * signature, then the zip goes straight from this tab to its machine's door
+ * while the new world's card, pinned first, carries the upload; it lands
+ * stopped. What a reload of this tab needs to finish it (never the admin
+ * code) lives in the tab's own history entry.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
   bootstrapLine,
   formatAgo,
+  formatSize,
   machineHealth,
+  readImportRule,
+  readRequest,
+  readTickets,
+  settled,
   shortSha,
   shortWallet,
   staleRecipe,
+  uploadZip,
+  waitFor,
+  withTickets,
   type DoorLogEntry,
+  type ImportTicket,
   type MachineHealth,
 } from '../../../lib/fleet';
 import {
@@ -30,6 +45,7 @@ import {
   filterRows,
   fleetServers,
   fleetStats,
+  importMachines,
   listedRows,
   machineChoices,
   rowPlace,
@@ -41,8 +57,20 @@ import {
   type WorldStatus,
 } from '../../../lib/worlds';
 import { LunaEspera } from '../../chrome/LunaEspera';
+import { problemText } from './fleet-action';
+import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
 import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
-import { CardsView, ListView, ServersView, type CodeMode, type WorldAction } from './WorldViews';
+import {
+  CardsView,
+  ListView,
+  ServersView,
+  pageLang,
+  type CodeMode,
+  type TransferAction,
+  type TransferView,
+  type WorldAction,
+} from './WorldViews';
+import { hashZip } from './zip-hash';
 
 export interface WorldsLabels {
   readonly forbidden: string;
@@ -69,6 +97,22 @@ type Panel =
 
 type View = 'cards' | 'list' | 'servers';
 
+/** A zip this tab is bringing back as a world: its slot, its file, and how far it got. */
+interface Transfer {
+  readonly ticket: ImportTicket;
+  /** The new world's own admin code, from its machine's 202; never kept beyond this page. */
+  readonly code: string | null;
+  /** The zip itself; null after a reload, until the Oracle picks the same one again. */
+  readonly file: File | null;
+  readonly state: TransferView['state'];
+  readonly sent: number;
+  readonly matching: number;
+  readonly problem: string | null;
+  readonly retry: boolean;
+  /** Whether its landing has been told (the notice, when its card is out of sight). */
+  readonly told: boolean;
+}
+
 const VIEWS: readonly View[] = ['cards', 'list', 'servers'];
 const STATUS_ORDER: readonly WorldStatus[] = [
   'running',
@@ -79,6 +123,11 @@ const STATUS_ORDER: readonly WorldStatus[] = [
 ];
 /** While a machine is changing a world, the room reads the fleet again this often. */
 const CHANGING_REFRESH_MS = 10_000;
+/** How often the room asks a machine how a zip it has is going, and for how long at most. */
+const WATCH_MS = 3000;
+const WATCH_FOR_MS = 60 * 60_000;
+/** The card's progress is redrawn at most this often while bytes move. */
+const PROGRESS_MS = 250;
 
 /** What a machine's heartbeat says, in the room's words; null when there is nothing to say. */
 function healthLine(alias: string, health: MachineHealth, room: WorldsRoomMessages): string | null {
@@ -96,9 +145,79 @@ function healthLine(alias: string, health: MachineHealth, room: WorldsRoomMessag
 function localTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  const lang =
-    typeof document === 'undefined' ? undefined : document.documentElement.lang || undefined;
-  return date.toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' });
+  return date.toLocaleString(pageLang(), { dateStyle: 'short', timeStyle: 'short' });
+}
+
+/** Why a machine would not bring a world back from its zip, from its request's result. */
+function machineWords(
+  rule: string | null,
+  entry: string | null,
+  ticket: ImportTicket,
+  room: WorldsRoomMessages,
+): string {
+  const found = readImportRule(rule);
+  if (found === null) {
+    return problemText(
+      { at: 'failed', problem: 'machine', detail: rule ?? '?' },
+      ticket.machine,
+      room,
+    );
+  }
+  // The machine names the entry that broke the rule beside the rule itself.
+  const named = found.detail ?? entry;
+  if (found.rule === 'unexpected' && named !== null) {
+    return fill(room.import.before.unexpected, { f: named });
+  }
+  const words = fill(room.import.rules[found.rule], {
+    m: ticket.machine,
+    f: ticket.name,
+    s: formatSize(ticket.bytes, pageLang()),
+    max: '?',
+  });
+  return named === null || found.rule === 'not-a-zip'
+    ? words
+    : `${words} ${fill(room.import.entry, { f: named })}`;
+}
+
+/** A world that exists only in this tab yet: its zip on its way, its machine not listing it. */
+function arrivingRow(transfer: Transfer): WorldRow {
+  return {
+    id: transfer.ticket.world,
+    title: transfer.ticket.world,
+    cover: null,
+    missingCard: false,
+    status: 'changing',
+    probe: null,
+    // Landed but not listed yet: still being opened, until its machine lists it stopped.
+    phase: transfer.state === 'checking' || transfer.state === 'landed' ? 'importing' : 'uploading',
+    order: null,
+    legacy: null,
+    place: { server: transfer.ticket.machine, domain: transfer.ticket.domain },
+    upload: null,
+  };
+}
+
+/**
+ * Keep the unfinished uploads in the tab's history entry. While a dialog is
+ * open its own entry is the current one: the room's entry gets them too once
+ * the dialog's is gone.
+ */
+function keepTickets(tickets: readonly ImportTicket[]): void {
+  const write = (): void =>
+    window.history.replaceState(withTickets(window.history.state, tickets), '');
+  write();
+  const state = window.history.state as { worldsDialog?: boolean } | null;
+  if (state?.worldsDialog === true) window.addEventListener('popstate', write, { once: true });
+}
+
+/** What a drop holds, as the room takes it: one file, several, or a folder. */
+function readDrop(data: DataTransfer | null): ImportSource | null {
+  if (data === null) return null;
+  const items = Array.from(data.items).filter((item) => item.kind === 'file');
+  if (items.length > 1) return { kind: 'several', count: items.length };
+  if (items[0]?.webkitGetAsEntry()?.isDirectory === true) return { kind: 'folder' };
+  const file = data.files[0];
+  return file === undefined ? null : { kind: 'file', file };
 }
 
 /** A line to copy: a machine's bootstrap line. */
@@ -145,6 +264,7 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
               data-open={machine.open}
               data-health={machine.open ? health.kind : undefined}
               data-recipe={machine.open ? (stale ? 'stale' : 'pinned') : undefined}
+              data-imports={machine.imports === null ? undefined : machine.imports.zipMaxBytes}
             >
               {machine.open ? (
                 <>
@@ -227,6 +347,19 @@ export function WorldsPanel({
   const [wizard, setWizard] = useState(false);
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
+  const [source, setSource] = useState<ImportSource | null>(null);
+  const [transfers, setTransfers] = useState<readonly Transfer[]>([]);
+  // How many files are dragged over the room (the overlay), or null.
+  const [drag, setDrag] = useState<number | null>(null);
+  const [notice, setNotice] = useState<{ world: string; machine: string } | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  // Which upload a picked zip is for: null = a new one (the dialog).
+  const pickFor = useRef<string | null>(null);
+  const controllers = useRef(new Map<string, AbortController>());
+  const tracked = useRef<readonly Transfer[]>([]);
+  tracked.current = transfers;
+  const scrollTo = useRef<string | null>(null);
+  const restored = useRef(false);
 
   const load = useCallback(() => {
     let alive = true;
@@ -269,6 +402,10 @@ export function WorldsPanel({
     () => machineChoices(panel.at === 'ready' ? panel.fleet.machines : []),
     [panel],
   );
+  const importers = useMemo(
+    () => importMachines(panel.at === 'ready' ? panel.fleet.machines : []),
+    [panel],
+  );
   const visible = useMemo(
     () => filterRows(rows, { query, status, server }),
     [rows, query, status, server],
@@ -282,6 +419,320 @@ export function WorldsPanel({
     const timer = setInterval(() => load(), CHANGING_REFRESH_MS);
     return () => clearInterval(timer);
   }, [changing, load]);
+
+  const patch = useCallback((world: string, next: Partial<Transfer>) => {
+    setTransfers((current) =>
+      current.map((transfer) =>
+        transfer.ticket.world === world ? { ...transfer, ...next } : transfer,
+      ),
+    );
+  }, []);
+
+  // Once its machine has the whole zip: ask how it goes until it has landed or been refused.
+  const watch = useCallback(
+    async (ticket: ImportTicket) => {
+      const result = await waitFor(
+        () => readRequest(fetch, ticket.machine, ticket.nonce),
+        settled,
+        {
+          intervalMs: WATCH_MS,
+          timeoutMs: WATCH_FOR_MS,
+          cancelled: () => !tracked.current.some((t) => t.ticket.world === ticket.world),
+        },
+      );
+      if (!tracked.current.some((t) => t.ticket.world === ticket.world)) return;
+      if (result?.state === 'done') {
+        patch(ticket.world, { state: 'landed' });
+        load();
+      } else if (result?.state === 'failed') {
+        patch(ticket.world, {
+          state: 'failed',
+          retry: false,
+          problem: machineWords(result.rule, result.entry, ticket, room),
+        });
+        load();
+      }
+    },
+    [patch, load, room],
+  );
+
+  // The zip, whole, to the slot its machine opened for it; the card says how far it got.
+  const send = useCallback(
+    async (ticket: ImportTicket, file: File) => {
+      const world = ticket.world;
+      controllers.current.get(world)?.abort();
+      const controller = new AbortController();
+      controllers.current.set(world, controller);
+      patch(world, { file, state: 'sending', sent: 0, problem: null, retry: false });
+      let drawn = 0;
+      const result = await uploadZip(
+        ticket.machine,
+        ticket.nonce,
+        file,
+        (sent) => {
+          const now = Date.now();
+          if (sent < file.size && now - drawn < PROGRESS_MS) return;
+          drawn = now;
+          patch(world, { sent });
+        },
+        undefined,
+        controller.signal,
+      );
+      // Discarded, or sent again, meanwhile: that run is no longer this one.
+      if (controllers.current.get(world) !== controller) return;
+      controllers.current.delete(world);
+      if (result.ok) {
+        patch(world, { state: 'checking', sent: file.size });
+        load();
+        void watch(ticket);
+        return;
+      }
+      if (result.error === 'cut' || result.error === 'unreachable') {
+        // No answer is not yet a cut: the door may have taken the zip whole, or
+        // refused it early, as the connection closed. Its request says which.
+        const after = await readRequest(fetch, ticket.machine, ticket.nonce);
+        if (!tracked.current.some((t) => t.ticket.world === world)) return;
+        if (after !== null && after.state === 'failed') {
+          patch(world, {
+            state: 'failed',
+            sent: result.sent,
+            retry: false,
+            problem: machineWords(after.rule, after.entry, ticket, room),
+          });
+          return;
+        }
+        if (after !== null && after.state !== 'uploading') {
+          patch(world, { state: 'checking', sent: file.size });
+          load();
+          void watch(ticket);
+          return;
+        }
+      }
+      if (result.error === 'stopped' || result.error === 'cut') {
+        patch(world, { state: result.error, sent: result.sent, retry: true });
+        return;
+      }
+      // A slot that is gone needs a new signature; anything else, the same zip again.
+      const gone = result.error === 'slot-expired' || result.error === 'missing';
+      patch(world, {
+        state: 'failed',
+        sent: result.sent,
+        retry: !gone,
+        problem: problemText(
+          {
+            at: 'failed',
+            problem: gone ? 'slot-expired' : result.error,
+            detail: String(result.status),
+          },
+          ticket.machine,
+          room,
+          { f: ticket.name, s: formatSize(ticket.bytes, pageLang()), max: '?' },
+        ),
+      });
+    },
+    [patch, load, watch, room],
+  );
+
+  // After a reload: the zip picked again must be the one signed (its size, then its fingerprint).
+  const resume = useCallback(
+    async (world: string, file: File) => {
+      const transfer = tracked.current.find((candidate) => candidate.ticket.world === world);
+      if (transfer === undefined) return;
+      if (file.size !== transfer.ticket.bytes) {
+        patch(world, { state: 'half', problem: room.import.notSame });
+        return;
+      }
+      patch(world, { state: 'matching', matching: 0, problem: null });
+      const digest = await hashZip(file, (share) => patch(world, { matching: share })).result;
+      if (digest !== transfer.ticket.sha256) {
+        patch(world, {
+          state: 'half',
+          problem: digest === null ? room.import.unreadable : room.import.notSame,
+        });
+        return;
+      }
+      void send(transfer.ticket, file);
+    },
+    [patch, send, room],
+  );
+
+  const handover = useCallback(
+    (given: Handover) => {
+      setSource(null);
+      const fresh: Transfer = {
+        ticket: given.ticket,
+        code: given.code,
+        file: given.file,
+        state: 'sending',
+        sent: 0,
+        matching: 0,
+        problem: null,
+        retry: false,
+        told: false,
+      };
+      setTransfers((current) => [
+        fresh,
+        ...current.filter((transfer) => transfer.ticket.world !== given.ticket.world),
+      ]);
+      tracked.current = [fresh, ...tracked.current];
+      scrollTo.current = given.ticket.world;
+      void send(given.ticket, given.file);
+    },
+    [send],
+  );
+
+  // A reload of this tab: each unfinished upload is asked of its machine, then shown again.
+  useEffect(() => {
+    if (panel.at !== 'ready' || restored.current) return;
+    restored.current = true;
+    const tickets = readTickets(window.history.state);
+    if (tickets.length === 0) return;
+    void Promise.all(
+      tickets.map(async (ticket) => ({
+        ticket,
+        result: await readRequest(fetch, ticket.machine, ticket.nonce),
+      })),
+    ).then((found) => {
+      const back = found.flatMap(({ ticket, result }): Transfer[] => {
+        // A slot that is gone, or a world already landed: nothing left to finish.
+        if (result === null || result.state === 'done') return [];
+        const base = {
+          ticket,
+          code: null,
+          file: null,
+          sent: 0,
+          matching: 0,
+          problem: null,
+          retry: false,
+          told: true,
+        };
+        if (result.state === 'uploading') return [{ ...base, state: 'half' }];
+        if (result.state === 'failed') {
+          return [
+            {
+              ...base,
+              state: 'failed',
+              problem: machineWords(result.rule, result.entry, ticket, room),
+            },
+          ];
+        }
+        return [{ ...base, state: 'checking', told: false }];
+      });
+      if (back.length === 0) return;
+      setTransfers((current) => [...current, ...back]);
+      tracked.current = [...tracked.current, ...back];
+      for (const transfer of back) if (transfer.state === 'checking') void watch(transfer.ticket);
+    });
+  }, [panel.at, room, watch]);
+
+  // What a reload needs to finish them: the uploads still open (never a code).
+  const open = transfers
+    .filter(
+      (transfer) =>
+        transfer.state !== 'landed' && !(transfer.state === 'failed' && !transfer.retry),
+    )
+    .map((transfer) => transfer.ticket);
+  const openKey = JSON.stringify(open);
+  useEffect(() => {
+    if (panel.at === 'ready' && restored.current)
+      keepTickets(JSON.parse(openKey) as ImportTicket[]);
+  }, [openKey, panel.at]);
+
+  // While bytes move, leaving the page asks first.
+  const moving = transfers.some((transfer) => transfer.state === 'sending');
+  useEffect(() => {
+    if (!moving) return;
+    const hold = (event: BeforeUnloadEvent): void => event.preventDefault();
+    window.addEventListener('beforeunload', hold);
+    return () => window.removeEventListener('beforeunload', hold);
+  }, [moving]);
+
+  // Its machine lists it as a world again: it has landed (stopped).
+  useEffect(() => {
+    for (const transfer of transfers) {
+      if (transfer.state !== 'checking') continue;
+      const row = known.find((candidate) => candidate.id === transfer.ticket.world);
+      if (row?.order != null && row.phase !== 'importing') {
+        patch(transfer.ticket.world, { state: 'landed' });
+      }
+    }
+  }, [known, transfers, patch]);
+
+  // Landed out of sight: a notice says so, with the way to start it.
+  useEffect(() => {
+    const landed = transfers.find((transfer) => transfer.state === 'landed' && !transfer.told);
+    if (landed === undefined) return;
+    const world = landed.ticket.world;
+    if (!known.some((row) => row.id === world && row.order !== null)) return;
+    patch(world, { told: true });
+    const box = document
+      .querySelector(`[data-world="${CSS.escape(world)}"]`)
+      ?.getBoundingClientRect();
+    const seen = box !== undefined && box.bottom > 0 && box.top < window.innerHeight;
+    if (!seen) setNotice({ world, machine: landed.ticket.machine });
+  }, [known, transfers, patch]);
+
+  // The card of a zip just handed over comes into view: once the dialog's own history
+  // entry is gone, since going back to the room's entry restores the room's scroll.
+  useEffect(() => {
+    const world = scrollTo.current;
+    if (world === null) return;
+    const card = document.querySelector(`[data-world="${CSS.escape(world)}"]`);
+    if (card === null) return;
+    scrollTo.current = null;
+    const show = (): void => card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    const state = window.history.state as { worldsDialog?: boolean } | null;
+    if (state?.worldsDialog === true) {
+      window.addEventListener('popstate', () => requestAnimationFrame(show), { once: true });
+    } else show();
+  });
+
+  // A file dragged over the room: the overlay (never over an open dialog), and the
+  // browser's own drop (opening the file) always cancelled.
+  const canImport = panel.at === 'ready' && importers.length > 0;
+  useEffect(() => {
+    if (panel.at !== 'ready') return;
+    let depth = 0;
+    const files = (event: DragEvent): boolean =>
+      event.dataTransfer?.types.includes('Files') ?? false;
+    const dialogOpen = (): boolean => document.querySelector('dialog[open]') !== null;
+    const enter = (event: DragEvent): void => {
+      if (!files(event)) return;
+      depth += 1;
+      if (canImport && !dialogOpen()) setDrag(event.dataTransfer?.items.length ?? 1);
+    };
+    const over = (event: DragEvent): void => {
+      if (!files(event)) return;
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = canImport && !dialogOpen() ? 'copy' : 'none';
+      }
+    };
+    const leave = (event: DragEvent): void => {
+      if (!files(event)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDrag(null);
+    };
+    const drop = (event: DragEvent): void => {
+      if (!files(event)) return;
+      event.preventDefault();
+      depth = 0;
+      setDrag(null);
+      if (!canImport || dialogOpen()) return;
+      const dropped = readDrop(event.dataTransfer);
+      if (dropped !== null) setSource(dropped);
+    };
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', drop);
+    return () => {
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', drop);
+    };
+  }, [panel.at, canImport]);
 
   if (panel.at === 'loading') {
     return (
@@ -360,6 +811,60 @@ export function WorldsPanel({
   const listens = (alias: string): boolean =>
     fleet.machines.some((machine) => machine.alias === alias && machine.listens.includes('events'));
 
+  // The worlds this tab is bringing back come first, whatever the filters say.
+  const pinned = transfers.map(
+    (transfer) => known.find((row) => row.id === transfer.ticket.world) ?? arrivingRow(transfer),
+  );
+  const pinnedIds = new Set(pinned.map((row) => row.id));
+  const shown = [...pinned, ...visible.filter((row) => !pinnedIds.has(row.id))];
+  const transferViews = new Map<string, TransferView>(
+    transfers.map((transfer) => [
+      transfer.ticket.world,
+      {
+        state: transfer.state,
+        machine: transfer.ticket.machine,
+        sent: transfer.sent,
+        total: transfer.ticket.bytes,
+        matching: transfer.matching,
+        problem: transfer.problem,
+        retry: transfer.retry && transfer.file !== null,
+        code: transfer.code,
+      },
+    ]),
+  );
+  const onTransfer = (row: WorldRow, action: TransferAction): void => {
+    const transfer = transfers.find((candidate) => candidate.ticket.world === row.id);
+    if (transfer === undefined) return;
+    if (action === 'stop') {
+      controllers.current.get(row.id)?.abort();
+    } else if (action === 'retry') {
+      if (transfer.file !== null) void send(transfer.ticket, transfer.file);
+    } else if (action === 'pick') {
+      pickFor.current = row.id;
+      picker.current?.click();
+    } else {
+      const running = controllers.current.get(row.id);
+      controllers.current.delete(row.id);
+      running?.abort();
+      setTransfers((current) => current.filter((candidate) => candidate.ticket.world !== row.id));
+    }
+  };
+  const onPicked = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file === undefined) return;
+    const world = pickFor.current;
+    pickFor.current = null;
+    if (world === null) setSource({ kind: 'file', file });
+    else void resume(world, file);
+  };
+  const lang = pageLang();
+  const zipMax = Math.max(0, ...importers.map((importer) => importer.zipMaxBytes));
+  const noticeRow =
+    notice === null
+      ? undefined
+      : known.find((row) => row.id === notice.world && row.order?.state === 'stopped');
+
   return (
     <div data-worlds-panel>
       <div className="barra-sala">
@@ -369,17 +874,44 @@ export function WorldsPanel({
             {fleet.wallet === null ? fleet.rank : `${shortWallet(fleet.wallet)} · ${fleet.rank}`}
           </span>
         </p>
-        <button
-          type="button"
-          className="btn btn-primario"
-          disabled={machines.length === 0}
-          onClick={() => setWizard(true)}
-          data-metric="worlds-new"
-        >
-          + {room.actions.newWorld}
-        </button>
+        <div className="botones-sala">
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            disabled={importers.length === 0}
+            onClick={() => {
+              pickFor.current = null;
+              picker.current?.click();
+            }}
+            data-metric="worlds-import"
+          >
+            {room.actions.importZip}
+          </button>
+          <button
+            type="button"
+            className="btn btn-primario"
+            disabled={machines.length === 0}
+            onClick={() => setWizard(true)}
+            data-metric="worlds-new"
+          >
+            + {room.actions.newWorld}
+          </button>
+        </div>
+        <input
+          ref={picker}
+          type="file"
+          accept={ZIP_ACCEPT}
+          hidden
+          onChange={onPicked}
+          data-metric="worlds-import-file"
+        />
       </div>
       {machines.length === 0 && <p className="nota llave">{room.noMachine}</p>}
+      {machines.length > 0 && importers.length === 0 && (
+        <p className="nota llave" data-no-imports>
+          {room.import.noMachine}
+        </p>
+      )}
 
       <dl className="cifras">
         {(
@@ -467,16 +999,36 @@ export function WorldsPanel({
         </div>
       )}
 
-      {rows.length === 0 && <p className="estado vacio">{room.empty}</p>}
-      {rows.length > 0 && visible.length === 0 && <p className="estado vacio">{room.noMatch}</p>}
-      {visible.length > 0 && view === 'cards' && (
-        <CardsView rows={visible} room={room} onAction={onAction} onCode={onCode} />
+      {shown.length === 0 && rows.length === 0 && <p className="estado vacio">{room.empty}</p>}
+      {shown.length === 0 && rows.length > 0 && <p className="estado vacio">{room.noMatch}</p>}
+      {shown.length > 0 && view === 'cards' && (
+        <CardsView
+          rows={shown}
+          room={room}
+          onAction={onAction}
+          onCode={onCode}
+          transfers={transferViews}
+          onTransfer={onTransfer}
+        />
       )}
-      {visible.length > 0 && view === 'list' && (
-        <ListView rows={visible} room={room} onAction={onAction} />
+      {shown.length > 0 && view === 'list' && (
+        <ListView
+          rows={shown}
+          room={room}
+          onAction={onAction}
+          transfers={transferViews}
+          onTransfer={onTransfer}
+        />
       )}
-      {visible.length > 0 && view === 'servers' && (
-        <ServersView rows={visible} room={room} onAction={onAction} onCode={onCode} />
+      {shown.length > 0 && view === 'servers' && (
+        <ServersView
+          rows={shown}
+          room={room}
+          onAction={onAction}
+          onCode={onCode}
+          transfers={transferViews}
+          onTransfer={onTransfer}
+        />
       )}
 
       <section className="historial" aria-label={room.history.title}>
@@ -519,6 +1071,45 @@ export function WorldsPanel({
         )}
       </section>
 
+      {drag !== null && (
+        <div className="capa-zip" aria-hidden="true" data-drop={drag > 1 ? 'several' : 'one'}>
+          <div>
+            <p className="titulo-capa">{drag > 1 ? room.import.dropOne : room.import.dropTitle}</p>
+            {drag <= 1 && <p>{room.import.dropNote}</p>}
+            <p className="mono">{fill(room.import.dropCap, { max: formatSize(zipMax, lang) })}</p>
+          </div>
+        </div>
+      )}
+
+      {notice !== null && (
+        <div className="aviso" data-tono="exito" role="status" data-landed={notice.world}>
+          <p>{fill(room.import.landed, { w: notice.world, m: notice.machine })}</p>
+          <div className="acciones">
+            {noticeRow !== undefined && (
+              <button
+                type="button"
+                className="btn btn-fantasma"
+                onClick={() => {
+                  setNotice(null);
+                  setChange({ row: noticeRow, action: 'start' });
+                }}
+                data-metric="worlds-start"
+              >
+                {room.actions.start}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={() => setNotice(null)}
+              data-metric="worlds-import-close"
+            >
+              {room.import.landedClose}
+            </button>
+          </div>
+        </div>
+      )}
+
       <NewWorldDialog
         open={wizard}
         onClose={() => setWizard(false)}
@@ -530,6 +1121,18 @@ export function WorldsPanel({
         wallet={fleet.wallet}
         sessionHref={sessionHref}
         listens={listens}
+      />
+      <ImportDialog
+        source={source}
+        importers={importers}
+        rows={known}
+        room={room}
+        wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        listens={listens}
+        onClose={() => setSource(null)}
+        onFile={(file) => setSource({ kind: 'file', file })}
+        onHandover={handover}
       />
       <ActionDialog
         change={change}
