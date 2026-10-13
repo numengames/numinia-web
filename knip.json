@@ -23,6 +23,9 @@
     "apps/com": {
       "entry": ["src/pages/**/*.astro"]
     },
+    "apps/till": {
+      "entry": ["test/*.test.ts"]
+    },
     "packages/domain": {
       "entry": ["src/index.ts", "__tests__/*.test.ts"]
     },

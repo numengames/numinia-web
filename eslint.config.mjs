@@ -19,7 +19,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/src/**/*.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/features/**/*.{ts,mjs}'],
+    files: [
+      '**/src/**/*.{ts,tsx}',
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/test/**/*.{ts,tsx}',
+      '**/features/**/*.{ts,mjs}',
+    ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       'no-console': 'error',

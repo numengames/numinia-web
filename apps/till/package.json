@@ -1,0 +1,20 @@
+{
+  "name": "@numinia/till",
+  "version": "0.1.0",
+  "description": "The till — Numinia's pay-per-use ledger: each account's balance in euro cents as lines only ever added, and the nightly close of each UTC day (ADR-070, MIS-177, MIS-178). A Worker of its own with its own D1 database.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run --coverage",
+    "build": "WRANGLER_SEND_METRICS=false wrangler deploy --dry-run --outdir dist"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261013.1",
+    "@types/node": "^26.6.2",
+    "@vitest/coverage-v8": "^5.0.1",
+    "vitest": "^5.0.1"
+  }
+}
