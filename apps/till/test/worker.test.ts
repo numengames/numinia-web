@@ -166,7 +166,7 @@ describe('the schedule (MIS-178)', () => {
       {
         binding: 'TILL_DB',
         database_name: 'numinia-till',
-        database_id: '00000000-0000-0000-0000-000000000000',
+        database_id: '309e7829-6361-40c0-9cde-3d1a601b8e44',
         migrations_dir: 'migrations',
       },
     ]);
@@ -175,6 +175,16 @@ describe('the schedule (MIS-178)', () => {
     expect(config['route']).toBeUndefined();
     expect(crons).toEqual([NIGHTLY]);
     expect(firing(NIGHTLY, '2026-10-25').toISOString()).toBe('2026-10-25T00:30:00.000Z');
+  });
+
+  it('is reachable from nowhere, logs to Workers Logs, and applies its migrations before each deploy', () => {
+    expect(config['workers_dev']).toBe(false);
+    expect(config['preview_urls']).toBe(false);
+    expect(config['observability']).toEqual({ enabled: true, head_sampling_rate: 1 });
+    const scripts = readJsonc('../package.json')['scripts'] as Record<string, string>;
+    expect(scripts['deploy']).toBe(
+      'wrangler d1 migrations apply TILL_DB --remote && wrangler deploy',
+    );
   });
 
   it('closes each UTC day once, 25 October 2026 included', async () => {

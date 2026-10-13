@@ -22,7 +22,7 @@ apart from numinia.com. This build closes `MIS-177` (the ledger) and `MIS-178`
   days and is then reported, never estimated. An account at or below zero
   has its running worlds listed to stop for balance and its worlds kept for
   free with a deletion date; a later top-up ends that from the next day.
-- Answers `GET /health` with `{"service":"till","ok":true}`; anything else is 404.
+- Answers `GET /health` with `{"service":"till","ok":true}` when run locally; anything else is 404. Deployed, nothing reaches it: no route, no workers.dev and no preview address (see Deploy).
 
 ## What it is not yet
 
@@ -109,13 +109,30 @@ curl "http://localhost:8787/cdn-cgi/local/scheduled?cron=30+0+*+*+*&time=1793061
 `time` is the firing's instant in ms: 1793061000000 is 2026-10-27T00:30:00.000Z,
 the run that closes 26 October.
 
-## Deploy (an Oracle, once)
+## Deploy
 
-1. `npx wrangler d1 create numinia-till`, and write its id in `wrangler.jsonc`
-   (the placeholder binds nothing).
-2. `npx wrangler d1 migrations apply numinia-till --remote`.
-3. `npx wrangler deploy` from `apps/till`. Workers Builds deploys only the
-   site's Worker today; the till is not wired to it.
+The database `numinia-till` exists: an Oracle created it in the Cloudflare panel on
+2026-10-13, and its id is in `wrangler.jsonc`. The till deploys through Workers Builds as a
+second Worker connected to this repository, with these settings:
+
+| Setting                            | Value                                                                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Worker name                        | `numinia-till`, the `name` in `wrangler.jsonc`                                                                                      |
+| Root directory                     | the repository root (empty), so `npm ci` installs from the root lockfile, as for the site                                           |
+| Build command                      | empty                                                                                                                               |
+| Deploy command                     | `npm run deploy --workspace apps/till`                                                                                              |
+| Builds for non-production branches | off: from the root, a preview's default command would read the site's `wrangler.jsonc`                                              |
+| Build watch paths                  | include `apps/till/*`                                                                                                               |
+| API token                          | the account's Workers Builds token with **Account → D1 → Edit** added: its default permissions leave D1 out, and migrations need it |
+
+`npm run deploy` applies the pending migrations to the remote database through its binding
+(`TILL_DB`), then deploys. Wrangler records each applied migration in the database's
+`d1_migrations` table, so each runs once: a change to the schema is a new numbered file in
+`migrations/`, never an edit to an applied one.
+
+Deployed, the till is reachable from nowhere (`workers_dev` and `preview_urls` are off and it
+has no route): its only entry point is the cron, and each run shows in Workers Logs
+(`observability`).
 
 The cron is UTC, the till's reference time: `30 0 * * *` fires at 00:30 UTC
 every night (01:30 in Madrid in winter, 02:30 in summer), and each run closes
