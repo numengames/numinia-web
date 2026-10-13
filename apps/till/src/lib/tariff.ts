@@ -3,10 +3,19 @@
  * per-size prices per day running and stopped, and the rules; it starts on
  * a UTC date, and every charged line keeps the version it was charged
  * with, so history never changes. The figures are examples (DBT-026).
+ *
+ * The Oracle desk (MIS-184) reads and checks drafts of the next version
+ * here, as pure functions: `readDraft` turns whatever a caller sent into a
+ * typed draft or the problems with it, never a throw; `draftCheck` says what
+ * the draft would replace, whether it is a rise, the first day it may start
+ * and exactly what scheduling it would refuse. The desk's shapes are the
+ * contract numinia.com copies: `TariffVersion` is its `DeskVersion`,
+ * `SizePrice` its `DeskSizePrice`, `TariffRules` its `DeskRules`,
+ * `TariffBasis` its `DeskBasis`.
  */
 
 import { divideHalfUp, isCents } from './money';
-import { MINUTES_PER_DAY, addDays, isDay, isInstant } from './utc-day';
+import { MINUTES_PER_DAY, addDays, isDay, isInstant, startOfDay } from './utc-day';
 
 /** Prices are per day; the till charges per minute of a day, every day 1440 minutes (UTC). */
 export const MINUTES_PER_PRICED_DAY = MINUTES_PER_DAY;
@@ -37,15 +46,29 @@ export interface TariffRules {
   readonly lowBalanceDaysDefault: number;
 }
 
+/**
+ * Why a version was published (MIS-184): the Oracle's note and, optionally,
+ * the price calculator's assumptions at that moment. The till stores it as
+ * it is given and never interprets `assumptions`: nothing is charged from it.
+ */
+export interface TariffBasis {
+  readonly note: string;
+  /** Plain JSON data, kept as given. */
+  readonly assumptions?: Readonly<Record<string, unknown>>;
+}
+
 export interface TariffVersion {
   /** Increasing: among versions starting the same day, the greatest id wins. */
   readonly id: number;
   /** The UTC date the version starts. */
   readonly startsOn: string;
   readonly createdAt: string;
+  /** Who scheduled it: a lowercase 0x wallet from the Oracle desk, or the seed's text. */
   readonly createdBy: string;
   readonly sizes: TariffSizes;
   readonly rules: TariffRules;
+  /** Why it was published; null for the seed and for a version published without one. */
+  readonly basis: TariffBasis | null;
 }
 
 const RULE_KEYS: readonly string[] = [
@@ -79,6 +102,7 @@ export const SEED_TARIFF: TariffVersion = {
     noticeDaysForRise: 30,
     lowBalanceDaysDefault: 3,
   },
+  basis: null,
 };
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -167,6 +191,80 @@ function readRules(json: unknown, problems: string[]): TariffRules | undefined {
   };
 }
 
+/** A basis's note: 500 UTF-16 code units at most, as JavaScript's `length` and HTML's `maxlength` count. */
+const BASIS_NOTE_MAX_LENGTH = 500;
+/**
+ * A whole basis: 16 KB of JSON at most, counted in bytes of UTF-8 — never
+ * fewer than the characters the column's CHECK counts, so the desk refuses
+ * before the database would.
+ */
+const BASIS_MAX_BYTES = 16_384;
+/** How deep a basis may nest: more than any calculator needs, far below SQLite's JSON limit (1000). */
+const BASIS_MAX_DEPTH = 32;
+
+const BASIS_PROBLEM =
+  'basis must be a note of at most 500 characters and an object of assumptions, 16 KB in all';
+
+/** An object made by `{}` or by JSON, or with no prototype: no array, Date, Map or class instance. */
+function isPlainObject(value: unknown): value is Readonly<Record<string, unknown>> {
+  if (typeof value !== 'object' || value === null) return false;
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** What an array or a plain object holds; undefined for what JSON would not give back as it was. */
+function childrenOf(value: unknown): readonly unknown[] | undefined {
+  if (Array.isArray(value)) {
+    // A hole, or a key that is not an index, would not come back from JSON as it went.
+    return value.length <= BASIS_MAX_BYTES && Object.keys(value).length === value.length
+      ? value
+      : undefined;
+  }
+  return isPlainObject(value) ? Object.values(value) : undefined;
+}
+
+/**
+ * True when `root` is plain JSON data — plain objects, arrays without holes,
+ * strings, finite numbers, booleans and null, which JSON.stringify writes and
+ * JSON.parse gives back as they were — nesting at most BASIS_MAX_DEPTH levels
+ * and holding at most BASIS_MAX_BYTES values (each takes a byte of JSON at
+ * least), so a cycle or a huge value ends the walk early and nothing throws.
+ */
+function isJsonData(root: unknown): boolean {
+  const stack: [unknown, number][] = [[root, 0]];
+  let seen = 1;
+  for (let next = stack.pop(); next !== undefined; next = stack.pop()) {
+    const [value, depth] = next;
+    if (depth > BASIS_MAX_DEPTH) return false;
+    if (value === null || typeof value === 'string' || typeof value === 'boolean') continue;
+    if (typeof value === 'number') {
+      if (Number.isFinite(value)) continue;
+      return false;
+    }
+    const children = childrenOf(value);
+    if (children === undefined) return false;
+    seen += children.length;
+    if (seen > BASIS_MAX_BYTES) return false;
+    for (const child of children) stack.push([child, depth + 1]);
+  }
+  return true;
+}
+
+/** True for null, or a note with assumptions within the desk's bounds (see `basisProblems`). */
+function isBasis(value: unknown): value is TariffBasis | null {
+  if (value === null) return true;
+  if (!isPlainObject(value)) return false;
+  const { note, assumptions } = value;
+  return (
+    Object.keys(value).every((key) => key === 'note' || key === 'assumptions') &&
+    typeof note === 'string' &&
+    note.length <= BASIS_NOTE_MAX_LENGTH &&
+    (assumptions === undefined || isPlainObject(assumptions)) &&
+    isJsonData(value) &&
+    new TextEncoder().encode(JSON.stringify(value)).byteLength <= BASIS_MAX_BYTES
+  );
+}
+
 /** Everything wrong with a version, in words; empty when it is well formed. */
 export function tariffProblems(version: TariffVersion): string[] {
   const problems: string[] = [];
@@ -197,16 +295,23 @@ export function parseRules(json: unknown): TariffRules {
   return rules;
 }
 
+/** Reads a version's `basis` column (parsed JSON) into a basis, or throws with what is wrong. */
+export function parseBasis(json: unknown): TariffBasis | null {
+  if (!isBasis(json)) throw new TypeError(`tariff basis: ${BASIS_PROBLEM}`);
+  return json;
+}
+
 /**
  * The version in force on `day`: the greatest `startsOn` ≤ day, ties broken
  * by the greatest id — so a future version is superseded by scheduling
- * another with the same start. Undefined when none has started yet.
+ * another with the same start. Undefined when none has started yet. Any
+ * list of dated versions will do: the close's carry no basis.
  */
-export function versionFor(
-  versions: readonly TariffVersion[],
+export function versionFor<Version extends Pick<TariffVersion, 'id' | 'startsOn'>>(
+  versions: readonly Version[],
   day: string,
-): TariffVersion | undefined {
-  let best: TariffVersion | undefined;
+): Version | undefined {
+  let best: Version | undefined;
   for (const version of versions) {
     if (version.startsOn > day) continue;
     if (
@@ -247,6 +352,20 @@ export function earliestStart(scheduledOn: string, noticeDays: number): string {
 }
 
 /**
+ * The notice a rise against `replaced`, scheduled on `scheduledOn`, needs:
+ * the strictest of the version in force that day (the replaced one when none
+ * is in force yet) and the replaced one.
+ */
+function riseNoticeDays(
+  versions: readonly TariffVersion[],
+  replaced: TariffVersion,
+  scheduledOn: string,
+): number {
+  const inForce = versionFor(versions, scheduledOn) ?? replaced;
+  return Math.max(inForce.rules.noticeDaysForRise, replaced.rules.noticeDaysForRise);
+}
+
+/**
  * Why `next` may not be scheduled on `scheduledOn`; empty when it may. Any
  * version starts the next day at the earliest (a cut applies from the next
  * day); a rise — against the version it replaces — starts no earlier than
@@ -270,8 +389,7 @@ export function scheduleProblems(
   }
   const replaced = versionFor(versions, next.startsOn);
   if (replaced !== undefined && isRise(next, replaced)) {
-    const inForce = versionFor(versions, scheduledOn) ?? replaced;
-    const notice = Math.max(inForce.rules.noticeDaysForRise, replaced.rules.noticeDaysForRise);
+    const notice = riseNoticeDays(versions, replaced, scheduledOn);
     const earliest = earliestStart(scheduledOn, notice);
     if (next.startsOn < earliest) {
       problems.push(
@@ -280,6 +398,138 @@ export function scheduleProblems(
     }
   }
   return problems;
+}
+
+/**
+ * What is wrong with a basis, in words; empty when it is null, or a note of
+ * at most 500 characters (UTF-16 code units) with, optionally, an object of
+ * assumptions — all of it plain JSON data (objects, arrays, strings, finite
+ * numbers, booleans, null; no undefined), nesting at most 32 levels, and its
+ * JSON at most 16384 bytes of UTF-8 in all.
+ */
+export function basisProblems(basis: unknown): string[] {
+  return isBasis(basis) ? [] : [BASIS_PROBLEM];
+}
+
+/** The sizes still charged to worlds (`inUse`) that `sizes` does not price: each once, sorted. */
+export function missingSizes(sizes: TariffSizes, inUse: readonly string[]): string[] {
+  return [...new Set(inUse)].filter((size) => !Object.hasOwn(sizes, size)).sort();
+}
+
+/** The id the next version takes: one more than the greatest (ids only grow), 1 for none. */
+export function nextVersionId(versions: readonly Pick<TariffVersion, 'id'>[]): number {
+  return versions.reduce((greatest, version) => Math.max(greatest, version.id), 0) + 1;
+}
+
+/**
+ * A version the Oracle desk is asked to check or to schedule: what the Oracle
+ * chose (the contract's `DeskDraft`). The till adds the id, the instant and who.
+ */
+export interface DeskDraft {
+  readonly startsOn: string;
+  readonly sizes: TariffSizes;
+  readonly rules: TariffRules;
+  readonly basis: TariffBasis | null;
+}
+
+/** What the desk says of a draft before anything is written (the contract's `DeskCheck`). */
+export interface DeskCheck {
+  /** The till's UTC date. */
+  readonly today: string;
+  /** The id the draft would take: one more than the greatest now. */
+  readonly nextId: number;
+  /** The version in force on the draft's start: the one it would replace from then. */
+  readonly replacedId: number | null;
+  readonly isRise: boolean;
+  /** For a rise, the strictest notice of the version in force today and the replaced one; else 0. */
+  readonly noticeDays: number;
+  /** The first day the draft may start: tomorrow, or the day the notice allows for a rise. */
+  readonly earliestStart: string;
+  /** Exactly what scheduling the draft would refuse, in words; empty when it would be accepted. */
+  readonly problems: readonly string[];
+}
+
+/** Anything a caller sent as a draft, read: the typed draft, or every problem found in it. */
+export type DraftReading =
+  | { readonly draft: DeskDraft; readonly problems: readonly [] }
+  | { readonly draft: undefined; readonly problems: readonly string[] };
+
+const DRAFT_PROBLEM = 'a draft must be an object of startsOn, sizes, rules and basis';
+
+const DRAFT_KEYS: readonly string[] = ['startsOn', 'sizes', 'rules', 'basis'];
+
+/**
+ * Reads anything a caller sent as a draft — the desk re-validates every
+ * field and trusts no shape — into a typed draft, or the problems with it in
+ * words, never a throw: a key a draft does not have, and each field missing
+ * or wrong (startsOn a YYYY-MM-DD day; sizes and rules as a version holds
+ * them, no unknown rule and nothing but the two prices per size; basis null
+ * or as `basisProblems` says).
+ */
+export function readDraft(sent: unknown): DraftReading {
+  if (!isPlainObject(sent)) return { draft: undefined, problems: [DRAFT_PROBLEM] };
+  const problems: string[] = [];
+  const unknownKeys = Object.keys(sent).filter((key) => !DRAFT_KEYS.includes(key));
+  if (unknownKeys.length > 0) problems.push(`unknown draft keys: ${unknownKeys.join(', ')}`);
+  const { startsOn, basis } = sent;
+  const dayRead = isDay(startsOn);
+  if (!dayRead) problems.push('startsOn must be a YYYY-MM-DD day');
+  const sizes = readSizes(sent['sizes'], problems);
+  const rules = readRules(sent['rules'], problems);
+  const basisRead = isBasis(basis);
+  if (!basisRead) problems.push(BASIS_PROBLEM);
+  if (!dayRead || rules === undefined || !basisRead || problems.length > 0) {
+    return { draft: undefined, problems };
+  }
+  return { draft: { startsOn, sizes, rules, basis }, problems: [] };
+}
+
+/** Who the version a check builds names: a check publishes nothing. */
+const CHECKED_BY = 'the Oracle desk, checking';
+
+/**
+ * What the desk answers about a draft on `today` (the contract's
+ * `DeskCheck`), from every version and the sizes still charged to worlds:
+ * the version the draft would replace from its start, whether it is a rise
+ * against that one (`isRise`), the notice and the first day that allows,
+ * and exactly the problems scheduling it would refuse with — those of
+ * `scheduleProblems` (the start, the notice, the ids), a size still charged
+ * that the draft stops pricing, and a basis out of bounds.
+ */
+export function draftCheck(
+  versions: readonly TariffVersion[],
+  draft: DeskDraft,
+  today: string,
+  sizesInUse: readonly string[],
+): DeskCheck {
+  const nextId = nextVersionId(versions);
+  const replaced = versionFor(versions, draft.startsOn);
+  const rise = replaced !== undefined && isRise(draft, replaced);
+  const noticeDays = rise ? riseNoticeDays(versions, replaced, today) : 0;
+  const tomorrow = addDays(today, 1);
+  const afterNotice = earliestStart(today, noticeDays);
+  // A check writes nothing: a well-formed instant and author stand in for the real ones.
+  const next: TariffVersion = {
+    ...draft,
+    id: nextId,
+    createdAt: startOfDay(today).toISOString(),
+    createdBy: CHECKED_BY,
+  };
+  return {
+    today,
+    nextId,
+    replacedId: replaced === undefined ? null : replaced.id,
+    isRise: rise,
+    noticeDays,
+    earliestStart: afterNotice > tomorrow ? afterNotice : tomorrow,
+    problems: [
+      ...scheduleProblems(versions, next, today),
+      ...missingSizes(draft.sizes, sizesInUse).map(
+        (size) => `size ${size} is still charged to worlds: a version must keep pricing it`,
+      ),
+      ...basisProblems(draft.basis),
+    ],
+  };
 }
 
 /**

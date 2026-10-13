@@ -1,16 +1,18 @@
 {
   // The till (ADR-070, MIS-177, MIS-178): its own Worker and its own D1
-  // database, apart from numinia.com. No routes and no secrets in this build:
-  // it runs the nightly close, and GET /health answers only in local runs.
+  // database, apart from numinia.com. No routes and no secrets: it runs the
+  // nightly close, GET /health answers only in local runs, and its one door
+  // is the Oracle desk (MIS-184), the RPC entrypoint `OracleDesk` that only
+  // numinia.com's service binding reaches.
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "numinia-till",
   "main": "src/worker.ts",
   // The same date as the site's Worker (root wrangler.jsonc).
   "compatibility_date": "2026-08-15",
   "send_metrics": false,
-  // Reachable from nowhere: no workers.dev address and no preview address.
-  // The till holds the money; until MIS-179 gives it an authenticated API,
-  // its only entry point is its cron.
+  // Reachable from nowhere over HTTP: no workers.dev address and no preview
+  // address. The till holds the money: its entry points are its cron and the
+  // Oracle desk, which answers no HTTP request; an accounts API is MIS-179.
   "workers_dev": false,
   "preview_urls": false,
   // Workers Logs, as the site's Worker: each nightly close and any error it

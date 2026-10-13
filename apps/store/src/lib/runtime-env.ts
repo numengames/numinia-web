@@ -44,6 +44,21 @@ export function runtimeEnv(): EnvRecord {
   return candidate ?? {};
 }
 
+/**
+ * An object binding workerd hands the Worker — a service binding such as
+ * the till's desk (TILL_ORACLE in the root wrangler.jsonc) — as its env
+ * holds it, or undefined when there is none. The env above is typed as
+ * strings because vars and secrets are; a binding is an object (an RPC stub
+ * may be a callable one), so it comes back as `unknown` and the caller
+ * narrows it to what it needs. Outside workerd only strings exist, so this
+ * answers undefined: no binding, never a string mistaken for one.
+ */
+export function runtimeBinding(name: string): unknown {
+  const value: unknown = (runtimeEnv() as Readonly<Record<string, unknown>>)[name];
+  if (value === null) return undefined;
+  return typeof value === 'object' || typeof value === 'function' ? value : undefined;
+}
+
 /** Test seam: priming is isolate-wide; tests reset between scenarios. */
 export function resetRuntimeEnvForTests(): void {
   primed = null;

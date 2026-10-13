@@ -69,6 +69,9 @@ const RATE_RULES: ReadonlyArray<{
 }> = [
   { test: (m, p) => m === 'POST' && p === '/api/auth/login', key: 'login', limit: 20 },
   { test: (m, p) => m === 'POST' && p === '/api/admin/census', key: 'census-write', limit: 20 },
+  // The price room checks each draft with the till as the Oracle types
+  // (debounced) and schedules versions: generous, but metered like any write.
+  { test: (m, p) => m === 'POST' && p === '/api/admin/prices', key: 'prices-desk', limit: 120 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },

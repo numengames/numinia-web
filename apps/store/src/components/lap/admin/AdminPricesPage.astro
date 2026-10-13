@@ -1,0 +1,658 @@
+---
+/**
+ * The price room (MIS-184). The page is static; every answer comes from the
+ * session-gated endpoint, which only an Oracle passes — anyone else receives
+ * the refusal, never a price.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../../i18n/lap';
+import { PRICES_UI } from '../../../i18n/prices';
+import LapShell from '../LapShell.astro';
+import { PricesPanel } from './PricesPanel';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = LAP_UI[locale];
+const labels = {
+  forbidden: t.admin.forbidden,
+  forbiddenNote: t.prices.forbiddenNote,
+  signedAs: t.worlds.signedAs,
+};
+---
+
+<LapShell
+  locale={locale}
+  current="admin-prices"
+  title={`${t.prices.title} — LAP — Numinia`}
+  description={t.prices.intro}
+>
+  <header class="cabecera">
+    <h1>{t.prices.title}</h1>
+    <p class="intro">{t.prices.intro}</p>
+  </header>
+  <PricesPanel client:load labels={labels} room={PRICES_UI[locale]} lang={locale} />
+</LapShell>
+
+<style>
+  .cabecera {
+    margin-bottom: var(--s5);
+  }
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    margin: 0 0 var(--s2);
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+    margin: 0;
+  }
+</style>
+
+<style is:global>
+  /* The price room, shaped like the Worlds room: sections under mono
+     labels, surfaces as cards, figures in mono. Everything scoped under the
+     island's own attribute; the house classes (.btn, .etiqueta, .pildora,
+     .tarjeta, .aviso, .mono) are used, never redefined. */
+  [data-prices-panel] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s6);
+    min-width: 0;
+    /* Native controls (date picker, select lists, scrollbars) follow the mode. */
+    color-scheme: dark;
+    /* Text that says something is wrong: coral reads at AA on the night
+       surfaces, grana on the day ones (coral on the day surface is 3.2:1). */
+    --precios-mal: var(--coral);
+  }
+  [data-modo='diurno'] [data-prices-panel] {
+    color-scheme: light;
+    --precios-mal: var(--grana);
+  }
+  [data-prices-panel] .estado {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .estado.fallo {
+    border-left: 2px solid var(--ambar);
+    padding-left: var(--s3);
+  }
+  [data-prices-panel] .estado.fallo p,
+  [data-prices-panel] .refuso p {
+    margin: 0 0 var(--s2);
+  }
+  [data-prices-panel] .nota,
+  [data-prices-panel] .detalle {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    max-width: 75ch;
+  }
+  [data-prices-panel] .pista {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    line-height: 1.45;
+  }
+  [data-prices-panel] .fallo {
+    margin: 0;
+    color: var(--precios-mal);
+    font-size: 0.875rem;
+  }
+  [data-prices-panel] .aviso-sala {
+    margin: 0;
+    padding-left: var(--s3);
+    border-left: 2px solid var(--ambar);
+    font-size: 0.9rem;
+  }
+  [data-prices-panel] a.btn {
+    text-decoration: none;
+  }
+  [data-prices-panel] .barra-sala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: calc(-1 * var(--s3));
+  }
+  [data-prices-panel] .sesion {
+    margin: 0;
+    color: var(--texto-2);
+  }
+
+  /* Sections: a mono label, then their content */
+  [data-prices-panel] .seccion {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    min-width: 0;
+  }
+  [data-prices-panel] .seccion > h2.etiqueta {
+    margin: 0;
+  }
+  [data-prices-panel] .marco {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+    padding: var(--s4) var(--s5);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  [data-prices-panel] .cabeza-version {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  [data-prices-panel] .cabeza-version strong {
+    font-weight: 500;
+  }
+  [data-prices-panel] .nota-version {
+    margin: 0;
+    color: var(--texto);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+  [data-prices-panel] .programada {
+    margin: 0;
+    padding-left: var(--s3);
+    border-left: 2px solid var(--turquesa);
+    font-size: 0.9rem;
+  }
+
+  /* Tables */
+  [data-prices-panel] .tabla-envoltura {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  [data-prices-panel] table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  [data-prices-panel] th {
+    padding: var(--s2) var(--s3);
+    font-weight: 500;
+    text-align: left;
+    vertical-align: top;
+  }
+  [data-prices-panel] thead th {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    border-bottom: 1px solid var(--linea-f);
+  }
+  [data-prices-panel] td {
+    padding: var(--s2) var(--s3);
+    vertical-align: top;
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-prices-panel] tbody th {
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-prices-panel] .num {
+    text-align: right;
+    white-space: nowrap;
+  }
+  [data-prices-panel] td .iva {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .marco table {
+    font-size: 0.9rem;
+  }
+
+  /* Calculator controls */
+  [data-prices-panel] .controles-calc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--s3) var(--s4);
+    min-width: 0;
+  }
+  [data-prices-panel] .control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    min-width: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .control > span:first-child {
+    color: var(--texto-2);
+  }
+  [data-prices-panel] select,
+  [data-prices-panel] input[type='number'],
+  [data-prices-panel] input[type='text'],
+  [data-prices-panel] input[type='date'] {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px var(--s3);
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--texto);
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+  }
+  [data-prices-panel] input[aria-invalid='true'] {
+    border-color: var(--coral);
+  }
+  [data-prices-panel] .deslizador {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    min-width: 0;
+  }
+  [data-prices-panel] .deslizador input[type='range'] {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--turquesa);
+  }
+  [data-prices-panel] .deslizador output {
+    flex: none;
+    min-width: 3.5em;
+    text-align: right;
+    color: var(--texto);
+  }
+  [data-prices-panel] .par {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--s2);
+  }
+
+  /* One card per size */
+  [data-prices-panel] .tamanos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--s4);
+    min-width: 0;
+  }
+  [data-prices-panel] .tamano {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    min-width: 0;
+    padding: var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    transition: border-color 120ms var(--ciclo);
+  }
+  [data-prices-panel] .tamano:hover {
+    border-color: var(--linea-f);
+  }
+  [data-prices-panel] .tamano[data-included='false'] {
+    border-style: dashed;
+  }
+  [data-prices-panel] .tamano[data-included='false'] .filas,
+  [data-prices-panel] .tamano[data-included='false'] .fila-frase {
+    opacity: 0.6;
+  }
+  [data-prices-panel] .cabeza-tamano {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+  }
+  [data-prices-panel] .cabeza-tamano h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+  [data-prices-panel] .personas {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .precios-par {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s2);
+  }
+  [data-prices-panel] .campo-precio {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .campo-precio input {
+    font-family: var(--mono);
+    font-size: 1rem;
+  }
+  [data-prices-panel] .filas {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+  }
+  [data-prices-panel] .fila {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0 var(--s2);
+    font-size: 0.85rem;
+  }
+  [data-prices-panel] .fila dt {
+    color: var(--texto-2);
+    min-width: 0;
+  }
+  [data-prices-panel] .fila dd {
+    margin: 0 0 0 auto;
+    text-align: right;
+    white-space: nowrap;
+    color: var(--texto);
+  }
+  [data-prices-panel] .fila.pieza {
+    font-size: 0.8rem;
+  }
+  [data-prices-panel] .fila.pieza dt {
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .fila.destacada dd {
+    font-size: 1.2rem;
+  }
+  [data-prices-panel] .fila-frase {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .fila.margen {
+    margin-top: var(--s1);
+    padding-top: var(--s2);
+    border-top: 1px solid var(--linea);
+  }
+  [data-prices-panel] .fila.margen[data-reached='true'] dd {
+    color: var(--verdemar);
+  }
+  [data-prices-panel] .fila.margen[data-reached='false'] dd {
+    color: var(--precios-mal);
+  }
+  [data-prices-panel] .marca-margen {
+    font-size: 0.8rem;
+  }
+  [data-prices-panel] .interruptor {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-top: auto;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  [data-prices-panel] .interruptor input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--turquesa);
+  }
+  [data-prices-panel] .llevada {
+    padding-left: var(--s3);
+    border-left: 2px solid var(--turquesa);
+  }
+
+  /* Example fleet and profit */
+  [data-prices-panel] .tabla-flota input[type='number'] {
+    max-width: 7rem;
+    appearance: textfield;
+  }
+  [data-prices-panel] .tabla-flota input[type='number']::-webkit-inner-spin-button,
+  [data-prices-panel] .tabla-flota input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  [data-prices-panel] .tabla-beneficio {
+    max-width: 32rem;
+  }
+  [data-prices-panel] .tabla-beneficio tr.total th,
+  [data-prices-panel] .tabla-beneficio tr.total td {
+    border-bottom: none;
+    border-top: 1px solid var(--linea-f);
+    font-size: 1.05rem;
+  }
+  [data-prices-panel] .tabla-beneficio tr.total[data-positive='true'] td {
+    color: var(--verdemar);
+  }
+  [data-prices-panel] .tabla-beneficio tr.total[data-positive='false'] td {
+    color: var(--precios-mal);
+  }
+
+  /* Market, with bars */
+  [data-prices-panel] .tabla-mercado td:first-child {
+    width: 100%;
+  }
+  [data-prices-panel] .tabla-mercado a {
+    color: var(--texto);
+  }
+  [data-prices-panel] .barra {
+    display: block;
+    height: 6px;
+    margin-top: var(--s1);
+    border-radius: var(--radio-completo);
+    background: transparent;
+  }
+  [data-prices-panel] .barra > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radio-completo);
+    background: var(--texto-3);
+    opacity: 0.5;
+  }
+  [data-prices-panel] tr[data-ours='true'] .barra > span {
+    background: var(--verdemar);
+    opacity: 1;
+  }
+
+  /* Rules, folded */
+  [data-prices-panel] .reglas summary {
+    cursor: pointer;
+    list-style-position: inside;
+    padding: var(--s2) 0;
+  }
+  [data-prices-panel] .reglas > .nota {
+    margin: 0 0 var(--s4);
+  }
+  [data-prices-panel] .lista-reglas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: var(--s4);
+  }
+  [data-prices-panel] .regla {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    min-width: 0;
+  }
+  [data-prices-panel] .regla label {
+    font-size: 0.875rem;
+  }
+
+  /* Publish */
+  [data-prices-panel] .publicar {
+    padding: var(--s4) var(--s5);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  [data-prices-panel] .campos-publicar {
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+    gap: var(--s4);
+  }
+  [data-prices-panel] .campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    min-width: 0;
+    font-size: 0.875rem;
+  }
+  [data-prices-panel] .estado-publicar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+  [data-prices-panel] .mover-fecha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+  }
+  [data-prices-panel] .problemas {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+  [data-prices-panel] .publicar > .btn-primario {
+    align-self: flex-start;
+  }
+
+  /* History */
+  [data-prices-panel] .historial ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-prices-panel] .historial li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s1);
+    padding: var(--s3) var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  [data-prices-panel] .linea-version {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+  }
+  [data-prices-panel] .linea-version strong {
+    font-weight: 500;
+  }
+  [data-prices-panel] .estado-version {
+    font-size: 0.75rem;
+    color: var(--texto-2);
+  }
+  [data-prices-panel] .estado-version[data-state='in-force'] {
+    color: var(--verdemar);
+  }
+  /* Waiting for its day: amber reads at AA in both modes (turquoise as text does not at night). */
+  [data-prices-panel] .estado-version[data-state='scheduled'] {
+    color: var(--ambar);
+  }
+  [data-prices-panel] .precios-version {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--texto-2);
+    overflow-wrap: anywhere;
+  }
+  [data-prices-panel] .historial .btn {
+    min-height: 32px;
+    padding: 4px var(--s3);
+    font-size: 0.8rem;
+    margin-top: var(--s1);
+  }
+
+  /* The publish dialog */
+  [data-prices-panel] .dialogo {
+    width: min(44rem, calc(100% - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    color: var(--texto);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  [data-prices-panel] .dialogo::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  [data-prices-panel] .contenido-dialogo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    min-width: 0;
+    padding: var(--s4) var(--s5) var(--s5);
+  }
+  [data-prices-panel] .contenido-dialogo h2 {
+    margin: 0;
+    font-size: 1.44rem;
+    font-weight: 400;
+  }
+  [data-prices-panel] .contenido-dialogo h3 {
+    margin: var(--s2) 0 0;
+  }
+  [data-prices-panel] .tabla-cambios td .mono {
+    display: block;
+    font-size: 0.85rem;
+  }
+  [data-prices-panel] .cambios-reglas {
+    margin: 0;
+    padding-left: 1.2rem;
+    font-size: 0.9rem;
+  }
+  [data-prices-panel] .rechazo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+  }
+  [data-prices-panel] .pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--s2);
+    margin-top: var(--s2);
+    padding-top: var(--s3);
+    border-top: 1px solid var(--linea);
+  }
+
+  /* The published notice: the house's toast (.aviso), above the room */
+  [data-prices-panel] .aviso {
+    z-index: 20;
+  }
+  [data-prices-panel] .aviso p {
+    margin: 0 0 var(--s2);
+  }
+
+  @media (max-width: 40rem) {
+    [data-prices-panel] .campos-publicar {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    [data-prices-panel] .contenido-dialogo {
+      padding: var(--s3) var(--s4) var(--s4);
+    }
+    /* On a phone the dialog's two buttons stack, the primary one first. */
+    [data-prices-panel] .pie {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+    [data-prices-panel] .pie .btn {
+      justify-content: center;
+    }
+    [data-prices-panel] .marco,
+    [data-prices-panel] .publicar {
+      padding: var(--s3);
+    }
+    [data-prices-panel] th,
+    [data-prices-panel] td {
+      padding: var(--s2);
+    }
+    [data-prices-panel] .tabla-flota input[type='number'] {
+      max-width: 4.5rem;
+      padding: 6px var(--s2);
+    }
+  }
+</style>

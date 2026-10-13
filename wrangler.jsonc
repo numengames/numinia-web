@@ -51,4 +51,16 @@
     "GITHUB_REPO_NAME": "numinia-digital-goods-data",
     "DATA_SOURCE": "fixture",
   },
+  // The till's Oracle desk (MIS-184): the price room (LAP › Prices) reads the
+  // tariff, checks a draft and schedules a dated version through it. A
+  // service binding, not a URL: `OracleDesk` is a named RPC entrypoint of
+  // the `numinia-till` Worker, and an RPC entrypoint has no address at all —
+  // it answers only Workers that declare a binding to it, like this one, so
+  // the desk stays unreachable from the internet even if the till gets a
+  // route later. This Worker checks the Oracle's session before calling it;
+  // the till re-validates every field. Deploy order, as Cloudflare asks for
+  // bindings: the bound Worker first — numinia-till with its OracleDesk —
+  // then this config. Until the desk is there, the room says the till did
+  // not answer; nothing else on the site depends on it.
+  "services": [{ "binding": "TILL_ORACLE", "service": "numinia-till", "entrypoint": "OracleDesk" }],
 }

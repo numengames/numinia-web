@@ -1,0 +1,22 @@
+{
+  "versions": [
+    {
+      "id": 1,
+      "startsOn": "2026-10-13",
+      "createdAt": "2026-10-13T00:00:00.000Z",
+      "createdBy": "seed: example figures (DBT-026)",
+      "sizes": { "2g": { "runningCentsPerDay": 60, "stoppedCentsPerDay": 5 } },
+      "rules": {
+        "eventBoostCentsPerDay": 180,
+        "minTopupCents": 1000,
+        "quickTopupsCents": [1000, 2000, 5000, 10000],
+        "minBalanceDaysRunning": 2,
+        "keepDaysAtZero": 90,
+        "noticeDaysForRise": 30,
+        "lowBalanceDaysDefault": 3
+      },
+      "basis": null
+    }
+  ],
+  "sizesInUse": []
+}

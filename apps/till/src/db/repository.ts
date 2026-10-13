@@ -7,6 +7,11 @@
  * per-query parameter limit. A second run over closed days writes nothing:
  * a world's day already written is skipped on its uniqueness, and the
  * database itself drops any insert that collides with a line.
+ *
+ * Tariff versions are read whole — why each was published (`basis`)
+ * included — only by the Oracle desk (`./desk`), through `SELECT_VERSIONS`
+ * and `versionOf`. The close reads the same rows without `basis`: nothing is
+ * charged from it, so no note can ever stop a night's close.
  */
 
 import {
@@ -23,14 +28,15 @@ import {
 } from '../lib/close';
 import { lineProblems } from '../lib/ledger';
 import { isCents } from '../lib/money';
-import { parseRules, parseSizes, type TariffVersion } from '../lib/tariff';
+import { parseBasis, parseRules, parseSizes, type TariffVersion } from '../lib/tariff';
 import { addDays, dayOf, daysFrom, isDay, isInstant } from '../lib/utc-day';
 import type { Meter } from '../meter';
 
 /** What the till uses of a D1 database: prepared statements and batches. */
 export type TillDatabase = Pick<D1Database, 'prepare' | 'batch'>;
 
-type Row = Readonly<Record<string, unknown>>;
+/** A row as D1 answers it: column names to values. */
+export type Row = Readonly<Record<string, unknown>>;
 
 /** What one close did: the decision, and what reached the database. */
 export interface CloseRun {
@@ -49,7 +55,8 @@ function column(row: Row, name: string): unknown {
   return row[name];
 }
 
-function text(row: Row, name: string): string {
+/** A column of non-empty text, or a throw: the till fails closed on a row the schema does not promise. */
+export function text(row: Row, name: string): string {
   const value = column(row, name);
   if (typeof value !== 'string' || value === '') {
     throw new TypeError(`till database: ${name} is not text`);
@@ -97,7 +104,32 @@ function group<T>(items: readonly T[], key: (item: T) => string): Map<string, T[
   return groups;
 }
 
+/** A `tariff_versions` row as the close charges from it; a throw when it is malformed. */
+function pricesOf(row: Row): Omit<TariffVersion, 'basis'> {
+  return {
+    id: cents(row, 'id'),
+    startsOn: day(row, 'starts_on'),
+    createdAt: instant(row, 'created_at'),
+    createdBy: text(row, 'created_by'),
+    sizes: parseSizes(json(row, 'sizes')),
+    rules: parseRules(json(row, 'rules')),
+  };
+}
+
+/** Every tariff version, ascending id, with why it was published: what the Oracle desk reads. */
+export const SELECT_VERSIONS =
+  'SELECT id, starts_on, created_at, created_by, sizes, rules, basis FROM tariff_versions ORDER BY id';
+
+/** A row of `SELECT_VERSIONS` as a whole version, basis included; a throw when it is malformed. */
+export function versionOf(row: Row): TariffVersion {
+  return {
+    ...pricesOf(row),
+    basis: column(row, 'basis') === null ? null : parseBasis(json(row, 'basis')),
+  };
+}
+
 const READS = [
+  // The close reads no basis: nothing is charged from it.
   'SELECT id, starts_on, created_at, created_by, sizes, rules FROM tariff_versions ORDER BY id',
   'SELECT id FROM accounts ORDER BY id',
   'SELECT id, account_id, first_seen_on FROM worlds ORDER BY id',
@@ -153,14 +185,7 @@ export async function loadCloseInput(
     Row[],
   ];
 
-  const versions: TariffVersion[] = versionRows.map((row) => ({
-    id: cents(row, 'id'),
-    startsOn: day(row, 'starts_on'),
-    createdAt: instant(row, 'created_at'),
-    createdBy: text(row, 'created_by'),
-    sizes: parseSizes(json(row, 'sizes')),
-    rules: parseRules(json(row, 'rules')),
-  }));
+  const versions = versionRows.map(pricesOf);
   const worlds = group(
     worldRows.map((row) => ({
       accountId: text(row, 'account_id'),
