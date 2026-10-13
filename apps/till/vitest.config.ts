@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 // The till's libraries carry numinia-web's bar for libraries: per file,
@@ -5,6 +6,15 @@ import { defineConfig } from 'vitest/config';
 // meter, the repository and the Worker are measured and reported too; the
 // bar is enforced on src/lib/**, as in the rest of the repository.
 export default defineConfig({
+  resolve: {
+    alias: {
+      // workerd's own module does not resolve in Node: the Worker's
+      // `WorkerEntrypoint` comes from a stand-in that keeps `ctx` and `env`.
+      'cloudflare:workers': fileURLToPath(
+        new URL('./test/cloudflare-workers.ts', import.meta.url).href,
+      ),
+    },
+  },
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],

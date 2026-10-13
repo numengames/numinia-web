@@ -121,7 +121,11 @@ export interface CloseInput {
   readonly today: string;
   /** The run's instant, on `today` in UTC; every new line's `at`. */
   readonly now: string;
-  readonly versions: readonly TariffVersion[];
+  /**
+   * Every version, as the close charges from it: why each was published
+   * (`basis`) is not read, so a version's note can never stop a night's close.
+   */
+  readonly versions: readonly Omit<TariffVersion, 'basis'>[];
   readonly accounts: readonly CloseAccount[];
   /** The meter's readings for the days in the window. */
   readonly readings: readonly MeterReading[];

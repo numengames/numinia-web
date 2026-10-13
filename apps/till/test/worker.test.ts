@@ -1,9 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TillDatabase } from '../src/db/repository';
+import { SEED_TARIFF } from '../src/lib/tariff';
 import { daysFrom } from '../src/lib/utc-day';
 import { FakeMeter, NoMeter } from '../src/meter';
-import worker, { handleFetch, handleScheduled, meterFor, type Env } from '../src/worker';
+import worker, {
+  OracleDesk,
+  handleFetch,
+  handleScheduled,
+  meterFor,
+  type Env,
+} from '../src/worker';
+import { WorkerEntrypoint } from './cloudflare-workers';
 import { migratedTill } from './sqlite-d1';
 
 /** A JSONC file (wrangler's): comments and trailing commas removed, then JSON. */
@@ -98,7 +107,7 @@ describe('fetch', () => {
     expect(await response.text()).toBe('{"service":"till","ok":true}');
   });
 
-  it('answers 404 to anything else: no data leaves the till in this build', async () => {
+  it('answers 404 to anything else: no data leaves the till over HTTP', async () => {
     for (const request of [
       new Request('https://numinia-till.example/'),
       new Request('https://numinia-till.example/health/'),
@@ -234,5 +243,117 @@ describe('the schedule (MIS-178)', () => {
     const manual = await handleScheduled(controller(new Date('2027-03-29T12:00:00.000Z')), env);
     expect(manual).toMatchObject({ today: '2027-03-29', linesWritten: 0 });
     expect(worldDays(sqlite)).toEqual([['w-lumen-plaza', '2027-03-28', -60]]);
+  });
+});
+
+/** True when `value` holds only plain objects, arrays and primitives: what RPC carries by value. */
+function isPlainData(value: unknown): boolean {
+  if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) return true;
+  if (Array.isArray(value)) return value.every(isPlainData);
+  return (
+    typeof value === 'object' &&
+    Object.getPrototypeOf(value) === Object.prototype &&
+    Object.values(value).every(isPlainData)
+  );
+}
+
+describe('the Oracle desk, through its entrypoint (MIS-184)', () => {
+  const ORACLE = `0x42e6${'a'.repeat(32)}ca26`;
+  const DRAFT = {
+    startsOn: '2026-10-14',
+    sizes: {
+      '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 },
+      small: { runningCentsPerDay: 20, stoppedCentsPerDay: 2 },
+      medium: { runningCentsPerDay: 75, stoppedCentsPerDay: 5 },
+      large: { runningCentsPerDay: 180, stoppedCentsPerDay: 10 },
+    },
+    rules: SEED_TARIFF.rules,
+    basis: { note: 'three sizes, by people at once', assumptions: { occupancy: 0.5 } },
+  };
+  // The invocation's context: the desk keeps it and uses nothing of it.
+  const ctx = {} as ExecutionContext;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-13T12:00:00.000Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('is a WorkerEntrypoint whose prototype declares read, check and schedule, and no fetch', () => {
+    const { db } = migratedTill();
+    expect(new OracleDesk(ctx, { TILL_DB: db })).toBeInstanceOf(WorkerEntrypoint);
+    // RPC exposes what the prototype declares; with no fetch, no HTTP request reaches it.
+    expect(Object.getOwnPropertyNames(OracleDesk.prototype).sort()).toEqual([
+      'check',
+      'constructor',
+      'read',
+      'schedule',
+    ]);
+  });
+
+  it('reads, checks and schedules with the bound database, on the till’s own clock', async () => {
+    const { db, sqlite } = migratedTill();
+    const desk = new OracleDesk(ctx, { TILL_DB: db });
+    expect(await desk.read()).toEqual({
+      today: '2026-10-13',
+      inForceId: 1,
+      versions: [SEED_TARIFF],
+      sizesInUse: [],
+    });
+    expect(await desk.check(DRAFT)).toEqual({
+      today: '2026-10-13',
+      nextId: 2,
+      replacedId: 1,
+      isRise: false,
+      noticeDays: 0,
+      earliestStart: '2026-10-14',
+      problems: [],
+    });
+    expect(await desk.schedule(DRAFT, ORACLE.toUpperCase())).toEqual({
+      ok: false,
+      problems: ['by must be a lowercase 0x wallet'],
+    });
+    expect(await desk.schedule(DRAFT, ORACLE)).toEqual({
+      ok: true,
+      version: {
+        id: 2,
+        createdAt: '2026-10-13T12:00:00.000Z',
+        createdBy: ORACLE,
+        ...DRAFT,
+      },
+    });
+    expect(sqlite.prepare('SELECT COUNT(*) AS n FROM tariff_versions').get()).toEqual({ n: 2 });
+    expect((await desk.read()).versions.map((version) => version.id)).toEqual([1, 2]);
+  });
+
+  it('answers with plain data only, which RPC carries by value', async () => {
+    const { db } = migratedTill();
+    const desk = new OracleDesk(ctx, { TILL_DB: db });
+    const answers: unknown[] = [
+      await desk.check({ nonsense: true }),
+      await desk.schedule(DRAFT, ORACLE),
+      await desk.schedule(DRAFT, 'nobody'),
+      await desk.read(),
+    ];
+    for (const answer of answers) {
+      expect(isPlainData(answer)).toBe(true);
+      expect(structuredClone(answer)).toEqual(answer);
+    }
+  });
+
+  it('lets a failing database throw, so its caller can tell a failure from a refusal', async () => {
+    const { db } = migratedTill();
+    const failing: TillDatabase = {
+      prepare: (query) => db.prepare(query),
+      batch: async () => {
+        throw new Error('D1_ERROR: the database is unreachable');
+      },
+    };
+    const desk = new OracleDesk(ctx, { TILL_DB: failing });
+    await expect(desk.read()).rejects.toThrow('D1_ERROR');
+    await expect(desk.check(DRAFT)).rejects.toThrow('D1_ERROR');
+    await expect(desk.schedule(DRAFT, ORACLE)).rejects.toThrow('D1_ERROR');
   });
 });

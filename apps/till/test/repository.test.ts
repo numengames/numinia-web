@@ -108,7 +108,7 @@ const fixtureMeter = (): FakeMeter => new FakeMeter(parseMeterReadings(meterFixt
 
 describe('the migration', () => {
   it('builds STRICT tables and seeds the tariff the code knows', async () => {
-    expect(migrationFiles()).toEqual(['0001_ledger.sql']);
+    expect(migrationFiles()).toEqual(['0001_ledger.sql', '0002_tariff_basis.sql']);
     const { db, sqlite } = migratedTill();
     const tables = rows(
       sqlite,
@@ -126,7 +126,10 @@ describe('the migration', () => {
       ].map((name) => ({ name, strict: 1 })),
     );
     const input = await loadCloseInput(db, new NoMeter(), nightOf('2026-10-14'));
-    expect(input.versions).toEqual([SEED_TARIFF]);
+    // The close charges from prices and rules: it does not read why a version was published.
+    const { basis: _basis, ...seedPrices } = SEED_TARIFF;
+    expect(input.versions).toEqual([seedPrices]);
+    expect(input.versions[0]).not.toHaveProperty('basis');
   });
 
   it('holds no LIKE or GLOB pattern, which D1 caps at 50 bytes', () => {
@@ -136,6 +139,50 @@ describe('the migration', () => {
     );
     expect(schema.length).toBeGreaterThan(10);
     expect(schema.filter((sql) => /\b(GLOB|LIKE)\b/i.test(sql))).toEqual([]);
+  });
+
+  it('adds why a version was published (0002): NULL, or a JSON object of 16384 characters at most', () => {
+    const { sqlite } = migratedTill();
+    expect(
+      rows(
+        sqlite,
+        `SELECT name, type, "notnull" FROM pragma_table_info('tariff_versions') WHERE name = 'basis'`,
+      ),
+    ).toEqual([{ name: 'basis', type: 'TEXT', notnull: 0 }]);
+    expect(rows(sqlite, 'SELECT id, basis FROM tariff_versions')).toEqual([{ id: 1, basis: null }]);
+    const insert = (id: number, basis: string | null): void => {
+      sqlite
+        .prepare(
+          `INSERT INTO tariff_versions (id, starts_on, created_at, created_by, sizes, rules, basis)
+           VALUES (?, '2026-10-20', '2026-10-13T12:00:00.000Z', 'oracle', ?, ?, ?)`,
+        )
+        .run(id, JSON.stringify(SEED_TARIFF.sizes), JSON.stringify(SEED_TARIFF.rules), basis);
+    };
+    // `{"note":"` and `"}` take 11 characters: this basis has exactly 16384.
+    const longest = `{"note":"${'é'.repeat(16384 - 11)}"}`;
+    insert(2, null);
+    insert(3, '{"note":"three sizes","assumptions":{"occupancy":0.5}}');
+    insert(4, longest);
+    for (const refused of [
+      '["a note"]',
+      '"a note"',
+      'a note',
+      '{"note":',
+      longest.replace('é', 'éé'),
+    ]) {
+      expect(() => insert(5, refused)).toThrow(/CHECK constraint failed/);
+    }
+    expect(() =>
+      sqlite
+        .prepare(`UPDATE tariff_versions SET basis = '{"note":"rewritten"}' WHERE id = 1`)
+        .run(),
+    ).toThrow('append-only');
+    expect(rows(sqlite, 'SELECT id, length(basis) AS characters FROM tariff_versions')).toEqual([
+      { id: 1, characters: null },
+      { id: 2, characters: null },
+      { id: 3, characters: 54 },
+      { id: 4, characters: 16384 },
+    ]);
   });
 
   it.skipIf(!limitsEnforced)('runs, like every test here, under D1’s limits', () => {
