@@ -21,3 +21,22 @@ npm run build && node dist/server/entry.mjs
   hydration + real framebuffer pixels.
 - Every page auto-emits `page_view`; interactive elements must carry
   `data-metric` (taxonomy in `packages/analytics/src/events.ts`).
+
+## The price room and the till's desk (MIS-184)
+
+`/lap/admin/prices/` (Oracles only) reads the till's tariff, checks a draft
+and schedules a dated version through the till's RPC entrypoint
+`OracleDesk`, bound in the root `wrangler.jsonc` as `TILL_ORACLE` (service
+`numinia-till`).
+
+Trust model: an RPC entrypoint has no URL — only a Worker that declares a
+binding to it can call it, so the desk stays unreachable from the internet
+even if the till gets a route. `pages/api/admin/prices.ts` checks the
+Oracle's session first (our own signed cookie, permission
+`edit-system-config`, which only the Oracle rank holds) and passes the
+session's wallet, lowercased, as `by`. The till trusts its one bound caller
+and re-validates every field; neither side trusts a browser
+(`lib/prices-source.ts` checks what the browser sends and what the till
+answers). Under `DATA_SOURCE=fixture` (CI, acceptance, screenshots) the desk
+is an in-memory fake seeded from `fixtures/prices/desk.json`
+(`lib/prices-fixture.ts`); the till holds the real rules.

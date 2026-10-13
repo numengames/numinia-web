@@ -11,6 +11,7 @@ import {
   primeFromWorkerd,
   primeRuntimeEnv,
   resetRuntimeEnvForTests,
+  runtimeBinding,
   runtimeEnv,
 } from '../runtime-env';
 
@@ -71,5 +72,32 @@ describe('runtimeEnv', () => {
     resetRuntimeEnvForTests();
     vi.stubEnv('RUNTIME_ENV_PROBE', 'fallback');
     expect(runtimeEnv().RUNTIME_ENV_PROBE).toBe('fallback');
+  });
+});
+
+describe('runtimeBinding', () => {
+  it('hands back an object binding as workerd holds it (a service binding)', () => {
+    const desk = { read: () => 'desk' };
+    primeRuntimeEnv({ TILL_ORACLE: desk });
+    expect(runtimeBinding('TILL_ORACLE')).toBe(desk);
+  });
+
+  it('hands back a callable binding too (an RPC stub may be a function)', () => {
+    const stub = Object.assign(() => undefined, { read: () => 'desk' });
+    primeRuntimeEnv({ TILL_ORACLE: stub });
+    expect(runtimeBinding('TILL_ORACLE')).toBe(stub);
+  });
+
+  it('never mistakes a string, a number, null or nothing for a binding', () => {
+    primeRuntimeEnv({ TILL_ORACLE: 'numinia-till', COUNT: 3, NOTHING: null });
+    expect(runtimeBinding('TILL_ORACLE')).toBeUndefined();
+    expect(runtimeBinding('COUNT')).toBeUndefined();
+    expect(runtimeBinding('NOTHING')).toBeUndefined();
+    expect(runtimeBinding('MISSING')).toBeUndefined();
+  });
+
+  it('outside workerd only strings exist: no binding', () => {
+    vi.stubEnv('TILL_ORACLE', 'a string from the shell');
+    expect(runtimeBinding('TILL_ORACLE')).toBeUndefined();
   });
 });

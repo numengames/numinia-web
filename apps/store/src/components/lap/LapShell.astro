@@ -21,7 +21,8 @@ export type LapSection =
   | 'settings'
   | 'admin-assets'
   | 'admin-census'
-  | 'admin-worlds';
+  | 'admin-worlds'
+  | 'admin-prices';
 
 interface Props {
   locale: SupportedLocale;
@@ -49,7 +50,8 @@ type IconName =
   | 'gear'
   | 'package'
   | 'users'
-  | 'planet';
+  | 'planet'
+  | 'coins';
 const ITEMS: ReadonlyArray<{
   id: LapSection | 'updates';
   href: string;
@@ -78,6 +80,8 @@ const ADMIN: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: 
     for the Oracle rank; the endpoint behind each one is the lock. */
 const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon: IconName }> = [
   { id: 'admin-worlds', href: `${prefix}/lap/admin/worlds/`, label: t.worlds.title, icon: 'planet' },
+  // The till's tariff and the calculator behind it (MIS-184).
+  { id: 'admin-prices', href: `${prefix}/lap/admin/prices/`, label: t.prices.title, icon: 'coins' },
 ];
 ---
 

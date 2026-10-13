@@ -44,6 +44,12 @@ export interface LapMessages {
     readonly signedAs: string;
     readonly empty: string;
   };
+  /** The price room (MIS-184): its frame; the room's own words live in prices.ts. */
+  readonly prices: {
+    readonly title: string;
+    readonly intro: string;
+    readonly forbiddenNote: string;
+  };
   readonly census: {
     readonly title: string;
     readonly intro: string;
@@ -303,6 +309,13 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       empty:
         'Todavía no hay mundos en la flota. Cada mundo nace con su ficha en la Summa y su orden en numinia-assets (ADR-069).',
     },
+    prices: {
+      title: 'Precios',
+      intro:
+        'Lo que cuesta y lo que deja cada tamaño de mundo, y la tarifa que cobra la caja. Al publicar, la caja guarda una versión nueva con su fecha; lo cobrado antes no cambia.',
+      forbiddenNote:
+        'Esta sala es solo para Oráculos. Entra con la cartera que lo es y volverá a abrirse.',
+    },
     census: {
       title: 'Censo',
       intro:
@@ -500,6 +513,13 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       empty:
         'No worlds in the fleet yet. Each world is born with its card in the Summa and its order in numinia-assets (ADR-069).',
     },
+    prices: {
+      title: 'Prices',
+      intro:
+        'What each size of world costs and what it leaves, and the tariff the till charges. Publishing makes the till keep a new version with its date; nothing charged before changes.',
+      forbiddenNote:
+        'This room is for Oracles only. Sign in with the wallet that is one and it will open again.',
+    },
     census: {
       title: 'Census',
       intro:
@@ -693,6 +713,13 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       empty:
         'フリートにはまだワールドがありません。各ワールドはSummaのカードとnuminia-assetsのオーダーから生まれます（ADR-069）。',
     },
+    prices: {
+      title: '料金',
+      intro:
+        '各サイズのワールドの原価と利益、そしてレジが請求する料金表。公開すると、レジは日付付きの新しいバージョンを保存します。これまでの請求は変わりません。',
+      forbiddenNote:
+        'この部屋はオラクル専用です。オラクルのウォレットでサインインすると再び開きます。',
+    },
     census: {
       title: '市民名簿',
       intro:
@@ -878,6 +905,12 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signedAs: '로그인한 등급',
       empty:
         '플릿에 아직 월드가 없습니다. 각 월드는 Summa의 카드와 numinia-assets의 오더로 태어납니다(ADR-069).',
+    },
+    prices: {
+      title: '요금',
+      intro:
+        '월드 크기별 비용과 남는 몫, 그리고 계산대가 청구하는 요금표. 게시하면 계산대는 날짜가 붙은 새 버전을 저장합니다. 이전에 청구된 것은 바뀌지 않습니다.',
+      forbiddenNote: '이 방은 오라클 전용입니다. 오라클 지갑으로 로그인하면 다시 열립니다.',
     },
     census: {
       title: '시민 명부',
@@ -1103,6 +1136,13 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signedAs: 'Você entrou como',
       empty:
         'Ainda não há mundos na frota. Cada mundo nasce com sua ficha na Summa e sua ordem em numinia-assets (ADR-069).',
+    },
+    prices: {
+      title: 'Preços',
+      intro:
+        'O que custa e o que rende cada tamanho de mundo, e a tarifa que o caixa cobra. Ao publicar, o caixa guarda uma versão nova com a sua data; o que já foi cobrado não muda.',
+      forbiddenNote:
+        'Esta sala é só para Oráculos. Entre com a carteira que é de um e ela volta a abrir.',
     },
     census: {
       title: 'Censo',

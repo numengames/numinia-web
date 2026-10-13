@@ -3,6 +3,31 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-13 13:17",
+    "entries": [
+      {
+        "text": "Prices, a new room in the Oracles’ zone of LAP. It opens on the tariff the till charges today: its version, since when, who published it and why, and each size’s price a day running and stopped, without VAT and with it, and a month running; a version scheduled for later is named under it. Then the calculator, with the machine, how full the machines run, how much processor each world is promised, the nightly copies, the average top-up, who sells, the team’s hour and the support minutes. Each size has its own card: who it is for — Small up to 20 people at once, Medium up to 50, Large up to 100 — its two prices, which are the draft you will publish, what it costs the person who pays, how long a 10 € top-up lasts, what it costs us piece by piece and its gross margin, marked when it reaches 60 %.",
+        "type": "NEW",
+      },
+      {
+        "text": "Under the cards, the profit of an example fleet in a month — the worlds of each size and how much of the month they run, the machines they need, copies, support, Stripe, the fixed costs and voice, video and AI — and where our sizes stand against the market, in a table with bars. The tariff’s seven rules are folded beneath, in euros and days, each with what it means.",
+        "type": "NEW",
+      },
+      {
+        "text": "Publish schedules the draft as a new dated version in the till. The room asks the till about the draft each time it changes: a rise needs its notice, and the room says from which day it may start and moves the date there in one click; a draft that changes nothing cannot be published. The dialog shows what changes, size by size, before and after, with and without VAT, the rules that change, the day it starts and the why you wrote; a rise also says that nobody is told by email yet. Once published, the version waits in the history until its day; what was charged before never changes. The history lists every version, newest first, and any of them can be taken back to the calculator, prices, rules and assumptions included.",
+        "type": "NEW",
+      },
+      {
+        "text": "The till opens its first door, an Oracle desk to read the tariff, check a draft and schedule a version with who published it and why. Only numinia.com reaches it, through a binding between the two Workers that has no address on the internet; the site checks the Oracle’s session first and the till checks every figure again.",
+        "type": "NEW",
+      },
+    ],
+    "missions": [
+      "MIS-184",
+    ],
+    "version": "v0.81.0",
+  },
+  {
     "date": "2026-10-13 01:40",
     "entries": [
       {
