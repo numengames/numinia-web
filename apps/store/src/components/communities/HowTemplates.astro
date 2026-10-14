@@ -1,0 +1,57 @@
+---
+/**
+ * The six templates a community can open its home from — shared by «Cómo
+ * funciona» and the front door's visitor face.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { HOW_IT_WORKS } from '../../i18n/how-it-works';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const t = HOW_IT_WORKS[Astro.props.locale];
+const TEMPLATE_ICONS = ['book-open', 'buildings', 'clipboard-text', 'lock-key', 'palette', 'confetti'] as const;
+---
+
+<ul class="plantillas">
+  {
+    t.templates.map((template, index) => (
+      <li class="tarjeta">
+        <Icon name={TEMPLATE_ICONS[index] ?? 'house'} size={24} />
+        <b>{template.name}</b>
+        <span>{template.text}</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .plantillas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (min-width: 56.25rem) {
+    .plantillas {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .plantillas li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .plantillas :global(.icono) {
+    color: var(--enlace);
+  }
+  .plantillas span {
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+</style>

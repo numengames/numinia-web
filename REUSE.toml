@@ -90,6 +90,13 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"
 
+# The same story in one paragraph, on the front door's visitor face (v0.86.0).
+[[annotations]]
+path = "apps/store/src/i18n/front-door.ts"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"
+
 # ── Packages: libraries, SDKs, types, tokens ─────────────────────────────────
 [[annotations]]
 path = "packages/**"

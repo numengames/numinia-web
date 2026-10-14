@@ -1,0 +1,94 @@
+---
+/**
+ * The four steps (find, enter, come, take), each with its door — shared by
+ * «Cómo funciona» and the front door's visitor face, so the two never drift.
+ * `heading` is the steps' level: h2 on the page whose h1 is the steps' own,
+ * h3 inside the front door's section.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { HOW_IT_WORKS } from '../../i18n/how-it-works';
+import { fill } from '../../i18n/communities';
+import { COMMUNITIES } from './register';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  heading: 'h2' | 'h3';
+  /** Prefix of the data-metric ids, one per page. */
+  metric: string;
+}
+
+const { locale, heading: Heading, metric } = Astro.props;
+const t = HOW_IT_WORKS[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+const STEPS = [
+  { icon: 'compass', href: `${prefix}/communities/`, id: 'communities' },
+  { icon: 'play', href: `${prefix}/live/`, id: 'live' },
+  { icon: 'calendar-blank', href: `${prefix}/calendar/`, id: 'calendar' },
+  { icon: 'archive', href: `${prefix}/bazaar/`, id: 'bazaar' },
+] as const;
+---
+
+<ol class="pasos">
+  {
+    t.steps.map((step, index) => {
+      const door = STEPS[index] ?? STEPS[0];
+      return (
+        <li>
+          <span class="n">
+            <Icon name={door.icon} size={18} />
+            {index + 1}
+          </span>
+          <Heading>{step.title}</Heading>
+          <p>{fill(step.text, { n: COMMUNITIES.length })}</p>
+          <a href={door.href} data-metric={`${metric}-${door.id}`}>
+            {step.link}
+          </a>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .pasos {
+    list-style: none;
+    margin: var(--s6) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  }
+  .pasos li {
+    border-top: 1px solid var(--enlace);
+    padding-top: var(--s4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .pasos .n {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    font-family: var(--mono);
+    color: var(--enlace);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+  }
+  .pasos h2,
+  .pasos h3 {
+    margin: var(--s2) 0 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .pasos p {
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .pasos a {
+    margin-top: auto;
+    font-size: 0.9rem;
+  }
+</style>

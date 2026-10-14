@@ -51,8 +51,12 @@ const BUDGETS = {
       wallet, rank), the Oracle's rooms and the ladder of ranks, then tells
       the sign-in island (~1.8KB). Before it, a signed-in person still saw
       «Iniciar sesión» everywhere. Still no external JS: the island reaches
-      the client through the window, never by import. Landing sits at ~16KB. */
-  landingInlineScriptBytes: 16_500,
+      the client through the window, never by import. Landing sits at ~16KB.
+      Raised 16500→17500 on 2026-10-14 (v0.86.0): the visitor face's form
+      to ask for a home opens the mail with a subject and one labelled line
+      per field (~0.6KB); without JavaScript the form posts to the mail
+      client as it is. Still no external JS. Landing sits at ~17KB. */
+  landingInlineScriptBytes: 17_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -87,8 +91,16 @@ const BUDGETS = {
       Raised 90000→95000 on 2026-10-14 (v0.84.0): the top bar's account —
       the face, the short wallet, the rank's name in each of its five forms,
       Perfil · Ajustes · Salir — and their three icons in the sprite, plus
-      the session script above (~3.7KB). Landing sits at ~93.2KB. */
-  landingHtmlBytes: 95_000,
+      the session script above (~3.7KB). Landing sits at ~93.2KB.
+      Raised 95000→120000 on 2026-10-14 (v0.86.0): the front door has two
+      faces in one static page — the visitor face (the line that says what
+      Numinia is, the four steps, the communities with an open home, six
+      templates, the form, what stays yours, the city, five questions) for
+      anyone without a session, and «Para ti» for the signed-in — with their
+      Phosphor icons inline (~21KB). The page is prerendered, so both ship;
+      the session script shows one. Still no external JS. Landing sits at
+      ~115.6KB. */
+  landingHtmlBytes: 120_000,
 };
 
 const failures = [];

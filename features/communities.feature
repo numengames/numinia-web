@@ -24,6 +24,11 @@ Feature: Communities (phase 0 of the communities platform)
     Then the home carries no explanation heading and opens on the featured card
     And the home shows the Bazar block with real goods and their licence
 
+  Scenario: A first visit says what Numinia is and opens the city without an account
+    Given the store application has been built
+    Then the home's visitor face comes first and the signed-in face waits hidden
+    And the visitor face opens the commons, shows only communities with an open home and asks for a home with a form
+
   Scenario: The app shell pages exist in every locale
     Given the store application has been built
     Then "how-it-works", "live" and "belong" exist under every locale prefix

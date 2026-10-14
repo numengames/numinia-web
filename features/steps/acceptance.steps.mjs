@@ -715,6 +715,70 @@ Then('the home carries no explanation heading and opens on the featured card', a
   }
 });
 
+Then("the home's visitor face comes first and the signed-in face waits hidden", async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+    const where = prefix || 'en';
+    const visitor = html.indexOf('class="visita" data-session-out');
+    const member = html.indexOf('<div data-session-in hidden');
+    assert.ok(visitor !== -1, `${where}: no visitor face`);
+    assert.ok(member !== -1, `${where}: the signed-in face is not hidden by default`);
+    assert.ok(visitor < member, `${where}: the visitor face is not first`);
+    // One h1 a visitor can see: the visitor face's line; the other sits in the hidden face.
+    const visible = html.slice(visitor, member);
+    assert.equal((visible.match(/<h1\b/g) ?? []).length, 1, `${where}: visitor face h1 count`);
+    assert.ok(
+      member < html.indexOf('data-featured-slide'),
+      `${where}: the featured card left the signed-in face`,
+    );
+  }
+});
+
+Then(
+  'the visitor face opens the commons, shows only communities with an open home and asks for a home with a form',
+  async function () {
+    const html = await readFile(path.join(this.distDir, 'es', 'index.html'), 'utf8');
+    const face = html.slice(
+      html.indexOf('class="visita"'),
+      html.indexOf('<div data-session-in hidden'),
+    );
+    // The way in: the commons, compared whole as a parsed URL.
+    const enter = /<a\b[^>]*\bdata-metric="door-enter-city"[^>]*>/.exec(face);
+    const href = enter && /\bhref="([^"]+)"/.exec(enter[0]);
+    assert.ok(href, 'visitor face: no way into the city');
+    const world = new URL(href[1]);
+    assert.equal(
+      `${world.origin}${world.pathname}`,
+      'https://v2.oncyber.io/agora_plaza_of_numinia',
+    );
+    // The cards: a community's own home, or the founder (the commons).
+    const withHome = readdirSync(COMMUNITY_FILES)
+      .filter((name) => name.endsWith('.md'))
+      .filter((name) => {
+        const text = readFileSync(path.join(COMMUNITY_FILES, name), 'utf8');
+        return !/^visibility: house/m.test(text) && /^(sede:|state: founder)/m.test(text);
+      })
+      .map((name) => name.replace(/\.md$/, ''))
+      .sort();
+    const block = face.slice(face.indexOf('id="con-sede"'), face.indexOf('id="abrir"'));
+    const cards = [...block.matchAll(/class="tarjeta com" href="\/es\/communities\/([^/]+)\/"/g)]
+      .map((match) => match[1])
+      .sort();
+    assert.deepEqual(
+      cards,
+      withHome,
+      'visitor face: the communities shown are not the ones with a home',
+    );
+    // The request: a form with the four fields, the two that matter required.
+    const form = face.slice(face.indexOf('<form'), face.indexOf('</form>'));
+    for (const name of ['name', 'kind', 'when', 'email']) {
+      assert.ok(new RegExp(`name="${name}"`).test(form), `form: no ${name}`);
+    }
+    assert.equal((form.match(/\brequired\b/g) ?? []).length, 2, 'form: required fields');
+    assert.equal((face.match(/<details\b/g) ?? []).length, 5, 'visitor face: five questions');
+  },
+);
+
 Then('the home shows the Bazar block with real goods and their licence', async function () {
   for (const [prefix, licence] of [
     ['', 'CC0 · free, no permission needed'],

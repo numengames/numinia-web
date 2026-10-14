@@ -67,7 +67,7 @@ const STORY_EN: readonly [string, string, string] = [
 const ES: HowItWorksMessages = {
   title: 'Cómo funciona — Numinia',
   description:
-    'Numinia es una ciudad en 3D donde tu comunidad tiene sede: encuéntrala, entra en su sede, ven a sus rituales y llévate lo vuestro.',
+    'Numinia es una ciudad en 3D donde tu comunidad tiene sede: encuéntrala, entra en su sede, ven a sus encuentros y llévate lo vuestro.',
   eyebrow: 'Cómo funciona',
   heading: 'Una ciudad en 3D donde tu comunidad tiene sede.',
   lead: 'Un congreso, un aula, un equipo o un grupo de amigos: cada uno tiene en Numinia su sitio en 3D, su calendario y su archivo.',
@@ -83,7 +83,7 @@ const ES: HowItWorksMessages = {
       link: 'Ver qué pasa ahora →',
     },
     {
-      title: 'Ven a sus rituales',
+      title: 'Ven a sus encuentros',
       text: 'Sus reuniones, en persona o en línea. Te las llevas a tu calendario.',
       link: 'Calendario →',
     },
@@ -117,7 +117,7 @@ const ES: HowItWorksMessages = {
 const EN: HowItWorksMessages = {
   title: 'How it works — Numinia',
   description:
-    'Numinia is a 3D city where your community has a home: find it, enter its home, come to its rituals and take what is yours.',
+    'Numinia is a 3D city where your community has a home: find it, enter its home, come to its gatherings and take what is yours.',
   eyebrow: 'How it works',
   heading: 'A 3D city where your community has a home.',
   lead: 'A conference, a classroom, a team or a group of friends: each has in Numinia its own 3D place, its calendar and its archive.',
@@ -133,7 +133,7 @@ const EN: HowItWorksMessages = {
       link: 'See what is on now →',
     },
     {
-      title: 'Come to its rituals',
+      title: 'Come to its gatherings',
       text: 'Its gatherings, in person or online. Take them to your calendar.',
       link: 'Calendar →',
     },
@@ -167,7 +167,7 @@ const EN: HowItWorksMessages = {
 const JA: HowItWorksMessages = {
   title: '仕組み — Numinia',
   description:
-    'Numinia は、あなたのコミュニティが拠点を持つ 3D の都市です。コミュニティを見つけ、拠点に入り、儀式に参加し、自分たちのものを持ち帰りましょう。',
+    'Numinia は、あなたのコミュニティが拠点を持つ 3D の都市です。コミュニティを見つけ、拠点に入り、集まりに参加し、自分たちのものを持ち帰りましょう。',
   eyebrow: '仕組み',
   heading: 'あなたのコミュニティが拠点を持つ 3D の都市。',
   lead: 'カンファレンス、教室、チーム、友人のグループ。それぞれが Numinia に、自分たちの 3D の場所、カレンダー、アーカイブを持ちます。',
@@ -183,7 +183,7 @@ const JA: HowItWorksMessages = {
       link: 'いま起きていることを見る →',
     },
     {
-      title: '儀式に参加する',
+      title: '集まりに参加する',
       text: '対面でもオンラインでも、その集まりをあなたのカレンダーに。',
       link: 'カレンダー →',
     },
@@ -217,7 +217,7 @@ const JA: HowItWorksMessages = {
 const KO: HowItWorksMessages = {
   title: '작동 방식 — Numinia',
   description:
-    'Numinia는 당신의 커뮤니티가 거점을 갖는 3D 도시입니다. 커뮤니티를 찾고, 거점에 들어가고, 의식에 참여하고, 여러분의 것을 가져가세요.',
+    'Numinia는 당신의 커뮤니티가 거점을 갖는 3D 도시입니다. 커뮤니티를 찾고, 거점에 들어가고, 모임에 참여하고, 여러분의 것을 가져가세요.',
   eyebrow: '작동 방식',
   heading: '당신의 커뮤니티가 거점을 갖는 3D 도시.',
   lead: '컨퍼런스, 교실, 팀, 친구들의 모임. 각각은 Numinia에 자신만의 3D 공간, 달력, 아카이브를 갖습니다.',
@@ -233,7 +233,7 @@ const KO: HowItWorksMessages = {
       link: '지금 일어나는 일 보기 →',
     },
     {
-      title: '의식에 참여하기',
+      title: '모임에 참여하기',
       text: '대면이든 온라인이든, 그 모임을 당신의 달력에.',
       link: '달력 →',
     },
@@ -267,7 +267,7 @@ const KO: HowItWorksMessages = {
 const PT_BR: HowItWorksMessages = {
   title: 'Como funciona — Numinia',
   description:
-    'Numinia é uma cidade em 3D onde a sua comunidade tem sede: encontre-a, entre na sede, venha aos rituais e leve o que é de vocês.',
+    'Numinia é uma cidade em 3D onde a sua comunidade tem sede: encontre-a, entre na sede, venha aos encontros e leve o que é de vocês.',
   eyebrow: 'Como funciona',
   heading: 'Uma cidade em 3D onde a sua comunidade tem sede.',
   lead: 'Um congresso, uma sala de aula, uma equipe ou um grupo de amigos: cada um tem na Numinia seu lugar em 3D, seu calendário e seu arquivo.',
@@ -283,7 +283,7 @@ const PT_BR: HowItWorksMessages = {
       link: 'Ver o que acontece agora →',
     },
     {
-      title: 'Venha aos rituais',
+      title: 'Venha aos encontros',
       text: 'Os encontros, presenciais ou on-line. Leve-os para o seu calendário.',
       link: 'Calendário →',
     },
