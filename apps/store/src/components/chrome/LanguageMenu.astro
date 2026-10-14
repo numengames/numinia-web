@@ -2,8 +2,9 @@
 /**
  * Language selector as a §9.8-style dropdown: globe + current code + caret
  * (closed), elevated panel with 40px rows (open), the current locale dressed
- * in ink. Built on details/summary: works without JS; a small script adds
- * Esc + click-outside closing.
+ * in ink. Built on details/summary: works without JS. It lives in the top
+ * bar's ⋮ menu (v0.83.0), whose script closes every chrome menu
+ * (`data-popover`) on Esc and on clicks outside.
  */
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
 import Icon from './Icon.astro';
@@ -29,7 +30,7 @@ const pathFor = (target: SupportedLocale): string =>
   `${target === 'en' ? '' : `/${target}`}${basePath}`;
 ---
 
-<details class="lang" data-lang-menu>
+<details class="lang" data-lang-menu data-popover>
   <summary aria-label={label} data-metric="chrome-language">
     <Icon name="globe" size={20} />
     <span class="code">{locale.toUpperCase()}</span>
@@ -64,19 +65,6 @@ const pathFor = (target: SupportedLocale): string =>
         /* private mode: the choice lives in the URL they navigate to */
       }
     });
-  });
-</script>
-
-<script>
-  // Close on Esc and on clicks outside — the panel never lingers.
-  const menu = document.querySelector<HTMLDetailsElement>('[data-lang-menu]');
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && menu?.open) menu.open = false;
-  });
-  document.addEventListener('click', (event) => {
-    if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
-      menu.open = false;
-    }
   });
 </script>
 

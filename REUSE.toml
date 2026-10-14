@@ -23,7 +23,7 @@ SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
 # The lore no longer lives here: it is in numinia-archive's lore/. Lore that
-# remains embedded in code (city-landing.ts) keeps its reserved annotation.
+# remains embedded in code (how-it-works.ts) keeps its reserved annotation.
 
 # ── Apps: deployable platform that decides (identity, progression, billing) ──
 [[annotations]]
@@ -39,7 +39,8 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC0-1.0"
 
-# Site documentation content (rendered /docs/ pages, 5 locales).
+# Site content prose: the legacy changelog (the /docs/ pages it also covered
+# went out to numinia.org in v0.83.0).
 [[annotations]]
 path = "apps/store/src/content/**"
 precedence = "closest"
@@ -81,9 +82,10 @@ SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC0-1.0"
 
 # Lore embedded in app code: code is AGPL, the narrative text it carries is
-# CC0 at its source (numinia-archive lore/, 2026-09-24).
+# CC0 at its source (numinia-archive lore/, 2026-09-24). The city's story in
+# three lines, on «Cómo funciona» since the city page retired (v0.83.0).
 [[annotations]]
-path = "apps/store/src/i18n/city-landing.ts"
+path = "apps/store/src/i18n/how-it-works.ts"
 precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"

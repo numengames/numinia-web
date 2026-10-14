@@ -1,0 +1,98 @@
+---
+/**
+ * Live (/live/, the app shell v0.83.0): the homes with people inside right
+ * now and the rituals taking place. No world reports who is inside yet, so
+ * «Now» says so plainly — never an invented count — and «Coming up» lists
+ * the six nearest rituals with their countdown.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+import { dayAndMonth, pick, upcoming } from '../../lib/communities';
+import { RITUALS, communityOf } from './register';
+import Icon from '../chrome/Icon.astro';
+import Countdown from './Countdown.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const next = upcoming(RITUALS).slice(0, 6);
+---
+
+<BaseLayout locale={locale} title={`${ui.livePageTitle} — Numinia`} description={ui.livePageLead}>
+  <header class="titulo-vista">
+    <h1 class="display-m">{ui.livePageTitle}</h1>
+    <p class="lead">{ui.livePageLead}</p>
+  </header>
+
+  <section class="bloque" id="now">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m">{ui.liveNowTitle}</h2>
+      </div>
+    </div>
+    <p class="vacio">
+      <Icon name="broadcast" size={24} />
+      <span>{ui.liveNowEmpty}</span>
+    </p>
+  </section>
+
+  <section class="bloque" id="next">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m">{ui.liveNextTitle}</h2>
+        <p class="ayuda">{ui.liveNextHelp}</p>
+      </div>
+    </div>
+    {
+      next.length > 0 ? (
+        <ul class="agenda-lista">
+          {next.map((ritual) => {
+            const date = dayAndMonth(ritual, locale);
+            const community = communityOf(ritual.community);
+            return (
+              <li>
+                <span class="fecha">
+                  <b>{date.day}</b>
+                  {date.month}
+                </span>
+                <div>
+                  <h3>
+                    <a href={`${prefix}/rituals/${ritual.id}/`} data-metric="live-ritual">
+                      {pick(ritual.title, locale)}
+                    </a>
+                  </h3>
+                  <p>
+                    {ritual.city ? ui.ofTheCity : community.name} · {pick(ritual.where, locale)}
+                    <span class="falta" data-countdown={ritual.start} />
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p class="vacio">
+          <Icon name="hourglass" size={24} />
+          <span>{ui.liveNextEmpty}</span>
+        </p>
+      )
+    }
+  </section>
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  .falta:not(:empty)::before {
+    content: ' · ';
+  }
+  .falta {
+    color: var(--enlace);
+  }
+</style>

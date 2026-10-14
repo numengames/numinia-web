@@ -28,7 +28,7 @@ const hash = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
 const loading = eager ? 'eager' : 'lazy';
 ---
 
-<div class:list={['cover', variant]}>
+<div class:list={['cover', variant === 'cover' ? 'band' : 'card']}>
   {
     image ? (
       <img src={image.src} alt={image.alt} loading={loading} decoding="async" />
@@ -50,11 +50,13 @@ const loading = eager ? 'eager' : 'lazy';
   .cover.card {
     aspect-ratio: 16 / 9;
   }
-  .cover.cover {
+  /* The page band. Its own class: `.cover.cover` matched every cover, so
+     the cards were 280 px tall and their monogram 4rem. */
+  .cover.band {
     height: 280px;
   }
   @media (min-width: 56.25rem) {
-    .cover.cover {
+    .cover.band {
       height: 360px;
     }
   }
@@ -87,7 +89,7 @@ const loading = eager ? 'eager' : 'lazy';
     letter-spacing: -0.04em;
     color: color-mix(in srgb, var(--enlace) 70%, transparent);
   }
-  .cover.cover .monogram b {
+  .cover.band .monogram b {
     font-size: 4rem;
   }
 </style>

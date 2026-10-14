@@ -1,37 +1,14 @@
 /**
  * UI messages of the communities platform (home, /communities/, a
- * community's page, a ritual's page, the calendar). Typed per locale: a
- * missing translation does not compile. The register's own texts
- * (summaries, places, programmes) travel in English and Spanish inside each
- * file under src/content/communities/ and the other locales read English.
+ * community's page, a ritual's page, the calendar, Live and «Perteneces»).
+ * Typed per locale: a missing translation does not compile. The register's
+ * own texts (summaries, places, programmes) travel in English and Spanish
+ * inside each file under src/content/communities/ and the other locales read
+ * English.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-
-export interface Step {
-  readonly title: string;
-  readonly text: string;
-}
-
-export interface CommunityKind {
-  readonly name: string;
-  readonly rule: string;
-  readonly note: string;
-}
-
-export interface Template {
-  readonly for: string;
-  readonly name: string;
-  readonly text: string;
-  readonly ticks: readonly [string, string];
-}
-
-export interface Agent {
-  readonly name: string;
-  readonly text: string;
-  /** 'beta' is live; 'later' is announced. */
-  readonly status: 'beta' | 'later';
-}
+import type { AssetCategory } from '../lib/data';
 
 export interface CommunitiesMessages {
   // ── the bar and the footer
@@ -39,50 +16,38 @@ export interface CommunitiesMessages {
   readonly navCalendar: string;
   readonly search: string;
 
-  // ── home
-  readonly eyebrow: string;
-  readonly heroTitle: string;
-  readonly heroLead: string;
-  readonly ctaOpen: string;
-  readonly ctaCommunities: string;
-  readonly featured: string;
+  // ── home (the app shell: action, not explanation)
+  readonly featuredLabel: string;
+  /** "{n}" of "{m}": a slide's place in the featured card. */
+  readonly slideOf: string;
   readonly nextRitual: string;
   readonly from: string;
   readonly home: string;
   readonly homeToOpen: string;
   readonly homeInProgress: string;
   readonly seeCommunity: string;
+  readonly seeRitual: string;
+  readonly enterWorld: string;
+  readonly toMyCalendar: string;
   readonly previous: string;
   readonly next: string;
   readonly upcomingEyebrow: string;
   readonly upcomingTitle: string;
   readonly upcomingHelp: string;
-  readonly fullCalendar: string;
+  readonly goodsEyebrow: string;
+  readonly goodsTitle: string;
+  readonly goodsHelp: string;
+  readonly seeBazaar: string;
+  readonly licenceLine: string;
+  readonly goodCategories: Readonly<Record<AssetCategory, string>>;
+  /** The catalogue's shelves by their id; a shelf not named here shows no chip. */
+  readonly goodCollections: Readonly<Record<string, string>>;
   readonly liveEyebrow: string;
   readonly liveTitle: string;
   readonly liveHelp: string;
-  readonly seeAll: string;
-  readonly howEyebrow: string;
-  readonly howTitle: string;
-  readonly steps: readonly [Step, Step, Step, Step];
-  readonly kindsEyebrow: string;
-  readonly kindsTitle: string;
-  readonly kindsHelp: string;
-  readonly kinds: readonly [CommunityKind, CommunityKind, CommunityKind];
-  readonly templatesEyebrow: string;
-  readonly templatesTitle: string;
-  readonly templatesHelp: string;
-  readonly templates: readonly Template[];
-  readonly agentsEyebrow: string;
-  readonly agentsTitle: string;
-  readonly agentsHelp: string;
-  readonly agents: readonly Agent[];
-  readonly beta: string;
-  readonly later: string;
-  readonly closingEyebrow: string;
-  readonly closingTitle: string;
-  readonly closingText: string;
-  readonly closingWho: string;
+  readonly firstTime: string;
+  readonly howItWorks: string;
+  readonly openYourHome: string;
 
   // ── cards and marks
   readonly founder: string;
@@ -112,6 +77,8 @@ export interface CommunitiesMessages {
 
   // ── a community's page
   readonly crumbCommunities: string;
+  readonly follow: string;
+  readonly following: string;
   readonly rituals: string;
   readonly inYourHour: string;
   readonly subscribe: string;
@@ -125,9 +92,10 @@ export interface CommunitiesMessages {
   readonly chronicle: string;
   readonly archive: string;
   readonly archiveEmpty: string;
+  readonly enter: string;
   readonly homeFounderNote: string;
   readonly homeInProgressText: string;
-  readonly homeToOpenText: string;
+  readonly homeToOpenLine: string;
   readonly members: string;
   readonly membersEmpty: string;
   readonly membersNote: string;
@@ -145,6 +113,14 @@ export interface CommunitiesMessages {
   readonly claimCta: string;
 
   // ── a ritual's page
+  readonly stageLabel: string;
+  /** "{x}" is the community's name. */
+  readonly homeOf: string;
+  /** "{x}" is the community's name. */
+  readonly homeOfToOpen: string;
+  readonly worldNote: string;
+  readonly share: string;
+  readonly linkCopied: string;
   readonly organisedBy: string;
   readonly cityKeeps: string;
   readonly when: string;
@@ -160,6 +136,7 @@ export interface CommunitiesMessages {
   readonly add: string;
   readonly addNote: string;
   readonly onlineNote: string;
+  readonly howToGetThere: string;
   readonly programme: string;
   /** "{source}" and "{date}". */
   readonly readOn: string;
@@ -176,6 +153,28 @@ export interface CommunitiesMessages {
   readonly ritualOne: string;
   readonly ritualMany: string;
 
+  // ── Live
+  readonly livePageTitle: string;
+  readonly livePageLead: string;
+  readonly liveNowTitle: string;
+  readonly liveNowEmpty: string;
+  readonly liveNextTitle: string;
+  readonly liveNextHelp: string;
+  readonly liveNextEmpty: string;
+
+  // ── «Perteneces» (/belong/)
+  readonly belongTitle: string;
+  readonly belongLead: string;
+  readonly followsTitle: string;
+  readonly followsHelp: string;
+  readonly followsEmpty: string;
+  readonly memberOfTitle: string;
+  readonly memberDoor: string;
+  readonly signIn: string;
+  readonly memberSoon: string;
+  /** "{n}" is the number of communities on the site. */
+  readonly exploreAll: string;
+
   // ── countdown templates for the page script ("{n}" is the number)
   readonly countNow: string;
   readonly countTomorrow: string;
@@ -190,148 +189,50 @@ const ES: CommunitiesMessages = {
   navCalendar: 'Calendario',
   search: 'Buscar',
 
-  eyebrow: 'Numinia · una ciudad para el conocimiento',
-  heroTitle: 'Una ciudad donde las comunidades tienen sede.',
-  heroLead:
-    'Un congreso, un aula, un equipo, una comunidad. Cada una tiene en Numinia una sede en 3D que se abre en el navegador, un calendario con sus rituales —sus reuniones, en persona o en línea— y un archivo que es suyo. La ciudad se construye con quienes entran; Numen Games fue la primera.',
-  ctaOpen: 'Abre tu sede',
-  ctaCommunities: 'Ver las comunidades',
-  featured: 'Comunidad destacada',
+  featuredLabel: 'Destacado',
+  slideOf: '{n} de {m}',
   nextRitual: 'Próximo ritual',
   from: 'De dónde',
   home: 'Sede',
   homeToOpen: 'Por abrir',
   homeInProgress: 'En construcción',
   seeCommunity: 'Ver la comunidad →',
+  seeRitual: 'Ver el ritual →',
+  enterWorld: 'Entrar al mundo',
+  toMyCalendar: 'A mi calendario',
   previous: 'Anterior',
   next: 'Siguiente',
   upcomingEyebrow: 'Lo que viene',
   upcomingTitle: 'Próximos rituales',
   upcomingHelp:
     'Las reuniones de cada comunidad, en persona o en línea. Las fechas, el mismo día en todo el mundo; las horas, en la tuya.',
-  fullCalendar: 'Calendario completo',
+  goodsEyebrow: 'Del Bazar',
+  goodsTitle: 'Objetos para tu sede',
+  goodsHelp: 'Todo CC0: úsalo, cámbialo y llévatelo, también fuera de Numinia.',
+  seeBazaar: 'Ver el Bazar',
+  licenceLine: 'CC0 · libre, sin pedir permiso',
+  goodCategories: {
+    models: 'Modelo 3D',
+    avatars: 'Avatar',
+    worlds: 'Mundo',
+    audio: 'Sonido',
+    video: 'Vídeo',
+    images: 'Imagen',
+  },
+  goodCollections: {
+    'numinia-avatars': 'Avatares de Numinia',
+    'numinia-assets': 'Objetos de Numinia',
+    'numinia-worlds': 'Mundos de Numinia',
+    'numinia-audio': 'Sonidos de Numinia',
+    'numinia-video': 'Vídeos de Numinia',
+    'numinia-images': 'Imágenes de Numinia',
+  },
   liveEyebrow: 'Ahora mismo',
   liveTitle: 'Comunidades con vida',
   liveHelp: 'Las tres con el ritual más cercano. De dónde son y cuándo se reúnen.',
-  seeAll: 'Ver todas',
-  howEyebrow: 'Cómo funciona',
-  howTitle: 'De la sede al archivo',
-  steps: [
-    {
-      title: 'Abre tu sede',
-      text: 'Eliges una plantilla y tu sede se abre en el navegador. Si ya hemos hecho algo juntos, te la abrimos nosotros y la haces tuya.',
-    },
-    {
-      title: 'Session Zero',
-      text: 'Cada persona cruza una sala corta y sale con su gremio y su rango, que la acompañan por toda la ciudad.',
-    },
-    {
-      title: 'El ritual',
-      text: 'Os reunís en la sede o en persona. El orden del día llega preparado y lo que decidís queda escrito.',
-    },
-    {
-      title: 'El archivo',
-      text: 'Todo lo que hacéis es un fichero vuestro. Os lo lleváis entero cuando queráis, con la sede dentro.',
-    },
-  ],
-  kindsEyebrow: 'El canon como mecánica',
-  kindsTitle: 'El tipo de comunidad lo decide su gente',
-  kindsHelp:
-    'Nadie elige la etiqueta: la ciudad la calcula a partir de quién está dentro, y cambia si la comunidad cambia.',
-  kinds: [
-    {
-      name: 'Logia',
-      rule: 'Misma facción, gremios distintos.',
-      note: 'Saberes diversos al servicio de un mismo campo.',
-    },
-    {
-      name: 'Liga',
-      rule: 'Mismo gremio, facciones distintas.',
-      note: 'El mismo saber aplicado a campos distintos.',
-    },
-    {
-      name: 'Hermandad',
-      rule: 'Mezcla de gremios y facciones.',
-      note: 'Para misiones que cruzan campos.',
-    },
-  ],
-  templatesEyebrow: 'Plantillas',
-  templatesTitle: 'Empieza desde lo que ya sois',
-  templatesHelp:
-    'Cada plantilla trae una sede, un ritual por defecto y los nombres de cada cosa. Luego lo cambiáis todo.',
-  templates: [
-    {
-      for: 'Aula',
-      name: 'El Anfiteatro',
-      text: 'Gradas, pizarra compartida y salas de grupo.',
-      ticks: ['Ritual por defecto: la clase, cada semana', 'Session Zero adaptada a la asignatura'],
-    },
-    {
-      for: 'Congreso',
-      name: 'El Auditorio',
-      text: 'Escenario, butacas y un vestíbulo donde cruzarse.',
-      ticks: ['Ritual por defecto: la edición anual', 'Las charlas quedan en el archivo'],
-    },
-    {
-      for: 'Equipo',
-      name: 'La Sala del Consejo',
-      text: 'Mesa de decisión, muro de proyectos y archivo a la vista.',
-      ticks: [
-        'Ritual por defecto: el consejo, cada semana',
-        'Un Administrador sigue cada decisión',
-      ],
-    },
-    {
-      for: 'Aventura',
-      name: 'La Cripta',
-      text: 'Una sala de enigmas para equipos: se entra junto y se sale junto.',
-      ticks: ['Ritual por defecto: la partida', 'Un Guía que marca el ritmo'],
-    },
-    {
-      for: 'Artistas',
-      name: 'La Galería',
-      text: 'Paredes para colgar, luz para mirar y una inauguración.',
-      ticks: [
-        'Ritual por defecto: la inauguración',
-        'Las obras, en el archivo y en el Bazar si quieres',
-      ],
-    },
-    {
-      for: 'Festival',
-      name: 'La Plaza',
-      text: 'Un escenario, puestos alrededor y sitio para la gente.',
-      ticks: ['Ritual por defecto: el festival, cada año', 'Aforo y entradas si hacen falta'],
-    },
-  ],
-  agentsEyebrow: 'Agentes de la comunidad',
-  agentsTitle: 'La burocracia la hacen ellos',
-  agentsHelp:
-    'Se activan por comunidad, cada uno con una persona responsable, y se presentan siempre como lo que son.',
-  agents: [
-    {
-      name: 'El Cronista',
-      text: 'Escribe el acta y la crónica de cada ritual en el archivo.',
-      status: 'beta',
-    },
-    {
-      name: 'El Administrador',
-      text: 'Prepara el orden del día y sigue cada decisión hasta cerrarla.',
-      status: 'later',
-    },
-    {
-      name: 'El Guardián',
-      text: 'Cuida la convivencia y avisa cuando alguien se descuelga.',
-      status: 'later',
-    },
-    { name: 'El Constructor', text: 'Adapta la sede con lo que hay en el Bazar.', status: 'later' },
-  ],
-  beta: 'Beta',
-  later: 'Después',
-  closingEyebrow: 'Abrimos la ciudad',
-  closingTitle: 'Las comunidades que ya se reúnen entran primero.',
-  closingText:
-    'Si hemos hecho algo juntos, tu sede ya está abierta: entra y hazla tuya. Si no, pídela y la abrimos contigo.',
-  closingWho: 'Ver quién está',
+  firstTime: '¿Primera vez aquí?',
+  howItWorks: 'Cómo funciona',
+  openYourHome: 'Abre la sede de tu comunidad',
 
   founder: 'Fundó la ciudad',
   openedByHouse: 'La abrió Numen Games',
@@ -356,6 +257,8 @@ const ES: CommunitiesMessages = {
   noResultsCta: 'Abre tu sede',
 
   crumbCommunities: 'Comunidades',
+  follow: 'Seguir',
+  following: 'Sigues',
   rituals: 'Rituales',
   inYourHour: 'en tu hora',
   subscribe: 'Suscribirte',
@@ -372,12 +275,13 @@ const ES: CommunitiesMessages = {
   archive: 'Archivo',
   archiveEmpty:
     'Las crónicas de sus rituales y lo que la comunidad escriba quedan aquí. Son ficheros suyos: se los lleva cuando quiera.',
+  enter: 'Entrar',
   homeFounderNote:
     'Numen Games no tiene sede propia: cuida los sitios de todos, el Ágora, las Puertas y la Biblioteca.',
   homeInProgressText:
     'Numen Games le está haciendo la sede. Cuando abra, se verá en el navegador, también en el móvil, y aquí dirá cuánta gente hay dentro.',
-  homeToOpenText:
-    'Por abrir. Cuando la comunidad quiera, elige una plantilla y la sede se abre en el navegador; aquí dirá cuánta gente hay dentro.',
+  homeToOpenLine:
+    'Cuando la comunidad la abra, entrarás desde aquí, en el navegador y sin instalar nada.',
   members: 'Miembros',
   membersEmpty: 'Nadie todavía: la sede espera a quien lleve la comunidad.',
   membersNote:
@@ -396,6 +300,12 @@ const ES: CommunitiesMessages = {
     'Hazla tuya: entras y pasas a llevarla. Tú decides qué se ve, cómo se llama cada cosa y quién entra.',
   claimCta: 'Es mi comunidad',
 
+  stageLabel: 'La sede en 3D',
+  homeOf: 'La sede de {x}',
+  homeOfToOpen: 'La sede de {x} está por abrir',
+  worldNote: 'Se abre en el navegador, también en el móvil. Sin instalar nada.',
+  share: 'Compartir',
+  linkCopied: 'Enlace copiado',
   organisedBy: 'Lo organiza',
   cityKeeps: 'Lo celebra toda la ciudad. Lo cuida',
   when: 'Cuándo',
@@ -410,6 +320,7 @@ const ES: CommunitiesMessages = {
   add: 'Añadir',
   addNote: 'Un fichero .ics para Google, Apple o el que uses',
   onlineNote: 'Cuando empiece, aquí aparecerá «Entrar» y cuánta gente hay dentro.',
+  howToGetThere: 'Cómo llegar',
   programme: 'Programa',
   readOn: 'Leído en {source} el {date}. Lo cambia la comunidad cuando quiera.',
   after: 'Después',
@@ -426,6 +337,26 @@ const ES: CommunitiesMessages = {
   ritualOne: '1 ritual',
   ritualMany: '{n} rituales',
 
+  livePageTitle: 'Live',
+  livePageLead: 'Las sedes con gente dentro ahora mismo y los rituales que están pasando.',
+  liveNowTitle: 'Ahora',
+  liveNowEmpty:
+    'Todavía ninguna sede cuenta quién está dentro. Cuando abran, aquí verás cuántos hay en cada una.',
+  liveNextTitle: 'Lo próximo',
+  liveNextHelp: 'Los seis rituales más cercanos. Las fechas, el mismo día en todo el mundo.',
+  liveNextEmpty: 'Ningún ritual a la vista.',
+
+  belongTitle: 'Perteneces',
+  belongLead: 'Tus comunidades y lo que pasa en ellas.',
+  followsTitle: 'Sigues',
+  followsHelp: 'Las comunidades que sigues desde este navegador, cada una con su próximo ritual.',
+  followsEmpty: 'Aún no sigues ninguna. Pulsa «Seguir» en la página de una comunidad.',
+  memberOfTitle: 'Perteneces a',
+  memberDoor: 'Entra para ver las comunidades a las que perteneces.',
+  signIn: 'Iniciar sesión',
+  memberSoon: 'Cuando una comunidad te haga miembro, aparecerá aquí.',
+  exploreAll: 'o explora las {n} comunidades →',
+
   countNow: 'ahora',
   countTomorrow: 'mañana',
   countDays: 'en {n} días',
@@ -439,145 +370,50 @@ const EN: CommunitiesMessages = {
   navCalendar: 'Calendar',
   search: 'Search',
 
-  eyebrow: 'Numinia · a city for knowledge',
-  heroTitle: 'A city where communities have a home.',
-  heroLead:
-    'A conference, a classroom, a team, a community. Each has in Numinia a 3D home that opens in the browser, a calendar of its rituals — its gatherings, in person or online — and an archive that is its own. The city is built with those who enter; Numen Games was the first.',
-  ctaOpen: 'Open your home',
-  ctaCommunities: 'See the communities',
-  featured: 'Featured community',
+  featuredLabel: 'Featured',
+  slideOf: '{n} of {m}',
   nextRitual: 'Next ritual',
   from: 'From',
   home: 'Home',
   homeToOpen: 'To open',
   homeInProgress: 'Being built',
   seeCommunity: 'See the community →',
+  seeRitual: 'See the ritual →',
+  enterWorld: 'Enter the world',
+  toMyCalendar: 'Add to my calendar',
   previous: 'Previous',
   next: 'Next',
   upcomingEyebrow: 'What is coming',
   upcomingTitle: 'Upcoming rituals',
   upcomingHelp:
     'Each community’s gatherings, in person or online. Dates are the same day everywhere; hours show in yours.',
-  fullCalendar: 'Full calendar',
+  goodsEyebrow: 'From the Bazaar',
+  goodsTitle: 'Objects for your home',
+  goodsHelp: 'All CC0: use it, change it and take it with you, outside Numinia too.',
+  seeBazaar: 'See the Bazaar',
+  licenceLine: 'CC0 · free, no permission needed',
+  goodCategories: {
+    models: '3D model',
+    avatars: 'Avatar',
+    worlds: 'World',
+    audio: 'Sound',
+    video: 'Video',
+    images: 'Image',
+  },
+  goodCollections: {
+    'numinia-avatars': 'Numinia avatars',
+    'numinia-assets': 'Numinia objects',
+    'numinia-worlds': 'Numinia worlds',
+    'numinia-audio': 'Numinia sounds',
+    'numinia-video': 'Numinia videos',
+    'numinia-images': 'Numinia images',
+  },
   liveEyebrow: 'Right now',
   liveTitle: 'Communities with life',
   liveHelp: 'The three with the nearest ritual. Where they are from and when they meet.',
-  seeAll: 'See all',
-  howEyebrow: 'How it works',
-  howTitle: 'From the home to the archive',
-  steps: [
-    {
-      title: 'Open your home',
-      text: 'Pick a template and your home opens in the browser. If we have already done something together, we open it for you and you make it yours.',
-    },
-    {
-      title: 'Session Zero',
-      text: 'Each person crosses a short room and comes out with a guild and a rank, which travel with them across the city.',
-    },
-    {
-      title: 'The ritual',
-      text: 'You gather in the home or in person. The agenda arrives prepared and what you decide is written down.',
-    },
-    {
-      title: 'The archive',
-      text: 'Everything you do is a file of yours. Take it all with you whenever you want, home included.',
-    },
-  ],
-  kindsEyebrow: 'The canon as a mechanic',
-  kindsTitle: 'The kind of community is decided by its people',
-  kindsHelp:
-    'Nobody picks the label: the city works it out from who is inside, and it changes when the community changes.',
-  kinds: [
-    {
-      name: 'Lodge',
-      rule: 'Same faction, different guilds.',
-      note: 'Diverse knowledge in the service of one field.',
-    },
-    {
-      name: 'League',
-      rule: 'Same guild, different factions.',
-      note: 'The same knowledge applied to different fields.',
-    },
-    {
-      name: 'Brotherhood',
-      rule: 'A mix of guilds and factions.',
-      note: 'For missions that cross fields.',
-    },
-  ],
-  templatesEyebrow: 'Templates',
-  templatesTitle: 'Start from what you already are',
-  templatesHelp:
-    'Each template brings a home, a default ritual and the names of each thing. Then you change it all.',
-  templates: [
-    {
-      for: 'Classroom',
-      name: 'The Amphitheatre',
-      text: 'Tiers, a shared board and breakout rooms.',
-      ticks: ['Default ritual: the class, every week', 'Session Zero adapted to the subject'],
-    },
-    {
-      for: 'Conference',
-      name: 'The Auditorium',
-      text: 'A stage, seats and a lobby to run into people.',
-      ticks: ['Default ritual: the yearly edition', 'The talks stay in the archive'],
-    },
-    {
-      for: 'Team',
-      name: 'The Council Room',
-      text: 'A decision table, a project wall and the archive in sight.',
-      ticks: ['Default ritual: the council, every week', 'An Administrator follows each decision'],
-    },
-    {
-      for: 'Adventure',
-      name: 'The Crypt',
-      text: 'An escape room for teams: you enter together and leave together.',
-      ticks: ['Default ritual: the game', 'A Guide who sets the pace'],
-    },
-    {
-      for: 'Artists',
-      name: 'The Gallery',
-      text: 'Walls to hang on, light to look by and an opening.',
-      ticks: [
-        'Default ritual: the opening',
-        'The works, in the archive and in the Bazaar if you wish',
-      ],
-    },
-    {
-      for: 'Festival',
-      name: 'The Square',
-      text: 'A stage, stalls around it and room for the crowd.',
-      ticks: ['Default ritual: the festival, every year', 'Capacity and tickets if needed'],
-    },
-  ],
-  agentsEyebrow: 'The community’s agents',
-  agentsTitle: 'They do the paperwork',
-  agentsHelp:
-    'Switched on per community, each with a person responsible, and always presented as what they are.',
-  agents: [
-    {
-      name: 'The Chronicler',
-      text: 'Writes the minutes and the chronicle of each ritual into the archive.',
-      status: 'beta',
-    },
-    {
-      name: 'The Administrator',
-      text: 'Prepares the agenda and follows each decision until it closes.',
-      status: 'later',
-    },
-    {
-      name: 'The Guardian',
-      text: 'Looks after the community and says when someone drifts away.',
-      status: 'later',
-    },
-    { name: 'The Builder', text: 'Adapts the home with what the Bazaar holds.', status: 'later' },
-  ],
-  beta: 'Beta',
-  later: 'Later',
-  closingEyebrow: 'We are opening the city',
-  closingTitle: 'The communities that already gather come in first.',
-  closingText:
-    'If we have done something together, your home is already open: come in and make it yours. If not, ask for it and we open it with you.',
-  closingWho: 'See who is here',
+  firstTime: 'First time here?',
+  howItWorks: 'How it works',
+  openYourHome: 'Open your community’s home',
 
   founder: 'Founded the city',
   openedByHouse: 'Opened by Numen Games',
@@ -602,6 +438,8 @@ const EN: CommunitiesMessages = {
   noResultsCta: 'Open your home',
 
   crumbCommunities: 'Communities',
+  follow: 'Follow',
+  following: 'Following',
   rituals: 'Rituals',
   inYourHour: 'in your hour',
   subscribe: 'Subscribe',
@@ -617,12 +455,13 @@ const EN: CommunitiesMessages = {
   archive: 'Archive',
   archiveEmpty:
     'The chronicles of its rituals and whatever the community writes stay here. They are its own files: it takes them whenever it wants.',
+  enter: 'Enter',
   homeFounderNote:
     'Numen Games has no home of its own: it keeps the places of everyone — the Agora, the Gates and the Library.',
   homeInProgressText:
     'Numen Games is building its home. When it opens it will show in the browser, on the phone too, and this will say how many people are inside.',
-  homeToOpenText:
-    'To open. When the community wishes, it picks a template and the home opens in the browser; this will say how many people are inside.',
+  homeToOpenLine:
+    'When the community opens it, you will enter from here, in the browser, with nothing to install.',
   members: 'Members',
   membersEmpty: 'Nobody yet: the home waits for whoever runs the community.',
   membersNote:
@@ -641,6 +480,12 @@ const EN: CommunitiesMessages = {
     'Make it yours: you come in and take it over. You decide what is shown, what each thing is called and who gets in.',
   claimCta: 'It is my community',
 
+  stageLabel: 'The home in 3D',
+  homeOf: '{x}’s home',
+  homeOfToOpen: '{x}’s home is still to open',
+  worldNote: 'Opens in the browser, on your phone too. Nothing to install.',
+  share: 'Share',
+  linkCopied: 'Link copied',
   organisedBy: 'Organised by',
   cityKeeps: 'The whole city celebrates it. It is kept by',
   when: 'When',
@@ -655,6 +500,7 @@ const EN: CommunitiesMessages = {
   add: 'Add',
   addNote: 'An .ics file for Google, Apple or whichever you use',
   onlineNote: 'When it starts, “Enter” will appear here, with how many people are inside.',
+  howToGetThere: 'Getting there',
   programme: 'Programme',
   readOn: 'Read on {source} on {date}. The community changes it whenever it wants.',
   after: 'Afterwards',
@@ -671,6 +517,26 @@ const EN: CommunitiesMessages = {
   ritualOne: '1 ritual',
   ritualMany: '{n} rituals',
 
+  livePageTitle: 'Live',
+  livePageLead: 'The homes with people inside right now, and the rituals taking place.',
+  liveNowTitle: 'Now',
+  liveNowEmpty:
+    'No home reports who is inside yet. When they open, you will see here how many are in each one.',
+  liveNextTitle: 'Coming up',
+  liveNextHelp: 'The six nearest rituals. Dates are the same day everywhere.',
+  liveNextEmpty: 'No ritual in sight.',
+
+  belongTitle: 'You belong',
+  belongLead: 'Your communities and what happens in them.',
+  followsTitle: 'You follow',
+  followsHelp: 'The communities you follow from this browser, each with its next ritual.',
+  followsEmpty: 'You follow none yet. Press “Follow” on a community’s page.',
+  memberOfTitle: 'You belong to',
+  memberDoor: 'Sign in to see the communities you belong to.',
+  signIn: 'Sign in',
+  memberSoon: 'When a community makes you a member, it will appear here.',
+  exploreAll: 'or explore the {n} communities →',
+
   countNow: 'now',
   countTomorrow: 'tomorrow',
   countDays: 'in {n} days',
@@ -684,37 +550,50 @@ const JA: CommunitiesMessages = {
   navCommunities: 'コミュニティ',
   navCalendar: 'カレンダー',
   search: '検索',
-  eyebrow: 'Numinia · 知のための都市',
-  heroTitle: 'コミュニティが拠点を持つ都市。',
-  heroLead:
-    'カンファレンス、教室、チーム、コミュニティ。それぞれが Numinia に、ブラウザで開く 3D の拠点、対面でもオンラインでも集まる「儀式」のカレンダー、そして自分たちのものであるアーカイブを持ちます。都市は入ってくる人とともに築かれます。最初に入ったのは Numen Games でした。',
-  ctaOpen: '拠点を開く',
-  ctaCommunities: 'コミュニティを見る',
-  featured: '注目のコミュニティ',
+  featuredLabel: 'おすすめ',
+  slideOf: '{n} / {m}',
   nextRitual: '次の儀式',
   from: '所在地',
   home: '拠点',
   homeToOpen: '準備中',
   homeInProgress: '建設中',
   seeCommunity: 'コミュニティを見る →',
+  seeRitual: '儀式を見る →',
+  enterWorld: 'ワールドに入る',
+  toMyCalendar: 'カレンダーに追加',
   previous: '前へ',
   next: '次へ',
   upcomingEyebrow: 'これから',
   upcomingTitle: '次の儀式',
   upcomingHelp:
     '各コミュニティの集まり。対面でもオンラインでも。日付は世界中で同じ日、時刻はあなたの時間で表示されます。',
-  fullCalendar: 'カレンダー全体',
+  goodsEyebrow: 'バザールから',
+  goodsTitle: '拠点のためのオブジェクト',
+  goodsHelp: 'すべて CC0。使って、変えて、持ち帰れます。Numinia の外でも。',
+  seeBazaar: 'バザールを見る',
+  licenceLine: 'CC0 · 自由に、許可なしで',
+  goodCategories: {
+    models: '3D モデル',
+    avatars: 'アバター',
+    worlds: 'ワールド',
+    audio: 'サウンド',
+    video: 'ビデオ',
+    images: '画像',
+  },
+  goodCollections: {
+    'numinia-avatars': 'Numinia のアバター',
+    'numinia-assets': 'Numinia のオブジェクト',
+    'numinia-worlds': 'Numinia のワールド',
+    'numinia-audio': 'Numinia のサウンド',
+    'numinia-video': 'Numinia のビデオ',
+    'numinia-images': 'Numinia の画像',
+  },
   liveEyebrow: 'いま',
   liveTitle: '動きのあるコミュニティ',
   liveHelp: '儀式が最も近い三つ。どこから来て、いつ集まるか。',
-  seeAll: 'すべて見る',
-  howEyebrow: '仕組み',
-  howTitle: '拠点からアーカイブへ',
-  closingEyebrow: '都市を開きます',
-  closingTitle: 'すでに集まっているコミュニティが先に入ります。',
-  closingText:
-    '一緒に何かをしたことがあれば、拠点はもう開いています。入って自分のものにしてください。まだなら、申し込めば一緒に開きます。',
-  closingWho: '誰がいるか見る',
+  firstTime: '初めてですか？',
+  howItWorks: '仕組み',
+  openYourHome: 'コミュニティの拠点を開く',
   founder: '都市を創設',
   openedByHouse: 'Numen Games が開設',
   runBy: '運営：{x}',
@@ -736,12 +615,17 @@ const JA: CommunitiesMessages = {
   noResults: '「{q}」に当たるコミュニティはありません。あなたのコミュニティですか？',
   noResultsCta: '拠点を開く',
   crumbCommunities: 'コミュニティ',
+  follow: 'フォロー',
+  following: 'フォロー中',
   rituals: '儀式',
   inYourHour: 'あなたの時間で',
   subscribe: '購読する',
   upcomingLabel: '予定',
   heldLabel: '開催済み',
   archive: 'アーカイブ',
+  enter: '入る',
+  homeToOpenLine:
+    'コミュニティが拠点を開いたら、ここからブラウザで入れます。インストールは不要です。',
   members: 'メンバー',
   details: '詳細',
   whoSees: '誰が見られるか',
@@ -753,6 +637,12 @@ const JA: CommunitiesMessages = {
   itsFile: 'ファイル',
   claimTitle: 'あなたのコミュニティですか？',
   claimCta: '私のコミュニティです',
+  stageLabel: '3D の拠点',
+  homeOf: '{x} の拠点',
+  homeOfToOpen: '{x} の拠点はまだ準備中です',
+  worldNote: 'ブラウザで開きます。スマートフォンでも。インストール不要。',
+  share: '共有',
+  linkCopied: 'リンクをコピーしました',
   organisedBy: '主催',
   when: '日時',
   wholeDay: '終日',
@@ -762,6 +652,7 @@ const JA: CommunitiesMessages = {
   anyone: '誰でも',
   inYourCalendar: 'カレンダーに',
   add: '追加',
+  howToGetThere: 'アクセス',
   programme: 'プログラム',
   after: 'その後',
   calendarEyebrow: '都市',
@@ -771,6 +662,25 @@ const JA: CommunitiesMessages = {
   weekdays: ['月', '火', '水', '木', '金', '土', '日'],
   ritualOne: '儀式 1',
   ritualMany: '儀式 {n}',
+  livePageTitle: 'Live',
+  livePageLead: 'いま人がいる拠点と、開催中の儀式。',
+  liveNowTitle: 'いま',
+  liveNowEmpty:
+    'まだ、中に誰がいるかを伝える拠点はありません。拠点が開いたら、ここでそれぞれの人数が見られます。',
+  liveNextTitle: 'これから',
+  liveNextHelp: '最も近い六つの儀式。日付は世界中で同じ日です。',
+  liveNextEmpty: '予定されている儀式はありません。',
+  belongTitle: '所属',
+  belongLead: 'あなたのコミュニティと、そこで起きていること。',
+  followsTitle: 'フォロー中',
+  followsHelp: 'このブラウザでフォローしているコミュニティと、それぞれの次の儀式。',
+  followsEmpty:
+    'まだ何もフォローしていません。コミュニティのページで「フォロー」を押してください。',
+  memberOfTitle: '所属コミュニティ',
+  memberDoor: 'ログインすると、所属しているコミュニティが表示されます。',
+  signIn: 'ログイン',
+  memberSoon: 'コミュニティがあなたをメンバーにすると、ここに表示されます。',
+  exploreAll: 'または {n} のコミュニティを見る →',
   countNow: '開催中',
   countTomorrow: '明日',
   countDays: '{n} 日後',
@@ -784,37 +694,50 @@ const KO: CommunitiesMessages = {
   navCommunities: '커뮤니티',
   navCalendar: '달력',
   search: '검색',
-  eyebrow: 'Numinia · 지식을 위한 도시',
-  heroTitle: '커뮤니티가 거점을 갖는 도시.',
-  heroLead:
-    '컨퍼런스, 교실, 팀, 커뮤니티. 각각은 Numinia에서 브라우저로 열리는 3D 거점, 대면이든 온라인이든 모이는 「의식」의 달력, 그리고 자신들의 것인 아카이브를 갖습니다. 도시는 들어오는 이들과 함께 세워집니다. 처음 들어온 곳은 Numen Games였습니다.',
-  ctaOpen: '거점 열기',
-  ctaCommunities: '커뮤니티 보기',
-  featured: '주목할 커뮤니티',
+  featuredLabel: '추천',
+  slideOf: '{n} / {m}',
   nextRitual: '다음 의식',
   from: '소재지',
   home: '거점',
   homeToOpen: '준비 중',
   homeInProgress: '건설 중',
   seeCommunity: '커뮤니티 보기 →',
+  seeRitual: '의식 보기 →',
+  enterWorld: '월드에 들어가기',
+  toMyCalendar: '내 달력에 추가',
   previous: '이전',
   next: '다음',
   upcomingEyebrow: '다가오는',
   upcomingTitle: '다음 의식',
   upcomingHelp:
     '각 커뮤니티의 모임, 대면 또는 온라인. 날짜는 전 세계 같은 날, 시간은 당신의 시간으로 표시됩니다.',
-  fullCalendar: '전체 달력',
+  goodsEyebrow: '바자르에서',
+  goodsTitle: '거점을 위한 오브젝트',
+  goodsHelp: '모두 CC0: 쓰고, 바꾸고, 가져가세요. Numinia 밖에서도.',
+  seeBazaar: '바자르 보기',
+  licenceLine: 'CC0 · 자유롭게, 허락 없이',
+  goodCategories: {
+    models: '3D 모델',
+    avatars: '아바타',
+    worlds: '월드',
+    audio: '사운드',
+    video: '비디오',
+    images: '이미지',
+  },
+  goodCollections: {
+    'numinia-avatars': 'Numinia 아바타',
+    'numinia-assets': 'Numinia 오브젝트',
+    'numinia-worlds': 'Numinia 월드',
+    'numinia-audio': 'Numinia 사운드',
+    'numinia-video': 'Numinia 비디오',
+    'numinia-images': 'Numinia 이미지',
+  },
   liveEyebrow: '지금',
   liveTitle: '활동 중인 커뮤니티',
   liveHelp: '의식이 가장 가까운 세 곳. 어디서 왔고 언제 모이는지.',
-  seeAll: '모두 보기',
-  howEyebrow: '작동 방식',
-  howTitle: '거점에서 아카이브까지',
-  closingEyebrow: '도시를 엽니다',
-  closingTitle: '이미 모이고 있는 커뮤니티가 먼저 들어옵니다.',
-  closingText:
-    '함께 무언가를 한 적이 있다면 거점은 이미 열려 있습니다. 들어와서 당신의 것으로 만드세요. 아니라면 요청하세요. 함께 열겠습니다.',
-  closingWho: '누가 있는지 보기',
+  firstTime: '처음 오셨나요?',
+  howItWorks: '작동 방식',
+  openYourHome: '커뮤니티의 거점 열기',
   founder: '도시를 세움',
   openedByHouse: 'Numen Games가 열었음',
   runBy: '운영: {x}',
@@ -836,12 +759,17 @@ const KO: CommunitiesMessages = {
   noResults: '“{q}”에 맞는 커뮤니티가 없습니다. 당신의 커뮤니티인가요?',
   noResultsCta: '거점 열기',
   crumbCommunities: '커뮤니티',
+  follow: '팔로우',
+  following: '팔로잉',
   rituals: '의식',
   inYourHour: '당신의 시간으로',
   subscribe: '구독',
   upcomingLabel: '예정',
   heldLabel: '개최됨',
   archive: '아카이브',
+  enter: '들어가기',
+  homeToOpenLine:
+    '커뮤니티가 거점을 열면 여기에서 브라우저로 들어갈 수 있습니다. 설치는 필요 없습니다.',
   members: '구성원',
   details: '상세',
   whoSees: '누가 볼 수 있나',
@@ -853,6 +781,12 @@ const KO: CommunitiesMessages = {
   itsFile: '파일',
   claimTitle: '당신의 커뮤니티인가요?',
   claimCta: '내 커뮤니티입니다',
+  stageLabel: '3D 거점',
+  homeOf: '{x}의 거점',
+  homeOfToOpen: '{x}의 거점은 아직 준비 중입니다',
+  worldNote: '브라우저에서 열립니다. 휴대폰에서도. 설치할 것이 없습니다.',
+  share: '공유',
+  linkCopied: '링크를 복사했습니다',
   organisedBy: '주최',
   when: '일시',
   wholeDay: '종일',
@@ -862,6 +796,7 @@ const KO: CommunitiesMessages = {
   anyone: '누구나',
   inYourCalendar: '내 달력에',
   add: '추가',
+  howToGetThere: '오시는 길',
   programme: '프로그램',
   after: '그 후',
   calendarEyebrow: '도시',
@@ -871,6 +806,24 @@ const KO: CommunitiesMessages = {
   weekdays: ['월', '화', '수', '목', '금', '토', '일'],
   ritualOne: '의식 1개',
   ritualMany: '의식 {n}개',
+  livePageTitle: 'Live',
+  livePageLead: '지금 사람이 있는 거점과 진행 중인 의식.',
+  liveNowTitle: '지금',
+  liveNowEmpty:
+    '아직 안에 누가 있는지 알려 주는 거점이 없습니다. 거점이 열리면 여기에서 각 거점의 인원을 볼 수 있습니다.',
+  liveNextTitle: '다가오는',
+  liveNextHelp: '가장 가까운 여섯 개의 의식. 날짜는 전 세계 같은 날입니다.',
+  liveNextEmpty: '예정된 의식이 없습니다.',
+  belongTitle: '소속',
+  belongLead: '당신의 커뮤니티와 그곳에서 일어나는 일.',
+  followsTitle: '팔로우 중',
+  followsHelp: '이 브라우저에서 팔로우하는 커뮤니티와 각각의 다음 의식.',
+  followsEmpty: '아직 팔로우하는 커뮤니티가 없습니다. 커뮤니티 페이지에서 「팔로우」를 누르세요.',
+  memberOfTitle: '소속 커뮤니티',
+  memberDoor: '로그인하면 소속된 커뮤니티를 볼 수 있습니다.',
+  signIn: '로그인',
+  memberSoon: '커뮤니티가 당신을 구성원으로 받으면 여기에 나타납니다.',
+  exploreAll: '또는 {n}개 커뮤니티 둘러보기 →',
   countNow: '진행 중',
   countTomorrow: '내일',
   countDays: '{n}일 후',
@@ -884,37 +837,50 @@ const PT_BR: CommunitiesMessages = {
   navCommunities: 'Comunidades',
   navCalendar: 'Calendário',
   search: 'Buscar',
-  eyebrow: 'Numinia · uma cidade para o conhecimento',
-  heroTitle: 'Uma cidade onde as comunidades têm sede.',
-  heroLead:
-    'Um congresso, uma sala de aula, uma equipe, uma comunidade. Cada uma tem na Numinia uma sede em 3D que abre no navegador, um calendário com seus rituais — seus encontros, presenciais ou on-line — e um arquivo que é seu. A cidade se constrói com quem entra; a Numen Games foi a primeira.',
-  ctaOpen: 'Abra sua sede',
-  ctaCommunities: 'Ver as comunidades',
-  featured: 'Comunidade em destaque',
+  featuredLabel: 'Destaque',
+  slideOf: '{n} de {m}',
   nextRitual: 'Próximo ritual',
   from: 'De onde',
   home: 'Sede',
   homeToOpen: 'Por abrir',
   homeInProgress: 'Em construção',
   seeCommunity: 'Ver a comunidade →',
+  seeRitual: 'Ver o ritual →',
+  enterWorld: 'Entrar no mundo',
+  toMyCalendar: 'No meu calendário',
   previous: 'Anterior',
   next: 'Próximo',
   upcomingEyebrow: 'O que vem',
   upcomingTitle: 'Próximos rituais',
   upcomingHelp:
     'Os encontros de cada comunidade, presenciais ou on-line. As datas são o mesmo dia no mundo todo; as horas, na sua.',
-  fullCalendar: 'Calendário completo',
+  goodsEyebrow: 'Do Bazar',
+  goodsTitle: 'Objetos para a sua sede',
+  goodsHelp: 'Tudo CC0: use, mude e leve com você, também fora da Numinia.',
+  seeBazaar: 'Ver o Bazar',
+  licenceLine: 'CC0 · livre, sem pedir permissão',
+  goodCategories: {
+    models: 'Modelo 3D',
+    avatars: 'Avatar',
+    worlds: 'Mundo',
+    audio: 'Som',
+    video: 'Vídeo',
+    images: 'Imagem',
+  },
+  goodCollections: {
+    'numinia-avatars': 'Avatares da Numinia',
+    'numinia-assets': 'Objetos da Numinia',
+    'numinia-worlds': 'Mundos da Numinia',
+    'numinia-audio': 'Sons da Numinia',
+    'numinia-video': 'Vídeos da Numinia',
+    'numinia-images': 'Imagens da Numinia',
+  },
   liveEyebrow: 'Agora',
   liveTitle: 'Comunidades com vida',
   liveHelp: 'As três com o ritual mais próximo. De onde são e quando se reúnem.',
-  seeAll: 'Ver todas',
-  howEyebrow: 'Como funciona',
-  howTitle: 'Da sede ao arquivo',
-  closingEyebrow: 'Abrimos a cidade',
-  closingTitle: 'As comunidades que já se reúnem entram primeiro.',
-  closingText:
-    'Se já fizemos algo juntos, sua sede já está aberta: entre e faça dela a sua. Se não, peça e a abrimos com você.',
-  closingWho: 'Ver quem está',
+  firstTime: 'Primeira vez aqui?',
+  howItWorks: 'Como funciona',
+  openYourHome: 'Abra a sede da sua comunidade',
   founder: 'Fundou a cidade',
   openedByHouse: 'Aberta pela Numen Games',
   runBy: 'Conduzida por {x}',
@@ -936,12 +902,17 @@ const PT_BR: CommunitiesMessages = {
   noResults: 'Nenhuma comunidade com “{q}”. É a sua?',
   noResultsCta: 'Abra sua sede',
   crumbCommunities: 'Comunidades',
+  follow: 'Seguir',
+  following: 'Seguindo',
   rituals: 'Rituais',
   inYourHour: 'na sua hora',
   subscribe: 'Assinar',
   upcomingLabel: 'Próximos',
   heldLabel: 'Já realizados',
   archive: 'Arquivo',
+  enter: 'Entrar',
+  homeToOpenLine:
+    'Quando a comunidade abri-la, você vai entrar daqui, no navegador e sem instalar nada.',
   members: 'Membros',
   details: 'Detalhes',
   whoSees: 'Quem a vê',
@@ -953,6 +924,12 @@ const PT_BR: CommunitiesMessages = {
   itsFile: 'Seu arquivo',
   claimTitle: 'É a sua comunidade?',
   claimCta: 'É a minha comunidade',
+  stageLabel: 'A sede em 3D',
+  homeOf: 'A sede de {x}',
+  homeOfToOpen: 'A sede de {x} ainda vai abrir',
+  worldNote: 'Abre no navegador, também no celular. Sem instalar nada.',
+  share: 'Compartilhar',
+  linkCopied: 'Link copiado',
   organisedBy: 'Organizado por',
   when: 'Quando',
   wholeDay: 'Dia inteiro',
@@ -962,6 +939,7 @@ const PT_BR: CommunitiesMessages = {
   anyone: 'Qualquer pessoa',
   inYourCalendar: 'No seu calendário',
   add: 'Adicionar',
+  howToGetThere: 'Como chegar',
   programme: 'Programa',
   after: 'Depois',
   calendarEyebrow: 'A cidade',
@@ -971,6 +949,24 @@ const PT_BR: CommunitiesMessages = {
   weekdays: ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'],
   ritualOne: '1 ritual',
   ritualMany: '{n} rituais',
+  livePageTitle: 'Live',
+  livePageLead: 'As sedes com gente dentro agora mesmo e os rituais que estão acontecendo.',
+  liveNowTitle: 'Agora',
+  liveNowEmpty:
+    'Nenhuma sede conta ainda quem está dentro. Quando abrirem, aqui você verá quantos há em cada uma.',
+  liveNextTitle: 'O que vem',
+  liveNextHelp: 'Os seis rituais mais próximos. As datas são o mesmo dia no mundo todo.',
+  liveNextEmpty: 'Nenhum ritual à vista.',
+  belongTitle: 'Você pertence',
+  belongLead: 'Suas comunidades e o que acontece nelas.',
+  followsTitle: 'Você segue',
+  followsHelp: 'As comunidades que você segue neste navegador, cada uma com seu próximo ritual.',
+  followsEmpty: 'Você ainda não segue nenhuma. Toque em «Seguir» na página de uma comunidade.',
+  memberOfTitle: 'Você pertence a',
+  memberDoor: 'Entre para ver as comunidades às quais você pertence.',
+  signIn: 'Entrar',
+  memberSoon: 'Quando uma comunidade fizer de você um membro, ela aparecerá aqui.',
+  exploreAll: 'ou explore as {n} comunidades →',
   countNow: 'agora',
   countTomorrow: 'amanhã',
   countDays: 'em {n} dias',

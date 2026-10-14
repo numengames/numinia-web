@@ -22,20 +22,18 @@ const PAGES = [
   '/ko/',
   '/pt-br/',
   '/spike/',
-  '/archive/',
-  '/es/archive/',
-  '/gallery/',
-  '/es/gallery/',
-  '/finder/',
-  '/es/finder/',
+  '/bazaar/', // the one door to the goods (v0.83.0): finder, gallery, archive, assets, inspector redirect here
+  '/es/bazaar/',
   '/updates/',
   '/es/legal/privacy/',
   '/legal/terms/', // real corpus (MIS-086): long-form markdown, not our markup
-  '/es/docs/',
-  '/docs/developers/',
-  '/es/inspector/',
-  '/es/city/',
-  '/es/assets/',
+  // The app shell pages (v0.83.0): «Cómo funciona» replaced /es/city/.
+  '/es/how-it-works/',
+  '/es/live/',
+  '/es/belong/',
+  '/es/rituals/numinia-anniversary-2026/', // the world stage, with a real world
+  '/es/rituals/trg26/', // the world stage, home still to open
+  '/es/communities/trgcon/', // the follow button and the home card
   '/es/lap/',
   '/es/lap/character/',
   '/es/lap/codex/', // gated: what axe sees is the door, which must be accessible too
@@ -111,7 +109,7 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
   await page.waitForLoadState('networkidle');
   const stops: string[] = [];
   let sawSystemOutline = false;
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 24; i += 1) {
     await page.keyboard.press('Tab');
     const info = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement;
@@ -128,9 +126,29 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
       sawSystemOutline = true;
     }
   }
-  // Tab order follows the chrome's reading order — the scarab, then the
-  // utilities: the search, the mode, the language, the door (no menu).
-  const expected = ['nav-home', 'nav-search', 'chrome-mode', 'chrome-sign-in'];
+  // The app shell's reading order (the Oracle's design, 2026-10-14): the
+  // skip link, the sidebar top to bottom — brand, fold, search, the places,
+  // the call to sign in — then the top bar's door and ⋮. The folded
+  // footer at the foot of the sidebar sits between the two.
+  const expected = [
+    'nav-skip',
+    'nav-home',
+    'nav-collapse',
+    'nav-search',
+    'nav-for-you',
+    'nav-explore',
+    'nav-communities',
+    'nav-calendar',
+    'nav-bazaar',
+    'nav-belong',
+    'nav-live',
+    'nav-profile',
+    'nav-more',
+    'nav-sign-in',
+    'chrome-sign-in',
+    'chrome-more',
+  ];
+  expect(stops[0], stops.join(' → ')).toBe('nav-skip');
   const positions = expected.map((metric) => stops.indexOf(metric));
   expect(positions, stops.join(' → ')).not.toContain(-1);
   expect(
@@ -139,3 +157,90 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
   ).toEqual(positions);
   expect(sawSystemOutline, `outlines seen on: ${stops.join(' → ')}`).toBe(true);
 });
+
+/* The app shell at both ends of the screen (1440 desktop, 390 phone), in
+   both modes, with its menus open and the sidebar folded: the chrome is on
+   every page, so its own states are measured here, not only the pages. */
+const SHELL_PAGES = [
+  '/',
+  '/es/',
+  '/es/communities/',
+  '/es/lap/',
+  '/es/legal/cookies/',
+  '/updates/',
+];
+const SHELL_VIEWPORTS = [
+  { name: 'desktop 1440', width: 1440, height: 900 },
+  { name: 'phone 390', width: 390, height: 844 },
+];
+
+async function axe(page: import('@playwright/test').Page): Promise<unknown[]> {
+  /* The home's hero fades in (a staggered entrance): measured mid-fade, axe
+     reads a blend of a button and the page, not the colour a reader sees.
+     Let every finite animation end first (the sky's endless ones excluded). */
+  await page.evaluate(() =>
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+          .map((animation) => animation.finished.catch(() => undefined)),
+      ),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]),
+  );
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .exclude('.binaria')
+    .exclude('[data-metric="auth-connect"]')
+    .analyze();
+  return results.violations.map((violation) => ({
+    id: violation.id,
+    impact: violation.impact,
+    nodes: violation.nodes.map((node) => node.target.join(' ')).slice(0, 5),
+  }));
+}
+
+for (const mode of MODES) {
+  for (const viewport of SHELL_VIEWPORTS) {
+    test.describe(`app shell — ${mode.name}, ${viewport.name}`, () => {
+      test.use({
+        colorScheme: mode.colorScheme,
+        viewport: { width: viewport.width, height: viewport.height },
+      });
+      for (const path of SHELL_PAGES) {
+        test(`WCAG A/AA: ${path}`, async ({ page }) => {
+          await page.goto(path);
+          await page.waitForLoadState('networkidle');
+          const violations = await axe(page);
+          expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+        });
+      }
+
+      test('WCAG A/AA with ⋮ and the folded footer open', async ({ page }) => {
+        await page.goto('/es/');
+        await page.waitForLoadState('networkidle');
+        await page.locator('[data-metric="chrome-more"]').click();
+        await page.locator('[data-lang-menu] summary').click();
+        for (const fold of await page.locator('.pie-pliegue:visible > summary').all()) {
+          await fold.click();
+        }
+        const violations = await axe(page);
+        expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+      });
+
+      if (viewport.width > 860) {
+        test('WCAG A/AA with «Más» open, then with the sidebar folded', async ({ page }) => {
+          await page.goto('/es/');
+          await page.waitForLoadState('networkidle');
+          await page.locator('[data-metric="nav-more"]').click();
+          expect(await axe(page)).toEqual([]);
+          await page.keyboard.press('Escape');
+          await page.locator('[data-metric="nav-collapse"]').click();
+          const violations = await axe(page);
+          expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+        });
+      }
+    });
+  }
+}

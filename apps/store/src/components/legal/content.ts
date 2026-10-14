@@ -1,7 +1,8 @@
 /**
  * Legal corpus registry — the Vite glob lives here (outside src/lib)
  * because markdown modules only exist inside the Astro/Vite build, not in
- * vitest. Same pattern as components/docs/content.ts.
+ * vitest. The docs registry used the same pattern until the docs went out
+ * to numinia.org (v0.83.0).
  *
  * The files are verbatim copies of the numinia-archive masters (LEG-001…
  * LEG-004): read-only here. Astro renders only the Markdown body; the

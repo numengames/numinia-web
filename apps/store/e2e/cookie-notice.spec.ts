@@ -53,6 +53,8 @@ test.describe('cookie notice', () => {
     await asVisitor(context);
     await page.goto('/');
     await page.locator('#cc-main .cm').getByRole('button', { name: 'Reject all' }).click();
+    // Folded under «Terms and policies» since the app shell (v0.83.0).
+    await page.locator('footer [data-metric="footer-legal"]').click();
     await page.locator('footer [data-cookie-choice]').click();
     await expect(page.locator('#cc-main .pm')).toBeVisible();
     await expect(page.locator('#cc-main .pm')).toContainText('Measurement');

@@ -6,15 +6,18 @@
  * and the details. Empty states say what will be here and who fills it.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import {
+  FOLLOWS_KEY,
   held,
   pick,
   placesLine,
   ritualsOf,
   upcoming,
   whenShort,
+  worldOf,
   yearOf,
   type Community,
 } from '../../lib/communities';
@@ -41,6 +44,8 @@ const image = community.image
   : undefined;
 const isConference = pick(community.kind, 'en').startsWith('Conference');
 const founder = community.state === 'founder';
+const world = worldOf(community, { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] });
+const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
 ---
 
 <BaseLayout
@@ -64,17 +69,31 @@ const founder = community.state === 'founder';
       <h1 class="display-m">{community.name}</h1>
       <span class="lugar-linea"><Icon name="map-pin" size={16} />{placesLine(community.places, locale)}</span>
       <p class="desc">{pick(community.summary, locale)}</p>
-      {
-        community.links.length > 0 && (
-          <div class="enlaces">
-            {community.links.map((link) => (
-              <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="community-link">
-                {link.label}
-              </a>
-            ))}
-          </div>
-        )
-      }
+      <div class="fila acciones-com">
+        <button
+          type="button"
+          class="btn btn-primario seguir"
+          data-follow={community.id}
+          data-follow-labels={followLabels}
+          aria-pressed="false"
+          data-metric="community-follow"
+        >
+          <span class="si-no"><Icon name="plus" size={18} /></span>
+          <span class="si-si"><Icon name="check" size={18} /></span>
+          <span data-follow-label>{ui.follow}</span>
+        </button>
+        {
+          community.links.length > 0 && (
+            <div class="enlaces">
+              {community.links.map((link) => (
+                <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="community-link">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
       {
         !founder && (
           <div class="franja">
@@ -184,17 +203,37 @@ const founder = community.state === 'founder';
         <section class="tarjeta">
           <h2 class="card-h2"><Icon name="house" size={20} />{ui.home}</h2>
           {
-            founder ? (
-              <p class="texto-2" style="margin: 0">{ui.homeFounderNote}</p>
+            world ? (
+              <>
+                <div class="sede con-mundo">
+                  <img src="/images/art/city.webp" alt="" loading="lazy" decoding="async" width="892" height="960" />
+                </div>
+                <div class="fila entre sede-pie">
+                  <b>{world.name}</b>
+                  <a
+                    class="btn btn-primario btn-sm"
+                    href={world.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-metric="community-enter-world"
+                  >
+                    <Icon name="play" size={16} />
+                    {ui.enter}
+                  </a>
+                </div>
+                {founder && <p class="texto-2 small" style="margin: var(--s3) 0 0">{ui.homeFounderNote}</p>}
+              </>
             ) : (
               <>
-                <div class="escena" aria-hidden="true">
+                <div class="sede escena" aria-hidden="true">
                   <div class="suelo" />
                   <div class="faro" />
                 </div>
                 <p class="texto-2 small" style="margin: var(--s3) 0 0">
-                  {community.homeInProgress && <span class="chip ambar" style="margin-right: 6px">{ui.homeInProgress}</span>}
-                  {community.homeInProgress ? ui.homeInProgressText : ui.homeToOpenText}
+                  <span class="chip ambar" style="margin-right: 6px">
+                    {community.homeInProgress ? ui.homeInProgress : ui.homeToOpen}
+                  </span>
+                  {community.homeInProgress ? ui.homeInProgressText : ui.homeToOpenLine}
                 </p>
               </>
             )
@@ -233,6 +272,47 @@ const founder = community.state === 'founder';
   </div>
 
   <Countdown ui={ui} />
+  <script is:inline data-follows-key={FOLLOWS_KEY}>
+    /* «Follow»: the community's id in this browser's list (a JSON array),
+       read back by /belong/. Nothing leaves the browser. Without JavaScript
+       the button hides: there is nowhere to keep the choice. */
+    (function () {
+      var key = document.currentScript.getAttribute('data-follows-key');
+      function read() {
+        try {
+          var list = JSON.parse(localStorage.getItem(key) || '[]');
+          return Array.isArray(list)
+            ? list.filter(function (id) {
+                return typeof id === 'string';
+              })
+            : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      document.querySelectorAll('[data-follow]').forEach(function (button) {
+        var id = button.getAttribute('data-follow');
+        var labels = JSON.parse(button.getAttribute('data-follow-labels'));
+        function paint(on) {
+          button.setAttribute('aria-pressed', String(on));
+          button.classList.toggle('btn-primario', !on);
+          button.classList.toggle('btn-fantasma', on);
+          button.querySelector('[data-follow-label]').textContent = on ? labels.on : labels.off;
+        }
+        paint(read().indexOf(id) >= 0);
+        button.addEventListener('click', function () {
+          var list = read();
+          var at = list.indexOf(id);
+          if (at >= 0) list.splice(at, 1);
+          else list.push(id);
+          try {
+            localStorage.setItem(key, JSON.stringify(list));
+          } catch (e) {}
+          paint(at < 0);
+        });
+      });
+    })();
+  </script>
 </BaseLayout>
 
 <style>
@@ -258,33 +338,45 @@ const founder = community.state === 'founder';
       grid-template-columns: 1fr 1fr;
     }
   }
-  .escena {
+  /* A card never widens its column (it pushed the page sideways on phones). */
+  .lista-rit > * {
+    min-width: 0;
+  }
+  .sede {
     position: relative;
     height: 170px;
     border-radius: var(--radio-control);
     overflow: hidden;
-    background: radial-gradient(120% 90% at 50% 0%, var(--elevada) 0%, var(--fondo) 70%);
     border: 1px solid var(--linea);
   }
-  .escena .suelo {
-    position: absolute;
-    inset: 55% -20% -40%;
-    background-image:
-      linear-gradient(var(--linea-f) 1px, transparent 1px),
-      linear-gradient(90deg, var(--linea-f) 1px, transparent 1px);
-    background-size: 28px 28px;
-    transform: perspective(260px) rotateX(58deg);
-    opacity: 0.7;
+  .sede img {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
-  .escena .faro {
-    position: absolute;
-    left: 50%;
-    top: 22%;
-    width: 12px;
-    height: 56px;
-    margin-left: -6px;
-    background: linear-gradient(var(--ambar), transparent);
-    border-radius: 6px;
-    box-shadow: 0 0 40px 10px color-mix(in srgb, var(--ambar) 25%, transparent);
+  .sede-pie {
+    margin-top: var(--s3);
+  }
+  .acciones-com {
+    gap: var(--s3);
+  }
+  /* The follow button shows the state you are in: + to follow, ✓ when you do. */
+  .seguir .si-no,
+  .seguir .si-si {
+    display: inline-flex;
+    align-items: center;
+  }
+  .seguir .si-si,
+  .seguir[aria-pressed='true'] .si-no {
+    display: none;
+  }
+  .seguir[aria-pressed='true'] .si-si {
+    display: inline-flex;
+  }
+  /* Without JavaScript there is nowhere to keep the choice: no button. */
+  :global(html:not([data-js='on'])) .seguir {
+    display: none;
   }
 </style>

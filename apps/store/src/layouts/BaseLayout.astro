@@ -5,10 +5,19 @@ import '@numinia/ui/platform.css';
 // forbids external JS on Layer 0 pages, and the kit is ~2KB.
 import kitMotion from '../scripts/sistema.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
-import SiteHeader from '../components/chrome/SiteHeader.astro';
-import SiteFooter from '../components/chrome/SiteFooter.astro';
+// The app shell (the Oracle's design, 2026-10-14): a sidebar, a top bar
+// almost empty, a tab bar on phones, and the footer folded at the sidebar's
+// foot (last in the page; on a phone, at its end).
+import '../styles/shell.css';
+import ChromeSprite from '../components/chrome/ChromeSprite.astro';
+import Sidebar from '../components/chrome/Sidebar.astro';
+import TopBar from '../components/chrome/TopBar.astro';
+import TabBar from '../components/chrome/TabBar.astro';
+import MoreList from '../components/chrome/MoreList.astro';
+import ShellFooter from '../components/chrome/ShellFooter.astro';
 import CookieNotice from '../components/chrome/CookieNotice.astro';
 import Starfield from '../components/chrome/Starfield.astro';
+import { APP_SHELL_UI } from '../i18n/app-shell';
 
 interface Props {
   locale: SupportedLocale;
@@ -17,7 +26,9 @@ interface Props {
   description?: string | undefined;
   /** The spike page opts out of the site chrome (internal, not in the sitemap). */
   chrome?: boolean;
-  /** Platform surfaces fill the viewport instead of the reading column. */
+  /** Platform surfaces fill the viewport instead of the reading column
+      (in the app shell every page has the full width; pages read this
+      attribute for their own bleed). */
   wide?: boolean;
   /** Share-card image; pages with their own visual (asset detail) override. */
   ogImage?: string | undefined;
@@ -30,6 +41,7 @@ import geistWoff from '../../../../packages/ui/src/assets/fonts/Geist-Variable.w
 import geistMonoWoff from '../../../../packages/ui/src/assets/fonts/GeistMono-Variable.woff2?url';
 
 const { locale, title, description, chrome = true, wide = false, ogImage } = Astro.props;
+const shell = APP_SHELL_UI[locale];
 
 /** OG locale codes (territory formats differ from our ids). */
 const OG_LOCALES: Record<SupportedLocale, string> = {
@@ -81,6 +93,7 @@ const urlFor = (target: SupportedLocale): string =>
         }
         if (localStorage.getItem('numinia-lap-nav') === 'plegado')
           document.documentElement.dataset.lapNav = 'plegado';
+        document.documentElement.dataset.sidebar = localStorage.getItem('numinia-sidebar') || '';
         var hidden = localStorage.getItem('numinia-lap-hidden');
         if (hidden) document.documentElement.dataset.lapHidden = hidden.split(',').join(' ');
       } catch {}
@@ -112,14 +125,46 @@ const urlFor = (target: SupportedLocale): string =>
     <slot name="head" />
   </head>
   <body>
+    {/* The first stop of the keyboard: straight past the sidebar to the page. */}
+    {
+      chrome && (
+        <a class="saltar" href="#contenido" data-metric="nav-skip">
+          {shell.skip}
+        </a>
+      )
+    }
     {/* The sky belongs to the site chrome: the chromeless book plane (Codex)
         keeps its paper, the internal spike keeps its one WebGL canvas. */}
     {chrome && <Starfield />}
-    {chrome && <SiteHeader locale={locale} basePath={basePath} />}
-    <main data-wide={wide ? '' : undefined}>
-      <slot />
-    </main>
-    {chrome && <SiteFooter locale={locale} />}
+    {chrome && <ChromeSprite basePath={basePath} />}
+    {
+      chrome ? (
+        <div class="app">
+          <Sidebar locale={locale} basePath={basePath} />
+          <div class="app-col">
+            <TopBar locale={locale} basePath={basePath} />
+            <main id="contenido" tabindex="-1" data-wide={wide ? '' : undefined}>
+              <slot />
+            </main>
+          </div>
+          {/* Last in the page, after main: on a phone «Más» and the folded
+              footer close the page (the legal links one scroll away); on a
+              desktop the stylesheet pins the footer to the sidebar's foot
+              and «Más» lives in the sidebar. */}
+          <div class="app-pie">
+            <nav class="mas-movil" aria-label={shell.more}>
+              <MoreList locale={locale} compact />
+            </nav>
+            <ShellFooter locale={locale} />
+          </div>
+        </div>
+      ) : (
+        <main class="plano" data-wide={wide ? '' : undefined}>
+          <slot />
+        </main>
+      )
+    }
+    {chrome && <TabBar locale={locale} basePath={basePath} />}
     {/* Every page asks, the chromeless Codex included (LEG-003 §4). */}
     <CookieNotice />
     <script>
@@ -163,27 +208,29 @@ const urlFor = (target: SupportedLocale): string =>
 </html>
 
 <style>
-  /* Base surface and type come from the kit (body rule in sistema.css). */
-  /* The reading column numinia.org uses: 1100px, 24px sides. */
-  main {
+  /* Base surface and type come from the kit (body rule in sistema.css); the
+     app shell's layout lives in styles/shell.css. What stays here is the
+     chromeless planes' page (the Codex, the spike): the reading column
+     numinia.org uses, 1100px with 24px sides. */
+  .plano {
     max-width: 1100px;
     margin: 0 auto;
     padding: var(--numinia-space-5) var(--s5);
   }
   /* A fixed decorative canvas must never widen the page: clip, not hidden
-     (hidden on <html> would kill the sticky bar). */
+     (hidden on <html> would kill the sticky bars). */
   :global(html) {
     overflow-x: clip;
   }
 
   /* Platform surfaces use the room they have — no vw hacks (Firefox counts
      the scrollbar in 50vw and the page would overflow). */
-  main[data-wide] {
+  .plano[data-wide] {
     max-width: none;
     padding: var(--s5) var(--s4) var(--s7);
   }
   @media (min-width: 100rem) {
-    main[data-wide] {
+    .plano[data-wide] {
       padding-inline: var(--s8);
     }
   }

@@ -11,6 +11,7 @@ import {
   CONSENT_COOKIE,
   CONSENT_DAYS,
   POLICY_REVISION,
+  STORED_KEYS,
   hasLegacyConsent,
   measurementConsent,
   needsNotice,
@@ -147,5 +148,18 @@ describe('constants', () => {
     expect(CONSENT_DAYS).toBe(182);
     expect(ANALYTICS_CATEGORY).toBe('analytics');
     expect(POLICY_REVISION).toBe(2);
+  });
+});
+
+/* The app shell (v0.83.0) stores two device preferences, both named by the
+   cookie policy: the sidebar's fold and the communities a visitor follows. */
+describe('the app shell keys', () => {
+  it('are in the inventory under their contract names', () => {
+    expect(STORED_KEYS).toContain('numinia-sidebar');
+    expect(STORED_KEYS).toContain('numinia-follows');
+  });
+
+  it('every inventory key is named once', () => {
+    expect(new Set(STORED_KEYS).size).toBe(STORED_KEYS.length);
   });
 });

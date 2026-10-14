@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test';
 test('a dark OS gets Nocturno without asking', async ({ browser }) => {
   const context = await browser.newContext({ colorScheme: 'dark' });
   const page = await context.newPage();
-  await page.goto('/es/city/');
+  await page.goto('/es/how-it-works/');
   await expect(page.locator('html')).toHaveAttribute('data-modo', 'nocturno');
   await context.close();
 });
@@ -19,7 +19,7 @@ test('a stored Diurno beats a dark OS — the citizen already chose', async ({ b
   const context = await browser.newContext({ colorScheme: 'dark' });
   const page = await context.newPage();
   await page.addInitScript(() => localStorage.setItem('numinia-modo', 'diurno'));
-  await page.goto('/es/city/');
+  await page.goto('/es/how-it-works/');
   await expect(page.locator('html')).toHaveAttribute('data-modo', 'diurno');
   await context.close();
 });
@@ -51,6 +51,8 @@ test('choosing a language in the menu is remembered', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'en-US' });
   const page = await context.newPage();
   await page.goto('/es/');
+  // The language lives in the top bar's ⋮ menu since the app shell (v0.83.0).
+  await page.locator('[data-metric="chrome-more"]').click();
   await page.locator('[data-lang-menu] summary').click();
   await page.locator('[data-metric="lang-ja"]').click();
   await page.waitForURL('**/ja/');

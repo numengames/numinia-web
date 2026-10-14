@@ -1,18 +1,26 @@
 ---
 /**
- * A ritual's page: its picture, when (the same day everywhere; a timed one
- * in UTC and in the reader's hour), where, who can go, the file to add it
- * to a calendar, the programme as read on the community's site, and what
- * happens after.
+ * A ritual's page — the world first (the app shell, v0.83.0, the Oracle
+ * 2026-10-14): a wide stage with the home where the ritual happens; the call
+ * is to enter it, and joining comes after. Only a real world gets «Enter the
+ * world»: the city's own rituals open in the commons; every other community
+ * has its home still to open, and the stage says so and offers the calendar.
+ *
+ * Below: the date line with its countdown, the mode, the title, who holds
+ * it, the actions (the calendar file, share), then the facts, the programme
+ * as read on the community's site, what happens after, and the side column
+ * (the community, how to get there in person, the details).
  */
-import type { SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import {
   pick,
   pickList,
+  placesLine,
   spanDays,
   whenLong,
+  worldOf,
   type Community,
   type Ritual,
 } from '../../lib/communities';
@@ -30,13 +38,16 @@ interface Props {
 const { locale, ritual, community } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const image = ritual.image
-  ? { src: ritual.image.src, alt: pick(ritual.image.alt, locale) }
-  : community.image
-    ? { src: community.image.src, alt: pick(community.image.alt, locale) }
-    : undefined;
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const world = worldOf(community, commons, ritual);
+const homeName = ritual.city ? commons.name : fill(ui.homeOf, { x: community.name });
 const days = spanDays(ritual);
 const description = `${whenLong(ritual, locale)} · ${pick(ritual.where, locale)}`;
+const icsHref = `/rituals/${ritual.id}.ics`;
+const communityImage = community.image
+  ? { src: community.image.src, alt: pick(community.image.alt, locale) }
+  : undefined;
+const inPerson = ritual.mode === 'in-person' || ritual.mode === 'mixed';
 const sourceDate = ritual.source
   ? new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
       day: 'numeric',
@@ -47,14 +58,67 @@ const sourceDate = ritual.source
   : '';
 ---
 
-<BaseLayout locale={locale} title={`${pick(ritual.title, locale)} — ${community.name} — Numinia`} description={description} wide>
-  <Cover id={community.id} name={community.name} image={image} variant="cover" eager art />
-  <div class="columna">
-    <p class="migas">
-      <a href={`${prefix}/`}>Numinia</a> /{' '}
-      <a href={`${prefix}/communities/${community.id}/`}>{community.name}</a> / {ui.rituals}
-    </p>
-    <div class="cabeza">
+<BaseLayout
+  locale={locale}
+  title={`${pick(ritual.title, locale)} — ${community.name} — Numinia`}
+  description={description}
+>
+  <p class="migas">
+    <a href={`${prefix}/`}>Numinia</a> /{' '}
+    <a href={`${prefix}/communities/${community.id}/`}>{community.name}</a> / {ui.rituals}
+  </p>
+
+  <section class:list={['mundo', { 'con-mundo': world, escena: !world }]} aria-label={ui.stageLabel}>
+    {
+      world ? (
+        <img
+          class="fondo"
+          src="/images/art/city.webp"
+          alt=""
+          width="892"
+          height="960"
+          decoding="async"
+          fetchpriority="high"
+        />
+      ) : (
+        <>
+          <div class="suelo" />
+          <div class="faro" />
+        </>
+      )
+    }
+    <div class="entrar">
+      {
+        world ? (
+          <>
+            <h2>{homeName}</h2>
+            <a
+              class="btn btn-primario btn-grande"
+              href={world.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-metric="ritual-enter-world"
+            >
+              <Icon name="play" size={20} />
+              {ui.enterWorld}
+            </a>
+            <p>{ui.worldNote}</p>
+          </>
+        ) : (
+          <>
+            <h2>{fill(ui.homeOfToOpen, { x: community.name })}</h2>
+            <a class="btn btn-primario btn-grande" href={icsHref} data-metric="ritual-stage-calendar">
+              <Icon name="calendar-plus" size={20} />
+              {ui.toMyCalendar}
+            </a>
+          </>
+        )
+      }
+    </div>
+  </section>
+
+  <div class="cabeza-rit">
+    <div class="titulo">
       <div class="fila">
         <span class="etiqueta">
           {whenLong(ritual, locale)}
@@ -71,94 +135,255 @@ const sourceDate = ritual.source
         {ritual.note && <> {pick(ritual.note, locale)}</>}
       </p>
     </div>
+    <div class="acciones-rit">
+      <a class="btn btn-fantasma" href={icsHref} data-metric="ritual-add-calendar">
+        <Icon name="calendar-plus" size={18} />
+        {ui.toMyCalendar}
+      </a>
+      <button
+        type="button"
+        class="btn btn-fantasma compartir"
+        data-share
+        data-metric="ritual-share"
+        aria-label={ui.share}
+        title={ui.share}
+      >
+        <Icon name="share-network" size={18} />
+      </button>
+      <span class="aviso-copia" data-share-note data-copied={ui.linkCopied} role="status"></span>
+    </div>
+  </div>
 
-    <div class="dos">
-      <div class="pila">
-        <section class="tarjeta">
-          <div class="datos">
-            <div class="dato">
-              <span class="etiqueta corta"><Icon name="calendar-blank" size={14} />{ui.when}</span>
-              <b>{whenLong(ritual, locale)}</b>
-              <span class="small texto-2">
-                {ritual.allDay ? (days > 1 ? fill(ui.wholeDays, { n: days }) : ui.wholeDay) : 'UTC'}
-              </span>
-            </div>
-            <div class="dato">
-              <span class="etiqueta corta"><Icon name="map-pin" size={14} />{ui.where}</span>
-              <b>{pick(ritual.where, locale)}</b>
-              <span class="small texto-2">{ritual.mode ? ui.modes[ritual.mode] : ui.howToAnnounce}</span>
-            </div>
-            <div class="dato">
-              <span class="etiqueta corta"><Icon name="users" size={14} />{ui.whoCanGo}</span>
-              <b>{ui.anyone}</b>
-              <span class="small texto-2">{ui.openNote}</span>
-            </div>
-            <div class="dato">
-              <span class="etiqueta corta"><Icon name="download-simple" size={14} />{ui.inYourCalendar}</span>
-              <b><a href={`/rituals/${ritual.id}.ics`} data-metric="ritual-add-calendar">{ui.add}</a></b>
-              <span class="small texto-2">{ui.addNote}</span>
-            </div>
+  <div class="dos">
+    <div class="pila">
+      <section class="tarjeta">
+        <div class="datos">
+          <div class="dato">
+            <span class="etiqueta corta"><Icon name="calendar-blank" size={14} />{ui.when}</span>
+            <b>{whenLong(ritual, locale)}</b>
+            <span class="small texto-2">
+              {ritual.allDay ? (days > 1 ? fill(ui.wholeDays, { n: days }) : ui.wholeDay) : 'UTC'}
+            </span>
           </div>
-          {
-            (ritual.mode === 'online' || ritual.mode === 'mixed') && ritual.status !== 'held' && (
-              <p class="small texto-2" style="margin: var(--s4) 0 0">{ui.onlineNote}</p>
-            )
-          }
-        </section>
+          <div class="dato">
+            <span class="etiqueta corta"><Icon name="map-pin" size={14} />{ui.where}</span>
+            <b>{pick(ritual.where, locale)}</b>
+            <span class="small texto-2">{ritual.mode ? ui.modes[ritual.mode] : ui.howToAnnounce}</span>
+          </div>
+          <div class="dato">
+            <span class="etiqueta corta"><Icon name="users" size={14} />{ui.whoCanGo}</span>
+            <b>{ui.anyone}</b>
+            <span class="small texto-2">{ui.openNote}</span>
+          </div>
+          <div class="dato">
+            <span class="etiqueta corta"><Icon name="download-simple" size={14} />{ui.inYourCalendar}</span>
+            <b><a href={icsHref} data-metric="ritual-ics">{ui.add}</a></b>
+            <span class="small texto-2">{ui.addNote}</span>
+          </div>
+        </div>
         {
-          ritual.programme && (
-            <section class="tarjeta">
-              <h2 class="card-h2"><Icon name="clipboard-text" size={20} />{ui.programme}</h2>
-              <ol class="agenda">
-                {pickList(ritual.programme, locale).map((line) => (
-                  <li>{line}</li>
-                ))}
-              </ol>
-              {ritual.source && (
-                <p class="small texto-2" style="margin: var(--s4) 0 0">
-                  {fill(ui.readOn, { source: ritual.source.name, date: sourceDate })}
-                </p>
-              )}
-            </section>
+          (ritual.mode === 'online' || ritual.mode === 'mixed') && ritual.status !== 'held' && !world && (
+            <p class="small texto-2" style="margin: var(--s4) 0 0">{ui.onlineNote}</p>
           )
         }
-      </div>
-      <div class="pila">
-        {
-          ritual.status !== 'held' && (
-            <section class="tarjeta">
-              <h2 class="card-h2"><Icon name="scroll" size={20} />{ui.after}</h2>
-              <p class="texto-2" style="margin: 0">{ui.afterText}</p>
-            </section>
-          )
-        }
-        <section class="tarjeta">
-          <h2 class="card-h2"><Icon name="gear" size={20} />{ui.details}</h2>
-          <dl class="kv">
-            <div>
-              <dt>{ui.itsFile}</dt>
-              <dd class="mono small texto-2">src/content/communities/rituals/{ritual.id}.md</dd>
-            </div>
-          </dl>
-        </section>
-      </div>
+      </section>
+      {
+        ritual.programme && (
+          <section class="tarjeta">
+            <h2 class="card-h2"><Icon name="clipboard-text" size={20} />{ui.programme}</h2>
+            <ol class="agenda">
+              {pickList(ritual.programme, locale).map((line) => (
+                <li>{line}</li>
+              ))}
+            </ol>
+            {ritual.source && (
+              <p class="small texto-2" style="margin: var(--s4) 0 0">
+                {fill(ui.readOn, { source: ritual.source.name, date: sourceDate })}
+              </p>
+            )}
+          </section>
+        )
+      }
+      {
+        ritual.status !== 'held' && (
+          <section class="tarjeta">
+            <h2 class="card-h2"><Icon name="scroll" size={20} />{ui.after}</h2>
+            <p class="texto-2" style="margin: 0">{ui.afterText}</p>
+          </section>
+        )
+      }
+    </div>
+    <div class="pila">
+      <a class="tarjeta mini-com" href={`${prefix}/communities/${community.id}/`} data-metric="ritual-community-card">
+        <span class="mini-cover">
+          <Cover id={community.id} name={community.name} image={communityImage} />
+        </span>
+        <span class="mini-texto">
+          <b>{community.name}</b>
+          <span class="small texto-2">{pick(community.kind, locale)} · {placesLine(community.places, locale)}</span>
+        </span>
+      </a>
+      {
+        inPerson && (
+          <section class="tarjeta">
+            <h2 class="card-h2"><Icon name="map-pin" size={20} />{ui.howToGetThere}</h2>
+            <p class="texto-2" style="margin: 0">{pick(ritual.where, locale)}</p>
+          </section>
+        )
+      }
+      <section class="tarjeta">
+        <h2 class="card-h2"><Icon name="gear" size={20} />{ui.details}</h2>
+        <dl class="kv">
+          <div>
+            <dt>{ui.itsFile}</dt>
+            <dd class="mono small texto-2">src/content/communities/rituals/{ritual.id}.md</dd>
+          </div>
+        </dl>
+      </section>
     </div>
   </div>
 
   <Countdown ui={ui} />
+  <script is:inline>
+    /* Share: the device's own sheet where there is one, else the address
+       copied to the clipboard and said aloud. Without JavaScript the button
+       hides (the address bar does the job). */
+    document.querySelectorAll('[data-share]').forEach(function (button) {
+      var note = document.querySelector('[data-share-note]');
+      button.addEventListener('click', function () {
+        var data = { title: document.title, url: location.href };
+        if (navigator.share) {
+          navigator.share(data).catch(function () {});
+          return;
+        }
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(location.href).then(function () {
+            if (note) note.textContent = note.getAttribute('data-copied');
+          }, function () {});
+        }
+      });
+    });
+  </script>
 </BaseLayout>
 
 <style>
-  :global(main[data-wide]) {
-    padding: 0 0 var(--s7);
+  .migas {
+    margin-top: 0;
+    margin-bottom: var(--s3);
   }
-  .columna {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 var(--s5);
+  /* The stage: wide, about 21:9 where the column allows, never under 360 px
+     high. On a phone the ratio would widen the box past the screen to keep
+     both rules, so there the height alone holds. */
+  .mundo {
+    position: relative;
+    min-height: 360px;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background-color: var(--fondo);
+  }
+  @media (min-width: 56.25rem) {
+    .mundo {
+      aspect-ratio: 21 / 9;
+    }
+  }
+  .mundo .fondo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .con-mundo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      70% 70% at 50% 50%,
+      color-mix(in srgb, var(--fondo) 78%, transparent),
+      color-mix(in srgb, var(--fondo) 35%, transparent)
+    );
+  }
+  .entrar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s4);
+    padding: var(--s6) var(--s5);
+    text-align: center;
+    max-width: 40rem;
+  }
+  .entrar h2 {
+    margin: 0;
+    font-size: clamp(1.6rem, 1.6vw + 1.2rem, 2.4rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    color: var(--texto);
+  }
+  .entrar p {
+    margin: 0;
+    color: var(--texto);
+  }
+  .btn-grande {
+    min-height: 52px;
+    padding: 12px var(--s6);
+    font-size: 1.1rem;
+  }
+  .cabeza-rit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s4) var(--s6);
+    align-items: end;
+    justify-content: space-between;
+    padding: var(--s5) 0 var(--s6);
+    border-bottom: 1px solid var(--linea);
+    margin-bottom: var(--s5);
+  }
+  .titulo {
+    display: grid;
+    gap: var(--s3);
+    min-width: 0;
+    flex: 1 1 28rem;
+  }
+  .titulo h1 {
+    margin: 0;
+  }
+  .titulo .etiqueta {
+    margin: 0;
+  }
+  .titulo .desc {
+    font-size: 1.1rem;
+    color: var(--texto-2);
+    max-width: 62ch;
+    margin: 0;
   }
   .falta:not(:empty)::before {
     content: ' · ';
+  }
+  .acciones-rit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    align-items: center;
+  }
+  .compartir {
+    padding-inline: var(--s3);
+  }
+  :global(html:not([data-js='on'])) .compartir {
+    display: none;
+  }
+  .aviso-copia {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .aviso-copia:empty {
+    display: none;
   }
   .datos {
     display: grid;
@@ -174,6 +399,7 @@ const sourceDate = ritual.source
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
   .dato .etiqueta {
     display: flex;
@@ -191,5 +417,32 @@ const sourceDate = ritual.source
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+  .mini-com {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--s4);
+    padding: var(--s3);
+  }
+  .mini-cover {
+    flex: 0 0 96px;
+    width: 96px;
+    height: 54px;
+    border-radius: var(--radio-control);
+    overflow: hidden;
+  }
+  .mini-cover :global(.cover.card) {
+    height: 100%;
+    aspect-ratio: auto;
+    border-bottom: 0;
+  }
+  .mini-cover :global(.monogram b) {
+    font-size: 1.4rem;
+  }
+  .mini-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 </style>

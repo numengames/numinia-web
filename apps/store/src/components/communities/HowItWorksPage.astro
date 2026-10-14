@@ -1,0 +1,216 @@
+---
+/**
+ * «Cómo funciona» (/how-it-works/, the app shell v0.83.0): what the front
+ * door used to explain and the old /city/ page told at length, in one page —
+ * what Numinia is in a line, four steps each with its door, the six
+ * templates a community can open its home from (and how to ask for one),
+ * and why a city, in three lines of its canon with the way to the Archive.
+ * No price block: there is no public tariff yet.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { HOW_IT_WORKS } from '../../i18n/how-it-works';
+import { fill } from '../../i18n/communities';
+import { COMMUNITIES } from './register';
+import Icon from '../chrome/Icon.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = HOW_IT_WORKS[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+
+const STEPS = [
+  { icon: 'compass', href: `${prefix}/communities/`, metric: 'how-step-communities' },
+  { icon: 'play', href: `${prefix}/live/`, metric: 'how-step-live' },
+  { icon: 'calendar-blank', href: `${prefix}/calendar/`, metric: 'how-step-calendar' },
+  { icon: 'archive', href: `${prefix}/bazaar/`, metric: 'how-step-bazaar' },
+] as const;
+const TEMPLATE_ICONS = ['book-open', 'buildings', 'clipboard-text', 'lock-key', 'palette', 'confetti'] as const;
+---
+
+<BaseLayout locale={locale} title={t.title} description={t.description}>
+  <header class="titulo-vista">
+    <p class="etiqueta entrada">{t.eyebrow}</p>
+    <h1 class="display-m entrada-1">{t.heading}</h1>
+    <p class="lead entrada-2">{t.lead}</p>
+  </header>
+
+  <ol class="pasos">
+    {
+      t.steps.map((step, index) => {
+        const door = STEPS[index] ?? STEPS[0];
+        return (
+          <li>
+            <span class="n">
+              <Icon name={door.icon} size={18} />
+              {index + 1}
+            </span>
+            <h2>{step.title}</h2>
+            <p>{fill(step.text, { n: COMMUNITIES.length })}</p>
+            <a href={door.href} data-metric={door.metric}>
+              {step.link}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ol>
+
+  <section class="bloque" id="open">
+    <div class="cabecera-bloque">
+      <div>
+        <p class="etiqueta">{t.openEyebrow}</p>
+        <h2 class="titulo-m">{t.openTitle}</h2>
+        <p class="ayuda">{t.openHelp}</p>
+      </div>
+      <a class="btn btn-primario" href="mailto:hola@numengames.com" data-metric="how-write">
+        <Icon name="house" size={18} />
+        {t.write}
+      </a>
+    </div>
+    <ul class="plantillas">
+      {
+        t.templates.map((template, index) => (
+          <li class="tarjeta">
+            <Icon name={TEMPLATE_ICONS[index] ?? 'house'} size={24} />
+            <b>{template.name}</b>
+            <span>{template.text}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="bloque" id="why">
+    <div class="cabecera-bloque">
+      <div>
+        <p class="etiqueta">{t.whyEyebrow}</p>
+        <h2 class="titulo-m">{t.whyTitle}</h2>
+      </div>
+    </div>
+    <div class="historia">
+      <div class="relato">
+        {t.storyNotice && <p class="aviso-idioma small">{t.storyNotice}</p>}
+        {t.story.map((line) => <p>{line}</p>)}
+        <a href="https://numinia.org" target="_blank" rel="noopener noreferrer" data-metric="how-archive">
+          {t.readArchive}
+          <Icon name="arrow-square-out" size={16} />
+        </a>
+      </div>
+      <img
+        src="/images/art/genesis.webp"
+        alt={t.storyImageAlt}
+        width="887"
+        height="960"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .pasos {
+    list-style: none;
+    margin: var(--s6) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  }
+  .pasos li {
+    border-top: 1px solid var(--enlace);
+    padding-top: var(--s4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .pasos .n {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    font-family: var(--mono);
+    color: var(--enlace);
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+  }
+  .pasos h2 {
+    margin: var(--s2) 0 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+  .pasos p {
+    color: var(--texto-2);
+    margin: 0;
+  }
+  .pasos a {
+    margin-top: auto;
+    font-size: 0.9rem;
+  }
+  .plantillas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  }
+  .plantillas li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .plantillas :global(.icono) {
+    color: var(--enlace);
+  }
+  .plantillas span {
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+  .historia {
+    display: grid;
+    gap: var(--s6);
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  @media (min-width: 56.25rem) {
+    .historia {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+  }
+  .historia > * {
+    min-width: 0;
+  }
+  .relato p {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--texto-2);
+    max-width: 62ch;
+    margin: 0 0 var(--s4);
+  }
+  .relato .aviso-idioma {
+    font-size: 0.875rem;
+    border-left: 2px solid var(--enlace);
+    padding-left: var(--s3);
+  }
+  .relato a {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .historia img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radio-marco);
+    border: 1px solid var(--linea);
+  }
+</style>

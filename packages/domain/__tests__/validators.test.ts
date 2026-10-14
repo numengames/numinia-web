@@ -122,8 +122,34 @@ describe('asset catalog validation (build fails loudly — MISSION-000 data spik
       isDraft: false,
       createdAt: '',
       updatedAt: '',
+      version: null,
+      sizeBytes: null,
       storage: { arweaveTx: null, r2Url: null, ipfsCid: null, githubRawUrl: null },
     });
+  });
+
+  it('reads the version and the size when the record states them', () => {
+    const asset = parseAssetRecord({
+      ...validRecord,
+      version: ' 0.1.4 ',
+      file_size_bytes: 200676,
+    });
+    expect(asset.version).toBe('0.1.4');
+    expect(asset.sizeBytes).toBe(200676);
+  });
+
+  it('leaves the version and the size out when they are missing or malformed, never failing', () => {
+    for (const odd of [
+      { version: '', file_size_bytes: 0 },
+      { version: '   ', file_size_bytes: -5 },
+      { version: 2, file_size_bytes: '200676' },
+      { version: null, file_size_bytes: 1.5 },
+      { file_size_bytes: Number.MAX_SAFE_INTEGER + 2 },
+    ]) {
+      const asset = parseAssetRecord({ ...validRecord, ...odd });
+      expect(asset.version).toBeNull();
+      expect(asset.sizeBytes).toBeNull();
+    }
   });
 
   it('accepts legacy records with unknown extra fields (passthrough, no data loss surprises)', () => {

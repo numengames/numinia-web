@@ -44,6 +44,14 @@ const description = t.meta[doc];
       <Content />
     </div>
   </article>
+  <script>
+    /* The policies' tables scroll sideways inside the column on a phone
+       (`display: block; overflow-x: auto` below): a keyboard must reach a
+       box it has to scroll (WCAG 2.1.1; axe scrollable-region-focusable). */
+    for (const table of document.querySelectorAll('.corpus table')) {
+      table.setAttribute('tabindex', '0');
+    }
+  </script>
 </BaseLayout>
 
 <style>

@@ -25,9 +25,15 @@ const BUDGETS: readonly Budget[] = [
   // to keep it there). Still 0 KB of external JS.
   { path: '/', totalKB: 720, jsKB: 0, imgKB: 450 },
   { path: '/es/', totalKB: 720, jsKB: 0, imgKB: 450 },
-  { path: '/archive/', totalKB: 620, jsKB: 0, imgKB: 400 },
-  { path: '/gallery/', totalKB: 450, jsKB: 0, imgKB: 250 },
-  { path: '/city/', totalKB: 420, jsKB: 0, imgKB: 160 },
+  // The Bazaar (v0.83.0) — the one door to the goods; the Archive's index
+  // and the Gallery (zero-JS pages, 620/450KB) went out with it. It is the
+  // Finder's island rethought: React and the island (~211KB, the 3D viewer
+  // only on «See it in 3D»), the first rows of baked thumbnails lazily
+  // (~301KB), ~750KB in all (measured on the fixture, 1280×720).
+  { path: '/bazaar/', totalKB: 940, jsKB: 230, imgKB: 380 },
+  // «Cómo funciona» took the old /city/ line (v0.83.0): text, six templates
+  // and one lazy illustration of the city's story. Zero external JS.
+  { path: '/how-it-works/', totalKB: 420, jsKB: 0, imgKB: 160 },
   { path: '/lap/', totalKB: 260, jsKB: 30, imgKB: 10 },
   // The book plane pays for its paper: four self-hosted Alegreya faces +
   // Geist + the grain put the cover at ~706KB (measured 2026-08-18), all
@@ -40,10 +46,15 @@ const BUDGETS: readonly Budget[] = [
   // Raised 480→495 (2026-09-29): the house look as numinia.org draws it —
   // the night sky, the phone menu and a Phosphor icon per bar entry — rides
   // on every chromed page; this one sat closest to its line (485KB).
-  { path: '/lap/character/', totalKB: 495, jsKB: 300, imgKB: 10 },
+  // Raised 495→515 (2026-10-14, the app shell): the sidebar, the top bar's
+  // ⋮ menu, the phone's tab bar and the folded footer ride on every page
+  // (measured 504KB here; the island itself did not change).
+  { path: '/lap/character/', totalKB: 515, jsKB: 300, imgKB: 10 },
   // The login page carries the wallet vendor — the one sanctioned heavy page,
   // still under the 1MB line. It grows past it only with a written reason.
-  { path: '/lap/session/', totalKB: 1024, jsKB: 900, imgKB: 10 },
+  // Written reason (2026-10-14): the app shell above, measured 1028KB; the
+  // wallet vendor is unchanged.
+  { path: '/lap/session/', totalKB: 1040, jsKB: 900, imgKB: 10 },
 ];
 
 for (const budget of BUDGETS) {

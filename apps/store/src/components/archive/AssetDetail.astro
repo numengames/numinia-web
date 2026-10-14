@@ -3,8 +3,9 @@ import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../chrome/Icon.astro';
 import { ModelViewer } from '../viewer/ModelViewer';
-import { ARCHIVE_MESSAGES } from '../../i18n/messages';
+import { ARCHIVE_MESSAGES, BAZAAR_MESSAGES } from '../../i18n/messages';
 import { downloadUrl } from '../../lib/archive';
+import { bazaarHref } from '../../lib/bazaar-view';
 import type { CatalogedAsset } from '../../lib/data';
 import { findCard, loadSumma } from '../../lib/summa';
 import SummaCard from './SummaCard.astro';
@@ -17,7 +18,8 @@ interface Props {
 const { entry, locale } = Astro.props;
 const { asset, category } = entry;
 const t = ARCHIVE_MESSAGES[locale];
-const prefix = locale === 'en' ? '' : `/${locale}`;
+// The way back leads to the Bazaar (v0.83.0): the Archive's index went out.
+const bazaar = BAZAAR_MESSAGES[locale];
 const binaryUrl = downloadUrl(asset);
 const description = asset.description || `${asset.format.toUpperCase()} · CC0 · Numinia`;
 // Summa experiment: a legacy id with a card in the archive gets the card
@@ -32,8 +34,10 @@ const card = findCard(await loadSumma(), asset.id);
   ogImage={asset.thumbnailUrl ?? undefined}
 >
 
-  <nav>
-    <a href={`${prefix}/archive/`} data-metric="archive-back">{t.backToArchive}</a>
+  <nav class="miga" aria-label={bazaar.breadcrumbLabel}>
+    <a href={bazaarHref(locale)} data-metric="archive-back">{bazaar.title}</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{asset.name}</span>
   </nav>
 
   <article>
@@ -165,5 +169,14 @@ const card = findCard(await loadSumma(), asset.id);
   }
   [data-download-unavailable] {
     color: var(--texto-2);
+  }
+  /* The breadcrumb: the Bazaar, then this good (its name may break anywhere). */
+  .miga {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
   }
 </style>

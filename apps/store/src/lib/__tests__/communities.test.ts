@@ -14,8 +14,12 @@ import {
   byStart,
   calendarMonth,
   calendarMonths,
+  dayAndMonth,
+  featuredSlides,
   firstMonth,
   foldLine,
+  FOLLOWS_KEY,
+  followEntries,
   held,
   icsFeed,
   idFromPath,
@@ -38,6 +42,7 @@ import {
   whenLong,
   whenShort,
   withLife,
+  worldOf,
   yearOf,
   type Community,
   type Ritual,
@@ -460,6 +465,129 @@ describe('dates as text', () => {
     const across = ritual({ start: '2026-10-31', end: '2026-11-03' });
     expect(whenLong(across, 'es')).toBe('Del 31 oct al 3 nov de 2026');
     expect(whenLong(across, 'en')).toBe('From 31 Oct to 3 Nov 2026');
+  });
+
+  it('dates a ritual by its day and short month, in UTC, without dots', () => {
+    expect(dayAndMonth(ritual(), 'es')).toEqual({ day: 22, month: 'oct' });
+    expect(dayAndMonth(ritual(), 'en')).toEqual({ day: 22, month: 'Oct' });
+    expect(dayAndMonth(ritual({ start: '2026-09-01', end: '2026-09-01' }), 'es').month).not.toMatch(
+      /\./,
+    );
+    const late = ritual({ start: '2026-10-31T23:30Z', end: '2026-11-01T01:00Z' });
+    expect(dayAndMonth(late, 'ja')).toEqual({ day: 31, month: 'Oct' });
+  });
+});
+
+describe('the app shell pages (v0.83.0)', () => {
+  const commons = { href: 'https://v2.oncyber.io/agora_plaza_of_numinia', name: 'El Ágora' };
+  const founder = parseCommunity('numen-games', {
+    ...COMMUNITY,
+    name: 'Numen Games',
+    state: 'founder',
+  });
+  const merge = parseCommunity('merge', { ...COMMUNITY, name: 'MERGE' });
+  const hidden = parseCommunity('cps', { ...COMMUNITY, name: 'CPS', visibility: 'house' });
+  const trg = ritual();
+  const mergeDays = parseRitual('merge-madrid-2026', {
+    ...RITUAL,
+    community: 'merge',
+    title: 'MERGE 2026',
+    start: '2026-10-27',
+    end: '2026-10-29',
+  });
+  const cityDay = parseRitual('public-domain-day-2027', {
+    ...RITUAL,
+    community: 'numen-games',
+    title: { en: 'Public Domain Day', es: 'Día del Dominio Público' },
+    start: '2027-01-01',
+    end: '2027-01-01',
+    city: true,
+  });
+  const cpsDay = parseRitual('cpslive', {
+    ...RITUAL,
+    community: 'cps',
+    start: '2026-10-01',
+    end: '2026-10-01',
+  });
+  const past = parseRitual('cc-2026', {
+    ...RITUAL,
+    community: 'commit-conf',
+    start: '2026-06-05',
+    end: '2026-06-06',
+    status: 'held',
+  });
+
+  it('opens a world only where one exists: the city rituals and the founder, in the commons', () => {
+    expect(worldOf(founder, commons)).toBe(commons);
+    expect(worldOf(founder, commons, trg)).toBe(commons);
+    expect(worldOf(merge, commons, cityDay)).toBe(commons);
+    expect(worldOf(merge, commons, mergeDays)).toBeUndefined();
+    expect(worldOf(merge, commons)).toBeUndefined();
+  });
+
+  it('features the house pick first, then the next rituals, each once, published only', () => {
+    const nextYear = parseRitual('merge-madrid-2027', {
+      ...RITUAL,
+      community: 'merge',
+      title: 'MERGE 2027',
+      start: '2027-10-27',
+      end: '2027-10-29',
+    });
+    const slides = featuredSlides(
+      [merge, founder, hidden, community()],
+      [mergeDays, cpsDay, trg, nextYear, cityDay, past],
+    );
+    expect(slides.map((slide) => [slide.community.id, slide.ritual?.id])).toEqual([
+      ['trgcon', 'trg26'],
+      ['merge', 'merge-madrid-2026'],
+      ['numen-games', 'public-domain-day-2027'],
+    ]);
+    expect(
+      featuredSlides([merge, founder], [mergeDays, trg, cityDay], 2).map(
+        (slide) => slide.ritual?.id,
+      ),
+    ).toEqual(['merge-madrid-2026', 'public-domain-day-2027']);
+  });
+
+  it('features the first community alone when no ritual is in sight, and nothing when it cannot', () => {
+    expect(featuredSlides([merge, founder], [past])).toEqual([
+      { community: merge, ritual: undefined },
+    ]);
+    expect(featuredSlides([hidden], [cpsDay])).toEqual([]);
+    expect(featuredSlides([merge], [mergeDays], 0)).toEqual([]);
+  });
+
+  it('keeps the follow list under the one browser key the shell agreed', () => {
+    expect(FOLLOWS_KEY).toBe('numinia-follows');
+  });
+
+  it('embeds what /belong/ draws: each published community and its next ritual', () => {
+    const entries = followEntries([merge, hidden, founder], [mergeDays, past, cpsDay], 'es', '/es');
+    expect(entries).toEqual([
+      {
+        id: 'merge',
+        name: 'MERGE',
+        href: '/es/communities/merge/',
+        line: `Congreso · ${placesLine(['madrid'], 'es')}`,
+        next: {
+          title: 'MERGE 2026',
+          when: whenShort(mergeDays, 'es'),
+          href: '/es/rituals/merge-madrid-2026/',
+          start: '2026-10-27',
+        },
+      },
+      {
+        id: 'numen-games',
+        name: 'Numen Games',
+        href: '/es/communities/numen-games/',
+        line: 'Congreso · Madrid, España',
+        next: null,
+      },
+    ]);
+    expect(followEntries([founder], [cityDay], 'en', '')[0]!.next).toMatchObject({
+      title: 'Public Domain Day',
+      href: '/rituals/public-domain-day-2027/',
+    });
   });
 });
 

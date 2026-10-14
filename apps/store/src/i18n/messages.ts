@@ -4,17 +4,11 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import type { AssetCategory } from '../lib/data';
 
 export interface ArchiveMessages {
-  readonly archiveTitle: string;
-  readonly archiveIntro: string;
-  readonly searchPlaceholder: string;
-  readonly allFormats: string;
   readonly download: string;
   readonly downloadUnavailable: string;
-  readonly emptyState: string;
-  readonly noResults: string;
-  readonly backToArchive: string;
   readonly category: string;
   readonly format: string;
   readonly license: string;
@@ -32,21 +26,10 @@ export interface ArchiveMessages {
   readonly summaCopiesCount: string;
   readonly summaDownloadDepot: string;
   readonly summaReadCard: string;
-  readonly summaMark: string;
 }
 
-/** Site chrome: header nav, language selector, footer. */
+/** Site chrome: the language selector, the mode switch, the footer. */
 export interface ChromeMessages {
-  readonly navHome: string;
-  readonly navCity: string;
-  readonly navAssets: string;
-  readonly navLap: string;
-  readonly navGallery: string;
-  readonly navArchive: string;
-  readonly navFinder: string;
-  readonly navUpdates: string;
-  readonly navDocs: string;
-  readonly navInspector: string;
   readonly footerLegal: string;
   readonly legalPrivacy: string;
   readonly legalCookies: string;
@@ -54,16 +37,7 @@ export interface ChromeMessages {
   readonly legalNotice: string;
   readonly languageSelector: string;
   readonly modeToggle: string;
-  /** The phone menu button (one 44 px button opening the full-screen panel). */
-  readonly menuOpen: string;
-  readonly menuClose: string;
-  readonly signIn: string;
-  readonly footerNavigation: string;
-  readonly footerResources: string;
-  readonly footerDataRepo: string;
-  readonly footerSocial: string;
-  /** The house column: the four sites, this one marked. */
-  readonly footerHouse: string;
+  /** The footer's sister sites: this one is marked, not linked. */
   readonly footerThisSite: string;
   /** Brand block: one line saying what this site is. */
   readonly footerTagline: string;
@@ -88,16 +62,6 @@ export interface ChromeMessages {
 
 export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> = {
   es: {
-    navHome: 'Inicio',
-    navCity: 'La Ciudad',
-    navAssets: 'Assets',
-    navLap: 'LAP',
-    navGallery: 'Galería',
-    navArchive: 'Archivo',
-    navFinder: 'Finder',
-    navUpdates: 'Updates',
-    navDocs: 'Recursos',
-    navInspector: 'Inspector',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidad',
     legalCookies: 'Cookies',
@@ -105,14 +69,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de color',
-    menuOpen: 'Abrir el menú',
-    menuClose: 'Cerrar el menú',
-    signIn: 'Entrar en Numinia',
-    footerNavigation: 'Navegación',
-    footerResources: 'Recursos',
-    footerDataRepo: 'Repositorio de datos',
-    footerSocial: 'Social',
-    footerHouse: 'Numen Games',
     footerThisSite: 'estás aquí',
     footerTagline:
       'Un mundo a lo largo de tres siglos. Su crónica, su cultura material —CC0— y el juego.',
@@ -133,16 +89,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalCookieChoice: 'Cambiar mi elección de cookies',
   },
   en: {
-    navHome: 'Home',
-    navCity: 'The City',
-    navAssets: 'Assets',
-    navLap: 'LAP',
-    navGallery: 'Gallery',
-    navArchive: 'Archive',
-    navFinder: 'Finder',
-    navUpdates: 'Updates',
-    navDocs: 'Resources',
-    navInspector: 'Inspector',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacy',
     legalCookies: 'Cookies',
@@ -150,14 +96,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Legal notice',
     languageSelector: 'Language',
     modeToggle: 'Color mode',
-    menuOpen: 'Open the menu',
-    menuClose: 'Close the menu',
-    signIn: 'Enter Numinia',
-    footerNavigation: 'Navigation',
-    footerResources: 'Resources',
-    footerDataRepo: 'Data repository',
-    footerSocial: 'Social',
-    footerHouse: 'Numen Games',
     footerThisSite: 'you are here',
     footerTagline:
       'A world across three centuries. Its chronicle, its material culture — CC0 — and the game.',
@@ -178,16 +116,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalCookieChoice: 'Change my cookie choice',
   },
   ja: {
-    navHome: 'ホーム',
-    navCity: '都市',
-    navAssets: 'アセット',
-    navLap: 'LAP',
-    navGallery: 'ギャラリー',
-    navArchive: 'アーカイブ',
-    navFinder: 'Finder',
-    navUpdates: 'Updates',
-    navDocs: 'リソース',
-    navInspector: 'インスペクター',
     footerLegal: '法的情報',
     legalPrivacy: 'プライバシー',
     legalCookies: 'クッキー',
@@ -195,14 +123,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '法的通知',
     languageSelector: '言語',
     modeToggle: 'カラーモード',
-    menuOpen: 'メニューを開く',
-    menuClose: 'メニューを閉じる',
-    signIn: 'ヌミニアに入る',
-    footerNavigation: 'ナビゲーション',
-    footerResources: 'リソース',
-    footerDataRepo: 'データリポジトリ',
-    footerSocial: 'ソーシャル',
-    footerHouse: 'Numen Games',
     footerThisSite: '現在地',
     footerTagline: '三世紀にわたる世界。その年代記、その物質文化（CC0）、そしてゲーム。',
     footerLicence: 'ファイルごとのライセンスで公開',
@@ -222,16 +142,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalCookieChoice: 'クッキーの選択を変更',
   },
   ko: {
-    navHome: '홈',
-    navCity: '도시',
-    navAssets: '에셋',
-    navLap: 'LAP',
-    navGallery: '갤러리',
-    navArchive: '아카이브',
-    navFinder: 'Finder',
-    navUpdates: 'Updates',
-    navDocs: '리소스',
-    navInspector: '인스펙터',
     footerLegal: '법적 고지',
     legalPrivacy: '개인정보',
     legalCookies: '쿠키',
@@ -239,14 +149,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: '법적 고지사항',
     languageSelector: '언어',
     modeToggle: '색상 모드',
-    menuOpen: '메뉴 열기',
-    menuClose: '메뉴 닫기',
-    signIn: '누미니아 입장',
-    footerNavigation: '내비게이션',
-    footerResources: '리소스',
-    footerDataRepo: '데이터 저장소',
-    footerSocial: '소셜',
-    footerHouse: 'Numen Games',
     footerThisSite: '현재 위치',
     footerTagline: '세 세기에 걸친 세계. 그 연대기, 그 물질문화(CC0), 그리고 게임.',
     footerLicence: '파일별 라이선스로 공개',
@@ -266,16 +168,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalCookieChoice: '쿠키 선택 변경',
   },
   'pt-br': {
-    navHome: 'Início',
-    navCity: 'A Cidade',
-    navAssets: 'Assets',
-    navLap: 'LAP',
-    navGallery: 'Galeria',
-    navArchive: 'Arquivo',
-    navFinder: 'Finder',
-    navUpdates: 'Updates',
-    navDocs: 'Recursos',
-    navInspector: 'Inspetor',
     footerLegal: 'Legal',
     legalPrivacy: 'Privacidade',
     legalCookies: 'Cookies',
@@ -283,14 +175,6 @@ export const CHROME_MESSAGES: Readonly<Record<SupportedLocale, ChromeMessages>> 
     legalNotice: 'Aviso legal',
     languageSelector: 'Idioma',
     modeToggle: 'Modo de cor',
-    menuOpen: 'Abrir o menu',
-    menuClose: 'Fechar o menu',
-    signIn: 'Entrar em Numinia',
-    footerNavigation: 'Navegação',
-    footerResources: 'Recursos',
-    footerDataRepo: 'Repositório de dados',
-    footerSocial: 'Social',
-    footerHouse: 'Numen Games',
     footerThisSite: 'você está aqui',
     footerTagline:
       'Um mundo ao longo de três séculos. Sua crônica, sua cultura material — CC0 — e o jogo.',
@@ -390,138 +274,375 @@ export const LANDING_MESSAGES: Readonly<Record<SupportedLocale, LandingMessages>
   },
 };
 
-/** Finder island — every label the client component needs, resolved at build. */
-export interface FinderMessages {
-  readonly finderTitle: string;
-  readonly finderIntro: string;
+/**
+ * The Bazaar (v0.83.0) — the Finder rethought, the one way to navigate the
+ * city's digital goods. Every label the page and its island need, resolved
+ * at build. `{n}`, `{total}`, `{format}` and `{names}` are filled in.
+ */
+export interface BazaarMessages {
+  readonly title: string;
+  readonly lead: string;
+  /** The object pages' breadcrumb landmark. */
+  readonly breadcrumbLabel: string;
+  readonly searchLabel: string;
+  readonly searchPlaceholder: string;
+  readonly filtersLabel: string;
   readonly collectionsLabel: string;
-  readonly filesLabel: string;
+  readonly allLabel: string;
+  readonly formatsLabel: string;
+  readonly licenceLabel: string;
+  readonly licenceNote: string;
+  readonly countOne: string;
+  readonly countOther: string;
+  /** Said after the count while every good is CC0. */
+  readonly allCc0: string;
+  readonly sortLabel: string;
+  readonly sortRecent: string;
+  readonly sortName: string;
+  readonly gridLabel: string;
+  readonly noResults: string;
+  readonly clearFilters: string;
+  readonly cardLicence: string;
   readonly previewLabel: string;
   readonly emptyPreview: string;
-  readonly queueLabel: string;
-  readonly addToQueue: string;
-  readonly removeFromQueue: string;
-  readonly downloadAll: string;
+  readonly closePreview: string;
+  readonly viewIn3d: string;
   readonly download: string;
   readonly downloadUnavailable: string;
+  readonly addToQueue: string;
+  readonly inQueue: string;
+  readonly removeFromQueue: string;
+  readonly openCard: string;
+  readonly factFormat: string;
+  readonly factLicence: string;
+  readonly factKind: string;
+  readonly factCollection: string;
+  readonly queueLabel: string;
   readonly queueEmpty: string;
-  readonly categories: Readonly<Record<string, string>>;
+  readonly downloadAll: string;
+  readonly zipBusy: string;
+  readonly zipDone: string;
+  readonly zipPartial: string;
+  readonly zipFailed: string;
+  /** The first line of the README.txt that travels inside the zip. */
+  readonly zipReadme: string;
+  /** The kinds of goods, plural: the filter column. */
+  readonly categories: Readonly<Record<AssetCategory, string>>;
+  /** The kinds of goods, singular: the card's first line. */
+  readonly kinds: Readonly<Record<AssetCategory, string>>;
 }
 
-export const FINDER_MESSAGES: Readonly<Record<SupportedLocale, FinderMessages>> = {
+export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> = {
   es: {
-    finderTitle: 'Finder',
-    finderIntro: 'Explora las colecciones de la ciudad y descarga por lotes.',
+    title: 'Bazar',
+    lead: 'Objetos 3D, avatares, sonidos e imágenes para tu sede. Todo CC0: úsalo, cámbialo y llévatelo.',
+    breadcrumbLabel: 'Ruta de navegación',
+    searchLabel: 'Buscar en el Bazar',
+    searchPlaceholder: 'Busca un objeto: avatar, silla, sonido…',
+    filtersLabel: 'Filtros',
     collectionsLabel: 'Colecciones',
-    filesLabel: 'Archivos',
+    allLabel: 'Todo',
+    formatsLabel: 'Formato',
+    licenceLabel: 'Licencia',
+    licenceNote: 'Todo es CC0: úsalo, cámbialo y véndelo sin pedir permiso ni citar.',
+    countOne: '1 objeto',
+    countOther: '{n} objetos',
+    allCc0: 'todos CC0',
+    sortLabel: 'Orden',
+    sortRecent: 'Más recientes',
+    sortName: 'A–Z',
+    gridLabel: 'Objetos',
+    noResults: 'Nada con esos filtros.',
+    clearFilters: 'Quitar los filtros',
+    cardLicence: 'CC0 · libre, sin pedir permiso',
     previewLabel: 'Vista previa',
-    emptyPreview: 'Selecciona un archivo para previsualizarlo.',
-    queueLabel: 'Cola de descarga',
-    addToQueue: 'Añadir a la cola',
-    removeFromQueue: 'Quitar de la cola',
-    downloadAll: 'Descargar todo',
-    download: 'Descargar',
+    emptyPreview: 'Elige un objeto para verlo aquí.',
+    closePreview: 'Cerrar',
+    viewIn3d: 'Verlo en 3D',
+    download: 'Descargar {format}',
     downloadUnavailable: 'Descarga no disponible',
-    queueEmpty: 'La cola está vacía.',
+    addToQueue: 'A la cola',
+    inQueue: 'En la cola',
+    removeFromQueue: 'Quitar de la cola',
+    openCard: 'Abrir la ficha',
+    factFormat: 'Formato',
+    factLicence: 'Licencia',
+    factKind: 'Tipo',
+    factCollection: 'Colección',
+    queueLabel: 'Cola de descarga',
+    queueEmpty: 'Vacía. Añade objetos con «A la cola» y bájalos juntos en un .zip.',
+    downloadAll: 'Descargar todo (.zip)',
+    zipBusy: 'Preparando el .zip: {n} de {total}…',
+    zipDone: 'Hecho: el .zip ya se está descargando.',
+    zipPartial: 'El .zip va sin {names}: no respondieron. Bájalos uno a uno desde su ficha.',
+    zipFailed:
+      'No se pudo preparar el .zip: ningún archivo respondió. Bájalos uno a uno desde su ficha.',
+    zipReadme: 'Del Bazar de Numinia. Cada archivo, con su licencia y su ficha:',
     categories: {
-      models: 'Modelos',
       avatars: 'Avatares',
+      models: 'Modelos 3D',
       worlds: 'Mundos',
-      audio: 'Audio',
+      audio: 'Sonido',
       video: 'Vídeo',
       images: 'Imágenes',
     },
+    kinds: {
+      avatars: 'Avatar',
+      models: 'Modelo 3D',
+      worlds: 'Mundo',
+      audio: 'Sonido',
+      video: 'Vídeo',
+      images: 'Imagen',
+    },
   },
   en: {
-    finderTitle: 'Finder',
-    finderIntro: 'Browse the city collections and batch-download.',
+    title: 'Bazaar',
+    lead: '3D objects, avatars, sounds and images for your home. All CC0: use it, change it, take it with you.',
+    breadcrumbLabel: 'Breadcrumb',
+    searchLabel: 'Search the Bazaar',
+    searchPlaceholder: 'Look for an object: avatar, chair, sound…',
+    filtersLabel: 'Filters',
     collectionsLabel: 'Collections',
-    filesLabel: 'Files',
+    allLabel: 'All',
+    formatsLabel: 'Format',
+    licenceLabel: 'Licence',
+    licenceNote: 'Everything is CC0: use it, change it and sell it without asking or crediting.',
+    countOne: '1 object',
+    countOther: '{n} objects',
+    allCc0: 'all CC0',
+    sortLabel: 'Order',
+    sortRecent: 'Newest',
+    sortName: 'A–Z',
+    gridLabel: 'Objects',
+    noResults: 'Nothing with those filters.',
+    clearFilters: 'Clear the filters',
+    cardLicence: 'CC0 · free, no permission needed',
     previewLabel: 'Preview',
-    emptyPreview: 'Select a file to preview it.',
-    queueLabel: 'Download queue',
-    addToQueue: 'Add to queue',
-    removeFromQueue: 'Remove from queue',
-    downloadAll: 'Download all',
-    download: 'Download',
+    emptyPreview: 'Pick an object to see it here.',
+    closePreview: 'Close',
+    viewIn3d: 'See it in 3D',
+    download: 'Download {format}',
     downloadUnavailable: 'Download unavailable',
-    queueEmpty: 'The queue is empty.',
+    addToQueue: 'Add to queue',
+    inQueue: 'In the queue',
+    removeFromQueue: 'Remove from the queue',
+    openCard: 'Open its page',
+    factFormat: 'Format',
+    factLicence: 'Licence',
+    factKind: 'Kind',
+    factCollection: 'Collection',
+    queueLabel: 'Download queue',
+    queueEmpty: 'Empty. Add objects with “Add to queue” and get them together in one .zip.',
+    downloadAll: 'Download all (.zip)',
+    zipBusy: 'Preparing the .zip: {n} of {total}…',
+    zipDone: 'Done: your .zip is downloading.',
+    zipPartial:
+      'The .zip goes without {names}: they did not answer. Download them one by one from their page.',
+    zipFailed:
+      'The .zip could not be prepared: no file answered. Download them one by one from their page.',
+    zipReadme: 'From the Numinia Bazaar. Each file, with its licence and its page:',
     categories: {
-      models: 'Models',
       avatars: 'Avatars',
+      models: '3D models',
       worlds: 'Worlds',
-      audio: 'Audio',
+      audio: 'Sound',
       video: 'Video',
       images: 'Images',
     },
+    kinds: {
+      avatars: 'Avatar',
+      models: '3D model',
+      worlds: 'World',
+      audio: 'Sound',
+      video: 'Video',
+      images: 'Image',
+    },
   },
   ja: {
-    finderTitle: 'Finder',
-    finderIntro: '都市のコレクションを探索して、まとめてダウンロード。',
+    title: 'バザール',
+    lead: '拠点のための3Dオブジェクト、アバター、サウンド、画像。すべてCC0:使って、変えて、持ち帰ってください。',
+    breadcrumbLabel: 'パンくずリスト',
+    searchLabel: 'バザールを検索',
+    searchPlaceholder: 'オブジェクトを探す:アバター、椅子、サウンド…',
+    filtersLabel: '絞り込み',
     collectionsLabel: 'コレクション',
-    filesLabel: 'ファイル',
+    allLabel: 'すべて',
+    formatsLabel: 'フォーマット',
+    licenceLabel: 'ライセンス',
+    licenceNote: 'すべてCC0です。許可も表記もなしで、使って、変えて、販売できます。',
+    countOne: '1 件',
+    countOther: '{n} 件',
+    allCc0: 'すべてCC0',
+    sortLabel: '並び順',
+    sortRecent: '新しい順',
+    sortName: 'A–Z',
+    gridLabel: 'オブジェクト',
+    noResults: 'その条件に合うものはありません。',
+    clearFilters: '絞り込みを解除',
+    cardLicence: 'CC0 · 許可不要で自由に',
     previewLabel: 'プレビュー',
-    emptyPreview: 'ファイルを選択するとプレビューできます。',
-    queueLabel: 'ダウンロードキュー',
-    addToQueue: 'キューに追加',
-    removeFromQueue: 'キューから削除',
-    downloadAll: 'すべてダウンロード',
-    download: 'ダウンロード',
+    emptyPreview: 'オブジェクトを選ぶとここに表示されます。',
+    closePreview: '閉じる',
+    viewIn3d: '3Dで見る',
+    download: '{format} をダウンロード',
     downloadUnavailable: 'ダウンロード不可',
-    queueEmpty: 'キューは空です。',
+    addToQueue: 'キューに追加',
+    inQueue: 'キューに追加済み',
+    removeFromQueue: 'キューから削除',
+    openCard: '詳細ページを開く',
+    factFormat: 'フォーマット',
+    factLicence: 'ライセンス',
+    factKind: '種類',
+    factCollection: 'コレクション',
+    queueLabel: 'ダウンロードキュー',
+    queueEmpty: '空です。「キューに追加」で集めて、1つの .zip でまとめてダウンロードできます。',
+    downloadAll: 'すべてダウンロード (.zip)',
+    zipBusy: '.zip を準備中: {total} 件中 {n} 件…',
+    zipDone: '完了: .zip のダウンロードを開始しました。',
+    zipPartial:
+      '{names} は応答がなかったため、.zip に含まれていません。詳細ページから個別にダウンロードしてください。',
+    zipFailed:
+      '.zip を準備できませんでした。どのファイルも応答しませんでした。詳細ページから個別にダウンロードしてください。',
+    zipReadme: 'ヌミニアのバザールより。各ファイルとそのライセンス、詳細ページ:',
     categories: {
-      models: 'モデル',
       avatars: 'アバター',
+      models: '3Dモデル',
       worlds: 'ワールド',
-      audio: 'オーディオ',
+      audio: 'サウンド',
+      video: 'ビデオ',
+      images: '画像',
+    },
+    kinds: {
+      avatars: 'アバター',
+      models: '3Dモデル',
+      worlds: 'ワールド',
+      audio: 'サウンド',
       video: 'ビデオ',
       images: '画像',
     },
   },
   ko: {
-    finderTitle: 'Finder',
-    finderIntro: '도시의 컬렉션을 둘러보고 일괄 다운로드하세요.',
+    title: '바자르',
+    lead: '거점을 위한 3D 오브젝트, 아바타, 사운드, 이미지. 모두 CC0: 쓰고, 바꾸고, 가져가세요.',
+    breadcrumbLabel: '이동 경로',
+    searchLabel: '바자르 검색',
+    searchPlaceholder: '오브젝트 찾기: 아바타, 의자, 사운드…',
+    filtersLabel: '필터',
     collectionsLabel: '컬렉션',
-    filesLabel: '파일',
+    allLabel: '전체',
+    formatsLabel: '포맷',
+    licenceLabel: '라이선스',
+    licenceNote: '모두 CC0입니다. 허락도 출처 표시도 없이 쓰고, 바꾸고, 팔 수 있습니다.',
+    countOne: '오브젝트 1개',
+    countOther: '오브젝트 {n}개',
+    allCc0: '모두 CC0',
+    sortLabel: '정렬',
+    sortRecent: '최신순',
+    sortName: 'A–Z',
+    gridLabel: '오브젝트',
+    noResults: '이 필터에 맞는 항목이 없습니다.',
+    clearFilters: '필터 지우기',
+    cardLicence: 'CC0 · 허락 없이 자유롭게',
     previewLabel: '미리보기',
-    emptyPreview: '파일을 선택하면 미리 볼 수 있습니다.',
-    queueLabel: '다운로드 대기열',
-    addToQueue: '대기열에 추가',
-    removeFromQueue: '대기열에서 제거',
-    downloadAll: '모두 다운로드',
-    download: '다운로드',
+    emptyPreview: '오브젝트를 고르면 여기에 보입니다.',
+    closePreview: '닫기',
+    viewIn3d: '3D로 보기',
+    download: '{format} 다운로드',
     downloadUnavailable: '다운로드 불가',
-    queueEmpty: '대기열이 비어 있습니다.',
+    addToQueue: '대기열에 추가',
+    inQueue: '대기열에 있음',
+    removeFromQueue: '대기열에서 빼기',
+    openCard: '상세 페이지 열기',
+    factFormat: '포맷',
+    factLicence: '라이선스',
+    factKind: '종류',
+    factCollection: '컬렉션',
+    queueLabel: '다운로드 대기열',
+    queueEmpty: '비어 있습니다. «대기열에 추가»로 모아서 .zip 하나로 함께 받으세요.',
+    downloadAll: '모두 다운로드 (.zip)',
+    zipBusy: '.zip 준비 중: {total}개 중 {n}개…',
+    zipDone: '완료: .zip 다운로드가 시작되었습니다.',
+    zipPartial: '{names}은(는) 응답하지 않아 .zip에서 빠졌습니다. 상세 페이지에서 하나씩 받으세요.',
+    zipFailed:
+      '.zip을 준비하지 못했습니다. 응답한 파일이 없습니다. 상세 페이지에서 하나씩 받으세요.',
+    zipReadme: '누미니아 바자르에서. 각 파일과 라이선스, 상세 페이지:',
     categories: {
-      models: '모델',
       avatars: '아바타',
+      models: '3D 모델',
       worlds: '월드',
-      audio: '오디오',
+      audio: '사운드',
+      video: '비디오',
+      images: '이미지',
+    },
+    kinds: {
+      avatars: '아바타',
+      models: '3D 모델',
+      worlds: '월드',
+      audio: '사운드',
       video: '비디오',
       images: '이미지',
     },
   },
   'pt-br': {
-    finderTitle: 'Finder',
-    finderIntro: 'Explore as coleções da cidade e baixe em lote.',
+    title: 'Bazar',
+    lead: 'Objetos 3D, avatares, sons e imagens para a sua sede. Tudo CC0: use, mude e leve com você.',
+    breadcrumbLabel: 'Trilha de navegação',
+    searchLabel: 'Buscar no Bazar',
+    searchPlaceholder: 'Procure um objeto: avatar, cadeira, som…',
+    filtersLabel: 'Filtros',
     collectionsLabel: 'Coleções',
-    filesLabel: 'Arquivos',
+    allLabel: 'Tudo',
+    formatsLabel: 'Formato',
+    licenceLabel: 'Licença',
+    licenceNote: 'Tudo é CC0: use, mude e venda sem pedir permissão nem citar.',
+    countOne: '1 objeto',
+    countOther: '{n} objetos',
+    allCc0: 'todos CC0',
+    sortLabel: 'Ordem',
+    sortRecent: 'Mais recentes',
+    sortName: 'A–Z',
+    gridLabel: 'Objetos',
+    noResults: 'Nada com esses filtros.',
+    clearFilters: 'Limpar os filtros',
+    cardLicence: 'CC0 · livre, sem pedir permissão',
     previewLabel: 'Pré-visualização',
-    emptyPreview: 'Selecione um arquivo para visualizá-lo.',
-    queueLabel: 'Fila de download',
-    addToQueue: 'Adicionar à fila',
-    removeFromQueue: 'Remover da fila',
-    downloadAll: 'Baixar tudo',
-    download: 'Baixar',
+    emptyPreview: 'Escolha um objeto para vê-lo aqui.',
+    closePreview: 'Fechar',
+    viewIn3d: 'Ver em 3D',
+    download: 'Baixar {format}',
     downloadUnavailable: 'Download indisponível',
-    queueEmpty: 'A fila está vazia.',
+    addToQueue: 'Para a fila',
+    inQueue: 'Na fila',
+    removeFromQueue: 'Tirar da fila',
+    openCard: 'Abrir a ficha',
+    factFormat: 'Formato',
+    factLicence: 'Licença',
+    factKind: 'Tipo',
+    factCollection: 'Coleção',
+    queueLabel: 'Fila de download',
+    queueEmpty: 'Vazia. Adicione objetos com «Para a fila» e baixe todos juntos em um .zip.',
+    downloadAll: 'Baixar tudo (.zip)',
+    zipBusy: 'Preparando o .zip: {n} de {total}…',
+    zipDone: 'Pronto: o seu .zip está baixando.',
+    zipPartial: 'O .zip vai sem {names}: não responderam. Baixe-os um a um pela ficha.',
+    zipFailed:
+      'Não foi possível preparar o .zip: nenhum arquivo respondeu. Baixe-os um a um pela ficha.',
+    zipReadme: 'Do Bazar de Numinia. Cada arquivo, com a sua licença e a sua ficha:',
     categories: {
-      models: 'Modelos',
       avatars: 'Avatares',
+      models: 'Modelos 3D',
       worlds: 'Mundos',
-      audio: 'Áudio',
+      audio: 'Som',
       video: 'Vídeo',
       images: 'Imagens',
+    },
+    kinds: {
+      avatars: 'Avatar',
+      models: 'Modelo 3D',
+      worlds: 'Mundo',
+      audio: 'Som',
+      video: 'Vídeo',
+      images: 'Imagem',
     },
   },
 };
@@ -585,252 +706,10 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
   },
 };
 
-/** Docs (resources) section shell. */
-export interface DocsMessages {
-  readonly docsTitle: string;
-  readonly sidebarLabel: string;
-  readonly previousLabel: string;
-  readonly nextLabel: string;
-  readonly legacyBanner: string;
-  readonly languageNotice: string | null;
-}
-
-export const DOCS_MESSAGES: Readonly<Record<SupportedLocale, DocsMessages>> = {
-  es: {
-    docsTitle: 'Recursos',
-    sidebarLabel: 'Documentación',
-    previousLabel: 'Anterior',
-    nextLabel: 'Siguiente',
-    legacyBanner:
-      'Esta página describe la arquitectura anterior de la plataforma y está pendiente de reescritura.',
-    languageNotice: 'Este contenido está disponible solo en inglés y japonés por ahora.',
-  },
-  en: {
-    docsTitle: 'Resources',
-    sidebarLabel: 'Documentation',
-    previousLabel: 'Previous',
-    nextLabel: 'Next',
-    legacyBanner:
-      'This page describes the previous platform architecture and is pending a rewrite.',
-    languageNotice: null,
-  },
-  ja: {
-    docsTitle: 'リソース',
-    sidebarLabel: 'ドキュメント',
-    previousLabel: '前へ',
-    nextLabel: '次へ',
-    legacyBanner: 'このページは旧プラットフォーム構成を説明しており、書き直し予定です。',
-    languageNotice: null,
-  },
-  ko: {
-    docsTitle: '리소스',
-    sidebarLabel: '문서',
-    previousLabel: '이전',
-    nextLabel: '다음',
-    legacyBanner: '이 페이지는 이전 플랫폼 아키텍처를 설명하며 재작성될 예정입니다.',
-    languageNotice: '이 콘텐츠는 현재 영어와 일본어로만 제공됩니다.',
-  },
-  'pt-br': {
-    docsTitle: 'Recursos',
-    sidebarLabel: 'Documentação',
-    previousLabel: 'Anterior',
-    nextLabel: 'Próximo',
-    legacyBanner: 'Esta página descreve a arquitetura anterior da plataforma e aguarda reescrita.',
-    languageNotice: 'Este conteúdo está disponível apenas em inglês e japonês por enquanto.',
-  },
-};
-
-/** 3D inspector page + island labels. */
-export interface InspectorMessages {
-  readonly inspectorTitle: string;
-  readonly inspectorIntro: string;
-  readonly dropHint: string;
-  readonly pickFile: string;
-  readonly unsupported: string;
-  readonly loadError: string;
-  readonly statsTitle: string;
-  readonly fileLabel: string;
-  readonly sizeLabel: string;
-  readonly privacyNote: string;
-  readonly statLabels: Readonly<
-    Record<
-      | 'meshes'
-      | 'vertices'
-      | 'triangles'
-      | 'materials'
-      | 'textures'
-      | 'animations'
-      | 'vrmName'
-      | 'vrmAuthors',
-      string
-    >
-  >;
-}
-
-export const INSPECTOR_MESSAGES: Readonly<Record<SupportedLocale, InspectorMessages>> = {
-  es: {
-    inspectorTitle: 'Inspector 3D',
-    inspectorIntro: 'Inspecciona un GLB o VRM local: vista previa y metadatos.',
-    dropHint: 'Arrastra aquí un archivo .glb, .gltf o .vrm',
-    pickFile: 'o elige un archivo',
-    unsupported: 'Formato no soportado — usa .glb, .gltf o .vrm',
-    loadError: 'No se pudo leer el modelo (archivo corrupto o incompatible).',
-    statsTitle: 'Metadatos',
-    fileLabel: 'Archivo',
-    sizeLabel: 'Tamaño',
-    privacyNote: 'Todo ocurre en tu navegador: el archivo nunca se sube.',
-    statLabels: {
-      meshes: 'Mallas',
-      vertices: 'Vértices',
-      triangles: 'Triángulos',
-      materials: 'Materiales',
-      textures: 'Texturas',
-      animations: 'Animaciones',
-      vrmName: 'Nombre VRM',
-      vrmAuthors: 'Autoría VRM',
-    },
-  },
-  en: {
-    inspectorTitle: '3D Inspector',
-    inspectorIntro: 'Inspect a local GLB or VRM: live preview plus metadata.',
-    dropHint: 'Drop a .glb, .gltf or .vrm file here',
-    pickFile: 'or pick a file',
-    unsupported: 'Unsupported format — use .glb, .gltf or .vrm',
-    loadError: 'The model could not be read (corrupt or incompatible file).',
-    statsTitle: 'Metadata',
-    fileLabel: 'File',
-    sizeLabel: 'Size',
-    privacyNote: 'Everything happens in your browser: the file is never uploaded.',
-    statLabels: {
-      meshes: 'Meshes',
-      vertices: 'Vertices',
-      triangles: 'Triangles',
-      materials: 'Materials',
-      textures: 'Textures',
-      animations: 'Animations',
-      vrmName: 'VRM name',
-      vrmAuthors: 'VRM authors',
-    },
-  },
-  ja: {
-    inspectorTitle: '3Dインスペクター',
-    inspectorIntro: 'ローカルのGLB/VRMを検査:プレビューとメタデータ。',
-    dropHint: '.glb / .gltf / .vrm ファイルをここにドロップ',
-    pickFile: 'またはファイルを選択',
-    unsupported: '非対応フォーマットです — .glb / .gltf / .vrm を使ってください',
-    loadError: 'モデルを読み込めませんでした(破損または非互換)。',
-    statsTitle: 'メタデータ',
-    fileLabel: 'ファイル',
-    sizeLabel: 'サイズ',
-    privacyNote: 'すべてブラウザ内で完結します。ファイルはアップロードされません。',
-    statLabels: {
-      meshes: 'メッシュ',
-      vertices: '頂点',
-      triangles: '三角形',
-      materials: 'マテリアル',
-      textures: 'テクスチャ',
-      animations: 'アニメーション',
-      vrmName: 'VRM名',
-      vrmAuthors: 'VRM作者',
-    },
-  },
-  ko: {
-    inspectorTitle: '3D 인스펙터',
-    inspectorIntro: '로컬 GLB/VRM 검사: 미리보기와 메타데이터.',
-    dropHint: '.glb / .gltf / .vrm 파일을 여기에 끌어다 놓으세요',
-    pickFile: '또는 파일 선택',
-    unsupported: '지원하지 않는 형식 — .glb / .gltf / .vrm을 사용하세요',
-    loadError: '모델을 읽을 수 없습니다(손상되었거나 호환되지 않는 파일).',
-    statsTitle: '메타데이터',
-    fileLabel: '파일',
-    sizeLabel: '크기',
-    privacyNote: '모든 처리는 브라우저 안에서 이루어지며 파일은 업로드되지 않습니다.',
-    statLabels: {
-      meshes: '메시',
-      vertices: '정점',
-      triangles: '삼각형',
-      materials: '머티리얼',
-      textures: '텍스처',
-      animations: '애니메이션',
-      vrmName: 'VRM 이름',
-      vrmAuthors: 'VRM 제작자',
-    },
-  },
-  'pt-br': {
-    inspectorTitle: 'Inspetor 3D',
-    inspectorIntro: 'Inspecione um GLB ou VRM local: prévia e metadados.',
-    dropHint: 'Arraste um arquivo .glb, .gltf ou .vrm aqui',
-    pickFile: 'ou escolha um arquivo',
-    unsupported: 'Formato não suportado — use .glb, .gltf ou .vrm',
-    loadError: 'Não foi possível ler o modelo (arquivo corrompido ou incompatível).',
-    statsTitle: 'Metadados',
-    fileLabel: 'Arquivo',
-    sizeLabel: 'Tamanho',
-    privacyNote: 'Tudo acontece no seu navegador: o arquivo nunca é enviado.',
-    statLabels: {
-      meshes: 'Malhas',
-      vertices: 'Vértices',
-      triangles: 'Triângulos',
-      materials: 'Materiais',
-      textures: 'Texturas',
-      animations: 'Animações',
-      vrmName: 'Nome VRM',
-      vrmAuthors: 'Autoria VRM',
-    },
-  },
-};
-
-export interface GalleryMessages {
-  readonly galleryTitle: string;
-  readonly galleryIntro: string;
-  readonly emptyState: string;
-  readonly viewInArchive: string;
-}
-
-export const GALLERY_MESSAGES: Readonly<Record<SupportedLocale, GalleryMessages>> = {
-  es: {
-    galleryTitle: 'Galería',
-    galleryIntro: 'Los avatares de Numinia, colección a colección. Todos CC0, todos tuyos.',
-    emptyState: 'La galería está vacía por ahora.',
-    viewInArchive: 'Ver en el Archivo',
-  },
-  en: {
-    galleryTitle: 'Gallery',
-    galleryIntro: 'The avatars of Numinia, collection by collection. All CC0, all yours.',
-    emptyState: 'The gallery is empty for now.',
-    viewInArchive: 'View in the Archive',
-  },
-  ja: {
-    galleryTitle: 'ギャラリー',
-    galleryIntro: 'ヌミニアのアバターをコレクションごとに。すべてCC0、すべてあなたのもの。',
-    emptyState: 'ギャラリーはまだ空です。',
-    viewInArchive: 'アーカイブで見る',
-  },
-  ko: {
-    galleryTitle: '갤러리',
-    galleryIntro: '누미니아의 아바타를 컬렉션별로. 전부 CC0, 전부 당신의 것.',
-    emptyState: '갤러리가 아직 비어 있습니다.',
-    viewInArchive: '아카이브에서 보기',
-  },
-  'pt-br': {
-    galleryTitle: 'Galeria',
-    galleryIntro: 'Os avatares de Numinia, coleção por coleção. Todos CC0, todos seus.',
-    emptyState: 'A galeria está vazia por enquanto.',
-    viewInArchive: 'Ver no Arquivo',
-  },
-};
-
 export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>> = {
   es: {
-    archiveTitle: 'Archivo',
-    archiveIntro: 'Bienes digitales CC0 de la ciudad de Numinia: úsalos, remézclalos, mejóralos.',
-    searchPlaceholder: 'Buscar en el archivo…',
-    allFormats: 'Todos',
     download: 'Descargar',
     downloadUnavailable: 'Descarga no disponible',
-    emptyState: 'El archivo está vacío por ahora.',
-    noResults: 'Nada coincide con tu búsqueda.',
-    backToArchive: '← Volver al Archivo',
     category: 'Categoría',
     format: 'Formato',
     license: 'Licencia',
@@ -848,18 +727,10 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n} copias declaradas, huella y tamaño en la ficha',
     summaDownloadDepot: 'Descargar del depósito',
     summaReadCard: 'Leer la ficha en numinia.org',
-    summaMark: 'Ficha en el Summa',
   },
   en: {
-    archiveTitle: 'Archive',
-    archiveIntro: 'CC0 digital goods from the city of Numinia: use them, remix them, improve them.',
-    searchPlaceholder: 'Search the archive…',
-    allFormats: 'All',
     download: 'Download',
     downloadUnavailable: 'Download unavailable',
-    emptyState: 'The archive is empty for now.',
-    noResults: 'Nothing matches your search.',
-    backToArchive: '← Back to the Archive',
     category: 'Category',
     format: 'Format',
     license: 'License',
@@ -877,19 +748,10 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n} copies declared, hash and size in the card',
     summaDownloadDepot: 'Download from the depot',
     summaReadCard: 'Read the card on numinia.org',
-    summaMark: 'Card in the Summa',
   },
   ja: {
-    archiveTitle: 'アーカイブ',
-    archiveIntro:
-      'ヌミニアの都市が贈るCC0デジタルグッズ。使って、リミックスして、良くしてください。',
-    searchPlaceholder: 'アーカイブを検索…',
-    allFormats: 'すべて',
     download: 'ダウンロード',
     downloadUnavailable: 'ダウンロード不可',
-    emptyState: 'アーカイブはまだ空です。',
-    noResults: '検索に一致するものがありません。',
-    backToArchive: '← アーカイブへ戻る',
     category: 'カテゴリー',
     format: 'フォーマット',
     license: 'ライセンス',
@@ -907,18 +769,10 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n} 件のコピーを宣言、ハッシュとサイズはカードに記載',
     summaDownloadDepot: 'デポからダウンロード',
     summaReadCard: 'numinia.org でカードを読む',
-    summaMark: 'スンマの記録カード',
   },
   ko: {
-    archiveTitle: '아카이브',
-    archiveIntro: '누미니아 도시의 CC0 디지털 굿즈 — 쓰고, 리믹스하고, 더 좋게 만드세요.',
-    searchPlaceholder: '아카이브 검색…',
-    allFormats: '전체',
     download: '다운로드',
     downloadUnavailable: '다운로드 불가',
-    emptyState: '아카이브가 아직 비어 있습니다.',
-    noResults: '검색과 일치하는 항목이 없습니다.',
-    backToArchive: '← 아카이브로 돌아가기',
     category: '카테고리',
     format: '포맷',
     license: '라이선스',
@@ -936,18 +790,10 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n}개의 사본 선언, 해시와 크기는 카드에',
     summaDownloadDepot: '보관소에서 다운로드',
     summaReadCard: 'numinia.org에서 카드 읽기',
-    summaMark: '수마의 기록 카드',
   },
   'pt-br': {
-    archiveTitle: 'Arquivo',
-    archiveIntro: 'Bens digitais CC0 da cidade de Numinia: use, remixe, melhore.',
-    searchPlaceholder: 'Buscar no arquivo…',
-    allFormats: 'Todos',
     download: 'Baixar',
     downloadUnavailable: 'Download indisponível',
-    emptyState: 'O arquivo está vazio por enquanto.',
-    noResults: 'Nada corresponde à sua busca.',
-    backToArchive: '← Voltar ao Arquivo',
     category: 'Categoria',
     format: 'Formato',
     license: 'Licença',
@@ -965,6 +811,5 @@ export const ARCHIVE_MESSAGES: Readonly<Record<SupportedLocale, ArchiveMessages>
     summaCopiesCount: '{n} cópias declaradas, hash e tamanho na ficha',
     summaDownloadDepot: 'Baixar do depósito',
     summaReadCard: 'Ler a ficha em numinia.org',
-    summaMark: 'Ficha na Summa',
   },
 };

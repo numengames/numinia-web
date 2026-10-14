@@ -1,48 +1,10 @@
 /**
- * Pillar pages copy (MISSION-004): the Assets hub and the LAP — platform
- * UI text, so fully localized in the 5 locales (not deep lore).
+ * Pillar pages copy (MISSION-004): the LAP — platform UI text, so fully
+ * localized in the 5 locales (not deep lore). The Assets hub, its sibling,
+ * went out with the other doors to the digital goods (v0.83.0, the Bazaar).
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-
-export interface AssetsHubMessages {
-  readonly assetsTitle: string;
-  readonly assetsIntro: string;
-  readonly resourcesCard: string;
-}
-
-export const ASSETS_HUB_MESSAGES: Readonly<Record<SupportedLocale, AssetsHubMessages>> = {
-  es: {
-    assetsTitle: 'Assets',
-    assetsIntro:
-      'Los bienes digitales de Numinia para construir mundos: avatares, modelos, escenarios, audio y más — todos CC0, en formatos abiertos.',
-    resourcesCard: 'Recursos: guías sobre formatos, licencias y filosofía del proyecto.',
-  },
-  en: {
-    assetsTitle: 'Assets',
-    assetsIntro:
-      'Numinia’s digital goods for building worlds: avatars, models, scenes, audio and more — all CC0, in open formats.',
-    resourcesCard: 'Resources: guides on formats, licenses, and the project philosophy.',
-  },
-  ja: {
-    assetsTitle: 'アセット',
-    assetsIntro:
-      '世界を作るためのヌミニアのデジタルグッズ:アバター、モデル、シーン、オーディオなど — すべてCC0、オープンフォーマット。',
-    resourcesCard: 'リソース:フォーマット、ライセンス、プロジェクト哲学のガイド。',
-  },
-  ko: {
-    assetsTitle: '에셋',
-    assetsIntro:
-      '월드를 만들기 위한 누미니아의 디지털 굿즈: 아바타, 모델, 씬, 오디오 등 — 전부 CC0, 개방형 포맷.',
-    resourcesCard: '리소스: 포맷, 라이선스, 프로젝트 철학 가이드.',
-  },
-  'pt-br': {
-    assetsTitle: 'Assets',
-    assetsIntro:
-      'Os bens digitais de Numinia para construir mundos: avatares, modelos, cenários, áudio e mais — todos CC0, em formatos abertos.',
-    resourcesCard: 'Recursos: guias sobre formatos, licenças e a filosofia do projeto.',
-  },
-};
 
 export interface LapMessages {
   readonly lapTitle: string;

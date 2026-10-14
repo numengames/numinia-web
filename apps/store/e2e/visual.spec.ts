@@ -21,13 +21,10 @@ import { buildTriangleGlb } from './support/triangle-glb';
 // The front door left this list on 2026-10-14: it is drawn from the
 // communities register (rituals come and go with the files), so its pixels
 // change by design; its gates are the acceptance scenarios and a11y.
-const PAGES = [
-  { path: '/archive/', name: 'archive-index' },
-  { path: '/es/archive/', name: 'archive-index-es' },
-  { path: '/gallery/', name: 'gallery' },
-  { path: '/es/gallery/', name: 'gallery-es' },
-  { path: '/finder/', name: 'finder' },
-] as const;
+// The Archive's index and the Gallery left it in v0.83.0 with their pages
+// (they redirect to the Bazaar); the Finder became the Bazaar, whose
+// baseline is rendered with the others once the new chrome lands.
+const PAGES = [{ path: '/bazaar/', name: 'bazaar' }] as const;
 
 async function settle(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
@@ -70,11 +67,12 @@ test('visual: archive detail (stable asset, viewer masked)', async ({ page }) =>
       body: buildTriangleGlb(),
     }),
   );
-  // Navigate via the index so the test breaks loudly if the archive is empty.
-  await page.goto('/archive/');
-  await settle(page);
-  const firstCard = page.locator('[data-metric="archive-card"]').first();
-  await firstCard.click();
+  // Navigate via the Bazaar so the test breaks loudly if it is empty: its
+  // first card (newest first, like the Archive's index was), then its page.
+  await page.goto('/bazaar/');
+  await page.waitForSelector('[data-bazaar][data-hydrated]');
+  await page.locator('[data-metric="bazaar-card"]').first().click();
+  await page.locator('[data-metric="bazaar-open-card"]').click();
   await page.waitForURL(/\/archive\/.+/);
   await settle(page);
   await expect(page).toHaveScreenshot('archive-detail.png', {

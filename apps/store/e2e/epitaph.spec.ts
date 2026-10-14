@@ -1,5 +1,7 @@
 /**
- * The epitaph (CAN-002): the skull that ends the footer's closing line.
+ * The epitaph (CAN-002): the skull that ends the footer's closing line —
+ * since the app shell (v0.83.0) at the foot of the sidebar on a desktop and
+ * at the end of the page on a phone, one footer either way.
  * Hover or focus shows it, a click toggles it (aria-expanded), Escape closes
  * it. English on every locale; no navigation.
  */
@@ -28,14 +30,31 @@ test.describe('footer epitaph', () => {
     await expect(tip).toBeHidden();
   });
 
-  test('keyboard focus shows it, and the skull sits after the build line', async ({ page }) => {
+  test('keyboard focus shows it, and the skull closes the signature line', async ({ page }) => {
     await page.goto('/');
     const skull = page.locator('footer').getByRole('button', { name: 'Epitaph' });
     await skull.focus();
     await expect(page.locator('#footer-epitaph')).toBeVisible();
-    const build = await page.locator('footer .build').boundingBox();
+    const signature = await page.locator('footer .pie-firma').boundingBox();
     const box = await skull.boundingBox();
-    expect(box!.x).toBeGreaterThan(build!.x + build!.width);
+    expect(box!.x).toBeGreaterThan(signature!.x + signature!.width);
+  });
+
+  test('on a desktop the bubble stays inside the window, the sidebar folded too', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/es/');
+    const skull = page.locator('footer').getByRole('button', { name: 'Epitaph' });
+    for (const fold of [false, true]) {
+      if (fold) await page.locator('[data-metric="nav-collapse"]').click();
+      await skull.click();
+      const tip = await page.locator('#footer-epitaph').boundingBox();
+      expect(tip!.x).toBeGreaterThanOrEqual(0);
+      expect(tip!.y).toBeGreaterThanOrEqual(0);
+      expect(tip!.y + tip!.height).toBeLessThanOrEqual(900);
+      await page.keyboard.press('Escape');
+    }
   });
 
   test('a 44px target on a phone', async ({ page }) => {

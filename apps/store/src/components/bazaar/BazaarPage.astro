@@ -1,0 +1,649 @@
+---
+/**
+ * The Bazaar's page (v0.83.0): its title and lead, then the island — the
+ * Finder rethought, at the full width of the platform surfaces.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BAZAAR_MESSAGES } from '../../i18n/messages';
+import { loadBazaarItems } from '../../lib/bazaar';
+import { Bazaar } from './Bazaar';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = BAZAAR_MESSAGES[locale];
+const items = await loadBazaarItems();
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead} wide>
+  <header class="bazaar-cabeza">
+    <h1>{t.title}</h1>
+    <p>{t.lead}</p>
+  </header>
+  <Bazaar client:load items={items} labels={t} locale={locale} />
+</BaseLayout>
+
+<style>
+  .bazaar-cabeza {
+    margin-bottom: var(--s5);
+  }
+  .bazaar-cabeza h1 {
+    margin: 0 0 var(--s2);
+  }
+  .bazaar-cabeza p {
+    max-width: 62ch;
+    margin: 0;
+    font-size: 1.125rem;
+    color: var(--texto-2);
+  }
+</style>
+
+<style is:global>
+  /* Island internals — global by necessity (Astro scoping stops at React).
+     Three panes from 74rem (the island's WIDE query): filters, cards,
+     preview + queue. Below it the preview opens as a sheet; below 54rem
+     the filters ride above the cards as rows of chips. */
+  [data-bazaar] {
+    --bazaar-arriba: 88px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s5);
+    align-items: start;
+  }
+  [data-bazaar] > * {
+    min-width: 0;
+  }
+  [data-bazaar] ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  [data-bazaar] .glyph {
+    display: inline-flex;
+    flex: none;
+  }
+  [data-bazaar] .glyph svg {
+    width: 100%;
+    height: 100%;
+  }
+  [data-bazaar] .mono {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 54rem) {
+    [data-bazaar] {
+      grid-template-columns: 12.5rem minmax(0, 1fr);
+    }
+    [data-bazaar] .bazaar-filters {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    [data-bazaar] .centro {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+    [data-bazaar] .lado {
+      grid-column: 1;
+      grid-row: 2;
+    }
+  }
+  @media (min-width: 74rem) {
+    [data-bazaar] {
+      grid-template-columns: 13rem minmax(0, 1fr) 21rem;
+    }
+    [data-bazaar] .centro {
+      grid-row: 1;
+    }
+    [data-bazaar] .lado {
+      grid-column: 3;
+      grid-row: 1;
+    }
+    [data-bazaar] .bazaar-filters,
+    [data-bazaar] .lado {
+      position: sticky;
+      top: var(--bazaar-arriba);
+      max-height: calc(100vh - var(--bazaar-arriba) - var(--s4));
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+  }
+  @media (max-width: 73.99rem) {
+    /* The inline preview waits for a wide screen; until the island knows
+       the width, its empty state must not flash in the left column. */
+    [data-bazaar] .previa {
+      display: none;
+    }
+  }
+
+  /* Filters (§13.11 rows: 36px, secondary text; the active row an ink pill). */
+  [data-bazaar] .bazaar-filters h2 {
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    margin: 0 0 var(--s2);
+  }
+  [data-bazaar] .bazaar-filters .grupo + .grupo {
+    margin-top: var(--s4);
+  }
+  [data-bazaar] .filtro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: none;
+    color: var(--texto-2);
+    cursor: pointer;
+    font: 400 0.93rem var(--sans);
+    text-align: left;
+    transition:
+      background 120ms var(--ciclo),
+      color 120ms var(--ciclo);
+  }
+  [data-bazaar] .filtro .n {
+    margin-left: auto;
+    font: 500 0.72rem var(--mono);
+    color: var(--texto-2);
+  }
+  [data-bazaar] .filtro:hover {
+    color: var(--texto);
+    background: var(--superficie);
+  }
+  [data-bazaar] .filtro[aria-pressed='true'] {
+    background: var(--texto);
+    color: var(--fondo);
+  }
+  [data-bazaar] .filtro[aria-pressed='true'] .n {
+    color: var(--fondo);
+  }
+  [data-bazaar] .filtro.sub {
+    min-height: 32px;
+    padding-left: 38px;
+    font-size: 0.86rem;
+    overflow-wrap: anywhere;
+  }
+  [data-bazaar] .formatos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  [data-bazaar] .bazaar-filters .licencia p {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: var(--texto-2);
+  }
+  @media (max-width: 53.99rem) {
+    [data-bazaar] .bazaar-filters .grupo + .grupo {
+      margin-top: var(--s3);
+    }
+    [data-bazaar] .clases {
+      display: flex;
+      gap: var(--s2);
+      overflow-x: auto;
+      padding-bottom: var(--s1);
+      scrollbar-width: thin;
+    }
+    [data-bazaar] .clases > li {
+      flex: none;
+    }
+    [data-bazaar] .clases .colecciones,
+    [data-bazaar] .bazaar-filters .licencia {
+      display: none;
+    }
+    [data-bazaar] .clases .filtro {
+      width: auto;
+      min-height: 40px;
+      padding: 0 var(--s3);
+      border: 1px solid var(--linea-f);
+      border-radius: 999px;
+    }
+  }
+
+  /* Chips (§9.3): Mono caps, full radius. */
+  [data-bazaar] .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--linea-f);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto-2);
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  [data-bazaar] .chip.vivo {
+    color: var(--verdemar);
+    border-color: color-mix(in srgb, var(--verdemar) 45%, transparent);
+  }
+  [data-bazaar] button.chip {
+    min-height: 32px;
+    cursor: pointer;
+  }
+  [data-bazaar] button.chip[aria-pressed='true'] {
+    color: var(--texto);
+    border-color: var(--verdemar);
+    background: color-mix(in srgb, var(--verdemar) 12%, transparent);
+  }
+
+  /* The bar above the cards: search, count (the licence in sight), order. */
+  [data-bazaar] .barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+  }
+  [data-bazaar] .busca {
+    flex: 1 1 16rem;
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 0 var(--s3);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--superficie);
+    color: var(--texto-2);
+  }
+  [data-bazaar] .busca:focus-within {
+    outline: 2px solid #018ea1;
+    outline-offset: 2px;
+  }
+  [data-bazaar] .busca input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--s2) 0;
+    border: 0;
+    background: transparent;
+    color: var(--texto);
+    font: inherit;
+  }
+  [data-bazaar] .busca input:focus-visible {
+    outline: none;
+  }
+  [data-bazaar] .busca input::placeholder {
+    color: var(--texto-2);
+    opacity: 1;
+  }
+  [data-bazaar] .cuantos {
+    margin: 0;
+    font: 400 0.8rem var(--mono);
+    color: var(--texto-2);
+  }
+  [data-bazaar] .orden {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  [data-bazaar] .orden select {
+    min-height: 40px;
+    padding: 0 var(--s2);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+  }
+  [data-bazaar] .vacio {
+    margin: 0;
+    padding: var(--s6) var(--s4);
+    border: 1px dashed var(--linea-f);
+    border-radius: var(--radio-marco);
+    color: var(--texto-2);
+    text-align: center;
+  }
+
+  /* The cards (§9.4): picture, kind · format, name, the licence line. */
+  [data-bazaar] .bazaar-grid {
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr));
+  }
+  @media (max-width: 30rem) {
+    [data-bazaar] .bazaar-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  [data-bazaar] .bazaar-grid > li {
+    display: flex;
+    min-width: 0;
+  }
+  [data-bazaar] .bazaar-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    background: var(--superficie);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 120ms var(--ciclo);
+  }
+  [data-bazaar] .bazaar-card:hover {
+    border-color: var(--verdemar);
+  }
+  [data-bazaar] .bazaar-card[aria-pressed='true'] {
+    border-color: var(--turquesa);
+    box-shadow: inset 0 0 0 1px var(--turquesa);
+  }
+  [data-bazaar] .bazaar-card .stage {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-bottom: 1px solid var(--linea);
+    background: var(--elevada);
+  }
+  [data-bazaar] .bazaar-card .stage img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  [data-bazaar] .sin-foto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s2);
+    width: 100%;
+    height: 100%;
+    color: var(--texto-2);
+    font: 500 0.75rem var(--mono);
+    letter-spacing: 0.1em;
+  }
+  [data-bazaar] .en-cola {
+    position: absolute;
+    top: var(--s2);
+    left: var(--s2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--verdemar);
+    border-radius: 999px;
+    background: var(--fondo);
+    color: var(--texto);
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  [data-bazaar] .bazaar-card .cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 10px 12px 12px;
+  }
+  [data-bazaar] .bazaar-card .tipo {
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  [data-bazaar] .bazaar-card .nombre {
+    color: var(--texto);
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  [data-bazaar] .bazaar-card .licencia {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: var(--s2);
+    border-top: 1px solid var(--linea);
+    color: var(--verdemar);
+    font-size: 0.74rem;
+  }
+
+  /* The preview (§9.4 tarjeta): chips, stage, name, facts, actions. */
+  [data-bazaar] .previa {
+    padding: var(--s4);
+  }
+  [data-bazaar] .previa > .vacio {
+    padding: var(--s5) var(--s3);
+  }
+  [data-bazaar] .previa-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  [data-bazaar] .previa-cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+  }
+  [data-bazaar] .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  [data-bazaar] .cerrar {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: transparent;
+    color: var(--texto-2);
+    cursor: pointer;
+  }
+  [data-bazaar] .cerrar:hover {
+    background: var(--superficie);
+    color: var(--texto);
+  }
+  [data-bazaar] .escenario {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
+  }
+  [data-bazaar] .escenario img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  [data-bazaar] .escenario video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  [data-bazaar] .escenario.visor {
+    aspect-ratio: auto;
+    min-height: 16rem;
+  }
+  [data-bazaar] .escenario.visor > * {
+    width: 100%;
+  }
+  [data-bazaar] .ver-3d {
+    position: absolute;
+    right: var(--s2);
+    bottom: var(--s2);
+    min-height: 36px;
+    padding: 6px var(--s3);
+    background: var(--fondo);
+    font-size: 0.875rem;
+  }
+  [data-bazaar] .previa-cuerpo audio {
+    width: 100%;
+  }
+  [data-bazaar] .previa-cuerpo h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    overflow-wrap: anywhere;
+  }
+  [data-bazaar] .previa-cuerpo .linea {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+  [data-bazaar] .datos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s2) var(--s4);
+    margin: 0;
+    padding: var(--s3) 0;
+    border-block: 1px solid var(--linea);
+  }
+  [data-bazaar] .datos dt {
+    font: 500 0.68rem var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  [data-bazaar] .datos dd {
+    margin: 0;
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+  }
+  [data-bazaar] .acciones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s2);
+  }
+  [data-bazaar] .acciones > :first-child {
+    grid-column: 1 / -1;
+  }
+  [data-bazaar] .acciones .btn {
+    justify-content: center;
+    padding-inline: var(--s3);
+    font-size: 0.92rem;
+    text-align: center;
+    text-decoration: none;
+  }
+  [data-bazaar] .no-disponible {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+
+  /* The queue: what goes in the zip, and the zip. */
+  [data-bazaar] .cola {
+    padding: var(--s4);
+  }
+  [data-bazaar] .previa + .cola {
+    margin-top: var(--s4);
+  }
+  [data-bazaar] .cola h2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 var(--s3);
+    font-size: 0.95rem;
+  }
+  [data-bazaar] .cola h2 .mono {
+    color: var(--texto-2);
+    font-size: 0.8rem;
+  }
+  [data-bazaar] .cola .vacia {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  [data-bazaar] .cola ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: var(--s3);
+  }
+  [data-bazaar] .cola li {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+    color: var(--texto-2);
+    font-size: 0.88rem;
+  }
+  [data-bazaar] .cola li .nombre {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--texto);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  [data-bazaar] .cola li .mono {
+    font-size: 0.72rem;
+  }
+  [data-bazaar] .quitar {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: transparent;
+    color: var(--texto-2);
+    cursor: pointer;
+  }
+  [data-bazaar] .quitar:hover {
+    color: var(--texto);
+  }
+  [data-bazaar] .ancho {
+    width: 100%;
+    justify-content: center;
+  }
+  [data-bazaar] .estado {
+    margin: var(--s2) 0 0;
+    color: var(--texto-2);
+    font-size: 0.82rem;
+  }
+  [data-bazaar] .estado:empty {
+    margin: 0;
+  }
+
+  /* The sheet: the preview on a narrow screen, a modal dialog. */
+  [data-bazaar] dialog.hoja {
+    width: min(100% - 2 * var(--s3), 34rem);
+    max-width: none;
+    max-height: min(88vh, 48rem);
+    margin: auto auto 0;
+    padding: var(--s4);
+    overflow: auto;
+    border: 1px solid var(--linea-f);
+    border-bottom: 0;
+    border-radius: var(--radio-marco) var(--radio-marco) 0 0;
+    background: var(--elevada);
+    color: var(--texto);
+  }
+  [data-bazaar] dialog.hoja::backdrop {
+    background: rgb(20 17 15 / 0.62);
+  }
+  @media (min-width: 40rem) {
+    [data-bazaar] dialog.hoja {
+      margin: auto;
+      border-bottom: 1px solid var(--linea-f);
+      border-radius: var(--radio-marco);
+    }
+  }
+</style>

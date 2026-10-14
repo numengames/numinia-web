@@ -1,12 +1,15 @@
 /**
- * The four sites of the house, in the order a visitor would read them: the
- * company, the game, the archive, the service. The same list sits in every
- * site's footer (a copy per repository, by decision of 2026-09-16: no
- * shared package yet), with the current site rendered as text, not a link.
- * From any of the four you can see the other three and what they are for.
+ * The house's sites the footer names, in the order a visitor reads them:
+ * the company, the game, the archive. The current site is rendered as
+ * text, not a link.
+ *
+ * numinia.com's app shell (the Oracle's design, 2026-10-14) folds the
+ * footer into the sidebar and names only these three: NWOS, GitHub and
+ * Discord left it. The other three sites still list four entries; the
+ * shared standard (STD-037) is updated in the archive afterwards.
  */
 export interface HouseLink {
-  readonly id: 'company' | 'game' | 'archive' | 'service';
+  readonly id: 'company' | 'game' | 'archive';
   readonly label: string;
   readonly what: string;
   readonly href: string;
@@ -17,17 +20,11 @@ export const HOUSE_LINKS: readonly HouseLink[] = [
   { id: 'game', label: 'Numinia', what: 'the game', href: 'https://numinia.com' },
   {
     id: 'archive',
-    label: 'NWOS',
+    label: 'The Archive',
     what: 'the archive, built in public',
     href: 'https://numinia.org',
   },
-  {
-    id: 'service',
-    label: 'NWOS for your organisation',
-    what: 'the service',
-    href: 'https://nwos.numen.games',
-  },
 ];
 
-/** Which of the four this site is. */
+/** Which of the three this site is. */
 export const THIS_SITE: HouseLink['id'] = 'game';

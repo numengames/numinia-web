@@ -40,8 +40,13 @@ const BUDGETS = {
       came with it — the countdown beside each ritual's date, filled from
       the reader's clock so the built page carries no "today" (~1.1KB), and
       the strip's two arrows (~0.4KB). Still no external JS; the page works
-      whole without either. Landing sits at ~12.7KB. */
-  landingInlineScriptBytes: 14_000,
+      whole without either. Landing sits at ~12.7KB.
+      Raised 14000→14500 on 2026-10-14 (v0.83.0): the app shell the Oracle
+      approved — the sidebar's fold applied before paint, the «Más» and ⋮
+      popovers, the «/» key to the search — and the featured strip's
+      arrows, on a front door that dropped its explanation blocks. Still no
+      external JS. Landing sits at ~14.2KB. */
+  landingInlineScriptBytes: 14_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
