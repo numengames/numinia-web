@@ -1,9 +1,15 @@
 {
   // The till (ADR-070, MIS-177, MIS-178): its own Worker and its own D1
-  // database, apart from numinia.com. No routes and no secrets: it runs the
-  // nightly close, GET /health answers only in local runs, and its one door
-  // is the Oracle desk (MIS-184), the RPC entrypoint `OracleDesk` that only
-  // numinia.com's service binding reaches.
+  // database, apart from numinia.com. No routes: it runs the nightly close
+  // and the minute's poll of Stripe's events, GET /health answers only in
+  // local runs, and its doors are two RPC entrypoints that only numinia.com's
+  // service bindings reach — the Oracle desk (`OracleDesk`, MIS-184) and the
+  // account desk (`AccountDesk`, cut «Saldo», MIS-179, MIS-180).
+  //
+  // One secret, set in the Cloudflare panel or with `wrangler secret put
+  // STRIPE_KEY`, never here: a Stripe restricted key (TEST mode in this cut)
+  // with Checkout Sessions write and Events read. Without it the desk answers
+  // `payments are not configured` and the minute's run does nothing.
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "numinia-till",
   "main": "src/worker.ts",
@@ -11,8 +17,9 @@
   "compatibility_date": "2026-08-15",
   "send_metrics": false,
   // Reachable from nowhere over HTTP: no workers.dev address and no preview
-  // address. The till holds the money: its entry points are its cron and the
-  // Oracle desk, which answers no HTTP request; an accounts API is MIS-179.
+  // address. The till holds the money: its entry points are its crons and
+  // its two desks, which answer no HTTP request. It reaches OUT to
+  // api.stripe.com; nothing of Stripe's reaches in (no webhook route).
   "workers_dev": false,
   "preview_urls": false,
   // Workers Logs, as the site's Worker: each nightly close and any error it
@@ -34,11 +41,18 @@
   ],
   "triggers": {
     // Cron is UTC, the till's reference time (ADR-070): at 00:30 UTC every
-    // night the run closes the UTC day that has just ended.
-    "crons": ["30 0 * * *"],
+    // night the run closes the UTC day that has just ended. Every minute the
+    // till reads Stripe's events of paid Checkout Sessions and credits each
+    // top-up once (src/worker.ts dispatches by `controller.cron`).
+    "crons": ["30 0 * * *", "* * * * *"],
   },
   "vars": {
     // `none`: no meter, every day pending. `fake`: fixtures/meter.json.
     "TILL_METER": "none",
+    // The Stripe price of each quick top-up, as JSON
+    // `{"10":"price_…","50":"price_…","100":"price_…"}`: one-time euro prices
+    // of the Stripe account's TEST mode, created by an Oracle. Unset, or with
+    // any of the three missing, the desk answers `payments are not configured`
+    // (set it here, beside TILL_METER, once the prices exist).
   },
 }

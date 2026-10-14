@@ -24,6 +24,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import wordmark from '@numinia/ui/assets/brand/Numinia_Word.svg?raw';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
 import { COMMUNITIES_UI } from '../../i18n/communities';
+import { SALDO_UI } from '../../i18n/saldo';
 import {
   EXPLORE_ITEMS,
   NAV_ITEMS,
@@ -130,6 +131,20 @@ const exploreLabel: Readonly<Record<ExploreId, string>> = {
           );
         })
       }
+      <li data-session-in hidden>
+        <a
+          href={localeHref(locale, '/saldo/')}
+          class="lat-item"
+          aria-current={ariaCurrent(
+            basePath === '/saldo/' ? 'page' : basePath.startsWith('/saldo/') ? 'section' : null,
+          )}
+          title={SALDO_UI[locale].nav}
+          data-metric="nav-saldo"
+        >
+          <Icon name="coins" size={26} />
+          <span class="lat-t">{SALDO_UI[locale].nav}</span>
+        </a>
+      </li>
       <li>
         <details class="lat-mas" name="shell-menu" data-popover>
           <summary class="lat-item" title={ui.more} data-metric="nav-more">

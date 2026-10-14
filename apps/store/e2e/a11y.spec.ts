@@ -46,6 +46,8 @@ const PAGES = [
   '/es/lap/admin/assets/',
   '/es/lap/admin/census/',
   '/es/lap/admin/prices/',
+  '/es/saldo/', // without a session: the door (the panel is measured in saldo.spec.ts)
+  '/es/saldo/referidos/',
   '/support/', // the help page (v0.70.0)
 ];
 

@@ -62,5 +62,16 @@
   // bindings: the bound Worker first — numinia-till with its OracleDesk —
   // then this config. Until the desk is there, the room says the till did
   // not answer; nothing else on the site depends on it.
-  "services": [{ "binding": "TILL_ORACLE", "service": "numinia-till", "entrypoint": "OracleDesk" }],
+  //
+  // The till's account desk («Saldo»): your balance and your organizations',
+  // top-ups through Stripe, members. Same walls as the Oracle's desk:
+  // `AccountDesk` is a second named RPC entrypoint of `numinia-till`, with no
+  // address. This Worker reads the person's session first (any rank) and
+  // passes its wallet; the till decides what that wallet may see or do. Same
+  // deploy order: the till with its AccountDesk first, then this config.
+  // Until it is there, «Saldo» says the till did not answer.
+  "services": [
+    { "binding": "TILL_ORACLE", "service": "numinia-till", "entrypoint": "OracleDesk" },
+    { "binding": "TILL_ACCOUNTS", "service": "numinia-till", "entrypoint": "AccountDesk" },
+  ],
 }

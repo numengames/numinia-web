@@ -78,11 +78,50 @@ was published meanwhile: read the desk again`). A refusal is an answer,
 never a throw; only a failing database throws, so the caller can tell a
 failure from a refusal.
 
+## The account desk
+
+`AccountDesk` (`src/worker.ts`, cut «Saldo»: `MIS-179` in its first form,
+`MIS-180`) is the till's second named RPC entrypoint. numinia.com binds it as
+`TILL_ACCOUNTS`; like the Oracle desk it has no `fetch` and no address.
+
+**Trust.** numinia.com's API route checks the session (its signed cookie, any
+rank) and passes the session's wallet, lowercase, as the first argument of
+every method. The till trusts its bound caller for WHO is asking and decides
+itself, from its own tables (`migrations/0003_accounts_and_checkouts.sql`),
+WHAT that wallet may do: its own account, and the organizations (accounts of
+kind `team`) where it is `admin` or `member`. Every other argument is
+re-validated; a refusal is an answer, never a throw.
+
+| Method                                                             | Answers                                                                                                                                                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `overview(wallet)`                                                 | the wallet's own account (created the first time, id derived from the wallet without holding it) and its organizations, with role and balance                                                           |
+| `createTeam(wallet, name)` / `renameTeam(wallet, accountId, name)` | a new organization with the wallet as admin (at most 20 per founder) / a new name, admins only                                                                                                          |
+| `statement(wallet, accountId, range)`                              | balance, low-balance flag (< 10 €), lots, spend per UTC day or month over `7d`/`30d`/`12m`, the last 100 lines, members of an organization                                                              |
+| `members` / `setMember` / `removeMember`                           | admins only; an organization never loses its last admin (the desk refuses; triggers back it up)                                                                                                         |
+| `startTopup(wallet, accountId, amountKey, returnBase)`             | opens a Stripe Checkout Session (`mode=payment`, `managed_payments[enabled]=true`) for 10, 50 or 100 € and keeps who opened it for which account (`checkouts`)                                          |
+| `confirmTopup(wallet, sessionId)`                                  | when the buyer comes back: reads the session from Stripe and, paid, writes one `topup` line (net = total − the tax Stripe collected, the tax in `vat_cents`, the payment intent as `stripe_payment_id`) |
+
+**Stripe.** Stripe Managed Payments is the seller (merchant of record); the
+till only keeps the balance. The till reaches OUT to api.stripe.com
+(`src/lib/stripe.ts`, pinned `Stripe-Version`); nothing of Stripe's reaches
+in — no webhook route. A paid session is credited when the buyer returns,
+and by the minute cron (`* * * * *`), which lists `checkout.session.completed`
+and `checkout.session.async_payment_succeeded` events since its cursor less
+five minutes and applies the till's own checkouts. The keep-first trigger on
+`stripe_payment_id` makes every credit happen once.
+
+**Configuration.** Secret `STRIPE_KEY`: a restricted key with Checkout
+Sessions write and Events read (TEST mode in this cut). Var
+`TILL_TOPUP_PRICES`: `{"10":"price_…","50":"price_…","100":"price_…"}`. Without
+both, the desk answers `payments are not configured` and the minute's run
+does nothing.
+
 ## What it is not yet
 
-The desk is the till's first door and serves the Prices room only. There
-are still no people, roles, invitations or accounts API (`MIS-179`); no
-Stripe (`MIS-180`); no signatures (`MIS-181`): the close **lists** the worlds
+The desks serve the Prices room and the Saldo screen. Still missing: roles
+beyond admin and member and invitations (the rest of `MIS-179`); refunds and
+chargebacks from Stripe's events, and the open books' nightly file (after
+`MIS-180`); no signatures (`MIS-181`): the close **lists** the worlds
 to stop and the deletion dates, nothing acts on them yet (`MIS-186`); no
 mail (`MIS-182`): a rise is scheduled with its notice, but nobody is told by
 mail yet; no account screens (`MIS-183`); no machine meter (`MIS-185`).
@@ -93,22 +132,26 @@ creating a world is `MIS-179`/`MIS-185`.
 
 ## Files
 
-| Path                               | What                                                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/lib/money.ts`                 | cents, half-up rounding in integers, VAT split and add                                                                                     |
-| `src/lib/utc-day.ts`               | UTC dates and day starts: every day 1440 minutes, no time zone                                                                             |
-| `src/lib/tariff.ts`                | versions, `versionFor`, `isRise`, `earliestStart`, the seed; the desk's drafts: `readDraft`, `draftCheck`, `basisProblems`, `missingSizes` |
-| `src/lib/ledger.ts`                | line kinds, balance, lots oldest first, line ids                                                                                           |
-| `src/lib/close.ts`                 | the nightly close, a pure function                                                                                                         |
-| `src/meter.ts`                     | `Meter`, `NoMeter`, `FakeMeter` and the fixture reader                                                                                     |
-| `src/db/repository.ts`             | D1 for the close: one read batch, one write batch; the whole-version reader the desk uses                                                  |
-| `src/db/desk.ts`                   | D1 for the desk: one read batch per call, one guarded insert to schedule                                                                   |
-| `src/worker.ts`                    | `fetch` (health), `scheduled` (the close) and `OracleDesk`                                                                                 |
-| `migrations/0001_ledger.sql`       | tables, append-only triggers, the seed tariff                                                                                              |
-| `migrations/0002_tariff_basis.sql` | why each version was published: `tariff_versions.basis`                                                                                    |
-| `fixtures/meter.json`              | the pretend meter's readings (`TILL_METER=fake`)                                                                                           |
-| `test/sqlite-d1.ts`                | a D1-shaped shim over `node:sqlite` that runs every migration                                                                              |
-| `test/cloudflare-workers.ts`       | the `WorkerEntrypoint` the tests use: vitest cannot resolve `cloudflare:workers`                                                           |
+| Path                                         | What                                                                                                                                       |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/lib/money.ts`                           | cents, half-up rounding in integers, VAT split and add                                                                                     |
+| `src/lib/utc-day.ts`                         | UTC dates and day starts: every day 1440 minutes, no time zone                                                                             |
+| `src/lib/tariff.ts`                          | versions, `versionFor`, `isRise`, `earliestStart`, the seed; the desk's drafts: `readDraft`, `draftCheck`, `basisProblems`, `missingSizes` |
+| `src/lib/ledger.ts`                          | line kinds, balance, lots oldest first, line ids                                                                                           |
+| `src/lib/close.ts`                           | the nightly close, a pure function                                                                                                         |
+| `src/meter.ts`                               | `Meter`, `NoMeter`, `FakeMeter` and the fixture reader                                                                                     |
+| `src/db/repository.ts`                       | D1 for the close: one read batch, one write batch; the whole-version reader the desk uses                                                  |
+| `src/db/desk.ts`                             | D1 for the desk: one read batch per call, one guarded insert to schedule                                                                   |
+| `src/worker.ts`                              | `fetch` (health), `scheduled` (the close, the minute's poll), `OracleDesk` and `AccountDesk`                                               |
+| `src/lib/accounts.ts`                        | what numinia.com sends the account desk, read; the top-up prices; spend buckets                                                            |
+| `src/lib/stripe.ts`                          | the few Stripe calls the till makes, over `fetch`                                                                                          |
+| `src/db/accounts.ts`                         | D1 for the account desk and the minute's poll                                                                                              |
+| `migrations/0003_accounts_and_checkouts.sql` | wallets' accounts, organizations and members, checkouts, the poll's cursor                                                                 |
+| `migrations/0001_ledger.sql`                 | tables, append-only triggers, the seed tariff                                                                                              |
+| `migrations/0002_tariff_basis.sql`           | why each version was published: `tariff_versions.basis`                                                                                    |
+| `fixtures/meter.json`                        | the pretend meter's readings (`TILL_METER=fake`)                                                                                           |
+| `test/sqlite-d1.ts`                          | a D1-shaped shim over `node:sqlite` that runs every migration                                                                              |
+| `test/cloudflare-workers.ts`                 | the `WorkerEntrypoint` the tests use: vitest cannot resolve `cloudflare:workers`                                                           |
 
 ## The rules
 

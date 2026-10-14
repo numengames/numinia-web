@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-14 21:30",
+    "entries": [
+      {
+        "text": "Saldo: your account and your organizations’ in one screen. Pick the account at the top — yours, or any organization you belong to — and see its balance, which never expires and warns you below 10 €; what was spent in the period; usage per day for 7 or 30 days, or per month for a year; and every movement. Top up 10, 50 or 100 €: Stripe opens in a new tab, sells as merchant of record and sends the receipt; back here the balance updates on its own. Test mode for now: no real money moves yet.",
+        "type": "NEW",
+      },
+      {
+        "text": "Organizations of your own. Create one from Saldo and you are its admin: rename it, add members by wallet, make them admins or members, or remove them. An organization never loses its last admin. Every member sees its balance and can top it up.",
+        "type": "NEW",
+      },
+      {
+        "text": "Saldo has its place in the sidebar once you are signed in, and a Referrals page that says plainly it is coming soon.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.88.0",
+  },
+  {
     "date": "2026-10-14 17:30",
     "entries": [
       {

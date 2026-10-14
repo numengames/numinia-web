@@ -50,7 +50,8 @@ export interface CloseRun {
 
 const REPORT_REASONS: readonly string[] = ['unmeasured', 'invalid_reading', 'unpriced'];
 
-function column(row: Row, name: string): unknown {
+/** A column the row must have, whatever its value. */
+export function column(row: Row, name: string): unknown {
   if (!(name in row)) throw new TypeError(`till database: no column ${name}`);
   return row[name];
 }
@@ -64,19 +65,22 @@ export function text(row: Row, name: string): string {
   return value;
 }
 
-function day(row: Row, name: string): string {
+/** A column holding a UTC date, or a throw. */
+export function day(row: Row, name: string): string {
   const value = text(row, name);
   if (!isDay(value)) throw new TypeError(`till database: ${name} is not a day`);
   return value;
 }
 
-function instant(row: Row, name: string): string {
+/** A column holding an ISO instant, or a throw. */
+export function instant(row: Row, name: string): string {
   const value = text(row, name);
   if (!isInstant(value)) throw new TypeError(`till database: ${name} is not an instant`);
   return value;
 }
 
-function cents(row: Row, name: string): number {
+/** A column holding whole cents (or any safe integer), or a throw. */
+export function cents(row: Row, name: string): number {
   const value = column(row, name);
   if (!isCents(value)) throw new TypeError(`till database: ${name} is not whole cents`);
   return value;

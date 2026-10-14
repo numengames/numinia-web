@@ -108,7 +108,11 @@ const fixtureMeter = (): FakeMeter => new FakeMeter(parseMeterReadings(meterFixt
 
 describe('the migration', () => {
   it('builds STRICT tables and seeds the tariff the code knows', async () => {
-    expect(migrationFiles()).toEqual(['0001_ledger.sql', '0002_tariff_basis.sql']);
+    expect(migrationFiles()).toEqual([
+      '0001_ledger.sql',
+      '0002_tariff_basis.sql',
+      '0003_accounts_and_checkouts.sql',
+    ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
       sqlite,
@@ -116,12 +120,17 @@ describe('the migration', () => {
     );
     expect(tables).toEqual(
       [
+        'account_wallets',
         'accounts',
         'at_zero_periods',
+        'checkouts',
         'close_reports',
         'keep_marks',
         'ledger_lines',
+        'stripe_cursor',
         'tariff_versions',
+        'team_members',
+        'team_profiles',
         'worlds',
       ].map((name) => ({ name, strict: 1 })),
     );
