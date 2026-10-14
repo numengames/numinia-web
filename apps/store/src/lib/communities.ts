@@ -442,6 +442,18 @@ export function withLife(
     .map((entry) => entry.community);
 }
 
+/**
+ * The communities whose 3D home is open — their own `sede`, or the founder,
+ * whose home is the city's commons. The front door's visitor face shows only
+ * these: a visitor who opens a card finds something to enter.
+ */
+export function withHome(communities: readonly Community[]): readonly Community[] {
+  return published(communities)
+    .filter((community) => community.sede !== undefined || community.state === 'founder')
+    .slice()
+    .sort(byName);
+}
+
 /** The index order: the founder, then the rest by name. */
 export function byName(a: Community, b: Community): number {
   if (a.state !== b.state) return a.state === 'founder' ? -1 : 1;

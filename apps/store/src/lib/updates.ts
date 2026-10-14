@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.86.0',
+    date: '2026-10-14 16:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The front door has two faces. A first visit, without a session, now says what Numinia is in one line — your organization, with a home of its own in a 3D city — and opens the Agora Plaza with one click, no account needed. Then the four steps, the communities whose home is already open, the six templates with a short form to ask for yours, what stays yours, the city in one paragraph and the questions people ask. Once you sign in, the front door is «For you», as before.',
+      },
+      {
+        type: 'UPD',
+        text: 'Asking for a home is a short form instead of a bare address: name, kind of home, a rough date and your email. Pressing send opens your mail with everything written.',
+      },
+      {
+        type: 'UPD',
+        text: 'The third step says «Come to its gatherings»: plain words first; «ritual» stays the city’s word inside.',
+      },
+    ],
+  },
+  {
     version: 'v0.85.0',
     date: '2026-10-14 15:20',
     entries: [

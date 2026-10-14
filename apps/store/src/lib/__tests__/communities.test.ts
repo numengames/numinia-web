@@ -46,6 +46,7 @@ import {
   upcoming,
   whenLong,
   whenShort,
+  withHome,
   withLife,
   worldOf,
   yearOf,
@@ -445,6 +446,29 @@ describe('order and lookup', () => {
     expect(
       withLife([quiet, merge, hidden, community()], [b, a, past, cps]).map((entry) => entry.id),
     ).toEqual(['trgcon', 'merge']);
+  });
+
+  it('lists the communities with an open home, the founder first, published only', () => {
+    const vic = parseCommunity('vic', {
+      ...COMMUNITY,
+      name: 'VIC',
+      sede: { href: 'https://vic.numinia.com/' },
+    });
+    const founder = parseCommunity('numen-games', {
+      ...COMMUNITY,
+      name: 'Numen Games',
+      state: 'founder',
+    });
+    const hidden = parseCommunity('cps', {
+      ...COMMUNITY,
+      name: 'CPS',
+      visibility: 'house',
+      sede: { href: 'https://cps.numinia.com/' },
+    });
+    expect(withHome([community(), vic, hidden, founder]).map((entry) => entry.id)).toEqual([
+      'numen-games',
+      'vic',
+    ]);
   });
 
   it('measures the span and the year', () => {
