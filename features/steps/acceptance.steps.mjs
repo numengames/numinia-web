@@ -6,6 +6,8 @@
 import { strict as assert } from 'node:assert';
 import { execFile } from 'node:child_process';
 import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { Given, When, Then } from '@cucumber/cucumber';
@@ -564,15 +566,107 @@ Then('key pages declare meta description and open graph tags', async function ()
   }
 });
 
-// --- three pillars (MISSION-004) ---
+// --- three pillars (MISSION-004), the bar without a menu (2026-10-14) ---
 
-Then('every page header links city, assets, and lap', async function () {
+Then('every page bar carries the scarab, the search, the mode and the door', async function () {
   for (const page of ['index.html', 'es/index.html', 'gallery/index.html', 'lap/index.html']) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
-    for (const metric of ['nav-city', 'nav-assets', 'nav-lap']) {
+    for (const metric of ['nav-home', 'nav-search', 'chrome-mode', 'chrome-sign-in']) {
       assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
     }
-    assert.ok(!html.includes('data-metric="nav-gallery"'), `${page}: old nav still present`);
+    for (const metric of ['nav-city', 'nav-assets', 'nav-lap', 'nav-gallery', 'chrome-menu']) {
+      assert.ok(!html.includes(`data-metric="${metric}"`), `${page}: old menu entry ${metric}`);
+    }
+  }
+});
+
+Then('every page footer links city, assets, lap, communities and the calendar', async function () {
+  for (const page of ['index.html', 'es/index.html', 'gallery/index.html', 'lap/index.html']) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    for (const metric of [
+      'footer-city',
+      'footer-assets',
+      'footer-lap',
+      'footer-communities',
+      'footer-calendar',
+    ]) {
+      assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
+    }
+  }
+});
+
+// --- communities (phase 0, 2026-10-14) ---
+
+const COMMUNITY_FILES = path.join(repoRoot, 'apps/store/src/content/communities');
+
+function frontmatterOf(file) {
+  const text = readFileSync(file, 'utf8');
+  const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  assert.ok(block, `${file}: no front matter`);
+  return block[1];
+}
+
+Then('the communities index exists under every locale prefix', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(
+      path.join(this.distDir, prefix, 'communities', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.ok(html, `missing communities index for ${prefix || 'en'}`);
+    assert.ok(
+      html.includes('data-metric="communities-search"'),
+      `${prefix || 'en'}: no search box`,
+    );
+    const calendar = await readFile(
+      path.join(this.distDir, prefix, 'calendar', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.ok(calendar, `missing calendar for ${prefix || 'en'}`);
+  }
+});
+
+Then('every public community has a page and every prepared one has none', async function () {
+  const files = readdirSync(COMMUNITY_FILES).filter((name) => name.endsWith('.md'));
+  assert.ok(files.length >= 15, `only ${files.length} community files`);
+  let published = 0;
+  let prepared = 0;
+  for (const name of files) {
+    const id = name.replace(/\.md$/, '');
+    const house = /^visibility:\s*house\s*$/m.test(frontmatterOf(path.join(COMMUNITY_FILES, name)));
+    const page = path.join(this.distDir, 'communities', id, 'index.html');
+    const exists = await readFile(page, 'utf8')
+      .then(() => true)
+      .catch(() => false);
+    if (house) {
+      prepared += 1;
+      assert.ok(!exists, `${id} is prepared (house only) but has a page`);
+      const index = await readFile(path.join(this.distDir, 'communities', 'index.html'), 'utf8');
+      assert.ok(!index.includes(`/communities/${id}/`), `${id} is prepared but listed`);
+    } else {
+      published += 1;
+      assert.ok(exists, `${id} has no page`);
+      const feed = await readFile(
+        path.join(this.distDir, 'communities', id, 'calendar.ics'),
+        'utf8',
+      ).catch(() => null);
+      assert.ok(feed && feed.startsWith('BEGIN:VCALENDAR'), `${id}: no calendar feed`);
+    }
+  }
+  assert.ok(published >= 11, `only ${published} published`);
+  assert.ok(prepared >= 4, `only ${prepared} prepared`);
+});
+
+Then('the home lists the upcoming rituals and the city feed is a calendar', async function () {
+  const home = await readFile(path.join(this.distDir, 'index.html'), 'utf8');
+  const cards = (home.match(/data-metric="ritual-card"/g) ?? []).length;
+  assert.ok(cards >= 3, `home shows ${cards} ritual cards`);
+  assert.ok(home.includes('data-metric="landing-calendar"'), 'home: no link to the calendar');
+  const feed = await readFile(path.join(this.distDir, 'calendar.ics'), 'utf8');
+  assert.ok(feed.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0'), 'city feed is not a calendar');
+  const events = (feed.match(/BEGIN:VEVENT/g) ?? []).length;
+  assert.equal(events, cards, `feed has ${events} events, home ${cards} cards`);
+  for (const line of feed.split('\r\n')) {
+    assert.ok(Buffer.byteLength(line, 'utf8') <= 75, `feed line over 75 octets: ${line}`);
   }
 });
 

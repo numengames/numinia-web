@@ -1,0 +1,94 @@
+---
+/**
+ * A ritual as a card: the picture clean, the date as text under it (never
+ * laid over the picture — the Oracle, 2026-10-14), the countdown the page's
+ * script fills, the name, who holds it, where, and how.
+ */
+import type { Community, Ritual } from '../../lib/communities';
+import { pick, whenShort } from '../../lib/communities';
+import type { CommunitiesMessages } from '../../i18n/communities';
+import Icon from '../chrome/Icon.astro';
+import Cover from './Cover.astro';
+
+interface Props {
+  ritual: Ritual;
+  community: Community;
+  locale: string;
+  prefix: string;
+  ui: CommunitiesMessages;
+  /** The carousel's cards keep a fixed width; a list's cards fill their column. */
+  inCarousel?: boolean;
+}
+
+const { ritual, community, locale, prefix, ui, inCarousel = false } = Astro.props;
+const who = ritual.city ? ui.ofTheCity : community.name;
+const image = ritual.image ? { src: ritual.image.src, alt: pick(ritual.image.alt, locale) } : community.image ? { src: community.image.src, alt: pick(community.image.alt, locale) } : undefined;
+---
+
+<a
+  class:list={['tarjeta', 'rit', { carrusel: inCarousel }]}
+  href={`${prefix}/rituals/${ritual.id}/`}
+  data-metric="ritual-card"
+>
+  <Cover id={community.id} name={community.name} image={image} />
+  <div class="cuerpo">
+    <span class="cuando">
+      <Icon name="calendar-blank" size={14} />
+      <span>{whenShort(ritual, locale)}</span>
+      <span class="falta" data-countdown={ritual.status === 'held' ? undefined : ritual.start} data-held={ritual.status === 'held' ? '' : undefined}></span>
+    </span>
+    <h3>{pick(ritual.title, locale)}</h3>
+    <span class="de">{who}</span>
+    <span class="donde"><Icon name="map-pin" size={14} />{pick(ritual.where, locale)}</span>
+    <span class="fila modo">
+      {ritual.mode && <span class="chip">{ui.modes[ritual.mode]}</span>}
+      {ritual.city && <span class="chip ambar">{ui.ofTheCity}</span>}
+      {ritual.status === 'held' && <span class="chip">{ui.heldChip}</span>}
+    </span>
+  </div>
+</a>
+
+<style>
+  .rit.carrusel {
+    flex: 0 0 300px;
+    scroll-snap-align: start;
+  }
+  .cuando {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--enlace);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .cuando .falta {
+    color: var(--texto-2);
+    flex-basis: 100%;
+    padding-left: 20px;
+  }
+  .cuando .falta:empty {
+    display: none;
+  }
+  .de {
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+  .donde {
+    color: var(--texto-2);
+    font-size: 0.85rem;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-top: auto;
+    padding-top: var(--s2);
+  }
+  .modo {
+    margin-top: var(--s2);
+  }
+  .modo:empty {
+    display: none;
+  }
+</style>

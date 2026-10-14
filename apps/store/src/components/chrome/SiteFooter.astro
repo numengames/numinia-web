@@ -27,6 +27,7 @@ import Icon from './Icon.astro';
 import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
 import { SOCIAL_LINKS } from '../../lib/social-links';
 import { HOUSE_LINKS, THIS_SITE } from '../../lib/house-links';
+import { COMMUNITIES_UI } from '../../i18n/communities';
 // §8.5 / repertoire rule: the scarab closes every piece, never opens it — the
 // scarab's one canonical home on the site is the foot of the page.
 import scarab from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
@@ -38,6 +39,7 @@ interface Props {
 const { locale } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const support = SUPPORT_UI[locale];
+const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
 // CAN-002: the manifesto closes on the epitaph. Never translated, never
@@ -45,10 +47,13 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 const EPITAPH =
   'They dreamed and experimented life, they imagined and took action. They were part of the fight to change the model, they did not let us alone, they built a game with which to create a better world.';
 
-// Navigation: the site's sections, in the header's order, then the asset
-// tools. Ten links — rendered in two columns, never stacked.
+// Navigation: the site's sections — since the bar carries no menu
+// (2026-10-14) this is where they all are — then the asset tools. Twelve
+// links, rendered in two columns, never stacked.
 const NAV = [
   { href: `${prefix}/`, label: t.navHome, metric: 'footer-home' },
+  { href: `${prefix}/communities/`, label: ui.navCommunities, metric: 'footer-communities' },
+  { href: `${prefix}/calendar/`, label: ui.navCalendar, metric: 'footer-calendar' },
   { href: `${prefix}/city/`, label: t.navCity, metric: 'footer-city' },
   { href: `${prefix}/assets/`, label: t.navAssets, metric: 'footer-assets' },
   { href: `${prefix}/lap/`, label: t.navLap, metric: 'footer-lap' },

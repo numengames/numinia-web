@@ -1,0 +1,50 @@
+---
+/**
+ * The countdown beside each ritual's date ("in 8 days", "tomorrow", "now",
+ * "held"), filled in the reader's browser from the reader's clock — the
+ * built page carries no "today", so it stays true between deploys and the
+ * reader without JavaScript simply sees the date. Inline (no external JS on
+ * the home: the landing budget) and tiny.
+ *
+ * Templates come from the page's messages; "{n}" is the number.
+ */
+import type { CommunitiesMessages } from '../../i18n/communities';
+
+interface Props {
+  ui: CommunitiesMessages;
+}
+
+const { ui } = Astro.props;
+const templates = {
+  now: ui.countNow,
+  tomorrow: ui.countTomorrow,
+  days: ui.countDays,
+  weeks: ui.countWeeks,
+  months: ui.countMonths,
+  held: ui.countHeld,
+};
+---
+
+<script is:inline data-countdown-templates={JSON.stringify(templates)}>
+  (function () {
+    var script = document.currentScript;
+    var t = JSON.parse(script.getAttribute('data-countdown-templates'));
+    var now = new Date();
+    var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    document.querySelectorAll('[data-countdown]').forEach(function (el) {
+      var start = el.getAttribute('data-countdown');
+      if (!start) return;
+      var day = start.length === 10 ? Date.parse(start + 'T00:00:00Z') : Date.parse(start);
+      if (isNaN(day)) return;
+      var days = Math.round((Date.UTC(new Date(day).getUTCFullYear(), new Date(day).getUTCMonth(), new Date(day).getUTCDate()) - today) / 864e5);
+      var text;
+      if (days < 0) text = t.held;
+      else if (days === 0) text = t.now;
+      else if (days === 1) text = t.tomorrow;
+      else if (days < 14) text = t.days.replace('{n}', days);
+      else if (days < 60) text = t.weeks.replace('{n}', Math.round(days / 7));
+      else text = t.months.replace('{n}', Math.round(days / 30));
+      el.textContent = text;
+    });
+  })();
+</script>

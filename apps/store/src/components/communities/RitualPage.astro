@@ -1,0 +1,195 @@
+---
+/**
+ * A ritual's page: its picture, when (the same day everywhere; a timed one
+ * in UTC and in the reader's hour), where, who can go, the file to add it
+ * to a calendar, the programme as read on the community's site, and what
+ * happens after.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import {
+  pick,
+  pickList,
+  spanDays,
+  whenLong,
+  type Community,
+  type Ritual,
+} from '../../lib/communities';
+import Icon from '../chrome/Icon.astro';
+import Cover from './Cover.astro';
+import Countdown from './Countdown.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+  ritual: Ritual;
+  community: Community;
+}
+
+const { locale, ritual, community } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const image = ritual.image
+  ? { src: ritual.image.src, alt: pick(ritual.image.alt, locale) }
+  : community.image
+    ? { src: community.image.src, alt: pick(community.image.alt, locale) }
+    : undefined;
+const days = spanDays(ritual);
+const description = `${whenLong(ritual, locale)} · ${pick(ritual.where, locale)}`;
+const sourceDate = ritual.source
+  ? new Intl.DateTimeFormat(locale === 'es' ? 'es-ES' : 'en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(`${ritual.source.date}T00:00:00Z`))
+  : '';
+---
+
+<BaseLayout locale={locale} title={`${pick(ritual.title, locale)} — ${community.name} — Numinia`} description={description} wide>
+  <Cover id={community.id} name={community.name} image={image} variant="cover" eager art />
+  <div class="columna">
+    <p class="migas">
+      <a href={`${prefix}/`}>Numinia</a> /{' '}
+      <a href={`${prefix}/communities/${community.id}/`}>{community.name}</a> / {ui.rituals}
+    </p>
+    <div class="cabeza">
+      <div class="fila">
+        <span class="etiqueta">
+          {whenLong(ritual, locale)}
+          <span class="falta" data-countdown={ritual.status === 'held' ? undefined : ritual.start}></span>
+        </span>
+        {ritual.mode && <span class="chip">{ui.modes[ritual.mode]}</span>}
+        {ritual.city && <span class="chip ambar">{ui.ofTheCity}</span>}
+        {ritual.status === 'held' && <span class="chip">{ui.heldChip}</span>}
+      </div>
+      <h1 class="display-m">{pick(ritual.title, locale)}</h1>
+      <p class="desc">
+        {ritual.city ? ui.cityKeeps : ui.organisedBy}{' '}
+        <a href={`${prefix}/communities/${community.id}/`} data-metric="ritual-community">{community.name}</a>.
+        {ritual.note && <> {pick(ritual.note, locale)}</>}
+      </p>
+    </div>
+
+    <div class="dos">
+      <div class="pila">
+        <section class="tarjeta">
+          <div class="datos">
+            <div class="dato">
+              <span class="etiqueta corta"><Icon name="calendar-blank" size={14} />{ui.when}</span>
+              <b>{whenLong(ritual, locale)}</b>
+              <span class="small texto-2">
+                {ritual.allDay ? (days > 1 ? fill(ui.wholeDays, { n: days }) : ui.wholeDay) : 'UTC'}
+              </span>
+            </div>
+            <div class="dato">
+              <span class="etiqueta corta"><Icon name="map-pin" size={14} />{ui.where}</span>
+              <b>{pick(ritual.where, locale)}</b>
+              <span class="small texto-2">{ritual.mode ? ui.modes[ritual.mode] : ui.howToAnnounce}</span>
+            </div>
+            <div class="dato">
+              <span class="etiqueta corta"><Icon name="users" size={14} />{ui.whoCanGo}</span>
+              <b>{ui.anyone}</b>
+              <span class="small texto-2">{ui.openNote}</span>
+            </div>
+            <div class="dato">
+              <span class="etiqueta corta"><Icon name="download-simple" size={14} />{ui.inYourCalendar}</span>
+              <b><a href={`/rituals/${ritual.id}.ics`} data-metric="ritual-add-calendar">{ui.add}</a></b>
+              <span class="small texto-2">{ui.addNote}</span>
+            </div>
+          </div>
+          {
+            (ritual.mode === 'online' || ritual.mode === 'mixed') && ritual.status !== 'held' && (
+              <p class="small texto-2" style="margin: var(--s4) 0 0">{ui.onlineNote}</p>
+            )
+          }
+        </section>
+        {
+          ritual.programme && (
+            <section class="tarjeta">
+              <h2 class="card-h2"><Icon name="clipboard-text" size={20} />{ui.programme}</h2>
+              <ol class="agenda">
+                {pickList(ritual.programme, locale).map((line) => (
+                  <li>{line}</li>
+                ))}
+              </ol>
+              {ritual.source && (
+                <p class="small texto-2" style="margin: var(--s4) 0 0">
+                  {fill(ui.readOn, { source: ritual.source.name, date: sourceDate })}
+                </p>
+              )}
+            </section>
+          )
+        }
+      </div>
+      <div class="pila">
+        {
+          ritual.status !== 'held' && (
+            <section class="tarjeta">
+              <h2 class="card-h2"><Icon name="scroll" size={20} />{ui.after}</h2>
+              <p class="texto-2" style="margin: 0">{ui.afterText}</p>
+            </section>
+          )
+        }
+        <section class="tarjeta">
+          <h2 class="card-h2"><Icon name="gear" size={20} />{ui.details}</h2>
+          <dl class="kv">
+            <div>
+              <dt>{ui.itsFile}</dt>
+              <dd class="mono small texto-2">src/content/communities/rituals/{ritual.id}.md</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  :global(main[data-wide]) {
+    padding: 0 0 var(--s7);
+  }
+  .columna {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 var(--s5);
+  }
+  .falta:not(:empty)::before {
+    content: ' · ';
+  }
+  .datos {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 40rem) {
+    .datos {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .dato {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .dato .etiqueta {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin: 0 0 4px;
+  }
+  .dato b {
+    font-weight: 500;
+    font-size: 1.05rem;
+  }
+  .agenda {
+    margin: 0;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+</style>

@@ -1,0 +1,93 @@
+---
+/**
+ * The picture at the head of a community or a ritual: a house illustration
+ * when the file names one; otherwise a monogram over a dimmed illustration
+ * chosen by the id. Never a third party's photo (rights, and the budget).
+ */
+import { monogram } from '../../lib/communities';
+
+interface Props {
+  id: string;
+  name: string;
+  image?: { readonly src: string; readonly alt: string } | undefined;
+  /** card: 16/9 in a card; cover: the wide band at the head of a page. */
+  variant?: 'card' | 'cover';
+  /** The first picture above the fold loads eagerly; the rest wait. */
+  eager?: boolean;
+  /** Without a picture: the dimmed illustration behind the monogram (page
+   *  covers and the featured card), or the plain gradient (the cards, so
+   *  the front door stays within its image budget). */
+  art?: boolean;
+}
+
+const { id, name, image, variant = 'card', eager = false, art = false } = Astro.props;
+
+/** The house illustrations a community without a picture borrows, dimmed. */
+const ART = ['/images/art/genesis.webp', '/images/art/builder.webp', '/images/art/play.webp', '/images/art/city.webp', '/images/art/interpret.webp', '/images/art/citizens.webp'];
+const hash = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+const loading = eager ? 'eager' : 'lazy';
+---
+
+<div class:list={['cover', variant]}>
+  {
+    image ? (
+      <img src={image.src} alt={image.alt} loading={loading} decoding="async" />
+    ) : (
+      <div class="monogram" aria-hidden="true">
+        {art && <img src={ART[hash % ART.length]} alt="" loading={loading} decoding="async" />}
+        <b>{monogram(name)}</b>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .cover {
+    background: var(--elevada);
+    overflow: hidden;
+    border-bottom: 1px solid var(--linea);
+  }
+  .cover.card {
+    aspect-ratio: 16 / 9;
+  }
+  .cover.cover {
+    height: 280px;
+  }
+  @media (min-width: 56.25rem) {
+    .cover.cover {
+      height: 360px;
+    }
+  }
+  .cover img {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .monogram {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(120% 100% at 30% 0%, var(--elevada), var(--fondo));
+    overflow: hidden;
+  }
+  .monogram img {
+    position: absolute;
+    inset: 0;
+    opacity: 0.18;
+    filter: saturate(0.5);
+  }
+  .monogram b {
+    position: relative;
+    font-weight: 300;
+    font-size: 2.4rem;
+    letter-spacing: -0.04em;
+    color: color-mix(in srgb, var(--enlace) 70%, transparent);
+  }
+  .cover.cover .monogram b {
+    font-size: 4rem;
+  }
+</style>

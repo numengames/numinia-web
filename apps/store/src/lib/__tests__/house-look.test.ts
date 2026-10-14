@@ -4,8 +4,8 @@
  * The four sites of Numen Games must read as one family. These checks pin
  * the measurable part of that family resemblance in the sources, so a later
  * edit cannot drift back silently: the bar (sticky, 56 px, blurred, the
- * wordmark, Mono entries with a Phosphor icon, Turquesa for the active one,
- * a full-screen menu on phones), the 1100 px column, the night sky, the
+ * scarab first, no menu, the search, the mode, the language and the door,
+ * Turquesa for the active one), the 1100 px column, the night sky, the
  * entrance, the system primary button, Verdemar eyebrows, and the two radii.
  * Pixels stay with the Playwright gates; this is the contract they draw.
  */
@@ -30,10 +30,11 @@ const radii = (css: string): string[] =>
   [...css.matchAll(/border-radius:\s*([^;]+);/g)].map((m) => (m[1] ?? '').trim());
 
 describe('the bar, as numinia.org draws it', () => {
-  it('keeps the wordmark as the first thing, named for a screen reader', async () => {
+  it('opens with the scarab, in currentColor, named for a screen reader', async () => {
     const src = await read(HEADER);
-    expect(src).toContain("import wordmark from '@numinia/ui/assets/brand/Numinia_Word.svg?raw'");
-    expect(src).toMatch(/class="brand"[\s\S]*?aria-label="Numinia"[\s\S]*?set:html=\{wordmark\}/);
+    expect(src).toContain("import scarab from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw'");
+    expect(src).toMatch(/class="brand"[\s\S]*?aria-label="Numinia"[\s\S]*?set:html=\{scarab\}/);
+    expect(src).toMatch(/\.brand:hover,\s*\.brand:focus-visible\s*\{[^}]*color:\s*var\(--enlace\)/);
   });
 
   it('is sticky, 56 px high, the page at 85 % with a 24 px blur and a half hairline', async () => {
@@ -48,26 +49,19 @@ describe('the bar, as numinia.org draws it', () => {
     expect(src).toMatch(/max-width:\s*1100px/);
   });
 
-  it('writes its entries in Mono 0.7rem, tracked 0.15em, each with a 14 px Phosphor icon', async () => {
+  it('carries no menu (the Oracle, 2026-10-14): the search, the mode, the language, the door', async () => {
     const src = await read(HEADER);
-    expect(src).toMatch(/font-size:\s*0\.7rem/);
-    expect(src).toMatch(/letter-spacing:\s*0\.15em/);
-    expect(src).toMatch(/<Icon name=\{item\.icon\} size=\{14\} \/>/);
-    expect(src).not.toMatch(/letter-spacing:\s*0\.1em/);
+    for (const metric of ['nav-home', 'nav-search', 'chrome-mode', 'chrome-sign-in']) {
+      expect(src).toContain(`data-metric="${metric}"`);
+    }
+    expect(src).toContain('<LanguageMenu');
+    expect(src).not.toMatch(/menu-movil|data-menu-btn|chrome-menu|nav-city|nav-assets|nav-lap/);
   });
 
-  it('marks the active entry with a 2 px Turquesa underline, never Ámbar', async () => {
+  it('marks the active utility with Turquesa, never Ámbar', async () => {
     const src = await read(HEADER);
-    expect(src).toMatch(/\[aria-current='page'\][^}]*border-bottom-color:\s*var\(--turquesa\)/);
+    expect(src).toMatch(/\[aria-current='page'\][^}]*border-color:\s*var\(--turquesa\)/);
     expect(src).not.toContain('var(--ambar)');
-  });
-
-  it('on a phone, one 44 px button opens a full-screen panel with the same entries', async () => {
-    const src = await read(HEADER);
-    expect(src).toMatch(/aria-controls="menu-movil"/);
-    expect(src).toMatch(/aria-expanded="false"/);
-    expect(src).toMatch(/aria-label=\{t\.menuOpen\}/);
-    expect(src).toMatch(/id="menu-movil"/);
   });
 
   it('the menu entries of the kit follow the same rule (Turquesa, 0.7rem, 0.15em)', async () => {

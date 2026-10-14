@@ -34,8 +34,14 @@ const BUDGETS = {
       unnoticed — only local `verify` runs budgets), and the Oracle ordered
       the epitaph skull at the foot of the four sites (CAN-002), whose
       toggle/Escape handler is ~0.7KB. House chrome, not feature creep.
-      Landing sits at ~11.7KB. */
-  landingInlineScriptBytes: 12_000,
+      Landing sits at ~11.7KB.
+      Raised 12000→14000 on 2026-10-14 (v0.82.0): the front door became the
+      communities platform's (the Oracle's order), and two inline scripts
+      came with it — the countdown beside each ritual's date, filled from
+      the reader's clock so the built page carries no "today" (~1.1KB), and
+      the strip's two arrows (~0.4KB). Still no external JS; the page works
+      whole without either. Landing sits at ~12.7KB. */
+  landingInlineScriptBytes: 14_000,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -59,8 +65,15 @@ const BUDGETS = {
       Raised 33000→36000 on 2026-10-03 for the epitaph skull (Oracle order,
       the four sites): the Phosphor skull SVG, the epitaph text, its button,
       popover styles and handler (~2.3KB), plus Discord in the Social column.
-      Landing sits at ~35.2KB. */
-  landingHtmlBytes: 36_000,
+      Landing sits at ~35.2KB.
+      Raised 36000→90000 on 2026-10-14 (v0.82.0): the front door is no
+      longer three doors but the city's register — the upcoming rituals as
+      cards, the three communities with life, four steps, three kinds, six
+      templates, four agents — each card with its Phosphor icons inline
+      (61 SVGs, ~25KB) and its texts in the page. Content, not feature
+      creep; ~14KB on the wire once gzipped, and still no external JS.
+      Landing sits at ~80KB. */
+  landingHtmlBytes: 90_000,
 };
 
 const failures = [];

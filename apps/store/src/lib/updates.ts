@@ -26,6 +26,28 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.82.0',
+    date: '2026-10-14 05:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The front door is a city where communities have a home. A conference, a classroom, a team, a community: each has in Numinia a 3D home, a calendar of its rituals and an archive of its own. The home opens on what we do, with a featured community beside it, the upcoming rituals in a strip, the three communities with the nearest ritual, how it works in four steps, the three kinds (Lodge, League, Brotherhood) with their seals, six templates and the four agents.',
+      },
+      {
+        type: 'NEW',
+        text: 'Communities: eleven pages opened by the house for the communities it has worked with — Numen Games, which founded the city, La Tarugo, MERGE, the Active Inference Institute, Commit Conf, València Innovation Capital, Tetuan Valley, Arcasiles, R3S3T, the City of Mesa and the Fundación Verón — each with what it is, where it is from, its line, its links, its rituals (standing, upcoming, held), its archive, its home, its members and the invitation to make the page its own. Four more are prepared on file and wait for their community’s yes. An index with a search box and filters by place, in the five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'Rituals: a page for each — TRG26, MERGE Madrid, the Anniversary of Numinia, the Active Inference Symposium, Public Domain Day, MERGE Buenos Aires, and the ones already held — with when (the same day everywhere), where, who can go, the programme as read on the community’s site, and a file to add it to your calendar. The calendar, month by month, and iCalendar feeds for the city and for each community. Every community and every ritual is a file under src/content/communities/: the page shows what the file says.',
+      },
+      {
+        type: 'UPD',
+        text: 'The bar carries no menu: the scarab opens it, then the search, the mode, the language and the door. The footer links every section, the communities and the calendar.',
+      },
+    ],
+  },
+  {
     version: 'v0.81.0',
     date: '2026-10-13 13:17',
     missions: ['MIS-184'],

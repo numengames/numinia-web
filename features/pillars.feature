@@ -1,11 +1,15 @@
 Feature: Three pillars (MISSION-004)
-  The site is organized as La Ciudad, Assets, and LAP — the header shows
-  exactly those three doors, the new sections exist in every locale, and no
-  internal link is broken. Verified against the build output.
+  The site is organized as La Ciudad, Assets, and LAP — since the
+  communities platform (2026-10-14) the bar carries no menu: the scarab,
+  the search, the mode, the language and the door; the footer links the
+  three sections, the communities and the calendar. The sections exist in
+  every locale, and no internal link is broken. Verified against the build
+  output.
 
-  Scenario: The header shows the three pillars on every page
+  Scenario: The bar shows the scarab and the utilities on every page, no menu
     Given the store application has been built
-    Then every page header links city, assets, and lap
+    Then every page bar carries the scarab, the search, the mode and the door
+    And every page footer links city, assets, lap, communities and the calendar
 
   Scenario: The pillar sections exist in every locale
     Given the store application has been built
