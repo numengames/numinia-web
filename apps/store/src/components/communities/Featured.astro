@@ -41,7 +41,7 @@ const STRIP = 'destacado-pista';
     <section class="destacado" aria-label={ui.featuredLabel}>
       <div class="dest-pista" id={STRIP} data-strip>
         {slides.map(({ community, ritual }, index) => {
-          const world = worldOf(community, commons, ritual);
+          const world = worldOf(community, commons, locale, ritual);
           const picture = ritual?.image ?? community.image;
           const image = picture ? { src: picture.src, alt: pick(picture.alt, locale) } : undefined;
           const first = index === 0;

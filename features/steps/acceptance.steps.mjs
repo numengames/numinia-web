@@ -851,6 +851,78 @@ Then('a ritual page opens on its world stage', async function () {
   assert.ok(trg.includes('data-metric="ritual-share"'), 'trg26: no share');
 });
 
+/** The address of the first link carrying a metric, parsed (never a substring of the page). */
+function hrefOf(html, metric) {
+  const tag = new RegExp(`<a\\b[^>]*\\bdata-metric="${metric}"[^>]*>`).exec(html);
+  const href = tag && /\bhref="([^"]+)"/.exec(tag[0]);
+  return href ? new URL(href[1].replace(/&amp;/g, '&')) : null;
+}
+
+Then('a community with a home opens it and counts who is inside', async function () {
+  const vic = await readFile(
+    path.join(this.distDir, 'es', 'communities', 'vic', 'index.html'),
+    'utf8',
+  );
+  const enter = hrefOf(vic, 'community-enter-world');
+  assert.ok(enter, 'vic: no way into its home');
+  assert.equal(enter.origin, 'https://vic.numinia.com', 'vic: the way in leads elsewhere');
+  assert.ok(vic.includes('data-inside="vic"'), 'vic: no slot for who is inside');
+  assert.ok(vic.includes('/api/live'), 'vic: nothing reads who is inside');
+  // A community without a home has neither the door nor the count.
+  const trg = await readFile(
+    path.join(this.distDir, 'es', 'communities', 'trgcon', 'index.html'),
+    'utf8',
+  );
+  assert.ok(
+    !trg.includes('data-metric="community-enter-world"'),
+    'trgcon: a home it does not have',
+  );
+  assert.ok(!trg.includes('data-inside='), 'trgcon: counts a home it does not have');
+});
+
+Then('Live lists the open homes with their doors', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const live = await readFile(path.join(this.distDir, prefix, 'live', 'index.html'), 'utf8');
+    assert.ok(live.includes('id="homes"'), `live (${prefix || 'en'}): no open homes`);
+    assert.ok(
+      live.includes('data-inside-row="vic"'),
+      `live (${prefix || 'en'}): vic is not in «Now»`,
+    );
+    assert.ok(live.includes('data-inside-empty'), `live (${prefix || 'en'}): no word for nobody`);
+  }
+  const live = await readFile(path.join(this.distDir, 'es', 'live', 'index.html'), 'utf8');
+  const door = hrefOf(live, 'live-home-enter');
+  assert.ok(door, 'live: an open home without a door');
+});
+
+Then('the Oracle alone sees how to edit a community and its rituals', async function () {
+  const vic = await readFile(
+    path.join(this.distDir, 'es', 'communities', 'vic', 'index.html'),
+    'utf8',
+  );
+  const edit = hrefOf(vic, 'community-edit');
+  assert.ok(edit, 'vic: no edit');
+  assert.equal(
+    `${edit.origin}${edit.pathname}`,
+    'https://github.com/numengames/numinia-web/edit/main/apps/store/src/content/communities/vic.md',
+    'vic: the edit opens another file',
+  );
+  const add = hrefOf(vic, 'community-add-ritual');
+  assert.ok(add && add.pathname.endsWith('/content/communities/rituals'), 'vic: no new ritual');
+  assert.ok(
+    (add.searchParams.get('value') ?? '').includes('community: vic'),
+    'vic: the draft is not hers',
+  );
+  const card = /<section\b[^>]*data-session-ranks="oracle"[^>]*>/.exec(vic);
+  assert.ok(card && /\bhidden\b/.test(card[0]), 'vic: the edit card is not hidden by default');
+  const ritual = await readFile(
+    path.join(this.distDir, 'es', 'rituals', 'trg26', 'index.html'),
+    'utf8',
+  );
+  const editRitual = hrefOf(ritual, 'ritual-edit');
+  assert.ok(editRitual && editRitual.pathname.endsWith('/rituals/trg26.md'), 'trg26: no edit');
+});
+
 Then('the bazaar and lap pages exist under every locale prefix', async function () {
   for (const prefix of LOCALE_PREFIXES) {
     for (const slug of ['bazaar', 'lap']) {

@@ -1,17 +1,20 @@
 ---
 /**
  * Live (/live/, the app shell v0.83.0): the homes with people inside right
- * now and the rituals taking place. No world reports who is inside yet, so
- * «Now» says so plainly — never an invented count — and «Coming up» lists
- * the six nearest rituals with their countdown.
+ * now and the rituals taking place. «Now» lists the homes someone is in,
+ * counted in the reader's browser from each home's public /status (numbers
+ * only, /api/live) — never an invented count; «Open homes» lists every
+ * community with a 3D home and its door; «Coming up» lists the six nearest
+ * rituals with their countdown.
  */
-import type { SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI } from '../../i18n/communities';
-import { dayAndMonth, pick, upcoming } from '../../lib/communities';
-import { RITUALS, communityOf } from './register';
+import { dayAndMonth, pick, sedeDomain, upcoming, worldOf } from '../../lib/communities';
+import { COMMUNITIES, RITUALS, communityOf } from './register';
 import Icon from '../chrome/Icon.astro';
 import Countdown from './Countdown.astro';
+import InsideCount from './InsideCount.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -22,6 +25,14 @@ const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const next = upcoming(RITUALS).slice(0, 6);
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+// Every community with a door to a 3D home; the founder's is the commons it keeps.
+const homes = COMMUNITIES.flatMap((community) => {
+  const world = worldOf(community, commons, locale);
+  if (!world) return [];
+  const counted = community.sede !== undefined && sedeDomain(community.sede.href) !== null;
+  return [{ community, world, counted }];
+});
 ---
 
 <BaseLayout locale={locale} title={`${ui.livePageTitle} — Numinia`} description={ui.livePageLead}>
@@ -36,10 +47,74 @@ const next = upcoming(RITUALS).slice(0, 6);
         <h2 class="titulo-m">{ui.liveNowTitle}</h2>
       </div>
     </div>
-    <p class="vacio">
+    <ul class="casas">
+      {
+        homes
+          .filter((home) => home.counted)
+          .map(({ community, world }) => (
+            <li class="tarjeta casa" data-inside-row={community.id} hidden>
+              <div>
+                <h3>
+                  <a href={`${prefix}/communities/${community.id}/`} data-metric="live-now-community">
+                    {community.name}
+                  </a>
+                </h3>
+                <p class="dentro" data-inside={community.id} />
+              </div>
+              <a
+                class="btn btn-primario btn-sm"
+                href={world.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="live-now-enter"
+              >
+                <Icon name="play" size={16} />
+                {ui.enter}
+              </a>
+            </li>
+          ))
+      }
+    </ul>
+    <p class="vacio" data-inside-empty>
       <Icon name="broadcast" size={24} />
       <span>{ui.liveNowEmpty}</span>
     </p>
+  </section>
+
+  <section class="bloque" id="homes">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m">{ui.liveHomesTitle}</h2>
+        <p class="ayuda">{ui.liveHomesHelp}</p>
+      </div>
+    </div>
+    <ul class="casas">
+      {
+        homes.map(({ community, world, counted }) => (
+          <li class="tarjeta casa">
+            <div>
+              <h3>
+                <a href={`${prefix}/communities/${community.id}/`} data-metric="live-home-community">
+                  {community.name}
+                </a>
+              </h3>
+              {world.name !== community.name && <p class="small texto-2">{world.name}</p>}
+              {counted && <p class="dentro small" data-inside={community.id} />}
+            </div>
+            <a
+              class="btn btn-fantasma btn-sm"
+              href={world.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-metric="live-home-enter"
+            >
+              <Icon name="play" size={16} />
+              {ui.enter}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
   </section>
 
   <section class="bloque" id="next">
@@ -86,9 +161,42 @@ const next = upcoming(RITUALS).slice(0, 6);
   </section>
 
   <Countdown ui={ui} />
+  <InsideCount ui={ui} />
 </BaseLayout>
 
 <style>
+  .casas {
+    list-style: none;
+    margin: 0 0 var(--s4);
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  }
+  .casas:not(:has(> li:not([hidden]))) {
+    margin: 0;
+  }
+  .casa {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s3);
+  }
+  .casa h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  .casa p {
+    margin: 2px 0 0;
+  }
+  .dentro:empty {
+    display: none;
+  }
+  .dentro:not([data-count='0']) {
+    color: var(--enlace);
+  }
   .falta:not(:empty)::before {
     content: ' · ';
   }

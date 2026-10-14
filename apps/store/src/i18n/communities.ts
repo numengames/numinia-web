@@ -161,6 +161,19 @@ export interface CommunitiesMessages {
   readonly liveNextTitle: string;
   readonly liveNextHelp: string;
   readonly liveNextEmpty: string;
+  readonly liveHomesTitle: string;
+  readonly liveHomesHelp: string;
+  /** How many are inside a home right now: none, one, "{n}". */
+  readonly insideNone: string;
+  readonly insideOne: string;
+  readonly insideMany: string;
+
+  // ── editing, the Oracle only (day one: the file in GitHub's editor)
+  readonly editLabel: string;
+  readonly editRitual: string;
+  readonly editOpen: string;
+  readonly addRitual: string;
+  readonly editNote: string;
 
   // ── «Perteneces» (/belong/)
   readonly belongTitle: string;
@@ -340,11 +353,22 @@ const ES: CommunitiesMessages = {
   livePageTitle: 'Live',
   livePageLead: 'Las sedes con gente dentro ahora mismo y los rituales que están pasando.',
   liveNowTitle: 'Ahora',
-  liveNowEmpty:
-    'Todavía ninguna sede cuenta quién está dentro. Cuando abran, aquí verás cuántos hay en cada una.',
+  liveNowEmpty: 'Ahora mismo no hay nadie dentro de ninguna sede.',
   liveNextTitle: 'Lo próximo',
   liveNextHelp: 'Los seis rituales más cercanos. Las fechas, el mismo día en todo el mundo.',
   liveNextEmpty: 'Ningún ritual a la vista.',
+  liveHomesTitle: 'Sedes abiertas',
+  liveHomesHelp:
+    'Las comunidades que ya tienen sede en 3D. Se entra desde el navegador, también en el móvil, sin instalar nada.',
+  insideNone: 'Nadie dentro ahora',
+  insideOne: '1 persona dentro ahora',
+  insideMany: '{n} personas dentro ahora',
+  editLabel: 'Editar la ficha',
+  editRitual: 'Editar el ritual',
+  editOpen: 'Abrir en GitHub',
+  addRitual: 'Añadir un ritual',
+  editNote:
+    'Solo lo ves tú, como Oráculo. Se abre el archivo en GitHub: al guardar queda una propuesta de cambio, y se publica cuando otra persona la aprueba.',
 
   belongTitle: 'Perteneces',
   belongLead: 'Tus comunidades y lo que pasa en ellas.',
@@ -520,11 +544,22 @@ const EN: CommunitiesMessages = {
   livePageTitle: 'Live',
   livePageLead: 'The homes with people inside right now, and the rituals taking place.',
   liveNowTitle: 'Now',
-  liveNowEmpty:
-    'No home reports who is inside yet. When they open, you will see here how many are in each one.',
+  liveNowEmpty: 'Nobody is inside any home right now.',
   liveNextTitle: 'Coming up',
   liveNextHelp: 'The six nearest rituals. Dates are the same day everywhere.',
   liveNextEmpty: 'No ritual in sight.',
+  liveHomesTitle: 'Open homes',
+  liveHomesHelp:
+    'The communities that already have a 3D home. You enter from the browser, on the phone too, with nothing to install.',
+  insideNone: 'Nobody inside now',
+  insideOne: '1 person inside now',
+  insideMany: '{n} people inside now',
+  editLabel: 'Edit the page',
+  editRitual: 'Edit the ritual',
+  editOpen: 'Open in GitHub',
+  addRitual: 'Add a ritual',
+  editNote:
+    'Only you see this, as an Oracle. The file opens in GitHub: saving leaves a proposed change, published once someone else approves it.',
 
   belongTitle: 'You belong',
   belongLead: 'Your communities and what happens in them.',
@@ -665,11 +700,22 @@ const JA: CommunitiesMessages = {
   livePageTitle: 'Live',
   livePageLead: 'いま人がいる拠点と、開催中の儀式。',
   liveNowTitle: 'いま',
-  liveNowEmpty:
-    'まだ、中に誰がいるかを伝える拠点はありません。拠点が開いたら、ここでそれぞれの人数が見られます。',
+  liveNowEmpty: 'いまはどの拠点にも誰もいません。',
   liveNextTitle: 'これから',
   liveNextHelp: '最も近い六つの儀式。日付は世界中で同じ日です。',
   liveNextEmpty: '予定されている儀式はありません。',
+  liveHomesTitle: '開いている拠点',
+  liveHomesHelp:
+    'すでに3Dの拠点を持つコミュニティ。ブラウザから、スマホでも、何もインストールせずに入れます。',
+  insideNone: 'いまは誰もいません',
+  insideOne: 'いま1人がいます',
+  insideMany: 'いま{n}人がいます',
+  editLabel: 'ページを編集',
+  editRitual: '儀式を編集',
+  editOpen: 'GitHubで開く',
+  addRitual: '儀式を追加',
+  editNote:
+    'オラクルであるあなたにだけ表示されます。ファイルがGitHubで開きます。保存すると変更の提案になり、別の人が承認すると公開されます。',
   belongTitle: '所属',
   belongLead: 'あなたのコミュニティと、そこで起きていること。',
   followsTitle: 'フォロー中',
@@ -809,11 +855,22 @@ const KO: CommunitiesMessages = {
   livePageTitle: 'Live',
   livePageLead: '지금 사람이 있는 거점과 진행 중인 의식.',
   liveNowTitle: '지금',
-  liveNowEmpty:
-    '아직 안에 누가 있는지 알려 주는 거점이 없습니다. 거점이 열리면 여기에서 각 거점의 인원을 볼 수 있습니다.',
+  liveNowEmpty: '지금은 어느 거점에도 아무도 없습니다.',
   liveNextTitle: '다가오는',
   liveNextHelp: '가장 가까운 여섯 개의 의식. 날짜는 전 세계 같은 날입니다.',
   liveNextEmpty: '예정된 의식이 없습니다.',
+  liveHomesTitle: '열린 거점',
+  liveHomesHelp:
+    '이미 3D 거점가 있는 커뮤니티입니다. 브라우저에서, 휴대폰에서도, 아무것도 설치하지 않고 들어갑니다.',
+  insideNone: '지금 아무도 없음',
+  insideOne: '지금 1명 있음',
+  insideMany: '지금 {n}명 있음',
+  editLabel: '페이지 편집',
+  editRitual: '의식 편집',
+  editOpen: 'GitHub에서 열기',
+  addRitual: '의식 추가',
+  editNote:
+    '오라클인 당신에게만 보입니다. 파일이 GitHub에서 열립니다. 저장하면 변경 제안이 남고, 다른 사람이 승인하면 게시됩니다.',
   belongTitle: '소속',
   belongLead: '당신의 커뮤니티와 그곳에서 일어나는 일.',
   followsTitle: '팔로우 중',
@@ -952,11 +1009,22 @@ const PT_BR: CommunitiesMessages = {
   livePageTitle: 'Live',
   livePageLead: 'As sedes com gente dentro agora mesmo e os rituais que estão acontecendo.',
   liveNowTitle: 'Agora',
-  liveNowEmpty:
-    'Nenhuma sede conta ainda quem está dentro. Quando abrirem, aqui você verá quantos há em cada uma.',
+  liveNowEmpty: 'Agora não há ninguém dentro de nenhuma sede.',
   liveNextTitle: 'O que vem',
   liveNextHelp: 'Os seis rituais mais próximos. As datas são o mesmo dia no mundo todo.',
   liveNextEmpty: 'Nenhum ritual à vista.',
+  liveHomesTitle: 'Sedes abertas',
+  liveHomesHelp:
+    'As comunidades que já têm sede em 3D. Entra-se pelo navegador, no celular também, sem instalar nada.',
+  insideNone: 'Ninguém dentro agora',
+  insideOne: '1 pessoa dentro agora',
+  insideMany: '{n} pessoas dentro agora',
+  editLabel: 'Editar a página',
+  editRitual: 'Editar o ritual',
+  editOpen: 'Abrir no GitHub',
+  addRitual: 'Adicionar um ritual',
+  editNote:
+    'Só você vê isto, como Oráculo. O arquivo abre no GitHub: ao salvar fica uma proposta de mudança, publicada quando outra pessoa a aprova.',
   belongTitle: 'Você pertence',
   belongLead: 'Suas comunidades e o que acontece nelas.',
   followsTitle: 'Você segue',
