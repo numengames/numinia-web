@@ -33,8 +33,31 @@ const labels = {
     <h1>{t.prices.title}</h1>
     <p class="intro">{t.prices.intro}</p>
   </header>
+  <p class="aviso pagos-retraso" role="alert" data-payments-lag data-template={t.prices.paymentsLag} hidden>
+  </p>
   <PricesPanel client:load labels={labels} room={PRICES_UI[locale]} lang={locale} />
 </LapShell>
+
+<script>
+  /* The till's poll of Stripe, watched (MIS-180): only when it is more than
+     two days behind does the room say so. Stripe keeps events 30 days. The
+     endpoint answers Oracles only; anyone else gets 403 and sees nothing. */
+  const lag = document.querySelector<HTMLElement>('[data-payments-lag]');
+  if (lag) {
+    fetch('/api/admin/payments', { headers: { accept: 'application/json' } })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((health: { readThrough?: unknown; lagging?: unknown } | null) => {
+        if (health?.lagging !== true) return;
+        const date =
+          typeof health.readThrough === 'string'
+            ? new Date(health.readThrough).toLocaleString(document.documentElement.lang)
+            : '—';
+        lag.textContent = (lag.dataset['template'] ?? '').replace('{date}', date);
+        lag.hidden = false;
+      })
+      .catch(() => undefined);
+  }
+</script>
 
 <style>
   .cabecera {
@@ -45,6 +68,9 @@ const labels = {
     font-weight: 400;
     letter-spacing: -0.025em;
     margin: 0 0 var(--s2);
+  }
+  .pagos-retraso {
+    margin: 0 0 var(--s5);
   }
   .intro {
     color: var(--texto-2);

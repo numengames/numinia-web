@@ -103,6 +103,9 @@ test('your own account: the balance, the low-balance warning, usage and movement
   await expect(page.locator('[data-saldo-low]')).toBeVisible();
   await expect(page.locator('[data-saldo-spent]')).toHaveText(/1,20\s€/);
   await expect(page.locator('[data-saldo-chart]')).toBeVisible();
+  // Before paying: who sells, and what the bank statement will say.
+  await expect(page.locator('[data-saldo-seller]')).toContainText('Link (Stripe)');
+  await expect(page.locator('[data-saldo-seller]')).toContainText('LINK.COM* NUMEN GAMES');
   await expect(page.locator('[data-saldo-lines] tbody tr')).toHaveCount(2);
   await expect(page.locator('[data-saldo-team]')).toHaveCount(0);
   // The sidebar opens Saldo once you are signed in.
@@ -146,6 +149,9 @@ test('the way back confirms the payment and shows the new balance', async ({ pag
   const posted = await signedIn(page);
   await page.goto('/es/saldo/vuelta/?session_id=cs_test_e2e');
   await expect(page.locator('[data-saldo-vuelta="paid"]')).toContainText(/14,20\s€/);
+  await expect(page.locator('[data-saldo-vuelta="paid"] [data-saldo-seller]')).toContainText(
+    'LINK.COM* NUMEN GAMES',
+  );
   expect(posted).toEqual(['confirm']);
 });
 

@@ -96,6 +96,9 @@ export function Topup({
       </h2>
       <div className="saldo-marco">
         <p className="saldo-nota">{ui.topup.note}</p>
+        <p className="saldo-nota" data-saldo-seller>
+          {ui.topup.seller}
+        </p>
         <div className="saldo-importes" role="group" aria-label={ui.topup.amounts}>
           {TOPUP_KEYS.map((key) => (
             <button

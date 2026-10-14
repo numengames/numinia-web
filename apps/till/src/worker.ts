@@ -34,6 +34,7 @@ import {
   createTeam,
   members,
   overview,
+  pollState,
   pollStripe,
   removeMember,
   renameTeam,
@@ -43,6 +44,7 @@ import {
   type MembersAnswer,
   type Overview,
   type Payments,
+  type PollState,
   type PollRun,
   type Refusal,
   type StatementAnswer,
@@ -136,14 +138,21 @@ export async function handleMinute(
     new Stripe(env.STRIPE_KEY, fetcher),
     new Date(controller.scheduledTime),
   );
-  if (run.uncreditable > 0) {
-    throw new Error(
-      `stripe poll: ${run.uncreditable} paid session(s) not credited (rule: same account, euros, a payment intent, a positive net)`,
-    );
-  }
-  if (!run.complete) {
-    throw new Error(`stripe poll: more events than one run reads; the cursor did not move`);
-  }
+  // Every rule broken this run, in one error: Workers Logs shows the run as
+  // failed, naming rules and counts — never an amount or a wallet.
+  const broken = [
+    ...(run.uncreditable > 0
+      ? [
+          `${run.uncreditable} paid session(s) not credited (rule: same account, euros, a payment intent, a positive amount)`,
+        ]
+      : []),
+    ...(run.unapplied > 0
+      ? [`${run.unapplied} refund(s) or dispute(s) of the till's top-ups not applied (rule: euros)`]
+      : []),
+    ...(run.complete ? [] : ['more events than one run reads; the cursor did not move']),
+    ...(run.lagging ? ['the poll is more than two days behind; Stripe keeps events 30 days'] : []),
+  ];
+  if (broken.length > 0) throw new Error(`stripe poll: ${broken.join('; ')}`);
   return run;
 }
 
@@ -169,6 +178,11 @@ export class OracleDesk extends WorkerEntrypoint<Env> {
   /** Every version, the one in force today, and the sizes still charged to worlds. */
   async read(): Promise<DeskView> {
     return readDesk(this.env.TILL_DB, new Date());
+  }
+
+  /** Where the minute's poll has read Stripe up to, and whether it is more than two days behind. */
+  async payments(): Promise<PollState> {
+    return pollState(this.env.TILL_DB, new Date());
   }
 
   /** What scheduling `draft` now would replace and refuse; writes nothing. */

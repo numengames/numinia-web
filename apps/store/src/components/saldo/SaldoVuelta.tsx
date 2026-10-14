@@ -88,6 +88,9 @@ export function SaldoVuelta({
           <p className="saldo-cifra-m mono">
             {fill(ui.vuelta.balanceNow, { b: formatEuros(state.balanceCents, lang) })}
           </p>
+          <p className="saldo-nota" data-saldo-seller>
+            {ui.topup.seller}
+          </p>
         </>
       )}
       {state.at === 'processing' && (

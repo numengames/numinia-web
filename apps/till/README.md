@@ -56,6 +56,7 @@ till never trusts a browser.
 
 | Method                | Answers                                                                                                                                                                                                                         |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payments()`          | `{ readThrough, lagging }`: where the minute's poll has read Stripe up to, and whether that is more than two days behind                                                                                                        |
 | `read()`              | `DeskView`: the till's date, the version in force, every version (prices, rules, from when, by whom, why) and the sizes charged to worlds in the last 35 days                                                                   |
 | `check(draft)`        | `DeskCheck`: the next id, the version the draft would replace from its start, whether it is a rise against it, the notice and the first day it may start, and exactly the problems `schedule` would refuse with. Writes nothing |
 | `schedule(draft, by)` | `{ ok: true, version }`, the version written (the next id, created now by `by`), or `{ ok: false, problems }` with nothing written                                                                                              |
@@ -105,10 +106,27 @@ re-validated; a refusal is an answer, never a throw.
 till only keeps the balance. The till reaches OUT to api.stripe.com
 (`src/lib/stripe.ts`, pinned `Stripe-Version`); nothing of Stripe's reaches
 in — no webhook route. A paid session is credited when the buyer returns,
-and by the minute cron (`* * * * *`), which lists `checkout.session.completed`
-and `checkout.session.async_payment_succeeded` events since its cursor less
-five minutes and applies the till's own checkouts. The keep-first trigger on
-`stripe_payment_id` makes every credit happen once.
+and by the minute cron (`* * * * *`), which lists Stripe's events since its
+cursor less five minutes and applies them oldest first:
+
+| Event                                                                           | What the till writes                                                                             |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `checkout.session.completed` (paid), `checkout.session.async_payment_succeeded` | the top-up, once (keep-first on `stripe_payment_id`)                                             |
+| `checkout.session.async_payment_failed`                                         | the checkout ends `expired`; nothing credited                                                    |
+| `charge.refunded`                                                               | a `refund` line of what the charge's cumulative refunded total adds (partial refunds one by one) |
+| `charge.dispute.created`                                                        | a `chargeback` line of the disputed amount                                                       |
+| `charge.dispute.closed`, won                                                    | an `adjustment` by `stripe` giving that chargeback back, naming it                               |
+
+Only events about the till's own checkouts and top-ups are applied; other
+products of the same Stripe account are skipped. Every line is keyed by its
+event, so an event read twice writes once. A refund of a balance already
+spent takes the account below zero (Pablo, 2026-10-14): the at-zero rules
+apply and the next top-up pays the debt first.
+
+**The poll's lag.** Stripe keeps events 30 days. A run that finds the cursor
+more than two days behind fails loudly in Workers Logs, and the Oracle desk's
+`payments()` answers `{ readThrough, lagging }`, which numinia.com's Prices
+room shows to the Oracle.
 
 **Configuration.** Secret `STRIPE_KEY`: a restricted key with Checkout
 Sessions write and Events read (TEST mode in this cut). Var
