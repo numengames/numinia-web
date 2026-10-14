@@ -1,28 +1,22 @@
 /**
- * The reader's live labels (bookmark, mode, moon, Narrador), handed from the
- * server in the `.codex` root's data-ui attribute so the client scripts speak
- * the manual's language without shipping both dictionaries. A missing or
- * unreadable attribute keeps the original Spanish words.
+ * The reader's live labels (bookmark, mode, moon), handed from the server in
+ * the `.codex` root's data-ui attribute so the client scripts speak the
+ * manual's language without shipping both dictionaries. A missing or
+ * unreadable attribute keeps the original Spanish words. (The reading
+ * player carries its own words: components/speech/SpeechPlayer.astro.)
  */
 
 export interface CodexClientUi {
   readonly bookmark: string;
   readonly bookmarked: string;
-  readonly narrator: string;
-  readonly pause: string;
-  readonly resume: string;
   readonly day: string;
   readonly night: string;
   readonly phases: readonly string[];
-  readonly voice: string;
 }
 
 const SPANISH: CodexClientUi = {
   bookmark: 'Marcapáginas',
   bookmarked: 'Marcado',
-  narrator: 'Narrador',
-  pause: 'Pausa',
-  resume: 'Seguir',
   day: 'Diurno',
   night: 'Nocturno',
   phases: [
@@ -35,7 +29,6 @@ const SPANISH: CodexClientUi = {
     'vísperas del plenilunio',
     'luna llena',
   ],
-  voice: 'es-ES',
 };
 
 export function codexClientUi(codex: HTMLElement | null | undefined): CodexClientUi {

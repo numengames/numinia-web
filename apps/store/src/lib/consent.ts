@@ -42,6 +42,9 @@ export const STORED_KEYS = [
   'numinia-codex-tam',
   'numinia-codex-marca',
   'numinia-codex-ritmo',
+  // The manual's reading player (v0.87.0): where you paused, per chapter,
+  // for this tab only (session storage).
+  'numinia-codex-escucha',
   'numinia-lap-personaje',
   // The app shell (v0.83.0): the sidebar's fold, and the communities a
   // visitor follows (the follow button on a community's page writes it).

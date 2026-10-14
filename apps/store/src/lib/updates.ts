@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.87.0',
+    date: '2026-10-14 17:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Numinia RPG manual reads aloud with numinia.org’s player. «Listen» in the top bar says how long the chapter takes and reads it with your device’s own voice — nothing leaves your device. While it speaks, a bar at the foot of the page shows the section and the time, a ruler with a mark per section to jump to any sentence, the speed (1×, 1.25×, 1.5×, 2×, 0.75×) and stop. What has been read fades like drying ink and a soft light follows the word; tap a sentence to hear it from there. Scroll away and «Back to the reading» brings you back. Pause, leave the chapter and return: it resumes where you were.',
+      },
+      {
+        type: 'UPD',
+        text: 'The old Narrador gives way to it: the same voice, on the chapters, the character sheet and the glossary.',
+      },
+    ],
+  },
+  {
     version: 'v0.86.0',
     date: '2026-10-14 16:30',
     entries: [

@@ -210,8 +210,8 @@ test('the chrome compacts but never leaves; the final paragraph can be marked', 
   );
 });
 
-test('el Narrador reads aloud and follows the sounding block', async ({ page }) => {
-  // Deterministic voice through the script's test seam (__narradorSynth) —
+test('Listen reads the chapter aloud: the dock, the speed, pause and stop', async ({ page }) => {
+  // Deterministic voice through the player's test seam (__speechSynth) —
   // window.speechSynthesis itself is not replaceable in every engine, and
   // headless WebKit must never touch the real voice stack.
   await page.addInitScript(() => {
@@ -223,15 +223,18 @@ test('el Narrador reads aloud and follows the sounding block', async ({ page }) 
       onstart: (() => void) | null = null;
       onend: (() => void) | null = null;
       onerror: (() => void) | null = null;
+      onboundary: (() => void) | null = null;
       constructor(text: string) {
         this.text = text;
       }
     }
+    const spoken: string[] = [];
     const fake = {
       speaking: false,
       paused: false,
       speak(utterance: FakeUtterance) {
         fake.speaking = true;
+        spoken.push(utterance.text);
         setTimeout(() => utterance.onstart?.(), 0);
       },
       cancel() {
@@ -246,27 +249,42 @@ test('el Narrador reads aloud and follows the sounding block', async ({ page }) 
       getVoices: () => [{ lang: 'es-ES', name: 'Voz de prueba' }],
       addEventListener() {},
     };
-    (window as { __narradorSynth?: unknown }).__narradorSynth = fake;
+    (window as { __speechSynth?: unknown }).__speechSynth = fake;
+    (window as { __spoken?: string[] }).__spoken = spoken;
     (window as { SpeechSynthesisUtterance?: unknown }).SpeechSynthesisUtterance = FakeUtterance;
   });
   await gotoFirstChapter(page);
-  const narrator = page.locator('[data-codex-narrador]');
-  await expect(narrator).toBeVisible();
-  await narrator.click();
-  await expect(narrator).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.cuerpo .narrando')).toHaveCount(1);
-  const pace = page.locator('[data-codex-ritmo]');
-  await expect(pace).toBeVisible();
-  await pace.click();
-  await expect(pace).toContainText('×1.25');
+  const listen = page.locator('.codex .chrome .sp-toggle');
+  await expect(listen).toBeVisible();
+  await expect(listen).toHaveAttribute('aria-label', 'Escuchar este capítulo');
+  await listen.click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'true');
+  // The dock surfaces, names the chapter and keeps the clock.
+  const dock = page.locator('body > .sp-dock');
+  await expect(dock).toHaveClass(/is-on/);
+  await expect(dock.locator('.sp-time')).toContainText('/');
+  // The first utterance is one sentence of the chapter's own text.
+  const first = await page.evaluate(() => (window as { __spoken?: string[] }).__spoken?.[0] ?? '');
+  expect(first.length).toBeGreaterThan(0);
+  expect(await page.locator('.codex .cuerpo').innerText()).toContain(first.slice(0, 20));
+  // The speed steps gently and follows the reader.
+  const rate = dock.locator('.sp-rate');
+  await rate.click();
+  await expect(rate).toHaveText('1.25×');
   // Pause keeps the place and hands the button its next verb.
-  await narrator.click();
-  await expect(narrator).toHaveAttribute('aria-pressed', 'false');
-  // The glossary narrates too: entry by entry, term then definition.
+  await dock.locator('.sp-play').click();
+  await expect(listen).toHaveAttribute('aria-pressed', 'false');
+  await expect(listen.locator('.sp-label')).toHaveText('Seguir');
+  // Stop folds the dock.
+  await dock.locator('.sp-stop').click();
+  await expect(dock).not.toHaveClass(/is-on/);
+  await expect(listen.locator('.sp-label')).toHaveText('Escuchar');
+  // The glossary reads too.
   await page.goto('/es/lap/codex/glosario/');
-  await expect(page.locator('[data-codex-narrador]')).toBeVisible();
-  await page.locator('[data-codex-narrador]').click();
-  await expect(page.locator('.glosario dt.narrando')).toHaveCount(1);
+  await expect(page.locator('.codex .chrome .sp-toggle')).toBeVisible();
+  // The cover has nothing to read: no button.
+  await page.goto('/es/lap/codex/');
+  await expect(page.locator('.codex .chrome .sp-toggle')).toBeHidden();
 });
 
 test('management data is refused without a session', async ({ request }) => {
