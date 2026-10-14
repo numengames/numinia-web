@@ -15,9 +15,11 @@ import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import {
+  editHref,
   pick,
   pickList,
   placesLine,
+  sedeDomain,
   spanDays,
   whenLong,
   worldOf,
@@ -27,6 +29,7 @@ import {
 import Icon from '../chrome/Icon.astro';
 import Cover from './Cover.astro';
 import Countdown from './Countdown.astro';
+import InsideCount from './InsideCount.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -39,8 +42,11 @@ const { locale, ritual, community } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
-const world = worldOf(community, commons, ritual);
+const world = worldOf(community, commons, locale, ritual);
 const homeName = ritual.city ? commons.name : fill(ui.homeOf, { x: community.name });
+// Who is inside, only when the ritual opens on the community's own home of the fleet.
+const counted =
+  !ritual.city && community.sede !== undefined && sedeDomain(community.sede.href) !== null;
 const days = spanDays(ritual);
 const description = `${whenLong(ritual, locale)} · ${pick(ritual.where, locale)}`;
 const icsHref = `/rituals/${ritual.id}.ics`;
@@ -103,6 +109,7 @@ const sourceDate = ritual.source
               {ui.enterWorld}
             </a>
             <p>{ui.worldNote}</p>
+            {counted && <p class="dentro" data-inside={community.id} />}
           </>
         ) : (
           <>
@@ -240,10 +247,25 @@ const sourceDate = ritual.source
           </div>
         </dl>
       </section>
+      <section class="tarjeta" data-session-ranks="oracle" hidden>
+        <h2 class="card-h2"><Icon name="github-logo" size={20} />{ui.editRitual}</h2>
+        <p class="small texto-2" style="margin: 0 0 var(--s4)">{ui.editNote}</p>
+        <a
+          class="btn btn-fantasma btn-sm"
+          href={editHref('ritual', ritual.id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-metric="ritual-edit"
+        >
+          <Icon name="arrow-square-out" size={16} />
+          {ui.editOpen}
+        </a>
+      </section>
     </div>
   </div>
 
   <Countdown ui={ui} />
+  {counted && <InsideCount ui={ui} />}
   <script is:inline>
     /* Share: the device's own sheet where there is one, else the address
        copied to the clipboard and said aloud. Without JavaScript the button
@@ -329,6 +351,13 @@ const sourceDate = ritual.source
   .entrar p {
     margin: 0;
     color: var(--texto);
+  }
+  .entrar .dentro:empty {
+    display: none;
+  }
+  .entrar .dentro:not([data-count='0']) {
+    color: var(--enlace);
+    font-weight: 500;
   }
   .btn-grande {
     min-height: 52px;

@@ -1,0 +1,54 @@
+---
+/**
+ * How many people are inside each home, filled in the reader's browser from
+ * /api/live (numbers only, reused for 30 s). The built page carries no
+ * count, so it never lies between deploys; without JavaScript, or when a
+ * home does not answer, the slot stays empty — never an invented number.
+ * Inline (no external JS: the page budgets) and tiny.
+ *
+ *   data-inside="<community>"       the count, as text
+ *   data-inside-row="<community>"   shown only while someone is inside
+ *   data-inside-empty               hidden once anyone is inside anywhere
+ *
+ * Templates come from the page's messages; "{n}" is the number.
+ */
+import type { CommunitiesMessages } from '../../i18n/communities';
+
+interface Props {
+  ui: CommunitiesMessages;
+}
+
+const { ui } = Astro.props;
+const templates = { none: ui.insideNone, one: ui.insideOne, many: ui.insideMany };
+---
+
+<script is:inline data-inside-templates={JSON.stringify(templates)}>
+  (function () {
+    var t = JSON.parse(document.currentScript.getAttribute('data-inside-templates'));
+    if (!document.querySelector('[data-inside], [data-inside-row]')) return;
+    fetch('/api/live', { headers: { accept: 'application/json' } })
+      .then(function (response) {
+        return response.ok ? response.json() : null;
+      })
+      .then(function (body) {
+        var inside = body && body.inside;
+        if (!inside) return;
+        var anyone = false;
+        document.querySelectorAll('[data-inside]').forEach(function (el) {
+          var n = inside[el.getAttribute('data-inside')];
+          if (typeof n !== 'number') return;
+          el.textContent = n === 0 ? t.none : n === 1 ? t.one : t.many.replace('{n}', n);
+          el.setAttribute('data-count', String(n));
+        });
+        document.querySelectorAll('[data-inside-row]').forEach(function (row) {
+          var n = inside[row.getAttribute('data-inside-row')];
+          var shown = typeof n === 'number' && n > 0;
+          row.hidden = !shown;
+          if (shown) anyone = true;
+        });
+        var empty = document.querySelector('[data-inside-empty]');
+        if (empty && anyone) empty.hidden = true;
+      })
+      .catch(function () {});
+  })();
+</script>

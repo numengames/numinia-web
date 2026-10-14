@@ -80,6 +80,20 @@ for (const mode of MODES) {
           .first()
           .waitFor({ state: 'detached', timeout: 5000 })
           .catch(() => undefined);
+        // A reveal that just turned visible is still fading in: on a long page
+        // (/updates/ grows with every release) the last cards are mid-fade when
+        // axe reads them. Let every finite animation end, as axe() below does.
+        await page.evaluate(() =>
+          Promise.race([
+            Promise.all(
+              document
+                .getAnimations()
+                .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+                .map((animation) => animation.finished.catch(() => undefined)),
+            ),
+            new Promise((resolve) => setTimeout(resolve, 3000)),
+          ]),
+        );
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           // Sistema §6.1 binaria: texture-as-text, aria-hidden, deliberately faint.

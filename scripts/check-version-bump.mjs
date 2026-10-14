@@ -21,6 +21,10 @@ const baseIdx = args.indexOf('--base');
 const base = baseIdx >= 0 ? args[baseIdx + 1] : 'origin/main';
 const UPDATES = 'apps/store/src/lib/updates.ts';
 const SCOPE = 'apps/store/src/';
+// The communities' register is content, not the site: a community's page or
+// ritual edited in GitHub's editor (the Oracle's «Edit», v0.85.0) publishes
+// without a release note. Its pages still rebuild, and every gate still runs.
+const CONTENT = 'apps/store/src/content/communities/';
 
 const sh = (cmd) => execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 
@@ -33,9 +37,13 @@ try {
 }
 
 const changed = sh(`git diff --name-only ${mergeBase} HEAD`).split('\n').filter(Boolean);
-const siteChanged = changed.filter((f) => f.startsWith(SCOPE) && f !== UPDATES);
+const siteChanged = changed.filter(
+  (f) => f.startsWith(SCOPE) && f !== UPDATES && !f.startsWith(CONTENT),
+);
 if (siteChanged.length === 0) {
-  console.log('check-version-bump: no change under apps/store/src — nothing to record.');
+  console.log(
+    'check-version-bump: no change under apps/store/src (register content aside) — nothing to record.',
+  );
   process.exit(0);
 }
 
@@ -61,4 +69,6 @@ if (baseVersion === headVersion) {
   );
   process.exit(1);
 }
-console.log(`check-version-bump: ${baseVersion ?? '(none)'} → ${headVersion}, ${siteChanged.length} site file(s) changed.`);
+console.log(
+  `check-version-bump: ${baseVersion ?? '(none)'} → ${headVersion}, ${siteChanged.length} site file(s) changed.`,
+);

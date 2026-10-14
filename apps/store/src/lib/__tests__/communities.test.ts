@@ -14,7 +14,12 @@ import {
   byStart,
   calendarMonth,
   calendarMonths,
+  countedSedes,
   dayAndMonth,
+  editHref,
+  newRitualHref,
+  REGISTER_REPO,
+  sedeDomain,
   featuredSlides,
   firstMonth,
   foldLine,
@@ -126,6 +131,13 @@ describe('the register on disk', () => {
       .sort();
     expect(prepared).toEqual(['adigital', 'backfund', 'cps', 'mad-tech-campus']);
     expect(published(REGISTER)).toHaveLength(11);
+  });
+
+  it('gives VIC its home in the fleet, and no other community a home yet', () => {
+    const housed = REGISTER.filter((entry) => entry.sede !== undefined);
+    expect(housed.map((entry) => [entry.id, entry.sede?.href])).toEqual([
+      ['vic', 'https://vic.numinia.com/'],
+    ]);
   });
 
   it('points every ritual at a community that exists', () => {
@@ -518,11 +530,91 @@ describe('the app shell pages (v0.83.0)', () => {
   });
 
   it('opens a world only where one exists: the city rituals and the founder, in the commons', () => {
-    expect(worldOf(founder, commons)).toBe(commons);
-    expect(worldOf(founder, commons, trg)).toBe(commons);
-    expect(worldOf(merge, commons, cityDay)).toBe(commons);
-    expect(worldOf(merge, commons, mergeDays)).toBeUndefined();
-    expect(worldOf(merge, commons)).toBeUndefined();
+    expect(worldOf(founder, commons, 'es')).toBe(commons);
+    expect(worldOf(founder, commons, 'es', trg)).toBe(commons);
+    expect(worldOf(merge, commons, 'es', cityDay)).toBe(commons);
+    expect(worldOf(merge, commons, 'es', mergeDays)).toBeUndefined();
+    expect(worldOf(merge, commons, 'es')).toBeUndefined();
+  });
+
+  it('opens a community with a home in its own world, named after it unless the file names it', () => {
+    const housed = parseCommunity('vic', {
+      ...COMMUNITY,
+      name: 'VIC',
+      sede: { href: 'https://vic.numinia.com/' },
+    });
+    expect(worldOf(housed, commons, 'es')).toEqual({
+      href: 'https://vic.numinia.com/',
+      name: 'VIC',
+    });
+    expect(worldOf(housed, commons, 'es', cityDay)).toBe(commons);
+    const named = parseCommunity('vic', {
+      ...COMMUNITY,
+      sede: { href: 'https://vic.numinia.com/', name: { en: 'The Hall', es: 'La Sala' } },
+    });
+    expect(worldOf(named, commons, 'es', mergeDays)?.name).toBe('La Sala');
+    expect(worldOf(named, commons, 'ko')?.name).toBe('The Hall');
+    const ownFounder = parseCommunity('numen-games', {
+      ...COMMUNITY,
+      state: 'founder',
+      sede: { href: 'https://numen.numen.games', name: 'Numen' },
+    });
+    expect(worldOf(ownFounder, commons, 'en')?.href).toBe('https://numen.numen.games');
+  });
+
+  it('reads a home as an https address, failing closed on anything else', () => {
+    expect(() => community({ sede: 'https://vic.numinia.com' })).toThrow(/expected a mapping/);
+    expect(() => community({ sede: { href: 'http://vic.numinia.com' } })).toThrow(/https address/);
+    expect(() => community({ sede: { href: 'https://' } })).toThrow(/https address/);
+    expect(() => community({ sede: {} })).toThrow(/"href"/);
+    expect(community().sede).toBeUndefined();
+  });
+
+  it('counts people only in homes of the fleet, which answer a public /status', () => {
+    expect(sedeDomain('https://vic.numinia.com/')).toBe('vic.numinia.com');
+    expect(sedeDomain('https://Hall.Numen.Games:443/x')).toBe('hall.numen.games');
+    expect(sedeDomain('https://vic.numinia.com?x=1')).toBe('vic.numinia.com');
+    expect(sedeDomain('https://numinia.com/')).toBeNull();
+    expect(sedeDomain('https://v2.oncyber.io/agora_plaza_of_numinia')).toBeNull();
+    expect(sedeDomain('https://evilnuminia.com/')).toBeNull();
+    expect(sedeDomain('not a url')).toBeNull();
+    const fleet = parseCommunity('vic', {
+      ...COMMUNITY,
+      sede: { href: 'https://vic.numinia.com/' },
+    });
+    const elsewhere = parseCommunity('merge', {
+      ...COMMUNITY,
+      sede: { href: 'https://v2.oncyber.io/merge' },
+    });
+    const prepared = parseCommunity('cps', {
+      ...COMMUNITY,
+      visibility: 'house',
+      sede: { href: 'https://cps.numinia.com/' },
+    });
+    expect(countedSedes([fleet, elsewhere, prepared, merge])).toEqual([
+      { id: 'vic', domain: 'vic.numinia.com' },
+    ]);
+  });
+
+  it('edits a file in GitHub: a community, a ritual, or a new ritual already filled in', () => {
+    expect(editHref('community', 'vic')).toBe(
+      `${REGISTER_REPO}/edit/main/apps/store/src/content/communities/vic.md`,
+    );
+    expect(editHref('ritual', 'trg26')).toBe(
+      `${REGISTER_REPO}/edit/main/apps/store/src/content/communities/rituals/trg26.md`,
+    );
+    const href = new URL(newRitualHref('vic', '2026-11-20'));
+    expect(href.pathname).toBe(
+      '/numengames/numinia-web/new/main/apps/store/src/content/communities/rituals',
+    );
+    expect(href.searchParams.get('filename')).toBe('vic-ritual.md');
+    const draft = href.searchParams.get('value') ?? '';
+    expect(draft).toContain('community: vic\n');
+    // The draft parses as a ritual of that community, so a save that keeps it is a valid file.
+    const block = /^---\n([\s\S]*?)\n---/.exec(draft)![1]!;
+    const parsed = parseRitual('vic-ritual', parseYaml(block));
+    expect(parsed.community).toBe('vic');
+    expect(parsed.start).toBe('2026-11-20');
   });
 
   it('features the house pick first, then the next rituals, each once, published only', () => {

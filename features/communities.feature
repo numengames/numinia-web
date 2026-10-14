@@ -36,3 +36,12 @@ Feature: Communities (phase 0 of the communities platform)
     Given the store application has been built
     Then every community page carries the follow button
     And a ritual page opens on its world stage
+
+  Scenario: A community can have its own 3D home, and Live shows the open ones
+    Given the store application has been built
+    Then a community with a home opens it and counts who is inside
+    And Live lists the open homes with their doors
+
+  Scenario: The Oracle edits the register from the site
+    Given the store application has been built
+    Then the Oracle alone sees how to edit a community and its rituals

@@ -75,6 +75,8 @@ const RATE_RULES: ReadonlyArray<{
   { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },
+  // Who is inside each home: reused for 30 s per instance, metered so the site is never a knocker on worlds.
+  { test: (m, p) => m === 'GET' && p === '/api/live', key: 'live', limit: 60 },
 ];
 const RATE_WINDOW_MS = 60_000;
 

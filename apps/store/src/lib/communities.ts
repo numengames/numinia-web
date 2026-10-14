@@ -11,6 +11,8 @@
  * IO, no dates read from the clock unless they are passed in.
  */
 
+import { WORLD_ZONES } from './worlds';
+
 /** A text in the two content languages; the other locales read English. */
 export interface Localized {
   readonly en: string;
@@ -91,6 +93,17 @@ export interface CommunityImage {
   readonly alt: Localized;
 }
 
+/**
+ * A community's home in 3D: the address its people enter by. The community
+ * file is the one place that says which world is whose (the world's card
+ * describes the world, its order on the machine says who governs it); the
+ * name defaults to the community's own.
+ */
+export interface Sede {
+  readonly href: string;
+  readonly name: Localized | undefined;
+}
+
 export interface Community {
   readonly id: string;
   readonly name: string;
@@ -105,6 +118,8 @@ export interface Community {
   /** A house illustration; never a third party's photo. */
   readonly image: CommunityImage | undefined;
   readonly weekly: readonly WeeklyRitual[];
+  /** Its 3D home, once it has one. */
+  readonly sede: Sede | undefined;
   /** True while the house is building the community its home. */
   readonly homeInProgress: boolean;
   /** Texts a founder page shows instead of the empty states. */
@@ -256,6 +271,18 @@ export function idFromPath(path: string): string {
   return id;
 }
 
+function optSede(raw: Raw, where: string): Sede | undefined {
+  if (raw['sede'] === undefined) return undefined;
+  const sede = record(raw['sede'], `${where}.sede`);
+  const href = str(sede, 'href', `${where}.sede`);
+  if (!/^https:\/\/[^/\s]+/.test(href))
+    throw new Error(`${where}.sede: the home is an https address`);
+  return {
+    href,
+    name: sede['name'] === undefined ? undefined : nameOrLocalized(sede, 'name', `${where}.sede`),
+  };
+}
+
 /** Parses one community file's front matter; throws naming the file. */
 export function parseCommunity(id: string, frontmatter: unknown): Community {
   const where = `communities/${id}.md`;
@@ -301,6 +328,7 @@ export function parseCommunity(id: string, frontmatter: unknown): Community {
     operator: optStr(raw, 'operator', where),
     image: optImage(raw, where),
     weekly,
+    sede: optSede(raw, where),
     homeInProgress: bool(raw, 'homeInProgress', false, where),
     home: optLocalized(raw, 'home', where),
     archive: optLocalized(raw, 'archive', where),
@@ -572,13 +600,89 @@ export interface World {
 
 /**
  * The world a community's ritual is entered from — only a real one. The
- * city's own rituals happen in the commons, and the founder keeps them, so
- * both open there. No other community has opened its home yet: for them
- * there is no world, and the page says the home is still to open.
+ * city's own rituals happen in the commons; a community with a home opens
+ * there; the founder has none of its own and keeps the commons, so it opens
+ * there too. Anyone else has no world yet, and the page says the home is
+ * still to open.
  */
-export function worldOf(community: Community, commons: World, ritual?: Ritual): World | undefined {
-  if (ritual?.city === true || community.state === 'founder') return commons;
+export function worldOf(
+  community: Community,
+  commons: World,
+  locale: string,
+  ritual?: Ritual,
+): World | undefined {
+  if (ritual?.city === true) return commons;
+  if (community.sede) {
+    const name = community.sede.name ? pick(community.sede.name, locale) : community.name;
+    return { href: community.sede.href, name };
+  }
+  if (community.state === 'founder') return commons;
   return undefined;
+}
+
+/**
+ * The address a home answers who is inside on: worlds of the house's fleet
+ * hang from its zones and their engine keeps a public `/status`. A home
+ * elsewhere (a world on another platform) has none, and the site never
+ * guesses a count for it.
+ */
+export function sedeDomain(href: string): string | null {
+  const host = /^https:\/\/([a-z0-9.-]+)(?:[/:?#]|$)/i.exec(href)?.[1]?.toLowerCase();
+  if (host === undefined) return null;
+  return WORLD_ZONES.some((zone) => host.endsWith(`.${zone}`)) ? host : null;
+}
+
+/** A home whose people can be counted: its community and its address. */
+export interface CountedSede {
+  readonly id: string;
+  readonly domain: string;
+}
+
+/** The published communities whose home answers who is inside, in the register's order. */
+export function countedSedes(communities: readonly Community[]): readonly CountedSede[] {
+  return published(communities).flatMap((community) => {
+    const domain = community.sede ? sedeDomain(community.sede.href) : null;
+    return domain === null ? [] : [{ id: community.id, domain }];
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Editing, day one: the register is files in git, so an edit is a change to
+// a file, proposed and reviewed like any other. The Oracle's «Edit» opens
+// the file in GitHub's editor, which turns the save into a pull request
+// (the editorial workflow of git-based CMSs, without a key in the site).
+
+/** Where the register's files live. */
+export const REGISTER_REPO = 'https://github.com/numengames/numinia-web';
+const REGISTER_DIR = 'apps/store/src/content/communities';
+
+/** GitHub's editor on a community's file, or on one of its rituals. */
+export function editHref(kind: 'community' | 'ritual', id: string): string {
+  const folder = kind === 'ritual' ? `${REGISTER_DIR}/rituals` : REGISTER_DIR;
+  return `${REGISTER_REPO}/edit/main/${folder}/${id}.md`;
+}
+
+/**
+ * GitHub's editor on a new ritual file for a community, filled with the
+ * fields a ritual needs: the name of the file is the ritual's address.
+ */
+export function newRitualHref(community: string, today: string): string {
+  const value = [
+    '---',
+    `community: ${community}`,
+    'title: { en: Title, es: Título }',
+    // Quoted: an unquoted day reads as a date object, and the register wants text.
+    `start: "${today}"`,
+    `end: "${today}"`,
+    'mode: in-person',
+    'where:',
+    '  en: Where it happens',
+    '  es: Dónde se celebra',
+    '---',
+    '',
+  ].join('\n');
+  const query = new URLSearchParams({ filename: `${community}-ritual.md`, value });
+  return `${REGISTER_REPO}/new/main/${REGISTER_DIR}/rituals?${query.toString()}`;
 }
 
 /** One slide of the home's featured card: a community and, when in sight, its ritual. */

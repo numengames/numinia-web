@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-14 15:20",
+    "entries": [
+      {
+        "text": "A community can have its own 3D home. Its page names the home and opens it with «Enter», and its rituals open there too. València Innovation Capital is the first: its world at vic.numinia.com is now its home. A home on the house’s fleet also says how many people are inside right now — a number read from the world itself, never a name.",
+        "type": "NEW",
+      },
+      {
+        "text": "Live shows what it promised. «Now» lists the homes someone is in at this moment, and «Open homes» lists every community with a 3D home and its door. When nobody is inside anywhere, it says so.",
+        "type": "NEW",
+      },
+      {
+        "text": "The Oracle can edit a community’s page and its rituals from the site, and add a new ritual already filled in. The file opens in GitHub’s editor; saving leaves a proposed change that someone else approves before it is published. Only an Oracle sees these buttons.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.85.0",
+  },
+  {
     "date": "2026-10-14 14:30",
     "entries": [
       {

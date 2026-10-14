@@ -17,4 +17,5 @@ links:
   - { label: valenciainnovationcapital.com, href: https://valenciainnovationcapital.com/ }
   - { label: VIC GovTech, href: https://valenciainnovationcapital.com/program/programa-de-innovacion-abierta-vic-govtech/ }
 operator: Reset
+sede: { href: https://vic.numinia.com/ }
 ---
