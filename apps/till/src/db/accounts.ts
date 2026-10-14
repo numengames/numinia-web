@@ -1,0 +1,920 @@
+/**
+ * The account desk's database work (cut «Saldo», MIS-179, MIS-180): what
+ * numinia.com's Saldo screen reads and does through the till's
+ * `AccountDesk` entrypoint (src/worker.ts). Each wallet sees its own
+ * account and the organizations (teams) it belongs to; it may read the
+ * statement of any of them, top any of them up, and — as an admin — rename
+ * an organization and say who belongs to it.
+ *
+ * Who is calling is numinia.com's signed session: the till trusts its bound
+ * caller for the wallet and decides here, from its own tables, what that
+ * wallet may do. Every argument is read as untrusted (`src/lib/accounts.ts`);
+ * a refusal is an answer with problems in words, never a throw. Only a
+ * failing database, or Stripe failing to answer, throws — so the caller can
+ * tell a failure from a refusal.
+ *
+ * A top-up is credited by `applySession`, the one place that turns a paid
+ * Stripe Checkout Session into a `topup` line: when the buyer comes back
+ * (`confirmTopup`) and when the minute's poll reads Stripe's events
+ * (`pollStripe`). Both may see the same payment, any number of times: the
+ * line carries the payment intent as `stripe_payment_id`, and the ledger's
+ * keep-first trigger (0001) drops a second insert of it.
+ */
+
+import {
+  LOW_BALANCE_CENTS,
+  readAccountId,
+  readAmountKey,
+  readMemberWallet,
+  readRange,
+  readReturnBase,
+  readRole,
+  readSessionId,
+  readTeamName,
+  readWallet,
+  spendBuckets,
+  type AmountKey,
+  type SpendBucket,
+  type SpendRange,
+  type TeamRole,
+  type TopupPrices,
+} from '../lib/accounts';
+import { compareLines, lineId, lotsAt, type LedgerLine } from '../lib/ledger';
+import type { CheckoutSession, Stripe } from '../lib/stripe';
+import { dayOf } from '../lib/utc-day';
+import { cents, column, day, instant, text, type Row, type TillDatabase } from './repository';
+
+/** One account as a wallet sees it: its own, or an organization it belongs to. */
+export interface AccountSummary {
+  readonly id: string;
+  readonly kind: 'personal' | 'team';
+  /** An organization's name; null for a personal account. */
+  readonly name: string | null;
+  /** `owner` of one's own account; `admin` or `member` of an organization. */
+  readonly role: 'owner' | TeamRole;
+  readonly balanceCents: number;
+}
+
+/** A refusal: what is wrong, in words. Nothing was written. */
+export interface Refusal {
+  readonly ok: false;
+  readonly problems: readonly string[];
+}
+
+export interface Overview {
+  readonly ok: true;
+  /** The wallet's own account first, then its organizations by name. */
+  readonly accounts: readonly AccountSummary[];
+}
+
+export type TeamAnswer = { readonly ok: true; readonly account: AccountSummary } | Refusal;
+
+/** A lot: a positive line, and how much of it is left now. */
+export interface StatementLot {
+  readonly lineId: string;
+  readonly at: string;
+  readonly amountCents: number;
+  readonly remainderCents: number;
+}
+
+/** A line as the screen lists it: the fields of its kind only. */
+export interface StatementLine {
+  readonly id: string;
+  readonly kind: LedgerLine['kind'];
+  readonly at: string;
+  readonly amountCents: number;
+  /** A top-up's VAT. */
+  readonly vatCents?: number;
+  /** A world's day: the UTC date, the world and its size. */
+  readonly day?: string;
+  readonly worldId?: string;
+  readonly size?: string;
+  /** An adjustment's reason. */
+  readonly reason?: string;
+}
+
+export interface Member {
+  readonly wallet: string;
+  readonly role: TeamRole;
+  readonly addedAt: string;
+}
+
+export interface Statement {
+  readonly ok: true;
+  readonly account: AccountSummary;
+  readonly balanceCents: number;
+  /** Under 10 €: the screen warns. */
+  readonly lowBalance: boolean;
+  /** Every lot, oldest first, with what is left of it now. */
+  readonly lots: readonly StatementLot[];
+  /** What worlds' days cost in the range, every bucket present, oldest first. */
+  readonly spend: readonly SpendBucket[];
+  readonly spendTotalCents: number;
+  /** The last 100 lines, newest first. */
+  readonly lines: readonly StatementLine[];
+  /** An organization's members (admins first); absent for a personal account. */
+  readonly members?: readonly Member[];
+}
+
+export type StatementAnswer = Statement | Refusal;
+
+export type MembersAnswer = { readonly ok: true; readonly members: readonly Member[] } | Refusal;
+
+export type TopupStart = { readonly ok: true; readonly url: string } | Refusal;
+
+export type CheckoutState = 'open' | 'paid' | 'expired';
+
+export type TopupConfirm =
+  | {
+      readonly ok: true;
+      readonly state: CheckoutState;
+      readonly accountId: string;
+      readonly balanceCents: number;
+    }
+  | Refusal;
+
+/** What taking payments needs: the Stripe client and the price of each quick top-up. Null: not configured. */
+export interface Payments {
+  readonly stripe: Stripe;
+  readonly prices: TopupPrices;
+}
+
+/** What one minute's poll of Stripe's events did. */
+export interface PollRun {
+  /** Events read, every page. */
+  readonly events: number;
+  /** Paid sessions of the till's checkouts applied (a payment seen again counts again: it writes nothing). */
+  readonly applied: number;
+  /** Paid sessions the till refused to credit (wrong currency, account or amounts). */
+  readonly uncreditable: number;
+  /** The high-water mark after the run (unix seconds). */
+  readonly cursor: number;
+  /** False when more events remained than one run reads: the cursor did not move. */
+  readonly complete: boolean;
+}
+
+export const PROBLEMS = {
+  wallet: 'wallet must be a lowercase 0x wallet',
+  accountId: 'accountId must be an account id',
+  name: 'name must be 1 to 60 characters, none of them a control character',
+  notMember: 'not a member',
+  notTeam: 'not an organization',
+  adminsOnly: 'only an admin of the organization may do this',
+  memberWallet: 'memberWallet must be a 0x wallet',
+  role: 'role must be admin or member',
+  lastAdmin: 'an organization keeps at least one admin',
+  noSuchMember: 'that wallet is not a member of the organization',
+  range: 'range must be 7d, 30d or 12m',
+  amountKey: 'amountKey must be 10, 50 or 100',
+  returnBase: 'returnBase must be a page of https://numinia.com/ or of a local run',
+  notConfigured: 'payments are not configured',
+  sessionId: 'sessionId must be a Checkout Session id',
+  notOurs: 'not a checkout of this wallet',
+  uncreditable: 'Stripe answered a payment the till cannot credit: tell an Oracle',
+  teamsPerFounder: 'a wallet may found at most 20 organizations',
+  meanwhile: 'the organization changed meanwhile: read it again',
+} as const;
+
+/** How many organizations one wallet may found: enough for anyone, a bound for a script. */
+export const TEAMS_PER_FOUNDER = 20;
+
+/** How many lines a statement lists. */
+export const STATEMENT_LINES = 100;
+
+/** The events the minute's poll reads: a session paid at once, or later (a bank transfer, SEPA). */
+export const PAID_EVENTS = [
+  'checkout.session.completed',
+  'checkout.session.async_payment_succeeded',
+] as const;
+
+/** Seconds the poll reads back past its cursor: Stripe's `created` is not strictly ordered with its writes. */
+export const POLL_OVERLAP_SECONDS = 300;
+
+/** The first poll, with no cursor yet, reads the last day. */
+export const FIRST_POLL_SECONDS = 86_400;
+
+/** Pages one minute's run reads at most (100 events each). */
+export const POLL_MAX_PAGES = 20;
+
+function refuse(...problems: string[]): Refusal {
+  return { ok: false, problems };
+}
+
+/**
+ * A wallet's personal account id: derived from the wallet, so two first
+ * calls at once create one account, and without the wallet in it.
+ */
+export async function personalAccountId(wallet: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`numinia-till personal account ${wallet}`),
+  );
+  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0'));
+  return `acc_p_${hex.join('').slice(0, 24)}`;
+}
+
+/** A new organization's id: random, as nothing about it is known in advance. */
+function teamAccountId(): string {
+  return `acc_t_${crypto.randomUUID().replaceAll('-', '')}`;
+}
+
+const BALANCE = `(SELECT coalesce(SUM(amount_cents), 0) FROM ledger_lines WHERE account_id = a.id)`;
+
+/** Every account the wallet ?1 may see: its own and its organizations', with role and balance. */
+const SELECT_ACCOUNTS = `
+  SELECT a.id AS id, a.kind AS kind, NULL AS name, 'owner' AS role, ${BALANCE} AS balance_cents
+    FROM account_wallets AS w JOIN accounts AS a ON a.id = w.account_id
+   WHERE w.wallet = ?1
+  UNION ALL
+  SELECT a.id, a.kind, p.name, m.role, ${BALANCE}
+    FROM team_members AS m
+    JOIN accounts AS a ON a.id = m.account_id
+    JOIN team_profiles AS p ON p.account_id = a.id
+   WHERE m.wallet = ?1
+   ORDER BY kind, name COLLATE NOCASE, id`;
+
+/** One account ?1 as the wallet ?2 sees it; no row when the wallet is neither its owner nor a member. */
+const SELECT_ACCOUNT = `
+  SELECT a.id AS id, a.kind AS kind, p.name AS name,
+         CASE WHEN w.wallet IS NOT NULL THEN 'owner' ELSE m.role END AS role,
+         ${BALANCE} AS balance_cents
+    FROM accounts AS a
+    LEFT JOIN account_wallets AS w ON w.account_id = a.id AND w.wallet = ?2
+    LEFT JOIN team_profiles AS p ON p.account_id = a.id
+    LEFT JOIN team_members AS m ON m.account_id = a.id AND m.wallet = ?2
+   WHERE a.id = ?1 AND (w.wallet IS NOT NULL OR m.wallet IS NOT NULL)`;
+
+const SELECT_MEMBERS = `
+  SELECT wallet, role, added_at FROM team_members WHERE account_id = ?1
+   ORDER BY role = 'member', added_at, wallet`;
+
+const SELECT_LINES = `
+  SELECT id, account_id, kind, amount_cents, at, vat_cents, stripe_payment_id, stripe_invoice_id,
+         world_id, machine, day, minutes_running, minutes_stopped, size, tariff_version_id,
+         "by", reason, corrects_line_id, lot_line_id, stripe_event_id
+    FROM ledger_lines WHERE account_id = ?1 ORDER BY at, id`;
+
+const INSERT_PERSONAL = `
+  INSERT INTO accounts (id, kind, created_at) VALUES (?1, 'personal', ?2) ON CONFLICT DO NOTHING`;
+
+const INSERT_WALLET = `
+  INSERT INTO account_wallets (wallet, account_id) VALUES (?1, ?2) ON CONFLICT DO NOTHING`;
+
+/** A new organization, written only while its founder has founded fewer than the bound. */
+const INSERT_TEAM = `
+  INSERT INTO accounts (id, kind, created_at)
+  SELECT ?1, 'team', ?2
+   WHERE (SELECT COUNT(*) FROM team_profiles WHERE created_by = ?3) < ?4`;
+
+const INSERT_PROFILE = `
+  INSERT INTO team_profiles (account_id, name, created_by, created_at)
+  SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM accounts WHERE id = ?1)`;
+
+const INSERT_FOUNDER = `
+  INSERT INTO team_members (account_id, wallet, role, added_by, added_at)
+  SELECT ?1, ?2, 'admin', ?2, ?3 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
+
+/** The caller ?2 is an admin of the organization ?1. */
+const IS_ADMIN = `EXISTS (SELECT 1 FROM team_members WHERE account_id = ?1 AND wallet = ?2 AND role = 'admin')`;
+
+const RENAME = `UPDATE team_profiles SET name = ?3 WHERE account_id = ?1 AND ${IS_ADMIN}`;
+
+/**
+ * Adds ?3 with role ?4, or changes its role — while the caller ?2 is an
+ * admin, and an admin other than ?3 remains when ?3 stops being one. Guarded
+ * here, so a change made meanwhile writes nothing rather than an orphaned
+ * organization; the 0003 triggers are the backstop.
+ */
+const SET_MEMBER = `
+  INSERT INTO team_members (account_id, wallet, role, added_by, added_at)
+  SELECT ?1, ?3, ?4, ?2, ?5
+   WHERE ${IS_ADMIN}
+     AND (?4 = 'admin' OR EXISTS (
+       SELECT 1 FROM team_members WHERE account_id = ?1 AND role = 'admin' AND wallet <> ?3))
+  ON CONFLICT (account_id, wallet) DO UPDATE SET role = excluded.role`;
+
+const REMOVE_MEMBER = `
+  DELETE FROM team_members
+   WHERE account_id = ?1 AND wallet = ?3 AND ${IS_ADMIN}
+     AND (role = 'member' OR EXISTS (
+       SELECT 1 FROM team_members WHERE account_id = ?1 AND role = 'admin' AND wallet <> ?3))`;
+
+const INSERT_CHECKOUT = `
+  INSERT INTO checkouts (id, account_id, wallet, amount_key, created_at, state)
+  VALUES (?1, ?2, ?3, ?4, ?5, 'open')`;
+
+const SELECT_CHECKOUT = 'SELECT id, account_id, wallet, state FROM checkouts WHERE id = ?1';
+
+const SELECT_CHECKOUTS = `
+  SELECT id, account_id, wallet, state FROM checkouts
+   WHERE id IN (SELECT value FROM json_each(?1))`;
+
+const INSERT_TOPUP = `
+  INSERT INTO ledger_lines (id, account_id, kind, amount_cents, at, vat_cents,
+                            stripe_payment_id, stripe_invoice_id)
+  VALUES (?1, ?2, 'topup', ?3, ?4, ?5, ?6, ?7)`;
+
+const MARK_PAID = "UPDATE checkouts SET state = 'paid' WHERE id = ?1 AND state <> 'paid'";
+
+const MARK_EXPIRED = "UPDATE checkouts SET state = 'expired' WHERE id = ?1 AND state = 'open'";
+
+const SELECT_BALANCE =
+  'SELECT coalesce(SUM(amount_cents), 0) AS balance_cents FROM ledger_lines WHERE account_id = ?1';
+
+const SELECT_CURSOR = 'SELECT last_created FROM stripe_cursor WHERE id = 1';
+
+const MOVE_CURSOR = `
+  INSERT INTO stripe_cursor (id, last_created) VALUES (1, ?1)
+  ON CONFLICT (id) DO UPDATE SET last_created = max(last_created, excluded.last_created)`;
+
+function nullable<T>(row: Row, name: string, read: (row: Row, name: string) => T): T | null {
+  return column(row, name) === null ? null : read(row, name);
+}
+
+function roleOf(value: string): AccountSummary['role'] {
+  if (value === 'owner' || readRole(value) !== undefined) return value as AccountSummary['role'];
+  throw new TypeError(`till database: unknown role ${value}`);
+}
+
+export function summaryOf(row: Row): AccountSummary {
+  const kind = text(row, 'kind');
+  if (kind !== 'personal' && kind !== 'team') {
+    throw new TypeError(`till database: unknown kind ${kind}`);
+  }
+  return {
+    id: text(row, 'id'),
+    kind,
+    name: kind === 'team' ? text(row, 'name') : null,
+    role: roleOf(text(row, 'role')),
+    balanceCents: cents(row, 'balance_cents'),
+  };
+}
+
+export function memberOf(row: Row): Member {
+  const role = readRole(text(row, 'role'));
+  if (role === undefined) throw new TypeError('till database: a member is an admin or a member');
+  return {
+    wallet: text(row, 'wallet'),
+    role,
+    addedAt: instant(row, 'added_at'),
+  };
+}
+
+/** A `ledger_lines` row as the ledger's own type; a throw when the schema's promise is broken. */
+export function ledgerLineOf(row: Row): LedgerLine {
+  const base = {
+    id: text(row, 'id'),
+    accountId: text(row, 'account_id'),
+    amountCents: cents(row, 'amount_cents'),
+    at: instant(row, 'at'),
+  };
+  const kind = text(row, 'kind');
+  switch (kind) {
+    case 'topup':
+      return {
+        ...base,
+        kind,
+        vatCents: cents(row, 'vat_cents'),
+        stripePaymentId: nullable(row, 'stripe_payment_id', text),
+        stripeInvoiceId: nullable(row, 'stripe_invoice_id', text),
+      };
+    case 'world_day':
+      return {
+        ...base,
+        kind,
+        worldId: text(row, 'world_id'),
+        machine: text(row, 'machine'),
+        day: day(row, 'day'),
+        minutesRunning: cents(row, 'minutes_running'),
+        minutesStopped: cents(row, 'minutes_stopped'),
+        size: text(row, 'size'),
+        tariffVersionId: cents(row, 'tariff_version_id'),
+      };
+    case 'adjustment':
+      return {
+        ...base,
+        kind,
+        by: text(row, 'by'),
+        reason: text(row, 'reason'),
+        correctsLineId: nullable(row, 'corrects_line_id', text),
+      };
+    case 'refund':
+    case 'chargeback':
+      return {
+        ...base,
+        kind,
+        lotLineId: text(row, 'lot_line_id'),
+        stripeEventId: nullable(row, 'stripe_event_id', text),
+      };
+    default:
+      throw new TypeError(`till database: unknown line kind ${kind}`);
+  }
+}
+
+/** A line as the statement lists it. */
+function statementLineOf(line: LedgerLine): StatementLine {
+  const base = { id: line.id, kind: line.kind, at: line.at, amountCents: line.amountCents };
+  switch (line.kind) {
+    case 'topup':
+      return { ...base, vatCents: line.vatCents };
+    case 'world_day':
+      return { ...base, day: line.day, worldId: line.worldId, size: line.size };
+    case 'adjustment':
+      return { ...base, reason: line.reason };
+    default:
+      return base;
+  }
+}
+
+async function batchOf(db: TillDatabase, statements: D1PreparedStatement[]): Promise<Row[][]> {
+  const results = await db.batch<Row>(statements);
+  if (results.length !== statements.length) {
+    throw new Error(`till database: ${statements.length} statements, ${results.length} answers`);
+  }
+  return results.map((result) => result.results);
+}
+
+async function changesOf(statement: D1PreparedStatement): Promise<number> {
+  const { meta } = await statement.run();
+  return meta.changes;
+}
+
+/** The account `accountId` as `wallet` sees it, or null when the wallet is neither its owner nor a member. */
+async function accountFor(
+  db: TillDatabase,
+  wallet: string,
+  accountId: string,
+): Promise<AccountSummary | null> {
+  const row = await db.prepare(SELECT_ACCOUNT).bind(accountId, wallet).first<Row>();
+  return row === null ? null : summaryOf(row);
+}
+
+/** The organization `accountId` when `wallet` is one of its admins; otherwise why not. */
+async function teamAdministeredBy(
+  db: TillDatabase,
+  wallet: string,
+  accountId: string,
+): Promise<AccountSummary | Refusal> {
+  const account = await accountFor(db, wallet, accountId);
+  if (account === null) return refuse(PROBLEMS.notMember);
+  if (account.kind !== 'team') return refuse(PROBLEMS.notTeam);
+  if (account.role !== 'admin') return refuse(PROBLEMS.adminsOnly);
+  return account;
+}
+
+async function membersOf(db: TillDatabase, accountId: string): Promise<Member[]> {
+  const { results } = await db.prepare(SELECT_MEMBERS).bind(accountId).all<Row>();
+  return results.map(memberOf);
+}
+
+/**
+ * The wallet's own account (created the first time the till sees the
+ * wallet, in the same batch that reads it) and every organization it
+ * belongs to, with its role and balance.
+ */
+export async function overview(
+  db: TillDatabase,
+  sent: unknown,
+  now: Date,
+): Promise<Overview | Refusal> {
+  const wallet = readWallet(sent);
+  if (wallet === undefined) return refuse(PROBLEMS.wallet);
+  const personal = await personalAccountId(wallet);
+  const [, , rows] = await batchOf(db, [
+    db.prepare(INSERT_PERSONAL).bind(personal, now.toISOString()),
+    db.prepare(INSERT_WALLET).bind(wallet, personal),
+    db.prepare(SELECT_ACCOUNTS).bind(wallet),
+  ]);
+  return { ok: true, accounts: (rows as Row[]).map(summaryOf) };
+}
+
+/** A new organization named `sentName`, founded by the wallet, its first admin. */
+export async function createTeam(
+  db: TillDatabase,
+  sent: unknown,
+  sentName: unknown,
+  now: Date,
+): Promise<TeamAnswer> {
+  const wallet = readWallet(sent);
+  const name = readTeamName(sentName);
+  const problems = [
+    ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+    ...(name === undefined ? [PROBLEMS.name] : []),
+  ];
+  if (wallet === undefined || name === undefined) return refuse(...problems);
+  const id = teamAccountId();
+  const at = now.toISOString();
+  const results = await db.batch([
+    db.prepare(INSERT_TEAM).bind(id, at, wallet, TEAMS_PER_FOUNDER),
+    db.prepare(INSERT_PROFILE).bind(id, name, wallet, at),
+    db.prepare(INSERT_FOUNDER).bind(id, wallet, at),
+  ]);
+  if (results[0]?.meta.changes !== 1) return refuse(PROBLEMS.teamsPerFounder);
+  return { ok: true, account: { id, kind: 'team', name, role: 'admin', balanceCents: 0 } };
+}
+
+/** Renames an organization: its admins only. */
+export async function renameTeam(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+  sentName: unknown,
+): Promise<TeamAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const name = readTeamName(sentName);
+  if (wallet === undefined || accountId === undefined || name === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(name === undefined ? [PROBLEMS.name] : []),
+    );
+  }
+  const team = await teamAdministeredBy(db, wallet, accountId);
+  if ('ok' in team) return team;
+  const changes = await changesOf(db.prepare(RENAME).bind(accountId, wallet, name));
+  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
+  return { ok: true, account: { ...team, name } };
+}
+
+/**
+ * The statement of an account the wallet owns or belongs to: balance,
+ * lots, the spend of `sentRange` in UTC days or months, the last lines and,
+ * for an organization, its members — read in one batch.
+ */
+export async function statement(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+  sentRange: unknown,
+  now: Date,
+): Promise<StatementAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const range: SpendRange | undefined = readRange(sentRange);
+  if (wallet === undefined || accountId === undefined || range === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(range === undefined ? [PROBLEMS.range] : []),
+    );
+  }
+  const [accountRows, lineRows, memberRows] = (await batchOf(db, [
+    db.prepare(SELECT_ACCOUNT).bind(accountId, wallet),
+    db.prepare(SELECT_LINES).bind(accountId),
+    db.prepare(SELECT_MEMBERS).bind(accountId),
+  ])) as [Row[], Row[], Row[]];
+  const accountRow = accountRows[0];
+  if (accountRow === undefined) return refuse(PROBLEMS.notMember);
+  const account = summaryOf(accountRow);
+  const lines = lineRows.map(ledgerLineOf);
+  const spend = spendBuckets(
+    range,
+    dayOf(now),
+    lines.flatMap((line) =>
+      line.kind === 'world_day' ? [{ day: line.day, cents: -line.amountCents }] : [],
+    ),
+  );
+  const answer: Statement = {
+    ok: true,
+    account,
+    balanceCents: account.balanceCents,
+    lowBalance: account.balanceCents < LOW_BALANCE_CENTS,
+    lots: lotsAt(lines, now.toISOString()).lots.map((lot) => ({ ...lot })),
+    spend,
+    spendTotalCents: spend.reduce((sum, bucket) => sum + bucket.cents, 0),
+    lines: [...lines]
+      .sort((a, b) => compareLines(b, a))
+      .slice(0, STATEMENT_LINES)
+      .map(statementLineOf),
+  };
+  return account.kind === 'team' ? { ...answer, members: memberRows.map(memberOf) } : answer;
+}
+
+/** An organization's members: its admins only. */
+export async function members(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+): Promise<MembersAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  if (wallet === undefined || accountId === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+    );
+  }
+  const team = await teamAdministeredBy(db, wallet, accountId);
+  if ('ok' in team) return team;
+  return { ok: true, members: await membersOf(db, accountId) };
+}
+
+/** Adds a member or changes a member's role: admins only, and never the last admin away. */
+export async function setMember(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+  sentMember: unknown,
+  sentRole: unknown,
+  now: Date,
+): Promise<MembersAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const member = readMemberWallet(sentMember);
+  const role = readRole(sentRole);
+  if (
+    wallet === undefined ||
+    accountId === undefined ||
+    member === undefined ||
+    role === undefined
+  ) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(member === undefined ? [PROBLEMS.memberWallet] : []),
+      ...(role === undefined ? [PROBLEMS.role] : []),
+    );
+  }
+  const team = await teamAdministeredBy(db, wallet, accountId);
+  if ('ok' in team) return team;
+  const before = await membersOf(db, accountId);
+  const otherAdmin = before.some((m) => m.role === 'admin' && m.wallet !== member);
+  if (role === 'member' && !otherAdmin) return refuse(PROBLEMS.lastAdmin);
+  const changes = await changesOf(
+    db.prepare(SET_MEMBER).bind(accountId, wallet, member, role, now.toISOString()),
+  );
+  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
+  return { ok: true, members: await membersOf(db, accountId) };
+}
+
+/** Removes a member: admins only, and never the last admin. */
+export async function removeMember(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+  sentMember: unknown,
+): Promise<MembersAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const member = readMemberWallet(sentMember);
+  if (wallet === undefined || accountId === undefined || member === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(member === undefined ? [PROBLEMS.memberWallet] : []),
+    );
+  }
+  const team = await teamAdministeredBy(db, wallet, accountId);
+  if ('ok' in team) return team;
+  const before = await membersOf(db, accountId);
+  const removed = before.find((m) => m.wallet === member);
+  if (removed === undefined) return refuse(PROBLEMS.noSuchMember);
+  const otherAdmin = before.some((m) => m.role === 'admin' && m.wallet !== member);
+  if (removed.role === 'admin' && !otherAdmin) return refuse(PROBLEMS.lastAdmin);
+  const changes = await changesOf(db.prepare(REMOVE_MEMBER).bind(accountId, wallet, member));
+  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
+  return { ok: true, members: await membersOf(db, accountId) };
+}
+
+/** The Checkout Session parameters of a quick top-up (Stripe's form keys). */
+export function checkoutParams(
+  price: string,
+  accountId: string,
+  wallet: string,
+  returnBase: string,
+): Record<string, string> {
+  return {
+    mode: 'payment',
+    'line_items[0][price]': price,
+    'line_items[0][quantity]': '1',
+    // Stripe Managed Payments sells: it is the merchant of record, and
+    // works out and collects the tax of the buyer's country.
+    'managed_payments[enabled]': 'true',
+    client_reference_id: accountId,
+    'metadata[account]': accountId,
+    'metadata[wallet]': wallet,
+    success_url: `${returnBase}?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${returnBase}?cancelled=1`,
+  };
+}
+
+/**
+ * Opens a Stripe Checkout Session to top up an account the wallet owns or
+ * belongs to (any role), and keeps who opened it for which account. Answers
+ * where to pay.
+ */
+export async function startTopup(
+  db: TillDatabase,
+  payments: Payments | null,
+  sent: unknown,
+  sentAccount: unknown,
+  sentAmount: unknown,
+  sentReturn: unknown,
+  now: Date,
+): Promise<TopupStart> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const amountKey: AmountKey | undefined = readAmountKey(sentAmount);
+  const returnBase = readReturnBase(sentReturn);
+  if (
+    wallet === undefined ||
+    accountId === undefined ||
+    amountKey === undefined ||
+    returnBase === undefined
+  ) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(amountKey === undefined ? [PROBLEMS.amountKey] : []),
+      ...(returnBase === undefined ? [PROBLEMS.returnBase] : []),
+    );
+  }
+  if ((await accountFor(db, wallet, accountId)) === null) return refuse(PROBLEMS.notMember);
+  if (payments === null) return refuse(PROBLEMS.notConfigured);
+  const session = await payments.stripe.createCheckoutSession(
+    checkoutParams(payments.prices[amountKey], accountId, wallet, returnBase),
+  );
+  await db
+    .prepare(INSERT_CHECKOUT)
+    .bind(session.id, accountId, wallet, amountKey, now.toISOString())
+    .run();
+  // createCheckoutSession answers only an open session with its url.
+  return { ok: true, url: session.url as string };
+}
+
+export interface CheckoutRow {
+  readonly id: string;
+  readonly accountId: string;
+  readonly wallet: string;
+  readonly state: CheckoutState;
+}
+
+export function checkoutOf(row: Row): CheckoutRow {
+  const state = text(row, 'state');
+  if (state !== 'open' && state !== 'paid' && state !== 'expired') {
+    throw new TypeError(`till database: unknown checkout state ${state}`);
+  }
+  return {
+    id: text(row, 'id'),
+    accountId: text(row, 'account_id'),
+    wallet: text(row, 'wallet'),
+    state,
+  };
+}
+
+/**
+ * What a paid session credits: its net (the total less its tax) and its
+ * tax, in euro cents, when the session is the checkout's own — same account,
+ * euros, a payment intent, a positive net. Null: not a payment the till
+ * may credit.
+ */
+export function creditOf(
+  checkout: Pick<CheckoutRow, 'id' | 'accountId'>,
+  session: CheckoutSession,
+): { netCents: number; vatCents: number; paymentId: string } | null {
+  const { amountTotal, amountTax, paymentIntent } = session;
+  if (session.id !== checkout.id || session.clientReferenceId !== checkout.accountId) return null;
+  if (session.currency !== 'eur' || paymentIntent === null) return null;
+  if (amountTotal === null || amountTax === null || amountTax < 0) return null;
+  const netCents = amountTotal - amountTax;
+  return netCents > 0 ? { netCents, vatCents: amountTax, paymentId: paymentIntent } : null;
+}
+
+/**
+ * Applies what Stripe says of a checkout's session: paid, it writes the
+ * top-up line and marks the checkout paid, in one batch (a second time
+ * writes nothing); expired, it marks the checkout expired; otherwise it is
+ * still open (or its payment still processing). `uncreditable`: paid, but
+ * not a payment the till may credit — nothing written.
+ */
+export async function applySession(
+  db: TillDatabase,
+  checkout: CheckoutRow,
+  session: CheckoutSession,
+  now: Date,
+): Promise<CheckoutState | 'uncreditable'> {
+  if (session.paymentStatus === 'paid') {
+    const credit = creditOf(checkout, session);
+    if (credit === null) return 'uncreditable';
+    await db.batch([
+      db
+        .prepare(INSERT_TOPUP)
+        .bind(
+          lineId(now.getTime(), `topup:${session.id}`),
+          checkout.accountId,
+          credit.netCents,
+          now.toISOString(),
+          credit.vatCents,
+          credit.paymentId,
+          session.invoice,
+        ),
+      db.prepare(MARK_PAID).bind(checkout.id),
+    ]);
+    return 'paid';
+  }
+  if (session.status === 'expired') {
+    await db.prepare(MARK_EXPIRED).bind(checkout.id).run();
+    return 'expired';
+  }
+  return 'open';
+}
+
+/**
+ * When the buyer comes back from Stripe: reads the session from Stripe and
+ * applies it, if it is a checkout this wallet opened. A checkout already
+ * paid answers at once, without asking Stripe again.
+ */
+export async function confirmTopup(
+  db: TillDatabase,
+  payments: Payments | null,
+  sent: unknown,
+  sentSession: unknown,
+  now: Date,
+): Promise<TopupConfirm> {
+  const wallet = readWallet(sent);
+  const sessionId = readSessionId(sentSession);
+  if (wallet === undefined || sessionId === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(sessionId === undefined ? [PROBLEMS.sessionId] : []),
+    );
+  }
+  const row = await db.prepare(SELECT_CHECKOUT).bind(sessionId).first<Row>();
+  const checkout = row === null ? null : checkoutOf(row);
+  if (checkout === null || checkout.wallet !== wallet) return refuse(PROBLEMS.notOurs);
+  let state: CheckoutState = checkout.state;
+  if (state !== 'paid') {
+    if (payments === null) return refuse(PROBLEMS.notConfigured);
+    const applied = await applySession(
+      db,
+      checkout,
+      await payments.stripe.retrieveCheckoutSession(sessionId),
+      now,
+    );
+    if (applied === 'uncreditable') return refuse(PROBLEMS.uncreditable);
+    state = applied;
+  }
+  const balance = await db.prepare(SELECT_BALANCE).bind(checkout.accountId).first<Row>();
+  return {
+    ok: true,
+    state,
+    accountId: checkout.accountId,
+    balanceCents: cents(balance as Row, 'balance_cents'),
+  };
+}
+
+/**
+ * The minute's poll: Stripe's events of paid Checkout Sessions created
+ * since the cursor (less an overlap), every page, newest first. Each that
+ * is one of the till's checkouts is applied as `confirmTopup` applies it —
+ * without the wallet check: the checkout's own account is credited. Then
+ * the cursor moves to the newest event read. Sessions that are not the
+ * till's (another product of the same Stripe account) are skipped.
+ */
+export async function pollStripe(db: TillDatabase, stripe: Stripe, now: Date): Promise<PollRun> {
+  const cursorRow = await db.prepare(SELECT_CURSOR).first<Row>();
+  const nowSeconds = Math.floor(now.getTime() / 1000);
+  const cursor =
+    cursorRow === null ? nowSeconds - FIRST_POLL_SECONDS : cents(cursorRow, 'last_created');
+  const createdGte = Math.max(0, cursor - POLL_OVERLAP_SECONDS);
+
+  const sessions: CheckoutSession[] = [];
+  // With no event the mark still moves, to a little before now: the next
+  // run's overlap covers an event Stripe had not listed yet.
+  let newest = Math.max(cursor, nowSeconds - POLL_OVERLAP_SECONDS);
+  let events = 0;
+  let complete = false;
+  let startingAfter: string | undefined;
+  for (let page = 0; page < POLL_MAX_PAGES && !complete; page += 1) {
+    const listed = await stripe.listEvents({
+      types: PAID_EVENTS,
+      createdGte,
+      ...(startingAfter === undefined ? {} : { startingAfter }),
+    });
+    for (const event of listed.events) {
+      events += 1;
+      newest = Math.max(newest, event.created);
+      if (event.session !== null) sessions.push(event.session);
+    }
+    startingAfter = listed.events.at(-1)?.id;
+    complete = !listed.hasMore || startingAfter === undefined;
+  }
+
+  const ids = [...new Set(sessions.map((session) => session.id))];
+  const { results } = await db.prepare(SELECT_CHECKOUTS).bind(JSON.stringify(ids)).all<Row>();
+  const checkouts = new Map(results.map((row) => [text(row, 'id'), checkoutOf(row)]));
+  let applied = 0;
+  let uncreditable = 0;
+  for (const session of sessions) {
+    const checkout = checkouts.get(session.id);
+    if (checkout === undefined) continue;
+    const state = await applySession(db, checkout, session, now);
+    if (state === 'uncreditable') uncreditable += 1;
+    else if (state === 'paid') applied += 1;
+  }
+  // A run that could not read every page leaves the cursor where it was, so
+  // the next one reads the same window again rather than skipping events.
+  if (complete) await db.prepare(MOVE_CURSOR).bind(newest).run();
+  return { events, applied, uncreditable, cursor: complete ? newest : cursor, complete };
+}

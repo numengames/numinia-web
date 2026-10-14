@@ -166,7 +166,7 @@ describe('the schedule (MIS-178)', () => {
   const config = readJsonc('../wrangler.jsonc');
   const crons = (config['triggers'] as { crons: string[] }).crons;
 
-  it('binds the till’s own database, names no route and no secret, and fires one cron: 00:30 UTC', () => {
+  it('binds the till’s own database, names no route and no secret, and fires two crons: 00:30 UTC and every minute', () => {
     const root = readJsonc('../../../wrangler.jsonc');
     expect(config['name']).toBe('numinia-till');
     expect(config['main']).toBe('src/worker.ts');
@@ -182,7 +182,7 @@ describe('the schedule (MIS-178)', () => {
     expect(config['vars']).toEqual({ TILL_METER: 'none' });
     expect(config['routes']).toBeUndefined();
     expect(config['route']).toBeUndefined();
-    expect(crons).toEqual([NIGHTLY]);
+    expect(crons).toEqual([NIGHTLY, '* * * * *']);
     expect(firing(NIGHTLY, '2026-10-25').toISOString()).toBe('2026-10-25T00:30:00.000Z');
   });
 

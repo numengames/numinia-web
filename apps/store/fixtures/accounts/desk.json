@@ -1,0 +1,465 @@
+{
+  "personal": {
+    "id": "acc_personal",
+    "lines": [
+      {
+        "kind": "topup",
+        "daysAgo": 32,
+        "amountCents": 1000,
+        "vatCents": 210
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 30,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 29,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 28,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 27,
+        "amountCents": -15,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 26,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 25,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 24,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 23,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 22,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 21,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 20,
+        "amountCents": -15,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 19,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 18,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 17,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 16,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 15,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 14,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 13,
+        "amountCents": -15,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 12,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 11,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 10,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 9,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 8,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 7,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 6,
+        "amountCents": -15,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 5,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 4,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 3,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 2,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 1,
+        "amountCents": -20,
+        "worldId": "mi-rincon",
+        "size": "2g"
+      }
+    ]
+  },
+  "teams": [
+    {
+      "id": "acc_team_numen_games",
+      "name": "Numen Games",
+      "createdDaysAgo": 40,
+      "members": [
+        {
+          "wallet": "self",
+          "role": "admin",
+          "addedDaysAgo": 40
+        },
+        {
+          "wallet": "0x00000000000000000000000000000000000000a1",
+          "role": "admin",
+          "addedDaysAgo": 38
+        },
+        {
+          "wallet": "0x00000000000000000000000000000000000000b2",
+          "role": "member",
+          "addedDaysAgo": 20
+        }
+      ],
+      "lines": [
+        {
+          "kind": "topup",
+          "daysAgo": 31,
+          "amountCents": 5000,
+          "vatCents": 1050
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -160,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -160,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -164,
+          "worldId": "sede-numen-games",
+          "size": "4g"
+        }
+      ]
+    }
+  ]
+}

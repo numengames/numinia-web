@@ -73,6 +73,10 @@ const RATE_RULES: ReadonlyArray<{
   // (debounced) and schedules versions: generous, but metered like any write.
   { test: (m, p) => m === 'POST' && p === '/api/admin/prices', key: 'prices-desk', limit: 120 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
+  // «Saldo»: top-ups, organizations and members are writes on the till; the
+  // screen re-reads the balance on every return to the tab, so reads get more.
+  { test: (m, p) => m === 'POST' && p === '/api/saldo', key: 'saldo-write', limit: 30 },
+  { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },
   // Who is inside each home: reused for 30 s per instance, metered so the site is never a knocker on worlds.

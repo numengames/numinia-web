@@ -15,12 +15,45 @@
  * only the Oracle rank holds) and passes the session's wallet as `by`; the
  * till trusts its one bound caller to have done so, and re-validates every
  * field it is sent. The till never trusts a browser.
+ *
+ * Its second door is the account desk (cut «Saldo», MIS-179, MIS-180):
+ * `AccountDesk`, bound by numinia.com as `TILL_ACCOUNTS`. numinia.com's API
+ * route checks the session (any rank) and passes the session's wallet as the
+ * first argument of every method; the till trusts its bound caller for WHO
+ * and decides itself, from its own tables, WHAT that wallet may do. Top-ups
+ * go through Stripe Managed Payments Checkout: the till reaches OUT to
+ * api.stripe.com, and nothing of Stripe's reaches in — a payment is
+ * confirmed when the buyer comes back and by a poll of Stripe's events every
+ * minute (the second cron).
  */
 
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import meterFixture from '../fixtures/meter.json';
+import {
+  confirmTopup,
+  createTeam,
+  members,
+  overview,
+  pollStripe,
+  removeMember,
+  renameTeam,
+  setMember,
+  startTopup,
+  statement,
+  type MembersAnswer,
+  type Overview,
+  type Payments,
+  type PollRun,
+  type Refusal,
+  type StatementAnswer,
+  type TeamAnswer,
+  type TopupConfirm,
+  type TopupStart,
+} from './db/accounts';
 import { checkDraft, readDesk, scheduleDraft, type DeskSchedule, type DeskView } from './db/desk';
 import { runClose, type CloseRun, type TillDatabase } from './db/repository';
+import { parseTopupPrices } from './lib/accounts';
+import { Stripe, type Fetcher } from './lib/stripe';
 import type { DeskCheck } from './lib/tariff';
 import { FakeMeter, NoMeter, parseMeterReadings, type Meter } from './meter';
 
@@ -28,7 +61,21 @@ export interface Env {
   readonly TILL_DB: TillDatabase;
   /** Which meter the close reads: `none` (the default: every day pending) or `fake` (the fixture). */
   readonly TILL_METER?: string;
+  /**
+   * Secret: a Stripe restricted key (Checkout Sessions write, Events read).
+   * Without it the desk answers `payments are not configured` and the
+   * minute's poll does nothing.
+   */
+  readonly STRIPE_KEY?: string;
+  /** Var: JSON `{"10":"price_…","50":"price_…","100":"price_…"}`, the Stripe price of each quick top-up. */
+  readonly TILL_TOPUP_PRICES?: string;
 }
+
+/** The nightly close: 00:30 UTC (wrangler.jsonc). */
+export const NIGHTLY_CRON = '30 0 * * *';
+
+/** The poll of Stripe's events: every minute (wrangler.jsonc). */
+export const MINUTE_CRON = '* * * * *';
 
 const HEALTH = JSON.stringify({ service: 'till', ok: true });
 
@@ -60,6 +107,57 @@ export async function handleScheduled(
 }
 
 /**
+ * Stripe and the top-up prices, when both are configured; null otherwise.
+ * `fetcher` is for tests: deployed, the till calls the runtime's `fetch`.
+ */
+export function paymentsFor(
+  env: Pick<Env, 'STRIPE_KEY' | 'TILL_TOPUP_PRICES'>,
+  fetcher?: Fetcher,
+): Payments | null {
+  const prices = parseTopupPrices(env.TILL_TOPUP_PRICES);
+  if (env.STRIPE_KEY === undefined || env.STRIPE_KEY === '' || prices === undefined) return null;
+  return { stripe: new Stripe(env.STRIPE_KEY, fetcher), prices };
+}
+
+/**
+ * The minute's poll of Stripe's events. Without `STRIPE_KEY` it does
+ * nothing (null). Paid sessions it refused to credit fail the run AFTER the
+ * cursor moved — the error, in Workers Logs, names the rule and a count,
+ * never an amount or a wallet — and the next runs' overlap shows them again.
+ */
+export async function handleMinute(
+  controller: Pick<ScheduledController, 'scheduledTime'>,
+  env: Env,
+  fetcher?: Fetcher,
+): Promise<PollRun | null> {
+  if (env.STRIPE_KEY === undefined || env.STRIPE_KEY === '') return null;
+  const run = await pollStripe(
+    env.TILL_DB,
+    new Stripe(env.STRIPE_KEY, fetcher),
+    new Date(controller.scheduledTime),
+  );
+  if (run.uncreditable > 0) {
+    throw new Error(
+      `stripe poll: ${run.uncreditable} paid session(s) not credited (rule: same account, euros, a payment intent, a positive net)`,
+    );
+  }
+  if (!run.complete) {
+    throw new Error(`stripe poll: more events than one run reads; the cursor did not move`);
+  }
+  return run;
+}
+
+/** Each cron to its run: the nightly close or the minute's poll; an unknown one fails. */
+export async function dispatchScheduled(
+  controller: Pick<ScheduledController, 'scheduledTime' | 'cron'>,
+  env: Env,
+): Promise<void> {
+  if (controller.cron === NIGHTLY_CRON) await handleScheduled(controller, env);
+  else if (controller.cron === MINUTE_CRON) await handleMinute(controller, env);
+  else throw new Error(`no run for the cron ${JSON.stringify(controller.cron)}`);
+}
+
+/**
  * The Oracle desk: read the tariff, check a draft of the next version, and
  * schedule it with who and why — each on the till's own clock (UTC). Its
  * arguments come from another Worker and are never trusted: a malformed
@@ -84,10 +182,89 @@ export class OracleDesk extends WorkerEntrypoint<Env> {
   }
 }
 
+/**
+ * The account desk: each wallet's own account and its organizations, their
+ * statements, their members, and top-ups through Stripe Checkout — each on
+ * the till's own clock (UTC). `wallet` is the session's, as numinia.com
+ * verified it; every other argument comes from a browser through
+ * numinia.com and is never trusted. A refusal is an answer with problems in
+ * words; only a failing database, or Stripe failing to answer, throws.
+ * Methods, not arrow properties: RPC exposes only what the prototype
+ * declares.
+ */
+export class AccountDesk extends WorkerEntrypoint<Env> {
+  /** The wallet's own account (created the first time) and its organizations, with balances. */
+  async overview(wallet: unknown): Promise<Overview | Refusal> {
+    return overview(this.env.TILL_DB, wallet, new Date());
+  }
+
+  /** A new organization, with the wallet as its first admin. */
+  async createTeam(wallet: unknown, name: unknown): Promise<TeamAnswer> {
+    return createTeam(this.env.TILL_DB, wallet, name, new Date());
+  }
+
+  /** Renames an organization: admins only. */
+  async renameTeam(wallet: unknown, accountId: unknown, name: unknown): Promise<TeamAnswer> {
+    return renameTeam(this.env.TILL_DB, wallet, accountId, name);
+  }
+
+  /** Balance, lots, spend over `range` (`7d`, `30d`, `12m`), the last lines and, for an organization, its members. */
+  async statement(wallet: unknown, accountId: unknown, range: unknown): Promise<StatementAnswer> {
+    return statement(this.env.TILL_DB, wallet, accountId, range, new Date());
+  }
+
+  /** An organization's members: admins only. */
+  async members(wallet: unknown, accountId: unknown): Promise<MembersAnswer> {
+    return members(this.env.TILL_DB, wallet, accountId);
+  }
+
+  /** Adds a member, or changes a member's role: admins only, never the last admin away. */
+  async setMember(
+    wallet: unknown,
+    accountId: unknown,
+    memberWallet: unknown,
+    role: unknown,
+  ): Promise<MembersAnswer> {
+    return setMember(this.env.TILL_DB, wallet, accountId, memberWallet, role, new Date());
+  }
+
+  /** Removes a member: admins only, never the last admin. */
+  async removeMember(
+    wallet: unknown,
+    accountId: unknown,
+    memberWallet: unknown,
+  ): Promise<MembersAnswer> {
+    return removeMember(this.env.TILL_DB, wallet, accountId, memberWallet);
+  }
+
+  /** Opens a Stripe Checkout Session of 10, 50 or 100 € for an account the wallet belongs to. */
+  async startTopup(
+    wallet: unknown,
+    accountId: unknown,
+    amountKey: unknown,
+    returnBase: unknown,
+  ): Promise<TopupStart> {
+    return startTopup(
+      this.env.TILL_DB,
+      paymentsFor(this.env),
+      wallet,
+      accountId,
+      amountKey,
+      returnBase,
+      new Date(),
+    );
+  }
+
+  /** When the buyer comes back: the session's state, credited once when paid. */
+  async confirmTopup(wallet: unknown, sessionId: unknown): Promise<TopupConfirm> {
+    return confirmTopup(this.env.TILL_DB, paymentsFor(this.env), wallet, sessionId, new Date());
+  }
+}
+
 const worker = {
   fetch: (request: Request): Response => handleFetch(request),
   scheduled: async (controller: ScheduledController, env: Env): Promise<void> => {
-    await handleScheduled(controller, env);
+    await dispatchScheduled(controller, env);
   },
 } satisfies ExportedHandler<Env>;
 
