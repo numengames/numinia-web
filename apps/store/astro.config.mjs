@@ -8,6 +8,9 @@ import sitemap from '@astrojs/sitemap';
 import { parseEnv } from '@numinia/domain';
 import { satteri } from '@astrojs/markdown-satteri';
 import { licenseManifest } from '../../scripts/vite-license-manifest.mjs';
+// The doors that went out (v0.83.0) and where each leads now — one map,
+// also read by the link checker and the tests (src/lib/redirects.ts).
+import { REDIRECTS } from './src/lib/redirects';
 
 // Fail closed AT BOOT: a missing required variable kills dev/build here,
 // before any server binds (MISSION-000 env-validation scenario).
@@ -67,6 +70,13 @@ const externalLinksNewTab = {
 export default defineConfig({
   site: env.publicSiteUrl,
   output: 'static',
+  /**
+   * Permanent redirects. Both adapters turn Astro's meta-refresh pages off
+   * (`build.redirects: false`): the Node server answers each with a 301,
+   * the Cloudflare adapter writes it into dist/client/_redirects, which the
+   * Workers static assets layer serves as a 301 before any file.
+   */
+  redirects: { ...REDIRECTS },
   vite: { define: publicDefines, plugins: [licenseManifest()] },
   /**
    * Astro sessions off: we never use them (our session is our own signed
@@ -93,7 +103,7 @@ export default defineConfig({
       // Internal pages and redirect stubs stay out of the index.
       filter: (page) =>
         !page.includes('/spike/') &&
-        !/\/city\/(inhabitants|districts|the-game)\//.test(page) &&
+        !/\/city\//.test(page) &&
         !/\/legal\/notice\/$/.test(page) &&
         // STD-044 CEL-010: a thanks page is reached by paying, never by search.
         // /support/thanks/ holds the redirect stubs to /back/thanks/ (v0.70.0).
@@ -102,7 +112,8 @@ export default defineConfig({
   ],
   markdown: {
     // Light syntax theme: the default dark theme fails WCAG contrast on our
-    // light surface background (caught by the axe gate on /docs/developers/).
+    // light surface background (caught by the axe gate on the docs pages,
+    // retired in v0.83.0; the legal corpus is markdown too).
     shikiConfig: { theme: 'github-light' },
     processor: satteri({ hastPlugins: [externalLinksNewTab] }),
   },

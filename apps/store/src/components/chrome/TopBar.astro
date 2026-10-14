@@ -1,0 +1,71 @@
+---
+/**
+ * The top bar of the app shell (the Oracle's design, 2026-10-14): sticky,
+ * 64 px, glass, almost empty — the centre stays free. On the right, the
+ * door («Iniciar sesión», the primary) and ⋮, a menu with the appearance
+ * (today's night/day switch: its icon shows the mode you are IN), the
+ * language (today's LanguageMenu) and the settings. On a phone, where the
+ * sidebar is gone, it also opens with the Khepri and the magnifier (both
+ * drawn from ChromeSprite). Its behaviour (night/day, the menus' Escape and
+ * click-outside) lives in scripts/app-shell.ts, the shell's one script.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+import { SEARCH_PATH, SETTINGS_PATH, SIGN_IN_PATH, localeHref } from '../../lib/app-nav';
+import { symbolId } from '../../lib/svg-sprite';
+import Icon from './Icon.astro';
+import LanguageMenu from './LanguageMenu.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { locale, basePath } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+const ui = APP_SHELL_UI[locale];
+const words = COMMUNITIES_UI[locale];
+---
+
+<header class="cima">
+  <a href={localeHref(locale, '/')} class="cima-marca" data-metric="nav-home" aria-label="Numinia">
+    <svg fill="currentColor" aria-hidden="true"><use href={`#${symbolId('khepri')}`} /></svg>
+  </a>
+  <a
+    href={localeHref(locale, SEARCH_PATH)}
+    class="cima-icono cima-buscar"
+    aria-label={words.search}
+    title={words.search}
+    data-metric="nav-search"
+  >
+    <Icon name="magnifying-glass" size={22} use />
+  </a>
+  <a
+    href={localeHref(locale, SIGN_IN_PATH)}
+    class="btn btn-primario cima-entrar"
+    data-metric="chrome-sign-in">{ui.signIn}</a
+  >
+  <details class="cima-mas" name="shell-menu" data-popover>
+    <summary class="cima-icono" aria-label={ui.options} title={ui.options} data-metric="chrome-more">
+      <Icon name="dots-three-vertical" size={22} />
+    </summary>
+    <div class="pop cima-pop">
+      <p class="pop-etiqueta">{ui.appearance}</p>
+      <button type="button" class="opc pop-modo" data-metric="chrome-mode">
+        <span class="sr-solo">{t.modeToggle}: </span>
+        <span class="solo-nocturno"><Icon name="moon-stars" size={20} />{ui.night}</span>
+        <span class="solo-diurno"><Icon name="sun" size={20} />{ui.day}</span>
+      </button>
+      <p class="pop-etiqueta">{t.languageSelector}</p>
+      <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
+      <hr />
+      <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-settings">
+        <Icon name="gear" size={20} />
+        {ui.settings}
+      </a>
+    </div>
+  </details>
+</header>

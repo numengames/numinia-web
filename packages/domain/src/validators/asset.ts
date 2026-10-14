@@ -14,6 +14,24 @@ const formatSchema = z
   .transform((value) => value.toLowerCase())
   .pipe(z.enum(ASSET_FORMATS));
 
+/**
+ * Display facts (a card's data line): read when the record states them in
+ * the expected shape, null otherwise. They never fail the build — a
+ * catalogue that writes them differently only loses the line, not the page.
+ * `.optional()` comes first: in zod 4 an absent key reaches the transform
+ * only when the input side is optional, else it fails as "nonoptional".
+ */
+const optionalText = z
+  .unknown()
+  .optional()
+  .transform((value) => (typeof value === 'string' && value.trim() !== '' ? value.trim() : null));
+const optionalBytes = z
+  .unknown()
+  .optional()
+  .transform((value) =>
+    typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : null,
+  );
+
 const assetRecordSchema = z
   .looseObject({
     id: z.string().min(1),
@@ -29,6 +47,8 @@ const assetRecordSchema = z
     is_draft: z.boolean().default(false),
     created_at: z.string().default(''),
     updated_at: z.string().default(''),
+    version: optionalText,
+    file_size_bytes: optionalBytes,
     storage: z
       .looseObject({
         arweave_tx: z.string().nullable().default(null),
@@ -52,6 +72,8 @@ const assetRecordSchema = z
     isDraft: record.is_draft,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
+    version: record.version,
+    sizeBytes: record.file_size_bytes,
     storage: {
       arweaveTx: record.storage.arweave_tx,
       r2Url: record.storage.r2,

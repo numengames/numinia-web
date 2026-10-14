@@ -19,14 +19,12 @@ const PAGES = [
   '/es/lap/stats/',
   '/es/lap/settings/',
   '/es/lap/admin/assets/',
-  '/es/city/',
-  '/es/archive/',
+  '/es/how-it-works/',
+  '/es/bazaar/',
   '/',
   // Responsive-audit offenders of 2026-08-16, pinned so they never return:
-  // an underscore-heavy asset name, code-heavy docs, a markdown table.
+  // an underscore-heavy asset name (the code-heavy docs went out in v0.83.0).
   '/archive/ndg-019d3f89-3aca-7631-b541-054596bb1de6/',
-  '/docs/developers/',
-  '/docs/about/ardrive/',
 ] as const;
 
 const VIEWPORTS = [
@@ -91,13 +89,17 @@ test('phone · primary controls meet the 44px touch target', async ({ page }) =>
   }
 });
 
-test('phone · the chrome stays compact — two rows, never three', async ({ page }) => {
+test('phone · the chrome stays compact — one bar on top, the tab bar below', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/es/');
   await page.waitForLoadState('networkidle');
-  const height = await page.locator('header').evaluate((el) => el.getBoundingClientRect().height);
-  // Two 44px rows + paddings ≈ 105px; three loose rows was ~154px.
-  expect(height).toBeLessThanOrEqual(120);
+  // The app shell (v0.83.0): Khepri, search, the door and ⋮ in one 64px row,
+  // and the five places in a tab bar at least 56px tall at the bottom.
+  const top = await page.locator('header.cima').evaluate((el) => el.getBoundingClientRect());
+  expect(top.height).toBeLessThanOrEqual(64);
+  const tabs = await page.locator('nav.pestanas-app').evaluate((el) => el.getBoundingClientRect());
+  expect(tabs.height).toBeGreaterThanOrEqual(56);
+  expect(tabs.bottom).toBeLessThanOrEqual(800);
 });
 
 test('both modes flip every surface token', async ({ page }) => {
@@ -114,7 +116,7 @@ test('both modes flip every surface token', async ({ page }) => {
 test('content survives with JavaScript disabled (SSG promise)', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  for (const path of ['/es/lap/stats/', '/es/lap/codex/', '/es/archive/']) {
+  for (const path of ['/es/lap/stats/', '/es/lap/codex/', '/es/bazaar/']) {
     await page.goto(path);
     const hidden = await page.evaluate(
       () =>

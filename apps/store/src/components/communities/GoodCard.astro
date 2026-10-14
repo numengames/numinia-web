@@ -1,0 +1,110 @@
+---
+/**
+ * One of the city's digital goods as a card on the home (the app shell,
+ * v0.83.0): its picture (small, lazy), kind and format, name, its own line,
+ * its size and version when the catalogue states them, its shelf, and the
+ * licence, always in sight. The card opens the object's page.
+ */
+import type { CommunitiesMessages } from '../../i18n/communities';
+import { objectHref, type GoodCard } from '../../lib/goods';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  card: GoodCard;
+  prefix: string;
+  ui: CommunitiesMessages;
+}
+
+const { card, prefix, ui } = Astro.props;
+const kind = ui.goodCategories[card.category];
+const shelf = ui.goodCollections[card.collection];
+---
+
+<a class="tarjeta obj" href={objectHref(card.id, prefix)} data-metric="home-good">
+  <div class="escenario">
+    {
+      card.thumb && (
+        <img src={card.thumb} alt="" width="240" height="240" loading="lazy" decoding="async" />
+      )
+    }
+  </div>
+  <div class="cuerpo">
+    <span class="tipo">{kind} · {card.format}</span>
+    <h3 class="nombre">{card.name}</h3>
+    {card.line && <p class="linea">{card.line}</p>}
+    {card.facts.length > 0 && <span class="datos">{card.facts.join(' · ')}</span>}
+    <span class="etiquetas">
+      <span class="chip">{kind}</span>
+      {shelf && <span class="chip">{shelf}</span>}
+    </span>
+    <span class="licencia">
+      <Icon name="check-circle" size={16} />
+      {ui.licenceLine}
+    </span>
+  </div>
+</a>
+
+<style>
+  .obj .escenario {
+    aspect-ratio: 4 / 3;
+    background: radial-gradient(120% 100% at 50% 0%, var(--elevada), var(--fondo));
+    border-bottom: 1px solid var(--linea);
+    overflow: hidden;
+  }
+  .obj .escenario img {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .obj .cuerpo {
+    gap: 6px;
+  }
+  .tipo {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .nombre {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .linea {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .datos {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--texto-2);
+  }
+  .etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--s1);
+  }
+  .licencia {
+    margin-top: auto;
+    padding-top: var(--s2);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--texto-2);
+  }
+  .licencia :global(.icono) {
+    color: var(--enlace);
+  }
+</style>

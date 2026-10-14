@@ -1,0 +1,316 @@
+---
+/**
+ * The home's featured card (the app shell, v0.83.0): landscape, the full
+ * width of the column — the picture on the left, the facts and the actions
+ * on the right — with up to three slides: the house's pick and the next
+ * upcoming rituals. Only real actions: the ritual's calendar file, its page,
+ * and «Enter the world» only where a real world exists. No invented count
+ * of people inside.
+ *
+ * Layer 0: the slides sit in a strip that scrolls by hand without
+ * JavaScript; the arrows (inline script on the home) only move the strip.
+ */
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import {
+  pick,
+  placesLine,
+  whenLong,
+  whenShort,
+  worldOf,
+  type FeaturedSlide,
+  type World,
+} from '../../lib/communities';
+import type { SupportedLocale } from '@numinia/domain';
+import Icon from '../chrome/Icon.astro';
+import Cover from './Cover.astro';
+
+interface Props {
+  slides: readonly FeaturedSlide[];
+  locale: SupportedLocale;
+  prefix: string;
+  commons: World;
+}
+
+const { slides, locale, prefix, commons } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const STRIP = 'destacado-pista';
+---
+
+{
+  slides.length > 0 && (
+    <section class="destacado" aria-label={ui.featuredLabel}>
+      <div class="dest-pista" id={STRIP} data-strip>
+        {slides.map(({ community, ritual }, index) => {
+          const world = worldOf(community, commons, ritual);
+          const picture = ritual?.image ?? community.image;
+          const image = picture ? { src: picture.src, alt: pick(picture.alt, locale) } : undefined;
+          const first = index === 0;
+          const homeLine = world
+            ? world.name
+            : community.homeInProgress
+              ? ui.homeInProgress
+              : ui.homeToOpen;
+          return (
+            <article
+              class="diapo"
+              role="group"
+              aria-label={fill(ui.slideOf, { n: index + 1, m: slides.length })}
+              data-featured-slide
+            >
+              <div class="lienzo">
+                <Cover id={community.id} name={community.name} image={image} eager={first} art={first} />
+              </div>
+              <div class="info">
+                <div class="cab">
+                  <div class="fila">
+                    {ritual?.city ? (
+                      <span class="chip ambar">{ui.ofTheCity}</span>
+                    ) : (
+                      <span class="chip ambar">{pick(community.kind, locale).split(' ·')[0]}</span>
+                    )}
+                    {ritual && ritual.status === 'upcoming' && (
+                      <span class="chip vivo">
+                        <span class="punto" />
+                        <span data-countdown={ritual.start}>{whenShort(ritual, locale)}</span>
+                      </span>
+                    )}
+                  </div>
+                  <h2>{ritual ? pick(ritual.title, locale) : community.name}</h2>
+                  {ritual ? (
+                    <p class="de">
+                      {ritual.city ? ui.cityKeeps : ui.organisedBy}{' '}
+                      <a href={`${prefix}/communities/${community.id}/`} data-metric="home-featured-community">
+                        {community.name}
+                      </a>
+                      .
+                    </p>
+                  ) : (
+                    <p class="de">{pick(community.summary, locale)}</p>
+                  )}
+                </div>
+                <div class="cuerpo-dest">
+                  <dl class="kv">
+                    {ritual ? (
+                      <>
+                        <div>
+                          <dt>
+                            <Icon name="calendar-blank" size={14} />
+                            {ui.when}
+                          </dt>
+                          <dd>{whenLong(ritual, locale)}</dd>
+                        </div>
+                        <div>
+                          <dt>
+                            <Icon name="map-pin" size={14} />
+                            {ui.where}
+                          </dt>
+                          <dd>{pick(ritual.where, locale)}</dd>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <dt>
+                          <Icon name="map-pin" size={14} />
+                          {ui.from}
+                        </dt>
+                        <dd>{placesLine(community.places, locale)}</dd>
+                      </div>
+                    )}
+                    <div>
+                      <dt>
+                        <Icon name="house" size={14} />
+                        {ui.home}
+                      </dt>
+                      <dd>{homeLine}</dd>
+                    </div>
+                  </dl>
+                  <div class="fila acciones">
+                    {world && (
+                      <a
+                        class="btn btn-primario"
+                        href={world.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-metric="home-featured-world"
+                      >
+                        <Icon name="play" size={18} />
+                        {ui.enterWorld}
+                      </a>
+                    )}
+                    {ritual && (
+                      <a
+                        class:list={['btn', world ? 'btn-fantasma' : 'btn-primario']}
+                        href={`/rituals/${ritual.id}.ics`}
+                        data-metric="home-featured-calendar"
+                      >
+                        <Icon name="calendar-plus" size={18} />
+                        {ui.toMyCalendar}
+                      </a>
+                    )}
+                  </div>
+                  <div class="pie">
+                    {ritual ? (
+                      <a href={`${prefix}/rituals/${ritual.id}/`} data-metric="home-featured-ritual">
+                        {ui.seeRitual}
+                      </a>
+                    ) : (
+                      <a href={`${prefix}/communities/${community.id}/`} data-metric="home-featured-community-page">
+                        {ui.seeCommunity}
+                      </a>
+                    )}
+                    {slides.length > 1 && (
+                      <span class="pasador">
+                        <span class="mono">
+                          {index + 1} / {slides.length}
+                        </span>
+                        <span class="flechas">
+                          <button
+                            type="button"
+                            class="flecha"
+                            data-step="-1"
+                            aria-controls={STRIP}
+                            aria-label={ui.previous}
+                            data-metric="home-featured-prev"
+                          >
+                            <Icon name="caret-left" size={18} />
+                          </button>
+                          <button
+                            type="button"
+                            class="flecha der"
+                            data-step="1"
+                            aria-controls={STRIP}
+                            aria-label={ui.next}
+                            data-metric="home-featured-next"
+                          >
+                            <Icon name="caret-left" size={18} />
+                          </button>
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .destacado {
+    padding-top: var(--s5);
+  }
+  .dest-pista {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    border-radius: var(--radio-marco);
+  }
+  .dest-pista::-webkit-scrollbar {
+    display: none;
+  }
+  .diapo {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: start;
+    display: grid;
+    grid-template-columns: 1fr;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    overflow: hidden;
+  }
+  @media (min-width: 56.25rem) {
+    .diapo {
+      grid-template-columns: 3fr 2fr;
+      min-height: 380px;
+    }
+  }
+  .diapo > * {
+    min-width: 0;
+  }
+  /* Stacked, every slide stretches to the tallest one in the strip: the
+     extra height goes to the info, never as a band under the picture. */
+  @media (max-width: 56.24rem) {
+    .diapo {
+      grid-template-rows: auto 1fr;
+    }
+  }
+  .lienzo {
+    position: relative;
+  }
+  .lienzo :global(.cover.card) {
+    border-bottom: 0;
+  }
+  /* Side by side, the picture fills its half of the card, whatever its height. */
+  @media (min-width: 56.25rem) {
+    .lienzo :global(.cover.card) {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      aspect-ratio: auto;
+    }
+  }
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    padding: var(--s5);
+    border-left: 1px solid var(--linea);
+  }
+  @media (max-width: 56.24rem) {
+    .info {
+      border-left: 0;
+      border-top: 1px solid var(--linea);
+    }
+  }
+  @media (min-width: 56.25rem) {
+    .info {
+      padding: var(--s6);
+    }
+  }
+  .cab {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  .cab h2 {
+    margin: 0;
+    font-size: clamp(1.6rem, 1.2vw + 1.2rem, 2.2rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  .de {
+    margin: 0;
+    color: var(--texto-2);
+  }
+  .cuerpo-dest {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    flex: 1;
+  }
+  .acciones {
+    gap: var(--s3);
+  }
+  .pie {
+    margin-top: auto;
+    border-top: 1px solid var(--linea);
+    padding-top: var(--s3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.875rem;
+  }
+  .pasador {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s3);
+    color: var(--texto-2);
+  }
+</style>

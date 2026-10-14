@@ -1,24 +1,28 @@
 ---
 /**
- * The front door (phase 0 of the communities platform, the Oracle,
- * 2026-10-14): a city where communities have a home. The hero names what we
- * do, a featured community sits beside it, then the upcoming rituals, the
- * three communities with the nearest ritual, how it works, the three kinds,
- * the templates, the agents and the closing invitation.
+ * The front door (the app shell, v0.83.0, the Oracle 2026-10-14): action,
+ * not explanation. The featured card first, landscape and full width — the
+ * house's pick and the next rituals — then the upcoming rituals, a shelf of
+ * the Bazar, the three communities with the nearest ritual, and the two
+ * doors for a first visit: how it works, and how to open a community's home.
+ * What the page used to explain lives in «Cómo funciona» (/how-it-works/).
  *
  * Layer 0: renders whole without JavaScript; the only scripts are inline
- * (the countdowns and the carousel's arrows), per the landing budget.
+ * (the countdowns and the strips' arrows), per the landing budget.
  */
-import type { SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { CHROME_MESSAGES } from '../i18n/messages';
 import { COMMUNITIES_UI } from '../i18n/communities';
-import { nextRitualOf, pick, placesLine, upcoming, whenShort, withLife } from '../lib/communities';
+import { featuredSlides, upcoming, withLife } from '../lib/communities';
+import { loadArchive } from '../lib/archive';
+import { goodCard, homeGoods } from '../lib/goods';
 import { COMMUNITIES, RITUALS, communityOf } from './communities/register';
 import Icon from './chrome/Icon.astro';
-import Cover from './communities/Cover.astro';
+import Featured from './communities/Featured.astro';
 import CommunityCard from './communities/CommunityCard.astro';
 import RitualCard from './communities/RitualCard.astro';
+import GoodCardView from './communities/GoodCard.astro';
 import Countdown from './communities/Countdown.astro';
 import '../styles/communities.css';
 
@@ -32,134 +36,53 @@ const ui = COMMUNITIES_UI[locale];
 const chrome = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
-/** §6.1 — the canonical binary phrase; copied from §19.3, never invented. */
-const BINARIA =
-  '010011000110010101100001011101100110010100100000011101000110100001101001011011100110011101110011001000000110001001100101011101000111010001100101011100100010000001110100011010000110000101101110001000000111011101100101001000000110011001101111011101010110111001100100001000000111010001101000011001010110110100101110' +
-  'x'.repeat(60);
-
-const alive = withLife(COMMUNITIES, RITUALS);
-const featured = alive[0] ?? COMMUNITIES[0]!;
-const featuredNext = nextRitualOf(featured.id, RITUALS);
-const featuredImage = featured.image
-  ? { src: featured.image.src, alt: pick(featured.image.alt, locale) }
-  : undefined;
+/** The city's commons: the one world the repository knows a real address for. */
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const slides = featuredSlides(COMMUNITIES, RITUALS);
 const coming = upcoming(RITUALS);
-
-const STEP_ICONS = ['house', 'user', 'calendar-blank', 'archive'] as const;
-const KIND_SEALS = [
-  '/images/seals/logias.webp',
-  '/images/seals/ligas.webp',
-  '/images/seals/hermandades.webp',
-] as const;
-const TEMPLATE_ICONS = ['book-open', 'buildings', 'clipboard-text', 'lock-key', 'palette', 'confetti'] as const;
-const AGENT_ICONS = ['scroll', 'clipboard-text', 'shield-check', 'crane-tower'] as const;
+const alive = withLife(COMMUNITIES, RITUALS).slice(0, 3);
+const goods = homeGoods(await loadArchive()).map((entry) => goodCard(entry, locale));
 ---
 
 <BaseLayout locale={locale} title="Numinia" description={chrome.footerTagline}>
-  <!-- §13.2 hero: the thesis, relief behind it (Nocturno only), the single
-       orchestrated moment of the piece — the entrance (STD-023 §14):
-       label, headline, line, actions rising 100ms apart. -->
-  <section class="hero" data-materia="relieve">
-    <div class="copy">
-      <p class="etiqueta entrada">{ui.eyebrow}</p>
-      <h1 class="display-m entrada-1">{ui.heroTitle}</h1>
-      <p class="lead entrada-2">{ui.heroLead}</p>
-      <div class="ctas entrada-3">
-        <a href={`${prefix}/communities/`} class="btn btn-primario" data-metric="landing-open">
-          {ui.ctaOpen}
-        </a>
-        <a href={`${prefix}/communities/`} class="btn btn-fantasma" data-metric="landing-communities">
-          {ui.ctaCommunities}
-        </a>
-      </div>
-    </div>
-    <aside class="tarjeta destacada entrada-2" aria-label={ui.featured}>
-      <div class="fila entre">
-        <span class="chip ambar">{pick(featured.kind, locale).split(' ·')[0]}</span>
-        {
-          featuredNext && (
-            <span class="chip vivo">
-              <span class="punto" />
-              <span data-countdown={featuredNext.start}>{whenShort(featuredNext, locale)}</span>
-            </span>
-          )
-        }
-      </div>
-      <h2 class="nombre">{featured.name}</h2>
-      <Cover id={featured.id} name={featured.name} image={featuredImage} eager art />
-      <dl class="kv">
-        {
-          featuredNext && (
-            <div>
-              <dt>
-                <Icon name="calendar-blank" size={14} />
-                {ui.nextRitual}
-              </dt>
-              <dd>
-                {pick(featuredNext.title, locale)} · {whenShort(featuredNext, locale)}
-              </dd>
-            </div>
-          )
-        }
-        <div>
-          <dt><Icon name="map-pin" size={14} />{ui.from}</dt>
-          <dd>{placesLine(featured.places, locale)}</dd>
-        </div>
-        <div>
-          <dt><Icon name="house" size={14} />{ui.home}</dt>
-          <dd>
-            {
-              featured.home
-                ? pick(featured.home, locale)
-                : featured.homeInProgress
-                  ? ui.homeInProgress
-                  : ui.homeToOpen
-            }
-          </dd>
-        </div>
-      </dl>
-      <a class="ver" href={`${prefix}/communities/${featured.id}/`} data-metric="landing-featured">
-        {ui.seeCommunity}
-      </a>
-    </aside>
-  </section>
-  <p class="binaria" data-barrido aria-hidden="true">{BINARIA}</p>
+  <h1 class="oculto">Numinia</h1>
+  {/* The entrance (STD-023 §14), the one orchestrated moment of the page:
+      the featured card, then the rituals' head and strip, 100 ms apart. */}
+  <div class="entrada">
+    <Featured slides={slides} locale={locale} prefix={prefix} commons={commons} />
+  </div>
 
   <section class="bloque" id="rituals">
-    <div class="cabecera-bloque">
+    <div class="cabecera-bloque entrada-1">
       <div>
         <p class="etiqueta">{ui.upcomingEyebrow}</p>
         <h2 class="titulo-m">{ui.upcomingTitle}</h2>
         <p class="ayuda">{ui.upcomingHelp}</p>
       </div>
-      <div class="fila">
-        <a class="btn btn-fantasma btn-sm" href={`${prefix}/calendar/`} data-metric="landing-calendar">
-          <Icon name="calendar-blank" size={16} />
-          {ui.fullCalendar}
-        </a>
-        <span class="flechas">
-          <button
-            type="button"
-            class="flecha"
-            data-carousel-step="-1"
-            aria-label={ui.previous}
-            data-metric="landing-carousel-prev"
-          >
-            <Icon name="caret-left" size={18} />
-          </button>
-          <button
-            type="button"
-            class="flecha der"
-            data-carousel-step="1"
-            aria-label={ui.next}
-            data-metric="landing-carousel-next"
-          >
-            <Icon name="caret-left" size={18} />
-          </button>
-        </span>
-      </div>
+      <span class="flechas">
+        <button
+          type="button"
+          class="flecha"
+          data-step="-1"
+          aria-controls="rituales-pista"
+          aria-label={ui.previous}
+          data-metric="landing-carousel-prev"
+        >
+          <Icon name="caret-left" size={18} />
+        </button>
+        <button
+          type="button"
+          class="flecha der"
+          data-step="1"
+          aria-controls="rituales-pista"
+          aria-label={ui.next}
+          data-metric="landing-carousel-next"
+        >
+          <Icon name="caret-left" size={18} />
+        </button>
+      </span>
     </div>
-    <div class="pista" data-carousel>
+    <div class="pista entrada-2" id="rituales-pista" data-step-px="632">
       {
         coming.map((ritual) => (
           <RitualCard
@@ -175,6 +98,28 @@ const AGENT_ICONS = ['scroll', 'clipboard-text', 'shield-check', 'crane-tower'] 
     </div>
   </section>
 
+  {
+    goods.length > 0 && (
+      <section class="bloque" id="bazaar">
+        <div class="cabecera-bloque">
+          <div>
+            <p class="etiqueta">{ui.goodsEyebrow}</p>
+            <h2 class="titulo-m">{ui.goodsTitle}</h2>
+            <p class="ayuda">{ui.goodsHelp}</p>
+          </div>
+          <a class="btn btn-fantasma btn-sm" href={`${prefix}/bazaar/`} data-metric="home-bazaar">
+            {ui.seeBazaar}
+          </a>
+        </div>
+        <div class="rejilla-obj">
+          {goods.map((card) => (
+            <GoodCardView card={card} prefix={prefix} ui={ui} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   <section class="bloque" id="alive">
     <div class="cabecera-bloque">
       <div>
@@ -182,277 +127,65 @@ const AGENT_ICONS = ['scroll', 'clipboard-text', 'shield-check', 'crane-tower'] 
         <h2 class="titulo-m">{ui.liveTitle}</h2>
         <p class="ayuda">{ui.liveHelp}</p>
       </div>
-      <a
-        class="btn btn-fantasma btn-sm"
-        href={`${prefix}/communities/`}
-        data-metric="landing-all-communities"
-      >
-        <Icon name="users" size={16} />
-        {ui.seeAll} · {COMMUNITIES.length}
+    </div>
+    <div class="rejilla">
+      {
+        alive.map((community) => (
+          <CommunityCard
+            community={community}
+            rituals={RITUALS}
+            locale={locale}
+            prefix={prefix}
+            ui={ui}
+          />
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="final" aria-label={ui.firstTime}>
+    <p>{ui.firstTime}</p>
+    <div class="fila puertas">
+      <a href={`${prefix}/how-it-works/`} data-metric="home-how">
+        <Icon name="question" size={20} />
+        {ui.howItWorks}
       </a>
-    </div>
-    <div class="rejilla">
-      {
-        alive
-          .slice(0, 3)
-          .map((community) => (
-            <CommunityCard
-              community={community}
-              rituals={RITUALS}
-              locale={locale}
-              prefix={prefix}
-              ui={ui}
-            />
-          ))
-      }
-    </div>
-  </section>
-
-  <section class="bloque">
-    <div class="cabecera-bloque">
-      <div>
-        <p class="etiqueta">{ui.howEyebrow}</p>
-        <h2 class="titulo-m">{ui.howTitle}</h2>
-      </div>
-    </div>
-    <ol class="pasos">
-      {
-        ui.steps.map((step, index) => (
-          <li class="reveal">
-            <span class="n">
-              <Icon name={STEP_ICONS[index] ?? 'house'} size={18} />
-              {index + 1}
-            </span>
-            <h3>{step.title}</h3>
-            <p>{step.text}</p>
-          </li>
-        ))
-      }
-    </ol>
-  </section>
-
-  <section class="bloque">
-    <div class="cabecera-bloque">
-      <div>
-        <p class="etiqueta">{ui.kindsEyebrow}</p>
-        <h2 class="titulo-m">{ui.kindsTitle}</h2>
-        <p class="ayuda">{ui.kindsHelp}</p>
-      </div>
-    </div>
-    <div class="rejilla">
-      {
-        ui.kinds.map((kind, index) => (
-          <div class="tarjeta tipo reveal">
-            <span class="sello">
-              <img src={KIND_SEALS[index]} alt="" width="72" height="72" loading="lazy" decoding="async" />
-            </span>
-            <span class="chip ambar">{kind.name}</span>
-            <p>{kind.rule}</p>
-            <p class="texto-2 small">{kind.note}</p>
-          </div>
-        ))
-      }
-    </div>
-  </section>
-
-  <section class="bloque">
-    <div class="cabecera-bloque">
-      <div>
-        <p class="etiqueta">{ui.templatesEyebrow}</p>
-        <h2 class="titulo-m">{ui.templatesTitle}</h2>
-        <p class="ayuda">{ui.templatesHelp}</p>
-      </div>
-    </div>
-    <div class="rejilla">
-      {
-        ui.templates.map((template, index) => (
-          <article class="tarjeta plantilla reveal">
-            <div class="cab">
-              <span class="ico">
-                <Icon name={TEMPLATE_ICONS[index] ?? 'house'} size={24} />
-              </span>
-              <div>
-                <span class="para">{template.for}</span>
-                <h3>{template.name}</h3>
-              </div>
-            </div>
-            <p>{template.text}</p>
-            <ul class="ticks">
-              {template.ticks.map((tick) => (
-                <li>
-                  <Icon name="check" size={14} />
-                  {tick}
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))
-      }
-    </div>
-  </section>
-
-  <section class="bloque">
-    <div class="cabecera-bloque">
-      <div>
-        <p class="etiqueta">{ui.agentsEyebrow}</p>
-        <h2 class="titulo-m">{ui.agentsTitle}</h2>
-        <p class="ayuda">{ui.agentsHelp}</p>
-      </div>
-    </div>
-    <ul class="agentes">
-      {
-        ui.agents.map((agent, index) => (
-          <li class="reveal">
-            <span class="ico">
-              <Icon name={AGENT_ICONS[index] ?? 'robot'} size={24} />
-            </span>
-            <div>
-              <b>
-                {agent.name}
-                <span class:list={['chip', { vivo: agent.status === 'beta' }]}>
-                  {agent.status === 'beta' ? ui.beta : ui.later}
-                </span>
-              </b>
-              <span>{agent.text}</span>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-
-  <section class="bloque cierre">
-    <div class="tarjeta final">
-      <div>
-        <p class="etiqueta">{ui.closingEyebrow}</p>
-        <h2 class="titulo-m">{ui.closingTitle}</h2>
-        <p class="texto-2">{ui.closingText}</p>
-      </div>
-      <div class="fila">
-        <a class="btn btn-primario" href={`${prefix}/communities/`} data-metric="landing-closing-open">
-          {ui.ctaOpen}
-        </a>
-        <a class="btn btn-fantasma" href={`${prefix}/communities/`} data-metric="landing-closing-who">
-          {ui.closingWho}
-        </a>
-      </div>
+      <a href={`${prefix}/how-it-works/#open`} data-metric="home-open">
+        <Icon name="house" size={20} />
+        {ui.openYourHome}
+      </a>
     </div>
   </section>
 
   <Countdown ui={ui} />
   <script is:inline>
-    /* The carousel's arrows scroll the strip two cards at a time; without
-       JavaScript the strip still scrolls by hand. */
-    (function () {
-      var strip = document.querySelector('[data-carousel]');
-      if (!strip) return;
-      document.querySelectorAll('[data-carousel-step]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          strip.scrollBy({
-            left: 632 * Number(button.getAttribute('data-carousel-step')),
-            behavior: 'smooth',
-          });
-        });
+    /* The strips' arrows: the featured card steps one slide, the rituals two
+       cards, and both wrap at the ends. Without JavaScript they scroll by hand. */
+    document.querySelectorAll('[data-step]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var s = document.getElementById(b.getAttribute('aria-controls'));
+        if (!s) return;
+        var w = Number(s.getAttribute('data-step-px')) || s.clientWidth;
+        var end = s.scrollWidth - s.clientWidth;
+        var x = s.scrollLeft;
+        x = b.getAttribute('data-step') === '1' ? (x >= end - 2 ? 0 : Math.min(x + w, end)) : x <= 2 ? end : Math.max(x - w, 0);
+        s.scrollTo({ left: x, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
       });
-    })();
+    });
   </script>
 </BaseLayout>
 
 <style>
-  .hero {
-    display: grid;
-    gap: var(--s7);
-    align-items: center;
-    grid-template-columns: 1fr;
-    padding: var(--s8) var(--s5) var(--s7);
-    margin: 0 calc(-1 * var(--s5));
-    border-radius: var(--radio-marco);
-  }
-  /* Grid items shrink below their pictures' intrinsic width on a phone. */
-  .hero > * {
-    min-width: 0;
-  }
-  @media (min-width: 56.25rem) {
-    .hero {
-      grid-template-columns: 1.15fr 0.85fr;
-      padding-top: var(--s9);
-      padding-bottom: var(--s8);
-    }
-  }
-  /* The page headline at numinia.org's size: 3–3.58rem, Geist 400. */
-  .hero h1 {
-    font-size: clamp(2.25rem, 2.5vw + 1.75rem, 3.583rem);
-    color: var(--texto);
-    margin: 0 0 var(--s5);
-    max-width: 16ch;
-  }
-  .lead {
-    font-size: 1.2rem;
-    line-height: 1.5;
-    color: var(--texto-2);
-    max-width: 54ch;
-    margin: 0 0 var(--s5);
-  }
-  .ctas {
-    display: flex;
-    gap: var(--s3);
-    flex-wrap: wrap;
-  }
-  .destacada {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s4);
-  }
-  .destacada .nombre {
-    margin: 0;
-    font-size: 1.44rem;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-  }
-  .destacada :global(.cover) {
-    border: 1px solid var(--linea);
-    border-radius: var(--radio-control);
-  }
-  .destacada .ver {
-    border-top: 1px solid var(--linea);
-    padding-top: var(--s3);
-    font-size: 0.875rem;
-  }
-  .binaria {
-    margin: 0 0 var(--s4);
-    max-width: 100%;
-  }
-  .flechas {
-    display: inline-flex;
-    gap: var(--s1);
-  }
-  .flecha {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--linea-f);
-    background: transparent;
-    color: var(--texto-2);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  .oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
     padding: 0;
-    transition:
-      color 120ms var(--ciclo),
-      border-color 120ms var(--ciclo);
-  }
-  .flecha:hover,
-  .flecha:focus-visible {
-    border-color: var(--enlace);
-    color: var(--enlace);
-  }
-  .flecha.der :global(svg) {
-    transform: rotate(180deg);
-  }
-  /* Without JavaScript the arrows could do nothing: the strip scrolls by hand. */
-  :global(html:not([data-js='on'])) .flechas {
-    display: none;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .pista {
     display: flex;
@@ -465,159 +198,39 @@ const AGENT_ICONS = ['scroll', 'clipboard-text', 'shield-check', 'crane-tower'] 
   .pista::-webkit-scrollbar {
     display: none;
   }
-  .pasos {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--s5);
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-  .pasos li {
-    border-top: 1px solid var(--enlace);
-    padding-top: var(--s4);
-  }
-  .pasos .n {
-    display: flex;
-    align-items: center;
-    gap: var(--s2);
-    font-family: var(--mono);
-    color: var(--enlace);
-    font-size: 0.75rem;
-    letter-spacing: 0.15em;
-  }
-  .pasos h3 {
-    margin: var(--s3) 0 var(--s2);
-    font-size: 1.2rem;
-  }
-  .pasos p {
-    color: var(--texto-2);
-    margin: 0;
-  }
-  .tipo {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s3);
-    align-items: flex-start;
-  }
-  .tipo .sello {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--elevada);
-    border: 1px solid var(--linea);
-  }
-  .tipo .sello img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .tipo p {
-    margin: 0;
-  }
-  .plantilla {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s2);
-  }
-  .plantilla .cab {
-    display: flex;
-    align-items: center;
-    gap: var(--s3);
-  }
-  .ico {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radio-control);
-    background: var(--elevada);
-    display: grid;
-    place-items: center;
-    color: var(--enlace);
-    flex: none;
-  }
-  .plantilla .para {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--texto-2);
-  }
-  .plantilla h3 {
-    margin: 2px 0 0;
-    font-size: 1.2rem;
-  }
-  .plantilla p {
-    color: var(--texto-2);
-    margin: 0;
-  }
-  .ticks {
-    list-style: none;
-    padding: 0;
-    margin: var(--s1) 0 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.875rem;
-    color: var(--texto-2);
-  }
-  .ticks li {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-  }
-  .ticks :global(.icono) {
-    color: var(--enlace);
-    margin-top: 4px;
-  }
-  .agentes {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .rejilla-obj {
     display: grid;
     gap: var(--s4);
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
   }
-  .agentes li {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    gap: var(--s3);
-    align-items: start;
-  }
-  .agentes b {
-    display: block;
-    font-weight: 600;
-  }
-  .agentes b .chip {
-    margin-left: 6px;
-    vertical-align: middle;
-  }
-  .agentes span {
-    color: var(--texto-2);
-    font-size: 0.95rem;
-  }
-  .cierre {
-    padding-top: var(--s7);
+  .rejilla-obj > * {
+    min-width: 0;
   }
   .final {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--s5);
-    align-items: end;
+    gap: var(--s4) var(--s6);
+    align-items: center;
     justify-content: space-between;
-    padding: var(--s6);
-    background: linear-gradient(
-      140deg,
-      var(--elevada),
-      color-mix(in srgb, var(--superficie) 60%, transparent)
-    );
-  }
-  .final h2 {
-    margin: 0 0 var(--s3);
+    border-top: 1px solid var(--linea);
+    padding: var(--s6) 0 var(--s4);
   }
   .final p {
-    max-width: 56ch;
     margin: 0;
+    color: var(--texto-2);
+  }
+  .puertas {
+    gap: var(--s5);
+  }
+  .puertas a {
+    display: inline-flex;
+    gap: var(--s2);
+    align-items: center;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .puertas a:hover,
+  .puertas a:focus-visible {
+    text-decoration: underline;
   }
 </style>

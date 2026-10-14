@@ -1,0 +1,31 @@
+---
+/**
+ * The chrome's sprite (the approved prototype draws its icons the same
+ * way): what the app shell shows in two places travels once per page as a
+ * <symbol>, and each place draws it with <use> (`<Icon use />`). The Khepri
+ * (the sidebar's brand and the phone's top bar), the magnifier (the
+ * sidebar's search and the phone's top bar), the five places in the state
+ * this page gives them (the sidebar and the tab bar) and the footer's
+ * external-link arrow.
+ */
+import khepri from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
+import { NAV_ITEMS, navIcon, navState } from '../../lib/app-nav';
+import { svgParts, symbolId } from '../../lib/svg-sprite';
+import Icon from './Icon.astro';
+
+interface Props {
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { basePath } = Astro.props;
+const mark = svgParts(khepri);
+const places = NAV_ITEMS.map((item) => navIcon(item, navState(item, basePath)));
+---
+
+<svg class="sprite" aria-hidden="true">
+  <symbol id={symbolId('khepri')} viewBox={mark.viewBox} set:html={mark.body} />
+  <Icon name="magnifying-glass" symbol />
+  {places.map((name) => <Icon name={name} symbol />)}
+  <Icon name="arrow-square-out" symbol />
+</svg>

@@ -547,6 +547,125 @@ export function yearOf(ritual: Ritual): number {
   return dayOf(ritual, 'start').getUTCFullYear();
 }
 
+/** The day of the month and the short month a ritual starts, for a dated list. */
+export function dayAndMonth(
+  ritual: Ritual,
+  locale: string,
+): { readonly day: number; readonly month: string } {
+  const start = dayOf(ritual, 'start');
+  const month = new Intl.DateTimeFormat(CONTENT_LOCALE(locale), {
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(start);
+  return { day: start.getUTCDate(), month: noDots(month) };
+}
+
+// ---------------------------------------------------------------------------
+// The app shell's pages (v0.83.0): the home's featured card, the worlds a
+// visitor can enter, and the follow list kept in the visitor's browser.
+
+/** A 3D world to enter: its address and its name in the page's language. */
+export interface World {
+  readonly href: string;
+  readonly name: string;
+}
+
+/**
+ * The world a community's ritual is entered from — only a real one. The
+ * city's own rituals happen in the commons, and the founder keeps them, so
+ * both open there. No other community has opened its home yet: for them
+ * there is no world, and the page says the home is still to open.
+ */
+export function worldOf(community: Community, commons: World, ritual?: Ritual): World | undefined {
+  if (ritual?.city === true || community.state === 'founder') return commons;
+  return undefined;
+}
+
+/** One slide of the home's featured card: a community and, when in sight, its ritual. */
+export interface FeaturedSlide {
+  readonly community: Community;
+  readonly ritual: Ritual | undefined;
+}
+
+/**
+ * The home's featured card: the house's pick first — the community with the
+ * nearest ritual, as the front door has chosen since phase 0, or the first
+ * community when none has a ritual in sight — then the next upcoming
+ * rituals, never the same one twice, up to `count` slides.
+ */
+export function featuredSlides(
+  communities: readonly Community[],
+  rituals: readonly Ritual[],
+  count = 3,
+): readonly FeaturedSlide[] {
+  const shown = published(communities);
+  const pick = withLife(shown, rituals)[0] ?? shown[0];
+  if (pick === undefined || count < 1) return [];
+  const first: FeaturedSlide = { community: pick, ritual: nextRitualOf(pick.id, rituals) };
+  const slides: FeaturedSlide[] = [first];
+  for (const ritual of upcoming(rituals)) {
+    if (slides.length >= count) break;
+    if (ritual.id === first.ritual?.id) continue;
+    const community = shown.find((entry) => entry.id === ritual.community);
+    if (community) slides.push({ community, ritual });
+  }
+  return slides;
+}
+
+/**
+ * The browser key where the visitor's followed communities live: a JSON
+ * array of community ids, written by the «Follow» button on a community's
+ * page and read by /belong/. Nothing leaves the browser.
+ */
+export const FOLLOWS_KEY = 'numinia-follows';
+
+/** A ritual as a followed community's card on /belong/ shows it. */
+export interface FollowNext {
+  readonly title: string;
+  readonly when: string;
+  readonly href: string;
+  readonly start: string;
+}
+
+/**
+ * What /belong/ needs to draw a followed community in the visitor's browser:
+ * embedded at build as JSON, one entry per published community, each with
+ * its next ritual when one is in sight.
+ */
+export interface FollowEntry {
+  readonly id: string;
+  readonly name: string;
+  readonly href: string;
+  readonly line: string;
+  readonly next: FollowNext | null;
+}
+
+/** The entries /belong/ embeds, in the register's order. */
+export function followEntries(
+  communities: readonly Community[],
+  rituals: readonly Ritual[],
+  locale: string,
+  prefix: string,
+): readonly FollowEntry[] {
+  return published(communities).map((community) => {
+    const next = nextRitualOf(community.id, rituals);
+    return {
+      id: community.id,
+      name: community.name,
+      href: `${prefix}/communities/${community.id}/`,
+      line: `${pick(community.kind, locale)} · ${placesLine(community.places, locale)}`,
+      next: next
+        ? {
+            title: pick(next.title, locale),
+            when: whenShort(next, locale),
+            href: `${prefix}/rituals/${next.id}/`,
+            start: next.start,
+          }
+        : null,
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // The calendar: months in a grid, Monday first, each day with its rituals.
 

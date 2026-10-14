@@ -3,6 +3,9 @@
  * Phosphor icon (§7) — regular weight, self-hosted subset (§7.3), official
  * SVGs from phosphor-icons/core normalized to currentColor. Never redrawn.
  * Decorative by default (aria-hidden); pass a label to make it meaningful.
+ * To add one: copy the official SVG into packages/ui/src/icons/, import it
+ * `?raw` below and name it in ICONS. `use` draws the page sprite's copy
+ * (ChromeSprite) instead of inlining the SVG again.
  */
 import archive from '../../../../../packages/ui/src/icons/archive.svg?raw';
 import musicNotes from '../../../../../packages/ui/src/icons/music-notes.svg?raw';
@@ -54,6 +57,33 @@ import hourglass from '../../../../../packages/ui/src/icons/hourglass.svg?raw';
 import fileText from '../../../../../packages/ui/src/icons/file-text.svg?raw';
 import robot from '../../../../../packages/ui/src/icons/robot.svg?raw';
 import eye from '../../../../../packages/ui/src/icons/eye.svg?raw';
+// The app shell (v0.83.0): the five places of the sidebar and the tab bar —
+// regular, and the fill the current place draws — the fold, the menus and
+// the «Más» list.
+import compass from '../../../../../packages/ui/src/icons/compass.svg?raw';
+import usersThree from '../../../../../packages/ui/src/icons/users-three.svg?raw';
+import broadcast from '../../../../../packages/ui/src/icons/broadcast.svg?raw';
+import userCircle from '../../../../../packages/ui/src/icons/user-circle.svg?raw';
+import houseFill from '../../../../../packages/ui/src/icons/house-fill.svg?raw';
+import compassFill from '../../../../../packages/ui/src/icons/compass-fill.svg?raw';
+import usersThreeFill from '../../../../../packages/ui/src/icons/users-three-fill.svg?raw';
+import broadcastFill from '../../../../../packages/ui/src/icons/broadcast-fill.svg?raw';
+import userCircleFill from '../../../../../packages/ui/src/icons/user-circle-fill.svg?raw';
+import sidebarSimple from '../../../../../packages/ui/src/icons/sidebar-simple.svg?raw';
+import dotsThree from '../../../../../packages/ui/src/icons/dots-three.svg?raw';
+import dotsThreeVertical from '../../../../../packages/ui/src/icons/dots-three-vertical.svg?raw';
+import signIn from '../../../../../packages/ui/src/icons/sign-in.svg?raw';
+import arrowSquareOut from '../../../../../packages/ui/src/icons/arrow-square-out.svg?raw';
+import question from '../../../../../packages/ui/src/icons/question.svg?raw';
+import info from '../../../../../packages/ui/src/icons/info.svg?raw';
+// The app shell's pages (v0.83.0): the world to enter, the calendar file,
+// sharing, the licence line, following.
+import play from '../../../../../packages/ui/src/icons/play.svg?raw';
+import calendarPlus from '../../../../../packages/ui/src/icons/calendar-plus.svg?raw';
+import shareNetwork from '../../../../../packages/ui/src/icons/share-network.svg?raw';
+import checkCircle from '../../../../../packages/ui/src/icons/check-circle.svg?raw';
+import plus from '../../../../../packages/ui/src/icons/plus.svg?raw';
+import { svgParts, symbolId } from '../../lib/svg-sprite';
 
 const ICONS = {
   archive,
@@ -104,6 +134,27 @@ const ICONS = {
   'file-text': fileText,
   robot,
   eye,
+  compass,
+  'users-three': usersThree,
+  broadcast,
+  'user-circle': userCircle,
+  'house-fill': houseFill,
+  'compass-fill': compassFill,
+  'users-three-fill': usersThreeFill,
+  'broadcast-fill': broadcastFill,
+  'user-circle-fill': userCircleFill,
+  'sidebar-simple': sidebarSimple,
+  'dots-three': dotsThree,
+  'dots-three-vertical': dotsThreeVertical,
+  'sign-in': signIn,
+  'arrow-square-out': arrowSquareOut,
+  question,
+  info,
+  play,
+  'calendar-plus': calendarPlus,
+  'share-network': shareNetwork,
+  'check-circle': checkCircle,
+  plus,
 } as const;
 
 interface Props {
@@ -113,26 +164,55 @@ interface Props {
   /** Meaningful icons carry a label; omitted = decorative (aria-hidden). */
   label?: string;
   class?: string;
+  /** The app shell draws some icons in two places (the sidebar and the tab
+      bar, the sidebar and the phone's top bar): those travel once per page
+      in ChromeSprite and every place draws its copy with <use>. */
+  use?: boolean;
+  /** Render the icon as the sprite's <symbol> (ChromeSprite only). */
+  symbol?: boolean;
 }
 
-const { name, size = 20, label, class: className } = Astro.props;
+const { name, size = 20, label, class: className, use = false, symbol = false } = Astro.props;
+const parts = symbol ? svgParts(ICONS[name]) : undefined;
+// 20px is the stylesheet's default: the attribute only travels when it differs.
+const sizeStyle = size === 20 ? undefined : `--icono-size:${size}px`;
 ---
 
-<span
-  class:list={['icono', className]}
-  style={`--icono-size:${size}px`}
-  aria-hidden={label ? undefined : 'true'}
-  role={label ? 'img' : undefined}
-  aria-label={label}
-  set:html={ICONS[name]}
-/>
+{
+  parts ? (
+    <symbol id={symbolId(name)} viewBox={parts.viewBox} set:html={parts.body} />
+  ) : use ? (
+    <svg
+      class:list={['icono', className]}
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden={label ? undefined : 'true'}
+      role={label ? 'img' : undefined}
+      aria-label={label}
+    >
+      <use href={`#${symbolId(name)}`} />
+    </svg>
+  ) : (
+    <span
+      class:list={['icono', className]}
+      style={sizeStyle}
+      aria-hidden={label ? undefined : 'true'}
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      set:html={ICONS[name]}
+    />
+  )
+}
 
-<style>
+<style is:global>
+  /* Global, not scoped: the class is this component's alone, and a scope
+     attribute on every icon of every page is weight for nothing. */
   .icono {
     display: inline-flex;
     flex: none;
   }
-  .icono :global(svg) {
+  .icono svg {
     width: var(--icono-size, 20px);
     height: var(--icono-size, 20px);
     display: block;

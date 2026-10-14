@@ -167,19 +167,6 @@ Then('each detail page carries a download control or an unavailable notice', asy
   }
 });
 
-Then('the archive index contains one card per public asset', async function () {
-  const html = await readFile(path.join(this.distDir, 'archive', 'index.html'), 'utf8');
-  const cards = html.match(/data-archive-card/g) ?? [];
-  // The inline filter script references the attribute once; discount it.
-  assert.equal(cards.length - 1, this.publicIds.length);
-});
-
-Then('the archive index offers search and format filters', async function () {
-  const html = await readFile(path.join(this.distDir, 'archive', 'index.html'), 'utf8');
-  assert.ok(html.includes('id="archive-search"'), 'search input missing');
-  assert.ok(html.includes('data-filter-format'), 'format filters missing');
-});
-
 // --- SEO plumbing ---
 
 Then('the page declares a canonical link', function () {
@@ -207,80 +194,97 @@ Then('the sitemap does not list internal pages', async function () {
   assert.ok(!sitemap.includes('/spike/'), 'sitemap leaks the spike page');
 });
 
-// --- gallery (MISSION-003 P1) ---
+// --- the Bazaar (v0.83.0): the Finder rethought, the one door to the goods ---
 
 const LOCALE_PREFIXES = ['', 'es', 'ja', 'ko', 'pt-br'];
 
-async function publicAvatarIds() {
-  const raw = JSON.parse(
-    await readFile(path.join(repoRoot, 'apps', 'store', 'fixtures', 'catalogs.json'), 'utf8'),
-  );
-  return (raw.avatars ?? [])
-    .filter((record) => record.is_public !== false && record.is_draft !== true)
-    .map((record) => record.id);
+// Each locale's name for it — the H1 the page must carry.
+const BAZAAR_TITLES = { '': 'Bazaar', es: 'Bazar', ja: 'バザール', ko: '바자르', 'pt-br': 'Bazar' };
+
+async function bazaarHtml(distDir, prefix) {
+  return readFile(path.join(distDir, prefix, 'bazaar', 'index.html'), 'utf8').catch(() => null);
 }
 
-Then('the gallery page exists under every locale prefix', async function () {
+Then('the bazaar page exists under every locale prefix with its own name', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    const page = path.join(this.distDir, prefix, 'gallery', 'index.html');
-    const html = await readFile(page, 'utf8').catch(() => null);
-    assert.ok(html, `missing gallery page for ${prefix || 'en'}`);
+    const html = await bazaarHtml(this.distDir, prefix);
+    assert.ok(html, `missing bazaar page for ${prefix || 'en'}`);
+    const h1 = /<h1[^>]*>([^<]*)<\/h1>/.exec(html);
+    assert.equal(h1?.[1], BAZAAR_TITLES[prefix], `bazaar title for ${prefix || 'en'}`);
   }
 });
 
-Then('each gallery page shows a card for every public avatar', async function () {
-  const avatarIds = await publicAvatarIds();
-  assert.ok(avatarIds.length > 0, 'fixture has no public avatars');
+Then('each bazaar page mounts exactly one island', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    const html = await readFile(path.join(this.distDir, prefix, 'gallery', 'index.html'), 'utf8');
-    const cards = html.match(/data-gallery-card/g) ?? [];
-    assert.equal(cards.length, avatarIds.length, `card count mismatch for ${prefix || 'en'}`);
-  }
-});
-
-Then('every gallery card links to its archive detail page', async function () {
-  const avatarIds = await publicAvatarIds();
-  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
-  for (const id of avatarIds) {
-    assert.ok(html.includes(`/archive/${id}/`), `gallery misses link to archive/${id}`);
-  }
-});
-
-Then('every gallery card carries the {string} metric', async function (metric) {
-  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
-  const cards = (html.match(/data-gallery-card/g) ?? []).length;
-  const metrics = (html.match(new RegExp(`data-metric="${metric}"`, 'g')) ?? []).length;
-  assert.ok(cards > 0, 'no gallery cards found');
-  assert.equal(metrics, cards, 'metric count differs from card count');
-});
-
-Then('the gallery page ships no JS islands', async function () {
-  const html = await readFile(path.join(this.distDir, 'gallery', 'index.html'), 'utf8');
-  assert.ok(!html.includes('<astro-island'), 'gallery page hydrates a JS island');
-});
-
-// --- finder (MISSION-003 P2) ---
-
-Then('the finder page exists under every locale prefix', async function () {
-  for (const prefix of LOCALE_PREFIXES) {
-    const page = path.join(this.distDir, prefix, 'finder', 'index.html');
-    const html = await readFile(page, 'utf8').catch(() => null);
-    assert.ok(html, `missing finder page for ${prefix || 'en'}`);
-  }
-});
-
-Then('each finder page mounts exactly one island', async function () {
-  for (const prefix of LOCALE_PREFIXES) {
-    const html = await readFile(path.join(this.distDir, prefix, 'finder', 'index.html'), 'utf8');
+    const html = await bazaarHtml(this.distDir, prefix);
     const islands = html.match(/<astro-island/g) ?? [];
     assert.equal(islands.length, 1, `island count wrong for ${prefix || 'en'}`);
   }
 });
 
-Then('the finder island data covers every public asset', async function () {
-  const html = await readFile(path.join(this.distDir, 'finder', 'index.html'), 'utf8');
+Then('the bazaar island data covers every public asset', async function () {
+  const html = await bazaarHtml(this.distDir, '');
   for (const id of this.publicIds) {
-    assert.ok(html.includes(id), `finder island data misses asset ${id}`);
+    assert.ok(html.includes(id), `bazaar island data misses asset ${id}`);
+  }
+});
+
+Then('the bazaar keeps the licence in sight', async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await bazaarHtml(this.distDir, prefix);
+    assert.ok(html.includes('data-bazaar-licence'), `licence note missing for ${prefix || 'en'}`);
+  }
+});
+
+Then('every retired door leads to the bazaar of its locale', async function () {
+  // The map astro.config.mjs reads: each door answers a 301 at runtime, so
+  // the proof in the build is twofold — no page left behind at the old
+  // address, and a built Bazaar where each one leads.
+  const { REDIRECTS } = await import('../../apps/store/src/lib/redirects.ts');
+  for (const prefix of LOCALE_PREFIXES) {
+    const base = prefix ? `/${prefix}` : '';
+    for (const door of ['finder', 'assets', 'gallery', 'archive', 'inspector']) {
+      assert.equal(REDIRECTS[`${base}/${door}/`], `${base}/bazaar/`, `${base}/${door}/`);
+      const left = await readFile(path.join(this.distDir, prefix, door, 'index.html'), 'utf8')
+        .then(() => true)
+        .catch(() => false);
+      assert.ok(!left, `${base}/${door}/ still has a page`);
+    }
+    assert.ok(await bazaarHtml(this.distDir, prefix), `no bazaar for ${prefix || 'en'}`);
+  }
+});
+
+Then('every docs page leads to numinia.org', async function () {
+  const { REDIRECTS } = await import('../../apps/store/src/lib/redirects.ts');
+  for (const prefix of LOCALE_PREFIXES) {
+    const base = prefix ? `/${prefix}` : '';
+    for (const slug of ['', 'about/license/', 'developers/database/', 'help/']) {
+      assert.equal(
+        REDIRECTS[`${base}/docs/${slug}`],
+        'https://numinia.org/',
+        `${base}/docs/${slug}`,
+      );
+    }
+    const left = await readFile(path.join(this.distDir, prefix, 'docs', 'index.html'), 'utf8')
+      .then(() => true)
+      .catch(() => false);
+    assert.ok(!left, `${base}/docs/ still has a page`);
+  }
+});
+
+Then('each detail page leads back to the bazaar of its locale', async function () {
+  const [id] = this.publicIds;
+  for (const prefix of LOCALE_PREFIXES) {
+    const html = await readFile(
+      path.join(this.distDir, prefix, 'archive', id, 'index.html'),
+      'utf8',
+    );
+    const back = /<a[^>]*href="([^"]*)"[^>]*data-metric="archive-back"[^>]*>([^<]*)<\/a>/.exec(
+      html,
+    );
+    assert.ok(back, `archive/${id} (${prefix || 'en'}) has no way back`);
+    assert.equal(back[1], `${prefix ? `/${prefix}` : ''}/bazaar/`);
+    assert.equal(back[2], BAZAAR_TITLES[prefix]);
   }
 });
 
@@ -410,7 +414,7 @@ Then('the legal pages disclose the language they are written in', async function
 });
 
 Then('every page footer shows the current version linking to the updates page', async function () {
-  for (const page of ['index.html', 'gallery/index.html', 'es/archive/index.html']) {
+  for (const page of ['index.html', 'bazaar/index.html', 'es/bazaar/index.html']) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
     const match = /<a[^>]*data-metric="footer-version"[^>]*>(v\d+\.\d+\.\d+)<\/a>/.exec(html);
     assert.ok(match, `${page}: footer version link missing`);
@@ -419,12 +423,7 @@ Then('every page footer shows the current version linking to the updates page', 
   }
 });
 
-const SAMPLED_PAGES = [
-  'index.html',
-  'gallery/index.html',
-  'es/archive/index.html',
-  'ja/index.html',
-];
+const SAMPLED_PAGES = ['index.html', 'bazaar/index.html', 'es/bazaar/index.html', 'ja/index.html'];
 
 Then(
   'every sampled page footer links the four legal texts and the cookie choice',
@@ -490,70 +489,15 @@ Then('the updates page shows the incoming roadmap', async function () {
   assert.ok(html.includes('Radicle.xyz'), 'roadmap items missing');
 });
 
-// --- docs (MISSION-003 P4) ---
-
-Then('the docs index exists under every locale prefix', async function () {
-  for (const prefix of LOCALE_PREFIXES) {
-    const page = path.join(this.distDir, prefix, 'docs', 'index.html');
-    const html = await readFile(page, 'utf8').catch(() => null);
-    assert.ok(html, `missing docs index for ${prefix || 'en'}`);
-    assert.ok(
-      html.includes('data-metric="docs-nav"'),
-      `docs sidebar missing for ${prefix || 'en'}`,
-    );
-  }
-});
-
-Then('the docs section renders {string} pages per locale', async function (expected) {
-  const { readdir } = await import('node:fs/promises');
-  for (const prefix of LOCALE_PREFIXES) {
-    const root = path.join(this.distDir, prefix, 'docs');
-    let count = 0;
-    const walk = async (dir) => {
-      for (const entry of await readdir(dir, { withFileTypes: true })) {
-        if (entry.isDirectory()) await walk(path.join(dir, entry.name));
-        else if (entry.name === 'index.html') count += 1;
-      }
-    };
-    await walk(root);
-    assert.equal(count, Number(expected), `docs page count for ${prefix || 'en'}`);
-  }
-});
-
-Then('legacy-architecture docs carry the legacy banner', async function () {
-  for (const slug of ['developers', 'developers/database', 'developers/website']) {
-    const html = await readFile(path.join(this.distDir, 'docs', slug, 'index.html'), 'utf8');
-    assert.ok(html.includes('data-doc-legacy'), `docs/${slug} lacks the legacy banner`);
-  }
-  const evergreen = await readFile(path.join(this.distDir, 'docs', 'help', 'index.html'), 'utf8');
-  assert.ok(!evergreen.includes('data-doc-legacy'), 'docs/help wrongly flagged legacy');
-});
-
-// --- inspector (MISSION-003 P5) ---
-
-Then('the inspector page exists under every locale prefix as an island', async function () {
-  for (const prefix of LOCALE_PREFIXES) {
-    const html = await readFile(
-      path.join(this.distDir, prefix, 'inspector', 'index.html'),
-      'utf8',
-    ).catch(() => null);
-    assert.ok(html, `missing inspector page for ${prefix || 'en'}`);
-    assert.ok(html.includes('<astro-island'), `inspector island missing for ${prefix || 'en'}`);
-  }
-});
-
 // --- SEO descriptions (v0.17.0 polish) ---
 
 Then('key pages declare meta description and open graph tags', async function () {
   const pages = [
     'index.html',
     'es/index.html',
-    'gallery/index.html',
-    'archive/index.html',
-    'finder/index.html',
+    'bazaar/index.html',
+    'es/bazaar/index.html',
     'updates/index.html',
-    'docs/index.html',
-    'inspector/index.html',
     'legal/privacy/index.html',
   ];
   for (const page of pages) {
@@ -566,12 +510,28 @@ Then('key pages declare meta description and open graph tags', async function ()
   }
 });
 
-// --- three pillars (MISSION-004), the bar without a menu (2026-10-14) ---
+// --- three pillars (MISSION-004), the app shell (2026-10-14, v0.83.0) ---
+
+// Pages every workstream keeps: the front door in two locales, the
+// communities' index, the Bazar and the LAP.
+const SHELL_PAGES = [
+  'index.html',
+  'es/index.html',
+  'communities/index.html',
+  'bazaar/index.html',
+  'lap/index.html',
+];
 
 Then('every page bar carries the scarab, the search, the mode and the door', async function () {
-  for (const page of ['index.html', 'es/index.html', 'gallery/index.html', 'lap/index.html']) {
+  for (const page of SHELL_PAGES) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
-    for (const metric of ['nav-home', 'nav-search', 'chrome-mode', 'chrome-sign-in']) {
+    for (const metric of [
+      'nav-home',
+      'nav-search',
+      'chrome-mode',
+      'chrome-sign-in',
+      'chrome-more',
+    ]) {
       assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
     }
     for (const metric of ['nav-city', 'nav-assets', 'nav-lap', 'nav-gallery', 'chrome-menu']) {
@@ -580,18 +540,56 @@ Then('every page bar carries the scarab, the search, the mode and the door', asy
   }
 });
 
-Then('every page footer links city, assets, lap, communities and the calendar', async function () {
-  for (const page of ['index.html', 'es/index.html', 'gallery/index.html', 'lap/index.html']) {
+Then('every page sidebar and tab bar carry the five places', async function () {
+  const places = ['for-you', 'explore', 'belong', 'live', 'profile'];
+  for (const page of SHELL_PAGES) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
-    for (const metric of [
-      'footer-city',
-      'footer-assets',
-      'footer-lap',
-      'footer-communities',
-      'footer-calendar',
-    ]) {
-      assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
+    const sidebar = /<aside class="lat"[\s\S]*?<\/aside>/.exec(html);
+    assert.ok(sidebar, `${page}: sidebar missing`);
+    const tabs = /<nav class="pestanas-app"[\s\S]*?<\/nav>/.exec(html);
+    assert.ok(tabs, `${page}: tab bar missing`);
+    for (const place of places) {
+      assert.ok(
+        sidebar[0].includes(`data-metric="nav-${place}"`),
+        `${page}: sidebar lacks ${place}`,
+      );
+      assert.ok(tabs[0].includes(`data-metric="tab-${place}"`), `${page}: tab bar lacks ${place}`);
     }
+    for (const metric of [
+      'nav-communities',
+      'nav-calendar',
+      'nav-bazaar',
+      'nav-more',
+      'nav-sign-in',
+    ]) {
+      assert.ok(sidebar[0].includes(`data-metric="${metric}"`), `${page}: sidebar lacks ${metric}`);
+    }
+    // Exactly one place is the current one, and the tab bar agrees.
+    const current = (block) =>
+      [...block.matchAll(/aria-current="page"[^>]*data-metric="(?:nav|tab)-([a-z-]+)"/g)].map(
+        (m) => m[1],
+      );
+    assert.deepEqual(
+      current(tabs[0]),
+      current(sidebar[0]).filter((id) => places.includes(id)),
+      `${page}: the sidebar and the tab bar light different places`,
+    );
+  }
+});
+
+Then('every page footer names the three sister sites and no social links', async function () {
+  for (const page of SHELL_PAGES) {
+    const html = await readFile(path.join(this.distDir, page), 'utf8');
+    const footer = /<footer class="pie-app"[\s\S]*?<\/footer>/.exec(html);
+    assert.ok(footer, `${page}: footer missing`);
+    for (const site of ['https://numen.games', 'https://numinia.org']) {
+      assert.ok(footer[0].includes(`href="${site}"`), `${page}: footer lacks ${site}`);
+    }
+    assert.ok(footer[0].includes('aria-current="page"'), `${page}: this site is not marked`);
+    for (const gone of ['nwos.numen.games', 'github.com/numengames"', 'discord', 'footer-social']) {
+      assert.ok(!footer[0].includes(gone), `${page}: footer still carries ${gone}`);
+    }
+    assert.ok(!html.includes('data-metric="footer-social'), `${page}: social links remain`);
   }
 });
 
@@ -660,7 +658,8 @@ Then('the home lists the upcoming rituals and the city feed is a calendar', asyn
   const home = await readFile(path.join(this.distDir, 'index.html'), 'utf8');
   const cards = (home.match(/data-metric="ritual-card"/g) ?? []).length;
   assert.ok(cards >= 3, `home shows ${cards} ritual cards`);
-  assert.ok(home.includes('data-metric="landing-calendar"'), 'home: no link to the calendar');
+  // The «full calendar» button left the home with the app shell (v0.83.0):
+  // the calendar is one click away in the shell itself.
   const feed = await readFile(path.join(this.distDir, 'calendar.ics'), 'utf8');
   assert.ok(feed.startsWith('BEGIN:VCALENDAR\r\nVERSION:2.0'), 'city feed is not a calendar');
   const events = (feed.match(/BEGIN:VEVENT/g) ?? []).length;
@@ -670,42 +669,184 @@ Then('the home lists the upcoming rituals and the city feed is a calendar', asyn
   }
 });
 
-Then('the city pages exist under every locale prefix', async function () {
-  // MISSION-007: one chronicle. The city page carries the four chapter
-  // anchors; the old subpages survive as redirect stubs to those anchors.
+// --- the app shell pages (v0.83.0) ---
+
+/** The headings the front door used to explain itself with, per locale. */
+const RETIRED_HOME_HEADINGS = [
+  'Una ciudad donde las comunidades tienen sede.',
+  'A city where communities have a home.',
+  'コミュニティが拠点を持つ都市。',
+  '커뮤니티가 거점을 갖는 도시.',
+  'Uma cidade onde as comunidades têm sede.',
+];
+
+/** Published community ids, read from the register's files. */
+function publishedCommunityIds() {
+  return readdirSync(COMMUNITY_FILES)
+    .filter((name) => name.endsWith('.md'))
+    .filter(
+      (name) => !/^visibility:\s*house\s*$/m.test(frontmatterOf(path.join(COMMUNITY_FILES, name))),
+    )
+    .map((name) => name.replace(/\.md$/, ''));
+}
+
+Then('the home carries no explanation heading and opens on the featured card', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    const city = await readFile(
-      path.join(this.distDir, prefix, 'city', 'index.html'),
-      'utf8',
-    ).catch(() => null);
-    assert.ok(city, `missing city for ${prefix || 'en'}`);
-    for (const anchor of [
-      'id="semilla"',
-      'id="ciudad"',
-      'id="identidad"',
-      'id="vida"',
-      'id="juego"',
-    ]) {
-      assert.ok(city.includes(anchor), `city (${prefix || 'en'}) lacks ${anchor}`);
+    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+    const where = prefix || 'en';
+    for (const heading of RETIRED_HOME_HEADINGS) {
+      assert.ok(!html.includes(heading), `${where}: the home still explains itself (${heading})`);
     }
-    for (const [slug, anchor] of [
-      ['city/inhabitants', '#identidad'],
-      ['city/districts', '#ciudad'],
-      ['city/the-game', '#juego'],
-    ]) {
-      const stub = await readFile(
-        path.join(this.distDir, prefix, slug, 'index.html'),
+    for (const metric of ['landing-calendar', 'landing-all-communities']) {
+      assert.ok(
+        !html.includes(`data-metric="${metric}"`),
+        `${where}: the home still has ${metric}`,
+      );
+    }
+    const slides = (html.match(/data-featured-slide/g) ?? []).length;
+    assert.ok(slides >= 1 && slides <= 3, `${where}: ${slides} featured slides`);
+    const featured = html.indexOf('data-featured-slide');
+    assert.ok(featured < html.indexOf('id="rituals"'), `${where}: the featured card is not first`);
+    assert.ok(html.indexOf('id="rituals"') < html.indexOf('id="bazaar"'), `${where}: block order`);
+    assert.ok(
+      html.includes(`href="${prefix ? `/${prefix}` : ''}/how-it-works/"`),
+      `${where}: no door`,
+    );
+  }
+});
+
+Then('the home shows the Bazar block with real goods and their licence', async function () {
+  for (const [prefix, licence] of [
+    ['', 'CC0 · free, no permission needed'],
+    ['es', 'CC0 · libre, sin pedir permiso'],
+  ]) {
+    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('id="alive"'));
+    const goods = [...block.matchAll(/href="([^"]+)"[^>]*data-metric="home-good"/g)].map(
+      (match) => match[1],
+    );
+    assert.equal(goods.length, 8, `${prefix || 'en'}: ${goods.length} goods on the home`);
+    for (const href of goods) {
+      const page = await readFile(path.join(this.distDir, href, 'index.html'), 'utf8').catch(
+        () => null,
+      );
+      assert.ok(page, `${prefix || 'en'}: ${href} is not an object page`);
+    }
+    const licences = block.split(licence).length - 1;
+    assert.equal(licences, 8, `${prefix || 'en'}: ${licences} licence lines for 8 goods`);
+    assert.ok(
+      block.includes('data-metric="home-bazaar"'),
+      `${prefix || 'en'}: no way to the Bazar`,
+    );
+  }
+});
+
+Then(
+  '{string}, {string} and {string} exist under every locale prefix',
+  async function (first, second, third) {
+    const slugs = [first, second, third];
+    const markers = {
+      'how-it-works': ['id="open"', 'mailto:hola@numengames.com', 'data-metric="how-step-bazaar"'],
+      live: ['id="now"', 'id="next"', 'data-countdown='],
+      belong: ['data-follows-data', '/lap/session/', 'data-metric="belong-explore"'],
+    };
+    for (const prefix of LOCALE_PREFIXES) {
+      for (const slug of slugs) {
+        const html = await readFile(
+          path.join(this.distDir, prefix, slug, 'index.html'),
+          'utf8',
+        ).catch(() => null);
+        assert.ok(html, `missing ${slug} for ${prefix || 'en'}`);
+        assert.equal(
+          (html.match(/<h1[\s>]/g) ?? []).length,
+          1,
+          `${prefix || 'en'}/${slug}: one h1`,
+        );
+        for (const marker of markers[slug] ?? []) {
+          assert.ok(html.includes(marker), `${prefix || 'en'}/${slug} lacks ${marker}`);
+        }
+      }
+    }
+    // «Perteneces» embeds what it draws: every published community, nothing else.
+    const belong = await readFile(path.join(this.distDir, 'belong', 'index.html'), 'utf8');
+    const json = /data-follows-data[^>]*>([\s\S]*?)<\/script>/.exec(belong);
+    assert.ok(json, 'belong: no embedded communities');
+    const ids = JSON.parse(json[1]).map((entry) => entry.id);
+    assert.deepEqual([...ids].sort(), publishedCommunityIds().sort(), 'belong: embedded ids');
+  },
+);
+
+Then('every city address redirects to how it works in its own locale', async function () {
+  // Redirects declared in astro.config.mjs leave no file in dist/client: the
+  // Node server answers them with a 301 and the Cloudflare build writes them
+  // into _redirects, both from the route manifest the server is built with.
+  const server = await readFile(path.join(this.distDir, '..', 'server', 'entry.mjs'), 'utf8');
+  const escape = (text) => text.replace(/[/\\^$.*+?()[\]{}|-]/g, '\\$&');
+  for (const prefix of LOCALE_PREFIXES) {
+    const base = prefix ? `/${prefix}` : '';
+    for (const chapter of ['', '/inhabitants', '/districts', '/the-game']) {
+      const from = `${base}/city${chapter}`;
+      const to = `${base}/how-it-works/`;
+      const route = new RegExp(`"pathname":"${escape(from)}"[^}]*?"redirect":"${escape(to)}"`);
+      assert.match(server, route, `${from} does not redirect to ${to}`);
+      const page = await readFile(
+        path.join(this.distDir, prefix, `city${chapter}`, 'index.html'),
         'utf8',
       ).catch(() => null);
-      assert.ok(stub, `missing redirect stub ${slug} for ${prefix || 'en'}`);
-      assert.ok(stub.includes(anchor), `${slug} (${prefix || 'en'}) does not point at ${anchor}`);
+      assert.equal(page, null, `${from} is still a page`);
+    }
+  }
+  const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
+  assert.ok(!/\/city\/<\/loc>/.test(sitemap), 'sitemap lists a retired city address');
+});
+
+Then('every community page carries the follow button', async function () {
+  for (const id of publishedCommunityIds()) {
+    for (const prefix of ['', 'es']) {
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'communities', id, 'index.html'),
+        'utf8',
+      );
+      assert.ok(
+        html.includes('data-metric="community-follow"'),
+        `${id} (${prefix || 'en'}): no follow`,
+      );
+      assert.ok(html.includes(`data-follow="${id}"`), `${id}: the button follows another id`);
+      assert.ok(html.includes('numinia-follows'), `${id}: the follow list key is missing`);
     }
   }
 });
 
-Then('the assets hub and lap pages exist under every locale prefix', async function () {
+Then('a ritual page opens on its world stage', async function () {
+  // A city ritual opens in the commons: a real world, entered from the stage.
+  const city = await readFile(
+    path.join(this.distDir, 'es', 'rituals', 'numinia-anniversary-2026', 'index.html'),
+    'utf8',
+  );
+  const stage = city.indexOf('class="mundo');
+  assert.ok(stage > -1 && stage < city.indexOf('<h1'), 'city ritual: the stage is not first');
+  assert.ok(
+    city.includes('data-metric="ritual-enter-world"'),
+    'city ritual: no way into its world',
+  );
+  assert.ok(
+    city.includes('https://v2.oncyber.io/agora_plaza_of_numinia'),
+    'city ritual: no commons',
+  );
+  // A community without a home yet says so, and offers the calendar instead.
+  const trg = await readFile(
+    path.join(this.distDir, 'es', 'rituals', 'trg26', 'index.html'),
+    'utf8',
+  );
+  assert.ok(trg.indexOf('class="mundo') < trg.indexOf('<h1'), 'trg26: the stage is not first');
+  assert.ok(!trg.includes('data-metric="ritual-enter-world"'), 'trg26: a world it does not have');
+  assert.ok(trg.includes('data-metric="ritual-stage-calendar"'), 'trg26: no calendar on the stage');
+  assert.ok(trg.includes('data-metric="ritual-share"'), 'trg26: no share');
+});
+
+Then('the bazaar and lap pages exist under every locale prefix', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    for (const slug of ['assets', 'lap']) {
+    for (const slug of ['bazaar', 'lap']) {
       const html = await readFile(
         path.join(this.distDir, prefix, slug, 'index.html'),
         'utf8',

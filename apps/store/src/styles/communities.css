@@ -37,7 +37,10 @@
   border-color: color-mix(in srgb, var(--ambar) 45%, transparent);
 }
 .chip.turquesa {
-  color: var(--turquesa);
+  /* A touch of the text colour: the night turquoise alone reads 4.43:1 on a
+     card (--superficie), under AA's 4.5; mixed, 5.3:1 by night and darker
+     still by day. */
+  color: color-mix(in srgb, var(--turquesa) 85%, var(--texto));
   border-color: color-mix(in srgb, var(--turquesa) 55%, transparent);
 }
 .chip.pendiente {
@@ -298,4 +301,142 @@ a.tarjeta:focus-visible {
   min-height: 32px;
   padding: 4px var(--s4);
   font-size: 0.875rem;
+}
+
+/* ---- A strip's arrows (the home's featured card and its rituals) -------- */
+.flechas {
+  display: inline-flex;
+  gap: var(--s1);
+}
+.flecha {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--linea-f);
+  background: transparent;
+  color: var(--texto-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    color 120ms var(--ciclo),
+    border-color 120ms var(--ciclo);
+}
+.flecha:hover,
+.flecha:focus-visible {
+  border-color: var(--enlace);
+  color: var(--enlace);
+}
+.flecha.der svg {
+  transform: rotate(180deg);
+}
+/* Without JavaScript the arrows could do nothing: the strip scrolls by hand. */
+html:not([data-js='on']) .flechas {
+  display: none;
+}
+
+/* ---- The 3D scene drawn while a home is still to open ------------------- */
+.escena {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 0%, var(--elevada) 0%, var(--fondo) 70%);
+}
+.escena .suelo {
+  position: absolute;
+  inset: 55% -20% -40%;
+  background-image:
+    linear-gradient(var(--linea-f) 1px, transparent 1px),
+    linear-gradient(90deg, var(--linea-f) 1px, transparent 1px);
+  background-size: 28px 28px;
+  transform: perspective(260px) rotateX(58deg);
+  opacity: 0.7;
+}
+.escena .faro {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  width: 12px;
+  height: 56px;
+  margin-left: -6px;
+  background: linear-gradient(var(--ambar), transparent);
+  border-radius: 6px;
+  box-shadow: 0 0 40px 10px color-mix(in srgb, var(--ambar) 25%, transparent);
+}
+
+/* ---- Dated lists (Live's «Lo próximo») ----------------------------------- */
+.agenda-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.agenda-lista li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: var(--s4);
+  align-items: center;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea);
+}
+.agenda-lista li:first-child {
+  border-top: 0;
+}
+.agenda-lista li > * {
+  min-width: 0;
+}
+.agenda-lista .fecha {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--enlace);
+}
+.agenda-lista .fecha b {
+  font-family: var(--sans);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--texto);
+  text-transform: none;
+}
+.agenda-lista h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.agenda-lista h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+.agenda-lista h3 a:hover,
+.agenda-lista h3 a:focus-visible {
+  color: var(--enlace);
+}
+.agenda-lista p {
+  margin: 0;
+  color: var(--texto-2);
+  font-size: 0.9rem;
+}
+
+/* ---- Page titles of the app's own pages (Live, Perteneces, Cómo funciona) */
+.titulo-vista {
+  padding: var(--s6) 0 var(--s4);
+  display: grid;
+  gap: var(--s3);
+}
+.titulo-vista h1 {
+  margin: 0;
+}
+.titulo-vista .lead {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--texto-2);
+  max-width: 60ch;
+  margin: 0;
+}
+.titulo-vista .etiqueta {
+  margin: 0;
 }

@@ -43,6 +43,10 @@ export const STORED_KEYS = [
   'numinia-codex-marca',
   'numinia-codex-ritmo',
   'numinia-lap-personaje',
+  // The app shell (v0.83.0): the sidebar's fold, and the communities a
+  // visitor follows (the follow button on a community's page writes it).
+  'numinia-sidebar',
+  'numinia-follows',
 ] as const;
 
 export interface ConsentRecord {

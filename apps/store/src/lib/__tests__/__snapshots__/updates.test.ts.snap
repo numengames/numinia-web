@@ -3,6 +3,32 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-14 11:20",
+    "entries": [
+      {
+        "text": "The site is an app now. A sidebar on the left, which folds to the scarab alone and remembers it, holds the Numinia mark, the search and the places: For you, Explore (with Communities, the Calendar and the Bazaar beneath it), Belong, Live, Profile and More (How it works, open your community’s home, buy us a coffee, Updates, Help), then the door to sign in and, folded at the bottom, the three sister sites (Numen Games, Numinia, the Archive), the terms and policies, the version and the skull. The top bar holds only the door and ⋮ (appearance, language, settings), and the whole width is the page. On a phone, five tabs at the bottom.",
+        "type": "NEW",
+      },
+      {
+        "text": "The front door is action, not explanation: a wide featured card that steps through the next rituals, the upcoming rituals, objects from the Bazaar for your home — each with its licence, its data and its tags — and the communities with life. How the city works moved to its own page.",
+        "type": "UPD",
+      },
+      {
+        "text": "The Bazaar, the one door to the digital goods: collections and formats on the left, the objects in a grid, the preview and the download queue on the right, one .zip for all of it, the licence always in sight. The Gallery, the Archive’s index, the Finder, the Inspector and the Assets page went out with it; their addresses lead to the Bazaar, and the old docs lead to numinia.org.",
+        "type": "NEW",
+      },
+      {
+        "text": "How it works, in four steps, the six kinds of home a community can open and why a city; it replaces the city page, whose address leads there. Live: the homes with people inside (none tells it yet, and the page says so) and the next rituals. Belong: the communities you follow and, once membership exists, the ones you belong to. Follow a community from its page: it stays in your browser.",
+        "type": "NEW",
+      },
+      {
+        "text": "A ritual’s page opens on its world: the community’s home, wide, with «Enter the world» when it has one and «still to open» when it does not, and then its date, the calendar file, sharing, the programme and the details.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.83.0",
+  },
+  {
     "date": "2026-10-14 05:30",
     "entries": [
       {

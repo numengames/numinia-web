@@ -34,4 +34,8 @@ export interface Asset {
   readonly isDraft: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** The record's own version, when the catalogue states one; never guessed. */
+  readonly version: string | null;
+  /** The file's size in bytes, when the catalogue states one; never guessed. */
+  readonly sizeBytes: number | null;
 }

@@ -1,0 +1,191 @@
+---
+/**
+ * The folded footer of the app shell (the Oracle's design, 2026-10-14):
+ * small, at the foot of the sidebar on a desktop and at the end of the page
+ * on a phone. One copy, last in the page (the contentinfo landmark after
+ * main): on a desktop the stylesheet pins it to the sidebar's foot.
+ *
+ *   Numen Games ▾          the house's three sites, this one marked
+ *   Términos y políticas ▾ the four legal texts, the cookie choice, then
+ *                          licence · telemetry · commit
+ *   by Numen Games · v0.83.0                                  skull
+ *
+ * NWOS, GitHub and Discord left the footer with the app shell. The
+ * signature is brand voice and never translated; the skull shows the
+ * epitaph (canon CAN-002), English on every locale, literal on purpose.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
+import { HOUSE_LINKS, THIS_SITE } from '../../lib/house-links';
+import { localeHref } from '../../lib/app-nav';
+import Icon from './Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+const ui = APP_SHELL_UI[locale];
+
+// CAN-002: the manifesto closes on the epitaph. Never translated, never
+// "fixed" — the wording is the Oracle's, literal on purpose.
+const EPITAPH =
+  'They dreamed and experimented life, they imagined and took action. They were part of the fight to change the model, they did not let us alone, they built a game with which to create a better world.';
+
+// The house order of the legal texts (Legal notice · Privacy · Cookies · Terms).
+const LEGAL = [
+  { path: '/legal/legal-notice/', label: t.legalNotice, metric: 'footer-notice' },
+  { path: '/legal/privacy/', label: t.legalPrivacy, metric: 'footer-privacy' },
+  { path: '/legal/cookies/', label: t.legalCookies, metric: 'footer-cookies' },
+  { path: '/legal/terms/', label: t.legalTerms, metric: 'footer-terms' },
+];
+---
+
+<footer class="pie-app">
+  <details class="pie-pliegue">
+    <summary data-metric="footer-house">{ui.footerSites}</summary>
+    <ul>
+      {
+        HOUSE_LINKS.map((site) =>
+          site.id === THIS_SITE ? (
+            <li>
+              <span class="pie-aqui" aria-current="page">
+                {site.label} <small>{t.footerThisSite}</small>
+              </span>
+            </li>
+          ) : (
+            <li>
+              <a
+                href={site.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={site.what}
+                data-metric={`footer-house-${site.id}`}
+              >
+                {site.id === 'archive' ? ui.archive : site.label}
+                <Icon name="arrow-square-out" size={12} use />
+              </a>
+            </li>
+          ),
+        )
+      }
+    </ul>
+  </details>
+  <details class="pie-pliegue">
+    <summary data-metric="footer-legal">{ui.footerLegal}</summary>
+    <ul>
+      {
+        LEGAL.map((doc) => (
+          <li>
+            <a href={localeHref(locale, doc.path)} data-metric={doc.metric}>
+              {doc.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <button type="button" data-cookie-choice data-metric="footer-cookie-choice">
+          {t.legalCookieChoice}
+        </button>
+      </li>
+      <li class="pie-obra">
+        <a
+          href={LICENSE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={t.footerLicenceTitle}
+          data-metric="footer-licence">{t.footerLicence}</a
+        >
+      </li>
+      <li>
+        <a
+          href={localeHref(locale, '/telemetry/')}
+          title={t.footerTelemetryTitle}
+          data-metric="footer-telemetry">{t.footerTelemetry}</a
+        >
+      </li>
+      <li class="mono">
+        {
+          COMMIT_URL ? (
+            <a
+              href={COMMIT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t.footerCommitTitle}
+              data-metric="footer-commit"
+            >
+              {`commit ${COMMIT_SHA}`}
+            </a>
+          ) : (
+            <span data-metric="footer-commit">{`commit ${COMMIT_SHA}`}</span>
+          )
+        }
+      </li>
+    </ul>
+  </details>
+  <div class="pie-cierre">
+    {/* Explicit string expressions: Astro collapses template whitespace
+        around inline elements, which once glued "by" to the link. */}
+    <p class="pie-firma">
+      {'by '}<a
+        href="https://numen.games"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-metric="footer-numen-signature">Numen Games</a
+      >{' · '}<a
+        href={localeHref(locale, '/updates/')}
+        title={t.footerVersionTitle}
+        data-metric="footer-version">{VERSION}</a
+      >
+    </p>
+    {/* The epitaph (CAN-002): hover or focus shows it, a tap toggles it,
+        Escape closes it. No page, no navigation. */}
+    <div class="epitafio" data-epitaph>
+      <button
+        type="button"
+        class="calavera"
+        aria-label="Epitaph"
+        aria-expanded="false"
+        aria-describedby="footer-epitaph"
+        data-metric="footer-epitaph"
+      >
+        <Icon name="skull" size={20} />
+      </button>
+      <p id="footer-epitaph" class="bocadillo" role="tooltip" lang="en">{EPITAPH}</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // The epitaph: click/tap toggles it (aria-expanded), Escape closes it and
+  // keeps it hushed until the pointer or the focus leaves the skull.
+  const box = document.querySelector<HTMLElement>('[data-epitaph]');
+  const button = box?.querySelector('button');
+  if (box && button) {
+    const set = (open: boolean): void => {
+      button.setAttribute('aria-expanded', String(open));
+      box.toggleAttribute('data-open', open);
+    };
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      box.removeAttribute('data-hushed');
+      set(open);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (box.hasAttribute('data-open') || box.matches(':hover, :focus-within')) {
+        set(false);
+        box.setAttribute('data-hushed', '');
+      }
+    });
+    const unhush = (): void => box.removeAttribute('data-hushed');
+    box.addEventListener('mouseleave', unhush);
+    box.addEventListener('focusout', unhush);
+    document.addEventListener('click', (event) => {
+      if (event.target instanceof Node && !box.contains(event.target)) set(false);
+    });
+  }
+</script>

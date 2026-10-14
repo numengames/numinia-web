@@ -6,9 +6,9 @@ uid: ""
 title: "Cookie Policy — Numen Games"
 type: legal
 status: draft
-version: "2.1.1"
+version: "2.2.0"
 created: "2026-09-18T17:00:00+02:00"
-updated: "2026-10-02T14:00:00+02:00"
+updated: "2026-10-14T12:00:00+02:00"
 author: "ursa"
 owner: "oracle"
 tags: [legal, cookies, privacy, gdpr, lssi, website, numen-games, enforceable]
@@ -44,6 +44,10 @@ review_flags: |
   Accept and Reject at the same level, and its own cookie. The Terms
   are no longer accepted from the cookie notice; they are accepted at
   sign-in. Counsel confirms the exemptions in §4 (DBT-022 #24, #25).
+  Re-measured 2026-10-14 (v2.2.0): numinia.com's app shell keeps the
+  sidebar's fold (`numinia-sidebar`) and the communities a visitor
+  follows (`numinia-follows`). Both are preferences set by the
+  visitor's own action and stay on the device.
 ---
 
 <!--
@@ -97,6 +101,8 @@ of that kind.
 | `numinia-codex-marca` | local storage | Your bookmark in the manual: which chapter you marked. | You mark a chapter | Until you remove it or clear it | Preference — set only when you act |
 | `numinia-codex-ritmo` | local storage | The reading speed you chose for the manual's narrator. | You change the speed | Until you clear it | Preference — set only when you choose |
 | `numinia-lap-personaje` | local storage | The character sheet you fill in the player area, so it is there when you return. It stays on your device; nothing is sent. | You edit the sheet | Until you delete it from the sheet or clear it | Preference — set only when you act |
+| `numinia-sidebar` | local storage | Whether you folded the side bar (folded or open). | You fold or unfold it | Until you clear it | Preference — set only when you act |
+| `numinia-follows` | local storage | The communities you follow, so the site can show them and their rituals to you. It stays on your device; nothing is sent. | You press *Follow* on a community's page | Until you unfollow or clear it | Preference — set only when you act |
 | `thirdweb:*`, `walletToken-*`, `thirdwebEwsWalletUserId-*`, `thirdwebEwsWalletUserDetails-*`, `a-*`, `walletConnectSessions-*` | local storage, written by the sign-in provider (thirdweb) | Remember which wallet you connected and keep the wallet the provider created for you usable on this device. | You sign in | Until you sign out or clear it | Yes — only if you sign in; part of the sign-in you asked for |
 
 **Measurement.** numinia.com counts what is clicked on the page to learn

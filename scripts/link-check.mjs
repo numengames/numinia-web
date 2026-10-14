@@ -1,11 +1,16 @@
 /**
  * Internal link integrity gate (MISSION-004) — crawls the built site and
  * fails on any internal href/src that does not resolve to a built file.
+ * A permanent redirect (src/lib/redirects.ts) counts as built when its
+ * destination does: it is a real route, answered before any file.
  *
  * Usage: node scripts/link-check.mjs   (requires apps/store/dist to exist)
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+// The site's permanent redirects (astro.config.mjs `redirects`): both
+// adapters answer them at runtime, so they leave no file in dist/client.
+import { redirectOf } from '../apps/store/src/lib/redirects.ts';
 
 const DIST = path.join('apps', 'store', 'dist', 'client');
 
@@ -45,10 +50,14 @@ function isOnDemand(clean) {
   );
 }
 
-async function resolves(target) {
+async function resolves(target, hops = 0) {
   // /path/ -> /path/index.html ; /file.ext -> as-is ; /path -> try both.
   const clean = target.split(/[?#]/)[0];
   if (isOnDemand(clean)) return true;
+  // A redirected address counts as built when where it leads does: an
+  // external home, or a built file (two hops at most — a chain is a defect).
+  const moved = redirectOf(clean);
+  if (moved !== null) return /^https?:\/\//.test(moved) || (hops < 2 && resolves(moved, hops + 1));
   const rel = clean.replace(/^\//, '');
   if (clean.endsWith('/')) return exists(path.join(DIST, rel, 'index.html'));
   if (path.extname(clean)) return exists(path.join(DIST, rel));

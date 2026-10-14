@@ -1,0 +1,874 @@
+/*
+ * The app shell of numinia.com (the Oracle's design, 2026-10-14; drawn in
+ * the approved wireframes v1): a sticky sidebar of 252 px (76 px folded)
+ * beside the page at its full width, the folded footer pinned to its foot,
+ * a glass top bar of 64 px almost empty, and — at 860 px and below — a tab
+ * bar at the bottom instead of the sidebar, with «Más» and the folded
+ * footer closing the page.
+ *
+ * Values only from the kit (sistema.css): colours, spaces, the two radii
+ * (6 px controls, 8 px frames) plus full circles. Icons sit without boxes
+ * and take the link colour on hover. Secondary text on a surface uses
+ * --texto-2: --texto-3 there fails AA contrast.
+ */
+
+:root {
+  --app-lat: 252px;
+  --app-lat-plegada: 76px;
+  --app-cima: 64px;
+  --app-pestanas: 56px;
+  /* The folded footer pinned at the sidebar's foot: the sidebar keeps this
+     much room free below its last item. */
+  --app-pie: 140px;
+}
+
+/* Anchors land below the sticky top bar, not under it. */
+html {
+  scroll-padding-top: var(--app-cima);
+}
+
+/* The chrome's sprite (ChromeSprite): defined, never drawn itself. */
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* A name for the screen reader that the eye does not need. */
+.sr-solo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The first stop of the keyboard: hidden above the window until focused. */
+.saltar {
+  position: fixed;
+  top: var(--s3);
+  left: var(--s3);
+  z-index: 100;
+  padding: var(--s2) var(--s4);
+  border-radius: var(--radio-control);
+  background: var(--interactivo-fondo);
+  color: #fff;
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+.saltar:focus {
+  transform: none;
+}
+
+/* ---- The frame: sidebar + the page at its full width ------------------ */
+.app {
+  display: grid;
+  grid-template-columns: var(--app-lat) minmax(0, 1fr);
+  min-height: 100vh;
+}
+html[data-sidebar='collapsed'] .app {
+  grid-template-columns: var(--app-lat-plegada) minmax(0, 1fr);
+}
+.app-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* :where() keeps the weight of a bare `main`, so a page that bleeds (a
+   ritual's or a community's cover, `main[data-wide]`) still wins. */
+:where(.app-col) > main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s2) var(--s7) var(--s8);
+  /* Pages drawn for the old full-width column bleed past it (the home's
+     hero by a negative margin; the archive index by 45 px at 1280): the
+     column now sits beside the sidebar, so it clips what sticks out
+     instead of giving the window a sideways scroll. `clip`, not `hidden`:
+     no scroll box, so sticky pieces inside still stick. */
+  overflow-x: clip;
+}
+:where(.app-col) > main:focus {
+  outline: none;
+}
+
+/* ---- The sidebar ------------------------------------------------------ */
+/* Sticky, the window's height, above the page: a sticky box is its own
+   stacking context, and the «Más» menu must paint over the content. Its
+   foot stays free for the folded footer pinned there (.app-pie). */
+.lat {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s4) var(--s3) var(--app-pie);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-padding-bottom: var(--app-pie);
+  scrollbar-width: thin;
+  scrollbar-color: var(--linea-f) transparent;
+  border-right: 1px solid var(--linea);
+  background: color-mix(in srgb, var(--fondo) 92%, transparent);
+}
+.lat-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-height: 52px;
+  margin-bottom: var(--s3);
+  padding: 0 4px 0 8px;
+}
+/* The Khepri with the Numinia wordmark, 36 px, in currentColor: the
+   text's colour, the link's under the pointer. */
+.lat-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 44px;
+  color: var(--texto);
+  text-decoration: none;
+  transition: color 120ms var(--ciclo);
+}
+.lat-marca:hover,
+.lat-marca:focus-visible {
+  color: var(--enlace);
+}
+.lat-khepri {
+  display: block;
+  width: 36px;
+  height: 36px;
+}
+.lat-palabra svg {
+  display: block;
+  width: 118px;
+  height: 17px;
+}
+/* Icon buttons: no box, the link colour on hover. */
+.lat-plegar,
+.cima-icono {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-2);
+  cursor: pointer;
+  list-style: none;
+  transition: color 120ms var(--ciclo);
+}
+.cima-icono::-webkit-details-marker {
+  display: none;
+}
+.lat-plegar:hover,
+.lat-plegar:focus-visible,
+.cima-icono:hover,
+.cima-icono:focus-visible,
+.cima-mas[open] > .cima-icono {
+  color: var(--enlace);
+}
+/* The search: a field-shaped door to the communities, «/» as its key. */
+.lat-buscar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  height: 42px;
+  padding: 0 var(--s3);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  background: var(--superficie);
+  color: var(--texto-2);
+  font: 400 0.95rem var(--sans);
+  text-decoration: none;
+  transition:
+    color 120ms var(--ciclo),
+    border-color 120ms var(--ciclo);
+}
+.lat-buscar:hover,
+.lat-buscar:focus-visible {
+  border-color: var(--enlace);
+  color: var(--texto);
+}
+.lat-buscar kbd {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  font: 500 0.68rem var(--mono);
+  color: var(--texto-2);
+}
+.lat-nav {
+  margin-top: var(--s3);
+}
+.lat-nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lat-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto-2);
+  font: 500 1.02rem var(--sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  list-style: none;
+  transition: color 120ms var(--ciclo);
+}
+.lat-item::-webkit-details-marker {
+  display: none;
+}
+.lat-item:hover,
+.lat-item:focus-visible,
+.lat-mas[open] > .lat-item {
+  color: var(--enlace);
+}
+/* The current place: the ink, a heavier word and its fill icon. */
+.lat-item[aria-current] {
+  color: var(--texto);
+  font-weight: 650;
+}
+.lat-item[aria-current] .icono {
+  color: var(--enlace);
+}
+/* Explorar's three, always shown, hung from a hairline. */
+.lat-nav .lat-sub {
+  gap: 0;
+  margin: 0 0 6px 52px;
+  padding-left: 2px;
+  border-left: 1px solid var(--linea);
+}
+.lat-sub a {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radio-control);
+  color: var(--texto-3);
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: color 120ms var(--ciclo);
+}
+.lat-sub a:hover,
+.lat-sub a:focus-visible {
+  color: var(--enlace);
+}
+.lat-sub a[aria-current] {
+  color: var(--texto);
+  font-weight: 600;
+}
+.lat-n {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--texto-3);
+}
+/* «Más»: without JS it unfolds in place; with JS it opens beside the bar,
+   fixed to the window, placed by the sidebar's script. */
+.lat-mas {
+  position: relative;
+}
+.lat-pop {
+  margin: var(--s1) 0 0;
+}
+html[data-js='on'] .lat-pop {
+  position: fixed;
+  left: calc(var(--app-lat) - var(--s1));
+  width: 300px;
+  margin: 0;
+  visibility: hidden;
+}
+html[data-js='on'][data-sidebar='collapsed'] .lat-pop {
+  left: calc(var(--app-lat-plegada) - var(--s1));
+}
+html[data-js='on'] .lat-pop[data-placed] {
+  visibility: visible;
+}
+/* The call to sign in: one line and the door. */
+.lat-cta {
+  margin-top: var(--s3);
+  padding: var(--s4) 8px var(--s2);
+  border-top: 1px solid var(--linea);
+}
+.lat-cta p {
+  margin: 0 0 var(--s3);
+  color: var(--texto-3);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.lat-entrar {
+  justify-content: center;
+  width: 100%;
+  padding: var(--s2) var(--s4);
+  text-decoration: none;
+}
+
+/* Folded: the Khepri and the icons; every word stays for the screen
+   reader (and as the pointer's tooltip). */
+html[data-sidebar='collapsed'] .lat {
+  align-items: center;
+  padding-inline: var(--s2);
+}
+html[data-sidebar='collapsed'] .lat-cab {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: auto;
+  padding: 0;
+}
+html[data-sidebar='collapsed'] .lat-palabra,
+html[data-sidebar='collapsed'] .lat-buscar kbd,
+html[data-sidebar='collapsed'] .lat-sub,
+html[data-sidebar='collapsed'] .lat-cta p {
+  display: none;
+}
+html[data-sidebar='collapsed'] .lat .lat-t {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+html[data-sidebar='collapsed'] .lat-plegar svg {
+  transform: scaleX(-1);
+}
+html[data-sidebar='collapsed'] .lat-buscar {
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-color: transparent;
+  background: none;
+}
+html[data-sidebar='collapsed'] .lat-item {
+  justify-content: center;
+  width: 52px;
+  padding: 0;
+}
+html[data-sidebar='collapsed'] .lat-cta {
+  padding-inline: 0;
+}
+html[data-sidebar='collapsed'] .lat-entrar {
+  width: 44px;
+  padding: 0;
+}
+
+/* ---- The folded footer's place ---------------------------------------- */
+/* Last in the page (after main, the contentinfo landmark), pinned to the
+   sidebar's foot on a desktop: the sidebar's colour and edge, above its
+   items when a fold opens. «Más» has its own place in the sidebar. */
+.app-pie {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 46;
+  width: var(--app-lat);
+  padding: var(--s4) calc(var(--s3) + 8px);
+  border-right: 1px solid var(--linea);
+  background: color-mix(in srgb, var(--fondo) 92%, transparent);
+}
+.mas-movil {
+  display: none;
+}
+/* Folded: the skull alone; its epitaph opens over the page. */
+html[data-sidebar='collapsed'] .app-pie {
+  width: var(--app-lat-plegada);
+  padding-inline: var(--s2);
+}
+html[data-sidebar='collapsed'] .app-pie .pie-pliegue,
+html[data-sidebar='collapsed'] .app-pie .pie-firma {
+  display: none;
+}
+html[data-sidebar='collapsed'] .app-pie .pie-cierre {
+  justify-content: center;
+  margin-top: 0;
+  border-top: 0;
+}
+html[data-sidebar='collapsed'] .app-pie .epitafio {
+  margin-left: 0;
+}
+html[data-sidebar='collapsed'] .app-pie .bocadillo {
+  right: auto;
+  left: 0;
+}
+
+/* ---- The top bar: almost empty ---------------------------------------- */
+.cima {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s2);
+  height: var(--app-cima);
+  padding: 0 var(--s6);
+}
+/* The glass lives on a pseudo-element, so the bar stays a plain
+   containing block for its menu. */
+.cima::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--fondo) 86%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+/* The Khepri and the magnifier belong to the phone's bar only. */
+.cima-marca,
+.cima-buscar {
+  display: none;
+}
+.cima-marca {
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-right: auto;
+  color: var(--texto);
+  transition: color 120ms var(--ciclo);
+}
+.cima-marca:hover,
+.cima-marca:focus-visible {
+  color: var(--enlace);
+}
+.cima-marca svg {
+  display: block;
+  width: 30px;
+  height: 30px;
+}
+.cima-entrar {
+  padding: 6px var(--s4);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.cima-mas {
+  position: relative;
+}
+
+/* ---- Menus (⋮ and «Más»): an elevated panel, 40 px rows --------------- */
+.pop {
+  z-index: 60;
+  padding: var(--s2);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+  background: var(--elevada);
+}
+[data-modo='diurno'] .pop {
+  box-shadow:
+    0 1px 2px rgba(20, 17, 15, 0.08),
+    0 8px 24px rgba(20, 17, 15, 0.06);
+}
+.cima-pop {
+  position: absolute;
+  top: calc(100% + var(--s2));
+  right: 0;
+  width: 300px;
+}
+.pop hr {
+  margin: 6px 0;
+  border: 0;
+  border-top: 1px solid var(--linea-f);
+}
+.pop-etiqueta {
+  margin: 6px 10px 4px;
+  color: var(--texto-2);
+  font: 500 0.66rem var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.opc {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto-2);
+  font: 400 0.95rem var(--sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.opc:hover,
+.opc:focus-visible {
+  background: color-mix(in srgb, var(--texto) 6%, transparent);
+  color: var(--texto);
+}
+.opc-der {
+  margin-left: auto;
+  color: var(--texto-2);
+  font-size: 0.75rem;
+}
+/* The night/day switch: its icon and word show the mode you are IN. */
+.pop-modo > span:not(.sr-solo) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+}
+html:not([data-modo='diurno']) .pop-modo .solo-diurno,
+html[data-modo='diurno'] .pop-modo .solo-nocturno {
+  display: none;
+}
+.cima-pop .lang {
+  margin: 0 10px var(--s1);
+}
+.mas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mas-linea {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--linea-f);
+}
+
+/* ---- The folded footer ------------------------------------------------ */
+.pie-app {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.82rem;
+}
+.pie-pliegue > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  color: var(--texto-3);
+  font: 500 0.82rem var(--sans);
+  list-style: none;
+  cursor: pointer;
+}
+.pie-pliegue > summary::-webkit-details-marker {
+  display: none;
+}
+.pie-pliegue > summary:hover,
+.pie-pliegue > summary:focus-visible {
+  color: var(--texto-2);
+}
+/* The fold's chevron, drawn by CSS (no icon to repeat in every copy). */
+.pie-pliegue > summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 120ms var(--ciclo);
+}
+.pie-pliegue[open] > summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+.pie-pliegue ul {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 6px;
+  padding: 0 0 0 10px;
+  list-style: none;
+}
+.pie-pliegue a,
+.pie-pliegue button,
+.pie-aqui {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--texto-3);
+  font: 400 0.82rem var(--sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pie-pliegue a:hover,
+.pie-pliegue a:focus-visible,
+.pie-pliegue button:hover,
+.pie-pliegue button:focus-visible {
+  color: var(--texto);
+}
+.pie-aqui {
+  color: var(--texto-2);
+  cursor: default;
+}
+.pie-aqui small {
+  color: var(--texto-3);
+  font: 500 0.58rem var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pie-pliegue .mono,
+.pie-pliegue .mono a {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+.pie-pliegue .mono span {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  color: var(--texto-3);
+}
+/* The closing line: the signature, the version, the skull. Links inside
+   running text never rely on colour alone (WCAG 1.4.1): underlined. */
+.pie-cierre {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--linea);
+}
+.pie-firma {
+  margin: 0;
+  color: var(--texto-3);
+  font: 400 0.7rem var(--mono);
+}
+.pie-firma a {
+  color: var(--texto-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pie-firma a:hover,
+.pie-firma a:focus-visible {
+  color: var(--enlace);
+}
+.epitafio {
+  position: relative;
+  margin-left: auto;
+}
+.calavera {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto-3);
+  cursor: pointer;
+}
+.calavera:hover,
+.calavera:focus-visible,
+.calavera[aria-expanded='true'] {
+  color: var(--texto-2);
+}
+.bocadillo {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--s2));
+  z-index: 5;
+  width: 224px;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: var(--s3);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+  background: var(--elevada);
+  color: var(--texto-2);
+  font: italic 400 0.82rem/1.5 var(--sans);
+  visibility: hidden;
+  opacity: 0;
+}
+.epitafio:hover .bocadillo,
+.epitafio:focus-within .bocadillo,
+.epitafio[data-open] .bocadillo {
+  visibility: visible;
+  opacity: 1;
+}
+.epitafio[data-hushed] .bocadillo {
+  visibility: hidden;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bocadillo {
+    transition:
+      opacity 120ms var(--ciclo),
+      visibility 120ms var(--ciclo);
+  }
+}
+
+/* ---- Phones: the sidebar becomes the tab bar -------------------------- */
+.pestanas-app {
+  display: none;
+}
+@media (max-width: 53.75rem) {
+  .app,
+  html[data-sidebar='collapsed'] .app {
+    grid-template-columns: minmax(0, 1fr);
+    /* The tab bar never covers the end of the page. */
+    padding-bottom: calc(var(--app-pestanas) + env(safe-area-inset-bottom, 0px));
+  }
+  .lat {
+    display: none;
+  }
+  :where(.app-col) > main {
+    padding: var(--s2) var(--s4) var(--s6);
+  }
+  .cima {
+    gap: var(--s1);
+    padding: 0 var(--s3) 0 var(--s4);
+  }
+  .cima-marca {
+    display: inline-flex;
+  }
+  .cima-buscar {
+    display: inline-grid;
+  }
+  .cima-icono {
+    width: 44px;
+    height: 44px;
+  }
+  .cima-entrar {
+    min-height: 44px;
+  }
+  .cima-pop {
+    position: fixed;
+    top: calc(var(--app-cima) - 4px);
+    right: var(--s2);
+    left: var(--s2);
+    width: auto;
+  }
+  /* «Más» and the folded footer close the page, compact, in the flow. */
+  .app-pie,
+  html[data-sidebar='collapsed'] .app-pie {
+    position: static;
+    width: auto;
+    padding: var(--s5) var(--s4);
+    border-top: 1px solid var(--linea);
+    border-right: 0;
+    background: none;
+  }
+  html[data-sidebar='collapsed'] .app-pie .pie-pliegue,
+  html[data-sidebar='collapsed'] .app-pie .pie-firma {
+    display: block;
+  }
+  html[data-sidebar='collapsed'] .app-pie .pie-cierre {
+    justify-content: flex-start;
+    margin-top: var(--s2);
+    border-top: 1px solid var(--linea);
+  }
+  html[data-sidebar='collapsed'] .app-pie .epitafio {
+    margin-left: auto;
+  }
+  html[data-sidebar='collapsed'] .app-pie .bocadillo {
+    right: 0;
+    left: auto;
+  }
+  .mas-movil {
+    display: block;
+  }
+  .mas-compacta {
+    margin-bottom: var(--s3);
+  }
+  .mas-compacta .opc {
+    min-height: 44px;
+    padding: 0;
+    font-size: 0.92rem;
+  }
+  .mas-compacta .opc:hover,
+  .mas-compacta .opc:focus-visible {
+    background: none;
+  }
+  .app-pie .pie-pliegue > summary,
+  .app-pie .pie-pliegue a,
+  .app-pie .pie-pliegue button,
+  .app-pie .pie-aqui {
+    min-height: 44px;
+  }
+  .app-pie .calavera {
+    width: 44px;
+    height: 44px;
+  }
+  .pestanas-app {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--linea-f);
+    background: color-mix(in srgb, var(--fondo) 94%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .pestanas-app a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: var(--app-pestanas);
+    padding: 6px 2px 8px;
+    color: var(--texto-2);
+    font: 500 0.68rem var(--sans);
+    text-align: center;
+    text-decoration: none;
+  }
+  .pestanas-app span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pestanas-app a[aria-current] {
+    color: var(--texto);
+  }
+  .pestanas-app a[aria-current] .icono {
+    color: var(--enlace);
+  }
+}
+
+/* Paper keeps the page and the footer, in the flow. */
+@media print {
+  .saltar,
+  .lat,
+  .cima,
+  .mas-movil,
+  .pestanas-app {
+    display: none;
+  }
+  .app {
+    display: block;
+  }
+  .app-pie {
+    position: static;
+    width: auto;
+    border: 0;
+  }
+}

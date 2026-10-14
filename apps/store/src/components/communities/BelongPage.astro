@@ -1,0 +1,205 @@
+---
+/**
+ * «Perteneces» (/belong/, the app shell v0.83.0): your communities and what
+ * happens in them. «Sigues» lists the communities this browser follows —
+ * the list lives in `numinia-follows` (written by the «Seguir» button), and
+ * the little each card needs is embedded here as JSON at build, so nothing
+ * is asked of a server. «Perteneces a»: membership does not exist yet —
+ * signed out, a door to sign in; signed in (the session read the way the
+ * LAP reads it), one plain sentence that it will appear here.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { FOLLOWS_KEY, followEntries } from '../../lib/communities';
+import { COMMUNITIES, RITUALS } from './register';
+import Icon from '../chrome/Icon.astro';
+import Countdown from './Countdown.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
+---
+
+<BaseLayout locale={locale} title={`${ui.belongTitle} — Numinia`} description={ui.belongLead}>
+  <header class="titulo-vista">
+    <h1 class="display-m">{ui.belongTitle}</h1>
+    <p class="lead">{ui.belongLead}</p>
+  </header>
+
+  <section class="bloque" id="follows">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m">{ui.followsTitle}</h2>
+        <p class="ayuda">{ui.followsHelp}</p>
+      </div>
+    </div>
+    <ul class="seguidas" data-follows-list hidden></ul>
+    <p class="vacio" data-follows-empty>
+      <Icon name="users-three" size={24} />
+      <span>{ui.followsEmpty}</span>
+    </p>
+    <template data-follow-card>
+      <li class="tarjeta seguida">
+        <h3><a data-name data-metric="belong-community"></a></h3>
+        <p class="small texto-2" data-line></p>
+        <p class="proximo" data-next>
+          <span class="etiqueta corta">{ui.nextRitual}</span>
+          <a data-next-title data-metric="belong-ritual"></a>
+          <span class="small texto-2"><span data-next-when></span><span class="falta" data-countdown></span></span>
+        </p>
+        <p class="small texto-2" data-none>{ui.toAnnounce}</p>
+      </li>
+    </template>
+    <script
+      is:inline
+      type="application/json"
+      data-follows-data
+      set:html={JSON.stringify(entries).replace(/</g, '\\u003c')}
+    />
+  </section>
+
+  <section class="bloque" id="member">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m">{ui.memberOfTitle}</h2>
+      </div>
+    </div>
+    <div class="vacio puerta" data-member-door>
+      <Icon name="users-three" size={24} />
+      <span>{ui.memberDoor}</span>
+      <a class="btn btn-primario btn-sm" href={`${prefix}/lap/session/`} data-metric="belong-sign-in">
+        <Icon name="sign-in" size={16} />
+        {ui.signIn}
+      </a>
+    </div>
+    <p class="vacio" data-member-soon hidden>
+      <Icon name="hourglass" size={24} />
+      <span>{ui.memberSoon}</span>
+    </p>
+    <p class="explorar">
+      <a href={`${prefix}/communities/`} data-metric="belong-explore">
+        {fill(ui.exploreAll, { n: COMMUNITIES.length })}
+      </a>
+    </p>
+  </section>
+
+  <script is:inline data-follows-key={FOLLOWS_KEY}>
+    /* «Sigues»: the ids this browser keeps, drawn from the entries embedded
+       at build (text only, never markup). «Perteneces a»: the session read
+       as the LAP reads it; a signed-in visitor sees the sentence, not the door. */
+    (function () {
+      var key = document.currentScript.getAttribute('data-follows-key');
+      var ids = [];
+      try {
+        var stored = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(stored)) ids = stored;
+      } catch (e) {}
+      var data = document.querySelector('[data-follows-data]');
+      var entries = data ? JSON.parse(data.textContent || '[]') : [];
+      var list = document.querySelector('[data-follows-list]');
+      var template = document.querySelector('[data-follow-card]');
+      var shown = entries.filter(function (entry) {
+        return ids.indexOf(entry.id) >= 0;
+      });
+      if (list && template && shown.length > 0) {
+        shown.forEach(function (entry) {
+          var card = template.content.firstElementChild.cloneNode(true);
+          var name = card.querySelector('[data-name]');
+          name.textContent = entry.name;
+          name.setAttribute('href', entry.href);
+          card.querySelector('[data-line]').textContent = entry.line;
+          if (entry.next) {
+            var title = card.querySelector('[data-next-title]');
+            title.textContent = entry.next.title;
+            title.setAttribute('href', entry.next.href);
+            card.querySelector('[data-next-when]').textContent = entry.next.when;
+            card.querySelector('[data-countdown]').setAttribute('data-countdown', entry.next.start);
+            card.querySelector('[data-none]').remove();
+          } else {
+            card.querySelector('[data-next]').remove();
+          }
+          list.appendChild(card);
+        });
+        list.hidden = false;
+        document.querySelector('[data-follows-empty]').hidden = true;
+      }
+      fetch('/api/auth/session')
+        .then(function (response) {
+          return response.ok ? response.json() : null;
+        })
+        .then(function (session) {
+          if (!session) return;
+          document.querySelector('[data-member-door]').hidden = true;
+          document.querySelector('[data-member-soon]').hidden = false;
+        })
+        .catch(function () {});
+    })();
+  </script>
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  .seguidas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  }
+  .seguidas > * {
+    min-width: 0;
+  }
+  .seguida {
+    gap: var(--s2);
+  }
+  .seguida h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .seguida h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .seguida h3 a:hover,
+  .seguida h3 a:focus-visible {
+    color: var(--enlace);
+  }
+  .seguida p {
+    margin: 0;
+  }
+  .proximo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-top: 1px solid var(--linea);
+    padding-top: var(--s3);
+    margin-top: auto !important;
+  }
+  .proximo .etiqueta {
+    margin: 0;
+  }
+  .falta:not(:empty)::before {
+    content: ' · ';
+  }
+  .puerta {
+    flex-wrap: wrap;
+  }
+  .puerta span {
+    flex: 1 1 16rem;
+  }
+  .explorar {
+    margin: var(--s4) 0 0;
+  }
+  [hidden] {
+    display: none !important;
+  }
+</style>
