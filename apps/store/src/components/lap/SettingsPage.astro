@@ -5,9 +5,16 @@
  * your rank grants (§Ranks, straight from the domain), and where your data
  * lives. Controls follow §9.8: switches are capsules, ON dresses in ink.
  */
-import { PERMISSION_GROUPS, RANK_DEFINITIONS, resolvePermissions, type SupportedLocale } from '@numinia/domain';
+import {
+  PERMISSION_GROUPS,
+  PERMISSIONS,
+  RANK_DEFINITIONS,
+  resolvePermissions,
+  type SupportedLocale,
+} from '@numinia/domain';
 import { SETTINGS_UI } from '../../i18n/settings';
 import { LAP_UI } from '../../i18n/lap';
+import { SETTINGS_PATH, signInHref, signOutHref } from '../../lib/app-nav';
 import { CURRENT_VERSION } from '../../lib/updates';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
@@ -24,7 +31,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 /** Sections a citizen may hide from the rail (chrome preference, D17). */
 const HIDEABLE = ['character', 'codex', 'portals', 'loot', 'seasons', 'stats'] as const;
 
-/** Nomad is the rank without a session: show what it opens and what waits. */
+/** What the first rank opens (Nomad: signed in, STD-003), against all there are. */
 const nomadGrants = resolvePermissions('nomad');
 const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   es: 'Español',
@@ -44,24 +51,44 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
     <section aria-labelledby="s-session">
       <h2 id="s-session" class="etiqueta">{t.session}</h2>
       <div class="tarjeta sesion" data-session-card>
-        <p data-session-state data-signed-in={t.signedIn}>{t.signedOut}</p>
-        <dl hidden data-session-detail>
+        <p data-session-out>{t.signedOut}</p>
+        <p data-session-in hidden>{t.signedIn}</p>
+        <dl data-session-in hidden>
           <div>
             <dt>{t.rank}</dt>
-            <dd data-session-rank>—</dd>
+            <dd>
+              {
+                RANK_DEFINITIONS.map((rank) => (
+                  <span data-rank-name={rank.id} hidden>
+                    {rank.name[locale]}
+                  </span>
+                ))
+              }
+            </dd>
           </div>
           <div>
             <dt>{t.address}</dt>
-            <dd class="mono" data-session-address>—</dd>
+            <dd class="mono" data-session-short>—</dd>
           </div>
         </dl>
         <div class="acciones">
-          <a href={`${prefix}/lap/session/`} class="btn btn-primario" data-metric="settings-sign-in">
+          <a
+            href={signInHref(locale, SETTINGS_PATH)}
+            class="btn btn-primario"
+            data-session-out
+            data-metric="settings-sign-in"
+          >
             {t.signIn}
           </a>
-          <button type="button" class="btn btn-fantasma" hidden data-session-signout data-metric="settings-sign-out">
+          <a
+            href={signOutHref(locale)}
+            class="btn btn-fantasma"
+            data-session-in
+            hidden
+            data-metric="settings-sign-out"
+          >
             {t.signOut}
-          </button>
+          </a>
         </div>
       </div>
     </section>
@@ -139,24 +166,29 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
       <h2 id="s-permissions" class="etiqueta">{t.permissions}</h2>
       <div class="tarjeta">
         <p class="nota">{t.permissionsNote}</p>
-        <ol class="rangos">
+        <ol class="rangos" data-rank-ladder>
           {
             RANK_DEFINITIONS.map((rank, index) => (
-              <li>
+              <li data-rank-level={index} data-rank={rank.id}>
                 <span class="mono nivel">{index}</span>
                 <div>
                   <p class="nombre">{rank.name[locale]}</p>
                   <p class="grupo mono">{PERMISSION_GROUPS[index]?.toUpperCase()}</p>
                 </div>
-                <span class="pildora" data-estado={index === 0 ? 'granted' : 'locked'}>
-                  {index === 0 ? t.granted : t.locked}
+                <span
+                  class="pildora"
+                  data-estado="locked"
+                  data-granted={t.granted}
+                  data-locked={t.locked}
+                >
+                  {t.locked}
                 </span>
               </li>
             ))
           }
         </ol>
         <p class="nota mono">
-          {nomadGrants.size}/22 · {[...nomadGrants].join(' · ')}
+          {nomadGrants.size}/{PERMISSIONS.length} · {[...nomadGrants].join(' · ')}
         </p>
       </div>
     </section>
@@ -202,9 +234,9 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
 </LapShell>
 
 <script>
-  /* Chrome preferences (D17: localStorage for chrome only) + a live read of
-     the session. Everything degrades: without JS the page still tells the
-     truth, it just cannot toggle. */
+  /* Chrome preferences (D17: localStorage for chrome only). Everything
+     degrades: without JS the page still tells the truth, it just cannot
+     toggle. */
   const root = document.documentElement;
 
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-mode]')) {
@@ -251,33 +283,10 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
     });
   }
 
-  const card = document.querySelector('[data-session-card]');
-  if (card) {
-    void fetch('/api/auth/session')
-      .then((response) => (response.ok ? response.json() : null))
-      .then((session: { address: string; rank: string } | null) => {
-        if (!session) return;
-        const state = card.querySelector('[data-session-state]');
-        const detail = card.querySelector('[data-session-detail]');
-        const signIn = card.querySelector('[data-metric="settings-sign-in"]');
-        const signOut = card.querySelector('[data-session-signout]');
-        if (state) state.textContent = state.getAttribute('data-signed-in') ?? state.textContent;
-        detail?.removeAttribute('hidden');
-        signIn?.setAttribute('hidden', '');
-        signOut?.removeAttribute('hidden');
-        const rank = card.querySelector('[data-session-rank]');
-        const address = card.querySelector('[data-session-address]');
-        if (rank) rank.textContent = session.rank;
-        if (address) {
-          address.textContent = `${session.address.slice(0, 6)}…${session.address.slice(-4)}`;
-          address.setAttribute('title', session.address);
-        }
-      })
-      .catch(() => undefined);
-    card.querySelector('[data-session-signout]')?.addEventListener('click', () => {
-      void fetch('/api/auth/logout', { method: 'POST' }).then(() => location.reload());
-    });
-  }
+  /* The session card's faces (`data-session-in/out`) and the ladder of
+     ranks (`data-rank-ladder`, every rank up to yours granted) are painted
+     by the chrome's one session read. Signing out is the shared link to
+     the sign-in page, which disconnects the wallet first. */
 </script>
 
 <style>

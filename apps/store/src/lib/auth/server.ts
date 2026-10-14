@@ -14,10 +14,11 @@ import { createAuth } from 'thirdweb/auth';
 import { z } from 'zod';
 import type { Rank } from '@numinia/domain';
 import {
-  createNonceStore,
   createSessionToken,
+  issueSignedNonce,
   parseAuthEnv,
   verifySessionTokenWithRotation,
+  verifySignedNonce,
   type SessionPayload,
   type VerifyResult,
 } from '@numinia/auth';
@@ -112,9 +113,19 @@ const NONCE_TTL_MS = 5 * 60 * 1000;
 
 export const SESSION_COOKIE = 'numinia_session';
 
-/** Single-use TTL nonces (in-memory: dev server / single instance only).
-    Shared across domains: a nonce is single-use citywide. */
-const nonces = createNonceStore({ ttlMs: NONCE_TTL_MS, now: Date.now });
+/**
+ * Login nonces are signed, not remembered: on Workers the request that
+ * issues one and the request that spends it may run on different isolates,
+ * and an in-memory store then refused good logins at random. The nonce
+ * carries its expiry under an HMAC of the session secret, so any instance
+ * can check it (@numinia/auth `issueSignedNonce`).
+ *
+ * Known gap, written down on purpose: with no shared store a signed login
+ * message could be replayed inside its 5-minute window by someone who
+ * already holds that exact signed message. Binding the nonce to the browser
+ * (a cookie, listed in the cookie policy first) or a single-use store is
+ * the identity ADR's call (MIS-157), not this change's.
+ */
 
 const authInstances = new Map<string, ReturnType<typeof createAuth>>();
 
@@ -132,9 +143,8 @@ export function getAuth(host: string): ReturnType<typeof createAuth> {
       payloadExpirationTimeSeconds: NONCE_TTL_MS / 1000,
       statement: 'Numinia: prove you hold this address. No transaction, no cost.',
       nonce: {
-        generate: () => nonces.issue(),
-        // Consuming on validate makes every login payload strictly single-use.
-        validate: (nonce) => nonces.consume(nonce),
+        generate: () => issueSignedNonce(requireConfig().sessionSecret, NONCE_TTL_MS, Date.now()),
+        validate: (nonce) => verifySignedNonce(nonce, requireConfig().sessionSecret, Date.now()),
       },
     },
   });

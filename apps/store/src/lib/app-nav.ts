@@ -139,6 +139,20 @@ export function localeHref(locale: SupportedLocale, path: string): string {
   return locale === 'en' ? path : `/${locale}${path}`;
 }
 
+/** The door, asking to come back to the page it was opened from
+    (`?vuelta=`; the sign-in page itself needs no way back to itself). */
+export function signInHref(locale: SupportedLocale, basePath: string): string {
+  const door = localeHref(locale, SIGN_IN_PATH);
+  if (basePath === SIGN_IN_PATH) return door;
+  return `${door}?vuelta=${encodeURIComponent(localeHref(locale, basePath))}`;
+}
+
+/** The one way out: the sign-in page signs out (it alone holds the wallet
+    code that must disconnect first) and takes the person home. */
+export function signOutHref(locale: SupportedLocale): string {
+  return `${localeHref(locale, SIGN_IN_PATH)}?salir=1`;
+}
+
 /** The sidebar's fold, kept on the device (LEG-003 §3.1): `collapsed` or
     `expanded`; anything else reads as open. */
 export const SIDEBAR_KEY = 'numinia-sidebar';

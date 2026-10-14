@@ -470,6 +470,23 @@ html[data-sidebar='collapsed'] .app-pie .bocadillo {
 .cima-mas {
   position: relative;
 }
+/* With a session the door becomes your account: the filled face and the
+   short wallet, a pill-less button like the other icons. */
+.cima-yo {
+  display: inline-flex;
+  gap: var(--s2);
+  width: auto;
+  padding: 0 var(--s2);
+  border-radius: var(--radio-control);
+  color: var(--texto);
+}
+.cima-corto {
+  font-size: 0.85rem;
+}
+.cima-rango {
+  margin: 0 10px var(--s1);
+  color: var(--texto);
+}
 
 /* ---- Menus (⋮ and «Más»): an elevated panel, 40 px rows --------------- */
 .pop {
@@ -753,6 +770,14 @@ html[data-modo='diurno'] .pop-modo .solo-nocturno {
   }
   .cima-entrar {
     min-height: 44px;
+  }
+  /* The phone keeps the face only: the wallet is one tap away, in Perfil. */
+  .cima-yo {
+    width: 44px;
+    padding: 0;
+  }
+  .cima-corto {
+    display: none;
   }
   .cima-pop {
     position: fixed;

@@ -5,8 +5,10 @@
  * <symbol>, and each place draws it with <use> (`<Icon use />`). The Khepri
  * (the sidebar's brand and the phone's top bar), the magnifier (the
  * sidebar's search and the phone's top bar), the five places in the state
- * this page gives them (the sidebar and the tab bar) and the footer's
- * external-link arrow.
+ * this page gives them (the sidebar and the tab bar), the footer's
+ * external-link arrow, and the account's icons (the gear is drawn by both
+ * menus of the top bar; the face and the way out by the account menu).
+ * Each name travels once, however many of these lists ask for it.
  */
 import khepri from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
 import { NAV_ITEMS, navIcon, navState } from '../../lib/app-nav';
@@ -21,11 +23,19 @@ interface Props {
 const { basePath } = Astro.props;
 const mark = svgParts(khepri);
 const places = NAV_ITEMS.map((item) => navIcon(item, navState(item, basePath)));
+const icons = [
+  ...new Set([
+    'magnifying-glass',
+    ...places,
+    'arrow-square-out',
+    'gear',
+    'sign-out',
+    'user-circle-fill',
+  ] as const),
+];
 ---
 
 <svg class="sprite" aria-hidden="true">
   <symbol id={symbolId('khepri')} viewBox={mark.viewBox} set:html={mark.body} />
-  <Icon name="magnifying-glass" symbol />
-  {places.map((name) => <Icon name={name} symbol />)}
-  <Icon name="arrow-square-out" symbol />
+  {icons.map((name) => <Icon name={name} symbol />)}
 </svg>

@@ -26,6 +26,32 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.84.0',
+    date: '2026-10-14 14:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'You sign in and you look signed in. The top bar used to offer «Sign in» on every page even after you had entered; now it shows your account — your face, the short form of your wallet — and opens on your rank, Profile, Settings and «Sign out». The sidebar’s invitation to sign in goes away once you are in, and Belong says so too. One read of the session per page feeds the whole chrome, and it changes the moment you sign in or out, without reloading.',
+      },
+      {
+        type: 'FIX',
+        text: 'Your real rank, everywhere. The citizen card in Profile used to say «Nomad» and the settings showed the rank’s internal id; both now name your rank in your language, the settings mark every rank up to yours as granted, and without a session they say you have none — a Nomad is someone who has signed in. The count of permissions reads the real total.',
+      },
+      {
+        type: 'UPD',
+        text: 'The sign-in page speaks your language — the step-by-step guide, the panel and the wallet widget itself — and once you are in it shows who you are instead of the sign-in buttons. Every door to it now brings you back to the page you came from after signing in; a way back to another site is ignored.',
+      },
+      {
+        type: 'FIX',
+        text: 'One way out. «Sign out» in the bar, in Settings and on the sign-in page all do the same thing: the wallet is disconnected first, then the session, and you land on the home page. The sign-out in Settings used to leave the wallet connected.',
+      },
+      {
+        type: 'FIX',
+        text: 'Signing in no longer depends on landing on the same server twice. The one-time code a wallet signs was kept in one server’s memory, and a sign-in whose second step reached another server was refused; the code now carries its own expiry under the site’s signature, so any server can check it.',
+      },
+    ],
+  },
+  {
     version: 'v0.83.0',
     date: '2026-10-14 11:20',
     entries: [

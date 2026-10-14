@@ -4,9 +4,15 @@
  * and the door, before anything else. Iconography stays Phosphor like the rest
  * of the product (the pixel register belongs to scenes, not to chrome); HUD
  * counters are persisting data → Geist Mono tabular (§9.6).
+ *
+ * Who you are comes from the page's one session read (the top bar's script
+ * shows the `data-session-in/out` faces and writes the short wallet and the
+ * rank's name): without a session the card says so — never «Nómada», which
+ * is a rank you get by signing in (STD-003).
  */
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
+import { signInHref } from '../../lib/app-nav';
 import Icon from '../chrome/Icon.astro';
 
 interface Props {
@@ -15,8 +21,6 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = LAP_UI[locale].citizen;
-const prefix = locale === 'en' ? '' : `/${locale}`;
-const nomad = RANK_DEFINITIONS[0]!;
 ---
 
 <section class="ciudadania" data-materia="relieve" data-citizen>
@@ -25,8 +29,17 @@ const nomad = RANK_DEFINITIONS[0]!;
   </div>
   <div class="identidad">
     <p class="etiqueta">{t.title}</p>
-    <p class="nombre" data-citizen-name>{t.noSession}</p>
-    <p class="pildora rango" data-citizen-rank>{nomad.name[locale]}</p>
+    <p class="nombre" data-session-out>{t.noSession}</p>
+    <p class="nombre mono" data-session-in data-session-short hidden></p>
+    <p class="pildora rango" data-session-in hidden>
+      {
+        RANK_DEFINITIONS.map((rank) => (
+          <span data-rank-name={rank.id} hidden>
+            {rank.name[locale]}
+          </span>
+        ))
+      }
+    </p>
   </div>
   <dl class="hud">
     <div>
@@ -38,28 +51,15 @@ const nomad = RANK_DEFINITIONS[0]!;
       <dd class="mono" data-citizen-prisma>0</dd>
     </div>
   </dl>
-  <a href={`${prefix}/lap/session/`} class="btn btn-primario" data-metric="citizen-enter" data-citizen-enter>
+  <a
+    href={signInHref(locale, '/lap/')}
+    class="btn btn-primario"
+    data-metric="citizen-enter"
+    data-session-out
+  >
     {t.enter}
   </a>
 </section>
-
-<script>
-  /* A real session renames the card: address in Mono truncated (§13.11). */
-  void fetch('/api/auth/session')
-    .then((response) => (response.ok ? response.json() : null))
-    .then((session: { address: string; rank: string } | null) => {
-      if (!session) return;
-      const card = document.querySelector('[data-citizen]');
-      const name = card?.querySelector('[data-citizen-name]');
-      if (name) {
-        name.textContent = `${session.address.slice(0, 6)}…${session.address.slice(-4)}`;
-        name.classList.add('mono');
-        name.setAttribute('title', session.address);
-      }
-      card?.querySelector('[data-citizen-enter]')?.setAttribute('hidden', '');
-    })
-    .catch(() => undefined);
-</script>
 
 <style>
   .ciudadania {

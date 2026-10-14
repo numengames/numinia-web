@@ -12,7 +12,12 @@
 
 import { z } from 'zod';
 import { RANKS, SEAL_IDS, THRESHOLD_IDS } from '@numinia/domain';
-import { fromBase64Url, timingSafeEqualBytes, toBase64Url } from './encoding.js';
+import {
+  fromBase64Url,
+  hmacSha256 as hmac,
+  timingSafeEqualBytes,
+  toBase64Url,
+} from './encoding.js';
 
 const VERSION = 'na1';
 
@@ -46,19 +51,6 @@ export type AttestationPayload = z.infer<typeof payloadSchema>;
 export type AttestationResult =
   | { valid: true; payload: AttestationPayload }
   | { valid: false; reason: 'structure' | 'signature' | 'payload' };
-
-async function hmac(secret: string, data: Uint8Array): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    // Non-extractable by hygiene. Documented equivalent mutant: flipping this
-    // is unobservable (we never export the key), so no test can kill it.
-    false,
-    ['sign'],
-  );
-  return new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
-}
 
 /** Throws on an invalid payload — the city never signs what it cannot say. */
 export async function createAttestation(

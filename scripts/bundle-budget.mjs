@@ -45,8 +45,14 @@ const BUDGETS = {
       approved — the sidebar's fold applied before paint, the «Más» and ⋮
       popovers, the «/» key to the search — and the featured strip's
       arrows, on a front door that dropped its explanation blocks. Still no
-      external JS. Landing sits at ~14.2KB. */
-  landingInlineScriptBytes: 14_500,
+      external JS. Landing sits at ~14.2KB.
+      Raised 14500→16500 on 2026-10-14 (v0.84.0): the chrome reads who is
+      here — one session read per page that paints the account (face, short
+      wallet, rank), the Oracle's rooms and the ladder of ranks, then tells
+      the sign-in island (~1.8KB). Before it, a signed-in person still saw
+      «Iniciar sesión» everywhere. Still no external JS: the island reaches
+      the client through the window, never by import. Landing sits at ~16KB. */
+  landingInlineScriptBytes: 16_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -77,8 +83,12 @@ const BUDGETS = {
       templates, four agents — each card with its Phosphor icons inline
       (61 SVGs, ~25KB) and its texts in the page. Content, not feature
       creep; ~14KB on the wire once gzipped, and still no external JS.
-      Landing sits at ~80KB. */
-  landingHtmlBytes: 90_000,
+      Landing sits at ~80KB.
+      Raised 90000→95000 on 2026-10-14 (v0.84.0): the top bar's account —
+      the face, the short wallet, the rank's name in each of its five forms,
+      Perfil · Ajustes · Salir — and their three icons in the sprite, plus
+      the session script above (~3.7KB). Landing sits at ~93.2KB. */
+  landingHtmlBytes: 95_000,
 };
 
 const failures = [];

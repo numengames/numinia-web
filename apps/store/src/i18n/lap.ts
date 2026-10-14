@@ -334,7 +334,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     citizen: {
       title: 'Tu ciudadanía',
-      noSession: 'Sin sesión — nómada de paso',
+      noSession: 'Sin sesión',
       rankLabel: 'Rango',
       seals: 'Sellos',
       prisma: 'Prisma',
@@ -538,7 +538,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     citizen: {
       title: 'Your citizenship',
-      noSession: 'No session — a Nomad passing through',
+      noSession: 'No session',
       rankLabel: 'Rank',
       seals: 'Seals',
       prisma: 'Prisma',
@@ -738,7 +738,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     citizen: {
       title: 'あなたの市民権',
-      noSession: 'セッションなし — 通りすがりのノマド',
+      noSession: 'セッションなし',
       rankLabel: 'ランク',
       seals: '印章',
       prisma: 'プリズマ',
@@ -930,7 +930,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     citizen: {
       title: '당신의 시민권',
-      noSession: '세션 없음 — 지나가는 노마드',
+      noSession: '세션 없음',
       rankLabel: '랭크',
       seals: '인장',
       prisma: '프리즈마',
@@ -1162,7 +1162,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
     },
     citizen: {
       title: 'Sua cidadania',
-      noSession: 'Sem sessão — nômade de passagem',
+      noSession: 'Sem sessão',
       rankLabel: 'Rank',
       seals: 'Selos',
       prisma: 'Prisma',

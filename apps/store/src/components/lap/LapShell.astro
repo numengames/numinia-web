@@ -120,7 +120,7 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
           ))
         }
       </ul>
-      <div class="gestion" data-admin-zone hidden>
+      <div class="gestion" data-admin-zone data-session-ranks="archon oracle" hidden>
         <p class="etiqueta">{t.adminGroup}</p>
         <ul>
           {
@@ -141,7 +141,7 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
           }
           {
             ORACLE.map((item) => (
-              <li data-oracle-only hidden>
+              <li data-oracle-only data-session-ranks="oracle" hidden>
                 <a
                   href={item.href}
                   data-section={item.id}
@@ -165,8 +165,6 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
 </BaseLayout>
 
 <script>
-  import { onSessionChange } from '../../lib/session-signal';
-
   /* Sidebar fold — a chrome preference like the mode (decision D17):
      localStorage only, applied by the BaseLayout boot script pre-paint. */
   const root = document.documentElement;
@@ -189,26 +187,9 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
     rail.scrollLeft = active.offsetLeft - (rail.clientWidth - active.offsetWidth) / 2;
   }
   updateFades();
-  /* The management zone appears when the session carries the rank — read at
-     load, and again whenever the sign-in island reports a sign-in or a
-     sign-out, so the Oracle's rooms show up (and go) without a reload. */
-  const showZones = (session: { rank: string } | null): void => {
-    const rank = session?.rank ?? '';
-    document
-      .querySelector('[data-admin-zone]')
-      ?.toggleAttribute('hidden', !['archon', 'oracle'].includes(rank));
-    document
-      .querySelectorAll('[data-oracle-only]')
-      .forEach((item) => item.toggleAttribute('hidden', rank !== 'oracle'));
-  };
-  const readSession = (): void => {
-    void fetch('/api/auth/session')
-      .then((response) => (response.ok ? response.json() : null))
-      .then(showZones)
-      .catch(() => undefined);
-  };
-  readSession();
-  onSessionChange(window, readSession);
+  /* The management zone and the Oracle's rooms carry `data-session-ranks`:
+     the chrome's one session read shows them to those ranks, and hides them
+     again on a sign-out, without a reload. */
 
   const foldButton = document.querySelector('[data-lap-fold]');
   foldButton?.setAttribute('aria-expanded', String(root.dataset['lapNav'] !== 'plegado'));

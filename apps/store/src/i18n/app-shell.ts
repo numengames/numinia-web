@@ -29,6 +29,12 @@ export interface AppShellMessages {
   /** The sidebar's call to sign in, one line. */
   readonly cta: string;
   readonly signIn: string;
+  /** With a session: the person's menu in the top bar (its spoken name),
+      the word before the rank, and the one way out. */
+  readonly account: string;
+  readonly rankLine: string;
+  readonly profile: string;
+  readonly signOut: string;
   /** The ⋮ button and its three groups. */
   readonly options: string;
   readonly appearance: string;
@@ -67,6 +73,10 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     cta: 'Entra para seguir a tus comunidades, unirte a sus rituales y ver quién está en su sede.',
     signIn: 'Iniciar sesión',
+    account: 'Tu cuenta',
+    rankLine: 'Rango',
+    profile: 'Perfil',
+    signOut: 'Salir',
     options: 'Más opciones',
     appearance: 'Aspecto',
     night: 'Noche',
@@ -101,6 +111,10 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     cta: 'Sign in to follow your communities, join their rituals and see who is in their home.',
     signIn: 'Sign in',
+    account: 'Your account',
+    rankLine: 'Rank',
+    profile: 'Profile',
+    signOut: 'Sign out',
     options: 'More options',
     appearance: 'Appearance',
     night: 'Night',
@@ -135,6 +149,10 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     cta: 'ログインすると、コミュニティをフォローし、その儀式に参加し、拠点に誰がいるかを見られます。',
     signIn: 'ログイン',
+    account: 'あなたのアカウント',
+    rankLine: 'ランク',
+    profile: 'プロフィール',
+    signOut: 'ログアウト',
     options: 'その他のオプション',
     appearance: '外観',
     night: '夜',
@@ -169,6 +187,10 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     cta: '로그인하면 커뮤니티를 팔로우하고, 의식에 참여하고, 거점에 누가 있는지 볼 수 있습니다.',
     signIn: '로그인',
+    account: '내 계정',
+    rankLine: '등급',
+    profile: '프로필',
+    signOut: '로그아웃',
     options: '더 많은 옵션',
     appearance: '화면',
     night: '밤',
@@ -203,6 +225,10 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     cta: 'Entre para seguir suas comunidades, participar dos rituais delas e ver quem está na sede.',
     signIn: 'Entrar',
+    account: 'Sua conta',
+    rankLine: 'Posto',
+    profile: 'Perfil',
+    signOut: 'Sair',
     options: 'Mais opções',
     appearance: 'Aparência',
     night: 'Noite',

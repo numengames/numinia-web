@@ -37,11 +37,16 @@ test('following a community keeps it in this browser and «Perteneces» lists it
   await expect(page.locator('[data-follows-list]')).toBeHidden();
 });
 
-test('without a session, «Perteneces a» is a door to sign in', async ({ page }) => {
+test('without a session, «Perteneces a» is a door to sign in that comes back here', async ({
+  page,
+}) => {
   await page.goto('/belong/');
   await page.waitForLoadState('networkidle');
-  await expect(page.locator('[data-member-door] a')).toHaveAttribute('href', '/lap/session/');
-  await expect(page.locator('[data-member-soon]')).toBeHidden();
+  await expect(page.locator('[data-metric="belong-sign-in"]')).toHaveAttribute(
+    'href',
+    '/lap/session/?vuelta=%2Fbelong%2F',
+  );
+  await expect(page.locator('p.vacio[data-session-in]')).toBeHidden();
 });
 
 test('the retired city addresses open «Cómo funciona» in their own locale', async ({ page }) => {

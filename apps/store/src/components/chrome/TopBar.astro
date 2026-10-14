@@ -2,18 +2,35 @@
 /**
  * The top bar of the app shell (the Oracle's design, 2026-10-14): sticky,
  * 64 px, glass, almost empty — the centre stays free. On the right, the
- * door («Iniciar sesión», the primary) and ⋮, a menu with the appearance
- * (today's night/day switch: its icon shows the mode you are IN), the
- * language (today's LanguageMenu) and the settings. On a phone, where the
- * sidebar is gone, it also opens with the Khepri and the magnifier (both
- * drawn from ChromeSprite). Its behaviour (night/day, the menus' Escape and
- * click-outside) lives in scripts/app-shell.ts, the shell's one script.
+ * door and ⋮, a menu with the appearance (today's night/day switch: its
+ * icon shows the mode you are IN), the language (today's LanguageMenu) and
+ * the settings. On a phone, where the sidebar is gone, it also opens with
+ * the Khepri and the magnifier (both drawn from ChromeSprite). Its
+ * behaviour (night/day, the menus' Escape and click-outside) lives in the
+ * sidebar's script, the shell's one script.
+ *
+ * The door has two faces and the page shows one: «Iniciar sesión» while
+ * nobody is signed in, your account once you are — the short wallet, your
+ * rank, Perfil, Ajustes and the one «Salir». Every page is prerendered for
+ * everyone, so lib/session-client.ts decides after load and sets
+ * `data-session` on <html>; until it answers the door shows, which is what
+ * most visitors see anyway. The rank's name in every language is rendered
+ * here, so the browser picks a word and never imports the domain package.
  */
-import type { SupportedLocale } from '@numinia/domain';
+import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
 import { COMMUNITIES_UI } from '../../i18n/communities';
-import { SEARCH_PATH, SETTINGS_PATH, SIGN_IN_PATH, localeHref } from '../../lib/app-nav';
+import {
+  NAV_ITEMS,
+  SEARCH_PATH,
+  SETTINGS_PATH,
+  localeHref,
+  navIcon,
+  navState,
+  signInHref,
+  signOutHref,
+} from '../../lib/app-nav';
 import { symbolId } from '../../lib/svg-sprite';
 import Icon from './Icon.astro';
 import LanguageMenu from './LanguageMenu.astro';
@@ -28,6 +45,8 @@ const { locale, basePath } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const ui = APP_SHELL_UI[locale];
 const words = COMMUNITIES_UI[locale];
+// Perfil, drawn with the same sprite icon the sidebar gives it on this page.
+const profile = NAV_ITEMS.find((item) => item.id === 'profile')!;
 ---
 
 <header class="cima">
@@ -44,10 +63,47 @@ const words = COMMUNITIES_UI[locale];
     <Icon name="magnifying-glass" size={22} use />
   </a>
   <a
-    href={localeHref(locale, SIGN_IN_PATH)}
+    href={signInHref(locale, basePath)}
     class="btn btn-primario cima-entrar"
+    data-session-out
     data-metric="chrome-sign-in">{ui.signIn}</a
   >
+  <details class="cima-mas" name="shell-menu" data-popover data-session-in hidden>
+    <summary
+      class="cima-icono cima-yo"
+      aria-label={ui.account}
+      title={ui.account}
+      data-metric="chrome-account"
+    >
+      <Icon name="user-circle-fill" size={24} use />
+      <span class="mono cima-corto" data-session-short></span>
+    </summary>
+    <div class="pop cima-pop">
+      <p class="pop-etiqueta">{ui.rankLine}</p>
+      <p class="cima-rango">
+        {
+          RANK_DEFINITIONS.map((rank) => (
+            <span data-rank-name={rank.id} hidden>
+              {rank.name[locale]}
+            </span>
+          ))
+        }
+      </p>
+      <hr />
+      <a href={localeHref(locale, profile.path)} class="opc" data-metric="chrome-profile">
+        <Icon name={navIcon(profile, navState(profile, basePath))} size={20} use />
+        {ui.profile}
+      </a>
+      <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-account-settings">
+        <Icon name="gear" size={20} use />
+        {ui.settings}
+      </a>
+      <a href={signOutHref(locale)} class="opc" data-metric="chrome-sign-out">
+        <Icon name="sign-out" size={20} use />
+        {ui.signOut}
+      </a>
+    </div>
+  </details>
   <details class="cima-mas" name="shell-menu" data-popover>
     <summary class="cima-icono" aria-label={ui.options} title={ui.options} data-metric="chrome-more">
       <Icon name="dots-three-vertical" size={22} />
@@ -63,9 +119,57 @@ const words = COMMUNITIES_UI[locale];
       <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
       <hr />
       <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-settings">
-        <Icon name="gear" size={20} />
+        <Icon name="gear" size={20} use />
         {ui.settings}
       </a>
     </div>
   </details>
 </header>
+
+<script>
+  /* The chrome is the page's one session reader (lib/session-client.ts,
+     inlined here by the bundler). It paints every session-dependent mark on
+     the page, wherever it sits — so other components only mark up:
+       data-session-in / data-session-out   the face for each state
+       data-session-ranks="archon oracle"   shown only to those ranks
+       data-session-short                   the short wallet
+       data-rank-name="<rank>"              the rank's name, one shown
+       data-rank-ladder > [data-rank]       every rank up to yours granted
+     and `data-session` on <html> tells the stylesheet. */
+  import { pageSession, rankLevel } from '../../lib/session-client';
+
+  const all = (selector: string): HTMLElement[] => [
+    ...document.querySelectorAll<HTMLElement>(selector),
+  ];
+
+  pageSession().subscribe((session) => {
+    const signedIn = session.status === 'in';
+    const rank = signedIn ? session.rank : '';
+    document.documentElement.dataset['session'] = signedIn ? 'in' : 'out';
+    all('[data-session-in]').forEach((element) => (element.hidden = !signedIn));
+    all('[data-session-out]').forEach((element) => (element.hidden = signedIn));
+    all('[data-session-ranks]').forEach((element) => {
+      element.hidden = !(element.dataset['sessionRanks'] ?? '').split(' ').includes(rank);
+    });
+    all('[data-rank-name]').forEach((element) => {
+      element.hidden = element.dataset['rankName'] !== rank;
+    });
+    if (signedIn) {
+      all('[data-session-short]').forEach((element) => (element.textContent = session.short));
+    }
+    all('[data-rank-ladder]').forEach((ladder) => {
+      const rows = [...ladder.querySelectorAll<HTMLElement>('[data-rank]')];
+      const level = rankLevel(
+        rows.map((row) => row.dataset['rank'] ?? ''),
+        session,
+      );
+      rows.forEach((row, index) => {
+        const pill = row.querySelector<HTMLElement>('[data-granted]');
+        if (!pill) return;
+        const state = index <= level ? 'granted' : 'locked';
+        pill.dataset['estado'] = state;
+        pill.textContent = pill.dataset[state] ?? '';
+      });
+    });
+  });
+</script>

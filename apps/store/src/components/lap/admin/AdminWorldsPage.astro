@@ -7,6 +7,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
 import { WORLDS_UI } from '../../../i18n/worlds';
+import { signInHref } from '../../../lib/app-nav';
 import LapShell from '../LapShell.astro';
 import { WorldsPanel } from './WorldsPanel';
 
@@ -21,9 +22,8 @@ const labels = {
   forbiddenNote: t.worlds.forbiddenNote,
   signedAs: t.worlds.signedAs,
 };
-// Where a wallet that the room cannot find is connected again.
-const prefix = locale === 'en' ? '' : `/${locale}`;
-const sessionHref = `${prefix}/lap/session/`;
+// Where a wallet that the room cannot find is connected again — and back here.
+const sessionHref = signInHref(locale, '/lap/admin/worlds/');
 ---
 
 <LapShell

@@ -5,12 +5,13 @@
  * the list lives in `numinia-follows` (written by the «Seguir» button), and
  * the little each card needs is embedded here as JSON at build, so nothing
  * is asked of a server. «Perteneces a»: membership does not exist yet —
- * signed out, a door to sign in; signed in (the session read the way the
- * LAP reads it), one plain sentence that it will appear here.
+ * signed out, a door to sign in; signed in (the page's one session read,
+ * `data-session-in/out`), one plain sentence that it will appear here.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { signInHref } from '../../lib/app-nav';
 import { FOLLOWS_KEY, followEntries } from '../../lib/communities';
 import { COMMUNITIES, RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
@@ -71,15 +72,15 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
         <h2 class="titulo-m">{ui.memberOfTitle}</h2>
       </div>
     </div>
-    <div class="vacio puerta" data-member-door>
+    <div class="vacio puerta" data-session-out>
       <Icon name="users-three" size={24} />
       <span>{ui.memberDoor}</span>
-      <a class="btn btn-primario btn-sm" href={`${prefix}/lap/session/`} data-metric="belong-sign-in">
+      <a class="btn btn-primario btn-sm" href={signInHref(locale, '/belong/')} data-metric="belong-sign-in">
         <Icon name="sign-in" size={16} />
         {ui.signIn}
       </a>
     </div>
-    <p class="vacio" data-member-soon hidden>
+    <p class="vacio" data-session-in hidden>
       <Icon name="hourglass" size={24} />
       <span>{ui.memberSoon}</span>
     </p>
@@ -130,16 +131,6 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
         list.hidden = false;
         document.querySelector('[data-follows-empty]').hidden = true;
       }
-      fetch('/api/auth/session')
-        .then(function (response) {
-          return response.ok ? response.json() : null;
-        })
-        .then(function (session) {
-          if (!session) return;
-          document.querySelector('[data-member-door]').hidden = true;
-          document.querySelector('[data-member-soon]').hidden = false;
-        })
-        .catch(function () {});
     })();
   </script>
   <Countdown ui={ui} />

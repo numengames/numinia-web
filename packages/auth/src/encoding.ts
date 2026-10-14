@@ -38,6 +38,18 @@ export function fromBase64Url(text: string): Uint8Array | null {
   return Uint8Array.from(bytes);
 }
 
+/** HMAC-SHA256 with Web Crypto — the one MAC every token of the package uses. */
+export async function hmacSha256(secret: string, data: Uint8Array): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  return new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
+}
+
 /** Constant-time byte comparison — never short-circuits on a mismatch. */
 export function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
