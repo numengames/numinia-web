@@ -11,6 +11,8 @@
  * bundles this module too, so the PDF/EPUB editions say the same words.
  */
 
+import type { SpeechStrings } from '../lib/speech-position';
+
 export type CodexUiLang = 'es' | 'en';
 
 export interface CodexUi {
@@ -70,11 +72,6 @@ export interface CodexUi {
     readonly index: string;
     readonly bookmark: string;
     readonly bookmarked: string;
-    readonly narrator: string;
-    readonly narratorTitle: string;
-    readonly narratorPause: string;
-    readonly narratorResume: string;
-    readonly paceTitle: string;
     readonly textSize: string;
     readonly mode: string;
     readonly modeTitle: string;
@@ -86,9 +83,11 @@ export interface CodexUi {
     readonly backToBookmark: string;
     readonly progress: string;
     readonly moonPhases: readonly string[];
-    /** BCP 47 tag the Narrador speaks in. */
+    /** BCP 47 tag the reading player speaks in. */
     readonly voice: string;
   };
+  /** The reading player (Listen), numinia.org's player in the manual. */
+  readonly listen: SpeechStrings;
   readonly downloads: {
     readonly bookFile: string;
     readonly book: string;
@@ -190,11 +189,6 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
       index: 'Índice',
       bookmark: 'Marcapáginas',
       bookmarked: 'Marcado',
-      narrator: 'Narrador',
-      narratorTitle: 'El Narrador lee el capítulo en voz alta',
-      narratorPause: 'Pausa',
-      narratorResume: 'Seguir',
-      paceTitle: 'Ritmo de lectura del Narrador',
       textSize: 'Tamaño de letra',
       mode: 'Modo del manual',
       modeTitle: 'Modo del manual — independiente del resto del LAP',
@@ -216,6 +210,26 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
         'luna llena',
       ],
       voice: 'es-ES',
+    },
+    listen: {
+      listen: 'Escuchar',
+      pause: 'Pausa',
+      resume: 'Seguir',
+      stop: 'Dejar de escuchar',
+      listenAria: 'Escuchar este capítulo',
+      pauseAria: 'Pausar la lectura',
+      resumeAria: 'Seguir escuchando',
+      noEngine: 'Este navegador no tiene síntesis de voz',
+      nothing: 'No hay nada que leer en esta página',
+      rateAria: 'Velocidad: {rate}x. Pulsa para cambiarla',
+      min: 'min',
+      player: 'Reproductor de lectura',
+      position: 'Posición de la lectura',
+      positionText: '{at} de {total}',
+      back: 'Volver a la lectura',
+      reading: 'Leyendo',
+      paused: 'En pausa',
+      stopped: 'Detenido',
     },
     downloads: {
       bookFile: '.md',
@@ -306,11 +320,6 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
       index: 'Contents',
       bookmark: 'Bookmark',
       bookmarked: 'Bookmarked',
-      narrator: 'Narrator',
-      narratorTitle: 'The Narrator reads the chapter aloud',
-      narratorPause: 'Pause',
-      narratorResume: 'Resume',
-      paceTitle: 'The Narrator’s reading pace',
       textSize: 'Text size',
       mode: 'Manual mode',
       modeTitle: 'Manual mode — independent of the rest of the LAP',
@@ -332,6 +341,26 @@ export const CODEX_UI: Readonly<Record<CodexUiLang, CodexUi>> = {
         'full moon',
       ],
       voice: 'en-GB',
+    },
+    listen: {
+      listen: 'Listen',
+      pause: 'Pause',
+      resume: 'Resume',
+      stop: 'Stop listening',
+      listenAria: 'Listen to this chapter',
+      pauseAria: 'Pause listening',
+      resumeAria: 'Resume listening',
+      noEngine: 'This browser has no speech synthesis',
+      nothing: 'Nothing to read on this page',
+      rateAria: 'Playback rate: {rate}x. Press to change',
+      min: 'min',
+      player: 'Reading player',
+      position: 'Reading position',
+      positionText: '{at} of {total}',
+      back: 'Back to the reading',
+      reading: 'Reading',
+      paused: 'Paused',
+      stopped: 'Stopped',
     },
     downloads: {
       bookFile: '.md',

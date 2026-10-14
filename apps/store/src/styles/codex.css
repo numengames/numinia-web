@@ -256,17 +256,18 @@
   }
 }
 
-/* ─── El Narrador: el bloque que suena lleva la regla solar ─── */
-.codex .cbtn .ritmo {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+/* ─── Escuchar (el reproductor de numinia.org): en el cromo, el botón cede
+   palabras con los demás; la estimación se va con su etiqueta ─── */
+.codex .chrome .sp-toggle .sp-icon {
+  font-size: 0.62rem;
 }
-.codex .cuerpo .narrando,
-.codex .cuerpo .lectura .narrando,
-.codex .glosario .narrando {
-  background: var(--papel-prof);
-  box-shadow: -4px 0 0 var(--solar);
-  transition: background 0.3s;
+.codex .chrome.compacta .sp-est {
+  display: none;
+}
+@media (max-width: 860px) {
+  .codex .chrome .sp-est {
+    display: none;
+  }
 }
 
 /* ─── Marcos de grabado (esquinas que se dibujan) ─── */

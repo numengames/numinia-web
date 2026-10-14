@@ -12,6 +12,7 @@ import { CHROME_MESSAGES } from '../../../i18n/messages';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import type { CodexLang } from '../../../lib/codex/source';
 import CodexChrome from './CodexChrome.astro';
+import SpeechPlayer from '../../speech/SpeechPlayer.astro';
 import '../../../styles/codex.css';
 
 import alegreyaWoff from '../../../../../../packages/ui/src/assets/fonts/Alegreya-Variable.woff2?url';
@@ -61,13 +62,9 @@ const clientUi =
     : JSON.stringify({
         bookmark: chrome.bookmark,
         bookmarked: chrome.bookmarked,
-        narrator: chrome.narrator,
-        pause: chrome.narratorPause,
-        resume: chrome.narratorResume,
         day: chrome.day,
         night: chrome.night,
         phases: chrome.moonPhases,
-        voice: chrome.voice,
       });
 ---
 
@@ -113,6 +110,16 @@ const clientUi =
       nextLabel={nextLabel}
     >
       <span slot="cap-actual">{capActual}</span>
+      <SpeechPlayer
+        slot="listen"
+        textSelector=".codex .cuerpo, .codex .glosario"
+        lang={chrome.voice}
+        htmlLang={locale}
+        title={capActual}
+        bar=".codex .chrome"
+        toggleClass="cbtn"
+        t={CODEX_UI[lang].listen}
+      />
     </CodexChrome>
     <div class="lienzo">
       <slot />
@@ -129,7 +136,6 @@ const clientUi =
   </div>
   <script>
     import '../../../scripts/codex-reader';
-    import '../../../scripts/codex-narrador';
   </script>
 </BaseLayout>
 
@@ -144,5 +150,33 @@ const clientUi =
   main[data-wide]:has(> .codex) {
     padding: 0;
     max-width: none;
+  }
+  /* The reading player's colours: numinia.org's own tokens, day and night,
+     which are the manual's paper and ink (Sistema §19.3). Set on <body>
+     because the dock and the light live there. */
+  body:has(.codex) {
+    --sp-text: 20 17 15;
+    --sp-text-dim: 110 98 89;
+    --sp-accent: 1 110 125;
+    --sp-teal: 1 110 125;
+    --sp-bg-card: 253 246 238;
+    --sp-border: 196 181 166;
+    --sp-font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --sp-font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  body:has(.codex.nocturno) {
+    --sp-text: 249 235 220;
+    --sp-text-dim: 138 125 114;
+    --sp-accent: 166 218 213;
+    --sp-teal: 1 142 161;
+    --sp-bg-card: 30 26 23;
+    --sp-border: 58 51 45;
+  }
+  .codex .chrome .speech-player {
+    display: contents;
+  }
+  /* While the dock is up it takes the running footer's place. */
+  body.sp-on .codex .pie {
+    transform: translateY(100%);
   }
 </style>

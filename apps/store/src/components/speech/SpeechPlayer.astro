@@ -1,0 +1,532 @@
+---
+/**
+ * The reading player, ported from numinia.org (MIS-119 and the dock and the
+ * ruler of 2026-09-24): Listen speaks the text through the browser's own
+ * voices; while it speaks a dock surfaces at the bottom — play/pause, the
+ * section and the clock, a ruler to jump by sentence, the speed and stop —
+ * the read text dries like ink and a soft light follows the word. The
+ * behaviour lives in scripts/speech-player.ts, the arithmetic in
+ * lib/speech-position.ts.
+ *
+ * The colours are numinia.org's own tokens (day and night), set on the
+ * page by the host (see CodexShell's `--sp-*` block): the dock and the
+ * light live on <body>, outside any themed container.
+ */
+
+import type { SpeechStrings } from '../../lib/speech-position';
+
+interface Props {
+  /** CSS selector of the element whose text is spoken. */
+  textSelector: string;
+  /** BCP 47 tag of the voice the text is read in. */
+  lang: string;
+  /** The first section's name on the dock (the chapter). */
+  title?: string | undefined;
+  /** Selector of the fixed top bar the reading must stay below. */
+  bar?: string | undefined;
+  /** Classes for the Listen button, so it matches the host's bar. */
+  toggleClass?: string | undefined;
+  /** The page's <html lang> as built: a different live value means the
+   * browser translated the page, and the voice follows the screen. */
+  htmlLang: string;
+  t: SpeechStrings;
+}
+const { textSelector, lang, title, bar, toggleClass = '', htmlLang, t } = Astro.props;
+---
+
+<div
+  class="speech-player"
+  data-text-selector={textSelector}
+  data-lang={lang}
+  data-html-lang={htmlLang}
+  data-title={title}
+  data-bar={bar}
+  data-t-listen={t.listen}
+  data-t-pause={t.pause}
+  data-t-resume={t.resume}
+  data-t-listen-aria={t.listenAria}
+  data-t-pause-aria={t.pauseAria}
+  data-t-resume-aria={t.resumeAria}
+  data-t-no-engine={t.noEngine}
+  data-t-nothing={t.nothing}
+  data-t-rate-aria={t.rateAria}
+  data-t-min={t.min}
+  data-t-position-text={t.positionText}
+  data-t-reading={t.reading}
+  data-t-paused={t.paused}
+  data-t-stopped={t.stopped}
+>
+  <button
+    type="button"
+    class:list={['sp-toggle', toggleClass]}
+    aria-pressed="false"
+    aria-label={t.listenAria}
+    data-metric="listen-toggle"
+  >
+    <span class="sp-icon" aria-hidden="true">▶</span>
+    <span class="lbl sp-label">{t.listen}</span>
+    <span class="sp-est"></span>
+  </button>
+
+  <!-- The dock: fixed to the viewport; the script moves it to <body>. -->
+  <div class="sp-dock" role="region" aria-label={t.player}>
+    <button type="button" class="sp-back" data-metric="listen-back">
+      <i aria-hidden="true"></i>
+      <span>{t.back}</span>
+      <svg width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"
+        ><path
+          d="M208.49,152.49l-72,72a12,12,0,0,1-17,0l-72-72a12,12,0,0,1,17-17L116,187V40a12,12,0,0,1,24,0V187l51.51-51.52a12,12,0,0,1,17,17Z"
+        ></path></svg
+      >
+    </button>
+    <div class="sp-card">
+      <button
+        type="button"
+        class="sp-btn sp-play"
+        aria-label={t.pauseAria}
+        data-metric="listen-play"
+      >
+        <span class="sp-when-playing"
+          ><svg width="13" height="13" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"
+            ><path
+              d="M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z"
+            ></path></svg
+          ></span
+        >
+        <span class="sp-when-paused"
+          ><svg width="13" height="13" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"
+            ><path
+              d="M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z"
+            ></path></svg
+          ></span
+        >
+      </button>
+      <div class="sp-mid">
+        <div class="sp-meta">
+          <span class="sp-sec"></span>
+          <span class="sp-time"></span>
+        </div>
+        <div
+          class="sp-ruler"
+          role="slider"
+          tabindex="0"
+          aria-label={t.position}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          data-metric="listen-ruler"
+        >
+          <svg class="sp-ticks" aria-hidden="true"></svg>
+          <div class="sp-halftone" aria-hidden="true"></div>
+          <div class="sp-head" aria-hidden="true"></div>
+          <div class="sp-peek" aria-hidden="true"><b></b><span></span></div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="sp-btn sp-rate"
+        data-rate="1"
+        aria-label={t.rateAria.replace('{rate}', '1')}
+        data-metric="listen-rate">1×</button
+      >
+      <button type="button" class="sp-btn sp-stop" aria-label={t.stop} data-metric="listen-stop">
+        <svg width="13" height="13" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"
+          ><path
+            d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+          ></path></svg
+        >
+      </button>
+    </div>
+  </div>
+  <div class="sp-live sr-only" aria-live="polite"></div>
+</div>
+
+<script>
+  import '../../scripts/speech-player';
+</script>
+
+<style is:global>
+  /* The live line for screen readers: visually hidden. */
+  .sp-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* While the voice is on, the text is a place you can touch to hear. */
+  .sp-on :is(p, li, blockquote, td, dd, dt, h2, h3, h4) {
+    cursor: pointer;
+  }
+
+  /* ---- reading marker: a diffuse light, with a trail ----------------- */
+  .sp-marker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 45;
+    opacity: 0;
+    transition: opacity 600ms ease;
+  }
+  .sp-marker.is-on {
+    opacity: 1;
+  }
+  .sp-marker.is-paused {
+    opacity: 0.45;
+  }
+  .sp-marker > i {
+    --d: calc(14px - var(--i) * 0.55px);
+    position: absolute;
+    left: calc(var(--d) / -2);
+    top: calc(var(--d) / -2);
+    width: var(--d);
+    height: var(--d);
+    border-radius: 50%;
+    opacity: calc(0.7 - var(--i) * 0.045);
+    background: radial-gradient(
+      circle,
+      rgb(var(--sp-text) / 0.55) 0,
+      rgb(var(--sp-text) / 0.22) 38%,
+      transparent 70%
+    );
+    will-change: transform;
+  }
+  /* The head: the same halo with a small core of ink, easier to follow. */
+  .sp-marker > i:last-child {
+    background: radial-gradient(
+      circle,
+      rgb(var(--sp-text) / 0.92) 0 1.6px,
+      rgb(var(--sp-text) / 0.42) 2.8px,
+      rgb(var(--sp-text) / 0.16) 45%,
+      transparent 70%
+    );
+  }
+  @media (prefers-contrast: more) {
+    .sp-marker > i:last-child {
+      background: radial-gradient(
+        circle,
+        rgb(var(--sp-text)) 0 2.4px,
+        rgb(var(--sp-text) / 0.5) 3.6px,
+        transparent 70%
+      );
+    }
+    .sp-marker.is-paused {
+      opacity: 0.8;
+    }
+  }
+
+  /* ---- the Listen button's estimate ------------------------------------ */
+  .sp-toggle .sp-est {
+    opacity: 0.7;
+  }
+  .sp-toggle[hidden] {
+    display: none;
+  }
+
+  /* ---- the dock: the page's card, in glass ----------------------------- */
+  .sp-dock {
+    position: fixed;
+    z-index: 55;
+    left: 50%;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: min(752px, calc(100vw - 20px));
+    translate: -50% 0;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 320ms,
+      visibility 0s 320ms;
+  }
+  /* Surfacing — as a keyframe, not a state: a filter left on the dock
+     would break the glass (backdrop-filter) inside it. */
+  .sp-dock.is-on {
+    visibility: visible;
+    opacity: 1;
+    transition: none;
+    animation: sp-surface 560ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes sp-surface {
+    from {
+      opacity: 0;
+      filter: blur(8px);
+      translate: -50% 8px;
+    }
+  }
+  .sp-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px 10px 10px;
+    border-radius: 8px;
+    background: rgb(var(--sp-bg-card) / 0.65);
+    border: 1px solid rgb(var(--sp-border) / 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .sp-btn {
+    flex: none;
+    display: grid;
+    place-items: center;
+    height: 34px;
+    min-width: 34px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: none;
+    color: rgb(var(--sp-text-dim));
+    font: 500 0.65rem var(--sp-font-mono);
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition:
+      color 150ms,
+      border-color 150ms;
+  }
+  .sp-btn:hover {
+    color: rgb(var(--sp-accent));
+    border-color: rgb(var(--sp-accent) / 0.4);
+  }
+  .sp-btn:focus-visible,
+  .sp-ruler:focus-visible,
+  .sp-back:focus-visible {
+    outline: 2px solid rgb(var(--sp-teal));
+    outline-offset: 2px;
+  }
+  .sp-play {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-color: rgb(var(--sp-border));
+    color: rgb(var(--sp-accent));
+  }
+  .sp-play .sp-when-playing,
+  .sp-play.is-playing .sp-when-paused {
+    display: none;
+  }
+  .sp-play .sp-when-paused,
+  .sp-play.is-playing .sp-when-playing {
+    display: grid;
+  }
+  .sp-mid {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .sp-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+  }
+  .sp-sec {
+    flex: 1;
+    min-width: 0;
+    font: 500 0.62rem var(--sp-font-mono);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgb(var(--sp-accent) / 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sp-time {
+    flex: none;
+    font: 0.65rem var(--sp-font-mono);
+    color: rgb(var(--sp-text-dim));
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- the ruler: a 1920 print ruler, the heard part in halftone ----- */
+  .sp-ruler {
+    position: relative;
+    height: 22px;
+    cursor: pointer;
+    touch-action: none;
+    outline: none;
+    border-radius: 999px;
+  }
+  .sp-ticks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    shape-rendering: crispEdges;
+  }
+  .sp-ticks line {
+    stroke-width: 1;
+  }
+  .sp-ticks .sp-hair {
+    stroke: rgb(var(--sp-text) / 0.16);
+  }
+  .sp-ticks .sp-mm {
+    stroke: rgb(var(--sp-text) / 0.14);
+  }
+  .sp-ticks .sp-mark {
+    stroke: rgb(var(--sp-text) / 0.38);
+  }
+  .sp-halftone {
+    position: absolute;
+    left: 0;
+    top: calc(50% - 4px);
+    height: 8px;
+    width: calc(var(--p, 0) * 100%);
+    background-image: radial-gradient(
+      circle,
+      rgb(var(--sp-accent) / 0.75) 0 1.05px,
+      transparent 1.35px
+    );
+    background-size: 4px 4px;
+    -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.35), #000 90%);
+    mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.35), #000 90%);
+  }
+  .sp-head {
+    position: absolute;
+    top: 50%;
+    left: calc(var(--p, 0) * 100%);
+    width: 0;
+    height: 0;
+  }
+  .sp-head::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: -6px;
+    top: -6px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgb(var(--sp-text) / 0.92) 0 1.6px,
+      rgb(var(--sp-text) / 0.3) 2.8px,
+      transparent 6px
+    );
+    transition: scale 120ms;
+  }
+  .sp-ruler:hover .sp-head::before,
+  .sp-ruler.is-drag .sp-head::before,
+  .sp-ruler:focus-visible .sp-head::before {
+    scale: 1.5;
+  }
+  .sp-peek {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    translate: -50% 0;
+    width: max-content;
+    max-width: 250px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgb(var(--sp-bg-card) / 0.9);
+    border: 1px solid rgb(var(--sp-accent) / 0.22);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: rgb(var(--sp-text));
+    font: 0.75rem/1.4 var(--sp-font-sans);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+  .sp-peek b {
+    display: block;
+    font: 500 0.6rem var(--sp-font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--sp-accent));
+    margin-bottom: 3px;
+  }
+  .sp-ruler.is-peek .sp-peek {
+    opacity: 1;
+  }
+
+  /* ---- back to the reading ------------------------------------------- */
+  .sp-back {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    translate: -50% 6px;
+    opacity: 0;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 13px 0 11px;
+    border-radius: 6px;
+    background: rgb(var(--sp-bg-card) / 0.65);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgb(var(--sp-border) / 0.5);
+    color: rgb(var(--sp-text-dim));
+    font: 500 0.62rem var(--sp-font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      opacity 320ms,
+      translate 320ms,
+      color 150ms;
+  }
+  .sp-back:hover {
+    color: rgb(var(--sp-accent));
+  }
+  .sp-back > i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgb(var(--sp-text) / 0.8) 0 1.5px,
+      rgb(var(--sp-text) / 0.2) 2.5px,
+      transparent 4.5px
+    );
+  }
+  .sp-back svg {
+    transition: rotate 200ms;
+  }
+  .sp-back.is-up svg {
+    rotate: 180deg;
+  }
+  .sp-lost .sp-back {
+    opacity: 1;
+    translate: -50% 0;
+    pointer-events: auto;
+  }
+  .sp-lost .sp-dock:has(.is-peek) .sp-back {
+    opacity: 0;
+  }
+
+  @media (max-width: 560px) {
+    .sp-card {
+      gap: 8px;
+      padding: 8px;
+    }
+    .sp-btn {
+      height: 44px;
+      min-width: 40px;
+    }
+    .sp-play {
+      width: 44px;
+      height: 44px;
+    }
+    .sp-ruler {
+      height: 26px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sp-dock,
+    .sp-back,
+    .sp-marker {
+      transition: none;
+      animation: none;
+    }
+  }
+</style>
