@@ -49,6 +49,7 @@ export class FakeStripe {
   /** When set, every answer is this body instead (a malformed Stripe). */
   answerWith: unknown = undefined;
   #sessionCount = 0;
+  readonly #refunded = new Map<string, number>();
   #eventCount = 0;
 
   readonly fetch: Fetcher = async (url, init) => {
@@ -197,5 +198,57 @@ export class FakeStripe {
       },
       created,
     );
+  }
+
+  /** Stripe refunds `cents` of session `id`'s charge: the charge's refunded total grows (cumulative). */
+  refund(id: string, cents: number, created = 1_792_000_100, currency = 'eur'): void {
+    const session = this.sessions.get(id);
+    if (session === undefined) throw new Error(`fake stripe: no session ${id}`);
+    const before = this.#refunded.get(id) ?? 0;
+    this.#refunded.set(id, before + cents);
+    this.#event(
+      'charge.refunded',
+      {
+        id: `ch_test_${id.slice(8)}`,
+        object: 'charge',
+        payment_intent: session['payment_intent'],
+        amount_refunded: before + cents,
+        currency,
+      },
+      created,
+    );
+  }
+
+  /** A dispute on session `id`'s charge: opened, or closed with `status`. */
+  dispute(
+    id: string,
+    cents: number,
+    type: 'charge.dispute.created' | 'charge.dispute.closed',
+    status: string,
+    created = 1_792_000_200,
+    currency = 'eur',
+  ): void {
+    const session = this.sessions.get(id);
+    if (session === undefined) throw new Error(`fake stripe: no session ${id}`);
+    this.#event(
+      type,
+      {
+        id: `du_test_${id.slice(8)}`,
+        object: 'dispute',
+        payment_intent: session['payment_intent'],
+        amount: cents,
+        currency,
+        status,
+      },
+      created,
+    );
+  }
+
+  /** A late payment that failed: its checkout ends unpaid. */
+  failAsync(id: string, created = 1_792_000_050): void {
+    const session = this.sessions.get(id);
+    if (session === undefined) throw new Error(`fake stripe: no session ${id}`);
+    Object.assign(session, { status: 'complete', payment_status: 'unpaid', url: null });
+    this.#event('checkout.session.async_payment_failed', session, created);
   }
 }

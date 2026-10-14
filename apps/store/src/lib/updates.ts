@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.90.0',
+    date: '2026-10-15 02:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Saldo takes back what Stripe gives back. A refund — whole or in parts — or a bank dispute now comes off the account that was topped up, and a dispute won returns it. If that balance was already spent, the account goes below zero and the next top-up pays the debt first. Each event counts once, however often it is read.',
+      },
+      {
+        type: 'NEW',
+        text: 'The Prices room warns the Oracle if the till has not read Stripe for more than two days: Stripe keeps its events thirty days, and none should be lost.',
+      },
+      {
+        type: 'UPD',
+        text: 'Saldo says who sells the top-up and what your bank will show, before you pay and once it is done: Link (Stripe) sells it and sends the invoice, and the charge appears as LINK.COM* NUMEN GAMES.',
+      },
+    ],
+  },
+  {
     version: 'v0.89.0',
     date: '2026-10-14 21:45',
     entries: [

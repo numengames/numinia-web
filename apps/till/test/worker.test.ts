@@ -293,13 +293,14 @@ describe('the Oracle desk, through its entrypoint (MIS-184)', () => {
     vi.useRealTimers();
   });
 
-  it('is a WorkerEntrypoint whose prototype declares read, check and schedule, and no fetch', () => {
+  it('is a WorkerEntrypoint whose prototype declares read, check, schedule and payments, and no fetch', () => {
     const { db } = migratedTill();
     expect(new OracleDesk(ctx, { TILL_DB: db })).toBeInstanceOf(WorkerEntrypoint);
     // RPC exposes what the prototype declares; with no fetch, no HTTP request reaches it.
     expect(Object.getOwnPropertyNames(OracleDesk.prototype).sort()).toEqual([
       'check',
       'constructor',
+      'payments',
       'read',
       'schedule',
     ]);

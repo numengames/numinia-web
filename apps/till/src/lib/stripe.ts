@@ -3,7 +3,7 @@
  * `fetch`, no SDK. Stripe Managed Payments is the seller (merchant of
  * record) and the till keeps only the balance, so it needs no more than to
  * open a Checkout Session, read one back, and list the events of finished
- * ones. Bodies are form-encoded as Stripe's API expects; every request
+ * ones — and of the money Stripe takes back: refunds and disputes. Bodies are form-encoded as Stripe's API expects; every request
  * names the key in `Authorization` and pins `Stripe-Version`, so a change
  * of the account's default version never changes what the till reads.
  *
@@ -44,7 +44,27 @@ export interface CheckoutSession {
   readonly url: string | null;
 }
 
-/** One event about a Checkout Session. */
+/** The fields of a Charge the till reads: how much of it was refunded, so far. */
+export interface ChargeFacts {
+  readonly id: string;
+  readonly paymentIntent: string | null;
+  /** Everything refunded on this charge until now, in its currency's smallest unit (cumulative). */
+  readonly amountRefunded: number;
+  readonly currency: string;
+}
+
+/** The fields of a Dispute the till reads. */
+export interface DisputeFacts {
+  readonly id: string;
+  readonly paymentIntent: string | null;
+  /** The disputed amount, in its currency's smallest unit. */
+  readonly amount: number;
+  readonly currency: string;
+  /** `won`, `lost`, `needs_response`, `under_review`, `warning_*`… as Stripe writes it. */
+  readonly status: string;
+}
+
+/** One event the till reads: about a Checkout Session, a Charge or a Dispute. */
 export interface SessionEvent {
   readonly id: string;
   readonly type: string;
@@ -52,6 +72,10 @@ export interface SessionEvent {
   readonly created: number;
   /** The session as it was when the event happened; null when it is not one. */
   readonly session: CheckoutSession | null;
+  /** The charge as it was when the event happened; null when it is not one. */
+  readonly charge: ChargeFacts | null;
+  /** The dispute as it was when the event happened; null when it is not one. */
+  readonly dispute: DisputeFacts | null;
 }
 
 export interface EventPage {
@@ -123,12 +147,41 @@ export function parseSession(value: unknown): CheckoutSession | null {
   };
 }
 
+/** A Charge's refunded total; null when the value is not a charge. */
+export function parseCharge(value: unknown): ChargeFacts | null {
+  if (!isRecord(value) || value['object'] !== 'charge') return null;
+  const { id, amount_refunded: amountRefunded, currency } = value;
+  const paymentIntent = idOf(value['payment_intent']);
+  if (!isId(id) || !isWhole(amountRefunded) || !isId(currency) || paymentIntent === undefined) {
+    return null;
+  }
+  return { id, paymentIntent, amountRefunded, currency };
+}
+
+/** A Dispute; null when the value is not one. */
+export function parseDispute(value: unknown): DisputeFacts | null {
+  if (!isRecord(value) || value['object'] !== 'dispute') return null;
+  const { id, amount, currency, status } = value;
+  const paymentIntent = idOf(value['payment_intent']);
+  if (!isId(id) || !isWhole(amount) || !isId(currency) || !isId(status)) return null;
+  if (paymentIntent === undefined) return null;
+  return { id, paymentIntent, amount, currency, status };
+}
+
 /** One event of a list page; null when it is not shaped as an event. */
 function parseEvent(value: unknown): SessionEvent | null {
   if (!isRecord(value)) return null;
   const { id, type, created, data } = value;
   if (!isId(id) || !isId(type) || !isWhole(created)) return null;
-  return { id, type, created, session: parseSession(isRecord(data) ? data['object'] : null) };
+  const object = isRecord(data) ? data['object'] : null;
+  return {
+    id,
+    type,
+    created,
+    session: parseSession(object),
+    charge: parseCharge(object),
+    dispute: parseDispute(object),
+  };
 }
 
 /** `application/x-www-form-urlencoded`, keys already in Stripe's bracket form. */

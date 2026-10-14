@@ -40,7 +40,7 @@ import {
   type TopupPrices,
 } from '../lib/accounts';
 import { compareLines, lineId, lotsAt, type LedgerLine } from '../lib/ledger';
-import type { CheckoutSession, Stripe } from '../lib/stripe';
+import type { CheckoutSession, SessionEvent, Stripe } from '../lib/stripe';
 import { dayOf } from '../lib/utc-day';
 import { cents, column, day, instant, text, type Row, type TillDatabase } from './repository';
 
@@ -147,10 +147,16 @@ export interface PollRun {
   readonly applied: number;
   /** Paid sessions the till refused to credit (wrong currency, account or amounts). */
   readonly uncreditable: number;
+  /** Refund, dispute and dispute-won events of the till's own top-ups applied (again: nothing written). */
+  readonly takenBack: number;
+  /** Refunds or disputes of the till's top-ups it could not apply (not euros). */
+  readonly unapplied: number;
   /** The high-water mark after the run (unix seconds). */
   readonly cursor: number;
   /** False when more events remained than one run reads: the cursor did not move. */
   readonly complete: boolean;
+  /** The cursor was, before this run, or still is after it, more than two days behind now. */
+  readonly lagging: boolean;
 }
 
 export const PROBLEMS = {
@@ -181,11 +187,31 @@ export const TEAMS_PER_FOUNDER = 20;
 /** How many lines a statement lists. */
 export const STATEMENT_LINES = 100;
 
-/** The events the minute's poll reads: a session paid at once, or later (a bank transfer, SEPA). */
+/** The events of a paid session: paid at once, or later (a bank transfer, SEPA). */
 export const PAID_EVENTS = [
   'checkout.session.completed',
   'checkout.session.async_payment_succeeded',
 ] as const;
+
+/**
+ * Every event the minute's poll reads: the paid ones; a late payment that
+ * failed; and the money Stripe takes back — a refund (Managed Payments may
+ * refund up to 60 days after the sale, and applies the EU withdrawal period)
+ * or a dispute, and a dispute's end, which gives it back when it is won.
+ */
+export const POLLED_EVENTS = [
+  ...PAID_EVENTS,
+  'checkout.session.async_payment_failed',
+  'charge.refunded',
+  'charge.dispute.created',
+  'charge.dispute.closed',
+] as const;
+
+/** Stripe keeps events 30 days: a cursor more than two days behind is told (logs and the Oracle's room). */
+export const LAG_SECONDS = 2 * 86_400;
+
+/** Who writes the line that gives a won dispute back. */
+export const STRIPE_AUTHOR = 'stripe';
 
 /** Seconds the poll reads back past its cursor: Stripe's `created` is not strictly ordered with its writes. */
 export const POLL_OVERLAP_SECONDS = 300;
@@ -867,13 +893,140 @@ export async function confirmTopup(
   };
 }
 
+const SELECT_LOT_BY_PAYMENT = `
+  SELECT id, account_id FROM ledger_lines WHERE kind = 'topup' AND stripe_payment_id = ?1`;
+
+const SELECT_REFUNDED = `
+  SELECT coalesce(-SUM(amount_cents), 0) AS refunded_cents
+    FROM ledger_lines WHERE kind = 'refund' AND lot_line_id = ?1`;
+
+const INSERT_TAKEBACK = `
+  INSERT INTO ledger_lines (id, account_id, kind, amount_cents, at, lot_line_id, stripe_event_id)
+  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`;
+
+/** The oldest chargeback of a lot that no line corrects yet: what a won dispute gives back. */
+const SELECT_OPEN_CHARGEBACK = `
+  SELECT id, amount_cents FROM ledger_lines AS cb
+   WHERE cb.kind = 'chargeback' AND cb.lot_line_id = ?1 AND cb.amount_cents = ?2
+     AND NOT EXISTS (SELECT 1 FROM ledger_lines AS fix WHERE fix.corrects_line_id = cb.id)
+   ORDER BY cb.at, cb.id LIMIT 1`;
+
+const INSERT_GIVEBACK = `
+  INSERT INTO ledger_lines (id, account_id, kind, amount_cents, at, "by", reason, corrects_line_id)
+  VALUES (?1, ?2, 'adjustment', ?3, ?4, ?5, ?6, ?7)`;
+
+/** An event's instant, as the ledger writes instants. */
+function eventAt(event: SessionEvent): string {
+  return new Date(event.created * 1000).toISOString();
+}
+
 /**
- * The minute's poll: Stripe's events of paid Checkout Sessions created
- * since the cursor (less an overlap), every page, newest first. Each that
- * is one of the till's checkouts is applied as `confirmTopup` applies it —
- * without the wallet check: the checkout's own account is credited. Then
- * the cursor moves to the newest event read. Sessions that are not the
- * till's (another product of the same Stripe account) are skipped.
+ * Takes back what Stripe took back, for a top-up of the till's own (found by
+ * its payment intent; anything else is not the till's and is skipped):
+ *
+ * - `charge.refunded`: the charge's refunded total is cumulative, so the line
+ *   is what it adds to the refunds already written for that top-up (a partial
+ *   refund, then another, each its own line);
+ * - `charge.dispute.created`: a chargeback line of the disputed amount;
+ * - `charge.dispute.closed` and won: an adjustment by `stripe` that gives that
+ *   chargeback back, naming it. Lost or anything else: nothing more.
+ *
+ * Each line is keyed by its event (refund and chargeback lines by
+ * `stripe_event_id`, the give-back by an id derived from the event), so an
+ * event read twice writes once. The balance may go below zero — Pablo's
+ * decision (2026-10-14): the till's at-zero rules then apply, and the next
+ * top-up pays the debt first. `unapplied`: the till's own top-up, but not in
+ * euros — nothing written, the run reports it.
+ */
+export async function applyTakeBack(
+  db: TillDatabase,
+  event: SessionEvent,
+): Promise<'applied' | 'skipped' | 'unapplied'> {
+  const facts = event.charge ?? event.dispute;
+  if (facts === null || facts.paymentIntent === null) return 'skipped';
+  const lotRow = await db.prepare(SELECT_LOT_BY_PAYMENT).bind(facts.paymentIntent).first<Row>();
+  if (lotRow === null) return 'skipped';
+  if (facts.currency !== 'eur') return 'unapplied';
+  const lotId = text(lotRow, 'id');
+  const accountId = text(lotRow, 'account_id');
+  const at = eventAt(event);
+  const atMs = event.created * 1000;
+
+  if (event.type === 'charge.refunded' && event.charge !== null) {
+    const row = await db.prepare(SELECT_REFUNDED).bind(lotId).first<Row>();
+    const added = event.charge.amountRefunded - cents(row as Row, 'refunded_cents');
+    if (added <= 0) return 'applied';
+    await db
+      .prepare(INSERT_TAKEBACK)
+      .bind(lineId(atMs, `refund:${event.id}`), accountId, 'refund', -added, at, lotId, event.id)
+      .run();
+    return 'applied';
+  }
+  if (event.dispute === null || event.dispute.amount <= 0) return 'skipped';
+  if (event.type === 'charge.dispute.created') {
+    await db
+      .prepare(INSERT_TAKEBACK)
+      .bind(
+        lineId(atMs, `chargeback:${event.id}`),
+        accountId,
+        'chargeback',
+        -event.dispute.amount,
+        at,
+        lotId,
+        event.id,
+      )
+      .run();
+    return 'applied';
+  }
+  if (event.type === 'charge.dispute.closed' && event.dispute.status === 'won') {
+    const open = await db
+      .prepare(SELECT_OPEN_CHARGEBACK)
+      .bind(lotId, -event.dispute.amount)
+      .first<Row>();
+    if (open === null) return 'applied';
+    await db
+      .prepare(INSERT_GIVEBACK)
+      .bind(
+        lineId(atMs, `dispute-won:${event.id}`),
+        accountId,
+        event.dispute.amount,
+        at,
+        STRIPE_AUTHOR,
+        `dispute ${event.dispute.id} won`,
+        text(open, 'id'),
+      )
+      .run();
+    return 'applied';
+  }
+  return 'skipped';
+}
+
+/** Where the poll has read Stripe up to, and whether that is more than two days behind `now`. */
+export interface PollState {
+  /** The cursor as an instant; null before the first poll. */
+  readonly readThrough: string | null;
+  readonly lagging: boolean;
+}
+
+export async function pollState(db: TillDatabase, now: Date): Promise<PollState> {
+  const row = await db.prepare(SELECT_CURSOR).first<Row>();
+  if (row === null) return { readThrough: null, lagging: false };
+  const cursor = cents(row, 'last_created');
+  return {
+    readThrough: new Date(cursor * 1000).toISOString(),
+    lagging: Math.floor(now.getTime() / 1000) - cursor > LAG_SECONDS,
+  };
+}
+
+/**
+ * The minute's poll: Stripe's events since the cursor (less an overlap),
+ * every page, applied OLDEST first — a dispute's start before its end, one
+ * partial refund before the next. A paid session of one of the till's
+ * checkouts is credited as `confirmTopup` credits it (without the wallet
+ * check: the checkout's own account); a late payment that failed marks its
+ * checkout expired; refunds and disputes of the till's own top-ups take
+ * money back (`applyTakeBack`). Events about anything else of the same
+ * Stripe account are skipped. Then the cursor moves to the newest event read.
  */
 export async function pollStripe(db: TillDatabase, stripe: Stripe, now: Date): Promise<PollRun> {
   const cursorRow = await db.prepare(SELECT_CURSOR).first<Row>();
@@ -882,42 +1035,66 @@ export async function pollStripe(db: TillDatabase, stripe: Stripe, now: Date): P
     cursorRow === null ? nowSeconds - FIRST_POLL_SECONDS : cents(cursorRow, 'last_created');
   const createdGte = Math.max(0, cursor - POLL_OVERLAP_SECONDS);
 
-  const sessions: CheckoutSession[] = [];
+  const read: SessionEvent[] = [];
   // With no event the mark still moves, to a little before now: the next
   // run's overlap covers an event Stripe had not listed yet.
   let newest = Math.max(cursor, nowSeconds - POLL_OVERLAP_SECONDS);
-  let events = 0;
   let complete = false;
   let startingAfter: string | undefined;
   for (let page = 0; page < POLL_MAX_PAGES && !complete; page += 1) {
     const listed = await stripe.listEvents({
-      types: PAID_EVENTS,
+      types: POLLED_EVENTS,
       createdGte,
       ...(startingAfter === undefined ? {} : { startingAfter }),
     });
     for (const event of listed.events) {
-      events += 1;
       newest = Math.max(newest, event.created);
-      if (event.session !== null) sessions.push(event.session);
+      read.push(event);
     }
     startingAfter = listed.events.at(-1)?.id;
     complete = !listed.hasMore || startingAfter === undefined;
   }
+  // Stripe lists newest first: reversed, the run applies them as they happened.
+  const events = read.reverse();
 
+  const sessions = events.flatMap((event) => (event.session === null ? [] : [event.session]));
   const ids = [...new Set(sessions.map((session) => session.id))];
   const { results } = await db.prepare(SELECT_CHECKOUTS).bind(JSON.stringify(ids)).all<Row>();
   const checkouts = new Map(results.map((row) => [text(row, 'id'), checkoutOf(row)]));
   let applied = 0;
   let uncreditable = 0;
-  for (const session of sessions) {
-    const checkout = checkouts.get(session.id);
-    if (checkout === undefined) continue;
-    const state = await applySession(db, checkout, session, now);
-    if (state === 'uncreditable') uncreditable += 1;
-    else if (state === 'paid') applied += 1;
+  let takenBack = 0;
+  let unapplied = 0;
+  for (const event of events) {
+    if (event.session !== null) {
+      const checkout = checkouts.get(event.session.id);
+      if (checkout === undefined) continue;
+      if (event.type === 'checkout.session.async_payment_failed') {
+        await db.prepare(MARK_EXPIRED).bind(checkout.id).run();
+        continue;
+      }
+      const state = await applySession(db, checkout, event.session, now);
+      if (state === 'uncreditable') uncreditable += 1;
+      else if (state === 'paid') applied += 1;
+      continue;
+    }
+    const taken = await applyTakeBack(db, event);
+    if (taken === 'applied') takenBack += 1;
+    else if (taken === 'unapplied') unapplied += 1;
   }
   // A run that could not read every page leaves the cursor where it was, so
   // the next one reads the same window again rather than skipping events.
   if (complete) await db.prepare(MOVE_CURSOR).bind(newest).run();
-  return { events, applied, uncreditable, cursor: complete ? newest : cursor, complete };
+  const after = complete ? newest : cursor;
+  return {
+    events: events.length,
+    applied,
+    uncreditable,
+    takenBack,
+    unapplied,
+    cursor: after,
+    complete,
+    // Behind before this run (the poll had stopped), or still behind after it.
+    lagging: nowSeconds - cursor > LAG_SECONDS || nowSeconds - after > LAG_SECONDS,
+  };
 }

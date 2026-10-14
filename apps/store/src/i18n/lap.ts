@@ -60,6 +60,8 @@ export interface LapMessages {
     readonly title: string;
     readonly intro: string;
     readonly forbiddenNote: string;
+    /** `{date}`: where the till's poll of Stripe stopped. Shown only when it is more than two days behind. */
+    readonly paymentsLag: string;
   };
   readonly census: {
     readonly title: string;
@@ -346,6 +348,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Lo que cuesta y lo que deja cada tamaño de mundo, y la tarifa que cobra la caja. Al publicar, la caja guarda una versión nueva con su fecha; lo cobrado antes no cambia.',
       forbiddenNote:
         'Esta sala es solo para Oráculos. Entra con la cartera que lo es y volverá a abrirse.',
+      paymentsLag:
+        'La caja lleva más de dos días sin leer Stripe (último evento leído: {date}). Stripe guarda los eventos 30 días: mira los registros de numinia-till en Cloudflare antes de que se pierdan pagos o reembolsos.',
     },
     census: {
       title: 'Censo',
@@ -568,6 +572,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'What each size of world costs and what it leaves, and the tariff the till charges. Publishing makes the till keep a new version with its date; nothing charged before changes.',
       forbiddenNote:
         'This room is for Oracles only. Sign in with the wallet that is one and it will open again.',
+      paymentsLag:
+        'The till has not read Stripe for more than two days (last event read: {date}). Stripe keeps events 30 days: check numinia-till’s logs in Cloudflare before payments or refunds are lost.',
     },
     census: {
       title: 'Census',
@@ -786,6 +792,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         '各サイズのワールドの原価と利益、そしてレジが請求する料金表。公開すると、レジは日付付きの新しいバージョンを保存します。これまでの請求は変わりません。',
       forbiddenNote:
         'この部屋はオラクル専用です。オラクルのウォレットでサインインすると再び開きます。',
+      paymentsLag:
+        'レジが2日以上Stripeを読んでいません（最後に読んだイベント：{date}）。Stripeはイベントを30日間保存します。支払いや返金が失われる前に、Cloudflareでnuminia-tillのログを確認してください。',
     },
     census: {
       title: '市民名簿',
@@ -996,6 +1004,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       intro:
         '월드 크기별 비용과 남는 몫, 그리고 계산대가 청구하는 요금표. 게시하면 계산대는 날짜가 붙은 새 버전을 저장합니다. 이전에 청구된 것은 바뀌지 않습니다.',
       forbiddenNote: '이 방은 오라클 전용입니다. 오라클 지갑으로 로그인하면 다시 열립니다.',
+      paymentsLag:
+        '계산대가 이틀 넘게 Stripe를 읽지 않았습니다(마지막으로 읽은 이벤트: {date}). Stripe는 이벤트를 30일 동안 보관합니다. 결제나 환불이 사라지기 전에 Cloudflare에서 numinia-till 로그를 확인하세요.',
     },
     census: {
       title: '시민 명부',
@@ -1246,6 +1256,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'O que custa e o que rende cada tamanho de mundo, e a tarifa que o caixa cobra. Ao publicar, o caixa guarda uma versão nova com a sua data; o que já foi cobrado não muda.',
       forbiddenNote:
         'Esta sala é só para Oráculos. Entre com a carteira que é de um e ela volta a abrir.',
+      paymentsLag:
+        'O caixa está há mais de dois dias sem ler o Stripe (último evento lido: {date}). O Stripe guarda os eventos 30 dias: veja os registos do numinia-till na Cloudflare antes que se percam pagamentos ou reembolsos.',
     },
     census: {
       title: 'Censo',

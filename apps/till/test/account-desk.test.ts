@@ -440,8 +440,11 @@ describe('the minute’s poll of Stripe’s events', () => {
       events: 4,
       applied: 2,
       uncreditable: 0,
+      takenBack: 0,
+      unapplied: 0,
       cursor: NOW_SECONDS - 10,
       complete: true,
+      lagging: false,
     });
     expect(
       sqlite.prepare("SELECT COUNT(*) AS n FROM ledger_lines WHERE kind = 'topup'").get(),
@@ -463,8 +466,11 @@ describe('the minute’s poll of Stripe’s events', () => {
       events: 0,
       applied: 0,
       uncreditable: 0,
+      takenBack: 0,
+      unapplied: 0,
       cursor: NOW_SECONDS - 300,
       complete: true,
+      lagging: false,
     });
   });
 

@@ -48,6 +48,8 @@ export interface SaldoMessages {
   readonly topup: {
     readonly title: string;
     readonly note: string;
+    /** Who sells the top-up and what the bank statement says (a buyer who does not recognise it may dispute). */
+    readonly seller: string;
     readonly amounts: string;
     readonly pay: string;
     readonly opening: string;
@@ -158,6 +160,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     topup: {
       title: 'Recarga',
       note: 'Elige cuánto añadir. El pago se hace en Stripe, en otra pestaña.',
+      seller:
+        'La recarga la vende Link (Stripe), que te enviará la factura. En tu extracto bancario aparecerá como LINK.COM* NUMEN GAMES.',
       amounts: 'Importe de la recarga',
       pay: 'Pagar con Stripe',
       opening: 'Abriendo Stripe…',
@@ -181,7 +185,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       when: 'Fecha',
       what: 'Concepto',
       amount: 'Importe',
-      labels: { topup: 'Recarga', world: 'Mundo · día', adjustment: 'Ajuste', refund: 'Devolución' },
+      labels: {
+        topup: 'Recarga',
+        world: 'Mundo · día',
+        adjustment: 'Ajuste',
+        refund: 'Devolución',
+      },
       vat: 'IVA {v}',
       world: '{world} · {size}',
     },
@@ -265,6 +274,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     topup: {
       title: 'Top up',
       note: 'Choose how much to add. You pay on Stripe, in another tab.',
+      seller:
+        'The top-up is sold by Link (Stripe), which sends you the invoice. On your bank statement it will appear as LINK.COM* NUMEN GAMES.',
       amounts: 'Top-up amount',
       pay: 'Pay with Stripe',
       opening: 'Opening Stripe…',
@@ -311,7 +322,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       actionOn: '{action}: {who}',
       onlyAdmins: "Only the organization's admins can add or remove members.",
       perMember: 'Use per member',
-      perMemberEmpty: 'Once every world has an owner, you will see here how much each of you spends.',
+      perMemberEmpty:
+        'Once every world has an owner, you will see here how much each of you spends.',
     },
     problems: {
       notMember: 'You are not a member of this organization.',
@@ -372,6 +384,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     topup: {
       title: 'チャージ',
       note: '追加する金額を選んでください。支払いは別タブのStripeで行います。',
+      seller:
+        'チャージの販売者はLink（Stripe）で、請求書はLinkから届きます。銀行の明細には「LINK.COM* NUMEN GAMES」と表示されます。',
       amounts: 'チャージ金額',
       pay: 'Stripeで支払う',
       opening: 'Stripeを開いています…',
@@ -479,6 +493,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     topup: {
       title: '충전',
       note: '추가할 금액을 고르세요. 결제는 다른 탭의 Stripe에서 합니다.',
+      seller:
+        '충전은 Link(Stripe)가 판매하며, 영수증도 Link가 보냅니다. 은행 명세서에는 「LINK.COM* NUMEN GAMES」로 표시됩니다.',
       amounts: '충전 금액',
       pay: 'Stripe로 결제',
       opening: 'Stripe 여는 중…',
@@ -586,6 +602,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     topup: {
       title: 'Recarga',
       note: 'Escolha quanto adicionar. O pagamento é feito no Stripe, em outra aba.',
+      seller:
+        'A recarga é vendida pela Link (Stripe), que lhe envia a fatura. No extrato bancário aparecerá como LINK.COM* NUMEN GAMES.',
       amounts: 'Valor da recarga',
       pay: 'Pagar com Stripe',
       opening: 'Abrindo o Stripe…',
