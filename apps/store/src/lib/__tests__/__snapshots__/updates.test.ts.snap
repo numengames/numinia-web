@@ -3,6 +3,48 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-14 21:45",
+    "entries": [
+      {
+        "text": "The player area is lighter and says where it stands. The site’s updates now live inside it, behind their own megaphone; the bell is kept for notices. It opens with your summary, your character, the seasons, the updates and the settings: the Codex, Portals, Loot and Stats are switched on one by one in Settings. Loot and Portals carry an «Under construction» mark in the menu and at the top of their page.",
+        "type": "NEW",
+      },
+      {
+        "text": "Seasons shows your way through the eight doors first, and the €9.99 season pass below it.",
+        "type": "UPD",
+      },
+      {
+        "text": "Stats opens with the city: its communities, the gatherings to come, the open homes, the objects in the Bazaar and how many people are inside right now, each figure with where it comes from. The archive’s figures follow.",
+        "type": "NEW",
+      },
+      {
+        "text": "Your profile is yours to fill: a photo, your name, a line about you, your city and your links, kept in this browser. The character sheet asks for one thing while it is empty, shows the characteristics in two columns with their dots, and opens the manual’s own blank sheet inside it.",
+        "type": "NEW",
+      },
+      {
+        "text": "Signing in reads in two columns: what it is on the left, the way in on the right. The steps carry one number each (they read «1 1, 2 2»), one line explains MetaMask’s list of permissions — Numinia uses only your address and one signature, never a transaction — and a fresh sign-in lands on your profile.",
+        "type": "UPD",
+      },
+      {
+        "text": "The Bazaar’s cards put the picture first and large, then the name, its kind and format, and the licence. A PNG or a JPG is its own picture, on its card and whole in the preview. Card pictures are lighter too: a screen of ordinary density downloads a cut of less than half the bytes.",
+        "type": "NEW",
+      },
+      {
+        "text": "The 3D viewer shows a GLB: the camera frames the model and measures its clipping planes from it, an emote shows its skeleton, and a model that cannot load says why and offers its file. Every state speaks the page’s language.",
+        "type": "FIX",
+      },
+      {
+        "text": "The Oracle’s assets room adds, edits and deletes goods. «Add» opens GitHub’s upload page in the chosen kind’s folder; each row’s «Edit» and «Delete» open its kind’s catalogue in GitHub’s editor, which makes the change. The site itself writes nothing.",
+        "type": "NEW",
+      },
+      {
+        "text": "On screen the city says «gathering» where it said «ritual», in the five languages; addresses and files keep the old word. The home’s objects sit in one row with arrows, like the gatherings, and every community page says what its space uses: its home and who is inside, its gatherings, and its archive, members and balance — under construction, except Numen Games’ archive and members, which are already real.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.89.0",
+  },
+  {
     "date": "2026-10-14 21:30",
     "entries": [
       {

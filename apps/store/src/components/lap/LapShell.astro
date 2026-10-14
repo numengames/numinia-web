@@ -9,6 +9,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../chrome/Icon.astro';
 import { LAP_UI } from '../../i18n/lap';
+import { isUnderConstruction } from '../../lib/lap-sections';
 
 export type LapSection =
   | 'overview'
@@ -18,6 +19,7 @@ export type LapSection =
   | 'loot'
   | 'seasons'
   | 'stats'
+  | 'updates'
   | 'settings'
   | 'admin-assets'
   | 'admin-census'
@@ -46,14 +48,14 @@ type IconName =
   | 'sword'
   | 'flame'
   | 'chart-bar'
-  | 'bell'
+  | 'megaphone-simple'
   | 'gear'
   | 'package'
   | 'users'
   | 'planet'
   | 'coins';
 const ITEMS: ReadonlyArray<{
-  id: LapSection | 'updates';
+  id: LapSection;
   href: string;
   label: string;
   icon: IconName;
@@ -65,7 +67,14 @@ const ITEMS: ReadonlyArray<{
   { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot, icon: 'sword' },
   { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons, icon: 'flame' },
   { id: 'stats', href: `${prefix}/lap/stats/`, label: t.sections.stats, icon: 'chart-bar' },
-  { id: 'updates', href: `${prefix}/updates/`, label: t.sections.updates, icon: 'bell' },
+  // Novedades stays inside the panel (the Oracle, 2026-10-14), and its icon
+  // is a megaphone: the bell is the top bar's, for notifications.
+  {
+    id: 'updates',
+    href: `${prefix}/lap/updates/`,
+    label: t.sections.updates,
+    icon: 'megaphone-simple',
+  },
   { id: 'settings', href: `${prefix}/lap/settings/`, label: t.sections.settings, icon: 'gear' },
 ];
 
@@ -104,20 +113,31 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
       </div>
       <ul id="lap-nav-items">
         {
-          ITEMS.map((item) => (
-            <li>
-              <a
-                href={item.href}
-                data-section={item.id}
-                aria-current={item.id === current ? 'page' : undefined}
-                title={item.label}
-                data-metric={`lap-nav-${item.id}`}
-              >
-                <Icon name={item.icon} size={18} />
-                <span class="texto">{item.label}</span>
-              </a>
-            </li>
-          ))
+          ITEMS.map((item) => {
+            const building = isUnderConstruction(item.id);
+            const here = item.id === current;
+            return (
+              <li data-row={item.id} data-here={here ? '' : undefined}>
+                <a
+                  href={item.href}
+                  data-section={item.id}
+                  data-building={building ? '' : undefined}
+                  aria-current={here ? 'page' : undefined}
+                  title={building ? `${item.label} · ${t.building.label}` : item.label}
+                  data-metric={`lap-nav-${item.id}`}
+                >
+                  <Icon name={item.icon} size={18} />
+                  <span class="texto">{item.label}</span>
+                  {building && (
+                    <span class="obra">
+                      <Icon name="crane-tower" size={14} />
+                      <span class="obra-texto">{t.building.label}</span>
+                    </span>
+                  )}
+                </a>
+              </li>
+            );
+          })
         }
       </ul>
       <div class="gestion" data-admin-zone data-session-ranks="archon oracle" hidden>
@@ -300,6 +320,37 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
     background: var(--texto);
     color: var(--fondo);
   }
+  /* «En construcción» (the Oracle, 2026-10-14): the crane and the words,
+     in amber, on a second line under the section's name. The current row
+     is dressed in ink, so its mark takes the row's own ink (amber on ink
+     would fall under AA in both modes). */
+  .obra {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    color: var(--ambar);
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+  a[aria-current='page'] .obra {
+    color: inherit;
+  }
+  @media (min-width: 50rem) {
+    a[data-building] {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      column-gap: var(--s3);
+      row-gap: 0;
+      align-content: center;
+      padding-block: 4px;
+    }
+    a[data-building] .obra {
+      grid-column: 2;
+    }
+    a[data-building] > :global(.icono) {
+      align-self: center;
+    }
+  }
   /* Mobile: the sidebar becomes a horizontal scrollable rail — thumb-first,
      44px touch targets, no fold button (nothing to fold). */
   @media (max-width: 49.99rem) {
@@ -359,6 +410,16 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
       min-height: 44px;
       flex: none;
     }
+    /* The phone's rail keeps one line: the crane alone says it, the
+       words stay for screen readers. */
+    .obra-texto {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     .cabecera {
       display: none;
     }
@@ -371,17 +432,20 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
   .gestion .etiqueta {
     margin: 0 0 var(--s2) var(--s2);
   }
-  /* Sections the citizen hid in Settings (never the current one). */
-  :global(html[data-lap-hidden~='character']) a[data-section='character']:not([aria-current]),
-  :global(html[data-lap-hidden~='codex']) a[data-section='codex']:not([aria-current]),
-  :global(html[data-lap-hidden~='portals']) a[data-section='portals']:not([aria-current]),
-  :global(html[data-lap-hidden~='loot']) a[data-section='loot']:not([aria-current]),
-  :global(html[data-lap-hidden~='seasons']) a[data-section='seasons']:not([aria-current]),
-  :global(html[data-lap-hidden~='stats']) a[data-section='stats']:not([aria-current]) {
+  /* Sections the citizen hid in Settings, or that a first visit finds off
+     (never the current one). The whole row goes, so the rail keeps its
+     rhythm (a hidden link inside a kept row left its gap behind). */
+  :global(html[data-lap-hidden~='character']) li[data-row='character']:not([data-here]),
+  :global(html[data-lap-hidden~='codex']) li[data-row='codex']:not([data-here]),
+  :global(html[data-lap-hidden~='portals']) li[data-row='portals']:not([data-here]),
+  :global(html[data-lap-hidden~='loot']) li[data-row='loot']:not([data-here]),
+  :global(html[data-lap-hidden~='seasons']) li[data-row='seasons']:not([data-here]),
+  :global(html[data-lap-hidden~='stats']) li[data-row='stats']:not([data-here]) {
     display: none;
   }
   /* Folded rail: icons only, labels and wordgroup hidden, caret flips. */
   :global(html[data-lap-nav='plegado']) .texto,
+  :global(html[data-lap-nav='plegado']) .obra-texto,
   :global(html[data-lap-nav='plegado']) .etiqueta {
     display: none;
   }
@@ -394,5 +458,14 @@ const ORACLE: ReadonlyArray<{ id: LapSection; href: string; label: string; icon:
   :global(html[data-lap-nav='plegado']) a {
     justify-content: center;
     padding: 0;
+  }
+  /* Folded, an unfinished section shows its icon with the crane under it;
+     the row's title names both («Botín · En construcción»). */
+  :global(html[data-lap-nav='plegado']) a[data-building] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding-block: 4px;
   }
 </style>

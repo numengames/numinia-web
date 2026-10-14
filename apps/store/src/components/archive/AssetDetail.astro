@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Icon from '../chrome/Icon.astro';
 import { ModelViewer } from '../viewer/ModelViewer';
 import { ARCHIVE_MESSAGES, BAZAAR_MESSAGES } from '../../i18n/messages';
+import { VIEWER_MESSAGES } from '../../i18n/viewer';
 import { downloadUrl } from '../../lib/archive';
 import { bazaarHref } from '../../lib/bazaar-view';
 import type { CatalogedAsset } from '../../lib/data';
@@ -44,7 +45,7 @@ const card = findCard(await loadSumma(), asset.id);
     <h1>{asset.name}</h1>
     {asset.description && <p>{asset.description}</p>}
 
-    <section aria-label="preview">
+    <section aria-label={bazaar.previewLabel}>
       {asset.format === 'png' || asset.format === 'jpg' ? (
         binaryUrl ? (
           <img src={binaryUrl} alt={asset.name} loading="lazy" />
@@ -65,7 +66,13 @@ const card = findCard(await loadSumma(), asset.id);
       ) : asset.format === 'hyp' ? (
         <p>{t.worldFileNote}</p>
       ) : (
-        <ModelViewer client:visible url={binaryUrl} kind={asset.format === 'vrm' ? 'vrm' : 'glb'} />
+        <ModelViewer
+          client:visible
+          url={binaryUrl}
+          kind={asset.format === 'vrm' ? 'vrm' : 'glb'}
+          labels={VIEWER_MESSAGES[locale]}
+          bytes={asset.sizeBytes}
+        />
       )}
     </section>
 
@@ -73,7 +80,7 @@ const card = findCard(await loadSumma(), asset.id);
       <dt>{t.format}</dt>
       <dd>{asset.format.toUpperCase()}</dd>
       <dt>{t.category}</dt>
-      <dd>{category}</dd>
+      <dd>{bazaar.kinds[category]}</dd>
       <dt>{t.license}</dt>
       <dd>{asset.license}</dd>
     </dl>

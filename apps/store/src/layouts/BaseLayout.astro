@@ -95,6 +95,8 @@ const urlFor = (target: SupportedLocale): string =>
           document.documentElement.dataset.lapNav = 'plegado';
         document.documentElement.dataset.sidebar = localStorage.getItem('numinia-sidebar') || '';
         var hidden = localStorage.getItem('numinia-lap-hidden');
+        /* Never chosen: a quiet panel (lib/lap-sections.ts); '' is a choice. */
+        if (hidden === null) hidden = 'codex,portals,loot,stats';
         if (hidden) document.documentElement.dataset.lapHidden = hidden.split(',').join(' ');
       } catch {}
     </script>

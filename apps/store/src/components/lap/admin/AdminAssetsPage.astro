@@ -5,7 +5,9 @@
  * without rank receives is a refusal, never a leak.
  */
 import type { SupportedLocale } from '@numinia/domain';
+import { ADMIN_ASSETS_MESSAGES } from '../../../i18n/admin-assets';
 import { LAP_UI } from '../../../i18n/lap';
+import { BAZAAR_MESSAGES } from '../../../i18n/messages';
 import LapShell from '../LapShell.astro';
 import { AdminAssets } from './AdminAssets';
 
@@ -28,7 +30,12 @@ const t = LAP_UI[locale];
     <h1>{t.admin.assets}</h1>
     <p class="intro">{t.admin.assetsIntro}</p>
   </header>
-  <AdminAssets client:load labels={t.admin} />
+  <AdminAssets
+    client:load
+    labels={t.admin}
+    edit={ADMIN_ASSETS_MESSAGES[locale]}
+    kinds={BAZAAR_MESSAGES[locale].kinds}
+  />
 </LapShell>
 
 <style>
@@ -100,6 +107,9 @@ const t = LAP_UI[locale];
     font-size: 0.875rem;
   }
   [data-admin-assets] .tabla-envoltura {
+    /* Positioned: the rows' visually hidden «opens GitHub» words (absolute)
+       stay inside the scroll box instead of widening the page. */
+    position: relative;
     overflow-x: auto;
     border: 1px solid var(--linea);
     border-radius: var(--radio-marco);
@@ -199,5 +209,117 @@ const t = LAP_UI[locale];
     height: 1px;
     overflow: hidden;
     clip: rect(0 0 0 0);
+  }
+
+  /* v0.89.0 — the room edits through GitHub: «Añadir» (the one primary)
+     unfolds the kinds; the publish line beside it; per row two quiet links. */
+  [data-admin-assets] .editar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--s3) var(--s4);
+    margin-bottom: var(--s4);
+  }
+  [data-admin-assets] .anadir > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    list-style: none;
+    cursor: pointer;
+  }
+  [data-admin-assets] .anadir > summary::-webkit-details-marker {
+    display: none;
+  }
+  [data-admin-assets] .anadir-menu {
+    max-width: 36rem;
+    margin-top: var(--s2);
+    padding: var(--s4);
+  }
+  [data-admin-assets] .anadir-menu p {
+    margin: 0 0 var(--s3);
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  [data-admin-assets] .anadir-menu ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-admin-assets] .anadir-menu .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    min-height: 44px;
+    padding-inline: var(--s4);
+    text-decoration: none;
+  }
+  [data-admin-assets] .publica {
+    flex: 1 1 18rem;
+    align-self: center;
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  [data-admin-assets] .acciones {
+    display: inline-flex;
+    gap: var(--s1);
+    white-space: nowrap;
+  }
+  [data-admin-assets] .acciones .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 36px;
+    padding: 4px var(--s2);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+  [data-admin-assets] .acciones .borrar {
+    color: var(--texto-2);
+  }
+  [data-admin-assets] .acciones .borrar:hover {
+    color: var(--texto);
+  }
+  [data-admin-assets] .fuera {
+    font-size: 0.75em;
+    opacity: 0.7;
+  }
+  @media (max-width: 40rem) {
+    [data-admin-assets] .acciones .btn {
+      min-height: 44px;
+    }
+  }
+
+  /* While the table loads («tarda un poquito»): a still skeleton of it. */
+  [data-admin-assets] .esqueleto {
+    margin-top: var(--s3);
+  }
+  [data-admin-assets] .fila-esqueleto {
+    display: grid;
+    grid-template-columns: 3fr 1fr 2fr 1fr;
+    gap: var(--s4);
+    align-items: center;
+    height: 48px;
+    padding: 0 var(--s4);
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-admin-assets] .fila-esqueleto .barra {
+    display: block;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--elevada);
+  }
+  [data-admin-assets] .fila-esqueleto .larga {
+    width: 80%;
+  }
+  [data-admin-assets] .fila-esqueleto .media {
+    width: 60%;
+  }
+  [data-admin-assets] .fila-esqueleto .corta {
+    width: 45%;
   }
 </style>

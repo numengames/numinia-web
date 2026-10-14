@@ -1,9 +1,14 @@
 /**
  * Per-method login progress (MISSION-002 spike UX).
- * Invisible until the user picks a method inside the vendor widget; then a
- * 1-2-3 progress bar shows the current step plus what comes next, driven by
- * real state (wallet + session) — never by clicks alone, so it cannot lie.
- * Copy rule: reassure, never alarm — no mention of payments or transactions.
+ * Invisible until the user picks a method inside the vendor widget; then the
+ * three steps of that method show as a short list — done, current, next —
+ * driven by real state (wallet + session), never by clicks alone, so it
+ * cannot lie. Each step carries its own number in a dot: the list draws no
+ * numbers of its own (v0.86.0 showed «1. 1 / 2. 2 / 3. 3», Pablo's frame
+ * t0421 of 2026-10-14).
+ * Copy rule: reassure, never alarm — no word about payments. The one word
+ * about transactions says none is asked: the wallet's own dialog lists that
+ * permission to every site, and Pablo asked whether we need it (2026-10-14).
  * The words arrive in the reader's language (i18n/sign-in.ts).
  */
 
@@ -16,6 +21,8 @@ export interface GuideCopy {
   readonly progress: string;
   /** «Paso {n} de 3». */
   readonly step: string;
+  /** Beside the wallet's steps: what its permission list means here. */
+  readonly walletNote: string;
   readonly methods: Readonly<Record<LoginMethod, MethodCopy>>;
 }
 
@@ -70,8 +77,12 @@ export function LoginMethodGuide({ copy, selected, detected, phase }: LoginMetho
   if (!shown) return null;
   const method = copy.methods[shown];
   const current = phase === 'connect' ? 0 : phase === 'sign' ? 1 : 2;
+  const stepOf = copy.step.replace('{n}', String(current + 1));
   return (
     <section aria-label={copy.progress} data-login-progress>
+      <p className="etiqueta" aria-hidden="true">
+        {method.label} · {stepOf}
+      </p>
       <ol>
         {method.steps.map((step, index) => {
           const state = index < current ? 'done' : index === current ? 'active' : 'pending';
@@ -81,22 +92,18 @@ export function LoginMethodGuide({ copy, selected, detected, phase }: LoginMetho
               data-step-state={state}
               aria-current={state === 'active' ? 'step' : undefined}
             >
-              <span data-step-dot>{state === 'done' ? '✓' : index + 1}</span>
+              <span data-step-dot aria-hidden="true">
+                {state === 'done' ? '✓' : index + 1}
+              </span>
+              <span>{step}</span>
             </li>
           );
         })}
       </ol>
-      <p role="status">
-        <strong>
-          {copy.step.replace('{n}', String(current + 1))} · {method.label}
-        </strong>{' '}
-        — {method.steps[current]}
+      {shown === 'wallet' && phase !== 'done' && <p data-wallet-note>{copy.walletNote}</p>}
+      <p role="status" className="sr-solo">
+        {stepOf} · {method.label} — {method.steps[current]}
       </p>
-      {method.steps.slice(current + 1).map((step, offset) => (
-        <p key={step} data-next-step>
-          {current + 2 + offset} · {step}
-        </p>
-      ))}
     </section>
   );
 }

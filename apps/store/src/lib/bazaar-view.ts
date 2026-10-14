@@ -34,6 +34,19 @@ export const BAZAAR_FORMATS: readonly AssetFormat[] = [
   'jpg',
 ];
 
+/**
+ * The formats whose own file is their picture (v0.89.0, «si es un JPG
+ * debería de tener el JPG pintado»): the card and the preview show the
+ * picture itself, never the kind's glyph. The domain holds no WebP yet;
+ * when it does, it joins here.
+ */
+export const PICTURE_FORMATS: readonly AssetFormat[] = ['png', 'jpg'];
+
+/** Whether a good of this format is a picture. */
+export function isPicture(format: AssetFormat): boolean {
+  return PICTURE_FORMATS.includes(format);
+}
+
 export type BazaarSort = 'recent' | 'name';
 
 export interface BazaarFilter {

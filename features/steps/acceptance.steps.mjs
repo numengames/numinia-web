@@ -987,6 +987,205 @@ Then('the Oracle alone sees how to edit a community and its rituals', async func
   assert.ok(editRitual && editRitual.pathname.endsWith('/rituals/trg26.md'), 'trg26: no edit');
 });
 
+// --- the Oracle's video, 2026-10-14: the home's shelf, what a space uses, the word ---
+
+Then("the home's Bazar shelf is one strip with its arrows, like the gatherings", async function () {
+  for (const prefix of LOCALE_PREFIXES) {
+    const where = prefix || 'en';
+    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('id="alive"'));
+    // One row: the goods ride a strip (.pista), the pattern of the gatherings above.
+    for (const [section, strip] of [
+      [html.slice(html.indexOf('id="rituals"'), html.indexOf('id="bazaar"')), 'rituales-pista'],
+      [block, 'objetos-pista'],
+    ]) {
+      const tag = new RegExp(`<div\\b[^>]*\\bclass="pista[^"]*"[^>]*\\bid="${strip}"[^>]*>`).exec(
+        section,
+      );
+      assert.ok(tag, `${where}: ${strip} is not a strip`);
+      assert.match(tag[0], /\bdata-step-px="\d+"/, `${where}: ${strip} has no step`);
+      for (const step of ['-1', '1']) {
+        assert.match(
+          section,
+          new RegExp(
+            `<button\\b[^>]*data-step="${step}"[^>]*aria-controls="${strip}"[^>]*data-metric=`,
+          ),
+          `${where}: ${strip} lacks its ${step === '1' ? 'next' : 'previous'} arrow`,
+        );
+      }
+    }
+    assert.ok(!block.includes('rejilla-obj'), `${where}: the shelf is still a grid of rows`);
+    const strip = block.slice(block.indexOf('id="objetos-pista"'));
+    assert.equal(
+      (strip.match(/data-metric="home-good"/g) ?? []).length,
+      8,
+      `${where}: the strip does not carry the eight goods`,
+    );
+  }
+});
+
+const SPACE_PIECES = ['home', 'gatherings', 'archive', 'members', 'balance'];
+
+/** One piece of a page's «what this space uses»: its state and its markup. */
+function spacePiece(html, piece) {
+  const match = new RegExp(
+    `<li\\b[^>]*\\bdata-piece="${piece}"[^>]*\\bdata-state="([a-z-]+)"[^>]*>([\\s\\S]*?)</li>`,
+  ).exec(html);
+  return match ? { state: match[1], body: match[2] } : null;
+}
+
+Then('every community page lists the five pieces its space uses', async function () {
+  for (const id of publishedCommunityIds()) {
+    for (const prefix of LOCALE_PREFIXES) {
+      const where = `${id} (${prefix || 'en'})`;
+      const html = await readFile(
+        path.join(this.distDir, prefix, 'communities', id, 'index.html'),
+        'utf8',
+      );
+      const start = html.indexOf('data-space-uses');
+      assert.ok(start !== -1, `${where}: no «what this space uses»`);
+      const block = html.slice(start, html.indexOf('</section>', start));
+      assert.deepEqual(
+        [...block.matchAll(/\bdata-piece="([a-z]+)"/g)].map((match) => match[1]),
+        SPACE_PIECES,
+        `${where}: the pieces`,
+      );
+      assert.ok(start < html.indexOf('id="encuentros"'), `${where}: the block is not first`);
+    }
+  }
+});
+
+Then(
+  'a home is entered and counted only where it exists, and the rest is marked under construction',
+  async function () {
+    const page = (id) =>
+      readFile(path.join(this.distDir, 'es', 'communities', id, 'index.html'), 'utf8');
+    const crane = /class="icono grua"/;
+    // VIC's home is in the fleet: the block enters it and counts who is inside.
+    const vic = spacePiece(await page('vic'), 'home');
+    assert.equal(vic?.state, 'world', 'vic: no home in the block');
+    assert.equal(hrefOf(vic.body, 'community-uses-home')?.origin, 'https://vic.numinia.com');
+    assert.ok(
+      vic.body.includes('data-inside="vic"'),
+      'vic: the block does not count who is inside',
+    );
+    // TRGCON has no home: it says so and counts nothing.
+    const trgHtml = await page('trgcon');
+    const trg = spacePiece(trgHtml, 'home');
+    assert.equal(trg?.state, 'no-home', 'trgcon: a home it does not have');
+    assert.ok(trg.body.includes('Sin sede todavía'), 'trgcon: no «sin sede todavía»');
+    assert.ok(!trg.body.includes('data-inside='), 'trgcon: counts a home it does not have');
+    // Its gatherings: as many as the page lists coming, linked to that list.
+    const coming = (trgHtml.match(/data-metric="ritual-card"/g) ?? []).length;
+    const gatherings = spacePiece(trgHtml, 'gatherings');
+    assert.equal(gatherings?.state, 'coming');
+    assert.ok(coming >= 1, 'trgcon: no gathering coming in the register');
+    const said = coming === 1 ? '1 próximo' : `${coming} próximos`;
+    assert.ok(gatherings.body.includes(said), `trgcon: the block does not say «${said}»`);
+    assert.match(gatherings.body, /href="#encuentros"/, 'trgcon: the count leads nowhere');
+    // What is not built yet carries the crane and says so.
+    for (const piece of ['archive', 'members', 'balance']) {
+      const entry = spacePiece(trgHtml, piece);
+      assert.equal(entry?.state, 'building', `trgcon: ${piece} is not marked`);
+      assert.ok(entry.body.includes('En construcción'), `trgcon: ${piece} without its words`);
+      assert.match(entry.body, crane, `trgcon: ${piece} without the crane`);
+    }
+    // The founder keeps the commons (nothing counted there) and states its archive and people.
+    const founderHtml = await page('numen-games');
+    const commons = spacePiece(founderHtml, 'home');
+    assert.equal(commons?.state, 'world', 'numen-games: no commons');
+    const door = hrefOf(commons.body, 'community-uses-home');
+    assert.equal(
+      `${door?.origin}${door?.pathname}`,
+      'https://v2.oncyber.io/agora_plaza_of_numinia',
+      'numen-games: the block does not open the commons',
+    );
+    assert.ok(!commons.body.includes('data-inside='), 'numen-games: counts the commons');
+    assert.equal(spacePiece(founderHtml, 'archive')?.state, 'stated');
+    assert.equal(spacePiece(founderHtml, 'members')?.state, 'stated');
+    assert.equal(spacePiece(founderHtml, 'balance')?.state, 'building');
+  },
+);
+
+/** Where the next `<name …>` opens at or after `from` in the lower-cased page; -1 when none. */
+function openingOf(lower, name, from) {
+  for (
+    let at = lower.indexOf(`<${name}`, from);
+    at !== -1;
+    at = lower.indexOf(`<${name}`, at + 1)
+  ) {
+    const next = lower.charAt(at + name.length + 1);
+    if (next === '>' || next === '/' || next.trim() === '') return at;
+  }
+  return -1;
+}
+
+/** The page with its <script> and <style> elements cut out, found in any case by walking the
+ *  lower-cased text with indexOf. A tag regex misses <SCRIPT> (CodeQL js/bad-tag-filter). */
+function withoutCode(html) {
+  const lower = html.toLowerCase();
+  let kept = '';
+  let at = 0;
+  for (;;) {
+    const opens = ['script', 'style']
+      .map((name) => ({ name, start: openingOf(lower, name, at) }))
+      .filter((open) => open.start !== -1)
+      .sort((a, b) => a.start - b.start);
+    if (opens.length === 0) return kept + html.slice(at);
+    const { name, start } = opens[0];
+    const close = lower.indexOf(`</${name}`, start);
+    const end = close === -1 ? -1 : lower.indexOf('>', close);
+    kept += `${html.slice(at, start)} `;
+    if (end === -1) return kept;
+    at = end + 1;
+  }
+}
+
+/** The words a reader meets on a page: its text, and the labels read aloud or shown on hover.
+ *  A path stays as it is (a gathering's «Its file» names src/content/communities/rituals/…):
+ *  file names and routes keep the old word by design, only the words on screen changed. */
+function visibleText(html) {
+  const bare = withoutCode(html);
+  const labels = [...bare.matchAll(/\b(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map(
+    (match) => match[1],
+  );
+  return `${bare.replace(/<[^>]+>/g, ' ')} ${labels.join(' ')}`.replace(/\S*\/rituals\/\S*/g, ' ');
+}
+
+/** The old word, per locale; how-it-works.ts's own word replaced it on screen. */
+const OLD_WORD = {
+  '': /\britual/i,
+  es: /\britual/i,
+  ja: /儀式/,
+  ko: /의식/,
+  'pt-br': /\britua(l|is)\b/i,
+};
+
+Then('the pages of the communities say «encuentro», never «ritual»', async function () {
+  const rituals = readdirSync(path.join(COMMUNITY_FILES, 'rituals'))
+    .filter((name) => name.endsWith('.md'))
+    .map((name) => `rituals/${name.replace(/\.md$/, '')}/index.html`);
+  const communities = publishedCommunityIds().map((id) => `communities/${id}/index.html`);
+  const pages = [
+    'index.html',
+    'communities/index.html',
+    'calendar/index.html',
+    'live/index.html',
+    'belong/index.html',
+    'how-it-works/index.html',
+    ...communities,
+    ...rituals,
+  ];
+  for (const prefix of LOCALE_PREFIXES) {
+    for (const page of pages) {
+      const html = await readFile(path.join(this.distDir, prefix, page), 'utf8').catch(() => null);
+      if (html === null) continue; // a gathering of a community not published has no page
+      const found = OLD_WORD[prefix].exec(visibleText(html));
+      assert.equal(found, null, `${prefix || 'en'}/${page} still says «${found?.[0]}»`);
+    }
+  }
+});
+
 Then('the bazaar and lap pages exist under every locale prefix', async function () {
   for (const prefix of LOCALE_PREFIXES) {
     for (const slug of ['bazaar', 'lap']) {

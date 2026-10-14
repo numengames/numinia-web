@@ -4,6 +4,10 @@
  * copy. Destructive actions warn before acting (Grana + confirmation);
  * import over a non-empty sheet counts as destructive, because it replaces
  * what the device holds.
+ *
+ * One primary per view (Pablo's walkthrough, 2026-10-14: «le hará falta
+ * maquetación»): Editar ficha leads, the file doors stay quiet. A blank sheet
+ * shows only its one door — start the character — and the quiet import.
  */
 
 import { useRef } from 'react';
@@ -14,6 +18,8 @@ interface Props {
   editing: boolean;
   /** True when the current sheet holds anything worth losing. */
   dirty: boolean;
+  /** The blank sheet's door: its label replaces «Editar ficha», the rest hides. */
+  startLabel?: string | undefined;
   onToggleEdit: () => void;
   onExport: () => void;
   onImport: (file: File | undefined) => void;
@@ -24,12 +30,14 @@ export function SheetActions({
   labels,
   editing,
   dirty,
+  startLabel,
   onToggleEdit,
   onExport,
   onImport,
   onWipe,
 }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
+  const blank = startLabel !== undefined;
   return (
     <div className="acciones">
       <button
@@ -38,42 +46,48 @@ export function SheetActions({
         onClick={onToggleEdit}
         data-metric="lap-sheet-edit"
       >
-        {editing ? labels.done : labels.edit}
+        {blank ? startLabel : editing ? labels.done : labels.edit}
       </button>
+      {!blank && (
+        <>
+          <button
+            type="button"
+            className="btn btn-silencioso"
+            onClick={onExport}
+            data-metric="lap-sheet-export"
+          >
+            {labels.exportMd}
+          </button>
+          <button
+            type="button"
+            className="btn btn-silencioso"
+            onClick={() => window.print()}
+            data-metric="lap-sheet-export-pdf"
+          >
+            {labels.exportPdf}
+          </button>
+        </>
+      )}
       <button
         type="button"
-        className="btn btn-fantasma"
-        onClick={onExport}
-        data-metric="lap-sheet-export"
-      >
-        {labels.exportMd}
-      </button>
-      <button
-        type="button"
-        className="btn btn-fantasma"
-        onClick={() => window.print()}
-        data-metric="lap-sheet-export-pdf"
-      >
-        {labels.exportPdf}
-      </button>
-      <button
-        type="button"
-        className="btn btn-fantasma"
+        className="btn btn-silencioso"
         onClick={() => fileInput.current?.click()}
         data-metric="lap-sheet-import"
       >
         {labels.importMd}
       </button>
-      <button
-        type="button"
-        className="btn btn-peligro"
-        onClick={() => {
-          if (window.confirm(labels.wipeConfirm)) onWipe();
-        }}
-        data-metric="lap-sheet-wipe"
-      >
-        {labels.wipe}
-      </button>
+      {!blank && (
+        <button
+          type="button"
+          className="btn btn-peligro"
+          onClick={() => {
+            if (window.confirm(labels.wipeConfirm)) onWipe();
+          }}
+          data-metric="lap-sheet-wipe"
+        >
+          {labels.wipe}
+        </button>
+      )}
       <input
         ref={fileInput}
         type="file"

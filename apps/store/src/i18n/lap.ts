@@ -20,7 +20,18 @@ export interface LapMessages {
     readonly settings: string;
   };
   readonly foldNav: string;
+  /** «En construcción» (the Oracle, 2026-10-14): the crane mark in the rail
+      and the settings, and the banner that opens each unfinished page with
+      what does not work yet and when it comes. */
+  readonly building: {
+    readonly label: string;
+    readonly loot: string;
+    readonly lootLink: string;
+    readonly portals: string;
+  };
   readonly adminGroup: string;
+  /** Ajustes → «Secciones del panel»: what a first visit finds off; {list} is the sections. */
+  readonly quietPanel: string;
   readonly admin: {
     readonly assets: string;
     readonly assetsIntro: string;
@@ -76,6 +87,17 @@ export interface LapMessages {
   };
   readonly stats: {
     readonly title: string;
+    /** Under the title: where «La ciudad» comes from, and that no session is needed. */
+    readonly source: string;
+    /** «La ciudad» (the Oracle, 2026-10-14: «deberían de ser las de Numinia»). */
+    readonly city: string;
+    readonly communities: string;
+    readonly upcoming: string;
+    readonly sedes: string;
+    readonly bazaar: string;
+    readonly insideNow: string;
+    /** «El archivo»: the catalogue's figures, below the city. */
+    readonly archive: string;
     readonly intro: string;
     readonly totalAssets: string;
     readonly projects: string;
@@ -233,7 +255,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Botín',
       seasons: 'Temporadas',
       stats: 'Estadísticas',
-      updates: 'Updates',
+      updates: 'Novedades',
       settings: 'Ajustes',
     },
     sheet: {
@@ -279,7 +301,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_ES,
     },
     foldNav: 'Plegar o desplegar la navegación',
+    building: {
+      label: 'En construcción',
+      loot: 'Aquí verás lo que ganes al cruzar las puertas de la Temporada I. Todavía no funciona: llegará cuando abra la temporada, y sus fechas aún no están fijadas. Mientras tanto, las puertas y sus premios se ven en Temporadas.',
+      lootLink: 'Ver Temporadas',
+      portals:
+        'Este mapa es un boceto: los portales que ya existen abren su mundo y los que dicen «Próximamente» aún no se han construido. El mapa de verdad de la ciudad llega más adelante, con la Fase 5 del plan, que todavía no tiene fecha.',
+    },
     adminGroup: 'Gestión',
+    quietPanel:
+      'Para empezar, el panel muestra lo esencial: {list} vienen apagados. Enciende los que quieras.',
     admin: {
       assets: 'Assets',
       assetsIntro:
@@ -343,7 +374,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Tu puesto en la ciudad: quién eres, qué llevas y qué puertas tienes abiertas.',
     },
     stats: {
-      title: 'Estadísticas del Archivo',
+      title: 'Estadísticas de Numinia',
+      source:
+        'Contadas al publicar la web, con el registro de comunidades y el catálogo del Bazar; «Ahora dentro» se pregunta en directo a cada sede. Todo es público: no hace falta iniciar sesión.',
+      city: 'La ciudad',
+      communities: 'Comunidades',
+      upcoming: 'Encuentros próximos',
+      sedes: 'Sedes abiertas',
+      bazaar: 'Objetos en el Bazar',
+      insideNow: 'Ahora dentro',
+      archive: 'El archivo',
       intro: 'Números reales del catálogo público — lo que hay, dónde vive y cuán a salvo está.',
       totalAssets: 'Assets públicos',
       projects: 'Proyectos',
@@ -438,7 +478,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Loot',
       seasons: 'Seasons',
       stats: 'Stats',
-      updates: 'Updates',
+      updates: 'What’s new',
       settings: 'Settings',
     },
     sheet: {
@@ -483,7 +523,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'Collapse or expand the navigation',
+    building: {
+      label: 'Under construction',
+      loot: 'Here you will see what you win by crossing the doors of Season I. It does not work yet: it arrives when the season opens, and its dates are not set yet. Meanwhile, the doors and their rewards are on Seasons.',
+      lootLink: 'See Seasons',
+      portals:
+        'This map is a sketch: the portals that already exist open their world, and the ones marked “Coming soon” are not built yet. The real map of the city comes later, with Phase 5 of the plan, which has no date yet.',
+    },
     adminGroup: 'Management',
+    quietPanel:
+      'To start with, the panel shows the essentials: {list} come switched off. Turn on the ones you want.',
     admin: {
       assets: 'Assets',
       assetsIntro:
@@ -546,7 +595,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       dashboardIntro: 'Your post in the city: who you are, what you carry, which doors stand open.',
     },
     stats: {
-      title: 'Archive Statistics',
+      title: 'Numinia Statistics',
+      source:
+        'Counted when the site is published, from the register of communities and the Bazaar catalogue; “Inside now” is asked live of each home. All of it is public: no need to sign in.',
+      city: 'The city',
+      communities: 'Communities',
+      upcoming: 'Upcoming gatherings',
+      sedes: 'Open homes',
+      bazaar: 'Items in the Bazaar',
+      insideNow: 'Inside now',
+      archive: 'The archive',
       intro: 'Real numbers from the public catalog — what exists, where it lives, how safe it is.',
       totalAssets: 'Public assets',
       projects: 'Projects',
@@ -640,7 +698,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '戦利品',
       seasons: 'シーズン',
       stats: '統計',
-      updates: 'Updates',
+      updates: '更新情報',
       settings: '設定',
     },
     sheet: {
@@ -685,7 +743,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: 'ナビゲーションの折りたたみ',
+    building: {
+      label: '準備中',
+      loot: 'シーズンIの扉をくぐって手に入れたものが、ここに表示されます。まだ動いていません。シーズンが始まるときに届きますが、日程はまだ決まっていません。それまでは、扉と報酬を「シーズン」で見られます。',
+      lootLink: 'シーズンを見る',
+      portals:
+        'この地図はまだ下書きです。すでにあるポータルはワールドを開き、「近日公開」のものはまだ建てられていません。本当の都市の地図は、計画のフェーズ5で届きます。日程はまだありません。',
+    },
     adminGroup: '管理',
+    quietPanel:
+      'はじめは必要なものだけを表示します。{list}はオフになっています。使いたいものをオンにしてください。',
     admin: {
       assets: 'アセット',
       assetsIntro: '都市が保管するすべて:形式、カテゴリ、そして各バイナリがどの層にあるか。',
@@ -746,7 +813,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       dashboardIntro: '都市でのあなたの立ち位置:誰であり、何を携え、どの扉が開いているか。',
     },
     stats: {
-      title: 'アーカイブ統計',
+      title: 'Numiniaの統計',
+      source:
+        'サイトの公開時に、コミュニティの登録とバザールのカタログから数えています。「いま中にいる人」は各拠点にその場で問い合わせます。すべて公開情報なので、サインインは不要です。',
+      city: '都市',
+      communities: 'コミュニティ',
+      upcoming: '今後の集まり',
+      sedes: '開いている拠点',
+      bazaar: 'バザールのアイテム',
+      insideNow: 'いま中にいる人',
+      archive: 'アーカイブ',
       intro: '公開カタログの実数 — 何があり、どこに保存され、どれほど安全か。',
       totalAssets: '公開アセット',
       projects: 'プロジェクト',
@@ -836,7 +912,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '전리품',
       seasons: '시즌',
       stats: '통계',
-      updates: 'Updates',
+      updates: '새 소식',
       settings: '설정',
     },
     sheet: {
@@ -880,7 +956,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       fields: FIELDS_EN,
     },
     foldNav: '내비게이션 접기/펼치기',
+    building: {
+      label: '준비 중',
+      loot: '시즌 I의 문을 지나며 얻은 것이 여기에 표시됩니다. 아직 작동하지 않습니다. 시즌이 열릴 때 함께 오며, 일정은 아직 정해지지 않았습니다. 그동안 문과 보상은 «시즌»에서 볼 수 있습니다.',
+      lootLink: '시즌 보기',
+      portals:
+        '이 지도는 아직 초안입니다. 이미 있는 포털은 월드를 열고, «공개 예정»인 것은 아직 지어지지 않았습니다. 도시의 진짜 지도는 나중에 계획의 5단계와 함께 오며, 아직 날짜가 없습니다.',
+    },
     adminGroup: '관리',
+    quietPanel:
+      '처음에는 꼭 필요한 것만 보여 줍니다. {list} 항목은 꺼져 있으니, 원하는 것을 켜세요.',
     admin: {
       assets: '에셋',
       assetsIntro: '도시가 보관하는 모든 것: 형식, 카테고리, 각 바이너리가 있는 계층.',
@@ -938,7 +1023,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       dashboardIntro: '도시에서의 당신의 자리: 누구이며, 무엇을 지녔고, 어떤 문이 열려 있는지.',
     },
     stats: {
-      title: '아카이브 통계',
+      title: 'Numinia 통계',
+      source:
+        '사이트를 게시할 때 커뮤니티 등록부와 바자 카탈로그로 셉니다. «지금 안에 있는 사람»은 각 거점에 실시간으로 묻습니다. 모두 공개 정보라 로그인할 필요가 없습니다.',
+      city: '도시',
+      communities: '커뮤니티',
+      upcoming: '다가오는 모임',
+      sedes: '열린 거점',
+      bazaar: '바자의 아이템',
+      insideNow: '지금 안에 있는 사람',
+      archive: '아카이브',
       intro: '공개 카탈로그의 실제 수치 — 무엇이 있고, 어디에 저장되며, 얼마나 안전한지.',
       totalAssets: '공개 에셋',
       projects: '프로젝트',
@@ -1029,7 +1123,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Espólio',
       seasons: 'Temporadas',
       stats: 'Estatísticas',
-      updates: 'Updates',
+      updates: 'Novidades',
       settings: 'Configurações',
     },
     sheet: {
@@ -1108,7 +1202,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       },
     },
     foldNav: 'Recolher ou expandir a navegação',
+    building: {
+      label: 'Em construção',
+      loot: 'Aqui você verá o que ganhar ao atravessar as portas da Temporada I. Ainda não funciona: chega quando a temporada abrir, e as datas ainda não foram definidas. Enquanto isso, as portas e suas recompensas estão em Temporadas.',
+      lootLink: 'Ver Temporadas',
+      portals:
+        'Este mapa é um esboço: os portais que já existem abrem seu mundo, e os marcados como «Em breve» ainda não foram construídos. O mapa de verdade da cidade chega mais adiante, com a Fase 5 do plano, que ainda não tem data.',
+    },
     adminGroup: 'Gestão',
+    quietPanel:
+      'Para começar, o painel mostra o essencial: {list} vêm desligados. Ligue os que quiser.',
     admin: {
       assets: 'Assets',
       assetsIntro:
@@ -1171,7 +1274,16 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Seu posto na cidade: quem você é, o que carrega e quais portas estão abertas.',
     },
     stats: {
-      title: 'Estatísticas do Arquivo',
+      title: 'Estatísticas de Numinia',
+      source:
+        'Contadas ao publicar o site, com o registro de comunidades e o catálogo do Bazar; «Dentro agora» é perguntado ao vivo a cada sede. Tudo é público: não é preciso entrar.',
+      city: 'A cidade',
+      communities: 'Comunidades',
+      upcoming: 'Próximos encontros',
+      sedes: 'Sedes abertas',
+      bazaar: 'Objetos no Bazar',
+      insideNow: 'Dentro agora',
+      archive: 'O arquivo',
       intro: 'Números reais do catálogo público — o que existe, onde vive e quão seguro está.',
       totalAssets: 'Assets públicos',
       projects: 'Projetos',

@@ -128,6 +128,8 @@ describe('goodCard', () => {
       facts: ['8,9 MB', 'v0.1.0'],
       collection: 'numinia-avatars',
       thumb: '/thumbs/ndg-019d3e6c-129a-701e-95fc-ce1754d5c917.webp',
+      thumbSrcSet:
+        '/thumbs/1x/ndg-019d3e6c-129a-701e-95fc-ce1754d5c917.webp 1x, /thumbs/ndg-019d3e6c-129a-701e-95fc-ce1754d5c917.webp 2x',
     });
 
     // The admin's placeholder is no line; a version without a size is just the version.

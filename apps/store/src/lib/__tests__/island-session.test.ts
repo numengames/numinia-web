@@ -5,10 +5,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { SUPPORTED_LOCALES } from '@numinia/domain';
 import {
   NO_DOOR_PARAMS,
   PAGE_SESSION_READY,
   doorParams,
+  landingAfterSignIn,
   pageSessionClient,
   safeReturnPath,
 } from '../island-session';
@@ -85,5 +87,68 @@ describe('what the sign-in page was asked', () => {
   it('asks nothing by default, and never trusts a foreign way back', () => {
     expect(doorParams('')).toEqual(NO_DOOR_PARAMS);
     expect(doorParams('?vuelta=https%3A%2F%2Fevil.example%2F&salir=0')).toEqual(NO_DOOR_PARAMS);
+  });
+});
+
+/* Pablo, 2026-10-14: «me saca de aquí, que no debería; me debería de
+   mantener en el perfil» — a sign-in from a community page took him back to
+   it. The door now lands on your profile, unless it was opened from inside
+   the player area. */
+describe('where a fresh sign-in lands', () => {
+  const PROFILE = '/es/lap/';
+
+  it('is your profile, in the page’s language, whatever page the door was opened from', () => {
+    for (const from of [
+      null,
+      '/es/communities/active-inference/',
+      '/es/',
+      '/',
+      '/es/belong/',
+      '/es/lapis/',
+      '/es/updates/?lap=1',
+    ]) {
+      expect(landingAfterSignIn(from, PROFILE)).toBe(PROFILE);
+    }
+    expect(landingAfterSignIn('/communities/', '/lap/')).toBe('/lap/');
+  });
+
+  it('keeps a room of the player area, in any locale, with its query and anchor', () => {
+    for (const room of [
+      '/es/lap/',
+      '/es/lap/character/',
+      '/es/lap/admin/worlds/',
+      '/lap/admin/prices/?tamano=s#tabla',
+      '/ja/lap/seasons/',
+      '/ko/lap/codex/ficha/',
+      '/pt-br/lap/settings/',
+    ]) {
+      expect(landingAfterSignIn(room, PROFILE)).toBe(room);
+    }
+  });
+
+  it('never lands back on the door itself, nor on its way out', () => {
+    for (const door of [
+      '/es/lap/session/',
+      '/lap/session/?salir=1',
+      '/es/lap/session?salir=1',
+      '/es/lap/session',
+      '/es/lap/session#x',
+    ]) {
+      expect(landingAfterSignIn(door, PROFILE)).toBe(PROFILE);
+    }
+    // A room whose name only starts like the door's is still a room.
+    expect(landingAfterSignIn('/es/lap/sessions-log/', PROFILE)).toBe('/es/lap/sessions-log/');
+  });
+
+  it('reads what doorParams kept: a foreign way back was already gone', () => {
+    const { returnTo } = doorParams('?vuelta=https%3A%2F%2Fevil.example%2Flap%2F');
+    expect(landingAfterSignIn(returnTo, PROFILE)).toBe(PROFILE);
+  });
+
+  it('knows the player area in every language the site serves', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const room = `${locale === 'en' ? '' : `/${locale}`}/lap/character/`;
+      expect(landingAfterSignIn(room, PROFILE), locale).toBe(room);
+    }
   });
 });

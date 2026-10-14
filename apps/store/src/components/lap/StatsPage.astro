@@ -7,7 +7,10 @@
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
 import { loadArchive } from '../../lib/archive';
+import { loadBazaarItems } from '../../lib/bazaar';
+import { cityStats } from '../../lib/city-stats';
 import { computeArchiveStats } from '../../lib/lap/stats';
+import { REGISTER, RITUALS } from '../communities/register';
 import LapShell from './LapShell.astro';
 
 interface Props {
@@ -17,6 +20,17 @@ interface Props {
 const { locale } = Astro.props;
 const t = LAP_UI[locale];
 const stats = computeArchiveStats(await loadArchive());
+/* «La ciudad» (the Oracle, 2026-10-14): counted at build from the register
+   the communities pages read and the Bazaar's own list; «Ahora dentro» is
+   the only live figure (lib/city-stats.ts). */
+const city = cityStats(REGISTER, RITUALS);
+const bazaarCount = (await loadBazaarItems(locale)).length;
+const CITY: ReadonlyArray<[number, string]> = [
+  [city.communities, t.stats.communities],
+  [city.upcoming, t.stats.upcoming],
+  [city.sedes, t.stats.sedes],
+  [bazaarCount, t.stats.bazaar],
+];
 const LAYERS: ReadonlyArray<[keyof typeof stats.layers, string]> = [
   ['r2', 'R2'],
   ['ipfs', 'IPFS'],
@@ -30,10 +44,30 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
   locale={locale}
   current="stats"
   title={`${t.stats.title} — LAP — Numinia`}
-  description={t.stats.intro}
+  description={t.stats.source}
 >
   <article data-lap-stats>
     <h1>{t.stats.title}</h1>
+    <p class="intro" data-stats-source>{t.stats.source}</p>
+
+    <h2 class="parte">{t.stats.city}</h2>
+    <div class="sondas ciudad" data-city-stats>
+      {
+        CITY.map(([count, label]) => (
+          <div class="kpi reveal">
+            <p class="dato-xl">{count}</p>
+            <p class="etiqueta">{label}</p>
+          </div>
+        ))
+      }
+      <div class="kpi reveal">
+        {/* Filled from /api/live in the browser; «—» until a home answers. */}
+        <p class="dato-xl" data-inside-total>—</p>
+        <p class="etiqueta">{t.stats.insideNow}</p>
+      </div>
+    </div>
+
+    <h2 class="parte">{t.stats.archive}</h2>
     <p class="intro">{t.stats.intro}</p>
 
     <div class="sondas" data-escalonado>
@@ -47,7 +81,7 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
       </div>
     </div>
 
-    <h2 class="etiqueta">{t.stats.byFormat}</h2>
+    <h3 class="etiqueta">{t.stats.byFormat}</h3>
     <div class="malla">
       {
         stats.byFormat.map((row) => (
@@ -59,7 +93,7 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
       }
     </div>
 
-    <h2 class="etiqueta">{t.stats.storageLayers}</h2>
+    <h3 class="etiqueta">{t.stats.storageLayers}</h3>
     <div class="malla">
       {
         LAYERS.map(([key, label]) => (
@@ -71,7 +105,7 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
       }
     </div>
 
-    <h2 class="etiqueta">{t.stats.redundancy}</h2>
+    <h3 class="etiqueta">{t.stats.redundancy}</h3>
     <div class="tarjeta reveal salud">
       <div class="barra-fila">
         <div
@@ -104,6 +138,28 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
   </article>
 </LapShell>
 
+<script>
+  import { insideTotal } from '../../lib/city-stats';
+
+  /* «Ahora dentro»: the same answer the communities pages read for their
+     «N dentro» (/api/live, numbers only, reused for 30 s). Without
+     JavaScript, or when no home answers, the «—» stays: never a made-up 0. */
+  const slot = document.querySelector<HTMLElement>('[data-inside-total]');
+  if (slot) {
+    void fetch('/api/live', { headers: { accept: 'application/json' } })
+      .then((response) => (response.ok ? (response.json() as Promise<{ inside?: unknown }>) : null))
+      .then((body) => {
+        const total = insideTotal(body?.inside);
+        if (total === null) return;
+        slot.textContent = String(total);
+        slot.dataset['count'] = String(total);
+      })
+      .catch(() => {
+        /* offline or a static preview: the «—» stays */
+      });
+  }
+</script>
+
 <style>
   h1 {
     font-size: 2.074rem;
@@ -116,9 +172,30 @@ const pct = Math.round((stats.redundancy.redundant / Math.max(1, stats.total)) *
     max-width: 65ch;
     line-height: 1.55;
   }
-  h2 {
+  h2.parte {
+    margin: var(--s7) 0 var(--s3);
+    font-size: 1.44rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--texto);
+  }
+  h3 {
     margin: var(--s7) 0 var(--s3);
     font-weight: 500;
+  }
+  /* The five city figures in one row on a desktop panel. */
+  .sondas.ciudad {
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    margin-top: var(--s4);
+  }
+  /* Five to a row: a little less padding and tracking, so the longest
+     label («COMUNIDADES») stays inside its card. */
+  .ciudad .kpi {
+    padding: var(--s4);
+  }
+  .ciudad .kpi .etiqueta {
+    letter-spacing: 0.06em;
+    overflow-wrap: anywhere;
   }
   .sondas,
   .malla {

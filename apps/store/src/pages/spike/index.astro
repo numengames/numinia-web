@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { ModelViewer } from '../../components/viewer/ModelViewer';
+import { VIEWER_MESSAGES } from '../../i18n/viewer';
 import { fetchAvatarCatalog, loadFixtureCatalog } from '../../lib/data';
 import { env } from '../../lib/env';
 
@@ -27,5 +28,10 @@ const firstVrm = publicVrms[0] ?? null;
     {publicVrms.map((asset) => <li>{asset.name}</li>)}
   </ul>
   <h2>VRM island (client:visible)</h2>
-  <ModelViewer client:visible url={firstVrm ? firstVrm.modelFileUrl : null} kind="vrm" />
+  <ModelViewer
+    client:visible
+    url={firstVrm ? firstVrm.modelFileUrl : null}
+    kind="vrm"
+    labels={VIEWER_MESSAGES.en}
+  />
 </BaseLayout>

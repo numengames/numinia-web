@@ -6,7 +6,27 @@
 
 import { describe, expect, it } from 'vitest';
 import { rollD6Pool } from '../lap/dice';
-import { emptySheet, sheetFromMarkdown, sheetToMarkdown, SHEET_FORMAT } from '../lap/sheet';
+import {
+  emptySheet,
+  isBlankSheet,
+  sheetFromMarkdown,
+  sheetToMarkdown,
+  SHEET_FORMAT,
+} from '../lap/sheet';
+
+describe('a blank sheet', () => {
+  it('is blank until something of the game is written, whatever the card holds', () => {
+    expect(isBlankSheet(emptySheet())).toBe(true);
+    const withCard = { ...emptySheet(), citizen: { ...emptySheet().citizen, name: 'Rima' } };
+    expect(isBlankSheet(withCard)).toBe(true);
+    const named = emptySheet();
+    named.identity.name = 'Aliseda';
+    expect(isBlankSheet(named)).toBe(false);
+    const scored = emptySheet();
+    scored.attributes.strength = 1;
+    expect(isBlankSheet(scored)).toBe(false);
+  });
+});
 
 describe('sheet markdown round-trip', () => {
   it('survives a fully populated sheet', () => {

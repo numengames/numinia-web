@@ -13,6 +13,7 @@
 import type { AssetFormat } from '@numinia/domain';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BazaarMessages } from '../../i18n/messages';
+import type { ViewerMessages } from '../../i18n/viewer';
 import type { BazaarItem } from '../../lib/bazaar';
 import {
   NO_FILTER,
@@ -36,6 +37,8 @@ import { Glyph } from './glyphs';
 interface BazaarProps {
   items: readonly BazaarItem[];
   labels: BazaarMessages;
+  /** The 3D viewer's words, in the page's language. */
+  viewerLabels: ViewerMessages;
   locale: string;
 }
 
@@ -55,7 +58,7 @@ function useWide(): boolean {
   return wide;
 }
 
-export function Bazaar({ items, labels, locale }: BazaarProps) {
+export function Bazaar({ items, labels, viewerLabels, locale }: BazaarProps) {
   const [filter, setFilter] = useState<BazaarFilter>(NO_FILTER);
   const [sort, setSort] = useState<BazaarSort>('recent');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -94,6 +97,16 @@ export function Bazaar({ items, labels, locale }: BazaarProps) {
     if (selected === null && dialog.open) dialog.close();
   }, [selected, wide]);
 
+  // On a wide screen the preview's pane opening narrows the cards: the
+  // chosen card is brought back into sight after the reflow.
+  useEffect(() => {
+    if (!wide || selectedId === null) return;
+    const card = document.querySelector(
+      `[data-bazaar-grid] [data-item="${CSS.escape(selectedId)}"]`,
+    );
+    card?.scrollIntoView({ block: 'nearest' });
+  }, [wide, selectedId]);
+
   const toggleQueue = (id: string): void => setQueue((current) => toggleQueued(current, id));
   const preview = (
     <BazaarPreview
@@ -101,6 +114,7 @@ export function Bazaar({ items, labels, locale }: BazaarProps) {
       queued={selected !== null && queue.includes(selected.id)}
       locale={locale}
       labels={labels}
+      viewerLabels={viewerLabels}
       onToggleQueue={toggleQueue}
       onClose={() => setSelectedId(null)}
     />
@@ -112,7 +126,14 @@ export function Bazaar({ items, labels, locale }: BazaarProps) {
     filter.query !== '';
 
   return (
-    <div className="bazaar" data-bazaar data-hydrated={hydrated ? '' : undefined}>
+    // data-open: a chosen good takes the third pane; with none chosen the
+    // cards keep that width (three columns at 1280 beside the sidebar).
+    <div
+      className="bazaar"
+      data-bazaar
+      data-open={wide && selected !== null ? '' : undefined}
+      data-hydrated={hydrated ? '' : undefined}
+    >
       <BazaarFilters
         facets={facets}
         formats={formats}
@@ -185,7 +206,7 @@ export function Bazaar({ items, labels, locale }: BazaarProps) {
         )}
       </div>
       <div className="lado">
-        {wide && (
+        {wide && selected !== null && (
           <section className="previa tarjeta" aria-label={labels.previewLabel} data-bazaar-preview>
             {preview}
           </section>

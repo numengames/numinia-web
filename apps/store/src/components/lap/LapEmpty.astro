@@ -3,7 +3,9 @@
 import type { SupportedLocale } from '@numinia/domain';
 import type { LapSection } from './LapShell.astro';
 import { LAP_UI } from '../../i18n/lap';
+import { isUnderConstruction } from '../../lib/lap-sections';
 import Icon from '../chrome/Icon.astro';
+import LapBuilding from './LapBuilding.astro';
 import LapShell from './LapShell.astro';
 
 interface Props {
@@ -13,9 +15,24 @@ interface Props {
 
 const { locale, section } = Astro.props;
 const t = LAP_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
 const PHRASES = { portals: t.emptyPortals, loot: t.emptyLoot, seasons: t.emptySeasons } as const;
 /** §7.1: light weight is the illustrative one, from 48px up. */
 const ICONS = { portals: 'globe-light', loot: 'sword-light', seasons: 'flame-light' } as const;
+/** What does not work yet, and where the working part lives meanwhile. */
+interface Building {
+  readonly text: string;
+  readonly link: { href: string; label: string; metric: string } | undefined;
+}
+const BUILDING: Readonly<Record<typeof section, Building | undefined>> = {
+  portals: { text: t.building.portals, link: undefined },
+  loot: {
+    text: t.building.loot,
+    link: { href: `${prefix}/lap/seasons/`, label: t.building.lootLink, metric: 'lap-loot-seasons' },
+  },
+  seasons: undefined,
+};
+const building = isUnderConstruction(section) ? BUILDING[section] : undefined;
 ---
 
 <LapShell
@@ -24,6 +41,7 @@ const ICONS = { portals: 'globe-light', loot: 'sword-light', seasons: 'flame-lig
   title={`${t.sections[section]} — LAP — Numinia`}
   description={PHRASES[section]}
 >
+  {building && <LapBuilding locale={locale} text={building.text} link={building.link} />}
   <div class="vacio" data-lap-empty={section}>
     <Icon name={ICONS[section]} size={48} class="glifo" />
     <h1>{t.emptyTitle}</h1>
@@ -42,7 +60,9 @@ const ICONS = { portals: 'globe-light', loot: 'sword-light', seasons: 'flame-lig
     min-height: 40vh;
     padding: var(--s7) var(--s4);
   }
-  .glifo {
+  /* The Icon component's span carries no scope attribute: reached through
+     the block (a bare `.glifo` here never matched it). */
+  .vacio > :global(.glifo) {
     color: var(--texto-3);
   }
   h1 {

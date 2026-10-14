@@ -11,8 +11,9 @@
 
 import { lazy, Suspense, useState } from 'react';
 import type { BazaarMessages } from '../../i18n/messages';
+import type { ViewerMessages } from '../../i18n/viewer';
 import type { BazaarItem } from '../../lib/bazaar';
-import { fill, objectHref } from '../../lib/bazaar-view';
+import { fill, isPicture, objectHref } from '../../lib/bazaar-view';
 import { Glyph, KIND_GLYPH } from './glyphs';
 
 const ModelViewer = lazy(() =>
@@ -24,18 +25,26 @@ interface BazaarPreviewProps {
   queued: boolean;
   locale: string;
   labels: BazaarMessages;
+  viewerLabels: ViewerMessages;
   onToggleQueue: (id: string) => void;
   onClose: () => void;
 }
 
-function Stage({ item, labels }: { item: BazaarItem; labels: BazaarMessages }) {
+interface StageProps {
+  item: BazaarItem;
+  labels: BazaarMessages;
+  viewerLabels: ViewerMessages;
+}
+
+function Stage({ item, labels, viewerLabels }: StageProps) {
   const [in3d, setIn3d] = useState(false);
   const model = item.format === 'glb' || item.format === 'vrm' ? item.format : null;
   if (model !== null && in3d) {
     return (
       <div className="escenario visor">
-        <Suspense fallback={<p className="cargando">…</p>}>
-          <ModelViewer url={item.url} kind={model} />
+        {/* three.js arrives on demand: the wait says so, never an empty box. */}
+        <Suspense fallback={<p className="cargando">{viewerLabels.loading}</p>}>
+          <ModelViewer url={item.url} kind={model} labels={viewerLabels} bytes={item.sizeBytes} />
         </Suspense>
       </div>
     );
@@ -47,15 +56,20 @@ function Stage({ item, labels }: { item: BazaarItem; labels: BazaarMessages }) {
       </div>
     );
   }
-  const picture =
-    item.format === 'png' || item.format === 'jpg'
-      ? (item.thumbnailUrl ?? item.url)
-      : item.thumbnailUrl;
+  // A picture shows itself whole — its own file, the baked card only as a
+  // fallback; anything else shows its thumbnail when it has one.
+  const own = isPicture(item.format);
+  const picture = own ? (item.url ?? item.thumbnailUrl) : item.thumbnailUrl;
   return (
     <>
       <div className="escenario">
         {picture ? (
-          <img src={picture} alt="" decoding="async" />
+          <img
+            className={own ? 'entera' : undefined}
+            src={picture}
+            alt={item.name}
+            decoding="async"
+          />
         ) : (
           <span className="sin-foto">
             <Glyph name={KIND_GLYPH[item.category]} size={48} />
@@ -70,7 +84,7 @@ function Stage({ item, labels }: { item: BazaarItem; labels: BazaarMessages }) {
             onClick={() => setIn3d(true)}
           >
             <Glyph name="cube" size={16} />
-            {labels.viewIn3d}
+            {item.size === null ? labels.viewIn3d : fill(labels.viewIn3dSized, { size: item.size })}
           </button>
         )}
       </div>
@@ -84,6 +98,7 @@ export function BazaarPreview({
   queued,
   locale,
   labels,
+  viewerLabels,
   onToggleQueue,
   onClose,
 }: BazaarPreviewProps) {
@@ -115,7 +130,7 @@ export function BazaarPreview({
         </button>
       </div>
       {/* Keyed: a new good starts as its picture, never in the last one's 3D. */}
-      <Stage key={item.id} item={item} labels={labels} />
+      <Stage key={item.id} item={item} labels={labels} viewerLabels={viewerLabels} />
       <h2>{item.name}</h2>
       {item.line !== null && <p className="linea">{item.line}</p>}
       <dl className="datos">
@@ -135,6 +150,12 @@ export function BazaarPreview({
           <dt>{labels.factCollection}</dt>
           <dd>{item.collection}</dd>
         </div>
+        {item.size !== null && (
+          <div>
+            <dt>{labels.factSize}</dt>
+            <dd>{item.size}</dd>
+          </div>
+        )}
       </dl>
       <div className="acciones">
         {item.url ? (

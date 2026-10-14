@@ -9,13 +9,20 @@
  * the visitor accepts the published corpus, and the accepted version travels
  * with the login request.
  *
- * Since v0.84.0 it is also the site's one way out and its way back:
- * - `?vuelta=<path>` (validated as a path on this site) is where a fresh
- *   sign-in returns and where «Continuar» leads;
+ * Since v0.84.0 it is also the site's one way out:
  * - `?salir=1` signs out — wallet first, then the cookie — and goes home.
  *   Every «Salir» on the site links here, because only this page carries
  *   the wallet code that must disconnect (the chrome never loads it).
+ * - A fresh sign-in lands on your profile (Pablo, 2026-10-14: «me debería
+ *   de mantener en el perfil»), or on the room of the player area the door
+ *   was opened from (`?vuelta=`, lib/island-session.ts `landingAfterSignIn`).
+ *   «Continuar» leads to the same place.
  * Once you are in, the widget is gone: the page shows who you are.
+ *
+ * The island draws two regions the page lays out (SessionPage.astro): the
+ * steps — the legal gate and the guide — and the way in — the widget, or
+ * its place while the terms wait, or who you are once in. On a wide screen
+ * they sit side by side; on a phone, one under the other.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
@@ -42,7 +49,12 @@ import { houseAuth } from './house-auth';
 import { houseWallets } from './wallets';
 import { WIDGET_THEMES, useModo } from './widget-theme';
 import { WIDGET_LOCALE, type SignInMessages } from '../../i18n/sign-in';
-import { NO_DOOR_PARAMS, doorParams, pageSessionClient } from '../../lib/island-session';
+import {
+  NO_DOOR_PARAMS,
+  doorParams,
+  landingAfterSignIn,
+  pageSessionClient,
+} from '../../lib/island-session';
 import type { SessionClient } from '../../lib/session-client';
 import type { SupportedLocale } from '@numinia/domain';
 
@@ -55,7 +67,7 @@ export interface LoginProps {
   readonly legal: LegalGateCopy;
   readonly copy: SignInMessages;
   readonly rankNames: Readonly<Record<string, string>>;
-  /** Where «Continuar» leads without a `?vuelta=`: Perfil. */
+  /** Your profile (Resumen) in the page's language: where a sign-in lands. */
   readonly profileHref: string;
   /** Where «Salir» lands: the home page. */
   readonly homeHref: string;
@@ -83,6 +95,8 @@ function SpikeInner({
   // Read after hydration: the query string is the browser's.
   const [{ returnTo, signOutAsked }, setDoor] = useState(NO_DOOR_PARAMS);
   useEffect(() => setDoor(doorParams(window.location.search)), []);
+  // Your profile, unless the door was opened from a room of the player area.
+  const landing = landingAfterSignIn(returnTo, profileHref);
 
   // Connected-but-unauthenticated is the exact spot users get lost in:
   // the wallet is linked yet the SIWE signature is still pending.
@@ -110,7 +124,7 @@ function SpikeInner({
 
   // The page's one session read, owned by the chrome: this island hears
   // the same answer, and every sign-in or sign-out it announces reaches
-  // the whole page. A fresh sign-in goes back to where the door was opened.
+  // the whole page. A fresh sign-in then lands on your profile.
   const [page, setPage] = useState<SessionClient | null>(null);
   useEffect(() => {
     let stop: (() => void) | undefined;
@@ -127,11 +141,11 @@ function SpikeInner({
         session: page,
         onSignedIn: () => {
           page.changed();
-          if (returnTo) window.location.assign(returnTo);
+          window.location.assign(landing);
         },
         onSignedOut: () => page.changed(),
       }),
-    [page, returnTo],
+    [page, landing],
   );
 
   // Dropping the cookie is not enough: in-app wallets (Google/email/passkey)
@@ -168,8 +182,8 @@ function SpikeInner({
 
   // «Listen to thirdweb»: taps inside the closed widget drive the guide.
   // Taps only, never focus: focus arrives on the press, the guide then
-  // appears above the widget and pushes it down, and the release lands
-  // beside the button — the first tap on «Connect a Wallet» was lost.
+  // appears and moves the layout, and the release lands beside the button —
+  // the first tap on «Connect a Wallet» was lost.
   const handleWidgetInteraction = useCallback((event: SyntheticEvent) => {
     const method = methodFromWidgetTarget(event.target);
     if (method) setSelectedMethod(method);
@@ -183,38 +197,50 @@ function SpikeInner({
 
   return (
     <>
-      {guiding && (
-        <LoginMethodGuide
-          copy={copy}
-          selected={selectedMethod}
-          detected={detectedMethod}
-          phase={phase}
-        />
-      )}
-      {/* Signed in: no widget, only who you are. The wallet still reconnects
-          in the background, so «Salir» can disconnect it. */}
-      {signedIn && <AutoConnect client={client} wallets={wallets} />}
-      {atDoor && <LegalConsentGate copy={legal} accepted={accepted} onChange={setAccepted} />}
-      {atDoor && !accepted && <p data-legal-gate-pending>{legal.pending}</p>}
-      {atDoor && accepted && auth && (
-        <div data-metric="auth-connect" onClickCapture={handleWidgetInteraction}>
-          <ConnectEmbed
-            client={client}
-            wallets={wallets}
-            locale={WIDGET_LOCALE[locale]}
-            theme={WIDGET_THEMES[modo]}
-            auth={auth}
+      <div data-sign-in-steps>
+        {atDoor && <LegalConsentGate copy={legal} accepted={accepted} onChange={setAccepted} />}
+        {guiding && (
+          <LoginMethodGuide
+            copy={copy}
+            selected={selectedMethod}
+            detected={detectedMethod}
+            phase={phase}
           />
-        </div>
-      )}
-      <SessionPanel
-        session={session}
-        copy={copy}
-        rankNames={rankNames}
-        continueHref={returnTo ?? profileHref}
-        leaving={leaving}
-        onLogout={handleLogout}
-      />
+        )}
+      </div>
+      <div data-sign-in-way>
+        {/* Signed in: no widget, only who you are. The wallet still reconnects
+            in the background, so «Salir» can disconnect it. */}
+        {signedIn && <AutoConnect client={client} wallets={wallets} />}
+        {/* The widget's place while the terms wait: the way in is visible
+            from the start, and says what opens it. */}
+        {atDoor && !accepted && (
+          <div data-way-waiting>
+            <p className="etiqueta">{copy.doorTitle}</p>
+            <p>{copy.doorMethods}</p>
+            <p data-legal-gate-pending>{legal.pending}</p>
+          </div>
+        )}
+        {atDoor && accepted && auth && (
+          <div data-metric="auth-connect" onClickCapture={handleWidgetInteraction}>
+            <ConnectEmbed
+              client={client}
+              wallets={wallets}
+              locale={WIDGET_LOCALE[locale]}
+              theme={WIDGET_THEMES[modo]}
+              auth={auth}
+            />
+          </div>
+        )}
+        <SessionPanel
+          session={session}
+          copy={copy}
+          rankNames={rankNames}
+          continueHref={landing}
+          leaving={leaving}
+          onLogout={handleLogout}
+        />
+      </div>
     </>
   );
 }

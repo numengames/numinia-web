@@ -68,7 +68,8 @@ test.describe('the Bazaar', () => {
   test('a chosen good fills the preview, which opens its page; the page leads back', async ({
     page,
   }) => {
-    await expect(page.locator('[data-bazaar-preview-empty]')).toBeVisible();
+    // No good chosen, no third pane: the cards keep its width (v0.89.0).
+    await expect(page.locator('[data-bazaar-preview]')).toHaveCount(0);
     const card = page.locator('[data-metric="bazaar-card"]').first();
     const id = await card.getAttribute('data-item');
     const name = ((await card.locator('.nombre').textContent()) ?? '').trim();

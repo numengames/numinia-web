@@ -4,18 +4,26 @@
  * localStorage → export/import — the stored copy IS the portable Markdown,
  * one format everywhere. Nothing ever leaves the device. The v0.6.0 rules
  * engine derives what the manual derives and warns where a file disagrees.
+ *
+ * Layout (Pablo's walkthrough, 2026-10-14: «le hará falta maquetación»): a
+ * blank sheet is one door («create your character»), not a wall of «—»; a
+ * written one opens with its head — the portrait Resumen keeps in this same
+ * record, the name, Prestigio and Prisma — then the identity in three groups
+ * and the characteristics as a compact grid of dots.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { SHEET_RECORD_KEY, isBlankCitizen } from '../../../lib/citizen-profile';
 import {
   emptySheet,
+  isBlankSheet,
   sheetFromMarkdown,
   sheetToMarkdown,
   type LapSheet,
 } from '../../../lib/lap/sheet';
 import { sheetRules } from '../../../lib/lap/rules';
 import { rollD6Pool } from '../../../lib/lap/dice';
-import type { SheetLabels, SheetOptions } from './sheet-props';
+import type { SheetLabels, SheetLayoutLabels, SheetOptions } from './sheet-props';
 import { SheetActions } from './SheetActions';
 import { SheetAptitudes } from './SheetAptitudes';
 import { SheetGears } from './SheetGears';
@@ -26,14 +34,12 @@ import { SheetStats } from './SheetStats';
 interface Props {
   options: SheetOptions;
   labels: SheetLabels;
+  layout: SheetLayoutLabels;
 }
-
-/** D11: the character lives on this device (and in exported files). */
-const STORAGE_KEY = 'numinia-lap-personaje';
 
 function storedSheet(): LapSheet {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(SHEET_RECORD_KEY);
     if (raw && raw.includes('## ')) return sheetFromMarkdown(raw);
   } catch {
     /* private mode: the sheet just starts empty */
@@ -41,19 +47,22 @@ function storedSheet(): LapSheet {
   return emptySheet();
 }
 
-export function SheetIsland({ options, labels }: Props) {
+export function SheetIsland({ options, labels, layout }: Props) {
   const [sheet, setSheet] = useState<LapSheet>(storedSheet);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState('');
   const rules = useMemo(() => sheetRules(sheet), [sheet]);
+  const blank = isBlankSheet(sheet);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, sheetToMarkdown(sheet));
+      // A record with nothing in it is not kept (Resumen does the same).
+      if (blank && isBlankCitizen(sheet.citizen)) localStorage.removeItem(SHEET_RECORD_KEY);
+      else localStorage.setItem(SHEET_RECORD_KEY, sheetToMarkdown(sheet));
     } catch {
       /* storage denied: exports still work */
     }
-  }, [sheet]);
+  }, [sheet, blank]);
 
   const onIdentity = useCallback((key: keyof LapSheet['identity'], value: string) => {
     setSheet((current) => {
@@ -116,22 +125,54 @@ export function SheetIsland({ options, labels }: Props) {
           setStatus(labels.importError);
           return;
         }
-        setSheet(sheetFromMarkdown(text));
+        // A file without a card keeps the portrait and profile Resumen holds.
+        setSheet((current) => {
+          const imported = sheetFromMarkdown(text);
+          return isBlankCitizen(imported.citizen)
+            ? { ...imported, citizen: current.citizen }
+            : imported;
+        });
         setStatus('');
       });
     },
     [labels.importError],
   );
 
+  // Wiping the sheet wipes the game, not the face: the portrait and the
+  // profile are Resumen's, and stay (they are removed there).
   const onWipe = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* nothing stored, nothing lost */
-    }
-    setSheet(emptySheet());
+    setSheet((current) => ({ ...emptySheet(), citizen: current.citizen }));
+    setEditing(false);
     setStatus('');
   }, []);
+
+  const statusLine = status && (
+    <p className="resultado mono" role="status">
+      {status}
+    </p>
+  );
+
+  if (blank && !editing) {
+    return (
+      <div data-lap-sheet>
+        <section className="ficha-vacia" aria-labelledby="ficha-vacia-titulo">
+          <h2 id="ficha-vacia-titulo">{layout.emptyTitle}</h2>
+          <p>{layout.emptyBody}</p>
+          <SheetActions
+            labels={labels}
+            editing={false}
+            dirty={false}
+            startLabel={layout.emptyStart}
+            onToggleEdit={() => setEditing(true)}
+            onExport={onExport}
+            onImport={onImport}
+            onWipe={onWipe}
+          />
+        </section>
+        {statusLine}
+      </div>
+    );
+  }
 
   const attributeRows = (
     [
@@ -159,40 +200,64 @@ export function SheetIsland({ options, labels }: Props) {
   const strayPoints = rules.disabledWithPoints
     .map((id) => options.competences.find((option) => option.id === id)?.label ?? id)
     .join(' · ');
+  const label = (list: readonly { id: string; label: string }[], id: string): string =>
+    list.find((option) => option.id === id)?.label ?? '';
+  const subtitle = [
+    label(options.species, sheet.identity.species),
+    label(options.positions, sheet.identity.position),
+    label(options.guilds, sheet.identity.guild),
+  ]
+    .filter((part) => part !== '')
+    .join(' · ');
+  const name = sheet.identity.name.trim();
+  const photo = sheet.citizen.photo;
 
   return (
     <div data-lap-sheet>
-      <p className="nota">{labels.fileNote}</p>
+      <header className="ficha-cabeza">
+        <span className="retrato-ficha">
+          {photo ? (
+            <img src={photo} alt={layout.portraitAlt} width={88} height={88} />
+          ) : (
+            <span className="monograma" aria-hidden="true">
+              {Array.from(name || '?')[0]?.toUpperCase()}
+            </span>
+          )}
+        </span>
+        <div className="ficha-quien">
+          <p className="ficha-nombre">{name || layout.unnamed}</p>
+          {subtitle && <p className="ficha-sub">{subtitle}</p>}
+          {!photo && <p className="ficha-pista">{layout.portraitHint}</p>}
+        </div>
+        {!editing && (
+          <div className="kpis">
+            {(['prestige', 'prisma'] as const).map((key) => (
+              <div className="kpi" key={key}>
+                <p className="dato-xl mono">
+                  {key === 'prestige' && sheet.values[key] === 0 ? labels.none : sheet.values[key]}
+                </p>
+                <p className="etiqueta">{labels.fields[key]}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </header>
       <SheetActions
         labels={labels}
         editing={editing}
-        dirty={sheetToMarkdown(sheet) !== sheetToMarkdown(emptySheet())}
+        dirty={!blank}
         onToggleEdit={() => setEditing((value) => !value)}
         onExport={onExport}
         onImport={onImport}
         onWipe={onWipe}
       />
-      {status && (
-        <p className="resultado mono" role="status">
-          {status}
-        </p>
-      )}
-      {!editing && (
-        <div className="kpis">
-          {(['prestige', 'prisma'] as const).map((key) => (
-            <div className="kpi" key={key}>
-              <p className="dato-xl mono">
-                {key === 'prestige' && sheet.values[key] === 0 ? labels.none : sheet.values[key]}
-              </p>
-              <p className="etiqueta">{labels.fields[key]}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {statusLine}
+      <p className="nota">{labels.fileNote}</p>
       <SheetIdentity
         sheet={sheet}
         options={options}
         labels={labels}
+        layout={layout}
         editing={editing}
         onIdentity={onIdentity}
       />
