@@ -10,7 +10,7 @@
 // on 2026-09-16 a stale LORE_TOKEN turned a public read into HTTP 401 and
 // blocked every deploy for a day.
 
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 const LORE_REPO = process.env.LORE_REPO ?? 'numengames/numinia-archive';
@@ -214,4 +214,45 @@ if (offer === null) {
   );
 } else {
   write(OFFER.target, offer, `${LORE_REPO}@${LORE_REF}`);
+}
+
+// The register of organisation permissions (STD-052). packages/domain keeps a
+// copy, and its tests hold the code to it (STD-051 ORG-012: the code and the
+// register move together). Here the copy is held to the archive's: when the
+// archive's keys, owners' acts, cap or templates differ from the copy, the
+// deploy stops until the copy and the code follow. Its prose may change
+// freely. A 404 keeps the copy, as the offer record above does.
+const REGISTER = {
+  path: 'standards/STD-052-organisation-permissions.md',
+  copy: new URL(
+    '../packages/domain/registers/STD-052-organisation-permissions.md',
+    import.meta.url,
+  ),
+  marker: '## Permissions',
+};
+function registerFacts(text) {
+  const facts = [];
+  for (const line of text.split('\n')) {
+    const key = /^\| `([a-z-]+)` \|/.exec(line);
+    const template = /^\| ([^|]+?) \| [^|]+ \| ([^|]*base role:[^|]*) \|$/.exec(line);
+    const cap = /at most (\d+) roles/.exec(line);
+    if (key) facts.push(key[1]);
+    else if (template) facts.push(`${template[1]}: ${template[2]}`);
+    else if (cap) facts.push(`at most ${cap[1]} roles`);
+    else if (line.startsWith('- ')) facts.push(line);
+  }
+  return facts.join('\n');
+}
+const register = await read(REGISTER.path, REGISTER.marker, { optional: true });
+if (register === null) {
+  console.warn(
+    `fetch-lore: ${REGISTER.path} not in the archive (HTTP 404); the code keeps to its copy in packages/domain/registers/.`,
+  );
+} else if (registerFacts(register) !== registerFacts(readFileSync(REGISTER.copy, 'utf8'))) {
+  console.error(
+    `fetch-lore: the archive's ${REGISTER.path} changed its keys, owners' acts, cap or templates. Copy it into packages/domain/registers/ and make the code follow (STD-051 ORG-012): the domain's tests say what to change.`,
+  );
+  process.exit(1);
+} else {
+  console.log(`fetch-lore: ${REGISTER.path} matches its copy in packages/domain/registers/.`);
 }

@@ -76,7 +76,7 @@ describe('ORG-012: the code holds what the register STD-052 holds', () => {
   it('the roles each kind of organisation is born with, with what each carries', () => {
     const rows = [
       ...section('The roles an organisation is born with').matchAll(
-        /^\| (Alpha|Team|Community) \| [^|]+ \| ([^|]+) \|$/gm,
+        /^\| ([^|]+?) \| [^|]+ \| ([^|]*base role:[^|]*) \|$/gm,
       ),
     ];
     const fromRegister = rows.map(([, name = '', cell = '']) => {
