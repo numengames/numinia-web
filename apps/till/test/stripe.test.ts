@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  STRIPE_VERSION,
-  Stripe,
-  formEncode,
-  parseSession,
-  type Fetcher,
-} from '../src/lib/stripe';
+import { STRIPE_VERSION, Stripe, formEncode, parseSession, type Fetcher } from '../src/lib/stripe';
 import { FakeStripe } from './fake-stripe';
 
 const KEY = 'rk_test_pretend';
@@ -100,9 +94,9 @@ describe('reading a Checkout Session', () => {
 
 describe('the client', () => {
   it('form-encodes Stripe’s bracket keys', () => {
-    expect(formEncode({ 'line_items[0][price]': 'price_ten', success_url: 'https://a/?s={X}' })).toBe(
-      'line_items%5B0%5D%5Bprice%5D=price_ten&success_url=https%3A%2F%2Fa%2F%3Fs%3D%7BX%7D',
-    );
+    expect(
+      formEncode({ 'line_items[0][price]': 'price_ten', success_url: 'https://a/?s={X}' }),
+    ).toBe('line_items%5B0%5D%5Bprice%5D=price_ten&success_url=https%3A%2F%2Fa%2F%3Fs%3D%7BX%7D');
   });
 
   it('pins the API version and names the key in every request, form-encoded', async () => {
@@ -154,11 +148,17 @@ describe('the client', () => {
     const types = ['checkout.session.completed', 'checkout.session.async_payment_succeeded'];
     const first = await client.listEvents({ types, createdGte: 50 });
     expect(first.hasMore).toBe(false);
-    expect(first.events.map((event) => [event.type, event.created, event.session?.paymentStatus])).toEqual([
+    expect(
+      first.events.map((event) => [event.type, event.created, event.session?.paymentStatus]),
+    ).toEqual([
       ['checkout.session.async_payment_succeeded', 100, 'paid'],
       ['checkout.session.completed', 100, 'unpaid'],
     ]);
-    const after = await client.listEvents({ types, createdGte: 50, startingAfter: 'evt_test_0002' });
+    const after = await client.listEvents({
+      types,
+      createdGte: 50,
+      startingAfter: 'evt_test_0002',
+    });
     expect(after.events.map((event) => event.id)).toEqual(['evt_test_0001']);
     expect(stripe.requests.at(-1)?.form.get('starting_after')).toBe('evt_test_0002');
     // An event about something else carries no session.
@@ -204,17 +204,17 @@ describe('the client', () => {
     await expect(client.retrieveCheckoutSession('cs_test_b2')).rejects.toThrow(
       'answered no such session',
     );
-    for (const notAList of [
-      [],
-      { data: {}, has_more: false },
-      { data: [], has_more: 'no' },
-    ]) {
+    for (const notAList of [[], { data: {}, has_more: false }, { data: [], has_more: 'no' }]) {
       stripe.answerWith = notAList;
       await expect(client.listEvents({ types: [], createdGte: 0 })).rejects.toThrow(
         'stripe: GET /v1/events answered no list',
       );
     }
-    for (const event of [null, { id: 'evt', type: 't', created: 1.5 }, { id: '', type: 't', created: 1 }]) {
+    for (const event of [
+      null,
+      { id: 'evt', type: 't', created: 1.5 },
+      { id: '', type: 't', created: 1 },
+    ]) {
       stripe.answerWith = { data: [event], has_more: false };
       await expect(client.listEvents({ types: [], createdGte: 0 })).rejects.toThrow(
         'answered a malformed event',

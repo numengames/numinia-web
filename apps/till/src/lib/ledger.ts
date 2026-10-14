@@ -1,8 +1,8 @@
 /**
  * The ledger (ADR-070 §8, MIS-177): each account's balance is the sum of
  * lines that are only ever added — one per top-up, per world and day, per
- * adjustment, per refund or chargeback. Amounts are integer euro cents, NET
- * of VAT. Positive lines are lots, spent oldest first, so the remainder of
+ * adjustment, per refund or chargeback. Amounts are integer euro cents as
+ * paid, VAT included (a top-up keeps its VAT beside it, for the books). Positive lines are lots, spent oldest first, so the remainder of
  * every top-up is known at any instant — what a refund on request or an
  * expiry would need one day (DBT-026).
  */
@@ -16,7 +16,7 @@ interface LineBase {
   /** Sortable and unique: see `lineId`. */
   readonly id: string;
   readonly accountId: string;
-  /** Signed, net of VAT. */
+  /** Signed, euro cents as paid (VAT included). */
   readonly amountCents: number;
   /** When the line was written, as an ISO instant (`Date#toISOString`). */
   readonly at: string;

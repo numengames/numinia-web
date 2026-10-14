@@ -353,7 +353,7 @@ describe('top-ups through Stripe Managed Payments Checkout', () => {
     ).toBeNull();
   });
 
-  it('credits a paid session once on return: net of the tax Stripe collected, the tax beside it', async () => {
+  it('credits a paid session once on return: the amount paid, the tax Stripe collected beside it', async () => {
     const { desk, stripe, sqlite } = scene();
     const own = await personal(desk);
     await desk.startTopup(PABLO, own, '10', RETURN);
@@ -365,7 +365,7 @@ describe('top-ups through Stripe Managed Payments Checkout', () => {
     });
     stripe.pay('cs_test_0001', { amountTotal: 1000, amountTax: 174 });
     const paid = await desk.confirmTopup(PABLO, 'cs_test_0001');
-    expect(paid).toEqual({ ok: true, state: 'paid', accountId: own, balanceCents: 826 });
+    expect(paid).toEqual({ ok: true, state: 'paid', accountId: own, balanceCents: 1000 });
     const asked = stripe.requests.length;
     expect(await desk.confirmTopup(PABLO, 'cs_test_0001')).toEqual(paid);
     expect(stripe.requests.length).toBe(asked);
@@ -378,7 +378,7 @@ describe('top-ups through Stripe Managed Payments Checkout', () => {
     ).toEqual([
       {
         kind: 'topup',
-        amount_cents: 826,
+        amount_cents: 1000,
         vat_cents: 174,
         stripe_payment_id: 'pi_test_0001',
         stripe_invoice_id: 'in_test_0001',
@@ -546,7 +546,7 @@ describe('reading rows and sessions', () => {
       url: null,
     } as const;
     expect(creditOf(checkout, session)).toEqual({
-      netCents: 826,
+      paidCents: 1000,
       vatCents: 174,
       paymentId: 'pi_1',
     });
@@ -556,6 +556,7 @@ describe('reading rows and sessions', () => {
     expect(creditOf(checkout, { ...session, amountTax: null })).toBeNull();
     expect(creditOf(checkout, { ...session, amountTax: -1 })).toBeNull();
     expect(creditOf(checkout, { ...session, amountTotal: 174 })).toBeNull();
+    expect(creditOf(checkout, { ...session, amountTotal: 0, amountTax: 0 })).toBeNull();
     expect(typeof applySession).toBe('function');
   });
 });
