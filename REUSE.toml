@@ -46,6 +46,15 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "CC-BY-4.0"
 
+# The communities register (phase 0 of the communities platform): one file
+# per community and per ritual, the facts each community publishes about
+# itself. Data, like the fixtures — CC0.
+[[annotations]]
+path = "apps/store/src/content/communities/**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "CC0-1.0"
+
 # Legal corpus (MIS-086): verbatim copies of the numinia-nwos masters
 # (operations/legal/). Enforceable legal artifacts — reserved, never CC-BY:
 # last-match-wins puts this block after the content/** one on purpose.

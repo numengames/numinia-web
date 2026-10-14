@@ -1,0 +1,301 @@
+/**
+ * Shared styles of the communities platform (home, /communities/, a
+ * community's page, a ritual's page, the calendar). Everything here uses the
+ * kit's variables only: no new colours, no new radii, no new durations.
+ */
+
+/* ---- Chips: mono caps in a capsule, the border at 40 % ---------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--linea-f);
+  color: var(--texto-2);
+  white-space: nowrap;
+  text-decoration: none;
+  background: transparent;
+}
+.chip .punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.chip.vivo {
+  color: var(--enlace);
+  border-color: color-mix(in srgb, var(--enlace) 45%, transparent);
+}
+.chip.ambar {
+  color: var(--ambar);
+  border-color: color-mix(in srgb, var(--ambar) 45%, transparent);
+}
+.chip.turquesa {
+  color: var(--turquesa);
+  border-color: color-mix(in srgb, var(--turquesa) 55%, transparent);
+}
+.chip.pendiente {
+  border-style: dashed;
+}
+button.chip {
+  cursor: pointer;
+}
+button.chip[aria-pressed='true'] {
+  color: var(--texto);
+  border-color: var(--enlace);
+  background: color-mix(in srgb, var(--enlace) 12%, transparent);
+}
+
+/* ---- Blocks and heads --------------------------------------------------- */
+.bloque {
+  padding-top: var(--s8);
+  padding-bottom: var(--s8);
+}
+.bloque + .bloque {
+  border-top: 1px solid var(--linea);
+}
+.cabecera-bloque {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: var(--s6);
+}
+.cabecera-bloque h2 {
+  margin: 0;
+}
+.cabecera-bloque .ayuda {
+  color: var(--texto-2);
+  margin: var(--s2) 0 0;
+  max-width: 56ch;
+}
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.fila.entre {
+  justify-content: space-between;
+}
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.rejilla {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+.rejilla > *,
+.dos > * {
+  min-width: 0;
+}
+.texto-2 {
+  color: var(--texto-2);
+}
+.small {
+  font-size: 0.875rem;
+}
+.etiqueta.corta {
+  letter-spacing: 0.15em;
+}
+
+/* ---- Cards as links: no underline, the kit's hover ---------------------- */
+a.tarjeta {
+  color: inherit;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+a.tarjeta:hover,
+a.tarjeta:focus-visible {
+  border-color: var(--enlace);
+}
+.tarjeta .cuerpo {
+  padding: var(--s4) 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.tarjeta h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Key/value lists ---------------------------------------------------- */
+.kv {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+}
+.kv dt {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.kv dd {
+  margin: 3px 0 0;
+}
+
+/* ---- Empty states ------------------------------------------------------- */
+.vacio {
+  color: var(--texto-2);
+  font-size: 0.95rem;
+  border: 1px dashed var(--linea-f);
+  border-radius: var(--radio-marco);
+  padding: var(--s4) 20px;
+  margin: 0;
+  display: flex;
+  gap: var(--s3);
+  align-items: center;
+}
+
+/* ---- Page heads (a community, a ritual, the calendar) ------------------ */
+.migas {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--texto-2);
+  margin: var(--s5) 0 0;
+  letter-spacing: 0.04em;
+}
+.migas a {
+  color: var(--texto-2);
+  text-decoration: none;
+}
+.migas a:hover {
+  color: var(--texto);
+}
+.cabeza {
+  padding: var(--s4) 0 var(--s6);
+  display: grid;
+  gap: var(--s4);
+}
+.cabeza h1 {
+  margin: 0;
+}
+.cabeza .desc {
+  font-size: 1.15rem;
+  color: var(--texto-2);
+  max-width: 62ch;
+  margin: 0;
+}
+.cabeza .etiqueta {
+  margin: 0;
+}
+.dos {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 56.25rem) {
+  .dos {
+    grid-template-columns: 1.25fr 0.75fr;
+  }
+}
+.card-h2 {
+  font-size: 1.44rem;
+  margin: 0 0 var(--s4);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--texto);
+}
+.card-h2 .icono {
+  color: var(--enlace);
+}
+
+/* ---- A page's countdown and the pages' bar of place --------------------- */
+.lugar-linea {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  color: var(--texto-2);
+  flex-wrap: wrap;
+}
+.enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+.enlaces a {
+  font: 500 0.875rem var(--sans);
+  text-decoration: none;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  padding: 7px 12px;
+  color: var(--texto-2);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.enlaces a:hover {
+  color: var(--texto);
+  border-color: var(--enlace);
+}
+.franja {
+  border: 1px solid color-mix(in srgb, var(--ambar) 45%, transparent);
+  background: color-mix(in srgb, var(--ambar) 8%, transparent);
+  border-radius: var(--radio-marco);
+  padding: var(--s4) 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  align-items: center;
+  justify-content: space-between;
+}
+.franja p {
+  margin: 0;
+  max-width: 60ch;
+}
+.linea-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.linea-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--linea);
+}
+.linea-lista li:first-child {
+  border-top: 0;
+}
+.linea-lista a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+.linea-lista a:hover {
+  color: var(--enlace);
+}
+.btn {
+  text-decoration: none;
+}
+.btn-sm {
+  min-height: 32px;
+  padding: 4px var(--s4);
+  font-size: 0.875rem;
+}

@@ -128,8 +128,9 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
       sawSystemOutline = true;
     }
   }
-  // Tab order follows the chrome's reading order — brand, pillars, utilities.
-  const expected = ['nav-home', 'nav-city', 'nav-assets', 'nav-lap', 'chrome-mode'];
+  // Tab order follows the chrome's reading order — the scarab, then the
+  // utilities: the search, the mode, the language, the door (no menu).
+  const expected = ['nav-home', 'nav-search', 'chrome-mode', 'chrome-sign-in'];
   const positions = expected.map((metric) => stops.indexOf(metric));
   expect(positions, stops.join(' → ')).not.toContain(-1);
   expect(

@@ -1,0 +1,290 @@
+---
+/**
+ * A community's public page: its picture, what it is, where it is from,
+ * its line, its links, the invitation to make the page its own, then its
+ * rituals (standing, upcoming, held), its archive, its home, its members
+ * and the details. Empty states say what will be here and who fills it.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import {
+  held,
+  pick,
+  placesLine,
+  ritualsOf,
+  upcoming,
+  whenShort,
+  yearOf,
+  type Community,
+} from '../../lib/communities';
+import { RITUALS } from './register';
+import Icon from '../chrome/Icon.astro';
+import Cover from './Cover.astro';
+import RitualCard from './RitualCard.astro';
+import Countdown from './Countdown.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+  community: Community;
+}
+
+const { locale, community } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const own = ritualsOf(community.id, RITUALS);
+const coming = upcoming(own);
+const past = held(own);
+const image = community.image
+  ? { src: community.image.src, alt: pick(community.image.alt, locale) }
+  : undefined;
+const isConference = pick(community.kind, 'en').startsWith('Conference');
+const founder = community.state === 'founder';
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${community.name} — Numinia`}
+  description={pick(community.summary, locale)}
+  wide
+>
+  <Cover id={community.id} name={community.name} image={image} variant="cover" eager art />
+  <div class="columna">
+    <p class="migas">
+      <a href={`${prefix}/`}>Numinia</a> / <a href={`${prefix}/communities/`}>{ui.crumbCommunities}</a> / {community.name}
+    </p>
+    <div class="cabeza">
+      <div class="fila">
+        <span class="etiqueta">{pick(community.kind, locale)}</span>
+        {founder && <span class="chip ambar">{ui.founder}</span>}
+        {!founder && <span class="chip">{ui.openedByHouse}</span>}
+        {community.operator && <span class="chip turquesa">{fill(ui.runBy, { x: community.operator })}</span>}
+      </div>
+      <h1 class="display-m">{community.name}</h1>
+      <span class="lugar-linea"><Icon name="map-pin" size={16} />{placesLine(community.places, locale)}</span>
+      <p class="desc">{pick(community.summary, locale)}</p>
+      {
+        community.links.length > 0 && (
+          <div class="enlaces">
+            {community.links.map((link) => (
+              <a href={link.href} target="_blank" rel="noopener noreferrer" data-metric="community-link">
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )
+      }
+      {
+        !founder && (
+          <div class="franja">
+            <p>
+              <strong>{ui.claimTitle}</strong> {ui.claimText}
+            </p>
+            <a class="btn btn-primario" href={`${prefix}/lap/session/`} data-metric="community-claim">
+              {ui.claimCta}
+            </a>
+          </div>
+        )
+      }
+    </div>
+
+    <div class="dos">
+      <div class="pila">
+        <section class="tarjeta">
+          <div class="fila entre" style="margin-bottom: var(--s4)">
+            <h2 class="card-h2" style="margin: 0"><Icon name="calendar-blank" size={20} />{ui.rituals}</h2>
+            <a
+              class="btn btn-fantasma btn-sm"
+              href={`/communities/${community.id}/calendar.ics`}
+              data-metric="community-subscribe"
+            >
+              <Icon name="download-simple" size={16} />
+              {ui.subscribe}
+            </a>
+          </div>
+          {
+            community.weekly.length > 0 && (
+              <>
+                <p class="etiqueta corta">{ui.weekly}</p>
+                <ul class="linea-lista">
+                  {community.weekly.map((entry) => (
+                    <li>
+                      <span>{pick(entry.name, locale)}</span>
+                      <span class="small texto-2">{pick(entry.when, locale)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p class="small texto-2" style="margin: var(--s2) 0 var(--s4)">
+                  {ui.weeklyNote}
+                </p>
+              </>
+            )
+          }
+          <p class="etiqueta corta">{ui.upcomingLabel}</p>
+          {
+            coming.length > 0 ? (
+              <ul class="lista-rit">
+                {coming.map((ritual) => (
+                  <li>
+                    <RitualCard ritual={ritual} community={community} locale={locale} prefix={prefix} ui={ui} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="vacio">
+                <Icon name="hourglass" size={24} />
+                <span>{isConference ? ui.noUpcomingConference : ui.noUpcoming}</span>
+              </p>
+            )
+          }
+          <p class="etiqueta corta" style="margin-top: var(--s5)">{ui.heldLabel}</p>
+          {
+            past.length > 0 ? (
+              <ul class="linea-lista">
+                {past.map((ritual) => (
+                  <li>
+                    <span>
+                      <a href={`${prefix}/rituals/${ritual.id}/`} data-metric="community-held-ritual">
+                        {pick(ritual.title, locale)}
+                      </a>{' '}
+                      <span class="texto-2 small">· {pick(ritual.where, locale)}</span>
+                    </span>
+                    <span class="small texto-2">
+                      {whenShort(ritual, locale)} {yearOf(ritual)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="vacio">
+                <Icon name="scroll" size={24} />
+                <span>{founder ? ui.noHeldFounder : ui.noHeld}</span>
+              </p>
+            )
+          }
+        </section>
+
+        <section class="tarjeta">
+          <h2 class="card-h2"><Icon name="archive" size={20} />{ui.archive}</h2>
+          {
+            community.archive ? (
+              <p class="texto-2" style="margin: 0">{pick(community.archive, locale)}</p>
+            ) : (
+              <p class="vacio">
+                <Icon name="file-text" size={24} />
+                <span>{ui.archiveEmpty}</span>
+              </p>
+            )
+          }
+        </section>
+      </div>
+
+      <div class="pila">
+        <section class="tarjeta">
+          <h2 class="card-h2"><Icon name="house" size={20} />{ui.home}</h2>
+          {
+            founder ? (
+              <p class="texto-2" style="margin: 0">{ui.homeFounderNote}</p>
+            ) : (
+              <>
+                <div class="escena" aria-hidden="true">
+                  <div class="suelo" />
+                  <div class="faro" />
+                </div>
+                <p class="texto-2 small" style="margin: var(--s3) 0 0">
+                  {community.homeInProgress && <span class="chip ambar" style="margin-right: 6px">{ui.homeInProgress}</span>}
+                  {community.homeInProgress ? ui.homeInProgressText : ui.homeToOpenText}
+                </p>
+              </>
+            )
+          }
+        </section>
+
+        <section class="tarjeta">
+          <h2 class="card-h2"><Icon name="users" size={20} />{ui.members}</h2>
+          {
+            community.people ? (
+              <p class="texto-2" style="margin: 0">{pick(community.people, locale)}</p>
+            ) : (
+              <p class="vacio">
+                <Icon name="user" size={24} />
+                <span>{ui.membersEmpty}</span>
+              </p>
+            )
+          }
+          <p class="small texto-2" style="margin: var(--s3) 0 0">{ui.membersNote}</p>
+        </section>
+
+        <section class="tarjeta">
+          <h2 class="card-h2"><Icon name="gear" size={20} />{ui.details}</h2>
+          <dl class="kv">
+            <div><dt>{ui.whoSees}</dt><dd>{ui.everyone}</dd></div>
+            <div><dt>{ui.howToEnter}</dt><dd>{founder ? ui.byInvitation : ui.decidedByCommunity}</dd></div>
+            <div><dt>{ui.district}</dt><dd>{ui.toChoose}</dd></div>
+            <div>
+              <dt>{ui.itsFile}</dt>
+              <dd class="mono small texto-2">src/content/communities/{community.id}.md</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  /* The page is wide for its cover; the text keeps the reading column. */
+  :global(main[data-wide]) {
+    padding: 0 0 var(--s7);
+  }
+  .columna {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 var(--s5);
+  }
+  .lista-rit {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 40rem) {
+    .lista-rit {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .escena {
+    position: relative;
+    height: 170px;
+    border-radius: var(--radio-control);
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 0%, var(--elevada) 0%, var(--fondo) 70%);
+    border: 1px solid var(--linea);
+  }
+  .escena .suelo {
+    position: absolute;
+    inset: 55% -20% -40%;
+    background-image:
+      linear-gradient(var(--linea-f) 1px, transparent 1px),
+      linear-gradient(90deg, var(--linea-f) 1px, transparent 1px);
+    background-size: 28px 28px;
+    transform: perspective(260px) rotateX(58deg);
+    opacity: 0.7;
+  }
+  .escena .faro {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    width: 12px;
+    height: 56px;
+    margin-left: -6px;
+    background: linear-gradient(var(--ambar), transparent);
+    border-radius: 6px;
+    box-shadow: 0 0 40px 10px color-mix(in srgb, var(--ambar) 25%, transparent);
+  }
+</style>

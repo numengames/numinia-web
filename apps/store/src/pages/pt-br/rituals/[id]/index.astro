@@ -1,0 +1,15 @@
+---
+import RitualPage from '../../../../components/communities/RitualPage.astro';
+import { RITUALS, communityOf } from '../../../../components/communities/register';
+
+export function getStaticPaths() {
+  return RITUALS.map((ritual) => ({
+    params: { id: ritual.id },
+    props: { ritual, community: communityOf(ritual.community) },
+  }));
+}
+
+const { ritual, community } = Astro.props;
+---
+
+<RitualPage locale="pt-br" ritual={ritual} community={community} />

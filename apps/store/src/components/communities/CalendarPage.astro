@@ -1,0 +1,183 @@
+---
+/**
+ * /calendar/ — the rituals of every community, month by month, from the
+ * month of the first upcoming ritual. Whole-day rituals cover their days;
+ * every cell links to the ritual's page. The feed to subscribe to is the
+ * same data as an .ics file.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { calendarMonths, firstMonth, pick, upcoming } from '../../lib/communities';
+import { RITUALS } from './register';
+import Icon from '../chrome/Icon.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const coming = upcoming(RITUALS);
+const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, coming, locale);
+---
+
+<BaseLayout locale={locale} title={`${ui.calendarTitle} — Numinia`} description={ui.calendarLead}>
+  <p class="migas"><a href={`${prefix}/`}>Numinia</a> / {ui.calendarTitle}</p>
+  <div class="cabeza">
+    <p class="etiqueta entrada">{ui.calendarEyebrow}</p>
+    <h1 class="display-m entrada-1">{ui.calendarTitle}</h1>
+    <p class="desc entrada-2">{ui.calendarLead}</p>
+    <div class="fila entrada-3">
+      <a class="btn btn-fantasma btn-sm" href="/calendar.ics" data-metric="calendar-subscribe">
+        <Icon name="calendar-blank" size={16} />
+        {ui.subscribeCity}
+      </a>
+    </div>
+  </div>
+  <div class="meses">
+    {
+      months.map((month) => (
+        <section class="tarjeta mes">
+          <h2>
+            {month.label}
+            <span>{month.count === 1 ? ui.ritualOne : fill(ui.ritualMany, { n: month.count })}</span>
+          </h2>
+          <table class="cal">
+            <thead>
+              <tr>
+                {ui.weekdays.map((day) => (
+                  <th scope="col">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {month.weeks.map((week) => (
+                <tr>
+                  {week.map((cell) => (
+                    <td class:list={{ fuera: !cell.inMonth }}>
+                      <span class="n">{cell.day}</span>
+                      {cell.rituals.map((ritual) => (
+                        <a
+                          class:list={['ev', ritual.city ? 'ciudad' : (ritual.mode ?? 'tba')]}
+                          href={`${prefix}/rituals/${ritual.id}/`}
+                          title={pick(ritual.title, locale)}
+                          data-metric="calendar-ritual"
+                        >
+                          {pick(ritual.title, locale)}
+                        </a>
+                      ))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))
+    }
+  </div>
+  <p class="small texto-2" style="margin: var(--s4) 0 var(--s8)">{ui.calendarNote}</p>
+</BaseLayout>
+
+<style>
+  .meses {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 53.75rem) {
+    .meses {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .mes {
+    padding: var(--s4);
+  }
+  .mes h2 {
+    margin: 0 0 var(--s3);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mes h2 span {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .cal {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 2px;
+  }
+  .cal th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    text-align: center;
+    padding: 4px 0 6px;
+  }
+  .cal td {
+    vertical-align: top;
+    min-width: 0;
+    height: 62px;
+    border: 1px solid var(--linea);
+    border-radius: 4px;
+    padding: 3px 4px;
+    background: var(--fondo);
+  }
+  .cal td.fuera {
+    opacity: 0.35;
+  }
+  .cal .n {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--texto-2);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .ev {
+    display: block;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    padding: 2px 4px;
+    margin-top: 2px;
+    border-radius: 3px;
+    text-decoration: none;
+    color: var(--texto);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-left: 3px solid var(--texto-2);
+    background: color-mix(in srgb, var(--texto-2) 14%, transparent);
+  }
+  .ev.in-person {
+    border-left-color: var(--ambar);
+    background: color-mix(in srgb, var(--ambar) 16%, transparent);
+  }
+  .ev.online {
+    border-left-color: var(--turquesa);
+    background: color-mix(in srgb, var(--turquesa) 20%, transparent);
+  }
+  .ev.mixed {
+    border-left-color: var(--enlace);
+    background: color-mix(in srgb, var(--enlace) 16%, transparent);
+  }
+  .ev.ciudad {
+    border-left-color: var(--ambar);
+    background: transparent;
+    border-top: 1px dashed color-mix(in srgb, var(--ambar) 50%, transparent);
+    border-bottom: 1px dashed color-mix(in srgb, var(--ambar) 50%, transparent);
+  }
+</style>

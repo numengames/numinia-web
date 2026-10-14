@@ -19,8 +19,12 @@ interface Budget {
 // Total budgets carry ~25% headroom over the measured baseline; JS budgets
 // are exact promises (zero means zero).
 const BUDGETS: readonly Budget[] = [
-  { path: '/', totalKB: 220, jsKB: 0, imgKB: 10 },
-  { path: '/es/', totalKB: 220, jsKB: 0, imgKB: 10 },
+  // The front door of the communities platform (2026-10-14): the featured
+  // community's illustration, the three seals and the city rituals' pictures
+  // (~363KB measured; the cards without a picture draw a monogram, no art,
+  // to keep it there). Still 0 KB of external JS.
+  { path: '/', totalKB: 720, jsKB: 0, imgKB: 450 },
+  { path: '/es/', totalKB: 720, jsKB: 0, imgKB: 450 },
   { path: '/archive/', totalKB: 620, jsKB: 0, imgKB: 400 },
   { path: '/gallery/', totalKB: 450, jsKB: 0, imgKB: 250 },
   { path: '/city/', totalKB: 420, jsKB: 0, imgKB: 160 },

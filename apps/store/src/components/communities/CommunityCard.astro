@@ -1,0 +1,107 @@
+---
+/**
+ * A community as a card: its picture or monogram, what it is, its name,
+ * where it is from, a line about it, its marks, and its next ritual.
+ */
+import type { Community, Ritual } from '../../lib/communities';
+import { nextRitualOf, pick, placesLine, ritualsOf, held, whenShort, yearOf } from '../../lib/communities';
+import { fill, type CommunitiesMessages } from '../../i18n/communities';
+import Icon from '../chrome/Icon.astro';
+import Cover from './Cover.astro';
+
+interface Props {
+  community: Community;
+  rituals: readonly Ritual[];
+  locale: string;
+  prefix: string;
+  ui: CommunitiesMessages;
+  /** For the search box: what this card matches against. */
+  searchText?: string | undefined;
+}
+
+const { community, rituals, locale, prefix, ui, searchText } = Astro.props;
+const next = nextRitualOf(community.id, rituals);
+const last = held(ritualsOf(community.id, rituals))[0];
+const image = community.image ? { src: community.image.src, alt: pick(community.image.alt, locale) } : undefined;
+
+let footLine: string;
+let footCountdown: string | undefined;
+if (next) {
+  footLine = `${ui.nextRitual}: ${pick(next.title, locale)} · ${whenShort(next, locale)}`;
+  footCountdown = next.start;
+} else if (community.weekly.length > 0) {
+  footLine = `${ui.weekly}: ${community.weekly.map((entry) => pick(entry.name, locale)).join(' · ')}`;
+} else if (last) {
+  footLine = `${ui.lastRitual}: ${pick(last.title, locale)} · ${whenShort(last, locale)} ${yearOf(last)}`;
+} else {
+  footLine = `${ui.nextRitual}: ${ui.toAnnounce}`;
+}
+---
+
+<a
+  class="tarjeta com"
+  href={`${prefix}/communities/${community.id}/`}
+  data-metric="community-card"
+  data-search={searchText}
+  data-places={community.places.join(' ')}
+>
+  <Cover id={community.id} name={community.name} image={image} />
+  <div class="cuerpo">
+    <span class="tipo">{pick(community.kind, locale)}</span>
+    <h3>{community.name}</h3>
+    <span class="lugar"><Icon name="map-pin" size={14} />{placesLine(community.places, locale)}</span>
+    <p class="desc">{pick(community.summary, locale)}</p>
+    {
+      (community.state === 'founder' || community.operator) && (
+        <span class="fila marcas">
+          {community.state === 'founder' && <span class="chip ambar">{ui.founder}</span>}
+          {community.operator && <span class="chip turquesa">{fill(ui.runBy, { x: community.operator })}</span>}
+        </span>
+      )
+    }
+    <span class="pie">
+      <Icon name="calendar-blank" size={14} />
+      <span>{footLine}<span class="falta" data-countdown={footCountdown}></span></span>
+    </span>
+  </div>
+</a>
+
+<style>
+  .tipo {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .lugar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--texto-2);
+    font-size: 0.9rem;
+  }
+  .desc {
+    color: var(--texto-2);
+    font-size: 0.95rem;
+    margin: var(--s1) 0 0;
+  }
+  .marcas {
+    margin-top: var(--s2);
+  }
+  .pie {
+    margin-top: auto;
+    padding-top: var(--s3);
+    font-size: 0.875rem;
+    color: var(--texto-2);
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .pie .icono {
+    margin-top: 3px;
+  }
+  .falta:not(:empty)::before {
+    content: ' · ';
+  }
+</style>

@@ -1,0 +1,12 @@
+---
+import CommunityPage from '../../../../components/communities/CommunityPage.astro';
+import { COMMUNITIES } from '../../../../components/communities/register';
+
+export function getStaticPaths() {
+  return COMMUNITIES.map((community) => ({ params: { id: community.id }, props: { community } }));
+}
+
+const { community } = Astro.props;
+---
+
+<CommunityPage locale="es" community={community} />

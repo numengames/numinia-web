@@ -18,9 +18,10 @@ import { buildTriangleGlb } from './support/triangle-glb';
 //   mcr.microsoft.com/playwright:v<playwright-version>-noble \
 //   npx playwright test visual --update-snapshots --project=chromium
 
+// The front door left this list on 2026-10-14: it is drawn from the
+// communities register (rituals come and go with the files), so its pixels
+// change by design; its gates are the acceptance scenarios and a11y.
 const PAGES = [
-  { path: '/', name: 'landing-en' },
-  { path: '/es/', name: 'landing-es' },
   { path: '/archive/', name: 'archive-index' },
   { path: '/es/archive/', name: 'archive-index-es' },
   { path: '/gallery/', name: 'gallery' },
