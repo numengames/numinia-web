@@ -764,21 +764,24 @@ export function checkoutOf(row: Row): CheckoutRow {
 }
 
 /**
- * What a paid session credits: its net (the total less its tax) and its
- * tax, in euro cents, when the session is the checkout's own — same account,
- * euros, a payment intent, a positive net. Null: not a payment the till
- * may credit.
+ * What a paid session credits: the amount the buyer PAID, tax included, as
+ * balance — Pablo's decision (2026-10-14): +10 € is 10 € of balance in every
+ * country, and Stripe's refunds are on the amount paid, so a refund takes
+ * back exactly what was credited. The tax Managed Payments collected is kept
+ * beside it (`vat_cents`) for the books. Only when the session is the
+ * checkout's own — same account, euros, a payment intent, a tax no larger
+ * than the total, a positive amount. Null: not a payment the till may credit.
  */
 export function creditOf(
   checkout: Pick<CheckoutRow, 'id' | 'accountId'>,
   session: CheckoutSession,
-): { netCents: number; vatCents: number; paymentId: string } | null {
+): { paidCents: number; vatCents: number; paymentId: string } | null {
   const { amountTotal, amountTax, paymentIntent } = session;
   if (session.id !== checkout.id || session.clientReferenceId !== checkout.accountId) return null;
   if (session.currency !== 'eur' || paymentIntent === null) return null;
   if (amountTotal === null || amountTax === null || amountTax < 0) return null;
-  const netCents = amountTotal - amountTax;
-  return netCents > 0 ? { netCents, vatCents: amountTax, paymentId: paymentIntent } : null;
+  if (amountTotal <= 0 || amountTax >= amountTotal) return null;
+  return { paidCents: amountTotal, vatCents: amountTax, paymentId: paymentIntent };
 }
 
 /**
@@ -803,7 +806,7 @@ export async function applySession(
         .bind(
           lineId(now.getTime(), `topup:${session.id}`),
           checkout.accountId,
-          credit.netCents,
+          credit.paidCents,
           now.toISOString(),
           credit.vatCents,
           credit.paymentId,

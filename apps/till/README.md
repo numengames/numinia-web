@@ -11,7 +11,7 @@ desk (`MIS-184`).
 
 - **Keeps each account's balance as lines only ever added** — one per top-up,
   per world and UTC day, per adjustment, per refund or chargeback — in
-  integer euro cents, net of VAT. The database refuses to change or delete a
+  integer euro cents, tax included as paid. The database refuses to change or delete a
   line; a correction is a new line that names the line it corrects.
 - **Spends top-ups oldest first**, so every lot's remainder is known at any
   instant (`lotsAt`).
@@ -156,9 +156,12 @@ creating a world is `MIS-179`/`MIS-185`.
 ## The rules
 
 - **Money** is integer euro cents; no float is stored (STRICT tables). The
-  ledger counts NET money. For screens: a VAT-inclusive 10.00 € at 21 % is
-  8.26 € of balance and 1.74 € of VAT (`net = round_half_up(gross × 100 /
-(100 + rate))`); 10.00 € net carries 2.10 € of VAT.
+  balance counts what the buyer PAID, tax included (Pablo, 2026-10-14): a
+  10.00 € top-up is 10.00 € of balance in every country, and a Stripe refund
+  of it takes back exactly 10.00 €. The VAT Stripe Managed Payments collected
+  is kept on the top-up line (`vat_cents`) for the books; the tariff's prices
+  are balance euros, VAT included. (`ADR-070` still says «net of VAT»: its
+  amendment goes to the archive.)
 - **A day** is a UTC date, `YYYY-MM-DD`, from 00:00 UTC to the next 00:00
   UTC: always 1440 minutes. UTC is the till's reference time (`ADR-070`);
   screens compute local times from it, and the till stores none.

@@ -17,7 +17,7 @@ export interface SeenRequest {
 
 type Json = Record<string, unknown>;
 
-/** The fake's prices: euros of each quick top-up, before the tax Stripe adds. */
+/** The fake's prices: euros of each quick top-up, tax included (as the real prices are). */
 export const FAKE_PRICES = { '10': 'price_ten', '50': 'price_fifty', '100': 'price_hundred' };
 const PRICE_CENTS: Readonly<Record<string, number>> = {
   price_ten: 1000,
@@ -26,7 +26,7 @@ const PRICE_CENTS: Readonly<Record<string, number>> = {
 };
 
 export interface Payment {
-  /** What the buyer paid, tax included (cents). */
+  /** What the buyer paid, tax included (cents); the price itself by default. */
   readonly amountTotal?: number | null;
   /** The tax Managed Payments collected (cents). */
   readonly amountTax?: number | null;
@@ -139,12 +139,14 @@ export class FakeStripe {
   pay(id: string, payment: Payment = {}): Json {
     const session = this.sessions.get(id);
     if (session === undefined) throw new Error(`fake stripe: no session ${id}`);
-    const net = Number(session['amount_total']);
-    const tax = payment.amountTax === undefined ? Math.round(net * 0.21) : payment.amountTax;
+    // Tax-inclusive prices: the buyer pays the price; Spain's 21 % sits inside it.
+    const total = Number(session['amount_total']);
+    const tax =
+      payment.amountTax === undefined ? total - Math.round(total / 1.21) : payment.amountTax;
     Object.assign(session, {
       status: 'complete',
       payment_status: 'paid',
-      amount_total: payment.amountTotal === undefined ? net + Number(tax) : payment.amountTotal,
+      amount_total: payment.amountTotal === undefined ? total : payment.amountTotal,
       total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: tax },
       currency: payment.currency ?? 'eur',
       payment_intent:

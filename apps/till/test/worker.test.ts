@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TillDatabase } from '../src/db/repository';
+import { parseTopupPrices } from '../src/lib/accounts';
 import { SEED_TARIFF } from '../src/lib/tariff';
 import { daysFrom } from '../src/lib/utc-day';
 import { FakeMeter, NoMeter } from '../src/meter';
@@ -179,7 +180,18 @@ describe('the schedule (MIS-178)', () => {
         migrations_dir: 'migrations',
       },
     ]);
-    expect(config['vars']).toEqual({ TILL_METER: 'none' });
+    expect(config['vars']).toEqual({
+      TILL_METER: 'none',
+      TILL_TOPUP_PRICES: expect.any(String),
+    });
+    // Each quick top-up names its own price: a swap would charge 50 € for the 10 € button.
+    expect(
+      parseTopupPrices((config['vars'] as Record<string, string>)['TILL_TOPUP_PRICES']),
+    ).toEqual({
+      '10': 'price_1UQXR9LTAyyB34WXNB1xSY57',
+      '50': 'price_1UQXTSLTAyyB34WXidqWNwNq',
+      '100': 'price_1UQXTSLTAyyB34WX2VwKhVzt',
+    });
     expect(config['routes']).toBeUndefined();
     expect(config['route']).toBeUndefined();
     expect(crons).toEqual([NIGHTLY, '* * * * *']);

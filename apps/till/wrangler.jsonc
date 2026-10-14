@@ -52,7 +52,9 @@
     // The Stripe price of each quick top-up, as JSON
     // `{"10":"price_…","50":"price_…","100":"price_…"}`: one-time euro prices
     // of the Stripe account's TEST mode, created by an Oracle. Unset, or with
-    // any of the three missing, the desk answers `payments are not configured`
-    // (set it here, beside TILL_METER, once the prices exist).
+    // any of the three missing, the desk answers `payments are not configured`.
+    // TEST mode prices of the product «Numinia Credit» (prod_VRQHf5afpKeLaw),
+    // tax included, created by Pablo on 2026-10-14. Not secrets: price ids.
+    "TILL_TOPUP_PRICES": "{\"10\":\"price_1UQXR9LTAyyB34WXNB1xSY57\",\"50\":\"price_1UQXTSLTAyyB34WXidqWNwNq\",\"100\":\"price_1UQXTSLTAyyB34WX2VwKhVzt\"}",
   },
 }

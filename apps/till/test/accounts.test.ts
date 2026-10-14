@@ -21,7 +21,14 @@ const WALLET = `0x${'ab'.repeat(20)}`;
 describe('reading what numinia.com sends', () => {
   it('takes the session’s wallet in lowercase only', () => {
     expect(readWallet(WALLET)).toBe(WALLET);
-    for (const refused of [WALLET.toUpperCase(), `0x${'AB'.repeat(20)}`, WALLET.slice(0, 41), `${WALLET}0`, 42, null]) {
+    for (const refused of [
+      WALLET.toUpperCase(),
+      `0x${'AB'.repeat(20)}`,
+      WALLET.slice(0, 41),
+      `${WALLET}0`,
+      42,
+      null,
+    ]) {
       expect(readWallet(refused)).toBeUndefined();
     }
   });
