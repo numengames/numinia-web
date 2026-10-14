@@ -9,6 +9,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import { AGORA_PLAZA } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { signInHref } from '../../lib/app-nav';
 import {
   FOLLOWS_KEY,
   held,
@@ -100,7 +101,11 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
             <p>
               <strong>{ui.claimTitle}</strong> {ui.claimText}
             </p>
-            <a class="btn btn-primario" href={`${prefix}/lap/session/`} data-metric="community-claim">
+            <a
+              class="btn btn-primario"
+              href={signInHref(locale, `/communities/${community.id}/`)}
+              data-metric="community-claim"
+            >
               {ui.claimCta}
             </a>
           </div>

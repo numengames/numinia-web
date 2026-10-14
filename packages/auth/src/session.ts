@@ -9,7 +9,12 @@
 
 import { z } from 'zod';
 import { RANKS, type Rank } from '@numinia/domain';
-import { fromBase64Url, timingSafeEqualBytes, toBase64Url } from './encoding.js';
+import {
+  fromBase64Url,
+  hmacSha256 as hmac,
+  timingSafeEqualBytes,
+  toBase64Url,
+} from './encoding.js';
 
 const VERSION = 'v1';
 
@@ -39,17 +44,6 @@ const payloadSchema = z.strictObject({
 export type VerifyResult =
   | { valid: true; payload: SessionPayload }
   | { valid: false; reason: 'structure' | 'signature' | 'payload' | 'expired' };
-
-async function hmac(secret: string, data: Uint8Array): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  return new Uint8Array(await crypto.subtle.sign('HMAC', key, data));
-}
 
 export async function createSessionToken(payload: SessionPayload, secret: string): Promise<string> {
   const body = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));

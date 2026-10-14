@@ -20,6 +20,8 @@ import {
   navState,
   opensSearch,
   popoverTop,
+  signInHref,
+  signOutHref,
   type ExploreId,
   type NavId,
 } from '../app-nav';
@@ -147,6 +149,24 @@ describe('localeHref', () => {
     expect(localeHref('es', '/communities/')).toBe('/es/communities/');
     expect(localeHref('pt-br', '/')).toBe('/pt-br/');
     expect(localeHref('ja', '/how-it-works/#open')).toBe('/ja/how-it-works/#open');
+  });
+});
+
+describe('the door and the way out', () => {
+  it('asks the door to bring the person back to the page it was opened from', () => {
+    expect(signInHref('es', '/communities/trgcon/')).toBe(
+      '/es/lap/session/?vuelta=%2Fes%2Fcommunities%2Ftrgcon%2F',
+    );
+    expect(signInHref('en', '/')).toBe('/lap/session/?vuelta=%2F');
+  });
+
+  it('needs no way back to itself', () => {
+    expect(signInHref('ko', SIGN_IN_PATH)).toBe('/ko/lap/session/');
+  });
+
+  it('signs out through the sign-in page, the one that holds the wallet code', () => {
+    expect(signOutHref('es')).toBe('/es/lap/session/?salir=1');
+    expect(signOutHref('en')).toBe('/lap/session/?salir=1');
   });
 });
 

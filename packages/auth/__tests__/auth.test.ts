@@ -1,6 +1,5 @@
 /**
- * Mutation score 98.09% (Stryker). The 3 survivors are provably equivalent:
- * - nonce.ts undefined-guard: without it, `now() <= undefined` is false anyway.
+ * Mutation score 98.09% (Stryker, before the signed nonces). Survivors were provably equivalent:
  * - session.ts importKey `extractable: false→true`: no observable output change.
  * - session.ts empty catch: undefined payload is rejected by zod with the same reason.
  */
@@ -8,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { AuthConfigError, formatIssue, parseAuthEnv } from '../src/config.js';
 import { fromBase64Url, timingSafeEqualBytes, toBase64Url } from '../src/encoding.js';
 import { createSessionToken, verifySessionToken } from '../src/session.js';
-import { createNonceStore } from '../src/nonce.js';
+import { issueSignedNonce, verifySignedNonce } from '../src/nonce.js';
 import { WEB3_BOUNDARY_RANK, walletRequiredFor } from '../src/boundary.js';
 
 const SECRET = 's'.repeat(32);
@@ -162,28 +161,41 @@ describe('session tokens (HMAC-SHA256, Web Crypto)', () => {
   });
 });
 
-describe('nonce store (single use + TTL)', () => {
-  it('issues unique nonces and consumes each exactly once', () => {
-    const time = NOW;
-    const store = createNonceStore({ ttlMs: 300_000, now: () => time });
-    const a = store.issue();
-    const b = store.issue();
+describe('signed nonces (stateless, TTL, bound to the secret)', () => {
+  it('issues unique nonces that verify under their secret', async () => {
+    const a = await issueSignedNonce(SECRET, 300_000, NOW);
+    const b = await issueSignedNonce(SECRET, 300_000, NOW);
     expect(a).not.toBe(b);
-    expect(store.consume(a)).toBe(true);
-    expect(store.consume(a)).toBe(false);
-    expect(store.consume('never-issued')).toBe(false);
-    expect(store.consume(b)).toBe(true);
+    expect(a.startsWith('n1.')).toBe(true);
+    expect(await verifySignedNonce(a, SECRET, NOW)).toBe(true);
+    expect(await verifySignedNonce(a, 'x'.repeat(32), NOW)).toBe(false);
   });
 
-  it('honors the TTL boundary: valid at exactly ttl, dead one ms later', () => {
-    let time = NOW;
-    const store = createNonceStore({ ttlMs: 1000, now: () => time });
-    const atBoundary = store.issue();
-    const late = store.issue();
-    time += 1000;
-    expect(store.consume(atBoundary)).toBe(true);
-    time += 1;
-    expect(store.consume(late)).toBe(false);
+  it('honors the TTL boundary: valid at exactly ttl, dead one ms later', async () => {
+    const nonce = await issueSignedNonce(SECRET, 1000, NOW);
+    expect(await verifySignedNonce(nonce, SECRET, NOW + 1000)).toBe(true);
+    expect(await verifySignedNonce(nonce, SECRET, NOW + 1001)).toBe(false);
+  });
+
+  it('refuses a stretched expiry, a foreign shape and a broken mac', async () => {
+    const nonce = await issueSignedNonce(SECRET, 1000, NOW);
+    const [version, random, expiry, mac] = nonce.split('.') as [string, string, string, string];
+    const stretched = [version, random, String(Number(expiry) + 60_000), mac].join('.');
+    expect(await verifySignedNonce(stretched, SECRET, NOW)).toBe(false);
+    expect(await verifySignedNonce(['n2', random, expiry, mac].join('.'), SECRET, NOW)).toBe(false);
+    expect(await verifySignedNonce(`${nonce}.extra`, SECRET, NOW)).toBe(false);
+    expect(await verifySignedNonce([version, random, '1e9', mac].join('.'), SECRET, NOW)).toBe(
+      false,
+    );
+    expect(await verifySignedNonce([version, random, expiry, '!!'].join('.'), SECRET, NOW)).toBe(
+      false,
+    );
+    expect(await verifySignedNonce('', SECRET, NOW)).toBe(false);
+  });
+
+  it('never verifies a session token as a nonce (domain separation)', async () => {
+    const token = await createSessionToken({ sub: '0xabc', rank: 'nomad', iat: 1, exp: 2 }, SECRET);
+    expect(await verifySignedNonce(token, SECRET, NOW)).toBe(false);
   });
 });
 

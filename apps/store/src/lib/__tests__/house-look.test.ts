@@ -115,7 +115,8 @@ describe('the sprite', () => {
   it('carries what the chrome draws twice, and the places draw it with <use>', async () => {
     const sprite = await read(SPRITE);
     expect(sprite).toContain('<svg class="sprite" aria-hidden="true">');
-    expect(sprite).toContain('<Icon name="magnifying-glass" symbol />');
+    expect(sprite).toContain("'magnifying-glass',");
+    expect(sprite).toContain('{icons.map((name) => <Icon name={name} symbol />)}');
     expect(sprite).toContain('navIcon(item, navState(item, basePath))');
     expect(await read(SIDEBAR)).toContain('<Icon name={navIcon(item, state)} size={26} use />');
     expect(await read(TABBAR)).toContain('<Icon name={navIcon(item, state)} size={24} use />');

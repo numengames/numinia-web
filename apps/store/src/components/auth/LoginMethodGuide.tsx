@@ -4,69 +4,38 @@
  * 1-2-3 progress bar shows the current step plus what comes next, driven by
  * real state (wallet + session) — never by clicks alone, so it cannot lie.
  * Copy rule: reassure, never alarm — no mention of payments or transactions.
+ * The words arrive in the reader's language (i18n/sign-in.ts).
  */
 
-export type LoginMethod = 'google' | 'email' | 'passkey' | 'wallet';
+import type { LoginMethodId, MethodCopy } from '../../i18n/sign-in';
+
+export type LoginMethod = LoginMethodId;
 export type LoginPhase = 'connect' | 'sign' | 'done';
 
-interface MethodCopy {
-  readonly id: LoginMethod;
-  readonly label: string;
-  /** One line per progress step, aligned with LoginPhase order. */
-  readonly steps: readonly [string, string, string];
+export interface GuideCopy {
+  readonly progress: string;
+  /** «Paso {n} de 3». */
+  readonly step: string;
+  readonly methods: Readonly<Record<LoginMethod, MethodCopy>>;
 }
-
-const METHODS: readonly MethodCopy[] = [
-  {
-    id: 'google',
-    label: 'Google',
-    steps: [
-      'A Google window opens — pick your account and it closes by itself.',
-      'Numinia prepares your personal key and signs you in automatically.',
-      'Welcome in — you are now a Nomad of Numinia.',
-    ],
-  },
-  {
-    id: 'email',
-    label: 'Email',
-    steps: [
-      'Type your email and press the arrow — a 6-digit code lands in your inbox.',
-      'Enter the code. Your access is created on the spot — no password, ever.',
-      'Welcome in — you are now a Nomad of Numinia.',
-    ],
-  },
-  {
-    id: 'passkey',
-    label: 'Passkey',
-    steps: [
-      'Your device asks for your fingerprint, face or PIN.',
-      'Your access unlocks and signs you in automatically.',
-      'Welcome in — you are now a Nomad of Numinia.',
-    ],
-  },
-  {
-    id: 'wallet',
-    label: 'Wallet',
-    steps: [
-      'Your wallet asks permission to connect with this site — accept to continue.',
-      'Your wallet shows a signature request — approve it to confirm the address is yours. That is all it does.',
-      'Welcome in — you are now a Nomad of Numinia.',
-    ],
-  },
-];
 
 /**
  * Infers which method a tap inside the vendor widget refers to.
  * ConnectEmbed exposes no selection callback, so we listen at the container
  * (capture phase) and classify the actionable element by its visible text /
  * labels. Heuristic and spike-grade by design: a miss just means the guide
- * doesn't switch — login itself is never affected.
+ * doesn't switch — login itself is never affected. The widget speaks the
+ * reader's language, so each pattern carries the words it uses in the five
+ * locales the site serves.
  */
 const METHOD_PATTERNS: ReadonlyArray<{ method: LoginMethod; pattern: RegExp }> = [
   { method: 'google', pattern: /google/ },
-  { method: 'passkey', pattern: /passkey/ },
-  { method: 'email', pattern: /e-?mail/ },
-  { method: 'wallet', pattern: /wallet|metamask|coinbase|rainbow|zerion/ },
+  { method: 'passkey', pattern: /passkey|パスキー|패스키/ },
+  { method: 'email', pattern: /e-?mail|correo|メール|이메일/ },
+  {
+    method: 'wallet',
+    pattern: /wallet|cartera|carteira|ウォレット|지갑|metamask|coinbase|rainbow|zerion/,
+  },
 ];
 
 export function methodFromWidgetTarget(target: EventTarget | null): LoginMethod | null {
@@ -88,6 +57,7 @@ export function methodFromWidgetTarget(target: EventTarget | null): LoginMethod 
 }
 
 interface LoginMethodGuideProps {
+  copy: GuideCopy;
   /** Method the user tapped in the widget (null until anything is chosen). */
   selected: LoginMethod | null;
   /** Method actually in use, once the flow really started (wins over taps). */
@@ -95,15 +65,15 @@ interface LoginMethodGuideProps {
   phase: LoginPhase;
 }
 
-export function LoginMethodGuide({ selected, detected, phase }: LoginMethodGuideProps) {
+export function LoginMethodGuide({ copy, selected, detected, phase }: LoginMethodGuideProps) {
   const shown = detected ?? selected;
-  const copy = METHODS.find((method) => method.id === shown);
-  if (!copy) return null;
+  if (!shown) return null;
+  const method = copy.methods[shown];
   const current = phase === 'connect' ? 0 : phase === 'sign' ? 1 : 2;
   return (
-    <section aria-label="Login progress" data-login-progress>
+    <section aria-label={copy.progress} data-login-progress>
       <ol>
-        {copy.steps.map((step, index) => {
+        {method.steps.map((step, index) => {
           const state = index < current ? 'done' : index === current ? 'active' : 'pending';
           return (
             <li
@@ -118,11 +88,11 @@ export function LoginMethodGuide({ selected, detected, phase }: LoginMethodGuide
       </ol>
       <p role="status">
         <strong>
-          Step {current + 1} of 3 · {copy.label}
+          {copy.step.replace('{n}', String(current + 1))} · {method.label}
         </strong>{' '}
-        — {copy.steps[current]}
+        — {method.steps[current]}
       </p>
-      {copy.steps.slice(current + 1).map((step, offset) => (
+      {method.steps.slice(current + 1).map((step, offset) => (
         <p key={step} data-next-step>
           {current + 2 + offset} · {step}
         </p>

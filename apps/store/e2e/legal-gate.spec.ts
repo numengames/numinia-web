@@ -38,7 +38,7 @@ test.describe('legal gate at the door', () => {
       'href',
       '/es/legal/privacy/',
     );
-    // Asked in Spanish even though the login guide is still EN (D9).
+    // Asked in the reader's language, like the guide and the widget beside it.
     await expect(gate).toContainText('acepto');
   });
 });

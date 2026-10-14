@@ -10,7 +10,8 @@
  *   Para ti · Explorar (Comunidades n · Calendario · Bazar) · Perteneces
  *   · Live · Perfil · Más ▸ popover beside the bar
  *   ──
- *   one line inviting to sign in, and the door
+ *   one line inviting to sign in, and the door (gone once you are in:
+ *   `data-session-out`, set by the top bar's session script)
  *   (the folded footer is pinned below by the stylesheet: it comes last in
  *   the page, after main — see BaseLayout)
  *
@@ -27,12 +28,12 @@ import {
   EXPLORE_ITEMS,
   NAV_ITEMS,
   SEARCH_PATH,
-  SIGN_IN_PATH,
   ariaCurrent,
   exploreState,
   localeHref,
   navIcon,
   navState,
+  signInHref,
   type ExploreId,
 } from '../../lib/app-nav';
 import { symbolId } from '../../lib/svg-sprite';
@@ -143,10 +144,10 @@ const exploreLabel: Readonly<Record<ExploreId, string>> = {
     </ul>
   </nav>
 
-  <div class="lat-cta">
+  <div class="lat-cta" data-session-out>
     <p>{ui.cta}</p>
     <a
-      href={localeHref(locale, SIGN_IN_PATH)}
+      href={signInHref(locale, basePath)}
       class="btn btn-fantasma lat-entrar"
       title={ui.signIn}
       data-metric="nav-sign-in"
