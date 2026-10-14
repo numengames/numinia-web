@@ -1107,13 +1107,45 @@ Then(
   },
 );
 
+/** Where the next `<name …>` opens at or after `from` in the lower-cased page; -1 when none. */
+function openingOf(lower, name, from) {
+  for (
+    let at = lower.indexOf(`<${name}`, from);
+    at !== -1;
+    at = lower.indexOf(`<${name}`, at + 1)
+  ) {
+    const next = lower.charAt(at + name.length + 1);
+    if (next === '>' || next === '/' || next.trim() === '') return at;
+  }
+  return -1;
+}
+
+/** The page with its <script> and <style> elements cut out, found in any case by walking the
+ *  lower-cased text with indexOf. A tag regex misses <SCRIPT> (CodeQL js/bad-tag-filter). */
+function withoutCode(html) {
+  const lower = html.toLowerCase();
+  let kept = '';
+  let at = 0;
+  for (;;) {
+    const opens = ['script', 'style']
+      .map((name) => ({ name, start: openingOf(lower, name, at) }))
+      .filter((open) => open.start !== -1)
+      .sort((a, b) => a.start - b.start);
+    if (opens.length === 0) return kept + html.slice(at);
+    const { name, start } = opens[0];
+    const close = lower.indexOf(`</${name}`, start);
+    const end = close === -1 ? -1 : lower.indexOf('>', close);
+    kept += `${html.slice(at, start)} `;
+    if (end === -1) return kept;
+    at = end + 1;
+  }
+}
+
 /** The words a reader meets on a page: its text, and the labels read aloud or shown on hover.
  *  A path stays as it is (a gathering's «Its file» names src/content/communities/rituals/…):
  *  file names and routes keep the old word by design, only the words on screen changed. */
 function visibleText(html) {
-  const bare = html
-    .replace(/<script\b[\s\S]*?<\/script>/g, ' ')
-    .replace(/<style\b[\s\S]*?<\/style>/g, ' ');
+  const bare = withoutCode(html);
   const labels = [...bare.matchAll(/\b(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map(
     (match) => match[1],
   );
