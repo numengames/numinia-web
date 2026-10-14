@@ -829,9 +829,16 @@ Then('a ritual page opens on its world stage', async function () {
     city.includes('data-metric="ritual-enter-world"'),
     'city ritual: no way into its world',
   );
-  assert.ok(
-    city.includes('https://v2.oncyber.io/agora_plaza_of_numinia'),
-    'city ritual: no commons',
+  // The way in leads to the commons: the link's own address, parsed and
+  // compared whole — a substring of the page could sit inside any URL.
+  const enter = /<a\b[^>]*\bdata-metric="ritual-enter-world"[^>]*>/.exec(city);
+  const href = enter && /\bhref="([^"]+)"/.exec(enter[0]);
+  assert.ok(href, 'city ritual: the way in has no address');
+  const world = new URL(href[1]);
+  assert.equal(
+    `${world.origin}${world.pathname}`,
+    'https://v2.oncyber.io/agora_plaza_of_numinia',
+    'city ritual: the way in does not lead to the commons',
   );
   // A community without a home yet says so, and offers the calendar instead.
   const trg = await readFile(
