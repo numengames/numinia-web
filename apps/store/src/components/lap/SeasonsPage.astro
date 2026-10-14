@@ -56,55 +56,16 @@ const price = formatEur(pass.priceEur, intl);
     data-label-pass={s.passActive}
     data-label-nopass={s.noPass}
   >
+    {/* Progress first, money after (the Oracle, 2026-10-14: «esta parte
+        debería ser la primera… y lo del dinero vendría abajo»): the title,
+        the progress line and the doors, then the pass below the track. */}
     <header class="cabeza">
-      <div>
-        <p class="etiqueta">{t.sections.seasons}</p>
-        <h1>{season.name[locale]}</h1>
-        <p class="intro">{s.intro}</p>
-        <p class="letra">
-          {`${total} ${s.doors.toLowerCase()}`} · {seasonMinutes(season)} min{season.startsAt === null && <> · {s.datesPending}</>}
-        </p>
-      </div>
-
-      <section class="compra tarjeta" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
-        <p class="etiqueta">{s.passTitle}</p>
-        <p class="precio">{price}</p>
-        <p class="letra">{s.vatIncluded}</p>
-        <p class="desc">{s.passGives}</p>
-        <div data-buy>
-          {
-            payable ? (
-              <>
-                <label class="desiste">
-                  <input type="checkbox" data-withdrawal />
-                  <span>{s.withdrawal}</span>
-                </label>
-                <a
-                  class="btn btn-primario"
-                  href={pass.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-disabled="true"
-                  data-buy-link
-                  data-metric="season-pass-buy"
-                >
-                  {s.buy} · {price}
-                </a>
-                {testMode && (
-                  <p class="nota" role="note" data-test-note>
-                    {s.testNote}
-                  </p>
-                )}
-              </>
-            ) : (
-              <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
-                {s.comingSoon}
-              </button>
-            )
-          }
-        </div>
-        <p class="activo" data-pass-active hidden>✓ {s.passActive}</p>
-      </section>
+      <p class="etiqueta">{t.sections.seasons}</p>
+      <h1>{season.name[locale]}</h1>
+      <p class="intro">{s.intro}</p>
+      <p class="letra">
+        {`${total} ${s.doors.toLowerCase()}`} · {seasonMinutes(season)} min{season.startsAt === null && <> · {s.datesPending}</>}
+      </p>
     </header>
 
     <div class="estado">
@@ -183,6 +144,50 @@ const price = formatEur(pass.priceEur, intl);
         }
       </ol>
     </div>
+
+    <section class="compra tarjeta" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
+      <div class="oferta">
+        <p class="etiqueta">{s.passTitle}</p>
+        <p class="precio">{price}</p>
+        <p class="letra">{s.vatIncluded}</p>
+        <p class="desc">{s.passGives}</p>
+      </div>
+      <div class="pago">
+        <div data-buy>
+          {
+            payable ? (
+              <>
+                <label class="desiste">
+                  <input type="checkbox" data-withdrawal />
+                  <span>{s.withdrawal}</span>
+                </label>
+                <a
+                  class="btn btn-primario"
+                  href={pass.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-disabled="true"
+                  data-buy-link
+                  data-metric="season-pass-buy"
+                >
+                  {s.buy} · {price}
+                </a>
+                {testMode && (
+                  <p class="nota" role="note" data-test-note>
+                    {s.testNote}
+                  </p>
+                )}
+              </>
+            ) : (
+              <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
+                {s.comingSoon}
+              </button>
+            )
+          }
+        </div>
+        <p class="activo" data-pass-active hidden>✓ {s.passActive}</p>
+      </div>
+    </section>
   </article>
 </LapShell>
 
@@ -262,16 +267,25 @@ const price = formatEur(pass.priceEur, intl);
 </script>
 
 <style>
-  .cabeza {
+  /* The pass, below the doors: one calm card, the offer on the left and
+     the payment on the right from 60rem; one column on a phone. */
+  .compra {
     display: grid;
-    gap: var(--s4);
+    gap: var(--s4) var(--s6);
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
+    margin-top: var(--s6);
   }
   @media (min-width: 60rem) {
-    .cabeza {
+    .compra {
       grid-template-columns: minmax(0, 1fr) 20rem;
     }
+  }
+  .compra .desc {
+    max-width: 60ch;
+  }
+  .compra .oferta > :last-child {
+    margin-bottom: 0;
   }
   h1 {
     font-size: 2.074rem;

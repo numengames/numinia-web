@@ -6,6 +6,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { BAZAAR_MESSAGES } from '../../i18n/messages';
+import { VIEWER_MESSAGES } from '../../i18n/viewer';
 import { loadBazaarItems } from '../../lib/bazaar';
 import { Bazaar } from './Bazaar';
 
@@ -15,7 +16,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = BAZAAR_MESSAGES[locale];
-const items = await loadBazaarItems();
+const items = await loadBazaarItems(locale);
 ---
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead} wide>
@@ -23,7 +24,13 @@ const items = await loadBazaarItems();
     <h1>{t.title}</h1>
     <p>{t.lead}</p>
   </header>
-  <Bazaar client:load items={items} labels={t} locale={locale} />
+  <Bazaar
+    client:load
+    items={items}
+    labels={t}
+    viewerLabels={VIEWER_MESSAGES[locale]}
+    locale={locale}
+  />
 </BaseLayout>
 
 <style>
@@ -90,19 +97,25 @@ const items = await loadBazaarItems();
       grid-row: 2;
     }
   }
+  /* The third pane exists only while a good is chosen (data-open): beside
+     the 252px sidebar a reserved empty preview left the cards one column at
+     1280 (v0.89.0). Closed, the queue rides under the filters. */
   @media (min-width: 74rem) {
     [data-bazaar] {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+    [data-bazaar][data-open] {
       grid-template-columns: 13rem minmax(0, 1fr) 21rem;
     }
-    [data-bazaar] .centro {
+    [data-bazaar][data-open] .centro {
       grid-row: 1;
     }
-    [data-bazaar] .lado {
+    [data-bazaar][data-open] .lado {
       grid-column: 3;
       grid-row: 1;
     }
-    [data-bazaar] .bazaar-filters,
-    [data-bazaar] .lado {
+    [data-bazaar][data-open] .bazaar-filters,
+    [data-bazaar][data-open] .lado {
       position: sticky;
       top: var(--bazaar-arriba);
       max-height: calc(100vh - var(--bazaar-arriba) - var(--s4));
@@ -262,6 +275,7 @@ const items = await loadBazaarItems();
   }
   [data-bazaar] .busca input {
     flex: 1;
+    align-self: stretch;
     min-width: 0;
     padding: var(--s2) 0;
     border: 0;
@@ -307,14 +321,17 @@ const items = await loadBazaarItems();
     text-align: center;
   }
 
-  /* The cards (§9.4): picture, kind · format, name, the licence line. */
+  /* The cards (v0.89.0, «las fichas hay que darles una vuelta»): the picture
+     first and large (4:3), the name, one quiet line — kind · format — and
+     the licence as a small chip. */
   [data-bazaar] .bazaar-grid {
     display: grid;
-    gap: var(--s3);
-    grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr));
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(13.5rem, 100%), 1fr));
   }
   @media (max-width: 30rem) {
     [data-bazaar] .bazaar-grid {
+      gap: var(--s3);
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -349,7 +366,6 @@ const items = await loadBazaarItems();
     display: block;
     aspect-ratio: 4 / 3;
     overflow: hidden;
-    border-bottom: 1px solid var(--linea);
     background: var(--elevada);
   }
   [data-bazaar] .bazaar-card .stage img {
@@ -390,32 +406,42 @@ const items = await loadBazaarItems();
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--s2);
     min-width: 0;
-    padding: 10px 12px 12px;
-  }
-  [data-bazaar] .bazaar-card .tipo {
-    font: 500 0.68rem var(--mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--texto-2);
+    padding: var(--s3);
   }
   [data-bazaar] .bazaar-card .nombre {
+    display: -webkit-box;
+    overflow: hidden;
     color: var(--texto);
-    font-size: 0.98rem;
+    font-size: 1rem;
     font-weight: 600;
-    line-height: 1.25;
+    line-height: 1.3;
     overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
-  [data-bazaar] .bazaar-card .licencia {
+  [data-bazaar] .bazaar-card .pie {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: var(--s2);
+    min-width: 0;
     margin-top: auto;
-    padding-top: var(--s2);
-    border-top: 1px solid var(--linea);
-    color: var(--verdemar);
-    font-size: 0.74rem;
+  }
+  [data-bazaar] .bazaar-card .tipo {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--texto-2);
+    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  [data-bazaar] .bazaar-card .chip {
+    flex: none;
+    padding: 2px 8px;
+    font-size: 0.62rem;
   }
 
   /* The preview (§9.4 tarjeta): chips, stage, name, facts, actions. */
@@ -471,6 +497,10 @@ const items = await loadBazaarItems();
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  /* A picture on show is seen whole: never cropped to the stage. */
+  [data-bazaar] .escenario img.entera {
+    object-fit: contain;
   }
   [data-bazaar] .escenario video {
     width: 100%;
@@ -644,6 +674,26 @@ const items = await loadBazaarItems();
       margin: auto;
       border-bottom: 1px solid var(--linea-f);
       border-radius: var(--radio-marco);
+    }
+  }
+
+  /* Phone: every target at least 44px (v0.89.0) — the chips, the order, the
+     sheet's close and actions, the queue's remove and its zip. */
+  @media (max-width: 40rem) {
+    [data-bazaar] .clases .filtro,
+    [data-bazaar] button.chip,
+    [data-bazaar] .orden select,
+    [data-bazaar] .acciones .btn,
+    [data-bazaar] .ancho,
+    [data-bazaar] .ver-3d,
+    [data-bazaar] .vacio .btn,
+    [data-bazaar] [data-viewer-failure] .btn {
+      min-height: 44px;
+    }
+    [data-bazaar] .cerrar,
+    [data-bazaar] .quitar {
+      width: 44px;
+      height: 44px;
     }
   }
 </style>

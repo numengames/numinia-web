@@ -5,6 +5,7 @@
  */
 
 import { parseAssetCatalog, type Asset } from '@numinia/domain';
+import { CATALOG_PATHS } from './asset-edit';
 
 // Committed fixtures travel as imports: hermetic builds on any runtime.
 import avatarCatalogFixture from '../../fixtures/avatar-catalog.json';
@@ -61,15 +62,9 @@ export const ASSET_CATEGORIES = [
 ] as const;
 export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
 
-const CATALOG_PATHS: Readonly<Record<AssetCategory, string>> = {
-  models: 'data/assets/numinia-assets.json',
-  avatars: 'data/avatars/numinia-avatars.json',
-  worlds: 'data/worlds/numinia-worlds.json',
-  audio: 'data/audio/numinia-audio.json',
-  video: 'data/video/numinia-video.json',
-  images: 'data/images/numinia-images.json',
-  // 3dprint deliberately absent: the catalog is 404 (data-doctor report).
-};
+// One truth for where each kind's catalog lives (CATALOG_PATHS, imported
+// above from asset-edit.ts): the assets room's editor links point at the
+// same files the build reads.
 
 export interface CatalogedAsset {
   readonly asset: Asset;

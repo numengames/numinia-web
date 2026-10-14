@@ -21,6 +21,12 @@ import {
   POSITION_IDS,
   SPECIES_IDS,
 } from '@numinia/domain';
+import {
+  citizenFromMarkdown,
+  citizenToMarkdown,
+  emptyCitizen,
+  type CitizenProfile,
+} from '../citizen-profile';
 
 export const SHEET_FORMAT = 'numinia-sheet/v3';
 
@@ -82,6 +88,9 @@ export interface LapSheet {
   competences: Record<string, number>;
   aptitudes: [LapAptitude, LapAptitude];
   notes: string;
+  /** The citizen's card (portrait and profile), kept by Resumen in this same
+      record and carried by the exported file (lib/citizen-profile.ts). */
+  citizen: CitizenProfile;
 }
 
 const record = <K extends string, V>(keys: readonly K[], value: V): Record<K, V> =>
@@ -99,7 +108,18 @@ export function emptySheet(): LapSheet {
       { name: '', points: 0 },
     ],
     notes: '',
+    citizen: emptyCitizen(),
   };
+}
+
+/**
+ * True while nothing of the game is written in the sheet — the card on
+ * Resumen does not count: a portrait alone is not a character yet. The page
+ * then shows one door («create your character») instead of a wall of «—».
+ */
+export function isBlankSheet(sheet: LapSheet): boolean {
+  const blank = emptySheet();
+  return sheetToMarkdown({ ...sheet, citizen: blank.citizen }) === sheetToMarkdown(blank);
 }
 
 /** Valid domain ids per identity field — unknown ids are dropped on import. */
@@ -122,6 +142,9 @@ function table(rows: ReadonlyArray<readonly [string, string | number]>): string 
 }
 
 export function sheetToMarkdown(sheet: LapSheet): string {
+  // The card sits before Notes (Notes runs to the end of the file); a sheet
+  // without one is written exactly as before.
+  const card = citizenToMarkdown(sheet.citizen);
   return [
     '# Numinia — Character Sheet',
     '',
@@ -152,6 +175,7 @@ export function sheetToMarkdown(sheet: LapSheet): string {
     '## Profile',
     table(TEXT_KEYS.map((key) => [key, sheet.text[key]])),
     '',
+    ...(card === '' ? [] : [card]),
     '## Notes',
     '',
     sheet.notes,
@@ -214,5 +238,6 @@ export function sheetFromMarkdown(markdown: string): LapSheet {
   for (const key of TEXT_KEYS) sheet.text[key] = (profile[key] ?? '').trim();
   const notesMatch = /## Notes\n\n?([\s\S]*)$/.exec(markdown);
   sheet.notes = (notesMatch?.[1] ?? '').trim();
+  sheet.citizen = citizenFromMarkdown(markdown);
   return sheet;
 }

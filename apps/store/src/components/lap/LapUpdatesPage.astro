@@ -1,0 +1,54 @@
+---
+/**
+ * Novedades (/lap/updates/): the site's updates inside the panel. The
+ * Oracle (2026-10-14): going to Updates from the LAP «te saca totalmente»,
+ * so the panel keeps its rail and draws the same list /updates/ shows.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import { UPDATES_MESSAGES } from '../../i18n/messages';
+import UpdatesList from '../updates/UpdatesList.astro';
+import LapShell from './LapShell.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const lap = LAP_UI[locale];
+const t = UPDATES_MESSAGES[locale];
+---
+
+<LapShell
+  locale={locale}
+  current="updates"
+  title={`${lap.sections.updates} — LAP — Numinia`}
+  description={t.updatesIntro}
+>
+  <article data-lap-updates>
+    <h1>{lap.sections.updates}</h1>
+    <p class="intro">{t.updatesIntro}</p>
+    {locale !== 'en' && <p class="nota">{t.techNote}</p>}
+    <UpdatesList locale={locale} />
+  </article>
+</LapShell>
+
+<style>
+  h1 {
+    font-size: 2.074rem;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    margin-top: 0;
+  }
+  .intro {
+    color: var(--texto-2);
+    max-width: 65ch;
+    line-height: 1.55;
+    margin-bottom: var(--s2);
+  }
+  .nota {
+    color: var(--texto-2);
+    font-size: 0.85rem;
+    margin: 0 0 var(--s5);
+  }
+</style>

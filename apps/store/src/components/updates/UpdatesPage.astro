@@ -2,7 +2,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { UPDATES_MESSAGES } from '../../i18n/messages';
-import { loadRoadmap, loadUpdates } from '../../lib/updates';
+import UpdatesList from './UpdatesList.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -10,14 +10,6 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = UPDATES_MESSAGES[locale];
-const updates = await loadUpdates();
-const roadmap = await loadRoadmap();
-
-/** "2026-04-02 22:00" → "2026-04-02 · 22:00 UTC" (dates without time pass through). */
-function formatDate(date: string): string {
-  const [day, time] = date.split(' ');
-  return time ? `${day} · ${time} UTC` : (day ?? date);
-}
 ---
 
 <BaseLayout locale={locale} title={`${t.updatesTitle} — Numinia`} description={t.updatesIntro}>
@@ -27,46 +19,8 @@ function formatDate(date: string): string {
     {locale !== 'en' && <p class="note">{t.techNote}</p>}
   </header>
 
-  {
-    roadmap.length > 0 && (
-      <section data-roadmap>
-        <h2>{t.roadmapTitle}</h2>
-        <ul>
-          {roadmap.map((entry) => (
-            <li>
-              <span class={`tag tag-${entry.status}`}>{t.statusLabels[entry.status]}</span>
-              {entry.item}
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
-
-  <ol data-updates>
-    {
-      updates.map((update, index) => (
-        <li class="reveal" data-version={update.version}>
-          <h2>
-            {update.version}
-            {index === 0 && <span class="tag tag-latest">{t.latestLabel}</span>}
-            <time>{formatDate(update.date)}</time>
-            {update.missions?.map((mission) => <span class="tag tag-mission">{mission}</span>)}
-          </h2>
-          <ul>
-            {update.entries.map((entry) => (
-              <li>
-                <span class={`tag tag-${entry.type.toLowerCase()}`}>
-                  {t.typeLabels[entry.type]}
-                </span>
-                {entry.text}
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))
-    }
-  </ol>
+  {/* The list itself is shared with the LAP's «Novedades» (/lap/updates/). */}
+  <UpdatesList locale={locale} />
 </BaseLayout>
 
 <style>
@@ -93,96 +47,5 @@ function formatDate(date: string): string {
   }
   .note {
     font-size: 0.85rem;
-  }
-  /* §9.4 tarjeta. */
-  [data-roadmap] {
-    background: var(--superficie);
-    border: 1px solid var(--linea);
-    border-radius: var(--radio-marco);
-    padding: var(--s4);
-    margin-bottom: var(--s5);
-  }
-  [data-roadmap] h2 {
-    margin-top: 0;
-  }
-  ol {
-    list-style: none;
-    padding: 0;
-  }
-  /* Oracle 2026-08-16: each version is its own §9.4 tarjeta; the seafoam
-     hairline survives as the card's signal edge. */
-  ol > li {
-    background: var(--superficie);
-    border: 1px solid var(--linea);
-    border-left: 2px solid var(--verdemar);
-    border-radius: var(--radio-marco);
-    padding: var(--s4);
-    margin: 0 0 var(--s4);
-  }
-  h2 {
-    font-size: 1rem;
-    margin-top: 0;
-    /* Version, tags and time wrap as a row on narrow screens — nothing overlaps. */
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--s1) var(--s2);
-  }
-  /* Versions and dates are measured: Mono tabular (§4.2). */
-  time {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    /* The card is a surface: terciario is base-only (§19.4). */
-    color: var(--texto-2);
-    font-size: 0.8rem;
-    font-weight: 400;
-  }
-  ul {
-    list-style: none;
-    padding: 0;
-  }
-  ul li {
-    margin-bottom: var(--numinia-space-1);
-    line-height: 1.5;
-  }
-  /* Entry types are labels: Mono etiqueta, color informs (§3.4). */
-  .tag {
-    display: inline-block;
-    min-width: 4.2rem;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    padding: 0.1rem 0.4rem;
-    margin-right: var(--s2);
-    border-radius: var(--radio-control);
-    border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-    /* Tags ride the version card (a surface): terciario is base-only (§19.4). */
-    color: var(--texto-2);
-  }
-  .tag-new {
-    /* The turquoise is a fill, never text on a dark surface (§3, §9.1). */
-    color: var(--enlace);
-  }
-  /* Same rule as the destructive button: the color lives in the edge, the
-     label keeps readable ink. Grana as text reads 3.56:1 over the card at
-     night, and Coral has no text variant over paper — as a border it is a UI
-     component (3:1) and passes in both modes. */
-  .tag-fix {
-    color: var(--texto-2);
-    border-color: var(--grana);
-  }
-  /* Sistema §9.2: emphasis as outlined etiqueta — amber flips per mode, AA in both. */
-  .tag-latest {
-    color: var(--ambar);
-  }
-  /* Mission ids: measured references, quiet ink, no minimum width. */
-  .tag-mission {
-    min-width: 0;
-    margin-right: 0;
-  }
-  .tag-planned,
-  .tag-research {
-    min-width: 5.4rem;
   }
 </style>

@@ -1,9 +1,10 @@
 ---
 /**
  * A community's public page: its picture, what it is, where it is from,
- * its line, its links, the invitation to make the page its own, then its
- * rituals (standing, upcoming, held), its archive, its home, its members
- * and the details. Empty states say what will be here and who fills it.
+ * its line, its links, the invitation to make the page its own, what its
+ * space uses (each piece with its honest state), then its gatherings
+ * (standing, upcoming, held), its archive, its home, its members and the
+ * details. Empty states say what will be here and who fills it.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { AGORA_PLAZA } from '@numinia/domain';
@@ -31,6 +32,7 @@ import Cover from './Cover.astro';
 import RitualCard from './RitualCard.astro';
 import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
+import SpaceUses from './SpaceUses.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -49,11 +51,8 @@ const image = community.image
   : undefined;
 const isConference = pick(community.kind, 'en').startsWith('Conference');
 const founder = community.state === 'founder';
-const world = worldOf(
-  community,
-  { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] },
-  locale,
-);
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const world = worldOf(community, commons, locale);
 // Only a home of the fleet answers who is inside; elsewhere the slot is not drawn.
 const counted = community.sede !== undefined && sedeDomain(community.sede.href) !== null;
 // The new ritual's draft starts on the day the page was built; the Oracle sets the real one.
@@ -125,9 +124,18 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
       }
     </div>
 
+    <SpaceUses
+      community={community}
+      rituals={RITUALS}
+      commons={commons}
+      locale={locale}
+      ui={ui}
+      gatheringsAnchor="#encuentros"
+    />
+
     <div class="dos">
       <div class="pila">
-        <section class="tarjeta">
+        <section class="tarjeta" id="encuentros">
           <div class="fila entre" style="margin-bottom: var(--s4)">
             <h2 class="card-h2" style="margin: 0"><Icon name="calendar-blank" size={20} />{ui.rituals}</h2>
             <a

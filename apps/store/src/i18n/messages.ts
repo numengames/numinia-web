@@ -307,6 +307,8 @@ export interface BazaarMessages {
   readonly emptyPreview: string;
   readonly closePreview: string;
   readonly viewIn3d: string;
+  /** The same, with the file's weight: «{size}». */
+  readonly viewIn3dSized: string;
   readonly download: string;
   readonly downloadUnavailable: string;
   readonly addToQueue: string;
@@ -317,6 +319,7 @@ export interface BazaarMessages {
   readonly factLicence: string;
   readonly factKind: string;
   readonly factCollection: string;
+  readonly factSize: string;
   readonly queueLabel: string;
   readonly queueEmpty: string;
   readonly downloadAll: string;
@@ -359,6 +362,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     emptyPreview: 'Elige un objeto para verlo aquí.',
     closePreview: 'Cerrar',
     viewIn3d: 'Verlo en 3D',
+    viewIn3dSized: 'Verlo en 3D · {size}',
     download: 'Descargar {format}',
     downloadUnavailable: 'Descarga no disponible',
     addToQueue: 'A la cola',
@@ -369,6 +373,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     factLicence: 'Licencia',
     factKind: 'Tipo',
     factCollection: 'Colección',
+    factSize: 'Tamaño',
     queueLabel: 'Cola de descarga',
     queueEmpty: 'Vacía. Añade objetos con «A la cola» y bájalos juntos en un .zip.',
     downloadAll: 'Descargar todo (.zip)',
@@ -421,6 +426,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     emptyPreview: 'Pick an object to see it here.',
     closePreview: 'Close',
     viewIn3d: 'See it in 3D',
+    viewIn3dSized: 'See it in 3D · {size}',
     download: 'Download {format}',
     downloadUnavailable: 'Download unavailable',
     addToQueue: 'Add to queue',
@@ -431,6 +437,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     factLicence: 'Licence',
     factKind: 'Kind',
     factCollection: 'Collection',
+    factSize: 'Size',
     queueLabel: 'Download queue',
     queueEmpty: 'Empty. Add objects with “Add to queue” and get them together in one .zip.',
     downloadAll: 'Download all (.zip)',
@@ -484,6 +491,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     emptyPreview: 'オブジェクトを選ぶとここに表示されます。',
     closePreview: '閉じる',
     viewIn3d: '3Dで見る',
+    viewIn3dSized: '3Dで見る · {size}',
     download: '{format} をダウンロード',
     downloadUnavailable: 'ダウンロード不可',
     addToQueue: 'キューに追加',
@@ -494,6 +502,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     factLicence: 'ライセンス',
     factKind: '種類',
     factCollection: 'コレクション',
+    factSize: 'サイズ',
     queueLabel: 'ダウンロードキュー',
     queueEmpty: '空です。「キューに追加」で集めて、1つの .zip でまとめてダウンロードできます。',
     downloadAll: 'すべてダウンロード (.zip)',
@@ -547,6 +556,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     emptyPreview: '오브젝트를 고르면 여기에 보입니다.',
     closePreview: '닫기',
     viewIn3d: '3D로 보기',
+    viewIn3dSized: '3D로 보기 · {size}',
     download: '{format} 다운로드',
     downloadUnavailable: '다운로드 불가',
     addToQueue: '대기열에 추가',
@@ -557,6 +567,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     factLicence: '라이선스',
     factKind: '종류',
     factCollection: '컬렉션',
+    factSize: '크기',
     queueLabel: '다운로드 대기열',
     queueEmpty: '비어 있습니다. «대기열에 추가»로 모아서 .zip 하나로 함께 받으세요.',
     downloadAll: '모두 다운로드 (.zip)',
@@ -609,6 +620,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     emptyPreview: 'Escolha um objeto para vê-lo aqui.',
     closePreview: 'Fechar',
     viewIn3d: 'Ver em 3D',
+    viewIn3dSized: 'Ver em 3D · {size}',
     download: 'Baixar {format}',
     downloadUnavailable: 'Download indisponível',
     addToQueue: 'Para a fila',
@@ -619,6 +631,7 @@ export const BAZAAR_MESSAGES: Readonly<Record<SupportedLocale, BazaarMessages>> 
     factLicence: 'Licença',
     factKind: 'Tipo',
     factCollection: 'Coleção',
+    factSize: 'Tamanho',
     queueLabel: 'Fila de download',
     queueEmpty: 'Vazia. Adicione objetos com «Para a fila» e baixe todos juntos em um .zip.',
     downloadAll: 'Baixar tudo (.zip)',

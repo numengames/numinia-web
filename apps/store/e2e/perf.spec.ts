@@ -49,12 +49,19 @@ const BUDGETS: readonly Budget[] = [
   // Raised 495→515 (2026-10-14, the app shell): the sidebar, the top bar's
   // ⋮ menu, the phone's tab bar and the folded footer ride on every page
   // (measured 504KB here; the island itself did not change).
-  { path: '/lap/character/', totalKB: 515, jsKB: 300, imgKB: 10 },
+  // Raised 515→522 (2026-10-14, Pablo's walkthrough): the sheet laid out —
+  // its head with the portrait, the blank sheet's one door, the identity in
+  // groups, the dots — and the manual's sheet opened in a panel (~0.8KB of
+  // script; its text comes from the Codex page on demand). Measured 515.5KB
+  // (511.8KB before); the page's HTML shrank, the island grew ~3KB.
+  { path: '/lap/character/', totalKB: 522, jsKB: 300, imgKB: 10 },
   // The login page carries the wallet vendor — the one sanctioned heavy page,
   // still under the 1MB line. It grows past it only with a written reason.
   // Written reason (2026-10-14): the app shell above, measured 1028KB; the
-  // wallet vendor is unchanged.
-  { path: '/lap/session/', totalKB: 1040, jsKB: 900, imgKB: 10 },
+  // wallet vendor is unchanged. Raised 1040→1050 the same day, with the
+  // balanced two-column door and the wallet's permission line (Pablo's
+  // walkthrough): measured 1039.6KB, a hair under the old line.
+  { path: '/lap/session/', totalKB: 1050, jsKB: 900, imgKB: 10 },
 ];
 
 for (const budget of BUDGETS) {

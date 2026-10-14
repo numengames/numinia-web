@@ -2,9 +2,10 @@
 /**
  * The front door (the app shell, v0.83.0, the Oracle 2026-10-14): action,
  * not explanation. The featured card first, landscape and full width — the
- * house's pick and the next rituals — then the upcoming rituals, a shelf of
- * the Bazar, the three communities with the nearest ritual, and the two
- * doors for a first visit: how it works, and how to open a community's home.
+ * house's pick and the next gatherings — then the upcoming gatherings, a
+ * shelf of the Bazar in one row (the same strip), the three communities with
+ * the nearest gathering, and the two doors for a first visit: how it works,
+ * and how to open a community's home.
  * What the page used to explain lives in «Cómo funciona» (/how-it-works/).
  *
  * Two faces (v0.86.0, the Oracle 2026-10-14). A visitor without a session
@@ -286,13 +287,39 @@ const homes = withHome(COMMUNITIES);
             <h2 class="titulo-m">{ui.goodsTitle}</h2>
             <p class="ayuda">{ui.goodsHelp}</p>
           </div>
-          <a class="btn btn-fantasma btn-sm" href={`${prefix}/bazaar/`} data-metric="home-bazaar">
-            {ui.seeBazaar}
-          </a>
+          <div class="fila acciones-pista">
+            <a class="btn btn-fantasma btn-sm" href={`${prefix}/bazaar/`} data-metric="home-bazaar">
+              {ui.seeBazaar}
+            </a>
+            <span class="flechas">
+              <button
+                type="button"
+                class="flecha"
+                data-step="-1"
+                aria-controls="objetos-pista"
+                aria-label={ui.previous}
+                data-metric="home-bazaar-prev"
+              >
+                <Icon name="caret-left" size={18} />
+              </button>
+              <button
+                type="button"
+                class="flecha der"
+                data-step="1"
+                aria-controls="objetos-pista"
+                aria-label={ui.next}
+                data-metric="home-bazaar-next"
+              >
+                <Icon name="caret-left" size={18} />
+              </button>
+            </span>
+          </div>
         </div>
-        <div class="rejilla-obj">
+        {/* One row, the same strip as the gatherings above (the Oracle,
+            2026-10-14: «yo no mostraría dos filas»): two cards per step. */}
+        <div class="pista" id="objetos-pista" data-step-px="512">
           {goods.map((card) => (
-            <GoodCardView card={card} prefix={prefix} ui={ui} />
+            <GoodCardView card={card} prefix={prefix} ui={ui} inCarousel />
           ))}
         </div>
       </section>
@@ -339,8 +366,8 @@ const homes = withHome(COMMUNITIES);
 
   <Countdown ui={ui} />
   <script is:inline>
-    /* The strips' arrows: the featured card steps one slide, the rituals two
-       cards, and both wrap at the ends. Without JavaScript they scroll by hand. */
+    /* The strips' arrows: the featured card steps one slide, the others two
+       cards, and all wrap at the ends. Without JavaScript they scroll by hand. */
     /* The request for a home: without JavaScript the form posts to the mail
        client as it is; with it, the mail opens with a subject and one line
        per field, labelled in the page's language. */
@@ -398,13 +425,8 @@ const homes = withHome(COMMUNITIES);
   .pista::-webkit-scrollbar {
     display: none;
   }
-  .rejilla-obj {
-    display: grid;
-    gap: var(--s4);
-    grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
-  }
-  .rejilla-obj > * {
-    min-width: 0;
+  .acciones-pista {
+    gap: var(--s3);
   }
   .final {
     display: flex;

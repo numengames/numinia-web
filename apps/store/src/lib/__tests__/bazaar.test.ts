@@ -11,6 +11,7 @@ import {
   BAZAAR_CATEGORIES,
   BAZAAR_FORMATS,
   NO_FILTER,
+  PICTURE_FORMATS,
   bazaarHref,
   categoryFacets,
   countLabel,
@@ -18,6 +19,7 @@ import {
   fill,
   fold,
   formatFacets,
+  isPicture,
   matches,
   objectHref,
   safeFileName,
@@ -53,7 +55,10 @@ const item = (over: Partial<BazaarItem> & Pick<BazaarItem, 'id'>): BazaarItem =>
   collection: 'numinia-assets',
   license: 'CC0',
   thumbnailUrl: null,
+  thumbnailSrcSet: null,
   url: null,
+  sizeBytes: null,
+  size: null,
   createdAt: '2026-03-01T00:00:00Z',
   ...over,
 });
@@ -62,7 +67,7 @@ describe('loadBazaarItems', () => {
   it('lists every public good once, newest first, in a serializable shape', async () => {
     const { loadBazaarItems } = await importBazaar();
     const { loadArchive } = await import('../archive');
-    const items = await loadBazaarItems();
+    const items = await loadBazaarItems('es');
     const archive = await loadArchive();
     expect(items.map((i) => i.id)).toEqual(archive.map((entry) => entry.asset.id));
     expect(new Set(items.map((i) => i.id)).size).toBe(items.length);
@@ -77,13 +82,40 @@ describe('loadBazaarItems', () => {
     }
   });
 
+  it('says how heavy a good is in the page language, only when the catalogue does', async () => {
+    const { loadBazaarItems } = await importBazaar();
+    const es = await loadBazaarItems('es');
+    const en = await loadBazaarItems('en');
+    // portfolio 0.1.4: the 63 MB scene the viewer once showed as an empty box.
+    const portfolio = 'ndg-019d49ff-3146-7b5b-a890-79d4fbeb62f5';
+    expect(es.find((i) => i.id === portfolio)).toMatchObject({
+      sizeBytes: 63_005_556,
+      size: '60,1 MB',
+    });
+    expect(en.find((i) => i.id === portfolio)?.size).toBe('60.1 MB');
+    for (const good of es) expect(good.size === null).toBe(good.sizeBytes === null);
+  });
+
   it('serves the baked thumbnail when there is one, and every fixture good is CC0', async () => {
     const { loadBazaarItems } = await importBazaar();
-    const items = await loadBazaarItems();
+    const items = await loadBazaarItems('en');
     expect(items.find((i) => i.id === 'pot-vapor-02')?.thumbnailUrl).toBe(
       '/thumbs/pot-vapor-02.webp',
     );
+    // A density-1 screen takes the 1x cut; a denser one the 480px picture.
+    expect(items.find((i) => i.id === 'pot-vapor-02')?.thumbnailSrcSet).toBe(
+      '/thumbs/1x/pot-vapor-02.webp 1x, /thumbs/pot-vapor-02.webp 2x',
+    );
     expect(items.every((i) => i.license === 'CC0')).toBe(true);
+  });
+
+  it('paints every fixture picture with its own baked image, never the glyph', async () => {
+    const { loadBazaarItems } = await importBazaar();
+    const pictures = (await loadBazaarItems('es')).filter((i) => isPicture(i.format));
+    expect(pictures.length).toBeGreaterThan(0);
+    for (const picture of pictures) {
+      expect(picture.thumbnailUrl).toBe(`/thumbs/${picture.id}.webp`);
+    }
   });
 
   it('files a good without a project under "uncollected"', async () => {
@@ -96,18 +128,19 @@ describe('loadBazaarItems', () => {
     vi.doMock('../archive', () => ({
       loadArchive: () =>
         Promise.resolve([
-          { category: 'models', asset: { ...template, id: 'm1', projectId: '' } },
+          { category: 'models', asset: { ...template, id: 'm1', projectId: '', sizeBytes: null } },
           { category: 'audio', asset: { ...template, id: 's1', projectId: 'sounds' } },
         ]),
       downloadUrl: () => null,
     }));
     const { loadBazaarItems, UNCOLLECTED } = await import('../bazaar');
-    const items = await loadBazaarItems();
+    const items = await loadBazaarItems('en');
     vi.doUnmock('../archive');
     expect(items.map((i) => [i.id, i.collection, i.url])).toEqual([
       ['m1', UNCOLLECTED, null],
       ['s1', 'sounds', null],
     ]);
+    expect(items[0]?.size).toBeNull();
   });
 });
 
@@ -117,6 +150,35 @@ describe('lineOf', () => {
     expect(lineOf('  Avatar VRM starter pack (CC0) ')).toBe('Avatar VRM starter pack (CC0)');
     expect(lineOf('GLB asset uploaded via Numinia Admin')).toBeNull();
     expect(lineOf('   ')).toBeNull();
+  });
+});
+
+describe('pictures are pictures', () => {
+  it('knows which formats are their own picture', () => {
+    expect(PICTURE_FORMATS.every((format) => BAZAAR_FORMATS.includes(format))).toBe(true);
+    expect(isPicture('png')).toBe(true);
+    expect(isPicture('jpg')).toBe(true);
+    expect(isPicture('glb')).toBe(false);
+    expect(isPicture('mp4')).toBe(false);
+  });
+
+  it('gives a card the baked image, the thumbnail, the picture itself or nothing', async () => {
+    const { cardPicture } = await importBazaar();
+    const baked = 'ndg-019d408c-335a-79aa-901a-5118e55b9c4d';
+    expect(cardPicture(baked, 'jpg', null, 'https://pub-x.r2.dev/a.jpg')).toBe(
+      `/thumbs/${baked}.webp`,
+    );
+    // A picture added after the bake shows its own file.
+    expect(cardPicture('new-picture', 'png', null, 'https://pub-x.r2.dev/new.png')).toBe(
+      'https://pub-x.r2.dev/new.png',
+    );
+    // The catalogue's thumbnail wins over the full file.
+    expect(cardPicture('new-picture', 'png', 'https://x/t.png', 'https://x/full.png')).toBe(
+      'https://x/t.png',
+    );
+    // A model with no thumbnail keeps its kind's glyph; so does a picture with no file.
+    expect(cardPicture('new-model', 'glb', null, 'https://x/m.glb')).toBeNull();
+    expect(cardPicture('lost-picture', 'jpg', null, null)).toBeNull();
   });
 });
 

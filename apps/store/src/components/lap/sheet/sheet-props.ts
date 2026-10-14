@@ -68,3 +68,17 @@ export interface SheetLabels {
   readonly notes: string;
   readonly fields: Readonly<Record<string, string>>;
 }
+
+/** The sheet's layout (Pablo's walkthrough, 2026-10-14; i18n/profile.ts): the
+    blank sheet's one door, the head with the portrait, the identity's groups. */
+export interface SheetLayoutLabels {
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly emptyStart: string;
+  readonly unnamed: string;
+  readonly portraitAlt: string;
+  readonly portraitHint: string;
+  readonly groupWho: string;
+  readonly groupOrigin: string;
+  readonly groupCity: string;
+}

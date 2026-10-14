@@ -13,18 +13,32 @@ interface Props {
   card: GoodCard;
   prefix: string;
   ui: CommunitiesMessages;
+  /** The home's shelf is one row, like the gatherings above it: a carousel's card keeps a fixed width. */
+  inCarousel?: boolean;
 }
 
-const { card, prefix, ui } = Astro.props;
+const { card, prefix, ui, inCarousel = false } = Astro.props;
 const kind = ui.goodCategories[card.category];
 const shelf = ui.goodCollections[card.collection];
 ---
 
-<a class="tarjeta obj" href={objectHref(card.id, prefix)} data-metric="home-good">
+<a
+  class:list={['tarjeta', 'obj', { carrusel: inCarousel }]}
+  href={objectHref(card.id, prefix)}
+  data-metric="home-good"
+>
   <div class="escenario">
     {
       card.thumb && (
-        <img src={card.thumb} alt="" width="240" height="240" loading="lazy" decoding="async" />
+        <img
+          src={card.thumb}
+          srcset={card.thumbSrcSet ?? undefined}
+          alt=""
+          width="240"
+          height="240"
+          loading="lazy"
+          decoding="async"
+        />
       )
     }
   </div>
@@ -45,6 +59,11 @@ const shelf = ui.goodCollections[card.collection];
 </a>
 
 <style>
+  /* Two cards and their gap make one step of the shelf's arrows (Landing's data-step-px). */
+  .obj.carrusel {
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+  }
   .obj .escenario {
     aspect-ratio: 4 / 3;
     background: radial-gradient(120% 100% at 50% 0%, var(--elevada), var(--fondo));

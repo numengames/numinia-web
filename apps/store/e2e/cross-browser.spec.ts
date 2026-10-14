@@ -82,7 +82,10 @@ test('phone · primary controls meet the 44px touch target', async ({ page }) =>
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto('/es/lap/character/');
   await page.waitForLoadState('networkidle');
-  for (const selector of ['[data-metric="lap-sheet-edit"]', '[data-metric="lap-nav-codex"]']) {
+  // A fresh browser starts with a quiet panel (Códice, Portales, Botín and
+  // Estadísticas hidden until chosen): the rail row measured is one that
+  // always shows.
+  for (const selector of ['[data-metric="lap-sheet-edit"]', '[data-metric="lap-nav-seasons"]']) {
     const box = await page.locator(selector).first().boundingBox();
     expect(box, `${selector} not visible`).not.toBeNull();
     expect(box!.height, `${selector} is ${box!.height}px tall`).toBeGreaterThanOrEqual(40);

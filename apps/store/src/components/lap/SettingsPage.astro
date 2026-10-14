@@ -15,6 +15,7 @@ import {
 import { SETTINGS_UI } from '../../i18n/settings';
 import { LAP_UI } from '../../i18n/lap';
 import { SETTINGS_PATH, signInHref, signOutHref } from '../../lib/app-nav';
+import { DEFAULT_HIDDEN, HIDEABLE_SECTIONS, isUnderConstruction } from '../../lib/lap-sections';
 import { CURRENT_VERSION } from '../../lib/updates';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
@@ -29,7 +30,11 @@ const lap = LAP_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
 /** Sections a citizen may hide from the rail (chrome preference, D17). */
-const HIDEABLE = ['character', 'codex', 'portals', 'loot', 'seasons', 'stats'] as const;
+const HIDEABLE = HIDEABLE_SECTIONS;
+/** What a first visit finds off, named in the page's language («Códice, Portales, Botín y Estadísticas»). */
+const quietList = new Intl.ListFormat(locale === 'pt-br' ? 'pt-BR' : locale, {
+  type: 'conjunction',
+}).format(DEFAULT_HIDDEN.map((section) => lap.sections[section]));
 
 /** What the first rank opens (Nomad: signed in, STD-003), against all there are. */
 const nomadGrants = resolvePermissions('nomad');
@@ -145,10 +150,18 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
             HIDEABLE.map((section) => (
               <li>
                 <label>
-                  <span>{lap.sections[section]}</span>
+                  <span class="seccion">
+                    {lap.sections[section]}
+                    {isUnderConstruction(section) && (
+                      <span class="obra">
+                        <Icon name="crane-tower" size={14} />
+                        {lap.building.label}
+                      </span>
+                    )}
+                  </span>
                   <input
                     type="checkbox"
-                    checked
+                    checked={!DEFAULT_HIDDEN.includes(section)}
                     data-section-toggle={section}
                     data-metric="settings-section-toggle"
                   />
@@ -158,6 +171,7 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
             ))
           }
         </ul>
+        <p class="nota">{lap.quietPanel.replace('{list}', quietList)}</p>
         <p class="nota">{t.sidebarNote}</p>
       </div>
     </section>
@@ -207,7 +221,7 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
           <div>
             <dt>{t.version}</dt>
             <dd class="mono">
-              <a href={`${prefix}/updates/`} data-metric="settings-version">{CURRENT_VERSION}</a>
+              <a href={`${prefix}/lap/updates/`} data-metric="settings-version">{CURRENT_VERSION}</a>
             </dd>
           </div>
           <div>
@@ -234,9 +248,17 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
 </LapShell>
 
 <script>
-  /* Chrome preferences (D17: localStorage for chrome only). Everything
-     degrades: without JS the page still tells the truth, it just cannot
-     toggle. */
+  import {
+    LAP_HIDDEN_KEY,
+    hiddenSections,
+    isHideable,
+    storedValue,
+    withSection,
+  } from '../../lib/lap-sections';
+
+  /* Chrome preferences (D17: localStorage for chrome only). Without JS the
+     page still reads, it just cannot toggle (the switches then show the
+     default a first visit gets). */
   const root = document.documentElement;
 
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-mode]')) {
@@ -259,27 +281,30 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   }
   paintMode();
 
-  const HIDDEN_KEY = 'numinia-lap-hidden';
-  const readHidden = (): string[] => {
+  const HIDDEN_KEY = LAP_HIDDEN_KEY;
+  const readStored = (): string | null => {
     try {
-      return (localStorage.getItem(HIDDEN_KEY) ?? '').split(',').filter(Boolean);
+      return localStorage.getItem(HIDDEN_KEY);
     } catch {
-      return [];
+      return null;
     }
   };
-  const hidden = new Set(readHidden());
+  /* Nothing stored = never chose: the quiet default. Any switch moved is
+     stored as the person's choice — an empty value shows everything — and
+     wins over the default from then on (lib/lap-sections.ts). */
+  let hidden = hiddenSections(readStored());
   for (const input of document.querySelectorAll<HTMLInputElement>('[data-section-toggle]')) {
-    const section = input.dataset['sectionToggle'] ?? '';
-    input.checked = !hidden.has(section);
+    const section = input.dataset['sectionToggle'];
+    if (!isHideable(section)) continue;
+    input.checked = !hidden.includes(section);
     input.addEventListener('change', () => {
-      if (input.checked) hidden.delete(section);
-      else hidden.add(section);
+      hidden = withSection(hidden, section, input.checked);
       try {
-        localStorage.setItem(HIDDEN_KEY, [...hidden].join(','));
+        localStorage.setItem(HIDDEN_KEY, storedValue(hidden));
       } catch {
         /* private mode */
       }
-      root.dataset['lapHidden'] = [...hidden].join(' ');
+      root.dataset['lapHidden'] = hidden.join(' ');
     });
   }
 
@@ -400,6 +425,21 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
     gap: var(--s4);
     min-height: 44px;
     cursor: pointer;
+  }
+  .seccion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s1) var(--s3);
+  }
+  /* «En construcción»: the same crane and words the rail shows, in amber
+     (AA on the card in both modes). */
+  .obra {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    font-size: 0.75rem;
+    color: var(--ambar);
   }
   .interruptores input {
     position: absolute;

@@ -9,9 +9,16 @@
  * shows the `data-session-in/out` faces and writes the short wallet and the
  * rank's name): without a session the card says so — never «Nómada», which
  * is a rank you get by signing in (STD-003).
+ *
+ * The portrait and the profile (Pablo's walkthrough, 2026-10-14: «la foto
+ * del personaje», «editar mi perfil personal») live in this browser, inside
+ * the character sheet's own record (lib/citizen-profile.ts): a tap on the
+ * portrait picks a picture, shrunk here to 256 px at most; «Editar perfil»
+ * opens a small form. Nothing is sent anywhere.
  */
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
+import { PROFILE_UI } from '../../i18n/profile';
 import { signInHref } from '../../lib/app-nav';
 import Icon from '../chrome/Icon.astro';
 
@@ -21,16 +28,42 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = LAP_UI[locale].citizen;
+const p = PROFILE_UI[locale];
+const words = JSON.stringify({
+  photoChange: p.card.photoChange,
+  photoAdd: p.card.photoAdd,
+  photoError: p.card.photoError,
+  photoFull: p.card.photoFull,
+  saved: p.card.saved,
+  badLink: p.form.badLink,
+});
 ---
 
-<section class="ciudadania" data-materia="relieve" data-citizen>
-  <div class="sello">
-    <Icon name="user" size={40} />
-  </div>
+<section class="ciudadania" data-materia="relieve" data-citizen data-citizen-words={words}>
+  <button
+    type="button"
+    class="sello"
+    data-citizen-pick
+    data-metric="citizen-photo"
+    aria-label={p.card.photoAdd}
+    title={p.card.photoAdd}
+  >
+    <span class="sello-glifo" data-citizen-glyph><Icon name="user" size={40} /></span>
+    <img data-citizen-photo alt={p.card.photoAlt} width="96" height="96" hidden />
+    <span class="sello-marca" aria-hidden="true">+</span>
+  </button>
+  <input
+    type="file"
+    accept="image/*"
+    hidden
+    data-citizen-file
+    data-metric="citizen-photo-file"
+  />
   <div class="identidad">
     <p class="etiqueta">{t.title}</p>
-    <p class="nombre" data-session-out>{t.noSession}</p>
-    <p class="nombre mono" data-session-in data-session-short hidden></p>
+    <p class="nombre" data-citizen-name hidden></p>
+    <p class="nombre sesion" data-session-out>{t.noSession}</p>
+    <p class="nombre sesion mono" data-session-in data-session-short hidden></p>
     <p class="pildora rango" data-session-in hidden>
       {
         RANK_DEFINITIONS.map((rank) => (
@@ -40,6 +73,12 @@ const t = LAP_UI[locale].citizen;
         ))
       }
     </p>
+    <p class="linea" data-citizen-line hidden></p>
+    <p class="lugar" data-citizen-place hidden>
+      <Icon name="map-pin" size={16} />
+      <span></span>
+    </p>
+    <ul class="vinculos" data-citizen-links aria-label={p.card.links} hidden></ul>
   </div>
   <dl class="hud">
     <div>
@@ -51,15 +90,362 @@ const t = LAP_UI[locale].citizen;
       <dd class="mono" data-citizen-prisma>0</dd>
     </div>
   </dl>
-  <a
-    href={signInHref(locale, '/lap/')}
-    class="btn btn-primario"
-    data-metric="citizen-enter"
-    data-session-out
-  >
-    {t.enter}
-  </a>
+  <div class="puertas-tarjeta">
+    <a
+      href={signInHref(locale, '/lap/')}
+      class="btn btn-primario"
+      data-metric="citizen-enter"
+      data-session-out
+    >
+      {t.enter}
+    </a>
+    <button type="button" class="btn btn-fantasma" data-citizen-edit data-metric="citizen-edit">
+      {p.card.edit}
+    </button>
+  </div>
+  <p class="estado" role="status" data-citizen-status></p>
+
+  <dialog class="perfil-dialogo" data-citizen-dialog aria-labelledby="perfil-titulo">
+    <form method="dialog" data-citizen-form novalidate>
+      <h2 id="perfil-titulo">{p.form.title}</h2>
+      <p class="nota-perfil">{p.form.note}</p>
+      <div class="foto-fila">
+        <span class="sello mini" aria-hidden="true">
+          <span class="sello-glifo" data-form-glyph><Icon name="user" size={28} /></span>
+          <img data-form-photo alt="" width="64" height="64" hidden />
+        </span>
+        <div class="foto-botones">
+          <span class="campo-nombre">{p.form.photo}</span>
+          <button
+            type="button"
+            class="btn btn-fantasma"
+            data-form-pick
+            data-metric="citizen-form-photo"
+          >
+            {p.form.photoPick}
+          </button>
+          <button
+            type="button"
+            class="btn btn-silencioso"
+            data-form-unpick
+            data-metric="citizen-form-photo-remove"
+            hidden
+          >
+            {p.form.photoRemove}
+          </button>
+        </div>
+      </div>
+      <label>
+        <span class="campo-nombre">{p.form.name}</span>
+        <input
+          name="name"
+          maxlength="60"
+          autocomplete="nickname"
+          placeholder={p.form.namePlaceholder}
+          data-metric="citizen-form-name"
+        />
+      </label>
+      <label>
+        <span class="campo-nombre">{p.form.line}</span>
+        <input
+          name="line"
+          maxlength="140"
+          placeholder={p.form.linePlaceholder}
+          data-metric="citizen-form-line"
+        />
+      </label>
+      <label>
+        <span class="campo-nombre">{p.form.place}</span>
+        <input
+          name="place"
+          maxlength="60"
+          autocomplete="address-level2"
+          placeholder={p.form.placePlaceholder}
+          data-metric="citizen-form-place"
+        />
+      </label>
+      <fieldset>
+        <legend class="campo-nombre">{p.form.links}</legend>
+        {
+          [1, 2, 3].map((n) => (
+            <input
+              name={`link${n}`}
+              type="text"
+              inputmode="url"
+              maxlength="300"
+              aria-label={p.form.link.replace('{n}', String(n))}
+              placeholder="https://…"
+              data-metric="citizen-form-link"
+            />
+          ))
+        }
+      </fieldset>
+      <p class="error-perfil" data-form-error role="alert" hidden></p>
+      <div class="acciones-perfil">
+        <button type="submit" class="btn btn-primario" data-metric="citizen-form-save">
+          {p.form.save}
+        </button>
+        <button
+          type="button"
+          class="btn btn-silencioso"
+          data-form-cancel
+          data-metric="citizen-form-cancel"
+        >
+          {p.form.cancel}
+        </button>
+      </div>
+    </form>
+  </dialog>
 </section>
+
+<script>
+  import {
+    SHEET_RECORD_KEY,
+    badLinks,
+    cleanCitizen,
+    citizenFromMarkdown,
+    isPortrait,
+    linkLabel,
+    portraitSize,
+    withCitizen,
+    type CitizenProfile,
+  } from '../../lib/citizen-profile';
+
+  interface Words {
+    photoChange: string;
+    photoAdd: string;
+    photoError: string;
+    photoFull: string;
+    saved: string;
+    badLink: string;
+  }
+
+  function readRecord(): string {
+    try {
+      return localStorage.getItem(SHEET_RECORD_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Writes the card into the sheet's record; false when the browser refused. */
+  function writeCitizen(citizen: CitizenProfile): boolean {
+    try {
+      const next = withCitizen(readRecord(), citizen);
+      if (next === '') localStorage.removeItem(SHEET_RECORD_KEY);
+      else localStorage.setItem(SHEET_RECORD_KEY, next);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** A picture shrunk in this browser to PORTRAIT_SIDE at most, as a data URL. */
+  async function toPortrait(file: File): Promise<string | null> {
+    if (!file.type.startsWith('image/')) return null;
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const size = portraitSize(image.naturalWidth, image.naturalHeight);
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!size || !context) return null;
+      canvas.width = size.width;
+      canvas.height = size.height;
+      context.drawImage(image, 0, 0, size.width, size.height);
+      const tries: ReadonlyArray<readonly [string, number]> = [
+        ['image/webp', 0.85],
+        ['image/jpeg', 0.85],
+        ['image/jpeg', 0.6],
+      ];
+      for (const [type, quality] of tries) {
+        const data = canvas.toDataURL(type, quality);
+        if (isPortrait(data)) return data;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function showPhoto(img: HTMLImageElement, glyph: HTMLElement | null, photo: string): void {
+    if (photo === '') img.removeAttribute('src');
+    else img.src = photo;
+    img.hidden = photo === '';
+    if (glyph) glyph.hidden = photo !== '';
+  }
+
+  function mount(root: HTMLElement): void {
+    const words = JSON.parse(root.dataset['citizenWords'] ?? '{}') as Words;
+    const $ = <T extends Element>(selector: string): T | null => root.querySelector<T>(selector);
+    const pick = $<HTMLButtonElement>('[data-citizen-pick]');
+    const file = $<HTMLInputElement>('[data-citizen-file]');
+    const photo = $<HTMLImageElement>('[data-citizen-photo]');
+    const glyph = $<HTMLElement>('[data-citizen-glyph]');
+    const name = $<HTMLElement>('[data-citizen-name]');
+    const line = $<HTMLElement>('[data-citizen-line]');
+    const place = $<HTMLElement>('[data-citizen-place]');
+    const links = $<HTMLUListElement>('[data-citizen-links]');
+    const status = $<HTMLElement>('[data-citizen-status]');
+    const dialog = $<HTMLDialogElement>('[data-citizen-dialog]');
+    const form = $<HTMLFormElement>('[data-citizen-form]');
+    const formPhoto = $<HTMLImageElement>('[data-form-photo]');
+    const formGlyph = $<HTMLElement>('[data-form-glyph]');
+    const unpick = $<HTMLButtonElement>('[data-form-unpick]');
+    const error = $<HTMLElement>('[data-form-error]');
+    if (!pick || !file || !photo || !name || !line || !place || !links || !status) return;
+    if (!dialog || !form || !formPhoto || !unpick || !error) return;
+
+    let current = citizenFromMarkdown(readRecord());
+    /** Who waits for the next picked file: the card itself, or the form. */
+    let pickingFor: 'card' | 'form' = 'card';
+    let draftPhoto = '';
+
+    const say = (text: string): void => {
+      status.textContent = text;
+    };
+    const fail = (text: string): void => {
+      error.textContent = text;
+      error.hidden = false;
+    };
+
+    const render = (): void => {
+      showPhoto(photo, glyph, current.photo);
+      const label = current.photo === '' ? words.photoAdd : words.photoChange;
+      pick.setAttribute('aria-label', label);
+      pick.title = label;
+      name.textContent = current.name;
+      name.hidden = current.name === '';
+      root.toggleAttribute('data-con-nombre', current.name !== '');
+      line.textContent = current.line;
+      line.hidden = current.line === '';
+      const placeText = place.querySelector('span');
+      if (placeText) placeText.textContent = current.place;
+      place.hidden = current.place === '';
+      links.replaceChildren(
+        ...current.links.map((href) => {
+          const item = document.createElement('li');
+          const anchor = document.createElement('a');
+          anchor.href = href;
+          anchor.rel = 'noopener noreferrer me';
+          anchor.target = '_blank';
+          anchor.dataset['metric'] = 'citizen-link';
+          anchor.textContent = linkLabel(href);
+          item.append(anchor);
+          return item;
+        }),
+      );
+      links.hidden = current.links.length === 0;
+    };
+
+    const save = (next: CitizenProfile): boolean => {
+      if (!writeCitizen(next)) {
+        say(words.photoFull);
+        return false;
+      }
+      current = next;
+      render();
+      say(words.saved);
+      return true;
+    };
+
+    pick.addEventListener('click', () => {
+      pickingFor = 'card';
+      file.click();
+    });
+
+    file.addEventListener('change', () => {
+      const chosen = file.files?.[0];
+      file.value = '';
+      if (!chosen) return;
+      void toPortrait(chosen).then((data) => {
+        if (pickingFor === 'card') {
+          if (data === null) say(words.photoError);
+          else save({ ...current, photo: data });
+          return;
+        }
+        if (data === null) {
+          fail(words.photoError);
+          return;
+        }
+        draftPhoto = data;
+        showPhoto(formPhoto, formGlyph, draftPhoto);
+        unpick.hidden = false;
+        error.hidden = true;
+      });
+    });
+
+    const field = (key: string): HTMLInputElement | null =>
+      form.querySelector<HTMLInputElement>(`[name="${key}"]`);
+    const linkFields = (): HTMLInputElement[] =>
+      ['link1', 'link2', 'link3']
+        .map((key) => field(key))
+        .filter((input): input is HTMLInputElement => input !== null);
+
+    $<HTMLButtonElement>('[data-citizen-edit]')?.addEventListener('click', () => {
+      current = citizenFromMarkdown(readRecord());
+      draftPhoto = current.photo;
+      showPhoto(formPhoto, formGlyph, draftPhoto);
+      unpick.hidden = draftPhoto === '';
+      const set = (key: string, value: string): void => {
+        const input = field(key);
+        if (input) input.value = value;
+      };
+      set('name', current.name);
+      set('line', current.line);
+      set('place', current.place);
+      linkFields().forEach((input, index) => {
+        input.value = current.links[index] ?? '';
+        input.removeAttribute('aria-invalid');
+      });
+      error.hidden = true;
+      dialog.showModal();
+    });
+
+    $<HTMLButtonElement>('[data-form-pick]')?.addEventListener('click', () => {
+      pickingFor = 'form';
+      file.click();
+    });
+    unpick.addEventListener('click', () => {
+      draftPhoto = '';
+      showPhoto(formPhoto, formGlyph, '');
+      unpick.hidden = true;
+    });
+    $<HTMLButtonElement>('[data-form-cancel]')?.addEventListener('click', () => dialog.close());
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const typed = linkFields().map((input) => input.value);
+      const wrong = badLinks(typed);
+      linkFields().forEach((input, index) => {
+        if (wrong.includes(index)) input.setAttribute('aria-invalid', 'true');
+        else input.removeAttribute('aria-invalid');
+      });
+      if (wrong.length > 0) {
+        fail(words.badLink);
+        return;
+      }
+      const next = cleanCitizen({
+        photo: draftPhoto,
+        name: field('name')?.value,
+        line: field('line')?.value,
+        place: field('place')?.value,
+        links: typed,
+      });
+      if (save(next)) dialog.close();
+      else fail(words.photoFull);
+    });
+
+    render();
+  }
+
+  const card = document.querySelector<HTMLElement>('[data-citizen]');
+  if (card) mount(card);
+</script>
 
 <style>
   .ciudadania {
@@ -73,17 +459,56 @@ const t = LAP_UI[locale].citizen;
     border: 1px solid var(--linea-f);
     border-radius: var(--radio-marco);
   }
-  /* The identity tile: a quiet frame, the glyph in secondary ink. */
+  /* The identity tile: a quiet frame, the glyph in secondary ink — and a
+     button: a tap picks the portrait. */
   .sello {
+    position: relative;
     flex: none;
     display: grid;
     place-items: center;
     width: 96px;
     height: 96px;
+    padding: 0;
+    font: inherit;
     background: var(--fondo);
     border: 1px solid var(--linea-f);
     border-radius: var(--radio-marco);
     color: var(--texto-2);
+    overflow: hidden;
+  }
+  button.sello {
+    cursor: pointer;
+  }
+  button.sello:hover,
+  button.sello:focus-visible {
+    border-color: var(--verdemar);
+  }
+  .sello img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .sello-glifo {
+    display: grid;
+    place-items: center;
+  }
+  .sello-glifo[hidden],
+  .sello img[hidden] {
+    display: none;
+  }
+  .sello-marca {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--fondo);
+    background: var(--verdemar);
+    border-radius: 50%;
   }
   .identidad {
     flex: 1 1 12rem;
@@ -99,8 +524,48 @@ const t = LAP_UI[locale].citizen;
     color: var(--texto);
     overflow-wrap: anywhere;
   }
+  /* With a name of your own, the session line steps back under it. */
+  [data-con-nombre] .nombre {
+    margin-bottom: var(--s2);
+  }
+  [data-con-nombre] .nombre.sesion {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--texto-2);
+  }
   .rango {
     color: var(--verdemar);
+  }
+  .linea {
+    margin: var(--s2) 0 0;
+    color: var(--texto-2);
+    max-width: 50ch;
+    overflow-wrap: anywhere;
+  }
+  .lugar {
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    margin: var(--s2) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .vinculos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s4);
+    list-style: none;
+    margin: var(--s2) 0 0;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+  .vinculos a {
+    color: var(--enlace);
+    overflow-wrap: anywhere;
+  }
+  .lugar[hidden],
+  .vinculos[hidden] {
+    display: none;
   }
   /* HUD counters: persisting data reads in Mono tabular (§9.6). */
   .hud {
@@ -128,14 +593,122 @@ const t = LAP_UI[locale].citizen;
     font-size: 1rem;
     color: var(--texto-3);
   }
+  .puertas-tarjeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+  }
   .ciudadania .btn {
     text-decoration: none;
+  }
+  .estado {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .estado:empty {
+    display: none;
+  }
+  /* The profile form: a small sheet over the page. */
+  .perfil-dialogo {
+    width: min(32rem, calc(100vw - 2 * var(--s4)));
+    max-height: calc(100dvh - 2 * var(--s4));
+    padding: var(--s5);
+    color: var(--texto);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  .perfil-dialogo::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
+  .perfil-dialogo form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+  }
+  .perfil-dialogo h2 {
+    margin: 0;
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  .nota-perfil {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--texto-2);
+  }
+  .perfil-dialogo label,
+  .perfil-dialogo fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+  .campo-nombre {
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .perfil-dialogo input {
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    padding: 8px var(--s3);
+    min-height: 44px;
+  }
+  .perfil-dialogo input[aria-invalid='true'] {
+    border-color: var(--grana);
+  }
+  .foto-fila {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+  }
+  .sello.mini {
+    width: 64px;
+    height: 64px;
+  }
+  .foto-botones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+  }
+  .foto-botones .campo-nombre {
+    flex-basis: 100%;
+  }
+  .foto-botones [hidden] {
+    display: none;
+  }
+  .error-perfil {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto);
+    border-left: 2px solid var(--grana);
+    padding-left: var(--s3);
+  }
+  .error-perfil[hidden] {
+    display: none;
+  }
+  .acciones-perfil {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
   }
   @media (max-width: 40rem) {
     .ciudadania {
       gap: var(--s4);
     }
-    .sello {
+    .ciudadania > .sello {
       width: 72px;
       height: 72px;
     }

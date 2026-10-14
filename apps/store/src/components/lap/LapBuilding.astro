@@ -1,0 +1,83 @@
+---
+/**
+ * «En construcción» (the Oracle, 2026-10-14: «todo lo que no esté
+ * funcionando debería salir con "está en construcción" o con un iconito
+ * que se vea claramente»): the banner that opens an unfinished LAP page —
+ * the crane, the words, what does not work yet and when it comes, and at
+ * most one quiet way on.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { LAP_UI } from '../../i18n/lap';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** What does not work yet and when it comes, in plain words. */
+  text: string;
+  /** An optional way on: where the working part lives meanwhile. */
+  link?: { href: string; label: string; metric: string } | undefined;
+}
+
+const { locale, text, link } = Astro.props;
+const t = LAP_UI[locale];
+---
+
+<aside class="en-obras" data-lap-building aria-label={t.building.label}>
+  <Icon name="crane-tower" size={28} class="grua" />
+  <div class="obra-cuerpo">
+    <p class="obra-titulo">{t.building.label}</p>
+    <p class="obra-texto">{text}</p>
+    {
+      link && (
+        <a class="btn btn-fantasma" href={link.href} data-metric={link.metric}>
+          {link.label}
+        </a>
+      )
+    }
+  </div>
+</aside>
+
+<style>
+  /* A notice, not a toast (the kit's .aviso is position: fixed): a card with
+     the amber edge — construction, not error — and the crane in amber. */
+  .en-obras {
+    display: flex;
+    gap: var(--s4);
+    align-items: flex-start;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-left: 2px solid var(--ambar);
+    border-radius: var(--radio-marco);
+    padding: var(--s4) var(--s5);
+    margin: 0 0 var(--s5);
+  }
+  /* The icon is the Icon component's own span: it carries no scope
+     attribute, so it is reached through the banner. */
+  .en-obras > :global(.grua) {
+    color: var(--ambar);
+    margin-top: 2px;
+  }
+  .obra-cuerpo {
+    min-width: 0;
+  }
+  /* Amber reads AA on the card in both modes (night #EFA517, day #7A5100). */
+  .obra-titulo {
+    margin: 0 0 var(--s1);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ambar);
+  }
+  .obra-texto {
+    margin: 0;
+    max-width: 68ch;
+    line-height: 1.55;
+    color: var(--texto);
+  }
+  .btn {
+    margin-top: var(--s3);
+    min-height: 44px;
+    text-decoration: none;
+  }
+</style>

@@ -5,7 +5,10 @@
  * the widget itself now gets thirdweb's own locale (`WIDGET_LOCALE`).
  *
  * Copy rule for the guide (MISSION-002): reassure, never alarm — no word
- * about payments or transactions.
+ * about payments. The one word about transactions (`walletNote`) says none
+ * is asked: MetaMask's own dialog lists «send transaction requests» to every
+ * site that connects, and Pablo asked whether we need it (2026-10-14). We do
+ * not — the sign-in is one signature of a text, on the wallet's own network.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
@@ -31,6 +34,12 @@ export interface SignInMessages {
   /** The guide: its landmark, «Paso {n} de 3», and each method's three steps. */
   readonly progress: string;
   readonly step: string;
+  /** Beside the wallet's steps: the permission list is MetaMask's, the same
+      for every site; Numinia uses the address and one signature. */
+  readonly walletNote: string;
+  /** The widget's place while the terms are not accepted yet. */
+  readonly doorTitle: string;
+  readonly doorMethods: string;
   readonly methods: Readonly<Record<LoginMethodId, MethodCopy>>;
 }
 
@@ -55,6 +64,11 @@ export const SIGN_IN_UI: Readonly<Record<SupportedLocale, SignInMessages>> = {
     signingOut: 'Saliendo…',
     progress: 'Cómo vas',
     step: 'Paso {n} de 3',
+    walletNote:
+      'MetaMask enseña esa misma lista de permisos a cualquier web que se conecta: no se puede pedir menos. Numinia solo usa tu dirección y una firma para comprobar que es tuya; no te pide ninguna transacción.',
+    doorTitle: 'La entrada',
+    doorMethods:
+      'Aquí aparecerán las formas de entrar: Google, tu correo, una passkey o tu cartera.',
     methods: {
       google: {
         label: 'Google',
@@ -101,6 +115,10 @@ export const SIGN_IN_UI: Readonly<Record<SupportedLocale, SignInMessages>> = {
     signingOut: 'Signing out…',
     progress: 'Your progress',
     step: 'Step {n} of 3',
+    walletNote:
+      'MetaMask shows that same list of permissions to every site that connects: no site can ask for less. Numinia only uses your address and one signature to check it is yours; it asks for no transaction.',
+    doorTitle: 'The way in',
+    doorMethods: 'Your ways in will appear here: Google, your email, a passkey or your wallet.',
     methods: {
       google: {
         label: 'Google',
@@ -147,6 +165,10 @@ export const SIGN_IN_UI: Readonly<Record<SupportedLocale, SignInMessages>> = {
     signingOut: 'ログアウトしています…',
     progress: '進み具合',
     step: 'ステップ {n} / 3',
+    walletNote:
+      'MetaMask は接続するすべてのサイトに同じ許可の一覧を表示します。それより少なく求めることはできません。ヌミニアが使うのは、あなたのアドレスと、それがあなたのものだと確かめる署名だけです。取引を求めることはありません。',
+    doorTitle: '入口',
+    doorMethods: 'ここに入り方が表示されます：Google、メール、パスキー、またはウォレット。',
     methods: {
       google: {
         label: 'Google',
@@ -193,6 +215,10 @@ export const SIGN_IN_UI: Readonly<Record<SupportedLocale, SignInMessages>> = {
     signingOut: '로그아웃하는 중…',
     progress: '진행 상황',
     step: '{n}/3단계',
+    walletNote:
+      'MetaMask는 연결하는 모든 사이트에 같은 권한 목록을 보여 줍니다. 그보다 적게 요청할 수는 없습니다. 누미니아는 주소와, 그 주소가 당신의 것임을 확인하는 서명 하나만 사용하며 거래는 요청하지 않습니다.',
+    doorTitle: '입구',
+    doorMethods: '여기에 들어오는 방법이 나타납니다: Google, 이메일, 패스키 또는 지갑.',
     methods: {
       google: {
         label: 'Google',
@@ -239,6 +265,11 @@ export const SIGN_IN_UI: Readonly<Record<SupportedLocale, SignInMessages>> = {
     signingOut: 'Saindo…',
     progress: 'Seu progresso',
     step: 'Passo {n} de 3',
+    walletNote:
+      'O MetaMask mostra essa mesma lista de permissões a qualquer site que se conecta: não dá para pedir menos. Numinia só usa seu endereço e uma assinatura para confirmar que ele é seu; não pede nenhuma transação.',
+    doorTitle: 'A entrada',
+    doorMethods:
+      'Aqui aparecem as formas de entrar: Google, seu e-mail, uma passkey ou sua carteira.',
     methods: {
       google: {
         label: 'Google',

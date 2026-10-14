@@ -83,23 +83,31 @@ test('a Nomad sees only the first rank granted', async ({ page }) => {
   await expect(pills.nth(1)).toHaveAttribute('data-estado', 'locked');
 });
 
-test('signed in, the sign-in page shows who you are and leads back, in Spanish', async ({
+test('signed in, the sign-in page shows who you are and leads to your profile, in Spanish', async ({
   page,
 }) => {
   await signedInAs(page, 'oracle');
+  // Opened from a community page: «Continuar» — like a fresh sign-in — goes
+  // to your profile, not back to the community (Pablo, 2026-10-14).
   await page.goto('/es/lap/session/?vuelta=%2Fes%2Fbelong%2F');
   const panel = page.locator('[data-session-panel]');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText('Has entrado en Numinia.');
   await expect(panel).toContainText('Oráculo');
-  await expect(panel.locator('[data-metric="auth-continue"]')).toHaveAttribute(
-    'href',
-    '/es/belong/',
-  );
+  await expect(panel.locator('[data-metric="auth-continue"]')).toHaveAttribute('href', '/es/lap/');
   await expect(panel.locator('[data-metric="auth-logout"]')).toHaveText('Salir');
   // No wallet widget and no legal gate for someone already in.
   await expect(page.locator('[data-metric="auth-connect"]')).toHaveCount(0);
   await expect(page.locator('[data-legal-gate]')).toHaveCount(0);
+});
+
+test('a door opened from a room of the player area leads back to that room', async ({ page }) => {
+  await signedInAs(page, 'oracle');
+  await page.goto('/es/lap/session/?vuelta=%2Fes%2Flap%2Fadmin%2Fworlds%2F');
+  await expect(page.locator('[data-metric="auth-continue"]')).toHaveAttribute(
+    'href',
+    '/es/lap/admin/worlds/',
+  );
 });
 
 test('a foreign way back is ignored: «Continuar» stays on the site', async ({ page }) => {

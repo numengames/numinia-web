@@ -1,0 +1,205 @@
+---
+/**
+ * What a community's space uses (the Oracle, 2026-10-14, on a community's
+ * page: «aquí tendrías que poder ver las características de tu espacio, lo
+ * que estás usando en tu espacio»): the pieces of Numinia it uses, each with
+ * its honest state — its home to enter or none yet, the gatherings coming,
+ * and what is not built yet, marked with the crane. The model lives in
+ * lib/space-uses.ts; here only the words and the marks.
+ *
+ * Visible to everyone: no membership data exists yet. Who is inside a home
+ * of the fleet is filled by the page's InsideCount from /api/live (the slot
+ * stays empty without it), never written at build.
+ */
+import { fill, type CommunitiesMessages } from '../../i18n/communities';
+import { pick, type Community, type Ritual, type World } from '../../lib/communities';
+import { spaceUses, type PieceId } from '../../lib/space-uses';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  community: Community;
+  rituals: readonly Ritual[];
+  /** The city's commons, where the founder's people meet. */
+  commons: World;
+  locale: string;
+  ui: CommunitiesMessages;
+  /** Where the page's own list of gatherings starts, e.g. "#encuentros". */
+  gatheringsAnchor: string;
+}
+
+const { community, rituals, commons, locale, ui, gatheringsAnchor } = Astro.props;
+const pieces = spaceUses(community, rituals, commons, locale);
+const ICONS = {
+  home: 'house',
+  gatherings: 'calendar-blank',
+  archive: 'archive',
+  members: 'users',
+  balance: 'coins',
+} as const satisfies Record<PieceId, string>;
+const NAMES: Readonly<Record<PieceId, string>> = {
+  home: ui.home,
+  gatherings: ui.rituals,
+  archive: ui.archive,
+  members: ui.members,
+  balance: ui.balance,
+};
+---
+
+<section class="tarjeta usa" aria-labelledby="usa-titulo" data-space-uses>
+  <h2 class="card-h2" id="usa-titulo"><Icon name="buildings" size={20} />{ui.usesTitle}</h2>
+  <p class="small texto-2 usa-ayuda">{ui.usesHelp}</p>
+  <ul class="piezas">
+    {
+      pieces.map(({ id, state }) => (
+        <li
+          class:list={['pieza', { 'en-obra': state.kind === 'building' }]}
+          data-piece={id}
+          data-state={state.kind}
+        >
+          <div class="pieza-cab">
+            <span class="pieza-nombre">
+              <Icon name={ICONS[id]} size={18} />
+              {NAMES[id]}
+            </span>
+            <span class="pieza-linea">{ui.usesLines[id]}</span>
+          </div>
+          <div class="pieza-estado">
+            {state.kind === 'world' && (
+              <>
+                <a
+                  href={state.world.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-metric="community-uses-home"
+                >
+                  {state.world.name}
+                  <Icon name="arrow-square-out" size={14} />
+                </a>
+                {state.counted && <span class="dentro" data-inside={community.id} />}
+              </>
+            )}
+            {state.kind === 'no-home' && (
+              <>
+                <span>{ui.usesNoHome}</span>
+                {state.building && (
+                  <span class="obra">
+                    <Icon name="crane-tower" size={16} class="grua" />
+                    {ui.underConstruction}
+                  </span>
+                )}
+              </>
+            )}
+            {state.kind === 'coming' &&
+              (state.count > 0 ? (
+                <a href={gatheringsAnchor} data-metric="community-uses-gatherings">
+                  {state.count === 1 ? ui.usesComingOne : fill(ui.usesComingMany, { n: state.count })}
+                </a>
+              ) : (
+                <span>{ui.usesComingNone}</span>
+              ))}
+            {state.kind === 'stated' && <span>{pick(state.text, locale)}</span>}
+            {state.kind === 'building' && (
+              <span class="obra">
+                <Icon name="crane-tower" size={16} class="grua" />
+                {ui.underConstruction}
+              </span>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .usa {
+    margin-bottom: var(--s4);
+  }
+  .usa-ayuda {
+    margin: calc(-1 * var(--s2)) 0 var(--s4);
+  }
+  .piezas {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr));
+  }
+  .pieza {
+    min-width: 0;
+    display: grid;
+    gap: var(--s2);
+    align-content: start;
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+    padding: var(--s3) 14px;
+  }
+  /* A piece not built yet: the dashed edge of the page's empty states. */
+  .pieza.en-obra {
+    border-style: dashed;
+    border-color: var(--linea-f);
+  }
+  .pieza-cab {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .pieza-nombre {
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+    font-weight: 600;
+  }
+  .pieza-nombre :global(.icono) {
+    color: var(--enlace);
+  }
+  .pieza-linea {
+    color: var(--texto-2);
+    font-size: 0.8rem;
+  }
+  .pieza-estado {
+    display: grid;
+    gap: 2px;
+    font-size: 0.875rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .pieza-estado a {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    font-weight: 500;
+  }
+  .dentro {
+    color: var(--texto-2);
+  }
+  .dentro:empty {
+    display: none;
+  }
+  .dentro:not([data-count='0']) {
+    color: var(--enlace);
+  }
+  /* «En construcción»: the crane and the words, in the amber of the page's
+     other «not yet» marks (the home still to open). */
+  .obra {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    color: var(--ambar);
+    font-weight: 500;
+  }
+  /* On a phone each piece is one row: what it is on the left, its state on the right. */
+  @media (max-width: 40rem) {
+    .pieza {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--s3);
+    }
+    .pieza-estado {
+      justify-items: end;
+      text-align: right;
+      max-width: 50vw;
+    }
+  }
+</style>

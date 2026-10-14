@@ -42,6 +42,7 @@ const PAGES = [
   '/es/lap/portals/',
   '/es/lap/seasons/',
   '/es/lap/settings/',
+  '/es/lap/updates/', // «Novedades»: the updates list inside the panel
   '/es/lap/session/',
   '/es/lap/admin/assets/',
   '/es/lap/admin/census/',

@@ -15,6 +15,7 @@ import {
   type SupportedLocale,
 } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
+import { PROFILE_UI } from '../../i18n/profile';
 import LapShell from './LapShell.astro';
 import { SheetIsland } from './sheet/SheetIsland';
 import type { SheetOptions } from './sheet/sheet-props';
@@ -25,7 +26,12 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = LAP_UI[locale];
+const p = PROFILE_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
+// The manual's sheet is read where the Codex keeps it: its on-demand page
+// (the Codex text never lands in a static file), fetched when opened.
+const annexPage = `${prefix}/lap/codex/ficha/`;
+const annexMd = locale === 'es' ? '/api/codex/ficha.md' : '/api/codex/ficha.en.md';
 const L = (text: Readonly<Record<string, string>>): string => text[locale] ?? text['en'] ?? '';
 const opt = (items: ReadonlyArray<{ id: string; name: Readonly<Record<string, string>> }>) =>
   items.map((item) => ({ id: item.id, label: L(item.name) }));
@@ -62,12 +68,60 @@ const options: SheetOptions = {
   description={t.sheet.fileNote}
 >
   <h1>{t.sheet.title}</h1>
-  {/* The reciprocal door (§4.9): the living sheet points at the manual's. */}
-  <p class="anexo-enlace">
-    <a href={`${prefix}/lap/codex/ficha/`} data-metric="lap-sheet-annex">{t.sheet.annexLink}</a>
-  </p>
-  <SheetIsland client:load options={options} labels={t.sheet} />
+  {
+    /* The reciprocal door (§4.9), now inside the page (Pablo, 2026-10-14: «el
+       códice no te debería sacar al códice entero»): the manual's sheet opens
+       here, read from the Codex's own page with this visitor's session — so
+       a signed-out visitor sees exactly what the Codex shows them. */
+  }
+  <details class="anexo" data-sheet-annex data-src={annexPage}>
+    <summary data-metric="lap-sheet-annex">{p.annex.summary}</summary>
+    <div class="anexo-int">
+      <p class="anexo-pista">{p.annex.hint}</p>
+      <div class="anexo-cuerpo" data-annex-body aria-live="polite">
+        <p class="anexo-pista">{p.annex.loading}</p>
+      </div>
+      <p class="anexo-fallo" data-annex-failed hidden>
+        {p.annex.failed}
+        <a href={annexPage} data-metric="lap-sheet-annex-page">{t.sheet.annexLink}</a>
+      </p>
+      <p class="anexo-pie">
+        <a href={annexMd} download data-metric="lap-sheet-annex-md">{p.annex.download}</a>
+      </p>
+    </div>
+  </details>
+  <SheetIsland client:load options={options} labels={t.sheet} layout={p.sheet} />
 </LapShell>
+
+<script>
+  /* Opens the manual's sheet inside the page: the first time the panel is
+     opened, read the Codex page (same origin, the session cookie goes with
+     it) and adopt its body — parsed, never written as a string. */
+  const annex = document.querySelector<HTMLDetailsElement>('[data-sheet-annex]');
+  const body = annex?.querySelector<HTMLElement>('[data-annex-body]');
+  const failed = annex?.querySelector<HTMLElement>('[data-annex-failed]');
+  let asked = false;
+  annex?.addEventListener('toggle', () => {
+    if (!annex.open || asked || !body || !failed) return;
+    asked = true;
+    const src = annex.dataset['src'] ?? '';
+    fetch(src, { credentials: 'same-origin', headers: { accept: 'text/html' } })
+      .then((response) => (response.ok ? response.text() : Promise.reject(new Error('status'))))
+      .then((html) => {
+        const page = new DOMParser().parseFromString(html, 'text/html');
+        const cuerpo = page.querySelector('.pliego .cuerpo') ?? page.querySelector('.cuerpo');
+        if (!cuerpo) throw new Error('empty');
+        cuerpo.querySelectorAll('script, style, iframe').forEach((node) => node.remove());
+        body.replaceChildren(
+          ...Array.from(cuerpo.childNodes, (node) => document.importNode(node, true)),
+        );
+      })
+      .catch(() => {
+        body.replaceChildren();
+        failed.hidden = false;
+      });
+  });
+</script>
 
 <style>
   h1 {
@@ -76,13 +130,216 @@ const options: SheetOptions = {
     letter-spacing: -0.025em;
     margin-top: 0;
   }
-  .anexo-enlace {
-    margin: calc(-1 * var(--s2)) 0 var(--s3);
+  .anexo {
+    margin: calc(-1 * var(--s2)) 0 var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+  }
+  .anexo summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--s4);
+    color: var(--enlace);
+    cursor: pointer;
+  }
+  .anexo-int {
+    padding: 0 var(--s4) var(--s4);
+    border-top: 1px solid var(--linea);
+  }
+  .anexo-pista,
+  .anexo-fallo {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .anexo-fallo[hidden] {
+    display: none;
+  }
+  .anexo-pie {
+    margin: var(--s3) 0 0;
     font-size: 0.875rem;
   }
 </style>
 
 <style is:global>
+  /* The manual's sheet, adopted from the Codex page: its own markup, read
+     here in the panel's quiet register (tables scroll on a phone). */
+  [data-annex-body] {
+    max-width: 72ch;
+    line-height: 1.55;
+    color: var(--texto);
+    overflow-x: auto;
+  }
+  [data-annex-body] h2,
+  [data-annex-body] h3 {
+    margin: var(--s5) 0 var(--s2);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  [data-annex-body] p {
+    margin: 0 0 var(--s2);
+  }
+  [data-annex-body] table {
+    border-collapse: collapse;
+    margin: 0 0 var(--s3);
+    font-size: 0.875rem;
+  }
+  [data-annex-body] th,
+  [data-annex-body] td {
+    padding: var(--s1) var(--s3);
+    border-bottom: 1px solid var(--linea);
+    text-align: left;
+  }
+  /* The sheet's head: portrait, name, the two probes. */
+  [data-lap-sheet] .ficha-cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s4) var(--s5);
+    padding: var(--s4);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  [data-lap-sheet] .retrato-ficha {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    overflow: hidden;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  [data-lap-sheet] .retrato-ficha img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  [data-lap-sheet] .monograma {
+    font-size: 2rem;
+    color: var(--texto-2);
+  }
+  [data-lap-sheet] .ficha-quien {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+  [data-lap-sheet] .ficha-nombre {
+    margin: 0;
+    font-size: 1.44rem;
+    font-weight: 600;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+  }
+  [data-lap-sheet] .ficha-sub,
+  [data-lap-sheet] .ficha-pista {
+    margin: var(--s1) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  [data-lap-sheet] .ficha-cabeza .kpis {
+    margin: 0;
+    min-width: 14rem;
+  }
+  /* A blank sheet: one door. */
+  [data-lap-sheet] .ficha-vacia {
+    padding: var(--s6) var(--s5);
+    background: var(--superficie);
+    border: 1px dashed var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  [data-lap-sheet] .ficha-vacia h2 {
+    margin: 0 0 var(--s2);
+    font-size: 1.44rem;
+    font-weight: 600;
+  }
+  [data-lap-sheet] .ficha-vacia p {
+    margin: 0;
+    max-width: 60ch;
+    line-height: 1.55;
+    color: var(--texto-2);
+  }
+  [data-lap-sheet] .ficha-vacia .acciones {
+    margin-bottom: 0;
+  }
+  /* Identity in three groups: label and value on one line. */
+  [data-lap-sheet] .grupos-identidad {
+    display: grid;
+    gap: var(--s4) var(--s5);
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    align-items: start;
+  }
+  [data-lap-sheet] .grupo-identidad h3 {
+    margin: 0 0 var(--s2);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  [data-lap-sheet] .grupo-identidad .campos {
+    grid-template-columns: 1fr;
+  }
+  [data-lap-sheet] .grupo-identidad dl {
+    margin: 0;
+  }
+  [data-lap-sheet] .grupo-identidad dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s3);
+    min-height: 36px;
+    align-items: center;
+    border-bottom: 1px solid var(--linea);
+  }
+  [data-lap-sheet] .grupo-identidad dt {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  [data-lap-sheet] .grupo-identidad dd {
+    margin: 0;
+    text-align: right;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+  }
+  [data-lap-sheet] .grupo-identidad .vacio dd {
+    color: var(--texto-3);
+  }
+  /* Characteristics in view: a compact two-column grid of dots. */
+  [data-lap-sheet] .filas-engranaje.rejilla {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--s5);
+    max-width: 48rem;
+  }
+  @media (max-width: 34rem) {
+    [data-lap-sheet] .filas-engranaje.rejilla {
+      grid-template-columns: 1fr;
+    }
+  }
+  [data-lap-sheet] .puntos-escala {
+    display: inline-flex;
+    gap: 3px;
+  }
+  [data-lap-sheet] .puntos-escala i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--linea-f);
+  }
+  [data-lap-sheet] .puntos-escala i.lleno {
+    background: var(--ambar);
+    border-color: var(--ambar);
+  }
+  [data-lap-sheet] .cifra {
+    min-width: 1ch;
+    text-align: right;
+  }
+  [data-lap-sheet] .stats ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    column-gap: var(--s5);
+    max-width: 48rem;
+  }
   /* Sheet island internals (§9.3 fields, §13.11 rows, Mono for measures). */
   [data-lap-sheet] .nota {
     color: var(--texto-2);
@@ -118,6 +375,7 @@ const options: SheetOptions = {
     header,
     footer,
     [data-lap-shell] > nav,
+    [data-sheet-annex],
     [data-lap-sheet] .acciones,
     [data-lap-sheet] .nota,
     [data-lap-sheet] .resultado {

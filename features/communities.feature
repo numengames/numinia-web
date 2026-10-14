@@ -50,3 +50,16 @@ Feature: Communities (phase 0 of the communities platform)
   Scenario: The Oracle edits the register from the site
     Given the store application has been built
     Then the Oracle alone sees how to edit a community and its rituals
+
+  Scenario: The home's Bazar shelf is one row, the same strip as the gatherings
+    Given the store application has been built
+    Then the home's Bazar shelf is one strip with its arrows, like the gatherings
+
+  Scenario: A community's page shows what its space uses, each piece with its honest state
+    Given the store application has been built
+    Then every community page lists the five pieces its space uses
+    And a home is entered and counted only where it exists, and the rest is marked under construction
+
+  Scenario: On screen they are «encuentros», not «rituales»
+    Given the store application has been built
+    Then the pages of the communities say «encuentro», never «ritual»

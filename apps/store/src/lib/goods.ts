@@ -9,7 +9,7 @@
  */
 
 import type { AssetCategory, CatalogedAsset } from './data';
-import { thumbSrc } from './thumbs';
+import { thumbSrc, thumbSrcSet } from './thumbs';
 
 /**
  * The house's pick for the home, in order: the eight of the approved
@@ -106,6 +106,8 @@ export interface GoodCard {
   /** The shelf it sits on (the catalogue's project), or '' when it has none. */
   readonly collection: string;
   readonly thumb: string | null;
+  /** The baked picture's 1x/2x srcset (v0.89.0); null for a remote one. */
+  readonly thumbSrcSet: string | null;
 }
 
 export function goodCard(entry: CatalogedAsset, locale: string): GoodCard {
@@ -122,5 +124,6 @@ export function goodCard(entry: CatalogedAsset, locale: string): GoodCard {
     facts,
     collection: asset.projectId.trim(),
     thumb: thumbSrc(asset.id, asset.thumbnailUrl),
+    thumbSrcSet: thumbSrcSet(asset.id),
   };
 }
