@@ -92,13 +92,14 @@ test('signed in, the sign-in page shows who you are and leads to your profile, i
   await page.goto('/es/lap/session/?vuelta=%2Fes%2Fbelong%2F');
   const panel = page.locator('[data-session-panel]');
   await expect(panel).toBeVisible();
-  await expect(panel).toContainText('Has entrado en Numinia.');
+  // The door's title says you are in (painted by the chrome's session read).
+  await expect(page.getByRole('dialog', { name: 'Has entrado en Numinia' })).toBeVisible();
   await expect(panel).toContainText('Oráculo');
   await expect(panel.locator('[data-metric="auth-continue"]')).toHaveAttribute('href', '/es/lap/');
   await expect(panel.locator('[data-metric="auth-logout"]')).toHaveText('Salir');
-  // No wallet widget and no legal gate for someone already in.
+  // No wallet widget and no legal line for someone already in.
   await expect(page.locator('[data-metric="auth-connect"]')).toHaveCount(0);
-  await expect(page.locator('[data-legal-gate]')).toHaveCount(0);
+  await expect(page.locator('[data-door-legal]')).toBeHidden();
 });
 
 test('a door opened from a room of the player area leads back to that room', async ({ page }) => {

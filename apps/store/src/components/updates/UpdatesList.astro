@@ -1,14 +1,16 @@
 ---
 /**
  * The site's updates as one list: the roadmap («Próximamente») and every
- * version with its entries, the latest first. Two frames draw it — the
- * public /updates/ page and the LAP's «Novedades» (/lap/updates/, the
- * Oracle 2026-10-14: going to Updates from the panel «te saca
- * totalmente») — so the list is written once.
+ * version with its entries, the latest first. The public /updates/ page
+ * draws it; its one door is the version in the footer (and in Settings).
+ * Each rebuild version links to its merge on GitHub (lib/update-merges.ts;
+ * the legacy line has none).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { UPDATES_MESSAGES } from '../../i18n/messages';
+import { mergeUrl } from '../../lib/update-merges';
 import { loadRoadmap, loadUpdates } from '../../lib/updates';
+import Icon from '../chrome/Icon.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -60,6 +62,20 @@ function formatDate(date: string): string {
             </li>
           ))}
         </ul>
+        {mergeUrl(update.version) && (
+          <p class="fusion">
+            <a
+              href={mergeUrl(update.version)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${t.mergeLink} · ${update.version}`}
+              data-metric="updates-merge"
+            >
+              {t.mergeLink}
+              <Icon name="arrow-square-out" size={14} use />
+            </a>
+          </p>
+        )}
       </li>
     ))
   }
@@ -156,6 +172,23 @@ function formatDate(date: string): string {
   .tag-mission {
     min-width: 0;
     margin-right: 0;
+  }
+  /* The merge on GitHub: a small quiet link at the card's foot (text-2 on
+     the surface reads AA in both modes). */
+  .fusion {
+    margin: var(--s2) 0 0;
+    font-size: 0.8rem;
+  }
+  .fusion a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    color: var(--texto-2);
+    text-underline-offset: 2px;
+  }
+  .fusion a:hover,
+  .fusion a:focus-visible {
+    color: var(--texto);
   }
   .tag-planned,
   .tag-research {

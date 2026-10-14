@@ -37,16 +37,8 @@ export interface SettingsMessages {
   readonly version: string;
   readonly designSystem: string;
   readonly sourceData: string;
-  /** Session page */
-  readonly sessionTitle: string;
+  /** The sign-in door's meta description (SessionPage.astro). */
   readonly sessionIntro: string;
-  readonly sessionWhy: string;
-  readonly sessionOpen: string;
-  readonly backToSettings: string;
-  /** Legal gate at the door (MIS-086) */
-  readonly acceptLabel: string;
-  readonly acceptRead: string;
-  readonly acceptPending: string;
 }
 
 export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = {
@@ -84,17 +76,8 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     version: 'Versión',
     designSystem: 'Sistema de diseño',
     sourceData: 'Repositorio de datos',
-    sessionTitle: 'Entrar en Numinia',
     sessionIntro:
       'Entra con lo que ya tienes: una cuenta de Google, tu correo, una passkey o tu propia cartera.',
-    sessionWhy:
-      'Puedes recorrer la ciudad y llevarte todo el archivo sin entrar. La sesión existe para lo que necesita recordarte: tu ficha, tus sellos, tu progreso.',
-    sessionOpen: 'Numinia solo comprueba que la dirección es tuya. Las llaves siguen siendo tuyas.',
-    backToSettings: '← Ajustes',
-    acceptLabel:
-      'He leído y acepto los términos y condiciones y la política de privacidad de Numen Games.',
-    acceptRead: 'Leer:',
-    acceptPending: 'Marca la casilla para continuar. Ninguna sesión se abre sin aceptación.',
   },
   en: {
     title: 'Settings',
@@ -129,16 +112,8 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     version: 'Version',
     designSystem: 'Design system',
     sourceData: 'Data repository',
-    sessionTitle: 'Enter Numinia',
     sessionIntro:
       'Enter with what you already have: a Google account, your email, a passkey, or your own wallet.',
-    sessionWhy:
-      'You can walk the city and take the whole archive without entering. A session exists for what needs to remember you: your sheet, your seals, your progress.',
-    sessionOpen: 'Numinia only checks that the address is yours. The keys stay yours.',
-    backToSettings: '← Settings',
-    acceptLabel: 'I have read and accept the Numen Games terms and conditions and privacy policy.',
-    acceptRead: 'Read:',
-    acceptPending: 'Tick the box to continue. No session is opened without acceptance.',
   },
   ja: {
     title: '設定',
@@ -172,17 +147,8 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     version: 'バージョン',
     designSystem: 'デザインシステム',
     sourceData: 'データリポジトリ',
-    sessionTitle: 'ヌミニアに入る',
     sessionIntro:
       'すでにお持ちのもので入れます:Googleアカウント、メール、パスキー、またはご自身のウォレット。',
-    sessionWhy:
-      '入らなくても都市を歩き、アーカイブを持ち帰れます。セッションは、あなたを記憶する必要があるもののために存在します。',
-    sessionOpen:
-      'ヌミニアはアドレスがあなたのものであることを確認するだけです。鍵はあなたのものです。',
-    backToSettings: '← 設定',
-    acceptLabel: 'Numen Games の利用規約およびプライバシーポリシーを読み、同意します。',
-    acceptRead: '本文を読む:',
-    acceptPending: '続けるにはチェックを入れてください。同意なしにセッションは開始されません。',
   },
   ko: {
     title: '설정',
@@ -216,15 +182,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     version: '버전',
     designSystem: '디자인 시스템',
     sourceData: '데이터 저장소',
-    sessionTitle: '누미니아 입장',
     sessionIntro: '이미 가진 것으로 들어오세요: Google 계정, 이메일, 패스키, 또는 당신의 지갑.',
-    sessionWhy:
-      '입장하지 않아도 도시를 걷고 아카이브를 가져갈 수 있습니다. 세션은 당신을 기억해야 하는 것들을 위해 존재합니다.',
-    sessionOpen: '누미니아는 주소가 당신의 것인지만 확인합니다. 열쇠는 당신의 것입니다.',
-    backToSettings: '← 설정',
-    acceptLabel: 'Numen Games의 이용약관과 개인정보 처리방침을 읽고 동의합니다.',
-    acceptRead: '읽기:',
-    acceptPending: '계속하려면 체크하세요. 동의 없이는 세션이 시작되지 않습니다.',
   },
   'pt-br': {
     title: 'Configurações',
@@ -259,15 +217,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     version: 'Versão',
     designSystem: 'Sistema de design',
     sourceData: 'Repositório de dados',
-    sessionTitle: 'Entrar em Numinia',
     sessionIntro:
       'Entre com o que já tem: uma conta Google, seu e-mail, uma passkey ou sua própria carteira.',
-    sessionWhy:
-      'Você pode percorrer a cidade e levar todo o arquivo sem entrar. A sessão existe para o que precisa lembrar de você.',
-    sessionOpen: 'Numinia apenas verifica que o endereço é seu. As chaves continuam suas.',
-    backToSettings: '← Configurações',
-    acceptLabel: 'Li e aceito os termos e condições e a política de privacidade da Numen Games.',
-    acceptRead: 'Ler:',
-    acceptPending: 'Marque a caixa para continuar. Nenhuma sessão é aberta sem aceitação.',
   },
 };

@@ -1,7 +1,8 @@
 /**
  * The LAP panel after the Oracle's walkthrough (2026-10-14): a quiet panel
- * by default whose choices stick, «Novedades» inside the panel, and the
- * «en construcción» marks on what does not work yet.
+ * by default whose choices stick, the updates out of the panel (2026-10-15:
+ * their one door is the version), and the «en construcción» marks on what
+ * does not work yet.
  */
 
 import { expect, test, type Page } from '@playwright/test';
@@ -22,7 +23,7 @@ test('a first visit gets a quiet panel, and a choice — even «show all» — i
 }) => {
   await page.goto('/es/lap/');
   for (const section of QUIET) await expect(row(page, section)).toBeHidden();
-  for (const section of ['overview', 'character', 'seasons', 'updates', 'settings']) {
+  for (const section of ['overview', 'character', 'seasons', 'settings']) {
     await expect(row(page, section)).toBeVisible();
   }
   // The page in view is never hidden.
@@ -52,20 +53,20 @@ test('a first visit gets a quiet panel, and a choice — even «show all» — i
   for (const section of QUIET) await expect(row(page, section)).toBeVisible();
 });
 
-test('«Novedades» opens inside the panel, with the site updates and no bell', async ({ page }) => {
+test('the updates have one door, the version: no «Novedades» in the panel', async ({ page }) => {
   await page.goto('/es/lap/');
-  const novedades = row(page, 'updates');
-  await expect(novedades).toHaveAttribute('href', '/es/lap/updates/');
-  await expect(novedades).toContainText('Novedades');
-  await novedades.click();
-  await page.waitForURL('**/es/lap/updates/');
-  await expect(page.locator('[data-lap-shell]')).toBeVisible();
-  await expect(row(page, 'updates')).toHaveAttribute('aria-current', 'page');
-  await expect(page.locator('[data-lap-updates] [data-updates] > li').first()).toBeVisible();
-  // The public list and the panel's list carry the same versions.
-  const inPanel = await page.locator('[data-updates] > li').count();
-  await page.goto('/es/updates/');
-  expect(await page.locator('[data-updates] > li').count()).toBe(inPanel);
+  await expect(row(page, 'updates')).toHaveCount(0);
+  await expect(page.locator('[data-lap-shell] a[href*="/updates/"]')).toHaveCount(0);
+  // The panel's old address answers a permanent redirect to the public list.
+  const response = await page.goto('/es/lap/updates/');
+  expect(response?.url()).toMatch(/\/es\/updates\/$/);
+  await expect(page.locator('[data-updates] > li').first()).toBeVisible();
+  // Settings' version is the same door.
+  await page.goto('/es/lap/settings/');
+  await expect(page.locator('[data-metric="settings-version"]')).toHaveAttribute(
+    'href',
+    '/es/updates/',
+  );
 });
 
 test('what does not work yet says so: the rail mark and the page banner', async ({ page }) => {

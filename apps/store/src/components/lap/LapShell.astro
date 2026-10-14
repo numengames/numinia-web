@@ -19,7 +19,6 @@ export type LapSection =
   | 'loot'
   | 'seasons'
   | 'stats'
-  | 'updates'
   | 'settings'
   | 'admin-assets'
   | 'admin-census'
@@ -48,7 +47,6 @@ type IconName =
   | 'sword'
   | 'flame'
   | 'chart-bar'
-  | 'megaphone-simple'
   | 'gear'
   | 'package'
   | 'users'
@@ -67,14 +65,8 @@ const ITEMS: ReadonlyArray<{
   { id: 'loot', href: `${prefix}/lap/loot/`, label: t.sections.loot, icon: 'sword' },
   { id: 'seasons', href: `${prefix}/lap/seasons/`, label: t.sections.seasons, icon: 'flame' },
   { id: 'stats', href: `${prefix}/lap/stats/`, label: t.sections.stats, icon: 'chart-bar' },
-  // Novedades stays inside the panel (the Oracle, 2026-10-14), and its icon
-  // is a megaphone: the bell is the top bar's, for notifications.
-  {
-    id: 'updates',
-    href: `${prefix}/lap/updates/`,
-    label: t.sections.updates,
-    icon: 'megaphone-simple',
-  },
+  // No «Novedades» here (the Oracle, 2026-10-15): the updates have one door,
+  // the version in the footer; /lap/updates/ redirects to /updates/.
   { id: 'settings', href: `${prefix}/lap/settings/`, label: t.sections.settings, icon: 'gear' },
 ];
 

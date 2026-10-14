@@ -1,0 +1,214 @@
+---
+/**
+ * «Notificaciones» (/notifications/, the «Más» bell; the Oracle,
+ * 2026-10-15, after platform.claude.com's page): a title, two tabs —
+ * «Actualizaciones» and «Solicitudes» — and the empty states. Nothing sends
+ * notifications yet, so the empty states are the truth today; no source is
+ * invented here.
+ *
+ * Signed out, the page shows the door instead of the tabs. Which face shows
+ * is painted by the chrome's one session read (`data-session-out` /
+ * `data-session-in`, TopBar.astro); this page never asks for the session
+ * itself. The tabs follow the ARIA tabs pattern with a tiny inline script —
+ * no framework, no storage; `?tab=requests` opens the second tab, and
+ * choosing a tab writes it back into the address.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { NOTIFICATIONS_UI, type NotificationsTab } from '../../i18n/notifications';
+import { NOTIFICATIONS_PATH, signInHref } from '../../lib/app-nav';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = NOTIFICATIONS_UI[locale];
+const shell = APP_SHELL_UI[locale];
+const TABS: readonly NotificationsTab[] = ['updates', 'requests'];
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
+  <div class="avisos-pagina">
+    <h1>{t.title}</h1>
+
+    <div class="vacio-avisos puerta-avisos" data-session-out data-notifications-door>
+      <span class="vacio-icono"><Icon name="bell" size={28} /></span>
+      <p class="vacio-titulo">{t.signedOut}</p>
+      <a
+        class="btn btn-primario btn-sm"
+        href={signInHref(locale, NOTIFICATIONS_PATH)}
+        data-metric="notifications-sign-in"
+      >
+        <Icon name="sign-in" size={16} />
+        {shell.signIn}
+      </a>
+    </div>
+
+    <div data-session-in hidden data-notifications>
+      <div class="pestanas-avisos" role="tablist" aria-label={t.title}>
+        {
+          TABS.map((tab, index) => (
+            <button
+              type="button"
+              role="tab"
+              id={`avisos-tab-${tab}`}
+              aria-controls={`avisos-panel-${tab}`}
+              aria-selected={index === 0 ? 'true' : 'false'}
+              tabindex={index === 0 ? 0 : -1}
+              data-tab={tab}
+              data-metric={`notifications-tab-${tab}`}
+            >
+              {t.tabs[tab]}
+            </button>
+          ))
+        }
+      </div>
+      {
+        TABS.map((tab, index) => (
+          <section
+            class="vacio-avisos"
+            role="tabpanel"
+            id={`avisos-panel-${tab}`}
+            aria-labelledby={`avisos-tab-${tab}`}
+            tabindex="0"
+            hidden={index !== 0}
+            data-panel={tab}
+          >
+            <span class="vacio-icono">
+              <Icon name="bell" size={28} />
+            </span>
+            <h2 class="vacio-titulo">{t.empty[tab].title}</h2>
+            <p class="vacio-texto">{t.empty[tab].text}</p>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+
+  <script is:inline>
+    /* The tabs (ARIA tabs, automatic activation): a click or an arrow key
+       selects a tab and shows its panel; `?tab=requests` opens on the
+       second, and each choice is written back into the address. */
+    (function () {
+      var root = document.querySelector('[data-notifications]');
+      if (!root) return;
+      var tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
+      function select(tab, focus) {
+        tabs.forEach(function (other) {
+          var on = other === tab;
+          other.setAttribute('aria-selected', on ? 'true' : 'false');
+          other.tabIndex = on ? 0 : -1;
+          var panel = document.getElementById(other.getAttribute('aria-controls'));
+          if (panel) panel.hidden = !on;
+        });
+        if (focus) tab.focus();
+      }
+      function remember(tab) {
+        var url = new URL(window.location.href);
+        if (tab.getAttribute('data-tab') === 'requests') url.searchParams.set('tab', 'requests');
+        else url.searchParams.delete('tab');
+        window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+      }
+      var wanted = new URLSearchParams(window.location.search).get('tab');
+      tabs.forEach(function (tab, index) {
+        if (tab.getAttribute('data-tab') === wanted) select(tab, false);
+        tab.addEventListener('click', function () {
+          select(tab, false);
+          remember(tab);
+        });
+        tab.addEventListener('keydown', function (event) {
+          var next = null;
+          if (event.key === 'ArrowRight') next = tabs[(index + 1) % tabs.length];
+          else if (event.key === 'ArrowLeft') next = tabs[(index - 1 + tabs.length) % tabs.length];
+          else if (event.key === 'Home') next = tabs[0];
+          else if (event.key === 'End') next = tabs[tabs.length - 1];
+          if (!next) return;
+          event.preventDefault();
+          select(next, true);
+          remember(next);
+        });
+      });
+    })();
+  </script>
+</BaseLayout>
+
+<style>
+  .avisos-pagina {
+    max-width: 60rem;
+    padding-top: var(--s5);
+  }
+  h1 {
+    margin: 0 0 var(--s5);
+  }
+  /* Two tabs on a hairline, the chosen one underlined in ink. */
+  .pestanas-avisos {
+    display: flex;
+    gap: var(--s5);
+    border-bottom: 1px solid var(--linea);
+    margin-bottom: var(--s5);
+  }
+  [role='tab'] {
+    min-height: 44px;
+    padding: 0 0 var(--s1);
+    margin-bottom: -1px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--texto-2);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      color 120ms var(--ciclo),
+      border-color 120ms var(--ciclo);
+  }
+  [role='tab']:hover {
+    color: var(--texto);
+  }
+  [role='tab'][aria-selected='true'] {
+    color: var(--texto);
+    border-bottom-color: var(--texto);
+  }
+  /* The empty states: an icon in a round well, a title, one line. */
+  .vacio-avisos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s7) var(--s4);
+    text-align: center;
+  }
+  .vacio-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--s2);
+    border-radius: 50%;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    color: var(--texto-2);
+  }
+  .vacio-titulo {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  .vacio-texto {
+    margin: 0;
+    max-width: 40ch;
+    color: var(--texto-2);
+    line-height: 1.5;
+  }
+  .puerta-avisos .btn {
+    margin-top: var(--s3);
+    text-decoration: none;
+  }
+  [hidden] {
+    display: none !important;
+  }
+</style>

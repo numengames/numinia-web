@@ -540,11 +540,6 @@ html[data-sidebar='collapsed'] .app-pie .bocadillo {
   background: color-mix(in srgb, var(--texto) 6%, transparent);
   color: var(--texto);
 }
-.opc-der {
-  margin-left: auto;
-  color: var(--texto-2);
-  font-size: 0.75rem;
-}
 /* The night/day switch: its icon and word show the mode you are IN. */
 .pop-modo > span:not(.sr-solo) {
   display: inline-flex;

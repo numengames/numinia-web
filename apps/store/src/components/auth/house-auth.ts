@@ -15,12 +15,20 @@ interface LoginPayloadQuery {
 }
 
 export interface AuthHooks {
-  /** The page's session client (published by the chrome). */
-  readonly session: SessionClient;
+  /** The page's session client (published by the chrome), as soon as it is
+      there: the widget is live from the first paint, before the chrome's
+      client may be (lib/island-session.ts `pageSessionClient`). */
+  readonly session: () => Promise<SessionClient>;
   readonly onSignedIn: () => void;
   readonly onSignedOut: () => void;
 }
 
+/**
+ * Continuing is accepting (the sign-in-wrap, since QA 2026-10-15): the door
+ * shows one legal line instead of MIS-086's checkbox, and the accepted
+ * corpus version still travels with every login — the endpoint refuses a
+ * stale one.
+ */
 export function houseAuth({ session, onSignedIn, onSignedOut }: AuthHooks) {
   return {
     getLoginPayload: async ({ address, chainId }: LoginPayloadQuery) => {
@@ -39,7 +47,7 @@ export function houseAuth({ session, onSignedIn, onSignedOut }: AuthHooks) {
       onSignedIn();
     },
     isLoggedIn: async (address: string) => {
-      const current = await session.fresh();
+      const current = await (await session()).fresh();
       return current.status === 'in' && current.address === address.toLowerCase();
     },
     doLogout: async () => {

@@ -46,6 +46,13 @@ export const DOCS_HOME = 'https://numinia.org/';
  */
 export const RETIRED_CITY = ['', 'inhabitants', 'districts', 'the-game'] as const;
 
+/**
+ * LAP rooms that went back out of the panel (the Oracle, 2026-10-15): the
+ * updates have one door, the version, which opens the public /updates/.
+ * Each slug leads to the page of the same name at the site's root.
+ */
+export const RETIRED_LAP = ['updates'] as const;
+
 const prefixOf = (locale: string): string => (locale === DEFAULT_LOCALE ? '' : `/${locale}`);
 
 function buildRedirects(): Readonly<Record<string, string>> {
@@ -59,6 +66,7 @@ function buildRedirects(): Readonly<Record<string, string>> {
     for (const chapter of RETIRED_CITY) {
       map[`${prefix}/city/${chapter === '' ? '' : `${chapter}/`}`] = `${prefix}/how-it-works/`;
     }
+    for (const room of RETIRED_LAP) map[`${prefix}/lap/${room}/`] = `${prefix}/${room}/`;
   }
   return map;
 }

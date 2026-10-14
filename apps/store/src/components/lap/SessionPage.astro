@@ -1,157 +1,190 @@
 ---
 /**
- * Enter Numinia (MISSION-010 / MISSION-002 Steps 1–3): the login promoted
- * from the spike into the LAP — a contextual moment, never a wall (D16).
- * The vendor proves the address; the session is ours (@numinia/auth).
- * Since v0.84.0 the island speaks the reader's language (i18n/sign-in.ts)
- * and is the site's one way out (`?salir=1`); a fresh sign-in lands on your
- * profile, or on the room of the player area the door was opened from.
+ * The sign-in door (MISSION-010 / MISSION-002 Steps 1–3): a contextual
+ * moment, never a wall (D16). The vendor proves the address; the session is
+ * ours (@numinia/auth).
  *
- * Balanced (Pablo, 2026-10-14: «esto está claramente descompensado» — all
- * of it sat in the left half): from 64rem the page is two columns, centred —
- * the words and the steps on the left, the way in on the right; on a phone,
- * one column in reading order. The island draws its two regions straight
- * into this grid (`astro-island` takes no box of its own).
+ * Since QA 2026-10-15 it is a modal over the app, the way TikTok's and
+ * Airbnb's sign-in look (Pablo: «súper limpio, súper sencillito … lo que no
+ * puede ser es esto»): the normal shell behind DES-009's canonical veil and
+ * one centred `elevada` panel, `marco` radius, 480 px wide (§9 «Modal
+ * dialog»); on a phone it fills the screen as a sheet. Top to bottom: the
+ * × back to where the door was opened from, the Numinia mark, the title,
+ * the way in (LoginSpike: thirdweb's compact widget, live from the first
+ * paint) and one legal line — continuing is accepting (MIS-086's checkbox
+ * became the sign-in-wrap; the accepted version still travels with the
+ * login and the endpoint still refuses a stale one).
+ *
+ * The wallet code stays on this one page (the identity-surface doctrine:
+ * session CSP in src/middleware.ts + public/_headers, the identity-surface
+ * test in scripts/bundle-budget.mjs). Every «Iniciar sesión» links here.
+ *
+ * It is still the site's one way out (`?salir=1`), and a fresh sign-in
+ * still lands on your profile or the player-area room the door was opened
+ * from (lib/island-session.ts `landingAfterSignIn`).
  */
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
-import { CHROME_MESSAGES } from '../../i18n/messages';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../chrome/Icon.astro';
 import { SETTINGS_UI } from '../../i18n/settings';
 import { SIGN_IN_UI } from '../../i18n/sign-in';
 import { localeHref } from '../../lib/app-nav';
+import { symbolId } from '../../lib/svg-sprite';
 import { LoginSpike } from '../auth/LoginSpike';
-import LapShell from './LapShell.astro';
 
 interface Props {
   locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;
-const t = SETTINGS_UI[locale];
-const chrome = CHROME_MESSAGES[locale];
-const prefix = locale === 'en' ? '' : `/${locale}`;
-const legal = {
-  label: t.acceptLabel,
-  read: t.acceptRead,
-  pending: t.acceptPending,
-  termsHref: `${prefix}/legal/terms/`,
-  termsLabel: chrome.legalTerms,
-  privacyHref: `${prefix}/legal/privacy/`,
-  privacyLabel: chrome.legalPrivacy,
-};
+const copy = SIGN_IN_UI[locale];
+const legal = copy.legal;
+const homeHref = localeHref(locale, '/');
 const rankNames = Object.fromEntries(RANK_DEFINITIONS.map((rank) => [rank.id, rank.name[locale]]));
 ---
 
-<LapShell
+<BaseLayout
   locale={locale}
-  current="settings"
-  title={`${t.sessionTitle} — LAP — Numinia`}
-  description={t.sessionIntro}
+  title={`${copy.title} — Numinia`}
+  description={SETTINGS_UI[locale].sessionIntro}
 >
-  <article data-lap-session>
-    <div class="puerta" data-sign-in-layout>
-      <header class="puerta-cab">
-        <nav class="volver">
-          <a href={`${prefix}/lap/settings/`} data-metric="session-back">{t.backToSettings}</a>
-        </nav>
-        <h1>{t.sessionTitle}</h1>
-        <p class="intro">{t.sessionIntro}</p>
-        <p class="nota">{t.sessionWhy}</p>
-      </header>
+  {/* The veil and the panel. The × is an ordinary link home until the
+      page's script points it back to `?vuelta=` (lib/island-session.ts).
+      `--door-google` carries the Google button's words into the widget. */}
+  <div
+    class="velo"
+    data-sign-in-door
+    data-home={homeHref}
+    style={`--door-google: ${JSON.stringify(copy.google)}`}
+  >
+    <section
+      class="puerta"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="puerta-titulo"
+      tabindex="-1"
+      data-lap-session
+    >
+      <a
+        class="cerrar"
+        href={homeHref}
+        aria-label={copy.close}
+        title={copy.close}
+        data-door-close
+        data-metric="auth-close"
+      >
+        <Icon name="x" size={22} />
+      </a>
+      <svg class="marca" fill="currentColor" aria-hidden="true">
+        <use href={`#${symbolId('khepri')}`} />
+      </svg>
+      {/* Painted by the chrome's one session read (TopBar.astro). */}
+      <h1 id="puerta-titulo">
+        <span data-session-out>{copy.title}</span>
+        <span data-session-in hidden>{copy.signedIn}</span>
+      </h1>
       <LoginSpike
         locale={locale}
-        legal={legal}
-        copy={SIGN_IN_UI[locale]}
+        copy={copy}
         rankNames={rankNames}
         profileHref={localeHref(locale, '/lap/')}
-        homeHref={localeHref(locale, '/')}
+        homeHref={homeHref}
         client:load
       />
-      <p class="dignidad">{t.sessionOpen}</p>
-    </div>
-  </article>
-</LapShell>
+      <p class="legal" data-door-legal data-session-out>
+        {legal.lead}<a
+          href={localeHref(locale, '/legal/terms/')}
+          target="_blank"
+          rel="noreferrer"
+          data-metric="auth-legal-terms">{legal.terms}</a
+        >{legal.join}<a
+          href={localeHref(locale, '/legal/privacy/')}
+          target="_blank"
+          rel="noreferrer"
+          data-metric="auth-legal-privacy">{legal.privacy}</a
+        >{legal.tail}
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  /* The door behaves as a modal: the × leads back to where it was opened
+     from, Escape does the same, focus starts in the panel and the app
+     behind is inert. The thirdweb widget itself is the island's. */
+  import { closeTarget, doorParams } from '../../lib/island-session';
+
+  const door = document.querySelector<HTMLElement>('[data-sign-in-door]');
+  const panel = door?.querySelector<HTMLElement>('[role="dialog"]');
+  const close = door?.querySelector<HTMLAnchorElement>('[data-door-close]');
+  if (door && panel && close) {
+    close.href = closeTarget(doorParams(window.location.search).returnTo, door.dataset['home'] ?? '/');
+    // Everything beside the door, up to <body>, leaves the keyboard and the
+    // reader's path — but never the cookie notice, which must stay usable.
+    for (let node: HTMLElement = door; node !== document.body && node.parentElement; ) {
+      const parent: HTMLElement = node.parentElement;
+      for (const sibling of parent.children) {
+        if (sibling !== node && sibling instanceof HTMLElement && sibling.id !== 'cc-main') {
+          sibling.inert = true;
+        }
+      }
+      node = parent;
+    }
+    panel.focus();
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      window.location.assign(close.href);
+    });
+  }
+</script>
 
 <style is:global>
-  /* The island renders client-side, outside Astro's scoped hashing. Its two
-     regions are grid items of the page: the island element takes no box. */
-  [data-sign-in-layout] > astro-island {
-    display: contents;
-  }
-  [data-sign-in-layout] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'cab' 'pasos' 'entrada' 'pie';
-    align-items: start;
-  }
-  [data-sign-in-layout] > .puerta-cab {
-    grid-area: cab;
-  }
-  [data-sign-in-steps] {
-    grid-area: pasos;
-    min-width: 0;
-  }
+  /* The island renders client-side, outside Astro's scoped hashing. */
   [data-sign-in-way] {
-    grid-area: entrada;
     min-width: 0;
   }
-  [data-sign-in-layout] > .dignidad {
-    grid-area: pie;
+  [data-sign-in-way] [data-metric='auth-connect'] {
+    margin: 0 calc(-1 * var(--s3));
   }
-  @media (min-width: 64rem) {
-    [data-sign-in-layout] {
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
-      grid-template-rows: auto auto 1fr;
-      grid-template-areas: 'cab entrada' 'pasos entrada' 'pie entrada';
-      column-gap: var(--s7);
-      max-width: 64rem;
-      margin-inline: auto;
-    }
-    [data-sign-in-way] {
-      /* The way in starts level with the title, below the back link. */
-      padding-top: var(--s7);
-    }
+  /* The Google button speaks the page's language (sign-in.ts `google`).
+     thirdweb prints «Continue with» plus its own label on a lone social
+     button, which reads «Continue with Iniciar sesión con Google» in
+     Spanish. Its text node stays, at no size; our words follow the icon
+     with the vendor's own 12 px gap. Matched by the vendor's aria-label:
+     if an update renames it, the button falls back to the vendor's words. */
+  [data-sign-in-way] .tw-social-button[data-variant='full'][aria-label='Login with google'] {
+    gap: 0;
+    font-size: 0;
   }
-  /* The widget's place while the terms wait: as tall as the widget, quiet. */
-  [data-way-waiting] {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--s3);
-    min-height: 22rem;
-    margin: var(--s5) 0 var(--s3);
-    padding: var(--s6) var(--s5);
-    border: 1px dashed var(--linea-f);
-    border-radius: var(--radio-marco);
-    background: color-mix(in srgb, var(--superficie) 55%, transparent);
-    text-align: center;
+  [data-sign-in-way] .tw-social-button[data-variant='full'][aria-label='Login with google']::after {
+    content: var(--door-google);
+    margin-inline-start: 12px;
+    font-size: 16px;
   }
-  [data-way-waiting] p {
-    margin: 0;
+  [data-door-status] {
+    margin: var(--s2) 0 0;
+    color: var(--texto);
+    font-size: 0.9375rem;
+  }
+  [data-door-status]:empty {
+    display: none;
+  }
+  /* What the wallet's permission list means here: one small line. */
+  [data-wallet-note] {
+    margin: var(--s2) 0 0;
     color: var(--texto-2);
-    line-height: 1.55;
-  }
-  [data-way-waiting] [data-legal-gate-pending] {
-    font-size: 0.875rem;
-  }
-  [data-metric='auth-connect'] {
-    margin: var(--s5) 0 var(--s3);
+    font-size: 0.8125rem;
+    line-height: 1.5;
   }
   [data-session-panel] {
-    margin: var(--s5) 0 var(--s3);
-    padding: var(--s5);
-    max-width: 56ch;
-    background: var(--superficie);
-    border: 1px solid var(--linea-f);
-    border-radius: var(--radio-marco);
-  }
-  [data-session-panel] .hecho {
-    margin: 0 0 var(--s4);
-    font-size: 1.2rem;
+    margin: var(--s4) 0 0;
   }
   [data-session-panel] dl {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--s5);
+    justify-content: center;
+    gap: var(--s6);
     margin: 0 0 var(--s5);
   }
   [data-session-panel] dt {
@@ -162,147 +195,97 @@ const rankNames = Object.fromEntries(RANK_DEFINITIONS.map((rank) => [rank.id, ra
   }
   [data-session-panel] .acciones {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--s3);
   }
   [data-session-panel] .btn {
+    justify-content: center;
     text-decoration: none;
-  }
-  [data-legal-gate] {
-    margin: var(--s5) 0 var(--s3);
-    max-width: 56ch;
-  }
-  [data-legal-gate] label {
-    display: flex;
-    gap: var(--s2);
-    align-items: flex-start;
-    line-height: 1.5;
-    cursor: pointer;
-  }
-  [data-legal-gate] input {
-    /* 44px touch target without inflating the visual box (§9.8). */
-    width: 1.1rem;
-    height: 1.1rem;
-    margin: 0.2rem 0;
-    accent-color: var(--ambar);
-    flex: none;
-  }
-  [data-legal-gate] p {
-    margin: var(--s2) 0 0 1.85rem;
-    font-size: 0.875rem;
-    color: var(--texto-3);
-  }
-  [data-legal-gate] a {
-    color: var(--enlace);
-  }
-  /* The guide: the method and the step, then the three steps — each one
-     numbered once, by its own dot (the list draws no numbers). */
-  [data-login-progress] {
-    margin: var(--s5) 0 var(--s3);
-    padding: var(--s4) var(--s5);
-    max-width: 56ch;
-    background: var(--superficie);
-    border: 1px solid var(--linea-f);
-    border-radius: var(--radio-marco);
-  }
-  [data-login-progress] .etiqueta {
-    margin: 0 0 var(--s3);
-  }
-  [data-login-progress] ol {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: var(--s3);
-  }
-  [data-login-progress] li {
-    position: relative;
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
-    gap: var(--s3);
-    align-items: start;
-    color: var(--texto-2);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-  }
-  /* The thread between two dots. */
-  [data-login-progress] li:not(:last-child)::before {
-    content: '';
-    position: absolute;
-    left: 13.5px;
-    top: 30px;
-    bottom: calc(-1 * var(--s3) + 2px);
-    width: 1px;
-    background: var(--linea-f);
-  }
-  [data-step-dot] {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 1px solid var(--linea-f);
-    background: var(--fondo);
-    color: var(--texto-3);
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-  }
-  [data-login-progress] li[data-step-state='active'] {
-    color: var(--texto);
-    font-weight: 500;
-  }
-  [data-login-progress] li[data-step-state='active'] [data-step-dot] {
-    border-color: var(--ambar);
-    color: var(--ambar);
-  }
-  [data-login-progress] li[data-step-state='done'] [data-step-dot] {
-    border-color: var(--verdemar);
-    color: var(--verdemar);
-  }
-  /* What the wallet's permission list means here: one plain line. */
-  [data-wallet-note] {
-    margin: var(--s4) 0 0;
-    padding-left: var(--s3);
-    border-left: 2px solid var(--turquesa);
-    color: var(--texto-2);
-    font-size: 0.875rem;
-    line-height: 1.55;
   }
 </style>
 
 <style>
+  /* DES-009 §9 «Modal dialog»: the canonical veil over the whole app. */
+  .velo {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: var(--s5);
+    overflow-y: auto;
+    background: rgba(20, 17, 15, 0.72);
+  }
+  .puerta {
+    position: relative;
+    width: min(480px, 100%);
+    padding: var(--s6) var(--s6) var(--s5);
+    color: var(--texto);
+    text-align: center;
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    box-shadow:
+      0 1px 2px rgba(20, 17, 15, 0.08),
+      0 8px 24px rgba(20, 17, 15, 0.06);
+  }
+  /* The panel takes focus only to start the keyboard inside it. */
+  .puerta:focus {
+    outline: none;
+  }
+  .cerrar {
+    position: absolute;
+    top: var(--s3);
+    right: var(--s3);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--texto-2);
+    border-radius: var(--radio-control);
+  }
+  .cerrar:hover {
+    color: var(--texto);
+    background: var(--fondo);
+  }
+  .cerrar:focus-visible {
+    outline: 2px solid var(--enlace);
+    outline-offset: 2px;
+  }
+  .marca {
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto var(--s4);
+  }
   h1 {
-    font-size: 2.074rem;
-    font-weight: 400;
-    letter-spacing: -0.025em;
-    margin: 0 0 var(--s3);
-  }
-  .volver {
-    margin-bottom: var(--s4);
-  }
-  .volver a {
-    color: var(--enlace);
-    text-decoration: none;
-    font-size: 0.875rem;
-  }
-  .intro {
+    margin: 0 0 var(--s5);
     font-size: 1.44rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .legal {
+    margin: var(--s5) 0 0;
     color: var(--texto-2);
-    max-width: 56ch;
+    font-size: 0.8125rem;
     line-height: 1.55;
   }
-  .nota,
-  .dignidad {
-    color: var(--texto-2);
-    max-width: 65ch;
-    line-height: 1.55;
-    font-size: 0.875rem;
+  .legal a {
+    color: var(--enlace);
   }
-  .dignidad {
-    margin-top: var(--s6);
-    padding-top: var(--s4);
-    border-top: 1px solid var(--linea);
-    color: var(--texto-3);
+  /* On a phone the door fills the screen as a sheet. */
+  @media (max-width: 36rem) {
+    .velo {
+      padding: 0;
+      place-items: stretch;
+    }
+    .puerta {
+      width: 100%;
+      min-height: 100dvh;
+      padding: var(--s7) var(--s5) var(--s5);
+      border: none;
+      border-radius: 0;
+    }
   }
 </style>

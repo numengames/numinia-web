@@ -16,7 +16,6 @@ export interface LapMessages {
     readonly loot: string;
     readonly seasons: string;
     readonly stats: string;
-    readonly updates: string;
     readonly settings: string;
   };
   readonly foldNav: string;
@@ -257,7 +256,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Botín',
       seasons: 'Temporadas',
       stats: 'Estadísticas',
-      updates: 'Novedades',
       settings: 'Ajustes',
     },
     sheet: {
@@ -482,7 +480,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Loot',
       seasons: 'Seasons',
       stats: 'Stats',
-      updates: 'What’s new',
       settings: 'Settings',
     },
     sheet: {
@@ -704,7 +701,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '戦利品',
       seasons: 'シーズン',
       stats: '統計',
-      updates: '更新情報',
       settings: '設定',
     },
     sheet: {
@@ -920,7 +916,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: '전리품',
       seasons: '시즌',
       stats: '통계',
-      updates: '새 소식',
       settings: '설정',
     },
     sheet: {
@@ -1133,7 +1128,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       loot: 'Espólio',
       seasons: 'Temporadas',
       stats: 'Estatísticas',
-      updates: 'Novidades',
       settings: 'Configurações',
     },
     sheet: {

@@ -2,6 +2,9 @@
  * Sistema dress for the thirdweb widget (Oracle 2026-08-16): the vendor modal
  * is the one surface our CSS cannot reach, so both modes are mirrored here
  * from the kit palette (packages/ui/src/sistema.css) — never invent a color.
+ * Since QA 2026-10-15 the widget sits inside the door's `elevada` panel, so
+ * its own background is `--elevada` too: the widget's scroll fade is drawn
+ * in that colour, and a `--superficie` one showed as a dark band at night.
  */
 
 import { useEffect, useState } from 'react';
@@ -26,7 +29,7 @@ export function useModo(): Modo {
 export const WIDGET_THEMES: Readonly<Record<Modo, Theme>> = {
   nocturno: darkTheme({
     colors: {
-      modalBg: '#1E1A17',
+      modalBg: '#292420',
       tertiaryBg: '#292420',
       secondaryButtonBg: '#292420',
       secondaryButtonHoverBg: '#3A332D',
