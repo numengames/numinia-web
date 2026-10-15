@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.92.0',
+    date: '2026-10-15 07:05',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Choosing a good in the Bazaar no longer squeezes the cards into one per row on a laptop. At 1280 and 1366 px the filters and the preview slim down and the cards stay two to a row (three with nothing chosen); «See it in 3D» no longer covers the kind’s label in that narrower preview.',
+      },
+      {
+        type: 'UPD',
+        text: 'The preview of a PNG or JPG shows the whole picture at 960 px — about a tenth of the weight — instead of downloading the original, up to 2.2 MB. The Download button still gives you the file itself.',
+      },
+    ],
+  },
+  {
     version: 'v0.91.0',
     date: '2026-10-15 06:30',
     entries: [

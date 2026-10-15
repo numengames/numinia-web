@@ -12,7 +12,7 @@ import { downloadUrl, loadArchive } from './archive';
 import { isPicture } from './bazaar-view';
 import type { AssetCategory } from './data';
 import { sizeText } from './goods';
-import { thumbSrc, thumbSrcSet } from './thumbs';
+import { previewSrc, thumbSrc, thumbSrcSet } from './thumbs';
 
 export interface BazaarItem {
   readonly id: string;
@@ -32,6 +32,12 @@ export interface BazaarItem {
   readonly thumbnailUrl: string | null;
   /** The card picture's 1x/2x srcset when it is the baked WebP (v0.89.0); null otherwise. */
   readonly thumbnailSrcSet: string | null;
+  /**
+   * A picture's baked preview (v0.91.0): the whole picture at 960px a side,
+   * what the preview shows instead of a multi-megabyte original; null when
+   * none was baked (the preview then shows the file itself).
+   */
+  readonly previewUrl: string | null;
   /** Best binary URL from the storage chain; null when nothing is reachable. */
   readonly url: string | null;
   /** The file's size in bytes as the catalogue states it; null when it does not. */
@@ -85,6 +91,7 @@ export async function loadBazaarItems(locale: string): Promise<readonly BazaarIt
       license: asset.license,
       thumbnailUrl: cardPicture(asset.id, asset.format, asset.thumbnailUrl, url),
       thumbnailSrcSet: thumbSrcSet(asset.id),
+      previewUrl: previewSrc(asset.id),
       url,
       sizeBytes: asset.sizeBytes,
       size: asset.sizeBytes === null ? null : sizeText(asset.sizeBytes, locale),

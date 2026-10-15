@@ -56,6 +56,7 @@ const item = (over: Partial<BazaarItem> & Pick<BazaarItem, 'id'>): BazaarItem =>
   license: 'CC0',
   thumbnailUrl: null,
   thumbnailSrcSet: null,
+  previewUrl: null,
   url: null,
   sizeBytes: null,
   size: null,
@@ -115,6 +116,20 @@ describe('loadBazaarItems', () => {
     expect(pictures.length).toBeGreaterThan(0);
     for (const picture of pictures) {
       expect(picture.thumbnailUrl).toBe(`/thumbs/${picture.id}.webp`);
+    }
+  });
+
+  it('shows a picture whole from its baked preview, never from a multi-megabyte original', async () => {
+    const { loadBazaarItems } = await importBazaar();
+    const items = await loadBazaarItems('es');
+    const pictures = items.filter((i) => isPicture(i.format));
+    expect(pictures.length).toBeGreaterThan(0);
+    for (const picture of pictures) {
+      expect(picture.previewUrl).toBe(`/thumbs/preview/${picture.id}.webp`);
+    }
+    // Only pictures are previewed from a baked cut: a model turns in 3D instead.
+    for (const good of items.filter((i) => !isPicture(i.format))) {
+      expect(good.previewUrl).toBeNull();
     }
   });
 
