@@ -3,7 +3,17 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
-    "date": "2026-10-15 16:30",
+    "date": "2026-10-15 13:05",
+    "entries": [
+      {
+        "text": "Giving «Administrator» or «Manage roles» in an organization works now: at that moment your wallet signs that very change — a few plain lines that name the organization, the role and the person, valid for two minutes. Google, email and passkey wallets sign without a window; MetaMask and WalletConnect show the lines and ask. Without the signature, with a late one or with another wallet, nothing changes and Saldo says why, in all five languages.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.95.0",
+  },
+  {
+    "date": "2026-10-15 12:08",
     "entries": [
       {
         "text": "A «Members and roles» tab in Saldo, in all five languages. For each organization you see its roles from the top down and who holds each one; you can create a role, rename it, colour it, choose what it allows, move it up or down, delete it, and give or take a role from a person — only where your own role lets you, and nothing that would fail is offered. A strip says when you enter as the house, and the log lists the last changes. Giving «Administrator» or «Manage roles» waits for a fresh signature from your wallet, which is not ready yet.",

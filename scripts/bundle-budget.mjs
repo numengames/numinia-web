@@ -71,7 +71,14 @@ const BUDGETS = {
       vendor the login does — the WalletConnect and Coinbase connectors,
       ~450KB each — and only on the click that asks for a signature. Those
       chunks were already in the build for the login; no other page reaches
-      them, and every public page keeps the strict budget. */
+      them, and every public page keeps the strict budget.
+      Widened on 2026-10-15 (v0.95.0) to Saldo's members tab
+      (/saldo/miembros/, signed-in people only): giving «Administrador» or
+      «Gestionar roles» is one act the person's wallet signs again (STD-051
+      ORG-008), so the tab reaches the same wallet chunks as the worlds room
+      — the same module, ../components/auth/remembered-wallet.ts — and only
+      on the click that asks for the signature. The tab itself still loads
+      none of them. */
   identityOnlyChunkBytes: 1_500_000,
   /** Whole-page HTML weight for the landing. Raised 30000→33000 on
       2026-09-29 for the same order as the inline raise above: the sky, the
@@ -129,10 +136,10 @@ try {
 
 /**
  * Chunks reachable from PUBLIC pages (anything but the identity surfaces:
- * /spike/, the session page and the worlds room) get the strict budgets;
- * chunks only the identity surfaces can ever load get their own class.
- * Reachability = script refs in the HTML plus the import graph (static and
- * dynamic) walked from those entries.
+ * /spike/, the session page, the worlds room and Saldo's members tab) get
+ * the strict budgets; chunks only the identity surfaces can ever load get
+ * their own class. Reachability = script refs in the HTML plus the import
+ * graph (static and dynamic) walked from those entries.
  */
 async function collectHtml(dir) {
   const found = [];
@@ -149,8 +156,9 @@ const publicEntries = new Set();
 for (const file of await collectHtml(DIST)) {
   const segments = path.relative(DIST, file).split(path.sep);
   const isWorldsRoom = segments.join('/').includes('lap/admin/worlds/');
+  const isMembersTab = segments.join('/').includes('saldo/miembros/');
   const isIdentitySurface =
-    segments.includes('spike') || segments.includes('session') || isWorldsRoom;
+    segments.includes('spike') || segments.includes('session') || isWorldsRoom || isMembersTab;
   if (isIdentitySurface) continue;
   const html = await readFile(file, 'utf8');
   for (const match of html.matchAll(chunkRef)) publicEntries.add(match[1]);

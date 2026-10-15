@@ -9,8 +9,8 @@
  * (AuthConfigError names the missing variable). No fallbacks, no defaults.
  */
 
-import { createThirdwebClient } from 'thirdweb';
-import { createAuth } from 'thirdweb/auth';
+import { createThirdwebClient, defineChain } from 'thirdweb';
+import { createAuth, verifyEOASignature, verifySignature } from 'thirdweb/auth';
 import { z } from 'zod';
 import type { Rank } from '@numinia/domain';
 import {
@@ -22,6 +22,7 @@ import {
   type SessionPayload,
   type VerifyResult,
 } from '@numinia/auth';
+import type { FreshDeps, SignatureCheck } from '../fresh-signature';
 import { runtimeEnv } from '../runtime-env';
 
 const envSchema = z.object({
@@ -206,4 +207,30 @@ export async function verifySession(token: string): Promise<VerifyResult> {
   return verifySessionTokenWithRotation(token, config.sessionSecret, config.previousSecret, () =>
     Math.floor(Date.now() / 1000),
   );
+}
+
+/**
+ * Whether `signature` is the wallet's own over `message` — the fresh
+ * signature of ORG-008 (lib/fresh-signature.ts). An ordinary wallet's key
+ * is checked here, offline; a smart account (ERC-1271, or ERC-6492 before
+ * it is deployed) only on the chain its wallet named, through thirdweb's
+ * RPC with our secret key — as the login's SIWE check does.
+ */
+export async function verifyWalletSignature(check: SignatureCheck): Promise<boolean> {
+  const { message, signature, address, chainId } = check;
+  if (chainId === null) return verifyEOASignature({ message, signature, address });
+  return verifySignature({
+    message,
+    signature,
+    address,
+    chain: defineChain(chainId),
+    client: createThirdwebClient({ secretKey: requireConfig().secretKey }),
+  });
+}
+
+/** What the fresh signature needs from the Worker: the session secret, the check and the clock; null when auth is not configured. */
+export function freshSignatureDeps(): FreshDeps | null {
+  const config = loadConfig();
+  if (!config) return null;
+  return { secret: config.sessionSecret, verify: verifyWalletSignature, now: () => Date.now() };
 }

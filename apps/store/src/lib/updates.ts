@@ -26,8 +26,18 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.95.0',
+    date: '2026-10-15 13:05',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Giving «Administrator» or «Manage roles» in an organization works now: at that moment your wallet signs that very change — a few plain lines that name the organization, the role and the person, valid for two minutes. Google, email and passkey wallets sign without a window; MetaMask and WalletConnect show the lines and ask. Without the signature, with a late one or with another wallet, nothing changes and Saldo says why, in all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.94.0',
-    date: '2026-10-15 16:30',
+    date: '2026-10-15 12:08',
     entries: [
       {
         type: 'NEW',

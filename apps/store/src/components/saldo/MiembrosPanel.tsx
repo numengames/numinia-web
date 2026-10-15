@@ -7,9 +7,10 @@
  * screen only leaves out what the person cannot do (`mayEdit`,
  * `assignable`), so no button fails.
  *
- * Giving «Administrador» or «Gestionar roles» needs a fresh wallet
- * signature (STD-051, ORG-008) that this screen cannot ask yet: those two
- * boxes stay shut unless the role already carries them.
+ * Giving «Administrador» or «Gestionar roles» needs a fresh signature of
+ * the wallet (STD-051, ORG-008): when /api/saldo answers so, the screen
+ * has the wallet sign the lines of that very act (./wallet-signature.ts)
+ * and sends it again with the proof — or says why it could not.
  */
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
@@ -40,6 +41,7 @@ import {
   type PostResult,
 } from '../../lib/accounts';
 import { LunaEspera } from '../chrome/LunaEspera';
+import { signAct, type Signed } from './wallet-signature';
 
 type Phase =
   | { readonly at: 'loading' }
@@ -100,7 +102,6 @@ function RoleForm({
   locale,
   idBase,
   initial,
-  carried,
   busy,
   submit,
   onSubmit,
@@ -110,8 +111,6 @@ function RoleForm({
   readonly locale: SupportedLocale;
   readonly idBase: string;
   readonly initial: Draft;
-  /** What the role carries already: kept open even when it asks for a signature. */
-  readonly carried: readonly OrganizationPermission[];
   readonly busy: boolean;
   readonly submit: string;
   readonly onSubmit: (draft: Draft) => Promise<boolean>;
@@ -176,23 +175,19 @@ function RoleForm({
       <fieldset className="saldo-fieldset">
         <legend>{words.permissions}</legend>
         <ul className="saldo-permisos">
-          {ORGANIZATION_PERMISSIONS.map((permission) => {
-            const shut = needsSignature(permission) && !carried.includes(permission);
-            return (
-              <li key={permission}>
-                <label className="saldo-casilla">
-                  <input
-                    type="checkbox"
-                    checked={permissions.includes(permission)}
-                    disabled={shut}
-                    aria-describedby={shut ? `${idBase}-firma` : undefined}
-                    onChange={() => toggle(permission)}
-                  />
-                  <span>{ORGANIZATION_PERMISSION_LABELS[permission][locale]}</span>
-                </label>
-              </li>
-            );
-          })}
+          {ORGANIZATION_PERMISSIONS.map((permission) => (
+            <li key={permission}>
+              <label className="saldo-casilla">
+                <input
+                  type="checkbox"
+                  checked={permissions.includes(permission)}
+                  aria-describedby={needsSignature(permission) ? `${idBase}-firma` : undefined}
+                  onChange={() => toggle(permission)}
+                />
+                <span>{ORGANIZATION_PERMISSION_LABELS[permission][locale]}</span>
+              </label>
+            </li>
+          ))}
         </ul>
         <p className="saldo-nota" id={`${idBase}-firma`}>
           {words.signatureNote}
@@ -236,6 +231,8 @@ export function MiembrosPanel({
   const [removing, setRemoving] = useState<string | null>(null);
   const [giving, setGiving] = useState<Readonly<Record<string, string>>>({});
   const [log, setLog] = useState<LogState>({ at: 'closed' });
+  // While the wallet is asked to sign an act (ORG-008).
+  const [signing, setSigning] = useState(false);
   // Only the newest organization read may paint.
   const asked = useRef(0);
 
@@ -253,6 +250,14 @@ export function MiembrosPanel({
     },
     [ui, locale],
   );
+
+  /** Why the wallet did not sign, in words. */
+  const unsignedText = (signed: Extract<Signed, { readonly ok: false }>): string => {
+    if (signed.problem === 'no-wallet') return words.noWallet;
+    if (signed.problem === 'other-wallet') return words.otherWallet;
+    if (signed.problem === 'declined') return words.declined;
+    return signed.problems === undefined ? ui.failed : problemText(signed.problems);
+  };
 
   const loadOverview = useCallback(async (): Promise<void> => {
     try {
@@ -314,7 +319,21 @@ export function MiembrosPanel({
     if (busy || current === null || sheet.at !== 'ready') return false;
     setBusy(true);
     setNotice(null);
-    const result = await post({ ...body, accountId: current });
+    const request = { ...body, accountId: current };
+    let result = await post(request);
+    // ORG-008: what gives «Administrador» or «Gestionar roles» asks the
+    // wallet to sign this very act, and goes again with the proof.
+    if (result !== null && !result.ok && readProblem(result.problems).key === 'freshSignature') {
+      setSigning(true);
+      const signed = await signAct(request, locale, sheet.you);
+      setSigning(false);
+      if (!signed.ok) {
+        setBusy(false);
+        setNotice(unsignedText(signed));
+        return false;
+      }
+      result = await post({ ...request, fresh: signed.proof });
+    }
     setBusy(false);
     if (result === null) {
       setNotice(ui.failed);
@@ -428,6 +447,11 @@ export function MiembrosPanel({
       )}
 
       <div aria-live="polite">
+        {signing && (
+          <p className="saldo-nota" role="status" data-panel-signing>
+            {words.signing}
+          </p>
+        )}
         {notice !== null && (
           <p className="saldo-mal saldo-aviso" role="alert">
             {notice}
@@ -491,7 +515,6 @@ export function MiembrosPanel({
                 locale={locale}
                 idBase="rol-nuevo"
                 initial={{ name: '', color: null, hoist: false, permissions: [] }}
-                carried={[]}
                 busy={busy}
                 submit={words.create}
                 onCancel={() => setEditing(null)}
@@ -612,7 +635,6 @@ export function MiembrosPanel({
                         locale={locale}
                         idBase={`rol-${role.id}`}
                         initial={draftOf(role)}
-                        carried={role.permissions}
                         busy={busy}
                         submit={words.save}
                         onCancel={() => setEditing(null)}

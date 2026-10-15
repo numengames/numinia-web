@@ -44,7 +44,16 @@ export interface TeamPanelMessages {
   readonly permissions: string;
   readonly create: string;
   readonly save: string;
+  /** Beside «Administrador» and «Gestionar roles»: giving them asks the wallet to sign. */
   readonly signatureNote: string;
+  /** While the wallet is asked to sign an act (ORG-008). */
+  readonly signing: string;
+  /** The wallet did not sign: this browser remembers none, … */
+  readonly noWallet: string;
+  /** … the one connected is not the session's, … */
+  readonly otherWallet: string;
+  /** … or the person did not sign. */
+  readonly declined: string;
   readonly give: string;
   /** The select's label: which role to give. */
   readonly giveLabel: string;
@@ -174,6 +183,8 @@ export interface SaldoMessages {
     readonly needs: string;
     readonly needsOwners: string;
     readonly freshSignature: string;
+    readonly signatureExpired: string;
+    readonly signatureMismatch: string;
     readonly other: string;
   };
   readonly referrals: { readonly title: string; readonly soon: string; readonly text: string };
@@ -308,7 +319,10 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       needsOwners:
         'Para hacerlo hace falta el permiso «{act}», que solo tienen las personas titulares.',
       freshSignature:
-        'La firma nueva de tu cartera para dar «Administrador» o «Gestionar roles» todavía no está lista. Lo demás sí puedes hacerlo.',
+        'Dar «Administrador» o «Gestionar roles» pide una firma nueva de tu cartera, y no ha llegado. No ha cambiado nada.',
+      signatureExpired: 'La firma ha caducado: vale dos minutos. Vuelve a intentarlo.',
+      signatureMismatch:
+        'La firma no corresponde a este cambio o no es de tu cartera. No ha cambiado nada.',
       other: 'La caja no lo ha permitido.',
     },
     panel: {
@@ -345,7 +359,13 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       create: 'Crear rol',
       save: 'Guardar',
       signatureNote:
-        'Dar «Administrador» o «Gestionar roles» pedirá una firma nueva de tu cartera; esta pantalla todavía no sabe pedirla.',
+        'Dar «Administrador» o «Gestionar roles» te pide firmar con tu cartera en ese momento.',
+      signing: 'Tu cartera te pide firmar este cambio…',
+      noWallet:
+        'Este navegador no recuerda tu cartera. Sal, vuelve a entrar con ella y repite el cambio.',
+      otherWallet:
+        'La cartera conectada no es la de tu sesión. Entra con la misma cartera y repite el cambio.',
+      declined: 'No has firmado, así que no ha cambiado nada.',
       give: 'Dar',
       giveLabel: 'Rol que dar a {who}',
       take: 'Quitar el rol {role} a {who}',
@@ -496,7 +516,10 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'This needs the “{act}” permission, which the owners have, and these roles: {holders}.',
       needsOwners: 'This needs the “{act}” permission, which only the owners have.',
       freshSignature:
-        'A new signature from your wallet to give «Administrator» or «Manage roles» is not ready yet. You can do the rest.',
+        'Giving «Administrator» or «Manage roles» needs a fresh signature from your wallet, and none arrived. Nothing changed.',
+      signatureExpired: 'The signature expired: it lasts two minutes. Try again.',
+      signatureMismatch:
+        'The signature does not match this change or is not from your wallet. Nothing changed.',
       other: 'The till did not allow it.',
     },
     panel: {
@@ -533,7 +556,13 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       create: 'Create role',
       save: 'Save',
       signatureNote:
-        'Giving «Administrator» or «Manage roles» will ask for a fresh signature from your wallet; this screen cannot ask for it yet.',
+        'Giving «Administrator» or «Manage roles» asks you to sign with your wallet at that moment.',
+      signing: 'Your wallet asks you to sign this change…',
+      noWallet:
+        'This browser does not remember your wallet. Sign out, come back in with it and make the change again.',
+      otherWallet:
+        'The connected wallet is not the one you signed in with. Come in with the same wallet and make the change again.',
+      declined: 'You did not sign, so nothing changed.',
       give: 'Give',
       giveLabel: 'Role to give to {who}',
       take: 'Take the role {role} from {who}',
@@ -682,7 +711,11 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       needs: 'これには「{act}」の権限が必要です。オーナーと次のロールが持っています: {holders}。',
       needsOwners: 'これには「{act}」の権限が必要です。持っているのはオーナーだけです。',
       freshSignature:
-        '「管理者」や「ロールの管理」を付与するためのウォレットの新しい署名は、まだ用意できていません。それ以外の操作はできます。',
+        '「管理者」や「ロールの管理」を付与するにはウォレットの新しい署名が必要ですが、届きませんでした。何も変更されていません。',
+      signatureExpired:
+        '署名の有効期限が切れました（有効なのは2分間です）。もう一度お試しください。',
+      signatureMismatch:
+        '署名がこの変更のものではないか、あなたのウォレットのものではありません。何も変更されていません。',
       other: 'レジが許可しませんでした。',
     },
     panel: {
@@ -719,7 +752,13 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       create: 'ロールを作成',
       save: '保存',
       signatureNote:
-        '「管理者」や「ロールの管理」を付与するには、ウォレットの新しい署名が必要になります。この画面はまだ署名を求められません。',
+        '「管理者」や「ロールの管理」を付与するときは、その場でウォレットによる署名が必要です。',
+      signing: 'ウォレットがこの変更への署名を求めています…',
+      noWallet:
+        'このブラウザはあなたのウォレットを覚えていません。いったんログアウトし、同じウォレットで入り直してから、もう一度変更してください。',
+      otherWallet:
+        '接続中のウォレットはセッションのものではありません。同じウォレットで入り直して、もう一度変更してください。',
+      declined: '署名されなかったため、何も変更されていません。',
       give: '付与',
       giveLabel: '{who} に付与するロール',
       take: '{who} からロール {role} を外す',
@@ -868,7 +907,10 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       needs: '“{act}” 권한이 필요합니다. 소유자와 다음 역할이 가지고 있습니다: {holders}.',
       needsOwners: '“{act}” 권한이 필요합니다. 소유자만 가지고 있습니다.',
       freshSignature:
-        "'관리자'나 '역할 관리'를 부여하기 위한 지갑의 새 서명은 아직 준비되지 않았습니다. 나머지는 할 수 있습니다.",
+        "'관리자'나 '역할 관리'를 부여하려면 지갑의 새 서명이 필요한데, 도착하지 않았습니다. 아무것도 바뀌지 않았습니다.",
+      signatureExpired: '서명이 만료되었습니다(유효 시간 2분). 다시 시도해 주세요.',
+      signatureMismatch:
+        '서명이 이 변경에 대한 것이 아니거나 당신의 지갑 서명이 아닙니다. 아무것도 바뀌지 않았습니다.',
       other: '계산대가 허용하지 않았습니다.',
     },
     panel: {
@@ -904,8 +946,13 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       permissions: '할 수 있는 일',
       create: '역할 만들기',
       save: '저장',
-      signatureNote:
-        "'관리자'나 '역할 관리'를 부여하려면 지갑의 새 서명이 필요합니다. 이 화면은 아직 서명을 요청할 수 없습니다.",
+      signatureNote: "'관리자'나 '역할 관리'를 부여할 때는 그 자리에서 지갑으로 서명해야 합니다.",
+      signing: '지갑이 이 변경에 서명을 요청합니다…',
+      noWallet:
+        '이 브라우저가 지갑을 기억하지 못합니다. 로그아웃한 뒤 같은 지갑으로 다시 들어와 변경을 다시 해 주세요.',
+      otherWallet:
+        '연결된 지갑이 세션의 지갑이 아닙니다. 같은 지갑으로 들어와 변경을 다시 해 주세요.',
+      declined: '서명하지 않아 아무것도 바뀌지 않았습니다.',
       give: '부여',
       giveLabel: '{who}에게 부여할 역할',
       take: '{who}에게서 역할 {role} 빼기',
@@ -1056,7 +1103,10 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       needsOwners:
         'Para fazer isso é preciso a permissão «{act}», que só as pessoas titulares têm.',
       freshSignature:
-        'A nova assinatura da sua carteira para dar «Administrador» ou «Gerenciar papéis» ainda não está pronta. O resto você pode fazer.',
+        'Dar «Administrador» ou «Gerenciar papéis» precisa de uma nova assinatura da sua carteira, e ela não chegou. Nada mudou.',
+      signatureExpired: 'A assinatura expirou: ela vale dois minutos. Tente de novo.',
+      signatureMismatch:
+        'A assinatura não corresponde a esta mudança ou não é da sua carteira. Nada mudou.',
       other: 'O caixa não permitiu.',
     },
     panel: {
@@ -1093,7 +1143,13 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       create: 'Criar papel',
       save: 'Salvar',
       signatureNote:
-        'Dar «Administrador» ou «Gerenciar papéis» vai pedir uma nova assinatura da sua carteira; esta tela ainda não sabe pedi-la.',
+        'Dar «Administrador» ou «Gerenciar papéis» pede que você assine com sua carteira nesse momento.',
+      signing: 'Sua carteira pede que você assine esta mudança…',
+      noWallet:
+        'Este navegador não lembra sua carteira. Saia, entre de novo com ela e repita a mudança.',
+      otherWallet:
+        'A carteira conectada não é a da sua sessão. Entre com a mesma carteira e repita a mudança.',
+      declined: 'Você não assinou, então nada mudou.',
       give: 'Dar',
       giveLabel: 'Papel a dar a {who}',
       take: 'Tirar o papel {role} de {who}',

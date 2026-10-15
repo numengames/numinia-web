@@ -15,24 +15,36 @@
  * it, and the way back from Stripe is built here from the request's own
  * origin, never taken from the body. Logs name rules, never wallets or
  * amounts.
+ *
+ * What is dangerous is signed again (STD-051, ORG-008): an act that gives
+ * «Administrator» or «Manage roles» reaches the till only with a fresh
+ * signature of the session's wallet over the lines /api/saldo/signature
+ * wrote for that very act (lib/fresh-signature.ts). Without one the act is
+ * answered FRESH_SIGNATURE and the screen asks the wallet; the till itself
+ * stays as it was.
  */
 
 import { z } from 'zod';
 import {
   ORGANIZATION_PERMISSIONS,
+  ORGANIZATION_PERMISSION_LABELS,
   SUPPORTED_LOCALES,
-  needsFreshSignature,
   type OrganizationPermission,
   type SupportedLocale,
 } from '@numinia/domain';
 import deskSeed from '../../fixtures/accounts/desk.json';
+import { FRESH_SIGNATURE_WORDS } from '../i18n/fresh-signature';
 import {
   DESK_METHODS,
   SPEND_RANGES,
   TOPUP_KEYS,
   FRESH_SIGNATURE,
+  SIGNATURE_EXPIRED,
+  SIGNATURE_MISMATCH,
   checkoutTarget,
   isSpendRange,
+  needsSignature,
+  shortWallet,
   vueltaBase,
   type AccountDesk,
   type DeskRoleChange,
@@ -40,6 +52,16 @@ import {
   type SpendRange,
 } from './accounts';
 import { createAccountsFixtureDesk, type AccountsSeed } from './accounts-fixture';
+import {
+  FRESH_TTL_MS,
+  actDigest,
+  checkFresh,
+  freshMessage,
+  issueFreshToken,
+  type FreshAct,
+  type FreshDeps,
+  type FreshProof,
+} from './fresh-signature';
 import { logEvent } from './telemetry';
 
 /** The desk read off whatever workerd bound: its eighteen methods, or null when it is not a desk. */
@@ -108,9 +130,17 @@ export function accountsFrom(env: AccountsEnv): AccountDesk | null {
 
 // ---- Shapes (built on first use, never at import) ---------------------------
 
-/** Bytes a POST may carry: an action and a few short fields. */
-export const MAX_BODY_BYTES = 4_096;
+/**
+ * Bytes a POST may carry: an action and a few short fields, plus the fresh
+ * signature some acts carry — its token holds the signed lines, and a smart
+ * account's signature (ERC-6492) runs to a few kilobytes.
+ */
+export const MAX_BODY_BYTES = 8_192;
 const ID_MAX = 100;
+/** A fresh signature's token: its claims hold the signed lines, in any of the five languages. */
+const TOKEN_MAX = 4_096;
+/** A signature in hex: 132 characters from an ordinary wallet, more from a smart account. */
+const SIGNATURE_MAX = 6_000;
 
 function buildSchemas() {
   const id = z.string().min(1).max(ID_MAX);
@@ -176,6 +206,16 @@ function buildSchemas() {
     z.object({ action: z.literal('give-role'), accountId: id, wallet, roleId }).strict(),
     z.object({ action: z.literal('take-role'), accountId: id, wallet, roleId }).strict(),
   ]);
+  // A fresh signature, carried apart from the act it signs (`fresh`).
+  const proof = z
+    .object({
+      token: z.string().min(1).max(TOKEN_MAX),
+      signature: z
+        .string()
+        .max(SIGNATURE_MAX)
+        .regex(/^0x[0-9a-fA-F]+$/, 'a signature is 0x and hex digits'),
+    })
+    .strict();
 
   // The till's answers: extra fields are dropped, missing or mistyped ones refused.
   const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
@@ -282,7 +322,19 @@ function buildSchemas() {
     }),
     refusal,
   ]);
-  return { request, overview, statement, team, members, access, roles, log, topup, confirm };
+  return {
+    request,
+    proof,
+    overview,
+    statement,
+    team,
+    members,
+    access,
+    roles,
+    log,
+    topup,
+    confirm,
+  };
 }
 
 let schemas: ReturnType<typeof buildSchemas> | null = null;
@@ -348,6 +400,26 @@ export function readSaldoRequest(
     return { ok: false, error: `${where}${issue?.message ?? 'invalid'}` };
   }
   return { ok: true, request: parsed.data as SaldoRequest };
+}
+
+/**
+ * The browser's POST body, split: the act, and apart the fresh signature it
+ * may carry (`fresh`, ORG-008) — or the issue that refuses a proof out of
+ * shape before anything else is read.
+ */
+function splitProof(
+  json: unknown,
+):
+  | { readonly ok: true; readonly act: unknown; readonly proof: FreshProof | null }
+  | { readonly ok: false; readonly error: string } {
+  if (typeof json !== 'object' || json === null || !('fresh' in json)) {
+    return { ok: true, act: json, proof: null };
+  }
+  const { fresh, ...act } = json as Readonly<Record<string, unknown>>;
+  const parsed = shapes().proof.safeParse(fresh);
+  if (!parsed.success)
+    return { ok: false, error: 'fresh: a token and a 0x signature, nothing else' };
+  return { ok: true, act, proof: parsed.data };
 }
 
 // ---- Answers ---------------------------------------------------------------
@@ -528,17 +600,22 @@ async function bodyOf(
  * POST /api/saldo: one action on the desk as the session's wallet. The
  * desk's refusals travel as values (`{ result: { ok: false, problems } }`,
  * 200): the screen tells the person why; only a desk that failed is 502.
+ * An act that gives what is dangerous also needs `fresh` and the Worker's
+ * `FreshDeps` (ORG-008); without them it never reaches the desk.
  */
 export async function answerAction(
   desk: AccountDesk | null,
   wallet: string | null,
   request: Request,
   log: Log = logEvent,
+  fresh: FreshDeps | null = null,
 ): Promise<Response> {
   if (wallet === null) return signedOut();
   const body = await bodyOf(request);
   if (!body.ok) return body.response;
-  const read = readSaldoRequest(body.json);
+  const split = splitProof(body.json);
+  if (!split.ok) return answer({ error: split.error }, 400);
+  const read = readSaldoRequest(split.act);
   if (!read.ok) return answer({ error: read.error }, 400);
   if (desk === null) return notBound();
   const you = wallet.toLowerCase();
@@ -588,7 +665,7 @@ export async function answerAction(
     action.action === 'move-role' ||
     action.action === 'delete-role'
   ) {
-    return answerRoleAction(desk, you, action, log);
+    return answerRoleAction(desk, you, action, log, split.proof, fresh);
   }
 
   const asked =
@@ -626,55 +703,100 @@ type RoleAction = Extract<
   }
 >;
 
-/** The permissions a request would ADD that ask for a new wallet signature (STD-051, ORG-008). */
-async function sensitiveGrant(
+/** The permissions among `permissions` that ask for a fresh signature (STD-051, ORG-008). */
+const signedAgain = (
+  permissions: readonly OrganizationPermission[],
+): readonly OrganizationPermission[] =>
+  permissions.filter((permission) => needsSignature(permission));
+
+/** What an act adds to a role the desk lists: giving it adds all it holds; editing it, what it does not hold yet. */
+function addsTo(action: RoleAction): {
+  readonly roleId: string;
+  readonly added: (held: readonly OrganizationPermission[]) => readonly OrganizationPermission[];
+} | null {
+  if (action.action === 'give-role') return { roleId: action.roleId, added: (held) => held };
+  if (action.action === 'edit-role' && action.change.permissions !== undefined) {
+    const asked = action.change.permissions;
+    return {
+      roleId: action.roleId,
+      added: (held) => asked.filter((permission) => !held.includes(permission)),
+    };
+  }
+  return null;
+}
+
+type Grant =
+  | {
+      readonly at: 'granted';
+      /** What the act would ADD that asks for a fresh signature; empty when nothing does. */
+      readonly permissions: readonly OrganizationPermission[];
+      /** The role's name, for the lines the wallet signs. */
+      readonly role: string;
+    }
+  | { readonly at: 'refused'; readonly problems: readonly string[] }
+  | { readonly at: 'failed'; readonly response: Response };
+
+const NO_GRANT: Grant = { at: 'granted', permissions: [], role: '' };
+
+/**
+ * What a role action would grant that asks for a new wallet signature
+ * (STD-051, ORG-008), read against the roles the desk lists now. A role the
+ * desk does not list adds nothing to check: the till answers for it.
+ */
+async function grantOf(
   desk: AccountDesk,
   you: string,
   action: RoleAction,
   log: Log,
-): Promise<
-  | { readonly ok: true; readonly grants: boolean }
-  | { readonly ok: false; readonly response: Response }
-> {
+): Promise<Grant> {
   if (action.action === 'create-role') {
     return {
-      ok: true,
-      grants: needsFreshSignature({ kind: 'grant', permissions: action.role.permissions }),
+      at: 'granted',
+      permissions: signedAgain(action.role.permissions),
+      role: action.role.name,
     };
   }
-  if (action.action !== 'edit-role' && action.action !== 'give-role')
-    return { ok: true, grants: false };
-  if (action.action === 'edit-role' && action.change.permissions === undefined) {
-    return { ok: true, grants: false };
-  }
+  const adds = addsTo(action);
+  if (adds === null) return NO_GRANT;
   const asked = await ask(log, 'roles', () => desk.roles(you, action.accountId), shapes().roles);
-  if (!asked.ok) return asked;
-  // A desk that refuses to say lets the write through to the same refusal: nothing is written.
-  if ('problems' in asked.value) return { ok: true, grants: false };
-  const held: readonly OrganizationPermission[] =
-    asked.value.roles.find((role) => role.id === action.roleId)?.permissions ?? [];
-  const added =
-    action.action === 'give-role'
-      ? held
-      : (action.change.permissions ?? []).filter((permission) => !held.includes(permission));
+  if (!asked.ok) return { at: 'failed', response: asked.response };
+  if ('problems' in asked.value) return { at: 'refused', problems: asked.value.problems };
+  const listed = asked.value.roles.find((role) => role.id === adds.roleId);
+  if (listed === undefined) return NO_GRANT;
   return {
-    ok: true,
-    grants: needsFreshSignature({ kind: 'grant', permissions: added }),
+    at: 'granted',
+    permissions: signedAgain(adds.added(listed.permissions)),
+    role: listed.name,
   };
 }
 
-/** A role action on the desk; granting administrator or manage-roles is refused until the screen can ask for a fresh signature. */
+/** Why an act that needs a fresh signature does not reach the desk: the log's outcome and the screen's words. */
+const UNSIGNED = {
+  missing: { outcome: 'needs-signature', problem: FRESH_SIGNATURE },
+  expired: { outcome: 'signature-expired', problem: SIGNATURE_EXPIRED },
+  mismatch: { outcome: 'signature-mismatch', problem: SIGNATURE_MISMATCH },
+} as const;
+
+/** A role action on the desk; one that gives administrator or manage-roles goes only with a fresh signature of this very act. */
 async function answerRoleAction(
   desk: AccountDesk,
   you: string,
   action: RoleAction,
   log: Log,
+  proof: FreshProof | null,
+  fresh: FreshDeps | null,
 ): Promise<Response> {
-  const gate = await sensitiveGrant(desk, you, action, log);
-  if (!gate.ok) return gate.response;
-  if (gate.grants) {
-    log({ level: 'info', kind: 'saldo-role', action: action.action, outcome: 'needs-signature' });
-    return answer({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+  const grant = await grantOf(desk, you, action, log);
+  if (grant.at === 'failed') return grant.response;
+  // A desk that refuses to list the roles lets the act through to the same refusal: nothing is written.
+  if (grant.at === 'granted' && grant.permissions.length > 0) {
+    const verdict =
+      proof === null || fresh === null ? 'missing' : await checkFresh(fresh, you, action, proof);
+    if (verdict !== 'ok') {
+      const { outcome, problem } = UNSIGNED[verdict];
+      log({ level: 'info', kind: 'saldo-role', action: action.action, outcome });
+      return answer({ result: { ok: false, problems: [problem] } });
+    }
   }
   const s = shapes();
   const asked =
@@ -727,4 +849,99 @@ async function answerRoleAction(
     outcome: asked.value.ok ? 'done' : 'refused',
   });
   return answer({ result: asked.value });
+}
+
+// ---- The fresh signature: the lines a wallet signs (ORG-008) ---------------
+
+/** The acts that may give what asks for a fresh signature. */
+type GrantAct = Extract<
+  SaldoRequest,
+  { readonly action: 'create-role' | 'edit-role' | 'give-role' }
+>;
+
+const isGrantAct = (request: SaldoRequest): request is GrantAct =>
+  request.action === 'create-role' ||
+  request.action === 'edit-role' ||
+  request.action === 'give-role';
+
+const KIND: Readonly<Record<GrantAct['action'], FreshAct['kind']>> = {
+  'create-role': 'create',
+  'edit-role': 'edit',
+  'give-role': 'give',
+};
+
+const NOTHING_TO_SIGN = 'nothing to sign: this act gives nothing that asks for a fresh signature';
+
+const isLocale = (text: string): text is SupportedLocale =>
+  (SUPPORTED_LOCALES as readonly string[]).includes(text);
+
+/** The chain the wallet named: absent is null, a whole number from 1 is itself, anything else undefined. */
+function chainOf(text: string | null): number | null | undefined {
+  if (text === null) return null;
+  const id = Number(text);
+  return /^[1-9]\d{0,15}$/.test(text) && Number.isSafeInteger(id) ? id : undefined;
+}
+
+/**
+ * POST /api/saldo/signature?locale=&chain=: the lines the session's wallet
+ * signs for this very act, in the page's language, and the token that
+ * brings them back with it (lib/fresh-signature.ts). The body is the act
+ * exactly as POST /api/saldo will receive it; `chain` is the wallet's own,
+ * for a smart account. Only an act that gives administrator or manage-roles
+ * gets lines to sign, and asking never acts: the desk is only read.
+ */
+export async function answerSignature(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  request: Request,
+  fresh: FreshDeps | null,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (wallet === null) return signedOut();
+  if (fresh === null) return answer({ error: 'not-configured' }, 503);
+  const body = await bodyOf(request);
+  if (!body.ok) return body.response;
+  const read = readSaldoRequest(body.json);
+  if (!read.ok) return answer({ error: read.error }, 400);
+  const query = new URL(request.url).searchParams;
+  const locale = query.get('locale') ?? '';
+  if (!isLocale(locale)) {
+    return answer({ error: `locale: one of ${SUPPORTED_LOCALES.join(', ')}` }, 400);
+  }
+  const chainId = chainOf(query.get('chain'));
+  if (chainId === undefined) return answer({ error: 'chain: a whole number from 1' }, 400);
+  const act = read.request;
+  if (!isGrantAct(act)) return answer({ error: NOTHING_TO_SIGN }, 400);
+  if (desk === null) return notBound();
+  const you = wallet.toLowerCase();
+  const grant = await grantOf(desk, you, act, log);
+  if (grant.at === 'failed') return grant.response;
+  if (grant.at === 'refused') return refused(grant.problems);
+  if (grant.permissions.length === 0) return answer({ error: NOTHING_TO_SIGN }, 400);
+  const accounts = await ask(log, 'overview', () => desk.overview(you), shapes().overview);
+  if (!accounts.ok) return accounts.response;
+  // The organization by its name; by its id when the wallet's own accounts do not list it.
+  const named =
+    'accounts' in accounts.value
+      ? accounts.value.accounts.find((account) => account.id === act.accountId)?.name
+      : null;
+  const expiresAt = fresh.now() + FRESH_TTL_MS;
+  const message = freshMessage(FRESH_SIGNATURE_WORDS[locale], locale, expiresAt, {
+    kind: KIND[act.action],
+    organization: named ?? act.accountId,
+    role: grant.role,
+    permissions: grant.permissions.map(
+      (permission) => ORGANIZATION_PERMISSION_LABELS[permission][locale],
+    ),
+    who: act.action === 'give-role' ? shortWallet(act.wallet) : '',
+  });
+  const token = await issueFreshToken(fresh.secret, {
+    wallet: you,
+    act: await actDigest(act),
+    message,
+    chainId,
+    expiresAt,
+  });
+  log({ level: 'info', kind: 'saldo-signature', action: act.action, outcome: 'issued' });
+  return answer({ sign: { message, token, expiresAt: new Date(expiresAt).toISOString() } });
 }

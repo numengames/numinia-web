@@ -36,6 +36,9 @@ import {
   readRolesView,
   stepPosition,
   FRESH_SIGNATURE,
+  SIGNATURE_EXPIRED,
+  SIGNATURE_MISMATCH,
+  readSign,
   type DeskRole,
   readResult,
   readStatement,
@@ -409,6 +412,19 @@ describe('members and roles', () => {
     expect(needsSignature('manage-roles')).toBe(true);
     expect(needsSignature('enter-worlds')).toBe(false);
     expect(readProblem([FRESH_SIGNATURE])).toEqual({ key: 'freshSignature' });
+    expect(readProblem([SIGNATURE_EXPIRED])).toEqual({ key: 'signatureExpired' });
+    expect(readProblem([SIGNATURE_MISMATCH])).toEqual({ key: 'signatureMismatch' });
+  });
+
+  it('reads the sentence to sign and its token, or nothing when the body is not that', () => {
+    const sign = { message: 'Numinia · Numen', token: 'f1.a.b', expiresAt: '2026-10-15T18:32:00Z' };
+    expect(readSign({ sign })).toEqual({ message: 'Numinia · Numen', token: 'f1.a.b' });
+    expect(readSign({ sign: { ...sign, message: 4 } })).toBeNull();
+    expect(readSign({ sign: { ...sign, token: null } })).toBeNull();
+    expect(readSign({ sign: { ...sign, message: '' } })).toBeNull();
+    expect(readSign({ sign: { ...sign, token: '' } })).toBeNull();
+    expect(readSign({ sign: 'x' })).toBeNull();
+    expect(readSign(null)).toBeNull();
   });
 
   it('moves a role one step inside the places above the base role', () => {
