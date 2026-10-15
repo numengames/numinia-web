@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.96.0',
+    date: '2026-10-15 15:45',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A community whose organization lives in Saldo now lists its people on its page, in all five languages. A member sees them in groups — first each role the organization shows apart, in the order of its roles, then everyone else — each person with a short wallet, a mark when they are an owner and a dot in the colour of their role. Anyone else, signed in or not, sees only how many members there are, and no name. Names and faces come later, with profiles.',
+      },
+    ],
+  },
+  {
     version: 'v0.95.0',
     date: '2026-10-15 13:05',
     entries: [

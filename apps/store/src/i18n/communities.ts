@@ -100,6 +100,13 @@ export interface CommunitiesMessages {
   readonly members: string;
   readonly membersEmpty: string;
   readonly membersNote: string;
+  readonly peopleOne: string;
+  readonly peopleMany: string;
+  readonly peopleHidden: string;
+  readonly peopleRest: string;
+  readonly peopleOwner: string;
+  readonly peopleYou: string;
+  readonly peopleLabel: string;
   readonly details: string;
   readonly whoSees: string;
   readonly everyone: string;
@@ -314,6 +321,13 @@ const ES: CommunitiesMessages = {
   membersEmpty: 'Nadie todavía: la sede espera a quien lleve la comunidad.',
   membersNote:
     'El tipo (Logia, Liga o Hermandad) se calcula de los miembros con Session Zero; hasta entonces no se muestra.',
+  peopleOne: 'Un miembro',
+  peopleMany: '{n} miembros',
+  peopleHidden: 'Los nombres solo los ve quien es miembro.',
+  peopleRest: 'Más gente',
+  peopleOwner: 'Propietaria',
+  peopleYou: 'tú',
+  peopleLabel: 'Quién forma parte de la comunidad',
   details: 'Detalles',
   whoSees: 'Quién la ve',
   everyone: 'Todo el mundo',
@@ -522,6 +536,13 @@ const EN: CommunitiesMessages = {
   membersEmpty: 'Nobody yet: the home waits for whoever runs the community.',
   membersNote:
     'The kind (Lodge, League or Brotherhood) is worked out from the members with a Session Zero; until then it is not shown.',
+  peopleOne: 'One member',
+  peopleMany: '{n} members',
+  peopleHidden: 'Only members see the names.',
+  peopleRest: 'Everyone else',
+  peopleOwner: 'Owner',
+  peopleYou: 'you',
+  peopleLabel: "The community's members",
   details: 'Details',
   whoSees: 'Who sees it',
   everyone: 'Everyone',
@@ -710,6 +731,13 @@ const JA: CommunitiesMessages = {
   homeToOpenLine:
     'コミュニティが拠点を開いたら、ここからブラウザで入れます。インストールは不要です。',
   members: 'メンバー',
+  peopleOne: 'メンバー1人',
+  peopleMany: 'メンバー{n}人',
+  peopleHidden: '名前が見えるのはメンバーだけです。',
+  peopleRest: 'そのほかの人',
+  peopleOwner: 'オーナー',
+  peopleYou: 'あなた',
+  peopleLabel: 'コミュニティのメンバー',
   details: '詳細',
   whoSees: '誰が見られるか',
   everyone: '誰でも',
@@ -880,6 +908,13 @@ const KO: CommunitiesMessages = {
   homeToOpenLine:
     '커뮤니티가 거점을 열면 여기에서 브라우저로 들어갈 수 있습니다. 설치는 필요 없습니다.',
   members: '구성원',
+  peopleOne: '멤버 1명',
+  peopleMany: '멤버 {n}명',
+  peopleHidden: '이름은 멤버에게만 보입니다.',
+  peopleRest: '그 밖의 사람',
+  peopleOwner: '소유자',
+  peopleYou: '나',
+  peopleLabel: '커뮤니티 멤버',
   details: '상세',
   whoSees: '누가 볼 수 있나',
   everyone: '모두',
@@ -1049,6 +1084,13 @@ const PT_BR: CommunitiesMessages = {
   homeToOpenLine:
     'Quando a comunidade abri-la, você vai entrar daqui, no navegador e sem instalar nada.',
   members: 'Membros',
+  peopleOne: 'Um membro',
+  peopleMany: '{n} membros',
+  peopleHidden: 'Só os membros veem os nomes.',
+  peopleRest: 'Mais gente',
+  peopleOwner: 'Proprietária',
+  peopleYou: 'você',
+  peopleLabel: 'Quem faz parte da comunidade',
   details: 'Detalhes',
   whoSees: 'Quem a vê',
   everyone: 'Todo mundo',

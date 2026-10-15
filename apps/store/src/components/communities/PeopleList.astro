@@ -1,0 +1,105 @@
+---
+/**
+ * The people of a community's organization, filled in the reader's browser
+ * from /api/people (STD-053 PRS-004): a member of the organization is shown
+ * the groups — each role shown apart, then everyone else — and anyone else
+ * only how many. The built page carries no person and no count, so it never
+ * lies between deploys, and a browser with no JavaScript, a community
+ * whose organization the till does not know, or a till that does not answer
+ * leaves the slot hidden — never an invented number.
+ *
+ * Inline (no external JS: the page budgets). The nodes are built with
+ * `textContent`, never `innerHTML`: a role's name is a person's text. A role's
+ * colour is a small dot beside the name, not the name's own colour (WCAG 1.4.3
+ * cannot be kept when the colour is a person's choice), and an owner is told
+ * in words, not only by a mark (1.4.1). Styles: styles/communities.css.
+ *
+ *   data-people="<community>"   the slot, hidden until there is something to say
+ *
+ * Templates come from the page's messages; "{n}" is the number.
+ */
+import type { CommunitiesMessages } from '../../i18n/communities';
+
+interface Props {
+  ui: CommunitiesMessages;
+  community: string;
+}
+
+const { ui, community } = Astro.props;
+const words = {
+  one: ui.peopleOne,
+  many: ui.peopleMany,
+  hidden: ui.peopleHidden,
+  rest: ui.peopleRest,
+  owner: ui.peopleOwner,
+  you: ui.peopleYou,
+};
+---
+
+<div class="gente" data-people={community} data-words={JSON.stringify(words)} hidden>
+  <p class="small texto-2 gente-cuenta" data-people-count></p>
+  <p class="small texto-2 gente-nota" data-people-hidden hidden>{ui.peopleHidden}</p>
+  <div class="gente-grupos" data-people-groups role="group" aria-label={ui.peopleLabel}></div>
+</div>
+
+<script is:inline>
+  (function () {
+    var slot = document.querySelector('[data-people]');
+    if (!slot) return;
+    var words = JSON.parse(slot.getAttribute('data-words'));
+    var colour = /^#[0-9a-fA-F]{6}$/;
+    function node(tag, className, text) {
+      var el = document.createElement(tag);
+      if (className) el.className = className;
+      if (text !== undefined) el.textContent = text;
+      return el;
+    }
+    function count(n) {
+      return n === 1 ? words.one : words.many.replace('{n}', n);
+    }
+    function person(entry) {
+      var li = node('li', 'gente-persona');
+      var dot = node('span', 'gente-punto');
+      dot.setAttribute('aria-hidden', 'true');
+      if (typeof entry.color === 'string' && colour.test(entry.color)) {
+        dot.style.backgroundColor = entry.color;
+      }
+      li.appendChild(dot);
+      li.appendChild(node('span', 'mono small', entry.short));
+      if (entry.owner) li.appendChild(node('span', 'chip ambar', words.owner));
+      if (entry.you) li.appendChild(node('span', 'small texto-2', '(' + words.you + ')'));
+      return li;
+    }
+    function paint(body) {
+      slot.querySelector('[data-people-count]').textContent = count(body.members);
+      var groups = slot.querySelector('[data-people-groups]');
+      groups.textContent = '';
+      var list = body.view === 'list' ? body.groups : [];
+      list.forEach(function (group) {
+        var section = node('div', 'gente-grupo');
+        if (list.length > 1) {
+          section.appendChild(node('p', 'etiqueta corta', group.name === '' ? words.rest : group.name));
+        }
+        var ul = node('ul', 'gente-lista');
+        group.people.forEach(function (entry) {
+          ul.appendChild(person(entry));
+        });
+        section.appendChild(ul);
+        groups.appendChild(section);
+      });
+      slot.querySelector('[data-people-hidden]').hidden = body.view === 'list';
+      groups.hidden = body.view !== 'list';
+      slot.hidden = false;
+    }
+    fetch('/api/people?comunidad=' + encodeURIComponent(slot.getAttribute('data-people')), {
+      headers: { accept: 'application/json' },
+    })
+      .then(function (response) {
+        return response.ok ? response.json() : null;
+      })
+      .then(function (body) {
+        if (body && typeof body.members === 'number') paint(body);
+      })
+      .catch(function () {});
+  })();
+</script>

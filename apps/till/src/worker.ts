@@ -54,6 +54,7 @@ import {
   type TopupConfirm,
   type TopupStart,
 } from './db/accounts';
+import { headcount, type HeadcountAnswer } from './db/headcount';
 import {
   assignRole,
   createRole,
@@ -241,6 +242,11 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** An organization's roles with who holds them and which the asker may handle: to any member. */
   async roles(wallet: unknown, accountId: unknown, house?: unknown): Promise<RolesAnswer> {
     return rolesOf(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** How many people an organization has, asked with no wallet: a number, never a name (PRS-004). */
+  async headcount(accountId: unknown): Promise<HeadcountAnswer> {
+    return headcount(this.env.TILL_DB, accountId);
   }
 
   /** A new role just below the asker's highest, carrying only permissions the asker holds. */

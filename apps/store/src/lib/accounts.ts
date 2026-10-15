@@ -148,6 +148,9 @@ export interface DeskRoles {
 
 export type DeskRolesAnswer = DeskRoles | DeskRefusal;
 
+/** How many people an organization has, asked with no wallet: all a stranger is shown (PRS-004). */
+export type DeskHeadcountAnswer = { ok: true; accountId: string; members: number } | DeskRefusal;
+
 /** What a role is made of when it is created. */
 export interface DeskRoleDraft {
   name: string;
@@ -215,6 +218,7 @@ export interface AccountDesk {
   ): Promise<DeskMembersAnswer>;
   removeMember(wallet: string, accountId: string, memberWallet: string): Promise<DeskMembersAnswer>;
   roles(wallet: string, accountId: string): Promise<DeskRolesAnswer>;
+  headcount(accountId: string): Promise<DeskHeadcountAnswer>;
   createRole(wallet: string, accountId: string, role: DeskRoleDraft): Promise<DeskRolesAnswer>;
   editRole(
     wallet: string,
@@ -262,6 +266,7 @@ export const DESK_METHODS = [
   'setMember',
   'removeMember',
   'roles',
+  'headcount',
   'createRole',
   'editRole',
   'moveRole',
