@@ -14,10 +14,34 @@
  * Stripe at all. It is a fake: the till holds the real rules (apps/till).
  */
 
-import { ORGANIZATION_PERMISSIONS, OWNER_ACTS, type OrganizationAccess } from '@numinia/domain';
 import {
+  BASE_ROLE_POSITION,
+  MAX_ORGANIZATION_ROLES,
+  ORGANIZATION_PERMISSIONS,
+  OWNER_ACTS,
+  accessOf,
+  canAssignRole,
+  canCreateRole,
+  canDeleteRole,
+  canEditRole,
+  canMoveRole,
+  placeForNewRole,
+  rolesFromTemplate,
+  type OrganizationAccess,
+  type OrganizationMember,
+  type OrganizationRefusal,
+  type OrganizationRole,
+  type OrganizationState,
+} from '@numinia/domain';
+import {
+  ALPHA,
+  BASE_ROLE as BASE_ROLE_SENTENCE,
+  GRANT_EXCEEDS,
   LAST_OWNER,
+  NOT_BELOW,
   NOT_MEMBER,
+  OWNERS_ONLY,
+  OWNER_ONLY,
   OWN_ROLES,
   isCheckoutId,
   isSpendRange,
@@ -29,9 +53,17 @@ import {
   type DeskAccount,
   type DeskConfirmAnswer,
   type DeskLine,
+  type DeskLogAct,
+  type DeskLogAnswer,
+  type DeskLogLine,
   type DeskLot,
   type DeskMember,
+  type DeskMemberDetail,
   type DeskMembersAnswer,
+  type DeskRoleChange,
+  type DeskRoleDraft,
+  type DeskRoles,
+  type DeskRolesAnswer,
   type DeskOverview,
   type DeskRefusal,
   type DeskStatement,
@@ -58,6 +90,8 @@ export interface SeedMember {
   /** `self` is the wallet asking. */
   readonly wallet: string;
   readonly role: MemberRole;
+  /** The Team template's roles held, counted from the top (1 = Administración); a plain member holds the third. */
+  readonly roles?: readonly number[];
   readonly addedDaysAgo: number;
 }
 
@@ -103,6 +137,36 @@ interface Book {
   name: string | null;
   lines: DeskLine[];
   members: DeskMember[];
+  /** An organization's roles, the base role included (the Team template); none for a personal account. */
+  roles: OrganizationRole[];
+  /** The roles each member holds besides the base role. */
+  held: Map<string, string[]>;
+  /** The last changes, oldest first. */
+  changes: DeskLogLine[];
+}
+
+/** The till's words for each refusal of the domain (apps/till lib/organizations.ts REFUSALS). */
+const REFUSALS: Readonly<Record<Exclude<OrganizationRefusal, 'missing-permission'>, string>> = {
+  'not-below': NOT_BELOW,
+  'own-roles': OWN_ROLES,
+  self: OWN_ROLES,
+  owner: OWNER_ONLY,
+  'base-role': BASE_ROLE_SENTENCE,
+  'grant-exceeds': GRANT_EXCEEDS,
+  'role-limit': `an organization holds at most ${MAX_ORGANIZATION_ROLES} roles besides the base role`,
+  'owners-only': OWNERS_ONLY,
+  'last-owner': LAST_OWNER,
+  alpha: ALPHA,
+};
+
+const BASE_FIXED = 'the base role keeps its name and its place: only what it carries changes';
+const NO_SUCH_ROLE = 'the organization has no such role';
+const NO_SUCH_MEMBER = 'that wallet is not a member of the organization';
+const hex16 = (n: number): string => `role_${n.toString(16).padStart(16, '0')}`;
+
+/** An organization's roles at birth: the Team template, in Castilian, ids counted from 1. */
+function birthRoles(): OrganizationRole[] {
+  return [...rolesFromTemplate('team', 'es', (index) => hex16(index + 1))];
 }
 
 interface Checkout {
@@ -192,6 +256,9 @@ function booksFor(seed: AccountsSeed, wallet: string, now: Date): Book[] {
     name: null,
     lines: seed.personal.lines.map((line) => lineOf(line, now)).sort(byTime),
     members: [],
+    roles: [],
+    held: new Map(),
+    changes: [],
   };
   const teams = seed.teams.map((team): Book => ({
     id: team.id,
@@ -203,6 +270,15 @@ function booksFor(seed: AccountsSeed, wallet: string, now: Date): Book[] {
       role: member.role,
       addedAt: new Date(dayStart(now, member.addedDaysAgo)).toISOString(),
     })),
+    roles: birthRoles(),
+    // A plain member holds the Team template's third role («Miembro») unless the seed says otherwise.
+    held: new Map(
+      team.members.map((member) => [
+        member.wallet === 'self' ? wallet : member.wallet,
+        (member.roles ?? (member.role === 'member' ? [3] : [])).map(hex16),
+      ]),
+    ),
+    changes: [],
   }));
   return [personal, ...teams];
 }
@@ -263,6 +339,159 @@ export function createAccountsFixtureDesk(
     return found;
   };
 
+  // ---- Roles: the domain's own rules (STD-051, STD-052), the till's words -------
+
+  let rolesMade = 100;
+  let changeSeq = 0;
+
+  const stateOf = (book: Book): OrganizationState => ({
+    roles: book.roles,
+    houseAccess: 'alpha',
+    houseLeaveOpen: false,
+  });
+
+  /** The roles a member holds besides the base role: none until they are given one. */
+  const heldBy = (book: Book, wallet: string): string[] => book.held.get(wallet) ?? [];
+
+  const memberOf = (book: Book, wallet: string): OrganizationMember => ({
+    personId: wallet,
+    kind: 'human',
+    isOwner: book.members.find((member) => member.wallet === wallet)?.role === 'admin',
+    roleIds: heldBy(book, wallet),
+  });
+
+  const accessIn = (book: Book, wallet: string) =>
+    accessOf(stateOf(book), { kind: 'member', member: memberOf(book, wallet) });
+
+  const topDown = (roles: readonly OrganizationRole[]): OrganizationRole[] =>
+    [...roles].sort((a, b) => b.position - a.position);
+
+  /** The till's words for a refusal; a missing permission names who holds it. */
+  const refusalOf = (
+    refusal: OrganizationRefusal,
+    act: OrganizationAccess,
+    book: Book,
+  ): DeskRefusal => {
+    if (refusal !== 'missing-permission') return refuse(REFUSALS[refusal]);
+    // The fake names the highest role that holds the act (the Team template has one for each).
+    const holder = topDown(book.roles).find((role) =>
+      role.permissions.some((held) => held === act || held === 'administrator'),
+    ) as OrganizationRole;
+    return refuse(`this needs ${act}, which the owners hold, and the role ${holder.name}`);
+  };
+
+  /** The organization as the one asking may handle its roles. */
+  const viewOf = (book: Book, who: string): DeskRoles => {
+    const access = accessIn(book, who);
+    return {
+      ok: true,
+      accountId: book.id,
+      as: access.isOwner ? 'owner' : 'member',
+      roles: topDown(book.roles).map((role) => {
+        const base = role.position === BASE_ROLE_POSITION;
+        return {
+          id: role.id,
+          name: role.name,
+          color: role.color,
+          position: role.position,
+          hoist: role.hoist,
+          permissions: [...role.permissions],
+          members: base
+            ? book.members.length
+            : book.members.filter((member) => heldBy(book, member.wallet).includes(role.id)).length,
+          mayEdit: !base && canEditRole(access, role).ok,
+        };
+      }),
+      members: [...book.members]
+        .sort((a, b) => Number(b.role === 'admin') - Number(a.role === 'admin'))
+        .map((member): DeskMemberDetail => {
+          const target = accessIn(book, member.wallet);
+          return {
+            wallet: member.wallet,
+            owner: member.role === 'admin',
+            addedAt: member.addedAt,
+            roleIds: [...heldBy(book, member.wallet)],
+            assignable: book.roles
+              .filter((role) => canAssignRole(access, target, role).ok)
+              .map((role) => role.id),
+          };
+        }),
+    };
+  };
+
+  const record = (
+    book: Book,
+    who: string,
+    act: DeskLogAct,
+    subject: string | null,
+    detail: Record<string, string> | null,
+  ): void => {
+    changeSeq += 1;
+    book.changes.push({
+      seq: changeSeq,
+      at: now().toISOString(),
+      actor: who,
+      asHouse: false,
+      act,
+      subject,
+      detail,
+    });
+  };
+
+  /** An organization the wallet belongs to, or why not. */
+  const entering = (
+    wallet: unknown,
+    accountId: unknown,
+  ): { who: string; book: Book } | DeskRefusal => {
+    const found = find(wallet, accountId);
+    if ('ok' in found) return found;
+    return found.book.kind === 'team' ? found : refuse('not an organization');
+  };
+
+  const nameProblems = (value: DeskRoleDraft | DeskRoleChange): string[] =>
+    value.name !== undefined && (value.name.trim().length < 1 || value.name.trim().length > 100)
+      ? ['name must be 1 to 100 characters, none of them a control character']
+      : [];
+
+  /** Puts the non-base roles at positions n..1 in the order given, the base role at 0. */
+  const place = (book: Book, ordered: readonly OrganizationRole[]): void => {
+    const base = book.roles.filter((role) => role.position === BASE_ROLE_POSITION);
+    book.roles = [
+      ...ordered.map((role, index) => ({ ...role, position: ordered.length - index })),
+      ...base,
+    ];
+  };
+
+  const aboveBase = (book: Book): OrganizationRole[] =>
+    topDown(book.roles).filter((role) => role.position !== BASE_ROLE_POSITION);
+
+  /** Gives or takes one role of a member, below the asker's highest role. */
+  const assign = (
+    give: boolean,
+    wallet: unknown,
+    accountId: unknown,
+    memberWallet: unknown,
+    roleId: unknown,
+  ): DeskRolesAnswer => {
+    const found = entering(wallet, accountId);
+    if ('ok' in found) return found;
+    const { book, who } = found;
+    const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
+    const target = book.members.find((entry) => entry.wallet === member);
+    if (target === undefined) return refuse(NO_SUCH_MEMBER);
+    const role = book.roles.find((entry) => entry.id === roleId);
+    if (role === undefined) return refuse(NO_SUCH_ROLE);
+    const allowed = canAssignRole(accessIn(book, who), accessIn(book, target.wallet), role);
+    if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
+    const ids = heldBy(book, target.wallet).filter((id) => id !== role.id);
+    book.held.set(target.wallet, give ? [...ids, role.id] : ids);
+    record(book, who, give ? 'role-given' : 'role-taken', target.wallet, {
+      role: role.id,
+      name: role.name,
+    });
+    return viewOf(book, who);
+  };
+
   const membersAnswer = (book: Book): DeskMembersAnswer => ({
     ok: true,
     members: copy(book.members),
@@ -290,6 +519,9 @@ export function createAccountsFixtureDesk(
         name: clean,
         lines: [],
         members: [{ wallet: who, role: 'admin', addedAt: now().toISOString() }],
+        roles: birthRoles(),
+        held: new Map(),
+        changes: [],
       };
       booksOf(who).push(book);
       return { ok: true, account: accountOf(book, who) };
@@ -392,6 +624,132 @@ export function createAccountsFixtureDesk(
       if (members[index]?.role === 'admin' && owners === 1) return refuse(LAST_OWNER);
       members.splice(index, 1);
       return membersAnswer(found.book);
+    },
+
+    roles: async (wallet, accountId): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId);
+      return 'ok' in found ? found : viewOf(found.book, found.who);
+    },
+
+    createRole: async (wallet, accountId, role): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId);
+      if ('ok' in found) return found;
+      const { book, who } = found;
+      const problems = nameProblems(role);
+      if (problems.length > 0) return refuse(...problems);
+      const access = accessIn(book, who);
+      const allowed = canCreateRole(access, stateOf(book));
+      if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
+      // Nobody here holds less than every permission, so «only what you hold» never bites in the fake.
+      const spot = placeForNewRole(access, book.roles);
+      rolesMade += 1;
+      const id = hex16(rolesMade);
+      book.roles = [
+        ...book.roles.map((entry) =>
+          spot.raised.includes(entry.id) ? { ...entry, position: entry.position + 1 } : entry,
+        ),
+        {
+          id,
+          name: role.name.trim(),
+          color: role.color,
+          position: spot.position,
+          hoist: role.hoist,
+          permissions: [...role.permissions],
+        },
+      ];
+      record(book, who, 'role-created', null, { role: id, name: role.name.trim() });
+      return viewOf(book, who);
+    },
+
+    editRole: async (wallet, accountId, roleId, change): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId);
+      if ('ok' in found) return found;
+      const { book, who } = found;
+      const role = book.roles.find((entry) => entry.id === roleId);
+      if (role === undefined) return refuse(NO_SUCH_ROLE);
+      const problems = nameProblems(change);
+      if (problems.length > 0) return refuse(...problems);
+      if (role.position === BASE_ROLE_POSITION && change.name !== undefined) {
+        return refuse(BASE_FIXED);
+      }
+      const next = change.permissions ?? role.permissions;
+      const allowed = canEditRole(accessIn(book, who), role, next);
+      if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
+      book.roles = book.roles.map((entry) =>
+        entry.id === roleId
+          ? {
+              ...entry,
+              name: change.name === undefined ? entry.name : change.name.trim(),
+              color: change.color === undefined ? entry.color : change.color,
+              hoist: change.hoist ?? entry.hoist,
+              permissions: [...next],
+            }
+          : entry,
+      );
+      record(book, who, 'role-edited', null, { role: roleId, name: role.name });
+      return viewOf(book, who);
+    },
+
+    moveRole: async (wallet, accountId, roleId, position): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId);
+      if ('ok' in found) return found;
+      const { book, who } = found;
+      const role = book.roles.find((entry) => entry.id === roleId);
+      if (role === undefined) return refuse(NO_SUCH_ROLE);
+      const allowed = canMoveRole(accessIn(book, who), role, position);
+      if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
+      const others = aboveBase(book).filter((entry) => entry.id !== roleId);
+      const to = Math.min(position, others.length + 1);
+      const at = others.length + 1 - to;
+      place(book, [...others.slice(0, at), role, ...others.slice(at)]);
+      record(book, who, 'role-moved', null, {
+        role: roleId,
+        name: role.name,
+        position: String(to),
+      });
+      return viewOf(book, who);
+    },
+
+    deleteRole: async (wallet, accountId, roleId): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId);
+      if ('ok' in found) return found;
+      const { book, who } = found;
+      const role = book.roles.find((entry) => entry.id === roleId);
+      if (role === undefined) return refuse(NO_SUCH_ROLE);
+      const allowed = canDeleteRole(accessIn(book, who), role);
+      if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
+      place(
+        book,
+        aboveBase(book).filter((entry) => entry.id !== roleId),
+      );
+      for (const [member, ids] of book.held) {
+        book.held.set(
+          member,
+          ids.filter((id) => id !== roleId),
+        );
+      }
+      record(book, who, 'role-deleted', null, { role: roleId, name: role.name });
+      return viewOf(book, who);
+    },
+
+    giveRole: async (wallet, accountId, memberWallet, roleId): Promise<DeskRolesAnswer> =>
+      assign(true, wallet, accountId, memberWallet, roleId),
+
+    takeRole: async (wallet, accountId, memberWallet, roleId): Promise<DeskRolesAnswer> =>
+      assign(false, wallet, accountId, memberWallet, roleId),
+
+    log: async (wallet, accountId): Promise<DeskLogAnswer> => {
+      const found = entering(wallet, accountId);
+      if ('ok' in found) return found;
+      const { book, who } = found;
+      if (!accessIn(book, who).permissions.has('view-organization-log')) {
+        return refusalOf('missing-permission', 'view-organization-log', book);
+      }
+      return {
+        ok: true,
+        accountId: book.id,
+        lines: copy([...book.changes].reverse().slice(0, LAST_LINES)),
+      };
     },
 
     startTopup: async (wallet, accountId, amountKey, returnBase): Promise<DeskTopupAnswer> => {

@@ -14,24 +14,33 @@ import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { SaldoPanel } from './SaldoPanel';
 import { SaldoVuelta } from './SaldoVuelta';
+import { MiembrosPanel } from './MiembrosPanel';
 
 interface Props {
   locale: SupportedLocale;
-  face: 'saldo' | 'vuelta' | 'referidos';
+  face: 'saldo' | 'miembros' | 'vuelta' | 'referidos';
 }
 
 const { locale, face } = Astro.props;
 const ui = SALDO_UI[locale];
 const saldoHref = localeHref(locale, '/saldo/');
+const membersHref = localeHref(locale, '/saldo/miembros/');
 const referralsHref = localeHref(locale, '/saldo/referidos/');
 const title =
-  face === 'referidos' ? ui.referrals.title : face === 'vuelta' ? ui.vuelta.title : ui.title;
+  face === 'referidos'
+    ? ui.referrals.title
+    : face === 'vuelta'
+      ? ui.vuelta.title
+      : face === 'miembros'
+        ? ui.panel.title
+        : ui.title;
 ---
 
-<BaseLayout locale={locale} title={`${title} — Numinia`} description={ui.lead}>
+<BaseLayout locale={locale} title={`${title} — Numinia`} description={face === 'miembros' ? ui.panel.lead : ui.lead}>
   <header class="titulo-vista saldo-titulo">
     <h1 class="display-m">{title}</h1>
     {face === 'saldo' && <p class="lead">{ui.lead}</p>}
+    {face === 'miembros' && <p class="lead">{ui.panel.lead}</p>}
   </header>
 
   {
@@ -39,6 +48,9 @@ const title =
       <nav class="saldo-pestanas" aria-label={ui.tabs.label}>
         <a href={saldoHref} aria-current={face === 'saldo' ? 'page' : undefined}>
           {ui.tabs.saldo}
+        </a>
+        <a href={membersHref} aria-current={face === 'miembros' ? 'page' : undefined}>
+          {ui.tabs.members}
         </a>
         <a href={referralsHref} aria-current={face === 'referidos' ? 'page' : undefined}>
           {ui.tabs.referrals}
@@ -55,6 +67,17 @@ const title =
         lang={locale}
         locale={locale}
         signIn={signInHref(locale, '/saldo/')}
+      />
+    )
+  }
+  {
+    face === 'miembros' && (
+      <MiembrosPanel
+        client:load
+        ui={ui}
+        lang={locale}
+        locale={locale}
+        signIn={signInHref(locale, '/saldo/miembros/')}
       />
     )
   }
@@ -95,6 +118,105 @@ const title =
   .saldo-pestanas a[aria-current='page'] {
     color: var(--texto);
     border-bottom-color: var(--ambar);
+  }
+  .saldo-punto-rol {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--texto-2);
+    flex: none;
+  }
+  .saldo-roles,
+  .saldo-gente,
+  .saldo-permisos,
+  .saldo-registro {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    min-width: 0;
+  }
+  .saldo-permisos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+    gap: var(--s2) var(--s4);
+  }
+  .saldo-rol-cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2) var(--s4);
+  }
+  .saldo-rol-nombre {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    flex-wrap: wrap;
+  }
+  .saldo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    padding: 0 var(--s2);
+    border: 1px solid var(--linea-f);
+    border-radius: 999px;
+    color: var(--texto-2);
+    font-size: 0.85rem;
+  }
+  .saldo-chip-x {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    padding: var(--s1);
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+  .saldo-fichas,
+  .saldo-colores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    align-items: center;
+  }
+  .saldo-color,
+  .saldo-casilla {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+  }
+  .saldo-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+  .saldo-casa {
+    border-color: var(--ambar);
+  }
+  .saldo-confirmar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+  }
+  .saldo-registro li {
+    display: grid;
+    grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) auto;
+    gap: var(--s3);
+    align-items: baseline;
+  }
+  @media (max-width: 600px) {
+    .saldo-registro li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--s1);
+    }
   }
   .saldo-panel {
     display: flex;

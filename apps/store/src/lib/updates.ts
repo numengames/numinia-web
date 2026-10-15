@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.94.0',
+    date: '2026-10-15 16:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A «Members and roles» tab in Saldo, in all five languages. For each organization you see its roles from the top down and who holds each one; you can create a role, rename it, colour it, choose what it allows, move it up or down, delete it, and give or take a role from a person — only where your own role lets you, and nothing that would fail is offered. A strip says when you enter as the house, and the log lists the last changes. Giving «Administrator» or «Manage roles» waits for a fresh signature from your wallet, which is not ready yet.',
+      },
+    ],
+  },
+  {
     version: 'v0.93.0',
     date: '2026-10-15 10:30',
     entries: [
