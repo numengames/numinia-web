@@ -1286,8 +1286,12 @@ Then(
         const block = html.slice(start, html.indexOf('<script', start));
         assert.ok(!/0x[0-9a-f]{4}/i.test(block), `${where}: the built page names a wallet`);
         assert.ok(
-          !/\d/.test(block.replace(/<[^>]*>/g, '')),
+          /<p[^>]*\bdata-people-count\b[^>]*><\/p>/.test(block),
           `${where}: the built page carries a count`,
+        );
+        assert.ok(
+          /<div[^>]*\bdata-people-groups\b[^>]*><\/div>/.test(block),
+          `${where}: the built page carries people`,
         );
       }
       if (hasTeam) linked += 1;
