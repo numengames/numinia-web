@@ -228,9 +228,12 @@ describe('finding the desk', () => {
     expect(boundAccounts(null)).toBeNull();
     expect(boundAccounts('numinia-till')).toBeNull();
     expect(boundAccounts({ overview: () => 1 })).toBeNull();
-    // A till that has not learned the directory yet is no desk of this site's.
+    // A till that has not learned the directory yet (the minutes between two deploys) is still a desk.
     const { directory: _directory, ...older } = fakeDesk();
-    expect(boundAccounts(older)).toBeNull();
+    expect(boundAccounts(older)).not.toBeNull();
+    // Any other missing method is not.
+    const { overview: _overview, ...broken } = fakeDesk();
+    expect(boundAccounts(broken)).toBeNull();
     const stub = fakeDesk();
     const bound = boundAccounts(stub);
     if (bound === null) throw new Error('not bound');
@@ -1260,6 +1263,16 @@ describe('the house: an Oracle’s session lists and enters every organization (
         expect.objectContaining({ kind: 'saldo-till', action: 'directory', rule }),
       );
     }
+  });
+
+  it('keeps an Oracle’s own accounts when the till is older and has no directory yet', async () => {
+    const { directory: _directory, ...older } = fakeDesk();
+    const reply = await answerOverviewAs(boundAccounts(older), oracle(), quiet);
+    expect(reply.status).toBe(200);
+    expect(await reply.json()).toEqual({ accounts: [ACCOUNT] });
+    expect(quiet).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'saldo-till', action: 'directory', rule: 'threw' }),
+    );
   });
 
   it('never asks the directory for a citizen, whose list is the till’s own', async () => {

@@ -20,6 +20,7 @@ import {
 
 export const ORG_PROBLEMS = {
   house: 'house must be true or false',
+  notHouse: 'only the house reads the directory of organizations',
   lastOwner: 'an organization keeps at least one owner',
   ownRoles: 'nobody changes their own roles: they may only leave',
   notBelow: 'you may act only on roles and members below your own highest role',

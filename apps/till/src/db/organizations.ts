@@ -173,7 +173,7 @@ function roleOf(row: Row): OrganizationRole {
   };
 }
 
-function houseAccessOf(value: string): HouseAccess {
+export function houseAccessOf(value: string): HouseAccess {
   if (!SETTINGS.has(value)) throw new TypeError(`till database: unknown house access ${value}`);
   return value as HouseAccess;
 }

@@ -5,13 +5,21 @@
  * answers there, or nothing does.
  *
  * Each wallet that asks gets its own copy of the seed (fixtures/accounts/
- * desk.json): a personal account at 4,20 € and the organization «Numen
- * Games» at 0,88 € with three members — the seed's `self` member is the
- * wallet asking. Lines are dated in days before today, so the chart always
- * has thirty days to draw. A top-up never leaves this process: it answers
- * the site's own way back with `session_id=cs_test_fixture_<n>`, and
- * confirming it credits the account — the shape of a Stripe Checkout, no
- * Stripe at all. It is a fake: the till holds the real rules (apps/till).
+ * desk.json): a personal account at 4,20 € and three organizations — «Numen
+ * Games» at 0,88 € with three members, whose `self` member is the wallet
+ * asking, and «Active Inference Institute» and «La Tarugo», which the
+ * wallet is NOT in (QA 2026-10-15, «la casa entra»). Lines are dated in days
+ * before today, so the chart always has thirty days to draw. A top-up never
+ * leaves this process: it answers the site's own way back with
+ * `session_id=cs_test_fixture_<n>`, and confirming it credits the account —
+ * the shape of a Stripe Checkout, no Stripe at all.
+ *
+ * The house (STD-051 ORG-007): with the flag `house` the desk lets the wallet
+ * into the organizations it is not in, as `house`, and lists them all in its
+ * `directory`; without it, or false, the wallet gets the till's own refusals.
+ * What the house reads and does is written down in the organization's log
+ * (ORG-009), as the till does. It is a fake: the till holds the real rules
+ * (apps/till).
  */
 
 import {
@@ -37,8 +45,10 @@ import {
   ALPHA,
   BASE_ROLE as BASE_ROLE_SENTENCE,
   GRANT_EXCEEDS,
+  HOUSE_BOOLEAN,
   LAST_OWNER,
   NOT_BELOW,
+  NOT_HOUSE,
   NOT_MEMBER,
   OWNERS_ONLY,
   OWNER_ONLY,
@@ -52,6 +62,8 @@ import {
   type DeskAccess,
   type DeskAccount,
   type DeskConfirmAnswer,
+  type DeskDirectoryAnswer,
+  type DeskDirectoryEntry,
   type DeskLine,
   type DeskLogAct,
   type DeskLogAnswer,
@@ -177,8 +189,26 @@ interface Checkout {
   state: 'open' | 'paid';
 }
 
+/** On whose behalf a wallet is in an organization: the till's `ActingAs`. */
+type Standing = 'owner' | 'house' | 'member';
+
+/** An organization as one wallet entered it, and on whose behalf. */
+interface Entry {
+  readonly who: string;
+  readonly book: Book;
+  readonly as: Standing;
+}
+
+const BAD_WALLET = 'wallet must be a lowercase 0x address';
 const refuse = (...problems: string[]): DeskRefusal => ({ ok: false, problems });
 const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+/** An organization's name: only a personal account has none. */
+const nameOf = (book: Book): string => book.name as string;
+
+/** The flag as the till reads it: absent is false, anything but a boolean is a problem. */
+const isFlag = (house: unknown): house is boolean | undefined =>
+  house === undefined || typeof house === 'boolean';
 
 function dayStart(now: Date, daysAgo: number): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - daysAgo * DAY_MS;
@@ -308,21 +338,47 @@ export function createAccountsFixtureDesk(
     return book.members.find((member) => member.wallet === wallet)?.role ?? null;
   };
 
-  const accountOf = (book: Book, wallet: string): DeskAccount => ({
+  /**
+   * On whose behalf the wallet is in the book — the till's `actingIn`: as an
+   * owner first; then as the house's staff, when numinia.com vouches for it
+   * (the organization lets the house in during the alpha, ORG-007); then as a
+   * member. Null: a stranger to it. A personal account is always its own.
+   */
+  const standing = (book: Book, wallet: string, house: boolean): Standing | null => {
+    if (book.kind === 'personal') return 'owner';
+    const role = roleIn(book, wallet);
+    if (role === 'admin') return 'owner';
+    if (house) return 'house';
+    return role === null ? null : 'member';
+  };
+
+  /** The account as the one who entered it sees it: the house is an admin, as the till answers. */
+  const accountOf = (book: Book, wallet: string, as?: Standing): DeskAccount => ({
     id: book.id,
     kind: book.kind,
     name: book.name,
-    role: roleIn(book, wallet) as DeskAccount['role'],
+    role: as === 'house' ? 'admin' : (roleIn(book, wallet) as DeskAccount['role']),
     balanceCents: balanceOf(book),
   });
 
-  /** The book a member sees, or why not. */
-  const find = (wallet: unknown, accountId: unknown): { who: string; book: Book } | DeskRefusal => {
+  /** The wallet and the house's flag as the till reads them, or the refusal of what it cannot read. */
+  const asker = (
+    wallet: unknown,
+    house: unknown,
+  ): { who: string; house: boolean } | DeskRefusal => {
     const who = typeof wallet === 'string' ? walletOf(wallet) : null;
-    if (who === null) return refuse('wallet must be a lowercase 0x address');
+    if (who !== null && isFlag(house)) return { who, house: house === true };
+    return refuse(...(who === null ? [BAD_WALLET] : []), ...(isFlag(house) ? [] : [HOUSE_BOOLEAN]));
+  };
+
+  /** The book a member — or the house — sees, or why not. */
+  const find = (wallet: unknown, accountId: unknown, house: unknown): Entry | DeskRefusal => {
+    const asking = asker(wallet, house);
+    if ('ok' in asking) return asking;
+    const { who } = asking;
     const book = booksOf(who).find((candidate) => candidate.id === accountId);
-    if (book === undefined || roleIn(book, who) === null) return refuse(NOT_MEMBER);
-    return { who, book };
+    const as = book === undefined ? null : standing(book, who, asking.house);
+    return book === undefined || as === null ? refuse(NOT_MEMBER) : { who, book, as };
   };
 
   /** The team where the wallet may do `act`, or why not. */
@@ -330,13 +386,13 @@ export function createAccountsFixtureDesk(
     wallet: unknown,
     accountId: unknown,
     act: OrganizationAccess,
-  ): { who: string; book: Book } | DeskRefusal => {
-    const found = find(wallet, accountId);
+    house: unknown,
+  ): Entry | DeskRefusal => {
+    const found = find(wallet, accountId, house);
     if ('ok' in found) return found;
     if (found.book.kind !== 'team') return refuse('not an organization');
-    if (roleIn(found.book, found.who) !== 'admin' && !BASE_ACTS.includes(act)) {
-      return refuse(needs(act));
-    }
+    // The owners and the house hold every act; a member only what the base role gives.
+    if (found.as === 'member' && !BASE_ACTS.includes(act)) return refuse(needs(act));
     return found;
   };
 
@@ -361,8 +417,13 @@ export function createAccountsFixtureDesk(
     roleIds: heldBy(book, wallet),
   });
 
-  const accessIn = (book: Book, wallet: string) =>
-    accessOf(stateOf(book), { kind: 'member', member: memberOf(book, wallet) });
+  const accessIn = (book: Book, wallet: string, as: Standing = 'member') =>
+    accessOf(
+      stateOf(book),
+      as === 'house'
+        ? { kind: 'house', personId: wallet }
+        : { kind: 'member', member: memberOf(book, wallet) },
+    );
 
   const topDown = (roles: readonly OrganizationRole[]): OrganizationRole[] =>
     [...roles].sort((a, b) => b.position - a.position);
@@ -381,13 +442,13 @@ export function createAccountsFixtureDesk(
     return refuse(`this needs ${act}, which the owners hold, and the role ${holder.name}`);
   };
 
-  /** The organization as the one asking may handle its roles. */
-  const viewOf = (book: Book, who: string): DeskRoles => {
-    const access = accessIn(book, who);
+  /** The organization as the one asking — an owner, the house or a member — may handle its roles. */
+  const viewOf = ({ book, who, as }: Entry): DeskRoles => {
+    const access = accessIn(book, who, as);
     return {
       ok: true,
       accountId: book.id,
-      as: access.isOwner ? 'owner' : 'member',
+      as,
       roles: topDown(book.roles).map((role) => {
         const base = role.position === BASE_ROLE_POSITION;
         return {
@@ -420,9 +481,9 @@ export function createAccountsFixtureDesk(
     };
   };
 
+  /** Writes a line in the organization's log: the house's are marked as such (ORG-009). */
   const record = (
-    book: Book,
-    who: string,
+    { book, who, as }: Entry,
     act: DeskLogAct,
     subject: string | null,
     detail: Record<string, string> | null,
@@ -432,19 +493,21 @@ export function createAccountsFixtureDesk(
       seq: changeSeq,
       at: now().toISOString(),
       actor: who,
-      asHouse: false,
+      asHouse: as === 'house',
       act,
       subject,
       detail,
     });
   };
 
-  /** An organization the wallet belongs to, or why not. */
-  const entering = (
-    wallet: unknown,
-    accountId: unknown,
-  ): { who: string; book: Book } | DeskRefusal => {
-    const found = find(wallet, accountId);
+  /** Writes down what the house reads (ORG-009); an owner's or a member's own reads leave no line. */
+  const houseRead = (entry: Entry, what: string): void => {
+    if (entry.as === 'house') record(entry, 'house-read', null, { what });
+  };
+
+  /** An organization the wallet belongs to — or, for the house, any — or why not. */
+  const entering = (wallet: unknown, accountId: unknown, house: unknown): Entry | DeskRefusal => {
+    const found = find(wallet, accountId, house);
     if ('ok' in found) return found;
     return found.book.kind === 'team' ? found : refuse('not an organization');
   };
@@ -473,24 +536,25 @@ export function createAccountsFixtureDesk(
     accountId: unknown,
     memberWallet: unknown,
     roleId: unknown,
+    house: unknown,
   ): DeskRolesAnswer => {
-    const found = entering(wallet, accountId);
+    const found = entering(wallet, accountId, house);
     if ('ok' in found) return found;
-    const { book, who } = found;
+    const { book, who, as } = found;
     const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
     const target = book.members.find((entry) => entry.wallet === member);
     if (target === undefined) return refuse(NO_SUCH_MEMBER);
     const role = book.roles.find((entry) => entry.id === roleId);
     if (role === undefined) return refuse(NO_SUCH_ROLE);
-    const allowed = canAssignRole(accessIn(book, who), accessIn(book, target.wallet), role);
+    const allowed = canAssignRole(accessIn(book, who, as), accessIn(book, target.wallet), role);
     if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
     const ids = heldBy(book, target.wallet).filter((id) => id !== role.id);
     book.held.set(target.wallet, give ? [...ids, role.id] : ids);
-    record(book, who, give ? 'role-given' : 'role-taken', target.wallet, {
+    record(found, give ? 'role-given' : 'role-taken', target.wallet, {
       role: role.id,
       name: role.name,
     });
-    return viewOf(book, who);
+    return viewOf(found);
   };
 
   const membersAnswer = (book: Book): DeskMembersAnswer => ({
@@ -501,16 +565,28 @@ export function createAccountsFixtureDesk(
   return {
     overview: async (wallet): Promise<DeskOverview | DeskRefusal> => {
       const who = typeof wallet === 'string' ? walletOf(wallet) : null;
-      if (who === null) return refuse('wallet must be a lowercase 0x address');
+      if (who === null) return refuse(BAD_WALLET);
       const books = booksOf(who).filter((book) => roleIn(book, who) !== null);
       const [personal, ...teams] = books.map((book) => accountOf(book, who));
       teams.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
       return { accounts: [personal as DeskAccount, ...teams] };
     },
 
+    directory: async (wallet, house): Promise<DeskDirectoryAnswer> => {
+      const asking = asker(wallet, house);
+      if ('ok' in asking) return asking;
+      if (!asking.house) return refuse(NOT_HOUSE);
+      // Every organization of the desk, the wallet's own among them: ids and names, no money.
+      const accounts = booksOf(asking.who)
+        .filter((book) => book.kind === 'team')
+        .map((book): DeskDirectoryEntry => ({ id: book.id, kind: 'team', name: nameOf(book) }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return { ok: true, accounts };
+    },
+
     createTeam: async (wallet, name): Promise<DeskTeamAnswer> => {
       const who = typeof wallet === 'string' ? walletOf(wallet) : null;
-      if (who === null) return refuse('wallet must be a lowercase 0x address');
+      if (who === null) return refuse(BAD_WALLET);
       const clean = typeof name === 'string' ? teamName(name) : null;
       if (clean === null) return refuse('name must be 1 to 60 characters');
       teamsMade += 1;
@@ -528,24 +604,26 @@ export function createAccountsFixtureDesk(
       return { ok: true, account: accountOf(book, who) };
     },
 
-    renameTeam: async (wallet, accountId, name): Promise<DeskTeamAnswer> => {
-      const found = managed(wallet, accountId, 'manage-organization');
+    renameTeam: async (wallet, accountId, name, house): Promise<DeskTeamAnswer> => {
+      const found = managed(wallet, accountId, 'manage-organization', house);
       if ('ok' in found) return found;
       const clean = typeof name === 'string' ? teamName(name) : null;
       if (clean === null) return refuse('name must be 1 to 60 characters');
+      record(found, 'organization-renamed', null, { from: nameOf(found.book), to: clean });
       found.book.name = clean;
-      return { ok: true, account: accountOf(found.book, found.who) };
+      return { ok: true, account: accountOf(found.book, found.who, found.as) };
     },
 
-    statement: async (wallet, accountId, range): Promise<DeskStatement | DeskRefusal> => {
-      const found = find(wallet, accountId);
+    statement: async (wallet, accountId, range, house): Promise<DeskStatement | DeskRefusal> => {
+      const found = find(wallet, accountId, house);
       if ('ok' in found) return found;
       if (!isSpendRange(range)) return refuse('range must be 7d, 30d or 12m');
-      const { book, who } = found;
+      houseRead(found, 'statement');
+      const { book, who, as } = found;
       const balanceCents = balanceOf(book);
       const { spend, total } = spendOf(book.lines, range, now());
       const statement: DeskStatement = {
-        account: accountOf(book, who),
+        account: accountOf(book, who, as),
         balanceCents,
         lowBalance: balanceCents < 1000,
         lots: lotsOf(book.lines),
@@ -557,21 +635,29 @@ export function createAccountsFixtureDesk(
       return statement;
     },
 
-    members: async (wallet, accountId): Promise<DeskMembersAnswer> => {
-      const found = find(wallet, accountId);
-      if ('ok' in found) return found;
-      return found.book.kind === 'team' ? membersAnswer(found.book) : refuse('not an organization');
-    },
-
-    access: async (wallet, accountId) => {
-      const found = find(wallet, accountId);
+    members: async (wallet, accountId, house): Promise<DeskMembersAnswer> => {
+      const found = find(wallet, accountId, house);
       if ('ok' in found) return found;
       if (found.book.kind !== 'team') return refuse('not an organization');
-      const owner = roleIn(found.book, found.who) === 'admin';
+      houseRead(found, 'members');
+      return membersAnswer(found.book);
+    },
+
+    access: async (wallet, accountId, house) => {
+      const found = find(wallet, accountId, house);
+      if ('ok' in found) return found;
+      if (found.book.kind !== 'team') return refuse('not an organization');
+      houseRead(found, 'access');
       const acts = [...ORGANIZATION_PERMISSIONS, ...OWNER_ACTS];
+      const permissions = {
+        owner: acts,
+        // The house holds every permission of the organization, none of the owners' own acts.
+        house: [...ORGANIZATION_PERMISSIONS],
+        member: [...BASE_ACTS],
+      }[found.as];
       const access: DeskAccess = {
-        as: owner ? 'owner' : 'member',
-        permissions: owner ? acts : [...BASE_ACTS],
+        as: found.as,
+        permissions,
         holders: Object.fromEntries(
           acts.map((act) => [
             act,
@@ -586,8 +672,8 @@ export function createAccountsFixtureDesk(
       return { ok: true, accountId: found.book.id, ...access };
     },
 
-    setMember: async (wallet, accountId, memberWallet, role): Promise<DeskMembersAnswer> => {
-      const found = find(wallet, accountId);
+    setMember: async (wallet, accountId, memberWallet, role, house): Promise<DeskMembersAnswer> => {
+      const found = find(wallet, accountId, house);
       if ('ok' in found) return found;
       if (found.book.kind !== 'team') return refuse('not an organization');
       const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
@@ -600,16 +686,26 @@ export function createAccountsFixtureDesk(
         wallet,
         accountId,
         current === undefined ? 'invite-members' : 'manage-roles',
+        house,
       );
       if ('ok' in allowed) return allowed;
       if (member === found.who) return refuse(OWN_ROLES);
-      if (current) current.role = role;
-      else members.push({ wallet: member, role, addedAt: now().toISOString() });
+      // The house stands below the owners (ORG-007): it names none and demotes none.
+      if (found.as === 'house' && current?.role === 'admin') {
+        return role === 'admin' ? membersAnswer(found.book) : refuse(OWNER_ONLY);
+      }
+      if (current === undefined) {
+        members.push({ wallet: member, role, addedAt: now().toISOString() });
+        record(found, 'member-added', member, null);
+      } else if (current.role !== role) {
+        current.role = role;
+        record(found, role === 'admin' ? 'role-given' : 'role-taken', member, { role });
+      }
       return membersAnswer(found.book);
     },
 
-    removeMember: async (wallet, accountId, memberWallet): Promise<DeskMembersAnswer> => {
-      const found = find(wallet, accountId);
+    removeMember: async (wallet, accountId, memberWallet, house): Promise<DeskMembersAnswer> => {
+      const found = find(wallet, accountId, house);
       if ('ok' in found) return found;
       if (found.book.kind !== 'team') return refuse('not an organization');
       const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
@@ -618,18 +714,23 @@ export function createAccountsFixtureDesk(
       if (index === -1) return refuse('that wallet is not a member of the organization');
       const leaving = member === found.who;
       if (!leaving) {
-        const allowed = managed(wallet, accountId, 'remove-members');
+        const allowed = managed(wallet, accountId, 'remove-members', house);
         if ('ok' in allowed) return allowed;
+        // The house sends no owner away (ORG-007).
+        if (found.as === 'house' && members[index]?.role === 'admin') return refuse(OWNER_ONLY);
       }
       const owners = members.filter((entry) => entry.role === 'admin').length;
       if (members[index]?.role === 'admin' && owners === 1) return refuse(LAST_OWNER);
       members.splice(index, 1);
+      record(found, leaving ? 'member-left' : 'member-removed', member, null);
       return membersAnswer(found.book);
     },
 
-    roles: async (wallet, accountId): Promise<DeskRolesAnswer> => {
-      const found = entering(wallet, accountId);
-      return 'ok' in found ? found : viewOf(found.book, found.who);
+    roles: async (wallet, accountId, house): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId, house);
+      if ('ok' in found) return found;
+      houseRead(found, 'roles');
+      return viewOf(found);
     },
 
     headcount: async (accountId): Promise<DeskHeadcountAnswer> => {
@@ -643,13 +744,13 @@ export function createAccountsFixtureDesk(
       return { ok: true, accountId: found.id, members: found.members.length };
     },
 
-    createRole: async (wallet, accountId, role): Promise<DeskRolesAnswer> => {
-      const found = entering(wallet, accountId);
+    createRole: async (wallet, accountId, role, house): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId, house);
       if ('ok' in found) return found;
-      const { book, who } = found;
+      const { book, who, as } = found;
       const problems = nameProblems(role);
       if (problems.length > 0) return refuse(...problems);
-      const access = accessIn(book, who);
+      const access = accessIn(book, who, as);
       const allowed = canCreateRole(access, stateOf(book));
       if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
       // Nobody here holds less than every permission, so «only what you hold» never bites in the fake.
@@ -669,14 +770,14 @@ export function createAccountsFixtureDesk(
           permissions: [...role.permissions],
         },
       ];
-      record(book, who, 'role-created', null, { role: id, name: role.name.trim() });
-      return viewOf(book, who);
+      record(found, 'role-created', null, { role: id, name: role.name.trim() });
+      return viewOf(found);
     },
 
-    editRole: async (wallet, accountId, roleId, change): Promise<DeskRolesAnswer> => {
-      const found = entering(wallet, accountId);
+    editRole: async (wallet, accountId, roleId, change, house): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId, house);
       if ('ok' in found) return found;
-      const { book, who } = found;
+      const { book, who, as } = found;
       const role = book.roles.find((entry) => entry.id === roleId);
       if (role === undefined) return refuse(NO_SUCH_ROLE);
       const problems = nameProblems(change);
@@ -685,7 +786,7 @@ export function createAccountsFixtureDesk(
         return refuse(BASE_FIXED);
       }
       const next = change.permissions ?? role.permissions;
-      const allowed = canEditRole(accessIn(book, who), role, next);
+      const allowed = canEditRole(accessIn(book, who, as), role, next);
       if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
       book.roles = book.roles.map((entry) =>
         entry.id === roleId
@@ -698,37 +799,37 @@ export function createAccountsFixtureDesk(
             }
           : entry,
       );
-      record(book, who, 'role-edited', null, { role: roleId, name: role.name });
-      return viewOf(book, who);
+      record(found, 'role-edited', null, { role: roleId, name: role.name });
+      return viewOf(found);
     },
 
-    moveRole: async (wallet, accountId, roleId, position): Promise<DeskRolesAnswer> => {
-      const found = entering(wallet, accountId);
+    moveRole: async (wallet, accountId, roleId, position, house): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId, house);
       if ('ok' in found) return found;
-      const { book, who } = found;
+      const { book, who, as } = found;
       const role = book.roles.find((entry) => entry.id === roleId);
       if (role === undefined) return refuse(NO_SUCH_ROLE);
-      const allowed = canMoveRole(accessIn(book, who), role, position);
+      const allowed = canMoveRole(accessIn(book, who, as), role, position);
       if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
       const others = aboveBase(book).filter((entry) => entry.id !== roleId);
       const to = Math.min(position, others.length + 1);
       const at = others.length + 1 - to;
       place(book, [...others.slice(0, at), role, ...others.slice(at)]);
-      record(book, who, 'role-moved', null, {
+      record(found, 'role-moved', null, {
         role: roleId,
         name: role.name,
         position: String(to),
       });
-      return viewOf(book, who);
+      return viewOf(found);
     },
 
-    deleteRole: async (wallet, accountId, roleId): Promise<DeskRolesAnswer> => {
-      const found = entering(wallet, accountId);
+    deleteRole: async (wallet, accountId, roleId, house): Promise<DeskRolesAnswer> => {
+      const found = entering(wallet, accountId, house);
       if ('ok' in found) return found;
-      const { book, who } = found;
+      const { book, who, as } = found;
       const role = book.roles.find((entry) => entry.id === roleId);
       if (role === undefined) return refuse(NO_SUCH_ROLE);
-      const allowed = canDeleteRole(accessIn(book, who), role);
+      const allowed = canDeleteRole(accessIn(book, who, as), role);
       if (!allowed.ok) return refusalOf(allowed.refusal, 'manage-roles', book);
       place(
         book,
@@ -740,23 +841,25 @@ export function createAccountsFixtureDesk(
           ids.filter((id) => id !== roleId),
         );
       }
-      record(book, who, 'role-deleted', null, { role: roleId, name: role.name });
-      return viewOf(book, who);
+      record(found, 'role-deleted', null, { role: roleId, name: role.name });
+      return viewOf(found);
     },
 
-    giveRole: async (wallet, accountId, memberWallet, roleId): Promise<DeskRolesAnswer> =>
-      assign(true, wallet, accountId, memberWallet, roleId),
+    giveRole: async (wallet, accountId, memberWallet, roleId, house): Promise<DeskRolesAnswer> =>
+      assign(true, wallet, accountId, memberWallet, roleId, house),
 
-    takeRole: async (wallet, accountId, memberWallet, roleId): Promise<DeskRolesAnswer> =>
-      assign(false, wallet, accountId, memberWallet, roleId),
+    takeRole: async (wallet, accountId, memberWallet, roleId, house): Promise<DeskRolesAnswer> =>
+      assign(false, wallet, accountId, memberWallet, roleId, house),
 
-    log: async (wallet, accountId): Promise<DeskLogAnswer> => {
-      const found = entering(wallet, accountId);
+    log: async (wallet, accountId, house): Promise<DeskLogAnswer> => {
+      const found = entering(wallet, accountId, house);
       if ('ok' in found) return found;
-      const { book, who } = found;
-      if (!accessIn(book, who).permissions.has('view-organization-log')) {
+      const { book, who, as } = found;
+      if (!accessIn(book, who, as).permissions.has('view-organization-log')) {
         return refusalOf('missing-permission', 'view-organization-log', book);
       }
+      // The till writes the read down before it answers: the house sees its own read first.
+      houseRead(found, 'log');
       return {
         ok: true,
         accountId: book.id,
@@ -764,8 +867,14 @@ export function createAccountsFixtureDesk(
       };
     },
 
-    startTopup: async (wallet, accountId, amountKey, returnBase): Promise<DeskTopupAnswer> => {
-      const found = find(wallet, accountId);
+    startTopup: async (
+      wallet,
+      accountId,
+      amountKey,
+      returnBase,
+      house,
+    ): Promise<DeskTopupAnswer> => {
+      const found = find(wallet, accountId, house);
       if ('ok' in found) return found;
       if (!isTopupKey(amountKey)) return refuse('amount must be 10, 50 or 100');
       if (typeof returnBase !== 'string' || !RETURN_BASES.some((b) => returnBase.startsWith(b))) {
@@ -778,6 +887,7 @@ export function createAccountsFixtureDesk(
         key: amountKey,
         state: 'open',
       });
+      if (found.book.kind === 'team') record(found, 'topup-started', null, { amount: amountKey });
       return { ok: true, url: `${returnBase}?session_id=${id}` };
     },
 

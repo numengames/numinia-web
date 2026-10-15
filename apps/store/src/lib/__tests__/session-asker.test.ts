@@ -92,3 +92,13 @@ describe('no session, no asker — and no house', () => {
     expect(await asker(token)).toBeNull();
   });
 });
+
+describe('the people list asks for the wallet alone', () => {
+  it('answers the lowercase wallet of any rank — never a house flag — and null without a session', async () => {
+    const { sessionWallet } = await import('../auth/session-wallet');
+    expect(await sessionWallet(await tokenOf(ORACLE, 'oracle'))).toBe(ORACLE.toLowerCase());
+    expect(await sessionWallet(await tokenOf(CITIZEN, 'nomad'))).toBe(CITIZEN.toLowerCase());
+    expect(await sessionWallet(undefined)).toBeNull();
+    expect(await sessionWallet('not-a-token')).toBeNull();
+  });
+});

@@ -11,7 +11,7 @@
 
 import type { APIRoute } from 'astro';
 import { SESSION_COOKIE, freshSignatureDeps } from '../../../lib/auth/server';
-import { sessionWallet } from '../../../lib/auth/session-wallet';
+import { sessionAsker } from '../../../lib/auth/session-wallet';
 import { accountsFrom, answerSignature } from '../../../lib/accounts-source';
 import { runtimeBinding } from '../../../lib/runtime-env';
 
@@ -24,7 +24,7 @@ const desk = () =>
 export const POST: APIRoute = async ({ cookies, request }) =>
   answerSignature(
     desk(),
-    await sessionWallet(cookies.get(SESSION_COOKIE)?.value),
+    await sessionAsker(cookies.get(SESSION_COOKIE)?.value),
     request,
     freshSignatureDeps(),
   );

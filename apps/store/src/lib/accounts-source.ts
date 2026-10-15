@@ -16,6 +16,16 @@
  * origin, never taken from the body. Logs name rules, never wallets or
  * amounts.
  *
+ * The house (STD-051 ORG-007, «la casa entra», QA 2026-10-15): during the
+ * alpha the house is the Oracles. The routes resolve an `Asker` — the
+ * session's wallet and whether its rank is Oracle (lib/auth/session-wallet.ts)
+ * — once per request, and every call on an organization carries that flag
+ * as its last argument, so the till lets the house into organizations it is
+ * not in and writes down what it does there (ORG-009). Nothing of the
+ * browser's can set it: a body is read by strict shapes, which refuse a
+ * `house` of its own, and a query is only read for the keys named here.
+ * Only an Oracle's session ever asks the till's directory.
+ *
  * What is dangerous is signed again (STD-051, ORG-008): an act that gives
  * «Administrator» or «Manage roles» reaches the till only with a fresh
  * signature of the session's wallet over the lines /api/saldo/signature
@@ -36,6 +46,7 @@ import deskSeed from '../../fixtures/accounts/desk.json';
 import { FRESH_SIGNATURE_WORDS } from '../i18n/fresh-signature';
 import {
   DESK_METHODS,
+  OPTIONAL_DESK_METHODS,
   SPEND_RANGES,
   TOPUP_KEYS,
   FRESH_SIGNATURE,
@@ -47,6 +58,8 @@ import {
   shortWallet,
   vueltaBase,
   type AccountDesk,
+  type Asker,
+  type DeskAccount,
   type DeskRoleChange,
   type DeskRoleDraft,
   type SpendRange,
@@ -65,39 +78,45 @@ import {
 import { peopleOf } from './people';
 import { logEvent } from './telemetry';
 
-/** The desk read off whatever workerd bound: its nineteen methods, or null when it is not a desk. */
+/** The desk read off whatever workerd bound: its methods (the optional ones may be missing), or null when it is not a desk. */
 export function boundAccounts(binding: unknown): AccountDesk | null {
   if (binding === null || (typeof binding !== 'object' && typeof binding !== 'function')) {
     return null;
   }
   const desk = binding as Partial<Record<keyof AccountDesk, unknown>>;
-  if (!DESK_METHODS.every((method) => typeof desk[method] === 'function')) return null;
+  const present = (method: (typeof DESK_METHODS)[number]): boolean =>
+    OPTIONAL_DESK_METHODS.includes(method) || typeof desk[method] === 'function';
+  if (!DESK_METHODS.every(present)) return null;
   // Called as methods of the stub (never detached): an RPC stub needs its receiver.
   const stub = binding as AccountDesk;
   return {
     overview: (wallet) => stub.overview(wallet),
+    directory: (wallet, house) => stub.directory(wallet, house),
     createTeam: (wallet, name) => stub.createTeam(wallet, name),
-    renameTeam: (wallet, accountId, name) => stub.renameTeam(wallet, accountId, name),
-    statement: (wallet, accountId, range) => stub.statement(wallet, accountId, range),
-    members: (wallet, accountId) => stub.members(wallet, accountId),
-    access: (wallet, accountId) => stub.access(wallet, accountId),
-    setMember: (wallet, accountId, member, role) => stub.setMember(wallet, accountId, member, role),
-    removeMember: (wallet, accountId, member) => stub.removeMember(wallet, accountId, member),
-    roles: (wallet, accountId) => stub.roles(wallet, accountId),
+    renameTeam: (wallet, accountId, name, house) => stub.renameTeam(wallet, accountId, name, house),
+    statement: (wallet, accountId, range, house) => stub.statement(wallet, accountId, range, house),
+    members: (wallet, accountId, house) => stub.members(wallet, accountId, house),
+    access: (wallet, accountId, house) => stub.access(wallet, accountId, house),
+    setMember: (wallet, accountId, member, role, house) =>
+      stub.setMember(wallet, accountId, member, role, house),
+    removeMember: (wallet, accountId, member, house) =>
+      stub.removeMember(wallet, accountId, member, house),
+    roles: (wallet, accountId, house) => stub.roles(wallet, accountId, house),
     headcount: (accountId) => stub.headcount(accountId),
-    createRole: (wallet, accountId, role) => stub.createRole(wallet, accountId, role),
-    editRole: (wallet, accountId, roleId, change) =>
-      stub.editRole(wallet, accountId, roleId, change),
-    moveRole: (wallet, accountId, roleId, position) =>
-      stub.moveRole(wallet, accountId, roleId, position),
-    deleteRole: (wallet, accountId, roleId) => stub.deleteRole(wallet, accountId, roleId),
-    giveRole: (wallet, accountId, member, roleId) =>
-      stub.giveRole(wallet, accountId, member, roleId),
-    takeRole: (wallet, accountId, member, roleId) =>
-      stub.takeRole(wallet, accountId, member, roleId),
-    log: (wallet, accountId) => stub.log(wallet, accountId),
-    startTopup: (wallet, accountId, key, returnBase) =>
-      stub.startTopup(wallet, accountId, key, returnBase),
+    createRole: (wallet, accountId, role, house) => stub.createRole(wallet, accountId, role, house),
+    editRole: (wallet, accountId, roleId, change, house) =>
+      stub.editRole(wallet, accountId, roleId, change, house),
+    moveRole: (wallet, accountId, roleId, position, house) =>
+      stub.moveRole(wallet, accountId, roleId, position, house),
+    deleteRole: (wallet, accountId, roleId, house) =>
+      stub.deleteRole(wallet, accountId, roleId, house),
+    giveRole: (wallet, accountId, member, roleId, house) =>
+      stub.giveRole(wallet, accountId, member, roleId, house),
+    takeRole: (wallet, accountId, member, roleId, house) =>
+      stub.takeRole(wallet, accountId, member, roleId, house),
+    log: (wallet, accountId, house) => stub.log(wallet, accountId, house),
+    startTopup: (wallet, accountId, key, returnBase, house) =>
+      stub.startTopup(wallet, accountId, key, returnBase, house),
     confirmTopup: (wallet, sessionId) => stub.confirmTopup(wallet, sessionId),
   };
 }
@@ -227,6 +246,8 @@ function buildSchemas() {
     name: z.string().nullable(),
     role: z.enum(['owner', 'admin', 'member']),
     balanceCents: z.number(),
+    // Only the house’s entries carry a mark, and only this one: any other is out of shape.
+    as: z.literal('house').optional(),
   });
   const member = z.object({ wallet: z.string(), role, addedAt: z.string() });
   const line = z.object({
@@ -240,6 +261,14 @@ function buildSchemas() {
     reason: z.string().nullish(),
   });
   const overview = z.union([z.object({ accounts: z.array(account) }), refusal]);
+  // The house's directory: an id, a team and a name per organization — no money, no people.
+  const directory = z.union([
+    z.object({
+      ok: z.literal(true),
+      accounts: z.array(z.object({ id: z.string(), kind: z.literal('team'), name: z.string() })),
+    }),
+    refusal,
+  ]);
   const statement = z.union([
     z.object({
       account,
@@ -332,6 +361,7 @@ function buildSchemas() {
     request,
     proof,
     overview,
+    directory,
     statement,
     team,
     members,
@@ -442,7 +472,7 @@ const refused = (problems: readonly string[]): Response =>
   answer({ error: 'refused', problems }, 403);
 
 /** A desk that threw, or answered out of shape: logged by rule, never by value. */
-function failed(log: Log, action: string, rule: string, error?: unknown): Response {
+function noted(log: Log, action: string, rule: string, error?: unknown): void {
   log({
     level: 'error',
     kind: 'saldo-till',
@@ -450,6 +480,11 @@ function failed(log: Log, action: string, rule: string, error?: unknown): Respon
     rule,
     ...(error === undefined ? {} : { error: error instanceof Error ? error.name : typeof error }),
   });
+}
+
+/** The same, and the 502 that tells the browser the till failed. */
+function failed(log: Log, action: string, rule: string, error?: unknown): Response {
+  noted(log, action, rule, error);
   return answer({ error: 'till-failed' }, 502);
 }
 
@@ -473,34 +508,78 @@ async function ask<T>(
   return { ok: true, value: parsed.data };
 }
 
-/** GET /api/saldo: the accounts this wallet sees, personal first. */
+/**
+ * The asker as the desk is called for it: the wallet, lowercase 0x, and the
+ * house's flag. The flag is the session's (lib/auth/session-wallet.ts) —
+ * never anything the request carries.
+ */
+interface Who {
+  readonly you: string;
+  readonly house: boolean;
+}
+
+const whoIs = (asker: Asker): Who => ({ you: asker.wallet.toLowerCase(), house: asker.house });
+
+/**
+ * The organizations only the house enters, as the overview lists them: the
+ * till's directory minus the wallet's own accounts, each marked
+ * `as: 'house'`. The directory names no money, so the entry carries a zero
+ * that means «not read here» (the statement has the real balance, and the
+ * till writes down that the house read it), and `admin`, which is what the
+ * till answers for the house. A directory that fails or refuses never
+ * fails the overview: the wallet keeps its own accounts and the rule is
+ * logged, by rule only.
+ */
+async function houseEntries(
+  desk: AccountDesk,
+  you: string,
+  own: readonly { readonly id: string }[],
+  log: Log,
+): Promise<readonly DeskAccount[]> {
+  const asked = await ask(log, 'directory', () => desk.directory(you, true), shapes().directory);
+  if (!asked.ok) return [];
+  if ('problems' in asked.value) {
+    noted(log, 'directory', 'refused');
+    return [];
+  }
+  const mine = new Set(own.map((account) => account.id));
+  return asked.value.accounts
+    .filter((entry) => !mine.has(entry.id))
+    .map((entry) => ({ ...entry, role: 'admin', balanceCents: 0, as: 'house' }));
+}
+
+/**
+ * GET /api/saldo: the accounts this wallet sees, personal first. For the
+ * house (an Oracle's session) the organizations it is not in follow,
+ * marked, from the till's directory: additive, so a reader that does not
+ * know the mark sees the same list, longer.
+ */
 export async function answerOverview(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   log: Log = logEvent,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   if (desk === null) return notBound();
-  const asked = await ask(
-    log,
-    'overview',
-    () => desk.overview(wallet.toLowerCase()),
-    shapes().overview,
-  );
+  const { you, house } = whoIs(asker);
+  const asked = await ask(log, 'overview', () => desk.overview(you), shapes().overview);
   if (!asked.ok) return asked.response;
   const overview = asked.value;
   if ('ok' in overview) return refused(overview.problems);
-  return answer({ accounts: overview.accounts });
+  if (!house) return answer({ accounts: overview.accounts });
+  return answer({
+    accounts: [...overview.accounts, ...(await houseEntries(desk, you, overview.accounts, log))],
+  });
 }
 
-/** GET /api/saldo/statement?cuenta=&rango=: one account's statement and, for an organization, what the wallet may do there; members only. */
+/** GET /api/saldo/statement?cuenta=&rango=: one account's statement and, for an organization, what the wallet may do there; members only — and the house. */
 export async function answerStatement(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   url: URL,
   log: Log = logEvent,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   const account = url.searchParams.get('cuenta') ?? '';
   const rango = url.searchParams.get('rango') ?? '30d';
   if (account.length === 0 || account.length > ID_MAX) {
@@ -510,12 +589,12 @@ export async function answerStatement(
     return answer({ error: `rango: one of ${SPEND_RANGES.join(', ')}` }, 400);
   }
   if (desk === null) return notBound();
-  const you = wallet.toLowerCase();
+  const { you, house } = whoIs(asker);
   const range: SpendRange = rango;
   const asked = await ask(
     log,
     'statement',
-    () => desk.statement(you, account, range),
+    () => desk.statement(you, account, range, house),
     shapes().statement,
   );
   if (!asked.ok) return asked.response;
@@ -524,7 +603,7 @@ export async function answerStatement(
   if (statement.account.kind === 'personal') return answer({ statement, you, access: null });
   // What this wallet may do here: the screen hides the rest. A desk that
   // cannot say leaves the controls shown (null) — the till refuses on every write.
-  const allowed = await ask(log, 'access', () => desk.access(you, account), shapes().access);
+  const allowed = await ask(log, 'access', () => desk.access(you, account, house), shapes().access);
   const access =
     allowed.ok && !('problems' in allowed.value)
       ? {
@@ -548,16 +627,21 @@ function accountOf(url: URL): { ok: true; account: string } | { ok: false; respo
 /** GET /api/saldo/roles?cuenta=: an organization's roles and members, as this wallet may handle them. */
 export async function answerRoles(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   url: URL,
   log: Log = logEvent,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   const named = accountOf(url);
   if (!named.ok) return named.response;
   if (desk === null) return notBound();
-  const you = wallet.toLowerCase();
-  const asked = await ask(log, 'roles', () => desk.roles(you, named.account), shapes().roles);
+  const { you, house } = whoIs(asker);
+  const asked = await ask(
+    log,
+    'roles',
+    () => desk.roles(you, named.account, house),
+    shapes().roles,
+  );
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
   return answer({ roles: asked.value, you });
@@ -594,16 +678,16 @@ export async function answerPeople(
 /** GET /api/saldo/log?cuenta=: the organization's last changes, for whoever may view its log. */
 export async function answerLog(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   url: URL,
   log: Log = logEvent,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   const named = accountOf(url);
   if (!named.ok) return named.response;
   if (desk === null) return notBound();
-  const you = wallet.toLowerCase();
-  const asked = await ask(log, 'log', () => desk.log(you, named.account), shapes().log);
+  const { you, house } = whoIs(asker);
+  const asked = await ask(log, 'log', () => desk.log(you, named.account, house), shapes().log);
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
   return answer({ log: asked.value });
@@ -640,12 +724,12 @@ async function bodyOf(
  */
 export async function answerAction(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   request: Request,
   log: Log = logEvent,
   fresh: FreshDeps | null = null,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   const body = await bodyOf(request);
   if (!body.ok) return body.response;
   const split = splitProof(body.json);
@@ -653,7 +737,8 @@ export async function answerAction(
   const read = readSaldoRequest(split.act);
   if (!read.ok) return answer({ error: read.error }, 400);
   if (desk === null) return notBound();
-  const you = wallet.toLowerCase();
+  const who = whoIs(asker);
+  const { you, house } = who;
   const s = shapes();
   const action = read.request;
 
@@ -663,7 +748,13 @@ export async function answerAction(
       log,
       'topup',
       () =>
-        desk.startTopup(you, action.accountId, action.amount, vueltaBase(origin, action.locale)),
+        desk.startTopup(
+          you,
+          action.accountId,
+          action.amount,
+          vueltaBase(origin, action.locale),
+          house,
+        ),
       s.topup,
     );
     if (!asked.ok) return asked.response;
@@ -700,7 +791,7 @@ export async function answerAction(
     action.action === 'move-role' ||
     action.action === 'delete-role'
   ) {
-    return answerRoleAction(desk, you, action, log, split.proof, fresh);
+    return answerRoleAction(desk, who, action, log, split.proof, fresh);
   }
 
   const asked =
@@ -710,20 +801,20 @@ export async function answerAction(
         ? await ask(
             log,
             action.action,
-            () => desk.renameTeam(you, action.accountId, action.name),
+            () => desk.renameTeam(you, action.accountId, action.name, house),
             s.team,
           )
         : action.action === 'set-member'
           ? await ask(
               log,
               action.action,
-              () => desk.setMember(you, action.accountId, action.wallet, action.role),
+              () => desk.setMember(you, action.accountId, action.wallet, action.role, house),
               s.members,
             )
           : await ask(
               log,
               action.action,
-              () => desk.removeMember(you, action.accountId, action.wallet),
+              () => desk.removeMember(you, action.accountId, action.wallet, house),
               s.members,
             );
   if (!asked.ok) return asked.response;
@@ -778,12 +869,7 @@ const NO_GRANT: Grant = { at: 'granted', permissions: [], role: '' };
  * (STD-051, ORG-008), read against the roles the desk lists now. A role the
  * desk does not list adds nothing to check: the till answers for it.
  */
-async function grantOf(
-  desk: AccountDesk,
-  you: string,
-  action: RoleAction,
-  log: Log,
-): Promise<Grant> {
+async function grantOf(desk: AccountDesk, who: Who, action: RoleAction, log: Log): Promise<Grant> {
   if (action.action === 'create-role') {
     return {
       at: 'granted',
@@ -793,7 +879,12 @@ async function grantOf(
   }
   const adds = addsTo(action);
   if (adds === null) return NO_GRANT;
-  const asked = await ask(log, 'roles', () => desk.roles(you, action.accountId), shapes().roles);
+  const asked = await ask(
+    log,
+    'roles',
+    () => desk.roles(who.you, action.accountId, who.house),
+    shapes().roles,
+  );
   if (!asked.ok) return { at: 'failed', response: asked.response };
   if ('problems' in asked.value) return { at: 'refused', problems: asked.value.problems };
   const listed = asked.value.roles.find((role) => role.id === adds.roleId);
@@ -812,16 +903,17 @@ const UNSIGNED = {
   mismatch: { outcome: 'signature-mismatch', problem: SIGNATURE_MISMATCH },
 } as const;
 
-/** A role action on the desk; one that gives administrator or manage-roles goes only with a fresh signature of this very act. */
+/** A role action on the desk; one that gives administrator or manage-roles goes only with a fresh signature of this very act — the house's included. */
 async function answerRoleAction(
   desk: AccountDesk,
-  you: string,
+  who: Who,
   action: RoleAction,
   log: Log,
   proof: FreshProof | null,
   fresh: FreshDeps | null,
 ): Promise<Response> {
-  const grant = await grantOf(desk, you, action, log);
+  const { you, house } = who;
+  const grant = await grantOf(desk, who, action, log);
   if (grant.at === 'failed') return grant.response;
   // A desk that refuses to list the roles lets the act through to the same refusal: nothing is written.
   if (grant.at === 'granted' && grant.permissions.length > 0) {
@@ -839,41 +931,41 @@ async function answerRoleAction(
       ? await ask(
           log,
           action.action,
-          () => desk.createRole(you, action.accountId, action.role),
+          () => desk.createRole(you, action.accountId, action.role, house),
           s.roles,
         )
       : action.action === 'edit-role'
         ? await ask(
             log,
             action.action,
-            () => desk.editRole(you, action.accountId, action.roleId, action.change),
+            () => desk.editRole(you, action.accountId, action.roleId, action.change, house),
             s.roles,
           )
         : action.action === 'move-role'
           ? await ask(
               log,
               action.action,
-              () => desk.moveRole(you, action.accountId, action.roleId, action.position),
+              () => desk.moveRole(you, action.accountId, action.roleId, action.position, house),
               s.roles,
             )
           : action.action === 'delete-role'
             ? await ask(
                 log,
                 action.action,
-                () => desk.deleteRole(you, action.accountId, action.roleId),
+                () => desk.deleteRole(you, action.accountId, action.roleId, house),
                 s.roles,
               )
             : action.action === 'give-role'
               ? await ask(
                   log,
                   action.action,
-                  () => desk.giveRole(you, action.accountId, action.wallet, action.roleId),
+                  () => desk.giveRole(you, action.accountId, action.wallet, action.roleId, house),
                   s.roles,
                 )
               : await ask(
                   log,
                   action.action,
-                  () => desk.takeRole(you, action.accountId, action.wallet, action.roleId),
+                  () => desk.takeRole(you, action.accountId, action.wallet, action.roleId, house),
                   s.roles,
                 );
   if (!asked.ok) return asked.response;
@@ -927,12 +1019,12 @@ function chainOf(text: string | null): number | null | undefined {
  */
 export async function answerSignature(
   desk: AccountDesk | null,
-  wallet: string | null,
+  asker: Asker | null,
   request: Request,
   fresh: FreshDeps | null,
   log: Log = logEvent,
 ): Promise<Response> {
-  if (wallet === null) return signedOut();
+  if (asker === null) return signedOut();
   if (fresh === null) return answer({ error: 'not-configured' }, 503);
   const body = await bodyOf(request);
   if (!body.ok) return body.response;
@@ -948,18 +1040,19 @@ export async function answerSignature(
   const act = read.request;
   if (!isGrantAct(act)) return answer({ error: NOTHING_TO_SIGN }, 400);
   if (desk === null) return notBound();
-  const you = wallet.toLowerCase();
-  const grant = await grantOf(desk, you, act, log);
+  const who = whoIs(asker);
+  const { you } = who;
+  const grant = await grantOf(desk, who, act, log);
   if (grant.at === 'failed') return grant.response;
   if (grant.at === 'refused') return refused(grant.problems);
   if (grant.permissions.length === 0) return answer({ error: NOTHING_TO_SIGN }, 400);
   const accounts = await ask(log, 'overview', () => desk.overview(you), shapes().overview);
   if (!accounts.ok) return accounts.response;
-  // The organization by its name; by its id when the wallet's own accounts do not list it.
-  const named =
-    'accounts' in accounts.value
-      ? accounts.value.accounts.find((account) => account.id === act.accountId)?.name
-      : null;
+  // The organization by its name; by its id when the lists do not name it — the wallet's own
+  // accounts and, for the house, the others it enters.
+  const own = 'accounts' in accounts.value ? accounts.value.accounts : [];
+  const listed = who.house ? [...own, ...(await houseEntries(desk, you, own, log))] : own;
+  const named = listed.find((account) => account.id === act.accountId)?.name;
   const expiresAt = fresh.now() + FRESH_TTL_MS;
   const message = freshMessage(FRESH_SIGNATURE_WORDS[locale], locale, expiresAt, {
     kind: KIND[act.action],

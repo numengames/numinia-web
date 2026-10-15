@@ -3,6 +3,11 @@
  * Any signed-in wallet may ask — the session is read from our own signed
  * cookie, never from a header or a query the caller controls — and the till
  * decides what that wallet may see or do (membership). No session → 401.
+ * An Oracle's session is the house (STD-051 ORG-007): the routes resolve
+ * that once per request (lib/auth/session-wallet.ts `sessionAsker`) and the
+ * till lets it into every organization, as the house, writing down what it
+ * reads and does there; the overview then lists those organizations too,
+ * marked `as: 'house'`. A `house` in a body or a query is never read.
  *
  * GET answers the accounts this wallet sees, personal first. POST (JSON
  * only) runs one action: `topup`, `confirm`, `create-team`, `rename`,
@@ -18,7 +23,7 @@
 
 import type { APIRoute } from 'astro';
 import { SESSION_COOKIE, freshSignatureDeps } from '../../../lib/auth/server';
-import { sessionWallet } from '../../../lib/auth/session-wallet';
+import { sessionAsker } from '../../../lib/auth/session-wallet';
 import { accountsFrom, answerAction, answerOverview } from '../../../lib/accounts-source';
 import { runtimeBinding } from '../../../lib/runtime-env';
 import { logEvent } from '../../../lib/telemetry';
@@ -30,12 +35,12 @@ const desk = () =>
   accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE });
 
 export const GET: APIRoute = async ({ cookies }) =>
-  answerOverview(desk(), await sessionWallet(cookies.get(SESSION_COOKIE)?.value));
+  answerOverview(desk(), await sessionAsker(cookies.get(SESSION_COOKIE)?.value));
 
 export const POST: APIRoute = async ({ cookies, request }) =>
   answerAction(
     desk(),
-    await sessionWallet(cookies.get(SESSION_COOKIE)?.value),
+    await sessionAsker(cookies.get(SESSION_COOKIE)?.value),
     request,
     logEvent,
     freshSignatureDeps(),

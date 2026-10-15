@@ -460,6 +460,147 @@
           "size": "4g"
         }
       ]
+    },
+    {
+      "id": "acc_team_active_inference",
+      "name": "Active Inference Institute",
+      "createdDaysAgo": 90,
+      "members": [
+        {
+          "wallet": "0x00000000000000000000000000000000000000c3",
+          "role": "admin",
+          "addedDaysAgo": 90
+        },
+        {
+          "wallet": "0x00000000000000000000000000000000000000d4",
+          "role": "member",
+          "addedDaysAgo": 60
+        }
+      ],
+      "lines": [
+        {
+          "kind": "topup",
+          "daysAgo": 21,
+          "amountCents": 2000,
+          "vatCents": 420
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -82,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g"
+        }
+      ]
+    },
+    {
+      "id": "acc_team_la_tarugo",
+      "name": "La Tarugo",
+      "createdDaysAgo": 45,
+      "members": [
+        {
+          "wallet": "0x00000000000000000000000000000000000000e5",
+          "role": "admin",
+          "addedDaysAgo": 45
+        },
+        {
+          "wallet": "0x00000000000000000000000000000000000000f6",
+          "role": "member",
+          "addedDaysAgo": 30
+        }
+      ],
+      "lines": [
+        {
+          "kind": "topup",
+          "daysAgo": 12,
+          "amountCents": 1000,
+          "vatCents": 210
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -125,
+          "worldId": "sala-la-tarugo",
+          "size": "2g"
+        }
+      ]
     }
   ]
 }

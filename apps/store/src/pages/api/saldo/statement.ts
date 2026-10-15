@@ -8,7 +8,7 @@
 
 import type { APIRoute } from 'astro';
 import { SESSION_COOKIE } from '../../../lib/auth/server';
-import { sessionWallet } from '../../../lib/auth/session-wallet';
+import { sessionAsker } from '../../../lib/auth/session-wallet';
 import { accountsFrom, answerStatement } from '../../../lib/accounts-source';
 import { runtimeBinding } from '../../../lib/runtime-env';
 
@@ -17,6 +17,6 @@ export const prerender = false;
 export const GET: APIRoute = async ({ cookies, url }) =>
   answerStatement(
     accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE }),
-    await sessionWallet(cookies.get(SESSION_COOKIE)?.value),
+    await sessionAsker(cookies.get(SESSION_COOKIE)?.value),
     url,
   );

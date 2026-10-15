@@ -29,6 +29,8 @@ const INSTITUTE = 'acc_team_active_inference';
 const TARUGO = 'acc_team_la_tarugo';
 const INSTITUTE_OWNER = '0x00000000000000000000000000000000000000c3';
 const INSTITUTE_PLAIN = '0x00000000000000000000000000000000000000d4';
+const NUMEN_OWNER = '0x00000000000000000000000000000000000000a1';
+const NEWCOMER = `0x${'0a'.repeat(20)}`;
 // The Team template's ids, from the top: Administración, Finanzas, Miembro, then the base role.
 const FINANCE = 'role_0000000000000002';
 
@@ -210,17 +212,29 @@ describe('entering as the house', () => {
     expect(roles(await d.editRole(ME, INSTITUTE, role, { hoist: true }, true)).as).toBe('house');
     expect(roles(await d.moveRole(ME, INSTITUTE, role, 2, true)).as).toBe('house');
     expect(roles(await d.deleteRole(ME, INSTITUTE, role, true)).as).toBe('house');
-    // Members: it makes a member an admin and sends them away; an owner it does not send away.
-    const promoted = await d.setMember(ME, INSTITUTE, INSTITUTE_PLAIN, 'admin', true);
-    expect(promoted).toMatchObject({ ok: true });
-    const removed = await d.removeMember(ME, INSTITUTE, INSTITUTE_PLAIN, true);
+    // Members: it adds a member and sends them away again. In this fake an «admin» is an owner (see
+    // ADMIN_ROLE), and the house stands below the owners: it neither demotes nor sends one away.
+    const added = await d.setMember(ME, INSTITUTE, NEWCOMER, 'member', true);
+    expect('members' in added && added.members?.map((member) => member.wallet)).toEqual([
+      INSTITUTE_OWNER,
+      INSTITUTE_PLAIN,
+      NEWCOMER,
+    ]);
+    const removed = await d.removeMember(ME, INSTITUTE, NEWCOMER, true);
     expect('members' in removed && removed.members?.map((member) => member.wallet)).toEqual([
       INSTITUTE_OWNER,
+      INSTITUTE_PLAIN,
     ]);
-    expect(await d.removeMember(ME, INSTITUTE, INSTITUTE_OWNER, true)).toEqual({
-      ok: false,
-      problems: [OWNER_ONLY],
+    expect(await d.setMember(ME, INSTITUTE, INSTITUTE_PLAIN, 'admin', true)).toMatchObject({
+      ok: true,
     });
+    for (const owner of [INSTITUTE_OWNER, INSTITUTE_PLAIN]) {
+      const refusal = { ok: false, problems: [OWNER_ONLY] };
+      expect(await d.removeMember(ME, INSTITUTE, owner, true)).toEqual(refusal);
+      expect(await d.setMember(ME, INSTITUTE, owner, 'member', true)).toEqual(refusal);
+      // Naming an owner what it already is changes nothing.
+      expect(await d.setMember(ME, INSTITUTE, owner, 'admin', true)).toMatchObject({ ok: true });
+    }
     expect(
       await d.startTopup(ME, TARUGO, '10', 'http://localhost:4321/es/saldo/vuelta/', true),
     ).toEqual({
@@ -264,5 +278,45 @@ describe('the house is written down (ORG-009)', () => {
     // And the log of a stranger’s organization is the house’s to read, not a citizen’s.
     expect(await d.log(ME, INSTITUTE)).toEqual({ ok: false, problems: [NOT_MEMBER] });
     expect(problems(await d.log(ME, INSTITUTE, 'yes'))).toEqual([HOUSE_BOOLEAN]);
+  });
+
+  it('writes down the house’s other acts too — a rename, members coming, changing and going, a top-up', async () => {
+    const d = desk();
+    await d.renameTeam(ME, INSTITUTE, 'Instituto', true);
+    await d.setMember(ME, INSTITUTE, NEWCOMER, 'member', true);
+    // Naming a member what it already is writes nothing.
+    await d.setMember(ME, INSTITUTE, NEWCOMER, 'member', true);
+    await d.removeMember(ME, INSTITUTE, NEWCOMER, true);
+    await d.setMember(ME, INSTITUTE, INSTITUTE_PLAIN, 'admin', true);
+    // Refused by the owners’ rule, the house’s attempt writes nothing.
+    await d.removeMember(ME, INSTITUTE, INSTITUTE_OWNER, true);
+    await d.startTopup(ME, INSTITUTE, '50', 'http://localhost:4321/es/saldo/vuelta/', true);
+    const written = lines(await d.log(ME, INSTITUTE, true));
+    expect(written.map((line) => [line.act, line.asHouse, line.subject])).toEqual([
+      ['house-read', true, null],
+      ['topup-started', true, null],
+      ['role-given', true, INSTITUTE_PLAIN],
+      ['member-removed', true, NEWCOMER],
+      ['member-added', true, NEWCOMER],
+      ['organization-renamed', true, null],
+    ]);
+    expect(written.at(-1)?.detail).toEqual({ from: 'Active Inference Institute', to: 'Instituto' });
+    expect(written[1]?.detail).toEqual({ amount: '50' });
+  });
+
+  it('writes down an owner’s own acts as no one’s house, even when the house flag is on', async () => {
+    const d = desk();
+    // An owner of Numen Games who is also the house: it demotes the other owner, names it back and leaves.
+    await d.setMember(ME, NUMEN, NUMEN_OWNER, 'member', true);
+    await d.setMember(ME, NUMEN, NUMEN_OWNER, 'admin', true);
+    await d.removeMember(ME, NUMEN, ME, true);
+    // Once out, the wallet enters Numen Games as the house like any other, and its read is written.
+    const written = lines(await d.log(ME, NUMEN, true));
+    expect(written.map((line) => [line.act, line.asHouse, line.subject])).toEqual([
+      ['house-read', true, null],
+      ['member-left', false, ME],
+      ['role-given', false, NUMEN_OWNER],
+      ['role-taken', false, NUMEN_OWNER],
+    ]);
   });
 });

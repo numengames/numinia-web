@@ -21,6 +21,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { createSessionToken } from '@numinia/auth';
 import { expect, test, type BrowserContext } from '@playwright/test';
+import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 
 const ORACLE = `0x${'ab'.repeat(20)}`;
 const CITIZEN = `0x${'cd'.repeat(20)}`;
@@ -98,7 +99,7 @@ test.afterAll(async () => {
 async function signIn(context: BrowserContext, wallet: string, rank: 'oracle' | 'nomad') {
   const now = Math.floor(Date.now() / 1000);
   const value = await createSessionToken(
-    { sub: wallet, rank, iat: now, exp: now + 3_600, terms: 'terms@1.0.0+privacy@1.0.0' },
+    { sub: wallet, rank, iat: now, exp: now + 3_600, terms: LEGAL_CORPUS_VERSION },
     secret,
   );
   await context.addCookies([{ name: 'numinia_session', value, url: origin }]);
@@ -217,7 +218,7 @@ test('a citizen sees only its own organization and cannot enter another by askin
 test('a forged or foreign cookie is no session, Oracle or not', async ({ page, context }) => {
   const now = Math.floor(Date.now() / 1000);
   const foreign = await createSessionToken(
-    { sub: ORACLE, rank: 'oracle', iat: now, exp: now + 3_600, terms: 'terms@1.0.0' },
+    { sub: ORACLE, rank: 'oracle', iat: now, exp: now + 3_600, terms: LEGAL_CORPUS_VERSION },
     randomBytes(32).toString('hex'),
   );
   await context.addCookies([{ name: 'numinia_session', value: foreign, url: origin }]);
