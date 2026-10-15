@@ -17,6 +17,7 @@ import {
   pollStripe,
   summaryOf,
 } from '../src/db/accounts';
+import { ORG_PROBLEMS, needs } from '../src/lib/organizations';
 import { Stripe } from '../src/lib/stripe';
 import {
   AccountDesk,
@@ -81,6 +82,7 @@ describe('the desk', () => {
     const { desk } = scene();
     expect(desk).toBeInstanceOf(WorkerEntrypoint);
     expect(Object.getOwnPropertyNames(AccountDesk.prototype).sort()).toEqual([
+      'access',
       'confirmTopup',
       'constructor',
       'createTeam',
@@ -186,7 +188,7 @@ describe('accounts and organizations', () => {
     });
   });
 
-  it('lets admins rename, members not, strangers not, and a personal account is no organization', async () => {
+  it('lets whoever may manage it rename it, a plain member not, strangers not, and a personal account is no organization', async () => {
     const { desk } = scene();
     const numen = await team(desk);
     await desk.setMember(PABLO, numen, MARIA, 'member');
@@ -196,7 +198,7 @@ describe('accounts and organizations', () => {
     });
     expect(await desk.renameTeam(MARIA, numen, 'Mine')).toEqual({
       ok: false,
-      problems: [PROBLEMS.adminsOnly],
+      problems: [needs('manage-organization', ['Administration'])],
     });
     expect(await desk.renameTeam(STRANGER, numen, 'Mine')).toEqual({
       ok: false,
@@ -209,7 +211,7 @@ describe('accounts and organizations', () => {
     });
   });
 
-  it('adds members, changes roles, removes them, and never leaves an organization without an admin', async () => {
+  it('adds members, changes roles, removes them, and never leaves an organization without an owner', async () => {
     const { desk } = scene();
     const numen = await team(desk);
     const added = await desk.setMember(
@@ -222,45 +224,46 @@ describe('accounts and organizations', () => {
       [PABLO, 'admin'],
       [MARIA, 'member'],
     ]);
-    expect(await desk.members(MARIA, numen)).toEqual({
-      ok: false,
-      problems: [PROBLEMS.adminsOnly],
-    });
+    const listed = await desk.members(MARIA, numen);
+    expect(listed.ok && listed.members.length).toBe(2);
     expect(await desk.setMember(PABLO, numen, PABLO, 'member')).toEqual({
       ok: false,
-      problems: [PROBLEMS.lastAdmin],
+      problems: [ORG_PROBLEMS.ownRoles],
     });
     expect(await desk.removeMember(PABLO, numen, PABLO)).toEqual({
       ok: false,
-      problems: [PROBLEMS.lastAdmin],
+      problems: [ORG_PROBLEMS.lastOwner],
     });
     expect(await desk.removeMember(PABLO, numen, STRANGER)).toEqual({
       ok: false,
       problems: [PROBLEMS.noSuchMember],
     });
-    await desk.setMember(PABLO, numen, MARIA, 'admin');
-    const stepped = await desk.setMember(PABLO, numen, PABLO, 'member');
-    expect(stepped.ok && stepped.members.map((m) => [m.wallet, m.role])).toEqual([
+    const made = await desk.setMember(PABLO, numen, MARIA, 'admin');
+    expect(made.ok && made.members.map((m) => [m.wallet, m.role])).toEqual([
+      [PABLO, 'admin'],
       [MARIA, 'admin'],
-      [PABLO, 'member'],
     ]);
-    const removed = await desk.removeMember(MARIA, numen, PABLO);
-    expect(removed.ok && removed.members.map((m) => m.wallet)).toEqual([MARIA]);
-    const read = await desk.members(MARIA, numen);
-    expect(read.ok && read.members.length).toBe(1);
+    expect(await desk.removeMember(MARIA, numen, PABLO)).toEqual({
+      ok: false,
+      problems: [ORG_PROBLEMS.owner],
+    });
+    const removed = await desk.removeMember(PABLO, numen, MARIA);
+    expect(removed.ok && removed.members.map((m) => m.wallet)).toEqual([PABLO]);
   });
 
-  it('keeps an admin even when a write slips past the desk', () => {
+  it('keeps an owner even when a write slips past the desk', () => {
     const { sqlite } = scene();
     sqlite.exec(`
       INSERT INTO accounts (id, kind, created_at) VALUES ('acc_t_x', 'team', '2026-10-14T12:00:00.000Z');
-      INSERT INTO team_profiles VALUES ('acc_t_x', 'X', '${PABLO}', '2026-10-14T12:00:00.000Z');
-      INSERT INTO team_members VALUES ('acc_t_x', '${PABLO}', 'admin', '${PABLO}', '2026-10-14T12:00:00.000Z');
+      INSERT INTO team_profiles (account_id, name, created_by, created_at)
+        VALUES ('acc_t_x', 'X', '${PABLO}', '2026-10-14T12:00:00.000Z');
+      INSERT INTO team_members (account_id, wallet, role, added_by, added_at, owner)
+        VALUES ('acc_t_x', '${PABLO}', 'admin', '${PABLO}', '2026-10-14T12:00:00.000Z', 1);
     `);
     expect(() => sqlite.exec("DELETE FROM team_members WHERE account_id = 'acc_t_x'")).toThrow(
-      /admin/,
+      /owner/,
     );
-    expect(() => sqlite.exec("UPDATE team_members SET role = 'member'")).toThrow(/admin/);
+    expect(() => sqlite.exec('UPDATE team_members SET owner = 0')).toThrow(/owner/);
   });
 });
 

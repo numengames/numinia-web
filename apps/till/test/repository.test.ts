@@ -112,6 +112,7 @@ describe('the migration', () => {
       '0001_ledger.sql',
       '0002_tariff_basis.sql',
       '0003_accounts_and_checkouts.sql',
+      '0004_organization_roles.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -129,8 +130,11 @@ describe('the migration', () => {
         'ledger_lines',
         'stripe_cursor',
         'tariff_versions',
+        'team_log',
+        'team_member_roles',
         'team_members',
         'team_profiles',
+        'team_roles',
         'worlds',
       ].map((name) => ({ name, strict: 1 })),
     );

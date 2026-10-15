@@ -7,7 +7,7 @@
 
 import type { LocalizedString } from './i18n.js';
 
-/** The sixteen permissions a role can carry (STD-052, «Permissions»). */
+/** The seventeen permissions a role can carry (STD-052, «Permissions»). */
 export const ORGANIZATION_PERMISSIONS = [
   'administrator',
   'manage-organization',
@@ -24,6 +24,7 @@ export const ORGANIZATION_PERMISSIONS = [
   'start-stop-worlds',
   'create-worlds',
   'view-balance',
+  'top-up',
   'manage-balance',
 ] as const;
 export type OrganizationPermission = (typeof ORGANIZATION_PERMISSIONS)[number];

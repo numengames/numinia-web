@@ -30,6 +30,7 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import meterFixture from '../fixtures/meter.json';
 import {
+  access,
   confirmTopup,
   createTeam,
   members,
@@ -41,6 +42,7 @@ import {
   setMember,
   startTopup,
   statement,
+  type AccessAnswer,
   type MembersAnswer,
   type Overview,
   type Payments,
@@ -200,7 +202,10 @@ export class OracleDesk extends WorkerEntrypoint<Env> {
  * The account desk: each wallet's own account and its organizations, their
  * statements, their members, and top-ups through Stripe Checkout — each on
  * the till's own clock (UTC). `wallet` is the session's, as numinia.com
- * verified it; every other argument comes from a browser through
+ * verified it; `house` is numinia.com's word that the session is the house's
+ * staff (STD-051 ORG-007: the house enters an organization with an
+ * administrator's reach as the organization allows, and its log keeps every
+ * act of theirs). Every other argument comes from a browser through
  * numinia.com and is never trusted. A refusal is an answer with problems in
  * words; only a failing database, or Stripe failing to answer, throws.
  * Methods, not arrow properties: RPC exposes only what the prototype
@@ -212,51 +217,69 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     return overview(this.env.TILL_DB, wallet, new Date());
   }
 
-  /** A new organization, with the wallet as its first admin. */
+  /** A new organization, with the wallet as its first owner and the Team template's roles. */
   async createTeam(wallet: unknown, name: unknown): Promise<TeamAnswer> {
     return createTeam(this.env.TILL_DB, wallet, name, new Date());
   }
 
-  /** Renames an organization: admins only. */
-  async renameTeam(wallet: unknown, accountId: unknown, name: unknown): Promise<TeamAnswer> {
-    return renameTeam(this.env.TILL_DB, wallet, accountId, name);
+  /** What the wallet may do in an organization, its roles, and who holds each act. */
+  async access(wallet: unknown, accountId: unknown, house?: unknown): Promise<AccessAnswer> {
+    return access(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** Renames an organization: whoever may manage it. */
+  async renameTeam(
+    wallet: unknown,
+    accountId: unknown,
+    name: unknown,
+    house?: unknown,
+  ): Promise<TeamAnswer> {
+    return renameTeam(this.env.TILL_DB, wallet, accountId, name, house, new Date());
   }
 
   /** Balance, lots, spend over `range` (`7d`, `30d`, `12m`), the last lines and, for an organization, its members. */
-  async statement(wallet: unknown, accountId: unknown, range: unknown): Promise<StatementAnswer> {
-    return statement(this.env.TILL_DB, wallet, accountId, range, new Date());
+  async statement(
+    wallet: unknown,
+    accountId: unknown,
+    range: unknown,
+    house?: unknown,
+  ): Promise<StatementAnswer> {
+    return statement(this.env.TILL_DB, wallet, accountId, range, house, new Date());
   }
 
-  /** An organization's members: admins only. */
-  async members(wallet: unknown, accountId: unknown): Promise<MembersAnswer> {
-    return members(this.env.TILL_DB, wallet, accountId);
+  /** An organization's members: to any of them. */
+  async members(wallet: unknown, accountId: unknown, house?: unknown): Promise<MembersAnswer> {
+    return members(this.env.TILL_DB, wallet, accountId, house, new Date());
   }
 
-  /** Adds a member, or changes a member's role: admins only, never the last admin away. */
+  /** Adds a member, or makes one `admin` or `member`: only below one's own highest role, never oneself or an owner. */
   async setMember(
     wallet: unknown,
     accountId: unknown,
     memberWallet: unknown,
     role: unknown,
+    house?: unknown,
   ): Promise<MembersAnswer> {
-    return setMember(this.env.TILL_DB, wallet, accountId, memberWallet, role, new Date());
+    return setMember(this.env.TILL_DB, wallet, accountId, memberWallet, role, house, new Date());
   }
 
-  /** Removes a member: admins only, never the last admin. */
+  /** Removes a member below one's own highest role, or lets the wallet leave; never the last owner. */
   async removeMember(
     wallet: unknown,
     accountId: unknown,
     memberWallet: unknown,
+    house?: unknown,
   ): Promise<MembersAnswer> {
-    return removeMember(this.env.TILL_DB, wallet, accountId, memberWallet);
+    return removeMember(this.env.TILL_DB, wallet, accountId, memberWallet, house, new Date());
   }
 
-  /** Opens a Stripe Checkout Session of 10, 50 or 100 € for an account the wallet belongs to. */
+  /** Opens a Stripe Checkout Session of 10, 50 or 100 € for the wallet's account or an organization where it may top up. */
   async startTopup(
     wallet: unknown,
     accountId: unknown,
     amountKey: unknown,
     returnBase: unknown,
+    house?: unknown,
   ): Promise<TopupStart> {
     return startTopup(
       this.env.TILL_DB,
@@ -265,6 +288,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
       accountId,
       amountKey,
       returnBase,
+      house,
       new Date(),
     );
   }

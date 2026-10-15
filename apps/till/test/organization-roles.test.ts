@@ -6,6 +6,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ORGANIZATION_PERMISSIONS, OWNER_ACTS, type OrganizationAccess } from '@numinia/domain';
 import { PROBLEMS } from '../src/db/accounts';
@@ -28,6 +29,10 @@ const ctx = {} as ExecutionContext;
 const EVERYTHING = [...ORGANIZATION_PERMISSIONS, ...OWNER_ACTS];
 
 type Shim = ReturnType<typeof migratedTill>;
+
+/** A migration's file, as sqlite-d1.ts reads them. */
+const migration = (name: string | undefined): string =>
+  fileURLToPath(new URL(`../migrations/${name ?? ''}`, import.meta.url).href);
 
 function scene(): Shim & { readonly desk: AccountDesk } {
   const shim = migratedTill();
@@ -97,7 +102,7 @@ describe('migration 0004: every organization founded before roles keeps working'
     const [last, ...earlier] = migrationFiles().reverse();
     expect(last).toBe('0004_organization_roles.sql');
     for (const name of earlier.reverse()) {
-      sqlite.exec(readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8'));
+      sqlite.exec(readFileSync(migration(name), 'utf8'));
     }
     const at = '2026-10-14T12:00:00.000Z';
     sqlite.exec(`
@@ -112,7 +117,7 @@ describe('migration 0004: every organization founded before roles keeps working'
       INSERT INTO team_members VALUES ('acc_t_two', '${FER}', 'admin', '${STRANGER}', '${at}');
       INSERT INTO team_members VALUES ('acc_t_two', '${MEMO}', 'member', '${STRANGER}', '${at}');
     `);
-    sqlite.exec(readFileSync(new URL(`../migrations/${last}`, import.meta.url), 'utf8'));
+    sqlite.exec(readFileSync(migration(last), 'utf8'));
 
     const roles = sqlite
       .prepare(
@@ -130,7 +135,7 @@ describe('migration 0004: every organization founded before roles keeps working'
         hoist: 0,
         permissions: '["enter-worlds","start-stop-worlds","build-in-worlds"]',
       },
-      { name: '@everyone', position: 0, hoist: 0, permissions: '["view-balance"]' },
+      { name: '@everyone', position: 0, hoist: 0, permissions: '["view-balance","top-up"]' },
     ]);
     const members = sqlite
       .prepare(
@@ -160,6 +165,41 @@ describe('migration 0004: every organization founded before roles keeps working'
       sqlite.exec(`DELETE FROM team_members WHERE account_id = 'acc_t_one' AND owner = 1`),
     ).toThrow(/owner/);
   });
+
+  it('gives an organization the old Worker founds between the migration and the deploy its owner, the Team template and its log line', async () => {
+    const { desk, sqlite } = scene();
+    const at = '2026-10-15T10:00:00.000Z';
+    // The statements of the Worker before roles (d243b82), as it runs them.
+    sqlite.exec(`
+      INSERT INTO accounts (id, kind, created_at) VALUES ('acc_t_old', 'team', '${at}');
+      INSERT INTO team_profiles (account_id, name, created_by, created_at)
+        VALUES ('acc_t_old', 'Old', '${PABLO}', '${at}');
+      INSERT INTO team_members (account_id, wallet, role, added_by, added_at)
+        VALUES ('acc_t_old', '${PABLO}', 'admin', '${PABLO}', '${at}');
+    `);
+    const answer = await desk.access(PABLO, 'acc_t_old');
+    expect(answer.ok && answer.as).toBe('owner');
+    const names = sqlite
+      .prepare(`SELECT name FROM team_roles WHERE account_id = 'acc_t_old' ORDER BY position DESC`)
+      .all()
+      .map((row) => row['name']);
+    expect(names).toEqual(['Administration', 'Finance', 'Member', '@everyone']);
+    const log = sqlite
+      .prepare(
+        `SELECT at, actor, as_house, act, detail FROM team_log WHERE account_id = 'acc_t_old'`,
+      )
+      .all()
+      .map((row) => ({ ...row }));
+    expect(log).toEqual([
+      {
+        at,
+        actor: PABLO,
+        as_house: 0,
+        act: 'organization-created',
+        detail: '{"name":"Old","template":"team"}',
+      },
+    ]);
+  });
 });
 
 describe('ORG-001: roles add up — what numinia.com asks before it shows anything', () => {
@@ -183,7 +223,7 @@ describe('ORG-001: roles add up — what numinia.com asks before it shows anythi
     const finance = await desk.access(FER, id);
     if (!finance.ok) throw new Error(finance.problems.join());
     expect(finance.as).toBe('member');
-    expect(finance.permissions).toEqual(['view-balance', 'manage-balance']);
+    expect(finance.permissions).toEqual(['view-balance', 'top-up', 'manage-balance']);
     expect(finance.roles.map((r) => r.name)).toEqual(['Finance', '@everyone']);
     expect(finance.holders['manage-balance']).toEqual(['Administration', 'Finance']);
     expect(finance.holders['delete-world']).toEqual([]);
@@ -194,6 +234,7 @@ describe('ORG-001: roles add up — what numinia.com asks before it shows anythi
       'build-in-worlds',
       'start-stop-worlds',
       'view-balance',
+      'top-up',
     ]);
     const admin = await desk.access(MARIA, id);
     expect(admin.ok && admin.permissions).toEqual([...ORGANIZATION_PERMISSIONS]);
@@ -242,11 +283,8 @@ describe('MIS-179: every cell of the four-role table, on the Team template', () 
       ['delete-world', 'see-world-code', 'download-world'],
       ['owner'],
     ],
-    [
-      'top up and change billing details',
-      ['manage-balance'],
-      ['owner', 'administration', 'finance'],
-    ],
+    ['change billing details', ['manage-balance'], ['owner', 'administration', 'finance']],
+    ['top up', ['top-up'], ['owner', 'administration', 'finance', 'member']],
     [
       'invite, remove and change roles',
       ['invite-members', 'remove-members', 'manage-roles'],
@@ -259,6 +297,7 @@ describe('MIS-179: every cell of the four-role table, on the Team template', () 
     'start-stop-worlds': ['Administration', 'Member'],
     'create-worlds': ['Administration'],
     'manage-balance': ['Administration', 'Finance'],
+    'top-up': ['Administration', '@everyone'],
     'invite-members': ['Administration'],
     'remove-members': ['Administration'],
     'manage-roles': ['Administration'],
@@ -284,11 +323,6 @@ describe('MIS-179: every cell of the four-role table, on the Team template', () 
           const read = await desk.statement(people[who], id, '7d');
           expect(read.ok).toBe(true);
         }
-        if (needed.includes('manage-balance')) {
-          const topup = await desk.startTopup(people[who], id, '10', RETURN);
-          if (may) expect(topup.ok).toBe(true);
-          else expect(topup).toEqual(refusal('manage-balance'));
-        }
         if (needed.includes('invite-members')) {
           const invited = await desk.setMember(people[who], id, newcomer[who], 'member');
           if (may) expect(invited.ok).toBe(true);
@@ -305,6 +339,44 @@ describe('MIS-179: every cell of the four-role table, on the Team template', () 
       });
     }
   }
+
+  // The Oracle split the row «top up and change billing details» on
+  // 2026-10-15 (MIS-179 0.3.0, STD-052 0.2.0): topping up is a permission of
+  // its own, `top-up`, which the Team template gives to @everyone.
+  for (const who of Object.keys(people) as Who[]) {
+    it(`top up through the desk: ${who} may, and the till keeps who paid`, async () => {
+      const { desk, sqlite } = scene();
+      const id = await studio(desk, sqlite);
+      const topup = await desk.startTopup(people[who], id, '10', RETURN);
+      expect(topup.ok).toBe(true);
+      const kept = sqlite
+        .prepare('SELECT wallet FROM checkouts WHERE account_id = ?')
+        .all(id)
+        .map((row) => row['wallet']);
+      expect(kept).toEqual([people[who]]);
+    });
+  }
+  it('top up through the desk: a stranger may not', async () => {
+    const { desk, sqlite } = scene();
+    const id = await studio(desk, sqlite);
+    expect(await desk.startTopup(STRANGER, id, '10', RETURN)).toEqual({
+      ok: false,
+      problems: [PROBLEMS.notMember],
+    });
+  });
+  it('top up through the desk: a team that takes it from @everyone leaves it to the roles that hold it', async () => {
+    const { desk, sqlite } = scene();
+    const id = await studio(desk, sqlite);
+    sqlite.exec(
+      `UPDATE team_roles SET permissions = '["view-balance"]' WHERE account_id = '${id}' AND position = 0`,
+    );
+    expect(await desk.startTopup(MEMO, id, '10', RETURN)).toEqual({
+      ok: false,
+      problems: [needs('top-up', ['Administration'])],
+    });
+    const owner = await desk.startTopup(PABLO, id, '10', RETURN);
+    expect(owner.ok).toBe(true);
+  });
 });
 
 describe('ORG-002: owners are not a role', () => {
@@ -458,7 +530,7 @@ describe('ORG-006: one organization never reaches another', () => {
     await desk.setMember(FER, other.account.id, MARIA, 'member');
     await desk.setMember(FER, other.account.id, ANA, 'member');
     const there = await desk.access(MARIA, other.account.id);
-    expect(there.ok && there.permissions).toEqual(['view-balance']);
+    expect(there.ok && there.permissions).toEqual(['view-balance', 'top-up']);
     expect(await desk.removeMember(MARIA, other.account.id, ANA)).toEqual({
       ok: false,
       problems: [needs('remove-members', ['Administration'])],
@@ -567,6 +639,15 @@ describe('ORG-009: every change is written down', () => {
     await studio(desk, sqlite);
     expect(() => sqlite.exec(`UPDATE team_log SET act = 'member-left'`)).toThrow(/kept/);
     expect(() => sqlite.exec('DELETE FROM team_log')).toThrow(/kept/);
+  });
+});
+
+describe('ORG-012: the till knows only the register’s permissions', () => {
+  it('fails closed on a role that carries a permission STD-052 does not register', async () => {
+    const { desk, sqlite } = scene();
+    const id = await studio(desk, sqlite);
+    sqlite.exec(`UPDATE team_roles SET permissions = '["fly"]' WHERE name = 'Member'`);
+    await expect(desk.access(MEMO, id)).rejects.toThrow(/STD-052/);
   });
 });
 

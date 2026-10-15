@@ -1,6 +1,6 @@
 /**
  * The register of organisation permissions (numinia-archive STD-052): the
- * labels of the sixteen permissions in the five languages, the cap of roles,
+ * labels of the seventeen permissions in the five languages, the cap of roles,
  * and the roles each kind of organisation is born with.
  */
 
@@ -137,12 +137,19 @@ export const ORGANIZATION_PERMISSION_LABELS: Readonly<
     ko: '잔액과 청구서 보기',
     'pt-br': 'Ver saldo e faturas',
   },
+  'top-up': {
+    es: 'Recargar saldo',
+    en: 'Top up',
+    ja: '残高のチャージ',
+    ko: '잔액 충전',
+    'pt-br': 'Recarregar saldo',
+  },
   'manage-balance': {
-    es: 'Recargar y facturación',
-    en: 'Top up and billing',
-    ja: 'チャージと請求情報',
-    ko: '충전과 청구 정보',
-    'pt-br': 'Recarregar e faturamento',
+    es: 'Datos de facturación',
+    en: 'Billing details',
+    ja: '請求情報',
+    ko: '청구 정보',
+    'pt-br': 'Dados de faturamento',
   },
 };
 
@@ -181,7 +188,7 @@ export const ORGANIZATION_TEMPLATES: Readonly<
   alpha: {
     id: 'alpha',
     roles: [{ name: ADMINISTRATION, permissions: ['administrator'], hoist: true }],
-    base: ['enter-worlds'],
+    base: ['enter-worlds', 'top-up'],
   },
   team: {
     id: 'team',
@@ -194,7 +201,7 @@ export const ORGANIZATION_TEMPLATES: Readonly<
         hoist: false,
       },
     ],
-    base: ['view-balance'],
+    base: ['view-balance', 'top-up'],
   },
   community: {
     id: 'community',
@@ -206,7 +213,7 @@ export const ORGANIZATION_TEMPLATES: Readonly<
         hoist: true,
       },
     ],
-    base: ['enter-worlds'],
+    base: ['enter-worlds', 'top-up'],
   },
 };
 

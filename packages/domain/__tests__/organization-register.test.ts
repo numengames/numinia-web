@@ -54,7 +54,7 @@ const OWNERS_ONLY: ReadonlyArray<readonly [string, readonly OwnerAct[]]> = [
 ];
 
 describe('ORG-012: the code holds what the register STD-052 holds', () => {
-  it('the sixteen permissions, in the register’s order', () => {
+  it('the seventeen permissions, in the register’s order', () => {
     expect(keys(section('Permissions'))).toEqual([...ORGANIZATION_PERMISSIONS]);
   });
 
