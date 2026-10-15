@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FRESH_SIGNATURE, type AccountDesk } from '../accounts';
+import { createThirdwebClient } from 'thirdweb';
+import { verifyEOASignature } from 'thirdweb/auth';
+import { privateKeyToAccount, type Account } from 'thirdweb/wallets';
+import {
+  FRESH_SIGNATURE,
+  SIGNATURE_EXPIRED,
+  SIGNATURE_MISMATCH,
+  type AccountDesk,
+} from '../accounts';
 import {
   MAX_BODY_BYTES,
   accountsFrom,
@@ -7,12 +15,14 @@ import {
   answerLog,
   answerOverview,
   answerRoles,
+  answerSignature,
   answerStatement,
   boundAccounts,
   fixtureAccounts,
   readSaldoRequest,
   resetFixtureAccountsForTests,
 } from '../accounts-source';
+import { FRESH_TTL_MS, actDigest, readFreshToken, type FreshDeps } from '../fresh-signature';
 
 const ME = `0x${'ab'.repeat(20)}`;
 const ACCOUNT = { id: 'acc', kind: 'team', name: 'Numen', role: 'admin', balanceCents: 88 };
@@ -115,6 +125,46 @@ function post(body: unknown, headers: Record<string, string> = {}): Request {
     headers: { 'content-type': 'application/json', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
+}
+
+function signatureRequest(body: unknown, query = 'locale=es'): Request {
+  return new Request(`https://numinia.com/api/saldo/signature?${query}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
+}
+
+const SECRET = 'z'.repeat(40);
+const NOW = Date.parse('2026-10-15T18:30:00.000Z');
+
+function freshDeps(overrides: Partial<FreshDeps> = {}): FreshDeps {
+  return {
+    secret: SECRET,
+    verify: async ({ message, signature, address }) =>
+      verifyEOASignature({ message, signature, address }),
+    now: () => NOW,
+    ...overrides,
+  };
+}
+
+/** A wallet of its own for each test: a random key, never one written down. */
+function testWallet(): Account {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const privateKey = `0x${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+  return privateKeyToAccount({ client: createThirdwebClient({ clientId: 'test' }), privateKey });
+}
+
+/** What the screen does: ask for the sentence of this very act, have the wallet sign it. */
+async function signedBy(
+  wallet: Account,
+  desk: AccountDesk,
+  body: unknown,
+): Promise<{ readonly token: string; readonly signature: string }> {
+  const you = wallet.address.toLowerCase();
+  const asked = await answerSignature(desk, you, signatureRequest(body), freshDeps(), quiet);
+  const { sign } = (await asked.json()) as { sign: { message: string; token: string } };
+  return { token: sign.token, signature: await wallet.signMessage({ message: sign.message }) };
 }
 
 const quiet = vi.fn();
@@ -464,7 +514,7 @@ describe('POST /api/saldo: roles', () => {
     );
   });
 
-  it('refuses to hand out administrator or manage-roles until a fresh signature can be asked (ORG-008)', async () => {
+  it('asks for a fresh signature before handing out administrator or manage-roles (ORG-008)', async () => {
     const desk = fakeDesk();
     const sensitive = [
       {
@@ -482,8 +532,13 @@ describe('POST /api/saldo: roles', () => {
       { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID },
     ];
     for (const body of sensitive) {
-      const response = await answerAction(desk, ME, post(body), quiet);
-      expect(await response.json()).toEqual({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+      // Unsigned, the act never reaches the till: with the secret at hand or without it.
+      for (const deps of [null, freshDeps()]) {
+        const response = await answerAction(desk, ME, post(body), quiet, deps);
+        expect(await response.json()).toEqual({
+          result: { ok: false, problems: [FRESH_SIGNATURE] },
+        });
+      }
     }
     expect(desk.createRole).not.toHaveBeenCalled();
     expect(desk.editRole).not.toHaveBeenCalled();
@@ -557,6 +612,237 @@ describe('POST /api/saldo: roles', () => {
   });
 });
 
+describe('POST /api/saldo/signature: the sentence a wallet signs (ORG-008)', () => {
+  const draft = { name: 'Ops', color: null, hoist: false, permissions: ['enter-worlds'] };
+  const grant = { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID };
+
+  it('needs a session, the secret, the page’s language and an act that asks for a signature', async () => {
+    const desk = fakeDesk();
+    const status = async (
+      body: unknown,
+      query = 'locale=es',
+      who: string | null = ME,
+      deps: FreshDeps | null = freshDeps(),
+      on: AccountDesk | null = desk,
+    ) => (await answerSignature(on, who, signatureRequest(body, query), deps, quiet)).status;
+    expect(await status(grant, 'locale=es', null)).toBe(401);
+    expect(await status(grant, 'locale=es', ME, null)).toBe(503);
+    expect(await status('{nope')).toBe(400);
+    expect(await status({ action: 'pay' })).toBe(400);
+    expect(await status(grant, '')).toBe(400);
+    expect(await status(grant, 'locale=fr')).toBe(400);
+    for (const chain of ['x', '0', '-1', '1.5', '9007199254740993', '']) {
+      expect(await status(grant, `locale=es&chain=${chain}`)).toBe(400);
+    }
+    // Nothing to sign: acts that never grant, and grants of nothing dangerous.
+    expect(
+      await status({ action: 'take-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID }),
+    ).toBe(400);
+    expect(await status({ action: 'create-team', name: 'X' })).toBe(400);
+    expect(await status({ action: 'create-role', accountId: 'acc', role: draft })).toBe(400);
+    expect(await status({ ...grant, roleId: ROLE_ID })).toBe(400);
+    expect(
+      await status({
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: ADMIN_ID,
+        change: { permissions: ['administrator'] },
+      }),
+    ).toBe(400);
+    expect(
+      await status({ action: 'edit-role', accountId: 'acc', roleId: ROLE_ID, change: {} }),
+    ).toBe(400);
+    expect(await status(grant, 'locale=es', ME, freshDeps(), null)).toBe(503);
+    // Asking for the sentence never acts.
+    expect(desk.giveRole).not.toHaveBeenCalled();
+  });
+
+  it('names the organization, the role, the person and the time, in the page’s language', async () => {
+    const desk = fakeDesk();
+    const response = await answerSignature(desk, ME, signatureRequest(grant), freshDeps(), quiet);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const { sign } = (await response.json()) as {
+      sign: { message: string; token: string; expiresAt: string };
+    };
+    expect(sign.message).toBe(
+      [
+        'Numinia · Numen',
+        'Das el rol «Administración», con Administrador, a 0xabab…abab.',
+        'Esta firma vale hasta las 18:32 UTC y solo para este cambio. No es una transacción ni cuesta nada.',
+      ].join('\n'),
+    );
+    expect(sign.expiresAt).toBe('2026-10-15T18:32:00.000Z');
+    expect(await readFreshToken(SECRET, sign.token)).toEqual({
+      wallet: ME,
+      act: await actDigest(grant),
+      message: sign.message,
+      chainId: null,
+      expiresAt: NOW + FRESH_TTL_MS,
+    });
+    expect(quiet).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'saldo-signature', action: 'give-role', outcome: 'issued' }),
+    );
+
+    const created = await answerSignature(
+      desk,
+      ME,
+      signatureRequest(
+        {
+          action: 'create-role',
+          accountId: 'acc',
+          role: { ...draft, permissions: ['enter-worlds', 'manage-roles'] },
+        },
+        'locale=en&chain=137',
+      ),
+      freshDeps(),
+      quiet,
+    );
+    const made = ((await created.json()) as { sign: { message: string; token: string } }).sign;
+    expect(made.message.split('\n')[1]).toBe(
+      'You create the role «Ops» and give it: Manage roles.',
+    );
+    expect((await readFreshToken(SECRET, made.token))?.chainId).toBe(137);
+
+    const edited = await answerSignature(
+      desk,
+      ME,
+      signatureRequest(
+        {
+          action: 'edit-role',
+          accountId: 'acc',
+          roleId: ROLE_ID,
+          change: { permissions: ['enter-worlds', 'administrator', 'manage-roles'] },
+        },
+        'locale=ja',
+      ),
+      freshDeps(),
+      quiet,
+    );
+    const changed = ((await edited.json()) as { sign: { message: string } }).sign;
+    expect(changed.message.split('\n')[1]).toBe(
+      'ロール「Gente」に管理者、ロールの管理を付与します。',
+    );
+  });
+
+  it('names the organization by its id when the wallet’s accounts do not list it', async () => {
+    for (const overview of [{ accounts: [] }, { ok: false, problems: ['not a member'] }]) {
+      const desk = fakeDesk({ overview: async () => overview });
+      const response = await answerSignature(desk, ME, signatureRequest(grant), freshDeps(), quiet);
+      const { sign } = (await response.json()) as { sign: { message: string } };
+      expect(sign.message.split('\n')[0]).toBe('Numinia · acc');
+    }
+  });
+
+  it('passes the desk’s refusals on as 403, and a broken desk as 502', async () => {
+    const closed = fakeDesk({ roles: async () => ({ ok: false, problems: ['not a member'] }) });
+    const refused = await answerSignature(closed, ME, signatureRequest(grant), freshDeps(), quiet);
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toEqual({ error: 'refused', problems: ['not a member'] });
+    const brokenRoles = fakeDesk({ roles: async () => ({ nonsense: true }) });
+    expect(
+      (await answerSignature(brokenRoles, ME, signatureRequest(grant), freshDeps(), quiet)).status,
+    ).toBe(502);
+    const brokenOverview = fakeDesk({ overview: async () => ({ nonsense: true }) });
+    expect(
+      (await answerSignature(brokenOverview, ME, signatureRequest(grant), freshDeps(), quiet))
+        .status,
+    ).toBe(502);
+  });
+
+  it('logs to telemetry by default', async () => {
+    const response = await answerSignature(null, null, signatureRequest(grant), null);
+    expect(response.status).toBe(401);
+  });
+});
+
+describe('POST /api/saldo with a fresh signature (ORG-008)', () => {
+  const grant = { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID };
+
+  it('carries out the grant once the session’s wallet has signed this very act', async () => {
+    const wallet = testWallet();
+    const you = wallet.address.toLowerCase();
+    const desk = fakeDesk();
+    const fresh = await signedBy(wallet, desk, grant);
+    const response = await answerAction(desk, you, post({ ...grant, fresh }), quiet, freshDeps());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ result: { ok: true, accountId: 'acc' } });
+    expect(desk.giveRole).toHaveBeenCalledWith(you, 'acc', ME, ADMIN_ID);
+    expect(quiet).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'saldo-role', action: 'give-role', outcome: 'done' }),
+    );
+
+    const role = {
+      name: 'Ops',
+      color: null,
+      hoist: true,
+      permissions: ['manage-roles', 'enter-worlds'],
+    };
+    const create = { action: 'create-role', accountId: 'acc', role };
+    const signed = await signedBy(wallet, desk, create);
+    // The same act, its keys in another order: still the act that was signed.
+    const reordered = { role: { ...role }, accountId: 'acc', action: 'create-role', fresh: signed };
+    const made = await answerAction(desk, you, post(reordered), quiet, freshDeps());
+    expect(made.status).toBe(200);
+    expect(desk.createRole).toHaveBeenCalledWith(you, 'acc', role);
+  });
+
+  it('refuses a late proof, a proof for another act or from another wallet, and writes nothing', async () => {
+    const wallet = testWallet();
+    const you = wallet.address.toLowerCase();
+    const desk = fakeDesk();
+    const fresh = await signedBy(wallet, desk, grant);
+    const answerOf = async (body: unknown, who: string, deps = freshDeps()) =>
+      (await answerAction(desk, who, post(body), quiet, deps)).json();
+    const late = freshDeps({ now: () => NOW + FRESH_TTL_MS + 1 });
+    expect(await answerOf({ ...grant, fresh }, you, late)).toEqual({
+      result: { ok: false, problems: [SIGNATURE_EXPIRED] },
+    });
+    const elsewhere = { ...grant, wallet: `0x${'ef'.repeat(20)}`, fresh };
+    expect(await answerOf(elsewhere, you)).toEqual({
+      result: { ok: false, problems: [SIGNATURE_MISMATCH] },
+    });
+    const stranger = testWallet().address.toLowerCase();
+    expect(await answerOf({ ...grant, fresh }, stranger)).toEqual({
+      result: { ok: false, problems: [SIGNATURE_MISMATCH] },
+    });
+    expect(desk.giveRole).not.toHaveBeenCalled();
+    expect(quiet).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'signature-expired' }));
+    expect(quiet).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'signature-mismatch' }));
+  });
+
+  it('without the secret nothing dangerous passes, signed or not', async () => {
+    const desk = fakeDesk();
+    const fresh = { token: 'f1.a.b', signature: '0x01' };
+    const response = await answerAction(desk, ME, post({ ...grant, fresh }), quiet, null);
+    expect(await response.json()).toEqual({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+    expect(desk.giveRole).not.toHaveBeenCalled();
+  });
+
+  it('refuses a proof out of shape before anything else, and ignores one where nothing asks for it', async () => {
+    const desk = fakeDesk();
+    for (const fresh of [
+      'x',
+      null,
+      { token: 'f1.a.b' },
+      { token: '', signature: '0x01' },
+      { token: 'f1.a.b', signature: 'zz' },
+      { token: 'f1.a.b', signature: '0x01', extra: 1 },
+      { token: 't'.repeat(5000), signature: '0x01' },
+    ]) {
+      const response = await answerAction(desk, ME, post({ ...grant, fresh }), quiet, freshDeps());
+      expect(response.status).toBe(400);
+    }
+    const fresh = { token: 'f1.a.b', signature: '0x01' };
+    const plain = { ...grant, roleId: ROLE_ID, fresh };
+    expect((await answerAction(desk, ME, post(plain), quiet, freshDeps())).status).toBe(200);
+    expect(desk.giveRole).toHaveBeenCalledTimes(1);
+    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID);
+    const team = { action: 'create-team', name: 'Numen', fresh };
+    expect((await answerAction(desk, ME, post(team), quiet, freshDeps())).status).toBe(200);
+  });
+});
+
 describe('POST /api/saldo', () => {
   it('needs a session, JSON, a small body and a known action', async () => {
     expect((await answerAction(fakeDesk(), null, post({}), quiet)).status).toBe(401);
@@ -579,7 +865,7 @@ describe('POST /api/saldo', () => {
         await answerAction(
           fakeDesk(),
           ME,
-          post({ action: 'create-team', name: 'x'.repeat(5000) }),
+          post({ action: 'create-team', name: 'x'.repeat(MAX_BODY_BYTES) }),
           quiet,
         )
       ).status,
