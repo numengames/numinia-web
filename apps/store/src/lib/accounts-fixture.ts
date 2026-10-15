@@ -14,16 +14,18 @@
  * Stripe at all. It is a fake: the till holds the real rules (apps/till).
  */
 
+import { ORGANIZATION_PERMISSIONS, OWNER_ACTS, type OrganizationAccess } from '@numinia/domain';
 import {
-  ADMIN_ONLY,
-  LAST_ADMIN,
+  LAST_OWNER,
   NOT_MEMBER,
+  OWN_ROLES,
   isCheckoutId,
   isSpendRange,
   isTopupKey,
   teamName,
   walletOf,
   type AccountDesk,
+  type DeskAccess,
   type DeskAccount,
   type DeskConfirmAnswer,
   type DeskLine,
@@ -79,6 +81,18 @@ const CHARGE_AT_MS = 30 * 60_000;
 const TOPUP_AT_MS = 10 * 3_600_000;
 const VAT_RATE = 0.21;
 const LAST_LINES = 100;
+
+/**
+ * The fixture's two roles, in the till's words: «admin» is an owner (every
+ * act), «member» holds only what the base role gives in the Alpha template.
+ */
+const ADMIN_ROLE = 'Administration';
+const BASE_ROLE = '@everyone';
+const BASE_ACTS: readonly OrganizationAccess[] = ['enter-worlds', 'top-up', 'view-balance'];
+
+/** The till's refusal for want of a permission, as it words it. */
+const needs = (act: OrganizationAccess): string =>
+  `this needs ${act}, which the owners hold, and the role ${ADMIN_ROLE}`;
 
 /** The way back must be this site: production, or a local server. */
 const RETURN_BASES = ['https://numinia.com/', 'http://localhost', 'http://127.0.0.1'];
@@ -234,15 +248,17 @@ export function createAccountsFixtureDesk(
     return { who, book };
   };
 
-  /** The team an admin manages, or why not. */
+  /** The team where the wallet may do `act`, or why not. */
   const managed = (
     wallet: unknown,
     accountId: unknown,
+    act: OrganizationAccess,
   ): { who: string; book: Book } | DeskRefusal => {
     const found = find(wallet, accountId);
     if ('ok' in found) return found;
-    if (found.book.kind !== 'team' || roleIn(found.book, found.who) !== 'admin') {
-      return refuse(ADMIN_ONLY);
+    if (found.book.kind !== 'team') return refuse('not an organization');
+    if (roleIn(found.book, found.who) !== 'admin' && !BASE_ACTS.includes(act)) {
+      return refuse(needs(act));
     }
     return found;
   };
@@ -280,7 +296,7 @@ export function createAccountsFixtureDesk(
     },
 
     renameTeam: async (wallet, accountId, name): Promise<DeskTeamAnswer> => {
-      const found = managed(wallet, accountId);
+      const found = managed(wallet, accountId, 'manage-organization');
       if ('ok' in found) return found;
       const clean = typeof name === 'string' ? teamName(name) : null;
       if (clean === null) return refuse('name must be 1 to 60 characters');
@@ -309,34 +325,71 @@ export function createAccountsFixtureDesk(
     },
 
     members: async (wallet, accountId): Promise<DeskMembersAnswer> => {
-      const found = managed(wallet, accountId);
-      return 'ok' in found ? found : membersAnswer(found.book);
+      const found = find(wallet, accountId);
+      if ('ok' in found) return found;
+      return found.book.kind === 'team' ? membersAnswer(found.book) : refuse('not an organization');
+    },
+
+    access: async (wallet, accountId) => {
+      const found = find(wallet, accountId);
+      if ('ok' in found) return found;
+      if (found.book.kind !== 'team') return refuse('not an organization');
+      const owner = roleIn(found.book, found.who) === 'admin';
+      const acts = [...ORGANIZATION_PERMISSIONS, ...OWNER_ACTS];
+      const access: DeskAccess = {
+        as: owner ? 'owner' : 'member',
+        permissions: owner ? acts : [...BASE_ACTS],
+        holders: Object.fromEntries(
+          acts.map((act) => [
+            act,
+            (OWNER_ACTS as readonly string[]).includes(act)
+              ? []
+              : BASE_ACTS.includes(act)
+                ? [ADMIN_ROLE, BASE_ROLE]
+                : [ADMIN_ROLE],
+          ]),
+        ),
+      };
+      return { ok: true, accountId: found.book.id, ...access };
     },
 
     setMember: async (wallet, accountId, memberWallet, role): Promise<DeskMembersAnswer> => {
-      const found = managed(wallet, accountId);
+      const found = find(wallet, accountId);
       if ('ok' in found) return found;
+      if (found.book.kind !== 'team') return refuse('not an organization');
       const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
       if (member === null) return refuse('member must be a 0x address');
       if (role !== 'admin' && role !== 'member') return refuse('role must be admin or member');
       const { members } = found.book;
       const current = members.find((entry) => entry.wallet === member);
-      const admins = members.filter((entry) => entry.role === 'admin').length;
-      if (current?.role === 'admin' && role === 'member' && admins === 1) return refuse(LAST_ADMIN);
+      // Adding needs «invite-members»; a role needs «manage-roles» (STD-052).
+      const allowed = managed(
+        wallet,
+        accountId,
+        current === undefined ? 'invite-members' : 'manage-roles',
+      );
+      if ('ok' in allowed) return allowed;
+      if (member === found.who) return refuse(OWN_ROLES);
       if (current) current.role = role;
       else members.push({ wallet: member, role, addedAt: now().toISOString() });
       return membersAnswer(found.book);
     },
 
     removeMember: async (wallet, accountId, memberWallet): Promise<DeskMembersAnswer> => {
-      const found = managed(wallet, accountId);
+      const found = find(wallet, accountId);
       if ('ok' in found) return found;
+      if (found.book.kind !== 'team') return refuse('not an organization');
       const member = typeof memberWallet === 'string' ? walletOf(memberWallet) : null;
       const { members } = found.book;
       const index = members.findIndex((entry) => entry.wallet === member);
-      if (index === -1) return refuse('not in this team');
-      const admins = members.filter((entry) => entry.role === 'admin').length;
-      if (members[index]?.role === 'admin' && admins === 1) return refuse(LAST_ADMIN);
+      if (index === -1) return refuse('that wallet is not a member of the organization');
+      const leaving = member === found.who;
+      if (!leaving) {
+        const allowed = managed(wallet, accountId, 'remove-members');
+        if ('ok' in allowed) return allowed;
+      }
+      const owners = members.filter((entry) => entry.role === 'admin').length;
+      if (members[index]?.role === 'admin' && owners === 1) return refuse(LAST_OWNER);
       members.splice(index, 1);
       return membersAnswer(found.book);
     },

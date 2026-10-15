@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { ORGANIZATION_PERMISSIONS, type OrganizationRefusal } from '@numinia/domain';
+import { ORG_PROBLEMS, refusalOf } from '../../../../till/src/lib/organizations';
+import { PROBLEMS } from '../../../../till/src/db/accounts';
 import {
-  ADMIN_ONLY,
-  LAST_ADMIN,
+  LAST_OWNER,
+  MEANWHILE,
+  NO_ADMIN_ROLE,
+  NOT_BELOW,
   NOT_CONFIGURED,
   NOT_MEMBER,
+  OWNER_ONLY,
+  OWN_ROLES,
   bucketsOf,
   chartBars,
   checkoutTarget,
@@ -17,8 +24,12 @@ import {
   isTopupKey,
   isWallet,
   lineLabel,
-  problemOf,
+  can,
+  holdersOf,
+  needsSentence,
+  readAccess,
   readOverview,
+  readProblem,
   readResult,
   readStatement,
   readYou,
@@ -130,11 +141,131 @@ describe('money, days and months for people', () => {
 
 describe('the till’s refusals', () => {
   it('tells apart the ones the screen has words for', () => {
-    expect(problemOf([NOT_CONFIGURED])).toBe('notConfigured');
-    expect(problemOf([NOT_MEMBER])).toBe('notMember');
-    expect(problemOf([ADMIN_ONLY])).toBe('adminOnly');
-    expect(problemOf([LAST_ADMIN])).toBe('lastAdmin');
-    expect(problemOf(['something else'])).toBe('other');
+    expect(readProblem([NOT_CONFIGURED])).toEqual({ key: 'notConfigured' });
+    expect(readProblem([NOT_MEMBER])).toEqual({ key: 'notMember' });
+    expect(readProblem([LAST_OWNER])).toEqual({ key: 'lastOwner' });
+    expect(readProblem([OWN_ROLES])).toEqual({ key: 'ownRoles' });
+    expect(readProblem([NOT_BELOW])).toEqual({ key: 'notBelow' });
+    expect(readProblem([OWNER_ONLY])).toEqual({ key: 'ownerOnly' });
+    expect(readProblem([NO_ADMIN_ROLE])).toEqual({ key: 'noAdminRole' });
+    expect(readProblem([MEANWHILE])).toEqual({ key: 'meanwhile' });
+    expect(readProblem(['something else'])).toEqual({ key: 'other' });
+    expect(readProblem([])).toEqual({ key: 'other' });
+    expect(readProblem(['something else', NOT_BELOW])).toEqual({ key: 'notBelow' });
+  });
+
+  it('says which permission is missing and who holds it', () => {
+    expect(
+      readProblem([
+        'this needs invite-members, which the owners hold, and the role Administration',
+      ]),
+    ).toEqual({ key: 'needs', act: 'invite-members', holders: 'Administration' });
+    expect(
+      readProblem([
+        'this needs manage-roles, which the owners hold, and the roles Sales and Marketing, Finance and Administration',
+      ]),
+    ).toEqual({
+      key: 'needs',
+      act: 'manage-roles',
+      holders: 'Sales and Marketing, Finance and Administration',
+    });
+    expect(readProblem(['this needs top-up, which only the owners hold'])).toEqual({
+      key: 'needs',
+      act: 'top-up',
+    });
+    // An act only owners do has no label of its own.
+    expect(readProblem(['this needs delete-world, which only the owners hold'])).toEqual({
+      key: 'ownersOnly',
+    });
+  });
+
+  it('knows every sentence the till writes (apps/till), so none falls to «other»', () => {
+    expect(NOT_MEMBER).toBe(PROBLEMS.notMember);
+    expect(NOT_CONFIGURED).toBe(PROBLEMS.notConfigured);
+    expect(MEANWHILE).toBe(PROBLEMS.meanwhile);
+    expect(LAST_OWNER).toBe(ORG_PROBLEMS.lastOwner);
+    expect(OWN_ROLES).toBe(ORG_PROBLEMS.ownRoles);
+    expect(NOT_BELOW).toBe(ORG_PROBLEMS.notBelow);
+    expect(OWNER_ONLY).toBe(ORG_PROBLEMS.owner);
+    expect(NO_ADMIN_ROLE).toBe(ORG_PROBLEMS.noAdministratorRole);
+    const refusals: OrganizationRefusal[] = [
+      'missing-permission',
+      'not-below',
+      'own-roles',
+      'self',
+      'owner',
+      'base-role',
+      'grant-exceeds',
+      'role-limit',
+      'owners-only',
+      'last-owner',
+      'alpha',
+    ];
+    for (const refusal of refusals) {
+      for (const act of ORGANIZATION_PERMISSIONS) {
+        const roles = [
+          {
+            id: 'r',
+            name: 'Sales, and more',
+            position: 1,
+            permissions: [act],
+            color: null,
+            hoist: false,
+          },
+        ];
+        const read = readProblem([refusalOf(refusal, act, roles)]);
+        expect(read.key, `${refusal} / ${act}`).not.toBe('other');
+        if (refusal === 'missing-permission') {
+          expect(read).toEqual({ key: 'needs', act, holders: 'Sales, and more' });
+        }
+      }
+    }
+  });
+});
+
+describe('what a wallet may do in an organization', () => {
+  const access = {
+    as: 'member' as const,
+    permissions: ['enter-worlds', 'top-up'] as const,
+    holders: { 'invite-members': ['Administration', 'Finance'], 'manage-roles': [] },
+  };
+  const here = { ...access, permissions: [...access.permissions] };
+
+  it('shows every control while the till has not said, and only the allowed ones after', () => {
+    expect(can(null, 'invite-members')).toBe(true);
+    expect(can(here, 'top-up')).toBe(true);
+    expect(can(here, 'invite-members')).toBe(false);
+  });
+
+  it('lists the roles that could open a door, in the reader’s language', () => {
+    expect(holdersOf(here, 'invite-members', 'en')).toBe('Administration and Finance');
+    expect(holdersOf(here, 'invite-members', 'es')).toBe('Administration y Finance');
+    expect(holdersOf(here, 'manage-roles', 'en')).toBeNull();
+    expect(holdersOf(here, 'remove-members', 'en')).toBeNull();
+    expect(holdersOf(null, 'invite-members', 'en')).toBeNull();
+  });
+
+  it('writes the sentence from the page’s words', () => {
+    const words = {
+      needs: 'Needs “{act}”: {holders}.',
+      needsOwners: 'Needs “{act}”, owners only.',
+    };
+    expect(needsSentence(words, 'Invite', 'Administration')).toBe(
+      'Needs “Invite”: Administration.',
+    );
+    expect(needsSentence(words, 'Invite', null)).toBe('Needs “Invite”, owners only.');
+  });
+
+  it('reads the access the API carries, or null', () => {
+    expect(readAccess({ access: here })).toEqual(here);
+    expect(readAccess({ access: { ...here, as: 'house' } })).toMatchObject({ as: 'house' });
+    expect(readAccess({ access: { ...here, as: 'owner' } })).toMatchObject({ as: 'owner' });
+    expect(readAccess({ access: null })).toBeNull();
+    expect(readAccess({})).toBeNull();
+    expect(readAccess('x')).toBeNull();
+    expect(readAccess({ access: { ...here, as: 'nobody' } })).toBeNull();
+    expect(readAccess({ access: { ...here, permissions: 'all' } })).toBeNull();
+    expect(readAccess({ access: { ...here, holders: [] } })).toBeNull();
   });
 });
 

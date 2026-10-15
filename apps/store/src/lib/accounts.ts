@@ -13,7 +13,12 @@
  * The till decides who may do what (membership); this module only shapes.
  */
 
-import type { SupportedLocale } from '@numinia/domain';
+import {
+  ORGANIZATION_PERMISSIONS,
+  type OrganizationAccess,
+  type OrganizationPermission,
+  type SupportedLocale,
+} from '@numinia/domain';
 import { localeHref } from './app-nav';
 
 // ---- The contract with the till's desk (SPEC «AccountDesk methods») -------
@@ -93,6 +98,18 @@ export interface DeskStatement {
 export type DeskTeamAnswer = { ok: true; account: DeskAccount } | DeskRefusal;
 export type DeskMembersAnswer = { ok: true; members?: DeskMember[] } | DeskRefusal;
 export type DeskTopupAnswer = { ok: true; url: string } | DeskRefusal;
+/**
+ * What the till says a wallet may do in an organization (its `access`):
+ * on whose behalf it acts, every act it may do, and for every act the
+ * names of the roles that hold it. The screen hides what the wallet may
+ * not do and says who could; the till still decides on every write.
+ */
+export interface DeskAccess {
+  as: 'owner' | 'house' | 'member';
+  permissions: OrganizationAccess[];
+  holders: Partial<Record<OrganizationAccess, string[]>>;
+}
+
 export type DeskConfirmAnswer =
   { ok: true; state: CheckoutState; accountId: string; balanceCents: number } | DeskRefusal;
 
@@ -111,6 +128,10 @@ export interface AccountDesk {
     range: SpendRange,
   ): Promise<DeskStatement | DeskRefusal>;
   members(wallet: string, accountId: string): Promise<DeskMembersAnswer>;
+  access(
+    wallet: string,
+    accountId: string,
+  ): Promise<({ ok: true; accountId: string } & DeskAccess) | DeskRefusal>;
   setMember(
     wallet: string,
     accountId: string,
@@ -134,6 +155,7 @@ export const DESK_METHODS = [
   'renameTeam',
   'statement',
   'members',
+  'access',
   'setMember',
   'removeMember',
   'startTopup',
@@ -149,11 +171,25 @@ export const LOW_BALANCE_CENTS = 1000;
 /** An organization's name: 1 to 60 characters once trimmed (the till's CHECK). */
 export const TEAM_NAME_MAX = 60;
 
-// The till's own words for the refusals the screen tells apart.
+// The till's own words for the refusals the screen tells apart (apps/till:
+// db/accounts.ts PROBLEMS and lib/organizations.ts ORG_PROBLEMS, pinned by
+// a test that reads them).
 export const NOT_MEMBER = 'not a member';
 export const NOT_CONFIGURED = 'payments are not configured';
-export const ADMIN_ONLY = 'only an admin of the organization may do this';
-export const LAST_ADMIN = 'an organization keeps at least one admin';
+export const LAST_OWNER = 'an organization keeps at least one owner';
+export const OWN_ROLES = 'nobody changes their own roles: they may only leave';
+export const NOT_BELOW = 'you may act only on roles and members below your own highest role';
+export const OWNER_ONLY = 'only the owners name or remove an owner';
+export const NO_ADMIN_ROLE = 'no role of the organization carries administrator';
+export const MEANWHILE = 'the organization changed meanwhile: read it again';
+const BASE_ROLE = 'everyone holds the base role: it is neither given nor taken away';
+const GRANT_EXCEEDS = 'you may grant or take away only the permissions you hold';
+const ROLE_LIMIT = /^an organization holds at most \d+ roles besides the base role$/;
+const OWNERS_ONLY = 'only the owners may do this';
+const ALPHA = "no organization changes the house's access during the alpha";
+/** «this needs manage-roles, which the owners hold, and the roles A and B» (or «which only the owners hold»). */
+const NEEDS =
+  /^this needs ([a-z-]+), which (?:only the owners hold|the owners hold, and the roles? (.+))$/;
 
 // ---- Small shared checks ---------------------------------------------------
 
@@ -329,14 +365,92 @@ export function chartBars(series: readonly DeskSpend[], width: number, height: n
 }
 
 /** Which of the till's refusals the screen has its own words for. */
-export type ProblemKey = 'notMember' | 'adminOnly' | 'lastAdmin' | 'notConfigured' | 'other';
+export type ProblemKey =
+  | 'notMember'
+  | 'notConfigured'
+  | 'lastOwner'
+  | 'ownRoles'
+  | 'notBelow'
+  | 'ownerOnly'
+  | 'noAdminRole'
+  | 'baseRole'
+  | 'grantExceeds'
+  | 'roleLimit'
+  | 'ownersOnly'
+  | 'alpha'
+  | 'meanwhile'
+  | 'needs'
+  | 'other';
 
-export function problemOf(problems: readonly string[]): ProblemKey {
-  if (problems.includes(NOT_CONFIGURED)) return 'notConfigured';
-  if (problems.includes(NOT_MEMBER)) return 'notMember';
-  if (problems.includes(ADMIN_ONLY)) return 'adminOnly';
-  if (problems.includes(LAST_ADMIN)) return 'lastAdmin';
-  return 'other';
+const SENTENCES: ReadonlyMap<string, ProblemKey> = new Map([
+  [NOT_MEMBER, 'notMember'],
+  [NOT_CONFIGURED, 'notConfigured'],
+  [LAST_OWNER, 'lastOwner'],
+  [OWN_ROLES, 'ownRoles'],
+  [NOT_BELOW, 'notBelow'],
+  [OWNER_ONLY, 'ownerOnly'],
+  [NO_ADMIN_ROLE, 'noAdminRole'],
+  [BASE_ROLE, 'baseRole'],
+  [GRANT_EXCEEDS, 'grantExceeds'],
+  [OWNERS_ONLY, 'ownersOnly'],
+  [ALPHA, 'alpha'],
+  [MEANWHILE, 'meanwhile'],
+]);
+
+/** One refusal, read: its key and, for a missing permission, which one and who holds it. */
+export interface ReadProblem {
+  readonly key: ProblemKey;
+  /** `needs` only: the permission the wallet lacks. */
+  readonly act?: OrganizationPermission;
+  /** `needs` only: the roles that hold it, as the till wrote them; absent when only the owners do. */
+  readonly holders?: string;
+}
+
+const isPermission = (text: string): text is OrganizationPermission =>
+  (ORGANIZATION_PERMISSIONS as readonly string[]).includes(text);
+
+export function readProblem(problems: readonly string[]): ReadProblem {
+  for (const problem of problems) {
+    const known = SENTENCES.get(problem);
+    if (known !== undefined) return { key: known };
+    if (ROLE_LIMIT.test(problem)) return { key: 'roleLimit' };
+    const needs = NEEDS.exec(problem);
+    if (needs !== null) {
+      const [, act = '', holders] = needs;
+      // An act only the owners hold has no label: it is the owners' own.
+      if (!isPermission(act)) return { key: 'ownersOnly' };
+      return holders === undefined ? { key: 'needs', act } : { key: 'needs', act, holders };
+    }
+  }
+  return { key: 'other' };
+}
+
+/** Whether the wallet may do `act` here. Unknown access (null) shows the control: the till decides anyway. */
+export function can(access: DeskAccess | null, act: OrganizationAccess): boolean {
+  return access === null || access.permissions.includes(act);
+}
+
+/** The roles that hold `act`, in the language's own list («A, B y C»), or null when none or unknown. */
+export function holdersOf(
+  access: DeskAccess | null,
+  act: OrganizationAccess,
+  lang: string,
+): string | null {
+  const names = access?.holders[act] ?? [];
+  return names.length === 0
+    ? null
+    : new Intl.ListFormat(lang, { style: 'long', type: 'conjunction' }).format(names);
+}
+
+/** The two sentences a missing permission is told in (`{act}`, and `{holders}` in the first). */
+export interface NeedsWords {
+  readonly needs: string;
+  readonly needsOwners: string;
+}
+
+/** «Para hacerlo hace falta «Invitar», que tienen …»: `act` is the permission's label in the page's language. */
+export function needsSentence(words: NeedsWords, act: string, holders: string | null): string {
+  return holders === null ? fill(words.needsOwners, { act }) : fill(words.needs, { act, holders });
 }
 
 // ---- Stripe in a new tab and the way back ----------------------------------
@@ -430,6 +544,22 @@ export function readStatement(json: unknown): DeskStatement | null {
 /** GET /api/saldo/statement also names who is asking (to mark «tú» among the members). */
 export function readYou(json: unknown): string | null {
   return isRecord(json) && typeof json['you'] === 'string' ? json['you'] : null;
+}
+
+/** GET /api/saldo/statement carries the wallet's access to an organization; null for a personal account or when unread. */
+export function readAccess(json: unknown): DeskAccess | null {
+  if (!isRecord(json) || !isRecord(json['access'])) return null;
+  const access = json['access'];
+  const holders = access['holders'];
+  return (access['as'] === 'owner' || access['as'] === 'house' || access['as'] === 'member') &&
+    Array.isArray(access['permissions']) &&
+    isRecord(holders)
+    ? {
+        as: access['as'],
+        permissions: (access['permissions'] as unknown[]).map(String) as OrganizationAccess[],
+        holders: holders as DeskAccess['holders'],
+      }
+    : null;
 }
 
 /** What a POST answered: the desk's own `{ ok, … }`, or null when the body is not one. */

@@ -18,7 +18,25 @@ function today(daysAgo: number): string {
   return new Date(Date.now() - daysAgo * 86_400_000).toISOString().slice(0, 10);
 }
 
-function statementOf(account: typeof PERSONAL | typeof TEAM) {
+/** What the till says an ordinary member may do: enter and top up, nothing else. */
+const MEMBER_ACCESS = {
+  as: 'member',
+  permissions: ['enter-worlds', 'top-up', 'view-balance'],
+  holders: {
+    'manage-organization': ['Administration'],
+    'invite-members': ['Administration', 'Finance'],
+    'manage-roles': ['Administration'],
+    'remove-members': ['Administration'],
+    'top-up': ['Administration', '@everyone'],
+  },
+};
+/** A person who holds nothing here, not even the top-up (the base role was narrowed). */
+const NO_TOPUP_ACCESS = {
+  ...MEMBER_ACCESS,
+  permissions: ['enter-worlds'],
+};
+
+function statementOf(account: typeof PERSONAL | typeof TEAM, access: object | null = null) {
   const team = account.kind === 'team';
   return {
     statement: {
@@ -52,20 +70,21 @@ function statementOf(account: typeof PERSONAL | typeof TEAM) {
         : {}),
     },
     you: WALLET,
+    access: account.kind === 'team' ? access : null,
   };
 }
 
 /** The way back the till would answer: this very site, wherever the suite serves it. */
 const VUELTA = '/es/saldo/vuelta/?session_id=cs_test_e2e';
 
-async function signedIn(page: Page): Promise<string[]> {
+async function signedIn(page: Page, access: object | null = null): Promise<string[]> {
   const posted: string[] = [];
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({ status: 200, json: { address: WALLET, rank: 'nomad' } }),
   );
   await page.route('**/api/saldo/statement?*', (route: Route) => {
     const id = new URL(route.request().url()).searchParams.get('cuenta');
-    return route.fulfill({ json: statementOf(id === TEAM.id ? TEAM : PERSONAL) });
+    return route.fulfill({ json: statementOf(id === TEAM.id ? TEAM : PERSONAL, access) });
   });
   await page.route('**/api/saldo', (route: Route) => {
     if (route.request().method() === 'GET') {
@@ -122,6 +141,35 @@ test('switching to an organization shows its balance and its team', async ({ pag
   await expect(team).toBeVisible();
   await expect(team.locator('tbody tr')).toHaveCount(2);
   await expect(team).toContainText('(tú)');
+});
+
+test('a member sees only what the roles let them do, and who could do the rest', async ({
+  page,
+}) => {
+  await signedIn(page, MEMBER_ACCESS);
+  await page.goto('/es/saldo/');
+  await page.locator('#saldo-cuenta').selectOption('acc_t');
+  const team = page.locator('[data-saldo-team]');
+  await expect(team).toBeVisible();
+  // Every member may top up and leave; nothing else is offered.
+  await expect(page.locator('[data-metric="saldo-pay"]')).toBeVisible();
+  await expect(team.locator('[data-metric="saldo-rename"]')).toHaveCount(0);
+  await expect(team.locator('[data-metric="saldo-member-add"]')).toHaveCount(0);
+  await expect(team.locator('[data-metric="saldo-member-role"]')).toHaveCount(0);
+  await expect(team.locator('[data-metric="saldo-member-remove"]')).toHaveCount(1);
+  await expect(team.locator('[data-metric="saldo-member-remove"]')).toHaveText('Salir');
+  await expect(team.locator('[data-saldo-no-invite]')).toContainText('«Invitar»');
+  await expect(team.locator('[data-saldo-no-invite]')).toContainText('Administration y Finance');
+});
+
+test('without the top-up permission the form is replaced by the sentence that says who has it', async ({
+  page,
+}) => {
+  await signedIn(page, NO_TOPUP_ACCESS);
+  await page.goto('/es/saldo/');
+  await page.locator('#saldo-cuenta').selectOption('acc_t');
+  await expect(page.locator('[data-saldo-no-topup]')).toContainText('«Recargar saldo»');
+  await expect(page.locator('[data-metric="saldo-pay"]')).toHaveCount(0);
 });
 
 test('a top-up opens Stripe in a new tab and this tab stays on Saldo', async ({

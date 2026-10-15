@@ -26,6 +26,16 @@ const STATEMENT = {
   members: [{ wallet: ME, role: 'admin', addedAt: 'a' }],
 };
 
+const ACCESS = {
+  ok: true,
+  accountId: 'acc',
+  as: 'member',
+  permissions: ['enter-worlds', 'top-up'],
+  roles: [],
+  holders: { 'invite-members': ['Administration'] },
+  houseAccess: 'alpha',
+};
+
 function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): AccountDesk {
   const answer = (value: unknown) => vi.fn(async () => value);
   return {
@@ -34,6 +44,7 @@ function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): 
     renameTeam: answer({ ok: true, account: ACCOUNT }),
     statement: answer(STATEMENT),
     members: answer({ ok: true, members: [] }),
+    access: answer(ACCESS),
     setMember: answer({ ok: true, members: [] }),
     removeMember: answer({ ok: true, members: [] }),
     startTopup: answer({ ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' }),
@@ -70,6 +81,8 @@ describe('finding the desk', () => {
     await bound.renameTeam(ME, 'a', 'n');
     await bound.statement(ME, 'a', '7d');
     await bound.members(ME, 'a');
+    await bound.access(ME, 'a');
+    expect(stub.access).toHaveBeenCalledWith(ME, 'a');
     await bound.setMember(ME, 'a', ME, 'admin');
     await bound.removeMember(ME, 'a', ME);
     await bound.startTopup(ME, 'a', '10', 'r');
@@ -191,9 +204,42 @@ describe('GET /api/saldo/statement', () => {
       quiet,
     );
     expect(desk.statement).toHaveBeenCalledWith(ME, 'acc', '30d');
-    const body = (await ok.json()) as { statement: { members: unknown[] }; you: string };
+    const body = (await ok.json()) as {
+      statement: { members: unknown[] };
+      you: string;
+      access: unknown;
+    };
     expect(body.you).toBe(ME);
     expect(body.statement.members).toHaveLength(1);
+    // What the wallet may do travels with the statement, trimmed to what the screen reads.
+    expect(desk.access).toHaveBeenCalledWith(ME, 'acc');
+    expect(body.access).toEqual({
+      as: 'member',
+      permissions: ['enter-worlds', 'top-up'],
+      holders: { 'invite-members': ['Administration'] },
+    });
+  });
+
+  it('asks nothing of a personal account, and shows every control if the desk cannot say', async () => {
+    const personal = fakeDesk({
+      statement: async () => ({ ...STATEMENT, account: { ...ACCOUNT, kind: 'personal' } }),
+    });
+    const mine = (await (await answerStatement(personal, ME, url('cuenta=acc'), quiet)).json()) as {
+      access: unknown;
+    };
+    expect(mine.access).toBeNull();
+    expect(personal.access).not.toHaveBeenCalled();
+    for (const access of [
+      async () => ({ ok: false, problems: ['not an organization'] }),
+      async () => ({ ok: 'maybe' }),
+      async () => {
+        throw new TypeError('boom');
+      },
+    ]) {
+      const reply = await answerStatement(fakeDesk({ access }), ME, url('cuenta=acc'), quiet);
+      expect(reply.status).toBe(200);
+      expect(((await reply.json()) as { access: unknown }).access).toBeNull();
+    }
   });
 
   it('passes refusals and failures on', async () => {

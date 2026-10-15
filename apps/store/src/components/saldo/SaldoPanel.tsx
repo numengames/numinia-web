@@ -13,16 +13,21 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import type { SupportedLocale } from '@numinia/domain';
+import { ORGANIZATION_PERMISSION_LABELS, type SupportedLocale } from '@numinia/domain';
 import type { SaldoMessages } from '../../i18n/saldo';
 import {
   checkoutTarget,
-  problemOf,
+  readAccess,
   readOverview,
+  readProblem,
+  can,
+  holdersOf,
+  needsSentence,
   readResult,
   readStatement,
   readYou,
   teamName,
+  type DeskAccess,
   type DeskAccount,
   type DeskStatement,
   type MemberRole,
@@ -43,7 +48,13 @@ type Phase =
 type Sheet =
   | { readonly at: 'loading' }
   | { readonly at: 'failed'; readonly text: string }
-  | { readonly at: 'ready'; readonly statement: DeskStatement; readonly you: string | null };
+  | {
+      readonly at: 'ready';
+      readonly statement: DeskStatement;
+      readonly you: string | null;
+      /** What the wallet may do in an organization; null for a personal account or when unknown. */
+      readonly access: DeskAccess | null;
+    };
 
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };
 
@@ -92,10 +103,18 @@ export function SaldoPanel({
 
   const problemText = useCallback(
     (problems: readonly string[]): string => {
-      const key = problemOf(problems);
-      return key === 'notConfigured' ? ui.topup.notConfigured : ui.problems[key];
+      const { key, act, holders } = readProblem(problems);
+      if (key === 'notConfigured') return ui.topup.notConfigured;
+      if (key === 'needs' && act !== undefined) {
+        return needsSentence(
+          ui.problems,
+          ORGANIZATION_PERMISSION_LABELS[act][locale],
+          holders ?? null,
+        );
+      }
+      return ui.problems[key === 'needs' ? 'other' : key];
     },
-    [ui],
+    [ui, locale],
   );
 
   const loadOverview = useCallback(async (): Promise<void> => {
@@ -138,7 +157,7 @@ export function SaldoPanel({
           });
         }
         setNow(new Date());
-        setSheet({ at: 'ready', statement, you: readYou(json) });
+        setSheet({ at: 'ready', statement, you: readYou(json), access: readAccess(json) });
       } catch {
         if (mine === asked.current) setSheet({ at: 'failed', text: ui.failed });
       }
@@ -375,17 +394,27 @@ export function SaldoPanel({
       {sheet.at === 'ready' && account !== null && (
         <>
           <Balance ui={ui} lang={lang} statement={sheet.statement} range={range} />
-          <Topup
-            ui={ui}
-            lang={lang}
-            amount={amount}
-            onAmount={(key) => {
-              setAmount(key);
-              setTopup({ at: 'idle' });
-            }}
-            onPay={pay}
-            state={topup}
-          />
+          {can(sheet.access, 'top-up') ? (
+            <Topup
+              ui={ui}
+              lang={lang}
+              amount={amount}
+              onAmount={(key) => {
+                setAmount(key);
+                setTopup({ at: 'idle' });
+              }}
+              onPay={pay}
+              state={topup}
+            />
+          ) : (
+            <p className="saldo-nota" data-saldo-no-topup>
+              {needsSentence(
+                ui.problems,
+                ORGANIZATION_PERMISSION_LABELS['top-up'][locale],
+                holdersOf(sheet.access, 'top-up', lang),
+              )}
+            </p>
+          )}
           <Usage
             ui={ui}
             lang={lang}
@@ -403,6 +432,8 @@ export function SaldoPanel({
               account={account}
               members={sheet.statement.members ?? []}
               you={sheet.you}
+              access={sheet.access}
+              locale={locale}
               busy={busy}
               onRename={(name) => act({ action: 'rename', accountId: account.id, name })}
               onSetMember={(wallet, role: MemberRole) =>
