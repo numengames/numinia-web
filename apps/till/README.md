@@ -87,20 +87,22 @@ failure from a refusal.
 
 **Trust.** numinia.com's API route checks the session (its signed cookie, any
 rank) and passes the session's wallet, lowercase, as the first argument of
-every method. The till trusts its bound caller for WHO is asking and decides
-itself, from its own tables (`migrations/0003_accounts_and_checkouts.sql`),
-WHAT that wallet may do: its own account, and the organizations (accounts of
-kind `team`) where it is `admin` or `member`. Every other argument is
-re-validated; a refusal is an answer, never a throw.
+every method. The till trusts its bound caller for WHO is asking — and, with
+the optional last argument `house`, for its word that the session is the
+house's staff — and decides itself, from its own tables, WHAT that wallet may
+do: its own account, and in each organization (an account of kind `team`)
+what that organization's own roles allow (see «Roles in an organization»).
+Every other argument is re-validated; a refusal is an answer, never a throw.
 
-| Method                                                             | Answers                                                                                                                                                                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `overview(wallet)`                                                 | the wallet's own account (created the first time, id derived from the wallet without holding it) and its organizations, with role and balance                                                           |
-| `createTeam(wallet, name)` / `renameTeam(wallet, accountId, name)` | a new organization with the wallet as admin (at most 20 per founder) / a new name, admins only                                                                                                          |
-| `statement(wallet, accountId, range)`                              | balance, low-balance flag (< 10 €), lots, spend per UTC day or month over `7d`/`30d`/`12m`, the last 100 lines, members of an organization                                                              |
-| `members` / `setMember` / `removeMember`                           | admins only; an organization never loses its last admin (the desk refuses; triggers back it up)                                                                                                         |
-| `startTopup(wallet, accountId, amountKey, returnBase)`             | opens a Stripe Checkout Session (`mode=payment`, `managed_payments[enabled]=true`) for 10, 50 or 100 € and keeps who opened it for which account (`checkouts`)                                          |
-| `confirmTopup(wallet, sessionId)`                                  | when the buyer comes back: reads the session from Stripe and, paid, writes one `topup` line (net = total − the tax Stripe collected, the tax in `vat_cents`, the payment intent as `stripe_payment_id`) |
+| Method                                                                     | Answers                                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `overview(wallet)`                                                         | the wallet's own account (created the first time, id derived from the wallet without holding it) and its organizations, with role and balance                                                                                            |
+| `createTeam(wallet, name)` / `renameTeam(wallet, accountId, name, house?)` | a new organization with the wallet as its owner and the Team template's roles (at most 20 per founder) / a new name, for whoever holds `manage-organization`                                                                             |
+| `access(wallet, accountId, house?)`                                        | what the wallet may do there: on whose behalf it acts (`owner`, `house`, `member`), every act it may do, the roles it holds, and for every act the roles that hold it                                                                    |
+| `statement(wallet, accountId, range, house?)`                              | balance, low-balance flag (< 10 €), lots, spend per UTC day or month over `7d`/`30d`/`12m`, the last 100 lines, members of an organization; in an organization, for whoever holds `view-balance`                                         |
+| `members` / `setMember` / `removeMember`                                   | any member may list them; adding needs `invite-members`, «admin» and «member» need `manage-roles`, removing needs `remove-members`; only below one's own highest role, never oneself or an owner, never the last owner                   |
+| `startTopup(wallet, accountId, amountKey, returnBase, house?)`             | opens a Stripe Checkout Session (`mode=payment`, `managed_payments[enabled]=true`) for 10, 50 or 100 € and keeps who opened it for which account (`checkouts`); in an organization, for whoever holds `top-up` (every member by default) |
+| `confirmTopup(wallet, sessionId)`                                          | when the buyer comes back: reads the session from Stripe and, paid, writes one `topup` line (net = total − the tax Stripe collected, the tax in `vat_cents`, the payment intent as `stripe_payment_id`)                                  |
 
 **Stripe.** Stripe Managed Payments is the seller (merchant of record); the
 till only keeps the balance. The till reaches OUT to api.stripe.com
@@ -134,10 +136,63 @@ Sessions write and Events read (TEST mode in this cut). Var
 both, the desk answers `payments are not configured` and the minute's run
 does nothing.
 
+## Roles in an organization
+
+Each organization runs its own roles, as a Discord server does
+(numinia-archive `ADR-071`; the rules are `STD-051`, what a role can carry is
+the register `STD-052`). `migrations/0004_organization_roles.sql` keeps them:
+
+- **`team_roles`**: the organization's ordered list. The base role sits at
+  position 0 and every member holds it without a row; the higher a role, the
+  more it may manage. Each carries some of the sixteen permissions of
+  `STD-052`, as a JSON array.
+- **`team_member_roles`**: who holds which role besides the base one.
+- **`team_members.owner`**: owners are a mark on the member, not a role. They
+  hold everything, the owners' acts included, and an organization keeps one
+  at least (the desk refuses; triggers back it up).
+- **`team_profiles.house_access`**: how the house's staff may enter. Every
+  organization is at `alpha` during the alpha: the house enters with an
+  administrator's reach, below the owners, and no organization changes it.
+- **`team_log`**: who, on whose behalf (their own or the house's), what and
+  when. It keeps every change to members and roles, every top-up started and
+  every act of the house's staff, reads included. Lines are only ever added.
+
+What anyone may do is worked out by `@numinia/domain`
+(`resolvers/organization-access`) from these tables, read again at every
+request (`src/db/organizations.ts`). The desk never keeps a role in the
+session or trusts one from the browser. Roles add up. Nobody acts on a role
+or a member at or above their own highest role, or on their own roles.
+Every write is guarded by the organization's `revision` and raises it last,
+in one batch: when someone else changed the organization in between, nothing
+is written and the desk answers «the organization changed meanwhile».
+
+A refusal for want of a permission names it and the roles that hold it
+(`MIS-179`): «this needs create-worlds, which the owners hold, and the role
+Administration». Topping up is the permission `top-up`, which every template gives to the base role. A new organization is born with the Team
+template, named in the site's default language: Administration
+(`administrator`), Finance (`manage-balance`), Member (`enter-worlds`,
+`start-stop-worlds`, `build-in-worlds`) and the base role @everyone
+(`view-balance`, `top-up`). Its founder is its owner, holding no role.
+
+The Saldo screen still speaks of `admin` and `member`. `admin` is an owner or
+whoever holds `administrator`. «make admin» gives the highest role carrying
+`administrator` below the one who asks, so only an owner or the house makes
+an administrator. «member» takes every such role away. 0004 gave every
+organization founded before it the Team template: its founder became its
+owner (or every admin did, where the founder had left), its admins hold
+Administration and its members hold Member. `team_members.role` is no longer
+read; it is still written, for the Worker that runs between the migration
+and the deploy, and a later migration drops it. An organization that Worker
+founds in between gets its owner, the Team template and its log line from a
+trigger (`team_members_founded_as_before`), which goes with that column.
+
 ## What it is not yet
 
-The desks serve the Prices room and the Saldo screen. Still missing: roles
-beyond admin and member and invitations (the rest of `MIS-179`); refunds and
+The desks serve the Prices room and the Saldo screen. Still missing: the
+panel that edits roles themselves (create, name, colour, order), bans with
+their reasons, a new signature for what is dangerous, invitations by email,
+and people with an id of their own apart from their wallet (the rest of
+`MIS-179` and `STD-051`); refunds and
 chargebacks from Stripe's events, and the open books' nightly file (after
 `MIS-180`); no signatures (`MIS-181`): the close **lists** the worlds
 to stop and the deletion dates, nothing acts on them yet (`MIS-186`); no
@@ -164,6 +219,9 @@ creating a world is `MIS-179`/`MIS-185`.
 | `src/lib/accounts.ts`                        | what numinia.com sends the account desk, read; the top-up prices; spend buckets                                                            |
 | `src/lib/stripe.ts`                          | the few Stripe calls the till makes, over `fetch`                                                                                          |
 | `src/db/accounts.ts`                         | D1 for the account desk and the minute's poll                                                                                              |
+| `src/db/organizations.ts`                    | an organization read in one batch, who is acting (owner, house, member), its log lines, the guarded writes                                 |
+| `src/lib/organizations.ts`                   | the house flag, the words of refusals and who holds each act, the Saldo screen's «admin»                                                   |
+| `migrations/0004_organization_roles.sql`     | owners, roles and who holds them, the house's access, each organization's log; the Team template for those founded before                  |
 | `migrations/0003_accounts_and_checkouts.sql` | wallets' accounts, organizations and members, checkouts, the poll's cursor                                                                 |
 | `migrations/0001_ledger.sql`                 | tables, append-only triggers, the seed tariff                                                                                              |
 | `migrations/0002_tariff_basis.sql`           | why each version was published: `tariff_versions.basis`                                                                                    |
@@ -251,15 +309,18 @@ second Worker connected to this repository, with these settings:
 | Build command                      | empty                                                                                                                               |
 | Deploy command                     | `npm run deploy --workspace apps/till`                                                                                              |
 | Builds for non-production branches | off: from the root, a preview's default command would read the site's `wrangler.jsonc`                                              |
-| Build watch paths                  | include `apps/till/*`                                                                                                               |
+| Build watch paths                  | include `apps/till/*` and `packages/domain/*`: the till decides with `@numinia/domain`, so a change there must deploy it too        |
 | API token                          | the account's Workers Builds token with **Account → D1 → Edit** added: its default permissions leave D1 out, and migrations need it |
 
-`npm run deploy` applies the pending migrations to the remote database through its binding
+`npm run deploy` builds `@numinia/domain` first (Workers Builds runs no build
+command, and the package ships as `dist/`), applies the pending migrations to
+the remote database through its binding
 (`TILL_DB`), then deploys. Wrangler records each applied migration in the database's
 `d1_migrations` table, so each runs once: a change to the schema is a new numbered file in
 `migrations/`, never an edit to an applied one. `0002_tariff_basis.sql` only adds a nullable
 column, so the Worker already running keeps working on it (it names the columns it reads) and
-the new one never runs without it (the migration is applied before the deploy).
+the new one never runs without it (the migration is applied before the deploy). `0004` keeps
+`team_members.role` for the same reason.
 
 Deployed, the till is reachable from nowhere over HTTP (`workers_dev` and `preview_urls` are
 off and it has no route): its entry points are the cron, whose runs show in Workers Logs

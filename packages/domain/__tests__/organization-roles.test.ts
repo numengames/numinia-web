@@ -340,7 +340,7 @@ describe('ORG-008: what is dangerous is signed again', () => {
 describe('ORG-012: the code and the register move together', () => {
   // Changing any list below changes numinia-archive's STD-052 in the same
   // change: these literals are its tables, copied word for word.
-  it('the sixteen permissions are the register’s', () => {
+  it('the seventeen permissions are the register’s', () => {
     expect(ORGANIZATION_PERMISSIONS).toEqual([
       'administrator',
       'manage-organization',
@@ -357,6 +357,7 @@ describe('ORG-012: the code and the register move together', () => {
       'start-stop-worlds',
       'create-worlds',
       'view-balance',
+      'top-up',
       'manage-balance',
     ]);
   });
@@ -435,7 +436,7 @@ describe('STD-052: the roles an organisation is born with', () => {
     const roles = rolesFromTemplate('alpha', 'es', (i) => `alpha-${i}`);
     expect(roles.map((r) => [r.id, r.name, r.position, r.permissions])).toEqual([
       ['alpha-0', 'Administración', 1, ['administrator']],
-      ['alpha-1', BASE_ROLE_NAME.es, 0, ['enter-worlds']],
+      ['alpha-1', BASE_ROLE_NAME.es, 0, ['enter-worlds', 'top-up']],
     ]);
     expect(validateOrganizationRoles(roles)).toEqual([]);
   });
@@ -466,7 +467,8 @@ describe('STD-052: the roles an organisation is born with', () => {
         ['delete-world', 'see-world-code', 'download-world'],
         'owner',
       ],
-      ['top up and change billing details', ['manage-balance'], 'owner administration finance'],
+      ['change billing details', ['manage-balance'], 'owner administration finance'],
+      ['top up', ['top-up'], 'owner administration finance member'],
       [
         'invite, remove and change roles',
         ['invite-members', 'remove-members', 'manage-roles'],

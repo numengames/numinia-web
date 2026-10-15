@@ -198,13 +198,13 @@ describe('the schedule (MIS-178)', () => {
     expect(firing(NIGHTLY, '2026-10-25').toISOString()).toBe('2026-10-25T00:30:00.000Z');
   });
 
-  it('is reachable from nowhere, logs to Workers Logs, and applies its migrations before each deploy', () => {
+  it('is reachable from nowhere, logs to Workers Logs, and builds the domain it decides with and applies its migrations before each deploy', () => {
     expect(config['workers_dev']).toBe(false);
     expect(config['preview_urls']).toBe(false);
     expect(config['observability']).toEqual({ enabled: true, head_sampling_rate: 1 });
     const scripts = readJsonc('../package.json')['scripts'] as Record<string, string>;
     expect(scripts['deploy']).toBe(
-      'wrangler d1 migrations apply TILL_DB --remote && wrangler deploy',
+      'npm run build --prefix ../../packages/domain && wrangler d1 migrations apply TILL_DB --remote && wrangler deploy',
     );
   });
 

@@ -2,16 +2,22 @@
  * The account desk's database work (cut «Saldo», MIS-179, MIS-180): what
  * numinia.com's Saldo screen reads and does through the till's
  * `AccountDesk` entrypoint (src/worker.ts). Each wallet sees its own
- * account and the organizations (teams) it belongs to; it may read the
- * statement of any of them, top any of them up, and — as an admin — rename
- * an organization and say who belongs to it.
+ * account and the organizations (teams) it belongs to.
+ *
+ * Inside an organization, what each wallet may do comes from that
+ * organization's own roles (numinia-archive ADR-071: the rules are STD-051,
+ * worked out by @numinia/domain; src/db/organizations.ts reads them at every
+ * request). The Saldo screen still speaks of `admin` and `member`: `admin` is
+ * an owner or whoever holds administrator, and «make admin» gives the highest
+ * role carrying administrator below the one who asks.
  *
  * Who is calling is numinia.com's signed session: the till trusts its bound
- * caller for the wallet and decides here, from its own tables, what that
- * wallet may do. Every argument is read as untrusted (`src/lib/accounts.ts`);
- * a refusal is an answer with problems in words, never a throw. Only a
- * failing database, or Stripe failing to answer, throws — so the caller can
- * tell a failure from a refusal.
+ * caller for the wallet — and for `house`, its word that the wallet is the
+ * house's staff — and decides here, from its own tables, what that wallet may
+ * do. Every argument is read as untrusted (`src/lib/accounts.ts`); a refusal
+ * is an answer with problems in words, never a throw. Only a failing
+ * database, or Stripe failing to answer, throws — so the caller can tell a
+ * failure from a refusal.
  *
  * A top-up is credited by `applySession`, the one place that turns a paid
  * Stripe Checkout Session into a `topup` line: when the buyer comes back
@@ -21,6 +27,16 @@
  * keep-first trigger (0001) drops a second insert of it.
  */
 
+import {
+  DEFAULT_LOCALE,
+  accessOf,
+  canActOnMember,
+  canAssignRole,
+  canLeave,
+  rolesFromTemplate,
+  type HouseAccess,
+  type OrganizationAccess,
+} from '@numinia/domain';
 import {
   LOW_BALANCE_CENTS,
   readAccountId,
@@ -40,8 +56,37 @@ import {
   type TopupPrices,
 } from '../lib/accounts';
 import { compareLines, lineId, lotsAt, type LedgerLine } from '../lib/ledger';
+import {
+  ACTS,
+  ORG_PROBLEMS,
+  administratorRoleFor,
+  compatRole,
+  holdersOf,
+  needs,
+  readHouse,
+  refusalOf,
+  topDown,
+} from '../lib/organizations';
 import type { CheckoutSession, SessionEvent, Stripe } from '../lib/stripe';
 import { dayOf } from '../lib/utc-day';
+import {
+  ADD_MEMBER,
+  DROP_MEMBER,
+  GIVE_ROLE,
+  MIRROR_ROLE,
+  RENAME,
+  TAKE_ROLE,
+  accessIn,
+  actingIn,
+  commit,
+  loadOrganization,
+  logLine,
+  memberIn,
+  type Acting,
+  type ActingAs,
+  type LogAct,
+  type Organization,
+} from './organizations';
 import { cents, column, day, instant, text, type Row, type TillDatabase } from './repository';
 
 /** One account as a wallet sees it: its own, or an organization it belongs to. */
@@ -50,7 +95,7 @@ export interface AccountSummary {
   readonly kind: 'personal' | 'team';
   /** An organization's name; null for a personal account. */
   readonly name: string | null;
-  /** `owner` of one's own account; `admin` or `member` of an organization. */
+  /** `owner` of one's own account; of an organization, `admin` for an owner or a holder of administrator, `member` otherwise. */
   readonly role: 'owner' | TeamRole;
   readonly balanceCents: number;
 }
@@ -120,6 +165,32 @@ export type StatementAnswer = Statement | Refusal;
 
 export type MembersAnswer = { readonly ok: true; readonly members: readonly Member[] } | Refusal;
 
+/** A role as `access` shows it. */
+interface RoleView {
+  readonly id: string;
+  readonly name: string;
+  readonly color: string | null;
+  readonly position: number;
+  readonly hoist: boolean;
+}
+
+/** What a wallet may do in an organization: the question numinia.com asks before it shows anything. */
+interface AccessView {
+  readonly ok: true;
+  readonly accountId: string;
+  /** On whose behalf it acts there: its own as an owner or a member, or the house's. */
+  readonly as: ActingAs;
+  /** In the register's order: the permissions, then the owners' acts. */
+  readonly permissions: readonly OrganizationAccess[];
+  /** The roles it holds, the base role included, from the top down; the house holds none. */
+  readonly roles: readonly RoleView[];
+  /** For every act, the roles that carry it, from the top down; the owners hold them all. */
+  readonly holders: Readonly<Record<OrganizationAccess, readonly string[]>>;
+  readonly houseAccess: HouseAccess;
+}
+
+export type AccessAnswer = AccessView | Refusal;
+
 export type TopupStart = { readonly ok: true; readonly url: string } | Refusal;
 
 export type CheckoutState = 'open' | 'paid' | 'expired';
@@ -165,10 +236,8 @@ export const PROBLEMS = {
   name: 'name must be 1 to 60 characters, none of them a control character',
   notMember: 'not a member',
   notTeam: 'not an organization',
-  adminsOnly: 'only an admin of the organization may do this',
   memberWallet: 'memberWallet must be a 0x wallet',
   role: 'role must be admin or member',
-  lastAdmin: 'an organization keeps at least one admin',
   noSuchMember: 'that wallet is not a member of the organization',
   range: 'range must be 7d, 30d or 12m',
   amountKey: 'amountKey must be 10, 50 or 100',
@@ -246,13 +315,27 @@ function teamAccountId(): string {
 
 const BALANCE = `(SELECT coalesce(SUM(amount_cents), 0) FROM ledger_lines WHERE account_id = a.id)`;
 
+/**
+ * The Saldo screen's role of the member row `m`: `admin` for an owner or a
+ * holder of administrator — through a role given, or through the base role —
+ * and `member` otherwise. What anyone may do is never read from it.
+ */
+const SALDO_ROLE = `
+  CASE WHEN m.owner = 1 OR EXISTS (
+    SELECT 1 FROM team_roles AS r, json_each(r.permissions) AS p
+     WHERE r.account_id = m.account_id AND p.value = 'administrator'
+       AND (r.position = 0 OR EXISTS (
+         SELECT 1 FROM team_member_roles AS h
+          WHERE h.account_id = m.account_id AND h.wallet = m.wallet AND h.role_id = r.id)))
+  THEN 'admin' ELSE 'member' END`;
+
 /** Every account the wallet ?1 may see: its own and its organizations', with role and balance. */
 const SELECT_ACCOUNTS = `
   SELECT a.id AS id, a.kind AS kind, NULL AS name, 'owner' AS role, ${BALANCE} AS balance_cents
     FROM account_wallets AS w JOIN accounts AS a ON a.id = w.account_id
    WHERE w.wallet = ?1
   UNION ALL
-  SELECT a.id, a.kind, p.name, m.role, ${BALANCE}
+  SELECT a.id, a.kind, p.name, ${SALDO_ROLE}, ${BALANCE}
     FROM team_members AS m
     JOIN accounts AS a ON a.id = m.account_id
     JOIN team_profiles AS p ON p.account_id = a.id
@@ -262,7 +345,7 @@ const SELECT_ACCOUNTS = `
 /** One account ?1 as the wallet ?2 sees it; no row when the wallet is neither its owner nor a member. */
 const SELECT_ACCOUNT = `
   SELECT a.id AS id, a.kind AS kind, p.name AS name,
-         CASE WHEN w.wallet IS NOT NULL THEN 'owner' ELSE m.role END AS role,
+         CASE WHEN w.wallet IS NOT NULL THEN 'owner' ELSE ${SALDO_ROLE} END AS role,
          ${BALANCE} AS balance_cents
     FROM accounts AS a
     LEFT JOIN account_wallets AS w ON w.account_id = a.id AND w.wallet = ?2
@@ -270,8 +353,11 @@ const SELECT_ACCOUNT = `
     LEFT JOIN team_members AS m ON m.account_id = a.id AND m.wallet = ?2
    WHERE a.id = ?1 AND (w.wallet IS NOT NULL OR m.wallet IS NOT NULL)`;
 
+/** An organization's members as the Saldo screen lists them: admins first, then by arrival. */
 const SELECT_MEMBERS = `
-  SELECT wallet, role, added_at FROM team_members WHERE account_id = ?1
+  SELECT wallet, role, added_at FROM (
+    SELECT m.wallet AS wallet, ${SALDO_ROLE} AS role, m.added_at AS added_at
+      FROM team_members AS m WHERE m.account_id = ?1)
    ORDER BY role = 'member', added_at, wallet`;
 
 const SELECT_LINES = `
@@ -296,34 +382,15 @@ const INSERT_PROFILE = `
   INSERT INTO team_profiles (account_id, name, created_by, created_at)
   SELECT ?1, ?2, ?3, ?4 WHERE EXISTS (SELECT 1 FROM accounts WHERE id = ?1)`;
 
+/** The founder joins as the organization's first owner (ORG-002); `admin` is for a Worker still reading the old column. */
 const INSERT_FOUNDER = `
-  INSERT INTO team_members (account_id, wallet, role, added_by, added_at)
-  SELECT ?1, ?2, 'admin', ?2, ?3 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
+  INSERT INTO team_members (account_id, wallet, role, added_by, added_at, owner)
+  SELECT ?1, ?2, 'admin', ?2, ?3, 1 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
 
-/** The caller ?2 is an admin of the organization ?1. */
-const IS_ADMIN = `EXISTS (SELECT 1 FROM team_members WHERE account_id = ?1 AND wallet = ?2 AND role = 'admin')`;
-
-const RENAME = `UPDATE team_profiles SET name = ?3 WHERE account_id = ?1 AND ${IS_ADMIN}`;
-
-/**
- * Adds ?3 with role ?4, or changes its role — while the caller ?2 is an
- * admin, and an admin other than ?3 remains when ?3 stops being one. Guarded
- * here, so a change made meanwhile writes nothing rather than an orphaned
- * organization; the 0003 triggers are the backstop.
- */
-const SET_MEMBER = `
-  INSERT INTO team_members (account_id, wallet, role, added_by, added_at)
-  SELECT ?1, ?3, ?4, ?2, ?5
-   WHERE ${IS_ADMIN}
-     AND (?4 = 'admin' OR EXISTS (
-       SELECT 1 FROM team_members WHERE account_id = ?1 AND role = 'admin' AND wallet <> ?3))
-  ON CONFLICT (account_id, wallet) DO UPDATE SET role = excluded.role`;
-
-const REMOVE_MEMBER = `
-  DELETE FROM team_members
-   WHERE account_id = ?1 AND wallet = ?3 AND ${IS_ADMIN}
-     AND (role = 'member' OR EXISTS (
-       SELECT 1 FROM team_members WHERE account_id = ?1 AND role = 'admin' AND wallet <> ?3))`;
+/** One of the roles a new organization is born with (STD-052). */
+const INSERT_ROLE = `
+  INSERT INTO team_roles (account_id, id, name, color, position, hoist, permissions)
+  SELECT ?1, ?2, ?3, NULL, ?4, ?5, ?6 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
 
 const INSERT_CHECKOUT = `
   INSERT INTO checkouts (id, account_id, wallet, amount_key, created_at, state)
@@ -460,11 +527,6 @@ async function batchOf(db: TillDatabase, statements: D1PreparedStatement[]): Pro
   return results.map((result) => result.results);
 }
 
-async function changesOf(statement: D1PreparedStatement): Promise<number> {
-  const { meta } = await statement.run();
-  return meta.changes;
-}
-
 /** The account `accountId` as `wallet` sees it, or null when the wallet is neither its owner nor a member. */
 async function accountFor(
   db: TillDatabase,
@@ -475,17 +537,60 @@ async function accountFor(
   return row === null ? null : summaryOf(row);
 }
 
-/** The organization `accountId` when `wallet` is one of its admins; otherwise why not. */
-async function teamAdministeredBy(
+/** An organization as someone entered it: its tables as read now, and on whose behalf they act. */
+interface Entered {
+  readonly org: Organization;
+  readonly acting: Acting;
+}
+
+/**
+ * The organization `accountId` as `wallet` enters it — as an owner, the
+ * house's staff or a member — or why not: a stranger to it, or no
+ * organization at all.
+ */
+async function enter(
   db: TillDatabase,
   wallet: string,
   accountId: string,
-): Promise<AccountSummary | Refusal> {
-  const account = await accountFor(db, wallet, accountId);
-  if (account === null) return refuse(PROBLEMS.notMember);
-  if (account.kind !== 'team') return refuse(PROBLEMS.notTeam);
-  if (account.role !== 'admin') return refuse(PROBLEMS.adminsOnly);
-  return account;
+  house: boolean,
+): Promise<Entered | Refusal> {
+  const org = await loadOrganization(db, accountId);
+  if (org === null) {
+    const account = await accountFor(db, wallet, accountId);
+    return refuse(account === null ? PROBLEMS.notMember : PROBLEMS.notTeam);
+  }
+  const acting = actingIn(org, wallet, house);
+  return acting === null ? refuse(PROBLEMS.notMember) : { org, acting };
+}
+
+/** Null when the one who entered may do `act`; otherwise the refusal, naming who holds it. */
+function lacking({ org, acting }: Entered, act: OrganizationAccess): Refusal | null {
+  return acting.access.permissions.has(act)
+    ? null
+    : refuse(needs(act, holdersOf(org.state.roles, act)));
+}
+
+/** Writes down what the house's staff read (ORG-009): every act of theirs is logged, reads too. */
+async function houseRead({ org, acting }: Entered, db: TillDatabase, now: Date, what: string) {
+  if (acting.as !== 'house') return;
+  await logLine(db, org.accountId, now, acting, 'house-read', null, { what }, null).run();
+}
+
+/** The organization as the one who entered it sees it on the Saldo screen. */
+function summaryIn({ org, acting }: Entered): AccountSummary {
+  return {
+    id: org.accountId,
+    kind: 'team',
+    name: org.name,
+    role: compatRole(acting.access),
+    balanceCents: org.balanceCents,
+  };
+}
+
+/** A new role's id: random, unique within its organization. */
+function roleId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return `role_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
 async function membersOf(db: TillDatabase, accountId: string): Promise<Member[]> {
@@ -514,7 +619,11 @@ export async function overview(
   return { ok: true, accounts: (rows as Row[]).map(summaryOf) };
 }
 
-/** A new organization named `sentName`, founded by the wallet, its first admin. */
+/**
+ * A new organization named `sentName`, founded by the wallet, its first
+ * owner, born with the Team template of STD-052 — the roles of MIS-179 —
+ * named in the site's default language.
+ */
 export async function createTeam(
   db: TillDatabase,
   sent: unknown,
@@ -530,37 +639,89 @@ export async function createTeam(
   if (wallet === undefined || name === undefined) return refuse(...problems);
   const id = teamAccountId();
   const at = now.toISOString();
+  const roles = rolesFromTemplate('team', DEFAULT_LOCALE, roleId);
   const results = await db.batch([
     db.prepare(INSERT_TEAM).bind(id, at, wallet, TEAMS_PER_FOUNDER),
     db.prepare(INSERT_PROFILE).bind(id, name, wallet, at),
     db.prepare(INSERT_FOUNDER).bind(id, wallet, at),
+    ...roles.map((role) =>
+      db
+        .prepare(INSERT_ROLE)
+        .bind(
+          id,
+          role.id,
+          role.name,
+          role.position,
+          role.hoist ? 1 : 0,
+          JSON.stringify(role.permissions),
+        ),
+    ),
+    // Guarded by the new organization's first revision: nothing when it was not founded.
+    logLine(
+      db,
+      id,
+      now,
+      { wallet, as: 'owner' },
+      'organization-created',
+      null,
+      { name, template: 'team' },
+      0,
+    ),
   ]);
   if (results[0]?.meta.changes !== 1) return refuse(PROBLEMS.teamsPerFounder);
   return { ok: true, account: { id, kind: 'team', name, role: 'admin', balanceCents: 0 } };
 }
 
-/** Renames an organization: its admins only. */
+/** Renames an organization: whoever may manage it (`manage-organization`). */
 export async function renameTeam(
   db: TillDatabase,
   sent: unknown,
   sentAccount: unknown,
   sentName: unknown,
+  sentHouse: unknown,
+  now: Date,
 ): Promise<TeamAnswer> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
   const name = readTeamName(sentName);
-  if (wallet === undefined || accountId === undefined || name === undefined) {
+  const house = readHouse(sentHouse);
+  if (
+    wallet === undefined ||
+    accountId === undefined ||
+    name === undefined ||
+    house === undefined
+  ) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
       ...(name === undefined ? [PROBLEMS.name] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  const team = await teamAdministeredBy(db, wallet, accountId);
-  if ('ok' in team) return team;
-  const changes = await changesOf(db.prepare(RENAME).bind(accountId, wallet, name));
-  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
-  return { ok: true, account: { ...team, name } };
+  const entered = await enter(db, wallet, accountId, house);
+  if ('problems' in entered) return entered;
+  const refused = lacking(entered, 'manage-organization');
+  if (refused !== null) return refused;
+  const { org, acting } = entered;
+  const renamed = await commit(
+    db,
+    org,
+    [
+      logLine(
+        db,
+        accountId,
+        now,
+        acting,
+        'organization-renamed',
+        null,
+        { from: org.name, to: name },
+        org.revision,
+      ),
+    ],
+    db.prepare(RENAME).bind(accountId, org.revision, name),
+  );
+  if (!renamed) return refuse(PROBLEMS.meanwhile);
+  return { ok: true, account: { ...summaryIn(entered), name } };
 }
 
 /**
@@ -573,26 +734,45 @@ export async function statement(
   sent: unknown,
   sentAccount: unknown,
   sentRange: unknown,
+  sentHouse: unknown,
   now: Date,
 ): Promise<StatementAnswer> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
   const range: SpendRange | undefined = readRange(sentRange);
-  if (wallet === undefined || accountId === undefined || range === undefined) {
+  const house = readHouse(sentHouse);
+  if (
+    wallet === undefined ||
+    accountId === undefined ||
+    range === undefined ||
+    house === undefined
+  ) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
       ...(range === undefined ? [PROBLEMS.range] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  const [accountRows, lineRows, memberRows] = (await batchOf(db, [
-    db.prepare(SELECT_ACCOUNT).bind(accountId, wallet),
+  let account: AccountSummary;
+  const org = await loadOrganization(db, accountId);
+  if (org === null) {
+    const own = await accountFor(db, wallet, accountId);
+    if (own === null) return refuse(PROBLEMS.notMember);
+    account = own;
+  } else {
+    const acting = actingIn(org, wallet, house);
+    if (acting === null) return refuse(PROBLEMS.notMember);
+    const entered = { org, acting };
+    const refused = lacking(entered, 'view-balance');
+    if (refused !== null) return refused;
+    await houseRead(entered, db, now, 'statement');
+    account = summaryIn(entered);
+  }
+  const [lineRows, memberRows] = (await batchOf(db, [
     db.prepare(SELECT_LINES).bind(accountId),
     db.prepare(SELECT_MEMBERS).bind(accountId),
-  ])) as [Row[], Row[], Row[]];
-  const accountRow = accountRows[0];
-  if (accountRow === undefined) return refuse(PROBLEMS.notMember);
-  const account = summaryOf(accountRow);
+  ])) as [Row[], Row[]];
   const lines = lineRows.map(ledgerLineOf);
   const spend = spendBuckets(
     range,
@@ -617,89 +797,231 @@ export async function statement(
   return account.kind === 'team' ? { ...answer, members: memberRows.map(memberOf) } : answer;
 }
 
-/** An organization's members: its admins only. */
+/** An organization's members: any of them, and the house's staff where it may enter. */
 export async function members(
   db: TillDatabase,
   sent: unknown,
   sentAccount: unknown,
+  sentHouse: unknown,
+  now: Date,
 ): Promise<MembersAnswer> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
-  if (wallet === undefined || accountId === undefined) {
+  const house = readHouse(sentHouse);
+  if (wallet === undefined || accountId === undefined || house === undefined) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  const team = await teamAdministeredBy(db, wallet, accountId);
-  if ('ok' in team) return team;
+  const entered = await enter(db, wallet, accountId, house);
+  if ('problems' in entered) return entered;
+  await houseRead(entered, db, now, 'members');
   return { ok: true, members: await membersOf(db, accountId) };
 }
 
-/** Adds a member or changes a member's role: admins only, and never the last admin away. */
+/**
+ * What the wallet may do in the organization (STD-051, worked out by
+ * @numinia/domain from the tables as they are now): on whose behalf it acts,
+ * every act it may do, the roles it holds, and for every act the roles that
+ * hold it — so a screen can say why a door is closed and who could open it.
+ */
+export async function access(
+  db: TillDatabase,
+  sent: unknown,
+  sentAccount: unknown,
+  sentHouse: unknown,
+  now: Date,
+): Promise<AccessAnswer> {
+  const wallet = readWallet(sent);
+  const accountId = readAccountId(sentAccount);
+  const house = readHouse(sentHouse);
+  if (wallet === undefined || accountId === undefined || house === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
+    );
+  }
+  const entered = await enter(db, wallet, accountId, house);
+  if ('problems' in entered) return entered;
+  await houseRead(entered, db, now, 'access');
+  const { org, acting } = entered;
+  const held = acting.as === 'house' ? [] : (memberIn(org, wallet)?.roleIds ?? []);
+  const roles = topDown(org.state.roles).filter(
+    (role) => acting.as !== 'house' && (role.position === 0 || held.includes(role.id)),
+  );
+  return {
+    ok: true,
+    accountId,
+    as: acting.as,
+    permissions: ACTS.filter((act) => acting.access.permissions.has(act)),
+    roles: roles.map(({ id, name, color, position, hoist }) => ({
+      id,
+      name,
+      color,
+      position,
+      hoist,
+    })),
+    holders: Object.fromEntries(
+      ACTS.map((act) => [act, holdersOf(org.state.roles, act)]),
+    ) as Record<OrganizationAccess, string[]>,
+    houseAccess: org.state.houseAccess,
+  };
+}
+
+/**
+ * The Saldo screen's door to roles: adds a member, or makes one `admin` or
+ * `member`. «admin» gives the highest role carrying administrator below the
+ * one who asks; «member» takes away every role carrying it. Adding needs
+ * `invite-members`, a role needs `manage-roles`, and nobody acts on a role or
+ * a member at or above their own highest role, on an owner, or on themselves
+ * (STD-051 ORG-003, ORG-004).
+ */
 export async function setMember(
   db: TillDatabase,
   sent: unknown,
   sentAccount: unknown,
   sentMember: unknown,
   sentRole: unknown,
+  sentHouse: unknown,
   now: Date,
 ): Promise<MembersAnswer> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
   const member = readMemberWallet(sentMember);
   const role = readRole(sentRole);
+  const house = readHouse(sentHouse);
   if (
     wallet === undefined ||
     accountId === undefined ||
     member === undefined ||
-    role === undefined
+    role === undefined ||
+    house === undefined
   ) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
       ...(member === undefined ? [PROBLEMS.memberWallet] : []),
       ...(role === undefined ? [PROBLEMS.role] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  const team = await teamAdministeredBy(db, wallet, accountId);
-  if ('ok' in team) return team;
-  const before = await membersOf(db, accountId);
-  const otherAdmin = before.some((m) => m.role === 'admin' && m.wallet !== member);
-  if (role === 'member' && !otherAdmin) return refuse(PROBLEMS.lastAdmin);
-  const changes = await changesOf(
-    db.prepare(SET_MEMBER).bind(accountId, wallet, member, role, now.toISOString()),
-  );
-  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
+  const entered = await enter(db, wallet, accountId, house);
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  if (member === wallet) return refuse(ORG_PROBLEMS.ownRoles);
+  const existing = memberIn(org, member);
+  if (existing?.isOwner === true) {
+    return role === 'admin'
+      ? { ok: true, members: await membersOf(db, accountId) }
+      : refuse(ORG_PROBLEMS.owner);
+  }
+  const target =
+    existing === undefined
+      ? accessOf(org.state, {
+          kind: 'member',
+          member: { personId: member, kind: 'human', isOwner: false, roleIds: [] },
+        })
+      : accessIn(org, member);
+  const now_ = now.toISOString();
+  const writes: D1PreparedStatement[] = [];
+  const log = (act: LogAct, detail: Readonly<Record<string, string>> | null) =>
+    logLine(db, accountId, now, acting, act, member, detail, org.revision);
+  if (existing === undefined) {
+    const refused = lacking(entered, 'invite-members');
+    if (refused !== null) return refused;
+    writes.push(
+      db.prepare(ADD_MEMBER).bind(accountId, member, role, wallet, now_, org.revision),
+      log('member-added', null),
+    );
+  } else if (compatRole(target) === role) {
+    return { ok: true, members: await membersOf(db, accountId) };
+  }
+  if (role === 'admin' && compatRole(target) === 'member') {
+    const given = administratorRoleFor(acting.access, org.state.roles);
+    if (typeof given === 'string') return refuse(given);
+    const verdict = canAssignRole(acting.access, target, given);
+    if (!verdict.ok) return refuse(refusalOf(verdict.refusal, 'manage-roles', org.state.roles));
+    writes.push(
+      db.prepare(GIVE_ROLE).bind(accountId, member, given.id, org.revision),
+      log('role-given', { role: given.id }),
+    );
+  }
+  if (role === 'member' && compatRole(target) === 'admin') {
+    const carrying = org.state.roles.filter((held) => held.permissions.includes('administrator'));
+    for (const taken of carrying) {
+      const holds = taken.position === 0 || existing?.roleIds.includes(taken.id) === true;
+      if (!holds) continue;
+      const verdict = canAssignRole(acting.access, target, taken);
+      if (!verdict.ok) return refuse(refusalOf(verdict.refusal, 'manage-roles', org.state.roles));
+      writes.push(
+        db.prepare(TAKE_ROLE).bind(accountId, member, taken.id, org.revision),
+        log('role-taken', { role: taken.id }),
+      );
+    }
+  }
+  if (existing !== undefined) {
+    writes.push(db.prepare(MIRROR_ROLE).bind(accountId, member, role, org.revision));
+  }
+  if (!(await commit(db, org, writes))) return refuse(PROBLEMS.meanwhile);
   return { ok: true, members: await membersOf(db, accountId) };
 }
 
-/** Removes a member: admins only, and never the last admin. */
+/**
+ * Takes a member out of the organization, or lets one leave. Anyone may
+ * leave but the last owner; only owners take an owner out; anyone else
+ * needs `remove-members` and a member below them (STD-051 ORG-002, ORG-003).
+ */
 export async function removeMember(
   db: TillDatabase,
   sent: unknown,
   sentAccount: unknown,
   sentMember: unknown,
+  sentHouse: unknown,
+  now: Date,
 ): Promise<MembersAnswer> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
   const member = readMemberWallet(sentMember);
-  if (wallet === undefined || accountId === undefined || member === undefined) {
+  const house = readHouse(sentHouse);
+  if (
+    wallet === undefined ||
+    accountId === undefined ||
+    member === undefined ||
+    house === undefined
+  ) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
       ...(member === undefined ? [PROBLEMS.memberWallet] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  const team = await teamAdministeredBy(db, wallet, accountId);
-  if ('ok' in team) return team;
-  const before = await membersOf(db, accountId);
-  const removed = before.find((m) => m.wallet === member);
-  if (removed === undefined) return refuse(PROBLEMS.noSuchMember);
-  const otherAdmin = before.some((m) => m.role === 'admin' && m.wallet !== member);
-  if (removed.role === 'admin' && !otherAdmin) return refuse(PROBLEMS.lastAdmin);
-  const changes = await changesOf(db.prepare(REMOVE_MEMBER).bind(accountId, wallet, member));
-  if (changes !== 1) return refuse(PROBLEMS.meanwhile);
+  const entered = await enter(db, wallet, accountId, house);
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  const target = memberIn(org, member);
+  if (target === undefined) return refuse(PROBLEMS.noSuchMember);
+  let act: LogAct = 'member-removed';
+  if (member === wallet) {
+    const owners = org.members.filter((one) => one.isOwner).length;
+    const verdict = canLeave(target, owners);
+    if (!verdict.ok) return refuse(refusalOf(verdict.refusal, 'remove-members', org.state.roles));
+    act = 'member-left';
+  } else if (target.isOwner) {
+    // Naming or removing owners is the owners' own act (STD-052); another owner always remains.
+    if (!acting.access.permissions.has('manage-owners')) return refuse(ORG_PROBLEMS.owner);
+  } else {
+    const verdict = canActOnMember(acting.access, accessIn(org, member), 'remove');
+    if (!verdict.ok) return refuse(refusalOf(verdict.refusal, 'remove-members', org.state.roles));
+  }
+  const removed = await commit(db, org, [
+    db.prepare(DROP_MEMBER).bind(accountId, member, org.revision),
+    logLine(db, accountId, now, acting, act, member, null, org.revision),
+  ]);
+  if (!removed) return refuse(PROBLEMS.meanwhile);
   return { ok: true, members: await membersOf(db, accountId) };
 }
 
@@ -726,9 +1048,10 @@ export function checkoutParams(
 }
 
 /**
- * Opens a Stripe Checkout Session to top up an account the wallet owns or
- * belongs to (any role), and keeps who opened it for which account. Answers
- * where to pay.
+ * Opens a Stripe Checkout Session to top up the wallet's own account, or an
+ * organization where it may (`top-up`, every member by default), and keeps who opened it for
+ * which account; in an organization, its log keeps it too. Answers where to
+ * pay.
  */
 export async function startTopup(
   db: TillDatabase,
@@ -737,34 +1060,53 @@ export async function startTopup(
   sentAccount: unknown,
   sentAmount: unknown,
   sentReturn: unknown,
+  sentHouse: unknown,
   now: Date,
 ): Promise<TopupStart> {
   const wallet = readWallet(sent);
   const accountId = readAccountId(sentAccount);
   const amountKey: AmountKey | undefined = readAmountKey(sentAmount);
   const returnBase = readReturnBase(sentReturn);
+  const house = readHouse(sentHouse);
   if (
     wallet === undefined ||
     accountId === undefined ||
     amountKey === undefined ||
-    returnBase === undefined
+    returnBase === undefined ||
+    house === undefined
   ) {
     return refuse(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(accountId === undefined ? [PROBLEMS.accountId] : []),
       ...(amountKey === undefined ? [PROBLEMS.amountKey] : []),
       ...(returnBase === undefined ? [PROBLEMS.returnBase] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
     );
   }
-  if ((await accountFor(db, wallet, accountId)) === null) return refuse(PROBLEMS.notMember);
+  const org = await loadOrganization(db, accountId);
+  let acting: Acting | null = null;
+  if (org === null) {
+    if ((await accountFor(db, wallet, accountId)) === null) return refuse(PROBLEMS.notMember);
+  } else {
+    acting = actingIn(org, wallet, house);
+    if (acting === null) return refuse(PROBLEMS.notMember);
+    // Its own permission, which every template gives to the base role (STD-052 0.2.0).
+    const refused = lacking({ org, acting }, 'top-up');
+    if (refused !== null) return refused;
+  }
   if (payments === null) return refuse(PROBLEMS.notConfigured);
   const session = await payments.stripe.createCheckoutSession(
     checkoutParams(payments.prices[amountKey], accountId, wallet, returnBase),
   );
-  await db
+  const checkout = db
     .prepare(INSERT_CHECKOUT)
-    .bind(session.id, accountId, wallet, amountKey, now.toISOString())
-    .run();
+    .bind(session.id, accountId, wallet, amountKey, now.toISOString());
+  await db.batch([
+    checkout,
+    ...(acting === null
+      ? []
+      : [logLine(db, accountId, now, acting, 'topup-started', null, { amount: amountKey }, null)]),
+  ]);
   // createCheckoutSession answers only an open session with its url.
   return { ok: true, url: session.url as string };
 }

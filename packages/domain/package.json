@@ -1,10 +1,11 @@
 {
   "name": "@numinia/domain",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "description": "Numinia domain model — the Functional Model layer. Framework-agnostic by decree: zod is the only runtime dependency.",
   "license": "MIT",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
