@@ -6,7 +6,8 @@
  *
  * GET answers the accounts this wallet sees, personal first. POST (JSON
  * only) runs one action: `topup`, `confirm`, `create-team`, `rename`,
- * `set-member`, `remove-member`. The desk is reached only through the
+ * `set-member`, `remove-member`, `create-role`, `edit-role`, `move-role`,
+ * `delete-role`, `give-role`, `take-role`. The desk is reached only through the
  * service binding TILL_ACCOUNTS (lib/accounts-source.ts holds the trust
  * model); under DATA_SOURCE=fixture it is the in-memory fixture desk. No
  * desk → 503 `not-bound`; a desk that fails → 502 `till-failed`.

@@ -8,7 +8,55 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-import type { LineLabel, SpendRange } from '../lib/accounts';
+import type { DeskLogAct, LineLabel, SpendRange } from '../lib/accounts';
+
+export interface TeamPanelMessages {
+  readonly title: string;
+  readonly lead: string;
+  readonly noOrganization: string;
+  readonly organization: string;
+  /** The strip shown while the house enters the organization (alpha). */
+  readonly house: string;
+  readonly ownerStrip: string;
+  readonly rolesTitle: string;
+  readonly membersTitle: string;
+  readonly logTitle: string;
+  /** `{n}`: how many people hold the role. */
+  readonly holders: string;
+  readonly base: string;
+  readonly apart: string;
+  readonly owner: string;
+  readonly you: string;
+  readonly noRoles: string;
+  readonly edit: string;
+  readonly moveUp: string;
+  readonly moveDown: string;
+  readonly remove: string;
+  /** `{name}`: the role about to be deleted. */
+  readonly confirmRemove: string;
+  readonly confirm: string;
+  readonly cancel: string;
+  readonly newRole: string;
+  readonly name: string;
+  readonly color: string;
+  readonly noColor: string;
+  readonly showApart: string;
+  readonly permissions: string;
+  readonly create: string;
+  readonly save: string;
+  readonly signatureNote: string;
+  readonly give: string;
+  /** The select's label: which role to give. */
+  readonly giveLabel: string;
+  /** `{role}` and `{who}`. */
+  readonly take: string;
+  readonly noRolesYet: string;
+  readonly working: string;
+  readonly showLog: string;
+  readonly hideLog: string;
+  readonly logEmpty: string;
+  readonly logAct: Readonly<Record<DeskLogAct, string>>;
+}
 
 export interface SaldoMessages {
   /** The sidebar's entry and the page's tab. */
@@ -17,7 +65,14 @@ export interface SaldoMessages {
   /** Meta description and lead of the page. */
   readonly lead: string;
   /** The page's own tabs: Saldo and Referidos. */
-  readonly tabs: { readonly label: string; readonly saldo: string; readonly referrals: string };
+  readonly tabs: {
+    readonly label: string;
+    readonly saldo: string;
+    readonly members: string;
+    readonly referrals: string;
+  };
+  /** «Miembros y roles»: who is in an organization and what each role lets them do. */
+  readonly panel: TeamPanelMessages;
   readonly signedOut: { readonly title: string; readonly text: string; readonly cta: string };
   readonly loading: string;
   /** No desk is bound to this site (503 not-bound). */
@@ -118,6 +173,7 @@ export interface SaldoMessages {
     readonly meanwhile: string;
     readonly needs: string;
     readonly needsOwners: string;
+    readonly freshSignature: string;
     readonly other: string;
   };
   readonly referrals: { readonly title: string; readonly soon: string; readonly text: string };
@@ -141,7 +197,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     nav: 'Saldo',
     title: 'Saldo',
     lead: 'Tu cuenta y la de tus organizaciones: el saldo no caduca, recargas cuando quieras y ves en qué se gasta.',
-    tabs: { label: 'Secciones de Saldo', saldo: 'Saldo', referrals: 'Referidos' },
+    tabs: {
+      label: 'Secciones de Saldo',
+      saldo: 'Saldo',
+      members: 'Miembros y roles',
+      referrals: 'Referidos',
+    },
     signedOut: {
       title: 'Entra para ver tu saldo',
       text: 'Tu saldo y el de tus organizaciones van con tu cuenta. Inicia sesión y lo verás aquí.',
@@ -246,7 +307,68 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'Para hacerlo hace falta el permiso «{act}», que tienen las personas titulares y estos roles: {holders}.',
       needsOwners:
         'Para hacerlo hace falta el permiso «{act}», que solo tienen las personas titulares.',
+      freshSignature:
+        'La firma nueva de tu cartera para dar «Administrador» o «Gestionar roles» todavía no está lista. Lo demás sí puedes hacerlo.',
       other: 'La caja no lo ha permitido.',
+    },
+    panel: {
+      title: 'Miembros y roles',
+      lead: 'Quién está en la organización y qué deja hacer cada rol. Cada cambio queda escrito en el registro.',
+      noOrganization:
+        'Todavía no estás en ninguna organización. Crea una desde Saldo y aquí podrás repartir roles.',
+      organization: 'Organización',
+      house:
+        'Entras como la casa: ves y actúas con el permiso que la alfa le da a Numen Games. Cada paso queda en el registro.',
+      ownerStrip: 'Eres titular: puedes todo menos lo que la casa se reserva.',
+      rolesTitle: 'Roles',
+      membersTitle: 'Gente',
+      logTitle: 'Registro',
+      holders: '{n} personas',
+      base: 'Rol de base: lo tiene todo el mundo',
+      apart: 'Sale aparte',
+      owner: 'Titular',
+      you: 'tú',
+      noRoles: 'Nadie tiene este rol todavía.',
+      edit: 'Editar',
+      moveUp: 'Subir',
+      moveDown: 'Bajar',
+      remove: 'Borrar',
+      confirmRemove: '¿Borrar el rol «{name}»? Quienes lo tienen lo pierden.',
+      confirm: 'Sí, borrar',
+      cancel: 'Cancelar',
+      newRole: 'Nuevo rol',
+      name: 'Nombre',
+      color: 'Color',
+      noColor: 'Sin color',
+      showApart: 'Mostrar aparte en la lista de gente',
+      permissions: 'Qué deja hacer',
+      create: 'Crear rol',
+      save: 'Guardar',
+      signatureNote:
+        'Dar «Administrador» o «Gestionar roles» pedirá una firma nueva de tu cartera; esta pantalla todavía no sabe pedirla.',
+      give: 'Dar',
+      giveLabel: 'Rol que dar a {who}',
+      take: 'Quitar el rol {role} a {who}',
+      noRolesYet: 'Sin más roles que el de base.',
+      working: 'Guardando…',
+      showLog: 'Ver el registro',
+      hideLog: 'Ocultar el registro',
+      logEmpty: 'Todavía no hay cambios escritos.',
+      logAct: {
+        'organization-created': 'Organización creada',
+        'organization-renamed': 'Organización renombrada',
+        'member-added': 'Persona añadida',
+        'member-removed': 'Persona quitada',
+        'member-left': 'Persona que se va',
+        'role-given': 'Rol dado',
+        'role-taken': 'Rol quitado',
+        'topup-started': 'Recarga empezada',
+        'house-read': 'La casa ha mirado',
+        'role-created': 'Rol creado',
+        'role-edited': 'Rol editado',
+        'role-moved': 'Rol movido',
+        'role-deleted': 'Rol borrado',
+      },
     },
     referrals: {
       title: 'Referidos',
@@ -270,7 +392,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     nav: 'Balance',
     title: 'Balance',
     lead: "Your account and your organizations': the balance never expires, you top up when you like and see what it is spent on.",
-    tabs: { label: 'Balance sections', saldo: 'Balance', referrals: 'Referrals' },
+    tabs: {
+      label: 'Balance sections',
+      saldo: 'Balance',
+      members: 'Members and roles',
+      referrals: 'Referrals',
+    },
     signedOut: {
       title: 'Sign in to see your balance',
       text: "Your balance and your organizations' travel with your account. Sign in and you will see them here.",
@@ -368,7 +495,68 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       needs:
         'This needs the “{act}” permission, which the owners have, and these roles: {holders}.',
       needsOwners: 'This needs the “{act}” permission, which only the owners have.',
+      freshSignature:
+        'A new signature from your wallet to give «Administrator» or «Manage roles» is not ready yet. You can do the rest.',
       other: 'The till did not allow it.',
+    },
+    panel: {
+      title: 'Members and roles',
+      lead: 'Who is in the organization and what each role lets them do. Every change is written in the log.',
+      noOrganization:
+        'You are not in any organization yet. Create one from Balance and you can hand out roles here.',
+      organization: 'Organization',
+      house:
+        'You enter as the house: you see and act with the permission the alpha gives Numen Games. Every step goes in the log.',
+      ownerStrip: 'You are an owner: you can do everything except what the house keeps.',
+      rolesTitle: 'Roles',
+      membersTitle: 'People',
+      logTitle: 'Log',
+      holders: '{n} people',
+      base: 'Base role: everyone has it',
+      apart: 'Shown apart',
+      owner: 'Owner',
+      you: 'you',
+      noRoles: 'Nobody holds this role yet.',
+      edit: 'Edit',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      remove: 'Delete',
+      confirmRemove: 'Delete the role «{name}»? Those who hold it lose it.',
+      confirm: 'Yes, delete',
+      cancel: 'Cancel',
+      newRole: 'New role',
+      name: 'Name',
+      color: 'Colour',
+      noColor: 'No colour',
+      showApart: 'Show apart in the list of people',
+      permissions: 'What it allows',
+      create: 'Create role',
+      save: 'Save',
+      signatureNote:
+        'Giving «Administrator» or «Manage roles» will ask for a fresh signature from your wallet; this screen cannot ask for it yet.',
+      give: 'Give',
+      giveLabel: 'Role to give to {who}',
+      take: 'Take the role {role} from {who}',
+      noRolesYet: 'No roles besides the base one.',
+      working: 'Saving…',
+      showLog: 'Show the log',
+      hideLog: 'Hide the log',
+      logEmpty: 'No changes written yet.',
+      logAct: {
+        'organization-created': 'Organization created',
+        'organization-renamed': 'Organization renamed',
+        'member-added': 'Person added',
+        'member-removed': 'Person removed',
+        'member-left': 'Person left',
+        'role-given': 'Role given',
+        'role-taken': 'Role taken away',
+        'topup-started': 'Top-up started',
+        'house-read': 'The house looked',
+        'role-created': 'Role created',
+        'role-edited': 'Role edited',
+        'role-moved': 'Role moved',
+        'role-deleted': 'Role deleted',
+      },
     },
     referrals: {
       title: 'Referrals',
@@ -392,7 +580,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     nav: '残高',
     title: '残高',
     lead: 'あなたのアカウントと所属する組織の残高。有効期限はなく、いつでもチャージでき、使い道も確認できます。',
-    tabs: { label: '残高のセクション', saldo: '残高', referrals: '紹介' },
+    tabs: {
+      label: '残高のセクション',
+      saldo: '残高',
+      members: 'メンバーとロール',
+      referrals: '紹介',
+    },
     signedOut: {
       title: 'ログインして残高を確認',
       text: 'あなたと組織の残高はアカウントに紐づいています。ログインするとここに表示されます。',
@@ -488,7 +681,68 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       meanwhile: 'その間に組織が変更されました。もう一度見てからやり直してください。',
       needs: 'これには「{act}」の権限が必要です。オーナーと次のロールが持っています: {holders}。',
       needsOwners: 'これには「{act}」の権限が必要です。持っているのはオーナーだけです。',
+      freshSignature:
+        '「管理者」や「ロールの管理」を付与するためのウォレットの新しい署名は、まだ用意できていません。それ以外の操作はできます。',
       other: 'レジが許可しませんでした。',
+    },
+    panel: {
+      title: 'メンバーとロール',
+      lead: '組織にいる人と、各ロールでできること。変更はすべて記録に残ります。',
+      noOrganization:
+        'まだどの組織にも入っていません。残高から組織を作ると、ここでロールを配れます。',
+      organization: '組織',
+      house:
+        '運営として入っています。アルファ版で Numen Games に与えられた権限で見て、操作します。すべて記録に残ります。',
+      ownerStrip: 'あなたはオーナーです。運営が持つ権限以外はすべてできます。',
+      rolesTitle: 'ロール',
+      membersTitle: 'メンバー',
+      logTitle: '記録',
+      holders: '{n} 人',
+      base: '基本ロール：全員が持っています',
+      apart: '別枠で表示',
+      owner: 'オーナー',
+      you: 'あなた',
+      noRoles: 'このロールを持つ人はまだいません。',
+      edit: '編集',
+      moveUp: '上へ',
+      moveDown: '下へ',
+      remove: '削除',
+      confirmRemove: 'ロール「{name}」を削除しますか？持っている人はそれを失います。',
+      confirm: '削除する',
+      cancel: 'キャンセル',
+      newRole: '新しいロール',
+      name: '名前',
+      color: '色',
+      noColor: '色なし',
+      showApart: 'メンバー一覧で別枠に表示する',
+      permissions: 'できること',
+      create: 'ロールを作成',
+      save: '保存',
+      signatureNote:
+        '「管理者」や「ロールの管理」を付与するには、ウォレットの新しい署名が必要になります。この画面はまだ署名を求められません。',
+      give: '付与',
+      giveLabel: '{who} に付与するロール',
+      take: '{who} からロール {role} を外す',
+      noRolesYet: '基本ロール以外のロールはありません。',
+      working: '保存中…',
+      showLog: '記録を見る',
+      hideLog: '記録を隠す',
+      logEmpty: 'まだ記録された変更はありません。',
+      logAct: {
+        'organization-created': '組織を作成',
+        'organization-renamed': '組織名を変更',
+        'member-added': 'メンバーを追加',
+        'member-removed': 'メンバーを削除',
+        'member-left': 'メンバーが退出',
+        'role-given': 'ロールを付与',
+        'role-taken': 'ロールを外した',
+        'topup-started': 'チャージを開始',
+        'house-read': '運営が確認',
+        'role-created': 'ロールを作成',
+        'role-edited': 'ロールを編集',
+        'role-moved': 'ロールを移動',
+        'role-deleted': 'ロールを削除',
+      },
     },
     referrals: {
       title: '紹介',
@@ -512,7 +766,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     nav: '잔액',
     title: '잔액',
     lead: '내 계정과 내가 속한 조직의 잔액. 만료되지 않으며, 원할 때 충전하고 어디에 쓰였는지 볼 수 있습니다.',
-    tabs: { label: '잔액 섹션', saldo: '잔액', referrals: '추천' },
+    tabs: {
+      label: '잔액 섹션',
+      saldo: '잔액',
+      members: '구성원과 역할',
+      referrals: '추천',
+    },
     signedOut: {
       title: '로그인하고 잔액 보기',
       text: '내 잔액과 조직의 잔액은 계정에 연결되어 있습니다. 로그인하면 여기에서 볼 수 있습니다.',
@@ -608,7 +867,68 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       meanwhile: '그사이 조직이 바뀌었습니다. 다시 확인하고 시도해 주세요.',
       needs: '“{act}” 권한이 필요합니다. 소유자와 다음 역할이 가지고 있습니다: {holders}.',
       needsOwners: '“{act}” 권한이 필요합니다. 소유자만 가지고 있습니다.',
+      freshSignature:
+        "'관리자'나 '역할 관리'를 부여하기 위한 지갑의 새 서명은 아직 준비되지 않았습니다. 나머지는 할 수 있습니다.",
       other: '계산대가 허용하지 않았습니다.',
+    },
+    panel: {
+      title: '구성원과 역할',
+      lead: '조직에 누가 있는지, 각 역할로 무엇을 할 수 있는지 보여 줍니다. 모든 변경은 기록에 남습니다.',
+      noOrganization:
+        '아직 어떤 조직에도 속해 있지 않습니다. 잔액에서 조직을 만들면 여기서 역할을 나눌 수 있습니다.',
+      organization: '조직',
+      house:
+        '운영진으로 들어왔습니다. 알파 단계에서 Numen Games에 주어진 권한으로 보고 행동합니다. 모든 단계가 기록에 남습니다.',
+      ownerStrip: '당신은 소유자입니다. 운영진이 보유한 것 외에는 모두 할 수 있습니다.',
+      rolesTitle: '역할',
+      membersTitle: '사람',
+      logTitle: '기록',
+      holders: '{n}명',
+      base: '기본 역할: 모두가 가지고 있습니다',
+      apart: '따로 표시',
+      owner: '소유자',
+      you: '나',
+      noRoles: '이 역할을 가진 사람이 아직 없습니다.',
+      edit: '편집',
+      moveUp: '위로',
+      moveDown: '아래로',
+      remove: '삭제',
+      confirmRemove: '역할 «{name}»을(를) 삭제할까요? 이 역할을 가진 사람은 역할을 잃습니다.',
+      confirm: '삭제',
+      cancel: '취소',
+      newRole: '새 역할',
+      name: '이름',
+      color: '색',
+      noColor: '색 없음',
+      showApart: '사람 목록에서 따로 표시',
+      permissions: '할 수 있는 일',
+      create: '역할 만들기',
+      save: '저장',
+      signatureNote:
+        "'관리자'나 '역할 관리'를 부여하려면 지갑의 새 서명이 필요합니다. 이 화면은 아직 서명을 요청할 수 없습니다.",
+      give: '부여',
+      giveLabel: '{who}에게 부여할 역할',
+      take: '{who}에게서 역할 {role} 빼기',
+      noRolesYet: '기본 역할 외에 다른 역할이 없습니다.',
+      working: '저장 중…',
+      showLog: '기록 보기',
+      hideLog: '기록 숨기기',
+      logEmpty: '아직 기록된 변경이 없습니다.',
+      logAct: {
+        'organization-created': '조직 생성',
+        'organization-renamed': '조직 이름 변경',
+        'member-added': '사람 추가',
+        'member-removed': '사람 제거',
+        'member-left': '사람이 나감',
+        'role-given': '역할 부여',
+        'role-taken': '역할 회수',
+        'topup-started': '충전 시작',
+        'house-read': '운영진이 확인',
+        'role-created': '역할 생성',
+        'role-edited': '역할 편집',
+        'role-moved': '역할 이동',
+        'role-deleted': '역할 삭제',
+      },
     },
     referrals: {
       title: '추천',
@@ -632,7 +952,12 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     nav: 'Saldo',
     title: 'Saldo',
     lead: 'Sua conta e a das suas organizações: o saldo não expira, você recarrega quando quiser e vê no que ele é gasto.',
-    tabs: { label: 'Seções do Saldo', saldo: 'Saldo', referrals: 'Indicações' },
+    tabs: {
+      label: 'Seções do Saldo',
+      saldo: 'Saldo',
+      members: 'Membros e papéis',
+      referrals: 'Indicações',
+    },
     signedOut: {
       title: 'Entre para ver seu saldo',
       text: 'Seu saldo e o das suas organizações ficam na sua conta. Entre e você os verá aqui.',
@@ -730,7 +1055,68 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'Para fazer isso é preciso a permissão «{act}», que as pessoas titulares têm, e estes cargos: {holders}.',
       needsOwners:
         'Para fazer isso é preciso a permissão «{act}», que só as pessoas titulares têm.',
+      freshSignature:
+        'A nova assinatura da sua carteira para dar «Administrador» ou «Gerenciar papéis» ainda não está pronta. O resto você pode fazer.',
       other: 'O caixa não permitiu.',
+    },
+    panel: {
+      title: 'Membros e papéis',
+      lead: 'Quem está na organização e o que cada papel permite. Toda mudança fica escrita no registro.',
+      noOrganization:
+        'Você ainda não está em nenhuma organização. Crie uma em Saldo e aqui você poderá distribuir papéis.',
+      organization: 'Organização',
+      house:
+        'Você entra como a casa: vê e age com a permissão que a alfa dá à Numen Games. Cada passo fica no registro.',
+      ownerStrip: 'Você é titular: pode tudo, menos o que a casa reserva.',
+      rolesTitle: 'Papéis',
+      membersTitle: 'Pessoas',
+      logTitle: 'Registro',
+      holders: '{n} pessoas',
+      base: 'Papel de base: todo mundo tem',
+      apart: 'Aparece à parte',
+      owner: 'Titular',
+      you: 'você',
+      noRoles: 'Ninguém tem este papel ainda.',
+      edit: 'Editar',
+      moveUp: 'Subir',
+      moveDown: 'Descer',
+      remove: 'Apagar',
+      confirmRemove: 'Apagar o papel «{name}»? Quem o tem o perde.',
+      confirm: 'Sim, apagar',
+      cancel: 'Cancelar',
+      newRole: 'Novo papel',
+      name: 'Nome',
+      color: 'Cor',
+      noColor: 'Sem cor',
+      showApart: 'Mostrar à parte na lista de pessoas',
+      permissions: 'O que permite',
+      create: 'Criar papel',
+      save: 'Salvar',
+      signatureNote:
+        'Dar «Administrador» ou «Gerenciar papéis» vai pedir uma nova assinatura da sua carteira; esta tela ainda não sabe pedi-la.',
+      give: 'Dar',
+      giveLabel: 'Papel a dar a {who}',
+      take: 'Tirar o papel {role} de {who}',
+      noRolesYet: 'Sem outros papéis além do de base.',
+      working: 'Salvando…',
+      showLog: 'Ver o registro',
+      hideLog: 'Ocultar o registro',
+      logEmpty: 'Ainda não há mudanças escritas.',
+      logAct: {
+        'organization-created': 'Organização criada',
+        'organization-renamed': 'Organização renomeada',
+        'member-added': 'Pessoa adicionada',
+        'member-removed': 'Pessoa removida',
+        'member-left': 'Pessoa que saiu',
+        'role-given': 'Papel dado',
+        'role-taken': 'Papel retirado',
+        'topup-started': 'Recarga iniciada',
+        'house-read': 'A casa olhou',
+        'role-created': 'Papel criado',
+        'role-edited': 'Papel editado',
+        'role-moved': 'Papel movido',
+        'role-deleted': 'Papel apagado',
+      },
     },
     referrals: {
       title: 'Indicações',

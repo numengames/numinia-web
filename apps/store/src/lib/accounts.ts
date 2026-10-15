@@ -15,6 +15,7 @@
 
 import {
   ORGANIZATION_PERMISSIONS,
+  needsFreshSignature,
   type OrganizationAccess,
   type OrganizationPermission,
   type SupportedLocale,
@@ -110,6 +111,80 @@ export interface DeskAccess {
   holders: Partial<Record<OrganizationAccess, string[]>>;
 }
 
+/** A role as the panel draws it (the till's `roles`). */
+export interface DeskRole {
+  id: string;
+  name: string;
+  color: string | null;
+  position: number;
+  hoist: boolean;
+  permissions: OrganizationPermission[];
+  /** How many members hold it; everyone holds the base role. */
+  members: number;
+  /** Whether the asker may edit, move or delete it. */
+  mayEdit: boolean;
+}
+
+/** A member as the panel draws it. */
+export interface DeskMemberDetail {
+  wallet: string;
+  owner: boolean;
+  addedAt: string;
+  /** The roles held besides the base role. */
+  roleIds: string[];
+  /** The roles the asker may give to or take from this member. */
+  assignable: string[];
+}
+
+export interface DeskRoles {
+  ok: true;
+  accountId: string;
+  as: 'owner' | 'house' | 'member';
+  /** From the top down, the base role last. */
+  roles: DeskRole[];
+  /** Owners first, then by arrival. */
+  members: DeskMemberDetail[];
+}
+
+export type DeskRolesAnswer = DeskRoles | DeskRefusal;
+
+/** What a role is made of when it is created. */
+export interface DeskRoleDraft {
+  name: string;
+  color: string | null;
+  hoist: boolean;
+  permissions: OrganizationPermission[];
+}
+
+export type DeskRoleChange = Partial<DeskRoleDraft>;
+
+export type DeskLogAct =
+  | 'organization-created'
+  | 'organization-renamed'
+  | 'member-added'
+  | 'member-removed'
+  | 'member-left'
+  | 'role-given'
+  | 'role-taken'
+  | 'topup-started'
+  | 'house-read'
+  | 'role-created'
+  | 'role-edited'
+  | 'role-moved'
+  | 'role-deleted';
+
+export interface DeskLogLine {
+  seq: number;
+  at: string;
+  actor: string;
+  asHouse: boolean;
+  act: DeskLogAct;
+  subject: string | null;
+  detail: Record<string, string> | null;
+}
+
+export type DeskLogAnswer = { ok: true; accountId: string; lines: DeskLogLine[] } | DeskRefusal;
+
 export type DeskConfirmAnswer =
   { ok: true; state: CheckoutState; accountId: string; balanceCents: number } | DeskRefusal;
 
@@ -139,6 +214,34 @@ export interface AccountDesk {
     role: MemberRole,
   ): Promise<DeskMembersAnswer>;
   removeMember(wallet: string, accountId: string, memberWallet: string): Promise<DeskMembersAnswer>;
+  roles(wallet: string, accountId: string): Promise<DeskRolesAnswer>;
+  createRole(wallet: string, accountId: string, role: DeskRoleDraft): Promise<DeskRolesAnswer>;
+  editRole(
+    wallet: string,
+    accountId: string,
+    roleId: string,
+    change: DeskRoleChange,
+  ): Promise<DeskRolesAnswer>;
+  moveRole(
+    wallet: string,
+    accountId: string,
+    roleId: string,
+    position: number,
+  ): Promise<DeskRolesAnswer>;
+  deleteRole(wallet: string, accountId: string, roleId: string): Promise<DeskRolesAnswer>;
+  giveRole(
+    wallet: string,
+    accountId: string,
+    memberWallet: string,
+    roleId: string,
+  ): Promise<DeskRolesAnswer>;
+  takeRole(
+    wallet: string,
+    accountId: string,
+    memberWallet: string,
+    roleId: string,
+  ): Promise<DeskRolesAnswer>;
+  log(wallet: string, accountId: string): Promise<DeskLogAnswer>;
   startTopup(
     wallet: string,
     accountId: string,
@@ -158,6 +261,14 @@ export const DESK_METHODS = [
   'access',
   'setMember',
   'removeMember',
+  'roles',
+  'createRole',
+  'editRole',
+  'moveRole',
+  'deleteRole',
+  'giveRole',
+  'takeRole',
+  'log',
   'startTopup',
   'confirmTopup',
 ] as const satisfies readonly (keyof AccountDesk)[];
@@ -181,12 +292,15 @@ export const OWN_ROLES = 'nobody changes their own roles: they may only leave';
 export const NOT_BELOW = 'you may act only on roles and members below your own highest role';
 export const OWNER_ONLY = 'only the owners name or remove an owner';
 export const NO_ADMIN_ROLE = 'no role of the organization carries administrator';
+/** What this screen says while it cannot yet ask for a fresh wallet signature (ORG-008). */
+export const FRESH_SIGNATURE =
+  'giving administrator or manage-roles needs a fresh signature of your wallet';
 export const MEANWHILE = 'the organization changed meanwhile: read it again';
-const BASE_ROLE = 'everyone holds the base role: it is neither given nor taken away';
-const GRANT_EXCEEDS = 'you may grant or take away only the permissions you hold';
+export const BASE_ROLE = 'everyone holds the base role: it is neither given nor taken away';
+export const GRANT_EXCEEDS = 'you may grant or take away only the permissions you hold';
 const ROLE_LIMIT = /^an organization holds at most \d+ roles besides the base role$/;
-const OWNERS_ONLY = 'only the owners may do this';
-const ALPHA = "no organization changes the house's access during the alpha";
+export const OWNERS_ONLY = 'only the owners may do this';
+export const ALPHA = "no organization changes the house's access during the alpha";
 /** «this needs manage-roles, which the owners hold, and the roles A and B» (or «which only the owners hold»). */
 const NEEDS =
   /^this needs ([a-z-]+), which (?:only the owners hold|the owners hold, and the roles? (.+))$/;
@@ -379,6 +493,7 @@ export type ProblemKey =
   | 'ownersOnly'
   | 'alpha'
   | 'meanwhile'
+  | 'freshSignature'
   | 'needs'
   | 'other';
 
@@ -395,6 +510,7 @@ const SENTENCES: ReadonlyMap<string, ProblemKey> = new Map([
   [OWNERS_ONLY, 'ownersOnly'],
   [ALPHA, 'alpha'],
   [MEANWHILE, 'meanwhile'],
+  [FRESH_SIGNATURE, 'freshSignature'],
 ]);
 
 /** One refusal, read: its key and, for a missing permission, which one and who holds it. */
@@ -573,4 +689,89 @@ export function readResult(json: unknown): PostResult | null {
     return { ok: false, problems: (result['problems'] as unknown[]).map(String) };
   }
   return null;
+}
+
+// ---- Members and roles: reading the API's answers, and the little rules the screen needs ----
+
+function isRole(value: unknown): value is DeskRole {
+  return (
+    isRecord(value) &&
+    typeof value['id'] === 'string' &&
+    typeof value['name'] === 'string' &&
+    (value['color'] === null || typeof value['color'] === 'string') &&
+    typeof value['position'] === 'number' &&
+    typeof value['hoist'] === 'boolean' &&
+    Array.isArray(value['permissions']) &&
+    typeof value['members'] === 'number' &&
+    typeof value['mayEdit'] === 'boolean'
+  );
+}
+
+function isMemberDetail(value: unknown): value is DeskMemberDetail {
+  return (
+    isRecord(value) &&
+    typeof value['wallet'] === 'string' &&
+    typeof value['owner'] === 'boolean' &&
+    typeof value['addedAt'] === 'string' &&
+    Array.isArray(value['roleIds']) &&
+    Array.isArray(value['assignable'])
+  );
+}
+
+/** An organization as the desk answers it (a GET's `roles`, a POST's `result`), or null when it is not one. */
+export function readRolesView(value: unknown): DeskRoles | null {
+  if (!isRecord(value) || value['ok'] !== true) return null;
+  const { accountId, as, roles, members } = value;
+  return typeof accountId === 'string' &&
+    (as === 'owner' || as === 'house' || as === 'member') &&
+    Array.isArray(roles) &&
+    roles.every(isRole) &&
+    Array.isArray(members) &&
+    members.every(isMemberDetail)
+    ? (value as unknown as DeskRoles)
+    : null;
+}
+
+/** GET /api/saldo/roles: the organization and who is asking, or null when the body is not that. */
+export function readRoles(json: unknown): { roles: DeskRoles; you: string | null } | null {
+  if (!isRecord(json)) return null;
+  const roles = readRolesView(json['roles']);
+  return roles === null ? null : { roles, you: readYou(json) };
+}
+
+/** GET /api/saldo/log: the changes, newest first, or null when the body is not that. */
+export function readLog(json: unknown): DeskLogLine[] | null {
+  if (!isRecord(json) || !isRecord(json['log'])) return null;
+  const lines = json['log']['lines'];
+  return Array.isArray(lines) &&
+    lines.every(
+      (line) =>
+        isRecord(line) &&
+        typeof line['seq'] === 'number' &&
+        typeof line['at'] === 'string' &&
+        typeof line['actor'] === 'string' &&
+        typeof line['act'] === 'string' &&
+        (line['subject'] === null || typeof line['subject'] === 'string'),
+    )
+    ? (lines as DeskLogLine[])
+    : null;
+}
+
+/** Whether giving this permission asks for a fresh wallet signature (ORG-008): the screen leaves it for later. */
+export function needsSignature(permission: OrganizationPermission): boolean {
+  return needsFreshSignature({ kind: 'grant', permissions: [permission] });
+}
+
+/**
+ * The place a role moves to one step up (+1) or down (-1), or null at the
+ * end of the list. Places run 1..n for the roles above the base role (0).
+ */
+export function stepPosition(
+  roles: readonly DeskRole[],
+  role: DeskRole,
+  step: 1 | -1,
+): number | null {
+  const top = roles.filter((entry) => entry.position > 0).length;
+  const to = role.position + step;
+  return to >= 1 && to <= top ? to : null;
 }

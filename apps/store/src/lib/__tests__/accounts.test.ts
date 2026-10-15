@@ -28,8 +28,15 @@ import {
   holdersOf,
   needsSentence,
   readAccess,
+  needsSignature,
+  readLog,
   readOverview,
   readProblem,
+  readRoles,
+  readRolesView,
+  stepPosition,
+  FRESH_SIGNATURE,
+  type DeskRole,
   readResult,
   readStatement,
   readYou,
@@ -339,5 +346,76 @@ describe('reading the API in the browser', () => {
     expect(readResult({ result: { ok: false } })).toBeNull();
     expect(readResult({ result: 'x' })).toBeNull();
     expect(readResult(null)).toBeNull();
+  });
+});
+
+describe('members and roles', () => {
+  const role = (id: string, position: number): DeskRole => ({
+    id,
+    name: id,
+    color: null,
+    position,
+    hoist: false,
+    permissions: [],
+    members: 0,
+    mayEdit: true,
+  });
+  const member = { wallet: WALLET, owner: true, addedAt: 'a', roleIds: [], assignable: [] };
+  const view = {
+    ok: true,
+    accountId: 'acc',
+    as: 'owner',
+    roles: [role('a', 2), role('b', 1), role('base', 0)],
+    members: [member],
+  };
+
+  it('reads an organization as the desk answers it, or nothing', () => {
+    expect(readRolesView(view)).toEqual(view);
+    expect(readRoles({ roles: view, you: WALLET })).toEqual({ roles: view, you: WALLET });
+    expect(readRoles({ roles: view })?.you).toBeNull();
+    expect(readRoles({ roles: { ...view, as: 'god' } })).toBeNull();
+    expect(readRoles([])).toBeNull();
+    expect(readRolesView(null)).toBeNull();
+    expect(readRolesView({ ...view, ok: false })).toBeNull();
+    expect(readRolesView({ ...view, accountId: 1 })).toBeNull();
+    expect(readRolesView({ ...view, roles: [{ id: 'x' }] })).toBeNull();
+    expect(readRolesView({ ...view, roles: 'none' })).toBeNull();
+    expect(readRolesView({ ...view, members: [{ wallet: 'x' }] })).toBeNull();
+    expect(readRolesView({ ...view, members: {} })).toBeNull();
+  });
+
+  it('reads the log, or nothing', () => {
+    const line = {
+      seq: 1,
+      at: 'a',
+      actor: WALLET,
+      asHouse: false,
+      act: 'role-given',
+      subject: null,
+      detail: null,
+    };
+    expect(readLog({ log: { lines: [line] } })).toEqual([line]);
+    expect(readLog({ log: { lines: [] } })).toEqual([]);
+    expect(readLog({ log: { lines: [{ ...line, seq: 'x' }] } })).toBeNull();
+    expect(readLog({ log: { lines: [{ ...line, subject: 4 }] } })).toBeNull();
+    expect(readLog({ log: { lines: [4] } })).toBeNull();
+    expect(readLog({ log: {} })).toBeNull();
+    expect(readLog({ log: null })).toBeNull();
+    expect(readLog(null)).toBeNull();
+  });
+
+  it('knows which permissions ask for a fresh signature, and says so in the till’s words', () => {
+    expect(needsSignature('administrator')).toBe(true);
+    expect(needsSignature('manage-roles')).toBe(true);
+    expect(needsSignature('enter-worlds')).toBe(false);
+    expect(readProblem([FRESH_SIGNATURE])).toEqual({ key: 'freshSignature' });
+  });
+
+  it('moves a role one step inside the places above the base role', () => {
+    const roles = view.roles as DeskRole[];
+    expect(stepPosition(roles, roles[0] as DeskRole, 1)).toBeNull();
+    expect(stepPosition(roles, roles[0] as DeskRole, -1)).toBe(1);
+    expect(stepPosition(roles, roles[1] as DeskRole, 1)).toBe(2);
+    expect(stepPosition(roles, roles[1] as DeskRole, -1)).toBeNull();
   });
 });

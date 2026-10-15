@@ -18,22 +18,31 @@
  */
 
 import { z } from 'zod';
-import { SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
+import {
+  ORGANIZATION_PERMISSIONS,
+  SUPPORTED_LOCALES,
+  needsFreshSignature,
+  type OrganizationPermission,
+  type SupportedLocale,
+} from '@numinia/domain';
 import deskSeed from '../../fixtures/accounts/desk.json';
 import {
   DESK_METHODS,
   SPEND_RANGES,
   TOPUP_KEYS,
+  FRESH_SIGNATURE,
   checkoutTarget,
   isSpendRange,
   vueltaBase,
   type AccountDesk,
+  type DeskRoleChange,
+  type DeskRoleDraft,
   type SpendRange,
 } from './accounts';
 import { createAccountsFixtureDesk, type AccountsSeed } from './accounts-fixture';
 import { logEvent } from './telemetry';
 
-/** The desk read off whatever workerd bound: its ten methods, or null when it is not a desk. */
+/** The desk read off whatever workerd bound: its eighteen methods, or null when it is not a desk. */
 export function boundAccounts(binding: unknown): AccountDesk | null {
   if (binding === null || (typeof binding !== 'object' && typeof binding !== 'function')) {
     return null;
@@ -51,6 +60,18 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
     access: (wallet, accountId) => stub.access(wallet, accountId),
     setMember: (wallet, accountId, member, role) => stub.setMember(wallet, accountId, member, role),
     removeMember: (wallet, accountId, member) => stub.removeMember(wallet, accountId, member),
+    roles: (wallet, accountId) => stub.roles(wallet, accountId),
+    createRole: (wallet, accountId, role) => stub.createRole(wallet, accountId, role),
+    editRole: (wallet, accountId, roleId, change) =>
+      stub.editRole(wallet, accountId, roleId, change),
+    moveRole: (wallet, accountId, roleId, position) =>
+      stub.moveRole(wallet, accountId, roleId, position),
+    deleteRole: (wallet, accountId, roleId) => stub.deleteRole(wallet, accountId, roleId),
+    giveRole: (wallet, accountId, member, roleId) =>
+      stub.giveRole(wallet, accountId, member, roleId),
+    takeRole: (wallet, accountId, member, roleId) =>
+      stub.takeRole(wallet, accountId, member, roleId),
+    log: (wallet, accountId) => stub.log(wallet, accountId),
     startTopup: (wallet, accountId, key, returnBase) =>
       stub.startTopup(wallet, accountId, key, returnBase),
     confirmTopup: (wallet, sessionId) => stub.confirmTopup(wallet, sessionId),
@@ -101,6 +122,27 @@ function buildSchemas() {
   const role = z.enum(['admin', 'member']);
   // The name's real rule (1 to 60 characters, trimmed) is the till's to judge.
   const name = z.string().max(200);
+  const roleId = z.string().regex(/^role_[0-9a-f]{16}$/, 'a role id');
+  const permission = z.enum(ORGANIZATION_PERMISSIONS);
+  const color = z.string().regex(/^#[0-9a-f]{6}$/, '#rrggbb in lower case');
+  // A role's name rules (1 to 100, no control characters) are the till's to judge.
+  const roleName = z.string().max(400);
+  const draft = z
+    .object({
+      name: roleName,
+      color: color.nullable(),
+      hoist: z.boolean(),
+      permissions: z.array(permission).max(ORGANIZATION_PERMISSIONS.length),
+    })
+    .strict();
+  const change = z
+    .object({
+      name: roleName.optional(),
+      color: color.nullable().optional(),
+      hoist: z.boolean().optional(),
+      permissions: z.array(permission).max(ORGANIZATION_PERMISSIONS.length).optional(),
+    })
+    .strict();
   const request = z.discriminatedUnion('action', [
     z
       .object({
@@ -120,6 +162,19 @@ function buildSchemas() {
     z.object({ action: z.literal('rename'), accountId: id, name }).strict(),
     z.object({ action: z.literal('set-member'), accountId: id, wallet, role }).strict(),
     z.object({ action: z.literal('remove-member'), accountId: id, wallet }).strict(),
+    z.object({ action: z.literal('create-role'), accountId: id, role: draft }).strict(),
+    z.object({ action: z.literal('edit-role'), accountId: id, roleId, change }).strict(),
+    z
+      .object({
+        action: z.literal('move-role'),
+        accountId: id,
+        roleId,
+        position: z.number().int().min(1).max(1000),
+      })
+      .strict(),
+    z.object({ action: z.literal('delete-role'), accountId: id, roleId }).strict(),
+    z.object({ action: z.literal('give-role'), accountId: id, wallet, roleId }).strict(),
+    z.object({ action: z.literal('take-role'), accountId: id, wallet, roleId }).strict(),
   ]);
 
   // The till's answers: extra fields are dropped, missing or mistyped ones refused.
@@ -177,6 +232,46 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  const roleDetail = z.object({
+    id: z.string(),
+    name: z.string(),
+    color: z.string().nullable(),
+    position: z.number(),
+    hoist: z.boolean(),
+    permissions: z.array(permission),
+    members: z.number(),
+    mayEdit: z.boolean(),
+  });
+  const memberDetail = z.object({
+    wallet: z.string(),
+    owner: z.boolean(),
+    addedAt: z.string(),
+    roleIds: z.array(z.string()),
+    assignable: z.array(z.string()),
+  });
+  const roles = z.union([
+    z.object({
+      ok: z.literal(true),
+      accountId: z.string(),
+      as: z.enum(['owner', 'house', 'member']),
+      roles: z.array(roleDetail),
+      members: z.array(memberDetail),
+    }),
+    refusal,
+  ]);
+  const logLine = z.object({
+    seq: z.number(),
+    at: z.string(),
+    actor: z.string(),
+    asHouse: z.boolean(),
+    act: z.string(),
+    subject: z.string().nullable(),
+    detail: z.record(z.string(), z.string()).nullable(),
+  });
+  const log = z.union([
+    z.object({ ok: z.literal(true), accountId: z.string(), lines: z.array(logLine) }),
+    refusal,
+  ]);
   const topup = z.union([z.object({ ok: z.literal(true), url: z.string() }), refusal]);
   const confirm = z.union([
     z.object({
@@ -187,7 +282,7 @@ function buildSchemas() {
     }),
     refusal,
   ]);
-  return { request, overview, statement, team, members, access, topup, confirm };
+  return { request, overview, statement, team, members, access, roles, log, topup, confirm };
 }
 
 let schemas: ReturnType<typeof buildSchemas> | null = null;
@@ -212,7 +307,33 @@ export type SaldoRequest =
       readonly wallet: string;
       readonly role: 'admin' | 'member';
     }
-  | { readonly action: 'remove-member'; readonly accountId: string; readonly wallet: string };
+  | { readonly action: 'remove-member'; readonly accountId: string; readonly wallet: string }
+  | { readonly action: 'create-role'; readonly accountId: string; readonly role: DeskRoleDraft }
+  | {
+      readonly action: 'edit-role';
+      readonly accountId: string;
+      readonly roleId: string;
+      readonly change: DeskRoleChange;
+    }
+  | {
+      readonly action: 'move-role';
+      readonly accountId: string;
+      readonly roleId: string;
+      readonly position: number;
+    }
+  | { readonly action: 'delete-role'; readonly accountId: string; readonly roleId: string }
+  | {
+      readonly action: 'give-role';
+      readonly accountId: string;
+      readonly wallet: string;
+      readonly roleId: string;
+    }
+  | {
+      readonly action: 'take-role';
+      readonly accountId: string;
+      readonly wallet: string;
+      readonly roleId: string;
+    };
 
 /** The browser's POST body, read: one action shaped like the contract's, or the first issue. */
 export function readSaldoRequest(
@@ -336,6 +457,51 @@ export async function answerStatement(
   return answer({ statement, you, access });
 }
 
+/** The account a GET names (`?cuenta=`), or the answer that refuses it. */
+function accountOf(url: URL): { ok: true; account: string } | { ok: false; response: Response } {
+  const account = url.searchParams.get('cuenta') ?? '';
+  if (account.length === 0 || account.length > ID_MAX) {
+    return { ok: false, response: answer({ error: 'cuenta: an account id is required' }, 400) };
+  }
+  return { ok: true, account };
+}
+
+/** GET /api/saldo/roles?cuenta=: an organization's roles and members, as this wallet may handle them. */
+export async function answerRoles(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (wallet === null) return signedOut();
+  const named = accountOf(url);
+  if (!named.ok) return named.response;
+  if (desk === null) return notBound();
+  const you = wallet.toLowerCase();
+  const asked = await ask(log, 'roles', () => desk.roles(you, named.account), shapes().roles);
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ roles: asked.value, you });
+}
+
+/** GET /api/saldo/log?cuenta=: the organization's last changes, for whoever may view its log. */
+export async function answerLog(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (wallet === null) return signedOut();
+  const named = accountOf(url);
+  if (!named.ok) return named.response;
+  if (desk === null) return notBound();
+  const you = wallet.toLowerCase();
+  const asked = await ask(log, 'log', () => desk.log(you, named.account), shapes().log);
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ log: asked.value });
+}
+
 /** Read a POST's JSON body within limits, or the answer that refuses it. */
 async function bodyOf(
   request: Request,
@@ -414,6 +580,17 @@ export async function answerAction(
     return answer({ result });
   }
 
+  if (
+    action.action === 'create-role' ||
+    action.action === 'edit-role' ||
+    action.action === 'give-role' ||
+    action.action === 'take-role' ||
+    action.action === 'move-role' ||
+    action.action === 'delete-role'
+  ) {
+    return answerRoleAction(desk, you, action, log);
+  }
+
   const asked =
     action.action === 'create-team'
       ? await ask(log, action.action, () => desk.createTeam(you, action.name), s.team)
@@ -438,5 +615,116 @@ export async function answerAction(
               s.members,
             );
   if (!asked.ok) return asked.response;
+  return answer({ result: asked.value });
+}
+
+type RoleAction = Extract<
+  SaldoRequest,
+  {
+    readonly action:
+      'create-role' | 'edit-role' | 'move-role' | 'delete-role' | 'give-role' | 'take-role';
+  }
+>;
+
+/** The permissions a request would ADD that ask for a new wallet signature (STD-051, ORG-008). */
+async function sensitiveGrant(
+  desk: AccountDesk,
+  you: string,
+  action: RoleAction,
+  log: Log,
+): Promise<
+  | { readonly ok: true; readonly grants: boolean }
+  | { readonly ok: false; readonly response: Response }
+> {
+  if (action.action === 'create-role') {
+    return {
+      ok: true,
+      grants: needsFreshSignature({ kind: 'grant', permissions: action.role.permissions }),
+    };
+  }
+  if (action.action !== 'edit-role' && action.action !== 'give-role')
+    return { ok: true, grants: false };
+  if (action.action === 'edit-role' && action.change.permissions === undefined) {
+    return { ok: true, grants: false };
+  }
+  const asked = await ask(log, 'roles', () => desk.roles(you, action.accountId), shapes().roles);
+  if (!asked.ok) return asked;
+  // A desk that refuses to say lets the write through to the same refusal: nothing is written.
+  if ('problems' in asked.value) return { ok: true, grants: false };
+  const held: readonly OrganizationPermission[] =
+    asked.value.roles.find((role) => role.id === action.roleId)?.permissions ?? [];
+  const added =
+    action.action === 'give-role'
+      ? held
+      : (action.change.permissions ?? []).filter((permission) => !held.includes(permission));
+  return {
+    ok: true,
+    grants: needsFreshSignature({ kind: 'grant', permissions: added }),
+  };
+}
+
+/** A role action on the desk; granting administrator or manage-roles is refused until the screen can ask for a fresh signature. */
+async function answerRoleAction(
+  desk: AccountDesk,
+  you: string,
+  action: RoleAction,
+  log: Log,
+): Promise<Response> {
+  const gate = await sensitiveGrant(desk, you, action, log);
+  if (!gate.ok) return gate.response;
+  if (gate.grants) {
+    log({ level: 'info', kind: 'saldo-role', action: action.action, outcome: 'needs-signature' });
+    return answer({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+  }
+  const s = shapes();
+  const asked =
+    action.action === 'create-role'
+      ? await ask(
+          log,
+          action.action,
+          () => desk.createRole(you, action.accountId, action.role),
+          s.roles,
+        )
+      : action.action === 'edit-role'
+        ? await ask(
+            log,
+            action.action,
+            () => desk.editRole(you, action.accountId, action.roleId, action.change),
+            s.roles,
+          )
+        : action.action === 'move-role'
+          ? await ask(
+              log,
+              action.action,
+              () => desk.moveRole(you, action.accountId, action.roleId, action.position),
+              s.roles,
+            )
+          : action.action === 'delete-role'
+            ? await ask(
+                log,
+                action.action,
+                () => desk.deleteRole(you, action.accountId, action.roleId),
+                s.roles,
+              )
+            : action.action === 'give-role'
+              ? await ask(
+                  log,
+                  action.action,
+                  () => desk.giveRole(you, action.accountId, action.wallet, action.roleId),
+                  s.roles,
+                )
+              : await ask(
+                  log,
+                  action.action,
+                  () => desk.takeRole(you, action.accountId, action.wallet, action.roleId),
+                  s.roles,
+                );
+  if (!asked.ok) return asked.response;
+  log({
+    level: 'info',
+    kind: 'saldo-role',
+    action: action.action,
+    outcome: asked.value.ok ? 'done' : 'refused',
+  });
   return answer({ result: asked.value });
 }
