@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import deskSeed from '../../../fixtures/accounts/desk.json';
 import {
-  ADMIN_ONLY,
-  LAST_ADMIN,
+  LAST_OWNER,
   NOT_MEMBER,
+  OWN_ROLES,
+  readProblem,
   type AccountDesk,
   type DeskStatement,
 } from '../accounts';
@@ -67,23 +68,92 @@ describe('the fixture desk', () => {
     expect(await d.renameTeam(ME, id, ' ')).toMatchObject({ ok: false });
     expect(await d.renameTeam(ME, 'acc_personal', 'X')).toEqual({
       ok: false,
-      problems: [ADMIN_ONLY],
+      problems: ['not an organization'],
     });
     expect(await d.members(ME, id)).toMatchObject({ ok: true, members: [{ wallet: ME }] });
     expect(await d.setMember(ME, id, OTHER, 'member')).toMatchObject({ ok: true });
     expect(await d.setMember(ME, id, 'x', 'member')).toMatchObject({ ok: false });
     expect(await d.setMember(ME, id, OTHER, 'owner')).toMatchObject({ ok: false });
-    expect(await d.setMember(ME, id, ME, 'member')).toEqual({ ok: false, problems: [LAST_ADMIN] });
-    expect(await d.removeMember(ME, id, ME)).toEqual({ ok: false, problems: [LAST_ADMIN] });
+    expect(await d.setMember(ME, id, ME, 'member')).toEqual({ ok: false, problems: [OWN_ROLES] });
+    expect(await d.removeMember(ME, id, ME)).toEqual({ ok: false, problems: [LAST_OWNER] });
     expect(await d.removeMember(ME, id, `0x${'ef'.repeat(20)}`)).toMatchObject({ ok: false });
     await d.setMember(ME, id, OTHER, 'admin');
     const removed = await d.removeMember(ME, id, OTHER);
     expect(removed.ok && removed.members?.map((m) => m.wallet)).toEqual([ME]);
     expect(await d.removeMember(ME, 'acc_personal', OTHER)).toEqual({
       ok: false,
-      problems: [ADMIN_ONLY],
+      problems: ['not an organization'],
     });
-    expect(await d.members(ME, 'acc_personal')).toEqual({ ok: false, problems: [ADMIN_ONLY] });
+    expect(await d.setMember(ME, 'acc_personal', OTHER, 'member')).toEqual({
+      ok: false,
+      problems: ['not an organization'],
+    });
+    expect(await d.members(ME, 'acc_personal')).toEqual({
+      ok: false,
+      problems: ['not an organization'],
+    });
+    expect(await d.members(ME, 'acc_missing')).toEqual({ ok: false, problems: [NOT_MEMBER] });
+  });
+
+  it('tells an owner everything and a plain member only what the base role gives', async () => {
+    const d = desk();
+    const team = seed.teams[0]?.id;
+    const owner = await d.access(ME, team);
+    expect(owner).toMatchObject({ ok: true, accountId: team, as: 'owner' });
+    expect('permissions' in owner && owner.permissions).toContain('manage-roles');
+    expect('permissions' in owner && owner.permissions).toContain('delete-world');
+    expect('holders' in owner && owner.holders['manage-roles']).toEqual(['Administration']);
+    expect('holders' in owner && owner.holders['top-up']).toEqual(['Administration', '@everyone']);
+    expect('holders' in owner && owner.holders['delete-world']).toEqual([]);
+    expect(await d.access(ME, 'acc_personal')).toEqual({
+      ok: false,
+      problems: ['not an organization'],
+    });
+    expect(await d.access(ME, 'acc_missing')).toEqual({ ok: false, problems: [NOT_MEMBER] });
+
+    const plain: AccountsSeed = {
+      ...seed,
+      teams: seed.teams.map((t) => ({
+        ...t,
+        members: t.members.map((m) =>
+          m.wallet === 'self' ? { ...m, role: 'member' as const } : m,
+        ),
+      })),
+    };
+    const m = loose(createAccountsFixtureDesk(plain, () => NOW));
+    const member = await m.access(ME, team);
+    expect(member).toMatchObject({
+      ok: true,
+      as: 'member',
+      permissions: ['enter-worlds', 'top-up', 'view-balance'],
+    });
+    // The words a refusal gets are the ones the till would write.
+    const refused = await m.setMember(ME, team, OTHER, 'member');
+    expect(refused).toEqual({
+      ok: false,
+      problems: ['this needs invite-members, which the owners hold, and the role Administration'],
+    });
+    expect(readProblem('problems' in refused ? refused.problems : [])).toEqual({
+      key: 'needs',
+      act: 'invite-members',
+      holders: 'Administration',
+    });
+    expect(await m.setMember(ME, team, OTHER, 'admin')).toMatchObject({ ok: false });
+    expect(
+      await m.setMember(ME, team, '0x00000000000000000000000000000000000000b2', 'admin'),
+    ).toMatchObject({ ok: false, problems: [expect.stringContaining('manage-roles')] });
+    expect(
+      await m.removeMember(ME, team, '0x00000000000000000000000000000000000000b2'),
+    ).toMatchObject({ ok: false, problems: [expect.stringContaining('remove-members')] });
+    expect(await m.renameTeam(ME, team, 'X')).toMatchObject({
+      ok: false,
+      problems: [expect.stringContaining('manage-organization')],
+    });
+    // Anyone may top up an organization they belong to, and leave it.
+    expect(
+      await m.startTopup(ME, team, '10', 'http://localhost:4321/es/saldo/vuelta/'),
+    ).toMatchObject({ ok: true });
+    expect(await m.removeMember(ME, team, ME)).toMatchObject({ ok: true });
   });
 
   it('tops up through the site’s own way back, credited once', async () => {
