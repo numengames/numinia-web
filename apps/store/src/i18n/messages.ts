@@ -669,6 +669,8 @@ export interface UpdatesMessages {
   readonly roadmapTitle: string;
   readonly latestLabel: string;
   readonly statusLabels: Readonly<Record<'planned' | 'research', string>>;
+  /** Each version card's link to its merge on GitHub (the pull request or the search). */
+  readonly mergeLink: string;
 }
 
 export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>> = {
@@ -680,6 +682,7 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: 'Próximamente',
     latestLabel: 'Latest',
     statusLabels: { planned: 'Planned', research: 'Research' },
+    mergeLink: 'Ver en GitHub',
   },
   en: {
     updatesTitle: 'Updates',
@@ -689,6 +692,7 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: 'Incoming',
     latestLabel: 'Latest',
     statusLabels: { planned: 'Planned', research: 'Research' },
+    mergeLink: 'View on GitHub',
   },
   ja: {
     updatesTitle: 'Updates',
@@ -698,6 +702,7 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: '今後の予定',
     latestLabel: 'Latest',
     statusLabels: { planned: 'Planned', research: 'Research' },
+    mergeLink: 'GitHubで見る',
   },
   ko: {
     updatesTitle: 'Updates',
@@ -707,6 +712,7 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: '예정',
     latestLabel: 'Latest',
     statusLabels: { planned: 'Planned', research: 'Research' },
+    mergeLink: 'GitHub에서 보기',
   },
   'pt-br': {
     updatesTitle: 'Updates',
@@ -716,6 +722,7 @@ export const UPDATES_MESSAGES: Readonly<Record<SupportedLocale, UpdatesMessages>
     roadmapTitle: 'Em breve',
     latestLabel: 'Latest',
     statusLabels: { planned: 'Planned', research: 'Research' },
+    mergeLink: 'Ver no GitHub',
   },
 };
 

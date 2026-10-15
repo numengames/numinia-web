@@ -1,14 +1,15 @@
 ---
 /**
  * The «Más» list of the app shell: how the city works and how to open a
- * home, then — after a line — the house's quieter doors (a coffee, what is
- * new with the version, help). The sidebar shows it in a popover with
- * icons; a phone shows it compact, as text, at the end of the page.
+ * home, then — after a line — the house's quieter doors (a coffee, the
+ * notifications behind the bell, help). The updates are not here: their one
+ * door is the version in the footer (the Oracle, 2026-10-15). The sidebar
+ * shows it in a popover with icons; a phone shows it compact, as text, at
+ * the end of the page.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
 import { MORE_ITEMS, localeHref } from '../../lib/app-nav';
-import { VERSION } from '../../lib/build-info';
 import Icon from './Icon.astro';
 
 interface Props {
@@ -28,7 +29,6 @@ const ui = APP_SHELL_UI[locale];
         <a href={localeHref(locale, item.path)} class="opc" data-metric={item.metric}>
           {!compact && <Icon name={item.icon} size={20} />}
           {ui.moreItems[item.id]}
-          {item.id === 'updates' && <span class="opc-der mono">{VERSION}</span>}
         </a>
       </li>
     ))

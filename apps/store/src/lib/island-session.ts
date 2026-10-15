@@ -86,3 +86,15 @@ const LAP_ROOM = /^\/(?:(?:es|ja|ko|pt-br)\/)?lap\/(?!session(?:[/?#]|$))/;
 export function landingAfterSignIn(returnTo: string | null, profileHref: string): string {
   return returnTo !== null && LAP_ROOM.test(returnTo) ? returnTo : profileHref;
 }
+
+/** The sign-in page itself, in any of the site's locales. */
+const SIGN_IN_PAGE = /^\/(?:(?:es|ja|ko|pt-br)\/)?lap\/session(?:[/?#]|$)/;
+
+/**
+ * Where the door's × (and Escape) leads: back to the page it was opened
+ * from (`?vuelta=`, already a path on this site), or home — never to the
+ * sign-in page again, which with `?salir=1` would sign you out.
+ */
+export function closeTarget(returnTo: string | null, homeHref: string): string {
+  return returnTo !== null && !SIGN_IN_PAGE.test(returnTo) ? returnTo : homeHref;
+}

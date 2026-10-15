@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.91.0',
+    date: '2026-10-15 06:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'Signing in is one clean panel over the site, as on TikTok or Airbnb: close, the mark, «Sign in to Numinia», the ways in from the first moment — Google, email, a passkey or your wallet — and one line at its foot: continuing is accepting the Terms and having read the Privacy Policy. No box to tick first; the version you accept still travels with your sign-in. On a phone it fills the screen. The Google button speaks your language.',
+      },
+      {
+        type: 'NEW',
+        text: 'Notifications: the bell in «More» opens them, in two tabs, Updates and Requests. Nothing sends notices yet, so each tab says so plainly, and signed out the page asks you to sign in.',
+      },
+      {
+        type: 'UPD',
+        text: 'The site’s updates have one door: the version number at the foot of the sidebar. They left «More» and the player area, and the old address in the player area leads here. Every version links to its change on GitHub.',
+      },
+    ],
+  },
+  {
     version: 'v0.90.0',
     date: '2026-10-15 02:00',
     entries: [

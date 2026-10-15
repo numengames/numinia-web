@@ -1,8 +1,9 @@
 /**
- * What the sign-in page shows once you are in (MISSION-002), in the
+ * What the sign-in door shows once you are in (MISSION-002), in the
  * reader's language: your rank by its name, the short wallet, «Continuar»
- * back to where you came from and the one «Salir». Split out of LoginSpike
- * so each file stays inside the 200-line rule.
+ * to where a sign-in lands and the one «Salir». The panel's title already
+ * says you are in (SessionPage.astro, painted by the chrome). Split out of
+ * LoginSpike so each file stays inside the 200-line rule.
  */
 
 import type { SignInMessages } from '../../i18n/sign-in';
@@ -15,7 +16,7 @@ interface Props {
   readonly copy: SignInMessages;
   /** Every rank's name in the reader's language, by rank id. */
   readonly rankNames: Readonly<Record<string, string>>;
-  /** Where «Continuar» leads: the page the person came from, or Perfil. */
+  /** Where «Continuar» leads: your profile, or the room you came from. */
   readonly continueHref: string;
   readonly leaving: boolean;
   readonly onLogout: () => void;
@@ -23,11 +24,9 @@ interface Props {
 
 export function SessionPanel({ session, copy, rankNames, continueHref, leaving, onLogout }: Props) {
   if (leaving) return <p role="status">{copy.signingOut}</p>;
-  if (session.status === 'loading') return <p role="status">{copy.checking}</p>;
-  if (session.status === 'out') return null;
+  if (session.status !== 'in') return null;
   return (
     <div data-session-panel>
-      <p className="hecho">{copy.signedIn}</p>
       <dl>
         <div>
           <dt className="etiqueta">{copy.rank}</dt>

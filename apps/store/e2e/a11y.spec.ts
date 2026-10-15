@@ -42,7 +42,7 @@ const PAGES = [
   '/es/lap/portals/',
   '/es/lap/seasons/',
   '/es/lap/settings/',
-  '/es/lap/updates/', // «Novedades»: the updates list inside the panel
+  '/es/notifications/', // the «Más» bell (2026-10-15): signed out, the door; the tabs in notifications.spec.ts
   '/es/lap/session/',
   '/es/lap/admin/assets/',
   '/es/lap/admin/census/',

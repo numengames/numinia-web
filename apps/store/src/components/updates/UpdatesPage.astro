@@ -19,7 +19,7 @@ const t = UPDATES_MESSAGES[locale];
     {locale !== 'en' && <p class="note">{t.techNote}</p>}
   </header>
 
-  {/* The list itself is shared with the LAP's «Novedades» (/lap/updates/). */}
+  {/* The list itself, each version with its merge on GitHub. */}
   <UpdatesList locale={locale} />
 </BaseLayout>
 

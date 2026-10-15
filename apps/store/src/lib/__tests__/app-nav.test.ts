@@ -9,6 +9,7 @@ import {
   EXPLORE_ITEMS,
   MORE_ITEMS,
   NAV_ITEMS,
+  NOTIFICATIONS_PATH,
   SEARCH_PATH,
   SETTINGS_PATH,
   SIDEBAR_KEY,
@@ -62,15 +63,23 @@ describe('the places', () => {
       ['how', '/how-it-works/', 'city'],
       ['open', '/how-it-works/#open', 'city'],
       ['back', '/back/', 'house'],
-      ['updates', '/updates/', 'house'],
+      ['notifications', '/notifications/', 'house'],
       ['support', '/support/', 'house'],
     ]);
+  });
+
+  it('the bell is the notifications, never the updates (their one door is the version)', () => {
+    const bell = MORE_ITEMS.find((item) => item.icon === 'bell');
+    expect(bell?.id).toBe('notifications');
+    expect(bell?.path).toBe(NOTIFICATIONS_PATH);
+    expect(NOTIFICATIONS_PATH).toBe('/notifications/');
+    expect(MORE_ITEMS.some((item) => item.path.startsWith('/updates/'))).toBe(false);
   });
 
   it('keeps the analytics names of the links that survive from the old footer', () => {
     const metrics = Object.fromEntries(MORE_ITEMS.map((item) => [item.id, item.metric]));
     expect(metrics['back']).toBe('footer-back');
-    expect(metrics['updates']).toBe('footer-updates');
+    expect(metrics['notifications']).toBe('nav-more-notifications');
     for (const metric of Object.values(metrics)) expect(metric).toMatch(/^(nav|footer)-/);
   });
 
@@ -110,7 +119,14 @@ describe('which place a page lights', () => {
   });
 
   it('pages outside the five light none', () => {
-    for (const path of ['/updates/', '/legal/privacy/', '/support/', '/how-it-works/', '/back/']) {
+    for (const path of [
+      '/updates/',
+      '/notifications/',
+      '/legal/privacy/',
+      '/support/',
+      '/how-it-works/',
+      '/back/',
+    ]) {
       expect(lit(path), path).toBeNull();
     }
   });

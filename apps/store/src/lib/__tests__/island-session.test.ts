@@ -9,6 +9,7 @@ import { SUPPORTED_LOCALES } from '@numinia/domain';
 import {
   NO_DOOR_PARAMS,
   PAGE_SESSION_READY,
+  closeTarget,
   doorParams,
   landingAfterSignIn,
   pageSessionClient,
@@ -150,5 +151,45 @@ describe('where a fresh sign-in lands', () => {
       const room = `${locale === 'en' ? '' : `/${locale}`}/lap/character/`;
       expect(landingAfterSignIn(room, PROFILE), locale).toBe(room);
     }
+  });
+});
+
+/* QA 2026-10-15: the door is a modal over the app, and its × (or Escape)
+   goes back to where it was opened from — like closing TikTok's sign-in. */
+describe('where the door’s close button leads', () => {
+  const HOME = '/es/';
+
+  it('is the page the door was opened from, with its query and anchor', () => {
+    for (const from of [
+      '/es/communities/trgcon/',
+      '/es/calendar/?mes=11#dia-2',
+      '/es/lap/admin/worlds/',
+      '/',
+    ]) {
+      expect(closeTarget(from, HOME)).toBe(from);
+    }
+  });
+
+  it('is home when the door was opened from nowhere', () => {
+    expect(closeTarget(null, HOME)).toBe(HOME);
+    expect(closeTarget(doorParams('?vuelta=https%3A%2F%2Fevil.example%2F').returnTo, HOME)).toBe(
+      HOME,
+    );
+  });
+
+  it('never reopens the door, nor its way out, in any locale', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const prefix = locale === 'en' ? '' : `/${locale}`;
+      for (const door of [
+        `${prefix}/lap/session/`,
+        `${prefix}/lap/session/?salir=1`,
+        `${prefix}/lap/session`,
+        `${prefix}/lap/session#x`,
+      ]) {
+        expect(closeTarget(door, HOME), door).toBe(HOME);
+      }
+    }
+    // A room whose name only starts like the door's is still a room.
+    expect(closeTarget('/es/lap/sessions-log/', HOME)).toBe('/es/lap/sessions-log/');
   });
 });

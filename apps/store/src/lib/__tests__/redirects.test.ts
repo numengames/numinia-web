@@ -12,6 +12,7 @@ import {
   RETIRED_CITY,
   RETIRED_DOCS,
   RETIRED_DOORS,
+  RETIRED_LAP,
   redirectOf,
 } from '../redirects';
 
@@ -33,6 +34,13 @@ describe('REDIRECTS', () => {
     }
   });
 
+  it('sends the panel’s old «Novedades», in every locale, to the public updates', () => {
+    for (const prefix of prefixes) {
+      expect(REDIRECTS[`${prefix}/lap/updates/`]).toBe(`${prefix}/updates/`);
+    }
+    expect(redirectOf('/es/lap/updates')).toBe('/es/updates/');
+  });
+
   it('sends every docs page, in every locale, to numinia.org', () => {
     expect(DOCS_HOME).toBe('https://numinia.org/');
     for (const prefix of prefixes) {
@@ -40,7 +48,8 @@ describe('REDIRECTS', () => {
       expect(REDIRECTS[`${prefix}/docs/developers/database/`]).toBe(DOCS_HOME);
     }
     expect(Object.keys(REDIRECTS)).toHaveLength(
-      prefixes.length * (RETIRED_DOORS.length + RETIRED_DOCS.length + RETIRED_CITY.length),
+      prefixes.length *
+        (RETIRED_DOORS.length + RETIRED_DOCS.length + RETIRED_CITY.length + RETIRED_LAP.length),
     );
   });
 

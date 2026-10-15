@@ -18,7 +18,7 @@ export type NavId = 'for-you' | 'explore' | 'belong' | 'live' | 'profile';
 export type ExploreId = 'communities' | 'calendar' | 'bazaar';
 
 /** The «Más» list: how the city works, then the house's quieter doors. */
-export type MoreId = 'how' | 'open' | 'back' | 'updates' | 'support';
+export type MoreId = 'how' | 'open' | 'back' | 'notifications' | 'support';
 
 /** Phosphor regular icons the places use; the current one draws its fill. */
 export type NavIcon = 'house' | 'compass' | 'users-three' | 'broadcast' | 'user-circle';
@@ -41,11 +41,14 @@ export interface MoreItem {
   readonly id: MoreId;
   readonly path: string;
   readonly icon: MoreIcon;
-  /** Analytics id: today's name where the link survives (footer-back, footer-updates). */
+  /** Analytics id: today's name where the link survives (footer-back). */
   readonly metric: string;
   /** The «Más» list draws a line before the house's own doors. */
   readonly group: 'city' | 'house';
 }
+
+/** The notifications page: the «Más» bell (its sign-in door comes back here). */
+export const NOTIFICATIONS_PATH = '/notifications/';
 
 export const NAV_ITEMS: readonly NavItem[] = [
   { id: 'for-you', path: '/', icon: 'house' },
@@ -71,7 +74,15 @@ export const MORE_ITEMS: readonly MoreItem[] = [
     group: 'city',
   },
   { id: 'back', path: '/back/', icon: 'coffee', metric: 'footer-back', group: 'house' },
-  { id: 'updates', path: '/updates/', icon: 'bell', metric: 'footer-updates', group: 'house' },
+  // The bell is the notifications' (the Oracle, 2026-10-15). The updates keep
+  // one door only: the version in the footer (and its twin in Settings).
+  {
+    id: 'notifications',
+    path: NOTIFICATIONS_PATH,
+    icon: 'bell',
+    metric: 'nav-more-notifications',
+    group: 'house',
+  },
   { id: 'support', path: '/support/', icon: 'info', metric: 'nav-more-support', group: 'house' },
 ];
 

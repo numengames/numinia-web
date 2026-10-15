@@ -5,8 +5,8 @@
  * The notice is vanilla-cookieconsent. It writes ONE first-party cookie,
  * `numinia_consent`, whose value is URI-encoded JSON carrying the accepted
  * categories and the policy revision. The Terms are NOT accepted here: they
- * are accepted at sign-in (components/auth/LegalConsentGate.tsx, checked by
- * api/auth/login.ts against LEGAL_CORPUS_VERSION).
+ * are accepted at sign-in (the door's legal line, components/lap/SessionPage.astro,
+ * checked by api/auth/login.ts against LEGAL_CORPUS_VERSION).
  *
  * Measurement counts only when the `analytics` category is in that cookie
  * for the CURRENT revision. Raising POLICY_REVISION asks every visitor again.
