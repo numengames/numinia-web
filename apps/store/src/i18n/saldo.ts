@@ -98,14 +98,26 @@ export interface SaldoMessages {
     readonly remove: string;
     /** `{who}`: the short wallet a button acts on. */
     readonly actionOn: string;
-    readonly onlyAdmins: string;
+    readonly leave: string;
     readonly perMember: string;
     readonly perMemberEmpty: string;
   };
+  /** The till's refusals in plain words. `needs`: `{act}` and `{holders}`; `needsOwners`: `{act}`. */
   readonly problems: {
     readonly notMember: string;
-    readonly adminOnly: string;
-    readonly lastAdmin: string;
+    readonly lastOwner: string;
+    readonly ownRoles: string;
+    readonly notBelow: string;
+    readonly ownerOnly: string;
+    readonly noAdminRole: string;
+    readonly baseRole: string;
+    readonly grantExceeds: string;
+    readonly roleLimit: string;
+    readonly ownersOnly: string;
+    readonly alpha: string;
+    readonly meanwhile: string;
+    readonly needs: string;
+    readonly needsOwners: string;
     readonly other: string;
   };
   readonly referrals: { readonly title: string; readonly soon: string; readonly text: string };
@@ -211,14 +223,29 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       makeMember: 'Hacer miembro',
       remove: 'Quitar',
       actionOn: '{action}: {who}',
-      onlyAdmins: 'Solo quien administra la organización puede añadir o quitar miembros.',
+      leave: 'Salir',
       perMember: 'Consumo por miembro',
       perMemberEmpty: 'Cuando cada mundo tenga dueño veréis aquí cuánto gasta cada uno.',
     },
     problems: {
       notMember: 'No eres miembro de esta organización.',
-      adminOnly: 'Solo quien administra la organización puede hacerlo.',
-      lastAdmin: 'Una organización necesita al menos una persona que la administre.',
+      lastOwner: 'Una organización necesita al menos una persona titular.',
+      ownRoles: 'No puedes cambiar tus propios roles: solo puedes salir de la organización.',
+      notBelow:
+        'Solo puedes actuar sobre roles y personas que estén por debajo de tu rol más alto.',
+      ownerOnly: 'Solo una persona titular puede nombrar o quitar a otra titular.',
+      noAdminRole: 'Todavía no hay en esta organización ningún rol con el permiso de administrar.',
+      baseRole: 'Todo el mundo tiene el rol de base: no se da ni se quita.',
+      grantExceeds: 'Solo puedes dar o quitar los permisos que tú tienes.',
+      roleLimit: 'Ya no caben más roles en esta organización.',
+      ownersOnly: 'Esto solo lo hacen las personas titulares de la organización.',
+      alpha: 'Durante la alfa, ninguna organización cambia el acceso de la casa.',
+      meanwhile:
+        'La organización ha cambiado mientras tanto. Vuelve a mirarla e inténtalo otra vez.',
+      needs:
+        'Para hacerlo hace falta el permiso «{act}», que tienen las personas titulares y estos roles: {holders}.',
+      needsOwners:
+        'Para hacerlo hace falta el permiso «{act}», que solo tienen las personas titulares.',
       other: 'La caja no lo ha permitido.',
     },
     referrals: {
@@ -320,15 +347,27 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       makeMember: 'Make member',
       remove: 'Remove',
       actionOn: '{action}: {who}',
-      onlyAdmins: "Only the organization's admins can add or remove members.",
+      leave: 'Leave',
       perMember: 'Use per member',
       perMemberEmpty:
         'Once every world has an owner, you will see here how much each of you spends.',
     },
     problems: {
       notMember: 'You are not a member of this organization.',
-      adminOnly: "Only the organization's admins can do that.",
-      lastAdmin: 'An organization needs at least one admin.',
+      lastOwner: 'An organization keeps at least one owner.',
+      ownRoles: 'You cannot change your own roles; you can only leave.',
+      notBelow: 'You can only act on roles and people below your own highest role.',
+      ownerOnly: 'Only an owner can name or remove another owner.',
+      noAdminRole: 'No role in this organization has the administrator permission yet.',
+      baseRole: 'Everyone has the base role: it is neither given nor taken away.',
+      grantExceeds: 'You can only give or take away permissions you hold yourself.',
+      roleLimit: 'This organization has no room for more roles.',
+      ownersOnly: 'Only the owners of the organization can do this.',
+      alpha: "During the alpha, no organization changes the house's access.",
+      meanwhile: 'The organization changed in the meantime. Look at it again and retry.',
+      needs:
+        'This needs the “{act}” permission, which the owners have, and these roles: {holders}.',
+      needsOwners: 'This needs the “{act}” permission, which only the owners have.',
       other: 'The till did not allow it.',
     },
     referrals: {
@@ -430,14 +469,25 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       makeMember: 'メンバーにする',
       remove: '外す',
       actionOn: '{action}：{who}',
-      onlyAdmins: 'メンバーの追加・削除は組織の管理者だけができます。',
+      leave: '退出する',
       perMember: 'メンバーごとの利用',
       perMemberEmpty: 'すべてのワールドに持ち主が決まると、ここで各自の利用額が見られます。',
     },
     problems: {
       notMember: 'あなたはこの組織のメンバーではありません。',
-      adminOnly: 'これは組織の管理者だけができます。',
-      lastAdmin: '組織には少なくとも1人の管理者が必要です。',
+      lastOwner: '組織には少なくとも1人のオーナーが必要です。',
+      ownRoles: '自分のロールは変更できません。退出することだけができます。',
+      notBelow: '自分の最上位ロールより下のロールとメンバーにだけ操作できます。',
+      ownerOnly: 'オーナーを指名したり外したりできるのはオーナーだけです。',
+      noAdminRole: 'この組織には、管理者の権限を持つロールがまだありません。',
+      baseRole: '全員が基本ロールを持っています。付けたり外したりはできません。',
+      grantExceeds: '付けたり外したりできるのは、自分が持っている権限だけです。',
+      roleLimit: 'この組織にはこれ以上ロールを作れません。',
+      ownersOnly: 'これは組織のオーナーだけができます。',
+      alpha: 'アルファ版の間は、どの組織もハウスのアクセスを変更できません。',
+      meanwhile: 'その間に組織が変更されました。もう一度見てからやり直してください。',
+      needs: 'これには「{act}」の権限が必要です。オーナーと次のロールが持っています: {holders}。',
+      needsOwners: 'これには「{act}」の権限が必要です。持っているのはオーナーだけです。',
       other: 'レジが許可しませんでした。',
     },
     referrals: {
@@ -539,14 +589,25 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       makeMember: '멤버로 지정',
       remove: '내보내기',
       actionOn: '{action}: {who}',
-      onlyAdmins: '멤버 추가와 삭제는 조직 관리자만 할 수 있습니다.',
+      leave: '나가기',
       perMember: '멤버별 사용량',
       perMemberEmpty: '모든 월드에 주인이 정해지면 여기에서 각자 얼마나 쓰는지 볼 수 있습니다.',
     },
     problems: {
       notMember: '이 조직의 멤버가 아닙니다.',
-      adminOnly: '조직 관리자만 할 수 있습니다.',
-      lastAdmin: '조직에는 관리자가 한 명 이상 필요합니다.',
+      lastOwner: '조직에는 소유자가 한 명 이상 있어야 합니다.',
+      ownRoles: '자신의 역할은 바꿀 수 없습니다. 나갈 수만 있습니다.',
+      notBelow: '자신의 가장 높은 역할보다 낮은 역할과 멤버에게만 할 수 있습니다.',
+      ownerOnly: '소유자를 지정하거나 내보낼 수 있는 사람은 소유자뿐입니다.',
+      noAdminRole: '이 조직에는 관리 권한을 가진 역할이 아직 없습니다.',
+      baseRole: '모두가 기본 역할을 가지고 있습니다. 주거나 뺏을 수 없습니다.',
+      grantExceeds: '자신이 가진 권한만 주거나 뺏을 수 있습니다.',
+      roleLimit: '이 조직에는 더 이상 역할을 만들 수 없습니다.',
+      ownersOnly: '조직의 소유자만 할 수 있습니다.',
+      alpha: '알파 기간에는 어떤 조직도 하우스의 접근을 바꿀 수 없습니다.',
+      meanwhile: '그사이 조직이 바뀌었습니다. 다시 확인하고 시도해 주세요.',
+      needs: '“{act}” 권한이 필요합니다. 소유자와 다음 역할이 가지고 있습니다: {holders}.',
+      needsOwners: '“{act}” 권한이 필요합니다. 소유자만 가지고 있습니다.',
       other: '계산대가 허용하지 않았습니다.',
     },
     referrals: {
@@ -648,14 +709,27 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       makeMember: 'Tornar membro',
       remove: 'Remover',
       actionOn: '{action}: {who}',
-      onlyAdmins: 'Só quem administra a organização pode adicionar ou remover membros.',
+      leave: 'Sair',
       perMember: 'Consumo por membro',
       perMemberEmpty: 'Quando cada mundo tiver dono, vocês verão aqui quanto cada um gasta.',
     },
     problems: {
       notMember: 'Você não é membro desta organização.',
-      adminOnly: 'Só quem administra a organização pode fazer isso.',
-      lastAdmin: 'Uma organização precisa de pelo menos uma pessoa que a administre.',
+      lastOwner: 'Uma organização precisa de pelo menos uma pessoa titular.',
+      ownRoles: 'Você não pode mudar seus próprios cargos: só pode sair da organização.',
+      notBelow: 'Você só pode agir sobre cargos e pessoas abaixo do seu cargo mais alto.',
+      ownerOnly: 'Só uma pessoa titular pode nomear ou remover outra titular.',
+      noAdminRole: 'Esta organização ainda não tem nenhum cargo com a permissão de administrar.',
+      baseRole: 'Todo mundo tem o cargo de base: ele não se dá nem se tira.',
+      grantExceeds: 'Você só pode dar ou tirar as permissões que você mesmo tem.',
+      roleLimit: 'Esta organização não comporta mais cargos.',
+      ownersOnly: 'Isto só as pessoas titulares da organização fazem.',
+      alpha: 'Durante a alfa, nenhuma organização muda o acesso da casa.',
+      meanwhile: 'A organização mudou enquanto isso. Veja de novo e tente outra vez.',
+      needs:
+        'Para fazer isso é preciso a permissão «{act}», que as pessoas titulares têm, e estes cargos: {holders}.',
+      needsOwners:
+        'Para fazer isso é preciso a permissão «{act}», que só as pessoas titulares têm.',
       other: 'O caixa não permitiu.',
     },
     referrals: {

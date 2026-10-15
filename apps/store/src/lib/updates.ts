@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.93.0',
+    date: '2026-10-15 10:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'Saldo shows each person only what their roles let them do in an organization. Where you may not rename it, invite someone or change a role, there is a sentence saying which permission it takes and which roles hold it, instead of a button that fails. Everyone can still top up and leave.',
+      },
+      {
+        type: 'FIX',
+        text: 'When Saldo refuses something it now says why in plain words, in all five languages — you may not act on someone at or above your own role, an organization keeps at least one owner, and so on — instead of «The till did not allow it».',
+      },
+    ],
+  },
+  {
     version: 'v0.92.0',
     date: '2026-10-15 07:05',
     entries: [

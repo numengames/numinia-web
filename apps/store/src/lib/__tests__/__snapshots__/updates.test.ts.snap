@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-15 10:30",
+    "entries": [
+      {
+        "text": "Saldo shows each person only what their roles let them do in an organization. Where you may not rename it, invite someone or change a role, there is a sentence saying which permission it takes and which roles hold it, instead of a button that fails. Everyone can still top up and leave.",
+        "type": "UPD",
+      },
+      {
+        "text": "When Saldo refuses something it now says why in plain words, in all five languages — you may not act on someone at or above your own role, an organization keeps at least one owner, and so on — instead of «The till did not allow it».",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.93.0",
+  },
+  {
     "date": "2026-10-15 07:05",
     "entries": [
       {

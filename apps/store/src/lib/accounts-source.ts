@@ -33,7 +33,7 @@ import {
 import { createAccountsFixtureDesk, type AccountsSeed } from './accounts-fixture';
 import { logEvent } from './telemetry';
 
-/** The desk read off whatever workerd bound: its nine methods, or null when it is not a desk. */
+/** The desk read off whatever workerd bound: its ten methods, or null when it is not a desk. */
 export function boundAccounts(binding: unknown): AccountDesk | null {
   if (binding === null || (typeof binding !== 'object' && typeof binding !== 'function')) {
     return null;
@@ -48,6 +48,7 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
     renameTeam: (wallet, accountId, name) => stub.renameTeam(wallet, accountId, name),
     statement: (wallet, accountId, range) => stub.statement(wallet, accountId, range),
     members: (wallet, accountId) => stub.members(wallet, accountId),
+    access: (wallet, accountId) => stub.access(wallet, accountId),
     setMember: (wallet, accountId, member, role) => stub.setMember(wallet, accountId, member, role),
     removeMember: (wallet, accountId, member) => stub.removeMember(wallet, accountId, member),
     startTopup: (wallet, accountId, key, returnBase) =>
@@ -167,6 +168,15 @@ function buildSchemas() {
     z.object({ ok: z.literal(true), members: z.array(member).optional() }),
     refusal,
   ]);
+  const access = z.union([
+    z.object({
+      ok: z.literal(true),
+      as: z.enum(['owner', 'house', 'member']),
+      permissions: z.array(z.string()),
+      holders: z.record(z.string(), z.array(z.string())),
+    }),
+    refusal,
+  ]);
   const topup = z.union([z.object({ ok: z.literal(true), url: z.string() }), refusal]);
   const confirm = z.union([
     z.object({
@@ -177,7 +187,7 @@ function buildSchemas() {
     }),
     refusal,
   ]);
-  return { request, overview, statement, team, members, topup, confirm };
+  return { request, overview, statement, team, members, access, topup, confirm };
 }
 
 let schemas: ReturnType<typeof buildSchemas> | null = null;
@@ -283,7 +293,7 @@ export async function answerOverview(
   return answer({ accounts: overview.accounts });
 }
 
-/** GET /api/saldo/statement?cuenta=&rango=: one account's statement, for a member only. */
+/** GET /api/saldo/statement?cuenta=&rango=: one account's statement and, for an organization, what the wallet may do there; members only. */
 export async function answerStatement(
   desk: AccountDesk | null,
   wallet: string | null,
@@ -311,7 +321,19 @@ export async function answerStatement(
   if (!asked.ok) return asked.response;
   const statement = asked.value;
   if ('ok' in statement) return refused(statement.problems);
-  return answer({ statement, you });
+  if (statement.account.kind === 'personal') return answer({ statement, you, access: null });
+  // What this wallet may do here: the screen hides the rest. A desk that
+  // cannot say leaves the controls shown (null) — the till refuses on every write.
+  const allowed = await ask(log, 'access', () => desk.access(you, account), shapes().access);
+  const access =
+    allowed.ok && !('problems' in allowed.value)
+      ? {
+          as: allowed.value.as,
+          permissions: allowed.value.permissions,
+          holders: allowed.value.holders,
+        }
+      : null;
+  return answer({ statement, you, access });
 }
 
 /** Read a POST's JSON body within limits, or the answer that refuses it. */

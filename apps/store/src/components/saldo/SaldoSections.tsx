@@ -6,21 +6,30 @@
  */
 
 import { useState, type SyntheticEvent } from 'react';
+import {
+  ORGANIZATION_PERMISSION_LABELS,
+  type OrganizationPermission,
+  type SupportedLocale,
+} from '@numinia/domain';
 import type { SaldoMessages } from '../../i18n/saldo';
 import {
   SPEND_RANGES,
   TOPUP_KEYS,
+  can,
   chartBars,
   fill,
   formatAt,
   formatBucket,
   formatEuros,
   formatTopup,
+  holdersOf,
   lineLabel,
+  needsSentence,
   shortWallet,
   signedEuros,
   spendSeries,
   walletOf,
+  type DeskAccess,
   type DeskAccount,
   type DeskLine,
   type DeskMember,
@@ -308,6 +317,8 @@ export function Team({
   account,
   members,
   you,
+  access,
+  locale,
   busy,
   onRename,
   onSetMember,
@@ -318,12 +329,26 @@ export function Team({
   readonly account: DeskAccount;
   readonly members: readonly DeskMember[];
   readonly you: string | null;
+  /** What the wallet may do here; null when the till did not say (the till still decides). */
+  readonly access: DeskAccess | null;
+  readonly locale: SupportedLocale;
   readonly busy: boolean;
   readonly onRename: (name: string) => Promise<boolean>;
   readonly onSetMember: (wallet: string, role: MemberRole) => Promise<boolean>;
   readonly onRemove: (wallet: string) => Promise<boolean>;
 }) {
-  const admin = account.role === 'admin';
+  const mayRename = can(access, 'manage-organization');
+  const mayInvite = can(access, 'invite-members');
+  const mayRole = can(access, 'manage-roles');
+  const mayRemove = can(access, 'remove-members');
+  // A column of buttons only when the wallet may press one of them.
+  const mayAct = mayRole || mayRemove || members.some((member) => member.wallet === you);
+  const refusal = (act: OrganizationPermission): string =>
+    needsSentence(
+      ui.problems,
+      ORGANIZATION_PERMISSION_LABELS[act][locale],
+      holdersOf(access, act, lang),
+    );
   const [name, setName] = useState(account.name ?? '');
   const [renaming, setRenaming] = useState(false);
   const [adding, setAdding] = useState('');
@@ -346,7 +371,7 @@ export function Team({
         <h2 className="etiqueta" id="saldo-equipo-t">
           {ui.team.title}
         </h2>
-        {admin && !renaming && (
+        {mayRename && !renaming && (
           <button
             type="button"
             className="btn btn-silencioso"
@@ -381,7 +406,7 @@ export function Team({
               <th scope="col">{ui.team.wallet}</th>
               <th scope="col">{ui.team.role}</th>
               <th scope="col">{ui.team.since}</th>
-              {admin && (
+              {mayAct && (
                 <th scope="col">
                   <span className="sr-only">{ui.team.members}</span>
                 </th>
@@ -403,28 +428,35 @@ export function Team({
                   <td className="mono saldo-fecha">
                     {new Date(member.addedAt).toLocaleDateString(lang, { dateStyle: 'medium' })}
                   </td>
-                  {admin && (
+                  {mayAct && (
                     <td className="saldo-acciones">
-                      <button
-                        type="button"
-                        className="btn btn-silencioso"
-                        disabled={busy}
-                        aria-label={fill(ui.team.actionOn, { action: toggle, who })}
-                        onClick={() => void onSetMember(member.wallet, other)}
-                        data-metric="saldo-member-role"
-                      >
-                        {toggle}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-silencioso saldo-quitar"
-                        disabled={busy}
-                        aria-label={fill(ui.team.actionOn, { action: ui.team.remove, who })}
-                        onClick={() => void onRemove(member.wallet)}
-                        data-metric="saldo-member-remove"
-                      >
-                        {ui.team.remove}
-                      </button>
+                      {mayRole && member.wallet !== you && (
+                        <button
+                          type="button"
+                          className="btn btn-silencioso"
+                          disabled={busy}
+                          aria-label={fill(ui.team.actionOn, { action: toggle, who })}
+                          onClick={() => void onSetMember(member.wallet, other)}
+                          data-metric="saldo-member-role"
+                        >
+                          {toggle}
+                        </button>
+                      )}
+                      {(mayRemove || member.wallet === you) && (
+                        <button
+                          type="button"
+                          className="btn btn-silencioso saldo-quitar"
+                          disabled={busy}
+                          aria-label={fill(ui.team.actionOn, {
+                            action: member.wallet === you ? ui.team.leave : ui.team.remove,
+                            who,
+                          })}
+                          onClick={() => void onRemove(member.wallet)}
+                          data-metric="saldo-member-remove"
+                        >
+                          {member.wallet === you ? ui.team.leave : ui.team.remove}
+                        </button>
+                      )}
                     </td>
                   )}
                 </tr>
@@ -433,7 +465,7 @@ export function Team({
           </tbody>
         </table>
       </div>
-      {admin ? (
+      {mayInvite ? (
         <form className="saldo-linea-form" onSubmit={(event) => void add(event)}>
           <label htmlFor="saldo-nuevo">{ui.team.addLabel}</label>
           <input
@@ -462,7 +494,9 @@ export function Team({
           )}
         </form>
       ) : (
-        <p className="saldo-nota">{ui.team.onlyAdmins}</p>
+        <p className="saldo-nota" data-saldo-no-invite>
+          {refusal('invite-members')}
+        </p>
       )}
       <div className="saldo-marco">
         <p className="etiqueta">{ui.team.perMember}</p>
