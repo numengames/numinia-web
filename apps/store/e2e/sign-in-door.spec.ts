@@ -8,6 +8,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { LEGAL_DOC_VERSION } from '../src/lib/legal';
 
 const TITLES = {
   es: 'Inicia sesión en Numinia',
@@ -60,6 +61,32 @@ test('the way in is live from the first paint, with nothing to tick first', asyn
   await expect(page.locator('[data-metric="auth-connect"]')).toHaveCount(1);
   await page.waitForLoadState('networkidle');
   await expect(page.locator('[data-metric="auth-connect"]')).toBeVisible();
+});
+
+// Continuing is accepting, and the accepted version still travels with the
+// login (the endpoint refuses a stale one: lib/__tests__/login-gate.test.ts).
+// Read in the built island here, not in the acceptance suite: only this
+// suite's build carries a thirdweb client id, without which the widget's
+// code is not in the bundle at all.
+test('the login request still carries the current legal corpus version', async ({ page }) => {
+  await page.goto('/es/lap/session/');
+  const island = await page
+    .locator('astro-island[component-export="LoginSpike"]')
+    .getAttribute('component-url');
+  expect(island, 'the door mounts no LoginSpike island').toBeTruthy();
+  const script = await (await page.request.get(island ?? '')).text();
+  expect(script).toContain('/api/auth/login');
+  // The login body carries the accepted corpus beside the signature …
+  expect(script).toMatch(/JSON\.stringify\(\{[^}]*\bsignature:[^}]*\bterms:/);
+  // … built from the current versions of the terms and the privacy policy.
+  expect(script).toContain('+privacy@');
+  for (const doc of ['terms', 'privacy'] as const) {
+    const version = LEGAL_DOC_VERSION[doc];
+    expect(
+      script.includes(`${doc}:\`${version}\``) || script.includes(`${doc}:"${version}"`),
+      `the island carries ${doc} ${version}`,
+    ).toBe(true);
+  }
 });
 
 test('one legal line at the foot links the published documents, in the reader locale', async ({

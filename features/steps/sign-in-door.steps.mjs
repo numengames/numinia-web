@@ -1,6 +1,6 @@
 /**
  * Step definitions for the sign-in door (features/sign-in-door.feature,
- * QA 2026-10-15): the built /lap/session/ pages and the island's script.
+ * QA 2026-10-15): the built /lap/session/ pages in every locale.
  * Kept in their own file so the shared acceptance.steps.mjs stays untouched.
  */
 import { strict as assert } from 'node:assert';
@@ -83,32 +83,6 @@ Then(
         attr(tagWith(line, 'data-metric="auth-legal-privacy"'), 'href'),
         `${base}/legal/privacy/`,
         `${where}: privacy link`,
-      );
-    }
-  },
-);
-
-Then(
-  "the sign-in door's script sends the current legal corpus version with the login",
-  async function () {
-    const { LEGAL_DOC_VERSION } = await import('../../apps/store/src/lib/legal.ts');
-    const html = await doorHtml(this.distDir, 'es');
-    const island = attr(tagWith(html, 'component-export="LoginSpike"'), 'component-url');
-    assert.ok(island, 'the door mounts no LoginSpike island');
-    const script = await readFile(path.join(this.distDir, island), 'utf8');
-    assert.ok(script.includes('/api/auth/login'), 'the island does not reach the login endpoint');
-    // The login body carries the accepted corpus beside the signature …
-    assert.ok(
-      /JSON\.stringify\(\{[^}]*\bsignature:[^}]*\bterms:/.test(script),
-      'the login request carries no `terms`',
-    );
-    // … built from the current versions of the terms and the privacy policy.
-    assert.ok(script.includes('terms@') && script.includes('+privacy@'), 'no corpus version');
-    for (const doc of ['terms', 'privacy']) {
-      assert.ok(
-        script.includes(`${doc}:\`${LEGAL_DOC_VERSION[doc]}\``) ||
-          script.includes(`${doc}:"${LEGAL_DOC_VERSION[doc]}"`),
-        `the island does not carry ${doc} ${LEGAL_DOC_VERSION[doc]}`,
       );
     }
   },
