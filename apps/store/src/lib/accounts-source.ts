@@ -62,9 +62,10 @@ import {
   type FreshDeps,
   type FreshProof,
 } from './fresh-signature';
+import { peopleOf } from './people';
 import { logEvent } from './telemetry';
 
-/** The desk read off whatever workerd bound: its eighteen methods, or null when it is not a desk. */
+/** The desk read off whatever workerd bound: its nineteen methods, or null when it is not a desk. */
 export function boundAccounts(binding: unknown): AccountDesk | null {
   if (binding === null || (typeof binding !== 'object' && typeof binding !== 'function')) {
     return null;
@@ -83,6 +84,7 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
     setMember: (wallet, accountId, member, role) => stub.setMember(wallet, accountId, member, role),
     removeMember: (wallet, accountId, member) => stub.removeMember(wallet, accountId, member),
     roles: (wallet, accountId) => stub.roles(wallet, accountId),
+    headcount: (accountId) => stub.headcount(accountId),
     createRole: (wallet, accountId, role) => stub.createRole(wallet, accountId, role),
     editRole: (wallet, accountId, roleId, change) =>
       stub.editRole(wallet, accountId, roleId, change),
@@ -299,6 +301,10 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  const headcount = z.union([
+    z.object({ ok: z.literal(true), accountId: z.string(), members: z.number().int().min(0) }),
+    refusal,
+  ]);
   const logLine = z.object({
     seq: z.number(),
     at: z.string(),
@@ -331,6 +337,7 @@ function buildSchemas() {
     members,
     access,
     roles,
+    headcount,
     log,
     topup,
     confirm,
@@ -554,6 +561,34 @@ export async function answerRoles(
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
   return answer({ roles: asked.value, you });
+}
+
+/**
+ * GET /api/people?comunidad=: the people of a community's organization
+ * (STD-053 PRS-004). A member is shown the groups — each person by a short
+ * wallet, never a whole one; anyone else (no session, or not a member) is
+ * shown how many and no one. `team` is the organization the community's
+ * file links, or null when it links none.
+ */
+export async function answerPeople(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  team: string | null,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (team === null) return answer({ error: 'no-team' }, 404);
+  if (desk === null) return notBound();
+  if (wallet !== null) {
+    const you = wallet.toLowerCase();
+    const asked = await ask(log, 'people', () => desk.roles(you, team), shapes().roles);
+    if (!asked.ok) return asked.response;
+    if (!('problems' in asked.value))
+      return answer({ view: 'list', ...peopleOf(asked.value, you) });
+  }
+  const counted = await ask(log, 'headcount', () => desk.headcount(team), shapes().headcount);
+  if (!counted.ok) return counted.response;
+  if ('problems' in counted.value) return answer({ error: 'no-team' }, 404);
+  return answer({ view: 'count', members: counted.value.members });
 }
 
 /** GET /api/saldo/log?cuenta=: the organization's last changes, for whoever may view its log. */

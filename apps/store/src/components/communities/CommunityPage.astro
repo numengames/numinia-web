@@ -32,6 +32,7 @@ import Cover from './Cover.astro';
 import RitualCard from './RitualCard.astro';
 import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
+import PeopleList from './PeopleList.astro';
 import SpaceUses from './SpaceUses.astro';
 import '../../styles/communities.css';
 
@@ -280,6 +281,7 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
               </p>
             )
           }
+          {community.team !== undefined && <PeopleList ui={ui} community={community.id} />}
           <p class="small texto-2" style="margin: var(--s3) 0 0">{ui.membersNote}</p>
         </section>
 

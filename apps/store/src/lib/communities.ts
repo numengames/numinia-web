@@ -126,6 +126,12 @@ export interface Community {
   readonly home: Localized | undefined;
   readonly archive: Localized | undefined;
   readonly people: Localized | undefined;
+  /**
+   * The id of the organization (a team of the till) whose people the page
+   * lists: a member sees the groups, anyone else only how many. Unset, the
+   * page lists no one.
+   */
+  readonly team: string | undefined;
 }
 
 export type RitualMode = 'in-person' | 'online' | 'mixed';
@@ -183,6 +189,20 @@ function str(raw: Raw, key: string, where: string): string {
 
 function optStr(raw: Raw, key: string, where: string): string | undefined {
   return raw[key] === undefined ? undefined : str(raw, key, where);
+}
+
+/** The till's own shape for an account id: letters, digits, - and _, 1 to 64. */
+const TEAM_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+function optTeam(raw: Raw, where: string): string | undefined {
+  const value = raw['team'];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !TEAM_ID.test(value)) {
+    throw new Error(
+      `${where}: "team" must be an organization id: letters, digits, - and _, up to 64`,
+    );
+  }
+  return value;
 }
 
 function bool(raw: Raw, key: string, fallback: boolean, where: string): boolean {
@@ -333,6 +353,7 @@ export function parseCommunity(id: string, frontmatter: unknown): Community {
     home: optLocalized(raw, 'home', where),
     archive: optLocalized(raw, 'archive', where),
     people: optLocalized(raw, 'people', where),
+    team: optTeam(raw, where),
   };
 }
 
@@ -425,6 +446,11 @@ export function nextRitualOf(community: string, rituals: readonly Ritual[]): Rit
 /** Only the communities that are on the site. */
 export function published(communities: readonly Community[]): readonly Community[] {
   return communities.filter((community) => community.visibility === 'public');
+}
+
+/** The organization the page of a published community lists the people of, or null. */
+export function teamOf(communities: readonly Community[], id: string | null): string | null {
+  return published(communities).find((community) => community.id === id)?.team ?? null;
 }
 
 /**

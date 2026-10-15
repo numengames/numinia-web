@@ -440,3 +440,43 @@ html:not([data-js='on']) .flechas {
 .titulo-vista .etiqueta {
   margin: 0;
 }
+
+/* ---- The people of a community's organization (PeopleList.astro, STD-053 PRS-004) */
+.gente {
+  margin-top: var(--s4);
+  display: grid;
+  gap: var(--s3);
+}
+.gente-cuenta,
+.gente-nota {
+  margin: 0;
+}
+.gente-grupos {
+  display: grid;
+  gap: var(--s4);
+}
+.gente-grupo > .etiqueta {
+  margin: 0 0 var(--s2);
+}
+.gente-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s2);
+}
+.gente-persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+/* A role's colour is a dot beside the name: the text keeps its own contrast. */
+.gente-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--linea);
+}

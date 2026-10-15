@@ -55,6 +55,7 @@ import {
   type DeskLine,
   type DeskLogAct,
   type DeskLogAnswer,
+  type DeskHeadcountAnswer,
   type DeskLogLine,
   type DeskLot,
   type DeskMember,
@@ -629,6 +630,17 @@ export function createAccountsFixtureDesk(
     roles: async (wallet, accountId): Promise<DeskRolesAnswer> => {
       const found = entering(wallet, accountId);
       return 'ok' in found ? found : viewOf(found.book, found.who);
+    },
+
+    headcount: async (accountId): Promise<DeskHeadcountAnswer> => {
+      // No wallet is asking: the organization as some wallet last left it, else as seeded.
+      const live = [...wallets.values()]
+        .flat()
+        .find((book) => book.kind === 'team' && book.id === accountId);
+      const seeded = seed.teams.find((team) => team.id === accountId);
+      const found = live ?? seeded;
+      if (found === undefined) return refuse('not an organization');
+      return { ok: true, accountId: found.id, members: found.members.length };
     },
 
     createRole: async (wallet, accountId, role): Promise<DeskRolesAnswer> => {
