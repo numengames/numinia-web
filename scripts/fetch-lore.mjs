@@ -218,10 +218,12 @@ if (offer === null) {
 
 // The register of organisation permissions (STD-052). packages/domain keeps a
 // copy, and its tests hold the code to it (STD-051 ORG-012: the code and the
-// register move together). Here the copy is held to the archive's: when the
-// archive's keys, owners' acts, cap or templates differ from the copy, the
-// deploy stops until the copy and the code follow. Its prose may change
-// freely. A 404 keeps the copy, as the offer record above does.
+// register move together). Here the copy is compared with the archive's: when
+// the archive's keys, owners' acts, cap or templates differ, the build log
+// says so loudly and the site keeps to its copy. It never stops a deploy: the
+// archive and the site merge separately, and a stopped deploy would hold back
+// every other change to the site until both had merged. A 404 keeps the copy
+// too, as the offer record above does.
 const REGISTER = {
   path: 'standards/STD-052-organisation-permissions.md',
   copy: new URL(
@@ -249,10 +251,9 @@ if (register === null) {
     `fetch-lore: ${REGISTER.path} not in the archive (HTTP 404); the code keeps to its copy in packages/domain/registers/.`,
   );
 } else if (registerFacts(register) !== registerFacts(readFileSync(REGISTER.copy, 'utf8'))) {
-  console.error(
-    `fetch-lore: the archive's ${REGISTER.path} changed its keys, owners' acts, cap or templates. Copy it into packages/domain/registers/ and make the code follow (STD-051 ORG-012): the domain's tests say what to change.`,
+  console.warn(
+    `fetch-lore: WARNING — the archive's ${REGISTER.path} differs from the copy in packages/domain/registers/ in its keys, owners' acts, cap or templates. The site keeps to its copy; copy the archive's into packages/domain/registers/ and make the code follow (STD-051 ORG-012): the domain's tests say what to change.`,
   );
-  process.exit(1);
 } else {
   console.log(`fetch-lore: ${REGISTER.path} matches its copy in packages/domain/registers/.`);
 }
