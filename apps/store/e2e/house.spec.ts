@@ -1,0 +1,241 @@
+/**
+ * «La casa entra» (QA 2026-10-15) in a real browser against the built site:
+ * an Oracle's session sees every organization in the Members tab and enters
+ * the ones it is not in as the house — with the strip «Entras como la casa» —
+ * while a citizen's session sees only its own and cannot enter another by
+ * asking for it, whatever it sends.
+ *
+ * The e2e server of playwright.config.ts has no auth secrets (the other specs
+ * play the till's answers with `page.route`), and this one tests the real
+ * plumbing: the session cookie, the rank read from it, the flag sent to the
+ * desk and the desk's own answers. So it starts the built server a second
+ * time, on a free port, with throwaway secrets, and mints the cookies with
+ * the same secret. `DATA_SOURCE` is frozen into the build as `fixture`, so
+ * /api/saldo is answered by the fixture desk (lib/accounts-fixture.ts).
+ */
+
+import AxeBuilder from '@axe-core/playwright';
+import { randomBytes } from 'node:crypto';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { createServer } from 'node:net';
+import { fileURLToPath } from 'node:url';
+import { createSessionToken } from '@numinia/auth';
+import { expect, test, type BrowserContext } from '@playwright/test';
+
+const ORACLE = `0x${'ab'.repeat(20)}`;
+const CITIZEN = `0x${'cd'.repeat(20)}`;
+const NUMEN = 'acc_team_numen_games';
+const INSTITUTE = 'acc_team_active_inference';
+const TARUGO = 'acc_team_la_tarugo';
+
+let server: ChildProcess | undefined;
+let origin = '';
+let secret = '';
+let stderr = '';
+
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const address = probe.address();
+      probe.close(() =>
+        resolve(typeof address === 'object' && address !== null ? address.port : 0),
+      );
+    });
+  });
+}
+
+async function waitUntilAnswering(url: string): Promise<void> {
+  const until = Date.now() + 30_000;
+  while (Date.now() < until) {
+    const answered = await fetch(url).then(
+      (response) => response.text().then(() => true),
+      () => false,
+    );
+    if (answered) return;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`the second server never answered at ${url}: ${stderr}`);
+}
+
+test.beforeAll(async () => {
+  const port = await freePort();
+  origin = `http://127.0.0.1:${port}`;
+  // Throwaway secrets, made here and never written down.
+  secret = randomBytes(32).toString('hex');
+  server = spawn(
+    process.execPath,
+    [fileURLToPath(new URL('../dist/server/entry.mjs', import.meta.url))],
+    {
+      env: {
+        ...process.env,
+        HOST: '127.0.0.1',
+        PORT: String(port),
+        DATA_SOURCE: 'fixture',
+        AUTH_SESSION_SECRET: secret,
+        THIRDWEB_SECRET_KEY: randomBytes(32).toString('hex'),
+        ADMIN_WALLET_ADDRESSES: ORACLE,
+      },
+      stdio: ['ignore', 'ignore', 'pipe'],
+    },
+  );
+  server.stderr?.on('data', (chunk: Buffer) => {
+    stderr += chunk.toString();
+  });
+  await waitUntilAnswering(`${origin}/api/auth/session`);
+});
+
+test.afterAll(async () => {
+  const stopping = server;
+  if (stopping === undefined) return;
+  const gone = new Promise((resolve) => stopping.once('exit', resolve));
+  stopping.kill();
+  await gone;
+});
+
+/** A session the server itself signed: the rank is in the cookie, as at sign-in. */
+async function signIn(context: BrowserContext, wallet: string, rank: 'oracle' | 'nomad') {
+  const now = Math.floor(Date.now() / 1000);
+  const value = await createSessionToken(
+    { sub: wallet, rank, iat: now, exp: now + 3_600, terms: 'terms@1.0.0+privacy@1.0.0' },
+    secret,
+  );
+  await context.addCookies([{ name: 'numinia_session', value, url: origin }]);
+}
+
+test('without a session the Members tab asks you to sign in, and the API says nobody', async ({
+  page,
+}) => {
+  await page.goto(`${origin}/es/saldo/miembros/`);
+  await expect(page.locator('[data-saldo-signed-out]')).toBeVisible();
+  const overview = await page.request.get(`${origin}/api/saldo`);
+  expect(overview.status()).toBe(401);
+  const entering = await page.request.get(`${origin}/api/saldo/roles?cuenta=${TARUGO}&house=true`);
+  expect(entering.status()).toBe(401);
+});
+
+test('an Oracle sees three organizations in Members and enters the others as the house', async ({
+  page,
+  context,
+}) => {
+  await signIn(context, ORACLE, 'oracle');
+  await page.goto(`${origin}/es/saldo/miembros/`);
+
+  // Its own organization first, then the other two by name.
+  const picker = page.locator('#panel-org');
+  await expect(picker).toBeVisible();
+  await expect(picker.locator('option')).toHaveText([
+    'Numen Games',
+    'Active Inference Institute',
+    'La Tarugo',
+  ]);
+  await expect(page.locator('[data-panel-owner]')).toBeVisible();
+  await expect(page.locator('[data-panel-house]')).toHaveCount(0);
+
+  // Each of the others: the strip, and the roles of an organization it is not in.
+  for (const name of ['Active Inference Institute', 'La Tarugo']) {
+    await picker.selectOption({ label: name });
+    await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
+    await expect(page.locator('[data-panel-owner]')).toHaveCount(0);
+    await expect(page.locator('[data-role]').first()).toBeVisible();
+  }
+
+  // Everything the house reads is written down, and it can read that.
+  await page.locator('[data-metric="saldo-log-toggle"]').click();
+  await expect(page.locator('.saldo-registro li').first()).toContainText('La casa ha mirado');
+
+  // Back in its own, the strip is its own again.
+  await picker.selectOption({ label: 'Numen Games' });
+  await expect(page.locator('[data-panel-owner]')).toBeVisible();
+  await expect(page.locator('[data-panel-house]')).toHaveCount(0);
+});
+
+test('the Balance tab lists them too, and shows the statement of one the Oracle enters', async ({
+  page,
+  context,
+}) => {
+  await signIn(context, ORACLE, 'oracle');
+  await page.goto(`${origin}/es/saldo/`);
+  const picker = page.locator('#saldo-cuenta');
+  await expect(picker).toBeVisible();
+  const options = await picker.locator('option').allTextContents();
+  expect(options).toHaveLength(4);
+  expect(options.join(' | ')).toContain('Active Inference Institute');
+  expect(options.join(' | ')).toContain('La Tarugo');
+
+  const statement = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/saldo/statement') && response.url().includes(INSTITUTE),
+  );
+  await picker.selectOption(INSTITUTE);
+  expect((await statement).status()).toBe(200);
+});
+
+test('a citizen sees only its own organization and cannot enter another by asking for it', async ({
+  page,
+  context,
+}) => {
+  await signIn(context, CITIZEN, 'nomad');
+  await page.goto(`${origin}/es/saldo/miembros/`);
+  await expect(page.locator('[data-panel-owner]')).toBeVisible();
+  // One organization: no picker, no strip of the house.
+  await expect(page.locator('#panel-org')).toHaveCount(0);
+  await expect(page.locator('[data-panel-house]')).toHaveCount(0);
+
+  const overview = await page.request.get(`${origin}/api/saldo`);
+  const { accounts } = (await overview.json()) as { accounts: { name: string | null }[] };
+  expect(accounts.map((account) => account.name)).toEqual([null, 'Numen Games']);
+  expect(JSON.stringify(accounts)).not.toContain('house');
+
+  // Another organization, with every claim a browser could add: the till’s refusal, always.
+  for (const query of [
+    `cuenta=${TARUGO}`,
+    `cuenta=${TARUGO}&house=true`,
+    `house=1&cuenta=${TARUGO}`,
+  ]) {
+    for (const path of ['roles', 'log', 'statement']) {
+      const reply = await page.request.get(`${origin}/api/saldo/${path}?${query}`);
+      expect(reply.status()).toBe(403);
+      expect(await reply.json()).toEqual({ error: 'refused', problems: ['not a member'] });
+    }
+  }
+  const rename = { action: 'rename', accountId: TARUGO, name: 'Mine' };
+  const refused = await page.request.post(`${origin}/api/saldo`, { data: rename });
+  expect(await refused.json()).toEqual({ result: { ok: false, problems: ['not a member'] } });
+  // A body that says it is the house is not read: it is refused before the desk sees it.
+  const claimed = await page.request.post(`${origin}/api/saldo`, {
+    data: { ...rename, house: true },
+  });
+  expect(claimed.status()).toBe(400);
+  // And a rank the cookie does not carry cannot be added to it.
+  const roles = await page.request.get(`${origin}/api/saldo/roles?cuenta=${NUMEN}`);
+  expect(roles.status()).toBe(200);
+  expect(((await roles.json()) as { roles: { as: string } }).roles.as).toBe('owner');
+});
+
+test('a forged or foreign cookie is no session, Oracle or not', async ({ page, context }) => {
+  const now = Math.floor(Date.now() / 1000);
+  const foreign = await createSessionToken(
+    { sub: ORACLE, rank: 'oracle', iat: now, exp: now + 3_600, terms: 'terms@1.0.0' },
+    randomBytes(32).toString('hex'),
+  );
+  await context.addCookies([{ name: 'numinia_session', value: foreign, url: origin }]);
+  const reply = await page.request.get(`${origin}/api/saldo`);
+  expect(reply.status()).toBe(401);
+});
+
+test('the Members tab is accessible as the house, on a phone too', async ({ page, context }) => {
+  await signIn(context, ORACLE, 'oracle');
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`${origin}/es/saldo/miembros/`);
+    await page.locator('#panel-org').selectOption({ label: 'La Tarugo' });
+    await expect(page.locator('[data-panel-house]')).toBeVisible();
+    await expect(page.locator('[data-role]').first()).toBeVisible();
+    const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scroll).toBeLessThanOrEqual(width);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+  }
+});

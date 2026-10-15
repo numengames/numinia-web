@@ -3,11 +3,14 @@ import { ORGANIZATION_PERMISSIONS, type OrganizationRefusal } from '@numinia/dom
 import { ORG_PROBLEMS, refusalOf } from '../../../../till/src/lib/organizations';
 import { PROBLEMS } from '../../../../till/src/db/accounts';
 import {
+  DESK_METHODS,
+  HOUSE_BOOLEAN,
   LAST_OWNER,
   MEANWHILE,
   NO_ADMIN_ROLE,
   NOT_BELOW,
   NOT_CONFIGURED,
+  NOT_HOUSE,
   NOT_MEMBER,
   OWNER_ONLY,
   OWN_ROLES,
@@ -54,6 +57,13 @@ import {
 
 const WALLET = `0x${'Ab'.repeat(20)}`;
 const ACCOUNT = { id: 'acc', kind: 'personal', name: null, role: 'owner', balanceCents: 420 };
+
+describe('the desk contract', () => {
+  it('has the directory among the methods a binding must have, right after the overview', () => {
+    expect(DESK_METHODS.slice(0, 3)).toEqual(['overview', 'directory', 'createTeam']);
+    expect(new Set(DESK_METHODS).size).toBe(DESK_METHODS.length);
+  });
+});
 
 describe('small checks', () => {
   it('reads wallets, names, ranges, amounts and checkout ids', () => {
@@ -198,6 +208,9 @@ describe('the till’s refusals', () => {
     expect(NOT_BELOW).toBe(ORG_PROBLEMS.notBelow);
     expect(OWNER_ONLY).toBe(ORG_PROBLEMS.owner);
     expect(NO_ADMIN_ROLE).toBe(ORG_PROBLEMS.noAdministratorRole);
+    // The words the fixture desk borrows from the till for the house’s door.
+    expect(NOT_HOUSE).toBe(ORG_PROBLEMS.notHouse);
+    expect(HOUSE_BOOLEAN).toBe(ORG_PROBLEMS.house);
     const refusals: OrganizationRefusal[] = [
       'missing-permission',
       'not-below',
@@ -312,6 +325,9 @@ describe('Stripe in a new tab and the way back', () => {
 describe('reading the API in the browser', () => {
   it('reads an overview, or nothing', () => {
     expect(readOverview({ accounts: [ACCOUNT] })).toEqual([ACCOUNT]);
+    // An organization the wallet enters only as the house (QA 2026-10-15) travels marked.
+    const house = { ...ACCOUNT, kind: 'team', name: 'La Tarugo', role: 'admin', as: 'house' };
+    expect(readOverview({ accounts: [ACCOUNT, house] })).toEqual([ACCOUNT, house]);
     expect(readOverview({ accounts: [{ ...ACCOUNT, kind: 'shop' }] })).toBeNull();
     expect(readOverview({ accounts: [{ ...ACCOUNT, balanceCents: '4' }] })).toBeNull();
     expect(readOverview({ accounts: 'x' })).toBeNull();

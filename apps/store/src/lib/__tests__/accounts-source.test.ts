@@ -7,17 +7,18 @@ import {
   SIGNATURE_EXPIRED,
   SIGNATURE_MISMATCH,
   type AccountDesk,
+  type Asker,
 } from '../accounts';
 import {
   MAX_BODY_BYTES,
   accountsFrom,
-  answerAction,
-  answerLog,
-  answerOverview,
+  answerAction as answerActionAs,
+  answerLog as answerLogAs,
+  answerOverview as answerOverviewAs,
   answerPeople,
-  answerRoles,
-  answerSignature,
-  answerStatement,
+  answerRoles as answerRolesAs,
+  answerSignature as answerSignatureAs,
+  answerStatement as answerStatementAs,
   boundAccounts,
   fixtureAccounts,
   readSaldoRequest,
@@ -25,8 +26,53 @@ import {
 } from '../accounts-source';
 import { FRESH_TTL_MS, actDigest, readFreshToken, type FreshDeps } from '../fresh-signature';
 
+// The desk is asked on behalf of an `Asker`: the session's wallet and whether it is the house's.
+// Most of what follows asks as a citizen — a session that is not an Oracle's, so never the
+// house — with the wallet alone; the tests of the house hand over an `Asker` of their own.
+const citizen = (wallet: string | null): Asker | null =>
+  wallet === null ? null : { wallet, house: false };
+type Log = Parameters<typeof answerOverviewAs>[2];
+const answerOverview = (desk: AccountDesk | null, wallet: string | null, log?: Log) =>
+  answerOverviewAs(desk, citizen(wallet), log);
+const answerStatement = (desk: AccountDesk | null, wallet: string | null, url: URL, log?: Log) =>
+  answerStatementAs(desk, citizen(wallet), url, log);
+const answerRoles = (desk: AccountDesk | null, wallet: string | null, url: URL, log?: Log) =>
+  answerRolesAs(desk, citizen(wallet), url, log);
+const answerLog = (desk: AccountDesk | null, wallet: string | null, url: URL, log?: Log) =>
+  answerLogAs(desk, citizen(wallet), url, log);
+const answerAction = (
+  desk: AccountDesk | null,
+  wallet: string | null,
+  request: Request,
+  log?: Log,
+  fresh?: FreshDeps | null,
+) => answerActionAs(desk, citizen(wallet), request, log, fresh);
+const answerSignature = (
+  desk: AccountDesk | null,
+  wallet: string | null,
+  request: Request,
+  fresh: FreshDeps | null,
+  log?: Log,
+) => answerSignatureAs(desk, citizen(wallet), request, fresh, log);
+
 const ME = `0x${'ab'.repeat(20)}`;
+/** The Oracle's session: the house. */
+const oracle = (wallet: string = ME): Asker => ({ wallet, house: true });
 const ACCOUNT = { id: 'acc', kind: 'team', name: 'Numen', role: 'admin', balanceCents: 88 };
+// The directory lists every organization by name — the wallet's own among them.
+const INSTITUTE = { id: 'acc_t_institute', kind: 'team', name: 'Active Inference Institute' };
+const TARUGO = { id: 'acc_t_tarugo', kind: 'team', name: 'La Tarugo' };
+const DIRECTORY = {
+  ok: true,
+  accounts: [INSTITUTE, TARUGO, { id: 'acc', kind: 'team', name: 'Numen' }],
+};
+/** An organization the wallet enters only as the house, as the overview lists it. */
+const entered = (entry: typeof INSTITUTE) => ({
+  ...entry,
+  role: 'admin',
+  balanceCents: 0,
+  as: 'house',
+});
 const STATEMENT = {
   ok: true,
   account: ACCOUNT,
@@ -99,6 +145,7 @@ function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): 
   const answer = (value: unknown) => vi.fn(async () => value);
   return {
     overview: answer({ ok: true, accounts: [ACCOUNT] }),
+    directory: answer(DIRECTORY),
     createTeam: answer({ ok: true, account: ACCOUNT }),
     renameTeam: answer({ ok: true, account: ACCOUNT }),
     statement: answer(STATEMENT),
@@ -181,35 +228,52 @@ describe('finding the desk', () => {
     expect(boundAccounts(null)).toBeNull();
     expect(boundAccounts('numinia-till')).toBeNull();
     expect(boundAccounts({ overview: () => 1 })).toBeNull();
+    // A till that has not learned the directory yet is no desk of this site's.
+    const { directory: _directory, ...older } = fakeDesk();
+    expect(boundAccounts(older)).toBeNull();
     const stub = fakeDesk();
     const bound = boundAccounts(stub);
     if (bound === null) throw new Error('not bound');
     await bound.overview(ME);
+    await bound.directory(ME, true);
     await bound.createTeam(ME, 'n');
-    await bound.renameTeam(ME, 'a', 'n');
-    await bound.statement(ME, 'a', '7d');
-    await bound.members(ME, 'a');
-    await bound.access(ME, 'a');
-    expect(stub.access).toHaveBeenCalledWith(ME, 'a');
-    await bound.setMember(ME, 'a', ME, 'admin');
-    await bound.removeMember(ME, 'a', ME);
+    await bound.renameTeam(ME, 'a', 'n', true);
+    await bound.statement(ME, 'a', '7d', true);
+    await bound.members(ME, 'a', true);
+    await bound.access(ME, 'a', true);
+    expect(stub.directory).toHaveBeenCalledWith(ME, true);
+    expect(stub.renameTeam).toHaveBeenCalledWith(ME, 'a', 'n', true);
+    expect(stub.statement).toHaveBeenCalledWith(ME, 'a', '7d', true);
+    expect(stub.members).toHaveBeenCalledWith(ME, 'a', true);
+    expect(stub.access).toHaveBeenCalledWith(ME, 'a', true);
+    await bound.setMember(ME, 'a', ME, 'admin', true);
+    await bound.removeMember(ME, 'a', ME, true);
+    expect(stub.setMember).toHaveBeenCalledWith(ME, 'a', ME, 'admin', true);
+    expect(stub.removeMember).toHaveBeenCalledWith(ME, 'a', ME, true);
     const draft = { name: 'n', color: null, hoist: false, permissions: [] };
-    await bound.roles(ME, 'a');
+    await bound.roles(ME, 'a', true);
     await bound.headcount('a');
     expect(stub.headcount).toHaveBeenCalledWith('a');
-    await bound.createRole(ME, 'a', draft);
-    await bound.editRole(ME, 'a', ROLE_ID, { hoist: true });
-    await bound.moveRole(ME, 'a', ROLE_ID, 2);
-    await bound.deleteRole(ME, 'a', ROLE_ID);
-    await bound.giveRole(ME, 'a', ME, ROLE_ID);
-    await bound.takeRole(ME, 'a', ME, ROLE_ID);
-    await bound.log(ME, 'a');
-    expect(stub.createRole).toHaveBeenCalledWith(ME, 'a', draft);
-    expect(stub.editRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, { hoist: true });
-    expect(stub.moveRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, 2);
-    expect(stub.giveRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID);
-    expect(stub.takeRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID);
-    await bound.startTopup(ME, 'a', '10', 'r');
+    await bound.createRole(ME, 'a', draft, true);
+    await bound.editRole(ME, 'a', ROLE_ID, { hoist: true }, true);
+    await bound.moveRole(ME, 'a', ROLE_ID, 2, true);
+    await bound.deleteRole(ME, 'a', ROLE_ID, true);
+    await bound.giveRole(ME, 'a', ME, ROLE_ID, true);
+    await bound.takeRole(ME, 'a', ME, ROLE_ID, true);
+    await bound.log(ME, 'a', true);
+    expect(stub.roles).toHaveBeenCalledWith(ME, 'a', true);
+    expect(stub.createRole).toHaveBeenCalledWith(ME, 'a', draft, true);
+    expect(stub.editRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, { hoist: true }, true);
+    expect(stub.moveRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, 2, true);
+    expect(stub.deleteRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, true);
+    expect(stub.giveRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID, true);
+    expect(stub.takeRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID, true);
+    expect(stub.log).toHaveBeenCalledWith(ME, 'a', true);
+    await bound.startTopup(ME, 'a', '10', 'r', true);
+    expect(stub.startTopup).toHaveBeenCalledWith(ME, 'a', '10', 'r', true);
+    // The flag is the caller's to give: a call without one passes none on, and the till reads it as false.
+    await bound.access(ME, 'a');
+    expect(stub.access).toHaveBeenLastCalledWith(ME, 'a', undefined);
     await bound.confirmTopup(ME, 'cs_1');
     expect(stub.confirmTopup).toHaveBeenCalledWith(ME, 'cs_1');
     expect(boundAccounts(Object.assign(() => 0, stub))).not.toBeNull();
@@ -327,7 +391,7 @@ describe('GET /api/saldo/statement', () => {
       url('cuenta=acc'),
       quiet,
     );
-    expect(desk.statement).toHaveBeenCalledWith(ME, 'acc', '30d');
+    expect(desk.statement).toHaveBeenCalledWith(ME, 'acc', '30d', false);
     const body = (await ok.json()) as {
       statement: { members: unknown[] };
       you: string;
@@ -336,7 +400,7 @@ describe('GET /api/saldo/statement', () => {
     expect(body.you).toBe(ME);
     expect(body.statement.members).toHaveLength(1);
     // What the wallet may do travels with the statement, trimmed to what the screen reads.
-    expect(desk.access).toHaveBeenCalledWith(ME, 'acc');
+    expect(desk.access).toHaveBeenCalledWith(ME, 'acc', false);
     expect(body.access).toEqual({
       as: 'member',
       permissions: ['enter-worlds', 'top-up'],
@@ -396,10 +460,10 @@ describe('GET /api/saldo/roles and /api/saldo/log', () => {
       at('roles', 'cuenta=acc'),
       quiet,
     );
-    expect(desk.roles).toHaveBeenCalledWith(ME, 'acc');
+    expect(desk.roles).toHaveBeenCalledWith(ME, 'acc', false);
     expect(await roles.json()).toMatchObject({ you: ME, roles: { as: 'owner' } });
     const log = await answerLog(desk, ME, at('log', 'cuenta=acc'), quiet);
-    expect(desk.log).toHaveBeenCalledWith(ME, 'acc');
+    expect(desk.log).toHaveBeenCalledWith(ME, 'acc', false);
     expect(await log.json()).toMatchObject({ log: { lines: [{ act: 'role-created' }] } });
   });
 
@@ -532,12 +596,18 @@ describe('POST /api/saldo: roles', () => {
       expect(response.status).toBe(200);
       expect(await response.json()).toMatchObject({ result: { ok: true, accountId: 'acc' } });
     }
-    expect(desk.createRole).toHaveBeenCalledWith(ME, 'acc', draft);
-    expect(desk.editRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, { name: 'Otra', color: null });
-    expect(desk.moveRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, 2);
-    expect(desk.deleteRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID);
-    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID);
-    expect(desk.takeRole).toHaveBeenCalledWith(ME, 'acc', ME, ADMIN_ID);
+    expect(desk.createRole).toHaveBeenCalledWith(ME, 'acc', draft, false);
+    expect(desk.editRole).toHaveBeenCalledWith(
+      ME,
+      'acc',
+      ROLE_ID,
+      { name: 'Otra', color: null },
+      false,
+    );
+    expect(desk.moveRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, 2, false);
+    expect(desk.deleteRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, false);
+    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID, false);
+    expect(desk.takeRole).toHaveBeenCalledWith(ME, 'acc', ME, ADMIN_ID, false);
   });
 
   it('passes the desk’s refusals on as values, and a broken desk as 502', async () => {
@@ -839,7 +909,7 @@ describe('POST /api/saldo with a fresh signature (ORG-008)', () => {
     const response = await answerAction(desk, you, post({ ...grant, fresh }), quiet, freshDeps());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ result: { ok: true, accountId: 'acc' } });
-    expect(desk.giveRole).toHaveBeenCalledWith(you, 'acc', ME, ADMIN_ID);
+    expect(desk.giveRole).toHaveBeenCalledWith(you, 'acc', ME, ADMIN_ID, false);
     expect(quiet).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'saldo-role', action: 'give-role', outcome: 'done' }),
     );
@@ -856,7 +926,7 @@ describe('POST /api/saldo with a fresh signature (ORG-008)', () => {
     const reordered = { role: { ...role }, accountId: 'acc', action: 'create-role', fresh: signed };
     const made = await answerAction(desk, you, post(reordered), quiet, freshDeps());
     expect(made.status).toBe(200);
-    expect(desk.createRole).toHaveBeenCalledWith(you, 'acc', role);
+    expect(desk.createRole).toHaveBeenCalledWith(you, 'acc', role, false);
   });
 
   it('refuses a late proof, a proof for another act or from another wallet, and writes nothing', async () => {
@@ -909,7 +979,7 @@ describe('POST /api/saldo with a fresh signature (ORG-008)', () => {
     const plain = { ...grant, roleId: ROLE_ID, fresh };
     expect((await answerAction(desk, ME, post(plain), quiet, freshDeps())).status).toBe(200);
     expect(desk.giveRole).toHaveBeenCalledTimes(1);
-    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID);
+    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID, false);
     const team = { action: 'create-team', name: 'Numen', fresh };
     expect((await answerAction(desk, ME, post(team), quiet, freshDeps())).status).toBe(200);
   });
@@ -962,6 +1032,7 @@ describe('POST /api/saldo', () => {
       'acc',
       '50',
       'https://numinia.com/es/saldo/vuelta/',
+      false,
     );
     expect(await response.json()).toEqual({
       result: { ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' },
@@ -1035,9 +1106,9 @@ describe('POST /api/saldo', () => {
       expect((await answerAction(desk, ME, post(body), quiet)).status).toBe(200);
     }
     expect(desk.createTeam).toHaveBeenCalledWith(ME, 'Arca');
-    expect(desk.renameTeam).toHaveBeenCalledWith(ME, 'acc', 'Arca');
-    expect(desk.setMember).toHaveBeenCalledWith(ME, 'acc', ME, 'admin');
-    expect(desk.removeMember).toHaveBeenCalledWith(ME, 'acc', ME);
+    expect(desk.renameTeam).toHaveBeenCalledWith(ME, 'acc', 'Arca', false);
+    expect(desk.setMember).toHaveBeenCalledWith(ME, 'acc', ME, 'admin', false);
+    expect(desk.removeMember).toHaveBeenCalledWith(ME, 'acc', ME, false);
     const broken = await answerAction(
       fakeDesk({ removeMember: async () => ({ ok: 'maybe' }) }),
       ME,
@@ -1074,5 +1145,287 @@ describe('POST /api/saldo', () => {
       )
     ).json()) as { result: { balanceCents: number } };
     expect(paid.result.balanceCents).toBe(1420);
+  });
+});
+
+describe('the house: an Oracle’s session lists and enters every organization (QA 2026-10-15)', () => {
+  const urlOf = (path: string, query: string) =>
+    new URL(`https://numinia.com/api/saldo/${path}?${query}`);
+  const draft = { name: 'Gente', color: '#aabbcc', hoist: false, permissions: ['enter-worlds'] };
+  /** Every act on an organization the desk knows the house flag for, with the arguments before it. */
+  const ACTS = [
+    [{ action: 'rename', accountId: 'acc', name: 'Arca' }, 'renameTeam', ['acc', 'Arca']],
+    [
+      { action: 'set-member', accountId: 'acc', wallet: ME, role: 'admin' },
+      'setMember',
+      ['acc', ME, 'admin'],
+    ],
+    [{ action: 'remove-member', accountId: 'acc', wallet: ME }, 'removeMember', ['acc', ME]],
+    [{ action: 'create-role', accountId: 'acc', role: draft }, 'createRole', ['acc', draft]],
+    [
+      { action: 'edit-role', accountId: 'acc', roleId: ROLE_ID, change: { hoist: true } },
+      'editRole',
+      ['acc', ROLE_ID, { hoist: true }],
+    ],
+    [
+      { action: 'move-role', accountId: 'acc', roleId: ROLE_ID, position: 2 },
+      'moveRole',
+      ['acc', ROLE_ID, 2],
+    ],
+    [{ action: 'delete-role', accountId: 'acc', roleId: ROLE_ID }, 'deleteRole', ['acc', ROLE_ID]],
+    [
+      { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ROLE_ID },
+      'giveRole',
+      ['acc', ME, ROLE_ID],
+    ],
+    [
+      { action: 'take-role', accountId: 'acc', wallet: ME, roleId: ROLE_ID },
+      'takeRole',
+      ['acc', ME, ROLE_ID],
+    ],
+    [
+      { action: 'topup', accountId: 'acc', amount: '50', locale: 'es' },
+      'startTopup',
+      ['acc', '50', 'https://numinia.com/es/saldo/vuelta/'],
+    ],
+  ] as const;
+  const CALLED = [
+    'statement',
+    'access',
+    'roles',
+    'log',
+    ...ACTS.map(([, method]) => method),
+  ] as const;
+
+  it('lists the wallet’s own accounts first and, marked as the house’s, the organizations it is not in', async () => {
+    const desk = fakeDesk();
+    const reply = await answerOverviewAs(desk, oracle(), quiet);
+    expect(reply.status).toBe(200);
+    // Additive: the till’s own list as it was, then the others by name — the wallet’s own never twice.
+    expect(await reply.json()).toEqual({
+      accounts: [ACCOUNT, entered(INSTITUTE), entered(TARUGO)],
+    });
+    expect(desk.overview).toHaveBeenCalledWith(ME);
+    expect(desk.directory).toHaveBeenCalledWith(ME, true);
+    // The directory names no money, so the entry carries none: a zero that means «not read here».
+    expect(entered(INSTITUTE)).toMatchObject({ role: 'admin', balanceCents: 0, as: 'house' });
+  });
+
+  it('asks the directory as the same lowercase wallet the overview was asked with', async () => {
+    const desk = fakeDesk();
+    await answerOverviewAs(desk, oracle(ME.toUpperCase().replace('0X', '0x')), quiet);
+    expect(desk.overview).toHaveBeenCalledWith(ME);
+    expect(desk.directory).toHaveBeenCalledWith(ME, true);
+  });
+
+  it('keeps the list as it was when the directory adds no organization', async () => {
+    for (const accounts of [[{ id: 'acc', kind: 'team', name: 'Numen' }], []]) {
+      const desk = fakeDesk({ directory: async () => ({ ok: true, accounts }) });
+      const reply = await answerOverviewAs(desk, oracle(), quiet);
+      expect(await reply.json()).toEqual({ accounts: [ACCOUNT] });
+    }
+  });
+
+  it('answers a refusal or a failure of the till’s overview as it always did, before it asks the directory', async () => {
+    const refusing = fakeDesk({ overview: async () => ({ ok: false, problems: ['wallet…'] }) });
+    expect((await answerOverviewAs(refusing, oracle(), quiet)).status).toBe(403);
+    const broken = fakeDesk({ overview: async () => ({ accounts: 'x' }) });
+    expect((await answerOverviewAs(broken, oracle(), quiet)).status).toBe(502);
+    expect(refusing.directory).not.toHaveBeenCalled();
+    expect(broken.directory).not.toHaveBeenCalled();
+    expect((await answerOverviewAs(null, oracle(), quiet)).status).toBe(503);
+    expect((await answerOverviewAs(fakeDesk(), null, quiet)).status).toBe(401);
+  });
+
+  it('keeps the wallet’s own accounts, and logs by rule why, when the directory fails or refuses', async () => {
+    const entry = { id: 'acc_t_x', kind: 'team', name: 'X' };
+    const failures: [() => Promise<unknown>, string][] = [
+      [
+        async () => {
+          throw new TypeError('boom');
+        },
+        'threw',
+      ],
+      [async () => ({ ok: true, accounts: 'x' }), 'answer-shape'],
+      // A directory lists organizations: a personal account in it is out of shape.
+      [async () => ({ ok: true, accounts: [{ ...entry, kind: 'personal' }] }), 'answer-shape'],
+      [async () => ({ ok: false, problems: ['only the house reads…'] }), 'refused'],
+    ];
+    for (const [directory, rule] of failures) {
+      quiet.mockClear();
+      const reply = await answerOverviewAs(fakeDesk({ directory }), oracle(), quiet);
+      expect(reply.status).toBe(200);
+      expect(await reply.json()).toEqual({ accounts: [ACCOUNT] });
+      expect(quiet).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'saldo-till', action: 'directory', rule }),
+      );
+    }
+  });
+
+  it('never asks the directory for a citizen, whose list is the till’s own', async () => {
+    const desk = fakeDesk();
+    const reply = await answerOverview(desk, ME, quiet);
+    expect(await reply.json()).toEqual({ accounts: [ACCOUNT] });
+    expect(desk.directory).not.toHaveBeenCalled();
+  });
+
+  it('keeps a mark on the till’s own accounts, and refuses any other', async () => {
+    const marked = fakeDesk({
+      overview: async () => ({ accounts: [{ ...ACCOUNT, as: 'house' }] }),
+    });
+    const kept = await answerOverview(marked, ME, quiet);
+    expect(await kept.json()).toEqual({ accounts: [{ ...ACCOUNT, as: 'house' }] });
+    const other = fakeDesk({ overview: async () => ({ accounts: [{ ...ACCOUNT, as: 'owner' }] }) });
+    expect((await answerOverview(other, ME, quiet)).status).toBe(502);
+  });
+
+  it.each([true, false])(
+    'sends house=%s with every read and every act on an organization',
+    async (flag) => {
+      const desk = fakeDesk();
+      const asker: Asker = { wallet: ME, house: flag };
+      await answerStatementAs(desk, asker, urlOf('statement', 'cuenta=acc'), quiet);
+      await answerRolesAs(desk, asker, urlOf('roles', 'cuenta=acc'), quiet);
+      await answerLogAs(desk, asker, urlOf('log', 'cuenta=acc'), quiet);
+      expect(desk.statement).toHaveBeenCalledWith(ME, 'acc', '30d', flag);
+      expect(desk.access).toHaveBeenCalledWith(ME, 'acc', flag);
+      expect(desk.roles).toHaveBeenCalledWith(ME, 'acc', flag);
+      expect(desk.log).toHaveBeenCalledWith(ME, 'acc', flag);
+      for (const [body, method, args] of ACTS) {
+        const reply = await answerActionAs(desk, asker, post(body), quiet);
+        expect(reply.status).toBe(200);
+        expect(desk[method]).toHaveBeenLastCalledWith(ME, ...args, flag);
+      }
+      // No organization yet and no checkout yet: nothing there for the house to enter.
+      await answerActionAs(desk, asker, post({ action: 'create-team', name: 'Arca' }), quiet);
+      await answerActionAs(desk, asker, post({ action: 'confirm', sessionId: 'cs_1' }), quiet);
+      expect(desk.createTeam).toHaveBeenCalledWith(ME, 'Arca');
+      expect(desk.confirmTopup).toHaveBeenCalledWith(ME, 'cs_1');
+    },
+  );
+
+  it('ignores a `house` the browser sends: in a body it is an unknown key, refused; in a query it is never read', async () => {
+    const desk = fakeDesk();
+    const asker: Asker = { wallet: ME, house: false };
+    const bodies = [
+      ...ACTS.map(([body]) => body),
+      { action: 'create-team', name: 'Arca' },
+      { action: 'confirm', sessionId: 'cs_1' },
+    ];
+    for (const body of bodies) {
+      for (const claim of [true, 'true', 1]) {
+        const reply = await answerActionAs(desk, asker, post({ ...body, house: claim }), quiet);
+        expect(reply.status).toBe(400);
+        expect(((await reply.json()) as { error: string }).error).toContain('house');
+      }
+    }
+    const grant = { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID };
+    const signing = signatureRequest({ ...grant, house: true });
+    expect((await answerSignatureAs(desk, asker, signing, freshDeps(), quiet)).status).toBe(400);
+    expect(readSaldoRequest({ action: 'rename', accountId: 'a', name: 'n', house: true }).ok).toBe(
+      false,
+    );
+    // A query string is not read for it either: the desk is asked with the session’s flag alone.
+    await answerStatementAs(
+      desk,
+      asker,
+      urlOf('statement', 'cuenta=acc&house=true&rango=7d'),
+      quiet,
+    );
+    await answerRolesAs(desk, asker, urlOf('roles', 'cuenta=acc&house=1'), quiet);
+    await answerLogAs(desk, asker, urlOf('log', 'house=true&cuenta=acc'), quiet);
+    expect(desk.statement).toHaveBeenCalledWith(ME, 'acc', '7d', false);
+    expect(desk.roles).toHaveBeenCalledWith(ME, 'acc', false);
+    expect(desk.log).toHaveBeenCalledWith(ME, 'acc', false);
+    // So no call of a citizen’s session ever carried a true flag, and none reached the directory.
+    for (const method of CALLED) {
+      for (const call of vi.mocked(desk[method]).mock.calls) expect(call).not.toContain(true);
+    }
+    expect(desk.directory).not.toHaveBeenCalled();
+  });
+
+  it('asks the house for the fresh signature all the same: ORG-008 stays as it is', async () => {
+    const desk = fakeDesk();
+    const grant = { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID };
+    for (const deps of [null, freshDeps()]) {
+      const reply = await answerActionAs(desk, oracle(), post(grant), quiet, deps);
+      expect(await reply.json()).toEqual({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+    }
+    expect(desk.giveRole).not.toHaveBeenCalled();
+    // And once the Oracle’s wallet has signed this very act, it goes through as the house.
+    const wallet = testWallet();
+    const you = wallet.address.toLowerCase();
+    const asked = await answerSignatureAs(
+      desk,
+      oracle(you),
+      signatureRequest(grant),
+      freshDeps(),
+      quiet,
+    );
+    const { sign } = (await asked.json()) as { sign: { message: string; token: string } };
+    const fresh = {
+      token: sign.token,
+      signature: await wallet.signMessage({ message: sign.message }),
+    };
+    const done = await answerActionAs(
+      desk,
+      oracle(you),
+      post({ ...grant, fresh }),
+      quiet,
+      freshDeps(),
+    );
+    expect(done.status).toBe(200);
+    expect(desk.giveRole).toHaveBeenCalledWith(you, 'acc', ME, ADMIN_ID, true);
+  });
+
+  it('names an organization entered as the house by its name in the sentence the wallet signs', async () => {
+    const grant = { action: 'give-role', accountId: INSTITUTE.id, wallet: ME, roleId: ADMIN_ID };
+    const sentence = async (desk: AccountDesk, asker: Asker | null) => {
+      const reply = await answerSignatureAs(
+        desk,
+        asker,
+        signatureRequest(grant),
+        freshDeps(),
+        quiet,
+      );
+      return ((await reply.json()) as { sign: { message: string } }).sign.message.split('\n')[0];
+    };
+    const desk = fakeDesk();
+    expect(await sentence(desk, oracle())).toBe('Numinia · Active Inference Institute');
+    expect(desk.roles).toHaveBeenCalledWith(ME, INSTITUTE.id, true);
+    // A citizen is told what its own accounts list — here, only the id — and asks no directory.
+    const plain = fakeDesk();
+    expect(await sentence(plain, citizen(ME))).toBe(`Numinia · ${INSTITUTE.id}`);
+    expect(plain.directory).not.toHaveBeenCalled();
+    // A directory that fails never stops the sentence: the id stands in for the name.
+    const blind = fakeDesk({ directory: async () => ({ nonsense: true }) });
+    expect(await sentence(blind, oracle())).toBe(`Numinia · ${INSTITUTE.id}`);
+  });
+
+  it('works end to end against the fixture desk: three organizations for the Oracle, one for a citizen', async () => {
+    const desk = fixtureAccounts();
+    const listed = async (asker: Asker) =>
+      (
+        (await (await answerOverviewAs(desk, asker, quiet)).json()) as {
+          accounts: { name: string | null; as?: string }[];
+        }
+      ).accounts.map((account) => [account.name, account.as ?? null]);
+    expect(await listed(oracle())).toEqual([
+      [null, null],
+      ['Numen Games', null],
+      ['Active Inference Institute', 'house'],
+      ['La Tarugo', 'house'],
+    ]);
+    expect(await listed({ wallet: ME, house: false })).toEqual([
+      [null, null],
+      ['Numen Games', null],
+    ]);
+    const rolesOf = (asker: Asker) =>
+      answerRolesAs(desk, asker, urlOf('roles', 'cuenta=acc_team_la_tarugo'), quiet);
+    const entering = await rolesOf(oracle());
+    expect(await entering.json()).toMatchObject({ roles: { as: 'house' } });
+    const refused = await rolesOf({ wallet: ME, house: false });
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toEqual({ error: 'refused', problems: ['not a member'] });
   });
 });

@@ -88,6 +88,7 @@ describe('the desk', () => {
       'createRole',
       'createTeam',
       'deleteRole',
+      'directory',
       'editRole',
       'giveRole',
       'headcount',
@@ -110,6 +111,7 @@ describe('the desk', () => {
     const bad = PABLO.toUpperCase();
     const refusal = { ok: false, problems: [PROBLEMS.wallet] };
     expect(await desk.overview(bad)).toEqual(refusal);
+    expect(await desk.directory(bad, true)).toEqual(refusal);
     expect(await desk.createTeam(bad, 'X')).toEqual(refusal);
     expect(await desk.renameTeam(bad, 'acc_x', 'X')).toEqual(refusal);
     expect(await desk.statement(bad, 'acc_x', '7d')).toEqual(refusal);
