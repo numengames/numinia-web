@@ -86,6 +86,31 @@ test.describe('the Bazaar', () => {
     await expect(back).toHaveText('Bazaar');
   });
 
+  test('a picture shows whole from its baked preview, never from the multi-megabyte original', async ({
+    page,
+  }) => {
+    // «ndg-019d4067…»: a PNG of 2 MB whose preview used to download all of it.
+    const id = 'ndg-019d4067-c52d-7fcc-96ce-d44f3e725ff4';
+    const originals: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/content/images/')) originals.push(request.url());
+    });
+    await page.locator(`[data-metric="bazaar-card"][data-item="${id}"]`).click();
+    const shown = page.locator('[data-bazaar-preview] .escenario img');
+    await expect(shown).toHaveAttribute('src', `/thumbs/preview/${id}.webp`);
+    await expect
+      .poll(() => shown.evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+    const width = await shown.evaluate((img: HTMLImageElement) => img.naturalWidth);
+    expect(width).toBeLessThanOrEqual(960);
+    // The download button still leads to the file itself.
+    await expect(page.locator('[data-metric="bazaar-download"]')).toHaveAttribute(
+      'href',
+      new RegExp(`/content/images/${id}\\.png$`),
+    );
+    expect(originals, 'the original is only fetched when someone downloads it').toEqual([]);
+  });
+
   test('the queue gathers, never twice, and empties', async ({ page }) => {
     const count = page.locator('[data-bazaar-queue-count]');
     await expect(count).toHaveText('0');
@@ -152,6 +177,30 @@ test.describe('the Bazaar', () => {
     expect(downloads).toBe(0);
   });
 });
+
+for (const width of [1280, 1366, 1536]) {
+  test(`at ${width}px a chosen good leaves the cards at least two to a row`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await openBazaar(page);
+    // The distinct left edges of the cards = the columns of the grid.
+    const columns = (): Promise<number> =>
+      page.evaluate(
+        () =>
+          new Set(
+            [...document.querySelectorAll('[data-bazaar-grid] > li')].map((li) =>
+              Math.round(li.getBoundingClientRect().left),
+            ),
+          ).size,
+      );
+    const closed = await columns();
+    await page.locator('[data-metric="bazaar-card"]').first().click();
+    await expect(page.locator('[data-bazaar-preview] h2')).toBeVisible();
+    // The preview pane takes width from the cards, never all of it (v0.91.0:
+    // at 1280 and 1366 a chosen good used to leave ONE card per row).
+    await expect.poll(columns).toBeGreaterThanOrEqual(2);
+    expect(closed).toBeGreaterThanOrEqual(3);
+  });
+}
 
 test('on a phone the preview opens as a sheet that Escape closes', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

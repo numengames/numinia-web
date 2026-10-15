@@ -7,7 +7,7 @@
  * never the 0.1 "needs improvement" line.
  */
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 interface Budget {
   readonly path: string;
@@ -64,29 +64,55 @@ const BUDGETS: readonly Budget[] = [
   { path: '/lap/session/', totalKB: 1050, jsKB: 900, imgKB: 10 },
 ];
 
+interface Weight {
+  readonly js: number;
+  readonly img: number;
+  readonly total: number;
+}
+
+/** Opens a page and weighs everything it fetched, in KB. */
+async function weigh(page: Page, path: string): Promise<Weight> {
+  const sizes = { js: 0, img: 0, total: 0 };
+  page.on('response', async (response) => {
+    const body = await response.body().catch(() => Buffer.alloc(0));
+    sizes.total += body.length;
+    const type = response.request().resourceType();
+    if (type === 'script') sizes.js += body.length;
+    if (type === 'image') sizes.img += body.length;
+  });
+  await page.goto(path, { waitUntil: 'networkidle' });
+  const kb = (n: number): number => Math.round(n / 1024);
+  return { js: kb(sizes.js), img: kb(sizes.img), total: kb(sizes.total) };
+}
+
 for (const budget of BUDGETS) {
   test(`weight budget: ${budget.path}`, async ({ page }) => {
-    const sizes = { js: 0, img: 0, total: 0 };
-    page.on('response', async (response) => {
-      const body = await response.body().catch(() => Buffer.alloc(0));
-      sizes.total += body.length;
-      const type = response.request().resourceType();
-      if (type === 'script') sizes.js += body.length;
-      if (type === 'image') sizes.img += body.length;
-    });
-    await page.goto(budget.path, { waitUntil: 'networkidle' });
-    const kb = (n: number): number => Math.round(n / 1024);
-    expect(kb(sizes.js), `${budget.path} ships ${kb(sizes.js)}KB of JS`).toBeLessThanOrEqual(
-      budget.jsKB,
-    );
-    expect(kb(sizes.img), `${budget.path} ships ${kb(sizes.img)}KB of images`).toBeLessThanOrEqual(
+    const weight = await weigh(page, budget.path);
+    expect(weight.js, `${budget.path} ships ${weight.js}KB of JS`).toBeLessThanOrEqual(budget.jsKB);
+    expect(weight.img, `${budget.path} ships ${weight.img}KB of images`).toBeLessThanOrEqual(
       budget.imgKB,
     );
-    expect(kb(sizes.total), `${budget.path} weighs ${kb(sizes.total)}KB`).toBeLessThanOrEqual(
+    expect(weight.total, `${budget.path} weighs ${weight.total}KB`).toBeLessThanOrEqual(
       budget.totalKB,
     );
   });
 }
+
+// The same Bazaar on a density-2 screen — a phone, a Retina laptop — which
+// takes the 480px cut of every card, not the 1x one (v0.91.0: the gate had
+// only ever measured density 1). Under Playwright's Chromium every lazy card
+// loads, even those 2200px below the fold, so this is the worst case, pinned.
+// Measured 573KB of images, 1049KB in all; AVIF at the same look would be ~310KB — the next
+// lever, with a <picture> fallback, if this line ever has to come down.
+test.describe('on a density-2 screen', () => {
+  test.use({ deviceScaleFactor: 2 });
+  test('weight budget: /bazaar/ with the 480px cards', async ({ page }) => {
+    const weight = await weigh(page, '/bazaar/');
+    expect(weight.js, `/bazaar/ ships ${weight.js}KB of JS`).toBeLessThanOrEqual(230);
+    expect(weight.img, `/bazaar/ ships ${weight.img}KB of images`).toBeLessThanOrEqual(640);
+    expect(weight.total, `/bazaar/ weighs ${weight.total}KB`).toBeLessThanOrEqual(1180);
+  });
+});
 
 test('layout stays still: CLS under 0.1 on the landing', async ({ page }) => {
   await page.addInitScript(() => {

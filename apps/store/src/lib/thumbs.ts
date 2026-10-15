@@ -6,8 +6,10 @@
  */
 
 import baked from '../generated/local-thumbs.json';
+import bakedPreviews from '../generated/local-previews.json';
 
 const LOCAL = new Set<string>(baked as string[]);
+const PREVIEWS = new Set<string>(bakedPreviews as string[]);
 
 /** The 480px local WebP when baked; the remote original otherwise. */
 export function thumbSrc(assetId: string, remoteUrl: string | null): string | null {
@@ -23,4 +25,14 @@ export function thumbSrc(assetId: string, remoteUrl: string | null): string | nu
 export function thumbSrcSet(assetId: string): string | null {
   if (!LOCAL.has(assetId)) return null;
   return `/thumbs/1x/${assetId}.webp 1x, /thumbs/${assetId}.webp 2x`;
+}
+
+/**
+ * A picture's preview (v0.91.0): the whole picture baked to 960px a side —
+ * about a tenth of the bytes of a 2000px original, still sharp in the pane
+ * and in the sheet at density 2. Null when none was baked (the preview then
+ * shows the picture's own file).
+ */
+export function previewSrc(assetId: string): string | null {
+  return PREVIEWS.has(assetId) ? `/thumbs/preview/${assetId}.webp` : null;
 }

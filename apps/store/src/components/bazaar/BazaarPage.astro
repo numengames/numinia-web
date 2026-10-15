@@ -123,6 +123,26 @@ const items = await loadBazaarItems(locale);
       scrollbar-width: thin;
     }
   }
+  /* From 74rem to 90rem (a 1280 or 1366 laptop) the three panes are tight:
+     with the 13rem rail and the 21rem preview, a chosen good left ONE card
+     per row. A slimmer rail and preview, and cards that may be 12rem wide,
+     keep two (v0.91.0). The rail is slim closed as well, so opening a good
+     never moves it. */
+  @media (min-width: 74rem) and (max-width: 89.99rem) {
+    [data-bazaar] {
+      grid-template-columns: 11rem minmax(0, 1fr);
+      gap: var(--s4);
+    }
+    [data-bazaar][data-open] {
+      grid-template-columns: 11rem minmax(0, 1fr) 18rem;
+    }
+    [data-bazaar][data-open] .bazaar-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
+    }
+    [data-bazaar][data-open] .acciones {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   @media (max-width: 73.99rem) {
     /* The inline preview waits for a wide screen; until the island knows
        the width, its empty state must not flash in the left column. */
@@ -522,6 +542,12 @@ const items = await loadBazaarItems(locale);
     padding: 6px var(--s3);
     background: var(--fondo);
     font-size: 0.875rem;
+  }
+  /* Beside «See it in 3D» the kind's glyph rides higher, clear of the
+     button: in the slim pane (v0.91.0) the stage is short and the button
+     covered the label. */
+  [data-bazaar] .escenario .sin-foto:has(+ .ver-3d) {
+    padding-bottom: 3rem;
   }
   [data-bazaar] .previa-cuerpo audio {
     width: 100%;

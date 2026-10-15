@@ -56,10 +56,11 @@ function Stage({ item, labels, viewerLabels }: StageProps) {
       </div>
     );
   }
-  // A picture shows itself whole — its own file, the baked card only as a
-  // fallback; anything else shows its thumbnail when it has one.
+  // A picture shows itself whole — its baked preview (960px: a tenth of the
+  // bytes of a big original), else its own file, the baked card only as a
+  // last fallback; anything else shows its thumbnail when it has one.
   const own = isPicture(item.format);
-  const picture = own ? (item.url ?? item.thumbnailUrl) : item.thumbnailUrl;
+  const picture = own ? (item.previewUrl ?? item.url ?? item.thumbnailUrl) : item.thumbnailUrl;
   return (
     <>
       <div className="escenario">
