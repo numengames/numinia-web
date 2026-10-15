@@ -291,7 +291,7 @@ export const FIRST_POLL_SECONDS = 86_400;
 /** Pages one minute's run reads at most (100 events each). */
 export const POLL_MAX_PAGES = 20;
 
-function refuse(...problems: string[]): Refusal {
+export function refuse(...problems: string[]): Refusal {
   return { ok: false, problems };
 }
 
@@ -538,7 +538,7 @@ async function accountFor(
 }
 
 /** An organization as someone entered it: its tables as read now, and on whose behalf they act. */
-interface Entered {
+export interface Entered {
   readonly org: Organization;
   readonly acting: Acting;
 }
@@ -548,7 +548,7 @@ interface Entered {
  * house's staff or a member — or why not: a stranger to it, or no
  * organization at all.
  */
-async function enter(
+export async function enter(
   db: TillDatabase,
   wallet: string,
   accountId: string,
@@ -564,14 +564,19 @@ async function enter(
 }
 
 /** Null when the one who entered may do `act`; otherwise the refusal, naming who holds it. */
-function lacking({ org, acting }: Entered, act: OrganizationAccess): Refusal | null {
+export function lacking({ org, acting }: Entered, act: OrganizationAccess): Refusal | null {
   return acting.access.permissions.has(act)
     ? null
     : refuse(needs(act, holdersOf(org.state.roles, act)));
 }
 
 /** Writes down what the house's staff read (ORG-009): every act of theirs is logged, reads too. */
-async function houseRead({ org, acting }: Entered, db: TillDatabase, now: Date, what: string) {
+export async function houseRead(
+  { org, acting }: Entered,
+  db: TillDatabase,
+  now: Date,
+  what: string,
+) {
   if (acting.as !== 'house') return;
   await logLine(db, org.accountId, now, acting, 'house-read', null, { what }, null).run();
 }
@@ -588,7 +593,7 @@ function summaryIn({ org, acting }: Entered): AccountSummary {
 }
 
 /** A new role's id: random, unique within its organization. */
-function roleId(): string {
+export function roleId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(8));
   return `role_${[...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
 }
