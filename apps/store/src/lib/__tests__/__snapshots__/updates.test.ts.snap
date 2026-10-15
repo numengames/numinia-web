@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-15 18:10",
+    "entries": [
+      {
+        "text": "A new door in your account menu, «Panels», opens the panel of each organization you belong to: a switcher between them and the list of its pieces. «Members and roles» and «Balance and usage» work inside it just as they do in Saldo; the rooms only Oracles use — Census, Worlds, Prices and Assets — are linked from it; and what is not built yet — Homes, Gatherings, Agents, Memory, Bazaar items and Settings — is shown as under construction instead of left out. In all five languages.",
+        "type": "NEW",
+      },
+      {
+        "text": "The house can enter every organization that lets it in — all of them, during the alpha. An Oracle session lists them in the panel, in Members and in Balance next to its own, says «The house» as its place in each one it only enters, and the till writes every look and every change into the log of that organization, as the house. Anyone else sees only their own organizations, as before, and nothing a browser sends can say «I am the house»: numinia.com says it to the till, from the signed session.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.97.0",
+  },
+  {
     "date": "2026-10-15 15:45",
     "entries": [
       {
