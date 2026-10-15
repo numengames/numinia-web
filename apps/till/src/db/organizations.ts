@@ -59,7 +59,11 @@ export type LogAct =
   | 'role-given'
   | 'role-taken'
   | 'topup-started'
-  | 'house-read';
+  | 'house-read'
+  | 'role-created'
+  | 'role-edited'
+  | 'role-moved'
+  | 'role-deleted';
 
 const KNOWN: ReadonlySet<unknown> = new Set(ORGANIZATION_PERMISSIONS);
 const SETTINGS: ReadonlySet<unknown> = new Set(HOUSE_ACCESS_SETTINGS);
@@ -98,6 +102,35 @@ export const TAKE_ROLE = `
   DELETE FROM team_member_roles
    WHERE account_id = ?1 AND wallet = ?2 AND role_id = ?3 AND ${REVISION} = ?4`;
 
+export const INSERT_ROLE = `
+  INSERT INTO team_roles (account_id, id, name, color, position, hoist, permissions)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE ${REVISION} = ?8`;
+
+export const UPDATE_ROLE = `
+  UPDATE team_roles SET name = ?3, color = ?4, hoist = ?5, permissions = ?6
+   WHERE account_id = ?1 AND id = ?2 AND ${REVISION} = ?7`;
+
+export const DELETE_ROLE = `
+  DELETE FROM team_roles WHERE account_id = ?1 AND id = ?2 AND ${REVISION} = ?3`;
+
+/**
+ * Roles change places in two steps, because each place is held by one role
+ * only (UNIQUE) and a statement checks it row by row: first every role that
+ * moves is lifted out of the way, then each is set at its new place.
+ */
+export const LIFT = 1_000_000;
+
+export const LIFT_ROLE = `
+  UPDATE team_roles SET position = position + ${LIFT}
+   WHERE account_id = ?1 AND id = ?2 AND ${REVISION} = ?3`;
+
+export const PLACE_ROLE = `
+  UPDATE team_roles SET position = ?3 WHERE account_id = ?1 AND id = ?2 AND ${REVISION} = ?4`;
+
+export const SELECT_LOG = `
+  SELECT seq, at, actor, as_house, act, subject, detail FROM team_log
+   WHERE account_id = ?1 ORDER BY seq DESC LIMIT 100`;
+
 export const DROP_MEMBER = `
   DELETE FROM team_members WHERE account_id = ?1 AND wallet = ?2 AND ${REVISION} = ?3`;
 
@@ -115,7 +148,7 @@ const INSERT_LOG = `
   SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE ?8 IS NULL OR ${REVISION} = ?8`;
 
 /** A whole number from the database, or a throw: the till fails closed on a row the schema does not promise. */
-function whole(row: Row, name: string): number {
+export function whole(row: Row, name: string): number {
   const value = column(row, name);
   if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
     throw new TypeError(`till database: ${name} is not a whole number`);

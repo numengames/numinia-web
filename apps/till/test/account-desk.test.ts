@@ -85,14 +85,22 @@ describe('the desk', () => {
       'access',
       'confirmTopup',
       'constructor',
+      'createRole',
       'createTeam',
+      'deleteRole',
+      'editRole',
+      'giveRole',
+      'log',
       'members',
+      'moveRole',
       'overview',
       'removeMember',
       'renameTeam',
+      'roles',
       'setMember',
       'startTopup',
       'statement',
+      'takeRole',
     ]);
   });
 

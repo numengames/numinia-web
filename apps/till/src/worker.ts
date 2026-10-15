@@ -54,6 +54,17 @@ import {
   type TopupConfirm,
   type TopupStart,
 } from './db/accounts';
+import {
+  assignRole,
+  createRole,
+  deleteRole,
+  editRole,
+  logOf,
+  moveRole,
+  rolesOf,
+  type LogAnswer,
+  type RolesAnswer,
+} from './db/roles';
 import { checkDraft, readDesk, scheduleDraft, type DeskSchedule, type DeskView } from './db/desk';
 import { runClose, type CloseRun, type TillDatabase } from './db/repository';
 import { parseTopupPrices } from './lib/accounts';
@@ -225,6 +236,98 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** What the wallet may do in an organization, its roles, and who holds each act. */
   async access(wallet: unknown, accountId: unknown, house?: unknown): Promise<AccessAnswer> {
     return access(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** An organization's roles with who holds them and which the asker may handle: to any member. */
+  async roles(wallet: unknown, accountId: unknown, house?: unknown): Promise<RolesAnswer> {
+    return rolesOf(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** A new role just below the asker's highest, carrying only permissions the asker holds. */
+  async createRole(
+    wallet: unknown,
+    accountId: unknown,
+    role: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return createRole(this.env.TILL_DB, wallet, accountId, role, house, new Date());
+  }
+
+  /** Edits a role below the asker's highest: name, colour, shown apart, what it carries. */
+  async editRole(
+    wallet: unknown,
+    accountId: unknown,
+    roleId: unknown,
+    change: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return editRole(this.env.TILL_DB, wallet, accountId, roleId, change, house, new Date());
+  }
+
+  /** Moves a role to a place of the list, below the asker's highest. */
+  async moveRole(
+    wallet: unknown,
+    accountId: unknown,
+    roleId: unknown,
+    position: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return moveRole(this.env.TILL_DB, wallet, accountId, roleId, position, house, new Date());
+  }
+
+  /** Deletes a role below the asker's highest; its holders lose it. */
+  async deleteRole(
+    wallet: unknown,
+    accountId: unknown,
+    roleId: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return deleteRole(this.env.TILL_DB, wallet, accountId, roleId, house, new Date());
+  }
+
+  /** Gives a role to a member below the asker's highest role. */
+  async giveRole(
+    wallet: unknown,
+    accountId: unknown,
+    memberWallet: unknown,
+    roleId: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return assignRole(
+      this.env.TILL_DB,
+      true,
+      wallet,
+      accountId,
+      memberWallet,
+      roleId,
+      house,
+      new Date(),
+    );
+  }
+
+  /** Takes a role from a member below the asker's highest role. */
+  async takeRole(
+    wallet: unknown,
+    accountId: unknown,
+    memberWallet: unknown,
+    roleId: unknown,
+    house?: unknown,
+  ): Promise<RolesAnswer> {
+    return assignRole(
+      this.env.TILL_DB,
+      false,
+      wallet,
+      accountId,
+      memberWallet,
+      roleId,
+      house,
+      new Date(),
+    );
+  }
+
+  /** The organization's last hundred changes, newest first: to whoever may view its log. */
+  async log(wallet: unknown, accountId: unknown, house?: unknown): Promise<LogAnswer> {
+    return logOf(this.env.TILL_DB, wallet, accountId, house, new Date());
   }
 
   /** Renames an organization: whoever may manage it. */

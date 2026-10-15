@@ -99,9 +99,11 @@ afterEach(() => {
 describe('migration 0004: every organization founded before roles keeps working', () => {
   it('gives each the Team template, its founder ownership, and admins and members their roles', () => {
     const { sqlite } = sqliteD1();
-    const [last, ...earlier] = migrationFiles().reverse();
-    expect(last).toBe('0004_organization_roles.sql');
-    for (const name of earlier.reverse()) {
+    const files = migrationFiles();
+    const last = '0004_organization_roles.sql';
+    const earlier = files.slice(0, files.indexOf(last));
+    expect(earlier.length).toBe(3);
+    for (const name of earlier) {
       sqlite.exec(readFileSync(migration(name), 'utf8'));
     }
     const at = '2026-10-14T12:00:00.000Z';
