@@ -14,8 +14,9 @@ import { capMessage, logEvent } from './lib/telemetry';
    assets layer serves them before the Worker); SSR responses get them here.
    The pages where a wallet signs keep a relaxed connect/frame set: wallet
    SDKs talk to vendor hosts and user-configured RPCs that no allowlist
-   survives. Those are the login and the worlds room, where an Oracle signs
-   each request to a fleet machine. */
+   survives. Those are the login, the worlds room, where an Oracle signs
+   each request to a fleet machine, and Saldo's members tab, where giving
+   «Administrador» or «Gestionar roles» is signed again (STD-051 ORG-008). */
 const CSP_STRICT = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -39,8 +40,11 @@ const CSP_SESSION =
 function isSessionPath(pathname: string): boolean {
   // One door only: /spike/auth was retired with MIS-078 — the login lives in
   // the LAP, and a second copy of it was a second surface to keep AA. The
-  // worlds room signs with the same wallet, so it gets the same walls.
-  return /^\/(es\/|ja\/|ko\/|pt-br\/)?lap\/(session|admin\/worlds)/.test(pathname);
+  // worlds room and the members tab sign with the same wallet, so they get
+  // the same walls.
+  return /^\/(es\/|ja\/|ko\/|pt-br\/)?(lap\/(session|admin\/worlds)|saldo\/miembros)/.test(
+    pathname,
+  );
 }
 
 export function securityHeaders(
@@ -76,6 +80,9 @@ const RATE_RULES: ReadonlyArray<{
   // «Saldo»: top-ups, organizations and members are writes on the till; the
   // screen re-reads the balance on every return to the tab, so reads get more.
   { test: (m, p) => m === 'POST' && p === '/api/saldo', key: 'saldo-write', limit: 30 },
+  // The lines a wallet signs before giving «Administrador» (ORG-008): the
+  // desk is only read, but each answer is a token under the session secret.
+  { test: (m, p) => m === 'POST' && p === '/api/saldo/signature', key: 'saldo-sign', limit: 30 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },

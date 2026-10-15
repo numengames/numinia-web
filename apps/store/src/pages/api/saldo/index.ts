@@ -7,17 +7,21 @@
  * GET answers the accounts this wallet sees, personal first. POST (JSON
  * only) runs one action: `topup`, `confirm`, `create-team`, `rename`,
  * `set-member`, `remove-member`, `create-role`, `edit-role`, `move-role`,
- * `delete-role`, `give-role`, `take-role`. The desk is reached only through the
+ * `delete-role`, `give-role`, `take-role`. An act that gives «Administrador»
+ * or «Gestionar roles» also carries `fresh: { token, signature }`, the
+ * wallet's signature over the lines ./signature.ts wrote for it (ORG-008).
+ * The desk is reached only through the
  * service binding TILL_ACCOUNTS (lib/accounts-source.ts holds the trust
  * model); under DATA_SOURCE=fixture it is the in-memory fixture desk. No
  * desk → 503 `not-bound`; a desk that fails → 502 `till-failed`.
  */
 
 import type { APIRoute } from 'astro';
-import { SESSION_COOKIE } from '../../../lib/auth/server';
+import { SESSION_COOKIE, freshSignatureDeps } from '../../../lib/auth/server';
 import { sessionWallet } from '../../../lib/auth/session-wallet';
 import { accountsFrom, answerAction, answerOverview } from '../../../lib/accounts-source';
 import { runtimeBinding } from '../../../lib/runtime-env';
+import { logEvent } from '../../../lib/telemetry';
 
 export const prerender = false;
 
@@ -29,4 +33,10 @@ export const GET: APIRoute = async ({ cookies }) =>
   answerOverview(desk(), await sessionWallet(cookies.get(SESSION_COOKIE)?.value));
 
 export const POST: APIRoute = async ({ cookies, request }) =>
-  answerAction(desk(), await sessionWallet(cookies.get(SESSION_COOKIE)?.value), request);
+  answerAction(
+    desk(),
+    await sessionWallet(cookies.get(SESSION_COOKIE)?.value),
+    request,
+    logEvent,
+    freshSignatureDeps(),
+  );

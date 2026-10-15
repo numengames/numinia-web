@@ -292,9 +292,13 @@ export const OWN_ROLES = 'nobody changes their own roles: they may only leave';
 export const NOT_BELOW = 'you may act only on roles and members below your own highest role';
 export const OWNER_ONLY = 'only the owners name or remove an owner';
 export const NO_ADMIN_ROLE = 'no role of the organization carries administrator';
-/** What this screen says while it cannot yet ask for a fresh wallet signature (ORG-008). */
+/** What /api/saldo answers when an act needs a fresh signature of the wallet and none came (ORG-008). */
 export const FRESH_SIGNATURE =
   'giving administrator or manage-roles needs a fresh signature of your wallet';
+/** The signature came after its two minutes: sign again. */
+export const SIGNATURE_EXPIRED = 'the signature expired: sign again';
+/** The signature is not the session's wallet's, or not for this very act. */
+export const SIGNATURE_MISMATCH = 'the signature is not for this act or not from your wallet';
 export const MEANWHILE = 'the organization changed meanwhile: read it again';
 export const BASE_ROLE = 'everyone holds the base role: it is neither given nor taken away';
 export const GRANT_EXCEEDS = 'you may grant or take away only the permissions you hold';
@@ -494,6 +498,8 @@ export type ProblemKey =
   | 'alpha'
   | 'meanwhile'
   | 'freshSignature'
+  | 'signatureExpired'
+  | 'signatureMismatch'
   | 'needs'
   | 'other';
 
@@ -511,6 +517,8 @@ const SENTENCES: ReadonlyMap<string, ProblemKey> = new Map([
   [ALPHA, 'alpha'],
   [MEANWHILE, 'meanwhile'],
   [FRESH_SIGNATURE, 'freshSignature'],
+  [SIGNATURE_EXPIRED, 'signatureExpired'],
+  [SIGNATURE_MISMATCH, 'signatureMismatch'],
 ]);
 
 /** One refusal, read: its key and, for a missing permission, which one and who holds it. */
@@ -757,9 +765,27 @@ export function readLog(json: unknown): DeskLogLine[] | null {
     : null;
 }
 
-/** Whether giving this permission asks for a fresh wallet signature (ORG-008): the screen leaves it for later. */
+/** Whether giving this permission asks for a fresh wallet signature (ORG-008): the screen says so beside it. */
 export function needsSignature(permission: OrganizationPermission): boolean {
   return needsFreshSignature({ kind: 'grant', permissions: [permission] });
+}
+
+/** What /api/saldo/signature answers: the sentence the wallet signs and the token that brings it back. */
+export interface FreshSign {
+  readonly message: string;
+  readonly token: string;
+}
+
+/** POST /api/saldo/signature: the sentence and its token, or null when the body is not that. */
+export function readSign(json: unknown): FreshSign | null {
+  if (!isRecord(json) || !isRecord(json['sign'])) return null;
+  const { message, token } = json['sign'];
+  return typeof message === 'string' &&
+    message.length > 0 &&
+    typeof token === 'string' &&
+    token.length > 0
+    ? { message, token }
+    : null;
 }
 
 /**
