@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AccountDesk } from '../accounts';
+import { FRESH_SIGNATURE, type AccountDesk } from '../accounts';
 import {
   MAX_BODY_BYTES,
   accountsFrom,
   answerAction,
+  answerLog,
   answerOverview,
+  answerRoles,
   answerStatement,
   boundAccounts,
   fixtureAccounts,
@@ -24,6 +26,52 @@ const STATEMENT = {
   spendTotalCents: 12,
   lines: [{ id: 'L1', kind: 'topup', at: 'a', amountCents: 100, vatCents: 21 }],
   members: [{ wallet: ME, role: 'admin', addedAt: 'a' }],
+};
+
+const ROLE_ID = 'role_00000000000000a1';
+const ADMIN_ID = 'role_00000000000000a2';
+const ROLES = {
+  ok: true,
+  accountId: 'acc',
+  as: 'owner',
+  roles: [
+    {
+      id: ADMIN_ID,
+      name: 'Administración',
+      color: null,
+      position: 2,
+      hoist: true,
+      permissions: ['administrator'],
+      members: 1,
+      mayEdit: true,
+    },
+    {
+      id: ROLE_ID,
+      name: 'Gente',
+      color: '#aabbcc',
+      position: 1,
+      hoist: false,
+      permissions: ['enter-worlds'],
+      members: 2,
+      mayEdit: true,
+    },
+  ],
+  members: [{ wallet: ME, owner: true, addedAt: 'a', roleIds: [], assignable: [ROLE_ID] }],
+};
+const LOG = {
+  ok: true,
+  accountId: 'acc',
+  lines: [
+    {
+      seq: 1,
+      at: 'a',
+      actor: ME,
+      asHouse: false,
+      act: 'role-created',
+      subject: null,
+      detail: { name: 'x' },
+    },
+  ],
 };
 
 const ACCESS = {
@@ -47,6 +95,14 @@ function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): 
     access: answer(ACCESS),
     setMember: answer({ ok: true, members: [] }),
     removeMember: answer({ ok: true, members: [] }),
+    roles: answer(ROLES),
+    createRole: answer(ROLES),
+    editRole: answer(ROLES),
+    moveRole: answer(ROLES),
+    deleteRole: answer(ROLES),
+    giveRole: answer(ROLES),
+    takeRole: answer(ROLES),
+    log: answer(LOG),
     startTopup: answer({ ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' }),
     confirmTopup: answer({ ok: true, state: 'paid', accountId: 'acc', balanceCents: 900 }),
     ...overrides,
@@ -85,6 +141,20 @@ describe('finding the desk', () => {
     expect(stub.access).toHaveBeenCalledWith(ME, 'a');
     await bound.setMember(ME, 'a', ME, 'admin');
     await bound.removeMember(ME, 'a', ME);
+    const draft = { name: 'n', color: null, hoist: false, permissions: [] };
+    await bound.roles(ME, 'a');
+    await bound.createRole(ME, 'a', draft);
+    await bound.editRole(ME, 'a', ROLE_ID, { hoist: true });
+    await bound.moveRole(ME, 'a', ROLE_ID, 2);
+    await bound.deleteRole(ME, 'a', ROLE_ID);
+    await bound.giveRole(ME, 'a', ME, ROLE_ID);
+    await bound.takeRole(ME, 'a', ME, ROLE_ID);
+    await bound.log(ME, 'a');
+    expect(stub.createRole).toHaveBeenCalledWith(ME, 'a', draft);
+    expect(stub.editRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, { hoist: true });
+    expect(stub.moveRole).toHaveBeenCalledWith(ME, 'a', ROLE_ID, 2);
+    expect(stub.giveRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID);
+    expect(stub.takeRole).toHaveBeenCalledWith(ME, 'a', ME, ROLE_ID);
     await bound.startTopup(ME, 'a', '10', 'r');
     await bound.confirmTopup(ME, 'cs_1');
     expect(stub.confirmTopup).toHaveBeenCalledWith(ME, 'cs_1');
@@ -257,6 +327,233 @@ describe('GET /api/saldo/statement', () => {
       quiet,
     );
     expect(broken.status).toBe(502);
+  });
+});
+
+describe('GET /api/saldo/roles and /api/saldo/log', () => {
+  const at = (path: string, query: string) =>
+    new URL(`https://numinia.com/api/saldo/${path}?${query}`);
+
+  it('asks the desk as the session’s wallet and answers what it said', async () => {
+    const desk = fakeDesk();
+    const roles = await answerRoles(
+      desk,
+      ME.toUpperCase().replace('0X', '0x'),
+      at('roles', 'cuenta=acc'),
+      quiet,
+    );
+    expect(desk.roles).toHaveBeenCalledWith(ME, 'acc');
+    expect(await roles.json()).toMatchObject({ you: ME, roles: { as: 'owner' } });
+    const log = await answerLog(desk, ME, at('log', 'cuenta=acc'), quiet);
+    expect(desk.log).toHaveBeenCalledWith(ME, 'acc');
+    expect(await log.json()).toMatchObject({ log: { lines: [{ act: 'role-created' }] } });
+  });
+
+  it('needs a session, a query and a desk, and passes refusals and failures on', async () => {
+    for (const answerOf of [answerRoles, answerLog]) {
+      const path = answerOf === answerRoles ? 'roles' : 'log';
+      expect((await answerOf(fakeDesk(), null, at(path, 'cuenta=a'), quiet)).status).toBe(401);
+      expect((await answerOf(fakeDesk(), ME, at(path, ''), quiet)).status).toBe(400);
+      expect(
+        (await answerOf(fakeDesk(), ME, at(path, `cuenta=${'a'.repeat(101)}`), quiet)).status,
+      ).toBe(400);
+      expect((await answerOf(null, ME, at(path, 'cuenta=a'), quiet)).status).toBe(503);
+      expect(
+        (
+          await answerOf(
+            fakeDesk({ roles: async () => ({ ok: 1 }), log: async () => ({ ok: 1 }) }),
+            ME,
+            at(path, 'cuenta=a'),
+            quiet,
+          )
+        ).status,
+      ).toBe(502);
+      const refused = await answerOf(
+        fakeDesk({
+          roles: async () => ({ ok: false, problems: ['not a member'] }),
+          log: async () => ({ ok: false, problems: ['not a member'] }),
+        }),
+        ME,
+        at(path, 'cuenta=a'),
+        quiet,
+      );
+      expect(refused.status).toBe(403);
+      expect(await refused.json()).toEqual({ error: 'refused', problems: ['not a member'] });
+    }
+  });
+});
+
+describe('POST /api/saldo: roles', () => {
+  const draft = { name: 'Gente', color: '#aabbcc', hoist: false, permissions: ['enter-worlds'] };
+
+  it('runs each role action as the session’s wallet and answers the organization as it is now', async () => {
+    const desk = fakeDesk();
+    for (const body of [
+      { action: 'create-role', accountId: 'acc', role: draft },
+      {
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: ROLE_ID,
+        change: { name: 'Otra', color: null },
+      },
+      { action: 'move-role', accountId: 'acc', roleId: ROLE_ID, position: 2 },
+      { action: 'delete-role', accountId: 'acc', roleId: ROLE_ID },
+      {
+        action: 'give-role',
+        accountId: 'acc',
+        wallet: ME.toUpperCase().replace('0X', '0x'),
+        roleId: ROLE_ID,
+      },
+      { action: 'take-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID },
+    ]) {
+      const response = await answerAction(desk, ME, post(body), quiet);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ result: { ok: true, accountId: 'acc' } });
+    }
+    expect(desk.createRole).toHaveBeenCalledWith(ME, 'acc', draft);
+    expect(desk.editRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, { name: 'Otra', color: null });
+    expect(desk.moveRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID, 2);
+    expect(desk.deleteRole).toHaveBeenCalledWith(ME, 'acc', ROLE_ID);
+    expect(desk.giveRole).toHaveBeenCalledWith(ME, 'acc', ME, ROLE_ID);
+    expect(desk.takeRole).toHaveBeenCalledWith(ME, 'acc', ME, ADMIN_ID);
+  });
+
+  it('passes the desk’s refusals on as values, and a broken desk as 502', async () => {
+    const refusal = async () => ({
+      ok: false,
+      problems: ['you may act only on roles and members below your own highest role'],
+    });
+    const desk = fakeDesk({ moveRole: refusal, deleteRole: refusal });
+    const refused = await answerAction(
+      desk,
+      ME,
+      post({ action: 'move-role', accountId: 'acc', roleId: ROLE_ID, position: 2 }),
+      quiet,
+    );
+    expect(await refused.json()).toEqual({
+      result: { ok: false, problems: [(await refusal()).problems[0]] },
+    });
+    const broken = await answerAction(
+      fakeDesk({ deleteRole: async () => ({ ok: 'maybe' }) }),
+      ME,
+      post({ action: 'delete-role', accountId: 'acc', roleId: ROLE_ID }),
+      quiet,
+    );
+    expect(broken.status).toBe(502);
+  });
+
+  it('checks the shape of a role before the till sees it', () => {
+    const bad = (body: unknown) => readSaldoRequest(body).ok;
+    const good = { action: 'create-role', accountId: 'acc', role: draft };
+    expect(bad(good)).toBe(true);
+    expect(bad({ ...good, role: { ...draft, color: 'red' } })).toBe(false);
+    expect(bad({ ...good, role: { ...draft, permissions: ['everything'] } })).toBe(false);
+    expect(bad({ ...good, role: { ...draft, extra: 1 } })).toBe(false);
+    expect(bad({ action: 'edit-role', accountId: 'acc', roleId: 'nope', change: {} })).toBe(false);
+    expect(
+      bad({ action: 'edit-role', accountId: 'acc', roleId: ROLE_ID, change: { hoist: 'yes' } }),
+    ).toBe(false);
+    expect(bad({ action: 'move-role', accountId: 'acc', roleId: ROLE_ID, position: 0 })).toBe(
+      false,
+    );
+    expect(bad({ action: 'move-role', accountId: 'acc', roleId: ROLE_ID, position: 1.5 })).toBe(
+      false,
+    );
+    expect(bad({ action: 'give-role', accountId: 'acc', wallet: 'nope', roleId: ROLE_ID })).toBe(
+      false,
+    );
+  });
+
+  it('refuses to hand out administrator or manage-roles until a fresh signature can be asked (ORG-008)', async () => {
+    const desk = fakeDesk();
+    const sensitive = [
+      {
+        action: 'create-role',
+        accountId: 'acc',
+        role: { ...draft, permissions: ['manage-roles'] },
+      },
+      {
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: ROLE_ID,
+        change: { permissions: ['enter-worlds', 'administrator'] },
+      },
+      // Giving a member the role that carries administrator is a grant too.
+      { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID },
+    ];
+    for (const body of sensitive) {
+      const response = await answerAction(desk, ME, post(body), quiet);
+      expect(await response.json()).toEqual({ result: { ok: false, problems: [FRESH_SIGNATURE] } });
+    }
+    expect(desk.createRole).not.toHaveBeenCalled();
+    expect(desk.editRole).not.toHaveBeenCalled();
+    expect(desk.giveRole).not.toHaveBeenCalled();
+    expect(quiet).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'needs-signature' }));
+  });
+
+  it('lets through what is no grant: ordinary permissions, a change without permissions, taking a role, one already held', async () => {
+    const desk = fakeDesk();
+    const ok = async (body: unknown) => (await answerAction(desk, ME, post(body), quiet)).status;
+    expect(
+      await ok({ action: 'edit-role', accountId: 'acc', roleId: ROLE_ID, change: { hoist: true } }),
+    ).toBe(200);
+    expect(
+      await ok({
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: ROLE_ID,
+        change: { permissions: ['enter-worlds', 'top-up'] },
+      }),
+    ).toBe(200);
+    // Keeping administrator on the role that already carries it is no new grant.
+    expect(
+      await ok({
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: ADMIN_ID,
+        change: { permissions: ['administrator'] },
+      }),
+    ).toBe(200);
+    expect(await ok({ action: 'take-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID })).toBe(
+      200,
+    );
+    expect(await ok({ action: 'give-role', accountId: 'acc', wallet: ME, roleId: ROLE_ID })).toBe(
+      200,
+    );
+    // A role the desk does not list adds nothing to check; the till answers for it.
+    expect(
+      await ok({
+        action: 'edit-role',
+        accountId: 'acc',
+        roleId: 'role_00000000000000ff',
+        change: { permissions: ['top-up'] },
+      }),
+    ).toBe(200);
+    expect(desk.editRole).toHaveBeenCalledTimes(4);
+  });
+
+  it('lets the till answer when it will not list the roles, and fails when that answer is broken', async () => {
+    const closed = fakeDesk({ roles: async () => ({ ok: false, problems: ['not a member'] }) });
+    const body = { action: 'give-role', accountId: 'acc', wallet: ME, roleId: ADMIN_ID };
+    expect((await answerAction(closed, ME, post(body), quiet)).status).toBe(200);
+    expect(closed.giveRole).toHaveBeenCalled();
+    const broken = fakeDesk({ roles: async () => ({ nonsense: true }) });
+    expect((await answerAction(broken, ME, post(body), quiet)).status).toBe(502);
+    expect(broken.giveRole).not.toHaveBeenCalled();
+  });
+
+  it('works end to end against the fixture desk', async () => {
+    const desk = fixtureAccounts();
+    const team = 'acc_team_numen_games';
+    const made = (await (
+      await answerAction(
+        desk,
+        ME,
+        post({ action: 'create-role', accountId: team, role: draft }),
+        quiet,
+      )
+    ).json()) as { result: { roles: { name: string }[] } };
+    expect(made.result.roles[0]?.name).toBe('Gente');
   });
 });
 
