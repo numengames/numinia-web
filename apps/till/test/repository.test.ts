@@ -113,6 +113,7 @@ describe('the migration', () => {
       '0002_tariff_basis.sql',
       '0003_accounts_and_checkouts.sql',
       '0004_organization_roles.sql',
+      '0005_role_log_acts.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
