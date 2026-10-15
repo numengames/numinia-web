@@ -14,6 +14,7 @@ import {
   answerAction,
   answerLog,
   answerOverview,
+  answerPeople,
   answerRoles,
   answerSignature,
   answerStatement,
@@ -106,6 +107,7 @@ function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): 
     setMember: answer({ ok: true, members: [] }),
     removeMember: answer({ ok: true, members: [] }),
     roles: answer(ROLES),
+    headcount: answer({ ok: true, accountId: 'acc', members: 7 }),
     createRole: answer(ROLES),
     editRole: answer(ROLES),
     moveRole: answer(ROLES),
@@ -193,6 +195,8 @@ describe('finding the desk', () => {
     await bound.removeMember(ME, 'a', ME);
     const draft = { name: 'n', color: null, hoist: false, permissions: [] };
     await bound.roles(ME, 'a');
+    await bound.headcount('a');
+    expect(stub.headcount).toHaveBeenCalledWith('a');
     await bound.createRole(ME, 'a', draft);
     await bound.editRole(ME, 'a', ROLE_ID, { hoist: true });
     await bound.moveRole(ME, 'a', ROLE_ID, 2);
@@ -430,6 +434,74 @@ describe('GET /api/saldo/roles and /api/saldo/log', () => {
       expect(refused.status).toBe(403);
       expect(await refused.json()).toEqual({ error: 'refused', problems: ['not a member'] });
     }
+  });
+});
+
+describe('GET /api/people: the list of a community’s people, or only how many (PRS-004)', () => {
+  it('has nothing to say for a community with no organization, or with no desk', async () => {
+    const none = await answerPeople(fakeDesk(), ME, null, quiet);
+    expect(none.status).toBe(404);
+    expect(await none.json()).toEqual({ error: 'no-team' });
+    expect((await answerPeople(null, ME, 'acc', quiet)).status).toBe(503);
+  });
+
+  it('shows someone with no session, or who is not a member, how many and no one', async () => {
+    const desk = fakeDesk();
+    const stranger = await answerPeople(desk, null, 'acc', quiet);
+    expect(desk.headcount).toHaveBeenCalledWith('acc');
+    expect(desk.roles).not.toHaveBeenCalled();
+    expect(stranger.headers.get('cache-control')).toBe('no-store');
+    expect(await stranger.json()).toEqual({ view: 'count', members: 7 });
+
+    const outsider = fakeDesk({
+      roles: vi.fn(async () => ({ ok: false, problems: ['not a member'] })),
+    });
+    const refused = await answerPeople(outsider, ME, 'acc', quiet);
+    expect(outsider.roles).toHaveBeenCalledWith(ME, 'acc');
+    expect(await refused.json()).toEqual({ view: 'count', members: 7 });
+  });
+
+  it('shows a member the groups, with the session’s wallet lowercased and never sent back whole', async () => {
+    const desk = fakeDesk();
+    const members = await answerPeople(desk, ME.toUpperCase().replace('0X', '0x'), 'acc', quiet);
+    expect(desk.roles).toHaveBeenCalledWith(ME, 'acc');
+    expect(desk.headcount).not.toHaveBeenCalled();
+    const body = await members.json();
+    expect(body).toEqual({
+      view: 'list',
+      members: 1,
+      groups: [
+        {
+          id: 'rest',
+          name: '',
+          color: null,
+          people: [{ short: '0xabab…abab', owner: true, you: true, color: null }],
+        },
+      ],
+    });
+    expect(JSON.stringify(body)).not.toContain(ME);
+  });
+
+  it('says there is no such community when the organization is nobody’s', async () => {
+    const desk = fakeDesk({
+      roles: async () => ({ ok: false, problems: ['not an organization'] }),
+      headcount: async () => ({ ok: false, problems: ['not an organization'] }),
+    });
+    const missing = await answerPeople(desk, ME, 'acc', quiet);
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toEqual({ error: 'no-team' });
+  });
+
+  it('fails as a gateway when the desk throws or answers out of shape', async () => {
+    const broken = fakeDesk({ roles: async () => ({ ok: 1 }) });
+    expect((await answerPeople(broken, ME, 'acc', quiet)).status).toBe(502);
+    const thrown = fakeDesk({
+      headcount: async () => {
+        throw new Error('down');
+      },
+    });
+    expect((await answerPeople(thrown, null, 'acc', quiet)).status).toBe(502);
+    expect(quiet).toHaveBeenCalledWith(expect.objectContaining({ action: 'headcount' }));
   });
 });
 

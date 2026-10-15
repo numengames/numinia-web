@@ -63,3 +63,7 @@ Feature: Communities (phase 0 of the communities platform)
   Scenario: On screen they are «encuentros», not «rituales»
     Given the store application has been built
     Then the pages of the communities say «encuentro», never «ritual»
+
+  Scenario: A community lists its people only where its file links an organization, and the built page names no one
+    Given the store application has been built
+    Then the pages of communities with an organization carry a hidden slot for its people, and the others carry none

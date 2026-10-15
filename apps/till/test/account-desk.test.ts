@@ -90,6 +90,7 @@ describe('the desk', () => {
       'deleteRole',
       'editRole',
       'giveRole',
+      'headcount',
       'log',
       'members',
       'moveRole',

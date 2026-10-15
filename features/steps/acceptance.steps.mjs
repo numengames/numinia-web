@@ -1258,3 +1258,42 @@ Then('every thanks page asks not to be indexed and stays out of the sitemap', as
     );
   }
 });
+
+Then(
+  'the pages of communities with an organization carry a hidden slot for its people, and the others carry none',
+  async function () {
+    let linked = 0;
+    let alone = 0;
+    for (const id of publishedCommunityIds()) {
+      const hasTeam = /^team:\s*\S+\s*$/m.test(
+        frontmatterOf(path.join(COMMUNITY_FILES, `${id}.md`)),
+      );
+      for (const prefix of LOCALE_PREFIXES) {
+        const where = `${id} (${prefix || 'en'})`;
+        const html = await readFile(
+          path.join(this.distDir, prefix, 'communities', id, 'index.html'),
+          'utf8',
+        );
+        const slot = /<div[^>]*\bdata-people="([^"]*)"[^>]*>/.exec(html);
+        if (!hasTeam) {
+          assert.equal(slot, null, `${where}: a slot for people with no organization linked`);
+          continue;
+        }
+        assert.ok(slot, `${where}: no slot for its people`);
+        assert.equal(slot[1], id, `${where}: the slot names another community`);
+        assert.ok(/\bhidden\b/.test(slot[0]), `${where}: the slot is not hidden at build`);
+        const start = html.indexOf(slot[0]);
+        const block = html.slice(start, html.indexOf('<script', start));
+        assert.ok(!/0x[0-9a-f]{4}/i.test(block), `${where}: the built page names a wallet`);
+        assert.ok(
+          !/\d/.test(block.replace(/<[^>]*>/g, '')),
+          `${where}: the built page carries a count`,
+        );
+      }
+      if (hasTeam) linked += 1;
+      else alone += 1;
+    }
+    assert.ok(linked >= 1, 'no community links an organization');
+    assert.ok(alone >= 10, `only ${alone} communities without one`);
+  },
+);

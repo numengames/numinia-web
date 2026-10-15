@@ -20,6 +20,7 @@ import {
   newRitualHref,
   REGISTER_REPO,
   sedeDomain,
+  teamOf,
   featuredSlides,
   firstMonth,
   foldLine,
@@ -168,6 +169,14 @@ describe('idFromPath', () => {
   });
 });
 
+describe('the organizations the register links', () => {
+  it('links Numen Games to the fixture desk’s organization, and no other community yet', () => {
+    expect(
+      REGISTER.filter((entry) => entry.team !== undefined).map((entry) => [entry.id, entry.team]),
+    ).toEqual([['numen-games', 'acc_team_numen_games']]);
+  });
+});
+
 describe('parseCommunity', () => {
   it('reads a minimal file with its defaults', () => {
     const entry = community();
@@ -184,6 +193,7 @@ describe('parseCommunity', () => {
       home: undefined,
       archive: undefined,
       people: undefined,
+      team: undefined,
     });
   });
 
@@ -200,7 +210,9 @@ describe('parseCommunity', () => {
       home: { en: 'The Agora', es: 'El Ágora' },
       archive: { en: 'The Summa', es: 'La Summa' },
       people: { en: 'The Oracles', es: 'Los Oráculos' },
+      team: 'acc_t_0123abcd',
     });
+    expect(entry.team).toBe('acc_t_0123abcd');
     expect(entry.state).toBe('founder');
     expect(entry.visibility).toBe('house');
     expect(entry.operator).toBe('Reset');
@@ -250,6 +262,38 @@ describe('parseCommunity', () => {
       'image.alt: expected a mapping',
     );
     expect(() => community({ operator: '' })).toThrow('"operator" must be a non-empty string');
+    for (const team of ['', 'a b', 'x'.repeat(65), 3]) {
+      expect(() => community({ team })).toThrow(
+        '"team" must be an organization id: letters, digits, - and _, up to 64',
+      );
+    }
+  });
+});
+
+describe('teamOf: the organization of a published community', () => {
+  const linked = parseCommunity('numen-games', {
+    ...COMMUNITY,
+    name: 'Numen Games',
+    state: 'founder',
+    team: 'acc_t_0123abcd',
+  });
+  const plain = parseCommunity('merge', { ...COMMUNITY, name: 'MERGE' });
+  const hidden = parseCommunity('cps', {
+    ...COMMUNITY,
+    name: 'CPS',
+    visibility: 'house',
+    team: 'acc_t_hidden',
+  });
+
+  it('gives the id the file names, for a community the site shows', () => {
+    expect(teamOf([linked, plain, hidden], 'numen-games')).toBe('acc_t_0123abcd');
+  });
+
+  it('gives nothing for a community with no organization, one on file only, or one unknown', () => {
+    expect(teamOf([linked, plain, hidden], 'merge')).toBeNull();
+    expect(teamOf([linked, plain, hidden], 'cps')).toBeNull();
+    expect(teamOf([linked, plain, hidden], 'atlantis')).toBeNull();
+    expect(teamOf([linked], null)).toBeNull();
   });
 });
 
