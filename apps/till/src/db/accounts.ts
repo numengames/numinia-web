@@ -33,6 +33,7 @@ import {
   canActOnMember,
   canAssignRole,
   canLeave,
+  houseMayEnter,
   rolesFromTemplate,
   type HouseAccess,
   type OrganizationAccess,
@@ -79,6 +80,7 @@ import {
   accessIn,
   actingIn,
   commit,
+  houseAccessOf,
   loadOrganization,
   logLine,
   memberIn,
@@ -111,6 +113,16 @@ export interface Overview {
   /** The wallet's own account first, then its organizations by name. */
   readonly accounts: readonly AccountSummary[];
 }
+
+/** One organization as the house's directory lists it: an id and a name, never money or people. */
+interface DirectoryEntry {
+  readonly id: string;
+  readonly kind: 'team';
+  readonly name: string;
+}
+
+export type DirectoryAnswer =
+  { readonly ok: true; readonly accounts: readonly DirectoryEntry[] } | Refusal;
 
 export type TeamAnswer = { readonly ok: true; readonly account: AccountSummary } | Refusal;
 
@@ -352,6 +364,11 @@ const SELECT_ACCOUNT = `
     LEFT JOIN team_profiles AS p ON p.account_id = a.id
     LEFT JOIN team_members AS m ON m.account_id = a.id AND m.wallet = ?2
    WHERE a.id = ?1 AND (w.wallet IS NOT NULL OR m.wallet IS NOT NULL)`;
+
+/** Every organization, by name: its id, its name and how it lets the house in — nothing else. */
+const SELECT_DIRECTORY = `
+  SELECT account_id AS id, name, house_access FROM team_profiles
+   ORDER BY name COLLATE NOCASE, account_id`;
 
 /** An organization's members as the Saldo screen lists them: admins first, then by arrival. */
 const SELECT_MEMBERS = `
@@ -622,6 +639,44 @@ export async function overview(
     db.prepare(SELECT_ACCOUNTS).bind(wallet),
   ]);
   return { ok: true, accounts: (rows as Row[]).map(summaryOf) };
+}
+
+/**
+ * Every organization the house's staff may enter (ORG-007), by name. It is
+ * the one door that lists organizations a wallet is not in, so it opens only
+ * to the house — numinia.com's word, `house === true`; a missing flag is
+ * false and refuses. It names ids and names and nothing else (no money, no
+ * roles, no people) and writes nothing, the log included: entering an
+ * organization is decided and logged where it happens (`access`,
+ * `statement`, …); the directory is a list of doors, not a way through one.
+ * An organization that does not let the house in is not listed: the screen
+ * never offers a door the desk will refuse.
+ */
+export async function directory(
+  db: TillDatabase,
+  sentWallet: unknown,
+  sentHouse: unknown,
+): Promise<DirectoryAnswer> {
+  const wallet = readWallet(sentWallet);
+  const house = readHouse(sentHouse);
+  if (wallet === undefined || house === undefined) {
+    return refuse(
+      ...(wallet === undefined ? [PROBLEMS.wallet] : []),
+      ...(house === undefined ? [ORG_PROBLEMS.house] : []),
+    );
+  }
+  if (!house) return refuse(ORG_PROBLEMS.notHouse);
+  const { results } = await db.prepare(SELECT_DIRECTORY).all<Row>();
+  return {
+    ok: true,
+    accounts: results
+      .filter((row) => houseMayEnter(houseAccessOf(text(row, 'house_access')), false))
+      .map((row): DirectoryEntry => ({
+        id: text(row, 'id'),
+        kind: 'team',
+        name: text(row, 'name'),
+      })),
+  };
 }
 
 /**

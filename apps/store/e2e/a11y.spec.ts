@@ -50,6 +50,9 @@ const PAGES = [
   '/es/saldo/', // without a session: the door (the panel is measured in saldo.spec.ts)
   '/es/saldo/miembros/', // without a session: the door (the panel is measured in members.spec.ts)
   '/es/saldo/referidos/',
+  '/es/panel/', // the organization panel without a session: the door (signed in it is measured in panel.spec.ts)
+  '/es/panel/miembros/',
+  '/es/panel/saldo/',
   '/support/', // the help page (v0.70.0)
 ];
 

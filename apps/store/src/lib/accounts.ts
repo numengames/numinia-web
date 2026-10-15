@@ -40,12 +40,31 @@ export interface DeskAccount {
   name: string | null;
   role: AccountRole;
   balanceCents: number;
+  /**
+   * `house` marks an organization the wallet is not in and enters as the
+   * house (QA 2026-10-15, STD-051 ORG-007): only an Oracle's session ever
+   * lists one. Absent on the wallet's own accounts, so old readers see the
+   * same list, longer. Such an entry says `admin` (what the till answers
+   * for the house) and `balanceCents: 0` — a placeholder, not a balance: the
+   * directory reveals no money, and the statement (which the till logs as a
+   * read of the house) has the real one.
+   */
+  as?: 'house';
 }
 
 export interface DeskOverview {
   /** Personal first, then the teams by name. */
   accounts: DeskAccount[];
 }
+
+/** One organization as the till's directory lists it to the house: an id and a name, no money. */
+export interface DeskDirectoryEntry {
+  id: string;
+  kind: 'team';
+  name: string;
+}
+
+export type DeskDirectoryAnswer = { ok: true; accounts: DeskDirectoryEntry[] } | DeskRefusal;
 
 /** A refusal: the till's answer when the wallet may not do it. */
 export interface DeskRefusal {
@@ -195,69 +214,118 @@ export type DeskConfirmAnswer =
  * The RPC surface of the till's `AccountDesk` entrypoint, as the store calls
  * it. The first argument is always the session's wallet, lowercase 0x — the
  * till trusts its bound caller for WHO and decides itself WHAT.
+ *
+ * The trailing `house` of the organization methods is the house's flag
+ * (STD-051 ORG-007): the store's word that this session is the house's staff
+ * — an Oracle's, read from our own signed cookie, never from the browser.
+ * With it the till lets the wallet into an organization it is not in, as
+ * `house`, and writes down what it reads and does there (ORG-009); without
+ * it, or false, the wallet is only what it is in that organization.
+ * `directory` is the one method that exists for the house alone.
  */
 export interface AccountDesk {
   overview(wallet: string): Promise<DeskOverview | DeskRefusal>;
+  directory(wallet: string, house: boolean): Promise<DeskDirectoryAnswer>;
   createTeam(wallet: string, name: string): Promise<DeskTeamAnswer>;
-  renameTeam(wallet: string, accountId: string, name: string): Promise<DeskTeamAnswer>;
+  renameTeam(
+    wallet: string,
+    accountId: string,
+    name: string,
+    house?: boolean,
+  ): Promise<DeskTeamAnswer>;
   statement(
     wallet: string,
     accountId: string,
     range: SpendRange,
+    house?: boolean,
   ): Promise<DeskStatement | DeskRefusal>;
-  members(wallet: string, accountId: string): Promise<DeskMembersAnswer>;
+  members(wallet: string, accountId: string, house?: boolean): Promise<DeskMembersAnswer>;
   access(
     wallet: string,
     accountId: string,
+    house?: boolean,
   ): Promise<({ ok: true; accountId: string } & DeskAccess) | DeskRefusal>;
   setMember(
     wallet: string,
     accountId: string,
     memberWallet: string,
     role: MemberRole,
+    house?: boolean,
   ): Promise<DeskMembersAnswer>;
-  removeMember(wallet: string, accountId: string, memberWallet: string): Promise<DeskMembersAnswer>;
-  roles(wallet: string, accountId: string): Promise<DeskRolesAnswer>;
+  removeMember(
+    wallet: string,
+    accountId: string,
+    memberWallet: string,
+    house?: boolean,
+  ): Promise<DeskMembersAnswer>;
+  roles(wallet: string, accountId: string, house?: boolean): Promise<DeskRolesAnswer>;
   headcount(accountId: string): Promise<DeskHeadcountAnswer>;
-  createRole(wallet: string, accountId: string, role: DeskRoleDraft): Promise<DeskRolesAnswer>;
+  createRole(
+    wallet: string,
+    accountId: string,
+    role: DeskRoleDraft,
+    house?: boolean,
+  ): Promise<DeskRolesAnswer>;
   editRole(
     wallet: string,
     accountId: string,
     roleId: string,
     change: DeskRoleChange,
+    house?: boolean,
   ): Promise<DeskRolesAnswer>;
   moveRole(
     wallet: string,
     accountId: string,
     roleId: string,
     position: number,
+    house?: boolean,
   ): Promise<DeskRolesAnswer>;
-  deleteRole(wallet: string, accountId: string, roleId: string): Promise<DeskRolesAnswer>;
+  deleteRole(
+    wallet: string,
+    accountId: string,
+    roleId: string,
+    house?: boolean,
+  ): Promise<DeskRolesAnswer>;
   giveRole(
     wallet: string,
     accountId: string,
     memberWallet: string,
     roleId: string,
+    house?: boolean,
   ): Promise<DeskRolesAnswer>;
   takeRole(
     wallet: string,
     accountId: string,
     memberWallet: string,
     roleId: string,
+    house?: boolean,
   ): Promise<DeskRolesAnswer>;
-  log(wallet: string, accountId: string): Promise<DeskLogAnswer>;
+  log(wallet: string, accountId: string, house?: boolean): Promise<DeskLogAnswer>;
   startTopup(
     wallet: string,
     accountId: string,
     amountKey: TopupKey,
     returnBase: string,
+    house?: boolean,
   ): Promise<DeskTopupAnswer>;
   confirmTopup(wallet: string, sessionId: string): Promise<DeskConfirmAnswer>;
+}
+
+/**
+ * Who is asking the desk, decided once per request from the verified
+ * session (lib/auth/session-wallet.ts): its wallet, lowercase 0x, and
+ * whether it is the house — the Oracle rank, and no other. It is never read
+ * from a body, a query or a header.
+ */
+export interface Asker {
+  readonly wallet: string;
+  readonly house: boolean;
 }
 
 /** The methods a binding must have to be a desk, in the contract's order. */
 export const DESK_METHODS = [
   'overview',
+  'directory',
   'createTeam',
   'renameTeam',
   'statement',
@@ -278,6 +346,13 @@ export const DESK_METHODS = [
   'confirmTopup',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
+/**
+ * The desk methods a till may still lack: the store and the till deploy on
+ * their own, so for the minutes between the two a till without `directory`
+ * is a desk all the same — the house just keeps the organizations it is in.
+ */
+export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = ['directory'];
+
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
 export const TOPUP_KEYS: readonly TopupKey[] = ['10', '50', '100'];
 export const MEMBER_ROLES: readonly MemberRole[] = ['admin', 'member'];
@@ -291,6 +366,10 @@ export const TEAM_NAME_MAX = 60;
 // db/accounts.ts PROBLEMS and lib/organizations.ts ORG_PROBLEMS, pinned by
 // a test that reads them).
 export const NOT_MEMBER = 'not a member';
+/** The directory of organizations is the house's alone (the till's `ORG_PROBLEMS.notHouse`). */
+export const NOT_HOUSE = 'only the house reads the directory of organizations';
+/** A `house` flag that is neither true nor false (the till's `ORG_PROBLEMS.house`). */
+export const HOUSE_BOOLEAN = 'house must be true or false';
 export const NOT_CONFIGURED = 'payments are not configured';
 export const LAST_OWNER = 'an organization keeps at least one owner';
 export const OWN_ROLES = 'nobody changes their own roles: they may only leave';

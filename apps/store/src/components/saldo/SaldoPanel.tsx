@@ -78,6 +78,7 @@ export function SaldoPanel({
   lang,
   locale,
   signIn,
+  organization,
 }: {
   readonly ui: SaldoMessages;
   /** The page's language, for money and dates. */
@@ -85,9 +86,13 @@ export function SaldoPanel({
   readonly locale: SupportedLocale;
   /** The door, coming back here. */
   readonly signIn: string;
+  /** Hosted by a page that already chose the organization (the organization
+      panel): the island shows that one's balance, with no account switcher
+      and no «Nueva organización» of its own. */
+  readonly organization?: string | undefined;
 }) {
   const [phase, setPhase] = useState<Phase>({ at: 'loading' });
-  const [current, setCurrent] = useState<string | null>(null);
+  const [current, setCurrent] = useState<string | null>(organization ?? null);
   const [range, setRange] = useState<SpendRange>('30d');
   const [sheet, setSheet] = useState<Sheet>({ at: 'loading' });
   const [amount, setAmount] = useState<TopupKey>('10');
@@ -127,14 +132,16 @@ export function SaldoPanel({
       if (accounts === null || accounts.length === 0) return setPhase({ at: 'failed' });
       setPhase({ at: 'ready', accounts });
       setCurrent((id) =>
-        id !== null && accounts.some((account) => account.id === id)
-          ? id
-          : (accounts[0] as DeskAccount).id,
+        organization !== undefined
+          ? organization
+          : id !== null && accounts.some((account) => account.id === id)
+            ? id
+            : (accounts[0] as DeskAccount).id,
       );
     } catch {
       setPhase({ at: 'failed' });
     }
-  }, []);
+  }, [organization]);
 
   const loadStatement = useCallback(
     async (id: string, which: SpendRange, quiet: boolean): Promise<void> => {
@@ -286,45 +293,68 @@ export function SaldoPanel({
   const nameOf = (candidate: DeskAccount): string =>
     candidate.kind === 'personal' ? ui.switcher.personal : (candidate.name ?? candidate.id);
 
-  return (
-    <div className="saldo-panel" data-saldo-panel>
-      <div className="saldo-cuentas">
-        <div className="saldo-elige">
-          <label htmlFor="saldo-cuenta" className="etiqueta">
-            {ui.switcher.label}
-          </label>
-          <select
-            id="saldo-cuenta"
-            value={current ?? ''}
-            onChange={(event) => {
-              setTopup({ at: 'idle' });
-              setNotice(null);
-              setCurrent(event.target.value);
-            }}
-            data-metric="saldo-account"
-          >
-            {phase.accounts.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.kind === 'personal'
-                  ? nameOf(candidate)
-                  : `${nameOf(candidate)} · ${ui.roles[candidate.role]}`}
-              </option>
-            ))}
-          </select>
-        </div>
-        {!creating && (
+  // Hosted for an organization the till did not list: say so, never a blank screen.
+  if (organization !== undefined && account === null) {
+    return (
+      <div className="saldo-marco saldo-fallo" role="alert">
+        <p>{ui.failed}</p>
+        <div>
           <button
             type="button"
             className="btn btn-fantasma"
-            onClick={() => setCreating(true)}
-            data-metric="saldo-new-team"
+            onClick={() => {
+              setPhase({ at: 'loading' });
+              void loadOverview();
+            }}
           >
-            + {ui.switcher.newTeam}
+            {ui.retry}
           </button>
-        )}
+        </div>
       </div>
+    );
+  }
 
-      {creating && (
+  return (
+    <div className="saldo-panel" data-saldo-panel>
+      {organization === undefined && (
+        <div className="saldo-cuentas">
+          <div className="saldo-elige">
+            <label htmlFor="saldo-cuenta" className="etiqueta">
+              {ui.switcher.label}
+            </label>
+            <select
+              id="saldo-cuenta"
+              value={current ?? ''}
+              onChange={(event) => {
+                setTopup({ at: 'idle' });
+                setNotice(null);
+                setCurrent(event.target.value);
+              }}
+              data-metric="saldo-account"
+            >
+              {phase.accounts.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.kind === 'personal'
+                    ? nameOf(candidate)
+                    : `${nameOf(candidate)} · ${ui.roles[candidate.role]}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          {!creating && (
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={() => setCreating(true)}
+              data-metric="saldo-new-team"
+            >
+              + {ui.switcher.newTeam}
+            </button>
+          )}
+        </div>
+      )}
+
+      {organization === undefined && creating && (
         <form
           className="saldo-marco saldo-nueva"
           onSubmit={(event) => void createTeam(event)}

@@ -33,6 +33,7 @@ import {
   access,
   confirmTopup,
   createTeam,
+  directory,
   members,
   overview,
   pollState,
@@ -43,6 +44,7 @@ import {
   startTopup,
   statement,
   type AccessAnswer,
+  type DirectoryAnswer,
   type MembersAnswer,
   type Overview,
   type Payments,
@@ -227,6 +229,16 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** The wallet's own account (created the first time) and its organizations, with balances. */
   async overview(wallet: unknown): Promise<Overview | Refusal> {
     return overview(this.env.TILL_DB, wallet, new Date());
+  }
+
+  /**
+   * Every organization the house may enter, by name — ids and names only, no
+   * money: to the house's staff alone (`house` true), since it lists
+   * organizations a wallet is not in. A list of doors, not a way through one:
+   * entering is decided, and logged, by the methods below.
+   */
+  async directory(wallet: unknown, house?: unknown): Promise<DirectoryAnswer> {
+    return directory(this.env.TILL_DB, wallet, house);
   }
 
   /** A new organization, with the wallet as its first owner and the Team template's roles. */

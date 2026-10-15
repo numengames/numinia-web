@@ -10,6 +10,7 @@ import {
   MORE_ITEMS,
   NAV_ITEMS,
   NOTIFICATIONS_PATH,
+  PANEL_PATH,
   SEARCH_PATH,
   SETTINGS_PATH,
   SIDEBAR_KEY,
@@ -87,6 +88,7 @@ describe('the places', () => {
     expect(SEARCH_PATH).toBe('/communities/');
     expect(SIGN_IN_PATH).toBe('/lap/session/');
     expect(SETTINGS_PATH).toBe('/lap/settings/');
+    expect(PANEL_PATH).toBe('/panel/');
   });
 });
 
@@ -116,6 +118,16 @@ describe('which place a page lights', () => {
     expect(navState(place('profile'), '/lap/')).toBe('page');
     expect(lit('/lap/settings/')).toBe('profile');
     expect(lit('/lap/session/')).toBe('profile');
+  });
+
+  it('the organization panel belongs to Perteneces: each of its pages lights it as a section', () => {
+    for (const path of ['/panel/', '/panel/miembros/', '/panel/saldo/']) {
+      expect(lit(path), path).toBe('belong');
+      expect(navState(place('belong'), path), path).toBe('section');
+    }
+    // Perteneces itself keeps its own address as the page.
+    expect(navState(place('belong'), '/belong/')).toBe('page');
+    expect(lit('/belonging/')).toBeNull();
   });
 
   it('pages outside the five light none', () => {

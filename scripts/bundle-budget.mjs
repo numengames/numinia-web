@@ -78,7 +78,12 @@ const BUDGETS = {
       ORG-008), so the tab reaches the same wallet chunks as the worlds room
       — the same module, ../components/auth/remembered-wallet.ts — and only
       on the click that asks for the signature. The tab itself still loads
-      none of them. */
+      none of them.
+      The organization panel's members screen (/panel/miembros/) hosts that
+      very tab (the same island, for the organization the address names), so
+      it is the same class: no byte budget moved, only the page's identity
+      — the Summary and the balance screens stay public-class and reach no
+      wallet chunk. */
   identityOnlyChunkBytes: 1_500_000,
   /** Whole-page HTML weight for the landing. Raised 30000→33000 on
       2026-09-29 for the same order as the inline raise above: the sky, the
@@ -136,10 +141,11 @@ try {
 
 /**
  * Chunks reachable from PUBLIC pages (anything but the identity surfaces:
- * /spike/, the session page, the worlds room and Saldo's members tab) get
- * the strict budgets; chunks only the identity surfaces can ever load get
- * their own class. Reachability = script refs in the HTML plus the import
- * graph (static and dynamic) walked from those entries.
+ * /spike/, the session page, the worlds room, Saldo's members tab and the
+ * organization panel's members screen) get the strict budgets; chunks only
+ * the identity surfaces can ever load get their own class. Reachability =
+ * script refs in the HTML plus the import graph (static and dynamic) walked
+ * from those entries.
  */
 async function collectHtml(dir) {
   const found = [];
@@ -156,7 +162,9 @@ const publicEntries = new Set();
 for (const file of await collectHtml(DIST)) {
   const segments = path.relative(DIST, file).split(path.sep);
   const isWorldsRoom = segments.join('/').includes('lap/admin/worlds/');
-  const isMembersTab = segments.join('/').includes('saldo/miembros/');
+  const isMembersTab =
+    segments.join('/').includes('saldo/miembros/') ||
+    segments.join('/').includes('panel/miembros/');
   const isIdentitySurface =
     segments.includes('spike') || segments.includes('session') || isWorldsRoom || isMembersTab;
   if (isIdentitySurface) continue;

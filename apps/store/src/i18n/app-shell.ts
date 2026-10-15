@@ -34,6 +34,8 @@ export interface AppShellMessages {
   readonly account: string;
   readonly rankLine: string;
   readonly profile: string;
+  /** The door to the organization panel, between the profile and the settings. */
+  readonly panels: string;
   readonly signOut: string;
   /** The ⋮ button and its three groups. */
   readonly options: string;
@@ -76,6 +78,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     account: 'Tu cuenta',
     rankLine: 'Rango',
     profile: 'Perfil',
+    panels: 'Paneles',
     signOut: 'Salir',
     options: 'Más opciones',
     appearance: 'Aspecto',
@@ -114,6 +117,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     account: 'Your account',
     rankLine: 'Rank',
     profile: 'Profile',
+    panels: 'Panels',
     signOut: 'Sign out',
     options: 'More options',
     appearance: 'Appearance',
@@ -152,6 +156,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     account: 'あなたのアカウント',
     rankLine: 'ランク',
     profile: 'プロフィール',
+    panels: 'パネル',
     signOut: 'ログアウト',
     options: 'その他のオプション',
     appearance: '外観',
@@ -190,6 +195,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     account: '내 계정',
     rankLine: '등급',
     profile: '프로필',
+    panels: '패널',
     signOut: '로그아웃',
     options: '더 많은 옵션',
     appearance: '화면',
@@ -228,6 +234,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     account: 'Sua conta',
     rankLine: 'Posto',
     profile: 'Perfil',
+    panels: 'Painéis',
     signOut: 'Sair',
     options: 'Mais opções',
     appearance: 'Aparência',
