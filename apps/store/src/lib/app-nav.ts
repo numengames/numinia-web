@@ -95,15 +95,20 @@ export const SIGN_IN_PATH = '/lap/session/';
 /** The person's settings (the ⋮ menu's last entry). */
 export const SETTINGS_PATH = '/lap/settings/';
 
+/** The organization panel (the account menu's «Paneles»): Perteneces' section. */
+export const PANEL_PATH = '/panel/';
+
 /**
  * The addresses each place lights beyond its own: ritual and community
  * pages belong to Explorar, and so do the object pages of the Bazar
- * (`/archive/<id>/` until they move); every LAP room belongs to Perfil.
+ * (`/archive/<id>/` until they move); every LAP room belongs to Perfil;
+ * the organization panel belongs to Perteneces (the prototype lights it
+ * there: it is where the organizations one belongs to are handled).
  */
 const SECTIONS: Readonly<Record<NavId, readonly string[]>> = {
   'for-you': [],
   explore: ['/communities/', '/calendar/', '/bazaar/', '/rituals/', '/archive/'],
-  belong: ['/belong/'],
+  belong: ['/belong/', PANEL_PATH],
   live: ['/live/'],
   profile: ['/lap/'],
 };

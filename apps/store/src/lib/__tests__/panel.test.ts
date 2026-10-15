@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { DeskRole, DeskRoles } from '../accounts';
-import { PANEL_PATH } from '../app-nav';
+import { PANEL_PATH, localeHref } from '../app-nav';
 import {
   ORG_PARAM,
   PIECES,
@@ -114,6 +114,15 @@ describe('where a piece leads', () => {
   it('leads nowhere when the piece is not built: never a link that fails', () => {
     for (const id of ['venues', 'gatherings', 'agents', 'memory', 'bazaar', 'settings']) {
       expect(pieceHref('es', piece(id), 'acc_t_1')).toBeNull();
+    }
+  });
+
+  it('writes the locale prefix as the nav does, in every language (this module does not import it)', () => {
+    for (const locale of ['en', 'es', 'ja', 'ko', 'pt-br'] as const) {
+      expect(pieceHref(locale, piece('summary'), null)).toBe(localeHref(locale, PANEL_PATH));
+      expect(pieceHref(locale, piece('census'), null)).toBe(
+        localeHref(locale, '/lap/admin/census/'),
+      );
     }
   });
 });

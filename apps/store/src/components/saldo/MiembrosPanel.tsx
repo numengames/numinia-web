@@ -215,15 +215,19 @@ export function MiembrosPanel({
   lang,
   locale,
   signIn,
+  organization,
 }: {
   readonly ui: SaldoMessages;
   readonly lang: string;
   readonly locale: SupportedLocale;
   readonly signIn: string;
+  /** Hosted by a page that already chose the organization (the organization
+      panel): the island shows that one and offers no picker of its own. */
+  readonly organization?: string | undefined;
 }) {
   const words = ui.panel;
   const [phase, setPhase] = useState<Phase>({ at: 'loading' });
-  const [current, setCurrent] = useState<string | null>(null);
+  const [current, setCurrent] = useState<string | null>(organization ?? null);
   const [sheet, setSheet] = useState<Sheet>({ at: 'loading' });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -269,13 +273,15 @@ export function MiembrosPanel({
       if (accounts === null) return setPhase({ at: 'failed' });
       const teams = accounts.filter((account) => account.kind === 'team');
       setPhase({ at: 'ready', teams });
-      setCurrent((id) =>
-        id !== null && teams.some((team) => team.id === id) ? id : (teams[0]?.id ?? null),
-      );
+      setCurrent((id) => {
+        // Hosted: the page's choice stands; the till answers for it below.
+        if (organization !== undefined) return organization;
+        return id !== null && teams.some((team) => team.id === id) ? id : (teams[0]?.id ?? null);
+      });
     } catch {
       setPhase({ at: 'failed' });
     }
-  }, []);
+  }, [organization]);
 
   const loadRoles = useCallback(
     async (id: string): Promise<void> => {
@@ -429,7 +435,7 @@ export function MiembrosPanel({
 
   return (
     <div className="saldo-panel" data-panel-members>
-      {phase.teams.length > 1 && (
+      {organization === undefined && phase.teams.length > 1 && (
         <div className="saldo-selector">
           <label htmlFor="panel-org">{words.organization}</label>
           <select

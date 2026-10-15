@@ -11,11 +11,12 @@
  *
  * The door has two faces and the page shows one: «Iniciar sesión» while
  * nobody is signed in, your account once you are — the short wallet, your
- * rank, Perfil, Ajustes and the one «Salir». Every page is prerendered for
- * everyone, so lib/session-client.ts decides after load and sets
- * `data-session` on <html>; until it answers the door shows, which is what
- * most visitors see anyway. The rank's name in every language is rendered
- * here, so the browser picks a word and never imports the domain package.
+ * rank, Perfil, Paneles, Ajustes and the one «Salir». Every page is
+ * prerendered for everyone, so lib/session-client.ts decides after load and
+ * sets `data-session` on <html>; until it answers the door shows, which is
+ * what most visitors see anyway. The rank's name in every language is
+ * rendered here, so the browser picks a word and never imports the domain
+ * package.
  */
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
@@ -23,6 +24,7 @@ import { APP_SHELL_UI } from '../../i18n/app-shell';
 import { COMMUNITIES_UI } from '../../i18n/communities';
 import {
   NAV_ITEMS,
+  PANEL_PATH,
   SEARCH_PATH,
   SETTINGS_PATH,
   localeHref,
@@ -47,6 +49,9 @@ const ui = APP_SHELL_UI[locale];
 const words = COMMUNITIES_UI[locale];
 // Perfil, drawn with the same sprite icon the sidebar gives it on this page.
 const profile = NAV_ITEMS.find((item) => item.id === 'profile')!;
+// Paneles: the organization panel belongs to Perteneces, so it draws that
+// place's icon in the state the page gives it (always in the page's sprite).
+const belong = NAV_ITEMS.find((item) => item.id === 'belong')!;
 ---
 
 <header class="cima">
@@ -93,6 +98,10 @@ const profile = NAV_ITEMS.find((item) => item.id === 'profile')!;
       <a href={localeHref(locale, profile.path)} class="opc" data-metric="chrome-profile">
         <Icon name={navIcon(profile, navState(profile, basePath))} size={20} use />
         {ui.profile}
+      </a>
+      <a href={localeHref(locale, PANEL_PATH)} class="opc" data-metric="chrome-panels">
+        <Icon name={navIcon(belong, navState(belong, basePath))} size={20} use />
+        {ui.panels}
       </a>
       <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-account-settings">
         <Icon name="gear" size={20} use />
