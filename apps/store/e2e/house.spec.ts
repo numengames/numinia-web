@@ -240,3 +240,44 @@ test('the Members tab is accessible as the house, on a phone too', async ({ page
     expect(results.violations).toEqual([]);
   }
 });
+
+// The seam between the two cuts: the panel (e2e/panel.spec.ts plays the till's
+// answers with page.route) reading what the house's session really gets.
+test('the panel offers an Oracle the same three organizations and says «La casa» in the two it only enters', async ({
+  page,
+  context,
+}) => {
+  await signIn(context, ORACLE, 'oracle');
+  await page.goto(`${origin}/es/panel/`);
+  const switcher = page.getByLabel('Panel de');
+  await expect(switcher.locator('option')).toHaveText([
+    'Numen Games',
+    'Active Inference Institute',
+    'La Tarugo',
+  ]);
+  const you = page.locator('[data-org-you]');
+  await expect(you).toContainText('Eres titular');
+
+  await switcher.selectOption({ label: 'Active Inference Institute' });
+  await expect(page).toHaveURL(new RegExp(`/es/panel/\\?org=${INSTITUTE}$`));
+  await expect(you).toContainText('La casa');
+  await expect(you).toContainText('Entras como la casa');
+
+  // The hosted Members screen keeps the organization and shows the strip too.
+  await page.locator('a[data-metric="panel-nav-members"]').click();
+  await expect(page).toHaveURL(new RegExp(`/es/panel/miembros/\\?org=${INSTITUTE}$`));
+  await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
+});
+
+test('the panel of a citizen offers its own organization only, whatever ?org= names', async ({
+  page,
+  context,
+}) => {
+  await signIn(context, CITIZEN, 'nomad');
+  await page.goto(`${origin}/es/panel/?org=${TARUGO}`);
+  await expect(page.locator('[data-org-name]')).toHaveText('Numen Games');
+  await expect(page.locator('#org-switch')).toHaveCount(0);
+  await expect(page.locator('[data-org-you]')).toContainText('Eres titular');
+  // The Oracle's rooms are signage for an Oracle only.
+  await expect(page.locator('[data-org-rooms]').first()).toBeHidden();
+});
