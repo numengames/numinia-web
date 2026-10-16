@@ -120,19 +120,20 @@ test('without a session Miembros asks you to sign in, and the API says nobody', 
   expect(ranks.status()).toBe(401);
 });
 
-test('an Oracle sees three organizations in Miembros and enters the others as the house', async ({
+test('an Oracle sees four organizations in Miembros and enters the others as the house', async ({
   page,
   context,
 }) => {
   await signIn(context, ORACLE, 'oracle');
   await page.goto(`${origin}/es/panel/miembros/`);
 
-  // Its own organization first, then the other two by name.
+  // Its own organization first, then the others by name (Reset holds two worlds in the fixture).
   const switcher = page.getByLabel('Panel de');
   await expect(switcher.locator('option')).toHaveText([
     'Numen Games',
     'Active Inference Institute',
     'La Tarugo',
+    'Reset',
   ]);
   await expect(page.locator(`[data-person="${ORACLE}"]`)).toBeVisible();
   await expect(page.locator('[data-panel-house]')).toHaveCount(0);
@@ -183,7 +184,7 @@ test('the Balance tab lists them too, and shows the statement of one the Oracle 
   const picker = page.locator('#saldo-cuenta');
   await expect(picker).toBeVisible();
   const options = await picker.locator('option').allTextContents();
-  expect(options).toHaveLength(4);
+  expect(options).toHaveLength(5);
   expect(options.join(' | ')).toContain('Active Inference Institute');
   expect(options.join(' | ')).toContain('La Tarugo');
 
@@ -274,7 +275,7 @@ test('Miembros and Roles are accessible as the house, on a phone too', async ({
 
 // The seam between the two cuts: the panel (e2e/panel.spec.ts plays the till's
 // answers with page.route) reading what the house's session really gets.
-test('the panel offers an Oracle the same three organizations and says «La casa» in the two it only enters', async ({
+test('the panel offers an Oracle the same four organizations and says «La casa» in the three it only enters', async ({
   page,
   context,
 }) => {
@@ -285,6 +286,7 @@ test('the panel offers an Oracle the same three organizations and says «La casa
     'Numen Games',
     'Active Inference Institute',
     'La Tarugo',
+    'Reset',
   ]);
   const you = page.locator('[data-org-you]');
   await expect(you).toContainText('Eres titular');
