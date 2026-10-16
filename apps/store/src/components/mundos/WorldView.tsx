@@ -9,7 +9,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { WorldPageMessages } from '../../i18n/mundos';
-import { loadWorldPage, type PageSheet } from '../../lib/mundos';
+import { fill } from '../../lib/accounts';
+import { enterWorld, loadWorldPage, type PageSheet } from '../../lib/mundos';
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
 
@@ -31,6 +32,8 @@ export function WorldView({
   readonly homeHref: string;
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
+  const [entering, setEntering] = useState(false);
+  const [enterFailed, setEnterFailed] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     setRead({ at: 'loading' });
@@ -41,8 +44,33 @@ export function WorldView({
     void load();
   }, [load]);
 
+  // Coming back to the page (bfcache) must not find the button still working.
+  useEffect(() => {
+    const again = (event: PageTransitionEvent): void => {
+      if (event.persisted) setEntering(false);
+    };
+    window.addEventListener('pageshow', again);
+    return () => window.removeEventListener('pageshow', again);
+  }, []);
+
   const page = read.at === 'ready' ? read.page : null;
   const home = page?.home ?? null;
+
+  /** Works out the address (with the pass for a member) and goes there; says so when there is none. */
+  const enter = useCallback(
+    async (fallback: string | null): Promise<void> => {
+      setEntering(true);
+      setEnterFailed(false);
+      const address = await enterWorld(fetch, worldId, fallback);
+      if (address === null) {
+        setEntering(false);
+        setEnterFailed(true);
+        return;
+      }
+      window.location.assign(address);
+    },
+    [worldId],
+  );
 
   return (
     <div className="mundo-pagina" data-world-page={worldId} data-state={read.at}>
@@ -90,6 +118,30 @@ export function WorldView({
             </>
           ) : (
             <h2 data-world-org>{home.accountName}</h2>
+          )}
+        </section>
+      )}
+      {page !== null && (
+        <section className="saldo-marco mundo-entrar" data-world-enter>
+          <button
+            type="button"
+            className="btn btn-primario"
+            onClick={() => void enter(page.url)}
+            disabled={entering}
+            aria-busy={entering}
+            data-metric="world-enter"
+          >
+            {entering ? words.entering : words.enter}
+          </button>
+          <p className="saldo-nota" data-world-enter-note>
+            {home !== null && page.manage
+              ? fill(words.enterMember, { org: home.accountName })
+              : words.enterGuest}
+          </p>
+          {enterFailed && (
+            <p className="saldo-nota" role="alert" data-world-enter-failed>
+              {words.enterFailed}
+            </p>
           )}
         </section>
       )}

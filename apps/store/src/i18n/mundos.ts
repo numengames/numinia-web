@@ -67,6 +67,11 @@ export interface VenuesMessages {
   readonly open: string;
   readonly openLabel: string;
   readonly address: string;
+  /** «Entrar»: the row's link into the world, with the pass when the person has one. */
+  readonly enter: string;
+  /** «Entrar en {w}», the link's accessible name. */
+  readonly enterLabel: string;
+  readonly enterFailed: string;
 }
 
 /** A world's own page. */
@@ -88,6 +93,14 @@ export interface WorldPageMessages {
     readonly balance: string;
   };
   readonly back: string;
+  /** «Entrar», the page's primary button, and what it says while it works. */
+  readonly enter: string;
+  readonly entering: string;
+  /** Under the button, for a member: «{org}» is the organization's name. */
+  readonly enterMember: string;
+  /** Under the button, for everyone else. */
+  readonly enterGuest: string;
+  readonly enterFailed: string;
 }
 
 export interface MundosMessages {
@@ -139,6 +152,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Abrir la página',
       openLabel: 'Abrir la página de {w}',
       address: 'Mundo',
+      enter: 'Entrar',
+      enterLabel: 'Entrar en {w}',
+      enterFailed: 'No se pudo abrir el mundo. Inténtalo de nuevo.',
     },
     page: {
       loading: 'Leyendo el mundo…',
@@ -158,6 +174,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         balance: 'Saldo y consumo',
       },
       back: 'Volver al inicio',
+      enter: 'Entrar',
+      entering: 'Entrando…',
+      enterMember: 'Entras con tu nombre y tus roles de {org}',
+      enterGuest: 'Entras como invitado',
+      enterFailed: 'No se pudo abrir el mundo. Inténtalo de nuevo.',
     },
   },
   en: {
@@ -202,6 +223,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Open the page',
       openLabel: 'Open the page of {w}',
       address: 'World',
+      enter: 'Enter',
+      enterLabel: 'Enter {w}',
+      enterFailed: 'Could not open the world. Try again.',
     },
     page: {
       loading: 'Reading the world…',
@@ -221,6 +245,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         balance: 'Balance and usage',
       },
       back: 'Back to the start',
+      enter: 'Enter',
+      entering: 'Entering…',
+      enterMember: 'You go in with your name and your roles in {org}',
+      enterGuest: 'You go in as a guest',
+      enterFailed: 'Could not open the world. Try again.',
     },
   },
   ja: {
@@ -265,6 +294,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'ページを開く',
       openLabel: '{w}のページを開く',
       address: 'ワールド',
+      enter: '入る',
+      enterLabel: '{w}に入る',
+      enterFailed: 'ワールドを開けませんでした。もう一度お試しください。',
     },
     page: {
       loading: 'ワールドを読み込み中…',
@@ -284,6 +316,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         balance: '残高と利用',
       },
       back: 'トップへ戻る',
+      enter: '入る',
+      entering: '入っています…',
+      enterMember: '{org}での名前とロールで入ります',
+      enterGuest: 'ゲストとして入ります',
+      enterFailed: 'ワールドを開けませんでした。もう一度お試しください。',
     },
   },
   ko: {
@@ -328,6 +365,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: '페이지 열기',
       openLabel: '{w} 페이지 열기',
       address: '월드',
+      enter: '입장',
+      enterLabel: '{w} 입장',
+      enterFailed: '월드를 열 수 없습니다. 다시 시도해 주세요.',
     },
     page: {
       loading: '월드를 읽는 중…',
@@ -347,6 +387,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         balance: '잔액과 사용량',
       },
       back: '처음으로',
+      enter: '입장',
+      entering: '입장하는 중…',
+      enterMember: '{org}에서의 이름과 역할로 입장합니다',
+      enterGuest: '게스트로 입장합니다',
+      enterFailed: '월드를 열 수 없습니다. 다시 시도해 주세요.',
     },
   },
   'pt-br': {
@@ -391,6 +436,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Abrir a página',
       openLabel: 'Abrir a página de {w}',
       address: 'Mundo',
+      enter: 'Entrar',
+      enterLabel: 'Entrar em {w}',
+      enterFailed: 'Não foi possível abrir o mundo. Tente de novo.',
     },
     page: {
       loading: 'Lendo o mundo…',
@@ -410,6 +458,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         balance: 'Saldo e consumo',
       },
       back: 'Voltar ao início',
+      enter: 'Entrar',
+      entering: 'Entrando…',
+      enterMember: 'Você entra com seu nome e seus papéis em {org}',
+      enterGuest: 'Você entra como convidado',
+      enterFailed: 'Não foi possível abrir o mundo. Tente de novo.',
     },
   },
 };

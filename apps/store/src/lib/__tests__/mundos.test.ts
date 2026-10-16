@@ -3,6 +3,8 @@ import { localeHref } from '../app-nav';
 import {
   HOMES_API,
   counted,
+  enterWorld,
+  passApiUrl,
   PLACE_API,
   PLACE_MAX,
   WORLD_ID_SHAPE,
@@ -91,12 +93,26 @@ describe('the readers', () => {
         home: { accountId: 'a', accountName: 'A', extra: 1 },
         manage: true,
       }),
-    ).toEqual({ worldId: 'w', home: { accountId: 'a', accountName: 'A' }, manage: true });
+    ).toEqual({
+      worldId: 'w',
+      home: { accountId: 'a', accountName: 'A' },
+      manage: true,
+      url: null,
+    });
     expect(readWorldPage({ worldId: 'w', home: null, manage: false })).toEqual({
       worldId: 'w',
       home: null,
       manage: false,
+      url: null,
     });
+    expect(
+      readWorldPage({ worldId: 'w', home: null, manage: false, url: 'https://w.numen.games/' }),
+    ).toMatchObject({ url: 'https://w.numen.games/' });
+    for (const url of ['http://w.numen.games/', 'javascript:alert(1)', 'https://a b', 7]) {
+      expect(readWorldPage({ worldId: 'w', home: null, manage: false, url })).toMatchObject({
+        url: null,
+      });
+    }
     expect(readWorldPage({ worldId: 'w', home: null })).toBeNull();
     expect(readWorldPage({ worldId: 'w', home: 'x', manage: false })).toBeNull();
     expect(readWorldPage({ worldId: 'w', home: { accountId: 'a' }, manage: false })).toBeNull();
@@ -137,7 +153,7 @@ describe('the loads', () => {
   });
 
   it('load a world’s page: found, unknown, or not answered', async () => {
-    const page = { worldId: 'w', home: null, manage: false };
+    const page = { worldId: 'w', home: null, manage: false, url: null };
     expect(await loadWorldPage(async () => answer(200, page), 'w')).toEqual({ at: 'ready', page });
     expect(await loadWorldPage(async () => answer(404, {}), 'w')).toEqual({ at: 'missing' });
     expect(await loadWorldPage(async () => answer(500, {}), 'w')).toEqual({ at: 'failed' });
@@ -147,6 +163,42 @@ describe('the loads', () => {
         throw new Error('offline');
       }, 'w'),
     ).toEqual({ at: 'failed' });
+  });
+});
+
+describe('entering a world', () => {
+  it('asks the pass endpoint with a POST and goes where it says', async () => {
+    const ask = vi.fn(async () =>
+      answer(200, { url: 'https://w.numen.games/#pass=a.b.c', pass: true }),
+    );
+    expect(passApiUrl('a/b')).toBe('/api/mundos/a%2Fb/pass');
+    expect(await enterWorld(ask, 'w', 'https://w.numen.games/')).toBe(
+      'https://w.numen.games/#pass=a.b.c',
+    );
+    expect(ask).toHaveBeenCalledWith(
+      '/api/mundos/w/pass',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('falls back to the guest address when the endpoint fails, answers oddly or is not there', async () => {
+    const guest = 'https://w.numen.games/';
+    const unavailable = async () => answer(503, { error: 'no-pass', url: guest });
+    expect(await enterWorld(unavailable, 'w', null)).toBe(guest);
+    expect(await enterWorld(async () => answer(500, 'oops'), 'w', guest)).toBe(guest);
+    expect(await enterWorld(async () => answer(200, { url: 'http://x/' }), 'w', guest)).toBe(guest);
+    expect(
+      await enterWorld(async () => answer(200, { url: 'javascript:alert(1)' }), 'w', null),
+    ).toBe(null);
+    expect(
+      await enterWorld(
+        async () => {
+          throw new Error('offline');
+        },
+        'w',
+        guest,
+      ),
+    ).toBe(guest);
   });
 });
 
