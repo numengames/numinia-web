@@ -19,6 +19,7 @@ import {
   readWorldPage,
   worldApiUrl,
   worldHref,
+  worldPageStatus,
 } from '../mundos';
 
 const home = {
@@ -260,5 +261,29 @@ describe('placing worlds', () => {
     const fetcher = vi.fn();
     expect(await placeWorlds(fetcher, [], 'acc_1')).toEqual({ ok: true, placed: 0 });
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('the status of a world’s page', () => {
+  const fleet = async () => new Set(['agora-plaza', 'pablofm-2']);
+
+  it('is 200 for a world the fleet has and 404 for one it does not', async () => {
+    expect(await worldPageStatus('agora-plaza', fleet)).toBe(200);
+    expect(await worldPageStatus('no-such-world', fleet)).toBe(404);
+  });
+
+  it('is 404 for an id not shaped like a fleet’s, without asking the fleet', async () => {
+    const asked = vi.fn(fleet);
+    for (const id of ['', '..%2Fx', 'Agora', 'a--b', '-a', 'a'.repeat(64)]) {
+      expect(await worldPageStatus(id, asked)).toBe(404);
+    }
+    expect(asked).not.toHaveBeenCalled();
+  });
+
+  it('serves the page when the fleet cannot be read: that proves nothing either way', async () => {
+    const down = async (): Promise<ReadonlySet<string>> => {
+      throw new Error('fleet unreachable');
+    };
+    expect(await worldPageStatus('agora-plaza', down)).toBe(200);
   });
 });

@@ -111,6 +111,14 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's Resumen: `panel-summary-next` (the next encounter),
 //   `panel-summary-people`, `panel-summary-balance`, `panel-summary-log`.
 
+// ---- W12 «Ajustes de la comunidad, Qué ha pasado y Sede completa» (cut 8, 2026-10-16) ----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The panel's Ajustes: `panel-settings-piece-<venues|members|roles|balance>` (a
+//   piece's switch), `panel-settings-words-<simple|mixed|numinia>` (a preset),
+//   `panel-settings-retry`; and, on the page of a piece that is off,
+//   `panel-piece-turn-on`.
+// - The panel's «Qué ha pasado»: `panel-happened-more`, `panel-happened-retry`.
+
 // ---- W4 «El censo» (cut 2026-10-16): its data-metric ids ----------------------
 // No new event and no new prop: each travels as `cta_click.metricId`.
 // - The Census page's «Quién ha entrado» (the house only): `census-citizens-search`,

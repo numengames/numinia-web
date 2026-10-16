@@ -68,6 +68,8 @@ export interface VenuesMessages {
   readonly open: string;
   readonly openLabel: string;
   readonly address: string;
+  /** Under the world's name, for a member: how many people may enter (`{n}`; `one` for a single person). */
+  readonly enterers: { readonly one: string; readonly other: string };
   /** «Entrar»: the row's link into the world, with the pass when the person has one. */
   readonly enter: string;
   /** «Entrar en {w}», the link's accessible name. */
@@ -92,6 +94,17 @@ export interface WorldPageMessages {
     readonly venues: string;
     readonly members: string;
     readonly balance: string;
+  };
+  /** «Quién entra»: read from the organization's roles, for people in it and the house. */
+  readonly enters: {
+    readonly title: string;
+    readonly everyone: string;
+    readonly roles: string;
+    readonly owners: string;
+    readonly people: string;
+    /** `{n}`: the people the list does not show. */
+    readonly more: string;
+    readonly none: string;
   };
   readonly back: string;
   /** «Entrar», the page's primary button, and what it says while it works. */
@@ -154,6 +167,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Abrir la página',
       openLabel: 'Abrir la página de {w}',
       address: 'Mundo',
+      enterers: { one: 'Puede entrar 1 persona', other: 'Pueden entrar {n} personas' },
       enter: 'Entrar',
       enterLabel: 'Entrar en {w}',
       enterFailed: 'No se pudo abrir el mundo. Inténtalo de nuevo.',
@@ -174,6 +188,15 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         venues: 'Sedes de la organización',
         members: 'Miembros',
         balance: 'Saldo y consumo',
+      },
+      enters: {
+        title: 'Quién entra',
+        everyone: 'Entra cualquier persona de la comunidad.',
+        roles: 'Entran quienes tienen alguno de estos roles:',
+        owners: 'Los titulares entran siempre.',
+        people: 'Gente que puede entrar',
+        more: '… y {n} más',
+        none: 'Nadie, de momento.',
       },
       back: 'Volver al inicio',
       enter: 'Entrar',
@@ -226,6 +249,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Open the page',
       openLabel: 'Open the page of {w}',
       address: 'World',
+      enterers: { one: 'One person may enter', other: '{n} people may enter' },
       enter: 'Enter',
       enterLabel: 'Enter {w}',
       enterFailed: 'Could not open the world. Try again.',
@@ -246,6 +270,15 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         venues: "The organization's homes",
         members: 'Members',
         balance: 'Balance and usage',
+      },
+      enters: {
+        title: 'Who may enter',
+        everyone: 'Anyone in the community may enter.',
+        roles: 'Whoever has one of these roles may enter:',
+        owners: 'Owners can always enter.',
+        people: 'People who may enter',
+        more: '… and {n} more',
+        none: 'Nobody yet.',
       },
       back: 'Back to the start',
       enter: 'Enter',
@@ -298,6 +331,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'ページを開く',
       openLabel: '{w}のページを開く',
       address: 'ワールド',
+      enterers: { one: '1人が入れます', other: '{n}人が入れます' },
       enter: '入る',
       enterLabel: '{w}に入る',
       enterFailed: 'ワールドを開けませんでした。もう一度お試しください。',
@@ -318,6 +352,15 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         venues: '組織の拠点',
         members: 'メンバー',
         balance: '残高と利用',
+      },
+      enters: {
+        title: '入れる人',
+        everyone: 'コミュニティの全員が入れます。',
+        roles: '次のロールを持つ人が入れます：',
+        owners: 'オーナーはいつでも入れます。',
+        people: '入れる人たち',
+        more: '…ほか{n}人',
+        none: 'まだ誰もいません。',
       },
       back: 'トップへ戻る',
       enter: '入る',
@@ -370,6 +413,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: '페이지 열기',
       openLabel: '{w} 페이지 열기',
       address: '월드',
+      enterers: { one: '1명이 입장할 수 있습니다', other: '{n}명이 입장할 수 있습니다' },
       enter: '입장',
       enterLabel: '{w} 입장',
       enterFailed: '월드를 열 수 없습니다. 다시 시도해 주세요.',
@@ -390,6 +434,15 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         venues: '조직의 거점',
         members: '구성원',
         balance: '잔액과 사용량',
+      },
+      enters: {
+        title: '입장할 수 있는 사람',
+        everyone: '커뮤니티의 모든 사람이 입장할 수 있습니다.',
+        roles: '다음 역할을 가진 사람이 입장할 수 있습니다:',
+        owners: '소유자는 언제나 입장할 수 있습니다.',
+        people: '입장할 수 있는 사람들',
+        more: '… 외 {n}명',
+        none: '아직 아무도 없습니다.',
       },
       back: '처음으로',
       enter: '입장',
@@ -442,6 +495,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       open: 'Abrir a página',
       openLabel: 'Abrir a página de {w}',
       address: 'Mundo',
+      enterers: { one: 'Pode entrar 1 pessoa', other: 'Podem entrar {n} pessoas' },
       enter: 'Entrar',
       enterLabel: 'Entrar em {w}',
       enterFailed: 'Não foi possível abrir o mundo. Tente de novo.',
@@ -462,6 +516,15 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         venues: 'Sedes da organização',
         members: 'Membros',
         balance: 'Saldo e consumo',
+      },
+      enters: {
+        title: 'Quem entra',
+        everyone: 'Qualquer pessoa da comunidade pode entrar.',
+        roles: 'Entram quem tem algum destes papéis:',
+        owners: 'Os titulares entram sempre.',
+        people: 'Gente que pode entrar',
+        more: '… e mais {n}',
+        none: 'Ninguém, por enquanto.',
       },
       back: 'Voltar ao início',
       enter: 'Entrar',

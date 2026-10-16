@@ -24,6 +24,25 @@ export const PLACE_MAX = 50;
 /** What a world's id looks like in an address (the fleet's ids: `agora-plaza`, `pablofm-2`): lib/worlds-homes.ts's own rule. */
 export const WORLD_ID_SHAPE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/**
+ * The status a world's page answers: 404 for an id that is not shaped like a
+ * fleet's and for one the fleet does not have; 200 otherwise. A fleet that
+ * cannot be read proves nothing either way, so the page is served and its
+ * island says what it can (the world's data route is the same 404 for an
+ * unknown id).
+ */
+export async function worldPageStatus(
+  id: string,
+  fleetIds: () => Promise<ReadonlySet<string>>,
+): Promise<200 | 404> {
+  if (!WORLD_ID_SHAPE.test(id)) return 404;
+  try {
+    return (await fleetIds()).has(id) ? 200 : 404;
+  } catch {
+    return 200;
+  }
+}
+
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };

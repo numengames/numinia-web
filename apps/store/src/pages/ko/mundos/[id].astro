@@ -1,12 +1,16 @@
 ---
 import WorldPage from '../../../components/mundos/WorldPage.astro';
-import { WORLD_ID_SHAPE } from '../../../lib/mundos';
+import { worldPageStatus } from '../../../lib/mundos';
+import { fleetWorlds } from '../../api/mundos/_fleet';
 
 export const prerender = false;
 
 const id = Astro.params.id ?? '';
-// An id that is not shaped like a fleet's never reaches the page (nor the API).
-if (!WORLD_ID_SHAPE.test(id)) return new Response(null, { status: 404 });
+// An id that is not shaped like a fleet's, or that the fleet does not have, is a 404
+// (a fleet that cannot be read proves nothing: the page is served and says what it can).
+if ((await worldPageStatus(id, async () => (await fleetWorlds()).ids)) === 404) {
+  return new Response(null, { status: 404 });
+}
 ---
 
 <WorldPage locale="ko" worldId={id} />

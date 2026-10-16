@@ -36,3 +36,26 @@
 .mundo-enlaces .btn {
   text-decoration: none;
 }
+.mundo-entran {
+  display: grid;
+  gap: var(--s3);
+  min-width: 0;
+}
+.mundo-entran h3 {
+  margin: 0;
+}
+.mundo-entran p {
+  margin: 0;
+}
+.mundo-gente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--texto);
+}
+.mundo-gente .saldo-nota {
+  color: var(--texto-2);
+}
