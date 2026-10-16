@@ -2824,6 +2824,16 @@
         }
       ]
     }
+    ,{
+      "id": "acc_team_reset",
+      "name": "Reset",
+      "createdDaysAgo": 20,
+      "members": [
+        { "wallet": "0x00000000000000000000000000000000000000ae", "role": "admin", "addedDaysAgo": 20 },
+        { "wallet": "0x00000000000000000000000000000000000000af", "role": "member", "addedDaysAgo": 12 }
+      ],
+      "lines": []
+    }
   ],
   "profiles": [
     {

@@ -1480,7 +1480,7 @@ describe('the house: an Oracle’s session lists and enters every organization (
     expect(await sentence(blind, oracle())).toBe(`Numinia · ${INSTITUTE.id}`);
   });
 
-  it('works end to end against the fixture desk: three organizations for the Oracle, one for a citizen', async () => {
+  it('works end to end against the fixture desk: four organizations for the Oracle, one for a citizen', async () => {
     const desk = fixtureAccounts();
     const listed = async (asker: Asker) =>
       (
@@ -1493,6 +1493,7 @@ describe('the house: an Oracle’s session lists and enters every organization (
       ['Numen Games', null],
       ['Active Inference Institute', 'house'],
       ['La Tarugo', 'house'],
+      ['Reset', 'house'],
     ]);
     expect(await listed({ wallet: ME, house: false })).toEqual([
       [null, null],

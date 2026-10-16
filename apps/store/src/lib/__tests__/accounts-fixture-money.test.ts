@@ -27,7 +27,10 @@ const cost = (running: number, stopped: number, price: { r: number; s: number })
 describe('the seed', () => {
   const accounts = [
     { id: seed.personal.id, lines: seed.personal.lines },
-    ...seed.teams.map((team) => ({ id: team.id, lines: team.lines })),
+    // Reset (cut «Mundos ↔ organizaciones») is new: it holds worlds, not yet a history of spend.
+    ...seed.teams
+      .filter((team) => team.lines.length > 0)
+      .map((team) => ({ id: team.id, lines: team.lines })),
   ];
 
   it('prices three sizes and states the two rules a person reads', () => {
@@ -89,7 +92,9 @@ describe('the seed', () => {
     const balance = (lines: readonly { amountCents: number }[]) =>
       lines.reduce((sum, line) => sum + line.amountCents, 0);
     expect(balance(seed.personal.lines)).toBe(420);
-    expect(seed.teams.map((team) => balance(team.lines))).toEqual([88, 1426, 250]);
+    expect(
+      seed.teams.filter((team) => team.lines.length > 0).map((team) => balance(team.lines)),
+    ).toEqual([88, 1426, 250]);
   });
 });
 
