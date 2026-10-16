@@ -57,8 +57,10 @@ describe('asking', () => {
     expect(join.id).not.toBe(claim.id);
     const mine = await d.myCommunityRequests(PABLO, 'merge');
     expect(mine.ok && mine.requests.map((r) => r.id)).toEqual([join.id, claim.id]);
+    expect(mine.ok && mine.standing).toEqual({ member: false, hasOwner: false });
     const all = await d.myCommunityRequests(PABLO);
     expect(all.ok && all.requests).toHaveLength(2);
+    expect(all.ok && 'standing' in all).toBe(false);
     const none = await d.myCommunityRequests(MARIA);
     expect(none).toEqual({ ok: true, requests: [] });
   });
@@ -83,6 +85,10 @@ describe('asking', () => {
       REQUEST_PROBLEMS.hasOwner,
     ]);
     expect((await d.requestCommunity(MARIA, 'merge', 'join')).ok).toBe(true);
+    const pablo = await d.myCommunityRequests(PABLO, 'merge');
+    expect(pablo.ok && pablo.standing).toEqual({ member: true, hasOwner: true });
+    const maria = await d.myCommunityRequests(MARIA, 'merge');
+    expect(maria.ok && maria.standing).toEqual({ member: false, hasOwner: true });
   });
 });
 

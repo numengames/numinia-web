@@ -211,10 +211,18 @@ describe('POST /api/community-request', () => {
 
 describe('GET /api/community-request', () => {
   it('lists the signed-in wallet’s own, for one community or all', async () => {
-    const desk = deskWith({ myCommunityRequests: async () => ({ ok: true, requests: [request] }) });
+    const standing = { member: false, hasOwner: true };
+    const desk = deskWith({
+      myCommunityRequests: async () => ({ ok: true, requests: [request], standing }),
+    });
     const reply = await answerMyRequests(desk, PABLO, url('?comunidad=reset'), quiet);
     expect(reply.status).toBe(200);
-    expect(await json(reply)).toEqual({ ok: true, requests: [request] });
+    expect(await json(reply)).toEqual({ ok: true, requests: [request], standing });
+    const bare = deskWith({ myCommunityRequests: async () => ({ ok: true, requests: [] }) });
+    expect(await json(await answerMyRequests(bare, PABLO, url(), quiet))).toEqual({
+      ok: true,
+      requests: [],
+    });
     expect(desk.myCommunityRequests).toHaveBeenCalledWith(PABLO.wallet.toLowerCase(), 'reset');
     await answerMyRequests(desk, PABLO, url(), quiet);
     expect(desk.myCommunityRequests).toHaveBeenLastCalledWith(PABLO.wallet.toLowerCase(), null);

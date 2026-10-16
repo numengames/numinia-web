@@ -1732,17 +1732,24 @@ export function createAccountsFixtureDesk(
           ...(community === undefined ? [REQUEST_PROBLEMS.community] : []),
         );
       }
-      return {
-        ok: true,
-        requests: copy(
-          newestFirst(
-            requests.filter(
-              (request) =>
-                request.wallet === who && (community === null || request.communityId === community),
-            ),
+      const mine = copy(
+        newestFirst(
+          requests.filter(
+            (request) =>
+              request.wallet === who && (community === null || request.communityId === community),
           ),
         ),
-      };
+      );
+      if (community === null) return { ok: true, requests: mine };
+      const book = communityBooks.get(await communityAccountId(community));
+      const standing =
+        book === undefined
+          ? { member: false, hasOwner: false }
+          : {
+              member: roleIn(book, who) !== null,
+              hasOwner: book.members.some((member) => member.role === 'admin'),
+            };
+      return { ok: true, requests: mine, standing };
     },
 
     communityRequests: async (wallet, house, communityId): Promise<DeskRequestsAnswer> => {

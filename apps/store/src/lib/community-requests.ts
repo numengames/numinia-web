@@ -120,7 +120,14 @@ const entry = request.extend({ name: z.string().nullable(), avatar: z.string().n
 
 const SHAPES = {
   one: z.union([z.object({ ok: z.literal(true), request }), refusal]),
-  mine: z.union([z.object({ ok: z.literal(true), requests: z.array(request) }), refusal]),
+  mine: z.union([
+    z.object({
+      ok: z.literal(true),
+      requests: z.array(request),
+      standing: z.object({ member: z.boolean(), hasOwner: z.boolean() }).optional(),
+    }),
+    refusal,
+  ]),
   open: z.union([z.object({ ok: z.literal(true), requests: z.array(entry) }), refusal]),
 } as const;
 
@@ -196,7 +203,8 @@ export async function answerMyRequests(
   );
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
-  return answer({ ok: true, requests: asked.value.requests });
+  const { requests, standing } = asked.value;
+  return answer({ ok: true, requests, ...(standing === undefined ? {} : { standing }) });
 }
 
 /**

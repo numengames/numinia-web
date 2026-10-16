@@ -637,8 +637,21 @@ export interface DeskCommunityRequestEntry extends DeskCommunityRequest {
   avatar: string | null;
 }
 
+/** Where one stands towards a community: a member asks nothing; a claim only while nobody is the titular. */
+export interface DeskCommunityStanding {
+  member: boolean;
+  hasOwner: boolean;
+}
+
 export type DeskRequestAnswer = { ok: true; request: DeskCommunityRequest } | DeskRefusal;
-export type DeskMyRequestsAnswer = { ok: true; requests: DeskCommunityRequest[] } | DeskRefusal;
+export type DeskMyRequestsAnswer =
+  | {
+      ok: true;
+      requests: DeskCommunityRequest[];
+      /** Present when one community was asked about. */
+      standing?: DeskCommunityStanding;
+    }
+  | DeskRefusal;
 export type DeskRequestsAnswer = { ok: true; requests: DeskCommunityRequestEntry[] } | DeskRefusal;
 
 /**
