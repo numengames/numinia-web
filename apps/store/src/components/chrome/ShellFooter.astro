@@ -18,6 +18,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
 import { VERSION, COMMIT_SHA, COMMIT_URL, LICENSE_URL } from '../../lib/build-info';
+import { EPITAPH } from '../../lib/canon';
 import { HOUSE_LINKS, THIS_SITE } from '../../lib/house-links';
 import { localeHref } from '../../lib/app-nav';
 import Icon from './Icon.astro';
@@ -30,10 +31,7 @@ const { locale } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const ui = APP_SHELL_UI[locale];
 
-// CAN-002: the manifesto closes on the epitaph. Never translated, never
-// "fixed" — the wording is the Oracle's, literal on purpose.
-const EPITAPH =
-  'They dreamed and experimented life, they imagined and took action. They were part of the fight to change the model, they did not let us alone, they built a game with which to create a better world.';
+// CAN-002: the epitaph (lib/canon.ts), literal on purpose.
 
 // The house order of the legal texts (Legal notice · Privacy · Cookies · Terms).
 const LEGAL = [

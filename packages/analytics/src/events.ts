@@ -162,3 +162,14 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The invitation dialog: `ai-invite-name`, `ai-invite-ability-talk`,
 //   `ai-invite-ability-build`, `ai-invite-next`, `ai-invite-back`, `ai-invite-copy`,
 //   `ai-invite-key`, `ai-invite-add`, `ai-invite-cancel`.
+
+// ---- v3 «La esfera y la casa» (cut B, 2026-10-16): its data-metric ids ----------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The sphere of Numen Games: `house-sphere-dot` (a community's dot on the
+//   ring), `house-sphere-more` (the «+N» chip to the list).
+// - /communities/: `communities-house-title`, `communities-house-enter` (the
+//   house's card, to its page).
+// - The page of Numen Games: `house-enter-agora` (or `house-its-worlds` when the
+//   commons has no world), `house-how-to-play`, `house-legend-chip`,
+//   `house-rings-summa`, `house-meta-doors`, `house-meta-codex`,
+//   `house-world-enter`, `house-archive`, `house-bazaar`.

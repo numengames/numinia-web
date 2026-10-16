@@ -1,0 +1,360 @@
+---
+/**
+ * The sphere of Numen Games (v3 «La esfera y la casa»): the oracle in a
+ * sphere, a tilted graduated amber ring round it and one dot per community
+ * on the ring — at most twelve, the most active (lib/house-sphere.ts); the
+ * rest in a «+N» chip that leads to the list.
+ *
+ * Layer 0 is the built page: the sphere drawn at rest — the oracle as a
+ * shaded picture, the ring as SVG and the dots as a list of links — so it
+ * reads and works with no JavaScript. The WebGL sphere and the turning are
+ * an island (sphere-island.ts) imported only once the sphere scrolls into
+ * view; it moves only when asked — a drag, the arrow keys, a dot taking the
+ * focus — plus one settle turn on arrival, and nothing under reduced motion.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { fill } from '../../i18n/communities';
+import { HOUSE_UI } from '../../i18n/house';
+import type { Community } from '../../lib/communities';
+import { dotPlace, FRAME, REST, ringPaths, ringRadius, ringTilt } from '../../lib/house-sphere';
+
+interface Props {
+  locale: SupportedLocale;
+  /** The communities with a dot, in the ring's order. */
+  dots: readonly Community[];
+  /** How many more the ring leaves out, and where their list is. */
+  rest: number;
+  restHref: string;
+  /** The big sphere of the house's page; the small one sits in the index's card. */
+  big?: boolean;
+}
+
+const { locale, dots, rest, restHref, big = false } = Astro.props;
+const ui = HOUSE_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const ORACLE = '/images/art/oracle.webp';
+const radius = ringRadius(big);
+const tilt = ringTilt(REST.pitch);
+const paths = ringPaths(REST.yaw, tilt, radius);
+const viewBox = `0 0 ${FRAME.width} ${FRAME.height}`;
+const short = (name: string): string => name.split(' · ')[0] ?? name;
+---
+
+<div class:list={['esfera', { grande: big }]} data-house-sphere data-big={big ? '' : undefined}>
+  <div class="halo" aria-hidden="true"></div>
+  <svg class="anillo atras" viewBox={viewBox} aria-hidden="true" focusable="false">
+    <path class="aro" d={paths.back}></path>
+    <path class="marcas" d={paths.backTicks}></path>
+  </svg>
+  <div class="esfera-css" aria-hidden="true" style={`background-image:url(${ORACLE})`}></div>
+  <canvas class="esfera-gl" aria-hidden="true" data-src={ORACLE}></canvas>
+  <svg class="anillo delante" viewBox={viewBox} aria-hidden="true" focusable="false">
+    <path class="aro" d={paths.front}></path>
+    <path class="marcas" d={paths.frontTicks}></path>
+  </svg>
+  <div class="mando" role="group" aria-label={ui.sphereLabel} data-sphere-handle>
+    <ul class="puntos" aria-label={ui.ringLabel}>
+      {
+        dots.map((community, index) => {
+          const place = dotPlace(index, dots.length, REST.yaw, tilt, radius);
+          return (
+            <li
+              class:list={[
+                'punto-com',
+                { detras: place.behind, oculto: place.hidden, izq: place.onLeft, frente: place.front },
+              ]}
+              style={`left:${place.left}%;top:${place.top}%`}
+              data-dot={community.id}
+            >
+              <a
+                href={`${prefix}/communities/${community.id}/`}
+                aria-label={community.name}
+                data-metric="house-sphere-dot"
+              >
+                <span class="bola" />
+                <em aria-hidden="true">{short(community.name)}</em>
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+  {
+    rest > 0 && (
+      <a class="mas-com" href={restHref} aria-label={fill(ui.moreLabel, { n: rest })} data-metric="house-sphere-more">
+        +{rest}
+      </a>
+    )
+  }
+</div>
+<p class="esfera-gira" aria-hidden="true">{ui.sphereHint}</p>
+
+<script>
+  /* The island: the WebGL sphere and the turning load only once a sphere is
+     in view (or about to be). Without IntersectionObserver the built
+     sphere stays as it is — still whole, still links. */
+  const spheres = Array.from(document.querySelectorAll<HTMLElement>('[data-house-sphere]'));
+  if (spheres.length > 0 && 'IntersectionObserver' in window) {
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          watcher.unobserve(entry.target);
+          const target = entry.target as HTMLElement;
+          void import('./sphere-island').then((island) => island.mountSphere(target));
+        }
+      },
+      { rootMargin: '160px' },
+    );
+    for (const sphere of spheres) watcher.observe(sphere);
+  }
+</script>
+
+<style>
+  /* The frame is wider than tall: the tilted ring barely rises or falls. */
+  .esfera {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 10 / 8;
+    margin: 0 auto;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .esfera.grande {
+    max-width: 560px;
+  }
+  .esfera[data-live] {
+    cursor: grab;
+  }
+  .esfera.arrastrando {
+    cursor: grabbing;
+  }
+  .mando {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 40%;
+  }
+  .mando:focus-visible {
+    outline: 2px solid var(--turquesa);
+    outline-offset: -4px;
+  }
+  .halo {
+    position: absolute;
+    left: 8%;
+    top: 50%;
+    width: 84%;
+    aspect-ratio: 1 / 1;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ambar) 26%, transparent), transparent 72%);
+    pointer-events: none;
+  }
+  .esfera-gl,
+  .esfera-css {
+    position: absolute;
+    left: 19%;
+    top: 50%;
+    width: 62%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .esfera-gl {
+    opacity: 0;
+    transition: opacity 500ms var(--ciclo);
+  }
+  .esfera.lista .esfera-gl {
+    opacity: 1;
+  }
+  .esfera.lista .esfera-css {
+    visibility: hidden;
+  }
+  .esfera-css {
+    background-size: cover;
+    background-position: 50% 40%;
+    box-shadow:
+      inset -26px -32px 60px rgba(0, 0, 0, 0.7),
+      inset 12px 14px 30px rgba(255, 236, 200, 0.18),
+      0 0 0 1px color-mix(in srgb, var(--ambar) 30%, transparent);
+  }
+  .anillo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .anillo.atras {
+    z-index: 0;
+  }
+  .anillo.delante {
+    z-index: 2;
+  }
+  .aro {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ambar) 75%, transparent);
+    stroke-width: 1.2;
+  }
+  .atras .aro {
+    stroke: color-mix(in srgb, var(--ambar) 28%, transparent);
+  }
+  .marcas {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ambar) 55%, transparent);
+    stroke-width: 1;
+  }
+  .atras .marcas {
+    stroke: color-mix(in srgb, var(--ambar) 20%, transparent);
+  }
+  .puntos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    inset: 0;
+  }
+  .punto-com {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    z-index: 3;
+  }
+  .punto-com.detras {
+    z-index: 1;
+  }
+  .punto-com.nombrado,
+  .punto-com:focus-within {
+    z-index: 5;
+  }
+  .punto-com a {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    pointer-events: auto;
+    text-decoration: none;
+    color: var(--texto);
+  }
+  .bola {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--verdemar);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--verdemar) 22%, transparent),
+      0 0 12px color-mix(in srgb, var(--verdemar) 55%, transparent);
+    transition:
+      transform 120ms var(--ciclo),
+      opacity 120ms var(--ciclo);
+  }
+  .punto-com a:hover .bola,
+  .punto-com a:focus-visible .bola {
+    transform: scale(1.6);
+  }
+  .punto-com.detras .bola {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
+  .punto-com.oculto {
+    opacity: 0;
+  }
+  .punto-com.oculto a {
+    pointer-events: none;
+  }
+  .punto-com.oculto:focus-within {
+    opacity: 1;
+  }
+  .punto-com.activo .bola,
+  .punto-com.nombrado .bola {
+    opacity: 1;
+    transform: scale(1.9);
+    background: var(--ambar);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--ambar) 25%, transparent),
+      0 0 14px color-mix(in srgb, var(--ambar) 70%, transparent);
+  }
+  /* The name: a pill that points inward, so it never leaves the screen. */
+  .punto-com em {
+    display: none;
+    position: absolute;
+    right: calc(100% - 2px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    color: var(--texto);
+    font: 500 0.72rem var(--mono);
+    letter-spacing: 0.04em;
+    font-style: normal;
+  }
+  .punto-com.izq em {
+    right: auto;
+    left: calc(100% - 2px);
+  }
+  /* In front and near the middle: under the dot. */
+  .punto-com.frente em {
+    left: 50%;
+    right: auto;
+    top: calc(100% + 2px);
+    transform: translateX(-50%);
+  }
+  .punto-com a:hover em,
+  .punto-com a:focus-visible em,
+  .punto-com.nombrado em,
+  .punto-com.activo em {
+    display: block;
+  }
+  /* Esc closes the names until the pointer or the focus moves again. */
+  .esfera.callada .punto-com em {
+    display: none;
+  }
+  .mas-com {
+    position: absolute;
+    right: 4%;
+    bottom: 6%;
+    z-index: 4;
+    min-width: 36px;
+    min-height: 28px;
+    padding: 0 10px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    color: var(--texto);
+    font: 500 0.74rem var(--mono);
+    text-decoration: none;
+  }
+  .mas-com:hover {
+    border-color: var(--verdemar);
+  }
+  .esfera-gira {
+    font: 500 0.62rem var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    margin: -6px 0 0;
+    text-align: center;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .esfera-gl,
+    .bola {
+      transition: none;
+    }
+  }
+</style>

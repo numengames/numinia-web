@@ -97,6 +97,13 @@ precedence = "closest"
 SPDX-FileCopyrightText = "2026 Numen Games S.L."
 SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"
 
+# The same story cut to one line, on the page of Numen Games (v0.110.0).
+[[annotations]]
+path = "apps/store/src/i18n/house.ts"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Numen Games S.L."
+SPDX-License-Identifier = "AGPL-3.0-only AND CC0-1.0"
+
 # ── Packages: libraries, SDKs, types, tokens ─────────────────────────────────
 [[annotations]]
 path = "packages/**"
