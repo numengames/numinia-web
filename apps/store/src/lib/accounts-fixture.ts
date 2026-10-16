@@ -77,6 +77,10 @@ import {
   type DeskPlacementsAnswer,
   type DeskWorldsOfAnswer,
   type DeskConfirmAnswer,
+  type DeskCommunityRequest,
+  type DeskMyRequestsAnswer,
+  type DeskRequestAnswer,
+  type DeskRequestsAnswer,
   type DeskDirectoryAnswer,
   type DeskEnsureAnswer,
   type DeskOpenAllAnswer,
@@ -117,6 +121,12 @@ import {
 } from './accounts';
 import { createAgentsFixture, type HostEntry } from './agents-fixture';
 import { communityAccountId, readCommunityId } from './community-teams';
+import {
+  REQUEST_PROBLEMS,
+  readRequestId,
+  readRequestKind,
+  readRequestNote,
+} from './community-requests';
 import {
   DEFAULT_VOCABULARY,
   HAPPENINGS_PAGE,
@@ -853,6 +863,33 @@ export function createAccountsFixtureDesk(
   /** Writes down what the house reads (ORG-009); an owner's or a member's own reads leave no line. */
   const houseRead = (entry: Entry, what: string): void => {
     if (entry.as === 'house') record(entry, 'house-read', null, { what });
+  };
+
+  // ---- «Hazla tuya» for real (cut G): the requests, in memory ----
+
+  const requests: DeskCommunityRequest[] = [];
+  let requestSeq = 0;
+
+  const newestFirst = (list: DeskCommunityRequest[]): DeskCommunityRequest[] =>
+    [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+
+  /**
+   * Who decides on a community's requests: the house, or an owner of its
+   * organization (the fixture's «admin» holds the administrator role). With
+   * the organization not open yet, the house alone; `book` is null then.
+   */
+  const deciderFor = async (
+    who: string,
+    house: boolean,
+    community: string,
+  ): Promise<{ book: Book | null; as: Standing } | DeskRefusal> => {
+    const book = communityBooks.get(await communityAccountId(community));
+    if (book === undefined) {
+      return house ? { book: null, as: 'house' } : refuse(REQUEST_PROBLEMS.notAllowed);
+    }
+    const as = standing(book, who, house);
+    if (as === null || as === 'member') return refuse(REQUEST_PROBLEMS.notAllowed);
+    return { book, as };
   };
 
   /** An organization the wallet belongs to — or, for the house, any — or why not. */
@@ -1637,6 +1674,182 @@ export function createAccountsFixtureDesk(
         ),
         more: older.length > HAPPENINGS_PAGE,
       };
+    },
+
+    // ---- «Hazla tuya» for real (cut G, 2026-10-17): claiming a community and asking to join it ----
+
+    requestCommunity: async (wallet, communityId, kind, note): Promise<DeskRequestAnswer> => {
+      const who = typeof wallet === 'string' ? walletOf(wallet) : null;
+      const community = readCommunityId(communityId);
+      const what = readRequestKind(kind);
+      const clean = readRequestNote(note);
+      if (who === null || community === undefined || what === undefined || clean === undefined) {
+        return refuse(
+          ...(who === null ? [BAD_WALLET] : []),
+          ...(community === undefined ? [REQUEST_PROBLEMS.community] : []),
+          ...(what === undefined ? [REQUEST_PROBLEMS.kind] : []),
+          ...(clean === undefined ? [REQUEST_PROBLEMS.note] : []),
+        );
+      }
+      const book = communityBooks.get(await communityAccountId(community));
+      if (book !== undefined) {
+        if (roleIn(book, who) !== null) return refuse(REQUEST_PROBLEMS.member);
+        if (what === 'claim' && book.members.some((member) => member.role === 'admin')) {
+          return refuse(REQUEST_PROBLEMS.hasOwner);
+        }
+      }
+      const open = requests.find(
+        (request) =>
+          request.state === 'open' &&
+          request.communityId === community &&
+          request.wallet === who &&
+          request.kind === what,
+      );
+      if (open !== undefined) return { ok: true, request: copy(open) };
+      requestSeq += 1;
+      const request: DeskCommunityRequest = {
+        id: `req_${requestSeq.toString(16).padStart(32, '0')}`,
+        communityId: community,
+        wallet: who,
+        kind: what,
+        note: clean,
+        state: 'open',
+        createdAt: now().toISOString(),
+        decidedAt: null,
+        decidedBy: null,
+      };
+      requests.push(request);
+      return { ok: true, request: copy(request) };
+    },
+
+    myCommunityRequests: async (wallet, communityId): Promise<DeskMyRequestsAnswer> => {
+      const who = typeof wallet === 'string' ? walletOf(wallet) : null;
+      const community =
+        communityId === undefined || communityId === null ? null : readCommunityId(communityId);
+      if (who === null || community === undefined) {
+        return refuse(
+          ...(who === null ? [BAD_WALLET] : []),
+          ...(community === undefined ? [REQUEST_PROBLEMS.community] : []),
+        );
+      }
+      return {
+        ok: true,
+        requests: copy(
+          newestFirst(
+            requests.filter(
+              (request) =>
+                request.wallet === who && (community === null || request.communityId === community),
+            ),
+          ),
+        ),
+      };
+    },
+
+    communityRequests: async (wallet, house, communityId): Promise<DeskRequestsAnswer> => {
+      const asking = asker(wallet, house);
+      const community =
+        communityId === undefined || communityId === null ? null : readCommunityId(communityId);
+      if ('ok' in asking || community === undefined) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(community === undefined ? [REQUEST_PROBLEMS.community] : []),
+        );
+      }
+      if (community === null) {
+        if (!asking.house) return refuse(REQUEST_PROBLEMS.notAllowed);
+      } else {
+        const decider = await deciderFor(asking.who, asking.house, community);
+        if ('ok' in decider) return decider;
+      }
+      return {
+        ok: true,
+        requests: copy(
+          newestFirst(
+            requests.filter(
+              (request) =>
+                request.state === 'open' &&
+                (community === null || request.communityId === community),
+            ),
+          ).map((request) => ({
+            ...request,
+            name: profiles.get(request.wallet)?.name ?? null,
+            avatar: profiles.get(request.wallet)?.avatar ?? null,
+          })),
+        ),
+      };
+    },
+
+    decideCommunityRequest: async (
+      wallet,
+      requestId,
+      accept,
+      house,
+      name,
+    ): Promise<DeskRequestAnswer> => {
+      const asking = asker(wallet, house ?? false);
+      const id = readRequestId(requestId);
+      if ('ok' in asking || id === undefined || typeof accept !== 'boolean') {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(id === undefined ? [REQUEST_PROBLEMS.requestId] : []),
+          ...(typeof accept === 'boolean' ? [] : [REQUEST_PROBLEMS.accept]),
+        );
+      }
+      const request = requests.find((candidate) => candidate.id === id);
+      if (request === undefined) return refuse(REQUEST_PROBLEMS.noSuchRequest);
+      if (request.state !== 'open') return refuse(REQUEST_PROBLEMS.decided);
+      let decider = await deciderFor(asking.who, asking.house, request.communityId);
+      if ('ok' in decider) return decider;
+      if (accept && decider.book === null) {
+        const clean = typeof name === 'string' ? teamName(name) : null;
+        if (clean === null) {
+          return refuse(REQUEST_PROBLEMS.noOrganization, 'name must be 1 to 60 characters');
+        }
+        const { id } = await ensureOne(asking.who, request.communityId, clean);
+        decider = { book: communityBooks.get(id) as Book, as: 'house' };
+      }
+      request.state = accept ? 'accepted' : 'declined';
+      request.decidedAt = now().toISOString();
+      request.decidedBy = asking.who;
+      const { book } = decider;
+      if (book === null) return { ok: true, request: copy(request) };
+      const entry: Entry = { who: asking.who, book, as: decider.as };
+      if (accept) {
+        const already = book.members.find((member) => member.wallet === request.wallet);
+        if (request.kind === 'join') {
+          if (already === undefined) {
+            book.members.push({
+              wallet: request.wallet,
+              role: 'member',
+              addedAt: request.decidedAt,
+            });
+            book.held.set(request.wallet, []);
+            record(entry, 'member-added', request.wallet, null);
+          }
+        } else {
+          if (already === undefined) {
+            book.members.push({
+              wallet: request.wallet,
+              role: 'admin',
+              addedAt: request.decidedAt,
+            });
+            record(entry, 'member-added', request.wallet, { owner: 'yes' });
+          } else {
+            already.role = 'admin';
+          }
+          const role = administratorOf(book);
+          const held = book.held.get(request.wallet) ?? [];
+          if (role !== undefined && !held.includes(role.id)) {
+            book.held.set(request.wallet, [...held, role.id]);
+            record(entry, 'role-given', request.wallet, { role: role.id });
+          }
+        }
+      }
+      record(entry, accept ? 'request-accepted' : 'request-declined', request.wallet, {
+        kind: request.kind,
+        request: request.id,
+      });
+      return { ok: true, request: copy(request) };
     },
 
     ...agents,

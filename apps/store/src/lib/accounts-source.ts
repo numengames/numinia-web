@@ -216,6 +216,23 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.claimAgentPass === 'function'
         ? stub.claimAgentPass(accountId, agentId, aud, t)
         : absent('claimAgentPass'),
+    // «Hazla tuya» for real (cut G): optional too. Without them the request routes say 503.
+    requestCommunity: (wallet, communityId, kind, note) =>
+      typeof desk.requestCommunity === 'function'
+        ? stub.requestCommunity(wallet, communityId, kind, note)
+        : absent('requestCommunity'),
+    myCommunityRequests: (wallet, communityId) =>
+      typeof desk.myCommunityRequests === 'function'
+        ? stub.myCommunityRequests(wallet, communityId)
+        : absent('myCommunityRequests'),
+    communityRequests: (wallet, house, communityId) =>
+      typeof desk.communityRequests === 'function'
+        ? stub.communityRequests(wallet, house, communityId)
+        : absent('communityRequests'),
+    decideCommunityRequest: (wallet, requestId, accept, house, name) =>
+      typeof desk.decideCommunityRequest === 'function'
+        ? stub.decideCommunityRequest(wallet, requestId, accept, house, name)
+        : absent('decideCommunityRequest'),
   };
 }
 

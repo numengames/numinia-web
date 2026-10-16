@@ -528,6 +528,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-removed': 'IA eliminada',
         'agent-role-given': 'Rol dado a una IA',
         'agent-role-taken': 'Rol quitado a una IA',
+        'request-accepted': 'Petición aceptada',
+        'request-declined': 'Petición rechazada',
       },
     },
     referrals: {
@@ -789,6 +791,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-removed': 'AI removed',
         'agent-role-given': 'Role given to an AI',
         'agent-role-taken': 'Role taken from an AI',
+        'request-accepted': 'Request accepted',
+        'request-declined': 'Request declined',
       },
     },
     referrals: {
@@ -1049,6 +1053,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-removed': 'AIを削除',
         'agent-role-given': 'AIにロールを付与',
         'agent-role-taken': 'AIからロールを削除',
+        'request-accepted': '申請を承認',
+        'request-declined': '申請を却下',
       },
     },
     referrals: {
@@ -1306,6 +1312,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-removed': 'AI 삭제',
         'agent-role-given': 'AI에 역할 부여',
         'agent-role-taken': 'AI의 역할 회수',
+        'request-accepted': '요청 수락',
+        'request-declined': '요청 거절',
       },
     },
     referrals: {
@@ -1571,6 +1579,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-removed': 'IA removida',
         'agent-role-given': 'Papel dado a uma IA',
         'agent-role-taken': 'Papel retirado de uma IA',
+        'request-accepted': 'Pedido aceito',
+        'request-declined': 'Pedido recusado',
       },
     },
     referrals: {
