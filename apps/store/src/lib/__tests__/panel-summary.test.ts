@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { DeskLine, DeskLogLine, DeskRole, DeskRoles } from '../accounts';
-import {
-  chargedWorlds,
-  latestOf,
-  nextEncounter,
-  peopleOf,
-  type EncounterMap,
-} from '../panel-summary';
+import type { DeskRole, DeskRoles } from '../accounts';
+import { chargedWorlds, nextEncounter, peopleOf, type EncounterMap } from '../panel-summary';
 
 const NOW = new Date('2026-10-16T12:00:00.000Z');
 
@@ -57,52 +51,6 @@ describe('the next encounter of the organization’s community', () => {
       nextEncounter(map, 'acc_team_numen_games', new Date('2027-02-01T00:00:00.000Z')),
     ).toBeNull();
     expect(nextEncounter(map, 'acc_team_la_tarugo', NOW)).toBeNull();
-  });
-});
-
-describe('the latest of an organization', () => {
-  const log = (seq: number, at: string): DeskLogLine => ({
-    seq,
-    at,
-    actor: `0x${'ab'.repeat(20)}`,
-    asHouse: false,
-    act: 'member-added',
-    subject: `0x${'cd'.repeat(20)}`,
-    detail: null,
-  });
-  const lines: DeskLine[] = [
-    { kind: 'world_day', at: '2026-10-16T00:30:00.000Z', amountCents: -164, day: '2026-10-15' },
-    { kind: 'topup', at: '2026-10-14T10:00:00.000Z', amountCents: 5000, vatCents: 1050 },
-    { kind: 'adjustment', at: '2026-10-13T10:00:00.000Z', amountCents: 25, reason: 'gift' },
-    { kind: 'topup', at: '2026-09-01T10:00:00.000Z', amountCents: 1000, vatCents: 210 },
-  ];
-
-  it('merges the log and the top-ups, newest first, five at the most', () => {
-    const latest = latestOf(
-      [
-        log(9, '2026-10-15T09:00:00.000Z'),
-        log(8, '2026-10-13T09:00:00.000Z'),
-        log(7, '2026-10-12T09:00:00.000Z'),
-        log(6, '2026-10-11T09:00:00.000Z'),
-      ],
-      lines,
-    );
-    expect(latest.map((entry) => [entry.kind, entry.at])).toEqual([
-      ['log', '2026-10-15T09:00:00.000Z'],
-      ['topup', '2026-10-14T10:00:00.000Z'],
-      ['log', '2026-10-13T09:00:00.000Z'],
-      ['log', '2026-10-12T09:00:00.000Z'],
-      ['log', '2026-10-11T09:00:00.000Z'],
-    ]);
-    expect(latest[1]).toEqual({ kind: 'topup', at: '2026-10-14T10:00:00.000Z', amountCents: 5000 });
-    expect(latest[0]).toMatchObject({ kind: 'log', line: { seq: 9 } });
-  });
-
-  it('keeps to what the person may read: no log, or no statement, or neither', () => {
-    expect(latestOf(null, lines).map((entry) => entry.kind)).toEqual(['topup', 'topup']);
-    expect(latestOf([log(1, '2026-10-01T00:00:00.000Z')], null)).toHaveLength(1);
-    expect(latestOf(null, null)).toEqual([]);
-    expect(latestOf([], [], 3)).toEqual([]);
   });
 });
 

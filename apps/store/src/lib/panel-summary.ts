@@ -2,12 +2,12 @@
  * The panel's Resumen (cut 2026-10-16 «el dinero»): what its four cards and
  * «Lo último» work out from the answers they read — the next encounter of
  * the organization's community (from a map built with the site), the worlds
- * with a charge, the people and the roles shown apart, and the newest
- * entries of the log merged with the top-ups. Pure: no fetch, no DOM, no
+ * with a charge, the people and the roles shown apart. «Qué ha pasado» is
+ * lib/happened.ts's. Pure: no fetch, no DOM, no
  * zod, so the island imports it and it is tested to the per-file bar.
  */
 
-import type { DeskLine, DeskLogLine, DeskRoles, DeskWorld } from './accounts';
+import type { DeskRoles, DeskWorld } from './accounts';
 
 /** An encounter as the Resumen is handed it when the site is built. */
 interface Encounter {
@@ -41,30 +41,6 @@ export function nextEncounter(map: EncounterMap, team: string, now: Date): NextE
   return start <= at
     ? { encounter, when: 'now' }
     : { encounter, when: 'soon', days: Math.ceil((start - at) / DAY_MS) };
-}
-
-/** One entry of «Lo último»: a line of the organization's log, or a top-up of its statement. */
-export type LatestEntry =
-  | { readonly kind: 'log'; readonly at: string; readonly line: DeskLogLine }
-  | { readonly kind: 'topup'; readonly at: string; readonly amountCents: number };
-
-/**
- * The newest `limit` entries, newest first, merging the log (null when the
- * person may not read it) and the statement's top-ups (null when the person
- * may not read the balance).
- */
-export function latestOf(
-  log: readonly DeskLogLine[] | null,
-  lines: readonly DeskLine[] | null,
-  limit = 5,
-): LatestEntry[] {
-  const entries: LatestEntry[] = [
-    ...(log ?? []).map((line): LatestEntry => ({ kind: 'log', at: line.at, line })),
-    ...(lines ?? [])
-      .filter((line) => line.kind === 'topup')
-      .map((line): LatestEntry => ({ kind: 'topup', at: line.at, amountCents: line.amountCents })),
-  ];
-  return entries.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, limit);
 }
 
 /** How many worlds cost something in the statement's range; null when the till does not say. */
