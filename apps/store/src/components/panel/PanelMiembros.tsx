@@ -7,6 +7,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import type { CommunityRequestsMessages } from '../../i18n/community-requests';
 import type { PanelMessages } from '../../i18n/panel';
 import type { PeopleMessages } from '../../i18n/panel-people';
 import type { SaldoMessages } from '../../i18n/saldo';
@@ -21,6 +22,8 @@ export function PanelMiembros({
   homeHref,
   ui,
   people,
+  communities,
+  requests,
 }: {
   readonly locale: SupportedLocale;
   readonly words: PanelMessages;
@@ -30,6 +33,9 @@ export function PanelMiembros({
   readonly homeHref: string;
   readonly ui: SaldoMessages;
   readonly people: PeopleMessages;
+  /** The community of each organization the register names, by the organization's account id. */
+  readonly communities: Readonly<Record<string, string>>;
+  readonly requests: CommunityRequestsMessages['list'];
 }) {
   return (
     <PanelFrame locale={locale} face="members" words={words} signIn={signIn} saldoHref={saldoHref}>
@@ -42,6 +48,8 @@ export function PanelMiembros({
           homeHref={homeHref}
           ui={ui}
           words={people}
+          community={communities[team.id] ?? null}
+          requests={requests}
         />
       )}
     </PanelFrame>

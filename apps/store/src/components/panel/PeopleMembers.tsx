@@ -14,6 +14,7 @@
 
 import { Fragment, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { Rank, SupportedLocale } from '@numinia/domain';
+import type { CommunityRequestsMessages } from '../../i18n/community-requests';
 import type { PeopleMessages } from '../../i18n/panel-people';
 import type { SaldoMessages } from '../../i18n/saldo';
 import { fill, formatAt, readLog, shortWallet, type DeskLogLine } from '../../lib/accounts';
@@ -31,6 +32,7 @@ import { LunaEspera } from '../chrome/LunaEspera';
 import { usePeopleDesk } from './people-desk';
 import { HouseStrip, OwnerChip, PeopleNotices, Person, RoleDot, whoOf } from './PeopleBits';
 import { PeopleGlyph } from './PeopleGlyph';
+import { PeopleRequests } from './PeopleRequests';
 import { WalletSuggest } from './WalletSuggest';
 
 type Ranks =
@@ -54,9 +56,14 @@ export function PeopleMembers({
   homeHref,
   ui,
   words,
+  community = null,
+  requests,
 }: {
   readonly org: string;
   readonly locale: SupportedLocale;
+  /** The community this organization is of, when the register names one: its «Peticiones» are shown. */
+  readonly community?: string | null;
+  readonly requests?: CommunityRequestsMessages['list'];
   /** The screen's name, which also labels the table's scrolling region. */
   readonly label: string;
   /** The panel's door, under the visitor's locale: where leaving the organization lands. */
@@ -206,6 +213,15 @@ export function PeopleMembers({
     <div className="saldo-panel gente" data-people-members>
       {organization.as === 'house' && <HouseStrip ui={ui} />}
       <PeopleNotices desk={desk} ui={ui} />
+      {community !== null && requests !== undefined && (
+        <PeopleRequests
+          community={community}
+          locale={locale}
+          words={requests}
+          ui={ui}
+          onAccepted={() => void desk.refresh()}
+        />
+      )}
 
       <div className="saldo-marco gente-tarjeta">
         <div className="gente-barra">

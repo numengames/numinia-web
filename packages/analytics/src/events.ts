@@ -204,3 +204,15 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - «Tu agenda» /agenda/: `agenda-sign-in` (the door, signed out),
 //   `agenda-encounters` (the empty state's link to the encounters),
 //   `agenda-past` (the fold «Ya pasaron · N»).
+
+// ---- v3 «Hazla tuya» for real (cut G, 2026-10-17): its data-metric ids ---------
+// No new event and no new prop: each travels as `cta_click.metricId`. The
+// claim rate — how many `community-claim-open` become `community-request-send`
+// with kind claim — is the beta's measure.
+// - A community's strip: `community-claim` (signed out: to sign in and back,
+//   as before), `community-claim-open` («Es mi comunidad», opens the dialog),
+//   `community-join-open` («Quiero entrar»); the dialog:
+//   `community-request-note`, `community-request-send`,
+//   `community-request-cancel`.
+// - «Peticiones» (the panel's Members, the house's Census): `request-accept`,
+//   `request-decline`.

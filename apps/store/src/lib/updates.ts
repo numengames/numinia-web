@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.119.0',
+    date: '2026-10-17 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Hazla tuya» for real. On a community’s page, signed in, «Es mi comunidad» opens a small dialog — one optional line, «Cuéntanos quién eres» — and records a claim; while nobody runs the community yet. Once somebody does, the strip offers «Quiero entrar» instead, the same way. Afterwards the strip says it was asked: the house confirms a claim, the community sees a join. A member sees neither; signed out, the button leads to sign in and back, as before.',
+      },
+      {
+        type: 'NEW',
+        text: '«Peticiones»: whoever decides sees them in one place. In the organization panel’s Members, on top and only when there are open ones — the person with the face and name they published, what they ask, their note, when — with «Aceptar» and «Rechazar». Accepting a claim opens the organization if needed and makes the person its titular; accepting a join makes them a member; declining only writes it down. Every decision goes to «Qué ha pasado». In the house’s Census, the same list across every community, newest first, with the community’s name.',
+      },
+    ],
+  },
+  {
     version: 'v0.118.0',
     date: '2026-10-17 23:30',
     entries: [
