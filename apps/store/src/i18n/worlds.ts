@@ -190,6 +190,12 @@ export interface WorldsRoomMessages {
     readonly dnsElsewhere: string;
     readonly dnsNone: string;
     readonly dnsUnknown: string;
+    /** The room will write the address's record itself (DNS desk): nobody has one yet. */
+    readonly dnsCreate: string;
+    /** The fleet's own record points at another machine: the room will move it. */
+    readonly dnsMove: string;
+    readonly dnsWriting: string;
+    readonly dnsWriteFailed: string;
     readonly imageLabel: string;
     readonly imageHint: string;
     /** The engine step: the engines the chosen machine runs, `{m}`. */
@@ -540,6 +546,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsNone:
         '{d} aún no existe en el DNS: crea un registro A hacia {m} (solo DNS); hasta entonces el mundo no se abrirá.',
       dnsUnknown: 'No se pudo comprobar a dónde apunta {d}; revísalo si el mundo no se abre.',
+      dnsCreate:
+        '{d} aún no tiene registro: la sala lo creará hacia {m} (solo DNS) al crear el mundo.',
+      dnsMove:
+        '{d} tiene un registro de la flota hacia otra máquina: la sala lo moverá a {m} al crear el mundo.',
+      dnsWriting: 'Creando el registro DNS de {d} hacia {m}…',
+      dnsWriteFailed:
+        'No se pudo crear el registro DNS de {d} ({code}). No se ha pedido nada a {m}: inténtalo de nuevo.',
       imageLabel: 'Motor',
       imageHint: 'Una versión fijada del motor: etiqueta sha- o digest, nunca latest.',
       engineLabel: 'Motor',
@@ -904,6 +917,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsNone:
         '{d} is not in DNS yet: create an A record to {m} (DNS only); until then the world will not open.',
       dnsUnknown: 'Could not check where {d} points; check it if the world does not open.',
+      dnsCreate:
+        '{d} has no record yet: the room will create it towards {m} (DNS only) when it creates the world.',
+      dnsMove:
+        '{d} has a fleet record towards another machine: the room will move it to {m} when it creates the world.',
+      dnsWriting: 'Creating the DNS record of {d} towards {m}…',
+      dnsWriteFailed:
+        'Could not create the DNS record of {d} ({code}). Nothing was asked of {m}: try again.',
       imageLabel: 'Engine',
       imageHint: 'A pinned engine build: a sha- tag or a digest, never latest.',
       engineLabel: 'Engine',
@@ -1275,6 +1295,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsNone:
         '{d} はまだ DNS にありません。{m} への A レコード（DNS のみ）を作成してください。それまでワールドは開きません。',
       dnsUnknown: '{d} の向き先を確認できませんでした。ワールドが開かない場合は確認してください。',
+      dnsCreate:
+        '{d} にはまだレコードがありません。ワールド作成時にルームが {m} 向けに作成します(DNS のみ)。',
+      dnsMove:
+        '{d} には別のマシン向けのフリートのレコードがあります。ワールド作成時にルームが {m} へ移します。',
+      dnsWriting: '{d} の DNS レコードを {m} 向けに作成しています…',
+      dnsWriteFailed:
+        '{d} の DNS レコードを作成できませんでした({code})。{m} には何も依頼していません。もう一度お試しください。',
       imageLabel: 'エンジン',
       imageHint: '固定されたエンジンのビルド：sha- タグかダイジェスト。latest は不可。',
       engineLabel: 'エンジン',
@@ -1641,6 +1668,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsNone:
         '{d}은(는) 아직 DNS에 없습니다. {m}(으)로 향하는 A 레코드(DNS 전용)를 만드세요. 그때까지 월드는 열리지 않습니다.',
       dnsUnknown: '{d}이(가) 가리키는 곳을 확인하지 못했습니다. 월드가 열리지 않으면 확인하세요.',
+      dnsCreate:
+        '{d}에는 아직 레코드가 없습니다. 월드를 만들 때 룸이 {m}을(를) 가리키도록 만듭니다(DNS 전용).',
+      dnsMove:
+        '{d}에는 다른 머신을 가리키는 플릿 레코드가 있습니다. 월드를 만들 때 룸이 {m}(으)로 옮깁니다.',
+      dnsWriting: '{d}의 DNS 레코드를 {m}(으)로 만드는 중…',
+      dnsWriteFailed:
+        '{d}의 DNS 레코드를 만들지 못했습니다({code}). {m}에는 아무것도 요청하지 않았습니다. 다시 시도하세요.',
       imageLabel: '엔진',
       imageHint: '고정된 엔진 빌드: sha- 태그나 다이제스트, latest는 안 됩니다.',
       engineLabel: '엔진',
@@ -2006,6 +2040,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsNone:
         '{d} ainda não existe no DNS: crie um registro A para {m} (só DNS); até lá o mundo não abre.',
       dnsUnknown: 'Não foi possível verificar para onde {d} aponta; confira se o mundo não abrir.',
+      dnsCreate:
+        '{d} ainda não tem registro: a sala vai criá-lo para {m} (só DNS) ao criar o mundo.',
+      dnsMove:
+        '{d} tem um registro da frota para outra máquina: a sala vai movê-lo para {m} ao criar o mundo.',
+      dnsWriting: 'Criando o registro DNS de {d} para {m}…',
+      dnsWriteFailed:
+        'Não foi possível criar o registro DNS de {d} ({code}). Nada foi pedido a {m}: tente de novo.',
       imageLabel: 'Motor',
       imageHint: 'Uma versão fixa do motor: etiqueta sha- ou digest, nunca latest.',
       engineLabel: 'Motor',

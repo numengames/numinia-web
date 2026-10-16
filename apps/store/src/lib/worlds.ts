@@ -433,8 +433,47 @@ export function proposeName(source: string, rows: readonly WorldRow[], zone: str
 /**
  * Where an address points in public DNS, against the machine chosen for it:
  * at that machine, somewhere else, nowhere yet, or it could not be told.
+ * With the till's DNS desk the room also knows whose record it is: `create`
+ * means nobody has one (the wildcard answers) and the room will make it,
+ * `move` that the fleet's own record points at another machine and the room
+ * will move it.
  */
-export type AddressDns = 'machine' | 'elsewhere' | 'none' | 'unknown';
+export type AddressDns = 'machine' | 'elsewhere' | 'none' | 'unknown' | 'create' | 'move';
+
+/** What the DNS desk says of an address (the till's `DnsLook`, as the room reads it). */
+export interface DeskLook {
+  readonly record: 'none' | 'fleet' | 'hand';
+  readonly ips: readonly string[];
+  readonly machineIp: string | null;
+}
+
+/** Whether the room writes the record itself before the world is created. */
+export const roomWritesDns = (dns: AddressDns | 'checking'): boolean =>
+  dns === 'create' || dns === 'move';
+
+/**
+ * The desk's answer → the wizard's line. Nobody's record: the room makes
+ * it. The fleet's: already right, or the room moves it. One made by hand:
+ * fine at the machine, a stop anywhere else (the room never touches it).
+ */
+export function dnsFromDesk(look: DeskLook): AddressDns {
+  const atMachine =
+    look.machineIp !== null && look.ips.length > 0 && look.ips.every((ip) => ip === look.machineIp);
+  if (look.record === 'none') return 'create';
+  if (atMachine) return 'machine';
+  if (look.record === 'fleet') return 'move';
+  return look.machineIp === null ? 'unknown' : 'elsewhere';
+}
+
+/** The room's DNS route answer → the desk's look; null when it is not one (a refusal included). */
+export function readDeskLook(body: unknown): DeskLook | null {
+  if (!isRecord(body) || body.ok !== true) return null;
+  const { record, ips, machineIp } = body;
+  if (record !== 'none' && record !== 'fleet' && record !== 'hand') return null;
+  if (!Array.isArray(ips) || !ips.every((ip) => typeof ip === 'string')) return null;
+  if (machineIp !== null && typeof machineIp !== 'string') return null;
+  return { record, ips: ips as string[], machineIp };
+}
 
 /**
  * A DNS-over-HTTPS JSON answer → its IPv4 addresses. A name that does not

@@ -32,7 +32,7 @@ import {
   type EngineRelease,
   type WorldRow,
 } from '../../../lib/worlds';
-import { checkAddress } from '../../../lib/worlds-source';
+import { askAddress } from '../../../lib/worlds-source';
 import {
   ZIP_CAPS,
   inspectZip,
@@ -43,7 +43,15 @@ import {
 } from '../../../lib/zip-read';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { busy, useFleetAction } from './fleet-action';
-import { AddressLine, Field, Modal, StepLine, type DnsState } from './WorldDialogs';
+import {
+  AddressLine,
+  DnsWriteLine,
+  Field,
+  Modal,
+  StepLine,
+  useDnsWrite,
+  type DnsState,
+} from './WorldDialogs';
 import { pageLang } from './WorldViews';
 import { hashZip } from './zip-hash';
 
@@ -165,6 +173,7 @@ export function ImportDialog({
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
   const { step: flow, run, reset } = useFleetAction(wallet, listens);
+  const { dnsStep, prepare, resetDns } = useDnsWrite();
   const lang = pageLang();
   const known = useRef({ rows, zone });
   known.current = { rows, zone };
@@ -230,7 +239,7 @@ export function ImportDialog({
   const badName =
     name !== '' && 'problems' in result && problemFields(result.problems).includes('id');
   const tooBig = file !== null && importer !== undefined && file.size > importer.zipMaxBytes;
-  const sending = busy(flow);
+  const sending = busy(flow) || dnsStep.at === 'writing';
   const words = room.import;
   // A zip the room read but cannot order: no build of its engine yet, or no machine that runs it.
   const unplaceable =
@@ -250,7 +259,7 @@ export function ImportDialog({
     let alive = true;
     setDns('checking');
     const timer = setTimeout(() => {
-      void checkAddress(fetch, domain, alias).then((answer) => {
+      void askAddress(fetch, domain, alias).then((answer) => {
         if (alive) setDns(answer);
       });
     }, 400);
@@ -262,6 +271,7 @@ export function ImportDialog({
 
   const close = (): void => {
     reset();
+    resetDns();
     onClose();
   };
 
@@ -288,9 +298,11 @@ export function ImportDialog({
     });
   }, [flow, file]);
 
-  const sign = (): void => {
+  const sign = async (): Promise<void> => {
     if (order === null || sha === null || file === null) return;
     signed.current = { order, sha };
+    // The address first: a world whose record the room writes gets it before the wallet signs.
+    if (!(await prepare(dns, order.domain, order.server))) return;
     void run({
       kind: 'ImportWorld',
       machine: order.server,
@@ -541,6 +553,7 @@ export function ImportDialog({
               )
             )}
             <p className="nota">{fill(words.signNote, { m: order.server })}</p>
+            <DnsWriteLine step={dnsStep} domain={order.domain} machine={order.server} room={room} />
             <StepLine
               step={flow}
               machine={order.server}
@@ -602,7 +615,7 @@ export function ImportDialog({
               type="button"
               className="btn btn-primario"
               disabled={order === null || sha === null || sending}
-              onClick={sign}
+              onClick={() => void sign()}
               data-metric="worlds-import-sign"
             >
               {words.sign}

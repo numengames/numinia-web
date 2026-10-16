@@ -17,6 +17,9 @@ import {
   buildRows,
   buildTag,
   compareDns,
+  dnsFromDesk,
+  readDeskLook,
+  roomWritesDns,
   describeStatus,
   draftToOrder,
   emptyDraft,
@@ -1057,5 +1060,47 @@ describe('the Numinia Engine beside Hyperfy', () => {
     ]);
     const quiet = buildRows({ orders: [world], cards: [], probes: {} });
     expect(quiet[0]?.update).toBeNull();
+  });
+});
+
+describe('the DNS desk’s answer, as the wizard reads it', () => {
+  const IP = '192.0.2.20';
+  it('makes a record nobody has, keeps or moves its own, and stops at one by hand elsewhere', () => {
+    expect(dnsFromDesk({ record: 'none', ips: [], machineIp: IP })).toBe('create');
+    expect(dnsFromDesk({ record: 'fleet', ips: [IP], machineIp: IP })).toBe('machine');
+    expect(dnsFromDesk({ record: 'fleet', ips: ['192.0.2.10'], machineIp: IP })).toBe('move');
+    expect(dnsFromDesk({ record: 'hand', ips: [IP], machineIp: IP })).toBe('machine');
+    expect(dnsFromDesk({ record: 'hand', ips: ['198.51.100.7'], machineIp: IP })).toBe('elsewhere');
+    expect(dnsFromDesk({ record: 'hand', ips: ['198.51.100.7'], machineIp: null })).toBe('unknown');
+    expect(dnsFromDesk({ record: 'hand', ips: [], machineIp: IP })).toBe('elsewhere');
+  });
+
+  it('writes only what it said it would', () => {
+    expect(roomWritesDns('create')).toBe(true);
+    expect(roomWritesDns('move')).toBe(true);
+    for (const other of ['machine', 'elsewhere', 'none', 'unknown', 'checking'] as const) {
+      expect(roomWritesDns(other)).toBe(false);
+    }
+  });
+
+  it('reads the route’s answer, and nothing that is not one', () => {
+    expect(readDeskLook({ ok: true, record: 'fleet', ips: [IP], machineIp: IP })).toEqual({
+      record: 'fleet',
+      ips: [IP],
+      machineIp: IP,
+    });
+    expect(readDeskLook({ ok: true, record: 'none', ips: [], machineIp: null })?.record).toBe(
+      'none',
+    );
+    for (const bad of [
+      null,
+      { ok: false, problem: 'domain' },
+      { ok: true, record: 'other', ips: [], machineIp: null },
+      { ok: true, record: 'none', ips: [3], machineIp: null },
+      { ok: true, record: 'none', ips: 'x', machineIp: null },
+      { ok: true, record: 'none', ips: [], machineIp: 7 },
+    ]) {
+      expect(readDeskLook(bad)).toBeNull();
+    }
   });
 });

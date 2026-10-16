@@ -72,6 +72,14 @@ import { checkDraft, readDesk, scheduleDraft, type DeskSchedule, type DeskView }
 import { runClose, type CloseRun, type TillDatabase } from './db/repository';
 import { parseTopupPrices } from './lib/accounts';
 import { Stripe, type Fetcher } from './lib/stripe';
+import {
+  CloudflareDns,
+  FleetDns,
+  type DnsDone,
+  type DnsLook,
+  type DnsRefusal,
+  type Fetcher as DnsFetcher,
+} from './lib/fleet-dns';
 import type { DeskCheck } from './lib/tariff';
 import { FakeMeter, NoMeter, parseMeterReadings, type Meter } from './meter';
 
@@ -87,6 +95,12 @@ export interface Env {
   readonly STRIPE_KEY?: string;
   /** Var: JSON `{"10":"price_…","50":"price_…","100":"price_…"}`, the Stripe price of each quick top-up. */
   readonly TILL_TOPUP_PRICES?: string;
+  /**
+   * Secret: a Cloudflare API token with Zone → Zone Read and Zone → DNS Edit
+   * on numinia.com and numen.games only. Without it the DNS desk answers
+   * `not-configured` and the room asks for the record by hand.
+   */
+  readonly CLOUDFLARE_DNS_TOKEN?: string;
 }
 
 /** The nightly close: 00:30 UTC (wrangler.jsonc). */
@@ -417,6 +431,52 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** When the buyer comes back: the session's state, credited once when paid. */
   async confirmTopup(wallet: unknown, sessionId: unknown): Promise<TopupConfirm> {
     return confirmTopup(this.env.TILL_DB, paymentsFor(this.env), wallet, sessionId, new Date());
+  }
+}
+
+/** The fleet's DNS over this Worker's token, or a desk that answers `not-configured`. */
+export function fleetDnsFor(
+  env: Pick<Env, 'CLOUDFLARE_DNS_TOKEN'>,
+  fetcher?: DnsFetcher,
+): FleetDns {
+  const token = env.CLOUDFLARE_DNS_TOKEN;
+  // Deployed, the runtime's own fetch (called, never detached); tests inject a fake Cloudflare.
+  const call: DnsFetcher = fetcher ?? ((url, init) => fetch(url, init));
+  return new FleetDns(
+    token === undefined || token === '' ? null : new CloudflareDns(token, call),
+    call,
+  );
+}
+
+/**
+ * The DNS desk: a world's address written by the fleet itself, so a world
+ * on any machine but the first needs no record made by hand. Bound by
+ * numinia.com as `TILL_DNS`; its API route checks the Oracle's session
+ * (`manage-worlds`), maps the machine to its public host name from its own
+ * list and passes the session's wallet as `by`. Every argument is
+ * re-validated (lib/fleet-dns.ts holds the rails); a refusal is an answer,
+ * only Cloudflare failing to answer throws. Methods, not arrow properties:
+ * RPC exposes only what the prototype declares.
+ */
+export class DnsDesk extends WorkerEntrypoint<Env> {
+  /** Who answers for an address today (the wildcard, the fleet, or a record by hand) and where the machine of `host` is. */
+  async look(domain: unknown, host?: unknown): Promise<DnsLook | DnsRefusal> {
+    return fleetDnsFor(this.env).look(domain, host);
+  }
+
+  /** Points the address at the machine (A, DNS only), creating or moving the fleet's record. */
+  async point(
+    domain: unknown,
+    machine: unknown,
+    host: unknown,
+    by: unknown,
+  ): Promise<DnsDone | DnsRefusal> {
+    return fleetDnsFor(this.env).point(domain, machine, host, by);
+  }
+
+  /** Deletes the fleet's record of the address for this machine; one made by hand stays. */
+  async release(domain: unknown, machine: unknown): Promise<DnsDone | DnsRefusal> {
+    return fleetDnsFor(this.env).release(domain, machine);
   }
 }
 

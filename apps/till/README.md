@@ -203,6 +203,37 @@ and the deploy, and a later migration drops it. An organization that Worker
 founds in between gets its owner, the Team template and its log line from a
 trigger (`team_members_founded_as_before`), which goes with that column.
 
+## The DNS desk
+
+`DnsDesk`, bound by numinia.com as `TILL_DNS`, writes a world's address so
+nobody makes a record by hand in Cloudflare. Every name under `numinia.com`
+and `numen.games` falls to a wildcard that sends it to the first machine
+(open-1); a world on another machine needs its own A record, DNS only (grey
+cloud: the machine's Caddy holds the certificate and the WebSocket). The
+Worlds room asks the desk while the wizard is open (`look`), before the
+wallet signs a new world or a world from its zip (`point`), and once a
+machine took a delete (`release`).
+
+numinia.com's API route checks the Oracle's session (`manage-worlds`), turns
+the machine's alias into its public host name from its own list
+(`FLEET_MACHINES`) and passes the session's wallet as `by`; the browser never
+names a host or an IP. The desk re-checks every field and keeps these rails
+(`src/lib/fleet-dns.ts`):
+
+- only one label under a house zone, never the zone itself or a reserved
+  name (`www`, `mail`, `api`…);
+- only A records, always `proxied: false`, always at the IPv4 the machine's
+  host name resolves to in public DNS;
+- it changes or deletes only records it made itself — their comment starts
+  with `numinia-fleet <machine>` and the short wallet that asked. A record by
+  hand that already points at the machine is left as it is; any other record
+  by hand, or of another type, is refused as `taken`.
+
+**Configuration.** Secret `CLOUDFLARE_DNS_TOKEN`: an API token with **Zone →
+Zone → Read** and **Zone → DNS → Edit**, limited to the zones `numinia.com`
+and `numen.games`. Without it every act answers `not-configured`, and the
+room falls back to public DNS and the record by hand, as before.
+
 ## What it is not yet
 
 The desks serve the Prices room and the Saldo screen. Still missing: the
@@ -232,7 +263,7 @@ creating a world is `MIS-179`/`MIS-185`.
 | `src/meter.ts`                               | `Meter`, `NoMeter`, `FakeMeter` and the fixture reader                                                                                     |
 | `src/db/repository.ts`                       | D1 for the close: one read batch, one write batch; the whole-version reader the desk uses                                                  |
 | `src/db/desk.ts`                             | D1 for the desk: one read batch per call, one guarded insert to schedule                                                                   |
-| `src/worker.ts`                              | `fetch` (health), `scheduled` (the close, the minute's poll), `OracleDesk` and `AccountDesk`                                               |
+| `src/worker.ts`                              | `fetch` (health), `scheduled` (the close, the minute's poll), `OracleDesk`, `AccountDesk`, `DnsDesk`                                       |
 | `src/lib/accounts.ts`                        | what numinia.com sends the account desk, read; the top-up prices; spend buckets                                                            |
 | `src/lib/stripe.ts`                          | the few Stripe calls the till makes, over `fetch`                                                                                          |
 | `src/db/accounts.ts`                         | D1 for the account desk and the minute's poll                                                                                              |
@@ -248,6 +279,7 @@ creating a world is `MIS-179`/`MIS-185`.
 | `fixtures/meter.json`                        | the pretend meter's readings (`TILL_METER=fake`)                                                                                           |
 | `test/sqlite-d1.ts`                          | a D1-shaped shim over `node:sqlite` that runs every migration                                                                              |
 | `test/cloudflare-workers.ts`                 | the `WorkerEntrypoint` the tests use: vitest cannot resolve `cloudflare:workers`                                                           |
+| `src/lib/fleet-dns.ts`                       | a world's address: the rails, the four Cloudflare calls, the desk's `look`, `point` and `release`                                          |
 
 ## The rules
 
