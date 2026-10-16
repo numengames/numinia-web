@@ -39,6 +39,7 @@ import {
   readCopyStatus,
   readDoorLog,
   readDoorWorlds,
+  readEngines,
   readHeartbeat,
   readImportRule,
   readImports,
@@ -48,6 +49,7 @@ import {
   readRequest,
   readRequestResult,
   readTickets,
+  readUpdates,
   sendBeacon,
   sendRequest,
   settled,
@@ -76,7 +78,7 @@ const EXPIRES = 1893456000;
  * and its signer, a stranger's signature, and the keccak checks. The machine
  * verifies the same file.
  */
-const ORACLE = '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2';
+const ORACLE = '0x9d45e13f44b7d40aff8265bd755e4095724df86b';
 const VECTORS = [
   {
     type: 'CreateWorld',
@@ -93,8 +95,8 @@ const VECTORS = [
     },
     digest: '0x6390352cb3395b9e08c31daaec3288413a5800cef65a6569164809637382ca1d',
     signature:
-      '0x53979b23b47d9e026169bf8185e378af8b05b9d237b5c7ce32e610e5be2de6c4661dfc877ceba01a0c99f57c731fd4ead5422c899c7f96928d1527dd6c9d742a1c',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0xef45b8300e044da1a6335bd8cb897797c13cebd0cd93f96a3c8922fcc7bdac6d2c364cde11b1342aad8c99a73f436805c32ed5c4450794ccdadcce36effbd40c1c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'DeleteWorld',
@@ -107,8 +109,8 @@ const VECTORS = [
     },
     digest: '0x4a05422e004fb6b333ed98bbc3d487bdbd231f0ebbf1e6d12516123f4f890a67',
     signature:
-      '0xe9de07eedac06515febd4397056a61540bdba5b71296fdce91768c98eba477330365818120877ecbfe23d1a97185b3e76f9b05a1bf938541ff3e802e1bb1ef551b',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0x1a9e36146a418fb09b44018c9248fb5ead1b42b97adc1876d6fee3b53143c6e155b9beb7badfb1b8c849ba9553637a686ea786e34bf1095c48720a76461ab3a91b',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'StopWorld',
@@ -120,8 +122,8 @@ const VECTORS = [
     },
     digest: '0xcce8832bb8c525e8a94356bd6e02d9d3e39d4fa88b0d9cf49eff9e7eaf8965d1',
     signature:
-      '0xb691149d215c3cc80f2234cb07ec9b1d461e37918e3ebde0664c6c05067bfe7169973ae463811559b9adf9eed9639177ed34ae518c4f183df02d8216650e2c0a1c',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0xc527c4889277e154bd8798478f1187f39da7bef34db4e405bb168c8e9464b9754494ce39ff535b8996f9f737099b04851719835010cc923260308389d88ce6871c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'StartWorld',
@@ -133,8 +135,8 @@ const VECTORS = [
     },
     digest: '0xd84f2ea0aea5ef8176282fb8b08b92dfdc169109ed22205f2271d8c372d82a26',
     signature:
-      '0x2f4a365ce32260dea3b843d2a216d8dd7405f62d04b56ecab76529494e1ed43328c2debd5314de9cf7e3821a16fbc5e0564b442a2eb8cec6e9885494eec3aa791b',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0xffc9bc29629161cb2cf8b601c6e1d64206545da180c404944c1e2e6a0dc9d1f007c4bc8832efe9099712e866254f3b35cbc72e70a7aab6c62c82ea09fbfeb5de1b',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'DownloadWorld',
@@ -146,16 +148,20 @@ const VECTORS = [
     },
     digest: '0xe03580fe93dd2192b20cd5fe6cba48e25020390d9e46e608440cfd5ec2651a27',
     signature:
-      '0xcba02d75d27431cde75fc3c0b570eda353ee5b9193c918c6bb3727bf63b2a16942faa7df519d9a01f90991588020c985431295ba1eb04f62bc0279f7aa6a91481c',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0xa292ba6e7885cc224dbec0c3219c52fafb44139213935adb6b14cb1420921b2316129d8c0d05dda299fbb53194665ea8f152b88358985f2e0d0087dd40481c0d1c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'ShowAdminCode',
-    message: { machine: 'open-1', nonce: '5123456789abcdef0123456789abcdef', expires: 1893456000 },
+    message: {
+      machine: 'open-1',
+      nonce: '5123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
     digest: '0x026533a50e419d03f37105c6f319572c0500f9b65237935ac8670b8dd46ecfe9',
     signature:
-      '0x877379c62c69cda4ac45e9071eb5d832ad67e0c73060d5daeb3e31d43d9cf11d4dfd84b119c708243e9cf1519675f0de1b7d36c898fd2ecd9775d3e63fdecde31b',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0x36e2fe6fbaf9d26f8654eef7f047418688dbd393e302262d4aa70967a66d8c24525e50a990f9300f94b8c7cb77a53f85812c91759492d747755dab4a59ff079e1c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'ShowWorldCode',
@@ -167,8 +173,8 @@ const VECTORS = [
     },
     digest: '0xf69173093218a76e67036e4059ad590d73a16d98de0532caf0ab55464aae3dfd',
     signature:
-      '0x8fc423400677904312b9062779a200695bc7daf3264785adeac3efeb918d1eaf5808b27a54be5e9d948750a9f3b2a7c8e578fa68e32a59b98a90050fede442851b',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0x5865796088c94c8ac85b72ad7192a4d74b665c19f8e38fd1c07becd9f3066430253e286e2326280fbb1110a90e332913594cefb0b05626b4711aced42a7c102f1c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'RotateWorldCode',
@@ -180,8 +186,8 @@ const VECTORS = [
     },
     digest: '0x167365fbf09a8fbe0cd684c20bce0ea5e0ceb682a44775f09ebd45137ba1ed82',
     signature:
-      '0xaff183e4fe6ec36b74b1598736ac446e4232258c4e336032ff0df351c2f6fd6372fbb63e531941a3862910f988a9a60a73aa1d7d1436d9550f2ff9125618b0861b',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0x7ee206a0eb620549dc0c619f1796ac7281f5e9a885650244857647b7ea03a1a0083a589ef21b486fe021df49dd0a6c42f127fe9caac9de50557bbc5299eab60a1c',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
   {
     type: 'ImportWorld',
@@ -200,8 +206,22 @@ const VECTORS = [
     },
     digest: '0x772dc4f6286f22eca4f7eb4bcfc2d0211b060fb1417a9a19415feed1a4999ebe',
     signature:
-      '0xfac462000daffcd32a6c56adf3c1f1303f9f9969f7bb2642c2b7aaea2c8f4abb2b0d67fcb7e4d460de2fae3625ce76066f28753716ab4df1cce6c298261f0eb61c',
-    signer: '0x7e769a047b6ddb1b44a9b8e8ea6b9b4f64da13c2',
+      '0x7f324d04ea7dd8e8c9248ee3294194851c2b4e56a091ff2527781f097d92576948972860d0aac3b893c1e95f9f2c6f012589b695dd63820e75121e8560ca91e21b',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+  },
+  {
+    type: 'UpdateWorld',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      image: 'ghcr.io/numengames/numinia-engine:sha-c57dbb7cc4c51b0834184f1dd47b311e47fde234',
+      nonce: '9123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x43cabdd5396fb9a42e85e9f001424dad6c43c5a282f9a1e075c700b9736ab598',
+    signature:
+      '0x6867abbe16f8f9b69d7db996601a61880def50867068d38a5abc052895f3411359a01b63978236b66dad94940e953c82fa20ace8e7b77c7e15b284509ce174b41b',
+    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
   },
 ] as const;
 const STRANGER = {
@@ -213,8 +233,8 @@ const STRANGER = {
     expires: 1893456000,
   },
   signature:
-    '0x07170a0a71f26014f3f089602c419bc0c29315459dc61594ff1f85cb8a79f35a28d99c448c247a57a63561627109fb21f8685bbfc7efd5a1df3f6800297dbcea1b',
-  signer: '0x21b92566387cea4b5ac4f76f5944248d39729467',
+    '0xb33535cbc5dbe7c7d9213a5e3d7f1750e7fefe2b32c6fabefb4dfef12d9e944d3bccf4a32f4d2732dce5a31f14808534312a5e756a8fc4dfe46f9adc427095d91b',
+  signer: '0x801e3d1cd483514ec2c7b26b9c37f7b4f2ef5a6c',
 } as const;
 const KECCAK = [
   { input: '', hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470' },
@@ -340,6 +360,14 @@ describe('the requests the room builds', () => {
     const zipData = typedData(zip);
     expect(zipData.message['zipBytes']).toBe(50331648n);
     expect(zipData.message['zipSha256']).toBe(VECTORS[8].message.zipSha256);
+    // Another build of a world's own engine: the machine, the world, the image, the number, the expiry.
+    const update = buildRequest(
+      { kind: 'UpdateWorld', machine: 'open-1', world: 'plaza', image: VECTORS[9].message.image },
+      VECTORS[9].message.nonce,
+      NOW_MS,
+    );
+    expect(update).toEqual({ type: 'UpdateWorld', message: VECTORS[9].message });
+    expect(Object.keys(update.message)).toEqual(['machine', 'world', 'image', 'nonce', 'expires']);
     // The answers that are a code: what the room waits for after the machine takes them.
     expect(CODE_KINDS).toEqual(['ShowAdminCode', 'ShowWorldCode', 'RotateWorldCode']);
   });
@@ -384,7 +412,7 @@ describe('addresses and small words', () => {
   });
 
   it('shortens a wallet, leaves a short text alone, and sizes files', () => {
-    expect(shortWallet(ORACLE)).toBe('0x7e76…13c2');
+    expect(shortWallet(ORACLE)).toBe('0x9d45…f86b');
     expect(shortWallet('0x1234')).toBe('0x1234');
     expect(formatBytes(840)).toBe('840 B');
     expect(formatBytes(12_700)).toBe('12.4 KB');
@@ -835,6 +863,8 @@ describe('reading a machine', () => {
       listens: [],
       recipe: null,
       imports: null,
+      engines: null,
+      updates: false,
     });
   });
 
@@ -846,6 +876,27 @@ describe('reading a machine', () => {
     });
     const view = await readMachine(door.fetch, 'open-1');
     expect(view.open && view.imports).toEqual({ zipMaxBytes: 2147483648 });
+  });
+
+  it('says which engines its machine runs and whether it takes updates', async () => {
+    const door = fakeFetch((url) => {
+      if (url === WORLDS) {
+        return json({ worlds: [listed('plaza', 'updating')] });
+      }
+      if (url === MACHINE) {
+        return json({
+          ...BEAT,
+          engines: ['numinia-engine', 'later', 'numinia-hyperfy2'],
+          updates: true,
+        });
+      }
+      return json({ entries: [] });
+    });
+    const view = await readMachine(door.fetch, 'open-1');
+    expect(view.open && view.engines).toEqual(['numinia-hyperfy2', 'numinia-engine']);
+    expect(view.open && view.updates).toBe(true);
+    // A world moved to another build says so until its machine has started it.
+    expect(view.open && view.worlds.map((world) => world.phase)).toEqual(['updating']);
   });
 
   it('says why a door could not be read', async () => {
@@ -907,6 +958,8 @@ describe('gatherFleet — several doors, one fleet', () => {
         listens: ['events'],
         recipe: FLEET_REF,
         imports: { zipMaxBytes: 2147483648 },
+        engines: ['numinia-hyperfy2', 'numinia-engine'],
+        updates: true,
       },
       {
         alias: 'open-2',
@@ -947,6 +1000,8 @@ describe('gatherFleet — several doors, one fleet', () => {
         listens: ['events'],
         recipe: FLEET_REF,
         imports: { zipMaxBytes: 2147483648 },
+        engines: ['numinia-hyperfy2', 'numinia-engine'],
+        updates: true,
       },
       {
         alias: 'open-2',
@@ -956,6 +1011,8 @@ describe('gatherFleet — several doors, one fleet', () => {
         listens: [],
         recipe: null,
         imports: null,
+        engines: null,
+        updates: false,
       },
       {
         alias: 'open-3',
@@ -965,6 +1022,8 @@ describe('gatherFleet — several doors, one fleet', () => {
         listens: [],
         recipe: null,
         imports: null,
+        engines: null,
+        updates: false,
       },
       {
         alias: 'open-4',
@@ -974,6 +1033,8 @@ describe('gatherFleet — several doors, one fleet', () => {
         listens: [],
         recipe: null,
         imports: null,
+        engines: null,
+        updates: false,
       },
     ]);
     // A name belongs to the first machine that holds it.
@@ -1276,9 +1337,17 @@ describe('which recipe a machine was installed from', () => {
     expect(machines.map((machine) => [machine.alias, machine.recipe])).toEqual([
       ['open-1', FLEET_REF],
       ['open-2', null],
+      ['bronte-xs-ca-003', FLEET_REF],
       ['open-3', null],
     ]);
-    expect(machines.map((machine) => staleRecipe(machine))).toEqual([false, true, false]);
+    expect(machines.map((machine) => staleRecipe(machine))).toEqual([false, true, false, false]);
+    // A door that names its engines and one that does not (Hyperfy alone).
+    expect(machines.map((machine) => [machine.engines ?? null, machine.updates])).toEqual([
+      [null, false],
+      [null, false],
+      [['numinia-hyperfy2', 'numinia-engine'], true],
+      [null, false],
+    ]);
   });
 });
 
@@ -1341,7 +1410,36 @@ describe('what the room tells a machine about the browser’s side', () => {
 describe('a world from its zip — sizes, the doors that take zips, the upload, a reload', () => {
   it('knows every rule a world’s zip can break as a refusal of the door', () => {
     for (const rule of IMPORT_RULES) expect(DOOR_ERRORS).toContain(rule);
-    expect(IMPORT_RULES).toHaveLength(20);
+    expect(IMPORT_RULES).toHaveLength(21);
+    // A Numinia Engine zip its own engine would not read: the engine's one line rides with it.
+    expect(readImportRule('engine-refused: mundo.json no es numinia-engine/mundo@2')).toEqual({
+      rule: 'engine-refused',
+      detail: 'mundo.json no es numinia-engine/mundo@2',
+    });
+  });
+
+  it('reads which engines a door runs and whether it takes updates; nothing from a door that says otherwise', () => {
+    expect(readEngines({ engines: ['numinia-engine', 'numinia-hyperfy2'] })).toEqual([
+      'numinia-hyperfy2',
+      'numinia-engine',
+    ]);
+    expect(readEngines({ engines: ['something-else'] })).toEqual([]);
+    for (const body of [null, {}, { engines: 'numinia-engine' }, []]) {
+      expect(readEngines(body)).toBeNull();
+    }
+    expect(readUpdates({ updates: true })).toBe(true);
+    for (const body of [null, {}, { updates: 'yes' }, { updates: 1 }]) {
+      expect(readUpdates(body)).toBe(false);
+    }
+    // An engine the machine does not run, or another engine's build: refusals with words.
+    expect(readAccepted(409, { error: 'unknown-engine' })).toEqual({
+      ok: false,
+      error: 'unknown-engine',
+      status: 409,
+    });
+    expect(readAccepted(409, { error: 'engine-mismatch' })).toMatchObject({
+      error: 'engine-mismatch',
+    });
   });
 
   it('writes a size short, in binary units and the reader’s language, at most one decimal', () => {

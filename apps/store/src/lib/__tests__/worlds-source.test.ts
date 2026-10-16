@@ -7,7 +7,12 @@
 import { describe, expect, it } from 'vitest';
 import type { WorldOrder } from '../worlds';
 import {
+  ENGINE_RELEASE_RETRY_MS,
+  ENGINE_RELEASE_TTL_MS,
+  ENGINE_RELEASE_URL,
   checkAddress,
+  forgetEngineRelease,
+  latestEngine,
   parseFace,
   probeFleet,
   probeWorld,
@@ -233,5 +238,46 @@ describe('a world’s face — its own title and loading picture', () => {
       { id: 'gone', domain: 'gone.numinia.com' },
     ]);
     expect(Object.keys(faces)).toEqual(['hive']);
+  });
+});
+
+describe('latestEngine — the Numinia Engine’s newest build, from its release', () => {
+  const RELEASE = {
+    image: `ghcr.io/numengames/numinia-engine:sha-${'d'.repeat(40)}`,
+    commit: 'd'.repeat(40),
+    build: 'ddddddd 2026-10-16',
+    digest: `sha256:${'e'.repeat(64)}`,
+  };
+
+  it('reads imagen.json once, and keeps a found build a few minutes', async () => {
+    forgetEngineRelease();
+    const { fetch, calls } = fakeFetch(() => ok(RELEASE));
+    expect(await latestEngine(fetch, 1_000)).toEqual(RELEASE);
+    expect(calls.map((call) => call.url)).toEqual([ENGINE_RELEASE_URL]);
+    expect(await latestEngine(fetch, 1_000 + ENGINE_RELEASE_TTL_MS - 1)).toEqual(RELEASE);
+    expect(calls).toHaveLength(1);
+    expect(await latestEngine(fetch, 1_000 + ENGINE_RELEASE_TTL_MS)).toEqual(RELEASE);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('says none while there is no release, or it cannot be read, and asks again after a minute', async () => {
+    for (const answer of [
+      () => fail(404),
+      () => text('<html>'),
+      () => ok({ ...RELEASE, image: 'ghcr.io/numengames/numinia-engine:latest' }),
+      () => Promise.reject(new TypeError('dns')),
+    ]) {
+      forgetEngineRelease();
+      const { fetch, calls } = fakeFetch(answer);
+      expect(await latestEngine(fetch, 5_000)).toBeNull();
+      expect(await latestEngine(fetch, 5_000 + ENGINE_RELEASE_RETRY_MS - 1)).toBeNull();
+      expect(calls).toHaveLength(1);
+      await latestEngine(fetch, 5_000 + ENGINE_RELEASE_RETRY_MS);
+      expect(calls).toHaveLength(2);
+    }
+    forgetEngineRelease();
+    // With no clock given, now.
+    expect(await latestEngine(fakeFetch(() => ok(RELEASE)).fetch)).toEqual(RELEASE);
+    forgetEngineRelease();
   });
 });

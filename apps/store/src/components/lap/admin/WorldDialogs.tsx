@@ -1,10 +1,11 @@
 /**
  * The worlds room's dialogs, after the Tower's: a four-step wizard for a
  * new world (card → place → engine → confirm) that shows exactly what the
- * wallet will sign, a dialog for stop, start, download and delete — delete
- * warns that it cannot be undone, offers a copy first and asks you to type
- * the world's address — and one that shows or changes a world's own admin
- * code.
+ * wallet will sign — the engine step offers the engines the chosen
+ * machine's door names —, a dialog for stop, start, update, download and
+ * delete — delete warns that it cannot be undone, offers a copy first and
+ * asks you to type the world's address — and one that shows or changes a
+ * world's own admin code.
  *
  * Nothing here holds a key. Each action is one request the Oracle's wallet
  * signs and the machine checks itself (lib/fleet.ts). Once the machine takes
@@ -17,11 +18,15 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { copyFileUrl, formatBytes } from '../../../lib/fleet';
 import {
+  DEFAULT_IMAGE,
+  ENGINE_NAMES,
   WORLD_ZONES,
   addressOwner,
   buildTag,
   draftToOrder,
   emptyDraft,
+  engineOf,
+  engineTag,
   fill,
   inHouseZone,
   joinDomain,
@@ -31,6 +36,8 @@ import {
   rowPlace,
   type AddressDns,
   type DraftField,
+  type Engine,
+  type EngineRelease,
   type OrderDraft,
   type WorldCardInfo,
   type WorldRow,
@@ -276,6 +283,8 @@ export function NewWorldDialog({
   wallet,
   sessionHref,
   listens,
+  engines,
+  release,
 }: {
   readonly open: boolean;
   readonly onClose: () => void;
@@ -292,6 +301,10 @@ export function NewWorldDialog({
   readonly sessionHref: string;
   /** Whether a machine's door takes the room's beacons. */
   readonly listens: (alias: string) => boolean;
+  /** The engines a machine runs, as its door says (machineEngines): the engine step offers those. */
+  readonly engines: (alias: string) => readonly Engine[];
+  /** The Numinia Engine's newest published build; null while there is none (its option stays off). */
+  readonly release: EngineRelease | null;
 }) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(machines[0]));
@@ -358,11 +371,17 @@ export function NewWorldDialog({
   const set = (key: keyof OrderDraft) => (value: string) =>
     setDraft((current) => ({ ...current, [key]: value }));
   const chosen = cards.find((card) => card.slug === draft.card.trim()) ?? null;
+  // The engines the chosen machine runs, each with the build a new world of it gets.
+  const offered = engines(draft.server);
+  const engineImage = (engine: Engine): string | null =>
+    engine === 'numinia-engine' ? (release?.image ?? null) : DEFAULT_IMAGE;
+  const drafted = engineOf(draft.image.trim());
+  const engineOffered = drafted === null || offered.includes(drafted);
 
   const canNext =
     (step === 0 && draft.id.trim() !== '' && taken === null) ||
     (step === 1 && draft.server.trim() !== '' && placeAllowed(domain, owner, dns)) ||
-    (step === 2 && draft.image.trim() !== '');
+    (step === 2 && draft.image.trim() !== '' && engineOffered);
 
   const next = (): void => {
     if (step === 0 && label.trim() === '') setLabel(draft.id.trim().toLowerCase());
@@ -545,12 +564,40 @@ export function NewWorldDialog({
           )}
           {step === 2 && (
             <>
+              <div className="campo">
+                <span className="etiqueta">{room.wizard.engineLabel}</span>
+                <div className="fichas" role="group" aria-label={room.wizard.engineLabel}>
+                  {offered.map((engine) => {
+                    const image = engineImage(engine);
+                    return (
+                      <button
+                        key={engine}
+                        type="button"
+                        className="ficha-mundo ficha-motor"
+                        aria-pressed={drafted === engine}
+                        disabled={image === null}
+                        onClick={() => {
+                          if (image !== null) set('image')(image);
+                        }}
+                        data-engine={engine}
+                        data-metric="worlds-wizard-engine"
+                      >
+                        <span>{ENGINE_NAMES[engine]}</span>
+                        <span className="pista mono">
+                          {image === null ? room.wizard.engineNoRelease : buildTag(image)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="pista">{fill(room.wizard.engineHint, { m: draft.server })}</span>
+              </div>
               <Field
                 id="mundo-motor"
                 label={room.wizard.imageLabel}
                 hint={room.wizard.imageHint}
                 value={draft.image}
-                invalid={marked.has('image')}
+                invalid={marked.has('image') || !engineOffered}
                 onChange={set('image')}
               />
               <div className="trio">
@@ -601,7 +648,7 @@ export function NewWorldDialog({
                       <div>
                         <dt className="etiqueta">{room.fields.build}</dt>
                         <dd className="mono" title={order.image}>
-                          {buildTag(order.image)}
+                          {engineTag(order.image)}
                         </dd>
                       </div>
                       <div>
@@ -729,17 +776,22 @@ export function ActionDialog({
     start: words.startTitle,
     delete: words.deleteTitle,
     download: words.downloadTitle,
+    update: words.updateTitle,
   };
   const confirms: Readonly<Record<WorldAction, string>> = {
     stop: words.stopConfirm,
     start: words.startConfirm,
     delete: words.deleteConfirm,
     download: words.downloadConfirm,
+    update: words.updateConfirm,
   };
   const title = row ? fill(titles[action], { t: row.title }) : '';
+  // The build an update moves the world to: the newest of its engine, as the room read it.
+  const target = row?.update ?? null;
   // A delete is confirmed by typing the world's whole address, as it is written.
   const confirmed =
-    action !== 'delete' || (place !== null && typed.trim().toLowerCase() === place.domain);
+    (action !== 'delete' || (place !== null && typed.trim().toLowerCase() === place.domain)) &&
+    (action !== 'update' || target !== null);
   const sending = busy(step);
 
   const close = (): void => {
@@ -747,8 +799,8 @@ export function ActionDialog({
     onClose();
   };
 
-  // Once the machine has taken a stop, a start or a delete, the dialog has
-  // done its job: the machine does the rest and the card shows it.
+  // Once the machine has taken a stop, a start, an update or a delete, the
+  // dialog has done its job: the machine does the rest and the card shows it.
   const closeNow = useRef(close);
   closeNow.current = close;
   useEffect(() => {
@@ -761,7 +813,9 @@ export function ActionDialog({
     if (action === 'delete') void run({ kind: 'DeleteWorld', ...world, domain: place.domain });
     else if (action === 'stop') void run({ kind: 'StopWorld', ...world });
     else if (action === 'start') void run({ kind: 'StartWorld', ...world });
-    else void run({ kind: 'DownloadWorld', ...world });
+    else if (action === 'update' && target !== null) {
+      void run({ kind: 'UpdateWorld', ...world, image: target });
+    } else void run({ kind: 'DownloadWorld', ...world });
   };
 
   return (
@@ -820,6 +874,21 @@ export function ActionDialog({
           {action === 'stop' && <p>{words.stopIntro}</p>}
           {action === 'start' && <p>{words.startIntro}</p>}
           {action === 'download' && <p>{words.downloadIntro}</p>}
+          {action === 'update' && row?.order && target !== null && (
+            <>
+              <p data-update-to={target}>
+                {fill(words.updateIntro, {
+                  t: row.title,
+                  from: buildTag(row.order.image),
+                  to: buildTag(target),
+                })}
+              </p>
+              {/* The build the wallet signs for, whole: the machine takes that one and no other. */}
+              <p className="nota mono huella" data-update-image>
+                {target}
+              </p>
+            </>
+          )}
           {action === 'delete' && row && place && (
             <>
               <p className="aviso-peligro" role="note">

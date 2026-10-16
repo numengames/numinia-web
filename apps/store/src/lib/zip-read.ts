@@ -7,8 +7,13 @@
  * early what the machine would refuse. The machine re-checks everything
  * after the upload: nothing read here is trusted for security.
  *
- * Pure: no dependency and no zod — this runs in the room's island.
+ * Pure: no dependency and no zod — this runs in the room's island. A
+ * Numinia Engine world's zip (`mundo.json`) is read only as far as the
+ * machine reads it: the rules every zip keeps, then its manifest's version;
+ * the engine's own tools judge the rest on its machine.
  */
+
+import type { Engine } from './worlds';
 
 /** The machine's caps for a world's zip; its own are the law, these mirror them. */
 export const ZIP_CAPS = {
@@ -331,13 +336,12 @@ const kept = (path: string): boolean =>
   KEPT_FOLDERS.some((folder) => path === folder || path.startsWith(folder));
 
 /**
- * The first of the machine's rules the zip breaks, in the machine's order
- * (reconcile.py `open_zip` then `inspect_zip`): too many files, then each
- * rule over every entry — encrypted, zip-slip, link, file-too-big, ratio —
- * then the total unpacked, where the world is, and inside it db-open and
- * unexpected. Null when none.
+ * The rules every world's zip keeps, whichever its engine, in the machine's
+ * order (reconcile.py `open_zip` then `check_entries`): too many files,
+ * then each rule over every entry — encrypted, zip-slip, link,
+ * file-too-big, ratio — then the total unpacked. Null when none.
  */
-export function checkZip(
+export function checkEntries(
   entries: readonly ZipEntry[],
   caps: ZipCaps = ZIP_CAPS,
 ): ZipProblem | null {
@@ -357,6 +361,21 @@ export function checkZip(
   }
   const unpacked = entries.reduce((sum, entry) => sum + entry.size, 0);
   if (unpacked > caps.unpackedMax) return problem('unpacked-too-big', null, unpacked);
+  return null;
+}
+
+/**
+ * The first of the machine's rules a Hyperfy world's zip breaks, in the
+ * machine's order (reconcile.py `open_zip` then `inspect_zip`): the rules
+ * every zip keeps (checkEntries), then where the world is, and inside it
+ * db-open and unexpected. Null when none.
+ */
+export function checkZip(
+  entries: readonly ZipEntry[],
+  caps: ZipCaps = ZIP_CAPS,
+): ZipProblem | null {
+  const broken = checkEntries(entries, caps);
+  if (broken) return broken;
   const root = worldRoot(entries);
   if (root === null) return problem('not-a-world');
   const paths = entries.flatMap((entry) => {
@@ -370,17 +389,38 @@ export function checkZip(
   return null;
 }
 
+/** A Numinia Engine world's manifest, and the versions of its zip the engine reads. */
+const ENGINE_MANIFEST = 'mundo.json';
+export const ENGINE_SCHEMAS = ['numinia-engine/mundo@1', 'numinia-engine/mundo@2'] as const;
+export type EngineSchema = (typeof ENGINE_SCHEMAS)[number];
+
+/**
+ * Where a Numinia Engine world sits in its zip, as the engine finds it: its
+ * one `mundo.json` at the zip's root ('') or in exactly one top folder
+ * (`<folder>/`). Null: none, or more than one.
+ */
+export function engineRoot(entries: readonly Pick<ZipEntry, 'name'>[]): string | null {
+  const found = entries
+    .map((entry) => entry.name)
+    .filter((name) => name === ENGINE_MANIFEST || /^[^/]+\/mundo\.json$/.test(name));
+  return found.length === 1 ? (found[0] as string).slice(0, -ENGINE_MANIFEST.length) : null;
+}
+
 /** What the room says about a zip that passes the machine's rules. */
 export interface ZipReading {
+  /** Which engine's world it is: a Hyperfy world (db.sqlite) or a Numinia Engine one (mundo.json). */
+  readonly engine: Engine;
+  /** For a Numinia Engine world: the version of its zip (`numinia-engine/mundo@1|@2`); null for Hyperfy. */
+  readonly schema: EngineSchema | null;
   /** Where the world sits in it: `world/`, `<one folder>/` or '' (the zip's root). */
   readonly root: string;
-  /** The files the machine keeps, db.sqlite included. */
+  /** The files the machine keeps, db.sqlite included (a Numinia Engine world: every file in its folder). */
   readonly files: number;
   /** Everything inside it, unpacked. */
   readonly unpacked: number;
   /** The world's name its `world.json` gives, when the zip carries one at its top. */
   readonly world: string | null;
-  /** When that `world.json` says the copy was made (ISO 8601). */
+  /** When that `world.json` (or the engine's `mundo.json`) says the copy was made (ISO 8601). */
   readonly copiedAt: string | null;
   /** An engine image the zip carries beside the world (a Tower backup's `engine/`): never used. */
   readonly engineBytes: number;
@@ -422,14 +462,72 @@ async function readManifest(
 }
 
 /**
+ * A Numinia Engine world's `mundo.json` → its zip's version and when it was
+ * made; null when it is not one the engine reads (`esquema` @2, or the first
+ * version's `schema` @1). The engine's own tools judge the rest, on its machine.
+ */
+async function readEngineManifest(
+  blob: Blob,
+  entry: ZipEntry,
+): Promise<{ readonly schema: EngineSchema; readonly copiedAt: string | null } | null> {
+  // It lists every file of the world: allowed more than world.json's megabyte.
+  const bytes = await readEntry(blob, entry, 16 * 1024 ** 2);
+  if (bytes === null) return null;
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(utf8.decode(bytes));
+  } catch {
+    return null;
+  }
+  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) return null;
+  const said = manifest as Readonly<Record<string, unknown>>;
+  const [first, second] = ENGINE_SCHEMAS;
+  const schema = said['esquema'] === second ? second : said['schema'] === first ? first : null;
+  if (schema === null || !Array.isArray(said['ficheros'])) return null;
+  const at = schema === second ? said['creado'] : said['hecho'];
+  return { schema, copiedAt: typeof at === 'string' && ISO.test(at) ? at : null };
+}
+
+/**
  * Read a zip the way the machine will judge it: its index, its rules, and,
- * when it passes, what it is. Never throws: an unreadable file is not a zip.
+ * when it passes, what it is — a Hyperfy world (db.sqlite, the machine's
+ * own rules) or a Numinia Engine world (mundo.json; the rules every zip
+ * keeps here, the engine's own on its machine). Never throws: an unreadable
+ * file is not a zip.
  */
 export async function inspectZip(blob: Blob, caps: ZipCaps = ZIP_CAPS): Promise<ZipInspection> {
   if (blob.size === 0) return { ok: false, problem: problem('empty') };
   try {
     const index = await readZipIndex(blob);
     if (!index.ok) return index;
+    const unpacked = index.entries.reduce((sum, entry) => sum + entry.size, 0);
+    if (worldRoot(index.entries) === null) {
+      const broken = checkEntries(index.entries, caps);
+      if (broken) return { ok: false, problem: broken };
+      const root = engineRoot(index.entries);
+      if (root === null) return { ok: false, problem: problem('not-a-world') };
+      const manifest = index.entries.find(
+        (entry) => entry.name === `${root}mundo.json`,
+      ) as ZipEntry;
+      const said = await readEngineManifest(blob, manifest);
+      if (said === null) return { ok: false, problem: problem('not-a-world') };
+      const files = index.entries.filter(
+        (entry) => entry.name.startsWith(root) && !entry.name.endsWith('/'),
+      ).length;
+      return {
+        ok: true,
+        reading: {
+          engine: 'numinia-engine',
+          schema: said.schema,
+          root,
+          files,
+          unpacked,
+          world: null,
+          copiedAt: said.copiedAt,
+          engineBytes: 0,
+        },
+      };
+    }
     const found = checkZip(index.entries, caps);
     if (found) return { ok: false, problem: found };
     const root = worldRoot(index.entries) as string;
@@ -443,9 +541,11 @@ export async function inspectZip(blob: Blob, caps: ZipCaps = ZIP_CAPS): Promise<
     return {
       ok: true,
       reading: {
+        engine: 'numinia-hyperfy2',
+        schema: null,
         root,
         files,
-        unpacked: index.entries.reduce((sum, entry) => sum + entry.size, 0),
+        unpacked,
         ...(await readManifest(blob, index.entries)),
         engineBytes,
       },

@@ -18,8 +18,10 @@
  */
 
 import {
+  ENGINES,
   orderProblems,
   type ArrivingWorld,
+  type Engine,
   type LeavingWorld,
   type MachineSummary,
   type WorldOrder,
@@ -43,7 +45,7 @@ export const REQUEST_SECONDS = 600;
  * the time. Moving it is a release of the room: the machine's pull request
  * merges first, then this constant and the fixture's open-1 move together.
  */
-export const FLEET_REF: string = '9eb226f0bb94db898527fae14699800996da7036';
+export const FLEET_REF: string = '880ff114c8cf2b4f4705300e8bc0224c7dbf0a41';
 /** The recipe each machine is made from, and updated with: pinned to FLEET_REF. */
 export const BOOTSTRAP_URL = `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`;
 
@@ -96,6 +98,11 @@ export const REQUEST_TYPES = {
     text('nonce'),
     whole('expires'),
   ],
+  /**
+   * A world moved to another build of its own engine: the image is all that
+   * changes. The machine fetches it, then makes that one container anew.
+   */
+  UpdateWorld: [text('machine'), text('world'), text('image'), text('nonce'), whole('expires')],
 } as const satisfies Readonly<Record<string, readonly TypeField[]>>;
 
 export type RequestKind = keyof typeof REQUEST_TYPES;
@@ -137,6 +144,13 @@ export type Ask =
       /** The zip's exact size in bytes, and its SHA-256 (64 lowercase hex). */
       readonly zipBytes: number;
       readonly zipSha256: string;
+    }
+  | {
+      readonly kind: 'UpdateWorld';
+      readonly machine: string;
+      readonly world: string;
+      /** The build to move to: another of the world's own engine. */
+      readonly image: string;
     };
 
 /** The requests whose answer is an admin code, the one thing the Oracle asked for. */
@@ -308,6 +322,9 @@ export const DOOR_ERRORS = [
   'origin',
   // A request with no length (411): the door's name for it, POST or PUT.
   'length',
+  // An engine the machine does not run, or a build of another engine than the world's.
+  'unknown-engine',
+  'engine-mismatch',
   // A world from its zip (ImportWorld): the door's, before and while the zip arrives…
   'zip-too-big',
   'no-room',
@@ -330,6 +347,8 @@ export const DOOR_ERRORS = [
   'manifest',
   'db-broken',
   'db-foreign',
+  // A Numinia Engine world's zip: its own engine's tools would not read it.
+  'engine-refused',
 ] as const;
 
 /** A refusal, or one of the two ways the room meets on the road: no answer, or an answer it cannot read. */
@@ -357,6 +376,7 @@ export const IMPORT_RULES = [
   'manifest',
   'db-broken',
   'db-foreign',
+  'engine-refused',
 ] as const satisfies readonly DoorError[];
 
 export type ImportRule = (typeof IMPORT_RULES)[number];
@@ -668,6 +688,22 @@ export function readImports(body: unknown): Imports | null {
     : null;
 }
 
+/**
+ * A door's `/machine` → the engines its machine runs (`engines: [...]`, those
+ * the room knows, in the room's order); null when it names none — a machine
+ * older than the Numinia Engine, which runs Hyperfy alone.
+ */
+export function readEngines(body: unknown): Engine[] | null {
+  if (!isObj(body) || !Array.isArray(body['engines'])) return null;
+  const said: readonly unknown[] = body['engines'];
+  return ENGINES.filter((engine) => said.includes(engine));
+}
+
+/** A door's `/machine` → whether it moves a world to another build of its engine (`updates: true`). */
+export function readUpdates(body: unknown): boolean {
+  return isObj(body) && body['updates'] === true;
+}
+
 /** A beacon's body: `{"events": [...]}`, at most BEACON_MAX_EVENTS, each `ms` a whole number in range. */
 export function beaconBody(events: readonly BeaconEvent[]): string {
   return JSON.stringify({
@@ -711,7 +747,9 @@ export type DoorPhase =
   /** A world from its zip: its zip is on its way to the machine… */
   | 'uploading'
   /** …or the machine is checking and unpacking it. */
-  | 'importing';
+  | 'importing'
+  /** A world moved to another build of its engine, until its machine has started it. */
+  | 'updating';
 
 const PHASES: readonly string[] = [
   'running',
@@ -722,6 +760,7 @@ const PHASES: readonly string[] = [
   'deleting',
   'uploading',
   'importing',
+  'updating',
 ];
 
 /** How much of a zip its machine has: `bytes` of `of`. */
@@ -893,6 +932,10 @@ export type MachineView =
       readonly recipe: string | null;
       /** Whether it brings worlds back from their zip, and how big a zip it takes (readImports). */
       readonly imports: Imports | null;
+      /** The engines it runs (readEngines); null when its door names none: Hyperfy alone. */
+      readonly engines?: readonly Engine[] | null;
+      /** Whether it moves a world to another build of its engine (readUpdates). */
+      readonly updates?: boolean;
     }
   | {
       readonly alias: string;
@@ -928,6 +971,8 @@ export async function readMachine(
     listens: machine.ok ? readListens(machine.body) : [],
     recipe: machine.ok ? readRecipe(machine.body) : null,
     imports: machine.ok ? readImports(machine.body) : null,
+    engines: machine.ok ? readEngines(machine.body) : null,
+    updates: machine.ok && readUpdates(machine.body),
   };
 }
 
@@ -989,6 +1034,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       listens: view.open ? view.listens : [],
       recipe: view.open ? view.recipe : null,
       imports: view.open ? (view.imports ?? null) : null,
+      engines: view.open ? (view.engines ?? null) : null,
+      updates: view.open && view.updates === true,
     })),
     orders,
     phases,

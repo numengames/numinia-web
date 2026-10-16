@@ -41,6 +41,7 @@ import {
   type MachineHealth,
 } from '../../../lib/fleet';
 import {
+  ENGINE_NAMES,
   fill,
   filterRows,
   fleetServers,
@@ -48,8 +49,11 @@ import {
   importMachines,
   listedRows,
   machineChoices,
+  machineEngines,
+  readEngineRelease,
   rowPlace,
   slot,
+  type EngineRelease,
   type MachineSummary,
   type StatusFilter,
   type WorldCardInfo,
@@ -87,6 +91,8 @@ interface Fleet {
   readonly rows: readonly WorldRow[];
   readonly cards: readonly WorldCardInfo[];
   readonly history: readonly DoorLogEntry[];
+  /** The Numinia Engine's newest published build; null while there is none. */
+  readonly engine: EngineRelease | null;
 }
 
 type Panel =
@@ -167,6 +173,10 @@ function machineWords(
   const named = found.detail ?? entry;
   if (found.rule === 'unexpected' && named !== null) {
     return fill(room.import.before.unexpected, { f: named });
+  }
+  // A Numinia Engine zip its machine's engine would not read: the engine's own line why.
+  if (found.rule === 'engine-refused' && named !== null) {
+    return fill(room.import.engineRefused, { m: ticket.machine, why: named });
   }
   const words = fill(room.import.rules[found.rule], {
     m: ticket.machine,
@@ -265,6 +275,8 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
               data-health={machine.open ? health.kind : undefined}
               data-recipe={machine.open ? (stale ? 'stale' : 'pinned') : undefined}
               data-imports={machine.imports === null ? undefined : machine.imports.zipMaxBytes}
+              data-engines={machine.open ? machineEngines(machine).join(' ') : undefined}
+              data-updates={machine.open && machine.updates === true ? 'yes' : undefined}
             >
               {machine.open ? (
                 <>
@@ -275,6 +287,14 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
                       {fill(room.machines.recipe, { r: shortSha(machine.recipe) })}
                     </span>
                   )}
+                  {/* The engines its door names; a door that names none runs Hyperfy alone. */}
+                  <span className="mono receta">
+                    {fill(room.machines.engines, {
+                      e: machineEngines(machine)
+                        .map((engine) => ENGINE_NAMES[engine])
+                        .join(', '),
+                    })}
+                  </span>
                   {line !== null && (
                     <p
                       className="salud-maquina"
@@ -379,6 +399,8 @@ export function WorldsPanel({
           rows: data.rows ?? [],
           cards: data.cards ?? [],
           history: data.history ?? [],
+          // Checked again here: only a build of the exact shape is ever signed for.
+          engine: readEngineRelease(data.engine),
         };
         if (alive) setPanel({ at: 'ready', fleet });
       })
@@ -1121,6 +1143,10 @@ export function WorldsPanel({
         wallet={fleet.wallet}
         sessionHref={sessionHref}
         listens={listens}
+        engines={(alias) =>
+          machineEngines(fleet.machines.find((machine) => machine.alias === alias))
+        }
+        release={fleet.engine}
       />
       <ImportDialog
         source={source}
@@ -1130,6 +1156,7 @@ export function WorldsPanel({
         wallet={fleet.wallet}
         sessionHref={sessionHref}
         listens={listens}
+        release={fleet.engine}
         onClose={() => setSource(null)}
         onFile={(file) => setSource({ kind: 'file', file })}
         onHandover={handover}

@@ -12,8 +12,8 @@ import { useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { formatSize } from '../../../lib/fleet';
 import {
-  buildTag,
   describeStatus,
+  engineTag,
   fill,
   groupByServer,
   rowPlace,
@@ -22,7 +22,8 @@ import {
 } from '../../../lib/worlds';
 import { LunaEspera } from '../../chrome/LunaEspera';
 
-export type WorldAction = 'stop' | 'start' | 'delete' | 'download';
+/** `update`: move a world of the Numinia Engine to its newest build (UpdateWorld). */
+export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update';
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
@@ -142,7 +143,8 @@ function StatusPill({
       phase === 'starting' ||
       phase === 'deleting' ||
       phase === 'uploading' ||
-      phase === 'importing')
+      phase === 'importing' ||
+      phase === 'updating')
       ? room.phases[phase]
       : null;
   return (
@@ -363,6 +365,17 @@ function Actions({
           {room.actions.start}
         </button>
       )}
+      {/* A world of the Numinia Engine whose machine takes updates, on an older build than the newest. */}
+      {order && row.update && (
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          onClick={() => onAction(row, 'update')}
+          data-metric="worlds-update"
+        >
+          {room.actions.update}
+        </button>
+      )}
       {order && (
         <button
           type="button"
@@ -551,7 +564,7 @@ function WorldCard({
               <div>
                 <dt className="etiqueta">{room.fields.build}</dt>
                 <dd className="mono" title={order.image}>
-                  {buildTag(order.image)}
+                  {engineTag(order.image)}
                 </dd>
               </div>
             )}
@@ -636,7 +649,7 @@ export function ListView({
                       <span className="direccion">{place.domain}</span>
                       <span className="detalle">
                         {row.order
-                          ? `${place.server} · ${buildTag(row.order.image)} · ${row.order.limits.memory} · ${row.order.limits.cpus} CPU · ${row.order.limits.maxUploadMb} MB`
+                          ? `${place.server} · ${engineTag(row.order.image)} · ${row.order.limits.memory} · ${row.order.limits.cpus} CPU · ${row.order.limits.maxUploadMb} MB`
                           : place.server}
                       </span>
                     </>

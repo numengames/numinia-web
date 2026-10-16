@@ -1,8 +1,9 @@
 /**
  * The worlds room's reads of the worlds themselves, made like any visitor:
  * each world's public `/status` (is it up, how many inside), where an
- * address points in public DNS, and a world's own page (its title and its
- * loading picture, for a world the Summa has no card for).
+ * address points in public DNS, a world's own page (its title and its
+ * loading picture, for a world the Summa has no card for), and the Numinia
+ * Engine's newest published build.
  *
  * The machines are read through their doors (lib/fleet.ts). Nothing here
  * writes anywhere, and nothing here needs a key.
@@ -12,14 +13,65 @@ import {
   compareDns,
   machineHost,
   readDohAnswer,
+  readEngineRelease,
   readProbe,
   type AddressDns,
+  type EngineRelease,
   type Probe,
   type WorldFace,
   type WorldOrder,
 } from './worlds';
 
 type Fetch = typeof fetch;
+
+// ---------------------------------------------------------------------------
+// The Numinia Engine's newest build, as its latest GitHub release says
+// ---------------------------------------------------------------------------
+
+/**
+ * The newest release's `imagen.json` (numinia-engine's publishing workflow):
+ * a release exists only once its image is in the registry. A public file,
+ * read by the server (github.com sends no CORS header for release files).
+ */
+export const ENGINE_RELEASE_URL =
+  'https://github.com/numengames/numinia-engine/releases/latest/download/imagen.json';
+/** How long an answer is kept: a found build a few minutes, a missing or unreadable one one minute. */
+export const ENGINE_RELEASE_TTL_MS = 5 * 60_000;
+export const ENGINE_RELEASE_RETRY_MS = 60_000;
+
+let engineRelease: { readonly at: number; readonly release: EngineRelease | null } | null = null;
+
+/** Forget the kept answer (tests). */
+export function forgetEngineRelease(): void {
+  engineRelease = null;
+}
+
+/**
+ * The newest Numinia Engine build (readEngineRelease), or null when there is
+ * no release yet or it cannot be read; kept a few minutes. Never throws.
+ */
+export async function latestEngine(
+  fetchImpl: Fetch,
+  nowMs: number = Date.now(),
+  timeoutMs = 4000,
+): Promise<EngineRelease | null> {
+  if (engineRelease !== null) {
+    const ttl = engineRelease.release === null ? ENGINE_RELEASE_RETRY_MS : ENGINE_RELEASE_TTL_MS;
+    if (nowMs - engineRelease.at < ttl) return engineRelease.release;
+  }
+  let release: EngineRelease | null = null;
+  try {
+    const response = await fetchImpl(ENGINE_RELEASE_URL, {
+      headers: { accept: 'application/json', 'user-agent': 'numinia-worlds-room' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (response.ok) release = readEngineRelease(await response.json());
+  } catch {
+    release = null;
+  }
+  engineRelease = { at: nowMs, release };
+  return release;
+}
 
 /** Ask a world's public `/status`, like a visitor. Never throws. */
 export async function probeWorld(
