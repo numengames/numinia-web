@@ -1195,6 +1195,7 @@
 }
 .sedes-ficha {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--s3);
   min-width: 0;
@@ -1213,25 +1214,18 @@
 }
 .sedes-cuerpo {
   display: flex;
-  flex: 1;
+  flex: 1 1 9rem;
   flex-direction: column;
   gap: var(--s1);
   min-width: 0;
 }
 .sedes-nombre {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   font-weight: 500;
   color: var(--texto);
 }
 .sedes-ficha .btn {
-  flex: none;
+  flex: 1 1 100%;
   text-decoration: none;
-}
-@media (max-width: 600px) {
-  .sedes-ficha {
-    flex-wrap: wrap;
-  }
-  .sedes-ficha .btn {
-    margin-left: auto;
-  }
+  text-align: center;
 }
