@@ -1085,14 +1085,20 @@ export function createAccountsFixtureDesk(
         house,
       );
       if ('ok' in allowed) return allowed;
-      // The house adding ITSELF to an organization it is not in is the one own-act allowed:
-      // it joins with the administrator role it already holds through its access.
+      // The house adding ITSELF to an organization it is not in is the one own-act allowed: it
+      // joins as an administrator whatever role was asked. Already an administrator there it is
+      // a no-op; changing its own roles as any other member stays refused.
       if (member === found.who) {
-        if (found.as !== 'house' || current !== undefined) return refuse(OWN_ROLES);
-        joinAsAdministrator(found.book, member);
-        record(found, 'member-added', member, null);
-        record(found, 'role-given', member, { role: administratorOf(found.book)?.id ?? '' });
-        return membersAnswer(found.book);
+        if (found.as !== 'house') return refuse(OWN_ROLES);
+        if (current === undefined) {
+          joinAsAdministrator(found.book, member);
+          record(found, 'member-added', member, null);
+          record(found, 'role-given', member, { role: administratorOf(found.book)?.id ?? '' });
+          return membersAnswer(found.book);
+        }
+        const admin = administratorOf(found.book);
+        const holds = admin !== undefined && heldBy(found.book, member).includes(admin.id);
+        return holds || current.role === 'admin' ? membersAnswer(found.book) : refuse(OWN_ROLES);
       }
       // The house stands below the owners (ORG-007): it names none and demotes none.
       if (found.as === 'house' && current?.role === 'admin') {

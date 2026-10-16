@@ -208,14 +208,31 @@ describe('the house adding itself (the case behind «No se ha podido añadir»)'
     ]);
   });
 
-  it('still refuses to change its own roles once it is a member, and a non-house self-add', async () => {
+  it('is a no-op once it is an administrator there: no new row, no new line', async () => {
     const d = desk();
     const id = await communityAccountId('merge');
     await d.ensureCommunityTeam(HOUSE, true, 'merge', 'Merge');
-    expect(problems(await d.setMember(HOUSE, id, HOUSE, 'member', true))).toEqual([OWN_ROLES]);
+    const written = async () =>
+      lines(await d.log(HOUSE, id, true)).filter((line) => line.act !== 'house-read').length;
+    const before = await written();
+    expect(await d.setMember(HOUSE, id, HOUSE, 'member', true)).toMatchObject({ ok: true });
+    const view = await d.roles(HOUSE, id, true);
+    if (!view.ok) throw new Error('roles');
+    expect(view.members).toHaveLength(1);
+    expect(await written()).toBe(before);
+  });
+
+  it('still refuses to change one’s own roles as a plain member, and a non-house self-add', async () => {
+    const d = desk();
+    const B2 = '0x00000000000000000000000000000000000000b2';
+    expect(problems(await d.setMember(B2, 'acc_team_numen_games', B2, 'admin', true))).toEqual([
+      OWN_ROLES,
+    ]);
     const mine = await d.createTeam(ME, 'Mine');
     if (!mine.ok || !('account' in mine)) throw new Error('team');
-    expect(problems(await d.setMember(ME, mine.account.id, ME, 'member', false))).toHaveLength(1);
+    expect(problems(await d.setMember(ME, mine.account.id, ME, 'member', false))).toEqual([
+      OWN_ROLES,
+    ]);
   });
 });
 
