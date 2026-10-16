@@ -8,6 +8,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { BAZAAR_MESSAGES } from '../../i18n/messages';
 import { VIEWER_MESSAGES } from '../../i18n/viewer';
 import { loadBazaarItems } from '../../lib/bazaar';
+import { communityShelves } from '../../lib/goods';
+import { AHORA_UI } from '../../i18n/ahora';
+import { COMMUNITIES } from '../communities/register';
 import { Bazaar } from './Bazaar';
 
 interface Props {
@@ -16,7 +19,11 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = BAZAAR_MESSAGES[locale];
+const a = AHORA_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
 const items = await loadBazaarItems(locale);
+// «El de cada comunidad, si ha subido algo»: only the communities with goods, never a «· 0».
+const shelves = communityShelves(COMMUNITIES, items.length);
 ---
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead} wide>
@@ -24,6 +31,26 @@ const items = await loadBazaarItems(locale);
     <h1>{t.title}</h1>
     <p>{t.lead}</p>
   </header>
+  {
+    shelves.length > 0 && (
+      <nav class="bazares" aria-label={a.shelvesLabel} data-bazaar-shelves>
+        <p>{a.shelvesLine}</p>
+        <ul>
+          {shelves.map((shelf) => (
+            <li>
+              <a
+                class="estante"
+                href={`${prefix}/communities/${shelf.id}/`}
+                data-metric="bazaar-community-shelf"
+              >
+                {shelf.name} · {shelf.count}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
   <Bazaar
     client:load
     items={items}
@@ -45,6 +72,46 @@ const items = await loadBazaarItems(locale);
     margin: 0;
     font-size: 1.125rem;
     color: var(--texto-2);
+  }
+  /* The line of shelves per community, above the finder (v3). */
+  .bazares {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s3);
+    align-items: center;
+    margin: 0 0 var(--s5);
+  }
+  .bazares p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .bazares ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .estante {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px solid color-mix(in srgb, var(--verdemar) 45%, transparent);
+    border-radius: 999px;
+    color: var(--verdemar);
+    font: 500 0.7rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .estante:hover,
+  .estante:focus-visible {
+    border-color: var(--verdemar);
+    background: color-mix(in srgb, var(--verdemar) 12%, transparent);
   }
 </style>
 

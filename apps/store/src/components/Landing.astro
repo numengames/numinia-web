@@ -1,33 +1,36 @@
 ---
 /**
- * The front door (the app shell, v0.83.0, the Oracle 2026-10-14): action,
- * not explanation. The featured card first, landscape and full width — the
- * house's pick and the next gatherings — then the upcoming gatherings, a
- * shelf of the Bazar in one row (the same strip), the three communities with
- * the nearest gathering, and the two doors for a first visit: how it works,
- * and how to open a community's home.
- * What the page used to explain lives in «Cómo funciona» (/how-it-works/).
+ * «Ahora» (v3, cut C, 2026-10-16): the front page is what the city is doing
+ * now, the same for everyone, signed in or not — action, not explanation
+ * (what the page used to explain lives in «Cómo funciona», /how-it-works/).
  *
- * Two faces (v0.86.0, the Oracle 2026-10-14). A visitor without a session
- * gets the visitor face: what Numinia is in a line, the way in without an
- * account, the four steps, the communities with an open home, the templates
- * with a short form, what stays yours, the city in one paragraph and the
- * questions. A signed-in person gets the face above («Para ti»). The top
- * bar's session script swaps them through `data-session-out` /
- * `data-session-in`; without JavaScript the visitor face is what shows.
+ * Top to bottom: «Lo que presentamos», the 16:9 frame with one featured thing
+ * at a time (Featured.astro); on the phone only, «Ahora mismo, dentro», the
+ * worlds with people as rows — only once the live count says so; the
+ * upcoming encounters, in the visitor's time zone; the three communities
+ * that meet soonest; the four newest goods of the Bazar; and the two doors
+ * for a first visit. The worlds with people are NOT repeated here as cards:
+ * on a wide screen they live in the left rail.
  *
  * Layer 0: renders whole without JavaScript; the only scripts are inline
- * (the countdowns and the strips' arrows), per the landing budget.
+ * (the countdowns, the live count, the frame's and the strip's arrows), per
+ * the landing budget.
  */
 import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { CHROME_MESSAGES } from '../i18n/messages';
-import { COMMUNITIES_UI } from '../i18n/communities';
-import { FRONT_DOOR } from '../i18n/front-door';
-import { HOW_IT_WORKS } from '../i18n/how-it-works';
-import { featuredSlides, upcoming, withHome, withLife } from '../lib/communities';
+import { AHORA_UI } from '../i18n/ahora';
+import { COMMUNITIES_UI, fill } from '../i18n/communities';
+import {
+  countedSedes,
+  featuredSlides,
+  monogram,
+  upcoming,
+  withLife,
+  worldOf,
+} from '../lib/communities';
 import { loadArchive } from '../lib/archive';
-import { goodCard, homeGoods } from '../lib/goods';
+import { goodCard, newestGoods } from '../lib/goods';
 import { COMMUNITIES, RITUALS, communityOf } from './communities/register';
 import Icon from './chrome/Icon.astro';
 import Featured from './communities/Featured.astro';
@@ -35,8 +38,7 @@ import CommunityCard from './communities/CommunityCard.astro';
 import RitualCard from './communities/RitualCard.astro';
 import GoodCardView from './communities/GoodCard.astro';
 import Countdown from './communities/Countdown.astro';
-import HowSteps from './communities/HowSteps.astro';
-import HowTemplates from './communities/HowTemplates.astro';
+import InsideCount from './communities/InsideCount.astro';
 import '../styles/communities.css';
 
 interface Props {
@@ -45,6 +47,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
+const a = AHORA_UI[locale];
 // STD-023 §19 — the site's one line is the page description too.
 const chrome = CHROME_MESSAGES[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
@@ -54,190 +57,62 @@ const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
 const slides = featuredSlides(COMMUNITIES, RITUALS);
 const coming = upcoming(RITUALS);
 const alive = withLife(COMMUNITIES, RITUALS).slice(0, 3);
-const goods = homeGoods(await loadArchive()).map((entry) => goodCard(entry, locale));
-const door = FRONT_DOOR[locale];
-const templates = HOW_IT_WORKS[locale].templates;
-const homes = withHome(COMMUNITIES);
+const archive = await loadArchive();
+const goods = newestGoods(archive).map((entry) => goodCard(entry, locale));
+/** The homes whose people the live count reads: their community and their door. */
+const counted = new Set(countedSedes(COMMUNITIES).map((sede) => sede.id));
+const live = COMMUNITIES.flatMap((community) => {
+  const world = counted.has(community.id) ? worldOf(community, commons, locale) : undefined;
+  return world ? [{ community, world }] : [];
+});
 ---
 
 <BaseLayout locale={locale} title="Numinia" description={chrome.footerTagline}>
-  <div class="visita" data-session-out>
-    <section class="portada">
-      <div class="portada-texto">
-        <p class="etiqueta entrada">{door.eyebrow}</p>
-        <h1 class="display-m entrada-1">{door.heading}</h1>
-        <p class="lead entrada-2">{door.lead}</p>
-        <div class="fila botones entrada-3">
-          <a
-            class="btn btn-primario"
-            href={commons.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-metric="door-enter-city"
-          >
-            {door.enterCity}
-            <Icon name="arrow-square-out" size={18} />
-          </a>
-          <a class="btn btn-fantasma" href="#abrir" data-metric="door-open-home">
-            {door.openHome}
-          </a>
-        </div>
-        <p class="nota entrada-3">{door.enterNote}</p>
-      </div>
-      <img
-        class="portada-imagen entrada-2"
-        src="/images/art/citizens.webp"
-        alt={door.pictureAlt}
-        width="883"
-        height="960"
-        decoding="async"
-      />
-    </section>
-
-    <section class="bloque" id="como">
-      <div class="cabecera-bloque">
-        <div>
-          <p class="etiqueta">{door.stepsEyebrow}</p>
-          <h2 class="titulo-m">{door.stepsTitle}</h2>
-        </div>
-      </div>
-      <HowSteps locale={locale} heading="h3" metric="door-step" />
-    </section>
-
-    {
-      homes.length > 0 && (
-        <section class="bloque" id="con-sede">
-          <div class="cabecera-bloque">
-            <div>
-              <p class="etiqueta">{door.homesEyebrow}</p>
-              <h2 class="titulo-m">{door.homesTitle}</h2>
-              <p class="ayuda">{door.homesHelp}</p>
-            </div>
-            <a class="btn btn-fantasma btn-sm" href={`${prefix}/communities/`} data-metric="door-communities">
-              {door.allCommunities}
-            </a>
-          </div>
-          <div class="rejilla">
-            {homes.map((community) => (
-              <CommunityCard community={community} rituals={RITUALS} locale={locale} prefix={prefix} ui={ui} />
-            ))}
-          </div>
-        </section>
-      )
-    }
-
-    <section class="bloque" id="abrir">
-      <div class="cabecera-bloque">
-        <div>
-          <p class="etiqueta">{HOW_IT_WORKS[locale].openEyebrow}</p>
-          <h2 class="titulo-m">{HOW_IT_WORKS[locale].openTitle}</h2>
-        </div>
-      </div>
-      <HowTemplates locale={locale} />
-      <form
-        class="tarjeta pedir"
-        id="pedir-sede"
-        action="mailto:hola@numengames.com"
-        method="post"
-        enctype="text/plain"
-        data-subject={door.mailSubject}
-      >
-        <h3>{door.formTitle}</h3>
-        <p class="ayuda">{door.formHelp}</p>
-        <div class="campos">
-          <label>
-            <span>{door.formName}</span>
-            <input name="name" required autocomplete="organization" />
-          </label>
-          <label>
-            <span>{door.formKind}</span>
-            <select name="kind">
-              {templates.map((template) => <option>{template.name}</option>)}
-              <option>{door.formKindUnsure}</option>
-            </select>
-          </label>
-          <label>
-            <span>{door.formWhen}</span>
-            <input name="when" type="month" />
-          </label>
-          <label>
-            <span>{door.formEmail}</span>
-            <input name="email" type="email" required autocomplete="email" />
-          </label>
-        </div>
-        <div class="fila enviar">
-          <button class="btn btn-primario" type="submit" data-metric="door-open-send">
-            {door.formSend}
-          </button>
-          <p class="nota">{door.formNote}</p>
-        </div>
-      </form>
-    </section>
-
-    <section class="bloque" id="vuestro">
-      <p class="etiqueta">{door.yoursEyebrow}</p>
-      <h2 class="titulo-m">{door.yoursTitle}</h2>
-      <p class="lead">{door.yoursLead}</p>
-      <div class="fila botones">
-        <a class="btn btn-fantasma" href={`${prefix}/bazaar/`} data-metric="door-bazaar">
-          {door.yoursBazaar}
-        </a>
-        <a
-          class="btn btn-fantasma"
-          href="https://github.com/numengames/numinia-web"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-metric="door-code"
-        >
-          {door.yoursCode}
-          <Icon name="arrow-square-out" size={18} />
-        </a>
-      </div>
-    </section>
-
-    <section class="bloque ciudad" id="ciudad">
-      <div>
-        <p class="etiqueta">{door.cityEyebrow}</p>
-        {door.cityNotice && <p class="nota">{door.cityNotice}</p>}
-        <p class="lead">{door.cityLine}</p>
-        <a href="https://numinia.org" target="_blank" rel="noopener noreferrer" data-metric="door-story">
-          {door.readStory}
-          <Icon name="arrow-square-out" size={16} />
-        </a>
-      </div>
-      <img src="/images/art/genesis.webp" alt="" width="887" height="960" loading="lazy" decoding="async" />
-    </section>
-
-    <section class="bloque" id="preguntas">
-      <p class="etiqueta">{door.faqEyebrow}</p>
-      <h2 class="titulo-m">{door.faqTitle}</h2>
-      <div class="preguntas">
-        {
-          door.faq.map((entry) => (
-            <details>
-              <summary data-metric="door-faq">{entry.q}</summary>
-              <p>{entry.a}</p>
-            </details>
-          ))
-        }
-      </div>
-    </section>
-  </div>
-
-  <div data-session-in hidden>
-  <h1 class="oculto">Numinia</h1>
-  {/* The entrance (STD-023 §14), the one orchestrated moment of the page:
-      the featured card, then the rituals' head and strip, 100 ms apart. */}
+  <h1 class="oculto">{a.title}</h1>
   <div class="entrada">
-    <Featured slides={slides} locale={locale} prefix={prefix} commons={commons} />
+    <Featured slides={slides} live={live} later={coming[0]} locale={locale} prefix={prefix} />
   </div>
+
+  {
+    live.length > 0 && (
+      <section class="vivo-movil" aria-labelledby="vivo-movil-t" data-inside-any hidden>
+        <h2 id="vivo-movil-t">{a.nowInside}</h2>
+        <ul>
+          {live.map(({ community, world }) => (
+            <li data-inside-row={community.id} hidden>
+              <a
+                class="vivo-fila"
+                href={world.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="home-live-world"
+              >
+                <span class="vivo-cara" aria-hidden="true">
+                  {community.image ? (
+                    <img src={community.image.src} alt="" width="40" height="40" loading="lazy" decoding="async" />
+                  ) : (
+                    <b>{monogram(world.name)}</b>
+                  )}
+                  <span class="punto-vivo" />
+                </span>
+                <span class="vivo-txt">
+                  <b>{world.name}</b>
+                  <span class="dentro" data-inside={community.id} />
+                </span>
+                <Icon name="caret-left" size={16} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 
   <section class="bloque" id="rituals">
     <div class="cabecera-bloque entrada-1">
       <div>
-        <p class="etiqueta">{ui.upcomingEyebrow}</p>
-        <h2 class="titulo-m">{ui.upcomingTitle}</h2>
-        <p class="ayuda">{ui.upcomingHelp}</p>
+        <h2 class="titulo-m">{a.upcomingTitle}</h2>
+        <p class="ayuda">{a.upcomingHelp}<span data-tz>.</span></p>
       </div>
       <span class="flechas">
         <button
@@ -278,61 +153,15 @@ const homes = withHome(COMMUNITIES);
     </div>
   </section>
 
-  {
-    goods.length > 0 && (
-      <section class="bloque" id="bazaar">
-        <div class="cabecera-bloque">
-          <div>
-            <p class="etiqueta">{ui.goodsEyebrow}</p>
-            <h2 class="titulo-m">{ui.goodsTitle}</h2>
-            <p class="ayuda">{ui.goodsHelp}</p>
-          </div>
-          <div class="fila acciones-pista">
-            <a class="btn btn-fantasma btn-sm" href={`${prefix}/bazaar/`} data-metric="home-bazaar">
-              {ui.seeBazaar}
-            </a>
-            <span class="flechas">
-              <button
-                type="button"
-                class="flecha"
-                data-step="-1"
-                aria-controls="objetos-pista"
-                aria-label={ui.previous}
-                data-metric="home-bazaar-prev"
-              >
-                <Icon name="caret-left" size={18} />
-              </button>
-              <button
-                type="button"
-                class="flecha der"
-                data-step="1"
-                aria-controls="objetos-pista"
-                aria-label={ui.next}
-                data-metric="home-bazaar-next"
-              >
-                <Icon name="caret-left" size={18} />
-              </button>
-            </span>
-          </div>
-        </div>
-        {/* One row, the same strip as the gatherings above (the Oracle,
-            2026-10-14: «yo no mostraría dos filas»): two cards per step. */}
-        <div class="pista" id="objetos-pista" data-step-px="512">
-          {goods.map((card) => (
-            <GoodCardView card={card} prefix={prefix} ui={ui} inCarousel />
-          ))}
-        </div>
-      </section>
-    )
-  }
-
   <section class="bloque" id="alive">
     <div class="cabecera-bloque">
       <div>
-        <p class="etiqueta">{ui.liveEyebrow}</p>
-        <h2 class="titulo-m">{ui.liveTitle}</h2>
-        <p class="ayuda">{ui.liveHelp}</p>
+        <h2 class="titulo-m">{a.aliveTitle}</h2>
+        <p class="ayuda">{a.aliveHelp}</p>
       </div>
+      <a class="btn btn-fantasma btn-sm" href={`${prefix}/communities/`} data-metric="home-communities">
+        {fill(a.allCommunities, { n: COMMUNITIES.length })}
+      </a>
     </div>
     <div class="rejilla">
       {
@@ -349,6 +178,27 @@ const homes = withHome(COMMUNITIES);
     </div>
   </section>
 
+  {
+    goods.length > 0 && (
+      <section class="bloque" id="bazaar">
+        <div class="cabecera-bloque">
+          <div>
+            <h2 class="titulo-m">{a.newTitle}</h2>
+            <p class="ayuda">{a.newHelp}</p>
+          </div>
+          <a class="btn btn-fantasma btn-sm" href={`${prefix}/bazaar/`} data-metric="home-bazaar">
+            {fill(a.allBazaar, { n: archive.length })}
+          </a>
+        </div>
+        <div class="rejilla rejilla-obj">
+          {goods.map((card) => (
+            <GoodCardView card={card} prefix={prefix} ui={ui} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   <section class="final" aria-label={ui.firstTime}>
     <p>{ui.firstTime}</p>
     <div class="fila puertas">
@@ -362,43 +212,38 @@ const homes = withHome(COMMUNITIES);
       </a>
     </div>
   </section>
-  </div>
 
   <Countdown ui={ui} />
-  <script is:inline>
-    /* The strips' arrows: the featured card steps one slide, the others two
-       cards, and all wrap at the ends. Without JavaScript they scroll by hand. */
-    /* The request for a home: without JavaScript the form posts to the mail
-       client as it is; with it, the mail opens with a subject and one line
-       per field, labelled in the page's language. */
-    var pedir = document.getElementById('pedir-sede');
-    if (pedir) {
-      pedir.addEventListener('submit', function (event) {
-        event.preventDefault();
-        var lines = [];
-        var name = '';
-        pedir.querySelectorAll('label').forEach(function (label) {
-          var field = label.querySelector('input,select');
-          if (!field || !field.value) return;
-          if (field.name === 'name') name = field.value;
-          lines.push(label.querySelector('span').textContent + ': ' + field.value);
-        });
-        var subject = (pedir.getAttribute('data-subject') || '').replace('{name}', name);
-        location.href =
-          'mailto:hola@numengames.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(lines.join('\n'));
+  <InsideCount ui={ui} />
+  <script>
+    /* The hours of the encounters are the visitor's: say whose. */
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone) {
+      for (const el of document.querySelectorAll('[data-tz]')) {
+        el.textContent = `: ${zone.replace(/_/g, ' ')}.`;
+      }
+    }
+    /* The encounters' strip: two cards per step, wrapping at the ends.
+       Without JavaScript it scrolls by hand. */
+    for (const button of document.querySelectorAll<HTMLElement>('[data-step]')) {
+      button.addEventListener('click', () => {
+        const strip = document.getElementById(button.getAttribute('aria-controls') ?? '');
+        if (!strip) return;
+        const width = Number(strip.dataset.stepPx) || strip.clientWidth;
+        const end = strip.scrollWidth - strip.clientWidth;
+        const x = strip.scrollLeft;
+        const left =
+          button.dataset.step === '1'
+            ? x >= end - 2
+              ? 0
+              : Math.min(x + width, end)
+            : x <= 2
+              ? end
+              : Math.max(x - width, 0);
+        const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        strip.scrollTo({ left, behavior: still ? 'auto' : 'smooth' });
       });
     }
-    document.querySelectorAll('[data-step]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var s = document.getElementById(b.getAttribute('aria-controls'));
-        if (!s) return;
-        var w = Number(s.getAttribute('data-step-px')) || s.clientWidth;
-        var end = s.scrollWidth - s.clientWidth;
-        var x = s.scrollLeft;
-        x = b.getAttribute('data-step') === '1' ? (x >= end - 2 ? 0 : Math.min(x + w, end)) : x <= 2 ? end : Math.max(x - w, 0);
-        s.scrollTo({ left: x, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      });
-    });
   </script>
 </BaseLayout>
 
@@ -425,8 +270,94 @@ const homes = withHome(COMMUNITIES);
   .pista::-webkit-scrollbar {
     display: none;
   }
-  .acciones-pista {
+  .rejilla-obj {
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  }
+  /* «Ahora mismo, dentro»: the phone only — on a wide screen the left rail says it. */
+  .vivo-movil {
+    margin: var(--s5) 0 0;
+  }
+  .vivo-movil[hidden] {
+    display: none;
+  }
+  @media (min-width: 48rem) {
+    .vivo-movil {
+      display: none;
+    }
+  }
+  .vivo-movil h2 {
+    font-size: 1.15rem;
+    margin: 0 0 var(--s2);
+  }
+  .vivo-movil ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .vivo-movil li[hidden] {
+    display: none;
+  }
+  .vivo-fila {
+    display: flex;
+    align-items: center;
     gap: var(--s3);
+    min-height: 52px;
+    padding: var(--s2) 0;
+    border-bottom: 1px solid var(--linea);
+    color: var(--texto);
+    text-decoration: none;
+  }
+  .vivo-fila > :global(svg) {
+    transform: scaleX(-1);
+    color: var(--texto-2);
+    flex: none;
+  }
+  .vivo-cara {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 8px;
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    display: grid;
+    place-items: center;
+  }
+  .vivo-cara img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 7px;
+  }
+  .vivo-cara b {
+    font: 600 0.7rem var(--sans);
+  }
+  .punto-vivo {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--enlace);
+    border: 2px solid var(--fondo);
+  }
+  .vivo-txt {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.3;
+  }
+  .vivo-txt b {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .vivo-txt .dentro {
+    font-size: 0.85rem;
+    color: var(--enlace);
   }
   .final {
     display: flex;
@@ -450,139 +381,10 @@ const homes = withHome(COMMUNITIES);
     align-items: center;
     font-weight: 500;
     text-decoration: none;
+    min-height: 32px;
   }
   .puertas a:hover,
   .puertas a:focus-visible {
     text-decoration: underline;
-  }
-  /* The visitor face. */
-  .portada {
-    display: grid;
-    gap: var(--s6);
-    grid-template-columns: 1fr;
-    align-items: center;
-    padding: var(--s6) 0 var(--s7);
-  }
-  @media (min-width: 56.25rem) {
-    .portada {
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: var(--s7);
-    }
-  }
-  .portada > *,
-  .ciudad > * {
-    min-width: 0;
-  }
-  .portada h1 {
-    margin: var(--s3) 0 var(--s4);
-  }
-  .visita .lead {
-    color: var(--texto-2);
-    font-size: 1.15rem;
-    line-height: 1.5;
-    max-width: 58ch;
-    margin: var(--s3) 0 var(--s5);
-  }
-  .botones {
-    gap: var(--s3);
-  }
-  .visita .nota {
-    color: var(--texto-2);
-    font-size: 0.875rem;
-    margin: var(--s3) 0 0;
-  }
-  .portada-imagen {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border-radius: var(--radio-marco);
-    border: 1px solid var(--linea);
-  }
-  .pedir {
-    margin-top: var(--s5);
-  }
-  .pedir h3 {
-    margin: 0;
-    font-size: 1.15rem;
-  }
-  .pedir .ayuda {
-    color: var(--texto-2);
-    margin: var(--s2) 0 var(--s4);
-  }
-  .campos {
-    display: grid;
-    gap: var(--s4);
-    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-    margin-bottom: var(--s4);
-  }
-  .campos label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    color: var(--texto-2);
-    font-size: 0.9rem;
-    min-width: 0;
-  }
-  .campos input,
-  .campos select {
-    font: 400 1rem var(--sans);
-    color: var(--texto);
-    background: var(--fondo);
-    border: 1px solid var(--linea-f);
-    border-radius: var(--radio-control);
-    min-height: 44px;
-    padding: 0 var(--s3);
-    min-width: 0;
-  }
-  .enviar {
-    gap: var(--s4);
-  }
-  .enviar .nota {
-    margin: 0;
-  }
-  .ciudad {
-    display: grid;
-    gap: var(--s6);
-    grid-template-columns: 1fr;
-    align-items: center;
-  }
-  @media (min-width: 56.25rem) {
-    .ciudad {
-      grid-template-columns: 1.3fr 0.7fr;
-    }
-  }
-  .ciudad a {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-  }
-  .ciudad img {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border-radius: var(--radio-marco);
-    border: 1px solid var(--linea);
-  }
-  .preguntas {
-    max-width: 760px;
-    margin-top: var(--s5);
-  }
-  .preguntas details {
-    border-bottom: 1px solid var(--linea);
-    padding: var(--s3) 0;
-  }
-  .preguntas summary {
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1.05rem;
-    min-height: 32px;
-  }
-  .preguntas p {
-    color: var(--texto-2);
-    margin: var(--s2) 0 0;
   }
 </style>

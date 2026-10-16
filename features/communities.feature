@@ -5,7 +5,8 @@ Feature: Communities (phase 0 of the communities platform)
   yes yet) is a file but never a page. The rituals feed the home, the
   calendar and the iCalendar feeds. Since the app shell (v0.83.0) the home
   is action, not explanation: what it used to explain lives in «Cómo
-  funciona», which replaced the city page. Verified against the build output.
+  funciona», which replaced the city page. Since v3 the home is «Ahora», the
+  same for everyone. Verified against the build output.
 
   Scenario: The communities index and the calendar exist in every locale
     Given the store application has been built
@@ -24,10 +25,10 @@ Feature: Communities (phase 0 of the communities platform)
     Then the home carries no explanation heading and opens on the featured card
     And the home shows the Bazar block with real goods and their licence
 
-  Scenario: A first visit says what Numinia is and opens the city without an account
+  Scenario: The home is «Ahora», the same for everyone, and its questions live in how it works
     Given the store application has been built
-    Then the home's visitor face comes first and the signed-in face waits hidden
-    And the visitor face opens the commons, shows only communities with an open home and asks for a home with a form
+    Then the home is «Ahora» in every locale: one face, the featured frame first, then encounters, communities and the newest goods
+    And the questions of the old visitor face are on how it works
 
   Scenario: The app shell pages exist in every locale
     Given the store application has been built
@@ -51,9 +52,9 @@ Feature: Communities (phase 0 of the communities platform)
     Given the store application has been built
     Then the Oracle alone sees how to edit a community and its rituals
 
-  Scenario: The home's Bazar shelf is one row, the same strip as the gatherings
+  Scenario: The home's newest goods are four in one row, under the encounters' strip
     Given the store application has been built
-    Then the home's Bazar shelf is one strip with its arrows, like the gatherings
+    Then the home's newest goods are four in one row, and the encounters ride a strip with arrows
 
   Scenario: A community's page shows what its space uses, each piece with its honest state
     Given the store application has been built
