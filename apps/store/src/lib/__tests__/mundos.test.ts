@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { localeHref } from '../app-nav';
 import {
   HOMES_API,
+  counted,
   PLACE_API,
   PLACE_MAX,
   WORLD_ID_SHAPE,
@@ -49,6 +50,15 @@ describe('addresses', () => {
     for (const id of ['', '../x', 'a/b', '-x', 'a b', 'x'.repeat(65)]) {
       expect(WORLD_ID_SHAPE.test(id)).toBe(false);
     }
+  });
+});
+
+describe('counts', () => {
+  it('pick the singular for one and the plural for the rest, zero included', () => {
+    const forms = { one: '{n} sede', other: '{n} sedes' };
+    expect(counted(forms, 1)).toBe('{n} sede');
+    expect(counted(forms, 0)).toBe('{n} sedes');
+    expect(counted(forms, 3)).toBe('{n} sedes');
   });
 });
 
