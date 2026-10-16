@@ -66,6 +66,7 @@ import {
   type Organization,
 } from './organizations';
 import { column, instant, text, type Row, type TillDatabase } from './repository';
+import { publishedIn } from './profiles';
 
 /** A role as the panel draws it. */
 export interface RoleDetail {
@@ -90,6 +91,13 @@ export interface MemberDetail {
   readonly roleIds: readonly string[];
   /** The roles the one asking may give to or take from this member. */
   readonly assignable: readonly string[];
+  /**
+   * What the member published (cut «Tu nombre y tu cara», STD-053): the name
+   * fellow members read and the Bazar avatar's id, or null for none. Absent,
+   * both, when the member published nothing.
+   */
+  readonly name?: string;
+  readonly avatar?: string | null;
 }
 
 export interface RolesView {
@@ -139,9 +147,14 @@ async function entering(
   return enter(db, wallet, accountId, house);
 }
 
-/** The organization as the one who entered it may handle its roles. */
-function viewOf({ org, acting }: Entered): RolesView {
+/**
+ * The organization as the one who entered it may handle its roles, each
+ * member with what they published, if anything (cut «Tu nombre y tu cara»):
+ * this view is answered only to members and to the house, never a stranger.
+ */
+async function viewOf(db: TillDatabase, { org, acting }: Entered): Promise<RolesView> {
   const { access } = acting;
+  const published = await publishedIn(db, org.accountId);
   return {
     ok: true,
     accountId: org.accountId,
@@ -173,6 +186,7 @@ function viewOf({ org, acting }: Entered): RolesView {
           assignable: org.state.roles
             .filter((role) => canAssignRole(access, target, role).ok)
             .map((role) => role.id),
+          ...published.get(member.personId),
         };
       }),
   };
@@ -182,7 +196,7 @@ function viewOf({ org, acting }: Entered): RolesView {
 async function reread(db: TillDatabase, { org, acting }: Entered): Promise<RolesAnswer> {
   const fresh = (await loadOrganization(db, org.accountId)) as Organization;
   const again = actingIn(fresh, acting.wallet, acting.as === 'house') ?? acting;
-  return viewOf({ org: fresh, acting: again });
+  return viewOf(db, { org: fresh, acting: again });
 }
 
 /** Runs a change and answers the organization as it is now, or that it changed meanwhile. */
@@ -206,7 +220,7 @@ export async function rolesOf(
   const entered = await entering(db, sentWallet, sentAccount, sentHouse);
   if ('problems' in entered) return entered;
   await houseRead(entered, db, now, 'roles');
-  return viewOf(entered);
+  return viewOf(db, entered);
 }
 
 const find = (org: Organization, id: string): OrganizationRole | undefined =>
@@ -351,7 +365,7 @@ export async function editRole(
     ...(after.hoist === role.hoist ? [] : ['hoist']),
     ...(Object.keys(delta).length > 0 ? ['permissions'] : []),
   ];
-  if (fields.length === 0) return viewOf(entered);
+  if (fields.length === 0) return viewOf(db, entered);
   return written(db, entered, [
     db
       .prepare(UPDATE_ROLE)
@@ -409,7 +423,7 @@ export async function moveRole(
   // Never beyond the top of the list: a gap would hold no role.
   const top = Math.max(...org.state.roles.map((held) => held.position));
   const to = Math.min(requested, top);
-  if (to === role.position) return viewOf(entered);
+  if (to === role.position) return viewOf(db, entered);
   const up = to > role.position;
   const shifted = org.state.roles
     .filter((held) =>
@@ -493,7 +507,7 @@ export async function assignRole(
   if (target === undefined) return refuse(ROLE_PROBLEMS.noSuchMember);
   const allowed = canAssignRole(acting.access, accessIn(org, target.personId), role);
   if (!allowed.ok) return refuse(refusalOf(allowed.refusal, 'manage-roles', org.state.roles));
-  if (target.roleIds.includes(role.id) === give) return viewOf(entered);
+  if (target.roleIds.includes(role.id) === give) return viewOf(db, entered);
   return written(db, entered, [
     db
       .prepare(give ? GIVE_ROLE : TAKE_ROLE)

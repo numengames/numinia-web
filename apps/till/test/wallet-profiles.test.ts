@@ -273,7 +273,10 @@ describe('migration 0006: one row per wallet that chose to publish', () => {
       ...FORBIDDEN.map((point) => ({ name: `Ri${String.fromCodePoint(point)}ma` })),
     ];
     for (const row of refused) {
-      expect(() => insert(row), JSON.stringify(row)).toThrow(/CHECK constraint failed/);
+      // A CHECK refuses; `'now'` is refused before it, as non-deterministic.
+      expect(() => insert(row), JSON.stringify(row)).toThrow(
+        /CHECK constraint failed|non-deterministic use of strftime/,
+      );
     }
     expect(profileRows(sqlite)).toEqual([]);
   });
