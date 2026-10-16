@@ -37,6 +37,13 @@ export interface PlacementMessages extends OrgChoiceMessages {
   readonly clear: string;
   /** Chooses every world the filters show: «Elegir los {n} que se ven». */
   readonly selectShown: string;
+  /** The house's button that opens the organization (the sede) of every community. */
+  readonly openAll: string;
+  /** Its tooltip: what it does and that it is safe to press twice. */
+  readonly openAllTip: string;
+  /** «{n} comunidades abiertas»: what it answers. */
+  readonly openedAll: Counted;
+  readonly openAllFailed: string;
   /** The dialog's title for one world and for several. */
   readonly titleOne: string;
   readonly titleMany: string;
@@ -205,6 +212,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       chosen: { one: '{n} mundo elegido', other: '{n} mundos elegidos' },
       clear: 'Quitar la selección',
       selectShown: 'Elegir los {n} que se ven',
+      openAll: 'Abrir todas las comunidades',
+      openAllTip:
+        'Abre la sede de cada comunidad y hace a la casa administradora de todas. Se puede repetir sin riesgo.',
+      openedAll: { one: '{n} comunidad abierta', other: '{n} comunidades abiertas' },
+      openAllFailed: 'No se han podido abrir las comunidades.',
       titleOne: 'Asignar «{w}» a una organización',
       titleMany: 'Asignar {n} mundos a una organización',
       orgLabel: 'Organización',
@@ -350,6 +362,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       chosen: { one: '{n} world chosen', other: '{n} worlds chosen' },
       clear: 'Clear the selection',
       selectShown: 'Choose the {n} shown',
+      openAll: 'Open all communities',
+      openAllTip:
+        'Opens the home of every community and makes the house an administrator of each. Safe to press again.',
+      openedAll: { one: '{n} community open', other: '{n} communities open' },
+      openAllFailed: 'The communities could not be opened.',
       titleOne: 'Assign “{w}” to an organization',
       titleMany: 'Assign {n} worlds to an organization',
       orgLabel: 'Organization',
@@ -496,6 +513,14 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       chosen: { one: '{n}件のワールドを選択中', other: '{n}件のワールドを選択中' },
       clear: '選択を解除',
       selectShown: '表示中の{n}件を選ぶ',
+      openAll: 'すべてのコミュニティを開く',
+      openAllTip:
+        'すべてのコミュニティの拠点を開き、ハウスをそれぞれの管理者にします。もう一度押しても問題ありません。',
+      openedAll: {
+        one: '{n}件のコミュニティを開きました',
+        other: '{n}件のコミュニティを開きました',
+      },
+      openAllFailed: 'コミュニティを開けませんでした。',
       titleOne: '「{w}」を組織に割り当てる',
       titleMany: '{n}件のワールドを組織に割り当てる',
       orgLabel: '組織',
@@ -640,6 +665,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       chosen: { one: '월드 {n}개 선택됨', other: '월드 {n}개 선택됨' },
       clear: '선택 해제',
       selectShown: '표시된 {n}개 선택',
+      openAll: '모든 커뮤니티 열기',
+      openAllTip:
+        '모든 커뮤니티의 거점을 열고 하우스를 각각의 관리자로 만듭니다. 다시 눌러도 안전합니다.',
+      openedAll: { one: '커뮤니티 {n}개 열림', other: '커뮤니티 {n}개 열림' },
+      openAllFailed: '커뮤니티를 열지 못했습니다.',
       titleOne: '“{w}”을(를) 조직에 배정',
       titleMany: '월드 {n}개를 조직에 배정',
       orgLabel: '조직',
@@ -783,6 +813,11 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       chosen: { one: '{n} mundo escolhido', other: '{n} mundos escolhidos' },
       clear: 'Limpar a seleção',
       selectShown: 'Escolher os {n} exibidos',
+      openAll: 'Abrir todas as comunidades',
+      openAllTip:
+        'Abre a sede de cada comunidade e torna a casa administradora de todas. Pode repetir sem risco.',
+      openedAll: { one: '{n} comunidade aberta', other: '{n} comunidades abertas' },
+      openAllFailed: 'Não foi possível abrir as comunidades.',
       titleOne: 'Atribuir “{w}” a uma organização',
       titleMany: 'Atribuir {n} mundos a uma organização',
       orgLabel: 'Organização',

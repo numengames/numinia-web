@@ -42,6 +42,7 @@ import {
   type ImportTicket,
   type MachineHealth,
 } from '../../../lib/fleet';
+import { openAllCommunities } from '../../../lib/org-choices';
 import { counted, homesByWorld, loadHomes, worldHref } from '../../../lib/mundos';
 import {
   ENGINE_NAMES,
@@ -397,6 +398,23 @@ export function WorldsPanel({
   const [homesFailed, setHomesFailed] = useState(false);
   const [placing, setPlacing] = useState<PlaceAsk | null>(null);
   const [placedNote, setPlacedNote] = useState<string | null>(null);
+  // Cut 7: the house opens every community's organization at once.
+  const [openingAll, setOpeningAll] = useState(false);
+  const [openedNote, setOpenedNote] = useState<{
+    readonly ok: boolean;
+    readonly text: string;
+  } | null>(null);
+  const openAll = async (): Promise<void> => {
+    setOpeningAll(true);
+    setOpenedNote(null);
+    const opened = await openAllCommunities(fetch);
+    setOpeningAll(false);
+    setOpenedNote(
+      opened.ok
+        ? { ok: true, text: fill(counted(mundos.openedAll, opened.opened), { n: opened.opened }) }
+        : { ok: false, text: mundos.openAllFailed },
+    );
+  };
   const readHomes = useCallback(async (): Promise<void> => {
     const sheet = await loadHomes(fetch);
     setHomes(sheet.at === 'ready' ? homesByWorld(sheet.items) : null);
@@ -1068,6 +1086,30 @@ export function WorldsPanel({
         </div>
       )}
 
+      {fleetReady && (
+        <div className="casas-barra" data-open-all-bar>
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            onClick={() => void openAll()}
+            disabled={openingAll}
+            data-espera={openingAll ? '' : undefined}
+            title={mundos.openAllTip}
+            data-metric="worlds-open-all-communities"
+          >
+            {mundos.openAll}
+          </button>
+          {openedNote !== null && (
+            <span
+              className={openedNote.ok ? 'nota exito' : 'nota fallo'}
+              role={openedNote.ok ? 'status' : 'alert'}
+              data-opened-all
+            >
+              {openedNote.text}
+            </span>
+          )}
+        </div>
+      )}
       {shown.length > 0 && (
         <div className="casas-barra" data-place-bar>
           <button
