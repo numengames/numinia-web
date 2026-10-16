@@ -161,7 +161,7 @@ async function ready(page: Page): Promise<void> {
   await expect(panel(page)).toHaveAttribute('data-state', 'ready');
 }
 
-const BUILT = ['members', 'balance'] as const;
+const BUILT = ['members', 'roles', 'balance'] as const;
 const SOON = [
   ['venues', 'Sedes'],
   ['gatherings', 'Encuentros'],
@@ -235,7 +235,12 @@ test.describe('without a session, or without an organization', () => {
   test('signed out, every screen asks you to sign in and comes back to itself', async ({
     page,
   }) => {
-    for (const path of ['/es/panel/', '/es/panel/miembros/', '/es/panel/saldo/']) {
+    for (const path of [
+      '/es/panel/',
+      '/es/panel/miembros/',
+      '/es/panel/roles/',
+      '/es/panel/saldo/',
+    ]) {
       await page.goto(path);
       const door = page.locator('[data-org-signed-out] a');
       await expect(door).toBeVisible();
@@ -334,6 +339,7 @@ test.describe('the organization in the address', () => {
     const paths: Record<string, string> = {
       summary: '/es/panel/',
       members: '/es/panel/miembros/',
+      roles: '/es/panel/roles/',
       balance: '/es/panel/saldo/',
     };
     for (const [id, path] of Object.entries(paths)) {
@@ -435,13 +441,13 @@ test.describe('Resumen', () => {
 });
 
 test.describe('the pieces of the rail', () => {
-  test('three are links, six are marked as under construction and are not, in the order of the prototype', async ({
+  test('four are links, six are marked as under construction and are not, in the order of the prototype', async ({
     page,
   }) => {
     await signedIn(page, 'nomad');
     await page.goto('/es/panel/');
     await ready(page);
-    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 9');
+    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 10');
     expect(
       await rail(page)
         .locator('[data-piece-list] > li')
@@ -451,13 +457,16 @@ test.describe('the pieces of the rail', () => {
       'venues',
       'gatherings',
       'members',
+      'roles',
       'agents',
       'memory',
       'bazaar',
       'balance',
       'settings',
     ]);
-    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(3);
+    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(4);
+    await expect(rail(page).locator('a[data-metric="panel-nav-members"]')).toHaveText('Miembros');
+    await expect(rail(page).locator('a[data-metric="panel-nav-roles"]')).toHaveText('Roles');
     for (const [id, name] of SOON) {
       const row = rail(page).locator(`[data-piece="${id}"]`);
       await expect(row).toContainText(name);
@@ -518,15 +527,15 @@ test.describe('the pieces of the rail', () => {
 });
 
 test.describe('the screens that already exist, inside the panel', () => {
-  test('Miembros y roles hosts the members of the chosen organization, with no second picker', async ({
+  test('Miembros hosts the people of the chosen organization, with no second picker', async ({
     page,
   }) => {
     const seen = await signedIn(page, 'nomad');
     await page.goto(`/es/panel/miembros/?org=${ACTIVE.id}`);
     await ready(page);
-    await expect(page.locator('h1')).toHaveText('Miembros y roles');
-    await expect(page.locator('[data-panel-members]')).toBeVisible();
-    await expect(page.locator('[data-panel-roles] [data-role]')).toHaveCount(3);
+    await expect(page.locator('h1')).toHaveText('Miembros');
+    await expect(page.locator('[data-people-members]')).toBeVisible();
+    await expect(page.locator('[data-person]')).toHaveCount(2);
     // The panel's own selector is the only one: the island's is gone.
     await expect(page.locator('#panel-org')).toHaveCount(0);
     await expect(page.getByLabel('Panel de')).toHaveValue(ACTIVE.id);
@@ -534,11 +543,27 @@ test.describe('the screens that already exist, inside the panel', () => {
     expect(new Set(seen.roles)).toEqual(new Set([ACTIVE.id]));
   });
 
+  test('Roles hosts the roles of the chosen organization, from the top down', async ({ page }) => {
+    const seen = await signedIn(page, 'nomad');
+    await page.goto(`/es/panel/roles/?org=${ACTIVE.id}`);
+    await ready(page);
+    await expect(page.locator('h1')).toHaveText('Roles');
+    await expect(page.locator('[data-roles-list] [data-role-name]')).toHaveText([
+      'Administración',
+      'Finanzas',
+      '@todos',
+    ]);
+    await expect(page.getByLabel('Panel de')).toHaveValue(ACTIVE.id);
+    expect(new Set(seen.roles)).toEqual(new Set([ACTIVE.id]));
+  });
+
   test('entering as the house shows the strip the screen already draws', async ({ page }) => {
     await signedIn(page, 'oracle');
-    await page.goto(`/es/panel/miembros/?org=${TARUGO.id}`);
-    await ready(page);
-    await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
+    for (const path of ['/es/panel/miembros/', '/es/panel/roles/']) {
+      await page.goto(`${path}?org=${TARUGO.id}`);
+      await ready(page);
+      await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
+    }
   });
 
   test('Saldo y consumo hosts the balance of the chosen organization, with no second picker', async ({
@@ -555,7 +580,7 @@ test.describe('the screens that already exist, inside the panel', () => {
     expect(new Set(seen.statements)).toEqual(new Set([ACTIVE.id]));
   });
 
-  test('/saldo/ and /saldo/miembros/ keep their own pickers, exactly as before', async ({
+  test('/saldo/ keeps its own picker, and /saldo/miembros/ sends you to the panel’s Miembros', async ({
     page,
   }) => {
     await signedIn(page, 'nomad');
@@ -564,15 +589,21 @@ test.describe('the screens that already exist, inside the panel', () => {
     await expect(page.locator('[data-metric="saldo-new-team"]')).toBeVisible();
     await expect(page.locator('[data-org-panel]')).toHaveCount(0);
     await page.goto('/es/saldo/miembros/');
-    await expect(page.locator('#panel-org')).toBeVisible();
-    await expect(page.locator('[data-org-panel]')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/es\/panel\/miembros\/$/);
+    await ready(page);
+    await expect(page.locator('h1')).toHaveText('Miembros');
   });
 });
 
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  for (const path of ['/es/panel/', '/es/panel/miembros/', '/es/panel/saldo/']) {
+  for (const path of [
+    '/es/panel/',
+    '/es/panel/miembros/',
+    '/es/panel/roles/',
+    '/es/panel/saldo/',
+  ]) {
     test(`${path} has no sideways scroll, and the rail scrolls inside itself`, async ({ page }) => {
       await signedIn(page, 'oracle');
       await page.goto(`${path}?org=${ACTIVE.id}`);
@@ -601,7 +632,12 @@ test.describe('on a phone', () => {
 
 for (const colorScheme of ['dark', 'light'] as const) {
   test.describe(`axe, ${colorScheme}`, () => {
-    for (const path of ['/es/panel/', '/es/panel/miembros/', '/es/panel/saldo/']) {
+    for (const path of [
+      '/es/panel/',
+      '/es/panel/miembros/',
+      '/es/panel/roles/',
+      '/es/panel/saldo/',
+    ]) {
       test(`${path} with an Oracle and three organizations passes WCAG A/AA`, async ({ page }) => {
         await page.emulateMedia({ colorScheme });
         await signedIn(page, 'oracle');

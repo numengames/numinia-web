@@ -1,9 +1,11 @@
 /**
  * «La casa entra» (QA 2026-10-15) in a real browser against the built site:
- * an Oracle's session sees every organization in the Members tab and enters
- * the ones it is not in as the house — with the strip «Entras como la casa» —
- * while a citizen's session sees only its own and cannot enter another by
- * asking for it, whatever it sends.
+ * an Oracle's session sees every organization in the panel's Miembros and
+ * enters the ones it is not in as the house — with the strip «Entras como
+ * la casa» — while a citizen's session sees only its own and cannot enter
+ * another by asking for it, whatever it sends. The ranks of Miembros
+ * (/api/saldo/ranks) are read here for real: the allowlist's Oracle, and
+ * everyone else a Nomad (this server has no census).
  *
  * The e2e server of playwright.config.ts has no auth secrets (the other specs
  * play the till's answers with `page.route`), and this one tests the real
@@ -105,50 +107,70 @@ async function signIn(context: BrowserContext, wallet: string, rank: 'oracle' | 
   await context.addCookies([{ name: 'numinia_session', value, url: origin }]);
 }
 
-test('without a session the Members tab asks you to sign in, and the API says nobody', async ({
+test('without a session Miembros asks you to sign in, and the API says nobody', async ({
   page,
 }) => {
-  await page.goto(`${origin}/es/saldo/miembros/`);
-  await expect(page.locator('[data-saldo-signed-out]')).toBeVisible();
+  await page.goto(`${origin}/es/panel/miembros/`);
+  await expect(page.locator('[data-org-signed-out]')).toBeVisible();
   const overview = await page.request.get(`${origin}/api/saldo`);
   expect(overview.status()).toBe(401);
   const entering = await page.request.get(`${origin}/api/saldo/roles?cuenta=${TARUGO}&house=true`);
   expect(entering.status()).toBe(401);
+  const ranks = await page.request.get(`${origin}/api/saldo/ranks?cuenta=${TARUGO}`);
+  expect(ranks.status()).toBe(401);
 });
 
-test('an Oracle sees three organizations in Members and enters the others as the house', async ({
+test('an Oracle sees three organizations in Miembros and enters the others as the house', async ({
   page,
   context,
 }) => {
   await signIn(context, ORACLE, 'oracle');
-  await page.goto(`${origin}/es/saldo/miembros/`);
+  await page.goto(`${origin}/es/panel/miembros/`);
 
   // Its own organization first, then the other two by name.
-  const picker = page.locator('#panel-org');
-  await expect(picker).toBeVisible();
-  await expect(picker.locator('option')).toHaveText([
+  const switcher = page.getByLabel('Panel de');
+  await expect(switcher.locator('option')).toHaveText([
     'Numen Games',
     'Active Inference Institute',
     'La Tarugo',
   ]);
-  await expect(page.locator('[data-panel-owner]')).toBeVisible();
+  await expect(page.locator(`[data-person="${ORACLE}"]`)).toBeVisible();
   await expect(page.locator('[data-panel-house]')).toHaveCount(0);
+  // Its rank in the city, read by the server: the allowlist says Oracle.
+  await expect(page.locator(`[data-person="${ORACLE}"] [data-rank]`)).toHaveText('Oráculo');
 
-  // Each of the others: the strip, and the roles of an organization it is not in.
+  // Each of the others: the strip, and the people of an organization it is not in.
   for (const name of ['Active Inference Institute', 'La Tarugo']) {
-    await picker.selectOption({ label: name });
+    await switcher.selectOption({ label: name });
     await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
-    await expect(page.locator('[data-panel-owner]')).toHaveCount(0);
-    await expect(page.locator('[data-role]').first()).toBeVisible();
+    await expect(page.locator('[data-person]').first()).toBeVisible();
+    await expect(page.locator(`[data-person="${ORACLE}"]`)).toHaveCount(0);
   }
+  // La Tarugo's people: no census on this server, so each is a Nomad.
+  await expect(page.locator('[data-person] [data-rank]')).toHaveText(['Nómada', 'Nómada']);
+  const ranks = await page.request.get(`${origin}/api/saldo/ranks?cuenta=${TARUGO}`);
+  expect(ranks.status()).toBe(200);
+  expect(ranks.headers()['cache-control']).toBe('private, max-age=300');
+  expect(await ranks.json()).toEqual({
+    ok: true,
+    ranks: {
+      '0x00000000000000000000000000000000000000e5': 'nomad',
+      '0x00000000000000000000000000000000000000f6': 'nomad',
+    },
+  });
 
   // Everything the house reads is written down, and it can read that.
-  await page.locator('[data-metric="saldo-log-toggle"]').click();
-  await expect(page.locator('.saldo-registro li').first()).toContainText('La casa ha mirado');
+  await page.locator('[data-metric="panel-log-toggle"]').click();
+  await expect(page.locator('[data-panel-log] li').first()).toContainText('La casa ha mirado');
 
-  // Back in its own, the strip is its own again.
-  await picker.selectOption({ label: 'Numen Games' });
-  await expect(page.locator('[data-panel-owner]')).toBeVisible();
+  // Its roles too, with the owners apart.
+  await page.locator('a[data-metric="panel-nav-roles"]').click();
+  await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
+  await expect(page.locator('[data-roles-list] [data-role]').first()).toBeVisible();
+
+  // Back in its own, the strip is gone.
+  await page.getByLabel('Panel de').selectOption({ label: 'Numen Games' });
+  await expect(page.locator('[data-roles-list] [data-role]').first()).toBeVisible();
   await expect(page.locator('[data-panel-house]')).toHaveCount(0);
 });
 
@@ -178,10 +200,10 @@ test('a citizen sees only its own organization and cannot enter another by askin
   context,
 }) => {
   await signIn(context, CITIZEN, 'nomad');
-  await page.goto(`${origin}/es/saldo/miembros/`);
-  await expect(page.locator('[data-panel-owner]')).toBeVisible();
-  // One organization: no picker, no strip of the house.
-  await expect(page.locator('#panel-org')).toHaveCount(0);
+  await page.goto(`${origin}/es/panel/miembros/`);
+  await expect(page.locator(`[data-person="${CITIZEN}"] [data-owner-chip]`)).toBeVisible();
+  // One organization: no switcher, no strip of the house.
+  await expect(page.locator('#org-switch')).toHaveCount(0);
   await expect(page.locator('[data-panel-house]')).toHaveCount(0);
 
   const overview = await page.request.get(`${origin}/api/saldo`);
@@ -195,12 +217,15 @@ test('a citizen sees only its own organization and cannot enter another by askin
     `cuenta=${TARUGO}&house=true`,
     `house=1&cuenta=${TARUGO}`,
   ]) {
-    for (const path of ['roles', 'log', 'statement']) {
+    for (const path of ['roles', 'log', 'statement', 'ranks']) {
       const reply = await page.request.get(`${origin}/api/saldo/${path}?${query}`);
       expect(reply.status()).toBe(403);
       expect(await reply.json()).toEqual({ error: 'refused', problems: ['not a member'] });
     }
   }
+  // The personal account has no people to rank.
+  const personal = await page.request.get(`${origin}/api/saldo/ranks?cuenta=acc_personal`);
+  expect(personal.status()).toBe(404);
   const rename = { action: 'rename', accountId: TARUGO, name: 'Mine' };
   const refused = await page.request.post(`${origin}/api/saldo`, { data: rename });
   expect(await refused.json()).toEqual({ result: { ok: false, problems: ['not a member'] } });
@@ -226,18 +251,24 @@ test('a forged or foreign cookie is no session, Oracle or not', async ({ page, c
   expect(reply.status()).toBe(401);
 });
 
-test('the Members tab is accessible as the house, on a phone too', async ({ page, context }) => {
+test('Miembros and Roles are accessible as the house, on a phone too', async ({
+  page,
+  context,
+}) => {
   await signIn(context, ORACLE, 'oracle');
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(`${origin}/es/saldo/miembros/`);
-    await page.locator('#panel-org').selectOption({ label: 'La Tarugo' });
-    await expect(page.locator('[data-panel-house]')).toBeVisible();
-    await expect(page.locator('[data-role]').first()).toBeVisible();
-    const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(scroll).toBeLessThanOrEqual(width);
-    const results = await new AxeBuilder({ page }).analyze();
-    expect(results.violations).toEqual([]);
+    for (const path of ['/es/panel/miembros/', '/es/panel/roles/']) {
+      await page.goto(`${origin}${path}?org=${TARUGO}`);
+      await expect(page.locator('[data-panel-house]')).toBeVisible();
+      await expect(
+        page.locator('[data-person], [data-roles-list] [data-role]').first(),
+      ).toBeVisible();
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(width);
+      const results = await new AxeBuilder({ page }).exclude('.binaria').analyze();
+      expect(results.violations, `${path} at ${width}`).toEqual([]);
+    }
   }
 });
 
