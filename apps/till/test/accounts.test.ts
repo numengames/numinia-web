@@ -240,7 +240,8 @@ describe('each world over a range', () => {
       worldsOver('7d', '2026-10-14', [
         use('zeta', '2026-10-13', '2g', 1440, 60),
         use('alfa', '2026-10-13', '2g', 1440, 60),
+        use('mitad', '2026-10-13', '2g', 1440, 60),
       ]).map((world) => world.worldId),
-    ).toEqual(['alfa', 'zeta']);
+    ).toEqual(['alfa', 'mitad', 'zeta']);
   });
 });

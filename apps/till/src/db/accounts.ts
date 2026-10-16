@@ -50,13 +50,17 @@ import {
   readTeamName,
   readWallet,
   spendBuckets,
+  worldsOver,
   type AmountKey,
+  type DaySpend,
   type SpendBucket,
   type SpendRange,
   type TeamRole,
   type TopupPrices,
+  type WorldDayUse,
+  type WorldSpend,
 } from '../lib/accounts';
-import { compareLines, lineId, lotsAt, type LedgerLine } from '../lib/ledger';
+import { compareLines, lineId, lotsAt, type LedgerLine, type WorldDayLine } from '../lib/ledger';
 import {
   ACTS,
   ORG_PROBLEMS,
@@ -69,6 +73,12 @@ import {
   topDown,
 } from '../lib/organizations';
 import type { CheckoutSession, SessionEvent, Stripe } from '../lib/stripe';
+import {
+  splitWorldDayCents,
+  statementTariff,
+  type StatementTariff,
+  type TariffVersion,
+} from '../lib/tariff';
 import { dayOf } from '../lib/utc-day';
 import {
   ADD_MEMBER,
@@ -89,7 +99,17 @@ import {
   type LogAct,
   type Organization,
 } from './organizations';
-import { cents, column, day, instant, text, type Row, type TillDatabase } from './repository';
+import {
+  SELECT_VERSIONS,
+  cents,
+  column,
+  day,
+  instant,
+  text,
+  versionOf,
+  type Row,
+  type TillDatabase,
+} from './repository';
 
 /** One account as a wallet sees it: its own, or an organization it belongs to. */
 export interface AccountSummary {
@@ -142,10 +162,12 @@ export interface StatementLine {
   readonly amountCents: number;
   /** A top-up's VAT. */
   readonly vatCents?: number;
-  /** A world's day: the UTC date, the world and its size. */
+  /** A world's day: the UTC date, the world, its size and its minutes running and stopped. */
   readonly day?: string;
   readonly worldId?: string;
   readonly size?: string;
+  readonly minutesRunning?: number;
+  readonly minutesStopped?: number;
   /** An adjustment's reason. */
   readonly reason?: string;
 }
@@ -164,9 +186,16 @@ export interface Statement {
   readonly lowBalance: boolean;
   /** Every lot, oldest first, with what is left of it now. */
   readonly lots: readonly StatementLot[];
-  /** What worlds' days cost in the range, every bucket present, oldest first. */
+  /**
+   * What worlds' days cost in the range, every bucket present, oldest first,
+   * each split between running and stopped minutes.
+   */
   readonly spend: readonly SpendBucket[];
   readonly spendTotalCents: number;
+  /** Each world with a day in the range: its size, the days it ran, what it cost. */
+  readonly worlds: readonly WorldSpend[];
+  /** The tariff in force today for the sizes in use; absent while none is in force. */
+  readonly tariff?: StatementTariff;
   /** The last 100 lines, newest first. */
   readonly lines: readonly StatementLine[];
   /** An organization's members (admins first); absent for a personal account. */
@@ -528,12 +557,55 @@ function statementLineOf(line: LedgerLine): StatementLine {
     case 'topup':
       return { ...base, vatCents: line.vatCents };
     case 'world_day':
-      return { ...base, day: line.day, worldId: line.worldId, size: line.size };
+      return {
+        ...base,
+        day: line.day,
+        worldId: line.worldId,
+        size: line.size,
+        minutesRunning: line.minutesRunning,
+        minutesStopped: line.minutesStopped,
+      };
     case 'adjustment':
       return { ...base, reason: line.reason };
     default:
       return base;
   }
+}
+
+/**
+ * What a world's day cost, split between its running and stopped minutes at
+ * the prices of the version that charged it. A size that version does not
+ * price (a line written by hand) counts as running whole.
+ */
+function daySpendOf(line: WorldDayLine, versions: readonly TariffVersion[]): DaySpend {
+  const spent = -line.amountCents;
+  const price = versions.find((version) => version.id === line.tariffVersionId)?.sizes[line.size];
+  const split =
+    price === undefined
+      ? { runningCents: spent, stoppedCents: 0 }
+      : splitWorldDayCents(price, line.minutesRunning, line.minutesStopped, spent);
+  return { day: line.day, cents: spent, ...split };
+}
+
+/** A world's day as the per-world table counts it. */
+function worldDayUseOf(line: WorldDayLine): WorldDayUse {
+  return {
+    worldId: line.worldId,
+    day: line.day,
+    size: line.size,
+    minutesRunning: line.minutesRunning,
+    cents: -line.amountCents,
+  };
+}
+
+/** The size each world of the account reserved on its latest charged day. */
+function sizesInUse(days: readonly WorldDayLine[]): string[] {
+  const latest = new Map<string, WorldDayLine>();
+  for (const line of days) {
+    const seen = latest.get(line.worldId);
+    if (seen === undefined || line.day >= seen.day) latest.set(line.worldId, line);
+  }
+  return [...new Set([...latest.values()].map((line) => line.size))];
 }
 
 async function batchOf(db: TillDatabase, statements: D1PreparedStatement[]): Promise<Row[][]> {
@@ -786,8 +858,11 @@ export async function renameTeam(
 
 /**
  * The statement of an account the wallet owns or belongs to: balance,
- * lots, the spend of `sentRange` in UTC days or months, the last lines and,
- * for an organization, its members — read in one batch.
+ * lots, the spend of `sentRange` in UTC days or months split between
+ * running and stopped minutes, each world over the range, the tariff in
+ * force today for the sizes in use, the last lines and, for an
+ * organization, its members — read in one batch. Only the account's own
+ * lines are read: no amount of another account ever reaches it.
  */
 export async function statement(
   db: TillDatabase,
@@ -829,18 +904,21 @@ export async function statement(
     await houseRead(entered, db, now, 'statement');
     account = summaryIn(entered);
   }
-  const [lineRows, memberRows] = (await batchOf(db, [
+  const [lineRows, memberRows, versionRows] = (await batchOf(db, [
     db.prepare(SELECT_LINES).bind(accountId),
     db.prepare(SELECT_MEMBERS).bind(accountId),
-  ])) as [Row[], Row[]];
+    db.prepare(SELECT_VERSIONS),
+  ])) as [Row[], Row[], Row[]];
   const lines = lineRows.map(ledgerLineOf);
+  const versions = versionRows.map(versionOf);
+  const today = dayOf(now);
+  const days = lines.filter((line): line is WorldDayLine => line.kind === 'world_day');
   const spend = spendBuckets(
     range,
-    dayOf(now),
-    lines.flatMap((line) =>
-      line.kind === 'world_day' ? [{ day: line.day, cents: -line.amountCents }] : [],
-    ),
+    today,
+    days.map((line) => daySpendOf(line, versions)),
   );
+  const tariff = statementTariff(versions, today, sizesInUse(days));
   const answer: Statement = {
     ok: true,
     account,
@@ -849,6 +927,8 @@ export async function statement(
     lots: lotsAt(lines, now.toISOString()).lots.map((lot) => ({ ...lot })),
     spend,
     spendTotalCents: spend.reduce((sum, bucket) => sum + bucket.cents, 0),
+    worlds: worldsOver(range, today, days.map(worldDayUseOf)),
+    ...(tariff === undefined ? {} : { tariff }),
     lines: [...lines]
       .sort((a, b) => compareLines(b, a))
       .slice(0, STATEMENT_LINES)

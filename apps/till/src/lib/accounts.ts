@@ -117,21 +117,67 @@ export function parseTopupPrices(text: unknown): TopupPrices | undefined {
   return prices as TopupPrices;
 }
 
-/** One bar of the usage chart: a UTC day (`YYYY-MM-DD`) or month (`YYYY-MM`) and what was spent in it. */
+/**
+ * One bar of the usage chart: a UTC day (`YYYY-MM-DD`) or month (`YYYY-MM`),
+ * what was spent in it, and that split between the minutes the worlds ran
+ * and the minutes they were stopped (the two add up to `cents`).
+ */
 export interface SpendBucket {
   readonly bucket: string;
   readonly cents: number;
+  readonly runningCents: number;
+  readonly stoppedCents: number;
 }
 
-/** What a world's day cost, positive: the spend of that UTC day. */
+/** What a world's day cost, positive: the spend of that UTC day, split as its bar stacks it. */
 export interface DaySpend {
   readonly day: string;
+  readonly cents: number;
+  readonly runningCents: number;
+  readonly stoppedCents: number;
+}
+
+/** A world's day as the per-world table counts it. */
+export interface WorldDayUse {
+  readonly worldId: string;
+  readonly day: string;
+  readonly size: string;
+  readonly minutesRunning: number;
+  /** What the day cost, positive. */
+  readonly cents: number;
+}
+
+/** A world over a range: its latest size there, the days it ran at all, and what it cost. */
+export interface WorldSpend {
+  readonly worldId: string;
+  readonly size: string;
+  readonly daysRunning: number;
   readonly cents: number;
 }
 
 function monthBefore(month: string, count: number): string {
   const index = Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1 - count;
   return `${String(Math.floor(index / 12)).padStart(4, '0')}-${String((index % 12) + 1).padStart(2, '0')}`;
+}
+
+/** The buckets of a range ending on `today`, oldest first: 7 or 30 UTC days, or 12 months. */
+function rangeKeys(range: SpendRange, today: string): string[] {
+  const keys: string[] = [];
+  if (range === '12m') {
+    for (let back = 11; back >= 0; back -= 1) keys.push(monthBefore(today.slice(0, 7), back));
+  } else {
+    const count = range === '7d' ? 7 : 30;
+    const end = Date.parse(`${today}T00:00:00.000Z`);
+    for (let back = count - 1; back >= 0; back -= 1) {
+      keys.push(new Date(end - back * 86_400_000).toISOString().slice(0, 10));
+    }
+  }
+  return keys;
+}
+
+/** The bucket a UTC day falls in. */
+function keyOf(range: SpendRange, day: string): string {
+  return range === '12m' ? day.slice(0, 7) : day;
 }
 
 /**
@@ -144,21 +190,55 @@ export function spendBuckets(
   today: string,
   spends: readonly DaySpend[],
 ): SpendBucket[] {
-  const keys: string[] = [];
-  if (range === '12m') {
-    for (let back = 11; back >= 0; back -= 1) keys.push(monthBefore(today.slice(0, 7), back));
-  } else {
-    const count = range === '7d' ? 7 : 30;
-    const end = Date.parse(`${today}T00:00:00.000Z`);
-    for (let back = count - 1; back >= 0; back -= 1) {
-      keys.push(new Date(end - back * 86_400_000).toISOString().slice(0, 10));
-    }
-  }
-  const buckets = keys.map((bucket) => ({ bucket, cents: 0 }));
+  const buckets = rangeKeys(range, today).map((bucket) => ({
+    bucket,
+    cents: 0,
+    runningCents: 0,
+    stoppedCents: 0,
+  }));
   const byKey = new Map(buckets.map((bucket) => [bucket.bucket, bucket]));
   for (const spend of spends) {
-    const bucket = byKey.get(range === '12m' ? spend.day.slice(0, 7) : spend.day);
-    if (bucket !== undefined) bucket.cents += spend.cents;
+    const bucket = byKey.get(keyOf(range, spend.day));
+    if (bucket === undefined) continue;
+    bucket.cents += spend.cents;
+    bucket.runningCents += spend.runningCents;
+    bucket.stoppedCents += spend.stoppedCents;
   }
   return buckets;
+}
+
+/**
+ * Each world with a day in the range ending on `today`: the size of its
+ * latest day there, how many of its days ran at all, and what its days cost;
+ * the most expensive first, then by id.
+ */
+export function worldsOver(
+  range: SpendRange,
+  today: string,
+  days: readonly WorldDayUse[],
+): WorldSpend[] {
+  const inRange = new Set(rangeKeys(range, today));
+  const worlds = new Map<
+    string,
+    { latest: string; size: string; daysRunning: number; cents: number }
+  >();
+  for (const day of days) {
+    if (!inRange.has(keyOf(range, day.day))) continue;
+    const world = worlds.get(day.worldId) ?? {
+      latest: day.day,
+      size: day.size,
+      daysRunning: 0,
+      cents: 0,
+    };
+    if (day.day > world.latest) {
+      world.latest = day.day;
+      world.size = day.size;
+    }
+    world.daysRunning += day.minutesRunning > 0 ? 1 : 0;
+    world.cents += day.cents;
+    worlds.set(day.worldId, world);
+  }
+  return [...worlds]
+    .map(([worldId, { size, daysRunning, cents }]) => ({ worldId, size, daysRunning, cents }))
+    .sort((a, b) => b.cents - a.cents || (a.worldId < b.worldId ? -1 : 1));
 }
