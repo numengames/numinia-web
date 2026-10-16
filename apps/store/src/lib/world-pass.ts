@@ -40,7 +40,7 @@
  */
 
 import type { OrganizationAccess } from '@numinia/domain';
-import type { DeskAccess, DeskRoles } from './accounts';
+import type { DeskAccess, DeskRole } from './accounts';
 
 /** The world permission ids a pass may carry, in the order they are written. */
 export const WORLD_PASS_PERMISSIONS = [
@@ -104,7 +104,7 @@ export function b64urlEncode(bytes: Uint8Array): string {
 }
 
 /** The bytes of base64url text, or null when it is not that. */
-export function b64urlDecode(text: string): Uint8Array | null {
+export function b64urlDecode(text: string): Uint8Array<ArrayBuffer> | null {
   if (!/^[A-Za-z0-9_-]*$/.test(text) || text.length % 4 === 1) return null;
   const padded = text
     .replace(/-/g, '+')
@@ -113,7 +113,7 @@ export function b64urlDecode(text: string): Uint8Array | null {
   return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
 }
 
-const utf8 = (text: string): Uint8Array => new TextEncoder().encode(text);
+const utf8 = (text: string): Uint8Array<ArrayBuffer> => new TextEncoder().encode(text);
 const hex = (bytes: Uint8Array): string =>
   [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 
@@ -156,7 +156,7 @@ export interface PublicKeyDocument {
 export async function publicKeyDocument(secret: string | undefined): Promise<PublicKeyDocument> {
   const jwk = await crypto.subtle.exportKey('jwk', await privateKeyOf(secret));
   const publicKey = jwk.x as string;
-  const raw = b64urlDecode(publicKey) as Uint8Array;
+  const raw = b64urlDecode(publicKey) as Uint8Array<ArrayBuffer>;
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
   return { alg: 'Ed25519', kid: hex(digest).slice(0, 8), publicKey };
 }
@@ -183,8 +183,20 @@ export interface PassInput {
   /** AUTH_SESSION_SECRET, the HMAC key of `sub`. */
   readonly secret: string;
   readonly wallet: string;
-  readonly access: DeskAccess;
-  readonly roles: DeskRoles;
+  readonly access: {
+    readonly as: DeskAccess['as'];
+    readonly permissions: readonly string[];
+    readonly [more: string]: unknown;
+  };
+  readonly roles: {
+    readonly roles: readonly Pick<DeskRole, 'id' | 'name' | 'color' | 'position'>[];
+    readonly members: readonly {
+      readonly wallet: string;
+      readonly roleIds: readonly string[];
+      readonly name?: string | null | undefined;
+    }[];
+    readonly [more: string]: unknown;
+  };
   /** Seconds since the epoch. */
   readonly now: number;
 }
@@ -297,7 +309,11 @@ export async function verifyPass(
   const decoded = parts.map(b64urlDecode);
   if (parts.length !== 3 || decoded.some((part) => part === null))
     return { ok: false, why: 'shape' };
-  const [headBytes, bodyBytes, signature] = decoded as [Uint8Array, Uint8Array, Uint8Array];
+  const [headBytes, bodyBytes, signature] = decoded as [
+    Uint8Array<ArrayBuffer>,
+    Uint8Array<ArrayBuffer>,
+    Uint8Array<ArrayBuffer>,
+  ];
   const header = parseJson(headBytes) as Record<string, unknown> | null;
   if (
     header?.['alg'] !== 'EdDSA' ||
@@ -308,7 +324,7 @@ export async function verifyPass(
   }
   const key = await crypto.subtle.importKey(
     'raw',
-    b64urlDecode(publicKey) as Uint8Array,
+    b64urlDecode(publicKey) as Uint8Array<ArrayBuffer>,
     'Ed25519',
     false,
     ['verify'],

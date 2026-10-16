@@ -52,7 +52,7 @@ describe('base64url', () => {
     const bytes = new Uint8Array([251, 255, 254, 0, 1]);
     const text = b64urlEncode(bytes);
     expect(text).not.toMatch(/[+/=]/);
-    expect([...b64urlDecode(text)]).toEqual([...bytes]);
+    expect([...(b64urlDecode(text) as Uint8Array)]).toEqual([...bytes]);
   });
   it('refuses text that is not base64url', () => {
     expect(b64urlDecode('a b')).toBeNull();
@@ -102,7 +102,8 @@ describe('signPass and verifyPass', () => {
       ok: false,
       why: 'signature',
     });
-    expect(await verifyPass(`${h}.${p}.${s.slice(0, -2)}AA`, keys.publicKey, at)).toEqual({
+    const flipped = `${s[0] === 'A' ? 'B' : 'A'}${s.slice(1)}`;
+    expect(await verifyPass(`${h}.${p}.${flipped}`, keys.publicKey, at)).toEqual({
       ok: false,
       why: 'signature',
     });

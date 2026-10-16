@@ -16,6 +16,7 @@ import {
   answerOrgWorlds,
   answerPlace,
   answerWorld,
+  fleetWorldHosts,
   fleetWorldIds,
   readAccountId,
   readPlaceBody,
@@ -156,6 +157,31 @@ describe('the words of the placement', () => {
       [{ id: 'hive' }],
     );
     expect([...ids].sort()).toEqual(['bosque', 'forge', 'hive']);
+  });
+
+  it('maps each world to the host it is served at, the machines first, skipping worlds without one', () => {
+    const hosts = fleetWorldHosts(
+      [
+        {
+          open: true,
+          worlds: [
+            { id: 'bosque', domain: 'bosque.numen.games' },
+            { id: 'forge', domain: null },
+            { id: 'atrium' },
+          ],
+        },
+        { open: false },
+      ],
+      [
+        { id: 'bosque', domain: 'old.numinia.com' },
+        { id: 'hive', domain: 'hive.numinia.com' },
+        { id: 'blank', domain: '' },
+      ],
+    );
+    expect([...hosts]).toEqual([
+      ['bosque', 'bosque.numen.games'],
+      ['hive', 'hive.numinia.com'],
+    ]);
   });
 });
 
@@ -361,8 +387,21 @@ describe('GET /api/mundos/<id>: one world, public, with a flag for who may manag
       worldId: 'bosque',
       home: { accountId: RESET, accountName: 'Reset', placedAt: PLACED_AT },
       manage: false,
+      url: null,
     });
     expect(desk.homeOf).toHaveBeenCalledWith('bosque', null, false);
+  });
+
+  it('adds the address the world is served at when the fleet knows its host', async () => {
+    const out = await answerWorld(
+      fakeDesk(),
+      null,
+      'bosque',
+      known,
+      quiet,
+      new Map([['bosque', 'bosque.numen.games']]),
+    );
+    expect(await json(out)).toMatchObject({ url: 'https://bosque.numen.games/' });
   });
 
   it('asks as the session’s wallet and as the house only when the session is the house’s', async () => {
@@ -377,7 +416,7 @@ describe('GET /api/mundos/<id>: one world, public, with a flag for who may manag
   it('answers a world no one has placed with a null home', async () => {
     const desk = fakeDesk({ homeOf: answering({ ok: true, home: null, manage: false }) });
     const out = await answerWorld(desk, null, 'forge', known, quiet);
-    expect(await json(out)).toEqual({ worldId: 'forge', home: null, manage: false });
+    expect(await json(out)).toEqual({ worldId: 'forge', home: null, manage: false, url: null });
   });
 
   it('answers 404 for an id the fleet does not have or one out of shape, without asking the till', async () => {
