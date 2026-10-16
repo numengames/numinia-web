@@ -10,7 +10,7 @@ import { existsSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import baked from '../../generated/local-thumbs.json';
 import previews from '../../generated/local-previews.json';
-import { previewSrc, thumbSrc, thumbSrcSet } from '../thumbs';
+import { faceSrc, previewSrc, thumbSrc, thumbSrcSet } from '../thumbs';
 
 const publicFile = (path: string): URL => new URL(`../../../public${path}`, import.meta.url);
 
@@ -64,5 +64,20 @@ describe('previewSrc', () => {
 
   it('has nothing to offer for an unbaked asset or a model', () => {
     expect(previewSrc('never-baked-id')).toBeNull();
+  });
+});
+
+describe('faceSrc (cut «Tu nombre y tu cara», 2026-10-16)', () => {
+  it('is the 1x cut of a baked good, on disk: the small round face beside a name', () => {
+    for (const id of baked as string[]) {
+      expect(faceSrc(id)).toBe(`/thumbs/1x/${id}.webp`);
+      expect(existsSync(publicFile(`/thumbs/1x/${id}.webp`))).toBe(true);
+    }
+  });
+
+  it('is null for anything the build did not bake: never a path made up from what was sent', () => {
+    for (const id of ['never-baked-id', '', '../x', 'avatar-arla-mncdhz3l/../../x']) {
+      expect(faceSrc(id), id).toBeNull();
+    }
   });
 });
