@@ -184,8 +184,14 @@ export interface Statement {
   readonly ok: true;
   readonly account: AccountSummary;
   readonly balanceCents: number;
-  /** Under 10 €: the screen warns. */
+  /** Under 10 €: the screen warns — only when the account has costs. */
   readonly lowBalance: boolean;
+  /**
+   * The account has something that costs: a world charged to it or placed in
+   * it. False for an organization just opened: opening one is free, and the
+   * screen asks for money only next to what costs.
+   */
+  readonly hasCosts: boolean;
   /** Every lot, oldest first, with what is left of it now. */
   readonly lots: readonly StatementLot[];
   /**
@@ -415,6 +421,15 @@ const SELECT_LINES = `
          world_id, machine, day, minutes_running, minutes_stopped, size, tariff_version_id,
          "by", reason, corrects_line_id, lot_line_id, stripe_event_id
     FROM ledger_lines WHERE account_id = ?1 ORDER BY at, id`;
+
+/**
+ * Whether the account has anything that costs: a world the till charges to
+ * it (`worlds`) or one placed in it (`world_placements`). An organization just
+ * opened has neither, and the screen asks it for no money (cut «gratis»).
+ */
+const SELECT_HAS_COSTS = `
+  SELECT EXISTS (SELECT 1 FROM worlds WHERE account_id = ?1)
+      OR EXISTS (SELECT 1 FROM world_placements WHERE account_id = ?1) AS found`;
 
 const INSERT_PERSONAL = `
   INSERT INTO accounts (id, kind, created_at) VALUES (?1, 'personal', ?2) ON CONFLICT DO NOTHING`;
@@ -917,11 +932,13 @@ export async function statement(
     await houseRead(entered, db, now, 'statement');
     account = summaryIn(entered);
   }
-  const [lineRows, memberRows, versionRows] = (await batchOf(db, [
+  const [lineRows, memberRows, versionRows, costRows] = (await batchOf(db, [
     db.prepare(SELECT_LINES).bind(accountId),
     db.prepare(SELECT_MEMBERS).bind(accountId),
     db.prepare(SELECT_VERSIONS),
-  ])) as [Row[], Row[], Row[]];
+    db.prepare(SELECT_HAS_COSTS).bind(accountId),
+  ])) as [Row[], Row[], Row[], Row[]];
+  const hasCosts = costRows.some((row) => column(row, 'found') === 1);
   const lines = lineRows.map(ledgerLineOf);
   const versions = versionRows.map(versionOf);
   const today = dayOf(now);
@@ -938,6 +955,7 @@ export async function statement(
     account,
     balanceCents: account.balanceCents,
     lowBalance: account.balanceCents < LOW_BALANCE_CENTS,
+    hasCosts,
     lots: lotsAt(lines, now.toISOString()).lots.map((lot) => ({ ...lot })),
     spend,
     spendTotalCents: spend.reduce((sum, bucket) => sum + bucket.cents, 0),
