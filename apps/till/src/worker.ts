@@ -56,6 +56,7 @@ import {
   type TopupConfirm,
   type TopupStart,
 } from './db/accounts';
+import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import { headcount, type HeadcountAnswer } from './db/headcount';
 import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
@@ -449,6 +450,32 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
    */
   async setProfile(wallet: unknown, change: unknown): Promise<ProfileAnswer> {
     return changeProfile(this.env.TILL_DB, wallet, change, new Date());
+  }
+
+  // ---- «El censo» (2026-10-16, STD-053): who has signed in, to the house alone ----
+
+  /**
+   * The wallet signed in now: its first time is kept, its last time moves
+   * forward. Nothing else is kept — no address, no browser, no count.
+   */
+  async signedIn(wallet: unknown): Promise<SignedInAnswer> {
+    return recordSignIn(this.env.TILL_DB, wallet, new Date());
+  }
+
+  /**
+   * Everyone who has signed in, newest last time first, with the name and
+   * avatar each published and how many organizations they are in; a search
+   * (`query`, a piece of wallet or name) and pages of 200 (`cursor`). To the
+   * house's staff alone (`house` true); the list belongs to no organization,
+   * so reading it writes no `house-read` line.
+   */
+  async citizens(
+    wallet: unknown,
+    house?: unknown,
+    query?: unknown,
+    cursor?: unknown,
+  ): Promise<CitizensAnswer> {
+    return citizens(this.env.TILL_DB, wallet, house, query, cursor);
   }
 }
 

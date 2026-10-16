@@ -83,6 +83,7 @@ describe('the desk', () => {
     expect(desk).toBeInstanceOf(WorkerEntrypoint);
     expect(Object.getOwnPropertyNames(AccountDesk.prototype).sort()).toEqual([
       'access',
+      'citizens',
       'confirmTopup',
       'constructor',
       'createRole',
@@ -102,6 +103,7 @@ describe('the desk', () => {
       'roles',
       'setMember',
       'setProfile',
+      'signedIn',
       'startTopup',
       'statement',
       'takeRole',

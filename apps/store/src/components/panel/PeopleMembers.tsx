@@ -31,6 +31,7 @@ import { LunaEspera } from '../chrome/LunaEspera';
 import { usePeopleDesk } from './people-desk';
 import { HouseStrip, OwnerChip, PeopleNotices, Person, RoleDot, whoOf } from './PeopleBits';
 import { PeopleGlyph } from './PeopleGlyph';
+import { WalletSuggest } from './WalletSuggest';
 
 type Ranks =
   | { readonly at: 'loading' }
@@ -244,18 +245,8 @@ export function PeopleMembers({
           <form className="gente-anadir" onSubmit={(event) => void add(event)} data-people-add>
             <label htmlFor="gente-cartera">{said.addLabel}</label>
             <div className="saldo-linea-form">
-              <input
-                id="gente-cartera"
-                className="mono"
-                value={typed}
-                autoComplete="off"
-                spellCheck={false}
-                maxLength={64}
-                aria-invalid={bad}
-                aria-describedby={bad ? 'gente-cartera-mal' : undefined}
-                onChange={(event) => setTyped(event.target.value)}
-                data-metric="panel-member-add-wallet"
-              />
+              {/* «El censo»: for the house, suggestions from who has signed in; for anyone else, as before. */}
+              <WalletSuggest locale={locale} value={typed} bad={bad} onChange={setTyped} />
               <button
                 type="submit"
                 className="btn btn-primario"

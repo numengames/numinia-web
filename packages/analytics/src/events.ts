@@ -110,3 +110,12 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `saldo-members-link` (an organization's way to «Miembros y roles»).
 // - The panel's Resumen: `panel-summary-next` (the next encounter),
 //   `panel-summary-people`, `panel-summary-balance`, `panel-summary-log`.
+
+// ---- W4 «El censo» (cut 2026-10-16): its data-metric ids ----------------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The Census page's «Quién ha entrado» (the house only): `census-citizens-search`,
+//   `census-citizens-retry`, `census-citizens-more`, `census-citizen-copy`,
+//   `census-citizen-add` (opens the dialog), `census-citizen-add-org`,
+//   `census-citizen-add-save`, `census-citizen-add-cancel`.
+// - The panel's «Añadir miembro», for the house: `panel-member-add-suggestion`
+//   (a person picked from the suggestions).

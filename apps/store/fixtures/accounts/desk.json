@@ -2836,5 +2836,37 @@
       "name": "Marco Ibáñez",
       "avatar": null
     }
+  ],
+  "signIns": [
+    {
+      "wallet": "0x00000000000000000000000000000000000000a1",
+      "firstDaysAgo": 38,
+      "lastDaysAgo": 0.1
+    },
+    {
+      "wallet": "0x00000000000000000000000000000000000000b2",
+      "firstDaysAgo": 20,
+      "lastDaysAgo": 1.3
+    },
+    {
+      "wallet": "0x0000000000000000000000000000000000000a07",
+      "firstDaysAgo": 2.2,
+      "lastDaysAgo": 2.2
+    },
+    {
+      "wallet": "0x00000000000000000000000000000000000000c3",
+      "firstDaysAgo": 30,
+      "lastDaysAgo": 4.6
+    },
+    {
+      "wallet": "0x00000000000000000000000000000000000000e5",
+      "firstDaysAgo": 25,
+      "lastDaysAgo": 9.4
+    },
+    {
+      "wallet": "0x00000000000000000000000000000000000000d4",
+      "firstDaysAgo": 15,
+      "lastDaysAgo": 12.8
+    }
   ]
 }

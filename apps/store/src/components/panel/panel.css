@@ -1128,3 +1128,46 @@
 .roles-dar select {
   flex: 1 1 12rem;
 }
+
+/* «El censo»: the house's suggestions under «Añadir miembro»'s wallet field. */
+.gente-sugerir {
+  position: relative;
+  display: flex;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+.gente-sugerir input {
+  flex: 1;
+  min-width: 0;
+}
+.gente-sugerencias {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  list-style: none;
+  margin: 0;
+  padding: var(--s1) 0;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-control);
+  max-height: 18rem;
+  overflow-y: auto;
+}
+.gente-sugerencias [role='option'] {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: var(--s1) var(--s3);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gente-sugerencias [role='option'][aria-selected='true'],
+.gente-sugerencias [role='option']:hover {
+  background: var(--linea-f);
+  outline: 1px solid var(--linea);
+}

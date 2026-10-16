@@ -46,6 +46,7 @@ import deskSeed from '../../fixtures/accounts/desk.json';
 import { FRESH_SIGNATURE_WORDS } from '../i18n/fresh-signature';
 import {
   DESK_METHODS,
+  NOT_HOUSE_CENSUS,
   OPTIONAL_DESK_METHODS,
   SPEND_RANGES,
   TOPUP_KEYS,
@@ -59,6 +60,7 @@ import {
   vueltaBase,
   type AccountDesk,
   type Asker,
+  type Citizen,
   type DeskAccount,
   type DeskMemberDetail,
   type DeskProfileChange,
@@ -139,6 +141,14 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.setProfile === 'function'
         ? stub.setProfile(wallet, change)
         : absent('setProfile'),
+    // «El censo»: optional too. Without them a sign-in records nothing and
+    // /api/admin/citizens says 503.
+    signedIn: (wallet) =>
+      typeof desk.signedIn === 'function' ? stub.signedIn(wallet) : absent('signedIn'),
+    citizens: (wallet, house, query, cursor) =>
+      typeof desk.citizens === 'function'
+        ? stub.citizens(wallet, house, query, cursor)
+        : absent('citizens'),
   };
 }
 
@@ -435,6 +445,31 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  // «El censo»: the till's list of who has signed in; each avatar leaves as its baked face.
+  const citizens = z.union([
+    z.object({
+      ok: z.literal(true),
+      people: z.array(
+        z
+          .object({
+            wallet: z.string(),
+            firstSeenAt: z.string(),
+            lastSeenAt: z.string(),
+            name: z.string().optional(),
+            avatar: z.string().nullable().optional(),
+            organizations: z.number().int().nonnegative(),
+          })
+          .transform(({ name, avatar, ...person }): Citizen => ({
+            ...person,
+            name: name ?? null,
+            face: name === undefined || avatar == null ? null : faceSrc(avatar),
+          })),
+      ),
+      total: z.number().int().nonnegative(),
+      next: z.string().nullable(),
+    }),
+    refusal,
+  ]);
   const profileRequest = z.union([
     z
       .object({ name: z.string().max(PROFILE_TEXT_MAX), avatar: z.string().max(ID_MAX).nullable() })
@@ -457,6 +492,7 @@ function buildSchemas() {
     confirm,
     profile,
     profileRequest,
+    citizens,
   };
 }
 
@@ -1251,4 +1287,116 @@ export async function answerSetProfile(
   if (!asked.ok) return asked.response;
   if (!asked.value.ok) return refusedProfile(asked.value.problems);
   return answer({ ok: true, profile: ownProfile(asked.value.profile) });
+}
+
+// ---- «El censo» (2026-10-16, STD-053): who has signed in, for the house alone ----
+//
+// Each verified sign-in is recorded in the till — the first and the last
+// time per wallet, nothing else — best effort, after the session cookie is
+// decided: nothing the till does can slow or break a sign-in. The list of
+// who has signed in is answered to an Oracle's session (the house) alone,
+// decided from our own signed cookie (lib/auth/session-wallet.ts), never
+// from the request; everyone else is refused before the till is asked.
+
+/** The list names people: private to the one browser that asked, and never stored. */
+const PRIVATE_HEADERS = { 'cache-control': 'private, no-store' } as const;
+const privately = (body: unknown, status = 200): Response =>
+  Response.json(body, { status, headers: PRIVATE_HEADERS });
+
+/** The longest search and cursor the route passes on (the till's own limit is 100 for a search). */
+const CITIZENS_QUERY_MAX = 100;
+const CITIZENS_CURSOR_MAX = 200;
+
+/**
+ * GET /api/admin/citizens?q=&cursor=: everyone who has signed in, newest
+ * first — `{ ok, people: [{ wallet, firstSeenAt, lastSeenAt, name, face,
+ * organizations }], total, next }` — to the house alone: 403 for any other
+ * session or none, 503 without a till or with one older than the census,
+ * 502 when it fails. Each avatar leaves as its baked face, never its id.
+ */
+export async function answerCitizens(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null || !asker.house) return privately({ error: 'forbidden' }, 403);
+  const query = url.searchParams.get('q') ?? '';
+  const cursor = url.searchParams.get('cursor') ?? '';
+  if (query.length > CITIZENS_QUERY_MAX) {
+    return privately({ error: `q: ${CITIZENS_QUERY_MAX} characters at most` }, 400);
+  }
+  if (cursor.length > CITIZENS_CURSOR_MAX) {
+    return privately({ error: `cursor: ${CITIZENS_CURSOR_MAX} characters at most` }, 400);
+  }
+  if (desk === null) return privately({ error: 'not-bound' }, 503);
+  const { you } = whoIs(asker);
+  let raw: unknown;
+  try {
+    raw = await desk.citizens(you, true, query, cursor === '' ? null : cursor);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(NOT_IMPLEMENTED)) {
+      noted(log, 'citizens', 'not-implemented');
+      return privately({ error: 'not-bound' }, 503);
+    }
+    noted(log, 'citizens', 'threw', error);
+    return privately({ error: 'till-failed' }, 502);
+  }
+  const parsed = shapes().citizens.safeParse(raw);
+  if (!parsed.success) {
+    noted(log, 'citizens', 'answer-shape');
+    return privately({ error: 'till-failed' }, 502);
+  }
+  const list = parsed.data;
+  if (!list.ok) {
+    const status = list.problems.includes(NOT_HOUSE_CENSUS) ? 403 : 400;
+    return privately({ error: 'refused', problems: list.problems }, status);
+  }
+  return privately(list);
+}
+
+/** Where work goes that must outlive the answer: the Worker's `waitUntil`. */
+export type Defer = (work: Promise<unknown>) => void;
+
+/** The Worker's own `waitUntil` (Astro's Cloudflare adapter: `locals.cfContext`), or none. */
+function waitUntilOf(locals: unknown): Defer | null {
+  try {
+    const context = (locals as { cfContext?: unknown } | null | undefined)?.cfContext;
+    const waitUntil = (context as { waitUntil?: unknown } | null | undefined)?.waitUntil;
+    if (typeof waitUntil !== 'function') return null;
+    // Called as a method of the context: workerd's needs its receiver.
+    return (work) => {
+      waitUntil.call(context, work);
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The route's way to keep work running after it answered: the Worker's
+ * `waitUntil` on workerd; elsewhere (node, tests) the work just runs on.
+ */
+export function deferFrom(locals: unknown): Defer {
+  return waitUntilOf(locals) ?? (() => undefined);
+}
+
+/**
+ * A verified sign-in, noted in the till best effort (`signedIn`): handed to
+ * `defer` as work for after the answer, every failure swallowed — a refusal,
+ * a throw, a till older than the census, a broken context. Returns at once.
+ */
+export function recordSignIn(desk: AccountDesk | null, wallet: string, defer: Defer): void {
+  if (desk === null) return;
+  const work = Promise.resolve()
+    .then(() => desk.signedIn(wallet.toLowerCase()))
+    .then(
+      () => undefined,
+      () => undefined,
+    );
+  try {
+    defer(work);
+  } catch {
+    // The sign-in is already decided: nothing here may change it.
+  }
 }

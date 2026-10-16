@@ -56,6 +56,7 @@ import {
   LAST_OWNER,
   NOT_BELOW,
   NOT_HOUSE,
+  NOT_HOUSE_CENSUS,
   NOT_MEMBER,
   OWNERS_ONLY,
   OWNER_ONLY,
@@ -68,6 +69,8 @@ import {
   type AccountDesk,
   type DeskAccess,
   type DeskAccount,
+  type DeskCitizen,
+  type DeskCitizensAnswer,
   type DeskConfirmAnswer,
   type DeskDirectoryAnswer,
   type DeskDirectoryEntry,
@@ -89,6 +92,7 @@ import {
   type DeskProfile,
   type DeskProfileAnswer,
   type DeskRefusal,
+  type DeskSignedInAnswer,
   type DeskSizePrice,
   type DeskSpend,
   type DeskStatement,
@@ -148,6 +152,13 @@ interface SeedProfile {
   readonly avatar: string | null;
 }
 
+/** Someone who has signed in (cut «El censo»): the first and the last time, in days before today. */
+interface SeedSignIn {
+  readonly wallet: string;
+  readonly firstDaysAgo: number;
+  readonly lastDaysAgo: number;
+}
+
 /** What the fixture desk starts with, for every wallet. */
 export interface AccountsSeed {
   /** Absent: the desk answers as a till before the cut «el dinero» would, with no tariff to show. */
@@ -156,6 +167,8 @@ export interface AccountsSeed {
   readonly teams: readonly SeedTeam[];
   /** Who has published a name already: the members screens and the people lists show them. */
   readonly profiles?: readonly SeedProfile[];
+  /** Who has signed in already: the Census page's list shows them to the house. */
+  readonly signIns?: readonly SeedSignIn[];
 }
 
 const DAY_MS = 86_400_000;
@@ -248,6 +261,34 @@ const isFlag = (house: unknown): house is boolean | undefined =>
 
 function dayStart(now: Date, daysAgo: number): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - daysAgo * DAY_MS;
+}
+
+// ---- «El censo»: the list's rules, as the till's src/lib/census.ts reads them ----
+
+const CENSUS_PAGE = 200;
+const CENSUS_QUERY_MAX = 100;
+const CENSUS_QUERY = `query must be text of ${CENSUS_QUERY_MAX} characters at most, none of them a control character`;
+const CENSUS_CURSOR = 'cursor must be one this list gave';
+const CURSOR = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)~(0x[0-9a-f]{40})$/;
+
+/** The instant `days` before `now`, to the millisecond. */
+function daysBefore(now: Date, days: number): string {
+  return new Date(now.getTime() - days * DAY_MS).toISOString();
+}
+
+/** A search, trimmed and lowercased ('' for everyone), or undefined when it is not one. */
+function readSearch(value: unknown): string | undefined {
+  if (value === undefined || value === null) return '';
+  if (typeof value !== 'string') return undefined;
+  const query = value.trim();
+  return query.length <= CENSUS_QUERY_MAX ? query.toLowerCase() : undefined;
+}
+
+/** A cursor the list gave, null for the first page, undefined otherwise. */
+function readCursor(value: unknown): { last: string; wallet: string } | null | undefined {
+  if (value === undefined || value === null) return null;
+  const match = typeof value === 'string' ? CURSOR.exec(value) : null;
+  return match === null ? undefined : { last: match[1] as string, wallet: match[2] as string };
 }
 
 function lineOf(seed: SeedLine, now: Date): DeskLine {
@@ -482,6 +523,16 @@ export function createAccountsFixtureDesk(
     (seed.profiles ?? []).map(({ wallet, name, avatar }) => [
       wallet,
       { name, avatar, updatedAt: now().toISOString() },
+    ]),
+  );
+  /**
+   * «El censo»: who has signed in, as the till's `wallet_sign_ins` — the
+   * first and the last time per wallet, shared by every wallet's copy.
+   */
+  const signIns = new Map<string, { first: string; last: string }>(
+    (seed.signIns ?? []).map(({ wallet, firstDaysAgo, lastDaysAgo }) => [
+      wallet,
+      { first: daysBefore(now(), firstDaysAgo), last: daysBefore(now(), lastDaysAgo) },
     ]),
   );
   /** What a member published, as the till's roles view adds it: absent when nothing. */
@@ -1107,6 +1158,76 @@ export function createAccountsFixtureDesk(
       const profile: DeskProfile = { ...read, updatedAt: now().toISOString() };
       profiles.set(who, profile);
       return { ok: true, profile: copy(profile) };
+    },
+
+    // ---- «El censo» (2026-10-16): the till's `signedIn` and `citizens` ----
+
+    signedIn: async (wallet): Promise<DeskSignedInAnswer> => {
+      const who = typeof wallet === 'string' ? walletOf(wallet) : null;
+      if (who === null || who !== wallet) return refuse(BAD_WALLET);
+      const at = now().toISOString();
+      const known = signIns.get(who);
+      signIns.set(who, {
+        first: known?.first ?? at,
+        last: known === undefined || at > known.last ? at : known.last,
+      });
+      return { ok: true };
+    },
+
+    citizens: async (wallet, house, query, cursor): Promise<DeskCitizensAnswer> => {
+      const asking = asker(wallet, house);
+      if ('ok' in asking) return asking;
+      const search = readSearch(query);
+      const after = readCursor(cursor);
+      if (search === undefined || after === undefined) {
+        return refuse(
+          ...(search === undefined ? [CENSUS_QUERY] : []),
+          ...(after === undefined ? [CENSUS_CURSOR] : []),
+        );
+      }
+      if (!asking.house) return refuse(NOT_HOUSE_CENSUS);
+      const teams = booksOf(asking.who).filter((book) => book.kind === 'team');
+      const matching = [...signIns.entries()]
+        .map(([who, seen]): DeskCitizen => {
+          const profile = profiles.get(who);
+          return {
+            wallet: who,
+            firstSeenAt: seen.first,
+            lastSeenAt: seen.last,
+            ...(profile === undefined ? {} : { name: profile.name, avatar: profile.avatar }),
+            organizations: teams.filter((book) =>
+              book.members.some((member) => member.wallet === who),
+            ).length,
+          };
+        })
+        .filter(
+          (person) =>
+            person.wallet.includes(search) || (person.name ?? '').toLowerCase().includes(search),
+        )
+        .sort((a, b) =>
+          a.lastSeenAt === b.lastSeenAt
+            ? a.wallet.localeCompare(b.wallet)
+            : b.lastSeenAt.localeCompare(a.lastSeenAt),
+        );
+      const rest =
+        after === null
+          ? matching
+          : matching.filter(
+              (person) =>
+                person.lastSeenAt < after.last ||
+                (person.lastSeenAt === after.last && person.wallet > after.wallet),
+            );
+      const people = rest.slice(0, CENSUS_PAGE);
+      const last = people.at(-1);
+      return {
+        ok: true,
+        people: copy(people),
+        total: matching.length,
+        next:
+          rest.length > CENSUS_PAGE && last !== undefined
+            ? `${last.lastSeenAt}~${last.wallet}`
+            : null,
+      };
     },
   };
 }
