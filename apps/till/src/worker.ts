@@ -57,6 +57,16 @@ import {
   type TopupStart,
 } from './db/accounts';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
+import {
+  homeOf,
+  placeWorld,
+  placements,
+  worldsOf,
+  type HomeOfAnswer,
+  type PlaceAnswer,
+  type PlacementsAnswer,
+  type WorldsOfAnswer,
+} from './db/world-placements';
 import { headcount, type HeadcountAnswer } from './db/headcount';
 import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
@@ -476,6 +486,40 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     cursor?: unknown,
   ): Promise<CitizensAnswer> {
     return citizens(this.env.TILL_DB, wallet, house, query, cursor);
+  }
+
+  // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----
+
+  /**
+   * The house places 1 to 50 worlds (fleet ids) in one organization, which
+   * pays for them and administers them; a world has exactly one. To the
+   * house's staff alone (`house` true). Not the billing table `worlds`.
+   */
+  async placeWorld(
+    wallet: unknown,
+    house: unknown,
+    worldIds: unknown,
+    accountId: unknown,
+  ): Promise<PlaceAnswer> {
+    return placeWorld(this.env.TILL_DB, wallet, house, worldIds, accountId, new Date());
+  }
+
+  /** Where every placed world stands, with the organization's name: to the house alone. */
+  async placements(wallet: unknown, house?: unknown): Promise<PlacementsAnswer> {
+    return placements(this.env.TILL_DB, wallet, house);
+  }
+
+  /** The worlds placed in one organization: to its members and owners, and the house. */
+  async worldsOf(wallet: unknown, house: unknown, accountId: unknown): Promise<WorldsOfAnswer> {
+    return worldsOf(this.env.TILL_DB, wallet, house, accountId);
+  }
+
+  /**
+   * The organization one world belongs to — public, so `wallet` and `house`
+   * may be absent — and `manage`: the caller is a member, an owner or the house.
+   */
+  async homeOf(worldId: unknown, wallet?: unknown, house?: unknown): Promise<HomeOfAnswer> {
+    return homeOf(this.env.TILL_DB, worldId, wallet, house);
   }
 }
 

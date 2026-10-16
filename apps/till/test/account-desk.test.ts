@@ -93,10 +93,13 @@ describe('the desk', () => {
       'editRole',
       'giveRole',
       'headcount',
+      'homeOf',
       'log',
       'members',
       'moveRole',
       'overview',
+      'placeWorld',
+      'placements',
       'profile',
       'removeMember',
       'renameTeam',
@@ -107,6 +110,7 @@ describe('the desk', () => {
       'startTopup',
       'statement',
       'takeRole',
+      'worldsOf',
     ]);
   });
 
