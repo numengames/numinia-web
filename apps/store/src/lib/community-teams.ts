@@ -49,7 +49,7 @@ export function readCommunityBody(json: unknown): { readonly community: string }
 }
 
 /** A community as the house's dialogs list it. */
-export interface CommunityEntry {
+interface CommunityEntry {
   readonly id: string;
   readonly name: string;
   /** The organization the community's file links (`team:`), or null. */
