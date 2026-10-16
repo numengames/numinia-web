@@ -43,10 +43,12 @@ import {
   type SupportedLocale,
 } from '@numinia/domain';
 import deskSeed from '../../fixtures/accounts/desk.json';
+import homesSeed from '../../fixtures/worlds/homes.json';
 import { FRESH_SIGNATURE_WORDS } from '../i18n/fresh-signature';
 import {
   DESK_METHODS,
   NOT_HOUSE_CENSUS,
+  NOT_IMPLEMENTED,
   OPTIONAL_DESK_METHODS,
   SPEND_RANGES,
   TOPUP_KEYS,
@@ -85,9 +87,6 @@ import { isProfileAvatar } from './profile-avatars';
 import { PROFILE_AVATAR_PROBLEM } from './profile-name';
 import { logEvent } from './telemetry';
 import { faceSrc } from './thumbs';
-
-/** workerd's words when the till's entrypoint has no such method: a till older than the store. */
-const NOT_IMPLEMENTED = 'does not implement the method';
 
 /** What a binding without an optional method answers instead: workerd's own words. */
 const absent = (method: string): Promise<never> =>
@@ -149,6 +148,19 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.citizens === 'function'
         ? stub.citizens(wallet, house, query, cursor)
         : absent('citizens'),
+    // «Mundos ↔ organizaciones»: optional too. Without them the world routes say 503.
+    placeWorld: (wallet, house, worldIds, accountId) =>
+      typeof desk.placeWorld === 'function'
+        ? stub.placeWorld(wallet, house, worldIds, accountId)
+        : absent('placeWorld'),
+    placements: (wallet, house) =>
+      typeof desk.placements === 'function' ? stub.placements(wallet, house) : absent('placements'),
+    worldsOf: (wallet, house, accountId) =>
+      typeof desk.worldsOf === 'function'
+        ? stub.worldsOf(wallet, house, accountId)
+        : absent('worldsOf'),
+    homeOf: (worldId, wallet, house) =>
+      typeof desk.homeOf === 'function' ? stub.homeOf(worldId, wallet, house) : absent('homeOf'),
   };
 }
 
@@ -156,7 +168,11 @@ let fixture: AccountDesk | null = null;
 
 /** The fixture desk, one per server process, so a top-up stays until it stops. */
 export function fixtureAccounts(): AccountDesk {
-  fixture ??= createAccountsFixtureDesk(deskSeed as unknown as AccountsSeed);
+  fixture ??= createAccountsFixtureDesk({
+    ...(deskSeed as unknown as AccountsSeed),
+    // «Mundos ↔ organizaciones»: where the fleet's worlds belong when the build is a fixture.
+    homes: (homesSeed as unknown as Pick<AccountsSeed, 'homes'>).homes,
+  });
   return fixture;
 }
 

@@ -71,6 +71,11 @@ import {
   type DeskAccount,
   type DeskCitizen,
   type DeskCitizensAnswer,
+  type DeskHome,
+  type DeskHomeOfAnswer,
+  type DeskPlaceAnswer,
+  type DeskPlacementsAnswer,
+  type DeskWorldsOfAnswer,
   type DeskConfirmAnswer,
   type DeskDirectoryAnswer,
   type DeskDirectoryEntry,
@@ -106,6 +111,7 @@ import {
   type TopupKey,
 } from './accounts';
 import { readProfileChange } from './profile-name';
+import { PLACEMENT_PROBLEMS, readAccountId, readWorldId, readWorldIds } from './worlds-homes';
 
 /** One line of the seed, dated in days before today. */
 export interface SeedLine {
@@ -159,6 +165,13 @@ interface SeedSignIn {
   readonly lastDaysAgo: number;
 }
 
+/** A world placed already (cut «Mundos ↔ organizaciones»): its organization, and how many days ago. */
+interface SeedHome {
+  readonly worldId: string;
+  readonly accountId: string;
+  readonly placedDaysAgo: number;
+}
+
 /** What the fixture desk starts with, for every wallet. */
 export interface AccountsSeed {
   /** Absent: the desk answers as a till before the cut «el dinero» would, with no tariff to show. */
@@ -169,6 +182,8 @@ export interface AccountsSeed {
   readonly profiles?: readonly SeedProfile[];
   /** Who has signed in already: the Census page's list shows them to the house. */
   readonly signIns?: readonly SeedSignIn[];
+  /** Which organization each placed world belongs to (fixtures/worlds/homes.json). */
+  readonly homes?: readonly SeedHome[] | undefined;
 }
 
 const DAY_MS = 86_400_000;
@@ -534,6 +549,24 @@ export function createAccountsFixtureDesk(
       wallet,
       { first: daysBefore(now(), firstDaysAgo), last: daysBefore(now(), lastDaysAgo) },
     ]),
+  );
+  /**
+   * «Mundos ↔ organizaciones»: which organization each world belongs to, as the
+   * till's `world_placements` — one per world, shared by every wallet's copy.
+   */
+  const homes = new Map<string, { accountId: string; accountName: string; placedAt: string }>(
+    (seed.homes ?? []).flatMap(({ worldId, accountId, placedDaysAgo }) => {
+      const team = seed.teams.find((candidate) => candidate.id === accountId);
+      // A seeded home whose organization the seed lacks is not kept.
+      return team === undefined
+        ? []
+        : [
+            [
+              worldId,
+              { accountId, accountName: team.name, placedAt: daysBefore(now(), placedDaysAgo) },
+            ] as const,
+          ];
+    }),
   );
   /** What a member published, as the till's roles view adds it: absent when nothing. */
   const publishedBy = (wallet: string): Pick<DeskMemberDetail, 'name' | 'avatar'> => {
@@ -1228,6 +1261,89 @@ export function createAccountsFixtureDesk(
             ? `${last.lastSeenAt}~${last.wallet}`
             : null,
       };
+    },
+
+    // ---- «Mundos ↔ organizaciones» (2026-10-16): the till's placements ----
+
+    placeWorld: async (wallet, house, worldIds, accountId): Promise<DeskPlaceAnswer> => {
+      const asking = asker(wallet, house);
+      const ids = readWorldIds(worldIds);
+      const account = readAccountId(accountId);
+      if ('ok' in asking || ids === undefined || account === undefined) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(ids === undefined ? [PLACEMENT_PROBLEMS.worlds] : []),
+          ...(account === undefined ? [PLACEMENT_PROBLEMS.account] : []),
+        );
+      }
+      if (!asking.house) return refuse(PLACEMENT_PROBLEMS.notHouse);
+      const team = booksOf(asking.who).find((book) => book.kind === 'team' && book.id === account);
+      if (team === undefined) return refuse(PLACEMENT_PROBLEMS.noAccount);
+      for (const worldId of ids) {
+        if (homes.get(worldId)?.accountId !== account) {
+          homes.set(worldId, {
+            accountId: account,
+            accountName: nameOf(team),
+            placedAt: now().toISOString(),
+          });
+        }
+      }
+      return { ok: true, placed: ids.length };
+    },
+
+    placements: async (wallet, house): Promise<DeskPlacementsAnswer> => {
+      const asking = asker(wallet, house);
+      if ('ok' in asking) return asking;
+      if (!asking.house) return refuse(PLACEMENT_PROBLEMS.notHouse);
+      const list = [...homes.entries()]
+        .map(([worldId, home]): DeskHome => ({ worldId, ...home }))
+        .sort((a, b) => a.worldId.localeCompare(b.worldId));
+      return { ok: true, homes: list };
+    },
+
+    worldsOf: async (wallet, house, accountId): Promise<DeskWorldsOfAnswer> => {
+      const asking = asker(wallet, house);
+      const account = readAccountId(accountId);
+      if ('ok' in asking || account === undefined) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(account === undefined ? [PLACEMENT_PROBLEMS.account] : []),
+        );
+      }
+      const book = booksOf(asking.who).find(
+        (candidate) => candidate.kind === 'team' && candidate.id === account,
+      );
+      if (asking.house) {
+        if (book === undefined) return refuse(PLACEMENT_PROBLEMS.noAccount);
+      } else if (book === undefined || roleIn(book, asking.who) === null) {
+        return refuse(PLACEMENT_PROBLEMS.notMember);
+      }
+      const worlds = [...homes.entries()]
+        .filter(([, home]) => home.accountId === account)
+        .map(([worldId]) => ({ worldId, accountId: account }))
+        .sort((a, b) => a.worldId.localeCompare(b.worldId));
+      return { ok: true, worlds };
+    },
+
+    homeOf: async (worldId, wallet, house): Promise<DeskHomeOfAnswer> => {
+      const id = readWorldId(worldId);
+      const anonymous = wallet === undefined || wallet === null;
+      const who = anonymous
+        ? null
+        : ((typeof wallet === 'string' ? walletOf(wallet) : null) ?? undefined);
+      const flag = house === null ? false : isFlag(house) ? house === true : undefined;
+      if (id === undefined || who === undefined || flag === undefined) {
+        return refuse(
+          ...(id === undefined ? [PLACEMENT_PROBLEMS.world] : []),
+          ...(who === undefined ? [BAD_WALLET] : []),
+          ...(flag === undefined ? [HOUSE_BOOLEAN] : []),
+        );
+      }
+      const home = homes.get(id);
+      if (home === undefined) return { ok: true, home: null, manage: flag };
+      const book = who === null ? undefined : booksOf(who).find((c) => c.id === home.accountId);
+      const member = who !== null && book !== undefined && roleIn(book, who) !== null;
+      return { ok: true, home: { ...home }, manage: flag || member };
     },
   };
 }
