@@ -10,11 +10,11 @@
  */
 
 /** The panel pieces an organization may turn off (the summary and the settings stay on). */
-export const SWITCHABLE_PIECES = ['venues', 'members', 'roles', 'balance'] as const;
+const SWITCHABLE_PIECES = ['venues', 'members', 'roles', 'balance'] as const;
 export type SwitchablePiece = (typeof SWITCHABLE_PIECES)[number];
 
 /** The three presets of «Cómo se llama cada cosa». */
-export const VOCABULARIES = ['simple', 'mixed', 'numinia'] as const;
+const VOCABULARIES = ['simple', 'mixed', 'numinia'] as const;
 export type Vocabulary = (typeof VOCABULARIES)[number];
 
 /** Today's behaviour: the words the panel already had. */

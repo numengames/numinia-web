@@ -35,7 +35,7 @@ import { commit, logLine, type LogAct } from './organizations';
 import { cents, column, instant, text, type Row, type TillDatabase } from './repository';
 
 /** An organization's settings as the asker sees them. */
-export interface SettingsView {
+interface SettingsView {
   readonly ok: true;
   readonly accountId: string;
   readonly off: readonly SwitchablePiece[];
@@ -47,7 +47,7 @@ export interface SettingsView {
 export type SettingsAnswer = SettingsView | Refusal;
 
 /** A line of the log for «Qué ha pasado»: the author's published name, if any. */
-export interface Happening {
+interface Happening {
   readonly seq: number;
   readonly at: string;
   readonly actor: string;

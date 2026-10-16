@@ -23,6 +23,7 @@ const LOCALES = [
     members: 'Members',
     roles: 'Roles',
     balance: 'Balance and usage',
+    settings: 'Settings',
     panels: 'Panels',
     building: 'Under construction',
   },
@@ -33,6 +34,7 @@ const LOCALES = [
     members: 'Miembros',
     roles: 'Roles',
     balance: 'Saldo y consumo',
+    settings: 'Ajustes',
     panels: 'Paneles',
     building: 'En construcción',
   },
@@ -43,6 +45,7 @@ const LOCALES = [
     members: 'メンバー',
     roles: 'ロール',
     balance: '残高と利用状況',
+    settings: '設定',
     panels: 'パネル',
     building: '準備中',
   },
@@ -53,6 +56,7 @@ const LOCALES = [
     members: '구성원',
     roles: '역할',
     balance: '잔액과 사용량',
+    settings: '설정',
     panels: '패널',
     building: '준비 중',
   },
@@ -63,6 +67,7 @@ const LOCALES = [
     members: 'Membros',
     roles: 'Papéis',
     balance: 'Saldo e uso',
+    settings: 'Configurações',
     panels: 'Painéis',
     building: 'Em construção',
   },
@@ -75,6 +80,7 @@ const FACES = [
   { segment: 'miembros/', piece: 'members' },
   { segment: 'roles/', piece: 'roles' },
   { segment: 'saldo/', piece: 'balance' },
+  { segment: 'ajustes/', piece: 'settings' },
 ];
 
 const PIECES = [
@@ -89,8 +95,8 @@ const PIECES = [
   'balance',
   'settings',
 ];
-const BUILT = ['summary', 'venues', 'members', 'roles', 'balance'];
-const SOON = ['gatherings', 'agents', 'memory', 'bazaar', 'settings'];
+const BUILT = ['summary', 'venues', 'members', 'roles', 'balance', 'settings'];
+const SOON = ['gatherings', 'agents', 'memory', 'bazaar'];
 const ROOMS = ['census', 'worlds', 'prices', 'assets'];
 
 const base = (prefix) => (prefix ? `/${prefix}` : '');
@@ -195,6 +201,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
       members: `${prefix}/panel/miembros/`,
       roles: `${prefix}/panel/roles/`,
       balance: `${prefix}/panel/saldo/`,
+      settings: `${prefix}/panel/ajustes/`,
     };
     for (const id of BUILT) {
       const link = tagWith(rail, `data-metric="panel-nav-${id}"`);
@@ -225,7 +232,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
 Then('no panel page links a piece that is not built', async function () {
   for await (const { where, face, html } of panelPages(this.distDir)) {
     const rail = railOf(html, where);
-    // Five built pieces and four rooms: nine links, not one more.
+    // Six built pieces and four rooms: ten links, not one more.
     assert.equal(
       (rail.match(/<a\b/g) ?? []).length,
       BUILT.length + ROOMS.length,
