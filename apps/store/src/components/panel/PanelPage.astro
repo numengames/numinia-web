@@ -19,7 +19,7 @@ import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
-import { PanelResumen } from './PanelResumen';
+import PanelSummary from './PanelSummary.astro';
 import { PanelSaldo } from './PanelSaldo';
 import '../saldo/saldo.css';
 import './panel.css';
@@ -48,7 +48,7 @@ const saldoHref = localeHref(locale, '/saldo/');
 >
   {
     face === 'summary' && (
-      <PanelResumen client:load locale={locale} words={words} signIn={signIn} saldoHref={saldoHref} />
+      <PanelSummary locale={locale} words={words} signIn={signIn} saldoHref={saldoHref} />
     )
   }
   {
