@@ -12,7 +12,7 @@ import type { VenuesMessages } from '../../i18n/mundos';
 import type { PanelMessages } from '../../i18n/panel';
 import { fill } from '../../lib/accounts';
 import { counted, loadOrgWorlds, worldHref, type Sheet } from '../../lib/mundos';
-import type { OrgWorld } from '../../lib/worlds-homes-types';
+import type { OrgWorld } from '../../lib/worlds-homes';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame } from './PanelFrame';
 import { PanelGlyph } from './PanelGlyph';

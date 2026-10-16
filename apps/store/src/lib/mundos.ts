@@ -12,7 +12,7 @@
 
 import type { SupportedLocale } from '@numinia/domain';
 import type { Counted } from '../i18n/mundos';
-import type { OrgWorld, WorldHome } from './worlds-homes-types';
+import type { OrgWorld, WorldHome } from './worlds-homes';
 
 /** The house's placements: who each world belongs to (an Oracle's session). */
 export const HOMES_API = '/api/admin/worlds/homes';
@@ -21,8 +21,8 @@ export const PLACE_API = '/api/admin/worlds/place';
 /** The most worlds one placement request carries (the API's own limit). */
 export const PLACE_MAX = 50;
 
-/** What a world's id looks like in an address (the fleet's ids: `agora-plaza`, `pablofm-2`). */
-export const WORLD_ID_SHAPE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+/** What a world's id looks like in an address (the fleet's ids: `agora-plaza`, `pablofm-2`): lib/worlds-homes.ts's own rule. */
+export const WORLD_ID_SHAPE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 

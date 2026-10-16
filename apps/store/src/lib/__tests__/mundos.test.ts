@@ -44,10 +44,10 @@ describe('addresses', () => {
   });
 
   it('accepts the fleet’s ids and nothing that could climb out of the path', () => {
-    for (const id of ['agora-plaza', 'pablofm-2', 'a', 'v1.2_x']) {
+    for (const id of ['agora-plaza', 'pablofm-2', 'a', 'x'.repeat(63)]) {
       expect(WORLD_ID_SHAPE.test(id)).toBe(true);
     }
-    for (const id of ['', '../x', 'a/b', '-x', 'a b', 'x'.repeat(65)]) {
+    for (const id of ['', '../x', 'a/b', '-x', 'x-', 'a--b', 'A', 'a b', 'v1.2', 'x'.repeat(64)]) {
       expect(WORLD_ID_SHAPE.test(id)).toBe(false);
     }
   });

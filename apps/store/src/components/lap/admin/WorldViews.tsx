@@ -21,7 +21,7 @@ import {
   worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
-import type { WorldHome } from '../../../lib/worlds-homes-types';
+import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 
 /** `update`: move a world of the Numinia Engine to its newest build (UpdateWorld). */

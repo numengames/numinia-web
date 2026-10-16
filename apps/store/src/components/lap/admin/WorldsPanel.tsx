@@ -63,7 +63,7 @@ import {
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
-import type { WorldHome } from '../../../lib/worlds-homes-types';
+import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { problemText } from './fleet-action';
 import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
