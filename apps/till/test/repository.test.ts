@@ -117,6 +117,7 @@ describe('the migration', () => {
       '0006_wallet_profiles.sql',
       '0007_wallet_sign_ins.sql',
       '0008_world_placements.sql',
+      '0009_numen_games_roles.sql',
       '0010_organization_settings.sql',
     ]);
     const { db, sqlite } = migratedTill();

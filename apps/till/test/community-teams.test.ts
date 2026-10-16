@@ -84,6 +84,8 @@ describe('the rules of a community’s account', () => {
       notHouse: 'only the house opens the organization of a community',
       community:
         'communityId must be 1 to 63 characters: lowercase letters, digits and hyphens, not starting with a hyphen',
+      communities:
+        'communities must be a list of 1 to 50 objects with an id (a community id) and a name (1 to 60 characters)',
     });
   });
 });
@@ -108,19 +110,19 @@ describe('ensureCommunityTeam: the house opens a community’s account', () => {
       name: 'Numen Games',
       created_by: HOUSE,
       house_access: 'alpha',
-      revision: 0,
+      revision: 1,
     });
   });
 
-  it('is born with the Team template’s roles, the same as an organization founded by hand', async () => {
+  it('is born with the Team template’s roles and colours, the same as an organization founded by hand', async () => {
     const { desk, sqlite } = scene();
     const made = await desk.createTeam(PABLO, 'By hand');
     if (!made.ok) throw new Error(made.problems.join());
-    const id = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen')).id;
+    const id = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numinia', 'Numen')).id;
     const rolesOf = (account: string) =>
       sqlite
         .prepare(
-          'SELECT name, position, hoist, permissions FROM team_roles WHERE account_id = ? ORDER BY position',
+          'SELECT name, color, position, hoist, permissions FROM team_roles WHERE account_id = ? ORDER BY position',
         )
         .all(account)
         .map((row) => ({ ...row }));
@@ -128,11 +130,13 @@ describe('ensureCommunityTeam: the house opens a community’s account', () => {
     expect(rolesOf(id)).toEqual(rolesOf(made.account.id));
   });
 
-  it('gives it no member and no owner — the house is not made one', async () => {
+  it('makes the opening Oracle a member with the administrator role — and no owner', async () => {
     const { desk, sqlite } = scene();
     const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
-    expect(count(sqlite, 'team_members WHERE account_id = ?', id)).toBe(0);
-    expect(count(sqlite, 'team_member_roles WHERE account_id = ?', id)).toBe(0);
+    expect(
+      sqlite.prepare('SELECT wallet, owner FROM team_members WHERE account_id = ?').all(id),
+    ).toEqual([{ wallet: HOUSE, owner: 0 }]);
+    expect(count(sqlite, 'team_member_roles WHERE account_id = ?', id)).toBe(1);
     expect(count(sqlite, 'account_wallets WHERE wallet = ?', HOUSE)).toBe(0);
   });
 
@@ -141,7 +145,9 @@ describe('ensureCommunityTeam: the house opens a community’s account', () => {
     const first = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
     const lines = () =>
       sqlite
-        .prepare('SELECT actor, as_house, act, subject, detail FROM team_log WHERE account_id = ?')
+        .prepare(
+          "SELECT actor, as_house, act, subject, detail FROM team_log WHERE account_id = ? AND act = 'organization-created'",
+        )
         .all(first.id)
         .map((row) => ({ ...row }));
     expect(lines()).toEqual([
@@ -179,7 +185,8 @@ describe('ensureCommunityTeam: the house opens a community’s account', () => {
     expect(answers.map((answer) => accountOf(answer).created).sort()).toEqual([false, true]);
     expect(new Set(answers.map((answer) => accountOf(answer).id)).size).toBe(1);
     expect(count(sqlite, 'team_profiles')).toBe(1);
-    expect(count(sqlite, 'team_log')).toBe(1);
+    expect(count(sqlite, "team_log WHERE act = 'organization-created'")).toBe(1);
+    expect(count(sqlite, 'team_members')).toBe(1);
   });
 
   it('gives the same id in another database, and another id to another community', async () => {
@@ -276,24 +283,27 @@ describe('ensureCommunityTeam: outside the founder bound', () => {
 });
 
 describe('a community’s account in the rest of the till', () => {
-  it('shows in the house’s directory by name — and not in the overview of the wallet that opened it', async () => {
+  it('shows in the house’s directory by name — and not in the overview of a wallet that is not in it', async () => {
     const { desk } = scene();
     const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
     expect(await desk.directory(HOUSE, true)).toEqual({
       ok: true,
       accounts: [{ id, kind: 'team', name: 'Numen' }],
     });
-    const overview = await desk.overview(HOUSE);
+    const overview = await desk.overview(PABLO);
     if (!overview.ok) throw new Error(overview.problems.join());
     expect(overview.accounts.map((account) => account.id)).not.toContain(id);
   });
 
-  it('is entered by the house with nobody in it: access, members, statement and log', async () => {
+  it('is entered by the house, its only member: access, members, statement and log', async () => {
     const { desk } = scene();
     const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
     const access = await desk.access(HOUSE, id, true);
     expect(access).toMatchObject({ ok: true, accountId: id, as: 'house' });
-    expect(await desk.members(HOUSE, id, true)).toEqual({ ok: true, members: [] });
+    expect(await desk.members(HOUSE, id, true)).toMatchObject({
+      ok: true,
+      members: [{ wallet: HOUSE, role: 'admin' }],
+    });
     expect(await desk.statement(HOUSE, id, '7d', true)).toMatchObject({
       ok: true,
       balanceCents: 0,
@@ -317,7 +327,13 @@ describe('a community’s account in the rest of the till', () => {
     const { desk } = scene();
     const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
     const added = await desk.setMember(HOUSE, id, MARIA, 'member', true);
-    expect(added).toMatchObject({ ok: true, members: [{ wallet: MARIA, role: 'member' }] });
+    expect(added).toMatchObject({
+      ok: true,
+      members: [
+        { wallet: HOUSE, role: 'admin' },
+        { wallet: MARIA, role: 'member' },
+      ],
+    });
     const overview = await desk.overview(MARIA);
     if (!overview.ok) throw new Error(overview.problems.join());
     expect(overview.accounts).toContainEqual({
@@ -331,7 +347,7 @@ describe('a community’s account in the rest of the till', () => {
     await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen');
     expect(await desk.members(HOUSE, id, true)).toMatchObject({
       ok: true,
-      members: [{ wallet: MARIA }],
+      members: [{ wallet: HOUSE }, { wallet: MARIA }],
     });
   });
 
@@ -339,8 +355,12 @@ describe('a community’s account in the rest of the till', () => {
     const { desk } = scene();
     const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
     await desk.setMember(HOUSE, id, MARIA, 'member', true);
-    expect(await desk.removeMember(MARIA, id, MARIA)).toEqual({ ok: true, members: [] });
-    expect(await desk.members(HOUSE, id, true)).toEqual({ ok: true, members: [] });
+    const left = await desk.removeMember(MARIA, id, MARIA);
+    expect(left).toMatchObject({ ok: true, members: [{ wallet: HOUSE }] });
+    expect(await desk.members(HOUSE, id, true)).toMatchObject({
+      ok: true,
+      members: [{ wallet: HOUSE }],
+    });
   });
 
   it('takes a world from the house, as any organization does', async () => {
