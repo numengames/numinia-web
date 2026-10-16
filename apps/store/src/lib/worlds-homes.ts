@@ -32,7 +32,7 @@ export interface OrgWorld {
 }
 
 /** The most worlds one placement carries (the till's limit). */
-export const WORLD_IDS_MAX = 50;
+const WORLD_IDS_MAX = 50;
 
 /** The till's own words (apps/till src/lib/world-placements.ts), which decide the status of a refusal. */
 export const PLACEMENT_PROBLEMS = {
