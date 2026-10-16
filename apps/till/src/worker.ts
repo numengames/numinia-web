@@ -81,6 +81,18 @@ import {
   type HappeningsAnswer,
   type SettingsAnswer,
 } from './db/settings';
+import {
+  agentPass,
+  agentsOf,
+  assignAgentRole,
+  changeAgent,
+  claimAgentPass,
+  createAgent,
+  removeAgent,
+  type AgentPassAnswer,
+  type AgentsAnswer,
+  type ClaimAnswer,
+} from './db/agents';
 import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
   assignRole,
@@ -557,6 +569,103 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     communities: unknown,
   ): Promise<OpenAllAnswer> {
     return openAllCommunities(this.env.TILL_DB, wallet, house, communities, new Date());
+  }
+
+  // ---- «IAs de organización» (2026-10-17): the AIs an organization sends into its worlds ----
+
+  /** The organization's agents with their state, to a member or the house. */
+  async agents(wallet: unknown, accountId: unknown, house?: unknown): Promise<AgentsAnswer> {
+    return agentsOf(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** A new agent: whoever holds manage-roles, as a member, who then answers for it (ORG-011); logged. */
+  async createAgent(
+    wallet: unknown,
+    accountId: unknown,
+    agent: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return createAgent(this.env.TILL_DB, wallet, accountId, agent, house, new Date());
+  }
+
+  /** Switches an agent on or off and/or sets its state (activa, dormida); logged. */
+  async changeAgent(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    change: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return changeAgent(this.env.TILL_DB, wallet, accountId, agentId, change, house, new Date());
+  }
+
+  /** Removes an agent; logged. */
+  async removeAgent(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return removeAgent(this.env.TILL_DB, wallet, accountId, agentId, house, new Date());
+  }
+
+  /** Gives a role to an agent below the asker's highest role; logged. */
+  async giveAgentRole(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    roleId: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return assignAgentRole(
+      this.env.TILL_DB,
+      true,
+      wallet,
+      accountId,
+      agentId,
+      roleId,
+      house,
+      new Date(),
+    );
+  }
+
+  /** Takes a role from an agent below the asker's highest role; logged. */
+  async takeAgentRole(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    roleId: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return assignAgentRole(
+      this.env.TILL_DB,
+      false,
+      wallet,
+      accountId,
+      agentId,
+      roleId,
+      house,
+      new Date(),
+    );
+  }
+
+  /**
+   * What an agent's pass is made of (its key, switch, state, who answers for
+   * it, what it holds): asked with no wallet by numinia.com, which signs
+   * nothing before it has verified the agent's signature. Read-only.
+   */
+  async agentPass(accountId: unknown, agentId: unknown): Promise<AgentPassAnswer> {
+    return agentPass(this.env.TILL_DB, accountId, agentId);
+  }
+
+  /** Uses up one signed pass request (agent, world, second): a second use is refused (replay). */
+  async claimAgentPass(
+    accountId: unknown,
+    agentId: unknown,
+    aud: unknown,
+    t: unknown,
+  ): Promise<ClaimAnswer> {
+    return claimAgentPass(this.env.TILL_DB, accountId, agentId, aud, t, new Date());
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----

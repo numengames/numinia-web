@@ -119,6 +119,7 @@ describe('the migration', () => {
       '0008_world_placements.sql',
       '0009_numen_games_roles.sql',
       '0010_organization_settings.sql',
+      '0011_organization_agents.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -137,6 +138,9 @@ describe('the migration', () => {
         'organization_settings',
         'stripe_cursor',
         'tariff_versions',
+        'team_agent_passes',
+        'team_agent_roles',
+        'team_agents',
         'team_log',
         'team_member_roles',
         'team_members',

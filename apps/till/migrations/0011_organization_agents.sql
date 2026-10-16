@@ -1,0 +1,145 @@
+-- «IAs de organización» (2026-10-17): an AI belongs to an organization, not
+-- to a world. It asks numinia.com for a world pass every few minutes (the
+-- store signs it, see apps/store/src/lib/agent-pass.ts); switching it off,
+-- putting it to sleep or removing it is no more than not giving it a pass,
+-- or a trimmed one, and the engine closes the connection of an AI whose
+-- pass runs out. The rules are STD-051 (ORG-011: an agent never goes beyond
+-- the person who answers for it, and is never an owner).
+--
+-- `enabled` is the switch (1 on, 0 off). `state` only counts while enabled:
+-- `activa` is awake and willing to act, `dormida` watches and listens but
+-- does not build (the pass leaves `build-in-worlds` out). The list of states
+-- is closed here and grows by adding values (a CHECK is rebuilt then).
+--
+-- `public_key` is the agent's Ed25519 key as `ed25519:` and 43 base64url
+-- characters (the engine's rule). `responsible_wallet` is the person who
+-- created it and answers for it; if they leave the organization, or lose
+-- manage-roles, the agent stops receiving a pass — worked out from the
+-- tables at every request by @numinia/domain, not by a trigger.
+--
+-- The agent's roles are the organization's own roles, never the base one,
+-- as `team_member_roles` (0004).
+--
+-- `team_agent_passes` keeps the (agent, world, second) of every pass asked
+-- for, one use each: a signed request seen twice is refused (replay). Rows
+-- older than two minutes are swept by the next request.
+--
+-- The organization's log learns the acts of the agents: a CHECK cannot be
+-- altered in SQLite, so the table is rebuilt with the longer list, as 0005
+-- and 0010 did, and its lines are copied as they are; it stays append-only.
+
+CREATE TABLE team_agents (
+  account_id TEXT NOT NULL REFERENCES team_profiles (account_id),
+  agent_id TEXT NOT NULL CHECK (
+    length(agent_id) BETWEEN 1 AND 32
+    AND length(trim(agent_id, 'abcdefghijklmnopqrstuvwxyz0123456789-')) = 0
+    AND substr(agent_id, 1, 1) <> '-' AND substr(agent_id, -1, 1) <> '-'
+  ),
+  name TEXT NOT NULL CHECK (name = trim(name) AND length(name) BETWEEN 1 AND 40),
+  public_key TEXT NOT NULL CHECK (
+    length(public_key) = 51 AND substr(public_key, 1, 8) = 'ed25519:'
+    AND length(trim(
+      substr(public_key, 9),
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+    )) = 0
+  ),
+  responsible_wallet TEXT NOT NULL CHECK (
+    length(responsible_wallet) = 42 AND substr(responsible_wallet, 1, 2) = '0x'
+    AND length(trim(substr(responsible_wallet, 3), '0123456789abcdef')) = 0
+  ),
+  enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+  state TEXT NOT NULL DEFAULT 'activa' CHECK (state IN ('activa', 'dormida')),
+  created_by TEXT NOT NULL CHECK (
+    length(created_by) = 42 AND substr(created_by, 1, 2) = '0x'
+    AND length(trim(substr(created_by, 3), '0123456789abcdef')) = 0
+  ),
+  created_at TEXT NOT NULL CHECK (strftime('%Y-%m-%dT%H:%M:%fZ', created_at) IS created_at),
+  updated_at TEXT NOT NULL CHECK (strftime('%Y-%m-%dT%H:%M:%fZ', updated_at) IS updated_at),
+  PRIMARY KEY (account_id, agent_id),
+  UNIQUE (account_id, public_key)
+) STRICT;
+
+CREATE TABLE team_agent_roles (
+  account_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, agent_id, role_id),
+  FOREIGN KEY (account_id, agent_id) REFERENCES team_agents (account_id, agent_id) ON DELETE CASCADE,
+  FOREIGN KEY (account_id, role_id) REFERENCES team_roles (account_id, id) ON DELETE CASCADE
+) STRICT;
+CREATE INDEX team_agent_roles_by_role ON team_agent_roles (account_id, role_id);
+
+CREATE TRIGGER team_agent_roles_never_the_base BEFORE INSERT ON team_agent_roles
+WHEN (SELECT position FROM team_roles WHERE account_id = NEW.account_id AND id = NEW.role_id) = 0
+BEGIN
+  SELECT RAISE(ABORT, 'everyone holds the base role: nobody is given it');
+END;
+
+CREATE TABLE team_agent_passes (
+  account_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  aud TEXT NOT NULL,
+  t INTEGER NOT NULL CHECK (t >= 0),
+  PRIMARY KEY (account_id, agent_id, aud, t)
+) STRICT, WITHOUT ROWID;
+CREATE INDEX team_agent_passes_by_time ON team_agent_passes (t);
+
+DROP TRIGGER team_members_founded_as_before;
+
+CREATE TABLE team_log_next (
+  seq INTEGER NOT NULL PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES team_profiles (account_id),
+  at TEXT NOT NULL CHECK (strftime('%Y-%m-%dT%H:%M:%fZ', at) IS at),
+  actor TEXT NOT NULL CHECK (
+    length(actor) = 42 AND substr(actor, 1, 2) = '0x'
+    AND length(trim(substr(actor, 3), '0123456789abcdef')) = 0
+  ),
+  as_house INTEGER NOT NULL CHECK (as_house IN (0, 1)),
+  act TEXT NOT NULL CHECK (act IN (
+    'organization-created', 'organization-renamed', 'member-added', 'member-removed',
+    'member-left', 'role-given', 'role-taken', 'topup-started', 'house-read',
+    'role-created', 'role-edited', 'role-moved', 'role-deleted', 'settings-changed',
+    'agent-created', 'agent-enabled', 'agent-disabled', 'agent-state', 'agent-removed',
+    'agent-role-given', 'agent-role-taken'
+  )),
+  subject TEXT,
+  detail TEXT CHECK (detail IS NULL OR json_valid(detail))
+) STRICT;
+
+INSERT INTO team_log_next (seq, account_id, at, actor, as_house, act, subject, detail)
+SELECT seq, account_id, at, actor, as_house, act, subject, detail FROM team_log;
+
+DROP TABLE team_log;
+ALTER TABLE team_log_next RENAME TO team_log;
+
+CREATE INDEX team_log_by_account ON team_log (account_id, seq);
+
+CREATE TRIGGER team_log_kept_on_update BEFORE UPDATE ON team_log
+BEGIN
+  SELECT RAISE(ABORT, 'the organization''s log is kept');
+END;
+CREATE TRIGGER team_log_kept_on_delete BEFORE DELETE ON team_log
+BEGIN
+  SELECT RAISE(ABORT, 'the organization''s log is kept');
+END;
+
+CREATE TRIGGER team_members_founded_as_before AFTER INSERT ON team_members
+WHEN NEW.owner = 0
+ AND NOT EXISTS (SELECT 1 FROM team_roles WHERE account_id = NEW.account_id)
+ AND NEW.wallet = (SELECT created_by FROM team_profiles WHERE account_id = NEW.account_id)
+BEGIN
+  UPDATE team_members SET owner = 1 WHERE account_id = NEW.account_id AND wallet = NEW.wallet;
+  INSERT INTO team_roles (account_id, id, name, color, position, hoist, permissions)
+  SELECT NEW.account_id, 'role_' || lower(hex(randomblob(8))), t.name, NULL, t.position, t.hoist,
+         t.permissions
+    FROM (
+      SELECT 'Administration' AS name, 3 AS position, 1 AS hoist, '["administrator"]' AS permissions
+      UNION ALL SELECT 'Finance', 2, 0, '["manage-balance"]'
+      UNION ALL SELECT 'Member', 1, 0, '["enter-worlds","start-stop-worlds","build-in-worlds"]'
+      UNION ALL SELECT '@everyone', 0, 0, '["view-balance","top-up"]'
+    ) AS t;
+  INSERT INTO team_log (account_id, at, actor, as_house, act, subject, detail)
+  SELECT NEW.account_id, NEW.added_at, NEW.wallet, 0, 'organization-created', NULL,
+         json_object('name', p.name, 'template', 'team')
+    FROM team_profiles AS p WHERE p.account_id = NEW.account_id;
+END;
