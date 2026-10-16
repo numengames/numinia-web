@@ -39,7 +39,7 @@ describe('the pieces of the panel', () => {
     ]);
   });
 
-  it('five are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
+  it('six are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
     const built = PIECES.filter((entry) => entry.kind === 'built');
     expect(built.map((entry) => [entry.id, entry.path])).toEqual([
       ['summary', '/panel/'],
@@ -47,6 +47,7 @@ describe('the pieces of the panel', () => {
       ['members', '/panel/miembros/'],
       ['roles', '/panel/roles/'],
       ['balance', '/panel/saldo/'],
+      ['settings', '/panel/ajustes/'],
     ]);
     expect(PANEL_PATH).toBe('/panel/');
   });
@@ -57,15 +58,9 @@ describe('the pieces of the panel', () => {
     expect(PIECES[at]?.icon).toBe('shield-check');
   });
 
-  it('five are not built yet, and a piece not built has no address to fail on', () => {
+  it('four are not built yet, and a piece not built has no address to fail on', () => {
     const soon = PIECES.filter((entry) => entry.kind === 'soon');
-    expect(soon.map((entry) => entry.id)).toEqual([
-      'gatherings',
-      'agents',
-      'memory',
-      'bazaar',
-      'settings',
-    ]);
+    expect(soon.map((entry) => entry.id)).toEqual(['gatherings', 'agents', 'memory', 'bazaar']);
     for (const entry of soon) expect(entry.path).toBeNull();
   });
 
@@ -123,7 +118,7 @@ describe('where a piece leads', () => {
   });
 
   it('leads nowhere when the piece is not built: never a link that fails', () => {
-    for (const id of ['gatherings', 'agents', 'memory', 'bazaar', 'settings']) {
+    for (const id of ['gatherings', 'agents', 'memory', 'bazaar']) {
       expect(pieceHref('es', piece(id), 'acc_t_1')).toBeNull();
     }
   });

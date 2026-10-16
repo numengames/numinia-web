@@ -21,6 +21,7 @@ import {
   type SupportedLocale,
 } from '@numinia/domain';
 import { localeHref } from './app-nav';
+import { isVocabulary } from './panel-settings';
 
 // ---- The contract with the till's desk (SPEC «AccountDesk methods») -------
 
@@ -242,7 +243,8 @@ export type DeskLogAct =
   | 'role-created'
   | 'role-edited'
   | 'role-moved'
-  | 'role-deleted';
+  | 'role-deleted'
+  | 'settings-changed';
 
 export interface DeskLogLine {
   seq: number;
@@ -255,6 +257,31 @@ export interface DeskLogLine {
 }
 
 export type DeskLogAnswer = { ok: true; accountId: string; lines: DeskLogLine[] } | DeskRefusal;
+
+/**
+ * «Ajustes de la comunidad» (cut 8): which pieces of the panel an organization
+ * has switched off, the preset of its words, and whether the asker may change
+ * them. Nothing stored is today's behaviour: `off` empty, `mixed`.
+ */
+export interface DeskSettings {
+  ok: true;
+  accountId: string;
+  off: string[];
+  vocabulary: 'simple' | 'mixed' | 'numinia';
+  mayEdit: boolean;
+}
+export type DeskSettingsAnswer = DeskSettings | DeskRefusal;
+export interface DeskSettingsChange {
+  off?: string[] | undefined;
+  vocabulary?: 'simple' | 'mixed' | 'numinia' | undefined;
+}
+
+/** A line of the log for «Qué ha pasado»: the log's line plus the author's published name. */
+export interface DeskHappening extends DeskLogLine {
+  actorName: string | null;
+}
+export type DeskHappeningsAnswer =
+  { ok: true; accountId: string; lines: DeskHappening[]; more: boolean } | DeskRefusal;
 
 export type DeskConfirmAnswer =
   { ok: true; state: CheckoutState; accountId: string; balanceCents: number } | DeskRefusal;
@@ -402,6 +429,22 @@ export interface AccountDesk {
     communityId: string,
     name: string,
   ): Promise<DeskEnsureAnswer>;
+  /** «Ajustes de la comunidad»: the pieces that are off and the preset of the words, to a member or the house (optional). */
+  settings(wallet: string, accountId: string, house?: boolean): Promise<DeskSettingsAnswer>;
+  /** Turns pieces on or off and picks the words: whoever may manage the organization; logged (optional). */
+  changeSettings(
+    wallet: string,
+    accountId: string,
+    change: DeskSettingsChange,
+    house?: boolean,
+  ): Promise<DeskSettingsAnswer>;
+  /** «Qué ha pasado»: the log, 30 a page, newest first; `before` is the last `seq` seen (optional). */
+  happenings(
+    wallet: string,
+    accountId: string,
+    before?: number | null,
+    house?: boolean,
+  ): Promise<DeskHappeningsAnswer>;
 }
 
 /**
@@ -446,6 +489,9 @@ export const DESK_METHODS = [
   'worldsOf',
   'homeOf',
   'ensureCommunityTeam',
+  'settings',
+  'changeSettings',
+  'happenings',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -458,6 +504,8 @@ export const DESK_METHODS = [
  * a sign-in records nothing, and /api/admin/citizens answers 503. And one
  * without the four of «Mundos ↔ organizaciones»: the world routes answer 503.
  * And one without `ensureCommunityTeam`: /api/admin/community-team answers 503.
+ * And one without `settings`, `changeSettings` and `happenings` (cut «Ajustes de la
+ * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -470,6 +518,9 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'worldsOf',
   'homeOf',
   'ensureCommunityTeam',
+  'settings',
+  'changeSettings',
+  'happenings',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -1018,6 +1069,40 @@ export function readLog(json: unknown): DeskLogLine[] | null {
         (line['subject'] === null || typeof line['subject'] === 'string'),
     )
     ? (lines as DeskLogLine[])
+    : null;
+}
+
+/** GET /api/saldo/settings: the settings of the organization, or null when the body is not that. */
+export function readSettings(json: unknown): DeskSettings | null {
+  if (!isRecord(json) || !isRecord(json['settings'])) return null;
+  const { accountId, off, vocabulary, mayEdit } = json['settings'];
+  return typeof accountId === 'string' &&
+    Array.isArray(off) &&
+    off.every((piece) => typeof piece === 'string') &&
+    isVocabulary(vocabulary) &&
+    typeof mayEdit === 'boolean'
+    ? { ok: true, accountId, off: off as string[], vocabulary, mayEdit }
+    : null;
+}
+
+/** GET /api/saldo/happened: a page of «Qué ha pasado», or null when the body is not that. */
+export function readHappenings(json: unknown): { lines: DeskHappening[]; more: boolean } | null {
+  if (!isRecord(json) || !isRecord(json['happened'])) return null;
+  const { lines, more } = json['happened'];
+  return typeof more === 'boolean' &&
+    Array.isArray(lines) &&
+    lines.every(
+      (line) =>
+        isRecord(line) &&
+        typeof line['seq'] === 'number' &&
+        typeof line['at'] === 'string' &&
+        typeof line['actor'] === 'string' &&
+        typeof line['act'] === 'string' &&
+        typeof line['asHouse'] === 'boolean' &&
+        (line['subject'] === null || typeof line['subject'] === 'string') &&
+        (line['actorName'] === null || typeof line['actorName'] === 'string'),
+    )
+    ? { lines: lines as DeskHappening[], more }
     : null;
 }
 

@@ -17,10 +17,10 @@
  * so it is never mounted after the chrome has painted and left hidden.
  */
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { PanelMessages } from '../../i18n/panel';
-import { readOverview, type DeskAccount } from '../../lib/accounts';
+import { fill, readOverview, type DeskAccount, type DeskSettings } from '../../lib/accounts';
 import {
   PIECES,
   ROOMS,
@@ -31,6 +31,8 @@ import {
   searchWithOrg,
   type BuiltPiece,
 } from '../../lib/panel';
+import { DEFAULT_VOCABULARY, isOn, withVocabulary } from '../../lib/panel-settings';
+import { loadSettings, saveSettings } from '../../lib/panel-settings-client';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelGlyph } from './PanelGlyph';
 
@@ -44,6 +46,19 @@ type Phase =
 /** What the page is showing, as the stylesheet and the tests read it. */
 type State = 'loading' | 'signed-out' | 'not-bound' | 'failed' | 'empty' | 'ready';
 
+/**
+ * What the frame knows about the organization shown, handed to its screen:
+ * the words under its preset (the ONE lookup, lib/panel-settings.ts), the
+ * pieces it switched off, its settings once the till said them (null before,
+ * or when it did not: today's defaults stand) and how a screen replaces them.
+ */
+export interface PanelContext {
+  readonly words: PanelMessages;
+  readonly off: readonly string[];
+  readonly settings: DeskSettings | null;
+  readonly update: (settings: DeskSettings) => void;
+}
+
 export interface PanelFrameProps {
   readonly locale: SupportedLocale;
   /** The screen this page is. */
@@ -54,9 +69,57 @@ export interface PanelFrameProps {
   /** Where an organization is created (Saldo), under the visitor's locale. */
   readonly saldoHref: string;
   /** The screen, for the organization shown (a new organization remounts it). */
-  readonly children?: (team: DeskAccount) => ReactNode;
+  readonly children?: (team: DeskAccount, panel: PanelContext) => ReactNode;
   /** Always drawn below the screen, whatever the state: the Summary's cards. */
-  readonly footer?: (shown: { readonly org: string | null; readonly ready: boolean }) => ReactNode;
+  readonly footer?: (
+    shown: { readonly org: string | null; readonly ready: boolean } & Pick<
+      PanelContext,
+      'words' | 'off'
+    >,
+  ) => ReactNode;
+}
+
+/** A piece the community switched off, reached by its address: said plainly, and the way to turn it on. */
+function OffNotice({
+  piece,
+  words,
+  settings,
+  onTurnOn,
+}: {
+  readonly piece: BuiltPiece;
+  readonly words: PanelMessages;
+  readonly settings: DeskSettings;
+  readonly onTurnOn: () => Promise<boolean>;
+}) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="saldo-marco" data-piece-off={piece}>
+      <h2>{words.off.title}</h2>
+      <p>{fill(words.off.text, { piece: words.names[piece] })}</p>
+      {settings.mayEdit ? (
+        <div>
+          <button
+            type="button"
+            className="btn btn-primario"
+            onClick={() => {
+              setFailed(false);
+              void onTurnOn().then((done) => setFailed(!done));
+            }}
+            data-metric="panel-piece-turn-on"
+          >
+            {words.off.turnOn}
+          </button>
+        </div>
+      ) : (
+        <p className="saldo-nota">{words.off.noRight}</p>
+      )}
+      {failed && (
+        <p className="saldo-nota" role="alert">
+          {words.off.failed}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function PanelFrame({
@@ -71,6 +134,7 @@ export function PanelFrame({
   const [phase, setPhase] = useState<Phase>({ at: 'loading' });
   // Read from the address after hydration, never in the initial state: the page is prerendered.
   const [wanted, setWanted] = useState<string | null>(null);
+  const [settings, setSettings] = useState<DeskSettings | null>(null);
   const list = useRef<HTMLUListElement>(null);
 
   const loadOverview = useCallback(async (): Promise<void> => {
@@ -126,6 +190,37 @@ export function PanelFrame({
   const several = teams.length > 1;
   const name = team?.name ?? '';
 
+  // The organization's settings: which pieces are off and what the panel calls things. Until the till
+  // says (or when it does not), today's defaults stand — everything built is on, the «mixed» words.
+  useEffect(() => {
+    setSettings(null);
+    if (org === null) return;
+    let current = true;
+    void loadSettings(fetch, org).then((read) => {
+      if (current) setSettings(read);
+    });
+    return () => {
+      current = false;
+    };
+  }, [org]);
+  const off = useMemo(() => settings?.off ?? [], [settings]);
+  const shown = useMemo(
+    () => withVocabulary(words, settings?.vocabulary ?? DEFAULT_VOCABULARY, locale),
+    [words, settings, locale],
+  );
+  const visible = PIECES.filter((piece) => isOn(piece.id, off));
+  const faceIsOff = !isOn(face, off);
+  const panel: PanelContext = { words: shown, off, settings, update: setSettings };
+
+  /** Turns the piece this page is back on, from the notice: true when the till took it. */
+  const turnFaceOn = async (): Promise<boolean> => {
+    if (org === null) return false;
+    const saved = await saveSettings(fetch, org, { off: off.filter((piece) => piece !== face) });
+    if (saved === null) return false;
+    setSettings(saved);
+    return true;
+  };
+
   /** A new organization: the address says so (back returns to the last one) and the screen follows. */
   const choose = (id: string): void => {
     window.history.pushState(
@@ -173,10 +268,10 @@ export function PanelFrame({
       </div>
 
       <nav className="panel-riel" aria-label={words.railLabel} data-org-rail>
-        <p className="etiqueta">{`${words.piecesLabel} · ${PIECES.length}`}</p>
+        <p className="etiqueta">{`${words.piecesLabel} · ${visible.length}`}</p>
         <ul ref={list} data-piece-list>
-          {PIECES.map((piece) => {
-            const label = words.names[piece.id];
+          {visible.map((piece) => {
+            const label = shown.names[piece.id];
             const href = pieceHref(locale, piece, org);
             if (href === null) {
               // Not built: a place in the list, never a link that fails.
@@ -240,7 +335,7 @@ export function PanelFrame({
               {name}
             </p>
           )}
-          <h1 className="display-m">{words.names[face]}</h1>
+          <h1 className="display-m">{shown.names[face]}</h1>
           <p className="panel-lead">{words.leads[face]}</p>
         </header>
 
@@ -288,8 +383,11 @@ export function PanelFrame({
             </div>
           </div>
         )}
-        {team !== null && children?.(team)}
-        {footer?.({ org, ready: team !== null })}
+        {team !== null && faceIsOff && settings !== null && (
+          <OffNotice piece={face} words={shown} settings={settings} onTurnOn={turnFaceOn} />
+        )}
+        {team !== null && !faceIsOff && children?.(team, panel)}
+        {!faceIsOff && footer?.({ org, ready: team !== null, words: shown, off })}
       </div>
     </div>
   );
