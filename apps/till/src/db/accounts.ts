@@ -422,11 +422,19 @@ const INSERT_PERSONAL = `
 const INSERT_WALLET = `
   INSERT INTO account_wallets (wallet, account_id) VALUES (?1, ?2) ON CONFLICT DO NOTHING`;
 
-/** A new organization, written only while its founder has founded fewer than the bound. */
+/**
+ * A new organization, written only while its founder has founded fewer than
+ * the bound. A community's organization, opened by the house (its birth line
+ * is by the house), is nobody's founding and is not counted.
+ */
 const INSERT_TEAM = `
   INSERT INTO accounts (id, kind, created_at)
   SELECT ?1, 'team', ?2
-   WHERE (SELECT COUNT(*) FROM team_profiles WHERE created_by = ?3) < ?4`;
+   WHERE (SELECT COUNT(*) FROM team_profiles AS p
+           WHERE p.created_by = ?3
+             AND NOT EXISTS (SELECT 1 FROM team_log AS l
+                              WHERE l.account_id = p.account_id
+                                AND l.act = 'organization-created' AND l.as_house = 1)) < ?4`;
 
 const INSERT_PROFILE = `
   INSERT INTO team_profiles (account_id, name, created_by, created_at)

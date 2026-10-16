@@ -56,6 +56,7 @@ import {
   type TopupConfirm,
   type TopupStart,
 } from './db/accounts';
+import { ensureCommunityTeam, type EnsureAnswer } from './db/community-teams';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import {
   homeOf,
@@ -486,6 +487,24 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     cursor?: unknown,
   ): Promise<CitizensAnswer> {
     return citizens(this.env.TILL_DB, wallet, house, query, cursor);
+  }
+
+  // ---- «Una comunidad ES una organización» (2026-10-16): the house opens a community's account ----
+
+  /**
+   * The house opens the organization of a register community the first time
+   * it uses it, and answers its account either way: the id is derived from
+   * the community id, so two first calls make one. To the house's staff
+   * alone (`house` true); the wallet is not made a member and the account
+   * does not count against the founder bound.
+   */
+  async ensureCommunityTeam(
+    wallet: unknown,
+    house: unknown,
+    communityId: unknown,
+    name: unknown,
+  ): Promise<EnsureAnswer> {
+    return ensureCommunityTeam(this.env.TILL_DB, wallet, house, communityId, name, new Date());
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----
