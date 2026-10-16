@@ -48,6 +48,12 @@ export function readCommunityBody(json: unknown): { readonly community: string }
   return Object.keys(json).length === 1 && community !== undefined ? { community } : null;
 }
 
+/** Whether the body is exactly `{ all: true }`: the house opening every community at once. */
+export function readAllBody(json: unknown): boolean {
+  if (typeof json !== 'object' || json === null || Array.isArray(json)) return false;
+  return Object.keys(json).length === 1 && (json as Readonly<Record<string, unknown>>).all === true;
+}
+
 /** A community as the house's dialogs list it. */
 interface CommunityEntry {
   readonly id: string;
@@ -80,6 +86,13 @@ export async function answerCommunities(
 }
 
 const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
+const openedAll = z.union([
+  z.object({
+    ok: z.literal(true),
+    accounts: z.array(z.object({ id: z.string(), name: z.string(), created: z.boolean() })),
+  }),
+  refusal,
+]);
 const ensured = z.union([
   z.object({
     ok: z.literal(true),
@@ -88,11 +101,40 @@ const ensured = z.union([
   refusal,
 ]);
 
+/** The till's refusal in the route's words: 403 when it is about the house, else 400. */
+function refused(problems: readonly string[]): Response {
+  const status = problems.some((problem) => /\bhouse\b/.test(problem)) ? 403 : 400;
+  return answer({ error: 'refused', problems }, status);
+}
+
+/** `{ all: true }`: every community of the register, opened by one call to the till. */
+async function openAll(
+  desk: AccountDesk | null,
+  asker: Asker,
+  register: readonly Community[],
+  log: Log,
+): Promise<Response> {
+  if (desk === null) return notBound();
+  const communities = register.map(({ id, name }) => ({ id, name }));
+  const asked = await ask(
+    log,
+    'openAllCommunities',
+    () => desk.openAllCommunities(lowercase(asker), true, communities),
+    openedAll,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  const accounts = asked.value.accounts.map(({ id, name, created }) => ({ id, name, created }));
+  return answer({ ok: true, opened: accounts.length, accounts });
+}
+
 /**
  * POST /api/admin/community-team, JSON `{ community }`: the house has the
  * till open that community's account (once) and gets `{ ok: true, account:
- * { id, name } }` — 403 for any other session before the body is read, 404
- * for a community the register lacks, 400 for a body out of shape or a
+ * { id, name } }`. With `{ all: true }` it has the till open every community
+ * of the register at once (the house becomes an administrator of each) and
+ * gets `{ ok: true, opened, accounts: [{ id, name, created }] }`. 403 for any
+ * other session before the body is read, 404 for a community the register lacks, 400 for a body out of shape or a
  * till's refusal, 503 without a till (or an older one), 502 when it fails.
  */
 export async function answerCommunityTeam(
@@ -105,8 +147,9 @@ export async function answerCommunityTeam(
   if (asker === null || !asker.house) return forbidden();
   const body = await bodyOf(request);
   if (!body.ok) return body.response;
+  if (readAllBody(body.json)) return openAll(desk, asker, register, log);
   const read = readCommunityBody(body.json);
-  if (read === null) return answer({ error: 'body: { community }' }, 400);
+  if (read === null) return answer({ error: 'body: { community } or { all: true }' }, 400);
   const community = register.find((entry) => entry.id === read.community);
   if (community === undefined) return answer({ error: 'no-community' }, 404);
   if (desk === null) return notBound();
@@ -117,10 +160,7 @@ export async function answerCommunityTeam(
     ensured,
   );
   if (!asked.ok) return asked.response;
-  if ('problems' in asked.value) {
-    const status = asked.value.problems.some((problem) => /\bhouse\b/.test(problem)) ? 403 : 400;
-    return answer({ error: 'refused', problems: asked.value.problems }, status);
-  }
+  if ('problems' in asked.value) return refused(asked.value.problems);
   const { id, name } = asked.value.account;
   return answer({ ok: true, account: { id, name } });
 }

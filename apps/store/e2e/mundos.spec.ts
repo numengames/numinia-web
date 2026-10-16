@@ -508,6 +508,67 @@ test.describe('a community is an organization', () => {
   });
 });
 
+test.describe('the house is an administrator of every community', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test('only the house opens them all', async ({ page, context }) => {
+    await signIn(context, ADMIN, 'nomad');
+    const refused = await page.request.post(`${origin}/api/admin/community-team`, {
+      data: { all: true },
+    });
+    expect(refused.status()).toBe(403);
+  });
+
+  test('«Abrir todas las comunidades» opens them, says how many, and can be pressed again', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    const register = await page.request.get(`${origin}/api/admin/communities`);
+    const { communities } = (await register.json()) as { communities: { id: string }[] };
+
+    await page.goto(room());
+    const button = page.locator('[data-metric="worlds-open-all-communities"]');
+    await expect(button).toBeVisible();
+    await expect(button).toHaveText('Abrir todas las comunidades');
+    await expect(button).toHaveAttribute('title', /administradora/);
+    await button.click();
+    const note = page.locator('[data-opened-all]');
+    await expect(note).toHaveText(`${communities.length} comunidades abiertas`);
+    await button.click();
+    await expect(note).toHaveText(`${communities.length} comunidades abiertas`);
+
+    // The house is a member with the administrator role, and the roles carry the default colours.
+    const asked = await page.request.get(
+      `${origin}/api/saldo/roles?cuenta=${communityAccount('merge')}`,
+    );
+    expect(asked.status()).toBe(200);
+    const view = (
+      (await asked.json()) as {
+        roles: {
+          roles: { name: string; color: string | null }[];
+          members: { wallet: string; owner: boolean; roleIds: string[] }[];
+        };
+      }
+    ).roles;
+    expect(view.members.map((member) => member.wallet)).toEqual([HOUSE]);
+    expect(view.members[0]?.roleIds).toHaveLength(1);
+    expect(view.roles.map((role) => role.color)).toEqual(['#d98324', '#2f7fa8', '#3d8b5f', null]);
+  });
+
+  test('in Numen Games the administrators are the Oráculos', async ({ page, context }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.request.post(`${origin}/api/admin/community-team`, { data: { all: true } });
+    const asked = await page.request.get(
+      `${origin}/api/saldo/roles?cuenta=${communityAccount('numen-games')}`,
+    );
+    const view = (
+      (await asked.json()) as { roles: { roles: { name: string; color: string | null }[] } }
+    ).roles;
+    expect(view.roles[0]).toMatchObject({ name: 'Oráculos', color: '#d98324' });
+  });
+});
+
 test.describe('Sedes says what it has', () => {
   const org = NUMEN;
   const answer = (page: Page, status: number, json: object): Promise<void> =>

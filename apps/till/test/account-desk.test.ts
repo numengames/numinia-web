@@ -100,6 +100,7 @@ describe('the desk', () => {
       'log',
       'members',
       'moveRole',
+      'openAllCommunities',
       'overview',
       'placeWorld',
       'placements',

@@ -18,18 +18,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { CensusListMessages } from '../../../i18n/census-list';
+import type { SaldoMessages } from '../../../i18n/saldo';
 import { fill, readResult, type Citizen } from '../../../lib/accounts';
 import {
   isHouseSession,
   loadCitizens,
   personLines,
+  refusalWords,
   seenAt,
   type CitizensSheet,
 } from '../../../lib/census-list';
 import { pageSessionClient } from '../../../lib/island-session';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { PeopleGlyph } from '../../panel/PeopleGlyph';
-import { accountOf } from '../../../lib/org-choices';
+import { accountOf, choicesToJoin } from '../../../lib/org-choices';
 import { OrgOptions } from './OrgOptions';
 import { readTeams, type Teams } from './org-teams';
 
@@ -40,8 +42,11 @@ const SEARCH_PAUSE_MS = 250;
 
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };
 
-/** Adds the wallet to the organization as a member: true when the till did it. */
-async function addMember(accountId: string, wallet: string): Promise<boolean> {
+/** What adding a person came to: done, or the till's reasons (none when it said nothing). */
+type Added = { readonly ok: true } | { readonly ok: false; readonly problems: readonly string[] };
+
+/** Adds the wallet to the organization as a member. */
+async function addMember(accountId: string, wallet: string): Promise<Added> {
   try {
     const response = await fetch('/api/saldo', {
       method: 'POST',
@@ -49,9 +54,12 @@ async function addMember(accountId: string, wallet: string): Promise<boolean> {
       body: JSON.stringify({ action: 'set-member', accountId, wallet, role: 'member' }),
     });
     const result = readResult(await response.json().catch(() => null));
-    return response.ok && result !== null && result.ok;
+    if (result === null) return { ok: false, problems: [] };
+    return result.ok && response.ok
+      ? { ok: true }
+      : { ok: false, problems: result.ok ? [] : result.problems };
   } catch {
-    return false;
+    return { ok: false, problems: [] };
   }
 }
 
@@ -68,9 +76,12 @@ function Face({ person }: { readonly person: Citizen }) {
 export function CitizensList({
   locale,
   words,
+  problems,
 }: {
   readonly locale: SupportedLocale;
   readonly words: CensusListMessages;
+  /** The Saldo panel's sentences for the till's refusals: an add that is refused says why. */
+  readonly problems: SaldoMessages['problems'];
 }) {
   const [house, setHouse] = useState(false);
   const [sheet, setSheet] = useState<Sheet>({ at: 'waiting' });
@@ -82,6 +93,11 @@ export function CitizensList({
   const [chosen, setChosen] = useState('');
   const [saving, setSaving] = useState(false);
   const [addFailed, setAddFailed] = useState(false);
+  // The till's reason for the last refused add, in words; null when it gave none.
+  const [addReason, setAddReason] = useState<string | null>(null);
+  // Every organization on offer already has the person in it.
+  const [allJoined, setAllJoined] = useState(false);
+  const opening = useRef(0);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
   // Only the newest read of the list may paint.
@@ -145,11 +161,24 @@ export function CitizensList({
     opener.current = button;
     setAdding(person);
     setAddFailed(false);
+    setAddReason(null);
+    setAllJoined(false);
     setStatus('');
     dialog.current?.showModal();
     // Each opening reads the list again: a community may have got its organization since.
+    // The ones the person already belongs to are left out of it.
     setTeams({ at: 'loading' });
-    void readTeams().then(setTeams);
+    const mine = ++opening.current;
+    void readTeams().then(async (read) => {
+      if (read.at !== 'ready') {
+        if (mine === opening.current) setTeams(read);
+        return;
+      }
+      const left = await choicesToJoin(fetch, read.choices, person.wallet);
+      if (mine !== opening.current) return;
+      setAllJoined(read.choices.length > 0 && left.length === 0);
+      setTeams({ at: 'ready', choices: left });
+    });
   };
 
   const close = (): void => {
@@ -166,12 +195,16 @@ export function CitizensList({
     if (adding === null || choice === null) return;
     setSaving(true);
     setAddFailed(false);
+    setAddReason(null);
     // A community the house has not used yet gets its account now, then the person joins it.
     const account = await accountOf(fetch, choice);
-    const done = account.ok && (await addMember(account.accountId, adding.wallet));
+    const done: Added = account.ok
+      ? await addMember(account.accountId, adding.wallet)
+      : { ok: false, problems: [] };
     setSaving(false);
-    if (!done) {
+    if (!done.ok) {
       setAddFailed(true);
+      setAddReason(done.problems.length === 0 ? null : refusalWords(done.problems, problems));
       return;
     }
     close();
@@ -348,7 +381,9 @@ export function CitizensList({
         )}
         {teams.at === 'failed' && <p className="estado aviso">{words.failed}</p>}
         {teams.at === 'ready' && teams.choices.length === 0 && (
-          <p className="estado">{words.noOrgs}</p>
+          <p className="estado" data-all-joined={allJoined ? '' : undefined}>
+            {allJoined ? words.allJoined : words.noOrgs}
+          </p>
         )}
         {teams.at === 'ready' && teams.choices.length > 0 && (
           <div className="censo-campo">
@@ -371,6 +406,12 @@ export function CitizensList({
         {addFailed && (
           <p className="estado aviso" role="alert">
             {words.addFailed}
+            {addReason !== null && (
+              <>
+                {' '}
+                <span data-add-reason>{addReason}</span>
+              </>
+            )}
           </p>
         )}
         <div className="censo-botones">

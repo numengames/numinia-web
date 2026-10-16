@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import deskSeed from '../../../fixtures/accounts/desk.json';
-import type { AccountDesk, DeskLogAnswer } from '../accounts';
+import { OWN_ROLES, type AccountDesk, type DeskLogAnswer } from '../accounts';
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
 import { communityAccountId } from '../community-teams';
 
@@ -61,14 +61,37 @@ describe('opening a community’s account', () => {
     ).toEqual([true]);
   });
 
-  it('does not make the house a member, and no one else either', async () => {
+  it('makes the house a member of it, an administrator, and no one else', async () => {
     const d = desk();
     const id = await communityAccountId('merge');
     await d.ensureCommunityTeam(HOUSE, true, 'merge', 'Merge');
     const overview = await d.overview(HOUSE);
-    expect('accounts' in overview && overview.accounts.map((a) => a.id)).not.toContain(id);
+    expect('accounts' in overview && overview.accounts.map((a) => a.id)).toContain(id);
+    const view = await d.roles(HOUSE, id, true);
+    if (!view.ok) throw new Error('roles');
+    const admin = view.roles.find((role) => role.permissions.includes('administrator'));
+    expect(view.members.map((m) => [m.wallet, m.owner, m.roleIds])).toEqual([
+      [HOUSE, false, [admin?.id]],
+    ]);
+  });
+
+  it('adds the house to an account already open that it was not in, once, with no new log line', async () => {
+    const d = desk();
+    const id = await communityAccountId('merge');
+    await d.ensureCommunityTeam(HOUSE, true, 'merge', 'Merge');
+    const again = await d.ensureCommunityTeam(OTHER_HOUSE, true, 'merge', 'Merge');
+    expect(again).toMatchObject({ ok: true, account: { created: false } });
+    const twice = await d.ensureCommunityTeam(OTHER_HOUSE, true, 'merge', 'Merge');
+    expect(twice).toEqual(again);
     const members = await d.members(HOUSE, id, true);
-    expect(members).toMatchObject({ ok: true, members: [] });
+    expect(members).toMatchObject({ ok: true });
+    expect('members' in members && members.members.map((m) => m.wallet)).toEqual([
+      HOUSE,
+      OTHER_HOUSE,
+    ]);
+    expect(lines(await d.log(HOUSE, id, true)).filter((l) => l.act !== 'house-read')).toHaveLength(
+      1,
+    );
   });
 
   it('is shared by every wallet’s copy: the house lists it from any, a stranger does not enter it', async () => {
@@ -127,5 +150,138 @@ describe('opening a community’s account', () => {
     expect(problems(await d.ensureCommunityTeam(HOUSE, true, 'merge', 7))).toEqual([
       'name must be 1 to 60 characters',
     ]);
+  });
+});
+
+describe('the default colours and Numen Games’ own roles', () => {
+  const colours = async (d: Loose, community: string, name: string) => {
+    await d.ensureCommunityTeam(HOUSE, true, community, name);
+    const view = await d.roles(HOUSE, await communityAccountId(community), true);
+    if (!view.ok) throw new Error('roles');
+    return view.roles.map((role) => [role.name, role.color]);
+  };
+
+  it('opens a community with Administration orange, Finance blue, Member green and a base role with none', async () => {
+    expect(await colours(desk(), 'merge', 'Merge')).toEqual([
+      ['Administración', '#d98324'],
+      ['Finanzas', '#2f7fa8'],
+      ['Miembro', '#3d8b5f'],
+      ['@todos', null],
+    ]);
+  });
+
+  it('names the administrators of Numen Games the Oracles, still orange', async () => {
+    expect(await colours(desk(), 'numen-games', 'Numen Games')).toEqual([
+      ['Oráculos', '#d98324'],
+      ['Finanzas', '#2f7fa8'],
+      ['Miembro', '#3d8b5f'],
+      ['@todos', null],
+    ]);
+  });
+
+  it('gives an organization created from now on the same colours', async () => {
+    const d = desk();
+    const made = await d.createTeam(ME, 'Mine');
+    if (!made.ok || !('account' in made)) throw new Error('team');
+    const view = await d.roles(ME, made.account.id, false);
+    if (!view.ok) throw new Error('roles');
+    expect(view.roles.map((role) => role.color)).toEqual(['#d98324', '#2f7fa8', '#3d8b5f', null]);
+  });
+});
+
+describe('the house adding itself (the case behind «No se ha podido añadir»)', () => {
+  it('joins an organization it is not in as an administrator, with the two log lines', async () => {
+    const d = desk();
+    const id = await communityAccountId('merge');
+    await d.ensureCommunityTeam(OTHER_HOUSE, true, 'merge', 'Merge');
+    const added = await d.setMember(HOUSE, id, HOUSE, 'member', true);
+    expect(added).toMatchObject({ ok: true });
+    const view = await d.roles(HOUSE, id, true);
+    if (!view.ok) throw new Error('roles');
+    expect(view.members.map((m) => m.wallet)).toContain(HOUSE);
+    const acts = lines(await d.log(HOUSE, id, true))
+      .filter((line) => line.subject === HOUSE)
+      .map((line) => [line.act, line.asHouse]);
+    expect(acts).toEqual([
+      ['role-given', true],
+      ['member-added', true],
+    ]);
+  });
+
+  it('is a no-op once it is an administrator there: no new row, no new line', async () => {
+    const d = desk();
+    const id = await communityAccountId('merge');
+    await d.ensureCommunityTeam(HOUSE, true, 'merge', 'Merge');
+    const written = async () =>
+      lines(await d.log(HOUSE, id, true)).filter((line) => line.act !== 'house-read').length;
+    const before = await written();
+    expect(await d.setMember(HOUSE, id, HOUSE, 'member', true)).toMatchObject({ ok: true });
+    const view = await d.roles(HOUSE, id, true);
+    if (!view.ok) throw new Error('roles');
+    expect(view.members).toHaveLength(1);
+    expect(await written()).toBe(before);
+  });
+
+  it('still refuses to change one’s own roles as a plain member, and a non-house self-add', async () => {
+    const d = desk();
+    const B2 = '0x00000000000000000000000000000000000000b2';
+    expect(problems(await d.setMember(B2, 'acc_team_numen_games', B2, 'admin', true))).toEqual([
+      OWN_ROLES,
+    ]);
+    const mine = await d.createTeam(ME, 'Mine');
+    if (!mine.ok || !('account' in mine)) throw new Error('team');
+    expect(problems(await d.setMember(ME, mine.account.id, ME, 'member', false))).toEqual([
+      OWN_ROLES,
+    ]);
+  });
+});
+
+describe('opening every community at once', () => {
+  const some = [
+    { id: 'merge', name: 'Merge' },
+    { id: 'reset', name: 'Reset' },
+  ];
+
+  it('opens them all, answers each account, and makes the house an administrator of each', async () => {
+    const d = desk();
+    const answer = await d.openAllCommunities(HOUSE, true, some);
+    expect(answer).toEqual({
+      ok: true,
+      accounts: [
+        { id: await communityAccountId('merge'), name: 'Merge', created: true },
+        { id: await communityAccountId('reset'), name: 'Reset', created: true },
+      ],
+    });
+    for (const { id } of some) {
+      const members = await d.members(HOUSE, await communityAccountId(id), true);
+      expect('members' in members && members.members.map((m) => m.wallet)).toEqual([HOUSE]);
+    }
+  });
+
+  it('is repeatable: the second time opens nothing new', async () => {
+    const d = desk();
+    await d.openAllCommunities(HOUSE, true, some);
+    const again = await d.openAllCommunities(HOUSE, true, some);
+    expect(again).toMatchObject({ ok: true });
+    expect('accounts' in again && again.accounts.map((a) => a.created)).toEqual([false, false]);
+  });
+
+  it('refuses a wallet that is not the house, a bad flag, and a list out of shape', async () => {
+    const d = desk();
+    expect(problems(await d.openAllCommunities(ME, false, some)).join(' ')).toMatch(/house/);
+    expect(problems(await d.openAllCommunities('nope', true, some))).toHaveLength(1);
+    expect(problems(await d.openAllCommunities(HOUSE, true, []))).toEqual([
+      'communities must be 1 to 50 communities',
+    ]);
+    const many = Array.from({ length: 51 }, (_, i) => ({ id: `c${i}`, name: `C ${i}` }));
+    expect(problems(await d.openAllCommunities(HOUSE, true, many))).toHaveLength(1);
+    expect(problems(await d.openAllCommunities(HOUSE, true, 'merge'))).toHaveLength(1);
+    expect(
+      problems(await d.openAllCommunities(HOUSE, true, [{ id: 'No Good', name: 'x' }])),
+    ).toEqual(['each community needs a community id and a name of 1 to 60 characters']);
+    expect(problems(await d.openAllCommunities(HOUSE, true, [{ id: 'ok', name: 3 }]))).toHaveLength(
+      1,
+    );
+    expect(problems(await d.openAllCommunities(HOUSE, true, [null]))).toHaveLength(1);
   });
 });

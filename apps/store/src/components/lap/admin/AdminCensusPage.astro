@@ -15,6 +15,7 @@ import { RANK_DEFINITIONS } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
 import LapShell from '../LapShell.astro';
 import { CENSUS_LIST_UI } from '../../../i18n/census-list';
+import { SALDO_UI } from '../../../i18n/saldo';
 import { CensusPanel } from './CensusPanel';
 import { CitizensList } from './CitizensList';
 
@@ -56,7 +57,12 @@ const labels = {
     <h2 id="censo-entradas-titulo">{listWords.title}</h2>
     <p class="intro">{listWords.intro}</p>
     <p class="censo-antes" data-citizens-before>{listWords.before}</p>
-    <CitizensList client:load locale={locale} words={listWords} />
+    <CitizensList
+      client:load
+      locale={locale}
+      words={listWords}
+      problems={SALDO_UI[locale].problems}
+    />
   </section>
   <CensusPanel client:load labels={labels} ranks={ranks} />
 </LapShell>

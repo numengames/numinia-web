@@ -79,6 +79,7 @@ import {
   type DeskConfirmAnswer,
   type DeskDirectoryAnswer,
   type DeskEnsureAnswer,
+  type DeskOpenAllAnswer,
   type DeskDirectoryEntry,
   type DeskLine,
   type DeskLogAct,
@@ -255,9 +256,31 @@ const NO_SUCH_ROLE = 'the organization has no such role';
 const NO_SUCH_MEMBER = 'that wallet is not a member of the organization';
 const hex16 = (n: number): string => `role_${n.toString(16).padStart(16, '0')}`;
 
-/** An organization's roles at birth: the Team template, in Castilian, ids counted from 1. */
-function birthRoles(): OrganizationRole[] {
-  return [...rolesFromTemplate('team', 'es', (index) => hex16(index + 1))];
+/**
+ * The Team template's default colours, top-down: Administration orange,
+ * Finance blue, Member green; the base role keeps none. The hex values are
+ * the Roles editor's own swatches (i18n/panel-people.ts), as the till's.
+ */
+const BIRTH_COLORS: readonly (string | null)[] = ['#d98324', '#2f7fa8', '#3d8b5f', null];
+
+/**
+ * The communities whose administrator role is named otherwise: Numen Games'
+ * administrators are the Oracles. Castilian here, like the rest of the fixture.
+ */
+const ADMIN_ROLE_NAMES: Readonly<Record<string, string>> = { 'numen-games': 'Oráculos' };
+
+/**
+ * An organization's roles at birth: the Team template, in Castilian, ids
+ * counted from 1, the default colours, and — for a community that has its
+ * own word for it — the administrator role under that name.
+ */
+function birthRoles(community?: string): OrganizationRole[] {
+  const adminName = community === undefined ? undefined : ADMIN_ROLE_NAMES[community];
+  return rolesFromTemplate('team', 'es', (index) => hex16(index + 1)).map((role, index) => ({
+    ...role,
+    color: BIRTH_COLORS[index] ?? null,
+    name: index === 0 && adminName !== undefined ? adminName : role.name,
+  }));
 }
 
 interface Checkout {
@@ -282,6 +305,10 @@ const refuse = (...problems: string[]): DeskRefusal => ({ ok: false, problems })
 const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /** An organization's name: only a personal account has none. */
+/** The most communities one call to `openAllCommunities` opens (the till's own cap). */
+const OPEN_ALL_MAX = 50;
+const ONLY_HOUSE_OPENS = 'only the house opens the organization of a community';
+
 const nameOf = (book: Book): string => book.name as string;
 
 /** The flag as the till reads it: absent is false, anything but a boolean is a problem. */
@@ -772,6 +799,56 @@ export function createAccountsFixtureDesk(
     });
   };
 
+  /** The role that carries the administrator permission, the template's first. */
+  const administratorOf = (book: Book): OrganizationRole | undefined =>
+    book.roles.find((role) => role.permissions.includes('administrator'));
+
+  /**
+   * The wallet becomes a member of the organization holding the administrator
+   * role (not an owner): a no-op when it is a member already.
+   */
+  const joinAsAdministrator = (book: Book, wallet: string): boolean => {
+    if (book.members.some((member) => member.wallet === wallet)) return false;
+    book.members.push({ wallet, role: 'member', addedAt: now().toISOString() });
+    const role = administratorOf(book);
+    book.held.set(wallet, role === undefined ? [] : [role.id]);
+    return true;
+  };
+
+  /**
+   * Opens a community's account once, under the id derived from the
+   * community's, and makes the house's wallet an administrator of it — also
+   * when the account was already open and the house was not in it. Only the
+   * first opening writes a line in the log.
+   */
+  const ensureOne = async (
+    who: string,
+    community: string,
+    name: string,
+  ): Promise<{ id: string; name: string; created: boolean }> => {
+    const id = await communityAccountId(community);
+    const found = communityBooks.get(id);
+    if (found !== undefined) {
+      joinAsAdministrator(found, who);
+      return { id, name: nameOf(found), created: false };
+    }
+    const book: Book = {
+      id,
+      kind: 'team',
+      name,
+      lines: [],
+      members: [],
+      roles: birthRoles(community),
+      held: new Map(),
+      changes: [],
+    };
+    joinAsAdministrator(book, who);
+    communityBooks.set(id, book);
+    for (const books of wallets.values()) books.push(book);
+    record({ book, who, as: 'house' }, 'organization-created', null, { name });
+    return { id, name, created: true };
+  };
+
   /** Writes down what the house reads (ORG-009); an owner's or a member's own reads leave no line. */
   const houseRead = (entry: Entry, what: string): void => {
     if (entry.as === 'house') record(entry, 'house-read', null, { what });
@@ -1008,7 +1085,21 @@ export function createAccountsFixtureDesk(
         house,
       );
       if ('ok' in allowed) return allowed;
-      if (member === found.who) return refuse(OWN_ROLES);
+      // The house adding ITSELF to an organization it is not in is the one own-act allowed: it
+      // joins as an administrator whatever role was asked. Already an administrator there it is
+      // a no-op; changing its own roles as any other member stays refused.
+      if (member === found.who) {
+        if (found.as !== 'house') return refuse(OWN_ROLES);
+        if (current === undefined) {
+          joinAsAdministrator(found.book, member);
+          record(found, 'member-added', member, null);
+          record(found, 'role-given', member, { role: administratorOf(found.book)?.id ?? '' });
+          return membersAnswer(found.book);
+        }
+        const admin = administratorOf(found.book);
+        const holds = admin !== undefined && heldBy(found.book, member).includes(admin.id);
+        return holds || current.role === 'admin' ? membersAnswer(found.book) : refuse(OWN_ROLES);
+      }
       // The house stands below the owners (ORG-007): it names none and demotes none.
       if (found.as === 'house' && current?.role === 'admin') {
         return role === 'admin' ? membersAnswer(found.book) : refuse(OWNER_ONLY);
@@ -1423,26 +1514,35 @@ export function createAccountsFixtureDesk(
           ...(clean === null ? ['name must be 1 to 60 characters'] : []),
         );
       }
-      if (!asking.house) return refuse('only the house opens the organization of a community');
-      const id = await communityAccountId(community);
-      const found = communityBooks.get(id);
-      if (found !== undefined) {
-        return { ok: true, account: { id, name: nameOf(found), created: false } };
+      if (!asking.house) return refuse(ONLY_HOUSE_OPENS);
+      return { ok: true, account: await ensureOne(asking.who, community, clean) };
+    },
+
+    // ---- Cut 7: the house opens every community at once, and becomes an administrator of each ----
+
+    openAllCommunities: async (wallet, house, communities): Promise<DeskOpenAllAnswer> => {
+      const asking = asker(wallet, house);
+      if ('ok' in asking) return asking;
+      if (!asking.house) return refuse(ONLY_HOUSE_OPENS);
+      if (
+        !Array.isArray(communities) ||
+        communities.length < 1 ||
+        communities.length > OPEN_ALL_MAX
+      ) {
+        return refuse(`communities must be 1 to ${OPEN_ALL_MAX} communities`);
       }
-      const book: Book = {
-        id,
-        kind: 'team',
-        name: clean,
-        lines: [],
-        members: [],
-        roles: birthRoles(),
-        held: new Map(),
-        changes: [],
-      };
-      communityBooks.set(id, book);
-      for (const books of wallets.values()) books.push(book);
-      record({ book, who: asking.who, as: 'house' }, 'organization-created', null, { name: clean });
-      return { ok: true, account: { id, name: clean, created: true } };
+      const asked = communities.map((entry) => ({
+        community: readCommunityId(entry?.id),
+        name: typeof entry?.name === 'string' ? teamName(entry.name) : null,
+      }));
+      if (asked.some(({ community, name }) => community === undefined || name === null)) {
+        return refuse('each community needs a community id and a name of 1 to 60 characters');
+      }
+      const accounts: { id: string; name: string; created: boolean }[] = [];
+      for (const { community, name } of asked) {
+        accounts.push(await ensureOne(asking.who, community as string, name as string));
+      }
+      return { ok: true, accounts };
     },
 
     // ---- «Ajustes de la comunidad» (cut 8): pieces, words and «Qué ha pasado» ----

@@ -208,10 +208,10 @@ test.describe('a community is an organization', () => {
     const dialog = page.getByRole('dialog');
     const select = dialog.getByRole('combobox');
     await expect(select.locator('optgroup[label="Comunidades"] option')).toContainText(['MERGE']);
-    await expect(select.locator('optgroup[label="Otras"] option')).toContainText(['La Tarugo']);
+    await expect(select.locator('optgroup[label="Otras"] option')).toContainText([
+      'Active Inference Institute',
+    ]);
     await expect(dialog).not.toContainText('No hay organizaciones');
-    await select.selectOption('c:numen-games');
-    await expect(dialog.locator('[data-opens-home]')).toHaveCount(0);
 
     const before = Number(await row.locator('[data-citizen-orgs]').innerText());
     await select.selectOption('c:merge');
@@ -286,6 +286,56 @@ test.describe('fit and finish', () => {
     await page.goto(census(''));
     await expect(page.locator('[data-citizens]').getByRole('heading')).toHaveText(
       'Who has signed in',
+    );
+  });
+});
+
+test.describe('the dialog leaves out what the person already belongs to', () => {
+  test('LUCÍA is in Numen Games, so it is not offered; D4 is not, so it is', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.goto(census());
+    const dialog = page.getByRole('dialog');
+    const select = dialog.getByRole('combobox');
+
+    await page.locator(`tr[data-citizen="${LUCIA}"] [data-metric="census-citizen-add"]`).click();
+    await expect(select).toBeVisible();
+    await expect(select.locator('option', { hasText: 'R3S3T' })).toHaveCount(1);
+    await expect(select.locator('option', { hasText: 'Numen Games' })).toHaveCount(0);
+    await dialog.locator('[data-metric="census-citizen-add-cancel"]').click();
+
+    await page.locator(`tr[data-citizen="${D4}"] [data-metric="census-citizen-add"]`).click();
+    await expect(select.locator('option', { hasText: 'Numen Games' })).toHaveCount(1);
+    // A community the till already has needs nothing opened.
+    await select.selectOption('c:numen-games');
+    await expect(dialog.locator('[data-opens-home]')).toHaveCount(0);
+  });
+
+  test('a refused add says why, in the panel’s own words', async ({ page, context }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.route('**/api/saldo', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      return route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          result: {
+            ok: false,
+            problems: ['nobody changes their own roles: they may only leave'],
+          },
+        }),
+      });
+    });
+    await page.goto(census());
+    await page.locator(`tr[data-citizen="${NUEVA}"] [data-metric="census-citizen-add"]`).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('combobox').selectOption('c:reset');
+    await dialog.locator('[data-metric="census-citizen-add-save"]').click();
+    await expect(dialog.getByRole('alert')).toContainText('No se ha podido añadir');
+    await expect(dialog.locator('[data-add-reason]')).toContainText(
+      'No puedes cambiar tus propios roles',
     );
   });
 });

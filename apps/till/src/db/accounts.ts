@@ -448,7 +448,7 @@ const INSERT_FOUNDER = `
 /** One of the roles a new organization is born with (STD-052). */
 const INSERT_ROLE = `
   INSERT INTO team_roles (account_id, id, name, color, position, hoist, permissions)
-  SELECT ?1, ?2, ?3, NULL, ?4, ?5, ?6 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7 WHERE EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
 
 const INSERT_CHECKOUT = `
   INSERT INTO checkouts (id, account_id, wallet, amount_key, created_at, state)
@@ -795,6 +795,7 @@ export async function createTeam(
           id,
           role.id,
           role.name,
+          role.color,
           role.position,
           role.hoist ? 1 : 0,
           JSON.stringify(role.permissions),
@@ -1065,8 +1066,19 @@ export async function setMember(
   const entered = await enter(db, wallet, accountId, house);
   if ('problems' in entered) return entered;
   const { org, acting } = entered;
-  if (member === wallet) return refuse(ORG_PROBLEMS.ownRoles);
   const existing = memberIn(org, member);
+  if (member === wallet) {
+    // Nobody changes their own roles — except that the house, acting as the
+    // house, may join an organization it is not in yet, as its administrator.
+    if (acting.as !== 'house') return refuse(ORG_PROBLEMS.ownRoles);
+    if (existing === undefined) {
+      const refused = await joinAsAdministrator(db, org, acting, now);
+      return refused ?? { ok: true, members: await membersOf(db, accountId) };
+    }
+    return compatRole(accessIn(org, member)) === 'admin'
+      ? { ok: true, members: await membersOf(db, accountId) }
+      : refuse(ORG_PROBLEMS.ownRoles);
+  }
   if (existing?.isOwner === true) {
     return role === 'admin'
       ? { ok: true, members: await membersOf(db, accountId) }
@@ -1121,6 +1133,32 @@ export async function setMember(
   }
   if (!(await commit(db, org, writes))) return refuse(PROBLEMS.meanwhile);
   return { ok: true, members: await membersOf(db, accountId) };
+}
+
+/**
+ * The house joins an organization as a member holding its administrator role
+ * (it already holds every permission through `accessOf`; this makes it show
+ * in the member list). Written as the house: `member-added` and `role-given`.
+ * Null when it is done, or the refusal; the caller checked it is not a member.
+ */
+export async function joinAsAdministrator(
+  db: TillDatabase,
+  org: Organization,
+  acting: Acting,
+  now: Date,
+): Promise<Refusal | null> {
+  const given = administratorRoleFor(acting.access, org.state.roles);
+  if (typeof given === 'string') return refuse(given);
+  const { wallet } = acting;
+  const joined = await commit(db, org, [
+    db
+      .prepare(ADD_MEMBER)
+      .bind(org.accountId, wallet, 'admin', wallet, now.toISOString(), org.revision),
+    logLine(db, org.accountId, now, acting, 'member-added', wallet, null, org.revision),
+    db.prepare(GIVE_ROLE).bind(org.accountId, wallet, given.id, org.revision),
+    logLine(db, org.accountId, now, acting, 'role-given', wallet, { role: given.id }, org.revision),
+  ]);
+  return joined ? null : refuse(PROBLEMS.meanwhile);
 }
 
 /**

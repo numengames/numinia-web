@@ -182,6 +182,13 @@ const MODERATION: LocalizedString = {
   'pt-br': 'Moderação',
 };
 
+/** Default colours of the Team template: the Roles editor's own swatches (orange, blue, green). */
+const TEAM_ROLE_COLORS = {
+  administration: '#d98324',
+  finance: '#2f7fa8',
+  member: '#3d8b5f',
+} as const;
+
 export const ORGANIZATION_TEMPLATES: Readonly<
   Record<OrganizationTemplateId, OrganizationTemplate>
 > = {
@@ -193,9 +200,20 @@ export const ORGANIZATION_TEMPLATES: Readonly<
   team: {
     id: 'team',
     roles: [
-      { name: ADMINISTRATION, permissions: ['administrator'], hoist: true },
-      { name: FINANCE, permissions: ['manage-balance'], hoist: false },
       {
+        name: ADMINISTRATION,
+        permissions: ['administrator'],
+        hoist: true,
+        color: TEAM_ROLE_COLORS.administration,
+      },
+      {
+        name: FINANCE,
+        permissions: ['manage-balance'],
+        hoist: false,
+        color: TEAM_ROLE_COLORS.finance,
+      },
+      {
+        color: TEAM_ROLE_COLORS.member,
         name: MEMBER,
         permissions: ['enter-worlds', 'start-stop-worlds', 'build-in-worlds'],
         hoist: false,
@@ -231,7 +249,7 @@ export function rolesFromTemplate(
   const roles: OrganizationRole[] = template.roles.map((role, index) => ({
     id: makeId(index),
     name: role.name[locale],
-    color: null,
+    color: role.color ?? null,
     position: top - index,
     hoist: role.hoist,
     permissions: role.permissions,

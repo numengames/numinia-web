@@ -8,7 +8,8 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import type { Citizen, DeskAccount } from '../accounts';
+import { SALDO_UI } from '../../i18n/saldo';
+import { NOT_CONFIGURED, OWN_ROLES, type Citizen, type DeskAccount } from '../accounts';
 import {
   CITIZENS_API,
   SUGGEST_MAX,
@@ -18,6 +19,7 @@ import {
   listboxStep,
   loadCitizens,
   personLines,
+  refusalWords,
   seenAt,
   suggestCitizens,
   teamsToJoin,
@@ -174,5 +176,30 @@ describe('walking a listbox by keyboard', () => {
     expect(listboxStep(1, 3, 'End')).toBe(2);
     expect(listboxStep(1, 3, 'a')).toBe(1);
     expect(listboxStep(-1, 0, 'ArrowDown')).toBe(-1);
+  });
+});
+
+describe('telling why the till refused an add', () => {
+  const words = SALDO_UI.es.problems;
+
+  it('uses the Saldo panel’s sentence for the refusals it knows', () => {
+    expect(refusalWords([OWN_ROLES], words)).toBe(words.ownRoles);
+    expect(refusalWords(['the organization has changed meanwhile'], words)).toBe(words.other);
+  });
+
+  it('keeps the one general line for a missing permission or a till not set up', () => {
+    expect(refusalWords(['this needs manage-roles, which only the owners hold'], words)).toBe(
+      words.other,
+    );
+    expect(
+      refusalWords(
+        ['this needs manage-balance, which the owners hold, and the role Finance'],
+        words,
+      ),
+    ).toBe(words.other);
+    expect(refusalWords([NOT_CONFIGURED], words)).toBe(words.other);
+    expect(refusalWords(['this needs nothing-known, which only the owners hold'], words)).toBe(
+      words.ownersOnly,
+    );
   });
 });

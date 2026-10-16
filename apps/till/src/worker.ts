@@ -56,7 +56,12 @@ import {
   type TopupConfirm,
   type TopupStart,
 } from './db/accounts';
-import { ensureCommunityTeam, type EnsureAnswer } from './db/community-teams';
+import {
+  ensureCommunityTeam,
+  openAllCommunities,
+  type EnsureAnswer,
+  type OpenAllAnswer,
+} from './db/community-teams';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import {
   homeOf,
@@ -502,7 +507,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
    * The house opens the organization of a register community the first time
    * it uses it, and answers its account either way: the id is derived from
    * the community id, so two first calls make one. To the house's staff
-   * alone (`house` true); the wallet is not made a member and the account
+   * alone (`house` true); the wallet is made a member holding the administrator role and the account
    * does not count against the founder bound.
    */
   async ensureCommunityTeam(
@@ -539,6 +544,19 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     house?: unknown,
   ): Promise<HappeningsAnswer> {
     return happenings(this.env.TILL_DB, wallet, accountId, before, house, new Date());
+  }
+
+  /**
+   * The house opens the organization of 1 to 50 communities (`{ id, name }`
+   * each) in one call, as `ensureCommunityTeam` does for one; answers
+   * `{ ok: true, accounts: { id, name, created }[] }` in the order sent.
+   */
+  async openAllCommunities(
+    wallet: unknown,
+    house: unknown,
+    communities: unknown,
+  ): Promise<OpenAllAnswer> {
+    return openAllCommunities(this.env.TILL_DB, wallet, house, communities, new Date());
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----

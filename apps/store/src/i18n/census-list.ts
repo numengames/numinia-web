@@ -47,6 +47,8 @@ export interface CensusListMessages extends OrgChoiceMessages {
   readonly dialogTitle: string;
   readonly orgLabel: string;
   readonly noOrgs: string;
+  /** Every organization on offer already has this person: nothing is left to add them to. */
+  readonly allJoined: string;
   readonly addSave: string;
   readonly cancel: string;
   /** «{who} ya está en {org}.» */
@@ -95,6 +97,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     dialogTitle: 'Añadir a {who} a una organización',
     orgLabel: 'Organización',
     noOrgs: 'No hay organizaciones en las que entrar.',
+    allJoined: 'Esta persona ya forma parte de todas las comunidades y organizaciones.',
     addSave: 'Añadir como miembro',
     cancel: 'Cancelar',
     added: '{who} ya está en {org}.',
@@ -137,6 +140,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     dialogTitle: 'Add {who} to an organization',
     orgLabel: 'Organization',
     noOrgs: 'There are no organizations to enter.',
+    allJoined: 'This person already belongs to every community and organization.',
     addSave: 'Add as a member',
     cancel: 'Cancel',
     added: '{who} is now in {org}.',
@@ -179,6 +183,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     dialogTitle: '{who}を組織に追加',
     orgLabel: '組織',
     noOrgs: '入れる組織がありません。',
+    allJoined: 'この人はすべてのコミュニティと組織にすでに参加しています。',
     addSave: 'メンバーとして追加',
     cancel: 'キャンセル',
     added: '{who}は{org}のメンバーになりました。',
@@ -221,6 +226,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     dialogTitle: '{who}을(를) 조직에 추가',
     orgLabel: '조직',
     noOrgs: '들어갈 수 있는 조직이 없습니다.',
+    allJoined: '이 사람은 이미 모든 커뮤니티와 조직에 속해 있습니다.',
     addSave: '멤버로 추가',
     cancel: '취소',
     added: '{who}이(가) 이제 {org}에 있습니다.',
@@ -263,6 +269,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     dialogTitle: 'Adicionar {who} a uma organização',
     orgLabel: 'Organização',
     noOrgs: 'Não há organizações em que entrar.',
+    allJoined: 'Esta pessoa já faz parte de todas as comunidades e organizações.',
     addSave: 'Adicionar como membro',
     cancel: 'Cancelar',
     added: '{who} agora está em {org}.',

@@ -7,7 +7,14 @@
  * Oracle's, the same rank the server reads from the signed cookie.
  */
 
-import { readCitizens, shortWallet, type Citizen, type DeskAccount } from './accounts';
+import {
+  readCitizens,
+  readProblem,
+  shortWallet,
+  type Citizen,
+  type DeskAccount,
+  type ProblemKey,
+} from './accounts';
 
 /** The list's one address: islands reach it only through this module. */
 export const CITIZENS_API = '/api/admin/citizens';
@@ -116,6 +123,22 @@ export function teamsToJoin(
     .filter((account) => account.kind === 'team')
     .map((account) => ({ id: account.id, name: account.name ?? account.id }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Why the till refused an add, in the person's words: the Saldo panel's
+ * sentences for the till's refusals. A refusal that needs a permission, or
+ * the till not being set up, has no sentence of its own here: it is told
+ * in the one line («La caja no lo ha permitido»).
+ */
+export function refusalWords(
+  problems: readonly string[],
+  sentences: Readonly<Record<Exclude<ProblemKey, 'needs' | 'notConfigured'>, string>> & {
+    readonly other: string;
+  },
+): string {
+  const { key } = readProblem(problems);
+  return key === 'needs' || key === 'notConfigured' ? sentences.other : sentences[key];
 }
 
 /** The option a listbox's key moves to (ARIA combobox pattern): -1 for none. */

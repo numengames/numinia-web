@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.110.0',
+    date: '2026-10-16 21:19',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The house is an administrator of every community. In the Worlds room, «Open all communities» opens the organization of each one in a single press and makes the house a member with the administrator role; it says how many are open and can be pressed again without harm. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'The Census no longer offers the organizations a person already belongs to, says so when there is none left, and when the till refuses an add it now tells the reason in words, not only «could not add». New organizations start with the default role colours — Administration orange, Finance blue, Member green — and in Numen Games the administrators are the Oracles.',
+      },
+    ],
+  },
+  {
     version: 'v0.109.0',
     date: '2026-10-16 20:11',
     entries: [

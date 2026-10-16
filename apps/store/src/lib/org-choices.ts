@@ -13,6 +13,8 @@
  * readers only keep a wrong body from breaking a screen.
  */
 
+import { readRoles } from './accounts';
+
 /** The register for the house: its communities, with the account the till opens for each. */
 export const COMMUNITIES_API = '/api/admin/communities';
 /** Where the house has the till open a community's account. */
@@ -134,4 +136,61 @@ export async function accountOf(fetcher: Fetch, choice: OrgChoice): Promise<Acco
   } catch {
     return { ok: false, why: 'failed' };
   }
+}
+
+/** What opening every community at once came to. */
+export type OpenedAll =
+  | { readonly ok: true; readonly opened: number }
+  | { readonly ok: false; readonly why: 'forbidden' | 'failed' };
+
+/** The house has the till open every community's organization at once; never throws. */
+export async function openAllCommunities(fetcher: Fetch): Promise<OpenedAll> {
+  try {
+    const response = await fetcher(COMMUNITY_TEAM_API, {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify({ all: true }),
+    });
+    if (response.status === 403) return { ok: false, why: 'forbidden' };
+    const json: unknown = response.ok ? await response.json().catch(() => null) : null;
+    return isRecord(json) && typeof json.opened === 'number'
+      ? { ok: true, opened: json.opened }
+      : { ok: false, why: 'failed' };
+  } catch {
+    return { ok: false, why: 'failed' };
+  }
+}
+
+/** The members' wallets of one organization, lowercase, or null when the till would not say. */
+async function membersOf(fetcher: Fetch, accountId: string): Promise<readonly string[] | null> {
+  try {
+    const response = await fetcher(`/api/saldo/roles?cuenta=${encodeURIComponent(accountId)}`, {
+      headers: { accept: 'application/json' },
+    });
+    const read = response.ok ? readRoles(await response.json().catch(() => null)) : null;
+    return read === null ? null : read.roles.members.map((member) => member.wallet.toLowerCase());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The choices the person is not yet in: each organization that exists is
+ * asked who its members are, and the ones that list the wallet are left out.
+ * An organization the till would not read stays in the list (the till decides
+ * on save anyway), and a community with no account yet has no member.
+ */
+export async function choicesToJoin(
+  fetcher: Fetch,
+  choices: readonly OrgChoice[],
+  wallet: string,
+): Promise<readonly OrgChoice[]> {
+  const who = wallet.toLowerCase();
+  const joined = await Promise.all(
+    choices.map(async (choice) => {
+      const members = choice.accountId === null ? [] : await membersOf(fetcher, choice.accountId);
+      return members !== null && members.includes(who);
+    }),
+  );
+  return choices.filter((_, index) => !joined[index]);
 }
