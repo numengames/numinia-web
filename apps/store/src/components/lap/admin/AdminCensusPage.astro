@@ -199,8 +199,19 @@ const labels = {
     gap: var(--s3);
     flex-wrap: wrap;
   }
-  /* A phone reads each person as a card: no table wider than the screen. */
-  @media (max-width: 40rem) {
+  .censo-lista {
+    container: censo / inline-size;
+  }
+  .censo-tabla time {
+    white-space: nowrap;
+  }
+  .censo-quien > span {
+    white-space: nowrap;
+  }
+  /* Where the table has no room for its five columns (the LAP's own column
+     beside the rail, a phone), each person reads as a card: who, first,
+     last and how many on one line, the actions under them. */
+  @container censo (max-width: 60rem) {
     .censo-tabla thead {
       position: absolute;
       width: 1px;
@@ -210,7 +221,8 @@ const labels = {
     }
     .censo-tabla tr {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(11rem, 1.4fr) 1fr 1fr auto;
+      align-items: center;
       gap: var(--s1) var(--s3);
       padding: var(--s3) 0;
       border-bottom: 1px solid var(--linea);
@@ -219,7 +231,6 @@ const labels = {
       border: 0;
       padding: 0;
     }
-    .censo-tabla td:first-child,
     .censo-tabla td.censo-acciones {
       grid-column: 1 / -1;
     }
@@ -228,6 +239,15 @@ const labels = {
       display: block;
       color: var(--texto-2);
       font-size: 0.833rem;
+    }
+  }
+  /* A phone reads each person as a card: no table wider than the screen. */
+  @container censo (max-width: 30rem) {
+    .censo-tabla tr {
+      grid-template-columns: 1fr 1fr;
+    }
+    .censo-tabla td:first-child {
+      grid-column: 1 / -1;
     }
     .censo-acciones {
       justify-content: flex-start;

@@ -166,10 +166,7 @@ export function CitizensList({
     dialog.current?.showModal();
     if (teams.at !== 'ready') {
       setTeams({ at: 'loading' });
-      void readTeams().then((read) => {
-        setTeams(read);
-        if (read.at === 'ready') setChosen((now) => now || (read.teams[0]?.id ?? ''));
-      });
+      void readTeams().then(setTeams);
     }
   };
 
@@ -177,17 +174,26 @@ export function CitizensList({
     dialog.current?.close();
   };
 
+  // The organization picked, or the first of the list until one is.
+  const choice =
+    teams.at === 'ready'
+      ? (teams.teams.find((team) => team.id === chosen)?.id ?? teams.teams[0]?.id ?? '')
+      : '';
+
   const save = async (): Promise<void> => {
-    if (adding === null || chosen === '' || teams.at !== 'ready') return;
+    if (adding === null || choice === '') return;
     setSaving(true);
     setAddFailed(false);
-    const done = await addMember(chosen, adding.wallet);
+    const done = await addMember(choice, adding.wallet);
     setSaving(false);
     if (!done) {
       setAddFailed(true);
       return;
     }
-    const org = teams.teams.find((team) => team.id === chosen)?.name ?? chosen;
+    const org =
+      teams.at === 'ready'
+        ? (teams.teams.find((team) => team.id === choice)?.name ?? choice)
+        : choice;
     close();
     setStatus(fill(words.added, { who: personLines(adding).title, org }));
     // The list says it at once: the person is in one organization more.
@@ -369,7 +375,7 @@ export function CitizensList({
             <label htmlFor="censo-org">{words.orgLabel}</label>
             <select
               id="censo-org"
-              value={chosen}
+              value={choice}
               onChange={(event) => setChosen(event.target.value)}
               data-metric="census-citizen-add-org"
             >
@@ -391,7 +397,7 @@ export function CitizensList({
             type="button"
             className="btn btn-primario"
             onClick={() => void save()}
-            disabled={saving || teams.at !== 'ready' || chosen === ''}
+            disabled={saving || choice === ''}
             data-espera={saving ? '' : undefined}
             data-metric="census-citizen-add-save"
           >
