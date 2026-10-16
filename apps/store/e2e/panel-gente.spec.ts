@@ -414,9 +414,9 @@ test.describe('Miembros', () => {
       .evaluate((element) => getComputedStyle(element).color);
     expect(ink).not.toBe('rgb(47, 127, 168)');
 
-    // The whole wallets never reach the page; the ranks are read for this organization only.
-    const html = await page.content();
-    for (const wallet of [ANA, TEO, OWNER]) expect(html).not.toContain(wallet);
+    // The whole wallets are never shown (the menu copies one); the ranks are read for this organization only.
+    const shownText = await page.locator('[data-people-members]').innerText();
+    for (const wallet of [ANA, TEO, ME]) expect(shownText).not.toContain(wallet);
     expect(asked).toContain(`/api/saldo/ranks?cuenta=${GAMES.id}`);
   });
 

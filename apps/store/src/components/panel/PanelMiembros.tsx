@@ -1,40 +1,47 @@
 /**
- * «Miembros y roles» inside the panel: the screen that already exists (a tab
- * of Saldo until now), hosted for the organization the panel shows, with no
- * second picker. It lives in its own island, apart from the Summary and the
- * balance, because it is the one that can ask the wallet to sign (giving
- * «Administrador»): only this page reaches the wallet's chunks.
+ * «Miembros» inside the panel: the people of the organization the panel
+ * shows (./PeopleMembers.tsx), with no picker of its own. It lives in its own
+ * island, apart from the Summary and the balance, because it is one of the
+ * two that can ask the wallet to sign (giving «Administrador»): only this
+ * page and Roles reach the wallet's chunks.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
 import type { PanelMessages } from '../../i18n/panel';
+import type { PeopleMessages } from '../../i18n/panel-people';
 import type { SaldoMessages } from '../../i18n/saldo';
-import { MiembrosPanel } from '../saldo/MiembrosPanel';
 import { PanelFrame } from './PanelFrame';
+import { PeopleMembers } from './PeopleMembers';
 
 export function PanelMiembros({
   locale,
   words,
   signIn,
   saldoHref,
+  homeHref,
   ui,
+  people,
 }: {
   readonly locale: SupportedLocale;
   readonly words: PanelMessages;
   readonly signIn: string;
   readonly saldoHref: string;
+  /** The panel's door, where leaving an organization lands. */
+  readonly homeHref: string;
   readonly ui: SaldoMessages;
+  readonly people: PeopleMessages;
 }) {
   return (
     <PanelFrame locale={locale} face="members" words={words} signIn={signIn} saldoHref={saldoHref}>
       {(team) => (
-        <MiembrosPanel
+        <PeopleMembers
           key={team.id}
-          ui={ui}
-          lang={locale}
+          org={team.id}
           locale={locale}
-          signIn={signIn}
-          organization={team.id}
+          label={words.names.members}
+          homeHref={homeHref}
+          ui={ui}
+          words={people}
         />
       )}
     </PanelFrame>

@@ -27,6 +27,7 @@ import {
   peopleAccess,
   peopleToGive,
   plural,
+  readRanks,
   removalOf,
   rolesToGive,
   sameSet,
@@ -405,6 +406,30 @@ describe('a person in the table', () => {
     );
     expect(monthOf(iso, 'es')).toContain('2026');
     expect(monthOf('yesterday', 'es')).toBeNull();
+  });
+
+  it('has the rank the city answered, read by hand, in lower case', () => {
+    expect(
+      readRanks({
+        ok: true,
+        ranks: { [ME.toUpperCase().replace('0X', '0x')]: 'citizen', [NEWBIE]: null },
+      }),
+    ).toEqual({ [ME]: 'citizen', [NEWBIE]: null });
+    // A rank the city does not know is no rank at all.
+    expect(readRanks({ ok: true, ranks: { [ME]: 'emperor', [NEWBIE]: 7 } })).toEqual({
+      [ME]: null,
+      [NEWBIE]: null,
+    });
+    expect(readRanks({ ok: true, ranks: {} })).toEqual({});
+    for (const odd of [
+      null,
+      'ok',
+      { ok: false, ranks: {} },
+      { ok: true },
+      { ok: true, ranks: [] },
+    ]) {
+      expect(readRanks(odd), JSON.stringify(odd)).toBeNull();
+    }
   });
 
   it('may be given the roles the person may give and they do not hold, in the list’s order', () => {

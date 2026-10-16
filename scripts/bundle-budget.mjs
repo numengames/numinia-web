@@ -83,7 +83,12 @@ const BUDGETS = {
       very tab (the same island, for the organization the address names), so
       it is the same class: no byte budget moved, only the page's identity
       — the Summary and the balance screens stay public-class and reach no
-      wallet chunk. */
+      wallet chunk.
+      On 2026-10-16 («La gente») the tab moved into the panel for good —
+      /saldo/miembros/ only sends to /panel/miembros/, loads no script and
+      leaves the class — and the panel's Roles editor (/panel/roles/) joins
+      it: saving «Administrador» or «Gestionar roles» on a role is the same
+      signed act. No byte budget moved. */
   identityOnlyChunkBytes: 1_500_000,
   /** Whole-page HTML weight for the landing. Raised 30000→33000 on
       2026-09-29 for the same order as the inline raise above: the sky, the
@@ -141,8 +146,8 @@ try {
 
 /**
  * Chunks reachable from PUBLIC pages (anything but the identity surfaces:
- * /spike/, the session page, the worlds room, Saldo's members tab and the
- * organization panel's members screen) get the strict budgets; chunks only
+ * /spike/, the session page, the worlds room and the organization panel's
+ * people screens, Miembros and Roles) get the strict budgets; chunks only
  * the identity surfaces can ever load get their own class. Reachability =
  * script refs in the HTML plus the import graph (static and dynamic) walked
  * from those entries.
@@ -162,11 +167,10 @@ const publicEntries = new Set();
 for (const file of await collectHtml(DIST)) {
   const segments = path.relative(DIST, file).split(path.sep);
   const isWorldsRoom = segments.join('/').includes('lap/admin/worlds/');
-  const isMembersTab =
-    segments.join('/').includes('saldo/miembros/') ||
-    segments.join('/').includes('panel/miembros/');
+  const isPeopleScreen =
+    segments.join('/').includes('panel/miembros/') || segments.join('/').includes('panel/roles/');
   const isIdentitySurface =
-    segments.includes('spike') || segments.includes('session') || isWorldsRoom || isMembersTab;
+    segments.includes('spike') || segments.includes('session') || isWorldsRoom || isPeopleScreen;
   if (isIdentitySurface) continue;
   const html = await readFile(file, 'utf8');
   for (const match of html.matchAll(chunkRef)) publicEntries.add(match[1]);

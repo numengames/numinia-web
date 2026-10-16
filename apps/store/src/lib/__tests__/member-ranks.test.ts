@@ -288,4 +288,24 @@ describe('GET /api/saldo/ranks', () => {
     const reply = await answerRanks(desk, citizen, url(`?cuenta=${ACCOUNT}`), sources());
     expect(reply.status).toBe(200);
   });
+
+  it('anything but members or a refusal from the till is out of shape: 502', async () => {
+    const log = vi.fn();
+    for (const odd of [
+      undefined,
+      'ok',
+      {},
+      { ok: 'yes' },
+      { ok: false },
+      { ok: false, problems: [404] },
+      { ok: true, members: 'everyone' },
+      { ok: true, members: [42] },
+      { ok: true, members: [null] },
+    ]) {
+      const { desk } = deskAnswering(async () => odd);
+      const reply = await answerRanks(desk, citizen, url(`?cuenta=${ACCOUNT}`), sources(), log);
+      expect(reply.status, JSON.stringify(odd) ?? 'undefined').toBe(502);
+    }
+    expect(log).toHaveBeenCalledTimes(9);
+  });
 });

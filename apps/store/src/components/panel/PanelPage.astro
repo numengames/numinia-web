@@ -1,24 +1,28 @@
 ---
 /**
  * «El panel»: an organization's panel — the screen the account menu's
- * «Paneles» opens. Three faces of one frame: `summary` (Resumen),
- * `members` (Miembros y roles) and `balance` (Saldo y consumo); the last two
- * host the screens Saldo already has, for the organization the address
+ * «Paneles» opens. Four faces of one frame: `summary` (Resumen), `members`
+ * (Miembros), `roles` (Roles) and `balance` (Saldo y consumo); the people's
+ * two are «La gente» (./PanelMiembros.tsx, ./PanelRoles.tsx), the balance
+ * hosts the screen Saldo already has, for the organization the address
  * names (`?org=<account id>`, lib/panel.ts). The page is static and the
  * island reads the session and the till (/api/saldo): nothing is made up
  * here, and nothing is stored.
  *
- * The words are in i18n/panel.ts (the pieces) and i18n/saldo.ts (the hosted
- * screens'); the rules in ./panel.css and, for the hosted screens, the very
- * file /saldo/ draws with (../saldo/saldo.css).
+ * The words are in i18n/panel.ts (the pieces), i18n/panel-people.ts (the
+ * people's two screens, carried only by them) and i18n/saldo.ts (Saldo's
+ * own terms); the rules in ./panel.css and the very file /saldo/ draws with
+ * (../saldo/saldo.css).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PANEL_UI } from '../../i18n/panel';
+import { PEOPLE_UI } from '../../i18n/panel-people';
 import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
+import { PanelRoles } from './PanelRoles';
 import PanelSummary from './PanelSummary.astro';
 import { PanelSaldo } from './PanelSaldo';
 import '../saldo/saldo.css';
@@ -38,6 +42,8 @@ const signIn = signInHref(locale, here);
 // Where an organization is created: the islands take their hrefs from here
 // (an island never imports lib/app-nav.ts: see lib/panel.ts).
 const saldoHref = localeHref(locale, '/saldo/');
+// The panel's door: where leaving an organization lands.
+const homeHref = localeHref(locale, '/panel/');
 ---
 
 <BaseLayout
@@ -59,7 +65,22 @@ const saldoHref = localeHref(locale, '/saldo/');
         words={words}
         signIn={signIn}
         saldoHref={saldoHref}
+        homeHref={homeHref}
         ui={SALDO_UI[locale]}
+        people={PEOPLE_UI[locale]}
+      />
+    )
+  }
+  {
+    face === 'roles' && (
+      <PanelRoles
+        client:load
+        locale={locale}
+        words={words}
+        signIn={signIn}
+        saldoHref={saldoHref}
+        ui={SALDO_UI[locale]}
+        people={PEOPLE_UI[locale]}
       />
     )
   }
