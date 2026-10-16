@@ -281,3 +281,8 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `ritual-rsvp` / `ritual-rsvp-sign-in`.
 // - /agenda/: `agenda-ics` (each upcoming encounter's calendar file, the
 //   till's included — the file's page has the same under `ritual-add-calendar`).
+// ---- v3 carril 5 «Comunidad» (2026-10-17): its data-metric ids --------------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The panel's «Encuentros» (/panel/encuentros/): `panel-gatherings-community`
+//   (its community's page), `panel-gatherings-subscribe` (its calendar),
+//   `panel-gatherings-upcoming`, `panel-gatherings-held` (an encounter's page).

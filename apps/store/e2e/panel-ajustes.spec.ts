@@ -133,9 +133,10 @@ test.describe('Ajustes', () => {
     await expect(cards.nth(1)).toContainText('Cómo se llama cada cosa');
     await expect(cards.nth(2)).toContainText('Acceso de la casa');
     await expect(cards.nth(3)).toContainText('Agente IA');
-    // The eight screens that exist; summary and settings are always on, the other six have a switch.
-    await expect(page.locator('[data-settings-piece]')).toHaveCount(8);
-    for (const id of ['summary', 'settings']) {
+    // The nine screens that exist; summary, gatherings and settings are always on, the other six have a switch.
+    // Encuentros (v3 carril 5) stays on until the till knows how to turn it off (its own list).
+    await expect(page.locator('[data-settings-piece]')).toHaveCount(9);
+    for (const id of ['summary', 'gatherings', 'settings']) {
       await expect(piece(page, id)).toContainText('Siempre encendida');
       await expect(piece(page, id).getByRole('switch')).toHaveCount(0);
     }

@@ -3,8 +3,8 @@ Feature: The organization panel
   estábamos haciendo». The roles and members were built, but as a tab of
   Balance reachable from no menu he looked at. The account menu now has one
   door, «Paneles», to /panel/: the organization's panel, with the pieces of
-  its rail — Resumen, Miembros, Roles, Saldo y consumo built; the rest
-  drawn under construction, never a link that fails; the Oracle's rooms only
+  its rail — Resumen, Miembros, Roles, Saldo y consumo built (Encuentros,
+  v3 carril 5, 2026-10-17); the rest drawn under construction, never a link that fails; the Oracle's rooms only
   signposted for the Oracle. Verified against the build output, in the five
   locales. What the panel does with each answer of /api/saldo (the
   organization in the address, the switcher, what each person is in each
@@ -15,9 +15,13 @@ Feature: The organization panel
     Given the store application has been built
     Then every locale has the panel, its homes, its members, its roles and its balance, each titled in its own words
 
-  Scenario: The rail draws eight built pieces, the Oracle's four rooms and three pieces under construction
+  Scenario: The rail draws nine built pieces, the Oracle's four rooms and two pieces under construction
     Given the store application has been built
     Then every panel page draws the rail of pieces the same way in every locale
+
+  Scenario: «Encuentros» lists each organization's community encounters, made when the site is built
+    Given the store application has been built
+    Then every locale's Encuentros page carries its communities' encounters from the register, and none kept on file
 
   Scenario: A piece that is not built is never a link, and the Oracle's rooms wait for the Oracle
     Given the store application has been built

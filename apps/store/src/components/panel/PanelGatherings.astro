@@ -1,0 +1,55 @@
+---
+/**
+ * The panel's «Encuentros» as its page hands it over (v3, carril 5): the
+ * island with its words and, per organization, its community's encounters,
+ * made here when the site is built (lib/panel-encounters.ts), so the island
+ * never reads the register of communities. A community is reached by the
+ * account in its `team:` and by the one the house opens for it on first use
+ * (lib/community-teams.ts), whichever the panel shows.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import type { PanelMessages } from '../../i18n/panel';
+import { PANEL_GATHERINGS_UI } from '../../i18n/panel-gatherings';
+import { localeHref } from '../../lib/app-nav';
+import { communityAccountId } from '../../lib/community-teams';
+import { gatheringsMap } from '../../lib/panel-encounters';
+import { COMMUNITIES, RITUALS } from '../communities/register';
+import { PanelEncuentros } from './PanelEncuentros';
+
+interface Props {
+  locale: SupportedLocale;
+  words: PanelMessages;
+  signIn: string;
+  saldoHref: string;
+}
+
+const { locale, words, signIn, saldoHref } = Astro.props;
+const derived = new Map(
+  await Promise.all(
+    COMMUNITIES.map(async (community) => [community.id, await communityAccountId(community.id)] as const),
+  ),
+);
+const gatherings = gatheringsMap(
+  COMMUNITIES,
+  RITUALS,
+  locale,
+  {
+    ritual: (id) => localeHref(locale, `/rituals/${id}/`),
+    community: (id) => localeHref(locale, `/communities/${id}/`),
+  },
+  (id) => {
+    const account = derived.get(id);
+    return account === undefined ? [] : [account];
+  },
+);
+---
+
+<PanelEncuentros
+  client:load
+  locale={locale}
+  words={words}
+  signIn={signIn}
+  saldoHref={saldoHref}
+  ui={PANEL_GATHERINGS_UI[locale]}
+  gatherings={gatherings}
+/>
