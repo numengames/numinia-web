@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.115.0',
+    date: '2026-10-16 23:01',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Gatherings» (/calendar/) opens on a list: every upcoming gathering of the city, one section per month in date order, each row with its day, its name (which opens its page), who holds it, where, how (in person, online) and how long until it starts. «Month» swaps the list for the month grid and «List» brings it back; without JavaScript the list is all there is, and no switch that does nothing. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.114.0',
     date: '2026-10-16 22:35',
     entries: [
