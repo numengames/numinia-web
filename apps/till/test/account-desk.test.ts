@@ -106,6 +106,7 @@ describe('the desk', () => {
       'log',
       'members',
       'moveRole',
+      'myRsvps',
       'openAllCommunities',
       'overview',
       'placeWorld',
@@ -115,6 +116,8 @@ describe('the desk', () => {
       'removeMember',
       'renameTeam',
       'roles',
+      'rsvp',
+      'rsvpCounts',
       'setMember',
       'setProfile',
       'settings',
@@ -123,6 +126,7 @@ describe('the desk', () => {
       'statement',
       'takeAgentRole',
       'takeRole',
+      'unrsvp',
       'worldsOf',
     ]);
   });
