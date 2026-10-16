@@ -27,11 +27,11 @@ export interface UpdateVersion {
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
     version: 'v0.117.0',
-    date: '2026-10-16 23:07',
+    date: '2026-10-16 23:13',
     entries: [
       {
         type: 'FIX',
-        text: 'Nothing on screen falls back to English any more in Japanese, Korean or Brazilian Portuguese: the Numen Games page reads its canon line («Nobody signs up for Numinia…»), the city’s story (Holberins, the fire of 1920, the rebirth a century later) and the three rings in your own language, «How it works» tells the city’s story in your language without the «available in Spanish and English» notice, and the community pages and calendar say their notes (standing dates, the chronicle, the archive, «make it yours», the .ics line) in your language too.',
+        text: 'Nothing on screen falls back to English any more in Japanese, Korean or Brazilian Portuguese: the Numen Games page reads its canon line («Nobody signs up for Numinia…»), the city’s story (Holberins, the fire of 1920, the rebirth a century later) and the three rings in your own language, «How it works» tells the city’s story in your language without the «available in Spanish and English» notice, and the community pages and calendar say their notes (standing dates, the chronicle, the archive, «make it yours», the .ics line) in your language too. The Numen Games file itself (what it is, its weekly gatherings, who keeps it) and the two city gatherings carry the five languages, and dates on the community pages are written the Japanese, Korean and Brazilian way.',
       },
     ],
   },
