@@ -161,7 +161,7 @@ async function ready(page: Page): Promise<void> {
   await expect(panel(page)).toHaveAttribute('data-state', 'ready');
 }
 
-const BUILT = ['venues', 'members', 'roles', 'balance', 'settings'] as const;
+const BUILT = ['venues', 'members', 'roles', 'gente', 'balance', 'settings'] as const;
 const SOON = [
   ['gatherings', 'Encuentros'],
   ['agents', 'Agentes'],
@@ -179,14 +179,20 @@ test.describe('the door', () => {
   test('«Paneles» sits between Perfil and Ajustes in the account menu, once you are in', async ({
     page,
   }) => {
-    await signedIn(page, 'nomad');
+    await signedIn(page, 'nomad', [PERSONAL]);
     await page.goto('/es/communities/');
     await page.locator('[data-metric="chrome-account"]').click();
     const entries = page.locator('details[data-session-in] .cima-pop a.opc');
-    await expect(entries).toHaveCount(4);
+    await expect(entries).toHaveCount(5);
     expect(
       await entries.evaluateAll((all) => all.map((a) => a.getAttribute('data-metric'))),
-    ).toEqual(['chrome-profile', 'chrome-panels', 'chrome-account-settings', 'chrome-sign-out']);
+    ).toEqual([
+      'chrome-profile',
+      'chrome-balance',
+      'chrome-panels',
+      'chrome-account-settings',
+      'chrome-sign-out',
+    ]);
     const door = page.locator('[data-metric="chrome-panels"]');
     await expect(door).toHaveText('Paneles');
     await expect(door).toHaveAttribute('href', '/es/panel/');
@@ -202,18 +208,25 @@ test.describe('the door', () => {
     await expect(page.locator('[data-metric="chrome-sign-in"]')).toBeVisible();
   });
 
-  test('opening the menu, or any other page, asks nothing of the till', async ({ page }) => {
+  test('only opening the menu asks the till, once; any other page asks nothing', async ({
+    page,
+  }) => {
     const seen = await signedIn(page, 'oracle');
     await page.goto('/es/communities/');
-    await page.locator('[data-metric="chrome-account"]').click();
-    await expect(page.locator('[data-metric="chrome-panels"]')).toBeVisible();
-    await page.goto('/es/lap/');
     await page.waitForLoadState('networkidle');
     expect(seen.saldo).toEqual([]);
+    await page.locator('[data-metric="chrome-account"]').click();
+    await expect(page.locator('[data-metric="chrome-panel-org"]').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('[data-metric="chrome-account"]').click();
+    expect(seen.saldo).toEqual(['/api/saldo']);
+    await page.goto('/es/lap/');
+    await page.waitForLoadState('networkidle');
+    expect(seen.saldo).toEqual(['/api/saldo']);
   });
 
   test('every language names the door in its own words', async ({ page }) => {
-    await signedIn(page, 'nomad');
+    await signedIn(page, 'nomad', [PERSONAL]);
     const words: Array<[string, string, string]> = [
       ['/communities/', 'Panels', '/panel/'],
       ['/ja/communities/', 'パネル', '/ja/panel/'],
@@ -439,13 +452,13 @@ test.describe('Resumen', () => {
 });
 
 test.describe('the pieces of the rail', () => {
-  test('six are links, four are marked as under construction and are not, in the order of the prototype', async ({
+  test('seven are links, four are marked as under construction and are not, in the order of the prototype', async ({
     page,
   }) => {
     await signedIn(page, 'nomad');
     await page.goto('/es/panel/');
     await ready(page);
-    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 10');
+    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 11');
     expect(
       await rail(page)
         .locator('[data-piece-list] > li')
@@ -456,13 +469,14 @@ test.describe('the pieces of the rail', () => {
       'gatherings',
       'members',
       'roles',
+      'gente',
       'agents',
       'memory',
       'bazaar',
       'balance',
       'settings',
     ]);
-    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(6);
+    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(7);
     await expect(rail(page).locator('a[data-metric="panel-nav-venues"]')).toHaveText('Sedes');
     await expect(rail(page).locator('a[data-metric="panel-nav-members"]')).toHaveText('Miembros');
     await expect(rail(page).locator('a[data-metric="panel-nav-roles"]')).toHaveText('Roles');

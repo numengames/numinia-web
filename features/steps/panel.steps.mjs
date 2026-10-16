@@ -22,6 +22,7 @@ const LOCALES = [
     venues: 'Homes',
     members: 'Members',
     roles: 'Roles',
+    gente: 'People',
     balance: 'Balance and usage',
     settings: 'Settings',
     panels: 'Panels',
@@ -33,6 +34,7 @@ const LOCALES = [
     venues: 'Sedes',
     members: 'Miembros',
     roles: 'Roles',
+    gente: 'Gente',
     balance: 'Saldo y consumo',
     settings: 'Ajustes',
     panels: 'Paneles',
@@ -44,6 +46,7 @@ const LOCALES = [
     venues: '拠点',
     members: 'メンバー',
     roles: 'ロール',
+    gente: 'ピープル',
     balance: '残高と利用状況',
     settings: '設定',
     panels: 'パネル',
@@ -55,6 +58,7 @@ const LOCALES = [
     venues: '거점',
     members: '구성원',
     roles: '역할',
+    gente: '사람들',
     balance: '잔액과 사용량',
     settings: '설정',
     panels: '패널',
@@ -66,6 +70,7 @@ const LOCALES = [
     venues: 'Sedes',
     members: 'Membros',
     roles: 'Papéis',
+    gente: 'Gente',
     balance: 'Saldo e uso',
     settings: 'Configurações',
     panels: 'Painéis',
@@ -79,6 +84,7 @@ const FACES = [
   { segment: 'sedes/', piece: 'venues' },
   { segment: 'miembros/', piece: 'members' },
   { segment: 'roles/', piece: 'roles' },
+  { segment: 'gente/', piece: 'gente' },
   { segment: 'saldo/', piece: 'balance' },
   { segment: 'ajustes/', piece: 'settings' },
 ];
@@ -89,13 +95,14 @@ const PIECES = [
   'gatherings',
   'members',
   'roles',
+  'gente',
   'agents',
   'memory',
   'bazaar',
   'balance',
   'settings',
 ];
-const BUILT = ['summary', 'venues', 'members', 'roles', 'balance', 'settings'];
+const BUILT = ['summary', 'venues', 'members', 'roles', 'gente', 'balance', 'settings'];
 const SOON = ['gatherings', 'agents', 'memory', 'bazaar'];
 const ROOMS = ['census', 'worlds', 'prices', 'assets'];
 
@@ -192,7 +199,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
     assert.deepEqual(
       rows.map((row) => row.id),
       PIECES,
-      `${where}: the pieces are not the ten of the prototype, in its order`,
+      `${where}: the pieces are not the eleven of the prototype, in its order`,
     );
     const prefix = base(locale.prefix);
     const hrefs = {
@@ -200,6 +207,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
       venues: `${prefix}/panel/sedes/`,
       members: `${prefix}/panel/miembros/`,
       roles: `${prefix}/panel/roles/`,
+      gente: `${prefix}/panel/gente/`,
       balance: `${prefix}/panel/saldo/`,
       settings: `${prefix}/panel/ajustes/`,
     };
@@ -232,7 +240,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
 Then('no panel page links a piece that is not built', async function () {
   for await (const { where, face, html } of panelPages(this.distDir)) {
     const rail = railOf(html, where);
-    // Six built pieces and four rooms: ten links, not one more.
+    // Seven built pieces and four rooms: eleven links, not one more.
     assert.equal(
       (rail.match(/<a\b/g) ?? []).length,
       BUILT.length + ROOMS.length,

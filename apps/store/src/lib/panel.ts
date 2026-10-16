@@ -45,12 +45,13 @@ export type PieceIcon =
 type PieceKind = 'built' | 'soon' | 'room';
 
 /** The screens that exist: the face a page of the panel draws. */
-export type BuiltPiece = 'summary' | 'venues' | 'members' | 'roles' | 'balance' | 'settings';
+export type BuiltPiece =
+  'summary' | 'venues' | 'members' | 'gente' | 'roles' | 'balance' | 'settings';
 /** The pieces still to be built: drawn under construction, never a link. */
 export type SoonPiece = 'gatherings' | 'agents' | 'memory' | 'bazaar';
 /** The Oracle's rooms, the LAP's own. */
 export type RoomPiece = 'census' | 'worlds' | 'prices' | 'assets';
-/** The organization's own ten pieces. */
+/** The organization's own eleven pieces. */
 export type OrgPiece = BuiltPiece | SoonPiece;
 type PieceId = OrgPiece | RoomPiece;
 
@@ -63,7 +64,7 @@ export interface Piece {
 }
 
 /**
- * One of the organization's ten pieces: a built one has its address, one
+ * One of the organization's eleven pieces: a built one has its address, one
  * not built has none — so narrowing on `kind` also names the words that
  * describe it (a built screen's lead, a coming piece's note).
  */
@@ -77,7 +78,7 @@ export interface RoomEntry extends Piece {
 }
 
 /**
- * The organization's ten pieces, in the order of the prototype (the working
+ * The organization's eleven pieces, in the order of the prototype (the working
  * ones are drawn among the rest). Six are built, with Spanish slugs like
  * Saldo's — Roles right under Miembros, as the prototype has them, Ajustes
  * last; four are drawn under construction and lead nowhere.
@@ -88,6 +89,7 @@ export const PIECES: readonly OrgEntry[] = [
   { id: 'gatherings', kind: 'soon', path: null, icon: 'calendar-blank' },
   { id: 'members', kind: 'built', path: `${ROOT}miembros/`, icon: 'users-three' },
   { id: 'roles', kind: 'built', path: `${ROOT}roles/`, icon: 'shield-check' },
+  { id: 'gente', kind: 'built', path: `${ROOT}gente/`, icon: 'users' },
   { id: 'agents', kind: 'soon', path: null, icon: 'robot' },
   { id: 'memory', kind: 'soon', path: null, icon: 'scroll' },
   { id: 'bazaar', kind: 'soon', path: null, icon: 'package' },

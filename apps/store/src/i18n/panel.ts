@@ -119,6 +119,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'Sedes',
       gatherings: 'Encuentros',
       members: 'Miembros',
+      gente: 'Gente',
       roles: 'Roles',
       agents: 'Agentes',
       memory: 'Memoria · la Summa',
@@ -131,6 +132,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'Las sedes de la organización: los mundos que la casa le ha asignado.',
       members:
         'Quién está dentro, su rango en la ciudad (es suyo, viaja con la persona) y sus roles aquí.',
+      gente:
+        'La gente de la organización en grupos: los Oráculos, cada rol con su propio nombre y el resto.',
       roles:
         'Cada organización crea sus roles, los ordena y decide qué puede hacer cada uno. Arriba manda más.',
       balance:
@@ -189,6 +192,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'Homes',
       gatherings: 'Gatherings',
       members: 'Members',
+      gente: 'People',
       roles: 'Roles',
       agents: 'Agents',
       memory: 'Memory · the Summa',
@@ -201,6 +205,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'The organization’s homes: the worlds the house has assigned to it.',
       members:
         'Who is in, their rank in the city (it is theirs: it travels with the person) and their roles here.',
+      gente:
+        'The people of the organization in groups: the Oracles, each role under its own name, and everyone else.',
       roles:
         'Each organization makes its own roles, orders them and decides what each one may do. Higher up commands more.',
       balance:
@@ -260,6 +266,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: '拠点',
       gatherings: '集まり',
       members: 'メンバー',
+      gente: 'ピープル',
       roles: 'ロール',
       agents: 'エージェント',
       memory: 'メモリー · Summa',
@@ -272,6 +279,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: '組織の拠点：ハウスが組織に割り当てたワールド。',
       members:
         '誰が参加しているか、街でのランク（本人のもので、その人と一緒にどこへでも移ります）、そしてここでのロール。',
+      gente:
+        '組織の人々をグループ別に表示します：オラクル、組織が付けた名前の各ロール、そしてその他の人。',
       roles:
         '組織ごとにロールを作り、並べ、それぞれに何ができるかを決めます。上にあるほど権限が強くなります。',
       balance: '組織の残高：有効期限はなく、必要なときにチャージでき、使い道も確認できます。',
@@ -329,6 +338,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: '거점',
       gatherings: '모임',
       members: '구성원',
+      gente: '사람들',
       roles: '역할',
       agents: '에이전트',
       memory: '기억 · Summa',
@@ -341,6 +351,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: '조직의 거점: 하우스가 조직에 배정한 월드.',
       members:
         '누가 들어와 있는지, 도시에서의 등급(그 사람의 것이며 어디든 함께 따라갑니다), 그리고 이곳에서의 역할.',
+      gente:
+        '조직의 사람들을 그룹별로 보여 줍니다: 오라클, 조직이 정한 이름의 각 역할, 그리고 나머지.',
       roles:
         '조직마다 역할을 만들고, 순서를 정하고, 각 역할이 무엇을 할 수 있는지 정합니다. 위에 있을수록 권한이 큽니다.',
       balance: '조직의 잔액: 만료되지 않으며, 필요할 때 충전하고 어디에 쓰였는지 볼 수 있습니다.',
@@ -398,6 +410,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'Sedes',
       gatherings: 'Encontros',
       members: 'Membros',
+      gente: 'Gente',
       roles: 'Papéis',
       agents: 'Agentes',
       memory: 'Memória · a Summa',
@@ -410,6 +423,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       venues: 'As sedes da organização: os mundos que a casa atribuiu a ela.',
       members:
         'Quem está dentro, seu posto na cidade (é da pessoa e viaja com ela) e seus papéis aqui.',
+      gente:
+        'As pessoas da organização em grupos: os Oráculos, cada papel com o nome que a organização lhe deu e o resto.',
       roles:
         'Cada organização cria seus papéis, os ordena e decide o que cada um pode fazer. Quanto mais acima, mais manda.',
       balance:

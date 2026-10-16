@@ -1305,3 +1305,66 @@
   color: var(--texto-2);
   font-size: 0.875rem;
 }
+
+/* «Gente» (cut 9): the people in groups. A group is a card with the label of
+   its role (a dot for the role's colour, never coloured words); a row is the
+   avatar, the name over the short wallet, and the chips (role, owner, rank).
+   There is no presence, so no status dot on the avatar. */
+.gente-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.gente-grupo .etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  font: 500 0.72rem var(--mono);
+  letter-spacing: 0.15em;
+}
+.gente-lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gente-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--linea-f);
+}
+.gente-fila:first-child {
+  border-top: 0;
+}
+.gente-inicial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linea-f);
+  color: var(--texto);
+  font: 600 0.9rem var(--sans);
+}
+.gente-fila .gente-quien {
+  flex: 1;
+}
+.gente-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s2);
+}
+@media (max-width: 640px) {
+  .gente-fila {
+    flex-wrap: wrap;
+  }
+  .gente-chips {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    padding-inline-start: 42px;
+  }
+}

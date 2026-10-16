@@ -24,13 +24,14 @@ import {
 const piece = (id: string): Piece => [...PIECES, ...ROOMS].find((entry) => entry.id === id)!;
 
 describe('the pieces of the panel', () => {
-  it('are ten, in the order of the prototype: the working ones are drawn among the rest', () => {
+  it('are eleven, in the order of the prototype: the working ones are drawn among the rest', () => {
     expect(PIECES.map((entry) => entry.id)).toEqual([
       'summary',
       'venues',
       'gatherings',
       'members',
       'roles',
+      'gente',
       'agents',
       'memory',
       'bazaar',
@@ -39,13 +40,14 @@ describe('the pieces of the panel', () => {
     ]);
   });
 
-  it('six are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
+  it('seven are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
     const built = PIECES.filter((entry) => entry.kind === 'built');
     expect(built.map((entry) => [entry.id, entry.path])).toEqual([
       ['summary', '/panel/'],
       ['venues', '/panel/sedes/'],
       ['members', '/panel/miembros/'],
       ['roles', '/panel/roles/'],
+      ['gente', '/panel/gente/'],
       ['balance', '/panel/saldo/'],
       ['settings', '/panel/ajustes/'],
     ]);
