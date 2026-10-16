@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.114.0',
+    date: '2026-10-16 22:35',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The city and you. numinia.com now has two bars, one on each side. On the left, the city — what is everyone’s: search, Now, Communities, Gatherings, Worlds and the Bazaar, and below them which worlds have people inside right now (only how many, never who) and the next gathering; at its foot how it works, the sister sites and the legal texts. On the right, you — what is yours: your face and your menu (profile, balance, panels, settings, sign out), «Create» (today: a home for your community; gatherings and worlds will follow), your notices, your communities, your balance and your loot, and at its foot the settings, the appearance (system, night or day) and the language. Each bar folds on its own and the device remembers it; on a narrower screen they fold by themselves, and folded they still name each icon when you point at it. On a phone, a bar at the bottom — Now, Communities, Gatherings, Worlds and «You» — and «You» opens a sheet with everything that is yours. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.113.0',
     date: '2026-10-16 21:06',
     entries: [

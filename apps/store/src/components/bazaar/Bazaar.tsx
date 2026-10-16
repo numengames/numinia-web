@@ -42,18 +42,23 @@ interface BazaarProps {
   locale: string;
 }
 
-/** Where the preview fits beside the cards (the page's CSS breaks at the same width). */
-const WIDE = '(min-width: 74rem)';
+/** Where the preview fits beside the cards: the page's own width — since
+    v0.112.0 two rails take theirs, and each folds on its own, so the
+    window's width says nothing. The page's CSS asks the same container. */
+const WIDE_REM = 56;
 
 /** Wide until the browser says otherwise: the build renders the wide page. */
 function useWide(): boolean {
   const [wide, setWide] = useState(true);
   useEffect(() => {
-    const query = window.matchMedia(WIDE);
-    const update = (): void => setWide(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
+    const page = document.getElementById('contenido');
+    if (!page) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setWide(entry.contentRect.width >= WIDE_REM * rem);
+    });
+    observer.observe(page);
+    return () => observer.disconnect();
   }, []);
   return wide;
 }

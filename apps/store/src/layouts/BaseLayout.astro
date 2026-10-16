@@ -5,15 +5,18 @@ import '@numinia/ui/platform.css';
 // forbids external JS on Layer 0 pages, and the kit is ~2KB.
 import kitMotion from '../scripts/sistema.js?raw';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
-// The app shell (the Oracle's design, 2026-10-14): a sidebar, a top bar
-// almost empty, a tab bar on phones, and the footer folded at the sidebar's
-// foot (last in the page; on a phone, at its end).
+// The app shell (v3, «La ciudad y tú»): the city's rail on the left, yours
+// on the right, the page between them; on a phone upright a header, a
+// bottom bar and the «Tú» sheet instead (the rails' words, one list:
+// lib/app-nav.ts).
 import '../styles/shell.css';
 import ChromeSprite from '../components/chrome/ChromeSprite.astro';
-import Sidebar from '../components/chrome/Sidebar.astro';
-import TopBar from '../components/chrome/TopBar.astro';
-import TabBar from '../components/chrome/TabBar.astro';
-import MoreList from '../components/chrome/MoreList.astro';
+import CityRail from '../components/chrome/CityRail.astro';
+import YouRail from '../components/chrome/YouRail.astro';
+import PhoneHeader from '../components/chrome/PhoneHeader.astro';
+import PhoneBar from '../components/chrome/PhoneBar.astro';
+import RailScript from '../components/chrome/RailScript.astro';
+import RailTips from '../components/chrome/RailTips.astro';
 import ShellFooter from '../components/chrome/ShellFooter.astro';
 import CookieNotice from '../components/chrome/CookieNotice.astro';
 import Starfield from '../components/chrome/Starfield.astro';
@@ -93,7 +96,22 @@ const urlFor = (target: SupportedLocale): string =>
         }
         if (localStorage.getItem('numinia-lap-nav') === 'plegado')
           document.documentElement.dataset.lapNav = 'plegado';
-        document.documentElement.dataset.sidebar = localStorage.getItem('numinia-sidebar') || '';
+        /* v3 «La ciudad y tú»: each rail's fold, before the first paint —
+           a phone on its side folds both; else the kept choice; else the
+           width (≥ 1440 both open, 1024–1439 yours folded, below both).
+           The same rule as lib/app-nav.ts railState (this script is inline). */
+        var rw = innerWidth, rh = innerHeight;
+        var folds = localStorage.getItem('numinia-sidebar') || '';
+        var rail = function (side) {
+          var kept = (new RegExp('(?:^|;)' + side + '=(\\w+)').exec(folds) || [])[1];
+          if (side === 'city' && /^(expanded|collapsed)$/.test(folds)) kept = folds;
+          if (rh <= 540 && rw > rh) return 'collapsed';
+          if (kept === 'expanded' || kept === 'collapsed') return kept;
+          if (rw >= 1440) return 'expanded';
+          return rw >= 1024 && side === 'city' ? 'expanded' : 'collapsed';
+        };
+        document.documentElement.dataset.railCity = rail('city');
+        document.documentElement.dataset.railYou = rail('you');
         var hidden = localStorage.getItem('numinia-lap-hidden');
         /* Never chosen: a quiet panel (lib/lap-sections.ts); '' is a choice. */
         if (hidden === null) hidden = 'codex,portals,loot,stats';
@@ -142,23 +160,19 @@ const urlFor = (target: SupportedLocale): string =>
     {
       chrome ? (
         <div class="app">
-          <Sidebar locale={locale} basePath={basePath} />
-          <div class="app-col">
-            <TopBar locale={locale} basePath={basePath} />
+          <CityRail locale={locale} basePath={basePath} />
+          <div class="app-centro">
+            <PhoneHeader locale={locale} basePath={basePath} />
             <main id="contenido" tabindex="-1" data-wide={wide ? '' : undefined}>
               <slot />
             </main>
+            {/* A phone upright has no rails: the folded footer closes the
+                page there (the legal links one scroll away). */}
+            <div class="pie-movil">
+              <ShellFooter locale={locale} where="page" />
+            </div>
           </div>
-          {/* Last in the page, after main: on a phone «Más» and the folded
-              footer close the page (the legal links one scroll away); on a
-              desktop the stylesheet pins the footer to the sidebar's foot
-              and «Más» lives in the sidebar. */}
-          <div class="app-pie">
-            <nav class="mas-movil" aria-label={shell.more}>
-              <MoreList locale={locale} compact />
-            </nav>
-            <ShellFooter locale={locale} />
-          </div>
+          <YouRail locale={locale} basePath={basePath} />
         </div>
       ) : (
         <main class="plano" data-wide={wide ? '' : undefined}>
@@ -166,7 +180,9 @@ const urlFor = (target: SupportedLocale): string =>
         </main>
       )
     }
-    {chrome && <TabBar locale={locale} basePath={basePath} />}
+    {chrome && <PhoneBar locale={locale} basePath={basePath} />}
+    {chrome && <RailScript />}
+    {chrome && <RailTips />}
     {/* Every page asks, the chromeless Codex included (LEG-003 §4). */}
     <CookieNotice />
     <script>

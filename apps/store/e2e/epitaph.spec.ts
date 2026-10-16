@@ -1,7 +1,8 @@
 /**
  * The epitaph (CAN-002): the skull that ends the footer's closing line —
  * since the app shell (v0.83.0) at the foot of the sidebar on a desktop and
- * at the end of the page on a phone, one footer either way.
+ * at the end of the page on a phone; since v3 (v0.112.0) at the foot of the
+ * city's rail, with a second copy closing the page on a phone upright.
  * Hover or focus shows it, a click toggles it (aria-expanded), Escape closes
  * it. English on every locale; no navigation.
  */
@@ -15,7 +16,7 @@ test.describe('footer epitaph', () => {
   test('click toggles, Escape closes, the page never moves', async ({ page }) => {
     await page.goto('/ja/');
     const skull = page.locator('footer').getByRole('button', { name: 'Epitaph' });
-    const tip = page.locator('#footer-epitaph');
+    const tip = page.locator('footer:visible .bocadillo');
     await expect(skull).toHaveAttribute('aria-expanded', 'false');
     await expect(tip).toBeHidden();
     await expect(tip).toHaveText(EPITAPH);
@@ -34,8 +35,8 @@ test.describe('footer epitaph', () => {
     await page.goto('/');
     const skull = page.locator('footer').getByRole('button', { name: 'Epitaph' });
     await skull.focus();
-    await expect(page.locator('#footer-epitaph')).toBeVisible();
-    const signature = await page.locator('footer .pie-firma').boundingBox();
+    await expect(page.locator('footer:visible .bocadillo')).toBeVisible();
+    const signature = await page.locator('footer:visible .pie-firma').boundingBox();
     const box = await skull.boundingBox();
     expect(box!.x).toBeGreaterThan(signature!.x + signature!.width);
   });
@@ -49,7 +50,7 @@ test.describe('footer epitaph', () => {
     for (const fold of [false, true]) {
       if (fold) await page.locator('[data-metric="nav-collapse"]').click();
       await skull.click();
-      const tip = await page.locator('#footer-epitaph').boundingBox();
+      const tip = await page.locator('footer:visible .bocadillo').boundingBox();
       expect(tip!.x).toBeGreaterThanOrEqual(0);
       expect(tip!.y).toBeGreaterThanOrEqual(0);
       expect(tip!.y + tip!.height).toBeLessThanOrEqual(900);
@@ -69,7 +70,7 @@ test.describe('footer epitaph', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await page.locator('footer').getByRole('button', { name: 'Epitaph' }).click();
-    const tip = await page.locator('#footer-epitaph').boundingBox();
+    const tip = await page.locator('footer:visible .bocadillo').boundingBox();
     expect(tip!.x).toBeGreaterThanOrEqual(0);
     expect(tip!.x + tip!.width).toBeLessThanOrEqual(390);
   });

@@ -32,6 +32,9 @@ async function serveFiles(page: Page, status: number): Promise<void> {
 }
 
 test.describe('the Bazaar', () => {
+  // The three panes need a 56rem page: since v0.112.0 two rails take their
+  // width, so the inline preview is measured where both are open (1600).
+  test.use({ viewport: { width: 1600, height: 900 } });
   test.beforeEach(async ({ page }) => {
     await openBazaar(page);
   });

@@ -16,6 +16,8 @@
 export interface FaceMenu {
   /** The name the person published, or null (the short wallet stays). */
   readonly name: string | null;
+  /** The Bazar avatar's baked face the person published (`/thumbs/1x/<id>.webp`), or null. */
+  readonly face: string | null;
   /** The personal account's balance in euro cents, or null when it cannot be read. */
   readonly balanceCents: number | null;
   /** The organizations the person belongs to (the house's own entries left out). */
@@ -23,7 +25,7 @@ export interface FaceMenu {
 }
 
 /** What a menu reads when the till answers nothing. */
-export const EMPTY_FACE: FaceMenu = { name: null, balanceCents: null, panels: [] };
+export const EMPTY_FACE: FaceMenu = { name: null, face: null, balanceCents: null, panels: [] };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -57,9 +59,19 @@ function readName(body: unknown): string | null {
   return typeof name === 'string' && name.trim() !== '' ? name.trim() : null;
 }
 
+/** Only a baked thumbnail of this site is ever drawn as a face (lib/thumbs.ts faceSrc). */
+const FACE_SHAPE = /^\/thumbs\/1x\/[A-Za-z0-9_.-]{1,128}\.webp$/;
+
+/** GET /api/profile's body: the face published, if any and if it is one of ours. */
+function readFaceSrc(body: unknown): string | null {
+  if (!isRecord(body) || !isRecord(body['profile'])) return null;
+  const { face } = body['profile'];
+  return typeof face === 'string' && FACE_SHAPE.test(face) ? face : null;
+}
+
 /** The two answers, read by hand; an answer that is not one reads as absent. */
 export function readFace(saldo: unknown, profile: unknown): FaceMenu {
-  return { name: readName(profile), ...readAccounts(saldo) };
+  return { name: readName(profile), face: readFaceSrc(profile), ...readAccounts(saldo) };
 }
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;

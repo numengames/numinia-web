@@ -1,0 +1,241 @@
+---
+/**
+ * The city's rail (v3, «La ciudad y tú»; the left one): what is everyone's.
+ * Sticky, the window's height, 256 px — 72 px folded (a choice the device
+ * keeps under `numinia-sidebar`, applied before paint by BaseLayout's boot
+ * script). Desktop and a phone on its side; a phone upright gets the
+ * bottom bar instead (PhoneBar).
+ *
+ *   Khepri + Numinia                         fold
+ *   [ magnifier  Buscar en la ciudad      / ]
+ *   Ahora · Comunidades n · Encuentros n · Mundos · Bazar
+ *   ──
+ *   Ahora en la ciudad: the worlds with people in (counts only, never
+ *   names; filled from /api/live, hidden while nobody is in) and the next
+ *   encounter
+ *   Cómo funciona · Abre la sede de tu comunidad
+ *   Numen Games ▾ · Términos y políticas ▾ · signature, version, skull
+ *
+ * Icons without boxes; hover tints icon and word with the link colour; the
+ * current place draws its fill icon. Every word stays for the screen reader
+ * when the rail folds; the folded rail's tooltips are the shell script's.
+ */
+import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+import {
+  CITY_ITEMS,
+  HOW_PATH,
+  SEARCH_PATH,
+  ariaCurrent,
+  localeHref,
+  navIcon,
+  navState,
+  type CityId,
+} from '../../lib/app-nav';
+import { pick, sedeDomain, upcoming, whenShort, worldOf } from '../../lib/communities';
+import { symbolId } from '../../lib/svg-sprite';
+import { COMMUNITIES, RITUALS } from '../communities/register';
+import Icon from './Icon.astro';
+import ShellFooter from './ShellFooter.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { locale, basePath } = Astro.props;
+const ui = APP_SHELL_UI[locale];
+const words = COMMUNITIES_UI[locale];
+const next = upcoming(RITUALS);
+// The counters a place carries, from the register (no figure is invented).
+const counts: Partial<Record<CityId, number>> = {
+  communities: COMMUNITIES.length,
+  encounters: next.length,
+};
+// Every world whose home answers who is inside: a row each, shown only while
+// someone is in (the shell script fills the count from /api/live).
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const homes = COMMUNITIES.flatMap((community) => {
+  const world = worldOf(community, commons, locale);
+  const counted = community.sede !== undefined && sedeDomain(community.sede.href) !== null;
+  return world && counted ? [{ id: community.id, world }] : [];
+});
+const soon = next[0];
+const inside = JSON.stringify({ one: words.insideOne, many: words.insideMany });
+---
+
+<aside class="rail rail-ciudad" aria-label={ui.cityRail} data-rail="city">
+  <div class="rail-cab">
+    <a
+      href={localeHref(locale, '/')}
+      class="rail-marca"
+      data-metric="nav-home"
+      aria-label="Numinia"
+      data-rail-tip="Numinia"
+    >
+      <svg class="rail-khepri" fill="currentColor" aria-hidden="true">
+        <use href={`#${symbolId('khepri')}`} />
+      </svg>
+      <svg class="rail-palabra" fill="currentColor" aria-hidden="true">
+        <use href={`#${symbolId('wordmark')}`} />
+      </svg>
+    </a>
+    <button
+      type="button"
+      class="rail-plegar"
+      aria-expanded="true"
+      aria-label={ui.foldCity}
+      data-fold={`${ui.foldCity}|${ui.unfoldCity}`}
+      data-rail-fold="city"
+      data-rail-tip={ui.foldCity}
+      data-metric="nav-collapse"
+    >
+      <Icon name="sidebar-simple" size={20} />
+    </button>
+  </div>
+
+  <a
+    href={localeHref(locale, SEARCH_PATH)}
+    class="rail-caja"
+    aria-keyshortcuts="/"
+    data-search
+    data-rail-tip={ui.search}
+    data-metric="nav-search"
+  >
+    <Icon name="magnifying-glass" size={20} use />
+    <span class="rail-t">{ui.search}</span>
+    <kbd aria-hidden="true">/</kbd>
+  </a>
+
+  <nav class="rail-nav" aria-label={ui.cityNav}>
+    <ul>
+      {
+        CITY_ITEMS.map((item) => {
+          const state = navState(item, basePath);
+          const count = counts[item.id];
+          return (
+            <li>
+              <a
+                href={localeHref(locale, item.path)}
+                class="rail-item"
+                aria-current={ariaCurrent(state)}
+                data-rail-tip={ui.city[item.id]}
+                data-metric={`nav-${item.id}`}
+              >
+                <Icon name={navIcon(item, state)} size={24} use />
+                <span class="rail-t">{ui.city[item.id]}</span>
+                {count !== undefined && <span class="rail-n mono">{count}</span>}
+                {item.id === 'now' && (
+                  <span class="rail-n rail-vivo mono" data-live-total hidden>
+                    <span class="punto-vivo" role="img" aria-label={ui.liveDot} />
+                    <span data-live-n />
+                  </span>
+                )}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+
+  <div class="rail-sep"></div>
+  <div class="rail-vivo-lista" data-live-rows={inside}>
+    <p class="rail-eti">{ui.nowInCity}</p>
+    {
+      homes.map(({ id, world }) => (
+        <a
+          class="vivo-fila"
+          href={localeHref(locale, `/communities/${id}/`)}
+          data-live-row={id}
+          data-rail-tip={world.name}
+          data-metric="nav-now-world"
+          hidden
+        >
+          <span class="vivo-cara">
+            <Icon name="planet" size={18} />
+            <span class="punto-vivo" />
+          </span>
+          <span class="vivo-txt">
+            <b>{world.name}</b>
+            <span class="dentro" data-live-count />
+          </span>
+        </a>
+      ))
+    }
+    {
+      soon && (
+        <a
+          class="vivo-fila"
+          href={localeHref(locale, `/rituals/${soon.id}/`)}
+          data-rail-tip={pick(soon.title, locale)}
+          data-metric="nav-now-encounter"
+        >
+          <span class="vivo-cara">
+            <Icon name="calendar-blank" size={18} />
+          </span>
+          <span class="vivo-txt">
+            <b>{pick(soon.title, locale)}</b>
+            <span>{whenShort(soon, locale)}</span>
+          </span>
+        </a>
+      )
+    }
+  </div>
+
+  <div class="rail-pie">
+    <a
+      href={localeHref(locale, HOW_PATH)}
+      class="pie-link"
+      data-rail-tip={ui.how}
+      data-metric="nav-more-how"
+    >
+      <Icon name="question" size={20} />
+      <span class="rail-t">{ui.how}</span>
+    </a>
+    <a
+      href={localeHref(locale, `${HOW_PATH}#open`)}
+      class="pie-link"
+      data-rail-tip={ui.open}
+      data-metric="nav-more-open"
+    >
+      <Icon name="house" size={20} use />
+      <span class="rail-t">{ui.open}</span>
+    </a>
+    <ShellFooter locale={locale} />
+  </div>
+</aside>
+
+<script>
+  /* «Ahora en la ciudad»: once the page has loaded, ask /api/live (numbers
+     only, reused for 30 s) and show the worlds with someone inside, the
+     total beside «Ahora» and the phone bar's live dot. Nobody inside, no
+     answer or no JavaScript: nothing shows — never an invented count. */
+  import { insideLine, peopleInside, totalInside } from '../../lib/live-now';
+
+  const rows = document.querySelector<HTMLElement>('[data-live-rows]');
+  const words = JSON.parse(rows?.dataset['liveRows'] ?? '{}') as { one: string; many: string };
+  const paint = (body: unknown): void => {
+    const counts = peopleInside(body);
+    rows?.querySelectorAll<HTMLElement>('[data-live-row]').forEach((row) => {
+      const n = counts[row.dataset['liveRow'] ?? ''];
+      row.hidden = n === undefined;
+      const line = row.querySelector('[data-live-count]');
+      if (line && n !== undefined) line.textContent = insideLine(n, words);
+    });
+    const total = totalInside(counts);
+    document.querySelectorAll<HTMLElement>('[data-live-total], [data-live-dot]').forEach((mark) => {
+      mark.hidden = total === 0;
+    });
+    const figure = document.querySelector('[data-live-n]');
+    if (figure) figure.textContent = String(total);
+  };
+  addEventListener('load', () => {
+    fetch('/api/live', { headers: { accept: 'application/json' } })
+      .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
+      .then(paint)
+      .catch(() => undefined);
+  });
+</script>

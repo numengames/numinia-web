@@ -1,16 +1,17 @@
 /**
  * The house look — numinia.org leads the design (the Oracle, 2026-09-29),
- * and numinia.com wears it as an app (the Oracle's design, 2026-10-14).
+ * and numinia.com wears it as an app: since v0.112.0 «La ciudad y tú», two
+ * mirrored rails (the city on the left, you on the right).
  *
  * These checks pin the measurable part of the app shell in the sources, so
- * a later edit cannot drift back silently: the sidebar (sticky, 252 px or
- * 76 px folded, the Khepri with the wordmark, the fold remembered before
- * paint, above the page), the top bar (sticky, 64 px of glass, no menu:
- * the door and ⋮ with the mode, the language and the settings), the phone's
- * tab bar, the folded footer (one copy, last in the page, pinned to the
- * sidebar's foot), the sprite, the page at the full width, the night sky,
- * the kit's entrance, primary button, eyebrows and the two radii. Pixels
- * stay with the Playwright gates; this is the contract they draw.
+ * a later edit cannot drift back silently: the rails (sticky, 256 px or
+ * 72 px folded, the Khepri with the wordmark on the city's, the folds
+ * applied before paint, above the page), the mirror of position but not of
+ * reading, the menus outside the rails, the phone's header, bottom bar and
+ * «Tú» sheet, the folded footer at the city's foot, the sprite, the page
+ * at the full width, the night sky, the kit's entrance, primary button,
+ * eyebrows and the two radii. Pixels stay with the Playwright gates; this
+ * is the contract they draw.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -21,9 +22,10 @@ const root = join(process.cwd(), '..', '..');
 const read = (path: string): Promise<string> => readFile(join(root, path), 'utf8');
 
 const CHROME = 'apps/store/src/components/chrome';
-const SIDEBAR = `${CHROME}/Sidebar.astro`;
-const TOPBAR = `${CHROME}/TopBar.astro`;
-const TABBAR = `${CHROME}/TabBar.astro`;
+const CITY = `${CHROME}/CityRail.astro`;
+const YOU = `${CHROME}/YouRail.astro`;
+const PHONE_BAR = `${CHROME}/PhoneBar.astro`;
+const PHONE_HEADER = `${CHROME}/PhoneHeader.astro`;
 const FOOTER = `${CHROME}/ShellFooter.astro`;
 const SPRITE = `${CHROME}/ChromeSprite.astro`;
 const SHELL = 'apps/store/src/styles/shell.css';
@@ -43,71 +45,100 @@ const rule = (css: string, selector: RegExp): string => {
   return match?.[1] ?? '';
 };
 
-/** The phone's block of the shell stylesheet (860 px and below). */
+/** The phone-upright block of the shell stylesheet (below 768 px). */
 const phone = (css: string): string =>
-  /@media \(max-width: 53\.75rem\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+  /@media \(max-width: 767px\) and \(min-height: 541px\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
 
-describe('the sidebar', () => {
-  it('opens with the Khepri and the Numinia wordmark, in currentColor, named for a screen reader', async () => {
-    const src = await read(SIDEBAR);
-    expect(src).toContain("import wordmark from '@numinia/ui/assets/brand/Numinia_Word.svg?raw'");
+describe('the rails', () => {
+  it('the city opens with the Khepri and the Numinia wordmark, in currentColor, named for a screen reader', async () => {
+    const src = await read(CITY);
     expect(src).toMatch(
-      /class="lat-marca"[\s\S]*?data-metric="nav-home"[\s\S]*?aria-label="Numinia"/,
+      /class="rail-marca"[\s\S]*?data-metric="nav-home"[\s\S]*?aria-label="Numinia"/,
     );
-    expect(src).toMatch(/<svg class="lat-khepri" fill="currentColor"[\s\S]*?symbolId\('khepri'\)/);
+    expect(src).toMatch(/<svg class="rail-khepri" fill="currentColor"[\s\S]*?symbolId\('khepri'\)/);
+    expect(src).toMatch(
+      /<svg class="rail-palabra" fill="currentColor"[\s\S]*?symbolId\('wordmark'\)/,
+    );
     const sprite = await read(SPRITE);
     expect(sprite).toContain("import khepri from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw'");
+    expect(sprite).toContain(
+      "import wordmark from '@numinia/ui/assets/brand/Numinia_Word.svg?raw'",
+    );
     const css = await read(SHELL);
-    expect(rule(css, /\.lat-marca:hover,\s*\.lat-marca:focus-visible/)).toMatch(
+    expect(rule(css, /\.rail-marca:hover,\s*\.rail-marca:focus-visible/)).toMatch(
       /color:\s*var\(--enlace\)/,
     );
-    expect(rule(css, /\.lat-khepri/)).toMatch(/height:\s*36px/);
+    expect(rule(css, /\.rail-khepri/)).toMatch(/height:\s*36px/);
   });
 
-  it('is sticky, the window tall, 252 px or 76 px folded, and paints above the page', async () => {
+  it('are sticky, the window tall, 256 px or 72 px folded, one each side of the page', async () => {
     const css = await read(SHELL);
-    expect(css).toMatch(/--app-lat:\s*252px/);
-    expect(css).toMatch(/--app-lat-plegada:\s*76px/);
-    const lat = rule(css, /\n\.lat/);
-    expect(lat).toMatch(/position:\s*sticky/);
-    expect(lat).toMatch(/height:\s*100vh/);
-    const latZ = Number(/z-index:\s*(\d+)/.exec(lat)?.[1]);
-    const cimaZ = Number(/z-index:\s*(\d+)/.exec(rule(css, /\n\.cima/))?.[1]);
-    expect(latZ).toBeGreaterThan(cimaZ);
-    expect(css).toMatch(/html\[data-sidebar='collapsed'\] \.app\s*\{[^}]*var\(--app-lat-plegada\)/);
+    expect(css).toMatch(/--rail:\s*256px/);
+    expect(css).toMatch(/--rail-plegada:\s*72px/);
+    const rail = rule(css, /\n\.rail/);
+    expect(rail).toMatch(/position:\s*sticky/);
+    expect(rail).toMatch(/height:\s*100vh/);
+    expect(Number(/z-index:\s*(\d+)/.exec(rail)?.[1])).toBeGreaterThan(40);
+    expect(rule(css, /\n\.app/)).toMatch(
+      /grid-template-columns:\s*var\(--rail-izq\) minmax\(0, 1fr\) var\(--rail-der\)/,
+    );
+    expect(css).toMatch(
+      /html\[data-rail-city='collapsed'\]\s*\{\s*--rail-izq:\s*var\(--rail-plegada\)/,
+    );
+    expect(css).toMatch(
+      /html\[data-rail-you='collapsed'\]\s*\{\s*--rail-der:\s*var\(--rail-plegada\)/,
+    );
   });
 
-  it('remembers the fold on the device and applies it before the first paint', async () => {
+  it('remember each fold on the device and apply it before the first paint', async () => {
     const layout = await read(LAYOUT);
     const boot = /<script is:inline>([\s\S]*?)<\/script>/.exec(layout)?.[1] ?? '';
-    expect(boot).toContain("dataset.sidebar = localStorage.getItem('numinia-sidebar')");
-    const src = await read(SIDEBAR);
-    expect(src).toMatch(/class="lat-plegar"[\s\S]*?aria-expanded="true"/);
-    expect(src).toContain('<Icon name="sidebar-simple"');
-    expect(src).toContain('keep(SIDEBAR_KEY, next)');
-    expect(src).toContain('fold.ariaExpanded = String(open)');
+    expect(boot).toContain("localStorage.getItem('numinia-sidebar')");
+    expect(boot).toContain("dataset.railCity = rail('city')");
+    expect(boot).toContain("dataset.railYou = rail('you')");
+    for (const src of [await read(CITY), await read(YOU)]) {
+      expect(src).toMatch(/class="rail-plegar"[\s\S]*?aria-expanded="true"/);
+      expect(src).toContain('<Icon name="sidebar-simple"');
+    }
   });
 
-  it('searches from a field with the «/» key, then the places of lib/app-nav', async () => {
-    const src = await read(SIDEBAR);
+  it('the city: search with «/», then its five places from lib/app-nav with their counts', async () => {
+    const src = await read(CITY);
     expect(src).toMatch(
-      /class="lat-buscar"[\s\S]*?aria-keyshortcuts="\/"[\s\S]*?data-metric="nav-search"/,
+      /class="rail-caja"[\s\S]*?aria-keyshortcuts="\/"[\s\S]*?data-metric="nav-search"/,
     );
-    expect(src).toContain('NAV_ITEMS.map');
-    expect(src).toContain('EXPLORE_ITEMS.map');
+    expect(src).toContain('CITY_ITEMS.map');
     expect(src).toContain('data-metric={`nav-${item.id}`}');
-    expect(src).toContain('<details class="lat-mas" name="shell-menu" data-popover>');
-    expect(src).toContain('data-metric="nav-sign-in"');
-    expect(src).toContain('COMMUNITIES.length');
+    expect(src).toContain('communities: COMMUNITIES.length');
   });
 
-  it('tints icons and words with the link colour, never with a box', async () => {
+  it('yours: the door or your face, «Crear», then your places; the menus live outside the rail', async () => {
+    const src = await read(YOU);
+    expect(src).toContain('data-metric="chrome-sign-in"');
+    expect(src).toMatch(/popovertarget="menu-cara"[\s\S]*?data-metric="chrome-account"/);
+    expect(src).toMatch(/popovertarget="menu-crear"[\s\S]*?data-metric="you-create"/);
+    expect(src).toContain('YOU_ITEMS.map');
+    expect(src).toContain('CREATE_ITEMS.map');
+    const aside = src.indexOf('</aside>');
+    expect(src.indexOf('id="menu-cara"')).toBeGreaterThan(aside);
+    expect(src.indexOf('id="menu-crear"')).toBeGreaterThan(aside);
+    // No presence: never a control that does nothing.
+    expect(src).not.toMatch(/e-en-linea|frase de estado|yo-frase|data-presence/i);
+  });
+
+  it('mirror the position, never the reading: icon and word from the left on both rails', async () => {
     const css = await read(SHELL);
-    expect(
-      rule(css, /\.lat-item:hover,\s*\.lat-item:focus-visible,\s*\.lat-mas\[open\] > \.lat-item/),
-    ).toMatch(/color:\s*var\(--enlace\)/);
-    expect(rule(css, /\n\.lat-item/)).toMatch(/background:\s*none/);
-    expect(rule(css, /\.lat-item\[aria-current\] \.icono/)).toMatch(/var\(--enlace\)/);
+    expect(rule(css, /\n\.rail-item/)).not.toMatch(/flex-direction:\s*row-reverse/);
+    expect(rule(css, /\n\.rail-n/)).toMatch(/margin-left:\s*-6px/);
+  });
+
+  it('tint icons and words with the link colour, never with a box', async () => {
+    const css = await read(SHELL);
+    expect(rule(css, /\.rail-item:hover,\s*\.rail-item:focus-visible/)).toMatch(
+      /color:\s*var\(--enlace\)/,
+    );
+    expect(rule(css, /\n\.rail-item/)).not.toMatch(/background:/);
+    expect(rule(css, /\.rail-item\[aria-current\] \.icono/)).toMatch(/var\(--enlace\)/);
   });
 });
 
@@ -118,93 +149,52 @@ describe('the sprite', () => {
     expect(sprite).toContain("'magnifying-glass',");
     expect(sprite).toContain('{icons.map((name) => <Icon name={name} symbol />)}');
     expect(sprite).toContain('navIcon(item, navState(item, basePath))');
-    expect(await read(SIDEBAR)).toContain('<Icon name={navIcon(item, state)} size={26} use />');
-    expect(await read(TABBAR)).toContain('<Icon name={navIcon(item, state)} size={24} use />');
+    expect(await read(CITY)).toContain('<Icon name={navIcon(item, state)} size={24} use />');
+    expect(await read(YOU)).toContain('<Icon name={navIcon(item, state)} size={24} use />');
+    expect(await read(PHONE_BAR)).toContain('<Icon name={navIcon(item, state)} size={24} use />');
     const layout = await read(LAYOUT);
     expect(layout).toContain('{chrome && <ChromeSprite basePath={basePath} />}');
   });
 });
 
-describe('the top bar', () => {
-  it('is sticky, 64 px of glass: the page at 86 % with a 24 px blur', async () => {
-    const css = await read(SHELL);
-    expect(css).toMatch(/--app-cima:\s*64px/);
-    const cima = rule(css, /\n\.cima/);
-    expect(cima).toMatch(/position:\s*sticky/);
-    expect(cima).toMatch(/height:\s*var\(--app-cima\)/);
-    const glass = rule(css, /\.cima::before/);
-    expect(glass).toMatch(/color-mix\(in srgb, var\(--fondo\) 86%, transparent\)/);
-    expect(glass).toMatch(/backdrop-filter:\s*blur\(24px\)/);
-  });
-
-  it('carries no menu: the door, then ⋮ with the mode, the language and the settings', async () => {
-    const src = await read(TOPBAR);
-    for (const metric of [
-      'nav-home',
-      'nav-search',
-      'chrome-sign-in',
-      'chrome-more',
-      'chrome-mode',
-      'chrome-settings',
-    ]) {
-      expect(src).toContain(`data-metric="${metric}"`);
-    }
-    expect(src).toContain('<LanguageMenu');
-    expect(src).toContain('<Icon name="dots-three-vertical"');
-    expect(src).toContain('<details class="cima-mas" name="shell-menu" data-popover>');
-    expect(src).not.toMatch(
-      /menu-movil|data-menu-btn|data-metric="chrome-menu"|nav-city|nav-assets|nav-lap/,
-    );
-  });
-
-  it('the mode switch shows the mode you are in: moon with stars at night, sun by day', async () => {
-    const src = await read(TOPBAR);
-    expect(src).toMatch(/class="solo-nocturno"><Icon name="moon-stars"/);
-    expect(src).toMatch(/class="solo-diurno"><Icon name="sun"/);
-    const css = await read(SHELL);
-    expect(css).toMatch(
-      /html:not\(\[data-modo='diurno'\]\) \.pop-modo \.solo-diurno,\s*html\[data-modo='diurno'\] \.pop-modo \.solo-nocturno\s*\{\s*display:\s*none/,
-    );
-  });
-});
-
 describe('the phone', () => {
-  it('swaps the sidebar for a fixed tab bar of the same five places, 56 px and the safe area', async () => {
-    const src = await read(TABBAR);
-    expect(src).toContain('NAV_ITEMS.map');
-    expect(src).toContain('data-metric={`tab-${item.id}`}');
-    const css = await read(SHELL);
-    expect(css).toMatch(/--app-pestanas:\s*56px/);
-    const block = phone(css);
-    expect(block).toMatch(/\.lat\s*\{\s*display:\s*none/);
+  it('swaps the rails for a header and a fixed bottom bar of four places and «Tú», 56 px and the safe area', async () => {
+    const bar = await read(PHONE_BAR);
+    expect(bar).toContain('PHONE_ITEMS.map');
+    expect(bar).toContain('data-metric={`tab-${item.id}`}');
+    expect(bar).toMatch(/popovertarget="hoja-tu"[\s\S]*?data-metric="tab-you"/);
+    const header = await read(PHONE_HEADER);
+    expect(header).toContain('data-metric="phone-bazaar"');
+    expect(header).toContain('data-metric="phone-search"');
+    const block = phone(await read(SHELL));
+    expect(block).toMatch(/\.rail\s*\{\s*display:\s*none/);
     expect(block).toMatch(
-      /\.pestanas-app\s*\{[^}]*position:\s*fixed[^}]*padding-bottom:\s*env\(safe-area-inset-bottom/,
+      /\.barra-movil\s*\{[^}]*position:\s*fixed[^}]*env\(safe-area-inset-bottom/,
     );
-    expect(block).toMatch(/\.pestanas-app a\s*\{[^}]*min-height:\s*var\(--app-pestanas\)/);
-    expect(block).toMatch(/\.app,[^{]*\{[^}]*padding-bottom:\s*calc\(var\(--app-pestanas\)/);
+    expect(block).toMatch(/min-height:\s*56px/);
   });
 
-  it('closes the page with «Más» and the folded footer, so the legal texts stay reachable', async () => {
-    const css = await read(SHELL);
-    const block = phone(css);
-    expect(block).toMatch(/\.app-pie,[^{]*\{[^}]*position:\s*static/);
-    expect(block).toMatch(/\.mas-movil\s*\{\s*display:\s*block/);
+  it('opens «Tú» as a sheet above the bar, the bar staying', async () => {
+    const block = phone(await read(SHELL));
+    expect(block).toMatch(
+      /\.hoja-tu:popover-open\s*\{[^}]*inset:\s*auto 0 calc\(var\(--barra-movil\)/,
+    );
+    expect(block).toMatch(/\.hoja-tu::backdrop\s*\{[^}]*bottom:\s*calc\(var\(--barra-movil\)/);
+  });
+
+  it('closes the page with the folded footer, so the legal texts stay reachable', async () => {
+    const block = phone(await read(SHELL));
+    expect(block).toMatch(/\.pie-movil\s*\{\s*display:\s*block/);
   });
 });
 
 describe('the folded footer', () => {
-  it('is one copy, last in the page after main, pinned to the sidebar foot on a desktop', async () => {
+  it('sits at the city rail’s foot, and once more at a phone’s page end', async () => {
+    expect(await read(CITY)).toContain('<ShellFooter locale={locale} />');
     const layout = await read(LAYOUT);
     expect(layout).toMatch(
-      /<\/main>\s*<\/div>[\s\S]*?<div class="app-pie">\s*<nav class="mas-movil"[^>]*>\s*<MoreList locale=\{locale\} compact \/>\s*<\/nav>\s*<ShellFooter locale=\{locale\} \/>/,
+      /<\/main>[\s\S]*?<div class="pie-movil">\s*<ShellFooter locale=\{locale\} where="page" \/>/,
     );
-    expect(layout.match(/<ShellFooter /g)).toHaveLength(1);
-    const css = await read(SHELL);
-    const pie = rule(css, /\n\.app-pie/);
-    expect(pie).toMatch(/position:\s*fixed/);
-    expect(pie).toMatch(/bottom:\s*0/);
-    expect(pie).toMatch(/width:\s*var\(--app-lat\)/);
-    expect(rule(css, /\n\.lat/)).toMatch(/padding:\s*var\(--s4\) var\(--s3\) var\(--app-pie\)/);
   });
 
   it('names only Numen Games, Numinia (here) and the Archive — no NWOS, no social', async () => {
@@ -223,6 +213,7 @@ describe('the folded footer', () => {
       'footer-cookies',
       'footer-terms',
       'footer-cookie-choice',
+      'footer-back',
       'footer-licence',
       'footer-telemetry',
       'footer-commit',
@@ -239,21 +230,31 @@ describe('the folded footer', () => {
 describe('the page', () => {
   it('takes the full remaining width: 48 px sides on a desktop, 16 px on a phone', async () => {
     const css = await read(SHELL);
-    expect(rule(css, /:where\(\.app-col\) > main/)).toMatch(/padding:\s*var\(--s2\) var\(--s7\)/);
+    expect(rule(css, /:where\(\.app-centro\) > main/)).toMatch(
+      /padding:\s*var\(--s5\) var\(--s7\)/,
+    );
     expect(css).not.toMatch(/\.app[^{]*\{[^}]*max-width:\s*1100px/);
     expect(phone(css)).toMatch(
-      /:where\(\.app-col\) > main\s*\{\s*padding:\s*var\(--s2\) var\(--s4\)/,
+      /:where\(\.app-centro\) > main\s*\{\s*padding:\s*var\(--s4\) var\(--s4\)/,
     );
   });
 
-  it('keeps the skip link first, the sky, and the reading column for the chromeless planes', async () => {
+  it('keeps the skip link first, then the city, the page and you, and the reading column for the chromeless planes', async () => {
     const layout = await read(LAYOUT);
     const body = layout.slice(layout.indexOf('<body>'));
-    expect(body.indexOf('class="saltar"')).toBeLessThan(body.indexOf('<Sidebar'));
-    expect(body.indexOf('<Sidebar')).toBeLessThan(body.indexOf('<TopBar'));
+    expect(body.indexOf('class="saltar"')).toBeLessThan(body.indexOf('<CityRail'));
+    expect(body.indexOf('<CityRail')).toBeLessThan(body.indexOf('<main id="contenido"'));
+    expect(body.indexOf('<main id="contenido"')).toBeLessThan(body.indexOf('<YouRail'));
     expect(body).toContain('<main id="contenido" tabindex="-1"');
     expect(layout).toContain('{chrome && <Starfield />}');
     expect(layout).toMatch(/\.plano\s*\{[^}]*max-width:\s*1100px/);
+  });
+
+  it('raises tier-3 text to tier-2 on elevated surfaces and inside cards', async () => {
+    const css = await read(SHELL);
+    expect(css).toMatch(
+      /:is\(\.pop, \.hoja-tu, \.tarjeta, dialog, \[role='dialog'\], \.bocadillo\)\s*\{\s*--texto-3:\s*var\(--texto-2\)/,
+    );
   });
 
   it('draws the night sky: 175 stars by rarity, still under reduced motion, none by day', async () => {

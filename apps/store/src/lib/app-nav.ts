@@ -1,89 +1,94 @@
 /**
- * The app's navigation (numinia.com's shell, the Oracle's design of
- * 2026-10-14): the places the sidebar and the phone's tab bar offer, in
- * their order, and which of them the page in view belongs to. Pure — a path
- * in, an answer out; the chrome components only draw it.
+ * The app's navigation (numinia.com v3, «La ciudad y tú»): two mirrored
+ * rails — on the left the city (what is everyone's), on the right you (what
+ * is yours), each item with its twin on the other side — and, on a phone,
+ * a bottom bar with four places of the city and «Tú». Pure: a path in, an
+ * answer out; the chrome components only draw it.
  *
  * Paths are written without the locale prefix (BaseLayout's `basePath`);
- * `localeHref` adds it. The sidebar and the tab bar read the same list, so
- * a place can never be in one and missing from the other.
+ * `localeHref` adds it. Both rails and the phone's bar read these lists, so
+ * a place can never be in one and missing from another.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
 
-/** The five places of the app, in the sidebar's (and the tab bar's) order. */
-export type NavId = 'for-you' | 'explore' | 'belong' | 'live' | 'profile';
+/** The city's five places, in the left rail's order. */
+export type CityId = 'now' | 'communities' | 'encounters' | 'worlds' | 'bazaar';
 
-/** What Explorar holds, always shown below it in the sidebar. */
-export type ExploreId = 'communities' | 'calendar' | 'bazaar';
-
-/** The «Más» list: how the city works, then the house's quieter doors. */
-export type MoreId = 'how' | 'open' | 'back' | 'notifications' | 'support';
+/** What is yours, in the right rail's order (each the twin of a city place). */
+export type YouId = 'notices' | 'your-communities' | 'balance' | 'loot';
 
 /** Phosphor regular icons the places use; the current one draws its fill. */
-export type NavIcon = 'house' | 'compass' | 'users-three' | 'broadcast' | 'user-circle';
+export type PlaceIcon =
+  | 'broadcast'
+  | 'users-three'
+  | 'calendar-blank'
+  | 'planet'
+  | 'storefront'
+  | 'bell'
+  | 'coins'
+  | 'backpack';
 
-/** Phosphor regular icons of the «Más» list. */
-type MoreIcon = 'question' | 'house' | 'coffee' | 'bell' | 'info';
-
-export interface NavItem {
-  readonly id: NavId;
+export interface Place<Id extends string> {
+  readonly id: Id;
   readonly path: string;
-  readonly icon: NavIcon;
+  readonly icon: PlaceIcon;
+  /** The addresses this place lights beyond its own (as a section). */
+  readonly sections: readonly string[];
+  /** Shown only with a session (the balance: in v3 it moves into «Tus mundos»). */
+  readonly signedInOnly?: boolean;
 }
 
-export interface ExploreItem {
-  readonly id: ExploreId;
-  readonly path: string;
-}
-
-export interface MoreItem {
-  readonly id: MoreId;
-  readonly path: string;
-  readonly icon: MoreIcon;
-  /** Analytics id: today's name where the link survives (footer-back). */
-  readonly metric: string;
-  /** The «Más» list draws a line before the house's own doors. */
-  readonly group: 'city' | 'house';
-}
-
-/** The notifications page: the «Más» bell (its sign-in door comes back here). */
+/** The notifications page: «Avisos» in the right rail. */
 export const NOTIFICATIONS_PATH = '/notifications/';
 
-export const NAV_ITEMS: readonly NavItem[] = [
-  { id: 'for-you', path: '/', icon: 'house' },
-  { id: 'explore', path: '/communities/', icon: 'compass' },
-  { id: 'belong', path: '/belong/', icon: 'users-three' },
-  { id: 'live', path: '/live/', icon: 'broadcast' },
-  { id: 'profile', path: '/lap/', icon: 'user-circle' },
+/** The organization panel (the face menu's «Paneles»): «Tus comunidades»' section. */
+export const PANEL_PATH = '/panel/';
+
+export const CITY_ITEMS: readonly Place<CityId>[] = [
+  // «Ahora» is the front page; /live/ (the homes with people in) belongs to it.
+  { id: 'now', path: '/', icon: 'broadcast', sections: ['/live/'] },
+  { id: 'communities', path: '/communities/', icon: 'users-three', sections: ['/communities/'] },
+  {
+    id: 'encounters',
+    path: '/calendar/',
+    icon: 'calendar-blank',
+    sections: ['/calendar/', '/rituals/'],
+  },
+  { id: 'worlds', path: '/mundos/', icon: 'planet', sections: ['/mundos/'] },
+  // The object pages of the Bazar still live under /archive/<id>/.
+  { id: 'bazaar', path: '/bazaar/', icon: 'storefront', sections: ['/bazaar/', '/archive/'] },
 ];
 
-export const EXPLORE_ITEMS: readonly ExploreItem[] = [
-  { id: 'communities', path: '/communities/' },
-  { id: 'calendar', path: '/calendar/' },
-  { id: 'bazaar', path: '/bazaar/' },
+export const YOU_ITEMS: readonly Place<YouId>[] = [
+  { id: 'notices', path: NOTIFICATIONS_PATH, icon: 'bell', sections: [NOTIFICATIONS_PATH] },
+  {
+    id: 'your-communities',
+    path: '/belong/',
+    icon: 'users-three',
+    sections: ['/belong/', PANEL_PATH],
+  },
+  { id: 'balance', path: '/saldo/', icon: 'coins', sections: ['/saldo/'], signedInOnly: true },
+  { id: 'loot', path: '/lap/loot/', icon: 'backpack', sections: ['/lap/loot/'] },
 ];
 
-export const MORE_ITEMS: readonly MoreItem[] = [
-  { id: 'how', path: '/how-it-works/', icon: 'question', metric: 'nav-more-how', group: 'city' },
-  {
-    id: 'open',
-    path: '/how-it-works/#open',
-    icon: 'house',
-    metric: 'nav-more-open',
-    group: 'city',
-  },
-  { id: 'back', path: '/back/', icon: 'coffee', metric: 'footer-back', group: 'house' },
-  // The bell is the notifications' (the Oracle, 2026-10-15). The updates keep
-  // one door only: the version in the footer (and its twin in Settings).
-  {
-    id: 'notifications',
-    path: NOTIFICATIONS_PATH,
-    icon: 'bell',
-    metric: 'nav-more-notifications',
-    group: 'house',
-  },
-  { id: 'support', path: '/support/', icon: 'info', metric: 'nav-more-support', group: 'house' },
+/** The phone's bottom bar: four places of the city, then «Tú» (the Bazar goes up to the header). */
+export const PHONE_ITEMS: readonly Place<CityId>[] = CITY_ITEMS.filter(
+  (item) => item.id !== 'bazaar',
+);
+
+/** «Crear», the twin of «Buscar»: only destinations that exist. */
+export type CreateId = 'community';
+
+export interface CreateItem {
+  readonly id: CreateId;
+  readonly path: string;
+  readonly icon: 'house';
+}
+
+/** Encounters (the panel's piece is `soon`) and worlds (no create page) are not here yet. */
+export const CREATE_ITEMS: readonly CreateItem[] = [
+  { id: 'community', path: '/how-it-works/#open', icon: 'house' },
 ];
 
 /** The search lives on the communities index until the global search dialog. */
@@ -92,32 +97,14 @@ export const SEARCH_PATH = '/communities/';
 /** The door: the LAP's sign-in page. */
 export const SIGN_IN_PATH = '/lap/session/';
 
-/** The person's settings (the ⋮ menu's last entry). */
+/** The person's settings (the right rail's foot). */
 export const SETTINGS_PATH = '/lap/settings/';
 
-/** The organization panel (the account menu's «Paneles»): Perteneces' section. */
-export const PANEL_PATH = '/panel/';
+/** Your card (the face menu's «Perfil», the phone sheet's head). */
+export const PROFILE_PATH = '/lap/';
 
-/**
- * The addresses each place lights beyond its own: ritual and community
- * pages belong to Explorar, and so do the object pages of the Bazar
- * (`/archive/<id>/` until they move); every LAP room belongs to Perfil;
- * the organization panel belongs to Perteneces (the prototype lights it
- * there: it is where the organizations one belongs to are handled).
- */
-const SECTIONS: Readonly<Record<NavId, readonly string[]>> = {
-  'for-you': [],
-  explore: ['/communities/', '/calendar/', '/bazaar/', '/rituals/', '/archive/'],
-  belong: ['/belong/', PANEL_PATH],
-  live: ['/live/'],
-  profile: ['/lap/'],
-};
-
-const EXPLORE_SECTIONS: Readonly<Record<ExploreId, readonly string[]>> = {
-  communities: ['/communities/'],
-  calendar: ['/calendar/'],
-  bazaar: ['/bazaar/', '/archive/'],
-};
+/** «Cómo funciona», at the left rail's foot. */
+export const HOW_PATH = '/how-it-works/';
 
 /**
  * Where a place stands from a page: `page` on its own address, `section`
@@ -126,17 +113,9 @@ const EXPLORE_SECTIONS: Readonly<Record<ExploreId, readonly string[]>> = {
  */
 export type NavState = 'page' | 'section' | null;
 
-function stateFor(path: string, own: string, sections: readonly string[]): NavState {
-  if (path === own) return 'page';
-  return sections.some((prefix) => path.startsWith(prefix)) ? 'section' : null;
-}
-
-export function navState(item: NavItem, path: string): NavState {
-  return stateFor(path, item.path, SECTIONS[item.id]);
-}
-
-export function exploreState(item: ExploreItem, path: string): NavState {
-  return stateFor(path, item.path, EXPLORE_SECTIONS[item.id]);
+export function navState(item: Place<string>, path: string): NavState {
+  if (path === item.path) return 'page';
+  return item.sections.some((prefix) => path.startsWith(prefix)) ? 'section' : null;
 }
 
 /** The aria-current value of a state (undefined drops the attribute). */
@@ -146,8 +125,21 @@ export function ariaCurrent(state: NavState): 'page' | 'true' | undefined {
 }
 
 /** The icon a place draws: its fill while the page is in it, else the regular one. */
-export function navIcon(item: NavItem, state: NavState): NavIcon | `${NavIcon}-fill` {
+export function navIcon(item: Place<string>, state: NavState): PlaceIcon | `${PlaceIcon}-fill` {
   return state === null ? item.icon : `${item.icon}-fill`;
+}
+
+/** The pages that are yours: the phone marks «Tú» current on them. */
+const PERSONAL_PATHS: readonly string[] = [
+  NOTIFICATIONS_PATH,
+  '/belong/',
+  '/saldo/',
+  PROFILE_PATH,
+  PANEL_PATH,
+];
+
+export function isPersonal(path: string): boolean {
+  return PERSONAL_PATHS.some((prefix) => path.startsWith(prefix));
 }
 
 /** A locale-free path as the visitor's locale serves it (English at the root). */
@@ -167,44 +159,4 @@ export function signInHref(locale: SupportedLocale, basePath: string): string {
     code that must disconnect first) and takes the person home. */
 export function signOutHref(locale: SupportedLocale): string {
   return `${localeHref(locale, SIGN_IN_PATH)}?salir=1`;
-}
-
-/** The sidebar's fold, kept on the device (LEG-003 §3.1): `collapsed` or
-    `expanded`; anything else reads as open. */
-export const SIDEBAR_KEY = 'numinia-sidebar';
-
-/** The parts of a keydown the «/» shortcut looks at. */
-export interface ShortcutKey {
-  readonly key: string;
-  readonly ctrlKey: boolean;
-  readonly metaKey: boolean;
-  readonly altKey: boolean;
-}
-
-/** The parts of the focused element the shortcut looks at. */
-export interface ShortcutTarget {
-  readonly tagName: string;
-  readonly isContentEditable: boolean;
-}
-
-const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
-
-/** «/» opens the search — unless the person is typing or holds a modifier. */
-export function opensSearch(event: ShortcutKey, target: ShortcutTarget | null): boolean {
-  if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return false;
-  if (target === null) return true;
-  return !target.isContentEditable && !TYPING_TAGS.has(target.tagName.toUpperCase());
-}
-
-/**
- * The top of a popover drawn beside its button: level with it, but never
- * past the window's bottom edge nor above its top (an 8 px margin).
- */
-export function popoverTop(
-  anchorTop: number,
-  popoverHeight: number,
-  viewportHeight: number,
-  margin = 8,
-): number {
-  return Math.max(margin, Math.min(anchorTop - margin, viewportHeight - popoverHeight - margin));
 }

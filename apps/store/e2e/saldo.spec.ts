@@ -127,8 +127,8 @@ test('your own account: the balance, the low-balance warning, usage and movement
   await expect(page.locator('[data-saldo-seller]')).toContainText('LINK.COM* NUMEN GAMES');
   await expect(page.locator('[data-saldo-lines] tbody tr')).toHaveCount(2);
   await expect(page.locator('[data-saldo-team]')).toHaveCount(0);
-  // The sidebar opens Saldo once you are signed in.
-  await expect(page.locator('[data-metric="nav-saldo"]')).toBeVisible();
+  // The city's rail opens Saldo once you are signed in.
+  await expect(page.locator('[data-metric="you-balance"]')).toBeVisible();
 });
 
 /** What a till of this cut adds to the personal statement: the split, the worlds, the minutes, the pace, the tariff. */

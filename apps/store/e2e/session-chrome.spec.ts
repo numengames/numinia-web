@@ -40,15 +40,15 @@ test('with a session the bar shows your account, your rank and the one way out',
   await expect(account).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-session', 'in');
   await expect(page.locator('[data-metric="chrome-sign-in"]')).toBeHidden();
-  await expect(page.locator('[data-metric="nav-sign-in"]')).toBeHidden();
   await expect(account).toContainText('0x42e6…ca26');
   // The full wallet never reaches the page.
   expect(await page.content()).not.toContain(WALLET);
 
   await account.click();
-  await expect(page.locator('.cima-rango [data-rank-name="oracle"]')).toBeVisible();
-  await expect(page.locator('.cima-rango [data-rank-name="oracle"]')).toHaveText('Oráculo');
-  await expect(page.locator('[data-metric="chrome-sign-out"]')).toHaveAttribute(
+  const menu = page.locator('#menu-cara');
+  await expect(menu.locator('.pop-rango [data-rank-name="oracle"]')).toBeVisible();
+  await expect(menu.locator('.pop-rango [data-rank-name="oracle"]')).toHaveText('Oráculo');
+  await expect(menu.locator('[data-metric="chrome-sign-out"]')).toHaveAttribute(
     'href',
     '/es/lap/session/?salir=1',
   );

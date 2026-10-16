@@ -1,0 +1,53 @@
+---
+/**
+ * The phone's header (v3, below 768 px upright): the Khepri and the
+ * wordmark home on the left; on the right the Bazar (the bottom bar keeps
+ * four places of the city and «Tú») and the search. Hidden on a desktop,
+ * where the city's rail carries all three.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { CITY_ITEMS, SEARCH_PATH, ariaCurrent, localeHref, navState } from '../../lib/app-nav';
+import { symbolId } from '../../lib/svg-sprite';
+import Icon from './Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { locale, basePath } = Astro.props;
+const ui = APP_SHELL_UI[locale];
+const bazaar = CITY_ITEMS.find((item) => item.id === 'bazaar')!;
+---
+
+<header class="borde-movil">
+  <a href={localeHref(locale, '/')} class="marca-movil" aria-label="Numinia" data-metric="phone-home">
+    <svg class="marca-khepri" fill="currentColor" aria-hidden="true">
+      <use href={`#${symbolId('khepri')}`} />
+    </svg>
+    <svg class="marca-palabra" fill="currentColor" aria-hidden="true">
+      <use href={`#${symbolId('wordmark')}`} />
+    </svg>
+  </a>
+  <span class="borde-acc">
+    <a
+      href={localeHref(locale, bazaar.path)}
+      class="icono-btn"
+      aria-label={ui.bazaar}
+      aria-current={ariaCurrent(navState(bazaar, basePath))}
+      data-metric="phone-bazaar"
+    >
+      <Icon name="storefront" size={22} use />
+    </a>
+    <a
+      href={localeHref(locale, SEARCH_PATH)}
+      class="icono-btn"
+      aria-label={ui.search}
+      data-metric="phone-search"
+    >
+      <Icon name="magnifying-glass" size={22} use />
+    </a>
+  </span>
+</header>
