@@ -161,10 +161,9 @@ async function ready(page: Page): Promise<void> {
   await expect(panel(page)).toHaveAttribute('data-state', 'ready');
 }
 
-const BUILT = ['venues', 'members', 'roles', 'gente', 'balance', 'settings'] as const;
+const BUILT = ['venues', 'members', 'roles', 'gente', 'agents', 'balance', 'settings'] as const;
 const SOON = [
   ['gatherings', 'Encuentros'],
-  ['agents', 'Agentes'],
   ['memory', 'Memoria · la Summa'],
   ['bazaar', 'Objetos del Bazar'],
 ] as const;
@@ -452,7 +451,7 @@ test.describe('Resumen', () => {
 });
 
 test.describe('the pieces of the rail', () => {
-  test('seven are links, four are marked as under construction and are not, in the order of the prototype', async ({
+  test('eight are links, three are marked as under construction and are not, in the order of the prototype', async ({
     page,
   }) => {
     await signedIn(page, 'nomad');
@@ -476,10 +475,11 @@ test.describe('the pieces of the rail', () => {
       'balance',
       'settings',
     ]);
-    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(7);
+    await expect(rail(page).locator('[data-piece-list] a')).toHaveCount(8);
     await expect(rail(page).locator('a[data-metric="panel-nav-venues"]')).toHaveText('Sedes');
     await expect(rail(page).locator('a[data-metric="panel-nav-members"]')).toHaveText('Miembros');
     await expect(rail(page).locator('a[data-metric="panel-nav-roles"]')).toHaveText('Roles');
+    await expect(rail(page).locator('a[data-metric="panel-nav-agents"]')).toHaveText('Agentes');
     for (const [id, name] of SOON) {
       const row = rail(page).locator(`[data-piece="${id}"]`);
       await expect(row).toContainText(name);

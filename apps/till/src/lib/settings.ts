@@ -10,7 +10,7 @@
  */
 
 /** The panel pieces an organization may turn off (the summary and the settings stay on). */
-const SWITCHABLE_PIECES = ['venues', 'members', 'gente', 'roles', 'balance'] as const;
+const SWITCHABLE_PIECES = ['venues', 'members', 'gente', 'roles', 'agents', 'balance'] as const;
 export type SwitchablePiece = (typeof SWITCHABLE_PIECES)[number];
 
 /** The three presets of «Cómo se llama cada cosa». */

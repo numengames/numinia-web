@@ -40,7 +40,7 @@ describe('the pieces of the panel', () => {
     ]);
   });
 
-  it('seven are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
+  it('eight are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
     const built = PIECES.filter((entry) => entry.kind === 'built');
     expect(built.map((entry) => [entry.id, entry.path])).toEqual([
       ['summary', '/panel/'],
@@ -48,6 +48,7 @@ describe('the pieces of the panel', () => {
       ['members', '/panel/miembros/'],
       ['roles', '/panel/roles/'],
       ['gente', '/panel/gente/'],
+      ['agents', '/panel/agentes/'],
       ['balance', '/panel/saldo/'],
       ['settings', '/panel/ajustes/'],
     ]);
@@ -60,9 +61,9 @@ describe('the pieces of the panel', () => {
     expect(PIECES[at]?.icon).toBe('shield-check');
   });
 
-  it('four are not built yet, and a piece not built has no address to fail on', () => {
+  it('three are not built yet, and a piece not built has no address to fail on', () => {
     const soon = PIECES.filter((entry) => entry.kind === 'soon');
-    expect(soon.map((entry) => entry.id)).toEqual(['gatherings', 'agents', 'memory', 'bazaar']);
+    expect(soon.map((entry) => entry.id)).toEqual(['gatherings', 'memory', 'bazaar']);
     for (const entry of soon) expect(entry.path).toBeNull();
   });
 
@@ -104,6 +105,7 @@ describe('where a piece leads', () => {
     expect(pieceHref('ko', piece('roles'), 'acc_t_1')).toBe('/ko/panel/roles/?org=acc_t_1');
     expect(pieceHref('pt-br', piece('balance'), 'acc_t_1')).toBe('/pt-br/panel/saldo/?org=acc_t_1');
     expect(pieceHref('ja', piece('venues'), 'acc_t_1')).toBe('/ja/panel/sedes/?org=acc_t_1');
+    expect(pieceHref('es', piece('agents'), 'acc_t_1')).toBe('/es/panel/agentes/?org=acc_t_1');
   });
 
   it('has no ?org= before an organization is known', () => {
@@ -120,7 +122,7 @@ describe('where a piece leads', () => {
   });
 
   it('leads nowhere when the piece is not built: never a link that fails', () => {
-    for (const id of ['gatherings', 'agents', 'memory', 'bazaar']) {
+    for (const id of ['gatherings', 'memory', 'bazaar']) {
       expect(pieceHref('es', piece(id), 'acc_t_1')).toBeNull();
     }
   });

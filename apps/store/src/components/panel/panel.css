@@ -1368,3 +1368,194 @@
     padding-inline-start: 42px;
   }
 }
+
+/* «Agentes» (IAs de organización): a row per AI — name and the Encendida/Apagada
+   switch, what its next pass is, the state as two choices (a green dot for
+   Activa, a moon for Dormida), its roles as chips, «Quitar». The invitation
+   dialog is the world page's own (mundo.css). The notice about the ten
+   minutes is always drawn, above the list. */
+.agentes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+.agentes > p,
+.agentes-marco p {
+  margin: 0;
+}
+.agentes-aviso {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.agentes-marco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.agentes-lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agentes-fila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s4) 0;
+  border-top: 1px solid var(--linea-f);
+}
+.agentes-fila:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.agentes-cabeza {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+.agentes-nombre {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.agentes-onoff {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 0.875rem;
+}
+.agentes-linea {
+  margin: 0;
+}
+.agentes-estado {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.agentes-estado legend {
+  padding: 0;
+  margin-bottom: var(--s1);
+  font: 500 0.72rem var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+.agentes-opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  min-height: 48px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  cursor: pointer;
+}
+.agentes-opcion[data-selected='true'] {
+  border-color: var(--turquesa);
+  background: color-mix(in srgb, var(--turquesa) 10%, transparent);
+}
+.agentes-opcion input {
+  margin-top: 3px;
+}
+.agentes-opcion-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.agentes-opcion-nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 600;
+}
+.agentes-punto {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: #2e9e6a;
+}
+.agentes-luna {
+  display: inline-flex;
+  color: var(--texto-2);
+}
+.agentes-estado:disabled .agentes-opcion {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.agentes-roles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.agentes-roles .etiqueta {
+  margin: 0;
+}
+.agentes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agentes-chip {
+  min-height: 1.75rem;
+}
+.agentes-dar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+.agentes-selector {
+  flex: 1 1 10rem;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px var(--s3);
+  font: inherit;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  cursor: pointer;
+}
+.agentes-selector:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: 2px;
+}
+.agentes-selector:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.agentes-confirmar {
+  margin-inline-start: 0;
+}
+.agentes-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+/* The world page's red for a refusal (mundo.css `.fallo`) is the dark mode's coral;
+   in the day mode it needs the deeper one, as Saldo's `.saldo-mal` does. */
+[data-modo='diurno'] .agentes .fallo,
+[data-modo='diurno'] .mundo-ia-dialogo .fallo {
+  color: var(--grana);
+}
+@media (max-width: 640px) {
+  .agentes-estado {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

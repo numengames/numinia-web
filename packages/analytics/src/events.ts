@@ -111,6 +111,15 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's Resumen: `panel-summary-next` (the next encounter),
 //   `panel-summary-people`, `panel-summary-balance`, `panel-summary-log`.
 
+// ---- W14 «Agentes» (IAs de organización, 2026-10-17) ----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The panel's Agentes: `panel-nav-agents` (its rail door), `panel-agentes-retry`,
+//   `panel-agentes-switch` (Encendida/Apagada), `panel-agentes-state-<activa|dormida>`,
+//   `panel-agentes-role-select`, `panel-agentes-role-give`, `panel-agentes-role-take`,
+//   `panel-agentes-remove` (+ `-yes`, `-no`), `panel-agentes-invite` and the invitation's
+//   `panel-agentes-invite-<name|ability-talk|ability-build|role|copy|key|next|back|cancel|add>`.
+// - The community's Ajustes: `panel-settings-piece-agents`.
+
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----
 // No new event and no new prop: each travels as `cta_click.metricId`.
 // - The header's account menu: `chrome-balance` (Tu saldo), `chrome-panel-org`

@@ -115,6 +115,7 @@ import {
   type SpendRange,
   type TopupKey,
 } from './accounts';
+import { createAgentsFixture, type HostEntry } from './agents-fixture';
 import { communityAccountId, readCommunityId } from './community-teams';
 import {
   DEFAULT_VOCABULARY,
@@ -730,7 +731,7 @@ export function createAccountsFixtureDesk(
   const refusalOf = (
     refusal: OrganizationRefusal,
     act: OrganizationAccess,
-    book: Book,
+    book: { readonly roles: readonly OrganizationRole[] },
   ): DeskRefusal => {
     if (refusal !== 'missing-permission') return refuse(REFUSALS[refusal]);
     // The fake names the highest role that holds the act (the Team template has one for each).
@@ -954,6 +955,45 @@ export function createAccountsFixtureDesk(
       ...(vocabulary === undefined ? {} : { vocabulary: vocabulary as Vocabulary }),
     };
   };
+
+  // ---- «IAs de organización»: kept apart (agents-fixture.ts), told what this desk knows ----
+  const hostEntries = new WeakMap<HostEntry, Entry>();
+  const agents = createAgentsFixture(
+    {
+      enter: (wallet, accountId, house) => {
+        const found = entering(wallet, accountId, house);
+        if ('ok' in found) return found;
+        const entry: HostEntry = {
+          accountId: found.book.id,
+          who: found.who,
+          as: found.as,
+          state: stateOf(found.book),
+          access: accessIn(found.book, found.who, found.as),
+        };
+        hostEntries.set(entry, found);
+        return entry;
+      },
+      responsible: (accountId, wallet) => {
+        const book = booksOf(wallet).find(
+          (candidate) => candidate.id === accountId && candidate.kind === 'team',
+        );
+        return book === undefined
+          ? null
+          : {
+              state: stateOf(book),
+              access: book.members.some((held) => held.wallet === wallet)
+                ? accessIn(book, wallet)
+                : null,
+            };
+      },
+      record: (entry, act, subject, detail) =>
+        record(hostEntries.get(entry) as Entry, act, subject, detail),
+      houseRead: (entry, what) => houseRead(hostEntries.get(entry) as Entry, what),
+      published: (wallet) => profiles.get(wallet)?.name,
+      refusalOf: (refusal, act, state) => refusalOf(refusal, act, state),
+    },
+    now,
+  );
 
   return {
     overview: async (wallet): Promise<DeskOverview | DeskRefusal> => {
@@ -1597,5 +1637,7 @@ export function createAccountsFixtureDesk(
         more: older.length > HAPPENINGS_PAGE,
       };
     },
+
+    ...agents,
   };
 }

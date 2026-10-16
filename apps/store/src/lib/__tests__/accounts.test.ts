@@ -70,45 +70,67 @@ describe('the desk contract', () => {
   });
 
   it('has one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-13, -11)).toEqual(['profile', 'setProfile']);
+    expect(DESK_METHODS.slice(-21, -19)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
   });
 
   it('has the census (cut «El censo»), optional too: a till without it changes nothing', () => {
-    expect(DESK_METHODS.slice(-11, -9)).toEqual(['signedIn', 'citizens']);
+    expect(DESK_METHODS.slice(-19, -17)).toEqual(['signedIn', 'citizens']);
   });
 
   it('has where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-9, -5)).toEqual(['placeWorld', 'placements', 'worldsOf', 'homeOf']);
+    expect(DESK_METHODS.slice(-17, -13)).toEqual(['placeWorld', 'placements', 'worldsOf', 'homeOf']);
     expect([...OPTIONAL_DESK_METHODS].sort()).toEqual([
+      'agentPass',
+      'agents',
+      'changeAgent',
       'changeSettings',
       'citizens',
+      'claimAgentPass',
+      'createAgent',
       'directory',
       'ensureCommunityTeam',
+      'giveAgentRole',
       'happenings',
       'homeOf',
       'openAllCommunities',
       'placeWorld',
       'placements',
       'profile',
+      'removeAgent',
       'setProfile',
       'settings',
       'signedIn',
+      'takeAgentRole',
       'worldsOf',
     ]);
   });
 
   it('has opening a community’s account (cut «Una comunidad ES una organización»), optional too', () => {
-    expect(DESK_METHODS.at(-5)).toBe('ensureCommunityTeam');
+    expect(DESK_METHODS.at(-13)).toBe('ensureCommunityTeam');
   });
 
   it('has the settings and «Qué ha pasado» (cut «Ajustes de la comunidad»), optional too', () => {
-    expect(DESK_METHODS.slice(-4, -1)).toEqual(['settings', 'changeSettings', 'happenings']);
+    expect(DESK_METHODS.slice(-12, -9)).toEqual(['settings', 'changeSettings', 'happenings']);
   });
 
-  it('ends with opening every community at once (cut 7), optional too', () => {
-    expect(DESK_METHODS.at(-1)).toBe('openAllCommunities');
+  it('has opening every community at once (cut 7), optional too', () => {
+    expect(DESK_METHODS.at(-9)).toBe('openAllCommunities');
     expect(OPTIONAL_DESK_METHODS).toContain('openAllCommunities');
+  });
+
+  it('ends with the AIs of an organization (cut «IAs de organización»), optional too', () => {
+    expect(DESK_METHODS.slice(-8)).toEqual([
+      'agents',
+      'createAgent',
+      'changeAgent',
+      'removeAgent',
+      'giveAgentRole',
+      'takeAgentRole',
+      'agentPass',
+      'claimAgentPass',
+    ]);
+    for (const method of DESK_METHODS.slice(-8)) expect(OPTIONAL_DESK_METHODS).toContain(method);
   });
 
   it('knows the till’s refusal of the list of who has signed in, in its own words', () => {

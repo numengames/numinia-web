@@ -205,6 +205,36 @@ and the deploy, and a later migration drops it. An organization that Worker
 founds in between gets its owner, the Team template and its log line from a
 trigger (`team_members_founded_as_before`), which goes with that column.
 
+## Organization AIs
+
+Cut «IAs de organización» (2026-10-17; STD-051 ORG-011). An organization keeps AIs that
+enter its worlds with a pass numinia.com signs for them every few minutes
+(`apps/store/src/lib/agent-pass.ts`, `POST /api/agents/pass`). Migration `0011`
+adds `team_agents` (id slug, name, Ed25519 public key `ed25519:<43 base64url>`, the wallet that
+answers for it, `enabled` 0/1, `state` `activa`/`dormida`), `team_agent_roles` (the
+organization's own roles, never the base one) and `team_agent_passes` (one row per signed pass
+request, so a request is used once). Methods of `AccountDesk`:
+
+- `agents(wallet, accountId, house?)` lists them, to a member or the house, with each one's
+  `status` (`apagada`, `sin-responsable`, `sin-permiso`, `activa`, `dormida`), what the asker
+  may do (`mayEdit`, `assignable`) and the roles a new one may be given (`assignableRoles`).
+- `createAgent`, `changeAgent` (`{ enabled?, state? }`), `removeAgent`, `giveAgentRole` and
+  `takeAgentRole`: whoever holds `manage-roles`. The creator, as a member (the house does not
+  answer for an AI), is its responsible person; later acts need the asker to answer for the
+  agent or to stand above it (its height, as `accessOf` works it out, below theirs).
+  Every act is a line of the organization's log: `agent-created`, `agent-enabled`,
+  `agent-disabled`, `agent-state`, `agent-removed`, `agent-role-given`, `agent-role-taken`.
+- `agentPass(accountId, agentId)` (read only, no wallet) and `claimAgentPass(accountId,
+agentId, aud, t)`: what the pass route asks. An agent's access is `accessOf` with `kind:
+'agent'` and its responsible person's access, so it never goes beyond them and is never an
+  owner. If that person leaves, or loses `manage-roles`, `eligible` turns false and the agent is
+  given no pass — worked out at every request, never by a trigger. The claim is `INSERT OR
+IGNORE` on `(account, agent, world, second)`; a second use changes nothing and is refused
+  (replay). Rows older than two minutes are swept by the next claim.
+
+No fresh wallet signature (ORG-008) is asked for giving an AI a role: an AI's pass keeps only
+`enter-worlds` and `build-in-worlds`, so a role with `manage-roles` gives it no power.
+
 ## The DNS desk
 
 `DnsDesk`, bound by numinia.com as `TILL_DNS`, writes a world's address so

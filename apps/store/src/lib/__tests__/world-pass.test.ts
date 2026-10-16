@@ -4,13 +4,17 @@
  * verifier exported by the lib is the one the engine copies.
  */
 
+import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
+  AGENT_PASS_PERMISSIONS,
   PASS_TTL_SECONDS,
   WORLD_PASS_PERMISSIONS,
   WorldPassError,
   b64urlDecode,
   b64urlEncode,
+  agentSub,
+  buildAgentPassPayload,
   buildPassPayload,
   personSub,
   publicKeyDocument,
@@ -371,5 +375,204 @@ describe('buildPassPayload', () => {
       'manage-organization',
       'download-world',
     ]);
+  });
+});
+
+describe("a person's pass stays byte for byte what it was", () => {
+  it('writes the fields in the same order, with no kind and no state', async () => {
+    const payload = await buildPassPayload({
+      aud: 'agora-plaza',
+      org: 'acc_team_numen_games',
+      secret: SECRET,
+      wallet: WALLET,
+      now: NOW,
+      access: { as: 'member', permissions: ['enter-worlds'], holders: {} },
+      roles: {
+        ok: true,
+        accountId: 'acc',
+        as: 'member',
+        roles: [],
+        members: [
+          {
+            wallet: WALLET.toLowerCase(),
+            roleIds: [],
+            name: 'Ada',
+          },
+        ],
+      },
+    });
+    expect(JSON.stringify(payload)).toBe(
+      `{"v":1,"iss":"numinia.com","aud":"agora-plaza","sub":"${await personSub(SECRET, WALLET)}","org":"acc_team_numen_games","perm":["enter-worlds"],"height":0,"roles":[],"name":"Ada","iat":${NOW},"exp":${NOW + 600}}`,
+    );
+  });
+});
+
+describe('agentSub', () => {
+  it('is a_ + 32 hex, the first 16 bytes of the HMAC of org and agent, and never says either', async () => {
+    const sub = await agentSub(SECRET, 'acc_team_numen_games', 'hermes-1');
+    const expected = createHmac('sha256', SECRET)
+      .update('world-pass-agent:acc_team_numen_games:hermes-1')
+      .digest('hex')
+      .slice(0, 32);
+    expect(sub).toBe(`a_${expected}`);
+    expect(sub).toMatch(/^a_[0-9a-f]{32}$/);
+    expect(await agentSub(SECRET, 'acc_team_numen_games', 'hermes-2')).not.toBe(sub);
+    expect(await agentSub(SECRET, 'acc_other', 'hermes-1')).not.toBe(sub);
+    expect(await agentSub('b'.repeat(40), 'acc_team_numen_games', 'hermes-1')).not.toBe(sub);
+    // Not the id of a person: a different prefix and a different message.
+    expect(sub).not.toBe(await personSub(SECRET, 'acc_team_numen_games'));
+  });
+});
+
+describe('buildAgentPassPayload', () => {
+  const base = {
+    aud: 'agora-plaza',
+    org: 'acc_team_numen_games',
+    secret: SECRET,
+    agent: 'hermes-1',
+    name: 'Hermes',
+    state: 'activa',
+    access: {
+      permissions: ['enter-worlds', 'build-in-worlds', 'manage-roles', 'ban-members'],
+      height: 2,
+    },
+    roles: [{ name: 'Builders', color: '#112233' }],
+    now: NOW,
+  } as const;
+
+  it('keeps entering and building of what the agent holds, and nothing else', async () => {
+    const payload = await buildAgentPassPayload(base);
+    expect(payload).toEqual({
+      v: 1,
+      iss: 'numinia.com',
+      aud: 'agora-plaza',
+      sub: await agentSub(SECRET, 'acc_team_numen_games', 'hermes-1'),
+      org: 'acc_team_numen_games',
+      perm: ['enter-worlds', 'build-in-worlds'],
+      height: 2,
+      roles: [{ name: 'Builders', color: '#112233' }],
+      name: 'Hermes',
+      kind: 'agent',
+      state: 'activa',
+      iat: NOW,
+      exp: NOW + 600,
+    });
+    expect([...AGENT_PASS_PERMISSIONS]).toEqual(['enter-worlds', 'build-in-worlds']);
+    expect(Object.keys(payload)).toEqual([
+      'v',
+      'iss',
+      'aud',
+      'sub',
+      'org',
+      'perm',
+      'height',
+      'roles',
+      'name',
+      'kind',
+      'state',
+      'iat',
+      'exp',
+    ]);
+  });
+
+  it('takes build-in-worlds from an agent that sleeps', async () => {
+    const payload = await buildAgentPassPayload({ ...base, state: 'dormida' });
+    expect(payload.perm).toEqual(['enter-worlds']);
+    expect(payload.state).toBe('dormida');
+  });
+
+  it('leaves out what the agent does not hold', async () => {
+    const payload = await buildAgentPassPayload({
+      ...base,
+      access: { permissions: ['build-in-worlds'], height: 0 },
+    });
+    expect(payload.perm).toEqual(['build-in-worlds']);
+    const nothing = await buildAgentPassPayload({
+      ...base,
+      access: { permissions: [], height: 0 },
+    });
+    expect(nothing.perm).toEqual([]);
+  });
+
+  it('never stands as high as an owner or the house: anything but a role position falls to the lowest', async () => {
+    for (const height of [
+      Number.MAX_VALUE,
+      Number.POSITIVE_INFINITY,
+      Number.MAX_SAFE_INTEGER,
+      -1,
+      1.5,
+      Number.NaN,
+    ]) {
+      const payload = await buildAgentPassPayload({
+        ...base,
+        access: { permissions: ['enter-worlds'], height },
+      });
+      expect(payload.height).toBe(0);
+    }
+    expect(
+      (await buildAgentPassPayload({ ...base, access: { permissions: [], height: 7 } })).height,
+    ).toBe(7);
+  });
+
+  it('caps roles at five and names at 40 characters', async () => {
+    const payload = await buildAgentPassPayload({
+      ...base,
+      name: 'N'.repeat(60),
+      roles: Array.from({ length: 7 }, (_, n) => ({ name: `${n}`.repeat(50), color: null })),
+    });
+    expect(payload.roles).toHaveLength(5);
+    expect(payload.roles[0]?.name).toBe('0'.repeat(40));
+    expect(payload.name).toBe('N'.repeat(40));
+  });
+});
+
+describe("verifyPass and an agent's pass", () => {
+  const SUB = `a_${'0'.repeat(32)}`;
+  const agent = (extra: Record<string, unknown> = {}): PassPayload =>
+    ({
+      ...payloadOf({ sub: SUB, name: 'Hermes' }),
+      kind: 'agent',
+      state: 'activa',
+      ...extra,
+    }) as PassPayload;
+  const at = { aud: 'agora-plaza', now: NOW };
+
+  it('accepts kind, state and an a_ sub, and still refuses any other extra', async () => {
+    const keys = await keyPair();
+    const ok = await verifyPass(await signPass(keys.privateKey, agent()), keys.publicKey, at);
+    expect(ok).toEqual({ ok: true, payload: agent() });
+    const asleep = await verifyPass(
+      await signPass(keys.privateKey, agent({ state: 'dormida' })),
+      keys.publicKey,
+      at,
+    );
+    expect(asleep.ok && asleep.payload.state).toBe('dormida');
+    const extra = await signPass(keys.privateKey, agent({ extra: 1 }));
+    expect(await verifyPass(extra, keys.publicKey, at)).toEqual({ ok: false, why: 'payload' });
+  });
+
+  it('refuses a half-agent: a state with no kind, a kind with no state or name, a wrong kind, state or sub', async () => {
+    const keys = await keyPair();
+    const refused = async (payload: object) =>
+      verifyPass(
+        await signPass(keys.privateKey, payload as unknown as PassPayload),
+        keys.publicKey,
+        at,
+      );
+    const { kind: _kind, ...noKind } = agent() as unknown as Record<string, unknown>;
+    const { state: _state, ...noState } = agent() as unknown as Record<string, unknown>;
+    const { name: _name, ...noName } = agent() as unknown as Record<string, unknown>;
+    for (const payload of [
+      noKind,
+      noState,
+      noName,
+      agent({ kind: 'person' }),
+      agent({ state: 'ocupada' }),
+      agent({ sub: `p_${'0'.repeat(32)}` }),
+      agent({ sub: `a_${'0'.repeat(31)}` }),
+      agent({ sub: `a_${'G'.repeat(32)}` }),
+    ]) {
+      expect(await refused(payload)).toEqual({ ok: false, why: 'payload' });
+    }
   });
 });

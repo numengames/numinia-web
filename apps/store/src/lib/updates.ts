@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.111.0',
+    date: '2026-10-16 23:10',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The AIs of a community, in the panel and behind the scenes. A community keeps its own AIs, with their own key: the person who creates one answers for it, and it never goes beyond what that person may do. Each has a switch — on or off — and a state: awake and willing to act, or asleep, which looks and listens but does not build. numinia.com gives each AI a pass of ten minutes, renewed by itself, so a change reaches the world within ten minutes; if the person who answers for an AI leaves or can no longer manage roles, it gets no more passes. Creating, switching, putting to sleep, giving roles to and removing an AI are all written in the community’s log. In the panel, the new piece «Agents» (/panel/agentes/, in five languages) lists them: each row shows the name, its roles, an On/Off switch and its state — Active or Asleep — with a plain line on whether it can enter the worlds and who answers for it; whoever may manage roles invites an AI in three steps (name and permission, the one-line command that makes its key, the public key pasted), gives and takes its roles, and removes it after a confirmation. The community turns the piece on or off in Settings, and the panel says that changes reach the worlds in about ten minutes at most.',
+      },
+    ],
+  },
+  {
     version: 'v0.110.0',
     date: '2026-10-16 21:19',
     entries: [

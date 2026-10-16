@@ -15,7 +15,7 @@ Feature: The organization panel
     Given the store application has been built
     Then every locale has the panel, its homes, its members, its roles and its balance, each titled in its own words
 
-  Scenario: The rail draws seven built pieces, the Oracle's four rooms and four pieces under construction
+  Scenario: The rail draws eight built pieces, the Oracle's four rooms and three pieces under construction
     Given the store application has been built
     Then every panel page draws the rail of pieces the same way in every locale
 

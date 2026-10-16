@@ -185,6 +185,37 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.openAllCommunities === 'function'
         ? stub.openAllCommunities(wallet, house, communities)
         : absent('openAllCommunities'),
+    // «IAs de organización»: optional too. Without them the agents routes and the pass say 503.
+    agents: (wallet, accountId, house) =>
+      typeof desk.agents === 'function' ? stub.agents(wallet, accountId, house) : absent('agents'),
+    createAgent: (wallet, accountId, agent, house) =>
+      typeof desk.createAgent === 'function'
+        ? stub.createAgent(wallet, accountId, agent, house)
+        : absent('createAgent'),
+    changeAgent: (wallet, accountId, agentId, change, house) =>
+      typeof desk.changeAgent === 'function'
+        ? stub.changeAgent(wallet, accountId, agentId, change, house)
+        : absent('changeAgent'),
+    removeAgent: (wallet, accountId, agentId, house) =>
+      typeof desk.removeAgent === 'function'
+        ? stub.removeAgent(wallet, accountId, agentId, house)
+        : absent('removeAgent'),
+    giveAgentRole: (wallet, accountId, agentId, roleId, house) =>
+      typeof desk.giveAgentRole === 'function'
+        ? stub.giveAgentRole(wallet, accountId, agentId, roleId, house)
+        : absent('giveAgentRole'),
+    takeAgentRole: (wallet, accountId, agentId, roleId, house) =>
+      typeof desk.takeAgentRole === 'function'
+        ? stub.takeAgentRole(wallet, accountId, agentId, roleId, house)
+        : absent('takeAgentRole'),
+    agentPass: (accountId, agentId) =>
+      typeof desk.agentPass === 'function'
+        ? stub.agentPass(accountId, agentId)
+        : absent('agentPass'),
+    claimAgentPass: (accountId, agentId, aud, t) =>
+      typeof desk.claimAgentPass === 'function'
+        ? stub.claimAgentPass(accountId, agentId, aud, t)
+        : absent('claimAgentPass'),
   };
 }
 
@@ -652,14 +683,14 @@ function splitProof(
 
 // ---- Answers ---------------------------------------------------------------
 
-type Log = (event: Readonly<Record<string, unknown>>) => void;
+export type Log = (event: Readonly<Record<string, unknown>>) => void;
 
 const HEADERS = { 'cache-control': 'no-store' } as const;
-const answer = (body: unknown, status = 200): Response =>
+export const answer = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: HEADERS });
-const signedOut = (): Response => answer({ error: 'signed-out' }, 401);
-const notBound = (): Response => answer({ error: 'not-bound' }, 503);
-const refused = (problems: readonly string[]): Response =>
+export const signedOut = (): Response => answer({ error: 'signed-out' }, 401);
+export const notBound = (): Response => answer({ error: 'not-bound' }, 503);
+export const refused = (problems: readonly string[]): Response =>
   answer({ error: 'refused', problems }, 403);
 
 /** A desk that threw, or answered out of shape: logged by rule, never by value. */
@@ -680,7 +711,7 @@ function failed(log: Log, action: string, rule: string, error?: unknown): Respon
 }
 
 /** Ask the desk and check its answer's shape: the answer, or the failure to send. */
-async function ask<T>(
+export async function ask<T>(
   log: Log,
   action: string,
   call: () => Promise<unknown>,
@@ -709,12 +740,15 @@ async function ask<T>(
  * house's flag. The flag is the session's (lib/auth/session-wallet.ts) —
  * never anything the request carries.
  */
-interface Who {
+export interface Who {
   readonly you: string;
   readonly house: boolean;
 }
 
-const whoIs = (asker: Asker): Who => ({ you: asker.wallet.toLowerCase(), house: asker.house });
+export const whoIs = (asker: Asker): Who => ({
+  you: asker.wallet.toLowerCase(),
+  house: asker.house,
+});
 
 /**
  * The organizations only the house enters, as the overview lists them: the
@@ -812,7 +846,9 @@ export async function answerStatement(
 }
 
 /** The account a GET names (`?cuenta=`), or the answer that refuses it. */
-function accountOf(url: URL): { ok: true; account: string } | { ok: false; response: Response } {
+export function accountOf(
+  url: URL,
+): { ok: true; account: string } | { ok: false; response: Response } {
   const account = url.searchParams.get('cuenta') ?? '';
   if (account.length === 0 || account.length > ID_MAX) {
     return { ok: false, response: answer({ error: 'cuenta: an account id is required' }, 400) };
@@ -975,7 +1011,7 @@ export async function answerHappened(
 }
 
 /** Read a POST's JSON body within limits, or the answer that refuses it. */
-async function bodyOf(
+export async function bodyOf(
   request: Request,
 ): Promise<{ ok: true; json: unknown } | { ok: false; response: Response }> {
   const type = (request.headers.get('content-type') ?? '').trim().toLowerCase();

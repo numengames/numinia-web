@@ -126,7 +126,7 @@ export type LogAnswer =
   { readonly ok: true; readonly accountId: string; readonly lines: readonly LogEntry[] } | Refusal;
 
 /** Reads the wallet, the organization and the house flag, adds the problems already found, and enters. */
-async function entering(
+export async function entering(
   db: TillDatabase,
   sentWallet: unknown,
   sentAccount: unknown,

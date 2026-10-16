@@ -128,6 +128,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Ajustes',
     },
     leads: {
+      agents: 'Las IAs de la comunidad: cuáles hay, si están encendidas y en qué estado.',
       summary: 'Lo que hay en el panel de esta organización, de un vistazo.',
       venues: 'Las sedes de la organización: los mundos que la casa le ha asignado.',
       members:
@@ -142,7 +143,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     notes: {
       gatherings: 'Publicar, mover y cerrar encuentros; quién va y su crónica.',
-      agents: 'Los agentes de la organización: qué hacen y quién los cuida.',
       memory: 'El archivo de la organización: sus ficheros, en su repositorio.',
       bazaar: 'Los objetos que la organización sube al Bazar.',
     },
@@ -201,6 +201,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Settings',
     },
     leads: {
+      agents:
+        "The community's AIs: which there are, whether they are on, and what state they are in.",
       summary: "What is in this organization's panel, at a glance.",
       venues: 'The organization’s homes: the worlds the house has assigned to it.',
       members:
@@ -216,7 +218,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     notes: {
       gatherings: 'Publish, move and close gatherings; who is going and their chronicle.',
-      agents: "The organization's agents: what they do and who looks after them.",
       memory: "The organization's archive: its files, in its own repository.",
       bazaar: 'The items the organization puts in the Bazaar.',
     },
@@ -275,6 +276,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: '設定',
     },
     leads: {
+      agents: 'コミュニティのAI：どのAIがいて、オンかオフか、どんな状態か。',
       summary: 'この組織のパネルにあるものを、ひと目で。',
       venues: '組織の拠点：ハウスが組織に割り当てたワールド。',
       members:
@@ -288,7 +290,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     notes: {
       gatherings: '集まりの公開・日程の変更・終了、参加者とその記録。',
-      agents: '組織のエージェント：何をしていて、誰が見ているか。',
       memory: '組織のアーカイブ：そのファイルを、組織自身のリポジトリで。',
       bazaar: '組織がバザールに出すアイテム。',
     },
@@ -347,6 +348,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: '설정',
     },
     leads: {
+      agents: '커뮤니티의 AI: 어떤 AI가 있고, 켜져 있는지, 어떤 상태인지.',
       summary: '이 조직의 패널에 있는 것을 한눈에.',
       venues: '조직의 거점: 하우스가 조직에 배정한 월드.',
       members:
@@ -360,7 +362,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     notes: {
       gatherings: '모임 게시, 일정 변경, 종료, 참석자와 기록.',
-      agents: '조직의 에이전트: 무엇을 하고 누가 돌보는지.',
       memory: '조직의 아카이브: 조직 자신의 저장소에 있는 파일들.',
       bazaar: '조직이 바자르에 올리는 아이템.',
     },
@@ -419,6 +420,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Configurações',
     },
     leads: {
+      agents: 'As IAs da comunidade: quais existem, se estão ligadas e em que estado.',
       summary: 'O que há no painel desta organização, num relance.',
       venues: 'As sedes da organização: os mundos que a casa atribuiu a ela.',
       members:
@@ -433,7 +435,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     notes: {
       gatherings: 'Publicar, mover e encerrar encontros; quem vai e a crônica.',
-      agents: 'Os agentes da organização: o que fazem e quem cuida deles.',
       memory: 'O arquivo da organização: seus arquivos, no seu repositório.',
       bazaar: 'Os objetos que a organização publica no Bazar.',
     },

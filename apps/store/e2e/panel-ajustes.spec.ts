@@ -131,13 +131,13 @@ test.describe('Ajustes', () => {
     await expect(cards.nth(0)).toContainText('Piezas');
     await expect(cards.nth(1)).toContainText('Cómo se llama cada cosa');
     await expect(cards.nth(2)).toContainText('Acceso de la casa');
-    // The seven screens that exist; summary and settings are always on, the other five have a switch.
-    await expect(page.locator('[data-settings-piece]')).toHaveCount(7);
+    // The eight screens that exist; summary and settings are always on, the other six have a switch.
+    await expect(page.locator('[data-settings-piece]')).toHaveCount(8);
     for (const id of ['summary', 'settings']) {
       await expect(piece(page, id)).toContainText('Siempre encendida');
       await expect(piece(page, id).getByRole('switch')).toHaveCount(0);
     }
-    for (const id of ['venues', 'members', 'gente', 'roles', 'balance']) {
+    for (const id of ['venues', 'members', 'gente', 'roles', 'agents', 'balance']) {
       await expect(piece(page, id)).toContainText('Encendida');
       await expect(piece(page, id).getByRole('switch')).toHaveAttribute('aria-checked', 'true');
       await expect(piece(page, id).getByRole('switch')).toHaveAttribute(
@@ -234,7 +234,7 @@ test.describe('Ajustes', () => {
     await expect(page.locator('[data-settings-readonly]')).toContainText(
       'Solo quien administra la comunidad puede cambiar esto.',
     );
-    for (const id of ['venues', 'members', 'gente', 'roles', 'balance']) {
+    for (const id of ['venues', 'members', 'gente', 'roles', 'agents', 'balance']) {
       await expect(piece(page, id).getByRole('switch')).toBeDisabled();
     }
     await expect(page.locator('.gente-seg button').first()).toBeDisabled();

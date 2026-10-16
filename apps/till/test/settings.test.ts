@@ -63,6 +63,7 @@ describe('the rules of the settings', () => {
     expect(readOff([])).toEqual([]);
     expect(readOff(['balance', 'venues'])).toEqual(['venues', 'balance']);
     expect(readOff(['balance', 'gente', 'venues'])).toEqual(['venues', 'gente', 'balance']);
+    expect(readOff(['agents', 'roles'])).toEqual(['roles', 'agents']);
     for (const value of [
       'venues',
       null,
