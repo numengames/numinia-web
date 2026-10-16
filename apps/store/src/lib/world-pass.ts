@@ -27,6 +27,20 @@
  *     name    the display name the person chose (opt-in); absent means the engine shows a guest name
  *     iat/exp seconds since the epoch; exp = iat + 600
  *
+ * The pass of an organization's AI (cut «IAs de organización», 2026-10-17; asked for by the AI's
+ * bridge at POST /api/agents/pass, lib/agent-pass.ts) is the same JWS with the same key and three
+ * fields more, which only an AI's pass carries — a person's pass stays byte for byte what it was:
+ *     kind    "agent"
+ *     state   "activa" | "dormida" (asleep: it watches and listens, and `perm` leaves out
+ *             `build-in-worlds`)
+ *     sub     `a_` + 32 hex: the first 16 bytes of HMAC-SHA256(key = AUTH_SESSION_SECRET,
+ *             msg = "world-pass-agent:" + org + ":" + agent id)
+ *     name    always: the agent's name (the engine adds « · IA»)
+ *     perm    already trimmed: what the agent's roles give, no more than the person who answers
+ *             for it holds (ORG-011), within {enter-worlds, build-in-worlds}
+ *     height  accessOf's: a role position, never an owner's nor the house's
+ * The verifier below accepts these fields and still refuses any other extra.
+ *
  * Key: the Worker secret `WORLD_PASS_PRIVATE_KEY` (Ed25519, PKCS8, base64). Its public half is published
  * at `GET /.well-known/world-pass-key.json` as `{ alg: "Ed25519", kid, publicKey }`, `publicKey` being the
  * raw 32 bytes in base64url and `kid` the first 8 hex digits of its SHA-256; the header's `kid` names it.
@@ -71,6 +85,12 @@ interface PassRole {
   readonly color: string | null;
 }
 
+/** What an AI's pass may carry of the world's permissions. */
+export const AGENT_PASS_PERMISSIONS = [
+  'enter-worlds',
+  'build-in-worlds',
+] as const satisfies readonly WorldPassPermission[];
+
 export interface PassPayload {
   readonly v: 1;
   readonly iss: 'numinia.com';
@@ -81,6 +101,10 @@ export interface PassPayload {
   readonly height: number;
   readonly roles: readonly PassRole[];
   readonly name?: string;
+  /** Only an AI's pass: `agent`. */
+  readonly kind?: 'agent';
+  /** Only an AI's pass. */
+  readonly state?: 'activa' | 'dormida';
   readonly iat: number;
   readonly exp: number;
 }
@@ -119,8 +143,8 @@ const hex = (bytes: Uint8Array): string =>
 
 // ---- the person --------------------------------------------------------------
 
-/** The opaque id of a person in a pass: stable, one-way, never the wallet. */
-export async function personSub(secret: string, wallet: string): Promise<string> {
+/** The first 16 bytes of HMAC-SHA256(secret, message), in hex. */
+async function mac16(secret: string, message: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
     utf8(secret),
@@ -128,10 +152,18 @@ export async function personSub(secret: string, wallet: string): Promise<string>
     false,
     ['sign'],
   );
-  const mac = new Uint8Array(
-    await crypto.subtle.sign('HMAC', key, utf8(`world-pass-sub:${wallet.toLowerCase()}`)),
-  );
-  return `p_${hex(mac.slice(0, 16))}`;
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', key, utf8(message)));
+  return hex(mac.slice(0, 16));
+}
+
+/** The opaque id of a person in a pass: stable, one-way, never the wallet. */
+export async function personSub(secret: string, wallet: string): Promise<string> {
+  return `p_${await mac16(secret, `world-pass-sub:${wallet.toLowerCase()}`)}`;
+}
+
+/** The opaque id of an organization's AI in a pass: stable, one-way, one per organization and agent. */
+export async function agentSub(secret: string, org: string, agent: string): Promise<string> {
+  return `a_${await mac16(secret, `world-pass-agent:${org}:${agent}`)}`;
 }
 
 // ---- keys --------------------------------------------------------------------
@@ -240,6 +272,53 @@ export async function buildPassPayload(input: PassInput): Promise<PassPayload> {
   };
 }
 
+export interface AgentPassInput {
+  readonly aud: string;
+  readonly org: string;
+  /** AUTH_SESSION_SECRET, the HMAC key of `sub`. */
+  readonly secret: string;
+  readonly agent: string;
+  readonly name: string;
+  readonly state: 'activa' | 'dormida';
+  /** What the till says the agent holds (accessOf with its person, ORG-011). */
+  readonly access: { readonly permissions: readonly string[]; readonly height: number };
+  /** The roles the agent holds besides the base role, highest first. */
+  readonly roles: readonly PassRole[];
+  /** Seconds since the epoch. */
+  readonly now: number;
+}
+
+/**
+ * What the till says an AI is in this organization, as a pass payload: only
+ * entering and building survive, building only while it is awake, and the
+ * height is a role position — anything else (an owner's, the house's) is
+ * not an AI's and falls to the lowest.
+ */
+export async function buildAgentPassPayload(input: AgentPassInput): Promise<PassPayload> {
+  const may = new Set<string>(input.access.permissions);
+  const perm = AGENT_PASS_PERMISSIONS.filter(
+    (id) => may.has(id) && !(id === 'build-in-worlds' && input.state === 'dormida'),
+  );
+  const { height } = input.access;
+  return {
+    v: 1,
+    iss: 'numinia.com',
+    aud: input.aud,
+    sub: await agentSub(input.secret, input.org, input.agent),
+    org: input.org,
+    perm,
+    height: Number.isSafeInteger(height) && height >= 0 && height < HOUSE_HEIGHT ? height : 0,
+    roles: input.roles
+      .slice(0, MAX_ROLES)
+      .map((role) => ({ name: role.name.slice(0, NAME_MAX), color: role.color })),
+    name: input.name.slice(0, NAME_MAX),
+    kind: 'agent',
+    state: input.state,
+    iat: input.now,
+    exp: input.now + PASS_TTL_SECONDS,
+  };
+}
+
 // ---- the verifier (the engine copies this) -----------------------------------
 
 export type PassVerdict =
@@ -250,6 +329,22 @@ export type PassVerdict =
     };
 
 const REQUIRED = ['v', 'iss', 'aud', 'sub', 'org', 'perm', 'height', 'roles', 'iat', 'exp'];
+const OPTIONAL = ['name', 'kind', 'state'];
+const AGENT_SUB = /^a_[0-9a-f]{32}$/;
+
+/**
+ * `kind` and `state` belong to an AI's pass together: an AI's pass says `agent`, a
+ * state, its name and an `a_…` sub; a person's carries neither field.
+ */
+function agentFieldsOk(record: Record<string, unknown>): boolean {
+  if (record['kind'] === undefined) return record['state'] === undefined;
+  return (
+    record['kind'] === 'agent' &&
+    (record['state'] === 'activa' || record['state'] === 'dormida') &&
+    isText(record['name']) &&
+    AGENT_SUB.test(record['sub'] as string)
+  );
+}
 
 const isText = (value: unknown): value is string => typeof value === 'string';
 
@@ -268,7 +363,7 @@ function readPayload(json: unknown): PassPayload | null {
   const keys = Object.keys(record);
   const exact =
     REQUIRED.every((key) => keys.includes(key)) &&
-    keys.every((key) => REQUIRED.includes(key) || key === 'name');
+    keys.every((key) => REQUIRED.includes(key) || OPTIONAL.includes(key));
   const roleOk = (role: unknown): boolean => {
     const r = role as Record<string, unknown> | null;
     return (
@@ -292,7 +387,8 @@ function readPayload(json: unknown): PassPayload | null {
     record['roles'].every(roleOk) &&
     (record['name'] === undefined || isText(record['name'])) &&
     typeof record['iat'] === 'number' &&
-    typeof record['exp'] === 'number';
+    typeof record['exp'] === 'number' &&
+    agentFieldsOk(record);
   return valid ? (record as unknown as PassPayload) : null;
 }
 

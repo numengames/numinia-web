@@ -85,6 +85,14 @@ const RATE_RULES: ReadonlyArray<{
   // The lines a wallet signs before giving «Administrador» (ORG-008): the
   // desk is only read, but each answer is a token under the session secret.
   { test: (m, p) => m === 'POST' && p === '/api/saldo/signature', key: 'saldo-sign', limit: 30 },
+  // «IAs de organización»: creating, switching and removing an AI are writes on the till.
+  {
+    test: (m, p) => (m === 'POST' || m === 'PATCH' || m === 'DELETE') && p === '/api/saldo/agents',
+    key: 'agents-write',
+    limit: 30,
+  },
+  // An AI's bridge renews its pass every ~8 minutes; the doorman only stops a loop.
+  { test: (m, p) => m === 'POST' && p === '/api/agents/pass', key: 'agent-pass', limit: 120 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },

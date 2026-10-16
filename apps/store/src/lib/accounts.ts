@@ -244,7 +244,14 @@ export type DeskLogAct =
   | 'role-edited'
   | 'role-moved'
   | 'role-deleted'
-  | 'settings-changed';
+  | 'settings-changed'
+  | 'agent-created'
+  | 'agent-enabled'
+  | 'agent-disabled'
+  | 'agent-state'
+  | 'agent-removed'
+  | 'agent-role-given'
+  | 'agent-role-taken';
 
 export interface DeskLogLine {
   seq: number;
@@ -282,6 +289,67 @@ export interface DeskHappening extends DeskLogLine {
 }
 export type DeskHappeningsAnswer =
   { ok: true; accountId: string; lines: DeskHappening[]; more: boolean } | DeskRefusal;
+
+/**
+ * «IAs de organización» (2026-10-17): the AIs an organization sends into its
+ * worlds. `state` is a closed list that grows by adding values; it only counts
+ * while `enabled`. `status` is what the next pass will be, worked out by the
+ * till from the tables: off, orphaned (the person who answers for it left or
+ * lost manage-roles), without the permission to enter, or its state.
+ */
+export type AgentState = 'activa' | 'dormida';
+export type AgentStatus = 'apagada' | 'sin-responsable' | 'sin-permiso' | AgentState;
+
+export interface DeskAgent {
+  id: string;
+  name: string;
+  publicKey: string;
+  enabled: boolean;
+  state: AgentState;
+  status: AgentStatus;
+  responsible: string;
+  responsibleName?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  roleIds: string[];
+  assignable: string[];
+  mayEdit: boolean;
+}
+
+export interface DeskAgents {
+  ok: true;
+  accountId: string;
+  as: 'owner' | 'house' | 'member';
+  mayCreate: boolean;
+  assignableRoles: { id: string; name: string; color: string | null; position: number }[];
+  agents: DeskAgent[];
+}
+export type DeskAgentsAnswer = DeskAgents | DeskRefusal;
+
+export interface DeskAgentDraft {
+  id: string;
+  name: string;
+  publicKey: string;
+  roleIds?: string[] | undefined;
+}
+
+export interface DeskAgentChange {
+  enabled?: boolean | undefined;
+  state?: AgentState | undefined;
+}
+
+/** What an agent's pass is made of (asked with no wallet, by the pass route, before it signs). */
+export interface DeskAgentPass {
+  ok: true;
+  accountId: string;
+  agent: { id: string; name: string; publicKey: string; enabled: boolean; state: AgentState };
+  eligible: boolean;
+  permissions: string[];
+  height: number;
+  roles: { name: string; color: string | null }[];
+}
+export type DeskAgentPassAnswer = DeskAgentPass | DeskRefusal;
+export type DeskClaimAnswer = { ok: true } | DeskRefusal;
 
 export type DeskConfirmAnswer =
   { ok: true; state: CheckoutState; accountId: string; balanceCents: number } | DeskRefusal;
@@ -456,6 +524,52 @@ export interface AccountDesk {
     house: boolean,
     communities: readonly { readonly id: string; readonly name: string }[],
   ): Promise<DeskOpenAllAnswer>;
+  /** «IAs de organización»: the organization's agents, to a member or the house (optional). */
+  agents(wallet: string, accountId: string, house?: boolean): Promise<DeskAgentsAnswer>;
+  /** A new agent; the creator answers for it (ORG-011); logged (optional). */
+  createAgent(
+    wallet: string,
+    accountId: string,
+    agent: DeskAgentDraft,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  /** Switches an agent on or off and/or sets its state; logged (optional). */
+  changeAgent(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    change: DeskAgentChange,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  removeAgent(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  giveAgentRole(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    roleId: string,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  takeAgentRole(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    roleId: string,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  /** What an agent's pass is made of; read-only, asked before the signature is verified (optional). */
+  agentPass(accountId: string, agentId: string): Promise<DeskAgentPassAnswer>;
+  /** Uses up one signed pass request (agent, world, second): a second use is refused (optional). */
+  claimAgentPass(
+    accountId: string,
+    agentId: string,
+    aud: string,
+    t: number,
+  ): Promise<DeskClaimAnswer>;
 }
 
 /**
@@ -504,6 +618,14 @@ export const DESK_METHODS = [
   'changeSettings',
   'happenings',
   'openAllCommunities',
+  'agents',
+  'createAgent',
+  'changeAgent',
+  'removeAgent',
+  'giveAgentRole',
+  'takeAgentRole',
+  'agentPass',
+  'claimAgentPass',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -519,6 +641,8 @@ export const DESK_METHODS = [
  * And one without `settings`, `changeSettings` and `happenings` (cut «Ajustes de la
  * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
  * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
+ * And one without the eight agent methods (cut «IAs de organización»): the agents
+ * routes and /api/agents/pass answer 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -535,6 +659,14 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'changeSettings',
   'happenings',
   'openAllCommunities',
+  'agents',
+  'createAgent',
+  'changeAgent',
+  'removeAgent',
+  'giveAgentRole',
+  'takeAgentRole',
+  'agentPass',
+  'claimAgentPass',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
