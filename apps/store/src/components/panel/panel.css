@@ -1229,3 +1229,79 @@
   text-decoration: none;
   text-align: center;
 }
+
+/* ---- «Ajustes» (cut 8): the pieces, the words and the house's access, one card each ---- */
+.ajustes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+.ajustes-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+.ajustes-tarjeta p {
+  margin: 0;
+}
+.ajustes-h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  font-size: 1.125rem;
+}
+.ajustes-piezas {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+}
+.ajustes-pieza {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s3);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.ajustes-pieza[data-on='false'] {
+  color: var(--texto-3);
+  border-style: dashed;
+}
+.ajustes-pieza-cuerpo {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ajustes-pieza-cuerpo b {
+  font-weight: 500;
+  color: var(--texto);
+}
+.ajustes-pieza[data-on='false'] .ajustes-pieza-cuerpo b {
+  color: var(--texto-2);
+}
+.ajustes-pieza-cuerpo span {
+  color: var(--texto-2);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+.gente-seg button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--verdemar) 14%, transparent);
+  color: var(--texto);
+}
+.gente-seg button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.sedes-entran {
+  color: var(--texto-2);
+  font-size: 0.875rem;
+}

@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.107.0',
+    date: '2026-10-16 19:19',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Settings of the community, a new piece of the panel. Each community switches on only the pieces it uses, picks how the panel names things — simple, mixed or Numinia words, on screen only — and reads how the house comes in to help. What is off leaves the rail and the cards, and the address of a piece that is off says so plainly, with a button to turn it on for whoever manages the community. Every change is written in the community’s log. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: '«What happened» in the panel’s summary is now the community’s log as a readable list: who, what and when in your own time zone, newest first, thirty at a time with «See more»; the house’s reads show as «The house» with its name. A world’s page and the panel’s Venues say who may enter and name the people who can, and the address of a world that does not exist now answers 404. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.105.0',
     date: '2026-10-16 14:48',
     entries: [

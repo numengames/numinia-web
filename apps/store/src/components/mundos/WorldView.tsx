@@ -9,7 +9,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { WorldPageMessages } from '../../i18n/mundos';
-import { fill } from '../../lib/accounts';
+import { fill, readRoles, type DeskRoles } from '../../lib/accounts';
+import { enterersOf, personLabel, shownPeople } from '../../lib/world-people';
 import { enterWorld, loadWorldPage, type PageSheet } from '../../lib/mundos';
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
@@ -18,6 +19,73 @@ type Read = { readonly at: 'loading' } | PageSheet;
 
 /** The panel's pieces the administration block leads to, in the order it draws them. */
 const MANAGE_PIECES = ['venues', 'members', 'balance'] as const;
+
+/**
+ * «Quién entra», read from the organization's roles — what the till already says to people in
+ * it and to the house: nothing is asked twice and nothing is made up. Where the till does not
+ * answer, the block is not drawn.
+ */
+function Enters({ org, words }: { readonly org: string; readonly words: WorldPageMessages }) {
+  const [view, setView] = useState<DeskRoles | null>(null);
+
+  useEffect(() => {
+    let current = true;
+    fetch(`/api/saldo/roles?cuenta=${encodeURIComponent(org)}`, {
+      headers: { accept: 'application/json' },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((json: unknown) => {
+        if (current) setView(readRoles(json)?.roles ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [org]);
+
+  if (view === null) return null;
+  const found = enterersOf(view);
+  const { list, rest } = shownPeople(found.people);
+  return (
+    <section
+      className="saldo-marco mundo-entran"
+      aria-labelledby="mundo-entran-t"
+      data-world-enters
+    >
+      <h2 id="mundo-entran-t">{words.enters.title}</h2>
+      {found.everyone ? (
+        <p className="saldo-nota">{words.enters.everyone}</p>
+      ) : (
+        found.roles.length > 0 && (
+          <>
+            <p className="saldo-nota">{words.enters.roles}</p>
+            <p className="saldo-chips">
+              {found.roles.map((role) => (
+                <span key={role.id} className="saldo-chip" data-world-enter-role>
+                  {role.name}
+                </span>
+              ))}
+            </p>
+          </>
+        )
+      )}
+      <p className="saldo-nota">{words.enters.owners}</p>
+      <h3 className="etiqueta">{words.enters.people}</h3>
+      {list.length === 0 ? (
+        <p className="saldo-nota">{words.enters.none}</p>
+      ) : (
+        <ul className="mundo-gente" data-world-people>
+          {list.map((member) => (
+            <li key={member.wallet} data-world-person>
+              {personLabel(member)}
+            </li>
+          ))}
+          {rest > 0 && <li className="saldo-nota">{fill(words.enters.more, { n: rest })}</li>}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 export function WorldView({
   worldId,
@@ -144,6 +212,9 @@ export function WorldView({
             </p>
           )}
         </section>
+      )}
+      {page !== null && page.manage && home !== null && (
+        <Enters org={home.accountId} words={words} />
       )}
       {page !== null && page.manage && home !== null && (
         <section

@@ -326,12 +326,20 @@ test.describe('the panel’s Resumen', () => {
     for (const link of await cards.locator('a').all()) {
       await expect(link).toHaveAttribute('data-metric', /^panel-summary-/);
     }
+    // «Qué ha pasado» is the organization's log and nothing else: this wallet's own acts, here two changes.
+    for (const vocabulary of ['simple', 'mixed']) {
+      const changed = await page.request.post(`${origin}/api/saldo/settings`, {
+        data: { accountId: NUMEN, vocabulary },
+      });
+      expect(changed.ok()).toBe(true);
+    }
+    await page.reload();
     const latest = page.locator('[data-summary-latest]');
     await expect(latest).toContainText('Qué ha pasado');
-    const entries = latest.locator('li');
-    expect(await entries.count()).toBeGreaterThan(0);
-    expect(await entries.count()).toBeLessThanOrEqual(5);
-    await expect(latest).toContainText(/Recarga de 50,00\s€/);
+    const entries = latest.locator('[data-happened-list] li');
+    await expect(entries).toHaveCount(2);
+    await expect(entries.first()).toContainText('Ajustes de la comunidad cambiados');
+    await expect(entries.first().locator('time')).toHaveAttribute('datetime', /Z$/);
     await expect(latest.locator('[data-metric="panel-summary-log"]')).toHaveAttribute(
       'href',
       `/es/panel/miembros/?org=${NUMEN}`,

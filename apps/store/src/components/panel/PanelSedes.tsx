@@ -10,8 +10,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { VenuesMessages } from '../../i18n/mundos';
 import type { PanelMessages } from '../../i18n/panel';
-import { fill } from '../../lib/accounts';
+import { fill, readRoles } from '../../lib/accounts';
 import { counted, enterWorld, loadOrgWorlds, worldHref, type Sheet } from '../../lib/mundos';
+import { enterCount, enterersOf } from '../../lib/world-people';
 import type { OrgWorld } from '../../lib/worlds-homes';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame } from './PanelFrame';
@@ -30,6 +31,8 @@ function Venues({
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
   const [failed, setFailed] = useState(false);
+  // How many people of the organization may enter: what its roles say, or nothing when the till does not.
+  const [mayEnter, setMayEnter] = useState<number | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setRead({ at: 'loading' });
@@ -39,6 +42,22 @@ function Venues({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let current = true;
+    fetch(`/api/saldo/roles?cuenta=${encodeURIComponent(org)}`, {
+      headers: { accept: 'application/json' },
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((json: unknown) => {
+        const view = readRoles(json)?.roles;
+        if (current) setMayEnter(view === undefined ? null : enterersOf(view).people.length);
+      })
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+  }, [org]);
 
   /** «Entrar»: the world's address (with the pass for a member); the world's page when there is none. */
   const enter = useCallback(async (worldId: string): Promise<void> => {
@@ -98,6 +117,11 @@ function Venues({
                 <span className="sedes-cuerpo">
                   <span className="etiqueta">{words.address}</span>
                   <strong className="mono sedes-nombre">{world.worldId}</strong>
+                  {mayEnter !== null && (
+                    <span className="sedes-entran" data-venue-enterers>
+                      {enterCount(mayEnter, words.enterers)}
+                    </span>
+                  )}
                 </span>
                 <a
                   className="btn btn-primario"

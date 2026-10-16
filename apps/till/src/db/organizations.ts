@@ -63,7 +63,8 @@ export type LogAct =
   | 'role-created'
   | 'role-edited'
   | 'role-moved'
-  | 'role-deleted';
+  | 'role-deleted'
+  | 'settings-changed';
 
 const KNOWN: ReadonlySet<unknown> = new Set(ORGANIZATION_PERMISSIONS);
 const SETTINGS: ReadonlySet<unknown> = new Set(HOUSE_ACCESS_SETTINGS);

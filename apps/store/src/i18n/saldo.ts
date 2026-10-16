@@ -511,6 +511,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'role-edited': 'Rol editado',
         'role-moved': 'Rol movido',
         'role-deleted': 'Rol borrado',
+        'settings-changed': 'Ajustes de la comunidad cambiados',
       },
     },
     referrals: {
@@ -760,6 +761,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'role-edited': 'Role edited',
         'role-moved': 'Role moved',
         'role-deleted': 'Role deleted',
+        'settings-changed': 'Community settings changed',
       },
     },
     referrals: {
@@ -1008,6 +1010,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'role-edited': 'ロールを編集',
         'role-moved': 'ロールを移動',
         'role-deleted': 'ロールを削除',
+        'settings-changed': 'コミュニティの設定を変更',
       },
     },
     referrals: {
@@ -1253,6 +1256,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'role-edited': '역할 편집',
         'role-moved': '역할 이동',
         'role-deleted': '역할 삭제',
+        'settings-changed': '커뮤니티 설정 변경',
       },
     },
     referrals: {
@@ -1506,6 +1510,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'role-edited': 'Papel editado',
         'role-moved': 'Papel movido',
         'role-deleted': 'Papel apagado',
+        'settings-changed': 'Ajustes da comunidade alterados',
       },
     },
     referrals: {

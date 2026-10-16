@@ -117,6 +117,7 @@ describe('the migration', () => {
       '0006_wallet_profiles.sql',
       '0007_wallet_sign_ins.sql',
       '0008_world_placements.sql',
+      '0010_organization_settings.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -132,6 +133,7 @@ describe('the migration', () => {
         'close_reports',
         'keep_marks',
         'ledger_lines',
+        'organization_settings',
         'stripe_cursor',
         'tariff_versions',
         'team_log',

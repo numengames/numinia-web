@@ -93,6 +93,9 @@ import {
   type DeskRoleDraft,
   type DeskRoles,
   type DeskRolesAnswer,
+  type DeskSettings,
+  type DeskSettingsAnswer,
+  type DeskHappeningsAnswer,
   type DeskOverview,
   type DeskPace,
   type DeskProfile,
@@ -112,6 +115,15 @@ import {
   type TopupKey,
 } from './accounts';
 import { communityAccountId, readCommunityId } from './community-teams';
+import {
+  DEFAULT_VOCABULARY,
+  HAPPENINGS_PAGE,
+  SWITCHABLE_PIECES,
+  isSwitchable,
+  isVocabulary,
+  type SwitchablePiece,
+  type Vocabulary,
+} from './panel-settings';
 import { readProfileChange } from './profile-name';
 import { PLACEMENT_PROBLEMS, readAccountId, readWorldId, readWorldIds } from './worlds-homes';
 
@@ -822,6 +834,50 @@ export function createAccountsFixtureDesk(
     members: copy(book.members),
   });
 
+  // ---- «Ajustes de la comunidad»: shared by every wallet's copy, as the till's organization_settings ----
+  const settings = new WeakMap<Book, { off: SwitchablePiece[]; vocabulary: Vocabulary }>();
+  const settingsOf = (book: Book): { off: SwitchablePiece[]; vocabulary: Vocabulary } =>
+    settings.get(book) ?? { off: [], vocabulary: DEFAULT_VOCABULARY };
+  const settingsView = ({ book, who, as }: Entry): DeskSettings => ({
+    ok: true,
+    accountId: book.id,
+    ...copy(settingsOf(book)),
+    mayEdit: accessIn(book, who, as).permissions.has('manage-organization'),
+  });
+  /** The till's reading of a change: only `off` (pieces that may be off) and `vocabulary`. */
+  const readSettingsChange = (
+    change: unknown,
+  ): { off?: SwitchablePiece[]; vocabulary?: Vocabulary } | { problems: string[] } => {
+    const sent =
+      typeof change === 'object' && change !== null ? (change as Record<string, unknown>) : {};
+    const keys = Object.keys(sent);
+    const off = sent['off'];
+    const vocabulary = sent['vocabulary'];
+    const offOk =
+      off === undefined ||
+      (Array.isArray(off) &&
+        off.every((piece) => typeof piece === 'string' && isSwitchable(piece)) &&
+        new Set(off).size === off.length);
+    const vocabularyOk = vocabulary === undefined || isVocabulary(vocabulary);
+    if (keys.length === 0 || keys.some((key) => key !== 'off' && key !== 'vocabulary')) {
+      return { problems: ['change must be an object with off and/or vocabulary, nothing else'] };
+    }
+    if (!offOk || !vocabularyOk) {
+      return {
+        problems: [
+          ...(offOk ? [] : ['off must be a list of pieces, each once']),
+          ...(vocabularyOk ? [] : ['vocabulary must be one of: simple, mixed, numinia']),
+        ],
+      };
+    }
+    return {
+      ...(off === undefined
+        ? {}
+        : { off: SWITCHABLE_PIECES.filter((piece) => (off as string[]).includes(piece)) }),
+      ...(vocabulary === undefined ? {} : { vocabulary: vocabulary as Vocabulary }),
+    };
+  };
+
   return {
     overview: async (wallet): Promise<DeskOverview | DeskRefusal> => {
       const who = typeof wallet === 'string' ? walletOf(wallet) : null;
@@ -1387,6 +1443,59 @@ export function createAccountsFixtureDesk(
       for (const books of wallets.values()) books.push(book);
       record({ book, who: asking.who, as: 'house' }, 'organization-created', null, { name: clean });
       return { ok: true, account: { id, name: clean, created: true } };
+    },
+
+    // ---- «Ajustes de la comunidad» (cut 8): pieces, words and «Qué ha pasado» ----
+
+    settings: async (wallet, accountId, house): Promise<DeskSettingsAnswer> => {
+      const found = entering(wallet, accountId, house);
+      if ('ok' in found) return found;
+      houseRead(found, 'settings');
+      return settingsView(found);
+    },
+
+    changeSettings: async (wallet, accountId, change, house): Promise<DeskSettingsAnswer> => {
+      const read = readSettingsChange(change);
+      const found = managed(wallet, accountId, 'manage-organization', house);
+      if ('ok' in found) return found;
+      if ('problems' in read) return refuse(...read.problems);
+      const before = settingsOf(found.book);
+      const off = read.off ?? before.off;
+      const vocabulary = read.vocabulary ?? before.vocabulary;
+      const piecesChanged = off.join() !== before.off.join();
+      const wordsChanged = vocabulary !== before.vocabulary;
+      if (piecesChanged || wordsChanged) {
+        settings.set(found.book, { off, vocabulary });
+        record(found, 'settings-changed', null, {
+          ...(piecesChanged ? { off: off.join(',') } : {}),
+          ...(wordsChanged ? { vocabulary } : {}),
+        });
+      }
+      return settingsView(found);
+    },
+
+    happenings: async (wallet, accountId, before, house): Promise<DeskHappeningsAnswer> => {
+      const after = before === undefined || before === null ? null : before;
+      const found = entering(wallet, accountId, house);
+      if ('ok' in found) return found;
+      if (after !== null && !(Number.isSafeInteger(after) && after > 0)) {
+        return refuse('before must be the number of a line of the log, or null');
+      }
+      if (after === null) houseRead(found, 'happenings');
+      const older = [...found.book.changes]
+        .reverse()
+        .filter((line) => after === null || line.seq < after);
+      return {
+        ok: true,
+        accountId: found.book.id,
+        lines: copy(
+          older.slice(0, HAPPENINGS_PAGE).map((line) => ({
+            ...line,
+            actorName: profiles.get(line.actor)?.name ?? null,
+          })),
+        ),
+        more: older.length > HAPPENINGS_PAGE,
+      };
     },
   };
 }

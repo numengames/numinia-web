@@ -52,11 +52,19 @@ export interface PanelSummaryMessages {
   readonly latest: {
     readonly label: string;
     readonly title: string;
-    /** `{amount}`: a top-up of the statement. */
-    readonly topup: string;
     readonly empty: string;
     /** The way to the whole log, in «Miembros y roles». */
     readonly log: string;
+    /** «Ver más»: the next thirty lines. */
+    readonly more: string;
+    readonly loading: string;
+    readonly failed: string;
+    readonly retry: string;
+    /** For an act this site does not know yet: never its id. */
+    readonly generic: string;
+    /** The house acting with no published name; and `{name}`, under one. */
+    readonly house: string;
+    readonly houseNamed: string;
     readonly acts: Readonly<Record<DeskLogAct, string>>;
   };
 }
@@ -105,9 +113,15 @@ export const PANEL_SUMMARY_UI: Readonly<Record<SupportedLocale, PanelSummaryMess
     latest: {
       label: 'Lo último',
       title: 'Qué ha pasado',
-      topup: 'Recarga de {amount}',
       empty: 'Todavía no ha pasado nada que contar.',
       log: 'Ver el registro completo',
+      more: 'Ver más',
+      loading: 'Leyendo lo que ha pasado…',
+      failed: 'No se ha podido leer lo que ha pasado.',
+      retry: 'Reintentar',
+      generic: 'Algo cambió en la comunidad',
+      house: 'La casa',
+      houseNamed: 'La casa ({name})',
       acts: ES.acts,
     },
   },
@@ -133,9 +147,15 @@ export const PANEL_SUMMARY_UI: Readonly<Record<SupportedLocale, PanelSummaryMess
     latest: {
       label: 'The latest',
       title: 'What happened',
-      topup: 'Top-up of {amount}',
       empty: 'Nothing worth telling has happened yet.',
       log: 'See the whole log',
+      more: 'See more',
+      loading: 'Reading what happened…',
+      failed: 'What happened could not be read.',
+      retry: 'Try again',
+      generic: 'Something changed in the community',
+      house: 'The house',
+      houseNamed: 'The house ({name})',
       acts: EN.acts,
     },
   },
@@ -161,9 +181,15 @@ export const PANEL_SUMMARY_UI: Readonly<Record<SupportedLocale, PanelSummaryMess
     latest: {
       label: '最新',
       title: '最近の出来事',
-      topup: '{amount}のチャージ',
       empty: 'まだ伝えることは何も起きていません。',
       log: '記録をすべて見る',
+      more: 'もっと見る',
+      loading: '出来事を読み込み中…',
+      failed: '出来事を読み込めませんでした。',
+      retry: 'もう一度',
+      generic: 'コミュニティで何かが変わりました',
+      house: 'ハウス',
+      houseNamed: 'ハウス（{name}）',
       acts: JA.acts,
     },
   },
@@ -189,9 +215,15 @@ export const PANEL_SUMMARY_UI: Readonly<Record<SupportedLocale, PanelSummaryMess
     latest: {
       label: '최신',
       title: '최근 있었던 일',
-      topup: '{amount} 충전',
       empty: '아직 전할 만한 일이 없습니다.',
       log: '전체 기록 보기',
+      more: '더 보기',
+      loading: '있었던 일을 읽는 중…',
+      failed: '있었던 일을 읽지 못했습니다.',
+      retry: '다시 시도',
+      generic: '커뮤니티에서 무언가 바뀌었습니다',
+      house: '하우스',
+      houseNamed: '하우스({name})',
       acts: KO.acts,
     },
   },
@@ -217,9 +249,15 @@ export const PANEL_SUMMARY_UI: Readonly<Record<SupportedLocale, PanelSummaryMess
     latest: {
       label: 'O mais recente',
       title: 'O que aconteceu',
-      topup: 'Recarga de {amount}',
       empty: 'Ainda não aconteceu nada que valha contar.',
       log: 'Ver o registro completo',
+      more: 'Ver mais',
+      loading: 'Lendo o que aconteceu…',
+      failed: 'Não foi possível ler o que aconteceu.',
+      retry: 'Tentar de novo',
+      generic: 'Algo mudou na comunidade',
+      house: 'A casa',
+      houseNamed: 'A casa ({name})',
       acts: PT.acts,
     },
   },

@@ -38,6 +38,15 @@ export interface PanelMessages {
   readonly none: { readonly text: string; readonly cta: string };
   /** The till is not bound, did not answer, or the person asks again (Saldo's words). */
   readonly desk: { readonly notBound: string; readonly failed: string; readonly retry: string };
+  /** A piece the community switched off, reached by its address: said plainly, with the way to turn it on. */
+  readonly off: {
+    readonly title: string;
+    /** `{piece}`: the piece's name. */
+    readonly text: string;
+    readonly turnOn: string;
+    readonly noRight: string;
+    readonly failed: string;
+  };
   /** What each piece is called, in the rail, on its card and above its screen. */
   readonly names: Readonly<Record<OrgPiece, string>>;
   /** What a screen that exists says under its title (and on its card). */
@@ -98,6 +107,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       cta: 'Ir a Saldo',
     },
     desk: shared('es').desk,
+    off: {
+      title: 'Esta pieza está apagada',
+      text: '«{piece}» está apagada en esta comunidad.',
+      turnOn: 'Encenderla',
+      noRight: 'Quien administra la comunidad puede encenderla en Ajustes.',
+      failed: 'No se ha podido encender. Inténtalo otra vez.',
+    },
     names: {
       summary: shared('es').summary,
       venues: 'Sedes',
@@ -119,13 +135,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'Cada organización crea sus roles, los ordena y decide qué puede hacer cada uno. Arriba manda más.',
       balance:
         'El saldo de la organización: no caduca, se recarga cuando haga falta y se ve en qué se gasta.',
+      settings: 'Cada comunidad enciende solo las piezas que usa y decide cómo se llama cada cosa.',
     },
     notes: {
       gatherings: 'Publicar, mover y cerrar encuentros; quién va y su crónica.',
       agents: 'Los agentes de la organización: qué hacen y quién los cuida.',
       memory: 'El archivo de la organización: sus ficheros, en su repositorio.',
       bazaar: 'Los objetos que la organización sube al Bazar.',
-      settings: 'Qué piezas enciende la organización y cómo se llama cada cosa.',
     },
     rooms: shared('es').rooms,
     standing: {
@@ -161,6 +177,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       cta: 'Go to Balance',
     },
     desk: shared('en').desk,
+    off: {
+      title: 'This piece is off',
+      text: '“{piece}” is switched off in this community.',
+      turnOn: 'Turn it on',
+      noRight: 'Whoever manages the community can turn it on in Settings.',
+      failed: 'It could not be turned on. Try again.',
+    },
     names: {
       summary: shared('en').summary,
       venues: 'Homes',
@@ -182,13 +205,14 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'Each organization makes its own roles, orders them and decides what each one may do. Higher up commands more.',
       balance:
         "The organization's balance: it never expires, you top up when needed and see what it is spent on.",
+      settings:
+        'Each community switches on only the pieces it uses and decides what each thing is called.',
     },
     notes: {
       gatherings: 'Publish, move and close gatherings; who is going and their chronicle.',
       agents: "The organization's agents: what they do and who looks after them.",
       memory: "The organization's archive: its files, in its own repository.",
       bazaar: 'The items the organization puts in the Bazaar.',
-      settings: 'Which pieces the organization switches on and what each thing is called.',
     },
     rooms: shared('en').rooms,
     standing: {
@@ -224,6 +248,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       cta: '残高へ',
     },
     desk: shared('ja').desk,
+    off: {
+      title: 'この機能はオフです',
+      text: '「{piece}」はこのコミュニティでオフになっています。',
+      turnOn: 'オンにする',
+      noRight: 'コミュニティの管理者が設定でオンにできます。',
+      failed: 'オンにできませんでした。もう一度お試しください。',
+    },
     names: {
       summary: shared('ja').summary,
       venues: '拠点',
@@ -244,13 +275,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       roles:
         '組織ごとにロールを作り、並べ、それぞれに何ができるかを決めます。上にあるほど権限が強くなります。',
       balance: '組織の残高：有効期限はなく、必要なときにチャージでき、使い道も確認できます。',
+      settings: 'コミュニティは使う機能だけをオンにし、各項目の呼び名を決めます。',
     },
     notes: {
       gatherings: '集まりの公開・日程の変更・終了、参加者とその記録。',
       agents: '組織のエージェント：何をしていて、誰が見ているか。',
       memory: '組織のアーカイブ：そのファイルを、組織自身のリポジトリで。',
       bazaar: '組織がバザールに出すアイテム。',
-      settings: '組織がどの機能をオンにするか、各項目の呼び名。',
     },
     rooms: shared('ja').rooms,
     standing: {
@@ -286,6 +317,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       cta: '잔액으로 이동',
     },
     desk: shared('ko').desk,
+    off: {
+      title: '이 기능은 꺼져 있습니다',
+      text: '「{piece}」은(는) 이 커뮤니티에서 꺼져 있습니다.',
+      turnOn: '켜기',
+      noRight: '커뮤니티 관리자가 설정에서 켤 수 있습니다.',
+      failed: '켜지 못했습니다. 다시 시도해 주세요.',
+    },
     names: {
       summary: shared('ko').summary,
       venues: '거점',
@@ -306,13 +344,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       roles:
         '조직마다 역할을 만들고, 순서를 정하고, 각 역할이 무엇을 할 수 있는지 정합니다. 위에 있을수록 권한이 큽니다.',
       balance: '조직의 잔액: 만료되지 않으며, 필요할 때 충전하고 어디에 쓰였는지 볼 수 있습니다.',
+      settings: '커뮤니티는 쓰는 기능만 켜고, 각 항목을 무엇이라 부를지 정합니다.',
     },
     notes: {
       gatherings: '모임 게시, 일정 변경, 종료, 참석자와 기록.',
       agents: '조직의 에이전트: 무엇을 하고 누가 돌보는지.',
       memory: '조직의 아카이브: 조직 자신의 저장소에 있는 파일들.',
       bazaar: '조직이 바자르에 올리는 아이템.',
-      settings: '조직이 어떤 기능을 켜는지, 각 항목을 무엇이라 부르는지.',
     },
     rooms: shared('ko').rooms,
     standing: {
@@ -348,6 +386,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       cta: 'Ir para Saldo',
     },
     desk: shared('pt-br').desk,
+    off: {
+      title: 'Esta peça está desligada',
+      text: '«{piece}» está desligada nesta comunidade.',
+      turnOn: 'Ligar',
+      noRight: 'Quem administra a comunidade pode ligá-la em Configurações.',
+      failed: 'Não foi possível ligar. Tente de novo.',
+    },
     names: {
       summary: shared('pt-br').summary,
       venues: 'Sedes',
@@ -369,13 +414,13 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'Cada organização cria seus papéis, os ordena e decide o que cada um pode fazer. Quanto mais acima, mais manda.',
       balance:
         'O saldo da organização: não expira, você recarrega quando precisar e vê no que ele é gasto.',
+      settings: 'Cada comunidade liga só as peças que usa e decide como se chama cada coisa.',
     },
     notes: {
       gatherings: 'Publicar, mover e encerrar encontros; quem vai e a crônica.',
       agents: 'Os agentes da organização: o que fazem e quem cuida deles.',
       memory: 'O arquivo da organização: seus arquivos, no seu repositório.',
       bazaar: 'Os objetos que a organização publica no Bazar.',
-      settings: 'Quais peças a organização liga e como se chama cada coisa.',
     },
     rooms: shared('pt-br').rooms,
     standing: {

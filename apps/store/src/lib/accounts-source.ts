@@ -83,6 +83,7 @@ import {
   type FreshProof,
 } from './fresh-signature';
 import { peopleOf } from './people';
+import { SWITCHABLE_PIECES, VOCABULARIES } from './panel-settings';
 import { isProfileAvatar } from './profile-avatars';
 import { PROFILE_AVATAR_PROBLEM } from './profile-name';
 import { logEvent } from './telemetry';
@@ -166,6 +167,19 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.ensureCommunityTeam === 'function'
         ? stub.ensureCommunityTeam(wallet, house, communityId, name)
         : absent('ensureCommunityTeam'),
+    // «Ajustes de la comunidad»: optional too. Without them the panel keeps its defaults.
+    settings: (wallet, accountId, house) =>
+      typeof desk.settings === 'function'
+        ? stub.settings(wallet, accountId, house)
+        : absent('settings'),
+    changeSettings: (wallet, accountId, change, house) =>
+      typeof desk.changeSettings === 'function'
+        ? stub.changeSettings(wallet, accountId, change, house)
+        : absent('changeSettings'),
+    happenings: (wallet, accountId, before, house) =>
+      typeof desk.happenings === 'function'
+        ? stub.happenings(wallet, accountId, before, house)
+        : absent('happenings'),
   };
 }
 
@@ -491,6 +505,32 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  const settings = z.union([
+    z.object({
+      ok: z.literal(true),
+      accountId: z.string(),
+      off: z.array(z.string()),
+      vocabulary: z.enum(VOCABULARIES),
+      mayEdit: z.boolean(),
+    }),
+    refusal,
+  ]);
+  const happenings = z.union([
+    z.object({
+      ok: z.literal(true),
+      accountId: z.string(),
+      lines: z.array(logLine.extend({ actorName: z.string().nullable() })),
+      more: z.boolean(),
+    }),
+    refusal,
+  ]);
+  const settingsRequest = z
+    .object({
+      accountId: id,
+      off: z.array(z.enum(SWITCHABLE_PIECES)).max(SWITCHABLE_PIECES.length).optional(),
+      vocabulary: z.enum(VOCABULARIES).optional(),
+    })
+    .strict();
   const profileRequest = z.union([
     z
       .object({ name: z.string().max(PROFILE_TEXT_MAX), avatar: z.string().max(ID_MAX).nullable() })
@@ -514,6 +554,9 @@ function buildSchemas() {
     profile,
     profileRequest,
     citizens,
+    settings,
+    happenings,
+    settingsRequest,
   };
 }
 
@@ -644,6 +687,11 @@ async function ask<T>(
   try {
     raw = await call();
   } catch (error) {
+    // A till older than the store lacks a newer method: the feature is not bound yet.
+    if (error instanceof Error && error.message.includes(NOT_IMPLEMENTED)) {
+      noted(log, action, 'not-implemented');
+      return { ok: false, response: notBound() };
+    }
     return { ok: false, response: failed(log, action, 'threw', error) };
   }
   const parsed = shape.safeParse(raw);
@@ -834,6 +882,91 @@ export async function answerLog(
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
   return answer({ log: asked.value });
+}
+
+/** GET /api/saldo/settings?cuenta=: the pieces that are off and the words of an organization, to a member or the house. */
+export async function answerSettings(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return signedOut();
+  const named = accountOf(url);
+  if (!named.ok) return named.response;
+  if (desk === null) return notBound();
+  const { you, house } = whoIs(asker);
+  const asked = await ask(
+    log,
+    'settings',
+    () => desk.settings(you, named.account, house),
+    shapes().settings,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ settings: asked.value });
+}
+
+/**
+ * POST /api/saldo/settings: `{ accountId, off?, vocabulary? }` turns pieces on
+ * or off and picks the words; the till decides who may and writes the log.
+ */
+export async function answerChangeSettings(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  request: Request,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return signedOut();
+  const body = await bodyOf(request);
+  if (!body.ok) return body.response;
+  const read = shapes().settingsRequest.safeParse(body.json);
+  if (!read.success) {
+    const issue = read.error.issues[0];
+    const where = issue === undefined || issue.path.length === 0 ? '' : `${issue.path.join('.')}: `;
+    return answer({ error: `${where}${issue?.message ?? 'invalid'}` }, 400);
+  }
+  if (read.data.off === undefined && read.data.vocabulary === undefined) {
+    return answer({ error: 'off or vocabulary is required' }, 400);
+  }
+  if (desk === null) return notBound();
+  const { you, house } = whoIs(asker);
+  const { accountId, ...change } = read.data;
+  const asked = await ask(
+    log,
+    'change-settings',
+    () => desk.changeSettings(you, accountId, change, house),
+    shapes().settings,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ settings: asked.value });
+}
+
+/** GET /api/saldo/happened?cuenta=&antes=: a page of «Qué ha pasado» — 30 lines, newest first — to a member or the house. */
+export async function answerHappened(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return signedOut();
+  const named = accountOf(url);
+  if (!named.ok) return named.response;
+  const sent = url.searchParams.get('antes');
+  const before = sent === null ? null : /^[1-9][0-9]{0,15}$/.test(sent) ? Number(sent) : undefined;
+  if (before === undefined) return answer({ error: 'antes: a line number' }, 400);
+  if (desk === null) return notBound();
+  const { you, house } = whoIs(asker);
+  const asked = await ask(
+    log,
+    'happenings',
+    () => desk.happenings(you, named.account, before, house),
+    shapes().happenings,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ happened: asked.value });
 }
 
 /** Read a POST's JSON body within limits, or the answer that refuses it. */

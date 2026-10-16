@@ -203,10 +203,19 @@ test.describe('the house places worlds', () => {
     const card = page.locator(`[data-venue="${world}"]`);
     await expect(card).toBeVisible();
     await expect(page.locator('[data-venues-count]')).toContainText('sede');
+    await expect(card.locator('[data-venue-enterers]')).toContainText(
+      /Pued(e|en) entrar \d+ person/,
+    );
     await card.locator('[data-metric="panel-venue-open"]').click();
     await expect(page).toHaveURL(worldPage(world));
     await expect(page.locator('[data-world-id]')).toHaveText(world);
     await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
+    // «Quién entra»: read from the organization's roles, with the people who may.
+    const enters = page.locator('[data-world-enters]');
+    await expect(enters.getByRole('heading', { name: 'Quién entra' })).toBeVisible();
+    await expect(enters.getByRole('heading', { name: 'Gente que puede entrar' })).toBeVisible();
+    expect(await enters.locator('[data-world-person]').count()).toBeGreaterThan(0);
+    await expect(page.locator('[data-world-enter] [data-metric="world-enter"]')).toBeVisible();
     const manage = page.locator('[data-world-manage]');
     await expect(manage).toBeVisible();
     await expect(manage.getByRole('heading')).toHaveText('Administración');
@@ -224,6 +233,9 @@ test.describe('the house places worlds', () => {
     await page.goto(worldPage(world));
     await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
     await expect(page.locator('[data-world-manage]')).toHaveCount(0);
+    // Who may enter is for the people of the organization: a stranger is not shown the list.
+    await expect(page.locator('[data-world-enter]')).toBeVisible();
+    await expect(page.locator('[data-world-enters]')).toHaveCount(0);
     // The same page in the other languages, and one a world never was.
     for (const [prefix, label] of [
       ['', 'Organization'],
@@ -234,8 +246,11 @@ test.describe('the house places worlds', () => {
       await page.goto(worldPage(world, prefix));
       await expect(page.locator('[data-world-page] .etiqueta').first()).toHaveText(label);
     }
-    await page.goto(worldPage('no-such-world'));
-    await expect(page.locator('[data-world-missing]')).toBeVisible();
+    // A world the fleet does not have is a 404 in every language, not a page with a message.
+    for (const prefix of ['', '/es', '/ja', '/ko', '/pt-br']) {
+      const unknown = await page.request.get(`${origin}${prefix}/mundos/no-such-world/`);
+      expect(unknown.status()).toBe(404);
+    }
     const bad = await page.request.get(`${origin}/es/mundos/..%2Fx/`);
     expect(bad.status()).toBe(404);
     await stranger.close();

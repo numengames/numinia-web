@@ -18,12 +18,14 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PANEL_UI } from '../../i18n/panel';
+import { PANEL_SETTINGS_UI } from '../../i18n/panel-settings';
 import { MUNDOS_UI } from '../../i18n/mundos';
 import { PEOPLE_UI } from '../../i18n/panel-people';
 import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
+import { PanelAjustes } from './PanelAjustes';
 import { PanelRoles } from './PanelRoles';
 import { PanelSedes } from './PanelSedes';
 import PanelSummary from './PanelSummary.astro';
@@ -108,6 +110,18 @@ const homeHref = localeHref(locale, '/panel/');
         signIn={signIn}
         saldoHref={saldoHref}
         ui={SALDO_UI[locale]}
+      />
+    )
+  }
+  {
+    face === 'settings' && (
+      <PanelAjustes
+        client:load
+        locale={locale}
+        words={words}
+        ui={PANEL_SETTINGS_UI[locale]}
+        signIn={signIn}
+        saldoHref={saldoHref}
       />
     )
   }

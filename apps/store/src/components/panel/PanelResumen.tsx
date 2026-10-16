@@ -26,30 +26,27 @@ import {
   formatAt,
   formatEuros,
   readAccess,
-  readLog,
   readRoles,
   readStatement,
-  shortWallet,
   type DeskAccess,
   type DeskAccount,
-  type DeskLogLine,
   type DeskRoles,
   type DeskStatement,
 } from '../../lib/accounts';
 import { PIECES, ROOMS, pieceHref, standingIn, type Standing } from '../../lib/panel';
+import { isOn } from '../../lib/panel-settings';
 import {
   chargedWorlds,
-  latestOf,
   nextEncounter,
   peopleOf,
   type EncounterMap,
-  type LatestEntry,
   type NextEncounter,
 } from '../../lib/panel-summary';
 import { runwayOf } from '../../lib/saldo-view';
 import { LunaEspera } from '../chrome/LunaEspera';
-import { PanelFrame } from './PanelFrame';
+import { PanelFrame, type PanelContext } from './PanelFrame';
 import { PanelGlyph } from './PanelGlyph';
+import { PanelPasado } from './PanelPasado';
 
 type Load<T> =
   | { readonly at: 'loading' }
@@ -127,19 +124,6 @@ function nextWhen(summary: PanelSummaryMessages, next: NextEncounter): string {
   return next.days <= 1 ? summary.next.soon : fill(summary.next.inDays, { n: next.days });
 }
 
-function entryText(summary: PanelSummaryMessages, entry: LatestEntry, lang: string): string {
-  if (entry.kind === 'topup') {
-    return fill(summary.latest.topup, { amount: formatEuros(entry.amountCents, lang) });
-  }
-  const { line } = entry;
-  const name = line.detail?.['name'];
-  return [
-    summary.latest.acts[line.act] ?? line.act,
-    name === undefined ? '' : ` · ${name}`,
-    line.subject === null ? '' : ` → ${shortWallet(line.subject)}`,
-  ].join('');
-}
-
 /** The balance card's second line: how long it lasts, or Saldo's words when nothing is left. */
 function lastsText(summary: PanelSummaryMessages, statement: DeskStatement): string | null {
   const runway = runwayOf(statement.balanceCents, statement.pace);
@@ -170,7 +154,6 @@ function Glance({
     at: 'loading',
   });
   const [sheet, setSheet] = useState<Load<Sheet>>({ at: 'loading' });
-  const [log, setLog] = useState<Load<DeskLogLine[]>>({ at: 'loading' });
   const [now] = useState(() => new Date());
 
   useEffect(() => {
@@ -183,9 +166,6 @@ function Glance({
     void load(`/api/saldo/statement?cuenta=${cuenta}&rango=30d`, readSheet).then((read) => {
       if (wanted) setSheet(read);
     });
-    void load(`/api/saldo/log?cuenta=${cuenta}`, readLog).then((read) => {
-      if (wanted) setLog(read);
-    });
     return () => {
       wanted = false;
     };
@@ -195,14 +175,11 @@ function Glance({
     roles.at === 'ready'
       ? { at: 'ready', value: standingIn(roles.value.roles, roles.value.you) }
       : roles;
-  const settled = roles.at !== 'loading' && sheet.at !== 'loading' && log.at !== 'loading';
+  const settled = roles.at !== 'loading' && sheet.at !== 'loading';
   const people = roles.at === 'ready' ? peopleOf(roles.value.roles) : null;
   const statement = sheet.at === 'ready' ? sheet.value.statement : null;
   const charged = statement === null ? null : chargedWorlds(statement.worlds);
   const next = nextEncounter(encounters, team.id, now);
-  // The house's own reads stay in the whole log; «Lo último» tells what was done.
-  const told = log.at === 'ready' ? log.value.filter((line) => line.act !== 'house-read') : null;
-  const entries = latestOf(told, statement?.lines ?? null);
   const membersHref = MEMBERS === undefined ? null : pieceHref(locale, MEMBERS, team.id);
   const balanceHref = BALANCE === undefined ? null : pieceHref(locale, BALANCE, team.id);
   const lasts = statement === null ? null : lastsText(summary, statement);
@@ -323,39 +300,7 @@ function Glance({
               </section>
             )}
           </div>
-          {(told !== null || statement !== null) && (
-            <section
-              className="saldo-seccion"
-              aria-labelledby="summary-latest-t"
-              data-summary-latest
-            >
-              <div className="saldo-cabeza">
-                <div className="saldo-cabeza-texto">
-                  <p className="etiqueta">{summary.latest.label}</p>
-                  <h2 id="summary-latest-t">{summary.latest.title}</h2>
-                </div>
-                {told !== null && membersHref !== null && (
-                  <a href={membersHref} data-metric="panel-summary-log">
-                    {summary.latest.log} <span aria-hidden="true">→</span>
-                  </a>
-                )}
-              </div>
-              <div className="saldo-marco">
-                {entries.length === 0 ? (
-                  <p className="saldo-nota">{summary.latest.empty}</p>
-                ) : (
-                  <ul className="saldo-ultimo">
-                    {entries.map((entry, i) => (
-                      <li key={`${entry.at}-${i}`}>
-                        <span>{entryText(summary, entry, locale)}</span>
-                        <time dateTime={entry.at}>{formatAt(entry.at, locale)}</time>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
-          )}
+          <PanelPasado org={team.id} locale={locale} words={summary.latest} logHref={membersHref} />
         </div>
       )}
     </>
@@ -366,11 +311,13 @@ function Glance({
 function Cards({
   locale,
   words,
+  off,
   org,
   ready,
 }: {
   readonly locale: SupportedLocale;
   readonly words: PanelMessages;
+  readonly off: readonly string[];
   readonly org: string | null;
   readonly ready: boolean;
 }) {
@@ -381,7 +328,7 @@ function Cards({
           {words.piecesLabel}
         </h2>
         <ul className="panel-cartas">
-          {PIECES.filter((piece) => piece.id !== 'summary').map((piece) => {
+          {PIECES.filter((piece) => piece.id !== 'summary' && isOn(piece.id, off)).map((piece) => {
             const name = words.names[piece.id];
             const note = piece.kind === 'built' ? words.leads[piece.id] : words.notes[piece.id];
             const body = (
@@ -472,14 +419,16 @@ export function PanelResumen({
       words={words}
       signIn={signIn}
       saldoHref={saldoHref}
-      footer={({ org, ready }) => <Cards locale={locale} words={words} org={org} ready={ready} />}
+      footer={({ org, ready, words: shown, off }) => (
+        <Cards locale={locale} words={shown} off={off} org={org} ready={ready} />
+      )}
     >
-      {(team) => (
+      {(team, panel: PanelContext) => (
         <Glance
           key={team.id}
           team={team}
           locale={locale}
-          words={words}
+          words={panel.words}
           summary={summary}
           encounters={encounters}
         />
