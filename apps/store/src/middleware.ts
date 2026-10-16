@@ -96,8 +96,11 @@ const RATE_RULES: ReadonlyArray<{
   { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },
-  // Who is inside each home: reused for 30 s per instance, metered so the site is never a knocker on worlds.
-  { test: (m, p) => m === 'GET' && p === '/api/live', key: 'live', limit: 60 },
+  // Who is inside each home: the answer is reused for 30 s per instance, so the worlds are knocked at
+  // most twice a minute whatever the traffic. Since v0.114.0 every page asks (the city rail's «Ahora en
+  // la ciudad»), so one person browsing — or an office behind one address — passes 60 a minute easily:
+  // the meter only stops a loop.
+  { test: (m, p) => m === 'GET' && p === '/api/live', key: 'live', limit: 600 },
 ];
 const RATE_WINDOW_MS = 60_000;
 
