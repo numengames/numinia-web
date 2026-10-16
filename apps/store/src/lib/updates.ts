@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.109.0',
+    date: '2026-10-16 20:11',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A world’s page has a new section, «AI», for whoever manages the world. It lists the AIs that come in as one more person — what each may do (look and talk, or also build), whether it is connected or asleep — and lets you remove one after a confirmation. «Invite an AI» takes three short steps: a name and a permission, one line to run where your AI lives to make its key, and the public key it prints. numinia.com asks the world for its list with your own world pass and renews the pass by itself; if the world does not answer, or is not on the new engine yet, it says so in plain words. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.108.0',
     date: '2026-10-16 19:50',
     entries: [
