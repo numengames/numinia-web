@@ -83,6 +83,9 @@ export interface DeskSpend {
   /** `YYYY-MM-DD` for the day ranges, `YYYY-MM` for 12 months. */
   bucket: string;
   cents: number;
+  /** A till of the cut «el dinero» splits each bucket: what the worlds' running and stopped minutes cost (they add up to `cents`). */
+  runningCents?: number;
+  stoppedCents?: number;
 }
 
 export interface DeskLine {
@@ -93,6 +96,9 @@ export interface DeskLine {
   day?: string | null;
   worldId?: string | null;
   size?: string | null;
+  /** A world's day, from a till of the cut «el dinero»: its minutes running and stopped. */
+  minutesRunning?: number | null;
+  minutesStopped?: number | null;
   reason?: string | null;
 }
 
@@ -100,6 +106,34 @@ export interface DeskMember {
   wallet: string;
   role: MemberRole;
   addedAt: string;
+}
+
+/** A world over the statement's range: its latest size there, the days it ran at all, what it cost. */
+export interface DeskWorld {
+  worldId: string;
+  size: string;
+  daysRunning: number;
+  cents: number;
+}
+
+/** What a day of a size costs, net of VAT, running or stopped. */
+export interface DeskSizePrice {
+  runningCentsPerDay: number;
+  stoppedCentsPerDay: number;
+}
+
+/** The tariff in force today, cut to what a person reads: the sizes in use and two rules. */
+export interface DeskTariff {
+  startsOn: string;
+  sizes: Record<string, DeskSizePrice>;
+  rules: { keepDaysAtZero: number; noticeDaysForRise: number };
+}
+
+/** The same in every range: the 7 complete UTC days before today, and the month so far with its worlds charged. */
+export interface DeskPace {
+  sevenDaysCents: number;
+  monthCents: number;
+  monthWorlds: number;
 }
 
 export interface DeskStatement {
@@ -113,6 +147,10 @@ export interface DeskStatement {
   lines: DeskLine[];
   /** Teams only. */
   members?: DeskMember[];
+  /** From a till of the cut «el dinero» (each absent from an older one; the screen hides what is absent). */
+  worlds?: DeskWorld[];
+  pace?: DeskPace;
+  tariff?: DeskTariff;
 }
 
 export type DeskTeamAnswer = { ok: true; account: DeskAccount } | DeskRefusal;
@@ -734,19 +772,68 @@ export function readOverview(json: unknown): DeskAccount[] | null {
   return accounts.every(isAccount) ? accounts : null;
 }
 
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+function isWorld(value: unknown): value is DeskWorld {
+  return (
+    isRecord(value) &&
+    typeof value['worldId'] === 'string' &&
+    typeof value['size'] === 'string' &&
+    isNumber(value['daysRunning']) &&
+    isNumber(value['cents'])
+  );
+}
+
+function isPace(value: unknown): value is DeskPace {
+  return (
+    isRecord(value) &&
+    isNumber(value['sevenDaysCents']) &&
+    isNumber(value['monthCents']) &&
+    isNumber(value['monthWorlds'])
+  );
+}
+
+function isTariff(value: unknown): value is DeskTariff {
+  if (!isRecord(value) || typeof value['startsOn'] !== 'string') return false;
+  const { sizes, rules } = value;
+  return (
+    isRecord(sizes) &&
+    Object.values(sizes).every(
+      (price) =>
+        isRecord(price) &&
+        isNumber(price['runningCentsPerDay']) &&
+        isNumber(price['stoppedCentsPerDay']),
+    ) &&
+    isRecord(rules) &&
+    isNumber(rules['keepDaysAtZero']) &&
+    isNumber(rules['noticeDaysForRise'])
+  );
+}
+
 /** GET /api/saldo/statement: the statement, or null when the body is not one. */
 export function readStatement(json: unknown): DeskStatement | null {
   if (!isRecord(json) || !isRecord(json['statement'])) return null;
   const statement = json['statement'];
-  return isAccount(statement['account']) &&
+  if (!(
+    isAccount(statement['account']) &&
     typeof statement['balanceCents'] === 'number' &&
     typeof statement['lowBalance'] === 'boolean' &&
     Array.isArray(statement['spend']) &&
     typeof statement['spendTotalCents'] === 'number' &&
     Array.isArray(statement['lines']) &&
     (statement['members'] === undefined || Array.isArray(statement['members']))
-    ? (statement as unknown as DeskStatement)
-    : null;
+  )) {
+    return null;
+  }
+  // What a till of the cut «el dinero» adds is read one field at a time: out of shape, it is dropped and the rest kept.
+  const { worlds, pace, tariff, ...rest } = statement;
+  return {
+    ...(rest as unknown as DeskStatement),
+    ...(Array.isArray(worlds) && worlds.every(isWorld) ? { worlds } : {}),
+    ...(isPace(pace) ? { pace } : {}),
+    ...(isTariff(tariff) ? { tariff } : {}),
+  };
 }
 
 /** GET /api/saldo/statement also names who is asking (to mark «tú» among the members). */

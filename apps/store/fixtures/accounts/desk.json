@@ -1,222 +1,675 @@
 {
+  "tariff": {
+    "startsDaysAgo": 60,
+    "sizes": {
+      "1g": {
+        "runningCentsPerDay": 30,
+        "stoppedCentsPerDay": 3
+      },
+      "2g": {
+        "runningCentsPerDay": 60,
+        "stoppedCentsPerDay": 5
+      },
+      "4g": {
+        "runningCentsPerDay": 120,
+        "stoppedCentsPerDay": 10
+      }
+    },
+    "rules": {
+      "keepDaysAtZero": 90,
+      "noticeDaysForRise": 30
+    }
+  },
   "personal": {
     "id": "acc_personal",
     "lines": [
       {
         "kind": "topup",
-        "daysAgo": 32,
+        "daysAgo": 36,
         "amountCents": 1000,
         "vatCents": 210
       },
       {
         "kind": "world_day",
-        "daysAgo": 30,
-        "amountCents": -20,
+        "daysAgo": 35,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 35,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 34,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 34,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 33,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 33,
+        "amountCents": -20,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 900,
+        "minutesStopped": 540
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 32,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 32,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 31,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 31,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 30,
+        "amountCents": -42,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 960,
+        "minutesStopped": 480
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 30,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 29,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 29,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 28,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 28,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
       },
       {
         "kind": "world_day",
         "daysAgo": 27,
-        "amountCents": -15,
+        "amountCents": -33,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 720,
+        "minutesStopped": 720
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 27,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 26,
-        "amountCents": -20,
+        "amountCents": -5,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 26,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 25,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 25,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 24,
-        "amountCents": -20,
+        "amountCents": -42,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 960,
+        "minutesStopped": 480
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 24,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
       },
       {
         "kind": "world_day",
         "daysAgo": 23,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 23,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 22,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
       },
       {
         "kind": "world_day",
         "daysAgo": 22,
         "amountCents": -20,
-        "worldId": "mi-rincon",
-        "size": "2g"
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 900,
+        "minutesStopped": 540
       },
       {
         "kind": "world_day",
         "daysAgo": 21,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 21,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 20,
-        "amountCents": -15,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 20,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
       },
       {
         "kind": "world_day",
         "daysAgo": 19,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 19,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 18,
-        "amountCents": -20,
+        "amountCents": -33,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 720,
+        "minutesStopped": 720
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 18,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 17,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 17,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 16,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 16,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
+      },
+      {
+        "kind": "adjustment",
+        "daysAgo": 15,
+        "amountCents": 461,
+        "reason": "Compensación: la sede estuvo caída casi una semana"
       },
       {
         "kind": "world_day",
         "daysAgo": 15,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 15,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "topup",
+        "daysAgo": 14,
+        "amountCents": 1000,
+        "vatCents": 210
       },
       {
         "kind": "world_day",
         "daysAgo": 14,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 14,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 13,
-        "amountCents": -15,
+        "amountCents": -5,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 13,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 12,
-        "amountCents": -20,
+        "amountCents": -42,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 960,
+        "minutesStopped": 480
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 12,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 11,
+        "amountCents": -60,
+        "worldId": "mi-rincon",
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
       },
       {
         "kind": "world_day",
         "daysAgo": 11,
         "amountCents": -20,
-        "worldId": "mi-rincon",
-        "size": "2g"
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 900,
+        "minutesStopped": 540
       },
       {
         "kind": "world_day",
         "daysAgo": 10,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 10,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 9,
-        "amountCents": -20,
+        "amountCents": -33,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 720,
+        "minutesStopped": 720
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 9,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 8,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 8,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
       },
       {
         "kind": "world_day",
         "daysAgo": 7,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 7,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 6,
-        "amountCents": -15,
+        "amountCents": -42,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 960,
+        "minutesStopped": 480
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 6,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 5,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 5,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 4,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 4,
+        "amountCents": -9,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 300,
+        "minutesStopped": 1140
       },
       {
         "kind": "world_day",
         "daysAgo": 3,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 3,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 2,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 2,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       },
       {
         "kind": "world_day",
         "daysAgo": 1,
-        "amountCents": -20,
+        "amountCents": -60,
         "worldId": "mi-rincon",
-        "size": "2g"
+        "size": "2g",
+        "minutesRunning": 1440,
+        "minutesStopped": 0
+      },
+      {
+        "kind": "world_day",
+        "daysAgo": 1,
+        "amountCents": -3,
+        "worldId": "taller-de-pruebas",
+        "size": "1g",
+        "minutesRunning": 0,
+        "minutesStopped": 1440
       }
     ]
   },
@@ -245,219 +698,834 @@
       "lines": [
         {
           "kind": "topup",
-          "daysAgo": 31,
+          "daysAgo": 36,
           "amountCents": 5000,
           "vatCents": 1050
         },
         {
           "kind": "world_day",
-          "daysAgo": 30,
-          "amountCents": -164,
+          "daysAgo": 35,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 35,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 34,
+          "amountCents": -120,
+          "worldId": "sede-numen-games",
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 34,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 33,
+          "amountCents": -120,
+          "worldId": "sede-numen-games",
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 33,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 32,
+          "amountCents": -120,
+          "worldId": "sede-numen-games",
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 32,
+          "amountCents": -23,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 31,
+          "amountCents": -120,
+          "worldId": "sede-numen-games",
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 31,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -83,
+          "worldId": "sede-numen-games",
+          "size": "4g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 29,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 28,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 27,
-          "amountCents": -164,
+          "amountCents": -65,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -23,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
         },
         {
           "kind": "world_day",
           "daysAgo": 26,
-          "amountCents": -164,
+          "amountCents": -10,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 25,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 24,
-          "amountCents": -164,
+          "amountCents": -83,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 23,
-          "amountCents": -160,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 22,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 21,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 20,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -9,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 19,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 18,
-          "amountCents": -164,
+          "amountCents": -65,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 17,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -23,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 16,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -9,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 15,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 14,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 13,
-          "amountCents": -164,
+          "amountCents": -10,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 12,
-          "amountCents": -164,
+          "amountCents": -83,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -23,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -9,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 11,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -20,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 900,
+          "minutesStopped": 540
         },
         {
           "kind": "world_day",
           "daysAgo": 10,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "adjustment",
+          "daysAgo": 9,
+          "amountCents": 230,
+          "reason": "Compensación: la sede estuvo caída dos días"
         },
         {
           "kind": "world_day",
           "daysAgo": 9,
-          "amountCents": -160,
+          "amountCents": -65,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 8,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -9,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 7,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 6,
-          "amountCents": -164,
+          "amountCents": -83,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 5,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 4,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -9,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 3,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -60,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 2,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -23,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 1,
-          "amountCents": -164,
+          "amountCents": -120,
           "worldId": "sede-numen-games",
-          "size": "4g"
+          "size": "4g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -5,
+          "worldId": "el-agora",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -3,
+          "worldId": "la-biblioteca",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         }
       ]
     },
@@ -480,58 +1548,612 @@
       "lines": [
         {
           "kind": "topup",
+          "daysAgo": 36,
+          "amountCents": 1000,
+          "vatCents": 210
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 35,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 34,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 33,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 32,
+          "amountCents": -23,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 31,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -21,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -23,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -17,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -3,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -21,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
           "daysAgo": 21,
-          "amountCents": 2000,
-          "vatCents": 420
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "topup",
+          "daysAgo": 20,
+          "amountCents": 1000,
+          "vatCents": 210
         },
         {
           "kind": "world_day",
           "daysAgo": 20,
-          "amountCents": -82,
+          "amountCents": -60,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 19,
-          "amountCents": -82,
+          "amountCents": -60,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 18,
-          "amountCents": -82,
+          "amountCents": -60,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -17,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
         },
         {
           "kind": "world_day",
           "daysAgo": 17,
-          "amountCents": -82,
+          "amountCents": -23,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 16,
-          "amountCents": -82,
+          "amountCents": -60,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 15,
-          "amountCents": -82,
+          "amountCents": -5,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         },
         {
           "kind": "world_day",
           "daysAgo": 14,
-          "amountCents": -82,
+          "amountCents": -5,
           "worldId": "laboratorio-active-inference",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -3,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "adjustment",
+          "daysAgo": 12,
+          "amountCents": 562,
+          "reason": "Compensación por los días sin servicio"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -23,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -21,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -17,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "topup",
+          "daysAgo": 8,
+          "amountCents": 1000,
+          "vatCents": 210
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -21,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -60,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -23,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 480,
+          "minutesStopped": 960
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -5,
+          "worldId": "laboratorio-active-inference",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -30,
+          "worldId": "aula-abierta",
+          "size": "1g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
         }
       ]
     },
@@ -554,51 +2176,651 @@
       "lines": [
         {
           "kind": "topup",
-          "daysAgo": 12,
+          "daysAgo": 36,
           "amountCents": 1000,
           "vatCents": 210
         },
         {
           "kind": "world_day",
-          "daysAgo": 11,
-          "amountCents": -125,
+          "daysAgo": 35,
+          "amountCents": -60,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 35,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 34,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 34,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 33,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 33,
+          "amountCents": -79,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 900,
+          "minutesStopped": 540
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 32,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 32,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 31,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 31,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -42,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 30,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 29,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 28,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -33,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 27,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -5,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 26,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 25,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -42,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 24,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 23,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 22,
+          "amountCents": -79,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 900,
+          "minutesStopped": 540
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 21,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "adjustment",
+          "daysAgo": 20,
+          "amountCents": 828,
+          "reason": "Compensación: el escenario no arrancó en toda una semana"
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 20,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 19,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -33,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 18,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 17,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "topup",
+          "daysAgo": 16,
+          "amountCents": 1000,
+          "vatCents": 210
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 16,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 15,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 14,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -5,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 13,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -42,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 12,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 11,
+          "amountCents": -79,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 900,
+          "minutesStopped": 540
         },
         {
           "kind": "world_day",
           "daysAgo": 10,
-          "amountCents": -125,
+          "amountCents": -60,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 10,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 9,
-          "amountCents": -125,
+          "amountCents": -33,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 720,
+          "minutesStopped": 720
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 9,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 8,
-          "amountCents": -125,
+          "amountCents": -60,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 8,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
         },
         {
           "kind": "world_day",
           "daysAgo": 7,
-          "amountCents": -125,
+          "amountCents": -60,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 7,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         },
         {
           "kind": "world_day",
           "daysAgo": 6,
-          "amountCents": -125,
+          "amountCents": -42,
           "worldId": "sala-la-tarugo",
-          "size": "2g"
+          "size": "2g",
+          "minutesRunning": 960,
+          "minutesStopped": 480
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 6,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 5,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 4,
+          "amountCents": -33,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 300,
+          "minutesStopped": 1140
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 3,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 2,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -60,
+          "worldId": "sala-la-tarugo",
+          "size": "2g",
+          "minutesRunning": 1440,
+          "minutesStopped": 0
+        },
+        {
+          "kind": "world_day",
+          "daysAgo": 1,
+          "amountCents": -10,
+          "worldId": "escenario-trgcon",
+          "size": "4g",
+          "minutesRunning": 0,
+          "minutesStopped": 1440
         }
       ]
     }

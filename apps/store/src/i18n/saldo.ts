@@ -109,6 +109,28 @@ export interface SaldoMessages {
     /** `{range}`: «30 días». */
     readonly spentOf: string;
   };
+  /**
+   * The three cards at the top (cut «el dinero»): the balance and how long it
+   * lasts, this month, the low-balance warning. `{n}`: a whole number.
+   */
+  readonly kpis: {
+    /** At the pace of the 7 complete UTC days before today: about `{n}` days, one, less than one. */
+    readonly runway: string;
+    readonly runwayOne: string;
+    readonly runwayLess: string;
+    /** Nothing spent in those seven days. */
+    readonly runwayStill: string;
+    readonly month: string;
+    /** The worlds a day of this month charged: `{n}`, one, none. */
+    readonly monthWorlds: string;
+    readonly monthWorldsOne: string;
+    readonly monthWorldsNone: string;
+    readonly low: string;
+    /** The screen's own warning, under 10 €. */
+    readonly lowWhen: string;
+    /** `{n}`: keepDaysAtZero. */
+    readonly lowKeep: string;
+  };
   readonly topup: {
     readonly title: string;
     readonly note: string;
@@ -131,19 +153,69 @@ export interface SaldoMessages {
     /** `{total}`: the period's spend, for screen readers. */
     readonly chartDays: string;
     readonly chartMonths: string;
+    /** The chart's heading: `{n}` days, or the twelve months. */
+    readonly headDays: string;
+    readonly headMonths: string;
+    readonly closes: string;
+    /** The legend: a world on, a world off. */
+    readonly running: string;
+    readonly stopped: string;
+    /** A bar's title: `{when}`, `{total}` and its two halves `{running}` and `{stopped}`. */
+    readonly bar: string;
+    /** The table of worlds of the period: its name and columns. */
+    readonly worlds: string;
+    readonly world: string;
+    readonly size: string;
+    readonly daysRunning: string;
+    readonly amount: string;
   };
   readonly lines: {
     readonly title: string;
+    readonly head: string;
+    /** Lines are never deleted: a correction is another line. */
+    readonly never: string;
+    readonly csv: string;
     readonly empty: string;
-    readonly when: string;
+    readonly day: string;
     readonly what: string;
+    readonly detail: string;
     readonly amount: string;
+    /** The balance after each line. */
+    readonly after: string;
+    /** How that balance is counted: back from today's, exact for the 100 newest lines. */
+    readonly afterNote: string;
     readonly labels: Readonly<Record<LineLabel, string>>;
     /** `{v}`: the VAT paid with a top-up. */
     readonly vat: string;
     /** `{world}` and `{size}` of a world's day. */
     readonly world: string;
+    /** A world's day minutes: `{on}` and `{off}`, each written with `hours` or `hoursMinutes` (`{h}`, `{m}`). */
+    readonly minutes: string;
+    readonly hours: string;
+    readonly hoursMinutes: string;
   };
+  /** «Las reglas, a la vista»: the tariff in force, for the signed-in only. */
+  readonly rules: {
+    readonly label: string;
+    readonly title: string;
+    /** `{size}`, `{running}` and `{stopped}`: a size and its two prices a day. */
+    readonly size: string;
+    readonly topups: string;
+    /** `{n}`: keepDaysAtZero. */
+    readonly keep: string;
+    /** `{n}`: noticeDaysForRise. */
+    readonly notice: string;
+    readonly personal: string;
+    /** `{roles}`: the roles that hold the top-up. */
+    readonly whoTopsUp: string;
+    readonly whoTopsUpOwners: string;
+    /** When the base role holds the top-up: every member tops up. */
+    readonly everyone: string;
+    /** `{date}`: the day the version in force started. */
+    readonly since: string;
+  };
+  /** Instead of the old Team section: where an organization's people now are. `{link}` is the link. */
+  readonly membersLink: { readonly text: string; readonly link: string };
   readonly team: {
     readonly title: string;
     readonly rename: string;
@@ -237,9 +309,22 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     balance: {
       label: 'Saldo · no caduca',
       low: 'Saldo bajo',
-      lowNote: 'Te queda menos de 10 €. Recarga para que tus mundos sigan abiertos.',
+      lowNote: 'Te queda menos de 10\u00a0€. Recarga para que tus sedes sigan abiertas.',
       spent: 'Gastado este periodo',
       spentOf: 'en los últimos {range}',
+    },
+    kpis: {
+      runway: 'Te da para unos {n} días al ritmo de los últimos 7 días.',
+      runwayOne: 'Te da para un día al ritmo de los últimos 7 días.',
+      runwayLess: 'Te da para menos de un día al ritmo de los últimos 7 días.',
+      runwayStill: 'Sin gasto estos días: el saldo no baja.',
+      month: 'Este mes',
+      monthWorlds: '{n} sedes con cargo',
+      monthWorldsOne: '1 sede con cargo',
+      monthWorldsNone: 'Ninguna sede con cargo',
+      low: 'Aviso de saldo bajo',
+      lowWhen: 'Esta pantalla te avisa cuando el saldo baja de 10\u00a0€.',
+      lowKeep: 'Con el saldo a cero, las sedes se apagan y se guardan {n} días.',
     },
     topup: {
       title: 'Recarga',
@@ -256,27 +341,65 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       notConfigured: 'Los pagos aún no están activados. Vuelve a intentarlo más tarde.',
     },
     usage: {
-      title: 'Uso',
+      title: 'Consumo',
       ranges: { '7d': '7 días', '30d': '30 días', '12m': '12 meses' },
       rangeLabel: 'Periodo',
-      empty: 'En este periodo no se ha gastado nada: ningún mundo ha consumido saldo.',
+      empty: 'En este periodo no se ha gastado nada: ninguna sede ha consumido saldo.',
       chartDays: 'Gasto por día: {total} en total',
       chartMonths: 'Gasto por mes: {total} en total',
+      headDays: 'Cada día, los últimos {n}',
+      headMonths: 'Cada mes, los últimos 12',
+      closes: 'Cada día se cierra a medianoche UTC.',
+      running: 'Sede encendida',
+      stopped: 'Apagada',
+      bar: '{when} · {total} — encendida {running} · apagada {stopped}',
+      worlds: 'Cada sede en el periodo',
+      world: 'Sede',
+      size: 'Tamaño',
+      daysRunning: 'Días encendida',
+      amount: 'Importe del periodo',
     },
     lines: {
       title: 'Movimientos',
+      head: 'Cada línea',
+      never: 'Las líneas nunca se borran: si algo se corrige, se añade otra.',
+      csv: 'Descargar (.csv)',
       empty: 'Todavía no hay movimientos en esta cuenta.',
-      when: 'Fecha',
-      what: 'Concepto',
+      day: 'Día (UTC)',
+      what: 'Qué',
+      detail: 'Detalle',
       amount: 'Importe',
+      after: 'Saldo',
+      afterNote:
+        'El saldo de cada línea se cuenta hacia atrás desde el de hoy, sobre las 100 líneas más recientes: para ellas es exacto.',
       labels: {
         topup: 'Recarga',
-        world: 'Mundo · día',
+        world: 'Día de sede',
         adjustment: 'Ajuste',
         refund: 'Devolución',
       },
       vat: 'IVA {v}',
       world: '{world} · {size}',
+      minutes: 'encendida {on} · apagada {off}',
+      hours: '{h} h',
+      hoursMinutes: '{h} h {m} min',
+    },
+    rules: {
+      label: 'Las reglas, a la vista',
+      title: 'Lo que cuesta y por qué',
+      size: 'Una sede de {size}: {running} al día encendida y {stopped} apagada.',
+      topups: 'Recargas de 10, 50 o 100 €. Sin suscripción: pagas lo que gastas.',
+      keep: 'Con el saldo a cero, la sede se apaga y se guarda {n} días.',
+      notice: 'Si la tarifa sube, la subida no empieza hasta {n} días después de anunciarse.',
+      personal: 'Es tu cuenta personal: solo tú recargas y ves estos datos.',
+      whoTopsUp: 'Recargan las personas titulares y estos roles: {roles}.',
+      whoTopsUpOwners: 'Solo recargan las personas titulares.',
+      everyone: 'Recargan todos los miembros de la organización.',
+      since: 'Tarifa en vigor desde el {date}.',
+    },
+    membersLink: {
+      text: 'Quién está en esta organización y qué deja hacer cada rol, en {link}.',
+      link: 'Miembros y roles',
     },
     team: {
       title: 'Equipo',
@@ -441,9 +564,22 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     balance: {
       label: 'Balance · never expires',
       low: 'Low balance',
-      lowNote: 'Less than €10 left. Top up to keep your worlds open.',
+      lowNote: 'Less than €10 left. Top up to keep your homes open.',
       spent: 'Spent this period',
       spentOf: 'over the last {range}',
+    },
+    kpis: {
+      runway: 'Enough for about {n} days at the pace of the last 7 days.',
+      runwayOne: 'Enough for one day at the pace of the last 7 days.',
+      runwayLess: 'Enough for less than a day at the pace of the last 7 days.',
+      runwayStill: 'Nothing spent these days: the balance is not going down.',
+      month: 'This month',
+      monthWorlds: '{n} homes charged',
+      monthWorldsOne: '1 home charged',
+      monthWorldsNone: 'No home charged',
+      low: 'Low-balance warning',
+      lowWhen: 'This screen warns you when the balance drops below €10.',
+      lowKeep: 'With the balance at zero, homes are switched off and kept for {n} days.',
     },
     topup: {
       title: 'Top up',
@@ -463,19 +599,58 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       title: 'Usage',
       ranges: { '7d': '7 days', '30d': '30 days', '12m': '12 months' },
       rangeLabel: 'Period',
-      empty: 'Nothing was spent in this period: no world used any balance.',
+      empty: 'Nothing was spent in this period: no home used any balance.',
       chartDays: 'Spend per day: {total} in all',
       chartMonths: 'Spend per month: {total} in all',
+      headDays: 'Each day, the last {n}',
+      headMonths: 'Each month, the last 12',
+      closes: 'Each day closes at midnight UTC.',
+      running: 'Home on',
+      stopped: 'Off',
+      bar: '{when} · {total} — on {running} · off {stopped}',
+      worlds: 'Each home in the period',
+      world: 'Home',
+      size: 'Size',
+      daysRunning: 'Days on',
+      amount: 'Amount for the period',
     },
     lines: {
       title: 'Movements',
+      head: 'Every line',
+      never: 'Lines are never deleted: if something is corrected, another one is added.',
+      csv: 'Download (.csv)',
       empty: 'No movements on this account yet.',
-      when: 'Date',
+      day: 'Day (UTC)',
       what: 'What',
+      detail: 'Detail',
       amount: 'Amount',
-      labels: { topup: 'Top-up', world: 'World · day', adjustment: 'Adjustment', refund: 'Refund' },
+      after: 'Balance',
+      afterNote:
+        "Each line's balance is counted back from today's over the 100 most recent lines: for them it is exact.",
+      labels: { topup: 'Top-up', world: 'Home day', adjustment: 'Adjustment', refund: 'Refund' },
       vat: 'VAT {v}',
       world: '{world} · {size}',
+      minutes: 'on {on} · off {off}',
+      hours: '{h} h',
+      hoursMinutes: '{h} h {m} min',
+    },
+    rules: {
+      label: 'Rules in sight',
+      title: 'What it costs and why',
+      size: 'A {size} home: {running} a day on and {stopped} off.',
+      topups: 'Top-ups of €10, €50 or €100. No subscription: you pay for what you use.',
+      keep: 'With the balance at zero, the home is switched off and kept for {n} days.',
+      notice:
+        'If the tariff goes up, the rise does not start until {n} days after it is announced.',
+      personal: 'It is your personal account: only you top it up and see these figures.',
+      whoTopsUp: 'Topped up by the holders and these roles: {roles}.',
+      whoTopsUpOwners: 'Only the holders top it up.',
+      everyone: 'Topped up by every member of the organization.',
+      since: 'Tariff in force since {date}.',
+    },
+    membersLink: {
+      text: 'Who is in this organization and what each role allows, in {link}.',
+      link: 'Members and roles',
     },
     team: {
       title: 'Team',
@@ -638,9 +813,22 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     balance: {
       label: '残高 · 有効期限なし',
       low: '残高わずか',
-      lowNote: '残りが10ユーロ未満です。ワールドを開いたままにするにはチャージしてください。',
+      lowNote: '残りが10ユーロ未満です。拠点を開いたままにするにはチャージしてください。',
       spent: '今期の利用額',
       spentOf: '直近{range}',
+    },
+    kpis: {
+      runway: '直近7日間のペースで、あと約{n}日分です。',
+      runwayOne: '直近7日間のペースで、あと1日分です。',
+      runwayLess: '直近7日間のペースで、残りは1日分に足りません。',
+      runwayStill: 'この数日は利用がないため、残高は減っていません。',
+      month: '今月',
+      monthWorlds: '請求のあった拠点：{n}',
+      monthWorldsOne: '請求のあった拠点：1',
+      monthWorldsNone: '請求のあった拠点はありません',
+      low: '残高不足のお知らせ',
+      lowWhen: '残高が10ユーロを下回ると、この画面でお知らせします。',
+      lowKeep: '残高が0になると拠点は停止し、{n}日間保管されます。',
     },
     topup: {
       title: 'チャージ',
@@ -660,19 +848,58 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       title: '利用状況',
       ranges: { '7d': '7日', '30d': '30日', '12m': '12か月' },
       rangeLabel: '期間',
-      empty: 'この期間の利用はありません。残高を使ったワールドはありません。',
+      empty: 'この期間の利用はありません。残高を使った拠点はありません。',
       chartDays: '日ごとの利用額：合計{total}',
       chartMonths: '月ごとの利用額：合計{total}',
+      headDays: '日ごと、直近{n}日',
+      headMonths: '月ごと、直近12か月',
+      closes: '1日はUTCの午前0時に締まります。',
+      running: '稼働中の拠点',
+      stopped: '停止中',
+      bar: '{when} · {total} — 稼働 {running} · 停止 {stopped}',
+      worlds: '期間中の各拠点',
+      world: '拠点',
+      size: 'サイズ',
+      daysRunning: '稼働日数',
+      amount: '期間の金額',
     },
     lines: {
       title: '取引履歴',
+      head: 'すべての明細',
+      never: '明細は削除されません。訂正があるときは、新しい明細が追加されます。',
+      csv: 'ダウンロード（.csv）',
       empty: 'このアカウントにはまだ取引がありません。',
-      when: '日付',
+      day: '日（UTC）',
       what: '内容',
+      detail: '詳細',
       amount: '金額',
-      labels: { topup: 'チャージ', world: 'ワールド · 1日', adjustment: '調整', refund: '返金' },
+      after: '残高',
+      afterNote:
+        '各明細の残高は、今日の残高から最新100件の明細をさかのぼって計算しています。その範囲では正確です。',
+      labels: { topup: 'チャージ', world: '拠点の1日', adjustment: '調整', refund: '返金' },
       vat: 'VAT {v}',
       world: '{world} · {size}',
+      minutes: '稼働 {on} · 停止 {off}',
+      hours: '{h}時間',
+      hoursMinutes: '{h}時間{m}分',
+    },
+    rules: {
+      label: 'ルールを見える形で',
+      title: '料金とその理由',
+      size: '{size}の拠点：稼働中は1日{running}、停止中は{stopped}。',
+      topups: 'チャージは10・50・100ユーロ。サブスクリプションはなく、使った分だけ支払います。',
+      keep: '残高が0になると拠点は停止し、{n}日間保管されます。',
+      notice: '料金が上がる場合、値上げは告知から{n}日後まで始まりません。',
+      personal:
+        'あなたの個人アカウントです。チャージできるのも、この数字を見られるのもあなただけです。',
+      whoTopsUp: 'チャージできるのは所有者と次のロールです：{roles}。',
+      whoTopsUpOwners: 'チャージできるのは所有者だけです。',
+      everyone: 'この組織のメンバーなら誰でもチャージできます。',
+      since: '{date}から適用中の料金です。',
+    },
+    membersLink: {
+      text: 'この組織にいる人と各ロールでできることは、{link}にあります。',
+      link: 'メンバーとロール',
     },
     team: {
       title: 'チーム',
@@ -834,9 +1061,22 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     balance: {
       label: '잔액 · 만료 없음',
       low: '잔액 부족',
-      lowNote: '10유로 미만 남았습니다. 월드를 계속 열어 두려면 충전하세요.',
+      lowNote: '10유로 미만 남았습니다. 거점을 계속 열어 두려면 충전하세요.',
       spent: '이번 기간 사용액',
       spentOf: '최근 {range}',
+    },
+    kpis: {
+      runway: '최근 7일의 속도라면 약 {n}일 동안 쓸 수 있습니다.',
+      runwayOne: '최근 7일의 속도라면 하루 동안 쓸 수 있습니다.',
+      runwayLess: '최근 7일의 속도라면 하루도 채 남지 않았습니다.',
+      runwayStill: '요즘은 사용한 금액이 없어 잔액이 줄지 않습니다.',
+      month: '이번 달',
+      monthWorlds: '요금이 나간 거점 {n}곳',
+      monthWorldsOne: '요금이 나간 거점 1곳',
+      monthWorldsNone: '요금이 나간 거점이 없습니다',
+      low: '잔액 부족 알림',
+      lowWhen: '잔액이 10유로 아래로 내려가면 이 화면에서 알려 드립니다.',
+      lowKeep: '잔액이 0이 되면 거점은 꺼지고 {n}일 동안 보관됩니다.',
     },
     topup: {
       title: '충전',
@@ -856,19 +1096,57 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       title: '사용량',
       ranges: { '7d': '7일', '30d': '30일', '12m': '12개월' },
       rangeLabel: '기간',
-      empty: '이 기간에는 사용한 금액이 없습니다. 잔액을 쓴 월드가 없습니다.',
+      empty: '이 기간에는 사용한 금액이 없습니다. 잔액을 쓴 거점이 없습니다.',
       chartDays: '일별 사용액: 합계 {total}',
       chartMonths: '월별 사용액: 합계 {total}',
+      headDays: '하루씩, 최근 {n}일',
+      headMonths: '한 달씩, 최근 12개월',
+      closes: '하루는 UTC 자정에 마감됩니다.',
+      running: '켜진 거점',
+      stopped: '꺼짐',
+      bar: '{when} · {total} — 켜짐 {running} · 꺼짐 {stopped}',
+      worlds: '기간 중 거점별',
+      world: '거점',
+      size: '크기',
+      daysRunning: '켜진 날',
+      amount: '기간 금액',
     },
     lines: {
       title: '거래 내역',
+      head: '모든 내역',
+      never: '내역은 지워지지 않습니다. 바로잡을 것이 있으면 새 내역이 추가됩니다.',
+      csv: '다운로드(.csv)',
       empty: '이 계정에는 아직 거래 내역이 없습니다.',
-      when: '날짜',
+      day: '날짜(UTC)',
       what: '내용',
+      detail: '세부',
       amount: '금액',
-      labels: { topup: '충전', world: '월드 · 1일', adjustment: '조정', refund: '환불' },
+      after: '잔액',
+      afterNote:
+        '각 내역의 잔액은 오늘 잔액에서 최근 100건을 거슬러 올라가며 계산합니다. 그 범위 안에서는 정확합니다.',
+      labels: { topup: '충전', world: '거점의 하루', adjustment: '조정', refund: '환불' },
       vat: 'VAT {v}',
       world: '{world} · {size}',
+      minutes: '켜짐 {on} · 꺼짐 {off}',
+      hours: '{h}시간',
+      hoursMinutes: '{h}시간 {m}분',
+    },
+    rules: {
+      label: '한눈에 보는 규칙',
+      title: '요금과 그 이유',
+      size: '{size} 거점: 켜져 있으면 하루 {running}, 꺼져 있으면 {stopped}.',
+      topups: '충전은 10·50·100유로. 구독은 없으며 쓴 만큼만 냅니다.',
+      keep: '잔액이 0이 되면 거점은 꺼지고 {n}일 동안 보관됩니다.',
+      notice: '요금이 오를 때는 공지 후 {n}일이 지나야 인상이 시작됩니다.',
+      personal: '내 개인 계정입니다. 충전하고 이 내역을 보는 사람은 나뿐입니다.',
+      whoTopsUp: '명의자와 다음 역할이 충전할 수 있습니다: {roles}.',
+      whoTopsUpOwners: '명의자만 충전할 수 있습니다.',
+      everyone: '이 조직의 멤버라면 누구나 충전할 수 있습니다.',
+      since: '{date}부터 적용 중인 요금입니다.',
+    },
+    membersLink: {
+      text: '이 조직에 누가 있고 역할마다 무엇을 할 수 있는지는 {link}에 있습니다.',
+      link: '멤버와 역할',
     },
     team: {
       title: '팀',
@@ -1028,9 +1306,22 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     balance: {
       label: 'Saldo · não expira',
       low: 'Saldo baixo',
-      lowNote: 'Restam menos de 10 €. Recarregue para manter seus mundos abertos.',
+      lowNote: 'Restam menos de 10\u00a0€. Recarregue para manter suas sedes abertas.',
       spent: 'Gasto neste período',
       spentOf: 'nos últimos {range}',
+    },
+    kpis: {
+      runway: 'Dá para uns {n} dias no ritmo dos últimos 7 dias.',
+      runwayOne: 'Dá para um dia no ritmo dos últimos 7 dias.',
+      runwayLess: 'Dá para menos de um dia no ritmo dos últimos 7 dias.',
+      runwayStill: 'Sem gasto nestes dias: o saldo não baixa.',
+      month: 'Este mês',
+      monthWorlds: '{n} sedes com cobrança',
+      monthWorldsOne: '1 sede com cobrança',
+      monthWorldsNone: 'Nenhuma sede com cobrança',
+      low: 'Aviso de saldo baixo',
+      lowWhen: 'Esta tela avisa quando o saldo fica abaixo de 10\u00a0€.',
+      lowKeep: 'Com o saldo em zero, as sedes se desligam e ficam guardadas por {n} dias.',
     },
     topup: {
       title: 'Recarga',
@@ -1047,22 +1338,65 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       notConfigured: 'Os pagamentos ainda não estão ativados. Tente de novo mais tarde.',
     },
     usage: {
-      title: 'Uso',
+      title: 'Consumo',
       ranges: { '7d': '7 dias', '30d': '30 dias', '12m': '12 meses' },
       rangeLabel: 'Período',
-      empty: 'Nada foi gasto neste período: nenhum mundo consumiu saldo.',
+      empty: 'Nada foi gasto neste período: nenhuma sede consumiu saldo.',
       chartDays: 'Gasto por dia: {total} no total',
       chartMonths: 'Gasto por mês: {total} no total',
+      headDays: 'Cada dia, os últimos {n}',
+      headMonths: 'Cada mês, os últimos 12',
+      closes: 'Cada dia fecha à meia-noite UTC.',
+      running: 'Sede ligada',
+      stopped: 'Desligada',
+      bar: '{when} · {total} — ligada {running} · desligada {stopped}',
+      worlds: 'Cada sede no período',
+      world: 'Sede',
+      size: 'Tamanho',
+      daysRunning: 'Dias ligada',
+      amount: 'Valor do período',
     },
     lines: {
       title: 'Movimentos',
+      head: 'Cada linha',
+      never: 'As linhas nunca são apagadas: se algo é corrigido, entra outra linha.',
+      csv: 'Baixar (.csv)',
       empty: 'Ainda não há movimentos nesta conta.',
-      when: 'Data',
-      what: 'Descrição',
+      day: 'Dia (UTC)',
+      what: 'O quê',
+      detail: 'Detalhe',
       amount: 'Valor',
-      labels: { topup: 'Recarga', world: 'Mundo · dia', adjustment: 'Ajuste', refund: 'Devolução' },
+      after: 'Saldo',
+      afterNote:
+        'O saldo de cada linha é contado de trás para a frente a partir do de hoje, sobre as 100 linhas mais recentes: para elas é exato.',
+      labels: {
+        topup: 'Recarga',
+        world: 'Dia de sede',
+        adjustment: 'Ajuste',
+        refund: 'Devolução',
+      },
       vat: 'IVA {v}',
       world: '{world} · {size}',
+      minutes: 'ligada {on} · desligada {off}',
+      hours: '{h} h',
+      hoursMinutes: '{h} h {m} min',
+    },
+    rules: {
+      label: 'As regras, à vista',
+      title: 'O que custa e por quê',
+      size: 'Uma sede de {size}: {running} por dia ligada e {stopped} desligada.',
+      topups: 'Recargas de 10, 50 ou 100 €. Sem assinatura: você paga o que gasta.',
+      keep: 'Com o saldo em zero, a sede se desliga e fica guardada por {n} dias.',
+      notice: 'Se a tarifa subir, o aumento só começa {n} dias depois de anunciado.',
+      personal: 'É a sua conta pessoal: só você recarrega e vê estes dados.',
+      whoTopsUp: 'Recarregam as pessoas titulares e estes papéis: {roles}.',
+      whoTopsUpOwners: 'Só as pessoas titulares recarregam.',
+      everyone: 'Recarregam todos os membros da organização.',
+      since: 'Tarifa em vigor desde {date}.',
+    },
+    membersLink: {
+      text: 'Quem está nesta organização e o que cada papel permite, em {link}.',
+      link: 'Membros e papéis',
     },
     team: {
       title: 'Equipe',

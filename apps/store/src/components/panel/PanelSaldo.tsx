@@ -1,9 +1,9 @@
 /**
- * «Saldo y consumo» inside the panel: the balance screen that already
- * exists, hosted for the organization the panel shows — its balance, the
- * top-up, usage, movements and team — with no account switcher of its own
- * (the panel's switcher is the only one) and no way to create an
- * organization from here (Saldo is where one is created).
+ * «Saldo y consumo» inside the panel: the very screen /saldo/ draws for your
+ * own account, hosted for the organization the panel shows — its three
+ * cards, usage, movements, rules and the way to «Miembros y roles» — with no
+ * account switcher of its own (the panel's switcher is the only one) and no
+ * way to create an organization from here (Saldo is where one is created).
  */
 
 import type { SupportedLocale } from '@numinia/domain';

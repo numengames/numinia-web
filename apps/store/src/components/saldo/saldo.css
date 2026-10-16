@@ -132,9 +132,14 @@
   gap: var(--s6);
   min-width: 0;
   max-width: 960px;
+  width: 100%;
+  /* The same screen sits in /saldo/ and beside the panel's rail: the cards
+     follow the room it is given, not the window. */
+  container: saldo / inline-size;
 }
 .saldo-panel > *,
-.saldo-cifras > * {
+.saldo-kpis > *,
+.saldo-resumen > * {
   min-width: 0;
 }
 .saldo-marco {
@@ -193,10 +198,76 @@
   padding: var(--s2) var(--s3);
   min-width: 0;
 }
-.saldo-cifras {
+/* The three cards of Saldo y consumo and the four of the panel's Resumen
+   (the prototype's .kpis): a card per figure, the figure large. */
+.saldo-kpis,
+.saldo-resumen {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: var(--s4);
+}
+.saldo-resumen {
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+/* Beside the panel's rail there is room for two columns: the balance card,
+   the tallest (it holds the top-up), takes both rows of the first. */
+@container saldo (min-width: 480px) and (max-width: 760px) {
+  .saldo-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .saldo-kpi-saldo {
+    grid-row: span 2;
+  }
+}
+.saldo-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+.saldo-kpi .etiqueta,
+.saldo-kpi p {
+  margin: 0;
+}
+.saldo-kpi-valor {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.saldo-kpi-valor small {
+  font-size: 1rem;
+  color: var(--texto-2);
+  margin-left: var(--s1);
+}
+/* A card whose figure is words: an encounter's name, «Ninguna sede todavía». */
+.saldo-kpi-texto {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.saldo-kpi > a {
+  margin-top: auto;
+  padding-top: var(--s2);
+  align-self: flex-start;
+}
+.saldo-recarga {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s2);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--linea-f);
+}
+.saldo-recarga .saldo-importe {
+  min-width: 0;
+  flex: 1 1 0;
+  font-size: 1rem;
+  padding: var(--s1) var(--s2);
+}
+.saldo-letra {
+  font-size: 0.85rem;
 }
 .saldo-cifra {
   font-size: 2.488rem;
@@ -274,6 +345,105 @@
 .saldo-grafica rect {
   fill: var(--turquesa);
 }
+/* Stacked: running at the base (verdemar), stopped above it (texto-3). */
+.saldo-grafica rect.saldo-encendida,
+.saldo-muestra-encendida {
+  fill: color-mix(in srgb, var(--verdemar) 70%, transparent);
+  background: color-mix(in srgb, var(--verdemar) 70%, transparent);
+}
+.saldo-grafica rect.saldo-apagada,
+.saldo-muestra-apagada {
+  fill: color-mix(in srgb, var(--texto-3) 55%, transparent);
+  background: color-mix(in srgb, var(--texto-3) 55%, transparent);
+}
+.saldo-grafica g:hover rect {
+  filter: brightness(1.25);
+}
+.saldo-uso-pie {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2) var(--s4);
+}
+.saldo-gastado {
+  color: var(--texto);
+}
+.saldo-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  font-size: 0.85rem;
+  color: var(--texto-2);
+}
+.saldo-leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.saldo-muestra {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.saldo-cabeza-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+.saldo-cabeza-texto .etiqueta,
+.saldo-cabeza-texto p {
+  margin: 0;
+}
+.saldo-cabeza-texto h2 {
+  margin: 0;
+  font-size: 1.44rem;
+  font-weight: 400;
+}
+.saldo-reglas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: var(--s2) var(--s5);
+}
+.saldo-reglas li {
+  display: flex;
+  gap: var(--s2);
+  align-items: baseline;
+  color: var(--texto-2);
+  line-height: 1.5;
+}
+.saldo-reglas li::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--verdemar);
+  transform: translateY(-0.1rem);
+}
+.saldo-pie {
+  font-size: 0.85rem;
+}
+.saldo-tabla td.mas {
+  color: var(--verdemar);
+}
+/* The movements: the day, the kind and the figures never break; the detail
+   wraps. On a phone the table keeps its width and scrolls in its frame. */
+.saldo-lineas th,
+.saldo-lineas .saldo-fecha,
+.saldo-lineas .saldo-que {
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .saldo-lineas table {
+    min-width: 36rem;
+  }
+}
 .saldo-grafica .eje {
   stroke: var(--linea-f);
 }
@@ -321,7 +491,6 @@
   color: var(--texto-2);
 }
 .saldo-detalle {
-  display: block;
   color: var(--texto-2);
   font-size: 0.875rem;
 }
@@ -366,4 +535,49 @@
 .saldo-pronto,
 .saldo-fuera {
   max-width: 640px;
+}
+/* The panel's Resumen (cut «el dinero»): its four cards use .saldo-kpi;
+   «Lo último» is a list of what happened, newest first. */
+.saldo-resumen-zona {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+  min-width: 0;
+}
+.saldo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+.saldo-ultimo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.saldo-ultimo li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2) var(--s4);
+  align-items: baseline;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--linea-f);
+}
+.saldo-ultimo li:first-child {
+  padding-top: 0;
+}
+.saldo-ultimo li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.saldo-ultimo time {
+  color: var(--texto-2);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .saldo-ultimo li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s1);
+  }
 }

@@ -172,4 +172,67 @@ describe('the fixture statement, as a till of this cut answers it', () => {
     expect(statement.pace).toEqual({ sevenDaysCents: 60, monthCents: 60, monthWorlds: 1 });
     expect(statement.lines[0]).not.toHaveProperty('minutesRunning');
   });
+
+  it('splits the odd days as the till does: stopped minutes free at zero, or a day it cannot price', async () => {
+    const odd = createAccountsFixtureDesk(
+      {
+        ...(seed.tariff === undefined ? {} : { tariff: seed.tariff }),
+        personal: {
+          id: 'acc_p',
+          lines: [
+            // Kept at zero: 30 minutes running cost 1 cent, the stopped ones nothing.
+            {
+              kind: 'world_day',
+              daysAgo: 1,
+              amountCents: -1,
+              worldId: 'a',
+              size: '2g',
+              minutesRunning: 30,
+              minutesStopped: 1410,
+            },
+            // No minutes, a size the tariff does not price, half the minutes: running whole.
+            { kind: 'world_day', daysAgo: 2, amountCents: -60, worldId: 'b', size: '2g' },
+            {
+              kind: 'world_day',
+              daysAgo: 3,
+              amountCents: -60,
+              worldId: 'c',
+              size: '8g',
+              minutesRunning: 1440,
+              minutesStopped: 0,
+            },
+            {
+              kind: 'world_day',
+              daysAgo: 4,
+              amountCents: -60,
+              worldId: 'd',
+              size: '2g',
+              minutesRunning: 1440,
+            },
+          ],
+        },
+        teams: [],
+      },
+      () => NOW,
+    ) as unknown as Loose;
+    const statement = (await odd.statement(ME, 'acc_p', '7d')) as DeskStatement;
+    expect(statement.spend).toEqual([
+      { bucket: '2026-10-10', cents: 60, runningCents: 60, stoppedCents: 0 },
+      { bucket: '2026-10-11', cents: 60, runningCents: 60, stoppedCents: 0 },
+      { bucket: '2026-10-12', cents: 60, runningCents: 60, stoppedCents: 0 },
+      { bucket: '2026-10-13', cents: 1, runningCents: 1, stoppedCents: 0 },
+    ]);
+    // Worlds of the same cost, by id.
+    expect(statement.worlds?.map((world) => world.worldId)).toEqual(['b', 'c', 'd', 'a']);
+  });
+
+  it('shows every size of the tariff to an account with no world yet', async () => {
+    const d = desk();
+    const made = await d.createTeam(ME, 'Arcasiles');
+    if (!made.ok) throw new Error('no team');
+    const statement = (await d.statement(ME, made.account.id, '30d')) as DeskStatement;
+    expect(Object.keys(statement.tariff?.sizes ?? {}).sort()).toEqual(['1g', '2g', '4g']);
+    expect(statement.worlds).toEqual([]);
+    expect(statement.pace).toEqual({ sevenDaysCents: 0, monthCents: 0, monthWorlds: 0 });
+  });
 });

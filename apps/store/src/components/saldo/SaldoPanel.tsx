@@ -1,15 +1,19 @@
 /**
- * «Saldo» (the island): your account and your organizations' in one
- * screen. Asks /api/saldo (the till's AccountDesk behind the session) and
- * shows only what it answers — no figure is made up here.
+ * «Saldo y consumo» (the island): one screen for your own account at /saldo/
+ * and for each organization at /panel/saldo/ («la misma pantalla para ti y
+ * para cada comunidad»). Asks /api/saldo (the till's AccountDesk behind the
+ * session) and shows only what it answers — no figure is made up here.
  *
  * Top to bottom: the account switcher («Tu cuenta», each organization,
- * «Nueva organización»), the balance that never expires and what was spent
- * in the period, the top-up (+10 / +50 / +100 €, Stripe in a NEW tab: the
- * tab is opened blank on the click itself, so popup blockers allow it, and
- * sent to Stripe once the API answers), usage per day or month, the
- * movements and, for an organization, its team. Every return to the tab
- * reads the balance again (the payment happened in the other one).
+ * «Nueva organización»; not when a page already chose the organization), the
+ * three cards — the balance that never expires with how long it lasts and
+ * the top-up (+10 / +50 / +100 €, Stripe in a NEW tab: the tab is opened
+ * blank on the click itself, so popup blockers allow it, and sent to Stripe
+ * once the API answers), this month, the low-balance warning —, usage per
+ * day or month, the movements with the balance after each line and their
+ * CSV, the rules in sight and, for an organization, the way to «Miembros y
+ * roles» (its people are managed there now). Every return to the tab reads
+ * the balance again (the payment happened in the other one).
  */
 
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
@@ -25,18 +29,17 @@ import {
   needsSentence,
   readResult,
   readStatement,
-  readYou,
   teamName,
   type DeskAccess,
   type DeskAccount,
   type DeskStatement,
-  type MemberRole,
   type PostResult,
   type SpendRange,
   type TopupKey,
 } from '../../lib/accounts';
+import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
-import { Balance, Movements, Team, Topup, Usage, type TopupState } from './SaldoSections';
+import { Kpis, MembersLink, Movements, Rules, Usage, type TopupState } from './SaldoSections';
 
 type Phase =
   | { readonly at: 'loading' }
@@ -51,12 +54,14 @@ type Sheet =
   | {
       readonly at: 'ready';
       readonly statement: DeskStatement;
-      readonly you: string | null;
       /** What the wallet may do in an organization; null for a personal account or when unknown. */
       readonly access: DeskAccess | null;
     };
 
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };
+
+/** «Miembros y roles» of the panel: where an organization's people are. */
+const MEMBERS_PIECE = PIECES.find((piece) => piece.id === 'members');
 
 /** POST one action; the desk's answer, or null when the API failed. */
 async function post(body: Readonly<Record<string, unknown>>): Promise<PostResult | null> {
@@ -101,7 +106,6 @@ export function SaldoPanel({
   const [newName, setNewName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   // Only the newest statement read may paint.
   const asked = useRef(0);
@@ -164,7 +168,7 @@ export function SaldoPanel({
           });
         }
         setNow(new Date());
-        setSheet({ at: 'ready', statement, you: readYou(json), access: readAccess(json) });
+        setSheet({ at: 'ready', statement, access: readAccess(json) });
       } catch {
         if (mine === asked.current) setSheet({ at: 'failed', text: ui.failed });
       }
@@ -214,21 +218,6 @@ export function SaldoPanel({
       tab.location.href = url;
       setTopup({ at: 'opened' });
     });
-  };
-
-  /** One write on the desk; true when it went through (then everything is read again). */
-  const act = async (body: Readonly<Record<string, unknown>>): Promise<boolean> => {
-    setBusy(true);
-    setNotice(null);
-    const result = await post(body);
-    setBusy(false);
-    if (result === null || !result.ok) {
-      setNotice(result === null ? ui.failed : problemText(result.problems));
-      return false;
-    }
-    await loadOverview();
-    if (current !== null) await loadStatement(current, range, true);
-    return true;
   };
 
   const createTeam = async (event: SyntheticEvent): Promise<void> => {
@@ -314,6 +303,11 @@ export function SaldoPanel({
     );
   }
 
+  const membersHref =
+    account !== null && account.kind === 'team' && MEMBERS_PIECE !== undefined
+      ? pieceHref(locale, MEMBERS_PIECE, account.id)
+      : null;
+
   return (
     <div className="saldo-panel" data-saldo-panel>
       {organization === undefined && (
@@ -327,7 +321,6 @@ export function SaldoPanel({
               value={current ?? ''}
               onChange={(event) => {
                 setTopup({ at: 'idle' });
-                setNotice(null);
                 setCurrent(event.target.value);
               }}
               data-metric="saldo-account"
@@ -394,14 +387,6 @@ export function SaldoPanel({
         </form>
       )}
 
-      <div aria-live="polite">
-        {notice !== null && (
-          <p className="saldo-mal saldo-aviso" role="alert">
-            {notice}
-          </p>
-        )}
-      </div>
-
       {sheet.at === 'loading' && (
         <div className="saldo-estado" role="status">
           <LunaEspera /> {ui.loading}
@@ -423,28 +408,29 @@ export function SaldoPanel({
       )}
       {sheet.at === 'ready' && account !== null && (
         <>
-          <Balance ui={ui} lang={lang} statement={sheet.statement} range={range} />
-          {can(sheet.access, 'top-up') ? (
-            <Topup
-              ui={ui}
-              lang={lang}
-              amount={amount}
-              onAmount={(key) => {
-                setAmount(key);
-                setTopup({ at: 'idle' });
-              }}
-              onPay={pay}
-              state={topup}
-            />
-          ) : (
-            <p className="saldo-nota" data-saldo-no-topup>
-              {needsSentence(
-                ui.problems,
-                ORGANIZATION_PERMISSION_LABELS['top-up'][locale],
-                holdersOf(sheet.access, 'top-up', lang),
-              )}
-            </p>
-          )}
+          <Kpis
+            ui={ui}
+            lang={lang}
+            statement={sheet.statement}
+            topup={
+              can(sheet.access, 'top-up')
+                ? {
+                    amount,
+                    onAmount: (key) => {
+                      setAmount(key);
+                      setTopup({ at: 'idle' });
+                    },
+                    onPay: pay,
+                    state: topup,
+                  }
+                : null
+            }
+            noTopup={needsSentence(
+              ui.problems,
+              ORGANIZATION_PERMISSION_LABELS['top-up'][locale],
+              holdersOf(sheet.access, 'top-up', lang),
+            )}
+          />
           <Usage
             ui={ui}
             lang={lang}
@@ -453,25 +439,17 @@ export function SaldoPanel({
             onRange={setRange}
             now={now}
           />
-          <Movements ui={ui} lang={lang} lines={sheet.statement.lines} />
-          {account.kind === 'team' && (
-            <Team
-              key={account.id}
+          <Movements ui={ui} lang={lang} statement={sheet.statement} now={now} />
+          {sheet.statement.tariff !== undefined && (
+            <Rules
               ui={ui}
               lang={lang}
-              account={account}
-              members={sheet.statement.members ?? []}
-              you={sheet.you}
+              tariff={sheet.statement.tariff}
+              personal={account.kind === 'personal'}
               access={sheet.access}
-              locale={locale}
-              busy={busy}
-              onRename={(name) => act({ action: 'rename', accountId: account.id, name })}
-              onSetMember={(wallet, role: MemberRole) =>
-                act({ action: 'set-member', accountId: account.id, wallet, role })
-              }
-              onRemove={(wallet) => act({ action: 'remove-member', accountId: account.id, wallet })}
             />
           )}
+          {membersHref !== null && <MembersLink ui={ui} href={membersHref} />}
         </>
       )}
     </div>
