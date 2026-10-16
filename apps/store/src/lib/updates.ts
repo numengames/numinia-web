@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.98.0',
+    date: '2026-10-16 05:36',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Balance and usage» is drawn as the prototype draws it, one screen for your own balance and for each organization’s. Three cards: the balance, with how many days it lasts at the pace of the last seven and the top-up inside it; this month’s spend and how many homes it charged; and the low-balance warning, with what happens at zero. Then the usage chart, each day split into homes running and stopped, with a table per home; every movement with the balance after it and a CSV you download straight from your browser; and the rules of the tariff in force, in sight, with who may top up. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: '«Members» and «Roles» are now two pieces of the panel, ten in all. Members is a table of the people — their rank in the city, the roles they hold here (given and taken with a click), the month they joined and a menu to remove someone — with a search box and «Add member». Roles is an editor like Discord’s: the owners apart, the roles from the top down with how many hold each, moved up or down, and for each role its look, a switch per permission in five groups with what each allows in plain words, the acts only owners do, and who holds it. Whoever may not manage roles sees it read-only, with who can. Saldo’s members tab now leads there. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'The panel’s Summary opens with four cards — the homes charged in the last 30 days, the next gathering, the people and the balance — and «The latest»: the five newest changes and top-ups of the organization.',
+      },
+    ],
+  },
+  {
     version: 'v0.97.0',
     date: '2026-10-15 18:10',
     entries: [
