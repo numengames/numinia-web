@@ -1,5 +1,6 @@
 /**
- * The home's Bazar block (the app shell, v0.83.0): a handful of the city's
+ * The home's Bazar block (the app shell, v0.83.0; «Recién llegado al Bazar»
+ * since v3): a handful of the city's
  * digital goods, each card saying only what the catalogue says — its
  * picture, kind and format, its name, its own line, its size and version
  * when stated, its shelf, and the licence. Nothing here is invented: a fact
@@ -8,24 +9,36 @@
  * Pure: the page hands in the archive (lib/archive.ts loads it once).
  */
 
+import type { Community } from './communities';
 import type { AssetCategory, CatalogedAsset } from './data';
 import { thumbSrc, thumbSrcSet } from './thumbs';
 
+/** One community's shelf on the Bazar: who, and how many goods it has uploaded. */
+interface CommunityShelf {
+  readonly id: string;
+  readonly name: string;
+  readonly count: number;
+}
+
 /**
- * The house's pick for the home, in order: the eight of the approved
- * wireframe (the Oracle, 2026-10-14). A pick the catalogue no longer holds
- * is skipped and the newest goods fill its place.
+ * The Bazar's line of shelves per community (v3): only the communities that
+ * have uploaded something — never a «· 0». Every good of the archive comes
+ * from the house's own data repository, so today they are all the founder's
+ * (Numen Games: and the house's are everyone's); a community gets its own
+ * shelf the day the catalogue says it uploaded something.
  */
-export const HOME_GOODS: readonly string[] = [
-  'avatar-arla-mncdhz3l',
-  'ndg-019d3e6c-129a-701e-95fc-ce1754d5c917',
-  'starter-avatar-01',
-  'pot-vapor-02',
-  'starter-chair-01',
-  'ndg-019d3ded-a1dd-7e0e-aeff-cb155bdff3d8',
-  'ndg-019d3e66-c8d0-7fd2-b5a8-fca1af183e43',
-  'ndg-019d3e75-7731-7261-913d-842515f90190',
-];
+export function communityShelves(
+  communities: readonly Pick<Community, 'id' | 'name' | 'state'>[],
+  archiveSize: number,
+): readonly CommunityShelf[] {
+  return communities
+    .map((community) => ({
+      id: community.id,
+      name: community.name,
+      count: community.state === 'founder' ? archiveSize : 0,
+    }))
+    .filter((shelf) => shelf.count > 0);
+}
 
 /**
  * Where an object's page lives. One helper, so the cut that moves the big
@@ -44,25 +57,22 @@ function showable(entry: CatalogedAsset): boolean {
 }
 
 /**
- * The goods the home shows: the house's picks first, in their order, then
- * the rest of the archive in its own order (the newest first), up to
- * `count`, each once.
+ * «Recién llegado al Bazar» (v3, «Ahora»): the newest goods the city can
+ * give away as they are, by the catalogue's own upload date, newest first
+ * (equal dates keep the archive's order), up to `count`.
  */
-export function homeGoods(
+export function newestGoods(
   archive: readonly CatalogedAsset[],
-  count = 8,
-  picks: readonly string[] = HOME_GOODS,
+  count = 4,
 ): readonly CatalogedAsset[] {
-  const pool = archive.filter(showable);
-  const chosen: CatalogedAsset[] = [];
-  for (const id of picks) {
-    const entry = pool.find((candidate) => candidate.asset.id === id);
-    if (entry && !chosen.includes(entry)) chosen.push(entry);
-  }
-  for (const entry of pool) {
-    if (!chosen.includes(entry)) chosen.push(entry);
-  }
-  return chosen.slice(0, Math.max(0, count));
+  return archive
+    .filter(showable)
+    .map((entry, index) => ({ entry, index }))
+    .sort(
+      (a, b) => b.entry.asset.createdAt.localeCompare(a.entry.asset.createdAt) || a.index - b.index,
+    )
+    .slice(0, Math.max(0, count))
+    .map(({ entry }) => entry);
 }
 
 /**

@@ -173,3 +173,16 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   commons has no world), `house-how-to-play`, `house-legend-chip`,
 //   `house-rings-summa`, `house-meta-doors`, `house-meta-codex`,
 //   `house-world-enter`, `house-archive`, `house-bazaar`.
+// ---- v3 «Ahora y Mundos» (cut C, 2026-10-16): its data-metric ids ---------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The front page «Ahora»: `home-featured-prev`, `home-featured-next` (the
+//   frame's arrows), `home-featured-world` («Entrar al mundo»),
+//   `home-featured-calendar` («Me apunto»), `home-featured-ritual`,
+//   `home-featured-community`, `home-featured-community-page`,
+//   `home-featured-later` (the next encounter under a world), `home-live-world`
+//   (a row of «Ahora mismo, dentro», the phone), `home-communities`.
+// - «Cómo funciona»: `how-faq` (a question, moved from the front page).
+// - The index of worlds /mundos/: `worlds-filter-<all|people|city|communities>`,
+//   `worlds-card-enter` («Entrar»), `worlds-card-page` («Su página»),
+//   `worlds-card-title`, `worlds-card-community`.
+// - The Bazar: `bazaar-community-shelf` (a community's chip).

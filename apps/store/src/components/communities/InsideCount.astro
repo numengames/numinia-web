@@ -9,6 +9,11 @@
  *   data-inside="<community>"       the count, as text
  *   data-inside-row="<community>"   shown only while someone is inside
  *   data-inside-empty               hidden once anyone is inside anywhere
+ *   data-inside-any                 shown only once anyone is inside anywhere
+ *   data-live-slide="<community>"   (the front page's frame) asks for the count too
+ *
+ * Once read, the counts also go out as a `numinia:inside` event (detail: the
+ * map), for the front page's featured frame.
  *
  * Templates come from the page's messages; "{n}" is the number.
  */
@@ -25,7 +30,7 @@ const templates = { none: ui.insideNone, one: ui.insideOne, many: ui.insideMany 
 <script is:inline data-inside-templates={JSON.stringify(templates)}>
   (function () {
     var t = JSON.parse(document.currentScript.getAttribute('data-inside-templates'));
-    if (!document.querySelector('[data-inside], [data-inside-row]')) return;
+    if (!document.querySelector('[data-inside], [data-inside-row], [data-live-slide]')) return;
     fetch('/api/live', { headers: { accept: 'application/json' } })
       .then(function (response) {
         return response.ok ? response.json() : null;
@@ -48,6 +53,11 @@ const templates = { none: ui.insideNone, one: ui.insideOne, many: ui.insideMany 
         });
         var empty = document.querySelector('[data-inside-empty]');
         if (empty && anyone) empty.hidden = true;
+        document.querySelectorAll('[data-inside-any]').forEach(function (el) {
+          el.hidden = !anyone;
+        });
+        // The front page's featured frame opens a world with people from the same count.
+        document.dispatchEvent(new CustomEvent('numinia:inside', { detail: inside }));
       })
       .catch(function () {});
   })();

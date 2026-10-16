@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.113.0',
+    date: '2026-10-16 21:06',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The front page is «Now», the same for everyone. At the top, one featured thing at a time in a wide frame — the nearest encounter with «Count me in», or a world with people inside with «Enter the world» once the world itself says someone is there — and arrows to see the next; nothing moves by itself. Then the upcoming encounters in your own time zone, the three communities that meet soonest, and the four newest goods of the Bazar. On a phone, «Inside right now» lists the worlds with people, only when there are. The questions the front page used to answer moved to «How it works». In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.112.0',
     date: '2026-10-16 22:15',
     entries: [

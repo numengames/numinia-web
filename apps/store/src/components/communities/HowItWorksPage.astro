@@ -5,12 +5,14 @@
  * what Numinia is in a line, four steps each with its door, the six
  * templates a community can open its home from (and how to ask for one),
  * and why a city, in three lines of its canon with the way to the Archive.
- * No price block: there is no public tariff yet. The steps and the templates
- * are shared with the front door's visitor face (v0.86.0).
+ * No price block: there is no public tariff yet. The steps, the templates
+ * and the questions were the front door's visitor face (v0.86.0); since v3
+ * the front page is «Ahora» and they live here.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { HOW_IT_WORKS } from '../../i18n/how-it-works';
+import { FRONT_DOOR } from '../../i18n/front-door';
 import Icon from '../chrome/Icon.astro';
 import HowSteps from './HowSteps.astro';
 import HowTemplates from './HowTemplates.astro';
@@ -22,6 +24,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = HOW_IT_WORKS[locale];
+const door = FRONT_DOOR[locale];
 ---
 
 <BaseLayout locale={locale} title={t.title} description={t.description}>
@@ -74,9 +77,43 @@ const t = HOW_IT_WORKS[locale];
       />
     </div>
   </section>
+
+  {/* The front door's questions (v0.86.0) moved here with v3: the front page is «Ahora». */}
+  <section class="bloque" id="faq">
+    <p class="etiqueta">{door.faqEyebrow}</p>
+    <h2 class="titulo-m">{door.faqTitle}</h2>
+    <div class="preguntas">
+      {
+        door.faq.map((entry) => (
+          <details>
+            <summary data-metric="how-faq">{entry.q}</summary>
+            <p>{entry.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
+  .preguntas {
+    max-width: 760px;
+    margin-top: var(--s5);
+  }
+  .preguntas details {
+    border-bottom: 1px solid var(--linea);
+    padding: var(--s3) 0;
+  }
+  .preguntas summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.05rem;
+    min-height: 32px;
+  }
+  .preguntas p {
+    color: var(--texto-2);
+    margin: var(--s2) 0 0;
+  }
   .historia {
     display: grid;
     gap: var(--s6);

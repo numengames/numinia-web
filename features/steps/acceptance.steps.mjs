@@ -703,7 +703,10 @@ Then('the home carries no explanation heading and opens on the featured card', a
         `${where}: the home still has ${metric}`,
       );
     }
-    const slides = (html.match(/data-featured-slide/g) ?? []).length;
+    // The encounters the build presents (a world's slide waits hidden for the live count).
+    const slides = [...html.matchAll(/<article\b[^>]*\bdata-featured-slide\b[^>]*>/g)].filter(
+      (match) => !match[0].includes('data-live-slide'),
+    ).length;
     assert.ok(slides >= 1 && slides <= 3, `${where}: ${slides} featured slides`);
     const featured = html.indexOf('data-featured-slide');
     assert.ok(featured < html.indexOf('id="rituals"'), `${where}: the featured card is not first`);
@@ -715,69 +718,78 @@ Then('the home carries no explanation heading and opens on the featured card', a
   }
 });
 
-Then("the home's visitor face comes first and the signed-in face waits hidden", async function () {
+Then(
+  'the home is «Ahora» in every locale: one face, the featured frame first, then encounters, communities and the newest goods',
+  async function () {
+    for (const prefix of LOCALE_PREFIXES) {
+      const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+      const where = prefix || 'en';
+      // One face for everyone: no visitor face, no signed-in face waiting hidden.
+      assert.ok(!html.includes('class="visita"'), `${where}: the visitor face is still there`);
+      assert.ok(!html.includes('<div data-session-in hidden'), `${where}: a hidden second face`);
+      const main = html.slice(html.indexOf('<main'));
+      assert.equal((main.match(/<h1\b/g) ?? []).length, 1, `${where}: one h1`);
+      // Top to bottom: the frame, the encounters, the communities, the newest goods, the doors.
+      const order = [
+        'id="destacado"',
+        'id="rituals"',
+        'id="alive"',
+        'id="bazaar"',
+        'class="final"',
+      ].map((marker) => [marker, html.indexOf(marker)]);
+      for (const [marker, at] of order) assert.ok(at !== -1, `${where}: no ${marker}`);
+      for (let i = 1; i < order.length; i += 1) {
+        assert.ok(
+          order[i - 1][1] < order[i][1],
+          `${where}: ${order[i][0]} before ${order[i - 1][0]}`,
+        );
+      }
+      // The frame: one big action per encounter, arrows that move it, no autoplay.
+      const frame = html.slice(html.indexOf('id="destacado"'), html.indexOf('id="rituals"'));
+      for (const step of ['-1', '1']) {
+        assert.match(
+          frame,
+          new RegExp(`data-featured-step="${step}"`),
+          `${where}: no arrow ${step}`,
+        );
+      }
+      assert.ok(frame.includes('data-metric="home-featured-calendar"'), `${where}: no «Me apunto»`);
+      assert.ok(!/autoplay|setInterval/.test(frame), `${where}: the frame moves on its own`);
+      // The worlds with people are not repeated as cards: on the phone a list
+      // that shows only once the live count says someone is inside.
+      const phone = /<section\b[^>]*class="vivo-movil"[^>]*>/.exec(html);
+      if (phone) {
+        assert.match(
+          phone[0],
+          /\bdata-inside-any\b/,
+          `${where}: the phone list is not tied to the count`,
+        );
+        assert.match(phone[0], /\bhidden\b/, `${where}: the phone list shows before the count`);
+      }
+      assert.ok(
+        !html.includes('data-metric="live-now-enter"'),
+        `${where}: Live's cards on the home`,
+      );
+    }
+  },
+);
+
+Then('the questions of the old visitor face are on how it works', async function () {
   for (const prefix of LOCALE_PREFIXES) {
-    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
-    const where = prefix || 'en';
-    const visitor = html.indexOf('class="visita" data-session-out');
-    const member = html.indexOf('<div data-session-in hidden');
-    assert.ok(visitor !== -1, `${where}: no visitor face`);
-    assert.ok(member !== -1, `${where}: the signed-in face is not hidden by default`);
-    assert.ok(visitor < member, `${where}: the visitor face is not first`);
-    // One h1 a visitor can see: the visitor face's line; the other sits in the hidden face.
-    const visible = html.slice(visitor, member);
-    assert.equal((visible.match(/<h1\b/g) ?? []).length, 1, `${where}: visitor face h1 count`);
-    assert.ok(
-      member < html.indexOf('data-featured-slide'),
-      `${where}: the featured card left the signed-in face`,
+    const html = await readFile(
+      path.join(this.distDir, prefix, 'how-it-works', 'index.html'),
+      'utf8',
+    );
+    const faq = html.slice(html.indexOf('id="faq"'));
+    const section = faq.slice(0, faq.indexOf('</section>'));
+    assert.ok(html.includes('id="faq"'), `${prefix || 'en'}: no questions`);
+    assert.equal(
+      (section.match(/<details\b/g) ?? []).length,
+      5,
+      `${prefix || 'en'}: five questions`,
     );
   }
 });
-
-Then(
-  'the visitor face opens the commons, shows only communities with an open home and asks for a home with a form',
-  async function () {
-    const html = await readFile(path.join(this.distDir, 'es', 'index.html'), 'utf8');
-    const face = html.slice(
-      html.indexOf('class="visita"'),
-      html.indexOf('<div data-session-in hidden'),
-    );
-    // The way in: the commons, compared whole as a parsed URL.
-    const enter = /<a\b[^>]*\bdata-metric="door-enter-city"[^>]*>/.exec(face);
-    const href = enter && /\bhref="([^"]+)"/.exec(enter[0]);
-    assert.ok(href, 'visitor face: no way into the city');
-    const world = new URL(href[1]);
-    assert.equal(
-      `${world.origin}${world.pathname}`,
-      'https://v2.oncyber.io/agora_plaza_of_numinia',
-    );
-    // The cards: a community's own home, or the founder (the commons).
-    const withHome = readdirSync(COMMUNITY_FILES)
-      .filter((name) => name.endsWith('.md'))
-      .filter((name) => {
-        const text = readFileSync(path.join(COMMUNITY_FILES, name), 'utf8');
-        return !/^visibility: house/m.test(text) && /^(sede:|state: founder)/m.test(text);
-      })
-      .map((name) => name.replace(/\.md$/, ''))
-      .sort();
-    const block = face.slice(face.indexOf('id="con-sede"'), face.indexOf('id="abrir"'));
-    const cards = [...block.matchAll(/class="tarjeta com" href="\/es\/communities\/([^/]+)\/"/g)]
-      .map((match) => match[1])
-      .sort();
-    assert.deepEqual(
-      cards,
-      withHome,
-      'visitor face: the communities shown are not the ones with a home',
-    );
-    // The request: a form with the four fields, the two that matter required.
-    const form = face.slice(face.indexOf('<form'), face.indexOf('</form>'));
-    for (const name of ['name', 'kind', 'when', 'email']) {
-      assert.ok(new RegExp(`name="${name}"`).test(form), `form: no ${name}`);
-    }
-    assert.equal((form.match(/\brequired\b/g) ?? []).length, 2, 'form: required fields');
-    assert.equal((face.match(/<details\b/g) ?? []).length, 5, 'visitor face: five questions');
-  },
-);
 
 Then('the home shows the Bazar block with real goods and their licence', async function () {
   for (const [prefix, licence] of [
@@ -785,11 +797,11 @@ Then('the home shows the Bazar block with real goods and their licence', async f
     ['es', 'CC0 · libre, sin pedir permiso'],
   ]) {
     const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
-    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('id="alive"'));
+    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('class="final"'));
     const goods = [...block.matchAll(/href="([^"]+)"[^>]*data-metric="home-good"/g)].map(
       (match) => match[1],
     );
-    assert.equal(goods.length, 8, `${prefix || 'en'}: ${goods.length} goods on the home`);
+    assert.equal(goods.length, 4, `${prefix || 'en'}: ${goods.length} goods on the home`);
     for (const href of goods) {
       const page = await readFile(path.join(this.distDir, href, 'index.html'), 'utf8').catch(
         () => null,
@@ -797,7 +809,7 @@ Then('the home shows the Bazar block with real goods and their licence', async f
       assert.ok(page, `${prefix || 'en'}: ${href} is not an object page`);
     }
     const licences = block.split(licence).length - 1;
-    assert.equal(licences, 8, `${prefix || 'en'}: ${licences} licence lines for 8 goods`);
+    assert.equal(licences, 4, `${prefix || 'en'}: ${licences} licence lines for 4 goods`);
     assert.ok(
       block.includes('data-metric="home-bazaar"'),
       `${prefix || 'en'}: no way to the Bazar`,
@@ -990,40 +1002,37 @@ Then('the Oracle alone sees how to edit a community and its rituals', async func
 
 // --- the Oracle's video, 2026-10-14: the home's shelf, what a space uses, the word ---
 
-Then("the home's Bazar shelf is one strip with its arrows, like the gatherings", async function () {
-  for (const prefix of LOCALE_PREFIXES) {
-    const where = prefix || 'en';
-    const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
-    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('id="alive"'));
-    // One row: the goods ride a strip (.pista), the pattern of the gatherings above.
-    for (const [section, strip] of [
-      [html.slice(html.indexOf('id="rituals"'), html.indexOf('id="bazaar"')), 'rituales-pista'],
-      [block, 'objetos-pista'],
-    ]) {
-      const tag = new RegExp(`<div\\b[^>]*\\bclass="pista[^"]*"[^>]*\\bid="${strip}"[^>]*>`).exec(
-        section,
-      );
-      assert.ok(tag, `${where}: ${strip} is not a strip`);
-      assert.match(tag[0], /\bdata-step-px="\d+"/, `${where}: ${strip} has no step`);
+Then(
+  "the home's newest goods are four in one row, and the encounters ride a strip with arrows",
+  async function () {
+    for (const prefix of LOCALE_PREFIXES) {
+      const where = prefix || 'en';
+      const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
+      // The encounters ride a strip (.pista) with its two arrows.
+      const section = html.slice(html.indexOf('id="rituals"'), html.indexOf('id="alive"'));
+      const tag = /<div\b[^>]*\bclass="pista[^"]*"[^>]*\bid="rituales-pista"[^>]*>/.exec(section);
+      assert.ok(tag, `${where}: rituales-pista is not a strip`);
+      assert.match(tag[0], /\bdata-step-px="\d+"/, `${where}: rituales-pista has no step`);
       for (const step of ['-1', '1']) {
         assert.match(
           section,
           new RegExp(
-            `<button\\b[^>]*data-step="${step}"[^>]*aria-controls="${strip}"[^>]*data-metric=`,
+            `<button\\b[^>]*data-step="${step}"[^>]*aria-controls="rituales-pista"[^>]*data-metric=`,
           ),
-          `${where}: ${strip} lacks its ${step === '1' ? 'next' : 'previous'} arrow`,
+          `${where}: rituales-pista lacks its ${step === '1' ? 'next' : 'previous'} arrow`,
         );
       }
+      // «Recién llegado al Bazar»: four goods, one row of a grid that fits four.
+      const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('class="final"'));
+      assert.ok(block.includes('rejilla-obj'), `${where}: the newest goods are not a row`);
+      assert.equal(
+        (block.match(/data-metric="home-good"/g) ?? []).length,
+        4,
+        `${where}: the row does not carry the four newest goods`,
+      );
     }
-    assert.ok(!block.includes('rejilla-obj'), `${where}: the shelf is still a grid of rows`);
-    const strip = block.slice(block.indexOf('id="objetos-pista"'));
-    assert.equal(
-      (strip.match(/data-metric="home-good"/g) ?? []).length,
-      8,
-      `${where}: the strip does not carry the eight goods`,
-    );
-  }
-});
+  },
+);
 
 const SPACE_PIECES = ['home', 'gatherings', 'archive', 'members', 'balance'];
 

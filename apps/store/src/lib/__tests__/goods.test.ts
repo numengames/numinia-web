@@ -6,7 +6,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CatalogedAsset } from '../data';
-import { catalogueLine, goodCard, HOME_GOODS, homeGoods, objectHref, sizeText } from '../goods';
+import {
+  catalogueLine,
+  communityShelves,
+  goodCard,
+  newestGoods,
+  objectHref,
+  sizeText,
+} from '../goods';
 
 async function fixtureArchive(): Promise<readonly CatalogedAsset[]> {
   vi.stubEnv('GITHUB_REPO_OWNER', 'o');
@@ -40,25 +47,39 @@ describe('objectHref', () => {
   });
 });
 
-describe('homeGoods', () => {
-  it('shows the eight goods of the approved wireframe, in their order', async () => {
-    const archive = await fixtureArchive();
-    expect(new Set(HOME_GOODS).size).toBe(8);
-    expect(homeGoods(archive).map((entry) => entry.asset.id)).toEqual(HOME_GOODS);
+describe('communityShelves', () => {
+  const founder = { id: 'numen-games', name: 'Numen Games', state: 'founder' as const };
+  const other = { id: 'trgcon', name: 'La Tarugo · TRGCON', state: 'opened' as const };
+
+  it('shows only the communities with goods: today the founder, with the whole archive', () => {
+    expect(communityShelves([other, founder], 32)).toEqual([
+      { id: 'numen-games', name: 'Numen Games', count: 32 },
+    ]);
   });
 
-  it('skips a pick the catalogue lacks, never repeats one, and fills from the archive', async () => {
+  it('never draws a shelf of nothing', () => {
+    expect(communityShelves([other, founder], 0)).toEqual([]);
+    expect(communityShelves([other], 32)).toEqual([]);
+  });
+});
+
+describe('newestGoods', () => {
+  it('shows the four newest goods by their upload date, newest first', async () => {
     const archive = await fixtureArchive();
-    // The showable goods in the archive's own order (no picks).
-    const [first, second] = homeGoods(archive, 99, []);
-    const picks = ['gone-for-good', second!.asset.id, second!.asset.id];
-    const shown = homeGoods(archive, 3, picks).map((entry) => entry.asset.id);
-    expect(shown[0]).toBe(second!.asset.id);
-    expect(shown[1]).toBe(first!.asset.id);
-    expect(shown).toHaveLength(3);
-    expect(new Set(shown).size).toBe(3);
-    expect(homeGoods(archive, 0)).toEqual([]);
-    expect(homeGoods(archive, -2)).toEqual([]);
+    const shown = newestGoods(archive);
+    expect(shown).toHaveLength(4);
+    const dates = shown.map((entry) => entry.asset.createdAt);
+    expect([...dates].sort().reverse()).toEqual(dates);
+  });
+
+  it('keeps the archive order between equal dates, and an empty count is empty', async () => {
+    const [template] = await fixtureArchive();
+    const at = (id: string, createdAt: string): CatalogedAsset =>
+      good(template!, { id, createdAt, license: 'CC0', thumbnailUrl: `https://x/${id}.png` });
+    const shelf = [at('a', '2026-01-01'), at('b', '2026-03-01'), at('c', '2026-01-01')];
+    expect(newestGoods(shelf, 99).map((entry) => entry.asset.id)).toEqual(['b', 'a', 'c']);
+    expect(newestGoods(shelf, 0)).toEqual([]);
+    expect(newestGoods(shelf, -2)).toEqual([]);
   });
 
   it('shows only goods the city can give away as they are: CC0, with a picture', async () => {
@@ -79,9 +100,10 @@ describe('homeGoods', () => {
       thumbnailUrl: 'https://x/c.png',
     });
     const blind = good(template!, { id: 'blind', license: 'CC0', thumbnailUrl: null });
-    expect(homeGoods([free, credited, blind, lower], 8, []).map((entry) => entry.asset.id)).toEqual(
-      ['free', 'lower'],
-    );
+    expect(newestGoods([free, credited, blind, lower], 8).map((entry) => entry.asset.id)).toEqual([
+      'free',
+      'lower',
+    ]);
   });
 });
 
