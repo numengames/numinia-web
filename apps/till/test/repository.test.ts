@@ -115,6 +115,7 @@ describe('the migration', () => {
       '0004_organization_roles.sql',
       '0005_role_log_acts.sql',
       '0006_wallet_profiles.sql',
+      '0007_wallet_sign_ins.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -138,6 +139,7 @@ describe('the migration', () => {
         'team_profiles',
         'team_roles',
         'wallet_profiles',
+        'wallet_sign_ins',
         'worlds',
       ].map((name) => ({ name, strict: 1 })),
     );
