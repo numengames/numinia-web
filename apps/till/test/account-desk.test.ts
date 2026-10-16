@@ -322,6 +322,188 @@ describe('the statement', () => {
       problems: [PROBLEMS.notMember],
     });
   });
+
+  /** An organization with two worlds of different sizes and a version that prices three sizes. */
+  function worlds(sqlite: Scene['sqlite'], account: string): void {
+    const sizes = JSON.stringify({
+      '1g': { runningCentsPerDay: 30, stoppedCentsPerDay: 3 },
+      '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 },
+      '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 },
+    });
+    const rules = JSON.stringify({
+      eventBoostCentsPerDay: 180,
+      minTopupCents: 1000,
+      quickTopupsCents: [1000, 5000, 10000],
+      minBalanceDaysRunning: 2,
+      keepDaysAtZero: 60,
+      noticeDaysForRise: 45,
+      lowBalanceDaysDefault: 3,
+    });
+    const day = (
+      id: string,
+      world: string,
+      on: string,
+      cents: number,
+      running: number,
+      size: string,
+      version: number,
+    ) =>
+      `INSERT INTO ledger_lines (id, account_id, kind, amount_cents, at, world_id, machine, day,
+                                 minutes_running, minutes_stopped, size, tariff_version_id)
+         VALUES ('${id}', '${account}', 'world_day', ${-cents}, '${on}T23:59:00.000Z', '${world}', 'vps-3-a',
+                 '${on}', ${running}, ${1440 - running}, '${size}', ${version});`;
+    sqlite.exec(`
+      INSERT INTO tariff_versions (id, starts_on, created_at, created_by, sizes, rules)
+        VALUES (2, '2026-10-13', '2026-10-13T00:00:00.000Z', 'test', '${sizes}', '${rules}');
+      INSERT INTO worlds (id, account_id, first_seen_on) VALUES ('w-agora', '${account}', '2026-09-01');
+      INSERT INTO worlds (id, account_id, first_seen_on) VALUES ('w-taller', '${account}', '2026-10-01');
+      INSERT INTO ledger_lines (id, account_id, kind, amount_cents, at, vat_cents)
+        VALUES ('L0', '${account}', 'topup', 5000, '2026-09-01T09:00:00.000Z', 1050);
+      ${day('L1', 'w-agora', '2026-09-20', 100, 1440, '4g', 1)}
+      ${day('L2', 'w-agora', '2026-10-12', 120, 1440, '4g', 2)}
+      ${day('L3', 'w-agora', '2026-10-13', 65, 720, '4g', 2)}
+      ${day('L4', 'w-taller', '2026-10-13', 3, 0, '1g', 2)}
+    `);
+  }
+
+  it('splits each bucket between running and stopped, at the price each day was charged with', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    const answer = await desk.statement(PABLO, numen, '30d');
+    if (!answer.ok) throw new Error(answer.problems.join());
+    const at = (bucket: string) => answer.spend.find((entry) => entry.bucket === bucket);
+    // The version that charged the day did not price 4g (a line by hand): all of it is running.
+    expect(at('2026-09-20')).toEqual({
+      bucket: '2026-09-20',
+      cents: 100,
+      runningCents: 100,
+      stoppedCents: 0,
+    });
+    expect(at('2026-10-12')).toEqual({
+      bucket: '2026-10-12',
+      cents: 120,
+      runningCents: 120,
+      stoppedCents: 0,
+    });
+    // 12 hours of a 4g world (60 + 5) and a 1g world stopped all day (3).
+    expect(at('2026-10-13')).toEqual({
+      bucket: '2026-10-13',
+      cents: 68,
+      runningCents: 60,
+      stoppedCents: 8,
+    });
+    expect(at('2026-10-14')).toEqual({
+      bucket: '2026-10-14',
+      cents: 0,
+      runningCents: 0,
+      stoppedCents: 0,
+    });
+    for (const bucket of answer.spend) {
+      expect(bucket.runningCents + bucket.stoppedCents).toBe(bucket.cents);
+    }
+    const year = await desk.statement(PABLO, numen, '12m');
+    expect(year.ok && year.spend.slice(-2)).toEqual([
+      { bucket: '2026-09', cents: 100, runningCents: 100, stoppedCents: 0 },
+      { bucket: '2026-10', cents: 188, runningCents: 180, stoppedCents: 8 },
+    ]);
+  });
+
+  it('lists each world over the range: its size, the days it ran and what it cost', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    const month = await desk.statement(PABLO, numen, '30d');
+    expect(month.ok && month.worlds).toEqual([
+      { worldId: 'w-agora', size: '4g', daysRunning: 3, cents: 285 },
+      { worldId: 'w-taller', size: '1g', daysRunning: 0, cents: 3 },
+    ]);
+    const week = await desk.statement(PABLO, numen, '7d');
+    expect(week.ok && week.worlds).toEqual([
+      { worldId: 'w-agora', size: '4g', daysRunning: 2, cents: 185 },
+      { worldId: 'w-taller', size: '1g', daysRunning: 0, cents: 3 },
+    ]);
+    const own = await personal(desk);
+    const empty = await desk.statement(PABLO, own, '30d');
+    expect(empty.ok && empty.worlds).toEqual([]);
+  });
+
+  it('gives each world’s day its minutes running and stopped', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    const answer = await desk.statement(PABLO, numen, '7d');
+    if (!answer.ok) throw new Error(answer.problems.join());
+    const days = answer.lines.filter((line) => line.kind === 'world_day');
+    expect(
+      days.map((line) => [line.worldId, line.day, line.minutesRunning, line.minutesStopped]),
+    ).toEqual([
+      ['w-taller', '2026-10-13', 0, 1440],
+      ['w-agora', '2026-10-13', 720, 720],
+      ['w-agora', '2026-10-12', 1440, 0],
+      ['w-agora', '2026-09-20', 1440, 0],
+    ]);
+    const topup = answer.lines.find((line) => line.kind === 'topup');
+    expect(topup).not.toHaveProperty('minutesRunning');
+    expect(topup).not.toHaveProperty('minutesStopped');
+  });
+
+  it('shows the tariff in force today for the sizes the account’s worlds use, and its two rules', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    const answer = await desk.statement(PABLO, numen, '7d');
+    expect(answer.ok && answer.tariff).toEqual({
+      startsOn: '2026-10-13',
+      sizes: {
+        '1g': { runningCentsPerDay: 30, stoppedCentsPerDay: 3 },
+        '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 },
+      },
+      rules: { keepDaysAtZero: 60, noticeDaysForRise: 45 },
+    });
+    // An account with no world yet reads every size of the version in force.
+    const own = await personal(desk);
+    const mine = await desk.statement(PABLO, own, '7d');
+    expect(mine.ok && mine.tariff).toEqual({
+      startsOn: '2026-10-13',
+      sizes: {
+        '1g': { runningCentsPerDay: 30, stoppedCentsPerDay: 3 },
+        '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 },
+        '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 },
+      },
+      rules: { keepDaysAtZero: 60, noticeDaysForRise: 45 },
+    });
+  });
+
+  it('has no tariff to show before the first version starts', async () => {
+    vi.setSystemTime(new Date('2026-10-12T12:00:00.000Z'));
+    const { desk } = scene();
+    const own = await personal(desk);
+    const answer = await desk.statement(PABLO, own, '7d');
+    expect(answer.ok).toBe(true);
+    expect(answer).not.toHaveProperty('tariff');
+  });
+
+  it('keeps all of it to who may read the statement: a member without view-balance reads none of it', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    await desk.setMember(PABLO, numen, MARIA, 'member');
+    // The base role stops carrying view-balance: a plain member no longer reads the money.
+    sqlite.exec(`
+      UPDATE team_roles SET permissions = json('["enter-worlds"]')
+       WHERE account_id = '${numen}' AND position = 0;
+      UPDATE team_profiles SET revision = revision + 1 WHERE account_id = '${numen}';
+    `);
+    const refused = await desk.statement(MARIA, numen, '30d');
+    expect(refused.ok).toBe(false);
+    expect(refused).not.toHaveProperty('worlds');
+    expect(refused).not.toHaveProperty('tariff');
+    expect(await desk.statement(STRANGER, numen, '30d')).toEqual({
+      ok: false,
+      problems: [PROBLEMS.notMember],
+    });
+  });
 });
 
 describe('top-ups through Stripe Managed Payments Checkout', () => {
