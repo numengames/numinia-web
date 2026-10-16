@@ -617,7 +617,7 @@ export interface AccountDesk {
 
 /** «Hazla tuya»: what a person asks of a community — to run it, or to be in it. */
 export type DeskRequestKind = 'claim' | 'join';
-export type DeskRequestState = 'open' | 'accepted' | 'declined';
+type DeskRequestState = 'open' | 'accepted' | 'declined';
 
 export interface DeskCommunityRequest {
   id: string;

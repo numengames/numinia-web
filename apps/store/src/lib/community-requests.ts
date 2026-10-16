@@ -26,7 +26,7 @@ import { readCommunityId } from './community-teams';
 import { logEvent } from './telemetry';
 import { answer, ask, bodyOf, forbidden, lowercase, notBound, type Log } from './worlds-homes';
 
-export const REQUEST_KINDS = ['claim', 'join'] as const satisfies readonly DeskRequestKind[];
+const REQUEST_KINDS = ['claim', 'join'] as const satisfies readonly DeskRequestKind[];
 
 /** «Cuéntanos quién eres» is this long at most — the till's limit too. */
 export const NOTE_MAX = 280;

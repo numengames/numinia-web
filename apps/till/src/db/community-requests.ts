@@ -61,7 +61,7 @@ export type RequestAnswer = { readonly ok: true; readonly request: CommunityRequ
  * to offer the right ask: a member asks nothing; a claim only while nobody
  * is the titular. Both false while the organization is not open.
  */
-export interface CommunityStanding {
+interface CommunityStanding {
   readonly member: boolean;
   readonly hasOwner: boolean;
 }

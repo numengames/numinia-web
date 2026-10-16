@@ -6,11 +6,10 @@
  * no database.
  */
 
-export const REQUEST_KINDS = ['claim', 'join'] as const;
+const REQUEST_KINDS = ['claim', 'join'] as const;
 export type RequestKind = (typeof REQUEST_KINDS)[number];
 
-export const REQUEST_STATES = ['open', 'accepted', 'declined'] as const;
-export type RequestState = (typeof REQUEST_STATES)[number];
+export type RequestState = 'open' | 'accepted' | 'declined';
 
 /** The optional line «Cuéntanos quién eres» is this long at most. */
 export const NOTE_MAX = 280;
