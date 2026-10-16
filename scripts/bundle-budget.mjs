@@ -78,8 +78,13 @@ const BUDGETS = {
       boot script's fold rule before paint (~0.5KB), minus the old sidebar
       and top bar scripts. Three scripts, not one: each stays under the
       bundler's inline limit and shares no module with the others, so the
-      landing still loads no external JS. With «Ahora» and the chrome together the landing sits near 25.5KB (measured at the gates). */
-  landingInlineScriptBytes: 26_500,
+      landing still loads no external JS. With «Ahora» and the chrome together the landing sits near 25.5KB (measured at the gates).
+      Then raised 26500→28500 on 2026-10-17 (v0.118.0, cut «Tu agenda»): «Me
+      apunto» on the featured encounter is real — one script (~1.7KB,
+      bundled and minified, no import so it stays inline) asks /api/rsvp
+      once the session is in, toggles the button, fills «N personas van»
+      and says it in a toast. Still no external JS. On top of the chrome the landing sits near ~27.5KB. */
+  landingInlineScriptBytes: 28_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */

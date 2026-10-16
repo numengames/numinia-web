@@ -1,0 +1,186 @@
+---
+/**
+ * «Me apunto» for real (cut F, 2026-10-17): the RSVP of one encounter. For
+ * a signed-in person a toggle — «Me apunto» → «Voy» (`aria-pressed`), and
+ * back, each confirmed by a toast —; signed out, a link to the door that
+ * comes back here (`signIn`). The chrome paints which of the two shows
+ * (data-session-in / data-session-out). The built page carries no state: the
+ * script asks /api/rsvp once the session is in, and fills every
+ * `[data-rsvp-count="<id>"]` of the page with «N personas van» only when N
+ * is above zero — never «0 personas».
+ *
+ * One script per page however many buttons (Astro hoists it once); it reads
+ * the page's session client through the window (lib/island-session.ts), so
+ * the front page keeps its promise of no external JavaScript.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { AGENDA_UI } from '../../i18n/agenda';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  ritualId: string;
+  /** Where the door comes back to. */
+  signIn: string;
+  /** The `data-metric` of the toggle; the door's is `<metric>-sign-in`. */
+  metric: string;
+  /** The front page's big button. */
+  large?: boolean;
+}
+
+const { locale, ritualId, signIn, metric, large = false } = Astro.props;
+const words = AGENDA_UI[locale];
+const carried = {
+  signMeUp: words.signMeUp,
+  going: words.going,
+  signedUp: words.signedUp,
+  noLongerGoing: words.noLongerGoing,
+  failed: words.failed,
+  peopleGoing: words.peopleGoing,
+  personGoing: words.personGoing,
+};
+---
+
+<a
+  class:list={['btn btn-primario', { 'btn-grande': large }]}
+  href={signIn}
+  data-session-out
+  data-metric={`${metric}-sign-in`}
+>
+  <Icon name="check-circle" size={large ? 20 : 18} />
+  {words.signMeUp}
+</a>
+<button
+  type="button"
+  class:list={['btn btn-primario voy', { 'btn-grande': large }]}
+  data-rsvp={ritualId}
+  data-rsvp-words={JSON.stringify(carried)}
+  aria-pressed="false"
+  data-session-in
+  data-metric={metric}
+  hidden
+>
+  <Icon name="check-circle" size={large ? 20 : 18} />
+  <span data-rsvp-label>{words.signMeUp}</span>
+</button>
+
+<script>
+  /* No import: a script that imports stays an external file, and the
+     front page ships no external JavaScript. The chrome publishes the
+     page's session client on window.numiniaSession and announces it with
+     'numinia:session-ready' (lib/island-session.ts pins both names). */
+  type Session = { status: string };
+  interface Client {
+    subscribe(listener: (session: Session) => void): unknown;
+  }
+  const win = window as Window & { numiniaSession?: Client };
+  const sessionClient = (): Promise<Client> =>
+    win.numiniaSession
+      ? Promise.resolve(win.numiniaSession)
+      : new Promise((resolve) => {
+          win.addEventListener(
+            'numinia:session-ready',
+            () => {
+              if (win.numiniaSession) resolve(win.numiniaSession);
+            },
+            { once: true },
+          );
+        });
+  type Words = Record<string, string>;
+  interface View {
+    readonly mine: readonly string[];
+    readonly counts: Readonly<Record<string, number>>;
+  }
+
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('button[data-rsvp]')];
+  const words = (button: HTMLButtonElement): Words =>
+    JSON.parse(button.dataset.rsvpWords ?? '{}') as Words;
+  const ids = [...new Set(buttons.map((button) => button.dataset.rsvp ?? ''))].filter(Boolean);
+
+  const paint = (view: View): void => {
+    for (const button of buttons) {
+      const id = button.dataset.rsvp ?? '';
+      const on = view.mine.includes(id);
+      const w = words(button);
+      button.setAttribute('aria-pressed', String(on));
+      const label = button.querySelector('[data-rsvp-label]');
+      if (label) label.textContent = (on ? w.going : w.signMeUp) ?? '';
+      for (const slot of document.querySelectorAll<HTMLElement>(`[data-rsvp-count="${id}"]`)) {
+        const n = view.counts[id];
+        slot.hidden = !(typeof n === 'number' && n > 0);
+        if (typeof n === 'number' && n > 0) {
+          slot.textContent = n === 1 ? (w.personGoing ?? '') : (w.peopleGoing ?? '').replace('{n}', String(n));
+        }
+      }
+    }
+  };
+
+  let toast: HTMLElement | null = null;
+  let hide = 0;
+  const say = (text: string, tone: 'exito' | 'aviso'): void => {
+    if (!toast) {
+      toast = document.createElement('p');
+      toast.className = 'aviso';
+      toast.setAttribute('role', 'status');
+      document.body.append(toast);
+    }
+    toast.dataset.tono = tone;
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(hide);
+    hide = window.setTimeout(() => {
+      if (toast) toast.hidden = true;
+    }, 4000);
+  };
+
+  const read = async (response: Response): Promise<View | null> =>
+    response.ok ? ((await response.json()) as View) : null;
+
+  if (buttons.length > 0) {
+    void sessionClient().then((client) => {
+      client.subscribe((session) => {
+        if (session.status !== 'in') return;
+        void fetch(`/api/rsvp?ids=${ids.join(',')}`, { headers: { accept: 'application/json' } })
+          .then(read)
+          .then((view) => {
+            if (view) paint(view);
+          })
+          .catch(() => {});
+      });
+    });
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const on = button.getAttribute('aria-pressed') !== 'true';
+        const w = words(button);
+        button.disabled = true;
+        void fetch('/api/rsvp', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ ritualId: button.dataset.rsvp, on }),
+        })
+          .then(read)
+          .then((view) => {
+            if (!view) {
+              say(w.failed ?? '', 'aviso');
+              return;
+            }
+            paint(view);
+            say((on ? w.signedUp : w.noLongerGoing) ?? '', 'exito');
+          })
+          .catch(() => say(w.failed ?? '', 'aviso'))
+          .finally(() => {
+            button.disabled = false;
+          });
+      });
+    }
+  }
+</script>
+
+<style>
+  /* Pressed, the button looks like the ghost ones beside it: said, and quiet. */
+  .voy[aria-pressed='true'] {
+    background: transparent;
+    border-color: var(--linea-f);
+    color: var(--texto);
+  }
+</style>

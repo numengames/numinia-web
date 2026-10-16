@@ -177,7 +177,7 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // No new event and no new prop: each travels as `cta_click.metricId`.
 // - The front page «Ahora»: `home-featured-prev`, `home-featured-next` (the
 //   frame's arrows), `home-featured-world` («Entrar al mundo»),
-//   `home-featured-calendar` («Me apunto»), `home-featured-ritual`,
+//   `home-featured-calendar` (the `.ics`; «Me apunto» is `home-featured-rsvp` since cut F), `home-featured-ritual`,
 //   `home-featured-community`, `home-featured-community-page`,
 //   `home-featured-later` (the next encounter under a world), `home-live-world`
 //   (a row of «Ahora mismo, dentro», the phone), `home-communities`.
@@ -192,3 +192,15 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - /calendar/: `encuentros-view-list`, `encuentros-view-month` (the switch),
 //   `encuentros-row` (a row of the list, to the encounter's page); the grid and
 //   the feed keep `calendar-ritual` and `calendar-subscribe`.
+
+// ---- v3 «Me apunto» and «Tu agenda» (cut F, 2026-10-17): its data-metric ids -----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The RSVP toggle: `ritual-rsvp` (an encounter's page), `home-featured-rsvp`
+//   (the featured encounter of «Ahora»); signed out, the same button is the
+//   door: `ritual-rsvp-sign-in`, `home-featured-rsvp-sign-in`. The `.ics`
+//   file stays as `ritual-add-calendar` / `home-featured-calendar`
+//   («Añadir a mi calendario»).
+// - An encounter's page: `ritual-your-agenda` (the link to /agenda/).
+// - «Tu agenda» /agenda/: `agenda-sign-in` (the door, signed out),
+//   `agenda-encounters` (the empty state's link to the encounters),
+//   `agenda-past` (the fold «Ya pasaron · N»).

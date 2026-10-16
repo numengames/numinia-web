@@ -41,7 +41,8 @@ async function exists(candidate) {
  * would call them broken. They are real routes served by the worker: the
  * session-gated Codex (its text must never be a static file), a world's own
  * page (/mundos/<id>/: its id is the fleet's, not the build's), the index of
- * worlds (/mundos/, read from the fleet at request time) and the API.
+ * worlds (/mundos/, read from the fleet at request time), «Tu agenda»
+ * (/agenda/: what the session's wallet said, read from the till) and the API.
  */
 function isOnDemand(clean) {
   const withoutLocale = clean.replace(/^\/(es|ja|ko|pt-br)\//, '/');
@@ -50,6 +51,7 @@ function isOnDemand(clean) {
     /^\/lap\/codex\/[^/]+\/?$/.test(withoutLocale) ||
     /^\/mundos\/?$/.test(withoutLocale) ||
     /^\/mundos\/[^/]+\/?$/.test(withoutLocale) ||
+    /^\/agenda\/?$/.test(withoutLocale) ||
     withoutLocale.startsWith('/api/')
   );
 }
