@@ -5,10 +5,12 @@
  * organization yet or whom the till did not answer. Plain Spanish first.
  *
  * The words the site already says elsewhere are taken from where they live,
- * so they can never drift: Saldo's terms win («organización», «Miembros y
- * roles», «Titular», the till's refusals) and the LAP's give the rooms of the
- * Oracle and the «En construcción» mark. Only what is new is written here.
- * «piezas» are the panel's pieces (the prototype's word), not objects.
+ * so they can never drift: Saldo's terms win («organización», «Titular»,
+ * the till's refusals) and the LAP's give the rooms of the Oracle and the
+ * «En construcción» mark. Only what is new is written here — and the words
+ * of Miembros and Roles' own screens live in ./panel-people.ts, which only
+ * those two pages carry. «piezas» are the panel's pieces (the prototype's
+ * word), not objects.
  *
  * Read on the server only: the page hands the island the one locale it
  * needs, so a client chunk never carries the five (or Saldo's, or the LAP's).
@@ -22,7 +24,7 @@ import { SALDO_UI } from './saldo';
 export interface PanelMessages {
   /** The rail's landmark. */
   readonly railLabel: string;
-  /** Above the list of pieces: «Piezas · 9». */
+  /** Above the list of pieces: «Piezas · 10». */
   readonly piecesLabel: string;
   /** Above the Oracle's rooms. */
   readonly roomsLabel: string;
@@ -67,7 +69,6 @@ function shared(locale: SupportedLocale) {
       prices: { name: lap.prices.title, note: lap.prices.intro },
       assets: { name: lap.admin.assets, note: lap.admin.assetsIntro },
     },
-    members: { name: saldo.panel.title, lead: saldo.panel.lead },
     standing: {
       owner: saldo.panel.owner,
       member: saldo.roles.member,
@@ -101,7 +102,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       summary: shared('es').summary,
       venues: 'Sedes',
       gatherings: 'Encuentros',
-      members: shared('es').members.name,
+      members: 'Miembros',
+      roles: 'Roles',
       agents: 'Agentes',
       memory: 'Memoria · la Summa',
       bazaar: 'Objetos del Bazar',
@@ -110,7 +112,10 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'Lo que hay en el panel de esta organización, de un vistazo.',
-      members: shared('es').members.lead,
+      members:
+        'Quién está dentro, su rango en la ciudad (es suyo, viaja con la persona) y sus roles aquí.',
+      roles:
+        'Cada organización crea sus roles, los ordena y decide qué puede hacer cada uno. Arriba manda más.',
       balance:
         'El saldo de la organización: no caduca, se recarga cuando haga falta y se ve en qué se gasta.',
     },
@@ -160,7 +165,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       summary: shared('en').summary,
       venues: 'Homes',
       gatherings: 'Gatherings',
-      members: shared('en').members.name,
+      members: 'Members',
+      roles: 'Roles',
       agents: 'Agents',
       memory: 'Memory · the Summa',
       bazaar: 'Bazaar items',
@@ -169,7 +175,10 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: "What is in this organization's panel, at a glance.",
-      members: shared('en').members.lead,
+      members:
+        'Who is in, their rank in the city (it is theirs: it travels with the person) and their roles here.',
+      roles:
+        'Each organization makes its own roles, orders them and decides what each one may do. Higher up commands more.',
       balance:
         "The organization's balance: it never expires, you top up when needed and see what it is spent on.",
     },
@@ -219,7 +228,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       summary: shared('ja').summary,
       venues: '拠点',
       gatherings: '集まり',
-      members: shared('ja').members.name,
+      members: 'メンバー',
+      roles: 'ロール',
       agents: 'エージェント',
       memory: 'メモリー · Summa',
       bazaar: 'バザールのアイテム',
@@ -228,7 +238,10 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'この組織のパネルにあるものを、ひと目で。',
-      members: shared('ja').members.lead,
+      members:
+        '誰が参加しているか、街でのランク（本人のもので、その人と一緒にどこへでも移ります）、そしてここでのロール。',
+      roles:
+        '組織ごとにロールを作り、並べ、それぞれに何ができるかを決めます。上にあるほど権限が強くなります。',
       balance: '組織の残高：有効期限はなく、必要なときにチャージでき、使い道も確認できます。',
     },
     notes: {
@@ -277,7 +290,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       summary: shared('ko').summary,
       venues: '거점',
       gatherings: '모임',
-      members: shared('ko').members.name,
+      members: '구성원',
+      roles: '역할',
       agents: '에이전트',
       memory: '기억 · Summa',
       bazaar: '바자르의 아이템',
@@ -286,7 +300,10 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: '이 조직의 패널에 있는 것을 한눈에.',
-      members: shared('ko').members.lead,
+      members:
+        '누가 들어와 있는지, 도시에서의 등급(그 사람의 것이며 어디든 함께 따라갑니다), 그리고 이곳에서의 역할.',
+      roles:
+        '조직마다 역할을 만들고, 순서를 정하고, 각 역할이 무엇을 할 수 있는지 정합니다. 위에 있을수록 권한이 큽니다.',
       balance: '조직의 잔액: 만료되지 않으며, 필요할 때 충전하고 어디에 쓰였는지 볼 수 있습니다.',
     },
     notes: {
@@ -335,7 +352,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       summary: shared('pt-br').summary,
       venues: 'Sedes',
       gatherings: 'Encontros',
-      members: shared('pt-br').members.name,
+      members: 'Membros',
+      roles: 'Papéis',
       agents: 'Agentes',
       memory: 'Memória · a Summa',
       bazaar: 'Objetos do Bazar',
@@ -344,7 +362,10 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'O que há no painel desta organização, num relance.',
-      members: shared('pt-br').members.lead,
+      members:
+        'Quem está dentro, seu posto na cidade (é da pessoa e viaja com ela) e seus papéis aqui.',
+      roles:
+        'Cada organização cria seus papéis, os ordena e decide o que cada um pode fazer. Quanto mais acima, mais manda.',
       balance:
         'O saldo da organização: não expira, você recarrega quando precisar e vê no que ele é gasto.',
     },

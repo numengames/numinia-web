@@ -107,7 +107,9 @@ export default defineConfig({
         !/\/legal\/notice\/$/.test(page) &&
         // STD-044 CEL-010: a thanks page is reached by paying, never by search.
         // /support/thanks/ holds the redirect stubs to /back/thanks/ (v0.70.0).
-        !/\/(back|support)\/thanks\//.test(page),
+        !/\/(back|support)\/thanks\//.test(page) &&
+        // Saldo's old members tab only sends to the panel's Miembros now.
+        !/\/saldo\/miembros\//.test(page),
     }),
   ],
   markdown: {

@@ -18,6 +18,7 @@ import packageIcon from '../../../../../packages/ui/src/icons/package.svg?raw';
 import planet from '../../../../../packages/ui/src/icons/planet.svg?raw';
 import robot from '../../../../../packages/ui/src/icons/robot.svg?raw';
 import scroll from '../../../../../packages/ui/src/icons/scroll.svg?raw';
+import shieldCheck from '../../../../../packages/ui/src/icons/shield-check.svg?raw';
 import users from '../../../../../packages/ui/src/icons/users.svg?raw';
 import usersThree from '../../../../../packages/ui/src/icons/users-three.svg?raw';
 import type { PieceIcon } from '../../lib/panel';
@@ -27,6 +28,7 @@ const GLYPHS: Readonly<Record<PieceIcon | 'caret-down' | 'crane-tower', string>>
   buildings,
   'calendar-blank': calendarBlank,
   'users-three': usersThree,
+  'shield-check': shieldCheck,
   robot,
   scroll,
   package: packageIcon,

@@ -1,12 +1,16 @@
 ---
 /**
  * «Saldo» (cut v0.87.0): your account and your organizations' — balance
- * that never expires, top-ups through Stripe in a new tab, usage, movements
- * and members — modelled on the Nous portal's billing (Pablo's brief,
+ * that never expires, top-ups through Stripe in a new tab, usage and
+ * movements — modelled on the Nous portal's billing (Pablo's brief,
  * 2026-10-14). Three faces of one page: `saldo` (the panel), `vuelta`
  * (where Stripe sends the buyer back) and `referidos` (coming soon). The
  * page is static; every figure comes from /api/saldo, which reads the
  * session and asks the till — nothing is made up here.
+ *
+ * The members tab leads to the organization panel's Miembros
+ * (/panel/miembros/), where the people and their roles live now; its old
+ * address, /saldo/miembros/, only sends there.
  *
  * Its rules are in ./saldo.css (global, `saldo-` prefixed): the organization
  * panel hosts the same islands and imports the same file.
@@ -17,34 +21,26 @@ import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { SaldoPanel } from './SaldoPanel';
 import { SaldoVuelta } from './SaldoVuelta';
-import { MiembrosPanel } from './MiembrosPanel';
 import './saldo.css';
 
 interface Props {
   locale: SupportedLocale;
-  face: 'saldo' | 'miembros' | 'vuelta' | 'referidos';
+  face: 'saldo' | 'vuelta' | 'referidos';
 }
 
 const { locale, face } = Astro.props;
 const ui = SALDO_UI[locale];
 const saldoHref = localeHref(locale, '/saldo/');
-const membersHref = localeHref(locale, '/saldo/miembros/');
+const membersHref = localeHref(locale, '/panel/miembros/');
 const referralsHref = localeHref(locale, '/saldo/referidos/');
 const title =
-  face === 'referidos'
-    ? ui.referrals.title
-    : face === 'vuelta'
-      ? ui.vuelta.title
-      : face === 'miembros'
-        ? ui.panel.title
-        : ui.title;
+  face === 'referidos' ? ui.referrals.title : face === 'vuelta' ? ui.vuelta.title : ui.title;
 ---
 
-<BaseLayout locale={locale} title={`${title} — Numinia`} description={face === 'miembros' ? ui.panel.lead : ui.lead}>
+<BaseLayout locale={locale} title={`${title} — Numinia`} description={ui.lead}>
   <header class="titulo-vista saldo-titulo">
     <h1 class="display-m">{title}</h1>
     {face === 'saldo' && <p class="lead">{ui.lead}</p>}
-    {face === 'miembros' && <p class="lead">{ui.panel.lead}</p>}
   </header>
 
   {
@@ -53,9 +49,7 @@ const title =
         <a href={saldoHref} aria-current={face === 'saldo' ? 'page' : undefined}>
           {ui.tabs.saldo}
         </a>
-        <a href={membersHref} aria-current={face === 'miembros' ? 'page' : undefined}>
-          {ui.tabs.members}
-        </a>
+        <a href={membersHref}>{ui.tabs.members}</a>
         <a href={referralsHref} aria-current={face === 'referidos' ? 'page' : undefined}>
           {ui.tabs.referrals}
         </a>
@@ -71,17 +65,6 @@ const title =
         lang={locale}
         locale={locale}
         signIn={signInHref(locale, '/saldo/')}
-      />
-    )
-  }
-  {
-    face === 'miembros' && (
-      <MiembrosPanel
-        client:load
-        ui={ui}
-        lang={locale}
-        locale={locale}
-        signIn={signInHref(locale, '/saldo/miembros/')}
       />
     )
   }

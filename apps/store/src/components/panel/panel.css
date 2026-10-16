@@ -390,3 +390,741 @@
 .panel-carta .obra {
   margin-top: var(--s3);
 }
+
+/* ---- «La gente»: Miembros and Roles ---------------------------------- */
+/* The prototype's .tabla-gente, .roles-ed, .rol-item, .ajuste, .interruptor,
+   .seg, .chip-rol and .punto-rol shapes, redrawn with the kit's tokens on top
+   of Saldo's own (saldo-marco, saldo-chip, saldo-punto-rol). A role's colour
+   is only ever a dot or a swatch, never the colour of words; secondary words
+   are --texto-2 (AA on a card). */
+
+/* What happened, or why not: out of the column's gaps while it says nothing
+   (still in the page, so a screen reader hears it when it speaks). */
+.gente-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.gente-avisos:empty {
+  position: absolute;
+}
+.gente-avisos p {
+  margin: 0;
+}
+/* The house's strip and the read-only line are paragraphs dressed as cards:
+   the column's gap spaces them, never a paragraph's own margins. */
+.gente > p {
+  margin: 0;
+}
+
+/* A person: a round face (or glyph), the name or the short wallet, a dot. */
+.gente-persona {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  line-height: 1.25;
+}
+.gente-persona-24 {
+  gap: var(--s2);
+  font-size: 0.875rem;
+}
+.gente-cara {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--elevada);
+}
+.gente-persona-24 .gente-cara {
+  width: 24px;
+  height: 24px;
+}
+.gente-glifo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linea-f);
+  color: var(--texto-2);
+}
+.gente-quien {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.gente-linea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.gente-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--texto);
+}
+.gente-cartera {
+  color: var(--texto);
+}
+.gente-cartera-pequena {
+  font-size: 0.75rem;
+  color: var(--texto-2);
+}
+.gente-punto {
+  width: 10px;
+  height: 10px;
+}
+.gente-tenue {
+  color: var(--texto-2);
+}
+
+/* A role as a chip: its dot, its name, × where it may be taken. */
+.gente-chip {
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 var(--s1) 0 var(--s2);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.gente-chip:not(:has(.gente-chip-x)) {
+  padding-inline-end: var(--s2);
+}
+.gente-chip .saldo-punto-rol {
+  width: 9px;
+  height: 9px;
+}
+.gente-titular {
+  gap: 6px;
+  min-height: 26px;
+  border-color: color-mix(in srgb, var(--ambar) 45%, transparent);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.gente-titular .icono,
+.roles-titulares > .icono {
+  color: var(--ambar);
+}
+.gente-chip-x {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+.gente-chip-x:hover,
+.gente-chip-x:focus-visible {
+  background: var(--elevada);
+  color: var(--texto);
+}
+.gente-mas {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px dashed var(--texto-3);
+  border-radius: 50%;
+  background: none;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+.gente-mas:hover,
+.gente-mas:focus-visible {
+  border-color: var(--verdemar);
+  color: var(--verdemar);
+}
+.gente-chip-x:disabled,
+.gente-flecha:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* The card: search, how many, «Añadir miembro»; then the table. */
+.gente-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+}
+.gente-buscar {
+  position: relative;
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+.gente-buscar > .icono {
+  position: absolute;
+  top: 50%;
+  left: var(--s3);
+  transform: translateY(-50%);
+  color: var(--texto-2);
+  pointer-events: none;
+}
+.gente .gente-buscar input {
+  width: 100%;
+  padding-left: calc(var(--s3) + 16px + var(--s2));
+}
+.gente-cuenta {
+  margin-left: auto;
+  color: var(--texto-2);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.gente-anadir {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.gente-anadir label,
+.gente-campo label,
+.gente-campo legend {
+  padding: 0;
+  color: var(--texto-2);
+  font-size: 0.875rem;
+}
+.gente-pequeno {
+  min-height: 28px;
+  padding: 2px var(--s3);
+  font-size: 0.85rem;
+}
+
+/* The table scrolls inside its own region on a phone, never the page; the
+   region is the containing block of the cells' screen-reader words too. */
+.gente-tabla {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.gente-tabla:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: 2px;
+}
+.gente-tabla table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.gente-tabla th {
+  padding: 0 10px var(--s2);
+  border-bottom: 1px solid var(--linea-f);
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.gente-tabla td {
+  padding: 10px;
+  border-bottom: 1px solid var(--linea-f);
+  vertical-align: middle;
+}
+.gente-tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+.gente-tabla td:first-child {
+  min-width: 12rem;
+}
+/* A known rank: a small pill, as the prototype's. */
+.gente-tabla [data-rank]:not(.gente-tenue) {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--linea-f);
+  border-radius: 999px;
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.gente-celda-persona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+}
+.gente-roles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.gente-dar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1);
+}
+.gente .gente-dar select {
+  padding: 2px var(--s2);
+  font-size: 0.85rem;
+}
+.gente-desde {
+  color: var(--texto-2);
+  white-space: nowrap;
+}
+.gente-tabla .gente-acciones {
+  width: 1%;
+  text-align: right;
+}
+.gente-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+.gente-menu-btn:hover,
+.gente-menu-btn:focus-visible,
+.gente-menu-btn[aria-expanded='true'] {
+  border-color: var(--linea-f);
+  color: var(--texto);
+}
+.gente-detalle td {
+  padding-block: var(--s2) var(--s3);
+}
+.gente-menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gente-detalle .saldo-confirmar {
+  align-items: flex-end;
+  text-align: right;
+}
+.gente-peligro {
+  color: var(--coral);
+}
+[data-modo='diurno'] .gente-peligro {
+  color: var(--grana);
+}
+
+/* ---- Roles: the list on the left (above on a phone), the role beside -- */
+.gente-roles-ed {
+  container-type: inline-size;
+}
+.roles-ed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+@container (min-width: 40rem) {
+  .roles-ed {
+    grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr);
+  }
+}
+.roles-izq {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+.roles-lista {
+  gap: var(--s2);
+  padding: var(--s3);
+}
+.roles-titulares {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--ambar) 45%, transparent);
+  border-radius: var(--radio-control);
+}
+.roles-titulares > .icono {
+  margin-top: 2px;
+}
+.roles-titulares > div {
+  flex: 1;
+  min-width: 0;
+}
+.roles-titulares b {
+  display: block;
+  font-weight: 500;
+  color: var(--texto);
+}
+.roles-titulares .saldo-nota {
+  display: block;
+  font-size: 0.8rem;
+}
+.roles-gente {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: var(--s2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.roles-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.roles-items li {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+}
+.roles-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.roles-item:hover {
+  background: color-mix(in srgb, var(--texto) 6%, transparent);
+}
+.roles-item:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: -2px;
+}
+.roles-item[aria-current='true'] {
+  background: color-mix(in srgb, var(--verdemar) 12%, transparent);
+  color: var(--texto);
+}
+.roles-item-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.roles-item-cuantos {
+  color: var(--texto-2);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.roles-mover {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+}
+.gente-flecha {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+.gente-flecha:hover,
+.gente-flecha:focus-visible {
+  border-color: var(--verdemar);
+  color: var(--verdemar);
+}
+.roles-crear {
+  justify-content: center;
+  width: 100%;
+}
+.roles-regla {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* The role: its dot and name, three segmented tabs, the tab's sheet. */
+.roles-hoja {
+  gap: var(--s4);
+}
+.roles-hoja-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.roles-hoja .roles-hoja-cabeza h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.gente-seg {
+  display: inline-flex;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+@container (max-width: 34rem) {
+  .gente-seg {
+    display: flex;
+    width: 100%;
+  }
+}
+.gente-seg button {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px var(--s3);
+  border: 0;
+  background: none;
+  color: var(--texto-2);
+  font: 500 0.8rem/1.2 var(--sans);
+  cursor: pointer;
+}
+.gente-seg button + button {
+  border-left: 1px solid var(--linea-f);
+}
+.gente-seg button[aria-selected='true'] {
+  background: color-mix(in srgb, var(--verdemar) 14%, transparent);
+  color: var(--texto);
+}
+.gente-seg button:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: -2px;
+}
+.roles-panel,
+.roles-aspecto,
+.roles-miembros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+.roles-permisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+}
+.roles-aspecto p,
+.roles-permisos p,
+.roles-miembros p {
+  margin: 0;
+}
+.gente-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gente-campo > input {
+  max-width: 24rem;
+}
+
+/* Colour swatches: round radios, the chosen one ringed; «none» is crossed. */
+.gente-muestras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+.gente-muestra-et {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--texto-2);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.gente .gente-muestra {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  appearance: none;
+  cursor: pointer;
+}
+.gente .gente-muestra-nada {
+  border-color: var(--linea-f);
+  background:
+    linear-gradient(
+      to top right,
+      transparent calc(50% - 1px),
+      var(--texto-2) calc(50% - 1px),
+      var(--texto-2) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    var(--elevada);
+}
+.gente .gente-muestra:checked {
+  border-color: var(--texto);
+  box-shadow: inset 0 0 0 2px var(--fondo);
+}
+.gente .gente-muestra:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: 2px;
+}
+.gente .gente-muestra:disabled {
+  cursor: not-allowed;
+}
+
+/* A setting: what it is and what it does, its switch at the end. */
+.gente-ajuste {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s4);
+  align-items: center;
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--linea-f);
+}
+.gente-ajuste:first-of-type {
+  border-top: 0;
+}
+.gente-ajuste b {
+  display: block;
+  font-weight: 500;
+  color: var(--texto);
+}
+.gente-ajuste span {
+  display: block;
+  color: var(--texto-2);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.gente-ajuste.peligro b {
+  color: var(--ambar);
+}
+.gente-ajuste .gente-razon {
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+.gente-ajuste-idea {
+  grid-template-columns: minmax(0, 1fr);
+}
+.gente-interruptor {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--texto-3);
+  border-radius: 999px;
+  background: var(--superficie);
+  cursor: pointer;
+}
+.gente-interruptor::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--texto-3);
+  transition:
+    left 120ms var(--ciclo),
+    background 120ms var(--ciclo);
+}
+.gente-interruptor[aria-checked='true'] {
+  border-color: var(--turquesa);
+  background: color-mix(in srgb, var(--turquesa) 35%, transparent);
+}
+.gente-interruptor[aria-checked='true']::after {
+  left: 23px;
+  background: var(--texto);
+}
+.gente-interruptor:focus-visible {
+  outline: 2px solid var(--enlace);
+  outline-offset: 2px;
+}
+.gente-interruptor:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gente-interruptor::after {
+    transition: none;
+  }
+}
+
+/* Permisos: five groups, then what only the owners do. */
+.roles-grupo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.roles-grupo > .etiqueta {
+  margin: 0 0 var(--s1);
+  color: var(--texto-2);
+}
+.roles-firma {
+  font-size: 0.875rem;
+}
+.roles-solo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.roles-solo li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--linea-f);
+  color: var(--texto-2);
+  font-size: 0.9rem;
+}
+.roles-solo li:first-child {
+  border-top: 0;
+}
+.roles-pie {
+  align-items: center;
+}
+
+/* Miembros · N: who holds it, × each; «Añadir» below. */
+.roles-miembros .roles-gente {
+  gap: 0;
+  margin: 0;
+}
+.roles-miembros .roles-gente li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--linea-f);
+}
+.roles-dar select {
+  flex: 1 1 12rem;
+}

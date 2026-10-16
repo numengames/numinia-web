@@ -103,3 +103,10 @@ export function buildEvent<Name extends AnalyticsEventName>(
     ...(context.locale === undefined ? {} : { locale: context.locale }),
   };
 }
+
+// ---- W1 «El dinero» (cut 2026-10-16): its data-metric ids --------------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - Saldo y consumo: `saldo-csv` (the movements as a CSV made in the browser),
+//   `saldo-members-link` (an organization's way to «Miembros y roles»).
+// - The panel's Resumen: `panel-summary-next` (the next encounter),
+//   `panel-summary-people`, `panel-summary-balance`, `panel-summary-log`.

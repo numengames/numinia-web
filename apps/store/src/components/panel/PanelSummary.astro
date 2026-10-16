@@ -1,0 +1,44 @@
+---
+/**
+ * The panel's Resumen as its page hands it over (cut 2026-10-16 «el
+ * dinero»): the island with its words and the map of the upcoming
+ * encounters of each organization's community — the community whose file
+ * names the organization in `team:` —, made here when the site is built, so
+ * the island never reads the register of communities
+ * (lib/panel-encounters.ts). One that has ended since the build is skipped
+ * by the island; a past one never shows.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import type { PanelMessages } from '../../i18n/panel';
+import { PANEL_SUMMARY_UI } from '../../i18n/panel-summary';
+import { localeHref } from '../../lib/app-nav';
+import { encounterMap } from '../../lib/panel-encounters';
+import { COMMUNITIES, RITUALS } from '../communities/register';
+import { PanelResumen } from './PanelResumen';
+
+interface Props {
+  locale: SupportedLocale;
+  words: PanelMessages;
+  signIn: string;
+  saldoHref: string;
+}
+
+const { locale, words, signIn, saldoHref } = Astro.props;
+const encounters = encounterMap(
+  COMMUNITIES,
+  RITUALS,
+  locale,
+  (id) => localeHref(locale, `/rituals/${id}/`),
+  new Date(),
+);
+---
+
+<PanelResumen
+  client:load
+  locale={locale}
+  words={words}
+  summary={PANEL_SUMMARY_UI[locale]}
+  encounters={encounters}
+  signIn={signIn}
+  saldoHref={saldoHref}
+/>

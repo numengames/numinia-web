@@ -1,5 +1,6 @@
 ---
-import SaldoPage from '../../../../components/saldo/SaldoPage.astro';
+/** Saldo's old «Miembros y roles» tab: it only sends to the panel's Miembros (see /saldo/miembros/). */
+import RedirectStub from '../../../../components/RedirectStub.astro';
 ---
 
-<SaldoPage locale="ko" face="miembros" />
+<RedirectStub to="/ko/panel/miembros/" />

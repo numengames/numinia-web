@@ -1,5 +1,11 @@
 ---
-import SaldoPage from '../../../components/saldo/SaldoPage.astro';
+/**
+ * Saldo's old «Miembros y roles» tab: the people and their roles live in the
+ * organization's panel now (/panel/miembros/). The built page stays — the
+ * updates history links here — and only sends on: a meta refresh and a
+ * visible link, nothing else loaded (no wallet), out of the index.
+ */
+import RedirectStub from '../../../components/RedirectStub.astro';
 ---
 
-<SaldoPage locale="en" face="miembros" />
+<RedirectStub to="/panel/miembros/" />

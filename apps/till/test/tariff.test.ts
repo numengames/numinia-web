@@ -13,6 +13,8 @@ import {
   parseSizes,
   readDraft,
   scheduleProblems,
+  splitWorldDayCents,
+  statementTariff,
   tariffProblems,
   versionFor,
   worldDayCostCents,
@@ -78,6 +80,78 @@ describe('what a world-day costs', () => {
     expect(worldDayCostCents(price, 0, 0)).toBe(0);
     // Kept at zero, a stopped minute costs nothing.
     expect(worldDayCostCents({ ...price, stoppedCentsPerDay: 0 }, 30, 1410)).toBe(1); // 1.25 → 1
+  });
+});
+
+describe('a world-day split between running and stopped (the Saldo chart)', () => {
+  const price = { runningCentsPerDay: 60, stoppedCentsPerDay: 5 };
+
+  it('gives the stopped minutes what they alone cost and the rest to running, adding up exactly', () => {
+    expect(splitWorldDayCents(price, 1440, 0, 60)).toEqual({ runningCents: 60, stoppedCents: 0 });
+    expect(splitWorldDayCents(price, 0, 1440, 5)).toEqual({ runningCents: 0, stoppedCents: 5 });
+    // 32.5 → 33 in all; the stopped half alone is 2.5 → 3, so running keeps 30.
+    expect(splitWorldDayCents(price, 720, 720, 33)).toEqual({ runningCents: 30, stoppedCents: 3 });
+    // 8 hours on: 23.33 → 23 in all, 3.33 → 3 stopped, the remainder (20) running.
+    expect(splitWorldDayCents(price, 480, 960, 23)).toEqual({ runningCents: 20, stoppedCents: 3 });
+    // 43.19 → 43 in all, 1.53 → 2 stopped: the rounding's remainder stays with running.
+    expect(splitWorldDayCents(price, 1000, 440, 43)).toEqual({ runningCents: 41, stoppedCents: 2 });
+    expect(splitWorldDayCents(price, 0, 0, 0)).toEqual({ runningCents: 0, stoppedCents: 0 });
+    for (const [running, stopped] of [
+      [1440, 0],
+      [0, 1440],
+      [720, 720],
+      [37, 1403],
+      [1439, 1],
+      [600, 600],
+    ] as const) {
+      const cost = worldDayCostCents(price, running, stopped);
+      const split = splitWorldDayCents(price, running, stopped, cost);
+      expect(split.runningCents + split.stoppedCents).toBe(cost);
+      expect(split.runningCents).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('has nothing stopped on a day the close charged with stopped minutes free (an account kept at zero)', () => {
+    // 30 minutes running, the rest stopped: 1.25 → 1 with free stopped minutes, 6 at full price.
+    expect(splitWorldDayCents(price, 30, 1410, 1)).toEqual({ runningCents: 1, stoppedCents: 0 });
+    expect(splitWorldDayCents(price, 0, 1440, 0)).toEqual({ runningCents: 0, stoppedCents: 0 });
+  });
+
+  it('never makes the stopped part larger than the cost, nor the running part negative', () => {
+    expect(splitWorldDayCents(price, 0, 1440, 2)).toEqual({ runningCents: 0, stoppedCents: 2 });
+  });
+});
+
+describe('the tariff a statement shows', () => {
+  const sizes = {
+    '1g': { runningCentsPerDay: 30, stoppedCentsPerDay: 3 },
+    '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 },
+    '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 },
+  };
+  const rules = { ...SEED_TARIFF.rules, keepDaysAtZero: 60, noticeDaysForRise: 45 };
+  const v2 = version({ id: 2, startsOn: '2026-10-20', sizes, rules });
+  const versions = [SEED_TARIFF, v2];
+
+  it('is the version in force that day, for the sizes in use, with the two rules a person reads', () => {
+    expect(statementTariff(versions, '2026-10-14', ['2g', '2g'])).toEqual({
+      startsOn: '2026-10-13',
+      sizes: { '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 } },
+      rules: { keepDaysAtZero: 90, noticeDaysForRise: 30 },
+    });
+    expect(statementTariff(versions, '2026-10-21', ['4g', '1g', 'gone'])).toEqual({
+      startsOn: '2026-10-20',
+      sizes: { '1g': sizes['1g'], '4g': sizes['4g'] },
+      rules: { keepDaysAtZero: 60, noticeDaysForRise: 45 },
+    });
+  });
+
+  it('prices every size when the account uses none it prices', () => {
+    expect(statementTariff(versions, '2026-10-21', [])?.sizes).toEqual(sizes);
+    expect(statementTariff(versions, '2026-10-21', ['gone'])?.sizes).toEqual(sizes);
+  });
+
+  it('is absent while no version is in force', () => {
+    expect(statementTariff(versions, '2026-10-12', ['2g'])).toBeUndefined();
   });
 });
 

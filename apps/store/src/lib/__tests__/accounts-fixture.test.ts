@@ -263,10 +263,12 @@ describe('lots and spend', () => {
       { kind: 'topup' as const, at: 'x', amountCents: 1000 },
     ];
     expect(spendOf(lines, '7d', NOW)).toEqual({
-      spend: [{ bucket: '2026-10-13', cents: 120 }],
+      spend: [{ bucket: '2026-10-13', cents: 120, runningCents: 120, stoppedCents: 0 }],
       total: 120,
     });
-    expect(spendOf(lines, '12m', NOW).spend).toEqual([{ bucket: '2026-10', cents: 120 }]);
+    expect(spendOf(lines, '12m', NOW).spend).toEqual([
+      { bucket: '2026-10', cents: 120, runningCents: 120, stoppedCents: 0 },
+    ]);
     expect(spendOf(lines, '30d', NOW).total).toBe(120);
   });
 });

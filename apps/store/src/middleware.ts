@@ -40,10 +40,11 @@ const CSP_SESSION =
 function isSessionPath(pathname: string): boolean {
   // One door only: /spike/auth was retired with MIS-078 — the login lives in
   // the LAP, and a second copy of it was a second surface to keep AA. The
-  // worlds room and the members tab sign with the same wallet, so they get
-  // the same walls — and so does the organization panel's members screen,
-  // which hosts that very tab.
-  return /^\/(es\/|ja\/|ko\/|pt-br\/)?(lap\/(session|admin\/worlds)|saldo\/miembros|panel\/miembros)/.test(
+  // worlds room and the organization panel's people screens (Miembros and
+  // Roles: giving «Administrador» asks the wallet to sign) sign with the same
+  // wallet, so they get the same walls. Saldo's old members address only
+  // sends on now, and keeps the strict ones.
+  return /^\/(es\/|ja\/|ko\/|pt-br\/)?(lap\/(session|admin\/worlds)|panel\/(miembros|roles))/.test(
     pathname,
   );
 }

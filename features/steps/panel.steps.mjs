@@ -1,8 +1,10 @@
 /**
  * Step definitions for the organization panel (features/panel.feature, QA
- * 2026-10-15): the built /panel/ pages in the five locales, the door in the
- * account menu and the walls of the page where the wallet signs. Kept in
- * their own file so the shared acceptance.steps.mjs stays untouched.
+ * 2026-10-15; «La gente», 2026-10-16): the built /panel/ pages in the five
+ * locales, the door in the account menu, the walls of the pages where the
+ * wallet signs (Miembros and Roles) and Saldo's old members address, which
+ * now only sends to the panel. Kept in their own file so the shared
+ * acceptance.steps.mjs stays untouched.
  */
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
@@ -17,7 +19,8 @@ const LOCALES = [
   {
     prefix: '',
     summary: 'Overview',
-    members: 'Members and roles',
+    members: 'Members',
+    roles: 'Roles',
     balance: 'Balance and usage',
     panels: 'Panels',
     building: 'Under construction',
@@ -25,7 +28,8 @@ const LOCALES = [
   {
     prefix: 'es',
     summary: 'Resumen',
-    members: 'Miembros y roles',
+    members: 'Miembros',
+    roles: 'Roles',
     balance: 'Saldo y consumo',
     panels: 'Paneles',
     building: 'En construcción',
@@ -33,7 +37,8 @@ const LOCALES = [
   {
     prefix: 'ja',
     summary: '概要',
-    members: 'メンバーとロール',
+    members: 'メンバー',
+    roles: 'ロール',
     balance: '残高と利用状況',
     panels: 'パネル',
     building: '準備中',
@@ -41,7 +46,8 @@ const LOCALES = [
   {
     prefix: 'ko',
     summary: '개요',
-    members: '구성원과 역할',
+    members: '구성원',
+    roles: '역할',
     balance: '잔액과 사용량',
     panels: '패널',
     building: '준비 중',
@@ -49,7 +55,8 @@ const LOCALES = [
   {
     prefix: 'pt-br',
     summary: 'Resumo',
-    members: 'Membros e papéis',
+    members: 'Membros',
+    roles: 'Papéis',
     balance: 'Saldo e uso',
     panels: 'Painéis',
     building: 'Em construção',
@@ -60,6 +67,7 @@ const LOCALES = [
 const FACES = [
   { segment: '', piece: 'summary' },
   { segment: 'miembros/', piece: 'members' },
+  { segment: 'roles/', piece: 'roles' },
   { segment: 'saldo/', piece: 'balance' },
 ];
 
@@ -68,13 +76,14 @@ const PIECES = [
   'venues',
   'gatherings',
   'members',
+  'roles',
   'agents',
   'memory',
   'bazaar',
   'balance',
   'settings',
 ];
-const BUILT = ['summary', 'members', 'balance'];
+const BUILT = ['summary', 'members', 'roles', 'balance'];
 const SOON = ['venues', 'gatherings', 'agents', 'memory', 'bazaar', 'settings'];
 const ROOMS = ['census', 'worlds', 'prices', 'assets'];
 
@@ -147,7 +156,7 @@ const textOf = (inner) =>
     .trim();
 
 Then(
-  'every locale has the panel, its members and its balance, each titled in its own words',
+  'every locale has the panel, its members, its roles and its balance, each titled in its own words',
   async function () {
     for await (const { locale, face, where, html } of panelPages(this.distDir)) {
       const lang = locale.prefix || 'en';
@@ -171,12 +180,13 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
     assert.deepEqual(
       rows.map((row) => row.id),
       PIECES,
-      `${where}: the pieces are not the nine of the prototype, in its order`,
+      `${where}: the pieces are not the ten of the prototype, in its order`,
     );
     const prefix = base(locale.prefix);
     const hrefs = {
       summary: `${prefix}/panel/`,
       members: `${prefix}/panel/miembros/`,
+      roles: `${prefix}/panel/roles/`,
       balance: `${prefix}/panel/saldo/`,
     };
     for (const id of BUILT) {
@@ -208,7 +218,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
 Then('no panel page links a piece that is not built', async function () {
   for await (const { where, face, html } of panelPages(this.distDir)) {
     const rail = railOf(html, where);
-    // Three built pieces and four rooms: seven links, not one more.
+    // Four built pieces and four rooms: eight links, not one more.
     assert.equal(
       (rail.match(/<a\b/g) ?? []).length,
       BUILT.length + ROOMS.length,
@@ -323,43 +333,90 @@ Then('the panel pages light Perteneces in the sidebar and in the tab bar', async
   }
 });
 
-Then("the members page of the panel has the wallet's walls in every locale", async function () {
-  const headers = (await readFile(path.join(repoRoot, 'apps/store/public/_headers'), 'utf8')).split(
-    '\n',
-  );
-  for (const locale of LOCALES) {
-    const route = `${base(locale.prefix)}/panel/miembros/*`;
-    const at = headers.indexOf(route);
-    assert.ok(at >= 0, `_headers: no block for ${route}`);
-    const policy = headers[at + 1] ?? '';
-    assert.ok(policy.includes('Content-Security-Policy:'), `${route}: no policy under it`);
-    assert.ok(
-      policy.includes("connect-src 'self' blob: https: wss:"),
-      `${route}: no wss for WalletConnect`,
-    );
-    assert.ok(policy.includes('frame-src https:'), `${route}: no frame for the in-app wallets`);
-  }
-  // The same walls for the pages the Worker answers: the regular expression in the middleware.
-  const source = await readFile(path.join(repoRoot, 'apps/store/src/middleware.ts'), 'utf8');
-  const body = source.slice(source.indexOf('function isSessionPath'));
-  const literal = /return\s+(\/(?:\\\/|[^/\n])+\/[a-z]*)\s*\.test\(/.exec(body);
-  assert.ok(literal, 'middleware.ts: isSessionPath no longer returns a regular expression');
-  const slash = literal[1].lastIndexOf('/');
-  const isSession = new RegExp(literal[1].slice(1, slash), literal[1].slice(slash + 1));
+Then(
+  "the members and roles pages of the panel have the wallet's walls in every locale",
+  async function () {
+    const headers = (
+      await readFile(path.join(repoRoot, 'apps/store/public/_headers'), 'utf8')
+    ).split('\n');
+    for (const locale of LOCALES) {
+      for (const screen of ['miembros', 'roles']) {
+        const route = `${base(locale.prefix)}/panel/${screen}/*`;
+        const at = headers.indexOf(route);
+        assert.ok(at >= 0, `_headers: no block for ${route}`);
+        const policy = headers[at + 1] ?? '';
+        assert.ok(policy.includes('Content-Security-Policy:'), `${route}: no policy under it`);
+        assert.ok(
+          policy.includes("connect-src 'self' blob: https: wss:"),
+          `${route}: no wss for WalletConnect`,
+        );
+        assert.ok(policy.includes('frame-src https:'), `${route}: no frame for the in-app wallets`);
+      }
+      // The old address only sends on: it loads no wallet, so it keeps the strict walls.
+      const old = `${base(locale.prefix)}/saldo/miembros/*`;
+      assert.ok(!headers.includes(old), `_headers: ${old} still relaxes the walls`);
+    }
+    // The same walls for the pages the Worker answers: the regular expression in the middleware.
+    const source = await readFile(path.join(repoRoot, 'apps/store/src/middleware.ts'), 'utf8');
+    const body = source.slice(source.indexOf('function isSessionPath'));
+    const literal = /return\s+(\/(?:\\\/|[^/\n])+\/[a-z]*)\s*\.test\(/.exec(body);
+    assert.ok(literal, 'middleware.ts: isSessionPath no longer returns a regular expression');
+    const slash = literal[1].lastIndexOf('/');
+    const isSession = new RegExp(literal[1].slice(1, slash), literal[1].slice(slash + 1));
+    for (const locale of LOCALES) {
+      const prefix = base(locale.prefix);
+      for (const screen of ['miembros', 'roles']) {
+        assert.ok(
+          isSession.test(`${prefix}/panel/${screen}/`),
+          `${prefix}/panel/${screen}/: no session walls`,
+        );
+      }
+      assert.ok(!isSession.test(`${prefix}/panel/`), `${prefix}/panel/: walls it does not need`);
+      assert.ok(
+        !isSession.test(`${prefix}/panel/saldo/`),
+        `${prefix}/panel/saldo/: walls it does not need`,
+      );
+      assert.ok(
+        !isSession.test(`${prefix}/saldo/miembros/`),
+        `${prefix}/saldo/miembros/: walls a page that only sends on does not need`,
+      );
+    }
+  },
+);
+
+Then(
+  "every locale's old members page of Saldo sends to its panel's Miembros, with a link, out of the index",
+  async function () {
+    const sitemap = await readFile(path.join(this.distDir, 'sitemap-0.xml'), 'utf8');
+    for (const locale of LOCALES) {
+      const prefix = base(locale.prefix);
+      const where = `${prefix}/saldo/miembros/`;
+      const to = `${prefix}/panel/miembros/`;
+      const html = await read(this.distDir, locale.prefix, 'saldo', 'miembros', 'index.html');
+      assert.ok(
+        html.includes(`<meta http-equiv="refresh" content="0;url=${to}"`),
+        `${where}: does not send to ${to}`,
+      );
+      assert.ok(html.includes(`<a href="${to}"`), `${where}: no link to ${to}`);
+      assert.ok(html.includes('<meta name="robots" content="noindex"'), `${where}: no noindex`);
+      // Nothing else is loaded on the way: no island, no wallet.
+      assert.ok(!html.includes('<script'), `${where}: loads a script`);
+      assert.ok(!sitemap.includes(`${where}<`), `${where}: listed in the sitemap`);
+    }
+  },
+);
+
+Then("Saldo's members tab leads to the panel's Miembros in every locale", async function () {
   for (const locale of LOCALES) {
     const prefix = base(locale.prefix);
-    assert.ok(
-      isSession.test(`${prefix}/panel/miembros/`),
-      `${prefix}/panel/miembros/: no session walls`,
-    );
-    assert.ok(!isSession.test(`${prefix}/panel/`), `${prefix}/panel/: walls it does not need`);
-    assert.ok(
-      !isSession.test(`${prefix}/panel/saldo/`),
-      `${prefix}/panel/saldo/: walls it does not need`,
-    );
-    assert.ok(
-      isSession.test(`${prefix}/saldo/miembros/`),
-      `${prefix}/saldo/miembros/: lost its walls`,
+    const html = await read(this.distDir, locale.prefix, 'saldo', 'index.html');
+    const tabs = /<nav class="saldo-pestanas"[\s\S]*?<\/nav>/.exec(html);
+    assert.ok(tabs, `${prefix}/saldo/: no tabs`);
+    const links = [...tabs[0].matchAll(/<a\b[^>]*>/g)].map((match) => attr(match[0], 'href'));
+    assert.deepEqual(
+      links,
+      [`${prefix}/saldo/`, `${prefix}/panel/miembros/`, `${prefix}/saldo/referidos/`],
+      `${prefix}/saldo/: the tabs lead elsewhere`,
     );
   }
 });

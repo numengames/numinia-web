@@ -548,3 +548,66 @@ export function worldDayCostCents(
     MINUTES_PER_PRICED_DAY,
   );
 }
+
+/** A world's day as the Saldo chart stacks it: what its running minutes cost and what its stopped minutes cost. */
+export interface WorldDaySplit {
+  readonly runningCents: number;
+  readonly stoppedCents: number;
+}
+
+/**
+ * Splits what a world's day was charged (`cents`, positive) between its
+ * running and its stopped minutes, with `worldDayCostCents`' arithmetic:
+ * the stopped minutes get what they alone cost at `price`, rounded half up
+ * once, and running keeps the rest — so the two halves always add up to the
+ * charge, the rounding's remainder with running. A day the close charged
+ * with stopped minutes free (an account kept at zero) has nothing stopped;
+ * a charge neither price explains (a line written by hand) never gives the
+ * stopped half more than the charge.
+ */
+export function splitWorldDayCents(
+  price: SizePrice,
+  minutesRunning: number,
+  minutesStopped: number,
+  cents: number,
+): WorldDaySplit {
+  const stoppedFree =
+    cents !== worldDayCostCents(price, minutesRunning, minutesStopped) &&
+    cents ===
+      worldDayCostCents({ ...price, stoppedCentsPerDay: 0 }, minutesRunning, minutesStopped);
+  const stoppedCents = stoppedFree
+    ? 0
+    : Math.min(cents, worldDayCostCents(price, 0, minutesStopped));
+  return { runningCents: cents - stoppedCents, stoppedCents };
+}
+
+/** The tariff a statement shows a person: the prices of the sizes in use and the two rules they read. */
+export interface StatementTariff {
+  readonly startsOn: string;
+  readonly sizes: TariffSizes;
+  readonly rules: Pick<TariffRules, 'keepDaysAtZero' | 'noticeDaysForRise'>;
+}
+
+/**
+ * The version in force on `day`, cut to what a statement shows: the sizes
+ * in `inUse` it prices (every size, when it prices none of them), the start
+ * date and the two rules a person reads beside the prices. Undefined while
+ * no version is in force.
+ */
+export function statementTariff(
+  versions: readonly TariffVersion[],
+  day: string,
+  inUse: readonly string[],
+): StatementTariff | undefined {
+  const version = versionFor(versions, day);
+  if (version === undefined) return undefined;
+  const priced = Object.entries(version.sizes).filter(([size]) => inUse.includes(size));
+  return {
+    startsOn: version.startsOn,
+    sizes: priced.length > 0 ? Object.fromEntries(priced) : version.sizes,
+    rules: {
+      keepDaysAtZero: version.rules.keepDaysAtZero,
+      noticeDaysForRise: version.rules.noticeDaysForRise,
+    },
+  };
+}

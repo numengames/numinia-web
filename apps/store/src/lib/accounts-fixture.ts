@@ -9,7 +9,14 @@
  * Games» at 0,88 € with three members, whose `self` member is the wallet
  * asking, and «Active Inference Institute» and «La Tarugo», which the
  * wallet is NOT in (QA 2026-10-15, «la casa entra»). Lines are dated in days
- * before today, so the chart always has thirty days to draw. A top-up never
+ * before today, so the chart always has thirty days to draw: about 35 days
+ * of worlds' days per account, over two or three worlds of different sizes,
+ * each day's minutes running and stopped and what they cost at the seed's
+ * tariff (cut 2026-10-16 «el dinero»), a top-up and an adjustment. The
+ * statement answers as a till of that cut does — each bucket split between
+ * running and stopped with the till's arithmetic, each world over the range,
+ * the pace of the last 7 complete days and of the month, the tariff in force
+ * for the sizes in use. A top-up never
  * leaves this process: it answers the site's own way back with
  * `session_id=cs_test_fixture_<n>`, and confirming it credits the account —
  * the shape of a Stripe Checkout, no Stripe at all.
@@ -78,10 +85,15 @@ import {
   type DeskRoles,
   type DeskRolesAnswer,
   type DeskOverview,
+  type DeskPace,
   type DeskRefusal,
+  type DeskSizePrice,
+  type DeskSpend,
   type DeskStatement,
+  type DeskTariff,
   type DeskTeamAnswer,
   type DeskTopupAnswer,
+  type DeskWorld,
   type LineKind,
   type MemberRole,
   type SpendRange,
@@ -96,7 +108,17 @@ export interface SeedLine {
   readonly vatCents?: number;
   readonly worldId?: string;
   readonly size?: string;
+  /** A world's day: its minutes running and stopped (the amount is what they cost at the seed's tariff). */
+  readonly minutesRunning?: number;
+  readonly minutesStopped?: number;
   readonly reason?: string;
+}
+
+/** The seed's tariff: its prices per size, the two rules a person reads, and since when (in days before today). */
+interface SeedTariff {
+  readonly startsDaysAgo: number;
+  readonly sizes: Readonly<Record<string, DeskSizePrice>>;
+  readonly rules: DeskTariff['rules'];
 }
 
 export interface SeedMember {
@@ -118,6 +140,8 @@ export interface SeedTeam {
 
 /** What the fixture desk starts with, for every wallet. */
 export interface AccountsSeed {
+  /** Absent: the desk answers as a till before the cut «el dinero» would, with no tariff to show. */
+  readonly tariff?: SeedTariff;
   readonly personal: { readonly id: string; readonly lines: readonly SeedLine[] };
   readonly teams: readonly SeedTeam[];
 }
@@ -225,6 +249,8 @@ function lineOf(seed: SeedLine, now: Date): DeskLine {
   if (seed.kind === 'world_day') line.day = new Date(start).toISOString().slice(0, 10);
   if (seed.worldId !== undefined) line.worldId = seed.worldId;
   if (seed.size !== undefined) line.size = seed.size;
+  if (seed.minutesRunning !== undefined) line.minutesRunning = seed.minutesRunning;
+  if (seed.minutesStopped !== undefined) line.minutesStopped = seed.minutesStopped;
   if (seed.reason !== undefined) line.reason = seed.reason;
   return line;
 }
@@ -257,27 +283,140 @@ export function lotsOf(lines: readonly DeskLine[]): DeskLot[] {
     });
 }
 
-/** What the worlds cost in each bucket of the range: a day, or a month for 12 months. */
+/** The till's `worldDayCostCents`: per minute of a 1440-minute day, rounded half up once. */
+function dayCost(price: DeskSizePrice, running: number, stopped: number): number {
+  const total = running * price.runningCentsPerDay + stopped * price.stoppedCentsPerDay;
+  const remainder = total % 1440;
+  return (total - remainder) / 1440 + (remainder * 2 >= 1440 ? 1 : 0);
+}
+
+/**
+ * A world's day split as the till splits it (apps/till lib/tariff.ts
+ * `splitWorldDayCents`): the stopped minutes get what they alone cost, running
+ * the rest; nothing stopped on a day charged with stopped minutes free; a day
+ * with no price or no minutes counts as running whole.
+ */
+function splitOf(
+  line: DeskLine,
+  prices: Readonly<Record<string, DeskSizePrice>>,
+): { runningCents: number; stoppedCents: number } {
+  const spent = -line.amountCents;
+  const price = prices[String(line.size)];
+  const running = line.minutesRunning;
+  const stopped = line.minutesStopped;
+  if (price === undefined || typeof running !== 'number' || typeof stopped !== 'number') {
+    return { runningCents: spent, stoppedCents: 0 };
+  }
+  const free =
+    spent !== dayCost(price, running, stopped) &&
+    spent === dayCost({ ...price, stoppedCentsPerDay: 0 }, running, stopped);
+  const stoppedCents = free ? 0 : Math.min(spent, dayCost(price, 0, stopped));
+  return { runningCents: spent - stoppedCents, stoppedCents };
+}
+
+/** A world's day with the UTC day it charges. */
+type WorldDay = DeskLine & { readonly day: string };
+
+/** The worlds' days among the lines, in ledger order (oldest first). */
+function worldDays(lines: readonly DeskLine[]): WorldDay[] {
+  return lines.filter(
+    (line): line is WorldDay => line.kind === 'world_day' && typeof line.day === 'string',
+  );
+}
+
+/** The first bucket of a range ending today: a day, or a month for 12 months. */
+function firstBucket(range: SpendRange, now: Date): string {
+  return range === '12m'
+    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1)).toISOString().slice(0, 7)
+    : new Date(dayStart(now, range === '7d' ? 6 : 29)).toISOString().slice(0, 10);
+}
+
+/** The worlds' days of a range, each with the bucket it falls in. */
+function daysIn(
+  lines: readonly DeskLine[],
+  range: SpendRange,
+  now: Date,
+): { line: WorldDay; bucket: string }[] {
+  const first = firstBucket(range, now);
+  return worldDays(lines)
+    .map((line) => ({ line, bucket: range === '12m' ? line.day.slice(0, 7) : line.day }))
+    .filter(({ bucket }) => bucket >= first);
+}
+
+/**
+ * What the worlds cost in each bucket of the range — a day, or a month for 12
+ * months — split between running and stopped at the seed's prices.
+ */
 export function spendOf(
   lines: readonly DeskLine[],
   range: SpendRange,
   now: Date,
-): { spend: { bucket: string; cents: number }[]; total: number } {
-  const monthly = range === '12m';
-  const first = monthly
-    ? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1)).toISOString().slice(0, 7)
-    : new Date(dayStart(now, range === '7d' ? 6 : 29)).toISOString().slice(0, 10);
-  const buckets = new Map<string, number>();
-  for (const line of lines) {
-    if (line.kind !== 'world_day' || typeof line.day !== 'string') continue;
-    const bucket = monthly ? line.day.slice(0, 7) : line.day;
-    if (bucket < first) continue;
-    buckets.set(bucket, (buckets.get(bucket) ?? 0) - line.amountCents);
+  prices: Readonly<Record<string, DeskSizePrice>> = {},
+): { spend: DeskSpend[]; total: number } {
+  const buckets = new Map<string, { cents: number; runningCents: number; stoppedCents: number }>();
+  for (const { line, bucket } of daysIn(lines, range, now)) {
+    const split = splitOf(line, prices);
+    const before = buckets.get(bucket) ?? { cents: 0, runningCents: 0, stoppedCents: 0 };
+    buckets.set(bucket, {
+      cents: before.cents - line.amountCents,
+      runningCents: before.runningCents + split.runningCents,
+      stoppedCents: before.stoppedCents + split.stoppedCents,
+    });
   }
   const spend = [...buckets.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([bucket, cents]) => ({ bucket, cents }));
+    .map(([bucket, figures]) => ({ bucket, ...figures }));
   return { spend, total: spend.reduce((sum, entry) => sum + entry.cents, 0) };
+}
+
+/**
+ * Each world of the range: the size of its latest day (the lines are in
+ * ledger order, so the last one seen), the days it ran at all (a day with no
+ * minutes counts as running), what it cost; the most expensive first, then by id.
+ */
+function worldsOf(lines: readonly DeskLine[], range: SpendRange, now: Date): DeskWorld[] {
+  const worlds = new Map<string, DeskWorld>();
+  for (const { line } of daysIn(lines, range, now)) {
+    const id = String(line.worldId);
+    const world = worlds.get(id) ?? { worldId: id, size: '', daysRunning: 0, cents: 0 };
+    world.size = String(line.size);
+    world.daysRunning += (line.minutesRunning ?? 1) > 0 ? 1 : 0;
+    world.cents -= line.amountCents;
+    worlds.set(id, world);
+  }
+  // Array sort is stable: by id first, then by cost.
+  return [...worlds.values()]
+    .sort((a, b) => a.worldId.localeCompare(b.worldId))
+    .sort((a, b) => b.cents - a.cents);
+}
+
+/** The 7 complete UTC days before today, and the month so far with how many worlds it charged. */
+function paceOf(lines: readonly DeskLine[], now: Date): DeskPace {
+  const today = new Date(dayStart(now, 0)).toISOString().slice(0, 10);
+  const weekStart = new Date(dayStart(now, 7)).toISOString().slice(0, 10);
+  const days = worldDays(lines);
+  const week = days.filter((line) => line.day >= weekStart && line.day < today);
+  const month = days.filter((line) => line.day.slice(0, 7) === today.slice(0, 7));
+  const spent = (some: readonly WorldDay[]): number =>
+    some.reduce((sum, line) => sum - line.amountCents, 0);
+  return {
+    sevenDaysCents: spent(week),
+    monthCents: spent(month),
+    monthWorlds: new Set(
+      month.filter((line) => line.amountCents < 0).map((line) => String(line.worldId)),
+    ).size,
+  };
+}
+
+/** The seed's tariff as the statement shows it: the sizes the account's worlds reserve (all, when none). */
+function tariffOf(tariff: SeedTariff, lines: readonly DeskLine[], now: Date): DeskTariff {
+  const inUse = new Set(worldDays(lines).map((line) => String(line.size)));
+  const priced = Object.entries(tariff.sizes).filter(([size]) => inUse.has(size));
+  return {
+    startsOn: new Date(dayStart(now, tariff.startsDaysAgo)).toISOString().slice(0, 10),
+    sizes: Object.fromEntries(priced.length > 0 ? priced : Object.entries(tariff.sizes)),
+    rules: { ...tariff.rules },
+  };
 }
 
 function booksFor(seed: AccountsSeed, wallet: string, now: Date): Book[] {
@@ -621,7 +760,7 @@ export function createAccountsFixtureDesk(
       houseRead(found, 'statement');
       const { book, who, as } = found;
       const balanceCents = balanceOf(book);
-      const { spend, total } = spendOf(book.lines, range, now());
+      const { spend, total } = spendOf(book.lines, range, now(), seed.tariff?.sizes);
       const statement: DeskStatement = {
         account: accountOf(book, who, as),
         balanceCents,
@@ -630,7 +769,10 @@ export function createAccountsFixtureDesk(
         spend,
         spendTotalCents: total,
         lines: copy([...book.lines].reverse().slice(0, LAST_LINES)),
+        worlds: worldsOf(book.lines, range, now()),
+        pace: paceOf(book.lines, now()),
       };
+      if (seed.tariff !== undefined) statement.tariff = tariffOf(seed.tariff, book.lines, now());
       if (book.kind === 'team') statement.members = copy(book.members);
       return statement;
     },

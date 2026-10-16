@@ -48,10 +48,11 @@ const PAGES = [
   '/es/lap/admin/census/',
   '/es/lap/admin/prices/',
   '/es/saldo/', // without a session: the door (the panel is measured in saldo.spec.ts)
-  '/es/saldo/miembros/', // without a session: the door (the panel is measured in members.spec.ts)
+  // /es/saldo/miembros/ only sends to /es/panel/miembros/ now: measured there.
   '/es/saldo/referidos/',
   '/es/panel/', // the organization panel without a session: the door (signed in it is measured in panel.spec.ts)
-  '/es/panel/miembros/',
+  '/es/panel/miembros/', // signed in: members.spec.ts and panel-gente.spec.ts
+  '/es/panel/roles/',
   '/es/panel/saldo/',
   '/support/', // the help page (v0.70.0)
 ];

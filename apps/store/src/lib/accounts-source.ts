@@ -258,6 +258,9 @@ function buildSchemas() {
     day: z.string().nullish(),
     worldId: z.string().nullish(),
     size: z.string().nullish(),
+    // A world's day, from a till of the cut «el dinero»: optional, as an older till sends none.
+    minutesRunning: z.number().nullish(),
+    minutesStopped: z.number().nullish(),
     reason: z.string().nullish(),
   });
   const overview = z.union([z.object({ accounts: z.array(account) }), refusal]);
@@ -282,10 +285,42 @@ function buildSchemas() {
           remainderCents: z.number(),
         }),
       ),
-      spend: z.array(z.object({ bucket: z.string(), cents: z.number() })),
+      spend: z.array(
+        z.object({
+          bucket: z.string(),
+          cents: z.number(),
+          runningCents: z.number().optional(),
+          stoppedCents: z.number().optional(),
+        }),
+      ),
       spendTotalCents: z.number(),
       lines: z.array(line),
       members: z.array(member).optional(),
+      // What a till of the cut «el dinero» adds; each optional, as the store
+      // deploys apart from the till and an older one sends none of it.
+      worlds: z
+        .array(
+          z.object({
+            worldId: z.string(),
+            size: z.string(),
+            daysRunning: z.number(),
+            cents: z.number(),
+          }),
+        )
+        .optional(),
+      pace: z
+        .object({ sevenDaysCents: z.number(), monthCents: z.number(), monthWorlds: z.number() })
+        .optional(),
+      tariff: z
+        .object({
+          startsOn: z.string(),
+          sizes: z.record(
+            z.string(),
+            z.object({ runningCentsPerDay: z.number(), stoppedCentsPerDay: z.number() }),
+          ),
+          rules: z.object({ keepDaysAtZero: z.number(), noticeDaysForRise: z.number() }),
+        })
+        .optional(),
     }),
     refusal,
   ]);

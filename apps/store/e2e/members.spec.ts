@@ -1,10 +1,12 @@
 /**
- * «Miembros y roles» (v0.94.0; the fresh signature, v0.95.0) in a real
- * browser against the built site. As in saldo.spec.ts the e2e server has no
- * auth secrets, so the till's answers are played by the browser
- * (`page.route`), shaped as the routes send them. What is under test is
- * what the screen does with each — and, for the fresh signature, that the
- * real thirdweb code finds the wallet of the session and signs the lines.
+ * The fresh signature of «La gente» (ORG-008, v0.95.0) in a real browser
+ * against the built site — now in the panel's Miembros and Roles
+ * (/panel/miembros/, /panel/roles/), where Saldo's old «Miembros y roles»
+ * moved. As in panel.spec.ts the e2e server has no auth secrets, so the
+ * till's answers are played by the browser (`page.route`), shaped as the
+ * routes send them. What is under test is what the screens do with each —
+ * and, for the fresh signature, that the real thirdweb code finds the wallet
+ * of the session and signs the lines, from the table and from the roles.
  */
 
 import AxeBuilder from '@axe-core/playwright';
@@ -35,14 +37,19 @@ const role = (id: string, name: string, position: number, extra: object = {}) =>
   ...extra,
 });
 
-function organization(as: 'owner' | 'house' | 'member', held: string[] = [], me = WALLET) {
+function organization(
+  as: 'owner' | 'house' | 'member',
+  held: string[] = [],
+  me = WALLET,
+  finance: string[] = ['manage-balance'],
+) {
   return {
     ok: true,
     accountId: TEAM.id,
     as,
     roles: [
       role(ADMIN, 'Administración', 2, { permissions: ['administrator'], hoist: true, members: 1 }),
-      role(FINANCE, 'Finanzas', 1, { permissions: ['manage-balance'], members: held.length }),
+      role(FINANCE, 'Finanzas', 1, { permissions: finance, members: held.length }),
       role(BASE, '@todos', 0, { permissions: ['enter-worlds', 'top-up'], members: 2 }),
     ],
     members: [
@@ -67,11 +74,15 @@ function organization(as: 'owner' | 'house' | 'member', held: string[] = [], me 
 async function signedIn(page: Page, as: 'owner' | 'house' | 'member' = 'owner', me = WALLET) {
   const posted: Record<string, unknown>[] = [];
   let held: string[] = [];
+  let finance = ['manage-balance'];
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({ status: 200, json: { address: me, rank: 'nomad' } }),
   );
   await page.route('**/api/saldo/roles?*', (route: Route) =>
-    route.fulfill({ json: { roles: organization(as, held, me), you: me } }),
+    route.fulfill({ json: { roles: organization(as, held, me, finance), you: me } }),
+  );
+  await page.route('**/api/saldo/ranks?*', (route: Route) =>
+    route.fulfill({ json: { ok: true, ranks: { [me]: 'nomad', [OTHER]: null } } }),
   );
   await page.route('**/api/saldo/log?*', (route: Route) =>
     route.fulfill({
@@ -101,15 +112,21 @@ async function signedIn(page: Page, as: 'owner' | 'house' | 'member' = 'owner', 
     const body = route.request().postDataJSON() as {
       action: string;
       roleId?: string;
+      change?: { permissions?: string[] };
       fresh?: unknown;
     };
     posted.push(body);
-    // Giving the role that carries «Administrador» waits for a fresh signature (ORG-008).
-    if (body.action === 'give-role' && body.roleId === ADMIN && body.fresh === undefined) {
+    // Giving the role that carries «Administrador», or «Gestionar roles» to a role,
+    // waits for a fresh signature (ORG-008).
+    const grants =
+      (body.action === 'give-role' && body.roleId === ADMIN) ||
+      (body.action === 'edit-role' && (body.change?.permissions ?? []).includes('manage-roles'));
+    if (grants && body.fresh === undefined) {
       return route.fulfill({ json: { result: { ok: false, problems: [FRESH_SIGNATURE] } } });
     }
     if (body.action === 'give-role') held = [body.roleId ?? FINANCE];
     if (body.action === 'take-role') held = [];
+    if (body.action === 'edit-role') finance = body.change?.permissions ?? finance;
     if (body.action === 'delete-role') {
       return route.fulfill({
         json: {
@@ -120,7 +137,7 @@ async function signedIn(page: Page, as: 'owner' | 'house' | 'member' = 'owner', 
         },
       });
     }
-    return route.fulfill({ json: { result: organization(as, held, me) } });
+    return route.fulfill({ json: { result: organization(as, held, me, finance) } });
   });
   return posted;
 }
@@ -170,70 +187,27 @@ async function withWallet(page: Page) {
   return signer.address;
 }
 
-test('without a session the tab asks you to sign in and comes back here', async ({ page }) => {
-  await page.goto('/es/saldo/miembros/');
-  const door = page.locator('[data-saldo-signed-out] a');
-  await expect(door).toHaveAttribute('href', '/es/lap/session/?vuelta=%2Fes%2Fsaldo%2Fmiembros%2F');
-});
+const other = (page: Page) => page.locator(`[data-person="${OTHER}"]`);
+const notices = (page: Page) => page.locator('[data-people-notices]');
 
-test('shows the roles from the top down, who holds them and the owner strip', async ({ page }) => {
-  await signedIn(page);
-  await page.goto('/es/saldo/miembros/');
-  await expect(page.locator('[data-panel-owner]')).toBeVisible();
-  await expect(page.locator('[data-panel-house]')).toHaveCount(0);
-  const names = page.locator('[data-role] strong');
-  await expect(names).toHaveText(['Administración', 'Finanzas', '@todos']);
-  await expect(page.locator(`[data-role="${BASE}"]`)).toContainText('Rol de base');
-  // The base role cannot be moved or deleted; the others can.
-  await expect(page.locator(`[data-role="${BASE}"] [data-metric="saldo-role-delete"]`)).toHaveCount(
-    0,
-  );
-  await expect(
-    page.locator(`[data-role="${FINANCE}"] [data-metric="saldo-role-delete"]`),
-  ).toHaveCount(1);
-  await expect(page.locator(`[data-role="${ADMIN}"] [data-metric="saldo-role-up"]`)).toHaveCount(0);
-  await expect(
-    page.locator(`[data-role="${FINANCE}"] [data-metric="saldo-role-down"]`),
-  ).toHaveCount(0);
-});
+/** The panel's Miembros, the table drawn; then «+» on the other person's row with this role chosen. */
+async function giveFromTable(page: Page, roleId: string): Promise<void> {
+  await page.goto(`/es/panel/miembros/?org=${TEAM.id}`);
+  await expect(other(page)).toBeVisible();
+  await other(page).locator('[data-metric="panel-member-role-more"]').click();
+  await other(page).getByRole('combobox').selectOption(roleId);
+  await other(page).locator('[data-metric="panel-member-role-give"]').click();
+}
 
-test('the house enters with its own strip', async ({ page }) => {
-  await signedIn(page, 'house');
-  await page.goto('/es/saldo/miembros/');
-  await expect(page.locator('[data-panel-house]')).toContainText('Entras como la casa');
-});
-
-test('gives and takes a role, then reads the log', async ({ page }) => {
+test('gives and takes a role from the table, then reads the log', async ({ page }) => {
   const posted = await signedIn(page);
-  await page.goto('/es/saldo/miembros/');
-  const person = page.locator('.saldo-persona').nth(1);
-  await person.getByRole('combobox').selectOption(FINANCE);
-  await person.locator('[data-metric="saldo-role-give"]').click();
-  await expect(person.locator('.saldo-chip', { hasText: 'Finanzas' })).toBeVisible();
-  await person.locator('[data-metric="saldo-role-take"]').click();
-  await expect(person.locator('.saldo-chip')).toHaveCount(0);
+  await giveFromTable(page, FINANCE);
+  await expect(other(page).locator('[data-role-chip]')).toHaveText(['Finanzas']);
+  await other(page).locator('[data-metric="panel-member-role-take"]').click();
+  await expect(other(page).locator('[data-role-chip]')).toHaveCount(0);
   expect(posted.map((body) => body.action)).toEqual(['give-role', 'take-role']);
-  await page.locator('[data-metric="saldo-log-toggle"]').click();
-  await expect(page.locator('.saldo-registro li')).toContainText('Rol dado');
-});
-
-test('a role form offers every permission, «Administrador» too, and creates the role', async ({
-  page,
-}) => {
-  const posted = await signedIn(page);
-  await page.goto('/es/saldo/miembros/');
-  await page.locator('[data-metric="saldo-role-new"]').click();
-  await expect(page.getByRole('checkbox', { name: 'Administrador' })).toBeEnabled();
-  await expect(page.getByRole('checkbox', { name: 'Gestionar roles' })).toBeEnabled();
-  await page.getByLabel('Nombre').fill('Cartografía');
-  await page.getByRole('checkbox', { name: 'Entrar en la sede' }).check();
-  await page.locator('[data-metric="saldo-role-save"]').click();
-  await expect.poll(() => posted.length).toBe(1);
-  expect(posted[0]).toMatchObject({
-    action: 'create-role',
-    accountId: TEAM.id,
-    role: { name: 'Cartografía', color: null, hoist: false, permissions: ['enter-worlds'] },
-  });
+  await page.locator('[data-metric="panel-log-toggle"]').click();
+  await expect(page.locator('[data-panel-log] li')).toContainText('Rol dado');
 });
 
 test('giving «Administración» asks the wallet to sign: with no wallet in this browser it says so, and gives nothing', async ({
@@ -247,16 +221,13 @@ test('giving «Administración» asks the wallet to sign: with no wallet in this
       json: { sign: { message: 'Numinia · Numen Games', token: 'f1.a.b', expiresAt: 'x' } },
     });
   });
-  await page.goto('/es/saldo/miembros/');
-  const person = page.locator('.saldo-persona').nth(1);
-  await person.getByRole('combobox').selectOption(ADMIN);
-  await person.locator('[data-metric="saldo-role-give"]').click();
-  await expect(page.getByRole('alert')).toContainText('no recuerda tu cartera');
+  await giveFromTable(page, ADMIN);
+  await expect(notices(page).getByRole('alert')).toContainText('no recuerda tu cartera');
   expect(posted).toHaveLength(1);
   expect(posted[0]).not.toHaveProperty('fresh');
   // The wallet is looked for first: no sentence is asked for one that is not there.
   expect(asked).toBe(0);
-  await expect(person.locator('.saldo-chip', { hasText: 'Administración' })).toHaveCount(0);
+  await expect(other(page).locator('[data-role-chip]')).toHaveCount(0);
 });
 
 test('giving «Administración» with the session’s wallet: it signs the very lines, and the act goes again with the proof', async ({
@@ -273,11 +244,8 @@ test('giving «Administración» with the session’s wallet: it signs the very 
       json: { sign: { message: lines, token: 'f1.e2e.token', expiresAt: 'x' } },
     });
   });
-  await page.goto('/es/saldo/miembros/');
-  const person = page.locator('.saldo-persona').nth(1);
-  await person.getByRole('combobox').selectOption(ADMIN);
-  await person.locator('[data-metric="saldo-role-give"]').click();
-  await expect(person.locator('.saldo-chip', { hasText: 'Administración' })).toBeVisible();
+  await giveFromTable(page, ADMIN);
+  await expect(other(page).locator('[data-role-chip]')).toHaveText(['Administración']);
 
   // Asked once for the lines of this very act, in the page's language, on the wallet's chain.
   expect(asked).toHaveLength(1);
@@ -295,6 +263,38 @@ test('giving «Administración» with the session’s wallet: it signs the very 
   ).toBe(true);
 });
 
+test('saving «Gestionar roles» in a role’s permissions signs the same way', async ({ page }) => {
+  const me = await withWallet(page);
+  const posted = await signedIn(page, 'owner', me.toLowerCase());
+  const lines = 'Numinia · Numen Games\nDas «Gestionar roles» al rol «Finanzas».';
+  await page.route('**/api/saldo/signature?*', (route: Route) =>
+    route.fulfill({ json: { sign: { message: lines, token: 'f1.e2e.roles', expiresAt: 'x' } } }),
+  );
+  await page.goto(`/es/panel/roles/?org=${TEAM.id}`);
+  await page.locator(`[data-role="${FINANCE}"] [data-metric="panel-role-select"]`).click();
+  await page.locator('[data-metric="panel-role-tab-permissions"]').click();
+  const manage = page.locator('[data-role-permissions]').getByRole('switch', {
+    name: 'Gestionar roles',
+  });
+  await manage.click();
+  await page.locator('[data-metric="panel-role-permissions-save"]').click();
+  await expect(manage).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('[data-metric="panel-role-permissions-save"]')).toHaveCount(0);
+  expect(posted).toHaveLength(2);
+  expect(posted[0]).toEqual({
+    action: 'edit-role',
+    accountId: TEAM.id,
+    roleId: FINANCE,
+    change: { permissions: ['manage-roles', 'manage-balance'] },
+  });
+  const { fresh, ...act } = posted[1] as { fresh: { token: string; signature: string } };
+  expect(act).toEqual(posted[0]);
+  expect(fresh.token).toBe('f1.e2e.roles');
+  expect(
+    await verifyEOASignature({ message: lines, signature: fresh.signature, address: me }),
+  ).toBe(true);
+});
+
 test('a wallet that is not the session’s signs nothing', async ({ page }) => {
   await withWallet(page);
   const posted = await signedIn(page);
@@ -303,33 +303,36 @@ test('a wallet that is not the session’s signs nothing', async ({ page }) => {
     asked += 1;
     return route.fulfill({ json: { sign: { message: 'x', token: 'f1.a.b', expiresAt: 'x' } } });
   });
-  await page.goto('/es/saldo/miembros/');
-  const person = page.locator('.saldo-persona').nth(1);
-  await person.getByRole('combobox').selectOption(ADMIN);
-  await person.locator('[data-metric="saldo-role-give"]').click();
-  await expect(page.getByRole('alert')).toContainText('no es la de tu sesión');
+  await giveFromTable(page, ADMIN);
+  await expect(notices(page).getByRole('alert')).toContainText('no es la de tu sesión');
   expect(asked).toBe(0);
   expect(posted).toHaveLength(1);
 });
 
 test('a refusal is told in plain words, and nothing moves', async ({ page }) => {
   await signedIn(page);
-  await page.goto('/es/saldo/miembros/');
-  await page.locator(`[data-role="${FINANCE}"] [data-metric="saldo-role-delete"]`).click();
-  await page.locator('[data-metric="saldo-role-delete-confirm"]').click();
-  await expect(page.getByRole('alert')).toContainText('por debajo de tu rol más alto');
-  await expect(page.locator('[data-role]')).toHaveCount(3);
+  await page.goto(`/es/panel/roles/?org=${TEAM.id}`);
+  await page.locator(`[data-role="${FINANCE}"] [data-metric="panel-role-select"]`).click();
+  await page.locator('[data-metric="panel-role-tab-look"]').click();
+  await page.locator('[data-metric="panel-role-delete"]').click();
+  await page.locator('[data-metric="panel-role-delete-confirm"]').click();
+  await expect(notices(page).getByRole('alert')).toContainText('por debajo de tu rol más alto');
+  await expect(page.locator('[data-roles-list] [data-role]')).toHaveCount(3);
 });
 
-test('the panel is accessible, on a phone too', async ({ page }) => {
+test('both screens are accessible, on a phone too', async ({ page }) => {
   await signedIn(page);
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/es/saldo/miembros/');
-    await expect(page.locator('[data-role]').first()).toBeVisible();
-    const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(scroll).toBeLessThanOrEqual(width);
-    const results = await new AxeBuilder({ page }).analyze();
-    expect(results.violations).toEqual([]);
+    for (const path of ['/es/panel/miembros/', '/es/panel/roles/']) {
+      await page.goto(`${path}?org=${TEAM.id}`);
+      await expect(
+        page.locator('[data-person], [data-roles-list] [data-role]').first(),
+      ).toBeVisible();
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(width);
+      const results = await new AxeBuilder({ page }).exclude('.binaria').analyze();
+      expect(results.violations, `${path} at ${width}`).toEqual([]);
+    }
   }
 });

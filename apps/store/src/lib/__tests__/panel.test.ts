@@ -24,12 +24,13 @@ import {
 const piece = (id: string): Piece => [...PIECES, ...ROOMS].find((entry) => entry.id === id)!;
 
 describe('the pieces of the panel', () => {
-  it('are nine, in the order of the prototype: the working ones are drawn among the rest', () => {
+  it('are ten, in the order of the prototype: the working ones are drawn among the rest', () => {
     expect(PIECES.map((entry) => entry.id)).toEqual([
       'summary',
       'venues',
       'gatherings',
       'members',
+      'roles',
       'agents',
       'memory',
       'bazaar',
@@ -38,14 +39,21 @@ describe('the pieces of the panel', () => {
     ]);
   });
 
-  it('three are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
+  it('four are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
     const built = PIECES.filter((entry) => entry.kind === 'built');
     expect(built.map((entry) => [entry.id, entry.path])).toEqual([
       ['summary', '/panel/'],
       ['members', '/panel/miembros/'],
+      ['roles', '/panel/roles/'],
       ['balance', '/panel/saldo/'],
     ]);
     expect(PANEL_PATH).toBe('/panel/');
+  });
+
+  it('Roles, right under Miembros, draws the shield the site already has', () => {
+    const at = PIECES.findIndex((entry) => entry.id === 'roles');
+    expect(PIECES[at - 1]?.id).toBe('members');
+    expect(PIECES[at]?.icon).toBe('shield-check');
   });
 
   it('six are not built yet, and a piece not built has no address to fail on', () => {
@@ -79,6 +87,7 @@ describe('the pieces of the panel', () => {
         'buildings',
         'calendar-blank',
         'users-three',
+        'shield-check',
         'robot',
         'scroll',
         'package',
@@ -95,6 +104,7 @@ describe('where a piece leads', () => {
   it('keeps the organization in every address of the panel, under the visitor’s locale', () => {
     expect(pieceHref('en', piece('summary'), 'acc_t_1')).toBe('/panel/?org=acc_t_1');
     expect(pieceHref('es', piece('members'), 'acc_t_1')).toBe('/es/panel/miembros/?org=acc_t_1');
+    expect(pieceHref('ko', piece('roles'), 'acc_t_1')).toBe('/ko/panel/roles/?org=acc_t_1');
     expect(pieceHref('pt-br', piece('balance'), 'acc_t_1')).toBe('/pt-br/panel/saldo/?org=acc_t_1');
   });
 

@@ -3,18 +3,19 @@ Feature: The organization panel
   estábamos haciendo». The roles and members were built, but as a tab of
   Balance reachable from no menu he looked at. The account menu now has one
   door, «Paneles», to /panel/: the organization's panel, with the pieces of
-  its rail — Resumen, Miembros y roles, Saldo y consumo built; the rest
+  its rail — Resumen, Miembros, Roles, Saldo y consumo built; the rest
   drawn under construction, never a link that fails; the Oracle's rooms only
   signposted for the Oracle. Verified against the build output, in the five
   locales. What the panel does with each answer of /api/saldo (the
   organization in the address, the switcher, what each person is in each
-  organization, the phone) is read in a browser by e2e/panel.spec.ts.
+  organization, the people and their roles, the phone) is read in a browser
+  by e2e/panel.spec.ts and e2e/panel-gente.spec.ts.
 
-  Scenario: The panel and its two screens exist in every locale, each with its own title
+  Scenario: The panel and its three screens exist in every locale, each with its own title
     Given the store application has been built
-    Then every locale has the panel, its members and its balance, each titled in its own words
+    Then every locale has the panel, its members, its roles and its balance, each titled in its own words
 
-  Scenario: The rail draws three built pieces, the Oracle's four rooms and six pieces under construction
+  Scenario: The rail draws four built pieces, the Oracle's four rooms and six pieces under construction
     Given the store application has been built
     Then every panel page draws the rail of pieces the same way in every locale
 
@@ -31,6 +32,11 @@ Feature: The organization panel
     Given the store application has been built
     Then the panel pages light Perteneces in the sidebar and in the tab bar
 
-  Scenario: The members screen of the panel is served with the walls of a page where the wallet signs
+  Scenario: The members and roles screens of the panel are served with the walls of a page where the wallet signs
     Given the store application has been built
-    Then the members page of the panel has the wallet's walls in every locale
+    Then the members and roles pages of the panel have the wallet's walls in every locale
+
+  Scenario: Saldo's old «Miembros y roles» address sends to the panel's Miembros in every locale
+    Given the store application has been built
+    Then every locale's old members page of Saldo sends to its panel's Miembros, with a link, out of the index
+    And Saldo's members tab leads to the panel's Miembros in every locale
