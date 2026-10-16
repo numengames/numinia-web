@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ORGANIZATION_PERMISSIONS, type OrganizationRefusal } from '@numinia/domain';
 import { ORG_PROBLEMS, refusalOf } from '../../../../till/src/lib/organizations';
 import { PROBLEMS } from '../../../../till/src/db/accounts';
+import { CENSUS_PROBLEMS } from '../../../../till/src/lib/census';
 import {
   DESK_METHODS,
   HOUSE_BOOLEAN,
@@ -16,6 +17,8 @@ import {
   OWNER_ONLY,
   OWN_ROLES,
   readOwnProfile,
+  readCitizens,
+  NOT_HOUSE_CENSUS,
   bucketsOf,
   chartBars,
   checkoutTarget,
@@ -66,10 +69,82 @@ describe('the desk contract', () => {
     expect(new Set(DESK_METHODS).size).toBe(DESK_METHODS.length);
   });
 
-  it('ends with one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-2)).toEqual(['profile', 'setProfile']);
-    expect([...OPTIONAL_DESK_METHODS].sort()).toEqual(['directory', 'profile', 'setProfile']);
+  it('has one’s own name and avatar, which a till older than the store may still lack', () => {
+    expect(DESK_METHODS.slice(-4, -2)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
+  });
+
+  it('ends with the census (cut «El censo»), optional too: a till without it changes nothing', () => {
+    expect(DESK_METHODS.slice(-2)).toEqual(['signedIn', 'citizens']);
+    expect([...OPTIONAL_DESK_METHODS].sort()).toEqual([
+      'citizens',
+      'directory',
+      'profile',
+      'setProfile',
+      'signedIn',
+    ]);
+  });
+
+  it('knows the till’s refusal of the list of who has signed in, in its own words', () => {
+    expect(NOT_HOUSE_CENSUS).toBe(CENSUS_PROBLEMS.notHouse);
+  });
+});
+
+describe('reading /api/admin/citizens in the browser (cut «El censo»)', () => {
+  const face = '/thumbs/1x/avatar-arla-mncdhz3l.webp';
+  const lucia = {
+    wallet: `0x${'a1'.repeat(20)}`,
+    firstSeenAt: '2026-10-01T08:00:00.000Z',
+    lastSeenAt: '2026-10-16T08:00:00.000Z',
+    name: 'Lucía Vidal',
+    face,
+    organizations: 2,
+  };
+  const nameless = { ...lucia, wallet: `0x${'b2'.repeat(20)}`, name: null, face: null };
+
+  it('reads a page of people, its total and the next cursor', () => {
+    expect(readCitizens({ ok: true, people: [lucia, nameless], total: 7, next: 'c' })).toEqual({
+      people: [lucia, nameless],
+      total: 7,
+      next: 'c',
+    });
+    expect(readCitizens({ ok: true, people: [], total: 0, next: null })).toEqual({
+      people: [],
+      total: 0,
+      next: null,
+    });
+  });
+
+  it('keeps only the fields it knows: an avatar id never reaches the screen', () => {
+    const read = readCitizens({
+      ok: true,
+      people: [{ ...lucia, avatar: 'avatar-arla-mncdhz3l' }],
+      total: 1,
+      next: null,
+    });
+    expect(read?.people[0]).toEqual(lucia);
+    expect(read?.people[0]).not.toHaveProperty('avatar');
+  });
+
+  it('reads anything else as nothing', () => {
+    for (const json of [
+      null,
+      'x',
+      { ok: false, people: [], total: 0, next: null },
+      { ok: true, people: 'x', total: 0, next: null },
+      { ok: true, people: [], total: '1', next: null },
+      { ok: true, people: [], total: 0, next: 7 },
+      { ok: true, people: [], total: 0 },
+      { ok: true, people: [null], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, wallet: 7 }], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, firstSeenAt: null }], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, lastSeenAt: 1 }], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, name: 1 }], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, face: 1 }], total: 1, next: null },
+      { ok: true, people: [{ ...lucia, organizations: '2' }], total: 1, next: null },
+    ]) {
+      expect(readCitizens(json), JSON.stringify(json)).toBeNull();
+    }
   });
 });
 
