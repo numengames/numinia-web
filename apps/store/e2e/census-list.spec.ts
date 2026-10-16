@@ -161,8 +161,9 @@ test.describe('the house sees who has signed in', () => {
     const asked = citizensRequests(page);
     await page.goto(members(TARUGO));
     await page.locator('[data-metric="panel-member-add"]').click();
-    const input = page.getByRole('combobox');
+    const input = page.locator('#gente-cartera');
     await expect(input).toHaveAttribute('aria-expanded', 'false');
+    await expect(input).toHaveAttribute('role', 'combobox');
     await input.fill('luc');
     const options = page.getByRole('listbox').getByRole('option');
     await expect(options).toHaveCount(1);
@@ -183,7 +184,8 @@ test.describe('the house sees who has signed in', () => {
     await signIn(context, HOUSE, 'oracle');
     await page.goto(members(TARUGO));
     await page.locator('[data-metric="panel-member-add"]').click();
-    await page.getByRole('combobox').fill(D4.toUpperCase().replace('0X', '0x'));
+    await expect(page.locator('#gente-cartera')).toHaveAttribute('role', 'combobox');
+    await page.locator('#gente-cartera').fill(D4.toUpperCase().replace('0X', '0x'));
     await page.locator('[data-metric="panel-member-add-save"]').click();
     await expect(page.locator(`tr[data-person="${D4}"]`)).toBeVisible();
   });

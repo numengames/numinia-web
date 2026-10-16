@@ -72,7 +72,8 @@ Then(
       assert.equal(attr(open, 'data-session-ranks'), 'oracle', `${where}: not for the house only`);
       assert.notEqual(attr(open, 'hidden'), null, `${where}: shown before the session is known`);
       assert.ok(body.includes(title), `${where}: no title «${title}»`);
-      const lookup = html.indexOf('data-census-panel');
+      // The lookup's own element, not the styles that name it in <head>.
+      const lookup = html.search(/<div[^>]*\sdata-census-panel[\s>=]/);
       assert.ok(lookup > start, `${where}: the list is not above the one-wallet lookup`);
     }
   },

@@ -4,12 +4,19 @@
  * from the session-gated endpoint — a visitor without rank receives the
  * refusal, never a record. Rank options come localized from the domain;
  * Oracle is not among them.
+ *
+ * Above the lookup, «Quién ha entrado» (cut «El censo», 2026-10-16):
+ * everyone who has signed in, for the house to add to an organization. The
+ * section stays hidden until the chrome knows the session is an Oracle's
+ * (`data-session-ranks`), and its island asks for the list only then.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { RANK_DEFINITIONS } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
 import LapShell from '../LapShell.astro';
+import { CENSUS_LIST_UI } from '../../../i18n/census-list';
 import { CensusPanel } from './CensusPanel';
+import { CitizensList } from './CitizensList';
 
 interface Props {
   locale: SupportedLocale;
@@ -21,6 +28,7 @@ const ranks = RANK_DEFINITIONS.filter((rank) => rank.id !== 'oracle').map((rank)
   id: rank.id,
   name: rank.name[locale],
 }));
+const listWords = CENSUS_LIST_UI[locale];
 const labels = {
   ...t.census,
   forbidden: t.admin.forbidden,
@@ -39,6 +47,17 @@ const labels = {
     <h1>{t.census.title}</h1>
     <p class="intro">{t.census.intro}</p>
   </header>
+  <section
+    class="censo-entradas"
+    data-citizens="list"
+    data-session-ranks="oracle"
+    hidden
+  >
+    <h2 id="censo-entradas-titulo">{listWords.title}</h2>
+    <p class="intro">{listWords.intro}</p>
+    <p class="censo-antes" data-citizens-before>{listWords.before}</p>
+    <CitizensList client:load locale={locale} words={listWords} />
+  </section>
   <CensusPanel client:load labels={labels} ranks={ranks} />
 </LapShell>
 
@@ -61,6 +80,159 @@ const labels = {
 </style>
 
 <style is:global>
+  .censo-entradas {
+    margin-bottom: var(--s6);
+  }
+  .censo-entradas h2 {
+    font-size: 1.44rem;
+    font-weight: 400;
+    margin: 0 0 var(--s2);
+  }
+  .censo-entradas .censo-antes {
+    color: var(--texto-2);
+    max-width: 65ch;
+    margin: var(--s2) 0 var(--s4);
+    border-left: 2px solid var(--linea);
+    padding-left: var(--s3);
+  }
+  .censo-buscar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    max-width: 28rem;
+    margin-bottom: var(--s3);
+  }
+  .censo-buscar input,
+  .censo-campo select {
+    min-height: 44px;
+    padding: 0 var(--s3);
+    background: var(--superficie);
+    color: var(--texto);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-control);
+  }
+  .censo-estado:empty {
+    display: none;
+  }
+  .censo-cuenta {
+    color: var(--texto-2);
+    margin: 0 0 var(--s2);
+  }
+  .censo-tabla {
+    overflow-x: auto;
+    margin-bottom: var(--s3);
+  }
+  .censo-tabla table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .censo-tabla th,
+  .censo-tabla td {
+    text-align: left;
+    padding: var(--s2) var(--s3);
+    border-bottom: 1px solid var(--linea);
+    vertical-align: middle;
+  }
+  .censo-tabla th {
+    color: var(--texto-2);
+    font-weight: 400;
+    font-size: 0.833rem;
+  }
+  .censo-persona {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+  }
+  .censo-cara {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex: none;
+    object-fit: cover;
+  }
+  .censo-glifo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+  }
+  .censo-quien {
+    display: flex;
+    flex-direction: column;
+  }
+  .censo-sub {
+    color: var(--texto-2);
+    font-size: 0.833rem;
+  }
+  .censo-num {
+    font-variant-numeric: tabular-nums;
+  }
+  .censo-acciones {
+    display: flex;
+    gap: var(--s2);
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .censo-acciones .btn {
+    min-height: 44px;
+  }
+  .censo-dialogo {
+    max-width: min(32rem, calc(100vw - 2 * var(--s4)));
+    color: var(--texto);
+  }
+  .censo-dialogo::backdrop {
+    background: rgb(0 0 0 / 0.6);
+  }
+  .censo-dialogo h3 {
+    margin: 0 0 var(--s3);
+    font-weight: 400;
+  }
+  .censo-campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s1);
+    margin-bottom: var(--s3);
+  }
+  .censo-botones {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap;
+  }
+  /* A phone reads each person as a card: no table wider than the screen. */
+  @media (max-width: 40rem) {
+    .censo-tabla thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .censo-tabla tr {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--s1) var(--s3);
+      padding: var(--s3) 0;
+      border-bottom: 1px solid var(--linea);
+    }
+    .censo-tabla td {
+      border: 0;
+      padding: 0;
+    }
+    .censo-tabla td:first-child,
+    .censo-tabla td.censo-acciones {
+      grid-column: 1 / -1;
+    }
+    .censo-tabla td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      color: var(--texto-2);
+      font-size: 0.833rem;
+    }
+    .censo-acciones {
+      justify-content: flex-start;
+    }
+  }
   [data-census-panel] .busqueda {
     display: flex;
     gap: var(--s3);
