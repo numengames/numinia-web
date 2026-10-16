@@ -38,6 +38,11 @@ Feature: Communities (phase 0 of the communities platform)
     Given the store application has been built
     Then every city address redirects to how it works in its own locale
 
+  Scenario: «Me apunto» is real and «Tu agenda» is a person's page, never a static file
+    Given the store application has been built
+    Then every upcoming encounter page offers «Me apunto» as a toggle and the calendar as a second action
+    And the agenda page is rendered on demand under every locale prefix
+
   Scenario: A community page lets you follow it, and a ritual page puts its world first
     Given the store application has been built
     Then every community page carries the follow button
