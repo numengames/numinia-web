@@ -55,8 +55,14 @@ const BUDGETS = {
       Raised 16500→17500 on 2026-10-14 (v0.86.0): the visitor face's form
       to ask for a home opens the mail with a subject and one labelled line
       per field (~0.6KB); without JavaScript the form posts to the mail
-      client as it is. Still no external JS. Landing sits at ~17KB. */
-  landingInlineScriptBytes: 17_500,
+      client as it is. Still no external JS. Landing sits at ~17KB.
+      Raised 17500→19500 on 2026-10-16 (v0.108.0, «El menú de la cara»): the
+      account menu reads the till once, when it is first opened — the balance,
+      the published name and the person's organizations — and writes them into
+      the markup the page already has (~1.9KB with its two pure readers,
+      lib/face-menu.ts). Still no external JS and nothing is asked before the
+      menu opens. Landing sits at ~19KB. */
+  landingInlineScriptBytes: 19_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -116,8 +122,12 @@ const BUDGETS = {
       anyone without a session, and «Para ti» for the signed-in — with their
       Phosphor icons inline (~21KB). The page is prerendered, so both ship;
       the session script shows one. Still no external JS. Landing sits at
-      ~115.6KB. */
-  landingHtmlBytes: 120_000,
+      ~115.6KB. 
+      Raised 120000→124000 on 2026-10-16 (v0.108.0, «El menú de la cara»):
+      the account menu gained its balance door, a label and a template for
+      the person's panels (five locales' words, one coin icon in the sprite),
+      ~2.8KB. Landing sits at ~122.8KB. */
+  landingHtmlBytes: 124_000,
 };
 
 const failures = [];

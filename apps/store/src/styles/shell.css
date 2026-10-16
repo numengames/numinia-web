@@ -487,6 +487,21 @@ html[data-sidebar='collapsed'] .app-pie .bocadillo {
   margin: 0 10px var(--s1);
   color: var(--texto);
 }
+/* The face menu's first line: the name published, else the short wallet. */
+.cima-nombre {
+  margin: 6px 10px 0;
+  color: var(--texto);
+  font: 600 1rem var(--sans);
+  overflow-wrap: anywhere;
+}
+.cima-nombre.mono {
+  font: 500 0.9rem var(--mono);
+}
+.opc .der {
+  margin-inline-start: auto;
+  color: var(--texto-2);
+  font-size: 0.85rem;
+}
 
 /* ---- Menus (⋮ and «Más»): an elevated panel, 40 px rows --------------- */
 .pop {

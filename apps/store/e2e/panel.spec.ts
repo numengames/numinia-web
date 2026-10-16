@@ -179,14 +179,20 @@ test.describe('the door', () => {
   test('«Paneles» sits between Perfil and Ajustes in the account menu, once you are in', async ({
     page,
   }) => {
-    await signedIn(page, 'nomad');
+    await signedIn(page, 'nomad', [PERSONAL]);
     await page.goto('/es/communities/');
     await page.locator('[data-metric="chrome-account"]').click();
     const entries = page.locator('details[data-session-in] .cima-pop a.opc');
-    await expect(entries).toHaveCount(4);
+    await expect(entries).toHaveCount(5);
     expect(
       await entries.evaluateAll((all) => all.map((a) => a.getAttribute('data-metric'))),
-    ).toEqual(['chrome-profile', 'chrome-panels', 'chrome-account-settings', 'chrome-sign-out']);
+    ).toEqual([
+      'chrome-profile',
+      'chrome-balance',
+      'chrome-panels',
+      'chrome-account-settings',
+      'chrome-sign-out',
+    ]);
     const door = page.locator('[data-metric="chrome-panels"]');
     await expect(door).toHaveText('Paneles');
     await expect(door).toHaveAttribute('href', '/es/panel/');
@@ -202,18 +208,25 @@ test.describe('the door', () => {
     await expect(page.locator('[data-metric="chrome-sign-in"]')).toBeVisible();
   });
 
-  test('opening the menu, or any other page, asks nothing of the till', async ({ page }) => {
+  test('only opening the menu asks the till, once; any other page asks nothing', async ({
+    page,
+  }) => {
     const seen = await signedIn(page, 'oracle');
     await page.goto('/es/communities/');
-    await page.locator('[data-metric="chrome-account"]').click();
-    await expect(page.locator('[data-metric="chrome-panels"]')).toBeVisible();
-    await page.goto('/es/lap/');
     await page.waitForLoadState('networkidle');
     expect(seen.saldo).toEqual([]);
+    await page.locator('[data-metric="chrome-account"]').click();
+    await expect(page.locator('[data-metric="chrome-panel-org"]').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.locator('[data-metric="chrome-account"]').click();
+    expect(seen.saldo).toEqual(['/api/saldo']);
+    await page.goto('/es/lap/');
+    await page.waitForLoadState('networkidle');
+    expect(seen.saldo).toEqual(['/api/saldo']);
   });
 
   test('every language names the door in its own words', async ({ page }) => {
-    await signedIn(page, 'nomad');
+    await signedIn(page, 'nomad', [PERSONAL]);
     const words: Array<[string, string, string]> = [
       ['/communities/', 'Panels', '/panel/'],
       ['/ja/communities/', 'パネル', '/ja/panel/'],

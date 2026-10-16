@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.108.0',
+    date: '2026-10-16 19:50',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The face menu of the header: your name if you published one, your rank, «Your balance» with the figure, one door for each panel of the organizations you belong to, Settings and Sign out. It reads the till only when you open it. There is no status and no «set a status line»: nobody sees who is online yet.',
+      },
+    ],
+  },
+  {
     version: 'v0.107.0',
     date: '2026-10-16 19:19',
     entries: [

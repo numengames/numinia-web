@@ -84,6 +84,7 @@ const belong = NAV_ITEMS.find((item) => item.id === 'belong')!;
       <span class="mono cima-corto" data-session-short></span>
     </summary>
     <div class="pop cima-pop">
+      <p class="cima-nombre mono" data-face-name data-session-short></p>
       <p class="pop-etiqueta">{ui.rankLine}</p>
       <p class="cima-rango">
         {
@@ -97,19 +98,38 @@ const belong = NAV_ITEMS.find((item) => item.id === 'belong')!;
       <hr />
       <a href={localeHref(locale, profile.path)} class="opc" data-metric="chrome-profile">
         <Icon name={navIcon(profile, navState(profile, basePath))} size={20} use />
-        {ui.profile}
+        {ui.face.profile}
       </a>
-      <a href={localeHref(locale, PANEL_PATH)} class="opc" data-metric="chrome-panels">
+      <a href={localeHref(locale, '/saldo/')} class="opc" data-metric="chrome-balance">
+        <Icon name="coins" size={20} use />
+        {ui.face.balance}
+        <span class="der mono" data-face-balance data-locale={locale} hidden></span>
+      </a>
+      <hr />
+      <p class="pop-etiqueta" data-face-panels-label hidden>{ui.face.panels}</p>
+      <a
+        href={localeHref(locale, PANEL_PATH)}
+        class="opc"
+        data-metric="chrome-panels"
+        data-face-panels-door
+      >
         <Icon name={navIcon(belong, navState(belong, basePath))} size={20} use />
         {ui.panels}
       </a>
+      <template data-face-panel>
+        <a href={localeHref(locale, PANEL_PATH)} class="opc" data-metric="chrome-panel-org">
+          <Icon name={navIcon(belong, navState(belong, basePath))} size={20} use />
+          <span></span>
+        </a>
+      </template>
+      <hr />
       <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-account-settings">
         <Icon name="gear" size={20} use />
         {ui.settings}
       </a>
       <a href={signOutHref(locale)} class="opc" data-metric="chrome-sign-out">
         <Icon name="sign-out" size={20} use />
-        {ui.signOut}
+        {ui.face.signOut}
       </a>
     </div>
   </details>
@@ -146,6 +166,7 @@ const belong = NAV_ITEMS.find((item) => item.id === 'belong')!;
        data-rank-ladder > [data-rank]       every rank up to yours granted
      and `data-session` on <html> tells the stylesheet. */
   import { pageSession, rankLevel } from '../../lib/session-client';
+  import { formatBalance, loadFace, panelLink } from '../../lib/face-menu';
 
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
@@ -179,6 +200,48 @@ const belong = NAV_ITEMS.find((item) => item.id === 'belong')!;
         pill.dataset['estado'] = state;
         pill.textContent = pill.dataset[state] ?? '';
       });
+    });
+  });
+
+  /* The face menu: the first time it opens it asks the till (and the profile)
+     once, then writes the name, the balance and the person's panels into the
+     markup the page already has. Nothing is asked before; any failure leaves
+     the static menu as it is. */
+  const account = document.querySelector<HTMLDetailsElement>('details[data-session-in]');
+  let faceRead = false;
+  account?.addEventListener('toggle', () => {
+    if (!account.open || faceRead) return;
+    faceRead = true;
+    void loadFace((input, init) => fetch(input, init)).then((face) => {
+      const pick = (selector: string): HTMLElement | null => account.querySelector(selector);
+      const name = pick('[data-face-name]');
+      if (name && face.name) {
+        // The published name replaces the short wallet (and the session reader stops repainting it).
+        name.removeAttribute('data-session-short');
+        name.classList.remove('mono');
+        name.textContent = face.name;
+      }
+      const figure = pick('[data-face-balance]');
+      if (figure && face.balanceCents !== null) {
+        figure.textContent = formatBalance(face.balanceCents, figure.dataset['locale'] ?? 'es');
+        figure.hidden = false;
+      }
+      const door = account.querySelector<HTMLAnchorElement>('[data-face-panels-door]');
+      const row = account.querySelector<HTMLTemplateElement>('template[data-face-panel]');
+      if (!door || !row || face.panels.length === 0) return;
+      const base = door.getAttribute('href') ?? '';
+      face.panels.forEach((panel) => {
+        const link = row.content.cloneNode(true) as DocumentFragment;
+        const anchor = link.querySelector('a');
+        const label = link.querySelector('span');
+        if (!anchor || !label) return;
+        anchor.href = panelLink(base, panel.id);
+        label.textContent = panel.name;
+        door.before(link);
+      });
+      const heading = pick('[data-face-panels-label]');
+      if (heading) heading.hidden = false;
+      door.hidden = true;
     });
   });
 </script>

@@ -37,6 +37,13 @@ export interface AppShellMessages {
   /** The door to the organization panel, between the profile and the settings. */
   readonly panels: string;
   readonly signOut: string;
+  /** The face menu (cut 9): the labels of the account popover. «Tu perfil», «Tu saldo», «Tus paneles». */
+  readonly face: {
+    readonly profile: string;
+    readonly balance: string;
+    readonly panels: string;
+    readonly signOut: string;
+  };
   /** The ⋮ button and its three groups. */
   readonly options: string;
   readonly appearance: string;
@@ -80,6 +87,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     profile: 'Perfil',
     panels: 'Paneles',
     signOut: 'Salir',
+    face: {
+      profile: 'Tu perfil',
+      balance: 'Tu saldo',
+      panels: 'Tus paneles',
+      signOut: 'Cerrar sesión',
+    },
     options: 'Más opciones',
     appearance: 'Aspecto',
     night: 'Noche',
@@ -119,6 +132,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     profile: 'Profile',
     panels: 'Panels',
     signOut: 'Sign out',
+    face: {
+      profile: 'Your profile',
+      balance: 'Your balance',
+      panels: 'Your panels',
+      signOut: 'Sign out',
+    },
     options: 'More options',
     appearance: 'Appearance',
     night: 'Night',
@@ -158,6 +177,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     profile: 'プロフィール',
     panels: 'パネル',
     signOut: 'ログアウト',
+    face: {
+      profile: 'あなたのプロフィール',
+      balance: '残高',
+      panels: 'あなたのパネル',
+      signOut: 'ログアウト',
+    },
     options: 'その他のオプション',
     appearance: '外観',
     night: '夜',
@@ -197,6 +222,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     profile: '프로필',
     panels: '패널',
     signOut: '로그아웃',
+    face: { profile: '내 프로필', balance: '내 잔액', panels: '내 패널', signOut: '로그아웃' },
     options: '더 많은 옵션',
     appearance: '화면',
     night: '밤',
@@ -236,6 +262,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     profile: 'Perfil',
     panels: 'Painéis',
     signOut: 'Sair',
+    face: {
+      profile: 'Seu perfil',
+      balance: 'Seu saldo',
+      panels: 'Seus painéis',
+      signOut: 'Encerrar sessão',
+    },
     options: 'Mais opções',
     appearance: 'Aparência',
     night: 'Noite',
