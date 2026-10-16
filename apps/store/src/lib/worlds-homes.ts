@@ -1,0 +1,323 @@
+/**
+ * «Mundos ↔ organizaciones» (cut of 2026-10-16): which organization each
+ * world belongs to. Pablo: only the house (the Oracles) assigns a world to
+ * an organization, and the organization that pays a world is the one that
+ * administers it — one per world, no field for anyone reselling. The till
+ * keeps the placements (apps/till `world_placements`); this file is the
+ * store's door to them: the routes' answers, the readers of what a browser
+ * sends, and the fleet's world ids a world page is checked against.
+ *
+ * Who asks is the session's, read from our own signed cookie
+ * (lib/auth/session-wallet.ts `sessionAsker`), never from a body, a query
+ * or a header: the house is an Oracle's session. The trust model is
+ * lib/accounts-source.ts's.
+ */
+
+import { z } from 'zod';
+import { NOT_IMPLEMENTED, type AccountDesk, type Asker } from './accounts';
+import { logEvent } from './telemetry';
+
+/** Where one world stands: its organization, by name, and since when (the contract with the screens). */
+export interface WorldHome {
+  readonly worldId: string;
+  readonly accountId: string;
+  readonly accountName: string;
+  readonly placedAt: string;
+}
+
+/** What «Sedes» lists: a world of an organization. */
+export interface OrgWorld {
+  readonly worldId: string;
+  readonly accountId: string;
+}
+
+/** The most worlds one placement carries (the till's limit). */
+const WORLD_IDS_MAX = 50;
+
+/** The till's own words (apps/till src/lib/world-placements.ts), which decide the status of a refusal. */
+export const PLACEMENT_PROBLEMS = {
+  notHouse: 'only the house places a world in an organization',
+  worlds: `worldIds must be 1 to ${WORLD_IDS_MAX} world ids: lowercase letters, digits and single hyphens`,
+  world: 'worldId must be a world id: lowercase letters, digits and single hyphens',
+  account: 'accountId must be an organization id',
+  noAccount: 'no such organization',
+  notMember: 'only the organization’s members and the house see its worlds',
+} as const;
+
+/** A fleet order's id: lowercase letters and digits in groups split by single hyphens. */
+const WORLD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const WORLD_ID_MAX = 63;
+/** An account id the till wrote: a few safe characters, never long. */
+const ACCOUNT_ID = /^[A-Za-z0-9_-]{1,64}$/;
+/** 50 ids of 63 characters fit well inside it. */
+const MAX_BODY_BYTES = 8_192;
+
+/** A world id as the fleet writes it, or undefined. */
+export function readWorldId(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length <= WORLD_ID_MAX && WORLD_ID.test(value)
+    ? value
+    : undefined;
+}
+
+/** 1 to 50 world ids, each once, in the order sent; or undefined when it is not that. */
+export function readWorldIds(value: unknown): string[] | undefined {
+  if (!Array.isArray(value) || value.length < 1 || value.length > WORLD_IDS_MAX) return undefined;
+  const ids = value.map(readWorldId);
+  return ids.every((id) => id !== undefined) ? [...new Set(ids)] : undefined;
+}
+
+/** An organization's id as the till writes it, or undefined. */
+export function readAccountId(value: unknown): string | undefined {
+  return typeof value === 'string' && ACCOUNT_ID.test(value) ? value : undefined;
+}
+
+/** The body of the house's placement — exactly `{ worldIds, accountId }` — or null. */
+export function readPlaceBody(
+  json: unknown,
+): { readonly worldIds: string[]; readonly accountId: string } | null {
+  if (typeof json !== 'object' || json === null || Array.isArray(json)) return null;
+  const keys = Object.keys(json);
+  const { worldIds, accountId } = json as Readonly<Record<string, unknown>>;
+  const ids = readWorldIds(worldIds);
+  const account = readAccountId(accountId);
+  return keys.length === 2 && ids !== undefined && account !== undefined
+    ? { worldIds: ids, accountId: account }
+    : null;
+}
+
+/** A machine as the fleet reads it: an open door lists its worlds; a closed one lists nothing. */
+type FleetView =
+  | { readonly open: true; readonly worlds: readonly { readonly id: string }[] }
+  | { readonly open: false };
+
+/** Every world id of the fleet's open machines, and of the worlds run by hand. */
+export function fleetWorldIds(
+  views: readonly FleetView[],
+  legacy: readonly { readonly id: string }[],
+): ReadonlySet<string> {
+  return new Set([
+    ...views.flatMap((view) => (view.open ? view.worlds.map((world) => world.id) : [])),
+    ...legacy.map((world) => world.id),
+  ]);
+}
+
+// ---- Answers ---------------------------------------------------------------
+
+type Log = (event: Readonly<Record<string, unknown>>) => void;
+
+/** The answers name people's organizations: private to the browser that asked, never stored. */
+const HEADERS = { 'cache-control': 'private, no-store' } as const;
+const answer = (body: unknown, status = 200): Response =>
+  Response.json(body, { status, headers: HEADERS });
+const forbidden = (): Response => answer({ error: 'forbidden' }, 403);
+const notBound = (): Response => answer({ error: 'not-bound' }, 503);
+
+const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
+const home = z.object({ accountId: z.string(), accountName: z.string(), placedAt: z.string() });
+
+const SHAPES = {
+  placements: z.union([
+    z.object({
+      ok: z.literal(true),
+      homes: z.array(home.extend({ worldId: z.string() })),
+    }),
+    refusal,
+  ]),
+  place: z.union([
+    z.object({ ok: z.literal(true), placed: z.number().int().nonnegative() }),
+    refusal,
+  ]),
+  worldsOf: z.union([
+    z.object({
+      ok: z.literal(true),
+      worlds: z.array(z.object({ worldId: z.string(), accountId: z.string() })),
+    }),
+    refusal,
+  ]),
+  homeOf: z.union([
+    z.object({ ok: z.literal(true), home: home.nullable(), manage: z.boolean() }),
+    refusal,
+  ]),
+} as const;
+
+/** Ask the desk and read its answer: the answer, or the response to send when it is missing, failed or odd. */
+async function ask<S extends z.ZodType>(
+  log: Log,
+  action: string,
+  call: () => Promise<unknown>,
+  shape: S,
+): Promise<
+  | { readonly ok: true; readonly value: z.infer<S> }
+  | { readonly ok: false; readonly response: Response }
+> {
+  let raw: unknown;
+  try {
+    raw = await call();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(NOT_IMPLEMENTED)) {
+      log({ level: 'error', kind: 'worlds-homes-till', action, rule: 'not-implemented' });
+      return { ok: false, response: notBound() };
+    }
+    log({
+      level: 'error',
+      kind: 'worlds-homes-till',
+      action,
+      rule: 'threw',
+      error: error instanceof Error ? error.name : typeof error,
+    });
+    return { ok: false, response: answer({ error: 'till-failed' }, 502) };
+  }
+  const parsed = shape.safeParse(raw);
+  if (!parsed.success) {
+    log({ level: 'error', kind: 'worlds-homes-till', action, rule: 'answer-shape' });
+    return { ok: false, response: answer({ error: 'till-failed' }, 502) };
+  }
+  return { ok: true, value: parsed.data as z.infer<S> };
+}
+
+/** A till's refusal as the browser gets it: the status its words decide, the problems in the body. */
+function refused(problems: readonly string[]): Response {
+  const status = problems.includes(PLACEMENT_PROBLEMS.notHouse)
+    ? 403
+    : problems.includes(PLACEMENT_PROBLEMS.notMember)
+      ? 403
+      : problems.includes(PLACEMENT_PROBLEMS.noAccount)
+        ? 404
+        : 400;
+  return answer({ error: 'refused', problems }, status);
+}
+
+const lowercase = (asker: Asker): string => asker.wallet.toLowerCase();
+
+/**
+ * GET /api/admin/worlds/homes: where every placed world stands — `{ homes:
+ * [{ worldId, accountId, accountName, placedAt }] }` — to the house alone
+ * (403 for any other session or none).
+ */
+export async function answerHomes(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null || !asker.house) return forbidden();
+  if (desk === null) return notBound();
+  const asked = await ask(
+    log,
+    'placements',
+    () => desk.placements(lowercase(asker), true),
+    SHAPES.placements,
+  );
+  if (!asked.ok) return asked.response;
+  return 'problems' in asked.value
+    ? refused(asked.value.problems)
+    : answer({ homes: asked.value.homes });
+}
+
+/** The JSON body of a request, or the response that refuses it. */
+async function bodyOf(
+  request: Request,
+): Promise<{ ok: true; json: unknown } | { ok: false; response: Response }> {
+  const type = (request.headers.get('content-type') ?? '').trim().toLowerCase();
+  if (!/^application\/json\s*(;|$)/.test(type)) {
+    return { ok: false, response: answer({ error: 'content-type must be application/json' }, 415) };
+  }
+  const declared = Number(request.headers.get('content-length') ?? '0');
+  if (declared > MAX_BODY_BYTES)
+    return { ok: false, response: answer({ error: 'body too large' }, 413) };
+  const text = await request.text();
+  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
+    return { ok: false, response: answer({ error: 'body too large' }, 413) };
+  }
+  try {
+    return { ok: true, json: JSON.parse(text) as unknown };
+  } catch {
+    return { ok: false, response: answer({ error: 'body must be JSON' }, 400) };
+  }
+}
+
+/**
+ * POST /api/admin/worlds/place, JSON `{ worldIds: [1 to 50], accountId }`:
+ * the house places those worlds in that organization — `{ placed }` — and
+ * nobody else: 403 for any other session before the body is read, 404 for an
+ * organization the till does not have, 400 for a body out of shape.
+ */
+export async function answerPlace(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  request: Request,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null || !asker.house) return forbidden();
+  const body = await bodyOf(request);
+  if (!body.ok) return body.response;
+  const read = readPlaceBody(body.json);
+  if (read === null) {
+    return answer({ error: `body: { worldIds: 1 to ${WORLD_IDS_MAX} world ids, accountId }` }, 400);
+  }
+  if (desk === null) return notBound();
+  const asked = await ask(
+    log,
+    'placeWorld',
+    () => desk.placeWorld(lowercase(asker), true, read.worldIds, read.accountId),
+    SHAPES.place,
+  );
+  if (!asked.ok) return asked.response;
+  return 'problems' in asked.value
+    ? refused(asked.value.problems)
+    : answer({ placed: asked.value.placed });
+}
+
+/**
+ * GET /api/mundos?org=<accountId>: the worlds placed in one organization —
+ * `{ worlds: [{ worldId, accountId }] }` — to its members and the house; the
+ * till decides, from the session's wallet (403 otherwise, 404 unknown).
+ */
+export async function answerOrgWorlds(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return forbidden();
+  const org = readAccountId(url.searchParams.get('org') ?? '');
+  if (org === undefined) return answer({ error: 'org: an organization id' }, 400);
+  if (desk === null) return notBound();
+  const asked = await ask(
+    log,
+    'worldsOf',
+    () => desk.worldsOf(lowercase(asker), asker.house, org),
+    SHAPES.worldsOf,
+  );
+  if (!asked.ok) return asked.response;
+  return 'problems' in asked.value
+    ? refused(asked.value.problems)
+    : answer({ worlds: asked.value.worlds });
+}
+
+/**
+ * GET /api/mundos/<worldId>: one world's page data, public — `{ worldId,
+ * home, manage }` — where `home` is its organization or null and `manage`
+ * says the session is a member, an owner or the house. A world the fleet
+ * does not have (`known`) is 404, whoever asks.
+ */
+export async function answerWorld(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  worldId: string,
+  known: ReadonlySet<string>,
+  log: Log = logEvent,
+): Promise<Response> {
+  const id = readWorldId(worldId);
+  if (id === undefined || !known.has(id)) return answer({ error: 'not-found' }, 404);
+  if (desk === null) return notBound();
+  const asked = await ask(
+    log,
+    'homeOf',
+    () => desk.homeOf(id, asker === null ? null : lowercase(asker), asker?.house ?? false),
+    SHAPES.homeOf,
+  );
+  if (!asked.ok) return asked.response;
+  return 'problems' in asked.value
+    ? refused(asked.value.problems)
+    : answer({ worldId: id, home: asked.value.home, manage: asked.value.manage });
+}

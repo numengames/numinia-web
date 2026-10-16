@@ -1,0 +1,10 @@
+{
+  "$comment": "Which organization each world belongs to (cut «Mundos ↔ organizaciones»), as the fixture desk starts: Reset holds two worlds, Numen Games three, the rest of the fleet is unplaced. Organizations are the ones of ../accounts/desk.json; world ids are the fleet's (fleet.json).",
+  "homes": [
+    { "worldId": "bosque", "accountId": "acc_team_reset", "placedDaysAgo": 3 },
+    { "worldId": "old-plaza", "accountId": "acc_team_reset", "placedDaysAgo": 3 },
+    { "worldId": "agora-plaza", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 },
+    { "worldId": "atlantis-library", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 },
+    { "worldId": "alchemists-tower", "accountId": "acc_team_numen_games", "placedDaysAgo": 5 }
+  ]
+}

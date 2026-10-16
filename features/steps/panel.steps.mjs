@@ -19,6 +19,7 @@ const LOCALES = [
   {
     prefix: '',
     summary: 'Overview',
+    venues: 'Homes',
     members: 'Members',
     roles: 'Roles',
     balance: 'Balance and usage',
@@ -28,6 +29,7 @@ const LOCALES = [
   {
     prefix: 'es',
     summary: 'Resumen',
+    venues: 'Sedes',
     members: 'Miembros',
     roles: 'Roles',
     balance: 'Saldo y consumo',
@@ -37,6 +39,7 @@ const LOCALES = [
   {
     prefix: 'ja',
     summary: '概要',
+    venues: '拠点',
     members: 'メンバー',
     roles: 'ロール',
     balance: '残高と利用状況',
@@ -46,6 +49,7 @@ const LOCALES = [
   {
     prefix: 'ko',
     summary: '개요',
+    venues: '거점',
     members: '구성원',
     roles: '역할',
     balance: '잔액과 사용량',
@@ -55,6 +59,7 @@ const LOCALES = [
   {
     prefix: 'pt-br',
     summary: 'Resumo',
+    venues: 'Sedes',
     members: 'Membros',
     roles: 'Papéis',
     balance: 'Saldo e uso',
@@ -66,6 +71,7 @@ const LOCALES = [
 /** The screens: the route under /panel/ and the piece each one is. */
 const FACES = [
   { segment: '', piece: 'summary' },
+  { segment: 'sedes/', piece: 'venues' },
   { segment: 'miembros/', piece: 'members' },
   { segment: 'roles/', piece: 'roles' },
   { segment: 'saldo/', piece: 'balance' },
@@ -83,8 +89,8 @@ const PIECES = [
   'balance',
   'settings',
 ];
-const BUILT = ['summary', 'members', 'roles', 'balance'];
-const SOON = ['venues', 'gatherings', 'agents', 'memory', 'bazaar', 'settings'];
+const BUILT = ['summary', 'venues', 'members', 'roles', 'balance'];
+const SOON = ['gatherings', 'agents', 'memory', 'bazaar', 'settings'];
 const ROOMS = ['census', 'worlds', 'prices', 'assets'];
 
 const base = (prefix) => (prefix ? `/${prefix}` : '');
@@ -156,7 +162,7 @@ const textOf = (inner) =>
     .trim();
 
 Then(
-  'every locale has the panel, its members, its roles and its balance, each titled in its own words',
+  'every locale has the panel, its homes, its members, its roles and its balance, each titled in its own words',
   async function () {
     for await (const { locale, face, where, html } of panelPages(this.distDir)) {
       const lang = locale.prefix || 'en';
@@ -185,6 +191,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
     const prefix = base(locale.prefix);
     const hrefs = {
       summary: `${prefix}/panel/`,
+      venues: `${prefix}/panel/sedes/`,
       members: `${prefix}/panel/miembros/`,
       roles: `${prefix}/panel/roles/`,
       balance: `${prefix}/panel/saldo/`,
@@ -218,7 +225,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
 Then('no panel page links a piece that is not built', async function () {
   for await (const { where, face, html } of panelPages(this.distDir)) {
     const rail = railOf(html, where);
-    // Four built pieces and four rooms: eight links, not one more.
+    // Five built pieces and four rooms: nine links, not one more.
     assert.equal(
       (rail.match(/<a\b/g) ?? []).length,
       BUILT.length + ROOMS.length,

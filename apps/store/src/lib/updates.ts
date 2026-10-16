@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.103.0',
+    date: '2026-10-16 11:58',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Every world now belongs to one organization. In the Worlds room the house sees which organization each world belongs to and assigns it — one world or several at once — from a list of organizations. Only the house can do it; the organization that holds a world is the one that runs it.',
+      },
+      {
+        type: 'NEW',
+        text: '«Venues» in the panel lists the worlds of the organization, each with a link, and every world has its own public page at /mundos/. The people of its organization also find there the way to its Venues, Members and Balance. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.102.0',
     date: '2026-10-16 10:46',
     entries: [

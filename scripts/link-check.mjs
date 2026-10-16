@@ -39,13 +39,15 @@ async function exists(candidate) {
 /**
  * Routes rendered ON DEMAND leave no file in dist/client, so a file check
  * would call them broken. They are real routes served by the worker: the
- * session-gated Codex (its text must never be a static file) and the API.
+ * session-gated Codex (its text must never be a static file), a world's own
+ * page (/mundos/<id>/: its id is the fleet's, not the build's) and the API.
  */
 function isOnDemand(clean) {
   const withoutLocale = clean.replace(/^\/(es|ja|ko|pt-br)\//, '/');
   return (
     /^\/lap\/codex\/?$/.test(withoutLocale) ||
     /^\/lap\/codex\/[^/]+\/?$/.test(withoutLocale) ||
+    /^\/mundos\/[^/]+\/?$/.test(withoutLocale) ||
     withoutLocale.startsWith('/api/')
   );
 }

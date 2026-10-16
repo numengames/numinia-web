@@ -119,3 +119,14 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `census-citizen-add-save`, `census-citizen-add-cancel`.
 // - The panel's «Añadir miembro», for the house: `panel-member-add-suggestion`
 //   (a person picked from the suggestions).
+
+// ---- W6 «Mundos ↔ organizaciones» (cut 2026-10-16): its data-metric ids --------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The Worlds room, the house only: `worlds-select` (a row's checkbox),
+//   `worlds-select-shown`, `worlds-select-clear`, `worlds-assign` (one row),
+//   `worlds-assign-chosen` (the chosen rows), `worlds-page-link` (to the
+//   world's own page), `worlds-assign-org`, `worlds-assign-save`,
+//   `worlds-assign-cancel` (the dialog).
+// - The panel's «Sedes»: `panel-venue-open`, `panel-venues-retry`.
+// - A world's page: `world-page-retry`, `world-page-home`,
+//   `world-page-venues`, `world-page-members`, `world-page-balance`.

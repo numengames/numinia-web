@@ -374,6 +374,22 @@ export interface AccountDesk {
     query?: string,
     cursor?: string | null,
   ): Promise<DeskCitizensAnswer>;
+  /**
+   * «Mundos ↔ organizaciones»: the house places 1 to 50 worlds (fleet ids) in
+   * one organization, which pays for them and administers them (optional).
+   */
+  placeWorld(
+    wallet: string,
+    house: boolean,
+    worldIds: string[],
+    accountId: string,
+  ): Promise<DeskPlaceAnswer>;
+  /** Where every placed world stands, to the house alone (`house` true). */
+  placements(wallet: string, house: boolean): Promise<DeskPlacementsAnswer>;
+  /** The worlds placed in one organization, to its members and the house. */
+  worldsOf(wallet: string, house: boolean, accountId: string): Promise<DeskWorldsOfAnswer>;
+  /** The organization one world belongs to — public: `wallet` may be null — and whether the caller may manage it. */
+  homeOf(worldId: string, wallet?: string | null, house?: boolean): Promise<DeskHomeOfAnswer>;
 }
 
 /**
@@ -413,6 +429,10 @@ export const DESK_METHODS = [
   'setProfile',
   'signedIn',
   'citizens',
+  'placeWorld',
+  'placements',
+  'worldsOf',
+  'homeOf',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -422,7 +442,8 @@ export const DESK_METHODS = [
  * So is one without `profile` and `setProfile` (cut «Tu nombre y tu cara»):
  * Saldo and the panel keep working, and /api/profile answers 503 until the
  * till has them. And one without `signedIn` and `citizens` (cut «El censo»):
- * a sign-in records nothing, and /api/admin/citizens answers 503.
+ * a sign-in records nothing, and /api/admin/citizens answers 503. And one
+ * without the four of «Mundos ↔ organizaciones»: the world routes answer 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -430,6 +451,10 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'setProfile',
   'signedIn',
   'citizens',
+  'placeWorld',
+  'placements',
+  'worldsOf',
+  'homeOf',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -447,6 +472,8 @@ export const TEAM_NAME_MAX = 60;
 export const NOT_MEMBER = 'not a member';
 /** The directory of organizations is the house's alone (the till's `ORG_PROBLEMS.notHouse`). */
 export const NOT_HOUSE = 'only the house reads the directory of organizations';
+/** workerd's words when the till's entrypoint has no such method: a till older than the store. */
+export const NOT_IMPLEMENTED = 'does not implement the method';
 /** The till's refusal of the list of who has signed in to anyone but the house (cut «El censo»). */
 export const NOT_HOUSE_CENSUS = 'only the house reads the list of who has signed in';
 /** A `house` flag that is neither true nor false (the till's `ORG_PROBLEMS.house`). */
@@ -1120,3 +1147,29 @@ export function readCitizens(json: unknown): CitizensPage | null {
     ? { people: read, total, next }
     : null;
 }
+
+// ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----
+
+/** Where one world stands: its organization, by name, and since when. */
+export interface DeskHome {
+  worldId: string;
+  accountId: string;
+  accountName: string;
+  placedAt: string;
+}
+
+export type DeskPlaceAnswer = { ok: true; placed: number } | DeskRefusal;
+
+export type DeskPlacementsAnswer = { ok: true; homes: DeskHome[] } | DeskRefusal;
+
+export type DeskWorldsOfAnswer =
+  { ok: true; worlds: { worldId: string; accountId: string }[] } | DeskRefusal;
+
+export type DeskHomeOfAnswer =
+  | {
+      ok: true;
+      home: { accountId: string; accountName: string; placedAt: string } | null;
+      /** The caller is a member or owner of the home organization, or the house. */
+      manage: boolean;
+    }
+  | DeskRefusal;

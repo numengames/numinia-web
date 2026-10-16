@@ -112,6 +112,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'Lo que hay en el panel de esta organización, de un vistazo.',
+      venues: 'Las sedes de la organización: los mundos que la casa le ha asignado.',
       members:
         'Quién está dentro, su rango en la ciudad (es suyo, viaja con la persona) y sus roles aquí.',
       roles:
@@ -120,7 +121,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'El saldo de la organización: no caduca, se recarga cuando haga falta y se ve en qué se gasta.',
     },
     notes: {
-      venues: 'Su mundo 3D: encenderlo, apagarlo y ver quién entra.',
       gatherings: 'Publicar, mover y cerrar encuentros; quién va y su crónica.',
       agents: 'Los agentes de la organización: qué hacen y quién los cuida.',
       memory: 'El archivo de la organización: sus ficheros, en su repositorio.',
@@ -175,6 +175,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: "What is in this organization's panel, at a glance.",
+      venues: 'The organization’s homes: the worlds the house has assigned to it.',
       members:
         'Who is in, their rank in the city (it is theirs: it travels with the person) and their roles here.',
       roles:
@@ -183,7 +184,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         "The organization's balance: it never expires, you top up when needed and see what it is spent on.",
     },
     notes: {
-      venues: 'Its 3D world: switch it on or off and see who comes in.',
       gatherings: 'Publish, move and close gatherings; who is going and their chronicle.',
       agents: "The organization's agents: what they do and who looks after them.",
       memory: "The organization's archive: its files, in its own repository.",
@@ -238,6 +238,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'この組織のパネルにあるものを、ひと目で。',
+      venues: '組織の拠点：ハウスが組織に割り当てたワールド。',
       members:
         '誰が参加しているか、街でのランク（本人のもので、その人と一緒にどこへでも移ります）、そしてここでのロール。',
       roles:
@@ -245,7 +246,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       balance: '組織の残高：有効期限はなく、必要なときにチャージでき、使い道も確認できます。',
     },
     notes: {
-      venues: '3Dの拠点：オンとオフの切り替えと、誰が入っているかの確認。',
       gatherings: '集まりの公開・日程の変更・終了、参加者とその記録。',
       agents: '組織のエージェント：何をしていて、誰が見ているか。',
       memory: '組織のアーカイブ：そのファイルを、組織自身のリポジトリで。',
@@ -300,6 +300,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: '이 조직의 패널에 있는 것을 한눈에.',
+      venues: '조직의 거점: 하우스가 조직에 배정한 월드.',
       members:
         '누가 들어와 있는지, 도시에서의 등급(그 사람의 것이며 어디든 함께 따라갑니다), 그리고 이곳에서의 역할.',
       roles:
@@ -307,7 +308,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       balance: '조직의 잔액: 만료되지 않으며, 필요할 때 충전하고 어디에 쓰였는지 볼 수 있습니다.',
     },
     notes: {
-      venues: '3D 거점: 켜고 끄기, 그리고 누가 들어와 있는지.',
       gatherings: '모임 게시, 일정 변경, 종료, 참석자와 기록.',
       agents: '조직의 에이전트: 무엇을 하고 누가 돌보는지.',
       memory: '조직의 아카이브: 조직 자신의 저장소에 있는 파일들.',
@@ -362,6 +362,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       summary: 'O que há no painel desta organização, num relance.',
+      venues: 'As sedes da organização: os mundos que a casa atribuiu a ela.',
       members:
         'Quem está dentro, seu posto na cidade (é da pessoa e viaja com ela) e seus papéis aqui.',
       roles:
@@ -370,7 +371,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'O saldo da organização: não expira, você recarrega quando precisar e vê no que ele é gasto.',
     },
     notes: {
-      venues: 'Seu mundo 3D: ligar, desligar e ver quem entra.',
       gatherings: 'Publicar, mover e encerrar encontros; quem vai e a crônica.',
       agents: 'Os agentes da organização: o que fazem e quem cuida deles.',
       memory: 'O arquivo da organização: seus arquivos, no seu repositório.',

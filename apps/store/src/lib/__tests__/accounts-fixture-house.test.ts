@@ -54,12 +54,13 @@ const lines = (answer: DeskLogAnswer) => {
   return answer.lines;
 };
 
-describe('the seed: three organizations', () => {
-  it('holds Numen Games, Active Inference Institute and La Tarugo, and the wallet asking is in the first only', async () => {
+describe('the seed: four organizations', () => {
+  it('holds Numen Games, Active Inference Institute, La Tarugo and Reset, and the wallet asking is in the first only', async () => {
     expect(seed.teams.map((team) => [team.id, team.name])).toEqual([
       [NUMEN, 'Numen Games'],
       [INSTITUTE, 'Active Inference Institute'],
       [TARUGO, 'La Tarugo'],
+      ['acc_team_reset', 'Reset'],
     ]);
     const mine = seed.teams.filter((team) =>
       team.members.some((member) => member.wallet === 'self'),
@@ -86,6 +87,7 @@ describe('the directory', () => {
         { id: INSTITUTE, kind: 'team', name: 'Active Inference Institute' },
         { id: TARUGO, kind: 'team', name: 'La Tarugo' },
         { id: NUMEN, kind: 'team', name: 'Numen Games' },
+        { id: 'acc_team_reset', kind: 'team', name: 'Reset' },
       ],
     });
     // An organization the wallet founds meanwhile joins the list, in its place by name.
@@ -96,6 +98,7 @@ describe('the directory', () => {
       'Arcasiles',
       'La Tarugo',
       'Numen Games',
+      'Reset',
     ]);
     expect(JSON.stringify(again)).not.toMatch(/balance|role|0x/i);
   });
