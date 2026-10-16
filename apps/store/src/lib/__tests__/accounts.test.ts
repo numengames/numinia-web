@@ -70,19 +70,20 @@ describe('the desk contract', () => {
   });
 
   it('has one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-8, -6)).toEqual(['profile', 'setProfile']);
+    expect(DESK_METHODS.slice(-9, -7)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
   });
 
   it('has the census (cut «El censo»), optional too: a till without it changes nothing', () => {
-    expect(DESK_METHODS.slice(-6, -4)).toEqual(['signedIn', 'citizens']);
+    expect(DESK_METHODS.slice(-7, -5)).toEqual(['signedIn', 'citizens']);
   });
 
   it('ends with where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-4)).toEqual(['placeWorld', 'placements', 'worldsOf', 'homeOf']);
+    expect(DESK_METHODS.slice(-5, -1)).toEqual(['placeWorld', 'placements', 'worldsOf', 'homeOf']);
     expect([...OPTIONAL_DESK_METHODS].sort()).toEqual([
       'citizens',
       'directory',
+      'ensureCommunityTeam',
       'homeOf',
       'placeWorld',
       'placements',
@@ -91,6 +92,10 @@ describe('the desk contract', () => {
       'signedIn',
       'worldsOf',
     ]);
+  });
+
+  it('ends with opening a community’s account (cut «Una comunidad ES una organización»), optional too', () => {
+    expect(DESK_METHODS.at(-1)).toBe('ensureCommunityTeam');
   });
 
   it('knows the till’s refusal of the list of who has signed in, in its own words', () => {

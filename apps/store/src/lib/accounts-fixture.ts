@@ -78,6 +78,7 @@ import {
   type DeskWorldsOfAnswer,
   type DeskConfirmAnswer,
   type DeskDirectoryAnswer,
+  type DeskEnsureAnswer,
   type DeskDirectoryEntry,
   type DeskLine,
   type DeskLogAct,
@@ -110,6 +111,7 @@ import {
   type SpendRange,
   type TopupKey,
 } from './accounts';
+import { communityAccountId, readCommunityId } from './community-teams';
 import { readProfileChange } from './profile-name';
 import { PLACEMENT_PROBLEMS, readAccountId, readWorldId, readWorldIds } from './worlds-homes';
 
@@ -528,6 +530,12 @@ export function createAccountsFixtureDesk(
 ): AccountDesk {
   const wallets = new Map<string, Book[]>();
   const checkouts = new Map<string, Checkout>();
+  /**
+   * «Una comunidad ES una organización»: the accounts the house opened for
+   * communities, as the till's rows — shared by every wallet's copy of the
+   * seed, with no member (the house reaches them as the house).
+   */
+  const communityBooks = new Map<string, Book>();
   let teamsMade = 0;
   /**
    * «Tu nombre y tu cara»: one entry per wallet that published, as the till's
@@ -578,7 +586,7 @@ export function createAccountsFixtureDesk(
   const booksOf = (wallet: string): Book[] => {
     let books = wallets.get(wallet);
     if (books === undefined) {
-      books = booksFor(seed, wallet, now());
+      books = [...booksFor(seed, wallet, now()), ...communityBooks.values()];
       wallets.set(wallet, books);
     }
     return books;
@@ -1344,6 +1352,41 @@ export function createAccountsFixtureDesk(
       const book = who === null ? undefined : booksOf(who).find((c) => c.id === home.accountId);
       const member = who !== null && book !== undefined && roleIn(book, who) !== null;
       return { ok: true, home: { ...home }, manage: flag || member };
+    },
+
+    // ---- «Una comunidad ES una organización» (cut 6): the house opens a community's account ----
+
+    ensureCommunityTeam: async (wallet, house, communityId, name): Promise<DeskEnsureAnswer> => {
+      const asking = asker(wallet, house);
+      const community = readCommunityId(communityId);
+      const clean = typeof name === 'string' ? teamName(name) : null;
+      if ('ok' in asking || community === undefined || clean === null) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(community === undefined ? ['communityId must be a community id'] : []),
+          ...(clean === null ? ['name must be 1 to 60 characters'] : []),
+        );
+      }
+      if (!asking.house) return refuse('only the house opens the organization of a community');
+      const id = await communityAccountId(community);
+      const found = communityBooks.get(id);
+      if (found !== undefined) {
+        return { ok: true, account: { id, name: nameOf(found), created: false } };
+      }
+      const book: Book = {
+        id,
+        kind: 'team',
+        name: clean,
+        lines: [],
+        members: [],
+        roles: birthRoles(),
+        held: new Map(),
+        changes: [],
+      };
+      communityBooks.set(id, book);
+      for (const books of wallets.values()) books.push(book);
+      record({ book, who: asking.who, as: 'house' }, 'organization-created', null, { name: clean });
+      return { ok: true, account: { id, name: clean, created: true } };
     },
   };
 }

@@ -161,6 +161,11 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
         : absent('worldsOf'),
     homeOf: (worldId, wallet, house) =>
       typeof desk.homeOf === 'function' ? stub.homeOf(worldId, wallet, house) : absent('homeOf'),
+    // «Una comunidad ES una organización»: optional too. Without it the community route says 503.
+    ensureCommunityTeam: (wallet, house, communityId, name) =>
+      typeof desk.ensureCommunityTeam === 'function'
+        ? stub.ensureCommunityTeam(wallet, house, communityId, name)
+        : absent('ensureCommunityTeam'),
   };
 }
 

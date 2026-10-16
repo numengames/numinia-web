@@ -390,6 +390,18 @@ export interface AccountDesk {
   worldsOf(wallet: string, house: boolean, accountId: string): Promise<DeskWorldsOfAnswer>;
   /** The organization one world belongs to — public: `wallet` may be null — and whether the caller may manage it. */
   homeOf(worldId: string, wallet?: string | null, house?: boolean): Promise<DeskHomeOfAnswer>;
+  /**
+   * «Una comunidad ES una organización»: the house opens the till account of a
+   * community of the register the first time it uses it — the account's id is
+   * derived from the community's (`communityAccountId`), so asking twice finds
+   * the same one (`created: false`). Only the house (`house` true) asks.
+   */
+  ensureCommunityTeam(
+    wallet: string,
+    house: boolean,
+    communityId: string,
+    name: string,
+  ): Promise<DeskEnsureAnswer>;
 }
 
 /**
@@ -433,6 +445,7 @@ export const DESK_METHODS = [
   'placements',
   'worldsOf',
   'homeOf',
+  'ensureCommunityTeam',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -444,6 +457,7 @@ export const DESK_METHODS = [
  * till has them. And one without `signedIn` and `citizens` (cut «El censo»):
  * a sign-in records nothing, and /api/admin/citizens answers 503. And one
  * without the four of «Mundos ↔ organizaciones»: the world routes answer 503.
+ * And one without `ensureCommunityTeam`: /api/admin/community-team answers 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -455,6 +469,7 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'placements',
   'worldsOf',
   'homeOf',
+  'ensureCommunityTeam',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -1157,6 +1172,10 @@ export interface DeskHome {
   accountName: string;
   placedAt: string;
 }
+
+/** The till account of a community: its id and name, and whether this very call opened it. */
+export type DeskEnsureAnswer =
+  { ok: true; account: { id: string; name: string; created: boolean } } | DeskRefusal;
 
 export type DeskPlaceAnswer = { ok: true; placed: number } | DeskRefusal;
 
