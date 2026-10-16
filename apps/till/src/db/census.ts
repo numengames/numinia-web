@@ -24,7 +24,7 @@ import { PROBLEMS, refuse, type Refusal } from './accounts';
 import { cents, column, instant, text, type Row, type TillDatabase } from './repository';
 
 /** One person of the list: when they came first and last, what they published, and in how many organizations. */
-export interface Citizen {
+interface Citizen {
   readonly wallet: string;
   readonly firstSeenAt: string;
   readonly lastSeenAt: string;
