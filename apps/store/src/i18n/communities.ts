@@ -650,7 +650,34 @@ const EN: CommunitiesMessages = {
 };
 
 const JA: CommunitiesMessages = {
-  ...EN,
+  weeklyNote: '定例の集まり。公開のものは都市のカレンダーにも出ます。',
+  noUpcomingConference: 'まだ公開されていません。次回が告知されると、すぐここに出ます。',
+  noUpcoming: 'まだ公開されていません。コミュニティが拠点を自分のものにすると公開します。',
+  noHeldFounder: 'すでに起きたことは、その記録とともにここに残ります。',
+  noHeld: '一緒にしたことが、その記録とともにここに出ます。',
+  chronicle: '記録',
+  archiveEmpty:
+    '集まりの記録と、コミュニティが書くものはここに残ります。コミュニティ自身のファイルなので、いつでも持ち出せます。',
+  homeFounderNote:
+    'Numen Games に自分の拠点はありません。みんなの場所、アゴラ、門、図書館を守っています。',
+  homeInProgressText:
+    'Numen Games は拠点を建設中です。開くとブラウザに、スマホにも表示され、ここに中にいる人数が出ます。',
+  membersEmpty: 'まだ誰もいません。拠点はコミュニティを運営する人を待っています。',
+  membersNote:
+    '種類(ロッジ、リーグ、兄弟団)はセッションゼロを終えたメンバーから決まります。それまでは表示されません。',
+  decidedByCommunity: 'いつ拠点を自分のものにするかはコミュニティが決めます',
+  claimText:
+    'あなたのものに。入って引き継ぎます。何を見せるか、それぞれを何と呼ぶか、誰を入れるかはあなたが決めます。',
+  cityKeeps: '都市全体で祝います。守っているのは',
+  howToAnnounce: '方法は、追って告知',
+  openNote: '公開です。コミュニティは自分たちだけの集まりを開くこともできます。',
+  addNote: 'Google、Apple、お使いのカレンダー向けの .ics ファイル',
+  onlineNote: '始まると、ここに「入る」と中にいる人数が出ます。',
+  readOn: '{date} に {source} から読み取りました。コミュニティはいつでも変更できます。',
+  afterText:
+    '終わると開催済みとして残ります。来た人数と、コミュニティに記録係がいればアーカイブにその記録が残ります。',
+  calendarNote:
+    '時刻のある集まりは UTC で保存され、あなたの時間で表示されます。終日のものはどこでも同じに見えます。各コミュニティには購読できる自分のカレンダーがあります。',
   navCommunities: 'コミュニティ',
   navCalendar: 'カレンダー',
   search: '検索',
@@ -827,7 +854,34 @@ const JA: CommunitiesMessages = {
 };
 
 const KO: CommunitiesMessages = {
-  ...EN,
+  weeklyNote: '정기 모임. 공개된 것은 도시 달력에도 나옵니다.',
+  noUpcomingConference: '아직 공개된 것이 없습니다. 다음 회차가 공지되면 바로 여기에 나옵니다.',
+  noUpcoming: '아직 공개된 것이 없습니다. 커뮤니티가 거점을 자기 것으로 만들면 공개합니다.',
+  noHeldFounder: '이미 일어난 일은 그 기록과 함께 여기에 남습니다.',
+  noHeld: '함께한 일이 그 기록과 함께 여기에 나옵니다.',
+  chronicle: '기록',
+  archiveEmpty:
+    '모임의 기록과 커뮤니티가 쓰는 것은 여기에 남습니다. 커뮤니티 자신의 파일이라 언제든 가져갈 수 있습니다.',
+  homeFounderNote:
+    'Numen Games에는 자기 거점이 없습니다. 모두의 장소인 아고라, 관문, 도서관을 돌봅니다.',
+  homeInProgressText:
+    'Numen Games가 거점을 짓고 있습니다. 열리면 브라우저에, 휴대폰에도 보이고, 여기에 안에 있는 사람 수가 나옵니다.',
+  membersEmpty: '아직 아무도 없습니다. 거점은 커뮤니티를 운영하는 사람을 기다립니다.',
+  membersNote:
+    '종류(로지, 리그, 형제단)는 세션 제로를 마친 구성원에게서 정해집니다. 그 전에는 보이지 않습니다.',
+  decidedByCommunity: '언제 거점을 자기 것으로 만들지는 커뮤니티가 정합니다',
+  claimText:
+    '당신의 것으로. 들어와서 맡습니다. 무엇을 보여줄지, 각각을 뭐라고 부를지, 누구를 들일지는 당신이 정합니다.',
+  cityKeeps: '도시 전체가 함께 기념합니다. 돌보는 곳은',
+  howToAnnounce: '방법은 추후 공지',
+  openNote: '공개입니다. 커뮤니티는 자기 사람들만을 위한 모임을 열 수도 있습니다.',
+  addNote: 'Google, Apple 또는 쓰시는 달력용 .ics 파일',
+  onlineNote: '시작되면 여기에 「들어가기」와 안에 있는 사람 수가 나옵니다.',
+  readOn: '{date}에 {source}에서 읽었습니다. 커뮤니티는 언제든 바꿀 수 있습니다.',
+  afterText:
+    '끝나면 개최됨으로 남습니다. 온 사람 수와, 커뮤니티에 기록자가 있으면 아카이브에 그 기록이 남습니다.',
+  calendarNote:
+    '시간이 있는 모임은 UTC로 저장되고 당신의 시간으로 보입니다. 종일 모임은 어디서나 똑같이 보입니다. 커뮤니티마다 구독할 수 있는 자기 달력이 있습니다.',
   navCommunities: '커뮤니티',
   navCalendar: '달력',
   search: '검색',
@@ -1003,7 +1057,35 @@ const KO: CommunitiesMessages = {
 };
 
 const PT_BR: CommunitiesMessages = {
-  ...EN,
+  weeklyNote: 'Seus encontros fixos. Quando abertos, aparecem também no calendário da cidade.',
+  noUpcomingConference:
+    'Nenhum publicado ainda. A próxima edição aparece aqui assim que for anunciada.',
+  noUpcoming: 'Nenhum publicado ainda. A comunidade os publica quando faz a sede sua.',
+  noHeldFounder: 'O que já aconteceu fica aqui, com a sua crônica.',
+  noHeld: 'O que fizemos juntos vai aparecer aqui, com a sua crônica.',
+  chronicle: 'Crônica',
+  archiveEmpty:
+    'As crônicas dos seus encontros e o que a comunidade escrever ficam aqui. São arquivos dela: ela os leva quando quiser.',
+  homeFounderNote:
+    'A Numen Games não tem sede própria: cuida dos lugares de todos — a Ágora, as Portas e a Biblioteca.',
+  homeInProgressText:
+    'A Numen Games está construindo a sua sede. Quando abrir, vai aparecer no navegador, no celular também, e aqui vai dizer quantas pessoas estão dentro.',
+  membersEmpty: 'Ninguém ainda: a sede espera por quem conduz a comunidade.',
+  membersNote:
+    'O tipo (Loja, Liga ou Irmandade) vem dos membros com Sessão Zero; até lá, não aparece.',
+  decidedByCommunity: 'A comunidade decide quando faz a sede sua',
+  claimText:
+    'Faça-a sua: você entra e assume. Você decide o que aparece, como cada coisa se chama e quem entra.',
+  cityKeeps: 'A cidade inteira celebra. Quem cuida é',
+  howToAnnounce: 'Como, a anunciar',
+  openNote: 'É aberto. Uma comunidade pode fazer um encontro só para a sua gente.',
+  addNote: 'Um arquivo .ics para Google, Apple ou o que você usar',
+  onlineNote: 'Quando começar, vai aparecer aqui «Entrar», com quantas pessoas estão dentro.',
+  readOn: 'Lido em {source} em {date}. A comunidade muda quando quiser.',
+  afterText:
+    'Quando terminar, fica como realizado: quantas pessoas vieram e, se a comunidade tiver um Cronista, a sua crônica no arquivo.',
+  calendarNote:
+    'Encontros com hora são guardados em UTC e mostrados na sua hora. Os de dia inteiro aparecem iguais em todo lugar. Cada comunidade tem o seu próprio calendário para assinar.',
   navCommunities: 'Comunidades',
   navCalendar: 'Calendário',
   search: 'Buscar',

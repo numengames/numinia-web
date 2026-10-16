@@ -6,9 +6,9 @@
  *
  * Canon is never invented here: the house's story line is the front door's
  * (i18n/front-door.ts: Holberins, the fire of 1920, the city reborn a
- * century later) and the rest is the approved wireframe's. Like the front
- * door, the canon lines travel in Spanish and English; the other locales
- * read them in English and the page marks them `lang="en"`.
+ * century later) and the rest is the approved wireframe's. The canon lines
+ * are translated into every locale from the Spanish source: nothing on
+ * this page falls back to another language.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
@@ -40,8 +40,6 @@ export interface HouseMessages {
   readonly lead: string;
   readonly quote: string;
   readonly quoteSource: string;
-  /** Set where the canon lines are read in another language than the page's. */
-  readonly canonLang: 'en' | undefined;
   readonly enterAgora: string;
   readonly itsWorlds: string;
   readonly howToPlay: string;
@@ -96,6 +94,18 @@ const QUOTE_ES =
   '«Nadie se apunta a Numinia. Llegas, y en algún momento te das cuenta de que ya estabas dentro.»';
 const QUOTE_EN =
   '“Nobody signs up for Numinia. You arrive, and at some point you realise you were already inside.”';
+const STORY_JA =
+  '都市として語られたモデル。ホルベリンスは人類の知を集めるためにこの都市を構想しました。1920年に火災がそれを滅ぼし、一世紀の後に都市はよみがえりました。';
+const STORY_KO =
+  '도시로 들려주는 모델. 홀베린스는 인류의 지식을 모으기 위해 이 도시를 구상했습니다. 1920년에 화재가 도시를 파괴했고, 한 세기 뒤에 도시는 다시 태어났습니다.';
+const STORY_PT =
+  'O modelo contado como uma cidade. Holberins a concebeu para reunir o conhecimento humano; um incêndio a destruiu em 1920 e um século depois ela renasceu.';
+const QUOTE_JA =
+  '「Numinia に登録する人はいません。たどり着いて、いつかの瞬間に、もう中にいたことに気づくのです。」';
+const QUOTE_KO =
+  '“Numinia에 가입하는 사람은 없습니다. 도착하고, 어느 순간 이미 안에 있었다는 것을 깨닫습니다.”';
+const QUOTE_PT =
+  '“Ninguém se inscreve em Numinia. Você chega e, em algum momento, percebe que já estava dentro.”';
 
 const ES: HouseMessages = {
   sphereLabel:
@@ -110,7 +120,6 @@ const ES: HouseMessages = {
   lead: 'Hace el juego en el que viven todas las demás. Existe para subir de nivel a las comunidades, para que la gente se relacione mejor dentro, y lo hace jugando: el juego es la primera narración y la primera lección.',
   quote: QUOTE_ES,
   quoteSource: '— Ya estás en el juego',
-  canonLang: undefined,
   enterAgora: 'Entrar en el Ágora',
   itsWorlds: 'Sus mundos',
   howToPlay: 'Cómo se juega',
@@ -177,7 +186,6 @@ const EN: HouseMessages = {
   lead: 'It makes the game all the others live in. It exists to level communities up, so that people relate better inside them, and it does so by playing: the game is the first story and the first lesson.',
   quote: QUOTE_EN,
   quoteSource: '— You are already in the game',
-  canonLang: undefined,
   enterAgora: 'Enter the Agora',
   itsWorlds: 'Its worlds',
   howToPlay: 'How it is played',
@@ -242,9 +250,8 @@ const JA: HouseMessages = {
   cardCta: 'その物語へ',
   countHouse: ' · そしてそれらをまとめる Numen Games',
   lead: 'ほかのすべてのコミュニティが暮らすゲームをつくっています。コミュニティを一段上へ導き、中の人どうしがよりよく関われるようにするために存在し、それを遊びで行います。ゲームは最初の物語であり、最初の学びです。',
-  quote: QUOTE_EN,
-  quoteSource: '— You are already in the game',
-  canonLang: 'en',
+  quote: QUOTE_JA,
+  quoteSource: '— あなたはもうゲームの中にいます',
   enterAgora: 'アゴラに入る',
   itsWorlds: 'そのワールド',
   howToPlay: '遊び方',
@@ -263,7 +270,7 @@ const JA: HouseMessages = {
       title: 'モデル',
       text: '役割、ポスト、文脈、道具。それが骨格です。名前を変えても変わりません。変えるのは、人どうしの関わり方を変えることです。',
     },
-    { title: '物語 · Numinia', text: STORY_EN },
+    { title: '物語 · Numinia', text: STORY_JA },
   ],
   storyTail: 'どのコミュニティも、同じモデルを自分の物語で語ることができます。',
   metaTitle: 'メタゲーム',
@@ -307,9 +314,8 @@ const KO: HouseMessages = {
   cardCta: '그 이야기로 들어가기',
   countHouse: ' · 그리고 이들을 모으는 Numen Games',
   lead: '다른 모든 커뮤니티가 사는 게임을 만듭니다. 커뮤니티의 수준을 끌어올려 그 안의 사람들이 더 잘 관계 맺도록 하기 위해 존재하며, 그것을 놀이로 합니다. 게임은 첫 번째 이야기이자 첫 번째 배움입니다.',
-  quote: QUOTE_EN,
-  quoteSource: '— You are already in the game',
-  canonLang: 'en',
+  quote: QUOTE_KO,
+  quoteSource: '— 당신은 이미 게임 안에 있습니다',
   enterAgora: '아고라에 들어가기',
   itsWorlds: '그 월드',
   howToPlay: '플레이 방법',
@@ -328,7 +334,7 @@ const KO: HouseMessages = {
       title: '모델',
       text: '역할, 자리, 맥락, 도구: 뼈대입니다. 이름을 바꿔도 바뀌지 않습니다. 사람들이 관계 맺는 방식을 바꿀 때 바뀝니다.',
     },
-    { title: '이야기 · Numinia', text: STORY_EN },
+    { title: '이야기 · Numinia', text: STORY_KO },
   ],
   storyTail: '어떤 커뮤니티든 같은 모델을 자신의 이야기로 들려줄 수 있습니다.',
   metaTitle: '메타게임',
@@ -372,9 +378,8 @@ const PT_BR: HouseMessages = {
   cardCta: 'Entre na sua história',
   countHouse: ' · e Numen Games, que as reúne',
   lead: 'Faz o jogo em que todas as outras vivem. Existe para elevar o nível das comunidades, para que as pessoas se relacionem melhor dentro delas, e faz isso jogando: o jogo é a primeira narrativa e a primeira lição.',
-  quote: QUOTE_EN,
-  quoteSource: '— You are already in the game',
-  canonLang: 'en',
+  quote: QUOTE_PT,
+  quoteSource: '— Você já está no jogo',
   enterAgora: 'Entrar na Ágora',
   itsWorlds: 'Seus mundos',
   howToPlay: 'Como se joga',
@@ -393,7 +398,7 @@ const PT_BR: HouseMessages = {
       title: 'O modelo',
       text: 'Papéis, postos, contextos e ferramentas: o esqueleto. Mudar os nomes não o transforma; o que o transforma é mudar como as pessoas se relacionam.',
     },
-    { title: 'A história · Numinia', text: STORY_EN },
+    { title: 'A história · Numinia', text: STORY_PT },
   ],
   storyTail: 'Qualquer comunidade pode contar o mesmo modelo com a sua própria história.',
   metaTitle: 'O metajogo',
