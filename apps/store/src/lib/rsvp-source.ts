@@ -149,7 +149,7 @@ const refused = (problems: readonly string[]): Response =>
   answer({ error: 'refused', problems }, 400);
 
 /** The answer both routes give: the wallet's own ids, and the count of each id asked. */
-export interface RsvpView {
+interface RsvpView {
   readonly mine: readonly string[];
   readonly counts: Readonly<Record<string, number>>;
 }

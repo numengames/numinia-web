@@ -16,7 +16,7 @@ import { PROBLEMS, refuse, type Refusal } from './accounts';
 import { cents, text, type Row, type TillDatabase } from './repository';
 
 /** The wallet's RSVPs after a change or on request: the ritual ids, soonest said first. */
-export interface MyRsvps {
+interface MyRsvps {
   readonly ok: true;
   readonly ritualIds: readonly string[];
 }
@@ -24,7 +24,7 @@ export interface MyRsvps {
 export type MyRsvpsAnswer = MyRsvps | Refusal;
 
 /** How many people said they are going, per ritual id asked; an id nobody goes to is 0. */
-export interface RsvpCounts {
+interface RsvpCounts {
   readonly ok: true;
   readonly counts: Readonly<Record<string, number>>;
 }
