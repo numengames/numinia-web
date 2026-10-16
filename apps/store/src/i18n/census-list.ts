@@ -7,8 +7,9 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import { ORG_CHOICE_WORDS, type OrgChoiceMessages } from './org-choices';
 
-export interface CensusListMessages {
+export interface CensusListMessages extends OrgChoiceMessages {
   /** The list's title. */
   readonly title: string;
   /** What it is, in one line. */
@@ -62,6 +63,7 @@ export interface CensusListMessages {
 
 export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages>> = {
   es: {
+    ...ORG_CHOICE_WORDS.es,
     title: 'Quién ha entrado',
     intro:
       'Cada persona que ha iniciado sesión en numinia.com, la más reciente primero. Solo la casa ve esta lista.',
@@ -103,6 +105,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     },
   },
   en: {
+    ...ORG_CHOICE_WORDS.en,
     title: 'Who has signed in',
     intro:
       'Everyone who has signed in to numinia.com, most recent first. Only the house sees this list.',
@@ -144,6 +147,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     },
   },
   ja: {
+    ...ORG_CHOICE_WORDS.ja,
     title: 'サインインした人',
     intro:
       'numinia.comにサインインしたすべての人を、新しい順に表示します。このリストはハウスだけが見られます。',
@@ -185,6 +189,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     },
   },
   ko: {
+    ...ORG_CHOICE_WORDS.ko,
     title: '로그인한 사람',
     intro:
       'numinia.com에 로그인한 모든 사람을 최근 순으로 보여 줍니다. 이 목록은 하우스만 볼 수 있습니다.',
@@ -226,6 +231,7 @@ export const CENSUS_LIST_UI: Readonly<Record<SupportedLocale, CensusListMessages
     },
   },
   'pt-br': {
+    ...ORG_CHOICE_WORDS['pt-br'],
     title: 'Quem já entrou',
     intro:
       'Cada pessoa que entrou em numinia.com, a mais recente primeiro. Só a casa vê esta lista.',

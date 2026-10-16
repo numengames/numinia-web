@@ -29,6 +29,8 @@ import {
 import { pageSessionClient } from '../../../lib/island-session';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { PeopleGlyph } from '../../panel/PeopleGlyph';
+import { accountOf } from '../../../lib/org-choices';
+import { OrgOptions } from './OrgOptions';
 import { readTeams, type Teams } from './org-teams';
 
 type Sheet = { readonly at: 'waiting' } | { readonly at: 'loading' } | CitizensSheet;
@@ -145,10 +147,9 @@ export function CitizensList({
     setAddFailed(false);
     setStatus('');
     dialog.current?.showModal();
-    if (teams.at !== 'ready') {
-      setTeams({ at: 'loading' });
-      void readTeams().then(setTeams);
-    }
+    // Each opening reads the list again: a community may have got its organization since.
+    setTeams({ at: 'loading' });
+    void readTeams().then(setTeams);
   };
 
   const close = (): void => {
@@ -158,25 +159,23 @@ export function CitizensList({
   // The organization picked, or the first of the list until one is.
   const choice =
     teams.at === 'ready'
-      ? (teams.teams.find((team) => team.id === chosen)?.id ?? teams.teams[0]?.id ?? '')
-      : '';
+      ? (teams.choices.find((team) => team.key === chosen) ?? teams.choices[0] ?? null)
+      : null;
 
   const save = async (): Promise<void> => {
-    if (adding === null || choice === '') return;
+    if (adding === null || choice === null) return;
     setSaving(true);
     setAddFailed(false);
-    const done = await addMember(choice, adding.wallet);
+    // A community the house has not used yet gets its account now, then the person joins it.
+    const account = await accountOf(fetch, choice);
+    const done = account.ok && (await addMember(account.accountId, adding.wallet));
     setSaving(false);
     if (!done) {
       setAddFailed(true);
       return;
     }
-    const org =
-      teams.at === 'ready'
-        ? (teams.teams.find((team) => team.id === choice)?.name ?? choice)
-        : choice;
     close();
-    setStatus(fill(words.added, { who: personLines(adding).title, org }));
+    setStatus(fill(words.added, { who: personLines(adding).title, org: choice.label }));
     // The list says it at once: the person is in one organization more.
     const wallet = adding.wallet;
     setSheet((now) =>
@@ -348,25 +347,26 @@ export function CitizensList({
           </p>
         )}
         {teams.at === 'failed' && <p className="estado aviso">{words.failed}</p>}
-        {teams.at === 'ready' && teams.teams.length === 0 && (
+        {teams.at === 'ready' && teams.choices.length === 0 && (
           <p className="estado">{words.noOrgs}</p>
         )}
-        {teams.at === 'ready' && teams.teams.length > 0 && (
+        {teams.at === 'ready' && teams.choices.length > 0 && (
           <div className="censo-campo">
             <label htmlFor="censo-org">{words.orgLabel}</label>
             <select
               id="censo-org"
-              value={choice}
+              value={choice?.key ?? ''}
               onChange={(event) => setChosen(event.target.value)}
               data-metric="census-citizen-add-org"
             >
-              {teams.teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
+              <OrgOptions list={teams.choices} words={words} />
             </select>
           </div>
+        )}
+        {choice !== null && choice.community !== null && choice.accountId === null && (
+          <p className="nota" data-opens-home>
+            {words.opensHomeAdd}
+          </p>
         )}
         {addFailed && (
           <p className="estado aviso" role="alert">
@@ -378,7 +378,7 @@ export function CitizensList({
             type="button"
             className="btn btn-primario"
             onClick={() => void save()}
-            disabled={saving || choice === ''}
+            disabled={saving || choice === null}
             data-espera={saving ? '' : undefined}
             data-metric="census-citizen-add-save"
           >

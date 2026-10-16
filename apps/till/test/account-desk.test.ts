@@ -91,6 +91,7 @@ describe('the desk', () => {
       'deleteRole',
       'directory',
       'editRole',
+      'ensureCommunityTeam',
       'giveRole',
       'headcount',
       'homeOf',

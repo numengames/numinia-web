@@ -11,7 +11,7 @@
  */
 
 import AxeBuilder from '@axe-core/playwright';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +23,10 @@ const HOUSE = `0x${'99'.repeat(20)}`;
 const ADMIN = `0x${'ab'.repeat(20)}`;
 const NUMEN = 'acc_team_numen_games';
 const TARUGO = 'acc_team_la_tarugo';
+
+/** The till account of a community: derived from its id, as the till and the store derive it. */
+const communityAccount = (community: string): string =>
+  `acc_t_${createHash('sha256').update(`numinia-till community ${community}`).digest('hex').slice(0, 32)}`;
 
 let server: ChildProcess | undefined;
 let origin = '';
@@ -156,7 +160,7 @@ test.describe('the house places worlds', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('heading')).toContainText('Asignar');
-    await dialog.getByRole('combobox').selectOption(NUMEN);
+    await dialog.getByRole('combobox').selectOption('c:numen-games');
     await dialog.locator('[data-metric="worlds-assign-save"]').click();
     await expect(page.locator('[data-placed-note]')).toContainText('Numen Games');
     await expect(home.locator('[data-home-name]')).toHaveText('Numen Games');
@@ -178,7 +182,7 @@ test.describe('the house places worlds', () => {
     await page.locator('[data-metric="worlds-assign-chosen"]').click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('heading')).toContainText('Asignar 2 mundos');
-    await dialog.getByRole('combobox').selectOption(TARUGO);
+    await dialog.getByRole('combobox').selectOption(`t:${TARUGO}`);
     await dialog.locator('[data-metric="worlds-assign-save"]').click();
     await expect(page.locator('[data-placed-note]')).toContainText(
       '2 mundos asignados a La Tarugo',
@@ -264,6 +268,106 @@ test.describe('only the house places', () => {
     expect(place.status()).toBe(403);
     await page.goto(room());
     await expect(page.locator('[data-home-of]')).toHaveCount(0);
+  });
+});
+
+test.describe('a community is an organization', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test('the dialog lists the register’s communities first, then the till’s other organizations', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    const register = await page.request.get(`${origin}/api/admin/communities`);
+    expect(register.status()).toBe(200);
+    const { communities } = (await register.json()) as { communities: { id: string }[] };
+    expect(communities.length).toBeGreaterThanOrEqual(14);
+
+    await page.goto(room());
+    await page.locator('[data-metric="worlds-assign"]').first().click();
+    const dialog = page.getByRole('dialog');
+    const select = dialog.getByRole('combobox');
+    await expect(select).toBeVisible();
+    const first = select.locator('optgroup[label="Comunidades"] option');
+    await expect(first).toHaveCount(communities.length);
+    await expect(first.filter({ hasText: 'MERGE' })).toHaveCount(1);
+    await expect(select.locator('optgroup[label="Otras"] option')).toContainText(['La Tarugo']);
+    // Numen Games is a community the till already has: it is listed once, not twice.
+    await expect(select.locator('option', { hasText: 'Numen Games' })).toHaveCount(1);
+    // The empty message belongs to an empty register, which this is not.
+    await expect(dialog.locator('[data-request="PlaceWorlds"]')).not.toContainText(
+      'No hay organizaciones',
+    );
+    // A community the till already has needs nothing opened; one it does not have says so.
+    await select.selectOption('c:numen-games');
+    await expect(dialog.locator('[data-opens-home]')).toHaveCount(0);
+    await select.selectOption('t:acc_team_la_tarugo');
+    await expect(dialog.locator('[data-opens-home]')).toHaveCount(0);
+    await select.selectOption('c:merge');
+    await expect(dialog.locator('[data-opens-home]')).toHaveCount(1);
+  });
+
+  test('assigning to a community with no account has the house open it on save', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    const state = await fleetState(page);
+    const free = state.ids.filter((id) => !state.placed.has(id));
+    expect(free.length).toBeGreaterThanOrEqual(2);
+    const [world, other] = [free[0] ?? '', free[1] ?? ''];
+
+    await page.goto(room());
+    const row = page.locator(`[data-home-of="${world}"]`);
+    await row.locator('[data-metric="worlds-assign"]').click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('combobox').selectOption('c:merge');
+    await expect(dialog.locator('[data-opens-home]')).toHaveText(
+      'Se abre la sede de la comunidad al asignar.',
+    );
+    await dialog.locator('[data-metric="worlds-assign-save"]').click();
+    await expect(page.locator('[data-placed-note]')).toContainText('MERGE');
+    await expect(row.locator('[data-home-name]')).toHaveText('MERGE');
+    const homes = await page.request.get(`${origin}/api/admin/worlds/homes`);
+    const placed = ((await homes.json()) as { homes: { worldId: string; accountId: string }[] })
+      .homes;
+    expect(placed.find((home) => home.worldId === world)?.accountId).toBe(
+      communityAccount('merge'),
+    );
+
+    // The house has used it: the next time there is nothing left to open.
+    await page.locator(`[data-home-of="${other}"] [data-metric="worlds-assign"]`).click();
+    await page.getByRole('dialog').getByRole('combobox').selectOption('c:merge');
+    await expect(page.getByRole('dialog').locator('[data-opens-home]')).toHaveCount(0);
+    await page.getByRole('dialog').locator('[data-metric="worlds-assign-save"]').click();
+    await expect(page.locator('[data-placed-note]')).toContainText('MERGE');
+    await expect(page.locator(`[data-home-of="${other}"] [data-home-name]`)).toHaveText('MERGE');
+  });
+
+  test('only the house opens a community’s organization, and asking twice finds the same one', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    expect((await page.request.get(`${origin}/api/admin/communities`)).status()).toBe(403);
+    const refused = await page.request.post(`${origin}/api/admin/community-team`, {
+      data: { community: 'reset' },
+    });
+    expect(refused.status()).toBe(403);
+
+    await context.clearCookies();
+    await signIn(context, HOUSE, 'oracle');
+    const ask = (community: string) =>
+      page.request.post(`${origin}/api/admin/community-team`, { data: { community } });
+    const one = await ask('reset');
+    expect(one.status()).toBe(200);
+    expect(await one.json()).toEqual({
+      ok: true,
+      account: { id: communityAccount('reset'), name: 'R3S3T' },
+    });
+    expect(await (await ask('reset')).json()).toEqual(await one.json());
+    expect((await ask('no-such-community')).status()).toBe(404);
   });
 });
 

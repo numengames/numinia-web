@@ -125,14 +125,14 @@ export function fleetWorldHosts(
 
 // ---- Answers ---------------------------------------------------------------
 
-type Log = (event: Readonly<Record<string, unknown>>) => void;
+export type Log = (event: Readonly<Record<string, unknown>>) => void;
 
 /** The answers name people's organizations: private to the browser that asked, never stored. */
 const HEADERS = { 'cache-control': 'private, no-store' } as const;
 export const answer = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: HEADERS });
-const forbidden = (): Response => answer({ error: 'forbidden' }, 403);
-const notBound = (): Response => answer({ error: 'not-bound' }, 503);
+export const forbidden = (): Response => answer({ error: 'forbidden' }, 403);
+export const notBound = (): Response => answer({ error: 'not-bound' }, 503);
 
 const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
 const home = z.object({ accountId: z.string(), accountName: z.string(), placedAt: z.string() });
@@ -209,7 +209,7 @@ function refused(problems: readonly string[]): Response {
   return answer({ error: 'refused', problems }, status);
 }
 
-const lowercase = (asker: Asker): string => asker.wallet.toLowerCase();
+export const lowercase = (asker: Asker): string => asker.wallet.toLowerCase();
 
 /**
  * GET /api/admin/worlds/homes: where every placed world stands — `{ homes:
@@ -236,7 +236,7 @@ export async function answerHomes(
 }
 
 /** The JSON body of a request, or the response that refuses it. */
-async function bodyOf(
+export async function bodyOf(
   request: Request,
 ): Promise<{ ok: true; json: unknown } | { ok: false; response: Response }> {
   const type = (request.headers.get('content-type') ?? '').trim().toLowerCase();

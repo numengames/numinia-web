@@ -13,7 +13,7 @@
  */
 
 import AxeBuilder from '@axe-core/playwright';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,10 @@ const NUEVA = '0x0000000000000000000000000000000000000a07';
 const D4 = '0x00000000000000000000000000000000000000d4';
 const NUMEN = 'acc_team_numen_games';
 const TARUGO = 'acc_team_la_tarugo';
+
+/** The till account of a community: derived from its id, as the till and the store derive it. */
+const communityAccount = (community: string): string =>
+  `acc_t_${createHash('sha256').update(`numinia-till community ${community}`).digest('hex').slice(0, 32)}`;
 
 let server: ChildProcess | undefined;
 let origin = '';
@@ -144,7 +148,7 @@ test.describe('the house sees who has signed in', () => {
     await row.locator('[data-metric="census-citizen-add"]').click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('combobox').selectOption(NUMEN);
+    await dialog.getByRole('combobox').selectOption('c:numen-games');
     await dialog.locator('[data-metric="census-citizen-add-save"]').click();
     await expect(page.locator('[data-citizens-status]')).toContainText('Numen Games');
     await expect(row.locator('[data-citizen-orgs]')).toHaveText('1');
@@ -188,6 +192,39 @@ test.describe('the house sees who has signed in', () => {
     await page.locator('#gente-cartera').fill(D4.toUpperCase().replace('0X', '0x'));
     await page.locator('[data-metric="panel-member-add-save"]').click();
     await expect(page.locator(`tr[data-person="${D4}"]`)).toBeVisible();
+  });
+});
+
+test.describe('a community is an organization', () => {
+  test('the dialog lists the communities first, and adding to one with no account opens it', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.goto(census());
+    const row = page.locator(`tr[data-citizen="${LUCIA}"]`);
+    await expect(row).toBeVisible();
+    await row.locator('[data-metric="census-citizen-add"]').click();
+    const dialog = page.getByRole('dialog');
+    const select = dialog.getByRole('combobox');
+    await expect(select.locator('optgroup[label="Comunidades"] option')).toContainText(['MERGE']);
+    await expect(select.locator('optgroup[label="Otras"] option')).toContainText(['La Tarugo']);
+    await expect(dialog).not.toContainText('No hay organizaciones');
+    await select.selectOption('c:numen-games');
+    await expect(dialog.locator('[data-opens-home]')).toHaveCount(0);
+
+    const before = Number(await row.locator('[data-citizen-orgs]').innerText());
+    await select.selectOption('c:merge');
+    await expect(dialog.locator('[data-opens-home]')).toHaveText(
+      'Se abre la sede de la comunidad al añadir.',
+    );
+    await dialog.locator('[data-metric="census-citizen-add-save"]').click();
+    await expect(page.locator('[data-citizens-status]')).toContainText('MERGE');
+    await expect(row.locator('[data-citizen-orgs]')).toHaveText(String(before + 1));
+
+    // The person is a member of the community's organization, the id derived from its own.
+    await page.goto(members(communityAccount('merge')));
+    await expect(page.locator(`tr[data-person="${LUCIA}"]`)).toBeVisible();
   });
 });
 
