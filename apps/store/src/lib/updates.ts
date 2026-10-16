@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.102.0',
+    date: '2026-10-16 10:46',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Who has signed in», on the Census page: the house now sees everyone who has ever signed in to numinia.com, with the first and the last time, searches them and adds any of them to an organization from there. Only the house sees this list. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'In the panel’s Members, «Add member» suggests, as the house types, the people who have signed in, so nobody has to copy a wallet by hand. Noting a sign-in never slows it or stops it: if the note fails, you are in all the same.',
+      },
+    ],
+  },
+  {
     version: 'v0.101.0',
     date: '2026-10-16 10:30',
     entries: [
