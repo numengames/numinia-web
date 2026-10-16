@@ -53,7 +53,7 @@ export const WORLD_PASS_PERMISSIONS = [
   'manage-organization',
   'download-world',
 ] as const satisfies readonly OrganizationAccess[];
-export type WorldPassPermission = (typeof WORLD_PASS_PERMISSIONS)[number];
+type WorldPassPermission = (typeof WORLD_PASS_PERMISSIONS)[number];
 
 /** A pass lives ten minutes. */
 export const PASS_TTL_SECONDS = 600;
@@ -66,7 +66,7 @@ const HOUSE_HEIGHT = Number.MAX_SAFE_INTEGER;
 /** accessOf's owner height (+Infinity) as JSON can say it. */
 const OWNER_HEIGHT = Number.MAX_VALUE;
 
-export interface PassRole {
+interface PassRole {
   readonly name: string;
   readonly color: string | null;
 }
