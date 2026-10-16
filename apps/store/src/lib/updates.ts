@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.105.0',
+    date: '2026-10-16 14:48',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A community is an organization. In the Worlds room («Assign to an organization») and in the Census («Add to an organization») the house now chooses among the communities of the register — all of them, the house-only ones too — and then among the organizations the till already had. Nobody has to create anything by hand in Balance.',
+      },
+      {
+        type: 'NEW',
+        text: 'The first time the house uses a community — assigning a world, adding a person — the till opens its organization, and from then on it is the same one. The dialog says so in a line under the list. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.104.0',
     date: '2026-10-16 14:20',
     entries: [
