@@ -13,7 +13,7 @@
 
 import type { SupportedLocale } from '@numinia/domain';
 
-export interface RingText {
+interface RingText {
   readonly title: string;
   readonly text: string;
 }
