@@ -475,6 +475,24 @@ describe('the statement', () => {
     });
   });
 
+  it('gives the pace whatever the range: the 7 complete days before today and the month so far', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    worlds(sqlite, numen);
+    // Today is 2026-10-14: the seven days are the 7th to the 13th; the month started on the 1st.
+    for (const range of ['7d', '30d', '12m'] as const) {
+      const answer = await desk.statement(PABLO, numen, range);
+      expect(answer.ok && answer.pace).toEqual({
+        sevenDaysCents: 188,
+        monthCents: 188,
+        monthWorlds: 2,
+      });
+    }
+    const own = await personal(desk);
+    const mine = await desk.statement(PABLO, own, '7d');
+    expect(mine.ok && mine.pace).toEqual({ sevenDaysCents: 0, monthCents: 0, monthWorlds: 0 });
+  });
+
   it('has no tariff to show before the first version starts', async () => {
     vi.setSystemTime(new Date('2026-10-12T12:00:00.000Z'));
     const { desk } = scene();
@@ -499,6 +517,7 @@ describe('the statement', () => {
     expect(refused.ok).toBe(false);
     expect(refused).not.toHaveProperty('worlds');
     expect(refused).not.toHaveProperty('tariff');
+    expect(refused).not.toHaveProperty('pace');
     expect(await desk.statement(STRANGER, numen, '30d')).toEqual({
       ok: false,
       problems: [PROBLEMS.notMember],

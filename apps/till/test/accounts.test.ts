@@ -13,6 +13,7 @@ import {
   readSessionId,
   readTeamName,
   readWallet,
+  paceOf,
   spendBuckets,
   worldsOver,
 } from '../src/lib/accounts';
@@ -243,5 +244,55 @@ describe('each world over a range', () => {
         use('mitad', '2026-10-13', '2g', 1440, 60),
       ]).map((world) => world.worldId),
     ).toEqual(['alfa', 'mitad', 'zeta']);
+  });
+});
+
+describe('the pace of an account (the Saldo screen’s figures, whatever the range)', () => {
+  const use = (worldId: string, day: string, cents: number) => ({
+    worldId,
+    day,
+    size: '2g',
+    minutesRunning: 1440,
+    cents,
+  });
+
+  it('counts the 7 complete UTC days before today, today left out', () => {
+    const days = [
+      use('agora', '2026-10-14', 60), // today: not complete yet
+      use('agora', '2026-10-13', 60),
+      use('agora', '2026-10-07', 60),
+      use('taller', '2026-10-07', 5),
+      use('agora', '2026-10-06', 60), // eight days back: out
+    ];
+    expect(paceOf('2026-10-14', days).sevenDaysCents).toBe(125);
+    expect(paceOf('2026-10-14', []).sevenDaysCents).toBe(0);
+  });
+
+  it('counts the current UTC month so far, and how many worlds it charged', () => {
+    const days = [
+      use('agora', '2026-10-14', 60),
+      use('agora', '2026-10-01', 60),
+      use('taller', '2026-10-02', 5),
+      use('puertas', '2026-10-03', 0), // a day that cost nothing charged nothing
+      use('archivo', '2026-09-30', 60), // last month
+    ];
+    expect(paceOf('2026-10-14', days)).toEqual({
+      sevenDaysCents: 0, // none of these days is one of the seven before the 14th
+      monthCents: 125,
+      monthWorlds: 2,
+    });
+  });
+
+  it('reaches back into the previous month for the seven days at the start of one', () => {
+    const days = [
+      use('agora', '2026-10-02', 60),
+      use('agora', '2026-09-26', 60),
+      use('agora', '2026-09-25', 60),
+    ];
+    expect(paceOf('2026-10-03', days)).toEqual({
+      sevenDaysCents: 120,
+      monthCents: 60,
+      monthWorlds: 1,
+    });
   });
 });
