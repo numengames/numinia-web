@@ -69,6 +69,13 @@ import {
   type WorldsOfAnswer,
 } from './db/world-placements';
 import { headcount, type HeadcountAnswer } from './db/headcount';
+import {
+  changeSettings,
+  happenings,
+  settings,
+  type HappeningsAnswer,
+  type SettingsAnswer,
+} from './db/settings';
 import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
   assignRole,
@@ -505,6 +512,33 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     name: unknown,
   ): Promise<EnsureAnswer> {
     return ensureCommunityTeam(this.env.TILL_DB, wallet, house, communityId, name, new Date());
+  }
+
+  // ---- «Ajustes de la comunidad» (cut 8, 2026-10-16): pieces, words and «Qué ha pasado» ----
+
+  /** Which pieces of the panel are off and how it names things: to a member or the house. */
+  async settings(wallet: unknown, accountId: unknown, house?: unknown): Promise<SettingsAnswer> {
+    return settings(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** Turns pieces on or off and picks the words: whoever may manage the organization; logged. */
+  async changeSettings(
+    wallet: unknown,
+    accountId: unknown,
+    change: unknown,
+    house?: unknown,
+  ): Promise<SettingsAnswer> {
+    return changeSettings(this.env.TILL_DB, wallet, accountId, change, house, new Date());
+  }
+
+  /** The organization's log as a readable list, 30 lines a page, newest first: to a member or the house. */
+  async happenings(
+    wallet: unknown,
+    accountId: unknown,
+    before?: unknown,
+    house?: unknown,
+  ): Promise<HappeningsAnswer> {
+    return happenings(this.env.TILL_DB, wallet, accountId, before, house, new Date());
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----
