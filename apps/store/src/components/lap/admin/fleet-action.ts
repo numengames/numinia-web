@@ -180,6 +180,8 @@ const PROBLEM_WORDS: Readonly<Partial<Record<Problem, keyof WorldsRoomMessages['
   'no-admin-code': 'noAdminCode',
   busy: 'busy',
   origin: 'origin',
+  'unknown-engine': 'unknownEngine',
+  'engine-mismatch': 'engineMismatch',
   unreachable: 'unreachable',
   machine: 'machine',
   late: 'late',

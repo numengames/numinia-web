@@ -42,12 +42,27 @@ export interface FleetMachine {
  */
 export const FLEET_MACHINES: readonly FleetMachine[] = [
   { alias: 'open-1', host: 'vps-39c7f315.vps.ovh.net' },
+  { alias: 'bronte-xs-ca-003', host: 'vps-1e2f105f.vps.ovh.ca' },
 ];
 /** The engine build the wizard proposes: numinia-hyperfy2 `dev`, pinned. */
 export const DEFAULT_IMAGE =
   'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3';
 export const DEFAULT_LIMITS = { memory: '2g', cpus: '1.5', maxUploadMb: 50 } as const;
 export const DEFAULT_SERVER = 'open-1';
+
+/**
+ * The engines a fleet machine runs, each known by its image's repository in
+ * the house's registry (reconcile.py ENGINES). A machine whose door names
+ * none runs Hyperfy alone; a new world must name one of them.
+ */
+export const ENGINES = ['numinia-hyperfy2', 'numinia-engine'] as const;
+export type Engine = (typeof ENGINES)[number];
+/** Their names, the same in every language. */
+export const ENGINE_NAMES: Readonly<Record<Engine, string>> = {
+  'numinia-hyperfy2': 'Hyperfy',
+  'numinia-engine': 'Numinia Engine',
+};
+const REGISTRY = 'ghcr.io/numengames/';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DOMAIN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
@@ -147,6 +162,18 @@ export function orderProblems(source: string, stem: string): OrderProblem[] {
   return found;
 }
 
+/**
+ * Which engine an image is, by its repository in the house's registry; null
+ * for any other image. An order already on a machine with another repository
+ * of the registry still runs there (as Hyperfy); a new one must name an engine.
+ */
+export function engineOf(image: string): Engine | null {
+  if (!IMAGE.test(image) || !image.startsWith(REGISTRY)) return null;
+  const repository = image.slice(REGISTRY.length).split(/[:@]/)[0] as string;
+  const known: readonly string[] = ENGINES;
+  return known.includes(repository) ? (repository as Engine) : null;
+}
+
 export type ParsedOrder =
   { readonly order: WorldOrder } | { readonly problems: readonly OrderProblem[] };
 
@@ -237,8 +264,9 @@ export type DraftResult =
   { readonly order: WorldOrder } | { readonly problems: readonly OrderProblem[] };
 
 /**
- * A draft becomes an order only if the order's rules accept it and its
- * address is one name under a house zone, which is all the machine serves.
+ * A draft becomes an order only if the order's rules accept it, its address
+ * is one name under a house zone, which is all the machine serves, and its
+ * image is one of the engines a machine runs (unknown-engine otherwise).
  */
 export function draftToOrder(draft: OrderDraft): DraftResult {
   const clean = (value: string): string => value.trim().toLowerCase();
@@ -258,6 +286,7 @@ export function draftToOrder(draft: OrderDraft): DraftResult {
   };
   const problems = orderProblems(renderOrder(order), order.id);
   if (!inHouseZone(order.domain) && !problems.includes('domain')) problems.push('domain');
+  if (engineOf(order.image) === null && !problems.includes('image')) problems.push('image');
   return problems.length > 0 ? { problems } : { order };
 }
 
@@ -287,6 +316,19 @@ export interface MachineSummary {
    * machine) or does not answer.
    */
   readonly imports: Imports | null;
+  /**
+   * The engines it runs, as its door says (`engines`); absent or null when
+   * its door names none — a machine older than the Numinia Engine, which
+   * runs Hyperfy alone (machineEngines).
+   */
+  readonly engines?: readonly Engine[] | null;
+  /** Whether its door says it moves a world to another build of its engine (`updates`). */
+  readonly updates?: boolean;
+}
+
+/** The engines a machine runs: those its door names, or Hyperfy alone when it names none. */
+export function machineEngines(machine: Pick<MachineSummary, 'engines'> | undefined): Engine[] {
+  return machine?.engines ? [...machine.engines] : ['numinia-hyperfy2'];
 }
 
 /**
@@ -297,13 +339,25 @@ export function machineChoices(machines: readonly MachineSummary[]): string[] {
   return machines.filter((machine) => machine.open).map((machine) => machine.alias);
 }
 
-/** The machines a world can be brought back to from its zip: those whose door says it takes zips. */
-export function importMachines(
-  machines: readonly MachineSummary[],
-): { readonly alias: string; readonly zipMaxBytes: number }[] {
+/**
+ * The machines a world can be brought back to from its zip: those whose door
+ * says it takes zips, with the engines each runs (a zip goes to a machine
+ * that runs its engine).
+ */
+export function importMachines(machines: readonly MachineSummary[]): {
+  readonly alias: string;
+  readonly zipMaxBytes: number;
+  readonly engines: readonly Engine[];
+}[] {
   return machines.flatMap((machine) =>
     machine.open && machine.imports !== null
-      ? [{ alias: machine.alias, zipMaxBytes: machine.imports.zipMaxBytes }]
+      ? [
+          {
+            alias: machine.alias,
+            zipMaxBytes: machine.imports.zipMaxBytes,
+            engines: machineEngines(machine),
+          },
+        ]
       : [],
   );
 }
@@ -460,21 +514,79 @@ export type Probe =
   | { readonly ok: false; readonly reason: ProbeFailure; readonly status?: number };
 
 /**
- * A world's `/status` body → counts only. The engine lists every visitor's
- * name and position there; the room keeps the number and drops the rest.
+ * A world's `/status` body → counts only. Hyperfy lists every visitor's name
+ * and position there (`connectedUsers`); the Numinia Engine says only how
+ * many are in (`conectados`). The room keeps the number and drops the rest.
  */
 export function readProbe(body: unknown): Probe {
   if (!isRecord(body)) return { ok: false, reason: 'shape' };
-  const { uptime, connectedUsers, commitHash } = body;
-  if (typeof uptime !== 'number' || !Array.isArray(connectedUsers)) {
+  const { uptime, connectedUsers, conectados, commitHash } = body;
+  const users = Array.isArray(connectedUsers)
+    ? connectedUsers.length
+    : typeof conectados === 'number' && Number.isInteger(conectados) && conectados >= 0
+      ? conectados
+      : null;
+  if (typeof uptime !== 'number' || users === null) {
     return { ok: false, reason: 'shape' };
   }
   return {
     ok: true,
-    users: connectedUsers.length,
+    users,
     uptime,
     commit: typeof commitHash === 'string' && commitHash !== '' ? commitHash.slice(0, 7) : null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// The Numinia Engine's newest build: its release's imagen.json
+// ---------------------------------------------------------------------------
+
+/** The newest published build of the Numinia Engine, as its release says (`imagen.json`). */
+export interface EngineRelease {
+  /** `ghcr.io/numengames/numinia-engine:sha-<commit>`: what a world of it is ordered with. */
+  readonly image: string;
+  readonly commit: string;
+  /** The engine's own build string, as people read it (`c57dbb7 2026-10-16`). */
+  readonly build: string;
+  /** The image's digest, `sha256:<64 hex>`. */
+  readonly digest: string;
+}
+
+const RELEASE_IMAGE = /^ghcr\.io\/numengames\/numinia-engine:sha-([0-9a-f]{40})$/;
+const RELEASE_COMMIT = /^[0-9a-f]{40}$/;
+const RELEASE_BUILD = /^[0-9A-Za-z][0-9A-Za-z .:+_-]{0,79}$/;
+const RELEASE_DIGEST = /^sha256:[0-9a-f]{64}$/;
+
+/**
+ * A release's `imagen.json` → the newest engine build; null unless every
+ * field has its exact shape and the image is the one built from its commit.
+ */
+export function readEngineRelease(body: unknown): EngineRelease | null {
+  if (!isRecord(body)) return null;
+  const { image, commit, build, digest } = body;
+  if (typeof image !== 'string' || typeof commit !== 'string') return null;
+  const built = RELEASE_IMAGE.exec(image);
+  if (built === null || built[1] !== commit || !RELEASE_COMMIT.test(commit)) return null;
+  if (typeof build !== 'string' || !RELEASE_BUILD.test(build)) return null;
+  if (typeof digest !== 'string' || !RELEASE_DIGEST.test(digest)) return null;
+  return { image, commit, build, digest };
+}
+
+/**
+ * The build a world can move to with one signature («Actualizar»): the
+ * newest Numinia Engine, for a world of that engine running another build,
+ * on a machine whose door says it takes updates; null otherwise. Hyperfy
+ * worlds are not offered one (the machine would take it; the room does not ask).
+ */
+export function updateFor(
+  order: WorldOrder,
+  machines: readonly Pick<MachineSummary, 'alias' | 'open' | 'updates'>[],
+  engine: EngineRelease | null,
+): string | null {
+  if (engine === null || engineOf(order.image) !== 'numinia-engine') return null;
+  if (order.image === engine.image) return null;
+  const machine = machines.find((candidate) => candidate.alias === order.server);
+  return machine?.open === true && machine.updates === true ? engine.image : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -525,6 +637,11 @@ export interface WorldRow {
   readonly place: WorldPlace | null;
   /** For a world whose zip is on its way to its machine: how much of it the machine has. */
   readonly upload: UploadProgress | null;
+  /**
+   * The newer build of its engine it can move to with one signature
+   * (updateFor); absent or null when there is none to offer.
+   */
+  readonly update?: string | null;
 }
 
 /** A world its machine is deleting after its order already went. */
@@ -554,6 +671,9 @@ export interface RowsInput {
   readonly legacy?: readonly LegacyWorld[];
   /** Read from each world's own page when the Summa has no card for it. */
   readonly faces?: Readonly<Record<string, WorldFace>>;
+  /** The machines as their doors answered, and the newest engine build: what «Actualizar» offers. */
+  readonly machines?: readonly Pick<MachineSummary, 'alias' | 'open' | 'updates'>[];
+  readonly engine?: EngineRelease | null;
 }
 
 function seen(probe: Probe | undefined): WorldStatus {
@@ -589,6 +709,8 @@ export function buildRows(input: RowsInput): WorldRow[] {
   const cards = new Map(input.cards.map((card) => [card.slug, card]));
   const faces = input.faces ?? {};
   const phases = input.phases ?? {};
+  const machines = input.machines ?? [];
+  const engine = input.engine ?? null;
   const rows: WorldRow[] = input.orders.map((order) => {
     const card = cards.get(order.card);
     const face = faces[order.id];
@@ -606,6 +728,7 @@ export function buildRows(input: RowsInput): WorldRow[] {
       legacy: null,
       place: { server: order.server, domain: order.domain },
       upload: null,
+      update: updateFor(order, machines, engine),
     };
   });
   const taken = new Set(input.orders.map((order) => order.id));
@@ -781,6 +904,14 @@ export function buildTag(image: string): string {
   return image;
 }
 
+/**
+ * The engine and its build, short: `Hyperfy · sha-0e20453`, `Numinia Engine ·
+ * sha-c57dbb7`. An image of no known engine runs as Hyperfy on its machine.
+ */
+export function engineTag(image: string): string {
+  return `${ENGINE_NAMES[engineOf(image) ?? 'numinia-hyperfy2']} · ${buildTag(image)}`;
+}
+
 /** Seconds awake → a short span: `45 min`, `3 h`, `2 d 4 h`. */
 export function formatUptime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -854,6 +985,8 @@ export interface ReasonWords {
   /** A world from its zip: its zip on its way to its machine, then being opened there. */
   readonly uploading: string;
   readonly importing: string;
+  /** A world moving to another build of its engine. */
+  readonly updating: string;
   readonly unknown: string;
 }
 
@@ -876,7 +1009,9 @@ export function describeStatus(row: WorldRow, words: ReasonWords): string {
   if (row.status === 'changing') {
     const phase = row.phase;
     if (phase === 'creating' || phase === 'stopping' || phase === 'starting') return words[phase];
-    if (phase === 'uploading' || phase === 'importing') return words[phase];
+    if (phase === 'uploading' || phase === 'importing' || phase === 'updating') {
+      return words[phase];
+    }
     return words.deleting;
   }
   return words.unknown;

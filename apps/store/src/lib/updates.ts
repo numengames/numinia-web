@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.99.0',
+    date: '2026-10-16 06:02',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Worlds room makes worlds on the Numinia Engine as well as on Hyperfy. The wizard’s engine step offers the engines the chosen machine says it runs — a machine that names none runs Hyperfy alone, as before — and the Numinia Engine comes with its newest published build, read from its release; until there is one the option says so and stays off. A world’s card names its engine and build, and an engine world’s card reads the engine’s own status: how many are inside and for how long, never who.',
+      },
+      {
+        type: 'NEW',
+        text: '«Update» on the card of a Numinia Engine world whose build is older than the newest one, where its machine takes updates: one signature names the world and the exact build it moves to, and the machine fetches that build first, saves the world and restarts it on it — whoever is inside is disconnected for a few seconds; its data and its adventure stay. The card says «Updating…» until the world runs on the new build. A build of another engine, or one the machine does not run, is refused in plain words.',
+      },
+      {
+        type: 'UPD',
+        text: 'Bring from a zip reads a Numinia Engine world’s zip too — its manifest, first or second version, and how many files it holds — after the rules every zip keeps, and offers only the machines that run that engine; the world comes back on the engine’s newest build, and if the engine on the machine cannot read the zip, the room says why in its own words. The fleet lists a second machine, bronte-xs-ca-003, and each machine’s line says which engines it runs. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.98.0',
     date: '2026-10-16 05:36',
     entries: [

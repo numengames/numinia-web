@@ -2,8 +2,10 @@
  * "Traer un mundo": a world brought back from its zip, in one dialog of two
  * steps. Lugar: what the zip is — read here first (lib/zip-read.ts), so that
  * what its machine would refuse is said before anything is signed — the
- * world's name, its machine (those whose door takes zips) and its address;
- * the engine is the fleet's own. Firmar: what the wallet signs, the zip's
+ * world's name, its machine (those whose door takes zips and runs the zip's
+ * engine) and its address; the engine is the zip's own — a Hyperfy world
+ * with the fleet's Hyperfy, a Numinia Engine world with that engine's
+ * newest build. Firmar: what the wallet signs, the zip's
  * exact size and its fingerprint included, the fingerprint made off the
  * page's thread (zip-hash.ts). At the machine's 202 the dialog closes and
  * hands the zip to the room, which uploads it from the world's card.
@@ -13,11 +15,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { formatCount, formatSize, type ImportTicket } from '../../../lib/fleet';
 import {
+  DEFAULT_IMAGE,
   WORLD_ZONES,
   addressOwner,
-  buildTag,
   draftToOrder,
   emptyDraft,
+  engineTag,
   fill,
   inHouseZone,
   joinDomain,
@@ -25,6 +28,8 @@ import {
   placeAllowed,
   problemFields,
   proposeName,
+  type Engine,
+  type EngineRelease,
   type WorldRow,
 } from '../../../lib/worlds';
 import { checkAddress } from '../../../lib/worlds-source';
@@ -48,10 +53,11 @@ export type ImportSource =
   | { readonly kind: 'several'; readonly count: number }
   | { readonly kind: 'folder' };
 
-/** A machine whose door brings worlds back from their zip, and the biggest zip it takes. */
+/** A machine whose door brings worlds back from their zip, the biggest zip it takes, and the engines it runs. */
 export interface Importer {
   readonly alias: string;
   readonly zipMaxBytes: number;
+  readonly engines: readonly Engine[];
 }
 
 /** What the dialog hands the room at the machine's 202: the slot, the zip, the new world's code. */
@@ -122,6 +128,7 @@ export function ImportDialog({
   wallet,
   sessionHref,
   listens,
+  release,
   onClose,
   onFile,
   onHandover,
@@ -136,6 +143,8 @@ export function ImportDialog({
   readonly wallet: string | null;
   readonly sessionHref: string;
   readonly listens: (alias: string) => boolean;
+  /** The Numinia Engine's newest published build: what one of its worlds comes back with. */
+  readonly release: EngineRelease | null;
   readonly onClose: () => void;
   /** Another zip, picked from the dialog itself (a picker outside an open modal is inert). */
   readonly onFile: (file: File) => void;
@@ -199,20 +208,41 @@ export function ImportDialog({
     };
   }, [file, reset]);
 
-  const importer = importers.find((candidate) => candidate.alias === machine) ?? importers[0];
+  const read = reading?.ok ? reading.reading : null;
+  // A zip goes to a machine that runs its engine, ordered with that engine's build.
+  const engine: Engine = read?.engine ?? 'numinia-hyperfy2';
+  const fits = importers.filter((candidate) => candidate.engines.includes(engine));
+  const image = engine === 'numinia-engine' ? (release?.image ?? null) : DEFAULT_IMAGE;
+  const importer = fits.find((candidate) => candidate.alias === machine) ?? fits[0];
   const alias = importer?.alias ?? '';
   const name = id.trim().toLowerCase();
   const domain = joinDomain(label ?? name, zone);
   const owner = addressOwner(domain, rows);
   const taken = nameOwner(name, rows);
-  const result = draftToOrder({ ...emptyDraft(alias), id: name, card: name, domain });
+  const result = draftToOrder({
+    ...emptyDraft(alias),
+    image: image ?? '',
+    id: name,
+    card: name,
+    domain,
+  });
   const order = 'order' in result ? result.order : null;
   const badName =
     name !== '' && 'problems' in result && problemFields(result.problems).includes('id');
-  const read = reading?.ok ? reading.reading : null;
   const tooBig = file !== null && importer !== undefined && file.size > importer.zipMaxBytes;
   const sending = busy(flow);
   const words = room.import;
+  // A zip the room read but cannot order: no build of its engine yet, or no machine that runs it.
+  const unplaceable =
+    read === null
+      ? null
+      : image === null
+        ? words.engineNoRelease
+        : fits.length === 0
+          ? engine === 'numinia-engine'
+            ? words.noEngineMachine
+            : words.noMachine
+          : null;
 
   // Where the address points, asked of public DNS a moment after the last keystroke.
   useEffect(() => {
@@ -277,6 +307,7 @@ export function ImportDialog({
 
   const canNext =
     read !== null &&
+    unplaceable === null &&
     order !== null &&
     taken === null &&
     !tooBig &&
@@ -287,16 +318,22 @@ export function ImportDialog({
   const zipLine =
     file === null || read === null
       ? null
-      : read.world !== null
-        ? fill(read.copiedAt === null ? words.copyOfUndated : words.copyOf, {
-            w: read.world,
-            d: read.copiedAt === null ? '' : copyDay(read.copiedAt, lang),
+      : read.engine === 'numinia-engine'
+        ? fill(words.engineWorld, {
+            v: (read.schema ?? '').replace('numinia-engine/', ''),
+            n: formatCount(read.files, lang),
             s: formatSize(file.size, lang),
           })
-        : fill(words.folder, {
-            n: formatCount(Math.max(0, read.files - 1), lang),
-            s: formatSize(file.size, lang),
-          });
+        : read.world !== null
+          ? fill(read.copiedAt === null ? words.copyOfUndated : words.copyOf, {
+              w: read.world,
+              d: read.copiedAt === null ? '' : copyDay(read.copiedAt, lang),
+              s: formatSize(file.size, lang),
+            })
+          : fill(words.folder, {
+              n: formatCount(Math.max(0, read.files - 1), lang),
+              s: formatSize(file.size, lang),
+            });
 
   // A refusal before anything is signed: the drop itself, or the room's reading of the zip.
   const refusal =
@@ -356,7 +393,16 @@ export function ImportDialog({
                 {fill(words.engineImage, { s: formatSize(read.engineBytes, lang) })}
               </p>
             )}
-            <p className="nota">{fill(words.keysNote, { m: alias })}</p>
+            {unplaceable !== null && (
+              <p className="fallo" role="alert" data-refused="engine">
+                {unplaceable}
+              </p>
+            )}
+            <p className="nota">
+              {fill(read.engine === 'numinia-engine' ? words.engineKeysNote : words.keysNote, {
+                m: alias,
+              })}
+            </p>
             <Field
               id="importar-nombre"
               label={room.wizard.idLabel}
@@ -371,7 +417,7 @@ export function ImportDialog({
                 })}
               </p>
             )}
-            {importers.length > 1 ? (
+            {fits.length > 1 ? (
               <label className="campo" htmlFor="importar-maquina">
                 <span className="etiqueta">{words.machineLabel}</span>
                 <select
@@ -380,7 +426,7 @@ export function ImportDialog({
                   onChange={(event) => setMachine(event.target.value)}
                   data-metric="worlds-field"
                 >
-                  {importers.map((candidate) => (
+                  {fits.map((candidate) => (
                     <option key={candidate.alias} value={candidate.alias}>
                       {candidate.alias}
                     </option>
@@ -440,8 +486,10 @@ export function ImportDialog({
             </div>
             <div className="campo">
               <span className="etiqueta">{room.fields.build}</span>
-              <span className="mono" title={emptyDraft().image}>
-                {fill(words.engineNote, { b: buildTag(emptyDraft().image) })}
+              <span className="mono" title={image ?? undefined} data-engine={engine}>
+                {image === null
+                  ? words.engineNoRelease
+                  : fill(words.engineNote, { b: engineTag(image) })}
               </span>
             </div>
           </>
@@ -464,7 +512,7 @@ export function ImportDialog({
               <div>
                 <dt className="etiqueta">{room.fields.build}</dt>
                 <dd className="mono" title={order.image}>
-                  {buildTag(order.image)}
+                  {engineTag(order.image)}
                 </dd>
               </div>
               <div>

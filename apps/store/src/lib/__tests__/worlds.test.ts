@@ -9,6 +9,8 @@ import type { SummaCard } from '../summa';
 import {
   DEFAULT_IMAGE,
   DEFAULT_SERVER,
+  ENGINES,
+  ENGINE_NAMES,
   FLEET_MACHINES,
   WORLD_ZONES,
   addressOwner,
@@ -18,6 +20,8 @@ import {
   describeStatus,
   draftToOrder,
   emptyDraft,
+  engineOf,
+  engineTag,
   fill,
   filterRows,
   fleetServers,
@@ -29,6 +33,7 @@ import {
   joinDomain,
   listedRows,
   machineChoices,
+  machineEngines,
   machineHost,
   nameOwner,
   orderProblems,
@@ -38,13 +43,16 @@ import {
   problemFields,
   proposeName,
   readDohAnswer,
+  readEngineRelease,
   readProbe,
   renderOrder,
   rowPlace,
   slot,
   slugify,
+  updateFor,
   worldCards,
   worldUrl,
+  type EngineRelease,
   type ReasonWords,
   type WorldOrder,
   type WorldRow,
@@ -647,8 +655,25 @@ describe('the place: machine, address and whether it is free', () => {
         { alias: 'open-4', ...open, imports: { zipMaxBytes: 1024 } },
       ]),
     ).toEqual([
-      { alias: 'open-1', zipMaxBytes: 2147483648 },
-      { alias: 'open-4', zipMaxBytes: 1024 },
+      { alias: 'open-1', zipMaxBytes: 2147483648, engines: ['numinia-hyperfy2'] },
+      { alias: 'open-4', zipMaxBytes: 1024, engines: ['numinia-hyperfy2'] },
+    ]);
+    // With the engines its door names: a Numinia Engine zip goes only where that engine runs.
+    expect(
+      importMachines([
+        {
+          alias: 'bronte-xs-ca-003',
+          ...open,
+          imports: { zipMaxBytes: 1024 },
+          engines: ['numinia-hyperfy2', 'numinia-engine'],
+        },
+      ]),
+    ).toEqual([
+      {
+        alias: 'bronte-xs-ca-003',
+        zipMaxBytes: 1024,
+        engines: ['numinia-hyperfy2', 'numinia-engine'],
+      },
     ]);
     expect(importMachines([])).toEqual([]);
   });
@@ -837,6 +862,7 @@ const WORDS: ReasonWords = {
   deleting: 'deleting',
   uploading: 'uploading',
   importing: 'importing',
+  updating: 'updating',
   unknown: 'unknown',
 };
 
@@ -859,6 +885,7 @@ describe('describeStatus — the reason, in one line', () => {
     expect(describeStatus({ ...base, phase: 'starting' }, WORDS)).toBe('starting');
     expect(describeStatus({ ...base, phase: 'uploading' }, WORDS)).toBe('uploading');
     expect(describeStatus({ ...base, phase: 'importing' }, WORDS)).toBe('importing');
+    expect(describeStatus({ ...base, phase: 'updating' }, WORDS)).toBe('updating');
   });
 
   it('names a failure that is not HTTP, and an HTTP failure without a status', () => {
@@ -902,5 +929,133 @@ describe('display helpers', () => {
     expect(slot('{w} のコードを表示', 'w')).toEqual(['', ' のコードを表示']);
     // A sentence without the slot takes the value after it.
     expect(slot('creó', 'w')).toEqual(['creó ', '']);
+  });
+});
+
+const ENGINE_OLD = 'ghcr.io/numengames/numinia-engine:sha-c57dbb7cc4c51b0834184f1dd47b311e47fde234';
+const RELEASE: EngineRelease = {
+  image: `ghcr.io/numengames/numinia-engine:sha-${'d'.repeat(40)}`,
+  commit: 'd'.repeat(40),
+  build: 'ddddddd 2026-10-16',
+  digest: `sha256:${'e'.repeat(64)}`,
+};
+
+describe('the Numinia Engine beside Hyperfy', () => {
+  it('lists the machine that runs the engine, with its provider host name', () => {
+    expect(FLEET_MACHINES.map((machine) => machine.alias)).toEqual(['open-1', 'bronte-xs-ca-003']);
+    expect(machineHost('bronte-xs-ca-003')).toBe('vps-1e2f105f.vps.ovh.ca');
+  });
+
+  it('knows an engine by its image’s repository in the house’s registry', () => {
+    expect(ENGINES).toEqual(['numinia-hyperfy2', 'numinia-engine']);
+    expect(engineOf(DEFAULT_IMAGE)).toBe('numinia-hyperfy2');
+    expect(engineOf(ENGINE_OLD)).toBe('numinia-engine');
+    expect(engineOf(`ghcr.io/numengames/numinia-engine@sha256:${'a'.repeat(64)}`)).toBe(
+      'numinia-engine',
+    );
+    for (const image of [
+      'ghcr.io/numengames/numinia-world:sha-0123456',
+      'ghcr.io/numengames/numinia-engine-dev:sha-0123456',
+      'ghcr.io/someone/numinia-engine:sha-0123456',
+      'ghcr.io/numengames/numinia-engine:latest',
+      '',
+    ]) {
+      expect(engineOf(image)).toBeNull();
+    }
+    expect(ENGINE_NAMES['numinia-engine']).toBe('Numinia Engine');
+    expect(engineTag(ENGINE_OLD)).toBe('Numinia Engine · sha-c57dbb7');
+    expect(engineTag(DEFAULT_IMAGE)).toBe('Hyperfy · sha-0e20453');
+    // An image of no known engine runs as Hyperfy on its machine.
+    expect(engineTag('ghcr.io/numengames/numinia-world:sha-0123456')).toBe('Hyperfy · sha-0123456');
+  });
+
+  it('offers the engines a door names, or Hyperfy alone when it names none', () => {
+    expect(machineEngines(undefined)).toEqual(['numinia-hyperfy2']);
+    expect(machineEngines({ engines: null })).toEqual(['numinia-hyperfy2']);
+    expect(machineEngines({})).toEqual(['numinia-hyperfy2']);
+    expect(machineEngines({ engines: ['numinia-hyperfy2', 'numinia-engine'] })).toEqual([
+      'numinia-hyperfy2',
+      'numinia-engine',
+    ]);
+  });
+
+  it('orders a new world only with an engine a machine runs (unknown-engine otherwise)', () => {
+    const base = { ...emptyDraft(), id: 'nuevo', card: 'nuevo', domain: 'nuevo.numinia.com' };
+    expect(draftToOrder({ ...base, image: ENGINE_OLD })).toMatchObject({
+      order: { image: ENGINE_OLD },
+    });
+    const other = draftToOrder({ ...base, image: 'ghcr.io/numengames/numinia-world:sha-0123456' });
+    expect('problems' in other && other.problems).toEqual(['image']);
+    const bad = draftToOrder({ ...base, image: 'nope' });
+    expect('problems' in bad && bad.problems.filter((p) => p === 'image')).toHaveLength(1);
+  });
+
+  it('reads the engine’s own /status: how many are in, never who', () => {
+    expect(
+      readProbe({ uptime: 5400, conectados: 3, commitHash: 'c'.repeat(40), version: 'x' }),
+    ).toEqual({ ok: true, users: 3, uptime: 5400, commit: 'ccccccc' });
+    expect(readProbe({ uptime: 1, conectados: 0 })).toEqual({
+      ok: true,
+      users: 0,
+      uptime: 1,
+      commit: null,
+    });
+    for (const conectados of [-1, 1.5, '3', null]) {
+      expect(readProbe({ uptime: 1, conectados })).toEqual({ ok: false, reason: 'shape' });
+    }
+    expect(readProbe({ uptime: '1', conectados: 2 })).toEqual({ ok: false, reason: 'shape' });
+  });
+
+  it('believes a release’s imagen.json only when every field has its exact shape', () => {
+    expect(readEngineRelease(RELEASE)).toEqual(RELEASE);
+    expect(readEngineRelease({ ...RELEASE, extra: 1 })).toEqual(RELEASE);
+    const broken: unknown[] = [
+      null,
+      [],
+      'x',
+      { ...RELEASE, image: 5 },
+      { ...RELEASE, commit: 5 },
+      // The image must be the one built from its commit.
+      { ...RELEASE, commit: 'f'.repeat(40) },
+      { ...RELEASE, image: `ghcr.io/numengames/numinia-hyperfy2:sha-${'d'.repeat(40)}` },
+      {
+        ...RELEASE,
+        image: `ghcr.io/numengames/numinia-engine:sha-${'d'.repeat(7)}`,
+        commit: 'd'.repeat(7),
+      },
+      { ...RELEASE, build: '' },
+      { ...RELEASE, build: 'a\nb' },
+      { ...RELEASE, build: 7 },
+      { ...RELEASE, digest: 'sha256:xyz' },
+      { ...RELEASE, digest: null },
+    ];
+    for (const body of broken) expect(readEngineRelease(body)).toBeNull();
+  });
+
+  it('offers «Actualizar» for a world of the engine on an older build, where its door takes updates', () => {
+    const world: WorldOrder = { ...VALID, server: 'bronte-xs-ca-003', image: ENGINE_OLD };
+    const door = { alias: 'bronte-xs-ca-003', open: true, updates: true };
+    expect(updateFor(world, [door], RELEASE)).toBe(RELEASE.image);
+    expect(updateFor(world, [door], null)).toBeNull();
+    expect(updateFor({ ...world, image: RELEASE.image }, [door], RELEASE)).toBeNull();
+    // Hyperfy worlds are not offered one by the room.
+    expect(updateFor({ ...world, image: DEFAULT_IMAGE }, [door], RELEASE)).toBeNull();
+    expect(updateFor(world, [{ ...door, updates: false }], RELEASE)).toBeNull();
+    expect(updateFor(world, [{ alias: 'bronte-xs-ca-003', open: true }], RELEASE)).toBeNull();
+    expect(updateFor(world, [{ ...door, open: false }], RELEASE)).toBeNull();
+    expect(updateFor(world, [], RELEASE)).toBeNull();
+    const rows = buildRows({
+      orders: [world, { ...VALID, id: 'plaza', card: 'plaza' }],
+      cards: [],
+      probes: {},
+      machines: [door],
+      engine: RELEASE,
+    });
+    expect(rows.map((row) => [row.id, row.update])).toEqual([
+      ['example-world', RELEASE.image],
+      ['plaza', null],
+    ]);
+    const quiet = buildRows({ orders: [world], cards: [], probes: {} });
+    expect(quiet[0]?.update).toBeNull();
   });
 });

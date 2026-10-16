@@ -794,6 +794,14 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     border-color: var(--ambar);
     box-shadow: 0 0 0 1px var(--ambar);
   }
+  /* The engine step: each engine the chosen machine runs, with the build it would get. */
+  [data-worlds-panel] .ficha-motor {
+    gap: var(--s1);
+    padding: var(--s2);
+  }
+  [data-worlds-panel] .ficha-motor:disabled {
+    cursor: not-allowed;
+  }
   [data-worlds-panel] .confirmacion {
     display: grid;
     grid-template-columns: 13rem minmax(0, 1fr);

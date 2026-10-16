@@ -6,7 +6,8 @@
  *
  * GET reads the fleet: each machine through its door (its worlds and their
  * phase, what it did — public facts, no key), cards and covers from the
- * Summa, liveness from each world's public /status. It writes nothing, and
+ * Summa, liveness from each world's public /status, and the Numinia
+ * Engine's newest published build. It writes nothing, and
  * there is nothing to write with: a change goes from the Oracle's browser
  * straight to the machine, signed by the Oracle's wallet, and the machine
  * checks the signature itself (lib/fleet.ts). This Worker holds no key to
@@ -24,12 +25,13 @@ import {
   FLEET_MACHINES,
   buildRows,
   worldCards,
+  type EngineRelease,
   type LegacyWorld,
   type Probe,
   type WorldCardInfo,
   type WorldFace,
 } from '../../../lib/worlds';
-import { probeFleet, probeWorlds, readFaces } from '../../../lib/worlds-source';
+import { latestEngine, probeFleet, probeWorlds, readFaces } from '../../../lib/worlds-source';
 
 export const prerender = false;
 
@@ -55,6 +57,8 @@ interface Fixture {
   readonly probes: Readonly<Record<string, Probe>>;
   readonly legacy: readonly LegacyWorld[];
   readonly faces: Readonly<Record<string, WorldFace>>;
+  /** The Numinia Engine's newest build, as its release would say. */
+  readonly engine?: EngineRelease | null;
 }
 const FIXTURE = fixtureFleet as unknown as Fixture;
 // The worlds the old machine runs by hand: watched, never changed.
@@ -70,20 +74,24 @@ export const GET: APIRoute = async ({ cookies }) => {
   let probes: Readonly<Record<string, Probe>>;
   let legacy: readonly LegacyWorld[];
   let faces: Readonly<Record<string, WorldFace>>;
+  let engine: EngineRelease | null;
   if (useFixture()) {
     views = FIXTURE.machines;
     cards = FIXTURE.cards;
     probes = FIXTURE.probes;
     legacy = FIXTURE.legacy;
     faces = FIXTURE.faces;
+    engine = FIXTURE.engine ?? null;
   } else {
-    const [read, summa] = await Promise.all([
+    const [read, summa, newest] = await Promise.all([
       Promise.all(FLEET_MACHINES.map((machine) => readMachine(fetch, machine.alias))),
       loadSumma(),
+      latestEngine(fetch),
     ]);
     views = read;
     cards = worldCards(summa.entities);
     legacy = LEGACY;
+    engine = newest;
     const { orders } = gatherFleet(views);
     // A world without a card is named and pictured by its own page.
     const carded = new Set(cards.map((card) => card.slug));
@@ -117,9 +125,14 @@ export const GET: APIRoute = async ({ cookies }) => {
         probes,
         legacy,
         faces,
+        machines: fleet.machines,
+        engine,
       }),
       cards,
       history: fleet.history,
+      // The Numinia Engine's newest build: what a new world of it, an import
+      // of its zip and «Actualizar» use; null while no release is published.
+      engine,
       readAt: new Date().toISOString(),
     },
     { headers: { 'cache-control': 'no-store' } },

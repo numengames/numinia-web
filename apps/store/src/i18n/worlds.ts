@@ -49,6 +49,8 @@ export interface WorldsRoomMessages {
     /** A world from its zip: the zip on its way, then its machine checking it. */
     readonly uploading: string;
     readonly importing: string;
+    /** A world moving to another build of its engine. */
+    readonly updating: string;
   };
   /** In place of a busy card's buttons. */
   readonly busyNote: string;
@@ -67,6 +69,7 @@ export interface WorldsRoomMessages {
     readonly deleting: string;
     readonly uploading: string;
     readonly importing: string;
+    readonly updating: string;
     readonly unknown: string;
   };
   readonly badges: {
@@ -91,6 +94,8 @@ export interface WorldsRoomMessages {
     readonly newWorld: string;
     /** Opens the system's file picker for a world's zip. */
     readonly importZip: string;
+    /** Moves a world of the Numinia Engine to its newest build. */
+    readonly update: string;
     readonly more: string;
     readonly less: string;
   };
@@ -117,6 +122,8 @@ export interface WorldsRoomMessages {
     readonly waiting: string;
     /** A world it is deleting, gone from the list: `{d}` its address. */
     readonly freeing: string;
+    /** The engines its door says it runs: `{e}`. */
+    readonly engines: string;
   };
   /** One signed request on its way: `{m}` is the machine. */
   readonly steps: {
@@ -149,6 +156,9 @@ export interface WorldsRoomMessages {
     readonly unreachable: string;
     readonly machine: string;
     readonly late: string;
+    /** A new world or an update names an engine the machine does not run, or another engine than its own. */
+    readonly unknownEngine: string;
+    readonly engineMismatch: string;
     readonly generic: string;
   };
   readonly wizard: {
@@ -182,6 +192,11 @@ export interface WorldsRoomMessages {
     readonly dnsUnknown: string;
     readonly imageLabel: string;
     readonly imageHint: string;
+    /** The engine step: the engines the chosen machine runs, `{m}`. */
+    readonly engineLabel: string;
+    readonly engineHint: string;
+    /** The Numinia Engine has no published release yet: the option stays off. */
+    readonly engineNoRelease: string;
     readonly memoryLabel: string;
     readonly cpusLabel: string;
     readonly uploadLabel: string;
@@ -242,6 +257,10 @@ export interface WorldsRoomMessages {
     readonly startConfirm: string;
     readonly deleteConfirm: string;
     readonly downloadConfirm: string;
+    /** Another build of its engine: `{from}` and `{to}` are the builds. */
+    readonly updateTitle: string;
+    readonly updateIntro: string;
+    readonly updateConfirm: string;
     /** Before signing, when the machine is not obeying: `{m}`. */
     readonly notObeying: string;
   };
@@ -311,6 +330,15 @@ export interface WorldsRoomMessages {
     readonly landedClose: string;
     /** A landed world's reason line, on its card. */
     readonly fromZip: string;
+    /** A Numinia Engine world's zip: `{v}` its version, `{n}` its files. */
+    readonly engineWorld: string;
+    readonly engineKeysNote: string;
+    /** No machine that takes zips runs the Numinia Engine. */
+    readonly noEngineMachine: string;
+    /** No published Numinia Engine build to order it with. */
+    readonly engineNoRelease: string;
+    /** The engine's own one line why it would not read the zip: `{why}`. */
+    readonly engineRefused: string;
     /** Before signing: what the room's own reading found, with its details (`{r}` a ratio). */
     readonly before: {
       readonly empty: string;
@@ -376,6 +404,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'Borrando…',
       uploading: 'Subiendo…',
       importing: 'Revisando…',
+      updating: 'Actualizando…',
     },
     busyNote: 'Suele tardar un minuto.',
     reasons: {
@@ -393,6 +422,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'su máquina lo está borrando',
       uploading: 'su zip está llegando a su máquina',
       importing: 'su máquina está revisando su zip',
+      updating: 'su máquina lo está pasando a otra versión del motor',
       unknown: 'todavía sin comprobar',
     },
     badges: {
@@ -417,6 +447,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       download: 'Descargar',
       newWorld: 'Nuevo mundo',
       importZip: 'Traer de un zip',
+      update: 'Actualizar',
       more: 'Ver {n} más',
       less: 'Ver menos',
     },
@@ -438,6 +469,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       lastRun: 'Su último trabajo terminó hace {t}.',
       waiting: 'Peticiones en espera: {n}.',
       freeing: 'Borrando {d}…',
+      engines: 'motores: {e}',
     },
     steps: {
       signing: 'Tu cartera te pide firmar…',
@@ -471,6 +503,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       unreachable: 'No se pudo hablar con {m}: no responde.',
       machine: '{m} lo intentó y no pudo ({rule}).',
       late: '{m} lo ha recibido, pero aún no ha terminado. Mira la sala en un minuto.',
+      unknownEngine: '{m} no ejecuta ese motor: elige Hyperfy o el Numinia Engine.',
+      engineMismatch: 'Esa versión es de otro motor: un mundo solo pasa a otra versión del suyo.',
       generic: '{m} no aceptó la petición ({code}).',
     },
     wizard: {
@@ -508,6 +542,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsUnknown: 'No se pudo comprobar a dónde apunta {d}; revísalo si el mundo no se abre.',
       imageLabel: 'Motor',
       imageHint: 'Una versión fijada del motor: etiqueta sha- o digest, nunca latest.',
+      engineLabel: 'Motor',
+      engineHint: 'Los motores que ejecuta {m}. La versión queda fijada en la orden.',
+      engineNoRelease: 'aún no hay versión publicada del motor',
       memoryLabel: 'Memoria',
       cpusLabel: 'CPU',
       uploadLabel: 'Subida máxima (MB)',
@@ -570,6 +607,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       startConfirm: 'Firmar y arrancar',
       deleteConfirm: 'Firmar y borrar',
       downloadConfirm: 'Firmar y preparar',
+      updateTitle: 'Actualizar {t}',
+      updateIntro:
+        '{t} pasa de la versión {from} a la {to} del Numinia Engine. La máquina descarga la nueva, guarda el mundo y lo reinicia con ella: quien esté dentro se desconecta unos segundos. Sus datos y su aventura se quedan.',
+      updateConfirm: 'Firmar y actualizar',
       notObeying: '{m} no obedece ahora mismo: tu petición esperará en su cola hasta que vuelva.',
     },
     copy: {
@@ -623,6 +664,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       landed: '{w} ya está en {m}, parado.',
       landedClose: 'Cerrar',
       fromZip: 'traído de un zip',
+      engineWorld: 'Mundo del Numinia Engine ({v}) · {n} archivos · {s}',
+      engineKeysNote:
+        'Del zip se usa el mundo (datos, aventura y entorno); nunca lleva claves: {m} hace claves nuevas.',
+      noEngineMachine: 'Ninguna máquina que traiga zips ejecuta todavía el Numinia Engine.',
+      engineNoRelease:
+        'Aún no hay versión publicada del motor: este zip todavía no se puede traer.',
+      engineRefused: 'El motor de {m} no lee este zip: {why}',
       before: {
         empty: 'El archivo está vacío.',
         several: 'Has soltado {n} archivos: trae uno solo.',
@@ -650,7 +698,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'file-too-big': 'Un archivo del zip pesa más de lo que {m} acepta por archivo.',
         ratio: 'El zip crecería demasiado al abrirlo: así son las «bombas zip». No se abre.',
         'unpacked-too-big': 'Abierto ocuparía más de lo que {m} acepta.',
-        'not-a-world': 'En el zip no hay un mundo: falta db.sqlite.',
+        'not-a-world':
+          'En el zip no hay un mundo: falta db.sqlite (Hyperfy) o mundo.json (Numinia Engine).',
         unexpected: 'El zip trae algo que un mundo no lleva.',
         'db-open':
           'La base de datos se copió con el mundo en marcha: descárgalo con Descargar o páralo antes de comprimirlo.',
@@ -658,6 +707,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'Un archivo no coincide con su huella en world.json: el zip se estropeó o lo cambiaron. Descárgalo otra vez.',
         'db-broken': 'La base de datos del zip está dañada: no pasa la comprobación.',
         'db-foreign': 'db.sqlite no es la base de datos de un mundo: no tiene sus tablas.',
+        'engine-refused': 'El motor de {m} no lee este zip.',
       },
     },
     history: {
@@ -675,6 +725,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowWorldCode: 'mostró el código de {w}',
         RotateWorldCode: 'cambió el código de {w}',
         ImportWorld: 'trajo {w}',
+        UpdateWorld: 'actualizó {w}',
       },
     },
     fieldNames: {
@@ -716,6 +767,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'Deleting…',
       uploading: 'Uploading…',
       importing: 'Checking…',
+      updating: 'Updating…',
     },
     busyNote: 'This usually takes about a minute.',
     reasons: {
@@ -733,6 +785,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'its machine is deleting it',
       uploading: 'its zip is reaching its machine',
       importing: 'its machine is checking its zip',
+      updating: 'its machine is moving it to another engine build',
       unknown: 'not checked yet',
     },
     badges: {
@@ -757,6 +810,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       download: 'Download',
       newWorld: 'New world',
       importZip: 'Bring from a zip',
+      update: 'Update',
       more: 'Show {n} more',
       less: 'Show less',
     },
@@ -778,6 +832,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       lastRun: 'Its last job ended {t} ago.',
       waiting: 'Requests waiting: {n}.',
       freeing: 'Deleting {d}…',
+      engines: 'engines: {e}',
     },
     steps: {
       signing: 'Your wallet asks you to sign…',
@@ -811,6 +866,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       unreachable: 'Could not reach {m}: it is not answering.',
       machine: '{m} tried and could not ({rule}).',
       late: '{m} received it but has not finished yet. Look at the room in a minute.',
+      unknownEngine: '{m} does not run that engine: choose Hyperfy or the Numinia Engine.',
+      engineMismatch:
+        'That build is of another engine: a world only moves to another build of its own.',
       generic: '{m} did not accept the request ({code}).',
     },
     wizard: {
@@ -848,6 +906,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsUnknown: 'Could not check where {d} points; check it if the world does not open.',
       imageLabel: 'Engine',
       imageHint: 'A pinned engine build: a sha- tag or a digest, never latest.',
+      engineLabel: 'Engine',
+      engineHint: 'The engines {m} runs. The build is pinned in the order.',
+      engineNoRelease: 'no engine version has been published yet',
       memoryLabel: 'Memory',
       cpusLabel: 'CPU',
       uploadLabel: 'Largest upload (MB)',
@@ -910,6 +971,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       startConfirm: 'Sign and start',
       deleteConfirm: 'Sign and delete',
       downloadConfirm: 'Sign and prepare',
+      updateTitle: 'Update {t}',
+      updateIntro:
+        '{t} moves from build {from} to build {to} of the Numinia Engine. The machine fetches the new build, saves the world and restarts it with it: anyone inside is disconnected for a few seconds. Its data and its adventure stay.',
+      updateConfirm: 'Sign and update',
       notObeying:
         '{m} is not obeying right now: your request will wait in its queue until it comes back.',
     },
@@ -965,6 +1030,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       landed: '{w} is now on {m}, stopped.',
       landedClose: 'Close',
       fromZip: 'brought back from a zip',
+      engineWorld: 'Numinia Engine world ({v}) · {n} files · {s}',
+      engineKeysNote:
+        'The world is taken from the zip (data, adventure and environment); it never carries keys: {m} makes new ones.',
+      noEngineMachine: 'No machine that takes zips runs the Numinia Engine yet.',
+      engineNoRelease:
+        'No engine version has been published yet: this zip cannot be brought back yet.',
+      engineRefused: 'The engine on {m} does not read this zip: {why}',
       before: {
         empty: 'The file is empty.',
         several: 'You dropped {n} files: bring just one.',
@@ -994,7 +1066,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ratio:
           'The zip would grow too much when opened: that is what “zip bombs” do. It is not opened.',
         'unpacked-too-big': 'Opened, it would take more than {m} accepts.',
-        'not-a-world': 'There is no world in the zip: db.sqlite is missing.',
+        'not-a-world':
+          'There is no world in the zip: db.sqlite (Hyperfy) or mundo.json (Numinia Engine) is missing.',
         unexpected: 'The zip carries something a world does not.',
         'db-open':
           'The database was copied while the world was running: get it with Download, or stop the world before zipping it.',
@@ -1002,6 +1075,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'A file does not match its fingerprint in world.json: the zip was damaged or changed. Download it again.',
         'db-broken': 'The zip’s database is damaged: it fails the check.',
         'db-foreign': 'db.sqlite is not a world’s database: it lacks its tables.',
+        'engine-refused': 'The engine on {m} does not read this zip.',
       },
     },
     history: {
@@ -1019,6 +1093,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowWorldCode: 'showed the code of {w}',
         RotateWorldCode: 'changed the code of {w}',
         ImportWorld: 'brought back {w}',
+        UpdateWorld: 'updated {w}',
       },
     },
     fieldNames: {
@@ -1061,6 +1136,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: '削除中…',
       uploading: 'アップロード中…',
       importing: '確認中…',
+      updating: '更新中…',
     },
     busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
@@ -1078,6 +1154,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'マシンが削除中',
       uploading: 'zip がマシンに届いているところ',
       importing: 'マシンが zip を確認中',
+      updating: 'マシンがエンジンの別のビルドへ移行中',
       unknown: 'まだ確認していません',
     },
     badges: {
@@ -1102,6 +1179,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       download: 'ダウンロード',
       newWorld: '新しいワールド',
       importZip: 'zip から戻す',
+      update: '更新',
       more: 'さらに {n} 件',
       less: '表示を減らす',
     },
@@ -1125,6 +1203,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       lastRun: '最後の作業が終わったのは {t} 前です。',
       waiting: '待機中のリクエスト：{n}。',
       freeing: '{d} を削除中…',
+      engines: 'エンジン：{e}',
     },
     steps: {
       signing: 'ウォレットが署名を求めています…',
@@ -1158,6 +1237,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       unreachable: '{m} と通信できませんでした。応答がありません。',
       machine: '{m} は試みましたが、できませんでした（{rule}）。',
       late: '{m} は受け取りましたが、まだ終わっていません。1 分後にルームを確認してください。',
+      unknownEngine:
+        '{m} はそのエンジンを実行しません：Hyperfy か Numinia Engine を選んでください。',
+      engineMismatch:
+        'そのビルドは別のエンジンのものです：ワールドは自分のエンジンの別のビルドにしか移れません。',
       generic: '{m} はリクエストを受け付けませんでした（{code}）。',
     },
     wizard: {
@@ -1194,6 +1277,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsUnknown: '{d} の向き先を確認できませんでした。ワールドが開かない場合は確認してください。',
       imageLabel: 'エンジン',
       imageHint: '固定されたエンジンのビルド：sha- タグかダイジェスト。latest は不可。',
+      engineLabel: 'エンジン',
+      engineHint: '{m} が実行するエンジン。ビルドはオーダーに固定されます。',
+      engineNoRelease: 'エンジンの公開版はまだありません',
       memoryLabel: 'メモリ',
       cpusLabel: 'CPU',
       uploadLabel: '最大アップロード (MB)',
@@ -1254,6 +1340,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       startConfirm: '署名して起動',
       deleteConfirm: '署名して削除',
       downloadConfirm: '署名して準備',
+      updateTitle: '{t} を更新',
+      updateIntro:
+        '{t} は Numinia Engine のビルド {from} から {to} に移ります。マシンが新しいビルドを取得し、ワールドを保存して再起動します：中にいる人は数秒切断されます。データとアドベンチャーはそのまま残ります。',
+      updateConfirm: '署名して更新',
       notObeying: '{m} はいま指示どおりに動いていません：リクエストは戻るまでキューで待ちます。',
     },
     copy: {
@@ -1308,6 +1398,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       landed: '{w} は {m} に戻りました（停止中）。',
       landedClose: '閉じる',
       fromZip: 'zip から戻したワールド',
+      engineWorld: 'Numinia Engine のワールド（{v}）· {n} ファイル · {s}',
+      engineKeysNote:
+        'zip からはワールド（データ、アドベンチャー、環境）を使います。鍵は入っていません：{m} が新しい鍵を作ります。',
+      noEngineMachine: 'zip を受け付けるマシンで Numinia Engine を実行するものはまだありません。',
+      engineNoRelease: 'エンジンの公開版がまだありません：この zip はまだ戻せません。',
+      engineRefused: '{m} のエンジンはこの zip を読めません：{why}',
       before: {
         empty: 'ファイルが空です。',
         several: '{n} 個のファイルがドロップされました。1 つだけにしてください。',
@@ -1338,7 +1434,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'zip の中に、{m} が 1 ファイルあたりに受け付けるサイズを超えるファイルがあります。',
         ratio: '展開すると大きくなりすぎます。「zip 爆弾」の手口です。開きません。',
         'unpacked-too-big': '展開すると {m} が受け付ける容量を超えます。',
-        'not-a-world': 'zip にワールドがありません。db.sqlite がありません。',
+        'not-a-world':
+          'zip にワールドがありません。db.sqlite（Hyperfy）か mundo.json（Numinia Engine）がありません。',
         unexpected: 'zip にワールドには含まれないものがあります。',
         'db-open':
           'ワールドの稼働中にデータベースがコピーされています。「ダウンロード」で取得するか、停止してから圧縮してください。',
@@ -1347,6 +1444,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'db-broken': 'zip のデータベースが壊れています。検査に通りません。',
         'db-foreign':
           'db.sqlite はワールドのデータベースではありません。必要なテーブルがありません。',
+        'engine-refused': '{m} のエンジンはこの zip を読めません。',
       },
     },
     history: {
@@ -1364,6 +1462,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowWorldCode: '{w} のコードを表示',
         RotateWorldCode: '{w} のコードを変更',
         ImportWorld: '{w} を zip から戻した',
+        UpdateWorld: '{w} を更新した',
       },
     },
     fieldNames: {
@@ -1405,6 +1504,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: '삭제하는 중…',
       uploading: '업로드하는 중…',
       importing: '확인하는 중…',
+      updating: '업데이트하는 중…',
     },
     busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
@@ -1422,6 +1522,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: '머신이 삭제하는 중',
       uploading: 'zip이 머신에 도착하는 중',
       importing: '머신이 zip을 확인하는 중',
+      updating: '머신이 다른 엔진 빌드로 옮기는 중',
       unknown: '아직 확인하지 않음',
     },
     badges: {
@@ -1446,6 +1547,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       download: '다운로드',
       newWorld: '새 월드',
       importZip: 'zip에서 가져오기',
+      update: '업데이트',
       more: '{n}개 더 보기',
       less: '접기',
     },
@@ -1469,6 +1571,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       lastRun: '마지막 작업은 {t} 전에 끝났습니다.',
       waiting: '대기 중인 요청: {n}.',
       freeing: '{d} 삭제 중…',
+      engines: '엔진: {e}',
     },
     steps: {
       signing: '지갑이 서명을 요청합니다…',
@@ -1501,6 +1604,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       unreachable: '{m}에 연결할 수 없습니다. 응답이 없습니다.',
       machine: '{m}이(가) 시도했지만 할 수 없었습니다 ({rule}).',
       late: '{m}이(가) 받았지만 아직 끝나지 않았습니다. 1분 뒤에 방을 보세요.',
+      unknownEngine: '{m}은(는) 그 엔진을 실행하지 않습니다. Hyperfy나 Numinia Engine을 고르세요.',
+      engineMismatch:
+        '그 빌드는 다른 엔진의 것입니다. 월드는 자기 엔진의 다른 빌드로만 옮길 수 있습니다.',
       generic: '{m}이(가) 요청을 받지 않았습니다 ({code}).',
     },
     wizard: {
@@ -1537,6 +1643,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsUnknown: '{d}이(가) 가리키는 곳을 확인하지 못했습니다. 월드가 열리지 않으면 확인하세요.',
       imageLabel: '엔진',
       imageHint: '고정된 엔진 빌드: sha- 태그나 다이제스트, latest는 안 됩니다.',
+      engineLabel: '엔진',
+      engineHint: '{m}이(가) 실행하는 엔진. 빌드는 주문에 고정됩니다.',
+      engineNoRelease: '아직 공개된 엔진 버전이 없습니다',
       memoryLabel: '메모리',
       cpusLabel: 'CPU',
       uploadLabel: '최대 업로드 (MB)',
@@ -1598,6 +1707,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       startConfirm: '서명하고 시작',
       deleteConfirm: '서명하고 삭제',
       downloadConfirm: '서명하고 준비',
+      updateTitle: '{t} 업데이트',
+      updateIntro:
+        '{t}은(는) Numinia Engine 빌드 {from}에서 {to}(으)로 옮깁니다. 머신이 새 빌드를 받고, 월드를 저장한 뒤 새 빌드로 다시 시작합니다. 안에 있는 사람은 몇 초 동안 연결이 끊깁니다. 데이터와 어드벤처는 그대로 남습니다.',
+      updateConfirm: '서명하고 업데이트',
       notObeying:
         '{m}이(가) 지금 명령을 따르지 않습니다: 요청은 돌아올 때까지 대기열에서 기다립니다.',
     },
@@ -1652,6 +1765,12 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       landed: '{w}이(가) {m}에 왔습니다. 정지 상태입니다.',
       landedClose: '닫기',
       fromZip: 'zip에서 가져옴',
+      engineWorld: 'Numinia Engine 월드({v}) · 파일 {n}개 · {s}',
+      engineKeysNote:
+        'zip에서는 월드(데이터, 어드벤처, 환경)를 씁니다. 키는 들어 있지 않습니다. {m}이(가) 새 키를 만듭니다.',
+      noEngineMachine: 'zip을 받는 머신 중 Numinia Engine을 실행하는 머신이 아직 없습니다.',
+      engineNoRelease: '아직 공개된 엔진 버전이 없습니다. 이 zip은 아직 가져올 수 없습니다.',
+      engineRefused: '{m}의 엔진이 이 zip을 읽지 못합니다: {why}',
       before: {
         empty: '파일이 비어 있습니다.',
         several: '파일 {n}개를 놓았습니다. 하나만 가져오세요.',
@@ -1679,7 +1798,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'file-too-big': 'zip 안에 {m}이(가) 파일 하나당 받는 크기보다 큰 파일이 있습니다.',
         ratio: '열면 너무 커집니다. “zip 폭탄”의 방식입니다. 열지 않습니다.',
         'unpacked-too-big': '열면 {m}이(가) 받는 용량을 넘습니다.',
-        'not-a-world': 'zip에 월드가 없습니다. db.sqlite가 없습니다.',
+        'not-a-world':
+          'zip에 월드가 없습니다. db.sqlite(Hyperfy)나 mundo.json(Numinia Engine)이 없습니다.',
         unexpected: 'zip에 월드에 없는 것이 들어 있습니다.',
         'db-open':
           '월드가 실행 중일 때 데이터베이스가 복사되었습니다. 다운로드로 받거나, 월드를 정지한 뒤 압축하세요.',
@@ -1687,6 +1807,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'world.json의 지문과 맞지 않는 파일이 있습니다. zip이 손상되었거나 바뀌었습니다. 다시 다운로드하세요.',
         'db-broken': 'zip의 데이터베이스가 손상되었습니다. 검사를 통과하지 못합니다.',
         'db-foreign': 'db.sqlite는 월드의 데이터베이스가 아닙니다. 필요한 테이블이 없습니다.',
+        'engine-refused': '{m}의 엔진이 이 zip을 읽지 못합니다.',
       },
     },
     history: {
@@ -1704,6 +1825,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowWorldCode: '{w}의 코드 표시',
         RotateWorldCode: '{w}의 코드 변경',
         ImportWorld: '{w}을(를) zip에서 가져옴',
+        UpdateWorld: '{w} 업데이트함',
       },
     },
     fieldNames: {
@@ -1750,6 +1872,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'Apagando…',
       uploading: 'Enviando…',
       importing: 'Revisando…',
+      updating: 'Atualizando…',
     },
     busyNote: 'Costuma levar um minuto.',
     reasons: {
@@ -1767,6 +1890,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       deleting: 'sua máquina está apagando',
       uploading: 'o zip está chegando à máquina',
       importing: 'a máquina está revisando o zip',
+      updating: 'a máquina está passando o mundo para outra versão do motor',
       unknown: 'ainda não verificado',
     },
     badges: {
@@ -1791,6 +1915,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       download: 'Baixar',
       newWorld: 'Novo mundo',
       importZip: 'Trazer de um zip',
+      update: 'Atualizar',
       more: 'Ver mais {n}',
       less: 'Ver menos',
     },
@@ -1812,6 +1937,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       lastRun: 'Seu último trabalho terminou há {t}.',
       waiting: 'Pedidos em espera: {n}.',
       freeing: 'Apagando {d}…',
+      engines: 'motores: {e}',
     },
     steps: {
       signing: 'Sua carteira pede que você assine…',
@@ -1844,6 +1970,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       unreachable: 'Não foi possível falar com {m}: não responde.',
       machine: '{m} tentou e não conseguiu ({rule}).',
       late: '{m} recebeu, mas ainda não terminou. Olhe a sala daqui a um minuto.',
+      unknownEngine: '{m} não roda esse motor: escolha Hyperfy ou o Numinia Engine.',
+      engineMismatch: 'Essa versão é de outro motor: um mundo só passa para outra versão do seu.',
       generic: '{m} não aceitou o pedido ({code}).',
     },
     wizard: {
@@ -1880,6 +2008,9 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       dnsUnknown: 'Não foi possível verificar para onde {d} aponta; confira se o mundo não abrir.',
       imageLabel: 'Motor',
       imageHint: 'Uma versão fixa do motor: etiqueta sha- ou digest, nunca latest.',
+      engineLabel: 'Motor',
+      engineHint: 'Os motores que {m} roda. A versão fica fixada na ordem.',
+      engineNoRelease: 'ainda não há versão publicada do motor',
       memoryLabel: 'Memória',
       cpusLabel: 'CPU',
       uploadLabel: 'Envio máximo (MB)',
@@ -1941,6 +2072,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       startConfirm: 'Assinar e iniciar',
       deleteConfirm: 'Assinar e apagar',
       downloadConfirm: 'Assinar e preparar',
+      updateTitle: 'Atualizar {t}',
+      updateIntro:
+        '{t} passa da versão {from} para a {to} do Numinia Engine. A máquina baixa a nova, salva o mundo e o reinicia com ela: quem estiver dentro se desconecta por alguns segundos. Os dados e a aventura ficam.',
+      updateConfirm: 'Assinar e atualizar',
       notObeying: '{m} não obedece agora: seu pedido vai esperar na fila até ela voltar.',
     },
     copy: {
@@ -1995,6 +2130,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       landed: '{w} já está em {m}, parado.',
       landedClose: 'Fechar',
       fromZip: 'trazido de um zip',
+      engineWorld: 'Mundo do Numinia Engine ({v}) · {n} arquivos · {s}',
+      engineKeysNote:
+        'Do zip se usa o mundo (dados, aventura e ambiente); ele nunca leva chaves: {m} faz chaves novas.',
+      noEngineMachine: 'Nenhuma máquina que recebe zips roda o Numinia Engine ainda.',
+      engineNoRelease:
+        'Ainda não há versão publicada do motor: este zip ainda não pode ser trazido.',
+      engineRefused: 'O motor de {m} não lê este zip: {why}',
       before: {
         empty: 'O arquivo está vazio.',
         several: 'Você soltou {n} arquivos: traga só um.',
@@ -2024,7 +2166,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ratio:
           'O zip cresceria demais ao ser aberto: é assim que funcionam as “bombas zip”. Não é aberto.',
         'unpacked-too-big': 'Aberto, ocuparia mais do que {m} aceita.',
-        'not-a-world': 'Não há um mundo no zip: falta o db.sqlite.',
+        'not-a-world':
+          'Não há um mundo no zip: falta o db.sqlite (Hyperfy) ou o mundo.json (Numinia Engine).',
         unexpected: 'O zip traz algo que um mundo não leva.',
         'db-open':
           'O banco de dados foi copiado com o mundo em funcionamento: baixe-o com Baixar ou pare-o antes de compactá-lo.',
@@ -2032,6 +2175,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'Um arquivo não confere com a sua impressão em world.json: o zip se danificou ou foi alterado. Baixe-o de novo.',
         'db-broken': 'O banco de dados do zip está danificado: não passa na verificação.',
         'db-foreign': 'db.sqlite não é o banco de dados de um mundo: faltam as suas tabelas.',
+        'engine-refused': 'O motor de {m} não lê este zip.',
       },
     },
     history: {
@@ -2049,6 +2193,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ShowWorldCode: 'mostrou o código de {w}',
         RotateWorldCode: 'trocou o código de {w}',
         ImportWorld: 'trouxe {w}',
+        UpdateWorld: 'atualizou {w}',
       },
     },
     fieldNames: {

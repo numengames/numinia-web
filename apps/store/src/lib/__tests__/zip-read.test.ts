@@ -9,10 +9,13 @@
 import { deflateRawSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 import {
+  ENGINE_SCHEMAS,
   HASH_CHUNK,
   ZIP_CAPS,
+  checkEntries,
   checkZip,
   digestChunks,
+  engineRoot,
   inspectZip,
   notRegular,
   readEntry,
@@ -505,6 +508,8 @@ describe('inspectZip — what the room says about a zip', () => {
     expect(inspection).toEqual({
       ok: true,
       reading: {
+        engine: 'numinia-hyperfy2',
+        schema: null,
         root: 'world/',
         files: 4,
         unpacked: expect.any(Number),
@@ -630,5 +635,112 @@ describe('small words and the fingerprint’s slices', () => {
     await digestChunks(file, (slice) => whole.push(slice.byteLength));
     expect(whole).toEqual([10]);
     expect(HASH_CHUNK).toBe(8 * 1024 ** 2);
+  });
+});
+
+describe('a Numinia Engine world’s zip — the rules every zip keeps, then its manifest', () => {
+  const MUNDO2 = JSON.stringify({
+    esquema: 'numinia-engine/mundo@2',
+    motor: { build: 'c57dbb7 2026-10-16', commit: null, imagen: null },
+    creado: '2026-10-16T09:00:00Z',
+    ficheros: [{ ruta: 'datos/objetos.json', bytes: 2, sha256: 'a'.repeat(64) }],
+  });
+  const MUNDO1 = JSON.stringify({
+    schema: 'numinia-engine/mundo@1',
+    motor: 'motor-c16624d',
+    hecho: '2026-10-10T08:00:00Z',
+    ficheros: [],
+  });
+
+  it('reads a mundo@2 zip at its root, with its run-it-yourself extras, as the engine’s', async () => {
+    const zip = makeZip([
+      { name: 'mundo.json', data: MUNDO2 },
+      { name: 'datos/', data: '' },
+      { name: 'datos/objetos.json', data: '[]' },
+      { name: 'aventura/misiones/una.json', data: '{}' },
+      { name: 'compose.yml', data: 'services: {}' },
+      { name: 'LEEME.txt', data: 'hola' },
+    ]);
+    expect(await inspectZip(zip)).toEqual({
+      ok: true,
+      reading: {
+        engine: 'numinia-engine',
+        schema: 'numinia-engine/mundo@2',
+        root: '',
+        files: 5,
+        unpacked: expect.any(Number),
+        world: null,
+        copiedAt: '2026-10-16T09:00:00Z',
+        engineBytes: 0,
+      },
+    });
+  });
+
+  it('reads the first version (mundo@1) inside one folder, as the engine still does', async () => {
+    const zip = makeZip([
+      { name: 'copia/mundo.json', data: MUNDO1, deflate: true },
+      { name: 'copia/datos/misiones.jsonl', data: '{}\n' },
+    ]);
+    expect(await inspectZip(zip)).toMatchObject({
+      ok: true,
+      reading: {
+        engine: 'numinia-engine',
+        schema: 'numinia-engine/mundo@1',
+        root: 'copia/',
+        files: 2,
+        copiedAt: '2026-10-10T08:00:00Z',
+      },
+    });
+    const undated = makeZip([
+      { name: 'mundo.json', data: JSON.stringify({ ...JSON.parse(MUNDO2), creado: 'ayer' }) },
+    ]);
+    expect(await inspectZip(undated)).toMatchObject({ ok: true, reading: { copiedAt: null } });
+  });
+
+  it('is not a world without exactly one manifest the engine reads', async () => {
+    const notAWorld = { ok: false, problem: { rule: 'not-a-world', entry: null, amount: null } };
+    const cases: Spec[][] = [
+      [{ name: 'datos/objetos.json', data: '[]' }],
+      [
+        { name: 'a/mundo.json', data: MUNDO2 },
+        { name: 'b/mundo.json', data: MUNDO2 },
+      ],
+      [{ name: 'a/b/mundo.json', data: MUNDO2 }],
+      [{ name: 'mundo.json', data: 'not json' }],
+      [{ name: 'mundo.json', data: '[]' }],
+      [
+        {
+          name: 'mundo.json',
+          data: JSON.stringify({ esquema: 'numinia-engine/mundo@3', ficheros: [] }),
+        },
+      ],
+      [{ name: 'mundo.json', data: JSON.stringify({ esquema: 'numinia-engine/mundo@2' }) }],
+      [
+        {
+          name: 'mundo.json',
+          data: JSON.stringify({ schema: 'numinia-engine/mundo@2', ficheros: [] }),
+        },
+      ],
+      // A manifest that claims more than it holds is not read.
+      [{ name: 'mundo.json', data: MUNDO2, size: 17 * 1024 ** 2, compressed: 17 * 1024 ** 2 }],
+    ];
+    for (const specs of cases) expect(await inspectZip(makeZip(specs))).toEqual(notAWorld);
+    expect(engineRoot([{ name: 'mundo.json' }])).toBe('');
+    expect(engineRoot([{ name: 'x/mundo.json' }, { name: 'x/datos/a.json' }])).toBe('x/');
+    expect(engineRoot([{ name: 'mundo.json' }, { name: 'x/mundo.json' }])).toBeNull();
+    expect(ENGINE_SCHEMAS).toEqual(['numinia-engine/mundo@1', 'numinia-engine/mundo@2']);
+  });
+
+  it('keeps the rules every zip keeps before the manifest, and leaves the engine’s own to its engine', async () => {
+    const slipped = makeZip([
+      { name: 'mundo.json', data: MUNDO2 },
+      { name: '../fuera.json', data: '{}' },
+    ]);
+    expect(await inspectZip(slipped)).toMatchObject({
+      ok: false,
+      problem: { rule: 'zip-slip', entry: '../fuera.json' },
+    });
+    expect(checkEntries([entry('mundo.json'), entry('datos/a.json')])).toBeNull();
+    expect(checkEntries([entry('mundo.json', { flags: 1 })])).toMatchObject({ rule: 'encrypted' });
   });
 });

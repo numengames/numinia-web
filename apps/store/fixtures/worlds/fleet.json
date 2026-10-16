@@ -1,5 +1,5 @@
 {
-  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on two imaginary machines whose doors answer and a third whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none and takes no zips. Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on three imaginary machines whose doors answer and a fourth whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none and takes no zips. Neither names its engines, so they run Hyperfy alone; bronte-xs-ca-003's door names both (`engines`) and takes updates (`updates`): `atrium` runs an older Numinia Engine build than the newest release (`engine`, imaginary like every build here), so the room offers to update it, and `lantern-hall` is being moved to that build (`updating`). Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
   "machines": [
     {
       "alias": "open-1",
@@ -173,7 +173,7 @@
         "waiting": { "requests": 1, "since": "2026-10-12T09:44:50Z" }
       },
       "listens": ["events"],
-      "recipe": "9eb226f0bb94db898527fae14699800996da7036",
+      "recipe": "880ff114c8cf2b4f4705300e8bc0224c7dbf0a41",
       "imports": { "zipMaxBytes": 2147483648 }
     },
     {
@@ -253,6 +253,62 @@
       "listens": [],
       "recipe": null
     },
+    {
+      "alias": "bronte-xs-ca-003",
+      "open": true,
+      "worlds": [
+        {
+          "id": "atrium",
+          "phase": "running",
+          "domain": "atrium.numinia.com",
+          "order": {
+            "id": "atrium",
+            "card": "atrium",
+            "state": "running",
+            "server": "bronte-xs-ca-003",
+            "domain": "atrium.numinia.com",
+            "image": "ghcr.io/numengames/numinia-engine:sha-c57dbb7cc4c51b0834184f1dd47b311e47fde234",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        },
+        {
+          "id": "lantern-hall",
+          "phase": "updating",
+          "domain": "lantern.numinia.com",
+          "order": {
+            "id": "lantern-hall",
+            "card": "lantern-hall",
+            "state": "running",
+            "server": "bronte-xs-ca-003",
+            "domain": "lantern.numinia.com",
+            "image": "ghcr.io/numengames/numinia-engine:sha-0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+            "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          }
+        }
+      ],
+      "log": [
+        {
+          "machine": "bronte-xs-ca-003",
+          "at": "2026-10-12T09:40:00Z",
+          "type": "UpdateWorld",
+          "world": "atrium",
+          "by": "0x42e6…ca26",
+          "state": "done",
+          "rule": null,
+          "took": 21
+        }
+      ],
+      "heartbeat": {
+        "at": "2026-10-12T09:45:00Z",
+        "lastRun": { "at": "2026-10-12T09:44:40Z", "ok": true, "rule": null },
+        "waiting": { "requests": 0, "since": null }
+      },
+      "listens": ["events"],
+      "recipe": "880ff114c8cf2b4f4705300e8bc0224c7dbf0a41",
+      "imports": { "zipMaxBytes": 2147483648 },
+      "engines": ["numinia-hyperfy2", "numinia-engine"],
+      "updates": true
+    },
     { "alias": "open-3", "open": false, "reason": "timeout" }
   ],
   "legacy": [
@@ -282,6 +338,13 @@
     "atlantis-library": { "ok": true, "users": 0, "uptime": 190800, "commit": "0e20453" },
     "alchemists-tower": { "ok": true, "users": 1, "uptime": 2700, "commit": "5091ad9" },
     "forge": { "ok": true, "users": 0, "uptime": 86400, "commit": "0e20453" },
-    "cosmos-gate": { "ok": false, "reason": "http", "status": 502 }
+    "cosmos-gate": { "ok": false, "reason": "http", "status": 502 },
+    "atrium": { "ok": true, "users": 3, "uptime": 5400, "commit": "c57dbb7" }
+  },
+  "engine": {
+    "image": "ghcr.io/numengames/numinia-engine:sha-0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+    "commit": "0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+    "build": "0d15ea5 2026-10-16",
+    "digest": "sha256:5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed"
   }
 }
