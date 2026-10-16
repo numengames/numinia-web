@@ -1,7 +1,8 @@
 ---
 /**
  * «El panel»: an organization's panel — the screen the account menu's
- * «Paneles» opens. Four faces of one frame: `summary` (Resumen), `members`
+ * «Paneles» opens. Five faces of one frame: `summary` (Resumen), `venues`
+ * (Sedes: ./PanelSedes.tsx, the organization's worlds), `members`
  * (Miembros), `roles` (Roles) and `balance` (Saldo y consumo); the people's
  * two are «La gente» (./PanelMiembros.tsx, ./PanelRoles.tsx), the balance
  * hosts the screen Saldo already has, for the organization the address
@@ -17,12 +18,14 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PANEL_UI } from '../../i18n/panel';
+import { MUNDOS_UI } from '../../i18n/mundos';
 import { PEOPLE_UI } from '../../i18n/panel-people';
 import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
 import { PanelRoles } from './PanelRoles';
+import { PanelSedes } from './PanelSedes';
 import PanelSummary from './PanelSummary.astro';
 import { PanelSaldo } from './PanelSaldo';
 import '../saldo/saldo.css';
@@ -55,6 +58,18 @@ const homeHref = localeHref(locale, '/panel/');
   {
     face === 'summary' && (
       <PanelSummary locale={locale} words={words} signIn={signIn} saldoHref={saldoHref} />
+    )
+  }
+  {
+    face === 'venues' && (
+      <PanelSedes
+        client:load
+        locale={locale}
+        words={words}
+        signIn={signIn}
+        saldoHref={saldoHref}
+        venues={MUNDOS_UI[locale].venues}
+      />
     )
   }
   {

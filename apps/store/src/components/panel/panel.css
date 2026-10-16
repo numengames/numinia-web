@@ -1171,3 +1171,67 @@
   background: var(--linea-f);
   outline: 1px solid var(--linea);
 }
+
+/* ---- «Sedes»: the organization's worlds (cut 4) ------------------------ */
+/* One card per world: the glyph, its name in mono and the way to its page.
+   Secondary words are --texto-2 (AA on a card); every grid child may shrink. */
+.sedes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+.sedes-cuenta {
+  margin: 0;
+  color: var(--texto-2);
+}
+.sedes-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+}
+.sedes-ficha {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s4);
+  color: var(--texto-2);
+}
+.sedes-icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--texto);
+  background: var(--elevada);
+  border-radius: var(--radio-control);
+}
+.sedes-cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+.sedes-nombre {
+  overflow-wrap: anywhere;
+  font-weight: 500;
+  color: var(--texto);
+}
+.sedes-ficha .btn {
+  flex: none;
+  text-decoration: none;
+}
+@media (max-width: 600px) {
+  .sedes-ficha {
+    flex-wrap: wrap;
+  }
+  .sedes-ficha .btn {
+    margin-left: auto;
+  }
+}

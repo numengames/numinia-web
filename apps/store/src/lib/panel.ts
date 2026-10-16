@@ -45,9 +45,9 @@ export type PieceIcon =
 type PieceKind = 'built' | 'soon' | 'room';
 
 /** The screens that exist: the face a page of the panel draws. */
-export type BuiltPiece = 'summary' | 'members' | 'roles' | 'balance';
+export type BuiltPiece = 'summary' | 'venues' | 'members' | 'roles' | 'balance';
 /** The pieces still to be built: drawn under construction, never a link. */
-export type SoonPiece = 'venues' | 'gatherings' | 'agents' | 'memory' | 'bazaar' | 'settings';
+export type SoonPiece = 'gatherings' | 'agents' | 'memory' | 'bazaar' | 'settings';
 /** The Oracle's rooms, the LAP's own. */
 export type RoomPiece = 'census' | 'worlds' | 'prices' | 'assets';
 /** The organization's own ten pieces. */
@@ -78,13 +78,13 @@ export interface RoomEntry extends Piece {
 
 /**
  * The organization's ten pieces, in the order of the prototype (the working
- * ones are drawn among the rest). Four are built, with Spanish slugs like
- * Saldo's — Roles right under Miembros, as the prototype has them; six are
+ * ones are drawn among the rest). Five are built, with Spanish slugs like
+ * Saldo's — Roles right under Miembros, as the prototype has them; five are
  * drawn under construction and lead nowhere.
  */
 export const PIECES: readonly OrgEntry[] = [
   { id: 'summary', kind: 'built', path: ROOT, icon: 'house' },
-  { id: 'venues', kind: 'soon', path: null, icon: 'buildings' },
+  { id: 'venues', kind: 'built', path: `${ROOT}sedes/`, icon: 'buildings' },
   { id: 'gatherings', kind: 'soon', path: null, icon: 'calendar-blank' },
   { id: 'members', kind: 'built', path: `${ROOT}miembros/`, icon: 'users-three' },
   { id: 'roles', kind: 'built', path: `${ROOT}roles/`, icon: 'shield-check' },
