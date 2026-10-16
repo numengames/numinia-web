@@ -49,10 +49,12 @@ import {
   readSessionId,
   readTeamName,
   readWallet,
+  paceOf,
   spendBuckets,
   worldsOver,
   type AmountKey,
   type DaySpend,
+  type Pace,
   type SpendBucket,
   type SpendRange,
   type TeamRole,
@@ -194,6 +196,8 @@ export interface Statement {
   readonly spendTotalCents: number;
   /** Each world with a day in the range: its size, the days it ran, what it cost. */
   readonly worlds: readonly WorldSpend[];
+  /** The 7 complete days before today and the month so far, whatever the range. */
+  readonly pace: Pace;
   /** The tariff in force today for the sizes in use; absent while none is in force. */
   readonly tariff?: StatementTariff;
   /** The last 100 lines, newest first. */
@@ -919,6 +923,7 @@ export async function statement(
     days.map((line) => daySpendOf(line, versions)),
   );
   const tariff = statementTariff(versions, today, sizesInUse(days));
+  const uses = days.map(worldDayUseOf);
   const answer: Statement = {
     ok: true,
     account,
@@ -927,7 +932,8 @@ export async function statement(
     lots: lotsAt(lines, now.toISOString()).lots.map((lot) => ({ ...lot })),
     spend,
     spendTotalCents: spend.reduce((sum, bucket) => sum + bucket.cents, 0),
-    worlds: worldsOver(range, today, days.map(worldDayUseOf)),
+    worlds: worldsOver(range, today, uses),
+    pace: paceOf(today, uses),
     ...(tariff === undefined ? {} : { tariff }),
     lines: [...lines]
       .sort((a, b) => compareLines(b, a))

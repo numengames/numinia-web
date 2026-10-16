@@ -242,3 +242,30 @@ export function worldsOver(
     .map(([worldId, { size, daysRunning, cents }]) => ({ worldId, size, daysRunning, cents }))
     .sort((a, b) => b.cents - a.cents || (a.worldId < b.worldId ? -1 : 1));
 }
+
+/**
+ * What the Saldo screen reads whatever the range: the spend of the 7
+ * complete UTC days before `today` (today is not over yet), and of the
+ * current UTC month so far with how many worlds a day of it charged.
+ */
+export interface Pace {
+  readonly sevenDaysCents: number;
+  readonly monthCents: number;
+  readonly monthWorlds: number;
+}
+
+export function paceOf(today: string, days: readonly WorldDayUse[]): Pace {
+  const end = Date.parse(`${today}T00:00:00.000Z`);
+  const weekStart = new Date(end - 7 * 86_400_000).toISOString().slice(0, 10);
+  const month = today.slice(0, 7);
+  let sevenDaysCents = 0;
+  let monthCents = 0;
+  const charged = new Set<string>();
+  for (const day of days) {
+    if (day.day >= weekStart && day.day < today) sevenDaysCents += day.cents;
+    if (day.day.slice(0, 7) !== month) continue;
+    monthCents += day.cents;
+    if (day.cents > 0) charged.add(day.worldId);
+  }
+  return { sevenDaysCents, monthCents, monthWorlds: charged.size };
+}
