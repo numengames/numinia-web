@@ -116,6 +116,7 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The header's account menu: `chrome-balance` (Tu saldo), `chrome-panel-org`
 //   (one door per organization the person belongs to); `chrome-panels` stays as
 //   the generic door while the list is not known.
+// - The panel's Gente: `panel-nav-gente` (its rail door), `panel-gente-retry`.
 
 // ---- W12 «Ajustes de la comunidad, Qué ha pasado y Sede completa» (cut 8, 2026-10-16) ----
 // No new event and no new prop: each travels as `cta_click.metricId`.

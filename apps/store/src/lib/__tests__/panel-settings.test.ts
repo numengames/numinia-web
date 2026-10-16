@@ -16,7 +16,7 @@ import { PIECES } from '../panel';
 
 describe('which pieces may be turned off', () => {
   it('are built pieces other than the summary and the settings', () => {
-    expect([...SWITCHABLE_PIECES]).toEqual(['venues', 'members', 'roles', 'balance']);
+    expect([...SWITCHABLE_PIECES]).toEqual(['venues', 'members', 'gente', 'roles', 'balance']);
     for (const id of SWITCHABLE_PIECES) {
       expect(PIECES.find((piece) => piece.id === id)?.kind).toBe('built');
     }

@@ -19,7 +19,7 @@ import type { PanelMessages } from '../i18n/panel';
 import type { OrgPiece } from './panel';
 
 /** The pieces an organization may turn off; the summary and the settings are always on. */
-export const SWITCHABLE_PIECES = ['venues', 'members', 'roles', 'balance'] as const;
+export const SWITCHABLE_PIECES = ['venues', 'members', 'gente', 'roles', 'balance'] as const;
 export type SwitchablePiece = (typeof SWITCHABLE_PIECES)[number];
 
 /** The presets: simple words, today's mix, or the game's own. */

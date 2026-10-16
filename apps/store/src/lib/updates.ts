@@ -33,6 +33,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'NEW',
         text: 'The face menu of the header: your name if you published one, your rank, «Your balance» with the figure, one door for each panel of the organizations you belong to, Settings and Sign out. It reads the till only when you open it. There is no status and no «set a status line»: nobody sees who is online yet.',
       },
+      {
+        type: 'NEW',
+        text: '«People», a new piece of the panel: the community’s people in groups — the Oracles, then one group for each role under the community’s own name, then everyone else — each with their avatar (the Bazaar’s if they chose one), name, role and rank in the city. It shows nobody as online, and it can be switched off in Settings like any piece. In all five languages.',
+      },
     ],
   },
   {

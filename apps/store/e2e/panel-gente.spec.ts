@@ -313,12 +313,12 @@ async function roles(page: Page): Promise<void> {
 }
 
 test.describe('the rail', () => {
-  test('ten pieces: Miembros and Roles side by side, both keeping the organization', async ({
+  test('eleven pieces: Miembros and Roles side by side, both keeping the organization', async ({
     page,
   }) => {
     await signedIn(page);
     await members(page);
-    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 10');
+    await expect(rail(page).locator('.etiqueta').first()).toHaveText('Piezas · 11');
     const ids = await rail(page)
       .locator('[data-piece-list] > li')
       .evaluateAll((rows) => rows.map((li) => li.getAttribute('data-piece')));

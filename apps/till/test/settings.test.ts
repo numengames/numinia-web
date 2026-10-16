@@ -62,6 +62,7 @@ describe('the rules of the settings', () => {
   it('reads pieces: each once, only the ones that may be turned off, in the order of the panel', () => {
     expect(readOff([])).toEqual([]);
     expect(readOff(['balance', 'venues'])).toEqual(['venues', 'balance']);
+    expect(readOff(['balance', 'gente', 'venues'])).toEqual(['venues', 'gente', 'balance']);
     for (const value of [
       'venues',
       null,
