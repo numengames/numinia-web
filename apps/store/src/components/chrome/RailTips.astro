@@ -1,0 +1,67 @@
+---
+/**
+ * The folded rails' tooltip (v3, «La ciudad y tú»; WCAG 1.4.13): when a
+ * rail is folded to its icons, pointing at or focusing one of them names
+ * it beside the rail, towards the page. The tooltip stays while the pointer
+ * is on it (a short grace lets the pointer cross the gap), and Esc
+ * dismisses it. Every icon keeps its accessible name; this only shows it.
+ */
+---
+
+<div class="tip" id="rail-tip" role="tooltip" hidden></div>
+
+<script>
+  import { placeTip } from '../../lib/rail-tip';
+
+  const root = document.documentElement;
+  const tip = document.getElementById('rail-tip');
+  let owner: HTMLElement | null = null;
+  let timer = 0;
+  const hide = (): void => {
+    clearTimeout(timer);
+    owner = null;
+    if (tip) tip.hidden = true;
+  };
+  const later = (): void => {
+    clearTimeout(timer);
+    timer = window.setTimeout(hide, 300);
+  };
+  const show = (element: HTMLElement): void => {
+    const side = element.closest<HTMLElement>('[data-rail]')?.dataset['rail'];
+    const flag = side === 'you' ? 'railYou' : 'railCity';
+    if (!tip || (side !== 'city' && side !== 'you') || root.dataset[flag] !== 'collapsed') {
+      return hide();
+    }
+    clearTimeout(timer);
+    owner = element;
+    tip.textContent = element.dataset['railTip'] ?? '';
+    tip.hidden = false;
+    const place = placeTip(
+      element.getBoundingClientRect(),
+      { width: tip.offsetWidth, height: tip.offsetHeight },
+      { width: innerWidth, height: innerHeight },
+      side,
+    );
+    tip.style.top = `${place.top}px`;
+    tip.style.left = `${place.left}px`;
+  };
+  const tipped = (target: EventTarget | null): HTMLElement | null =>
+    target instanceof Element ? target.closest<HTMLElement>('[data-rail] [data-rail-tip]') : null;
+  document.addEventListener('pointerover', (event) => {
+    if (event.pointerType === 'touch') return;
+    if (tip && event.target instanceof Node && tip.contains(event.target)) return clearTimeout(timer);
+    const element = tipped(event.target);
+    if (element && element !== owner) show(element);
+    else if (element) clearTimeout(timer);
+    else if (owner) later();
+  });
+  document.addEventListener('focusin', (event) => {
+    const element = tipped(event.target);
+    if (element) show(element);
+    else hide();
+  });
+  document.addEventListener('scroll', hide, { capture: true, passive: true });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && tip && !tip.hidden) hide();
+  });
+</script>

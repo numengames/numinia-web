@@ -1,0 +1,193 @@
+---
+/**
+ * The phone's bottom bar and its «Tú» sheet (v3, below 768 px upright):
+ * like every app, one bar at the bottom — Ahora · Comunidades · Encuentros
+ * · Mundos · Tú — fixed, at least 56 px plus the safe area. «Tú» is your
+ * face (an empty one signed out) and toggles a sheet ABOVE the bar (the
+ * bar stays): the right rail in your pocket — the head (face, name, «Tu
+ * ficha · rango»), your places, «Crear» as tiles (only what exists), the
+ * settings with appearance and language, and the way out; signed out, the
+ * door first («Entrar · sin contraseña») and the same places.
+ *
+ * The sheet is a native popover: «Tú» opens and closes it, Esc and a tap
+ * on the veil close it, and the focus goes into it and back to «Tú». «Tú»
+ * is marked current on the pages that are yours.
+ */
+import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import {
+  CREATE_ITEMS,
+  PHONE_ITEMS,
+  PROFILE_PATH,
+  SETTINGS_PATH,
+  YOU_ITEMS,
+  ariaCurrent,
+  isPersonal,
+  localeHref,
+  navIcon,
+  navState,
+  signInHref,
+  signOutHref,
+} from '../../lib/app-nav';
+import Icon from './Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { locale, basePath } = Astro.props;
+const ui = APP_SHELL_UI[locale];
+const mine = isPersonal(basePath);
+---
+
+<nav class="barra-movil" aria-label={ui.phoneNav}>
+  {
+    PHONE_ITEMS.map((item) => {
+      const state = navState(item, basePath);
+      return (
+        <a
+          href={localeHref(locale, item.path)}
+          aria-current={ariaCurrent(state)}
+          data-metric={`tab-${item.id}`}
+        >
+          <span class="bm-ico">
+            <Icon name={navIcon(item, state)} size={24} use />
+            {item.id === 'now' && <span class="punto-vivo bm-vivo" data-live-dot hidden />}
+          </span>
+          <span>{ui.city[item.id]}</span>
+        </a>
+      );
+    })
+  }
+  <button
+    type="button"
+    class:list={['bm-tu', { actual: mine }]}
+    popovertarget="hoja-tu"
+    aria-current={mine ? 'true' : undefined}
+    data-metric="tab-you"
+  >
+    <span class="bm-ico">
+      <span class="bm-cara">
+        <span data-session-out><Icon name="user-circle" size={24} use /></span>
+        <span data-session-in hidden>
+          <Icon name="user-circle-fill" size={24} use />
+          <img alt="" width="26" height="26" data-face-img hidden />
+        </span>
+      </span>
+    </span>
+    <span>{ui.youWord}</span>
+  </button>
+</nav>
+
+<div id="hoja-tu" class="hoja-tu" popover role="dialog" aria-label={ui.youRail} data-sheet>
+  <span class="ht-asa" aria-hidden="true"></span>
+  <div class="ht-cab">
+    <a href={localeHref(locale, PROFILE_PATH)} class="ht-yo" data-session-in hidden data-metric="sheet-card">
+      <span class="cara" aria-hidden="true">
+        <Icon name="user-circle-fill" size={26} use />
+        <img alt="" width="44" height="44" data-face-img hidden />
+      </span>
+      <span class="yo-txt">
+        <b class="mono" data-face-name data-session-short></b>
+        <span>
+          {ui.sheetCard}
+          {
+            RANK_DEFINITIONS.map((rank) => (
+              <span data-rank-name={rank.id} hidden>
+                {` · ${rank.name[locale]}`}
+              </span>
+            ))
+          }
+        </span>
+      </span>
+    </a>
+    <span class="ht-yo" data-session-out>
+      <span class="cara vacia" aria-hidden="true"><Icon name="user-circle" size={26} use /></span>
+      <span class="yo-txt"><b>{ui.youWord}</b></span>
+    </span>
+    <button
+      type="button"
+      class="icono-btn"
+      popovertarget="hoja-tu"
+      popovertargetaction="hide"
+      aria-label={ui.sheetClose}
+      data-metric="sheet-close"
+    >
+      <Icon name="x" size={22} />
+    </button>
+  </div>
+  <div data-session-out>
+    <p class="ht-txt">{ui.signedOutLine}</p>
+    <a href={signInHref(locale, basePath)} class="btn btn-primario ht-entrar" data-metric="sheet-sign-in">
+      <Icon name="sign-in" size={20} use />
+      {ui.signInSheet}
+    </a>
+  </div>
+  <nav class="ht-cinco" aria-label={ui.youNav}>
+    {
+      YOU_ITEMS.map((item) => {
+        const state = navState(item, basePath);
+        return (
+          <a
+            href={localeHref(locale, item.path)}
+            aria-current={ariaCurrent(state)}
+            data-session-in={item.signedInOnly ? '' : undefined}
+            hidden={item.signedInOnly}
+            data-metric={`sheet-${item.id}`}
+          >
+            <Icon name={navIcon(item, state)} size={22} use />
+            <span>{ui.you[item.id]}</span>
+            {item.id === 'balance' && (
+              <span class="ht-n mono" data-face-balance data-locale={locale} hidden />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+  <p class="pop-etiqueta ht-eti">{ui.create}</p>
+  <div class="ht-crear">
+    {
+      CREATE_ITEMS.map((item) => (
+        <a href={localeHref(locale, item.path)} data-metric={`sheet-create-${item.id}`}>
+          <Icon name={item.icon} size={22} use />
+          <span>{ui.createItems[item.id].tile}</span>
+        </a>
+      ))
+    }
+    <p class="ht-pronto">{ui.createSoon}</p>
+  </div>
+  <div class="ht-pie">
+    <a href={localeHref(locale, SETTINGS_PATH)} class="pie-link" data-metric="sheet-settings">
+      <Icon name="gear" size={20} use />
+      <span>{ui.sheetSettings}</span>
+    </a>
+    <a href={signOutHref(locale)} class="pie-link" data-session-in hidden data-metric="sheet-sign-out">
+      <Icon name="sign-out" size={20} use />
+      <span>{ui.signOut}</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  /* The «Tú» sheet: when it opens the focus goes to its first entry; when
+     it closes (Esc, the veil, «Tú» again, the ×) the focus comes back to
+     «Tú» if it was inside. The popover does the rest without JS. */
+  const sheet = document.getElementById('hoja-tu');
+  const you = document.querySelector<HTMLButtonElement>('[popovertarget="hoja-tu"].bm-tu');
+  sheet?.addEventListener('toggle', () => {
+    const open = sheet.matches(':popover-open');
+    you?.setAttribute('aria-expanded', String(open));
+    if (open) {
+      [...sheet.querySelectorAll<HTMLElement>('a, button')].find((el) => el.checkVisibility())?.focus();
+    } else if (
+      document.activeElement === null ||
+      document.activeElement === document.body ||
+      sheet.contains(document.activeElement)
+    ) {
+      you?.focus();
+    }
+  });
+</script>

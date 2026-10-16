@@ -1,13 +1,13 @@
 ---
 /**
- * The folded footer of the app shell (the Oracle's design, 2026-10-14):
- * small, at the foot of the sidebar on a desktop and at the end of the page
- * on a phone. One copy, last in the page (the contentinfo landmark after
- * main): on a desktop the stylesheet pins it to the sidebar's foot.
+ * The folded footer of the app shell, at the foot of the city's rail (v3,
+ * «La ciudad y tú»; it was the sidebar's since 2026-10-14). On a phone
+ * upright the rails are gone and the footer closes the page instead
+ * (BaseLayout draws a second copy there, hidden on a desktop).
  *
  *   Numen Games ▾          the house's three sites, this one marked
- *   Términos y políticas ▾ the four legal texts, the cookie choice, then
- *                          licence · telemetry · commit
+ *   Términos y políticas ▾ the four legal texts, the cookie choice, a
+ *                          coffee, help, then licence · telemetry · commit
  *   by Numen Games · v0.83.0                                  skull
  *
  * NWOS, GitHub and Discord left the footer with the app shell. The
@@ -25,11 +25,14 @@ import Icon from './Icon.astro';
 
 interface Props {
   locale: SupportedLocale;
+  /** Which copy: the city rail's foot, or the phone's end of the page. */
+  where?: 'rail' | 'page';
 }
 
-const { locale } = Astro.props;
+const { locale, where = 'rail' } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const ui = APP_SHELL_UI[locale];
+const bubble = `footer-epitaph-${where}`;
 
 // CAN-002: the epitaph (lib/canon.ts), literal on purpose.
 
@@ -89,6 +92,12 @@ const LEGAL = [
           {t.legalCookieChoice}
         </button>
       </li>
+      <li>
+        <a href={localeHref(locale, '/back/')} data-metric="footer-back">{ui.back}</a>
+      </li>
+      <li>
+        <a href={localeHref(locale, '/support/')} data-metric="nav-more-support">{ui.support}</a>
+      </li>
       <li class="pie-obra">
         <a
           href={LICENSE_URL}
@@ -147,22 +156,23 @@ const LEGAL = [
         class="calavera"
         aria-label="Epitaph"
         aria-expanded="false"
-        aria-describedby="footer-epitaph"
+        aria-describedby={bubble}
         data-metric="footer-epitaph"
       >
         <Icon name="skull" size={20} />
       </button>
-      <p id="footer-epitaph" class="bocadillo" role="tooltip" lang="en">{EPITAPH}</p>
+      <p id={bubble} class="bocadillo" role="tooltip" lang="en">{EPITAPH}</p>
     </div>
   </div>
 </footer>
 
 <script>
   // The epitaph: click/tap toggles it (aria-expanded), Escape closes it and
-  // keeps it hushed until the pointer or the focus leaves the skull.
-  const box = document.querySelector<HTMLElement>('[data-epitaph]');
-  const button = box?.querySelector('button');
-  if (box && button) {
+  // keeps it hushed until the pointer or the focus leaves the skull. Each
+  // copy of the footer (the rail's, the phone's) has its own.
+  document.querySelectorAll<HTMLElement>('[data-epitaph]').forEach((box) => {
+    const button = box.querySelector('button');
+    if (!button) return;
     const set = (open: boolean): void => {
       button.setAttribute('aria-expanded', String(open));
       box.toggleAttribute('data-open', open);
@@ -185,5 +195,5 @@ const LEGAL = [
     document.addEventListener('click', (event) => {
       if (event.target instanceof Node && !box.contains(event.target)) set(false);
     });
-  }
+  });
 </script>

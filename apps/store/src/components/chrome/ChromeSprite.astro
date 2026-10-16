@@ -1,17 +1,17 @@
 ---
 /**
- * The chrome's sprite (the approved prototype draws its icons the same
- * way): what the app shell shows in two places travels once per page as a
- * <symbol>, and each place draws it with <use> (`<Icon use />`). The Khepri
- * (the sidebar's brand and the phone's top bar), the magnifier (the
- * sidebar's search and the phone's top bar), the five places in the state
- * this page gives them (the sidebar and the tab bar), the footer's
- * external-link arrow, and the account's icons (the gear is drawn by both
- * menus of the top bar; the face and the way out by the account menu).
- * Each name travels once, however many of these lists ask for it.
+ * The chrome's sprite: what the app shell draws in more than one place
+ * travels once per page as a <symbol>, and each place draws it with <use>
+ * (`<Icon use />`). The Khepri and the wordmark (the city's rail and the
+ * phone's header), the magnifier and the Bazar (the rail and the phone's
+ * header), the city's places in the state this page gives them (the rail
+ * and the phone's bottom bar), yours (the right rail and the «Tú» sheet),
+ * the face, «Crear»'s house and plus, the gear and the way out (the rail's
+ * foot, the face menu and the sheet). Each name travels once.
  */
 import khepri from '@numinia/ui/assets/brand/Khepri_Logo.svg?raw';
-import { NAV_ITEMS, navIcon, navState } from '../../lib/app-nav';
+import wordmark from '@numinia/ui/assets/brand/Numinia_Word.svg?raw';
+import { CITY_ITEMS, YOU_ITEMS, navIcon, navState } from '../../lib/app-nav';
 import { svgParts, symbolId } from '../../lib/svg-sprite';
 import Icon from './Icon.astro';
 
@@ -22,21 +22,27 @@ interface Props {
 
 const { basePath } = Astro.props;
 const mark = svgParts(khepri);
-const places = NAV_ITEMS.map((item) => navIcon(item, navState(item, basePath)));
+const word = svgParts(wordmark);
+const places = [...CITY_ITEMS, ...YOU_ITEMS].map((item) => navIcon(item, navState(item, basePath)));
 const icons = [
   ...new Set([
     'magnifying-glass',
+    'storefront',
     ...places,
+    'user-circle',
+    'user-circle-fill',
+    'house',
+    'plus',
     'arrow-square-out',
     'gear',
-    'coins',
     'sign-out',
-    'user-circle-fill',
+    'sign-in',
   ] as const),
 ];
 ---
 
 <svg class="sprite" aria-hidden="true">
   <symbol id={symbolId('khepri')} viewBox={mark.viewBox} set:html={mark.body} />
+  <symbol id={symbolId('wordmark')} viewBox={word.viewBox} set:html={word.body} />
   {icons.map((name) => <Icon name={name} symbol />)}
 </svg>

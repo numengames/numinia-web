@@ -1,30 +1,30 @@
 /*
- * The app shell of numinia.com (the Oracle's design, 2026-10-14; drawn in
- * the approved wireframes v1): a sticky sidebar of 252 px (76 px folded)
- * beside the page at its full width, the folded footer pinned to its foot,
- * a glass top bar of 64 px almost empty, and — at 860 px and below — a tab
- * bar at the bottom instead of the sidebar, with «Más» and the folded
- * footer closing the page.
+ * The app shell of numinia.com, v3 «La ciudad y tú» (drawn in the approved
+ * wireframe numinia-app-v3): two mirrored rails — the city on the left,
+ * you on the right — with the page between them at its full width. Each
+ * rail is 256 px, 72 px folded (html[data-rail-city|data-rail-you], set
+ * before paint by BaseLayout's boot script). Below 768 px upright the rails
+ * give way to a header, a bottom bar and the «Tú» sheet; a phone on its
+ * side keeps both rails folded as icon edges.
  *
  * Values only from the kit (sistema.css): colours, spaces, the two radii
  * (6 px controls, 8 px frames) plus full circles. Icons sit without boxes
- * and take the link colour on hover. Secondary text on a surface uses
- * --texto-2: --texto-3 there fails AA contrast.
+ * and take the link colour on hover. On elevated surfaces and inside cards
+ * tier-3 text becomes tier-2 (WCAG 1.4.3; the contrast block below).
  */
 
 :root {
-  --app-lat: 252px;
-  --app-lat-plegada: 76px;
-  --app-cima: 64px;
-  --app-pestanas: 56px;
-  /* The folded footer pinned at the sidebar's foot: the sidebar keeps this
-     much room free below its last item. */
-  --app-pie: 140px;
+  --rail: 256px;
+  --rail-plegada: 72px;
+  --rail-izq: var(--rail);
+  --rail-der: var(--rail);
+  --barra-movil: 64px;
 }
-
-/* Anchors land below the sticky top bar, not under it. */
-html {
-  scroll-padding-top: var(--app-cima);
+html[data-rail-city='collapsed'] {
+  --rail-izq: var(--rail-plegada);
+}
+html[data-rail-you='collapsed'] {
+  --rail-der: var(--rail-plegada);
 }
 
 /* The chrome's sprite (ChromeSprite): defined, never drawn itself. */
@@ -53,7 +53,7 @@ html {
   position: fixed;
   top: var(--s3);
   left: var(--s3);
-  z-index: 100;
+  z-index: 130;
   padding: var(--s2) var(--s4);
   border-radius: var(--radio-control);
   background: var(--interactivo-fondo);
@@ -66,60 +66,56 @@ html {
   transform: none;
 }
 
-/* ---- The frame: sidebar + the page at its full width ------------------ */
+/* ---- The frame: city · page · you ------------------------------------- */
 .app {
   display: grid;
-  grid-template-columns: var(--app-lat) minmax(0, 1fr);
+  grid-template-columns: var(--rail-izq) minmax(0, 1fr) var(--rail-der);
   min-height: 100vh;
 }
-html[data-sidebar='collapsed'] .app {
-  grid-template-columns: var(--app-lat-plegada) minmax(0, 1fr);
-}
-.app-col {
+.app-centro {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 /* :where() keeps the weight of a bare `main`, so a page that bleeds (a
-   ritual's or a community's cover, `main[data-wide]`) still wins. */
-:where(.app-col) > main {
+   ritual's or a community's cover, `main[data-wide]`) still wins. `clip`,
+   not `hidden`: no scroll box, so sticky pieces inside still stick. */
+:where(.app-centro) > main {
   flex: 1;
   min-width: 0;
-  padding: var(--s2) var(--s7) var(--s8);
-  /* Pages drawn for the old full-width column bleed past it (the home's
-     hero by a negative margin; the archive index by 45 px at 1280): the
-     column now sits beside the sidebar, so it clips what sticks out
-     instead of giving the window a sideways scroll. `clip`, not `hidden`:
-     no scroll box, so sticky pieces inside still stick. */
+  padding: var(--s5) var(--s7) var(--s8);
   overflow-x: clip;
 }
-:where(.app-col) > main:focus {
+:where(.app-centro) > main:focus {
   outline: none;
 }
 
-/* ---- The sidebar ------------------------------------------------------ */
-/* Sticky, the window's height, above the page: a sticky box is its own
-   stacking context, and the «Más» menu must paint over the content. Its
-   foot stays free for the folded footer pinned there (.app-pie). */
-.lat {
+/* ---- The rails --------------------------------------------------------- */
+/* Sticky, the window's height, above the page. Their menus live outside,
+   in the top layer, so the scrolling rail never clips them. */
+.rail {
   position: sticky;
   top: 0;
   z-index: 45;
   align-self: start;
-  height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: var(--s4) var(--s3) var(--app-pie);
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--s4) var(--s3);
   overflow-x: hidden;
   overflow-y: auto;
-  scroll-padding-bottom: var(--app-pie);
   scrollbar-width: thin;
   scrollbar-color: var(--linea-f) transparent;
-  border-right: 1px solid var(--linea);
   background: color-mix(in srgb, var(--fondo) 92%, transparent);
 }
-.lat-cab {
+.rail-ciudad {
+  border-right: 1px solid var(--linea);
+}
+.rail-tu {
+  border-left: 1px solid var(--linea);
+}
+.rail-cab {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,9 +124,11 @@ html[data-sidebar='collapsed'] .app {
   margin-bottom: var(--s3);
   padding: 0 4px 0 8px;
 }
-/* The Khepri with the Numinia wordmark, 36 px, in currentColor: the
-   text's colour, the link's under the pointer. */
-.lat-marca {
+.rail-tu .rail-cab {
+  padding: 0 8px 0 4px;
+}
+/* The Khepri with the Numinia wordmark, in currentColor. */
+.rail-marca {
   display: inline-flex;
   align-items: center;
   gap: var(--s3);
@@ -139,24 +137,25 @@ html[data-sidebar='collapsed'] .app {
   text-decoration: none;
   transition: color 120ms var(--ciclo);
 }
-.lat-marca:hover,
-.lat-marca:focus-visible {
+.rail-marca:hover,
+.rail-marca:focus-visible {
   color: var(--enlace);
 }
-.lat-khepri {
+.rail-khepri {
   display: block;
   width: 36px;
   height: 36px;
 }
-.lat-palabra svg {
+.rail-palabra {
   display: block;
   width: 118px;
   height: 17px;
 }
 /* Icon buttons: no box, the link colour on hover. */
-.lat-plegar,
-.cima-icono {
+.rail-plegar,
+.icono-btn {
   display: inline-grid;
+  flex: none;
   place-items: center;
   width: 40px;
   height: 40px;
@@ -166,54 +165,72 @@ html[data-sidebar='collapsed'] .app {
   background: none;
   color: var(--texto-2);
   cursor: pointer;
-  list-style: none;
   transition: color 120ms var(--ciclo);
 }
-.cima-icono::-webkit-details-marker {
-  display: none;
-}
-.lat-plegar:hover,
-.lat-plegar:focus-visible,
-.cima-icono:hover,
-.cima-icono:focus-visible,
-.cima-mas[open] > .cima-icono {
+.rail-plegar:hover,
+.rail-plegar:focus-visible,
+.icono-btn:hover,
+.icono-btn:focus-visible,
+.icono-btn[aria-current] {
   color: var(--enlace);
 }
-/* The search: a field-shaped door to the communities, «/» as its key. */
-.lat-buscar {
+/* The fold's icon points where the rail goes. */
+.rail-tu .rail-plegar .icono,
+html[data-rail-city='collapsed'] .rail-ciudad .rail-plegar .icono {
+  transform: scaleX(-1);
+}
+html[data-rail-you='collapsed'] .rail-tu .rail-plegar .icono {
+  transform: none;
+}
+
+/* «Buscar» and its twin «Crear»: field-shaped, the same height. */
+.rail-caja {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--s3);
   width: 100%;
-  height: 42px;
+  min-height: 42px;
   padding: 0 var(--s3);
   border: 1px solid var(--linea-f);
   border-radius: var(--radio-control);
   background: var(--superficie);
   color: var(--texto-2);
   font: 400 0.95rem var(--sans);
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
   transition:
     color 120ms var(--ciclo),
     border-color 120ms var(--ciclo);
 }
-.lat-buscar:hover,
-.lat-buscar:focus-visible {
+.rail-caja:hover,
+.rail-caja:focus-visible {
   border-color: var(--enlace);
   color: var(--texto);
 }
-.lat-buscar kbd {
-  margin-left: auto;
+.rail-caja .rail-t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-caja kbd {
   padding: 1px 6px;
   border: 1px solid var(--linea-f);
   border-radius: var(--radio-control);
-  font: 500 0.68rem var(--mono);
   color: var(--texto-2);
+  font: 500 0.68rem var(--mono);
 }
-.lat-nav {
+
+/* The places: icon and word from the left on BOTH rails (the mirror is of
+   position, never of reading); the city's counters at the row's end, yours
+   right after the word. */
+.rail-nav {
   margin-top: var(--s3);
 }
-.lat-nav ul {
+.rail-nav ul {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -221,132 +238,342 @@ html[data-sidebar='collapsed'] .app {
   padding: 0;
   list-style: none;
 }
-.lat-item {
+.rail-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
   min-height: 44px;
   padding: 0 var(--s3);
+  border-radius: var(--radio-control);
+  color: var(--texto-2);
+  font: 500 1rem var(--sans);
+  text-decoration: none;
+  transition: color 120ms var(--ciclo);
+}
+.rail-item:hover,
+.rail-item:focus-visible {
+  color: var(--enlace);
+}
+/* The current place: the ink, a heavier word and its fill icon. */
+.rail-item[aria-current] {
+  color: var(--texto);
+  font-weight: 650;
+}
+.rail-item[aria-current] .icono {
+  color: var(--enlace);
+}
+.rail-n {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--texto-3);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.rail-n[hidden] {
+  display: none;
+}
+.rail-tu .rail-n {
+  margin-left: -6px;
+}
+.rail-vivo {
+  color: var(--enlace);
+}
+.punto-vivo {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--verdemar);
+}
+.punto-vivo[hidden] {
+  display: none;
+}
+.rail-sep {
+  flex: none;
+  height: 1px;
+  margin: var(--s3) 8px;
+  background: var(--linea);
+}
+
+/* «Ahora en la ciudad»: rows of worlds with people in, then the next encounter. */
+.rail-vivo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rail-eti {
+  margin: 0 8px 6px;
+  color: var(--texto-3);
+  font: 500 0.64rem var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.vivo-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px 8px;
+  border-radius: var(--radio-control);
+  color: var(--texto-2);
+  text-decoration: none;
+}
+.vivo-fila[hidden] {
+  display: none;
+}
+.vivo-fila:hover .vivo-txt b,
+.vivo-fila:focus-visible .vivo-txt b {
+  color: var(--enlace);
+}
+.vivo-cara {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+  background: var(--superficie);
+  color: var(--enlace);
+}
+.vivo-cara .punto-vivo {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--fondo);
+}
+.vivo-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.vivo-txt b {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--texto);
+  font-size: 0.87rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 120ms var(--ciclo);
+}
+.vivo-txt span {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--texto-3);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vivo-txt .dentro {
+  color: var(--enlace);
+}
+.rail-txt {
+  margin: var(--s3) 8px 0;
+  color: var(--texto-3);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* Your head: «Tú · Entrar» or your face, at the rail's outer edge. */
+.rail .yo {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  min-height: 44px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rail .yo[hidden] {
+  display: none;
+}
+.yo-txt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.2;
+}
+.yo-txt b {
+  max-width: 150px;
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 120ms var(--ciclo);
+}
+.yo-txt b.mono {
+  font: 500 0.88rem var(--mono);
+}
+.yo-txt > span {
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--texto-3);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yo-txt .yo-entrar {
+  color: var(--enlace);
+  font-weight: 500;
+}
+.yo:hover .yo-txt b,
+.yo:focus-visible .yo-txt b {
+  color: var(--enlace);
+}
+:is(.rail, .hoja-tu, .barra-movil) .cara {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  color: var(--texto-2);
+}
+:is(.rail, .hoja-tu) .cara.vacia {
+  background: var(--superficie);
+  color: var(--texto-3);
+}
+:is(.rail, .hoja-tu, .barra-movil) img[data-face-img] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+:is(.rail, .hoja-tu, .barra-movil) img[data-face-img][hidden] {
+  display: none;
+}
+.rail-crear {
+  margin-bottom: 0;
+}
+.rail-crear .caja-caret {
+  color: var(--texto-2);
+}
+
+/* The foot: on the left how it works, the house's doors and the folded
+   footer; on the right the settings, the appearance, the language, the
+   way out. */
+.rail-pie {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  padding: var(--s4) 4px 0;
+}
+.pie-link {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: 38px;
+  padding: 0 8px;
   border: 0;
   border-radius: var(--radio-control);
   background: none;
   color: var(--texto-2);
-  font: 500 1.02rem var(--sans);
+  font: 500 0.88rem var(--sans);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  list-style: none;
   transition: color 120ms var(--ciclo);
 }
-.lat-item::-webkit-details-marker {
+.pie-link[hidden] {
   display: none;
 }
-.lat-item:hover,
-.lat-item:focus-visible,
-.lat-mas[open] > .lat-item {
+.pie-link:hover,
+.pie-link:focus-visible {
   color: var(--enlace);
 }
-/* The current place: the ink, a heavier word and its fill icon. */
-.lat-item[aria-current] {
-  color: var(--texto);
-  font-weight: 650;
+.rail-pie .pie-app {
+  padding: var(--s2) 8px 0;
 }
-.lat-item[aria-current] .icono {
-  color: var(--enlace);
-}
-/* Explorar's three, always shown, hung from a hairline. */
-.lat-nav .lat-sub {
-  gap: 0;
-  margin: 0 0 6px 52px;
-  padding-left: 2px;
-  border-left: 1px solid var(--linea);
-}
-.lat-sub a {
+.pie-seg {
   display: flex;
-  align-items: center;
-  gap: var(--s2);
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: var(--radio-control);
-  color: var(--texto-3);
-  font-size: 0.92rem;
-  text-decoration: none;
-  transition: color 120ms var(--ciclo);
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 4px;
 }
-.lat-sub a:hover,
-.lat-sub a:focus-visible {
+/* A segmented control: the chosen one pressed in. */
+.seg {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.seg > :is(a, button) {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--texto-2);
+  font: 500 0.74rem var(--sans);
+  text-decoration: none;
+  cursor: pointer;
+}
+.seg > :is(a, button) + :is(a, button) {
+  border-left: 1px solid var(--linea-f);
+}
+.seg > :is(a, button):hover,
+.seg > :is(a, button):focus-visible {
   color: var(--enlace);
 }
-.lat-sub a[aria-current] {
+.seg > [aria-pressed='true'],
+.seg > [aria-current] {
+  background: color-mix(in srgb, var(--enlace) 16%, transparent);
   color: var(--texto);
-  font-weight: 600;
-}
-.lat-n {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--texto-3);
-}
-/* «Más»: without JS it unfolds in place; with JS it opens beside the bar,
-   fixed to the window, placed by the sidebar's script. */
-.lat-mas {
-  position: relative;
-}
-.lat-pop {
-  margin: var(--s1) 0 0;
-}
-html[data-js='on'] .lat-pop {
-  position: fixed;
-  left: calc(var(--app-lat) - var(--s1));
-  width: 300px;
-  margin: 0;
-  visibility: hidden;
-}
-html[data-js='on'][data-sidebar='collapsed'] .lat-pop {
-  left: calc(var(--app-lat-plegada) - var(--s1));
-}
-html[data-js='on'] .lat-pop[data-placed] {
-  visibility: visible;
-}
-/* The call to sign in: one line and the door. */
-.lat-cta {
-  margin-top: var(--s3);
-  padding: var(--s4) 8px var(--s2);
-  border-top: 1px solid var(--linea);
-}
-.lat-cta p {
-  margin: 0 0 var(--s3);
-  color: var(--texto-3);
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-.lat-entrar {
-  justify-content: center;
-  width: 100%;
-  padding: var(--s2) var(--s4);
-  text-decoration: none;
 }
 
-/* Folded: the Khepri and the icons; every word stays for the screen
-   reader (and as the pointer's tooltip). */
-html[data-sidebar='collapsed'] .lat {
+/* ---- Folded: icons only ------------------------------------------------ */
+/* Every word stays for the screen reader; the pointer and the keyboard get
+   a tooltip that stays while hovered and goes with Esc (RailScript). */
+html[data-rail-city='collapsed'] .rail-ciudad,
+html[data-rail-you='collapsed'] .rail-tu {
   align-items: center;
   padding-inline: var(--s2);
 }
-html[data-sidebar='collapsed'] .lat-cab {
+html[data-rail-city='collapsed'] .rail-ciudad .rail-cab {
   flex-direction: column;
   justify-content: center;
-  gap: var(--s2);
   min-height: auto;
   padding: 0;
 }
-html[data-sidebar='collapsed'] .lat-palabra,
-html[data-sidebar='collapsed'] .lat-buscar kbd,
-html[data-sidebar='collapsed'] .lat-sub,
-html[data-sidebar='collapsed'] .lat-cta p {
-  display: none;
+html[data-rail-you='collapsed'] .rail-tu .rail-cab {
+  flex-direction: column-reverse;
+  justify-content: center;
+  min-height: auto;
+  padding: 0;
 }
-html[data-sidebar='collapsed'] .lat .lat-t {
+html[data-rail-city='collapsed'] .rail-ciudad .rail-t,
+html[data-rail-you='collapsed'] .rail-tu .rail-t {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -354,173 +581,120 @@ html[data-sidebar='collapsed'] .lat .lat-t {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-html[data-sidebar='collapsed'] .lat-plegar svg {
-  transform: scaleX(-1);
+html[data-rail-city='collapsed']
+  .rail-ciudad
+  :is(
+    .rail-palabra,
+    kbd,
+    .rail-eti,
+    .vivo-txt,
+    .pie-pliegue,
+    .pie-firma,
+    .rail-n:not([data-live-total])
+  ),
+html[data-rail-you='collapsed'] .rail-tu :is(.caja-caret, .rail-txt, .pie-seg, .rail-n) {
+  display: none;
 }
-html[data-sidebar='collapsed'] .lat-buscar {
+html[data-rail-city='collapsed'] .rail-ciudad .rail-caja,
+html[data-rail-you='collapsed'] .rail-tu .rail-caja {
   justify-content: center;
   width: 44px;
   height: 44px;
+  min-height: 44px;
   padding: 0;
   border-color: transparent;
   background: none;
 }
-html[data-sidebar='collapsed'] .lat-item {
+html[data-rail-city='collapsed'] .rail-ciudad .rail-item,
+html[data-rail-you='collapsed'] .rail-tu .rail-item {
   justify-content: center;
   width: 52px;
   padding: 0;
 }
-html[data-sidebar='collapsed'] .lat-cta {
-  padding-inline: 0;
+html[data-rail-city='collapsed'] .rail-ciudad .vivo-fila {
+  justify-content: center;
+  padding: 6px 0;
 }
-html[data-sidebar='collapsed'] .lat-entrar {
+html[data-rail-city='collapsed'] .rail-ciudad .rail-sep {
+  width: 36px;
+  margin-inline: auto;
+}
+html[data-rail-city='collapsed'] .rail-ciudad .pie-link,
+html[data-rail-you='collapsed'] .rail-tu .pie-link {
+  justify-content: center;
   width: 44px;
   padding: 0;
 }
-
-/* ---- The folded footer's place ---------------------------------------- */
-/* Last in the page (after main, the contentinfo landmark), pinned to the
-   sidebar's foot on a desktop: the sidebar's colour and edge, above its
-   items when a fold opens. «Más» has its own place in the sidebar. */
-.app-pie {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  z-index: 46;
-  width: var(--app-lat);
-  padding: var(--s4) calc(var(--s3) + 8px);
-  border-right: 1px solid var(--linea);
-  background: color-mix(in srgb, var(--fondo) 92%, transparent);
+html[data-rail-city='collapsed'] .rail-ciudad .pie-app {
+  padding-inline: 0;
 }
-.mas-movil {
-  display: none;
-}
-/* Folded: the skull alone; its epitaph opens over the page. */
-html[data-sidebar='collapsed'] .app-pie {
-  width: var(--app-lat-plegada);
-  padding-inline: var(--s2);
-}
-html[data-sidebar='collapsed'] .app-pie .pie-pliegue,
-html[data-sidebar='collapsed'] .app-pie .pie-firma {
-  display: none;
-}
-html[data-sidebar='collapsed'] .app-pie .pie-cierre {
+html[data-rail-city='collapsed'] .rail-ciudad .pie-cierre {
   justify-content: center;
   margin-top: 0;
   border-top: 0;
 }
-html[data-sidebar='collapsed'] .app-pie .epitafio {
+html[data-rail-city='collapsed'] .rail-ciudad .epitafio {
   margin-left: 0;
 }
-html[data-sidebar='collapsed'] .app-pie .bocadillo {
+html[data-rail-city='collapsed'] .rail-ciudad .bocadillo {
   right: auto;
   left: 0;
 }
-
-/* ---- The top bar: almost empty ---------------------------------------- */
-.cima {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--s2);
-  height: var(--app-cima);
-  padding: 0 var(--s6);
-}
-/* The glass lives on a pseudo-element, so the bar stays a plain
-   containing block for its menu. */
-.cima::before {
-  content: '';
+/* Folded, what matters stays in sight: the live dot beside «Ahora». */
+html[data-rail-city='collapsed'] .rail-ciudad [data-live-total] {
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: color-mix(in srgb, var(--fondo) 86%, transparent);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  top: 7px;
+  right: 9px;
+  margin: 0;
 }
-/* The Khepri and the magnifier belong to the phone's bar only. */
-.cima-marca,
-.cima-buscar {
+html[data-rail-city='collapsed'] .rail-ciudad [data-live-n] {
   display: none;
 }
-.cima-marca {
-  align-items: center;
-  min-width: 44px;
-  min-height: 44px;
-  margin-right: auto;
-  color: var(--texto);
-  transition: color 120ms var(--ciclo);
-}
-.cima-marca:hover,
-.cima-marca:focus-visible {
-  color: var(--enlace);
-}
-.cima-marca svg {
-  display: block;
-  width: 30px;
-  height: 30px;
-}
-.cima-entrar {
-  padding: 6px var(--s4);
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-.cima-mas {
-  position: relative;
-}
-/* With a session the door becomes your account: the filled face and the
-   short wallet, a pill-less button like the other icons. */
-.cima-yo {
-  display: inline-flex;
-  gap: var(--s2);
-  width: auto;
-  padding: 0 var(--s2);
+
+/* ---- The folded rails' tooltip ----------------------------------------- */
+.tip {
+  position: fixed;
+  z-index: 120;
+  max-width: 280px;
+  padding: 6px 10px;
   border-radius: var(--radio-control);
-  color: var(--texto);
+  background: var(--texto);
+  color: var(--fondo);
+  font: 500 0.8rem/1.35 var(--sans);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
-.cima-corto {
-  font-size: 0.85rem;
-}
-.cima-rango {
-  margin: 0 10px var(--s1);
-  color: var(--texto);
-}
-/* The face menu's first line: the name published, else the short wallet. */
-.cima-nombre {
-  margin: 6px 10px 0;
-  color: var(--texto);
-  font: 600 1rem var(--sans);
-  overflow-wrap: anywhere;
-}
-.cima-nombre.mono {
-  font: 500 0.9rem var(--mono);
-}
-.opc .der {
-  margin-inline-start: auto;
-  color: var(--texto-2);
-  font-size: 0.85rem;
+.tip[hidden] {
+  display: none;
 }
 
-/* ---- Menus (⋮ and «Más»): an elevated panel, 40 px rows --------------- */
+/* ---- Menus: an elevated panel, 40 px rows ------------------------------ */
 .pop {
-  z-index: 60;
+  z-index: 110;
   padding: var(--s2);
   border: 1px solid var(--linea-f);
   border-radius: var(--radio-marco);
   background: var(--elevada);
+  color: var(--texto);
 }
 [data-modo='diurno'] .pop {
   box-shadow:
     0 1px 2px rgba(20, 17, 15, 0.08),
     0 8px 24px rgba(20, 17, 15, 0.06);
 }
-.cima-pop {
-  position: absolute;
-  top: calc(100% + var(--s2));
-  right: 0;
+/* The rail menus (native popovers): without JS the browser centres them;
+   with it the shell script places them next to their button, hidden until
+   it has. */
+.pop-fijo {
   width: 300px;
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+}
+html[data-js='on'] .pop-fijo {
+  inset: auto;
+  margin: 0;
+}
+html[data-js='on'] .pop-fijo:not([data-placed]) {
+  visibility: hidden;
 }
 .pop hr {
   margin: 6px 0;
@@ -533,6 +707,22 @@ html[data-sidebar='collapsed'] .app-pie .bocadillo {
   font: 500 0.66rem var(--mono);
   letter-spacing: 0.15em;
   text-transform: uppercase;
+}
+.pop-etiqueta[hidden] {
+  display: none;
+}
+.pop-nombre {
+  margin: 6px 10px 0;
+  overflow-wrap: anywhere;
+  color: var(--texto);
+  font: 600 1rem var(--sans);
+}
+.pop-nombre.mono {
+  font: 500 0.9rem var(--mono);
+}
+.pop-rango {
+  margin: 0 10px var(--s1);
+  color: var(--texto);
 }
 .opc {
   display: flex;
@@ -550,36 +740,45 @@ html[data-sidebar='collapsed'] .app-pie .bocadillo {
   text-decoration: none;
   cursor: pointer;
 }
+.opc[hidden] {
+  display: none;
+}
 .opc:hover,
 .opc:focus-visible {
   background: color-mix(in srgb, var(--texto) 6%, transparent);
   color: var(--texto);
 }
-/* The night/day switch: its icon and word show the mode you are IN. */
-.pop-modo > span:not(.sr-solo) {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s3);
+.opc .der {
+  margin-inline-start: auto;
+  color: var(--texto-2);
+  font-size: 0.85rem;
 }
-html:not([data-modo='diurno']) .pop-modo .solo-diurno,
-html[data-modo='diurno'] .pop-modo .solo-nocturno {
-  display: none;
+.crear-opc {
+  align-items: flex-start;
+  min-height: 56px;
+  padding-block: 9px;
 }
-.cima-pop .lang {
-  margin: 0 10px var(--s1);
+.crear-opc .icono {
+  margin-top: 2px;
+  color: var(--enlace);
 }
-.mas {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.crear-opc > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
 }
-.mas-linea {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--linea-f);
+.crear-opc small {
+  color: var(--texto-2);
+  font-size: 0.78rem;
+}
+.crear-pronto {
+  margin: 6px 10px 4px;
+  color: var(--texto-2);
+  font-size: 0.82rem;
 }
 
-/* ---- The folded footer ------------------------------------------------ */
+/* ---- The folded footer ------------------------------------------------- */
 .pie-app {
   display: flex;
   flex-direction: column;
@@ -747,163 +946,351 @@ html[data-modo='diurno'] .pop-modo .solo-nocturno {
   }
 }
 
-/* ---- Phones: the sidebar becomes the tab bar -------------------------- */
-.pestanas-app {
+/* ---- The phone's pieces: hidden until the phone layout ------------------ */
+.borde-movil,
+.barra-movil,
+.pie-movil {
   display: none;
 }
-@media (max-width: 53.75rem) {
-  .app,
-  html[data-sidebar='collapsed'] .app {
-    grid-template-columns: minmax(0, 1fr);
-    /* The tab bar never covers the end of the page. */
-    padding-bottom: calc(var(--app-pestanas) + env(safe-area-inset-bottom, 0px));
+
+/* ---- A phone on its side: both rails folded as icon edges -------------- */
+@media (orientation: landscape) and (max-height: 540px) {
+  .rail {
+    padding: var(--s2);
   }
-  .lat {
+  .rail :is(.rail-plegar, .rail-caja, .rail-vivo-lista, .rail-sep, .rail-pie, .rail-txt) {
     display: none;
   }
-  :where(.app-col) > main {
-    padding: var(--s2) var(--s4) var(--s6);
+  .rail .rail-cab {
+    margin-bottom: var(--s1);
   }
-  .cima {
-    gap: var(--s1);
-    padding: 0 var(--s3) 0 var(--s4);
+  .rail .rail-nav {
+    margin-top: 0;
   }
-  .cima-marca {
+  :where(.app-centro) > main {
+    padding: var(--s3) var(--s5) var(--s6);
+  }
+}
+
+/* ---- A phone upright: header, bottom bar and the «Tú» sheet ------------ */
+@media (max-width: 767px) and (min-height: 541px) {
+  html {
+    scroll-padding-top: 56px;
+  }
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    /* The bottom bar never covers the end of the page. */
+    padding-bottom: calc(var(--barra-movil) + env(safe-area-inset-bottom, 0px));
+  }
+  .rail {
+    display: none;
+  }
+  :where(.app-centro) > main {
+    padding: var(--s4) var(--s4) var(--s6);
+  }
+  .borde-movil {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 var(--s2) 0 var(--s4);
+    border-bottom: 1px solid var(--linea);
+    background: color-mix(in srgb, var(--fondo) 90%, transparent);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .marca-movil {
     display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    color: var(--texto);
+    text-decoration: none;
   }
-  .cima-buscar {
-    display: inline-grid;
+  .marca-khepri {
+    width: 28px;
+    height: 28px;
   }
-  .cima-icono {
+  .marca-palabra {
+    width: 92px;
+    height: 14px;
+  }
+  .borde-acc {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .icono-btn {
     width: 44px;
     height: 44px;
   }
-  .cima-entrar {
-    min-height: 44px;
-  }
-  /* The phone keeps the face only: the wallet is one tap away, in Perfil. */
-  .cima-yo {
-    width: 44px;
-    padding: 0;
-  }
-  .cima-corto {
-    display: none;
-  }
-  .cima-pop {
-    position: fixed;
-    top: calc(var(--app-cima) - 4px);
-    right: var(--s2);
-    left: var(--s2);
-    width: auto;
-  }
-  /* «Más» and the folded footer close the page, compact, in the flow. */
-  .app-pie,
-  html[data-sidebar='collapsed'] .app-pie {
-    position: static;
-    width: auto;
+  .pie-movil {
+    display: block;
     padding: var(--s5) var(--s4);
     border-top: 1px solid var(--linea);
-    border-right: 0;
-    background: none;
   }
-  html[data-sidebar='collapsed'] .app-pie .pie-pliegue,
-  html[data-sidebar='collapsed'] .app-pie .pie-firma {
-    display: block;
-  }
-  html[data-sidebar='collapsed'] .app-pie .pie-cierre {
-    justify-content: flex-start;
-    margin-top: var(--s2);
-    border-top: 1px solid var(--linea);
-  }
-  html[data-sidebar='collapsed'] .app-pie .epitafio {
-    margin-left: auto;
-  }
-  html[data-sidebar='collapsed'] .app-pie .bocadillo {
-    right: 0;
-    left: auto;
-  }
-  .mas-movil {
-    display: block;
-  }
-  .mas-compacta {
-    margin-bottom: var(--s3);
-  }
-  .mas-compacta .opc {
-    min-height: 44px;
-    padding: 0;
-    font-size: 0.92rem;
-  }
-  .mas-compacta .opc:hover,
-  .mas-compacta .opc:focus-visible {
-    background: none;
-  }
-  .app-pie .pie-pliegue > summary,
-  .app-pie .pie-pliegue a,
-  .app-pie .pie-pliegue button,
-  .app-pie .pie-aqui {
+  .pie-movil :is(.pie-pliegue > summary, .pie-pliegue a, .pie-pliegue button, .pie-aqui) {
     min-height: 44px;
   }
-  .app-pie .calavera {
+  .pie-movil .calavera {
     width: 44px;
     height: 44px;
   }
-  .pestanas-app {
+  .barra-movil {
     position: fixed;
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 50;
+    z-index: 75;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    border-top: 1px solid var(--linea-f);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--linea);
     background: color-mix(in srgb, var(--fondo) 94%, transparent);
     -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
   }
-  .pestanas-app a {
+  .barra-movil > :is(a, button) {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     min-width: 0;
-    min-height: var(--app-pestanas);
-    padding: 6px 2px 8px;
+    min-height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radio-control);
+    background: none;
     color: var(--texto-2);
-    font: 500 0.68rem var(--sans);
-    text-align: center;
+    font: 500 0.66rem var(--sans);
     text-decoration: none;
+    cursor: pointer;
   }
-  .pestanas-app span {
+  .barra-movil > :is(a, button) > span:last-child {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .pestanas-app a[aria-current] {
+  .bm-ico {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+  }
+  .barra-movil [aria-current] {
     color: var(--texto);
   }
-  .pestanas-app a[aria-current] .icono {
+  .barra-movil [aria-current] .bm-ico .icono {
     color: var(--enlace);
   }
+  .barra-movil [aria-current] .bm-ico::after {
+    content: '';
+    position: absolute;
+    inset: -4px -14px;
+    z-index: -1;
+    border-radius: var(--radio-marco);
+    background: color-mix(in srgb, var(--enlace) 14%, transparent);
+  }
+  .bm-vivo {
+    position: absolute;
+    top: -1px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--fondo);
+  }
+  .bm-cara {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    border-radius: 50%;
+  }
+  .bm-cara > span {
+    display: grid;
+    place-items: center;
+  }
+  .bm-cara > span[hidden] {
+    display: none;
+  }
+  .bm-tu.actual .bm-cara,
+  .bm-tu[aria-expanded='true'] .bm-cara {
+    box-shadow: 0 0 0 2px var(--enlace);
+  }
+
+  /* The sheet: above the bar (which stays), the veil over the page only. */
+  .hoja-tu:popover-open {
+    position: fixed;
+    inset: auto 0 calc(var(--barra-movil) + env(safe-area-inset-bottom, 0px)) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 120px);
+    margin: 0;
+    padding: 6px var(--s4) var(--s4);
+    overflow-y: auto;
+    border: 0;
+    border-top: 1px solid var(--linea-f);
+    border-top-left-radius: var(--radio-marco);
+    border-top-right-radius: var(--radio-marco);
+    background: var(--elevada);
+    color: var(--texto);
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+  }
+  .hoja-tu::backdrop {
+    bottom: calc(var(--barra-movil) + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, #14110f 60%, transparent);
+  }
+}
+/* The sheet's parts (they only ever show on a phone). */
+.ht-asa {
+  width: 40px;
+  height: 4px;
+  margin: 4px auto 8px;
+  border-radius: var(--radio-control);
+  background: var(--linea-f);
+}
+.ht-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.ht-yo {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 52px;
+  color: var(--texto);
+  text-decoration: none;
+}
+.ht-yo[hidden],
+.hoja-tu [data-session-out][hidden] {
+  display: none;
+}
+.ht-yo .cara {
+  width: 44px;
+  height: 44px;
+}
+.ht-yo .yo-txt > span {
+  max-width: none;
+}
+.ht-txt {
+  margin: 4px 0 var(--s3);
+  color: var(--texto-2);
+  font-size: 0.92rem;
+}
+.ht-entrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  width: 100%;
+  margin-bottom: var(--s3);
+  text-decoration: none;
+}
+.ht-cinco {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+  border-top: 1px solid var(--linea);
+}
+.ht-cinco a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 50px;
+  padding: 0 6px;
+  border-radius: var(--radio-control);
+  color: var(--texto);
+  font: 500 1rem var(--sans);
+  text-decoration: none;
+}
+.ht-cinco a[hidden] {
+  display: none;
+}
+.ht-cinco a .icono {
+  color: var(--enlace);
+}
+.ht-cinco a[aria-current] {
+  background: color-mix(in srgb, var(--enlace) 12%, transparent);
+}
+.ht-n {
+  color: var(--texto-2);
+  font-size: 0.74rem;
+}
+.ht-eti {
+  margin: var(--s3) 6px 6px;
+}
+.ht-crear {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.ht-crear a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 68px;
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  color: var(--texto);
+  font: 500 0.86rem var(--sans);
+  text-decoration: none;
+}
+.ht-crear a .icono {
+  color: var(--enlace);
+}
+.ht-pronto {
+  grid-column: span 2;
+  align-self: center;
+  margin: 0;
+  color: var(--texto-2);
+  font-size: 0.82rem;
+}
+.ht-pie {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--s3);
+  padding-top: 4px;
+  border-top: 1px solid var(--linea);
+}
+.ht-pie .pie-link {
+  min-height: 46px;
 }
 
-/* Paper keeps the page and the footer, in the flow. */
+/* ---- Contrast (WCAG 1.4.3) ---------------------------------------------- */
+/* On elevated surfaces (menus, dialogs, the sheet, the tooltip's kin) and
+   inside cards, tier-3 text fails 4.5:1 at night: it becomes tier-2 there. */
+:is(.pop, .hoja-tu, .tarjeta, dialog, [role='dialog'], .bocadillo) {
+  --texto-3: var(--texto-2);
+}
+
+/* Paper keeps the page, in the flow. */
 @media print {
   .saltar,
-  .lat,
-  .cima,
-  .mas-movil,
-  .pestanas-app {
+  .rail,
+  .borde-movil,
+  .barra-movil,
+  .hoja-tu,
+  .tip {
     display: none;
   }
   .app {
     display: block;
   }
-  .app-pie {
-    position: static;
-    width: auto;
-    border: 0;
+  .pie-movil {
+    display: block;
   }
 }

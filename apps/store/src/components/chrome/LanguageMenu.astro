@@ -1,13 +1,11 @@
 ---
 /**
- * Language selector as a §9.8-style dropdown: globe + current code + caret
- * (closed), elevated panel with 40px rows (open), the current locale dressed
- * in ink. Built on details/summary: works without JS. It lives in the top
- * bar's ⋮ menu (v0.83.0), whose script closes every chrome menu
- * (`data-popover`) on Esc and on clicks outside.
+ * The language, as a segmented control (v3, «La ciudad y tú»): five short
+ * codes in a row at the foot of your rail, the current one pressed in. Plain
+ * links: it works without JS. Each code carries its language's own name for
+ * the screen reader (never translated, an a11y convention).
  */
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@numinia/domain';
-import Icon from './Icon.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -26,33 +24,38 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   'pt-br': 'Português',
 };
 
+/** The short code drawn in the segment. */
+const SHORT: Record<SupportedLocale, string> = {
+  en: 'EN',
+  es: 'ES',
+  'pt-br': 'PT',
+  ja: '日本',
+  ko: '한국',
+};
+
+/** The wireframe's order: the two widest first, then the rest. */
+const ORDER: readonly SupportedLocale[] = ['en', 'es', 'pt-br', 'ja', 'ko'];
+
 const pathFor = (target: SupportedLocale): string =>
   `${target === 'en' ? '' : `/${target}`}${basePath}`;
+const codes = ORDER.filter((code) => SUPPORTED_LOCALES.includes(code));
 ---
 
-<details class="lang" data-lang-menu data-popover>
-  <summary aria-label={label} data-metric="chrome-language">
-    <Icon name="globe" size={20} />
-    <span class="code">{locale.toUpperCase()}</span>
-    <Icon name="caret-down" size={16} />
-  </summary>
-  <ul>
-    {
-      SUPPORTED_LOCALES.map((code) => (
-        <li>
-          <a
-            href={pathFor(code)}
-            aria-current={code === locale ? 'true' : undefined}
-            lang={code}
-            data-metric={`lang-${code}`}
-          >
-            {LANGUAGE_NAMES[code]}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
-</details>
+<nav class="seg seg-idioma" aria-label={label} data-lang-menu>
+  {
+    codes.map((code) => (
+      <a
+        href={pathFor(code)}
+        aria-current={code === locale ? 'true' : undefined}
+        lang={code}
+        data-metric={`lang-${code}`}
+      >
+        {SHORT[code]}
+        <span class="sr-solo">{LANGUAGE_NAMES[code]}</span>
+      </a>
+    ))
+  }
+</nav>
 
 <script>
   /* MISSION-029: an explicit language choice is a chrome preference (D17) —
@@ -67,76 +70,3 @@ const pathFor = (target: SupportedLocale): string =>
     });
   });
 </script>
-
-<style>
-  .lang {
-    position: relative;
-  }
-  summary {
-    list-style: none;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s2);
-    min-height: 44px;
-    padding: 4px var(--s3);
-    border: 1px solid var(--linea-f);
-    border-radius: var(--radio-control);
-    color: var(--texto-2);
-    cursor: pointer;
-    transition:
-      color 120ms var(--ciclo),
-      border-color 120ms var(--ciclo);
-  }
-  summary::-webkit-details-marker {
-    display: none;
-  }
-  summary:hover,
-  summary:focus-visible,
-  .lang[open] summary {
-    color: var(--texto);
-    border-color: var(--verdemar);
-  }
-  .code {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-  }
-  /* §9.8 selector panel: elevated, marco radius, 40px rows. */
-  ul {
-    position: absolute;
-    right: 0;
-    top: calc(100% + var(--s2));
-    z-index: 10;
-    min-width: 11rem;
-    margin: 0;
-    padding: var(--s2);
-    list-style: none;
-    background: var(--elevada);
-    border: 1px solid var(--linea);
-    border-radius: var(--radio-marco);
-  }
-  :global([data-modo='diurno']) ul {
-    box-shadow:
-      0 1px 2px rgba(20, 17, 15, 0.08),
-      0 8px 24px rgba(20, 17, 15, 0.06);
-  }
-  a {
-    display: flex;
-    align-items: center;
-    min-height: 40px;
-    padding: 0 var(--s3);
-    border-radius: var(--radio-control);
-    color: var(--texto-2);
-    text-decoration: none;
-  }
-  a:hover,
-  a:focus-visible {
-    color: var(--texto);
-    background: var(--superficie);
-  }
-  /* The chosen one dresses in ink (§9.8). */
-  a[aria-current='true'] {
-    background: var(--texto);
-    color: var(--fondo);
-  }
-</style>

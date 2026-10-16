@@ -30,9 +30,20 @@ describe('reading the two answers', () => {
       readFace({ accounts: [PERSONAL, GAMES] }, { ok: true, profile: { name: '  Pablo ' } }),
     ).toEqual({
       name: 'Pablo',
+      face: null,
       balanceCents: 1840,
       panels: [{ id: 'acc_t_games', name: 'Numen Games' }],
     });
+  });
+
+  it('takes the published face only when it is one of our baked thumbnails', () => {
+    const face = (value: unknown) => readFace(null, { profile: { name: 'P', face: value } }).face;
+    expect(face('/thumbs/1x/avatar-arla.webp')).toBe('/thumbs/1x/avatar-arla.webp');
+    expect(face('https://evil.example/x.webp')).toBeNull();
+    expect(face('/thumbs/1x/../secret.webp')).toBeNull();
+    expect(face('/thumbs/1x/a.png')).toBeNull();
+    expect(face(7)).toBeNull();
+    expect(readFace(null, { profile: 3 }).face).toBeNull();
   });
 
   it('leaves out the organizations the house only enters', () => {
@@ -94,7 +105,7 @@ describe("asking the page's two routes", () => {
     const face = await loadFace(
       route({ '/api/saldo': json({ accounts: [PERSONAL] }), '/api/profile': json({}, 503) }),
     );
-    expect(face).toEqual({ name: null, balanceCents: 1840, panels: [] });
+    expect(face).toEqual({ name: null, face: null, balanceCents: 1840, panels: [] });
   });
 
   it('reads a failing network, a 401 and a body that is not JSON as nothing', async () => {

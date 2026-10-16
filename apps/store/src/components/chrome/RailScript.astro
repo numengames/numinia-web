@@ -1,0 +1,119 @@
+---
+/**
+ * The rails' behaviour (v3, «La ciudad y tú»), one small inline script:
+ *
+ * - the folds: each rail on its own, kept on the device; with no choice
+ *   kept, the window's width decides (lib/app-nav.ts `railState`, the same
+ *   rule BaseLayout's boot script applies before the first paint);
+ * - the appearance: Sistema · Noche · Día (a kept choice ends the
+ *   following of the OS);
+ * - the menus (native popovers): placed next to their button, above it when
+ *   there is no room below;
+ * - «/» opens the search.
+ *
+ * The folded rails' tooltips are RailTips'. Without JavaScript the shell
+ * still works: the rails stay as the boot script left them, the menus open
+ * centred, the search is a plain link.
+ */
+---
+
+<script>
+  import { FOLD_KEY, keepFold, opensSearch, placeMenu, railState } from '../../lib/rails';
+
+  const root = document.documentElement;
+  const read = (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+  /** A device preference (decision D17); private mode keeps it for the page. */
+  const keep = (key: string, value: string | null): void => {
+    try {
+      if (value === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, value);
+    } catch {
+      /* private mode: the choice lives for this page */
+    }
+  };
+
+  /* The folds. */
+  const folds = [...document.querySelectorAll<HTMLButtonElement>('[data-rail-fold]')];
+  const sideOf = (button: HTMLElement) => (button.dataset['railFold'] === 'you' ? 'you' : 'city');
+  const flagOf = (side: string) => (side === 'you' ? 'railYou' : 'railCity');
+  const paint = (): void => {
+    folds.forEach((button) => {
+      const side = sideOf(button);
+      const state = railState(side, read(FOLD_KEY), innerWidth, innerHeight);
+      root.dataset[flagOf(side)] = state;
+      const [fold = '', unfold = ''] = (button.dataset['fold'] ?? '').split('|');
+      const label = state === 'expanded' ? fold : unfold;
+      button.ariaExpanded = String(state === 'expanded');
+      button.ariaLabel = label;
+      button.dataset['railTip'] = label;
+    });
+  };
+  paint();
+  addEventListener('resize', paint);
+  folds.forEach((button) =>
+    button.addEventListener('click', () => {
+      const side = sideOf(button);
+      const next = root.dataset[flagOf(side)] === 'collapsed' ? 'expanded' : 'collapsed';
+      keep(FOLD_KEY, keepFold(read(FOLD_KEY), side, next));
+      paint();
+    }),
+  );
+
+  /* Sistema · Noche · Día (§13.11; MISSION-029: no choice kept follows the OS). */
+  const modes = [...document.querySelectorAll<HTMLButtonElement>('[data-mode-set]')];
+  const dark = matchMedia('(prefers-color-scheme: dark)');
+  const applyMode = (): void => {
+    const kept = read('numinia-modo');
+    const chosen = kept === 'nocturno' || kept === 'diurno' ? kept : null;
+    // Assign, never delete: the kit reads a MISSING attribute as Nocturno.
+    root.dataset['modo'] = chosen ?? (dark.matches ? 'nocturno' : 'diurno');
+    modes.forEach((button) =>
+      button.setAttribute('aria-pressed', String(button.dataset['modeSet'] === (chosen ?? 'system'))),
+    );
+  };
+  applyMode();
+  dark.addEventListener('change', applyMode);
+  modes.forEach((button) =>
+    button.addEventListener('click', () => {
+      const mode = button.dataset['modeSet'] ?? 'system';
+      keep('numinia-modo', mode === 'system' ? null : mode);
+      applyMode();
+    }),
+  );
+
+  /* The menus: next to the button that opened them. */
+  document.querySelectorAll<HTMLElement>('[data-rail-menu]').forEach((menu) =>
+    menu.addEventListener('toggle', () => {
+      const open = menu.matches(':popover-open');
+      const button = [
+        ...document.querySelectorAll<HTMLElement>(`[popovertarget="${menu.id}"]`),
+      ].find((element) => element.checkVisibility());
+      menu.toggleAttribute('data-placed', open && button !== undefined);
+      if (!open || !button) return;
+      const width = Math.min(300, innerWidth - 16);
+      menu.style.width = `${width}px`;
+      const place = placeMenu(
+        button.getBoundingClientRect(),
+        { width, height: menu.offsetHeight },
+        { width: innerWidth, height: innerHeight },
+      );
+      menu.style.top = `${place.top}px`;
+      menu.style.left = `${place.left}px`;
+    }),
+  );
+
+  /* «/» opens the search unless the person is typing. */
+  const search = document.querySelector<HTMLAnchorElement>('[data-search]');
+  document.addEventListener('keydown', (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (event.defaultPrevented || !search || !opensSearch(event, target)) return;
+    event.preventDefault();
+    search.click();
+  });
+</script>

@@ -1,0 +1,338 @@
+---
+/**
+ * Your rail (v3, «La ciudad y tú»; the right one): what is yours, the
+ * city's rail in a mirror. The mirror is of POSITION only, never of reading:
+ * it sits on the right but reads like the left one — icon and word from the
+ * left, a counter right after its word. Sticky, 256 px, 72 px folded (kept
+ * under `numinia-sidebar-you`).
+ *
+ *   fold                     [ your face, name, rank ]  → «Tu menú»
+ *   [ plus  Crear  ▾ ]                                  → the Crear menu
+ *   Avisos · Tus comunidades · Tu saldo (signed in) · Tu botín
+ *   Ajustes · Aspecto [Sistema|Noche|Día] · Idioma [EN|ES|PT|日本|한국]
+ *   Cerrar sesión (signed in)
+ *
+ * Signed out the head is «Tú · Entrar» (the door) and a line says what this
+ * bar will hold. Every page is prerendered for everyone: the session script
+ * below decides after load and shows one face (`data-session-in/out`).
+ *
+ * The two menus live OUTSIDE the scrolling rail, in the top layer (native
+ * popovers: Esc and a click outside close them, the focus returns to their
+ * button, and their links follow the button in the tab order); the shell
+ * script places them next to their button. There is no presence: no
+ * status, no status phrase — never a control that does nothing.
+ */
+import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import { CHROME_MESSAGES } from '../../i18n/messages';
+import { APP_SHELL_UI } from '../../i18n/app-shell';
+import {
+  CREATE_ITEMS,
+  PANEL_PATH,
+  PROFILE_PATH,
+  SETTINGS_PATH,
+  YOU_ITEMS,
+  ariaCurrent,
+  localeHref,
+  navIcon,
+  navState,
+  signInHref,
+  signOutHref,
+} from '../../lib/app-nav';
+import Icon from './Icon.astro';
+import LanguageMenu from './LanguageMenu.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  /** Current path without the locale prefix (from BaseLayout). */
+  basePath: string;
+}
+
+const { locale, basePath } = Astro.props;
+const t = CHROME_MESSAGES[locale];
+const ui = APP_SHELL_UI[locale];
+const belong = YOU_ITEMS.find((item) => item.id === 'your-communities')!;
+const panelIcon = navIcon(belong, navState(belong, basePath));
+const ranks = RANK_DEFINITIONS.map((rank) => ({ id: rank.id, name: rank.name[locale] }));
+---
+
+<aside class="rail rail-tu" aria-label={ui.youRail} data-rail="you">
+  <div class="rail-cab">
+    <button
+      type="button"
+      class="rail-plegar"
+      aria-expanded="true"
+      aria-label={ui.foldYou}
+      data-fold={`${ui.foldYou}|${ui.unfoldYou}`}
+      data-rail-fold="you"
+      data-rail-tip={ui.foldYou}
+      data-metric="you-collapse"
+    >
+      <Icon name="sidebar-simple" size={20} />
+    </button>
+    <a
+      href={signInHref(locale, basePath)}
+      class="yo"
+      data-session-out
+      data-rail-tip={`${ui.youWord} · ${ui.enter}`}
+      data-metric="chrome-sign-in"
+    >
+      <span class="cara vacia" aria-hidden="true"><Icon name="user-circle" size={24} use /></span>
+      <span class="yo-txt rail-t"><b>{ui.youWord}</b><span class="yo-entrar">{ui.enter}</span></span>
+    </a>
+    <button
+      type="button"
+      class="yo"
+      popovertarget="menu-cara"
+      data-session-in
+      hidden
+      data-rail-tip={ui.faceMenu}
+      data-metric="chrome-account"
+    >
+      <span class="cara" aria-hidden="true">
+        <Icon name="user-circle-fill" size={24} use />
+        <img alt="" width="40" height="40" data-face-img hidden />
+      </span>
+      <span class="yo-txt rail-t">
+        <b class="mono" data-face-name data-session-short></b>
+        <span>
+          {ranks.map((rank) => <span data-rank-name={rank.id} hidden>{rank.name}</span>)}
+        </span>
+      </span>
+    </button>
+  </div>
+
+  <button
+    type="button"
+    class="rail-caja rail-crear"
+    popovertarget="menu-crear"
+    data-rail-tip={ui.create}
+    data-metric="you-create"
+  >
+    <Icon name="plus" size={20} use />
+    <span class="rail-t">{ui.create}</span>
+    <Icon name="caret-down" size={14} class="caja-caret" />
+  </button>
+
+  <nav class="rail-nav" aria-label={ui.youNav}>
+    <ul>
+      {
+        YOU_ITEMS.map((item) => {
+          const state = navState(item, basePath);
+          return (
+            <li data-session-in={item.signedInOnly ? '' : undefined} hidden={item.signedInOnly}>
+              <a
+                href={localeHref(locale, item.path)}
+                class="rail-item"
+                aria-current={ariaCurrent(state)}
+                data-rail-tip={ui.you[item.id]}
+                data-metric={`you-${item.id}`}
+              >
+                <Icon name={navIcon(item, state)} size={24} use />
+                <span class="rail-t">{ui.you[item.id]}</span>
+                {item.id === 'balance' && (
+                  <span class="rail-n mono" data-face-balance data-locale={locale} hidden />
+                )}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+  <p class="rail-txt" data-session-out>{ui.signedOutLine}</p>
+
+  <div class="rail-pie">
+    <a
+      href={localeHref(locale, SETTINGS_PATH)}
+      class="pie-link"
+      data-rail-tip={ui.settings}
+      data-metric="you-settings"
+    >
+      <Icon name="gear" size={20} use />
+      <span class="rail-t">{ui.settings}</span>
+    </a>
+    <div class="pie-seg">
+      <div class="seg" role="group" aria-label={`${ui.appearance} · ${t.modeToggle}`}>
+        <button type="button" aria-pressed="false" data-mode-set="system" data-metric="chrome-mode-system">
+          <Icon name="monitor" size={16} />{ui.system}
+        </button>
+        <button type="button" aria-pressed="false" data-mode-set="nocturno" data-metric="chrome-mode">
+          <Icon name="moon-stars" size={16} />{ui.night}
+        </button>
+        <button type="button" aria-pressed="false" data-mode-set="diurno" data-metric="chrome-mode-day">
+          <Icon name="sun" size={16} />{ui.day}
+        </button>
+      </div>
+      <LanguageMenu locale={locale} basePath={basePath} label={t.languageSelector} />
+    </div>
+    <a
+      href={signOutHref(locale)}
+      class="pie-link"
+      data-session-in
+      hidden
+      data-rail-tip={ui.signOut}
+      data-metric="you-sign-out"
+    >
+      <Icon name="sign-out" size={20} use />
+      <span class="rail-t">{ui.signOut}</span>
+    </a>
+  </div>
+</aside>
+
+<div id="menu-cara" class="pop pop-fijo" popover role="group" aria-label={ui.faceMenu} data-rail-menu>
+  <p class="pop-nombre mono" data-face-name data-session-short></p>
+  <p class="pop-etiqueta">{ui.rankLine}</p>
+  <p class="pop-rango">
+    {ranks.map((rank) => <span data-rank-name={rank.id} hidden>{rank.name}</span>)}
+  </p>
+  <hr />
+  <a href={localeHref(locale, PROFILE_PATH)} class="opc" data-metric="chrome-profile">
+    <Icon name="user-circle" size={20} use />
+    {ui.face.profile}
+  </a>
+  <a href={localeHref(locale, '/saldo/')} class="opc" data-metric="chrome-balance">
+    <Icon name="coins" size={20} />
+    {ui.face.balance}
+    <span class="der mono" data-face-balance data-locale={locale} hidden></span>
+  </a>
+  <hr />
+  <p class="pop-etiqueta" data-face-panels-label hidden>{ui.face.panels}</p>
+  <a href={localeHref(locale, PANEL_PATH)} class="opc" data-metric="chrome-panels" data-face-panels-door>
+    <Icon name={panelIcon} size={20} use />
+    {ui.panels}
+  </a>
+  <template data-face-panel>
+    <a href={localeHref(locale, PANEL_PATH)} class="opc" data-metric="chrome-panel-org">
+      <Icon name={panelIcon} size={20} use />
+      <span></span>
+    </a>
+  </template>
+  <hr />
+  <a href={localeHref(locale, SETTINGS_PATH)} class="opc" data-metric="chrome-account-settings">
+    <Icon name="gear" size={20} use />
+    {ui.settings}
+  </a>
+  <a href={signOutHref(locale)} class="opc" data-metric="chrome-sign-out">
+    <Icon name="sign-out" size={20} use />
+    {ui.face.signOut}
+  </a>
+</div>
+
+<div id="menu-crear" class="pop pop-fijo" popover role="group" aria-label={ui.create} data-rail-menu>
+  <p class="pop-etiqueta">{ui.create}</p>
+  {
+    CREATE_ITEMS.map((item) => (
+      <a
+        href={localeHref(locale, item.path)}
+        class="opc crear-opc"
+        data-metric={`you-create-${item.id}`}
+      >
+        <Icon name={item.icon} size={20} use />
+        <span>
+          <b>{ui.createItems[item.id].title}</b>
+          <small>{ui.createItems[item.id].what}</small>
+        </span>
+      </a>
+    ))
+  }
+  <p class="crear-pronto">{ui.createSoon}</p>
+</div>
+
+<script>
+  /* The chrome is the page's one session reader (lib/session-client.ts,
+     inlined here by the bundler). It paints every session-dependent mark on
+     the page, wherever it sits — so other components only mark up:
+       data-session-in / data-session-out   the face for each state
+       data-session-ranks="archon oracle"   shown only to those ranks
+       data-session-short                   the short wallet
+       data-rank-name="<rank>"              the rank's name, one shown
+       data-rank-ladder > [data-rank]       every rank up to yours granted
+     and `data-session` on <html> tells the stylesheet. */
+  import { pageSession, rankLevel } from '../../lib/session-client';
+  import { formatBalance, loadFace, panelLink } from '../../lib/face-menu';
+
+  const all = (selector: string): HTMLElement[] => [
+    ...document.querySelectorAll<HTMLElement>(selector),
+  ];
+
+  pageSession().subscribe((session) => {
+    const signedIn = session.status === 'in';
+    const rank = signedIn ? session.rank : '';
+    document.documentElement.dataset['session'] = signedIn ? 'in' : 'out';
+    all('[data-session-in]').forEach((element) => (element.hidden = !signedIn));
+    all('[data-session-out]').forEach((element) => (element.hidden = signedIn));
+    all('[data-session-ranks]').forEach((element) => {
+      element.hidden = !(element.dataset['sessionRanks'] ?? '').split(' ').includes(rank);
+    });
+    all('[data-rank-name]').forEach((element) => {
+      element.hidden = element.dataset['rankName'] !== rank;
+    });
+    if (signedIn) {
+      all('[data-session-short]').forEach((element) => (element.textContent = session.short));
+    }
+    all('[data-rank-ladder]').forEach((ladder) => {
+      const rows = [...ladder.querySelectorAll<HTMLElement>('[data-rank]')];
+      const level = rankLevel(
+        rows.map((row) => row.dataset['rank'] ?? ''),
+        session,
+      );
+      rows.forEach((row, index) => {
+        const pill = row.querySelector<HTMLElement>('[data-granted]');
+        if (!pill) return;
+        const state = index <= level ? 'granted' : 'locked';
+        pill.dataset['estado'] = state;
+        pill.textContent = pill.dataset[state] ?? '';
+      });
+    });
+  });
+
+  /* «Tu menú»: the first time it opens it asks the till (and the profile)
+     once, then writes the name, the face, the balance and the person's
+     panels into the markup the page already has — the rail's head, the
+     phone's sheet and the menu itself. Nothing is asked before; any failure
+     leaves the static menu as it is. */
+  const menu = document.getElementById('menu-cara');
+  let faceRead = false;
+  menu?.addEventListener('toggle', () => {
+    if (!menu.matches(':popover-open') || faceRead) return;
+    faceRead = true;
+    void loadFace((input, init) => fetch(input, init)).then((face) => {
+      if (face.name) {
+        all('[data-face-name]').forEach((name) => {
+          // The published name replaces the short wallet (and the session reader stops repainting it).
+          name.removeAttribute('data-session-short');
+          name.classList.remove('mono');
+          name.textContent = face.name;
+        });
+      }
+      if (face.face) {
+        all('img[data-face-img]').forEach((img) => {
+          (img as HTMLImageElement).src = face.face ?? '';
+          img.hidden = false;
+        });
+      }
+      if (face.balanceCents !== null) {
+        all('[data-face-balance]').forEach((figure) => {
+          figure.textContent = formatBalance(face.balanceCents ?? 0, figure.dataset['locale'] ?? 'es');
+          figure.hidden = false;
+        });
+      }
+      const door = menu.querySelector<HTMLAnchorElement>('[data-face-panels-door]');
+      const row = menu.querySelector<HTMLTemplateElement>('template[data-face-panel]');
+      if (!door || !row || face.panels.length === 0) return;
+      const base = door.getAttribute('href') ?? '';
+      face.panels.forEach((panel) => {
+        const link = row.content.cloneNode(true) as DocumentFragment;
+        const anchor = link.querySelector('a');
+        const label = link.querySelector('span');
+        if (!anchor || !label) return;
+        anchor.href = panelLink(base, panel.id);
+        label.textContent = panel.name;
+        door.before(link);
+      });
+      const heading = menu.querySelector<HTMLElement>('[data-face-panels-label]');
+      if (heading) heading.hidden = false;
+      door.hidden = true;
+    });
+  });
+</script>

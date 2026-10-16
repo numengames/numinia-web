@@ -68,8 +68,18 @@ const BUDGETS = {
       world with people from the live count the site already reads, which the
       home now asks for too (~1.6KB in all, the frame's script bundled and
       minified). The visitor face's mail form left (~0.6KB). Still no
-      external JS. Landing sits at ~20.6KB. */
-  landingInlineScriptBytes: 21_000,
+      external JS. Landing sits at ~20.6KB.
+      Then raised 21000→26500 on 2026-10-16 (v0.112.0, «La ciudad y tú»): the
+      new chrome's two mirrored rails need their own behaviour — each rail's
+      fold kept per device and by width, Sistema · Noche · Día, the rail
+      menus placed beside their button (~1.9KB), the folded rails' hoverable
+      tooltips with Esc (WCAG 1.4.13, ~1KB), «Ahora en la ciudad» filled from
+      /api/live (~0.9KB), the phone's «Tú» sheet focus (~0.4KB) and the
+      boot script's fold rule before paint (~0.5KB), minus the old sidebar
+      and top bar scripts. Three scripts, not one: each stays under the
+      bundler's inline limit and shares no module with the others, so the
+      landing still loads no external JS. With «Ahora» and the chrome together the landing sits near 25.5KB (measured at the gates). */
+  landingInlineScriptBytes: 26_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
@@ -133,8 +143,17 @@ const BUDGETS = {
       Raised 120000→124000 on 2026-10-16 (v0.108.0, «El menú de la cara»):
       the account menu gained its balance door, a label and a template for
       the person's panels (five locales' words, one coin icon in the sprite),
-      ~2.8KB. Landing sits at ~122.8KB. */
-  landingHtmlBytes: 124_000,
+      ~2.8KB. Landing sits at ~122.8KB.
+      Raised 124000→142000 on 2026-10-16 (v0.112.0, «La ciudad y tú»): the
+      chrome became two mirrored rails plus the phone's own pieces, all in
+      the one prerendered page — the city's rail (five places with their
+      counters, «Ahora en la ciudad», its foot), yours (both faces, «Crear»,
+      four places, the appearance and language as segmented controls), the
+      face and «Crear» menus, the phone's header, bottom bar and «Tú» sheet,
+      and the folded footer's second copy that closes the page on a phone,
+      with their five-locale words and ten more Phosphor symbols in the
+      sprite (~15KB). Still no external JS. Landing sits at ~139.6KB. */
+  landingHtmlBytes: 142_000,
 };
 
 const failures = [];
