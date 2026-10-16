@@ -113,8 +113,10 @@ test('Estadísticas opens with the city, counted from the register, and «Ahora 
   await expect(city).toContainText('Encuentros próximos');
   await expect(city).toContainText('Sedes abiertas');
   await expect(city).toContainText('Objetos en el Bazar');
-  // The fixture's /api/live answers every home with 0.
-  await expect(page.locator('[data-inside-total]')).toHaveText('0');
+  // The fixture's /api/live answers every home with 0. Every page of the new
+  // chrome asks /api/live too (the city rail), so under a full parallel run the
+  // answer can take longer than the default 5 s: wait for it a little longer.
+  await expect(page.locator('[data-inside-total]')).toHaveText('0', { timeout: 15_000 });
   // The city first, the archive below it.
   const headings = await page.locator('article h2').allTextContents();
   expect(headings).toEqual(['La ciudad', 'El archivo']);
