@@ -141,6 +141,12 @@ export interface DeskStatement {
   account: DeskAccount;
   balanceCents: number;
   lowBalance: boolean;
+  /**
+   * From a till of the cut «gratis»: whether the account has something that
+   * costs (a world charged to it or placed in it). Absent from an older till:
+   * see `hasCosts()`.
+   */
+  hasCosts?: boolean;
   lots: DeskLot[];
   spend: DeskSpend[];
   spendTotalCents: number;
@@ -673,8 +679,25 @@ export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
 export const TOPUP_KEYS: readonly TopupKey[] = ['10', '50', '100'];
 export const MEMBER_ROLES: readonly MemberRole[] = ['admin', 'member'];
 
-/** Under 10 € the screen warns «Saldo bajo» (the till says it too: `lowBalance`). */
+/** Under 10 € the screen warns «Saldo bajo» (the till says it too: `lowBalance`) — only on an account that has costs. */
 export const LOW_BALANCE_CENTS = 1000;
+
+/**
+ * Whether the account has anything that costs. A till of the cut «gratis»
+ * says it; an older one does not, and then a world's day in the lines is the
+ * evidence. Opening an organization is free: with nothing that costs, the
+ * screen asks for no money.
+ */
+export function hasCosts(statement: Pick<DeskStatement, 'hasCosts' | 'lines'>): boolean {
+  return statement.hasCosts ?? statement.lines.some((line) => line.kind === 'world_day');
+}
+
+/** The low-balance warning shows only when something costs and the balance is below the threshold. */
+export function warnsLowBalance(
+  statement: Pick<DeskStatement, 'hasCosts' | 'lines' | 'lowBalance'>,
+): boolean {
+  return statement.lowBalance && hasCosts(statement);
+}
 /** An organization's name: 1 to 60 characters once trimmed (the till's CHECK). */
 export const TEAM_NAME_MAX = 60;
 
@@ -1101,6 +1124,7 @@ export function readStatement(json: unknown): DeskStatement | null {
     isAccount(statement['account']) &&
     typeof statement['balanceCents'] === 'number' &&
     typeof statement['lowBalance'] === 'boolean' &&
+    (statement['hasCosts'] === undefined || typeof statement['hasCosts'] === 'boolean') &&
     Array.isArray(statement['spend']) &&
     typeof statement['spendTotalCents'] === 'number' &&
     Array.isArray(statement['lines']) &&

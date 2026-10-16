@@ -41,6 +41,7 @@ describe('the fixture desk', () => {
     const personal = (await d.statement(ME, 'acc_personal', '30d')) as DeskStatement;
     expect(personal.balanceCents).toBe(420);
     expect(personal.lowBalance).toBe(true);
+    expect(personal.hasCosts).toBe(true);
     expect(personal.members).toBeUndefined();
     expect((personal.lines[0]?.at ?? '') >= (personal.lines.at(-1)?.at ?? '')).toBe(true);
     const team = (await d.statement(ME, seed.teams[0]?.id, '12m')) as DeskStatement;

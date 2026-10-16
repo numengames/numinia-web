@@ -48,6 +48,8 @@ export interface PanelSummaryMessages {
     readonly runwayLess: string;
     readonly runwayStill: string;
     readonly empty: string;
+    /** With nothing that costs (cut «gratis»): no warning, the calm truth instead. */
+    readonly free: string;
   };
   readonly latest: {
     readonly label: string;
@@ -79,6 +81,7 @@ function fromSaldo(locale: SupportedLocale) {
       runwayLess: kpis.runwayLess,
       runwayStill: kpis.runwayStill,
       empty: `${balance.low} · ${balance.lowNote}`,
+      free: balance.free,
     },
     acts: panel.logAct,
   };

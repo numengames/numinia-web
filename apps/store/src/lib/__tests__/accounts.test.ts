@@ -27,6 +27,8 @@ import {
   formatBucket,
   formatEuros,
   formatTopup,
+  hasCosts,
+  warnsLowBalance,
   isCheckoutId,
   isSpendRange,
   isTopupKey,
@@ -79,7 +81,12 @@ describe('the desk contract', () => {
   });
 
   it('has where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-17, -13)).toEqual(['placeWorld', 'placements', 'worldsOf', 'homeOf']);
+    expect(DESK_METHODS.slice(-17, -13)).toEqual([
+      'placeWorld',
+      'placements',
+      'worldsOf',
+      'homeOf',
+    ]);
     expect([...OPTIONAL_DESK_METHODS].sort()).toEqual([
       'agentPass',
       'agents',
@@ -537,11 +544,31 @@ describe('reading the API in the browser', () => {
     expect(readStatement({ statement: { ...statement, members: [] } })).not.toBeNull();
     expect(readStatement({ statement: { ...statement, members: 'x' } })).toBeNull();
     expect(readStatement({ statement: { ...statement, lowBalance: 'yes' } })).toBeNull();
+    expect(readStatement({ statement: { ...statement, hasCosts: false } })).toMatchObject({
+      hasCosts: false,
+    });
+    expect(readStatement({ statement: { ...statement, hasCosts: 'no' } })).toBeNull();
     expect(readStatement({ statement: null })).toBeNull();
     expect(readStatement('x')).toBeNull();
     expect(readYou({ you: '0xab' })).toBe('0xab');
     expect(readYou({})).toBeNull();
     expect(readYou(null)).toBeNull();
+  });
+
+  it('warns of a low balance only on an account that has something that costs', () => {
+    const day = { kind: 'world_day' as const, at: '2026-10-14T00:30:00.000Z', amountCents: -60 };
+    const topup = { kind: 'topup' as const, at: '2026-10-01T00:00:00.000Z', amountCents: 1000 };
+    // A till of the cut «gratis» says it.
+    expect(hasCosts({ hasCosts: false, lines: [day] })).toBe(false);
+    expect(hasCosts({ hasCosts: true, lines: [] })).toBe(true);
+    // An older till does not: a world's day in the lines is the evidence.
+    expect(hasCosts({ lines: [topup, day] })).toBe(true);
+    expect(hasCosts({ lines: [topup] })).toBe(false);
+    expect(hasCosts({ lines: [] })).toBe(false);
+    expect(warnsLowBalance({ lowBalance: true, hasCosts: false, lines: [] })).toBe(false);
+    expect(warnsLowBalance({ lowBalance: true, hasCosts: true, lines: [] })).toBe(true);
+    expect(warnsLowBalance({ lowBalance: false, hasCosts: true, lines: [] })).toBe(false);
+    expect(warnsLowBalance({ lowBalance: true, lines: [day] })).toBe(true);
   });
 
   it('reads what a till of this cut adds, and drops any of it that is out of shape', () => {

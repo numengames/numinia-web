@@ -25,6 +25,7 @@ import {
   fill,
   formatAt,
   formatEuros,
+  hasCosts,
   readAccess,
   readRoles,
   readStatement,
@@ -124,8 +125,9 @@ function nextWhen(summary: PanelSummaryMessages, next: NextEncounter): string {
   return next.days <= 1 ? summary.next.soon : fill(summary.next.inDays, { n: next.days });
 }
 
-/** The balance card's second line: how long it lasts, or Saldo's words when nothing is left. */
+/** The balance card's second line: how long it lasts, Saldo's words when nothing is left, or — with nothing that costs — that it spends nothing yet. */
 function lastsText(summary: PanelSummaryMessages, statement: DeskStatement): string | null {
+  if (!hasCosts(statement)) return summary.balance.free;
   const runway = runwayOf(statement.balanceCents, statement.pace);
   if (runway === null) return null;
   if (runway.kind === 'empty') return summary.balance.empty;
