@@ -121,6 +121,7 @@ describe('the migration', () => {
       '0010_organization_settings.sql',
       '0011_organization_agents.sql',
       '0012_ritual_rsvps.sql',
+      '0013_community_requests.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -134,6 +135,7 @@ describe('the migration', () => {
         'at_zero_periods',
         'checkouts',
         'close_reports',
+        'community_requests',
         'keep_marks',
         'ledger_lines',
         'organization_settings',

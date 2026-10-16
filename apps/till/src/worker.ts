@@ -62,6 +62,15 @@ import {
   type EnsureAnswer,
   type OpenAllAnswer,
 } from './db/community-teams';
+import {
+  communityRequests,
+  decideCommunityRequest,
+  myCommunityRequests,
+  requestCommunity,
+  type MyRequestsAnswer,
+  type RequestAnswer,
+  type RequestsAnswer,
+} from './db/community-requests';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import {
   myRsvps,
@@ -599,6 +608,58 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     communities: unknown,
   ): Promise<OpenAllAnswer> {
     return openAllCommunities(this.env.TILL_DB, wallet, house, communities, new Date());
+  }
+
+  // ---- «Hazla tuya» for real (cut G, 2026-10-17): claiming a community and asking to join it ----
+
+  /** The signed-in wallet claims a community (`claim`) or asks to join it (`join`), with an optional note. */
+  async requestCommunity(
+    wallet: unknown,
+    communityId: unknown,
+    kind: unknown,
+    note?: unknown,
+  ): Promise<RequestAnswer> {
+    return requestCommunity(this.env.TILL_DB, wallet, communityId, kind, note, new Date());
+  }
+
+  /** The wallet's own requests, newest first; `communityId` narrows them to one community. */
+  async myCommunityRequests(wallet: unknown, communityId?: unknown): Promise<MyRequestsAnswer> {
+    return myCommunityRequests(this.env.TILL_DB, wallet, communityId);
+  }
+
+  /**
+   * The open requests of one community, to the house or an administrator of
+   * its organization; with no community, every open one, to the house alone.
+   */
+  async communityRequests(
+    wallet: unknown,
+    house?: unknown,
+    communityId?: unknown,
+  ): Promise<RequestsAnswer> {
+    return communityRequests(this.env.TILL_DB, wallet, house, communityId);
+  }
+
+  /**
+   * Accepts or declines an open request: the house or an administrator of the
+   * organization. `name` is the community's name, for the house to open the
+   * organization when a claim is accepted before it is open. Logged.
+   */
+  async decideCommunityRequest(
+    wallet: unknown,
+    requestId: unknown,
+    accept: unknown,
+    house?: unknown,
+    name?: unknown,
+  ): Promise<RequestAnswer> {
+    return decideCommunityRequest(
+      this.env.TILL_DB,
+      wallet,
+      house,
+      requestId,
+      accept,
+      name,
+      new Date(),
+    );
   }
 
   // ---- «IAs de organización» (2026-10-17): the AIs an organization sends into its worlds ----
