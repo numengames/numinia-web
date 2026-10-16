@@ -3,8 +3,8 @@
  * but the house it is the plain field it always was: a wallet typed by
  * hand, and not one request more. For the house — an Oracle's session, as
  * the chrome read it — it is an ARIA combobox: as two or more characters are
- * typed it suggests people who have signed in (by name or wallet, from
- * /api/admin/citizens through lib/census-list.ts), walked with the arrows,
+ * typed it suggests people who have signed in (by name or wallet, from the
+ * house's list, asked only through lib/census-list.ts), walked with the arrows,
  * picked with Enter or a click, which fills in the wallet. Typing a whole
  * wallet still works, and then nothing is suggested.
  */
