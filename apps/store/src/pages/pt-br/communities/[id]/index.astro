@@ -1,5 +1,6 @@
 ---
 import CommunityPage from '../../../../components/communities/CommunityPage.astro';
+import HousePage from '../../../../components/communities/HousePage.astro';
 import { COMMUNITIES } from '../../../../components/communities/register';
 
 export function getStaticPaths() {
@@ -9,4 +10,10 @@ export function getStaticPaths() {
 const { community } = Astro.props;
 ---
 
-<CommunityPage locale="pt-br" community={community} />
+{
+  community.state === 'founder' ? (
+    <HousePage locale="pt-br" community={community} />
+  ) : (
+    <CommunityPage locale="pt-br" community={community} />
+  )
+}

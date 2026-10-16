@@ -865,7 +865,8 @@ Then('every city address redirects to how it works in its own locale', async fun
 });
 
 Then('every community page carries the follow button', async function () {
-  for (const id of publishedCommunityIds()) {
+  // The house's page is a narrative since v3 (features/house.feature): no card, no follow.
+  for (const id of publishedCommunityIds().filter((entry) => entry !== 'numen-games')) {
     for (const prefix of ['', 'es']) {
       const html = await readFile(
         path.join(this.distDir, prefix, 'communities', id, 'index.html'),
@@ -1035,7 +1036,8 @@ function spacePiece(html, piece) {
 }
 
 Then('every community page lists the five pieces its space uses', async function () {
-  for (const id of publishedCommunityIds()) {
+  // The house's page is a narrative since v3 (features/house.feature): it tells, it lists no pieces.
+  for (const id of publishedCommunityIds().filter((entry) => entry !== 'numen-games')) {
     for (const prefix of LOCALE_PREFIXES) {
       const where = `${id} (${prefix || 'en'})`;
       const html = await readFile(
@@ -1090,20 +1092,15 @@ Then(
       assert.ok(entry.body.includes('En construcción'), `trgcon: ${piece} without its words`);
       assert.match(entry.body, crane, `trgcon: ${piece} without the crane`);
     }
-    // The founder keeps the commons (nothing counted there) and states its archive and people.
+    // The founder keeps the commons (nothing counted there): its narrative page opens them in «Lo que cuida».
     const founderHtml = await page('numen-games');
-    const commons = spacePiece(founderHtml, 'home');
-    assert.equal(commons?.state, 'world', 'numen-games: no commons');
-    const door = hrefOf(commons.body, 'community-uses-home');
+    const door = hrefOf(founderHtml, 'house-world-enter');
     assert.equal(
       `${door?.origin}${door?.pathname}`,
       'https://v2.oncyber.io/agora_plaza_of_numinia',
-      'numen-games: the block does not open the commons',
+      'numen-games: «Lo que cuida» does not open the commons',
     );
-    assert.ok(!commons.body.includes('data-inside='), 'numen-games: counts the commons');
-    assert.equal(spacePiece(founderHtml, 'archive')?.state, 'stated');
-    assert.equal(spacePiece(founderHtml, 'members')?.state, 'stated');
-    assert.equal(spacePiece(founderHtml, 'balance')?.state, 'building');
+    assert.ok(!founderHtml.includes('data-inside='), 'numen-games: counts the commons');
   },
 );
 

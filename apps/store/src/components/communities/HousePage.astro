@@ -1,0 +1,642 @@
+---
+/**
+ * The page of Numen Games (v3 «La esfera y la casa»): not a card page but
+ * a narrative. The house is not one more community — it is the community of
+ * communities, the metagame — so its page tells what it does and why, with
+ * the canon's words, and draws every community round it in the big sphere.
+ *
+ *   hero          its kind, its name, what it does, the canon quote, the
+ *                 door to the Agora (only while the commons has a real
+ *                 world in the data) and «Cómo se juega»; the big sphere
+ *                 with the legend — pointing at a chip brings its dot front
+ *   three rings   PRI-006: the motive, the model, the story
+ *   the metagame  the ranks (@numinia/domain), the Gates, the seasons, the
+ *                 seals (computed, never chosen), the Codex — only what
+ *                 exists, linked where it has a page
+ *   what it keeps the commons it keeps, from the register and the domain
+ *   its dates     its encounters from the register and its weekly ones
+ *   people · archive · bazaar, and the close: the Khepri and the epitaph
+ *
+ * Canon is never invented here (i18n/house.ts says where each line is from).
+ */
+import { AGORA_PLAZA, RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { HOUSE_UI } from '../../i18n/house';
+import { EPITAPH } from '../../lib/canon';
+import { pick, ritualsOf, upcoming, worldOf, type Community } from '../../lib/communities';
+import { communityActivity, ringChoice } from '../../lib/house-sphere';
+import { symbolId } from '../../lib/svg-sprite';
+import { COMMUNITIES, RITUALS } from './register';
+import Icon from '../chrome/Icon.astro';
+import Countdown from './Countdown.astro';
+import HouseSphere from './HouseSphere.astro';
+import PeopleList from './PeopleList.astro';
+import RitualCard from './RitualCard.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+  community: Community;
+}
+
+const { locale, community } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const hui = HOUSE_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const others = COMMUNITIES.filter((entry) => entry.id !== community.id);
+const ring = ringChoice(others, (entry) => communityActivity(entry, RITUALS));
+const short = (name: string): string => name.split(' · ')[0] ?? name;
+
+// The Agora's door only while the commons has a real world in the data.
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const kept = worldOf(community, commons, locale);
+const coming = upcoming(ritualsOf(community.id, RITUALS));
+const ranks = [...RANK_DEFINITIONS].sort((a, b) => a.level - b.level);
+const firstRank = ranks[0]?.name[locale] ?? '';
+const lastRank = ranks[ranks.length - 1]?.name[locale] ?? '';
+const seals = [
+  { file: 'logias', name: hui.seals.lodge },
+  { file: 'ligas', name: hui.seals.league },
+  { file: 'hermandades', name: hui.seals.brotherhood },
+];
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${community.name} — Numinia`}
+  description={`${hui.cardLine}. ${hui.cardText}`}
+>
+  <p class="migas">
+    <a href={`${prefix}/`}>Numinia</a> / <a href={`${prefix}/communities/`}>{ui.crumbCommunities}</a> / {community.name}
+  </p>
+
+  <section class="casa-hero" data-house-figure aria-labelledby="casa-titulo">
+    <div class="casa-hero-txt">
+      <div class="fila"><span class="chip ambar">{pick(community.kind, locale)}</span></div>
+      <h1 id="casa-titulo">{community.name}</h1>
+      <p class="sub">{hui.cardLine}</p>
+      <p class="lead">{hui.lead}</p>
+      <p class="texto-2 resumen">{pick(community.summary, locale)}</p>
+      <blockquote class="cita" lang={hui.canonLang}>
+        <p>{hui.quote}</p>
+        <cite>{hui.quoteSource}</cite>
+      </blockquote>
+      <div class="fila acciones">
+        {
+          kept ? (
+            <a
+              class="btn btn-primario"
+              href={kept.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-metric="house-enter-agora"
+            >
+              <Icon name="play" size={18} />
+              {hui.enterAgora}
+            </a>
+          ) : (
+            <a class="btn btn-primario" href="#cuida" data-metric="house-its-worlds">
+              {hui.itsWorlds}
+            </a>
+          )
+        }
+        <a class="btn btn-fantasma" href={`${prefix}/how-it-works/`} data-metric="house-how-to-play">
+          {hui.howToPlay}
+        </a>
+      </div>
+    </div>
+    <figure class="casa-esfera">
+      <HouseSphere locale={locale} dots={ring.shown} rest={ring.rest.length} restHref="#leyenda" big />
+      <figcaption class="leyenda" id="leyenda">
+        <p class="small texto-2">{fill(hui.legend, { n: others.length })}</p>
+        <ul class="chips" aria-label={hui.legendLabel}>
+          {
+            others.map((entry) => (
+              <li>
+                <a
+                  class="chip"
+                  href={`${prefix}/communities/${entry.id}/`}
+                  data-ring-chip={entry.id}
+                  data-metric="house-legend-chip"
+                >
+                  {short(entry.name)}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="bloque" id="nudo" aria-labelledby="nudo-titulo">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m" id="nudo-titulo">{hui.ringsTitle}</h2>
+        <p class="ayuda">{hui.ringsHelp}</p>
+      </div>
+      <a
+        class="btn btn-silencioso btn-sm"
+        href="https://numinia.org"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-metric="house-rings-summa"
+      >
+        {hui.ringsRead}
+        <Icon name="arrow-square-out" size={16} />
+      </a>
+    </div>
+    <div class="nudo">
+      <svg class="borromeo" viewBox="0 0 120 112" aria-hidden="true" focusable="false">
+        <circle cx="40" cy="40" r="30"></circle>
+        <circle cx="80" cy="40" r="30"></circle>
+        <circle cx="60" cy="74" r="30"></circle>
+      </svg>
+      <ol class="anillos-3">
+        <li><b>{hui.rings[0].title}</b><span>{hui.rings[0].text}</span></li>
+        <li><b>{hui.rings[1].title}</b><span>{hui.rings[1].text}</span></li>
+        <li>
+          <b>{hui.rings[2].title}</b>
+          <span><span lang={hui.canonLang}>{hui.rings[2].text}</span> {hui.storyTail}</span>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="bloque" id="metajuego" aria-labelledby="meta-titulo">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m" id="meta-titulo">{hui.metaTitle}</h2>
+        <p class="ayuda">{hui.metaHelp}</p>
+      </div>
+    </div>
+    <div class="meta-rejilla">
+      <article class="tarjeta meta">
+        <h3><Icon name="chart-bar" size={20} />{hui.rankTitle}</h3>
+        <p>{hui.rankText}</p>
+        <ol class="escalera" aria-label={hui.ladderLabel} data-house-ranks>
+          {ranks.map((rank) => <li>{rank.name[locale]}</li>)}
+        </ol>
+        <p class="nota">{fill(hui.rankNote, { first: firstRank, last: lastRank })}</p>
+      </article>
+      <article class="tarjeta meta">
+        <h3><Icon name="compass" size={20} />{hui.doorsTitle}</h3>
+        <p>{hui.doorsText}</p>
+        <a class="ir" href={`${prefix}/lap/seasons/`} data-metric="house-meta-doors">
+          {hui.doorsLink} <span aria-hidden="true">→</span>
+        </a>
+      </article>
+      <article class="tarjeta meta">
+        <h3><Icon name="flame" size={20} />{hui.seasonsTitle}</h3>
+        <p>{hui.seasonsText}</p>
+      </article>
+      <article class="tarjeta meta">
+        <h3><Icon name="shield-check" size={20} />{hui.sealsTitle}</h3>
+        <p>{hui.sealsText}</p>
+        <ul class="sellos">
+          {
+            seals.map((seal) => (
+              <li>
+                <img src={`/images/seals/${seal.file}.webp`} alt="" width="56" height="56" loading="lazy" decoding="async" />
+                <span>{seal.name}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </article>
+      <article class="tarjeta meta">
+        <h3><Icon name="book-open" size={20} />{hui.codexTitle}</h3>
+        <p>{hui.codexText}</p>
+        <a class="ir" href={`${prefix}/lap/codex/`} data-metric="house-meta-codex">
+          {hui.codexLink} <span aria-hidden="true">→</span>
+        </a>
+      </article>
+    </div>
+  </section>
+
+  {
+    kept && (
+      <section class="bloque" id="cuida" aria-labelledby="cuida-titulo">
+        <div class="cabecera-bloque">
+          <div>
+            <h2 class="titulo-m" id="cuida-titulo">{hui.caresTitle}</h2>
+            {community.home && <p class="ayuda">{pick(community.home, locale)}</p>}
+          </div>
+        </div>
+        <div class="mundos">
+          <article class="tarjeta mundo">
+            <div class="sede">
+              <img src="/images/art/city.webp" alt="" loading="lazy" decoding="async" width="892" height="960" />
+            </div>
+            <div class="fila entre sede-pie">
+              <b>{kept.name}</b>
+              <a
+                class="btn btn-primario btn-sm"
+                href={kept.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="house-world-enter"
+              >
+                <Icon name="play" size={16} />
+                {ui.enter}
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="bloque" id="citas" aria-labelledby="citas-titulo">
+    <div class="cabecera-bloque">
+      <div>
+        <h2 class="titulo-m" id="citas-titulo">{hui.datesTitle}</h2>
+        <p class="ayuda">{hui.datesHelp}</p>
+      </div>
+    </div>
+    <div class="dos citas">
+      {
+        coming.length > 0 ? (
+          <ul class="lista-rit">
+            {coming.map((ritual) => (
+              <li>
+                <RitualCard ritual={ritual} community={community} locale={locale} prefix={prefix} ui={ui} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="vacio">
+            <Icon name="hourglass" size={24} />
+            <span>{hui.noDates}</span>
+          </p>
+        )
+      }
+      {
+        community.weekly.length > 0 && (
+          <div class="tarjeta">
+            <h3 class="card-h2">
+              <Icon name="moon-stars" size={20} />
+              {ui.weekly}
+            </h3>
+            <ul class="linea-lista">
+              {community.weekly.map((entry) => (
+                <li>
+                  <span>{pick(entry.name, locale)}</span>
+                  <span class="small texto-2">{pick(entry.when, locale)}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="small texto-2" style="margin: var(--s3) 0 0">{ui.weeklyNote}</p>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="bloque dos" aria-label={hui.peopleTitle}>
+    <div class="tarjeta">
+      <h2 class="card-h2"><Icon name="users" size={20} />{hui.peopleTitle}</h2>
+      {community.people && <p class="texto-2" style="margin: 0">{pick(community.people, locale)}</p>}
+      {community.team !== undefined && <PeopleList ui={ui} community={community.id} />}
+    </div>
+    <div class="pila">
+      <div class="tarjeta">
+        <h2 class="card-h2"><Icon name="archive" size={20} />{hui.archiveTitle}</h2>
+        <p class="texto-2" style="margin: 0 0 var(--s3)">{hui.archiveText}</p>
+        <a
+          class="ir"
+          href="https://numinia.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-metric="house-archive"
+        >
+          numinia.org <Icon name="arrow-square-out" size={16} />
+        </a>
+      </div>
+      <div class="tarjeta">
+        <h2 class="card-h2"><Icon name="package" size={20} />{hui.bazaarTitle}</h2>
+        <p class="texto-2" style="margin: 0 0 var(--s3)">{hui.bazaarText}</p>
+        <a class="ir" href={`${prefix}/bazaar/`} data-metric="house-bazaar">
+          {hui.bazaarLink} <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="cierre-casa">
+    <svg class="khepri-cierre" aria-hidden="true" focusable="false"><use href={`#${symbolId('khepri')}`}></use></svg>
+    <p lang="en">«{EPITAPH}»</p>
+  </div>
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  .casa-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 540px);
+    gap: var(--s6);
+    align-items: center;
+    padding: var(--s3) 0 var(--s6);
+    border-bottom: 1px solid var(--linea);
+  }
+  .casa-hero h1 {
+    font-size: clamp(2.6rem, 5vw, 4.4rem);
+    letter-spacing: -0.04em;
+    font-weight: 500;
+    margin: var(--s3) 0 0;
+    line-height: 1;
+  }
+  .sub {
+    font: 500 0.7rem var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    margin: var(--s3) 0 var(--s3);
+  }
+  .lead {
+    font-size: 1.18rem;
+    line-height: 1.5;
+    color: var(--texto);
+    max-width: 54ch;
+  }
+  .resumen {
+    max-width: 56ch;
+  }
+  .cita {
+    margin: var(--s5) 0;
+    padding-left: var(--s4);
+    border-left: 2px solid var(--ambar);
+    font-size: 1.12rem;
+    font-style: italic;
+    color: var(--texto);
+    max-width: 52ch;
+  }
+  .cita p {
+    margin: 0;
+  }
+  .cita cite {
+    display: block;
+    margin-top: var(--s2);
+    font: 500 0.72rem var(--mono);
+    font-style: normal;
+    letter-spacing: 0.08em;
+    color: var(--texto-2);
+  }
+  .acciones {
+    gap: var(--s3);
+  }
+  .casa-esfera {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    min-width: 0;
+  }
+  .leyenda {
+    margin-top: var(--s2);
+    max-width: 540px;
+    text-align: center;
+  }
+  .leyenda p {
+    margin: 0 0 var(--s2);
+  }
+  .chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .chips .chip {
+    min-height: 26px;
+  }
+  .chips .chip:hover,
+  .chips .chip:focus-visible {
+    color: var(--texto);
+    border-color: var(--verdemar);
+  }
+  .nudo {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--s6);
+    align-items: center;
+  }
+  .borromeo {
+    width: 200px;
+    height: auto;
+    overflow: visible;
+  }
+  .borromeo circle {
+    fill: none;
+    stroke-width: 2.5;
+  }
+  .borromeo circle:nth-child(1) {
+    stroke: var(--ambar);
+  }
+  .borromeo circle:nth-child(2) {
+    stroke: var(--verdemar);
+  }
+  .borromeo circle:nth-child(3) {
+    stroke: var(--coral);
+  }
+  .anillos-3 {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s4);
+  }
+  .anillos-3 li {
+    position: relative;
+    padding-left: 26px;
+  }
+  .anillos-3 li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2.5px solid var(--ambar);
+  }
+  .anillos-3 li:nth-child(2)::before {
+    border-color: var(--verdemar);
+  }
+  .anillos-3 li:nth-child(3)::before {
+    border-color: var(--coral);
+  }
+  .anillos-3 b {
+    display: block;
+    font-size: 1.08rem;
+    margin-bottom: 2px;
+  }
+  .anillos-3 span {
+    color: var(--texto-2);
+  }
+  .meta-rejilla {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+  }
+  .meta {
+    display: flex;
+    flex-direction: column;
+  }
+  .meta h3 {
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+    font-size: 1.08rem;
+    margin: 0 0 var(--s2);
+  }
+  .meta h3 :global(.icono) {
+    color: var(--ambar);
+  }
+  .meta p {
+    color: var(--texto-2);
+    font-size: 0.92rem;
+    margin: 0 0 var(--s3);
+  }
+  .meta .ir {
+    margin-top: auto;
+  }
+  .ir {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 24px;
+    color: var(--enlace);
+    font-weight: 500;
+  }
+  .escalera {
+    list-style: none;
+    margin: 0 0 var(--s3);
+    padding: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+  }
+  .escalera li {
+    font: 500 0.72rem var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    padding: 4px 10px;
+    border-left: 2px solid var(--linea-f);
+  }
+  .escalera li:last-child {
+    border-left-color: var(--ambar);
+    color: var(--ambar);
+  }
+  .meta .nota {
+    font-size: 0.82rem;
+    margin: 0;
+  }
+  .sellos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+  }
+  .sellos li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font: 500 0.72rem var(--mono);
+    color: var(--texto-2);
+  }
+  .sellos img {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 1px solid var(--linea-f);
+  }
+  .mundos {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  }
+  .sede {
+    height: 170px;
+    border-radius: var(--radio-control);
+    overflow: hidden;
+    border: 1px solid var(--linea);
+  }
+  .sede img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .sede-pie {
+    margin-top: var(--s3);
+  }
+  .citas {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+    margin-top: 0;
+  }
+  .lista-rit {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  }
+  .lista-rit > * {
+    min-width: 0;
+  }
+  .cierre-casa {
+    margin-top: var(--s6);
+    padding: var(--s7) var(--s4) var(--s4);
+    border-top: 1px solid var(--linea);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s4);
+  }
+  .khepri-cierre {
+    width: 44px;
+    height: 44px;
+    color: var(--texto-2);
+    fill: currentColor;
+  }
+  .cierre-casa p {
+    font-style: italic;
+    color: var(--texto-2);
+    max-width: 60ch;
+    margin: 0;
+  }
+  @media (max-width: 1180px) {
+    .casa-hero {
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+    }
+  }
+  @media (max-width: 960px) {
+    .casa-hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .nudo {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .citas {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .borromeo {
+      width: 150px;
+    }
+  }
+</style>
