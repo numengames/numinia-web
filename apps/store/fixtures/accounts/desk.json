@@ -2824,5 +2824,17 @@
         }
       ]
     }
+  ],
+  "profiles": [
+    {
+      "wallet": "0x00000000000000000000000000000000000000a1",
+      "name": "Lucía Vidal",
+      "avatar": "avatar-arla-mncdhz3l"
+    },
+    {
+      "wallet": "0x00000000000000000000000000000000000000b2",
+      "name": "Marco Ibáñez",
+      "avatar": null
+    }
   ]
 }

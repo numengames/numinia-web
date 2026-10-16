@@ -86,6 +86,8 @@ import {
   type DeskRolesAnswer,
   type DeskOverview,
   type DeskPace,
+  type DeskProfile,
+  type DeskProfileAnswer,
   type DeskRefusal,
   type DeskSizePrice,
   type DeskSpend,
@@ -99,6 +101,7 @@ import {
   type SpendRange,
   type TopupKey,
 } from './accounts';
+import { readProfileChange } from './profile-name';
 
 /** One line of the seed, dated in days before today. */
 export interface SeedLine {
@@ -138,12 +141,21 @@ export interface SeedTeam {
   readonly lines: readonly SeedLine[];
 }
 
+/** A name and a Bazar avatar a seeded person has published (cut «Tu nombre y tu cara»). */
+interface SeedProfile {
+  readonly wallet: string;
+  readonly name: string;
+  readonly avatar: string | null;
+}
+
 /** What the fixture desk starts with, for every wallet. */
 export interface AccountsSeed {
   /** Absent: the desk answers as a till before the cut «el dinero» would, with no tariff to show. */
   readonly tariff?: SeedTariff;
   readonly personal: { readonly id: string; readonly lines: readonly SeedLine[] };
   readonly teams: readonly SeedTeam[];
+  /** Who has published a name already: the members screens and the people lists show them. */
+  readonly profiles?: readonly SeedProfile[];
 }
 
 const DAY_MS = 86_400_000;
@@ -461,6 +473,22 @@ export function createAccountsFixtureDesk(
   const wallets = new Map<string, Book[]>();
   const checkouts = new Map<string, Checkout>();
   let teamsMade = 0;
+  /**
+   * «Tu nombre y tu cara»: one entry per wallet that published, as the till's
+   * `wallet_profiles` — shared by every wallet's copy of the seed, replaced
+   * on change and deleted on removal.
+   */
+  const profiles = new Map<string, DeskProfile>(
+    (seed.profiles ?? []).map(({ wallet, name, avatar }) => [
+      wallet,
+      { name, avatar, updatedAt: now().toISOString() },
+    ]),
+  );
+  /** What a member published, as the till's roles view adds it: absent when nothing. */
+  const publishedBy = (wallet: string): Pick<DeskMemberDetail, 'name' | 'avatar'> => {
+    const profile = profiles.get(wallet);
+    return profile === undefined ? {} : { name: profile.name, avatar: profile.avatar };
+  };
 
   /** The wallet's books, created on first sight like the till's personal account. */
   const booksOf = (wallet: string): Book[] => {
@@ -615,6 +643,7 @@ export function createAccountsFixtureDesk(
             assignable: book.roles
               .filter((role) => canAssignRole(access, target, role).ok)
               .map((role) => role.id),
+            ...publishedBy(member.wallet),
           };
         }),
     };
@@ -1054,6 +1083,30 @@ export function createAccountsFixtureDesk(
         checkout.state = 'paid';
       }
       return { ok: true, state: 'paid', accountId: book.id, balanceCents: balanceOf(book) };
+    },
+
+    // ---- «Tu nombre y tu cara» (2026-10-16): the till's `profile` and `setProfile` ----
+
+    profile: async (wallet): Promise<DeskProfileAnswer> => {
+      const who = typeof wallet === 'string' ? walletOf(wallet) : null;
+      if (who === null || who !== wallet) return refuse(BAD_WALLET);
+      return { ok: true, profile: copy(profiles.get(who) ?? null) };
+    },
+
+    setProfile: async (wallet, change): Promise<DeskProfileAnswer> => {
+      const who = typeof wallet === 'string' ? walletOf(wallet) : null;
+      const read = readProfileChange(change);
+      const lowercase = who !== null && who === wallet;
+      if (!lowercase || Array.isArray(read)) {
+        return refuse(...(lowercase ? [] : [BAD_WALLET]), ...(Array.isArray(read) ? read : []));
+      }
+      if (read === null) {
+        profiles.delete(who);
+        return { ok: true, profile: null };
+      }
+      const profile: DeskProfile = { ...read, updatedAt: now().toISOString() };
+      profiles.set(who, profile);
+      return { ok: true, profile: copy(profile) };
     },
   };
 }

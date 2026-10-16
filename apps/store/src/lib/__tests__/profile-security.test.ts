@@ -11,11 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSessionToken } from '@numinia/auth';
 import type { AccountDesk } from '../accounts';
 import { NOT_MEMBER } from '../accounts';
-import { resetFixtureAccountsForTests } from '../accounts-source';
+import { accountsFrom, answerPeople, resetFixtureAccountsForTests } from '../accounts-source';
 import { SESSION_COOKIE } from '../auth/server';
+import { sessionWallet } from '../auth/session-wallet';
 import { primeRuntimeEnv } from '../runtime-env';
 import { GET as getProfile, POST as postProfile } from '../../pages/api/profile';
-import { GET as getPeople } from '../../pages/api/people';
 import { GET as getRoles } from '../../pages/api/saldo/roles';
 
 const SECRET = 'w'.repeat(40);
@@ -67,6 +67,21 @@ const posting = (body: unknown): RequestInit => ({
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify(body),
 });
+
+/**
+ * GET /api/people?comunidad=numen-games, as its route answers it: the desk
+ * the route finds, the wallet of the real session cookie, and the
+ * organization the community's file links. (The route itself imports the
+ * community register, Markdown only the build reads.)
+ */
+async function getPeople(wallet: string | null): Promise<Response> {
+  const token = wallet === null ? undefined : await tokenOf(wallet);
+  return answerPeople(
+    accountsFrom({ binding: bound, dataSource: 'fixture' }),
+    await sessionWallet(token),
+    NUMEN,
+  );
+}
 
 /** The till's members of Numen Games, published names and avatars included, for ME and OTHER only. */
 const TILL_VIEW = {
@@ -199,11 +214,10 @@ describe('no answer to someone who is not a member carries a name or a face', ()
   it('shows a member the names; a stranger or a visitor only how many', async () => {
     const desk = tillLike();
     bound = desk;
-    const people = 'https://numinia.com/api/people?comunidad=numen-games';
-    const member = await body(await getPeople(await context(OTHER, people)));
+    const member = await body(await getPeople(OTHER));
     expect(member).toMatch(/Rima/);
     for (const who of [STRANGER, null]) {
-      const answer = await getPeople(await context(who, people));
+      const answer = await getPeople(who);
       expect(answer.status).toBe(200);
       const text = await body(answer);
       expect(JSON.parse(text)).toEqual({ view: 'count', members: 2 });
@@ -226,9 +240,8 @@ describe('no answer to someone who is not a member carries a name or a face', ()
     const profile = 'https://numinia.com/api/profile';
     await postProfile(await context(ME, profile, posting({ name: 'Rima', avatar: ARLA })));
     // OTHER's own world of the fixture is a separate set of organizations: ME is in none of them.
-    const people = await body(
-      await getPeople(await context(OTHER, 'https://numinia.com/api/people?comunidad=numen-games')),
-    );
+    const people = await body(await getPeople(OTHER));
+    expect(people).toMatch(/Lucía Vidal/);
     expect(people).not.toMatch(/Rima/);
     const roles = await body(
       await getRoles(await context(OTHER, `https://numinia.com/api/saldo/roles?cuenta=${NUMEN}`)),

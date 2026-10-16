@@ -60,8 +60,11 @@ import {
   type AccountDesk,
   type Asker,
   type DeskAccount,
+  type DeskMemberDetail,
+  type DeskProfileChange,
   type DeskRoleChange,
   type DeskRoleDraft,
+  type OwnProfile,
   type SpendRange,
 } from './accounts';
 import { createAccountsFixtureDesk, type AccountsSeed } from './accounts-fixture';
@@ -76,7 +79,17 @@ import {
   type FreshProof,
 } from './fresh-signature';
 import { peopleOf } from './people';
+import { isProfileAvatar } from './profile-avatars';
+import { PROFILE_AVATAR_PROBLEM } from './profile-name';
 import { logEvent } from './telemetry';
+import { faceSrc } from './thumbs';
+
+/** workerd's words when the till's entrypoint has no such method: a till older than the store. */
+const NOT_IMPLEMENTED = 'does not implement the method';
+
+/** What a binding without an optional method answers instead: workerd's own words. */
+const absent = (method: string): Promise<never> =>
+  Promise.reject(new TypeError(`The desk ${NOT_IMPLEMENTED} "${method}".`));
 
 /** The desk read off whatever workerd bound: its methods (the optional ones may be missing), or null when it is not a desk. */
 export function boundAccounts(binding: unknown): AccountDesk | null {
@@ -118,6 +131,14 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
     startTopup: (wallet, accountId, key, returnBase, house) =>
       stub.startTopup(wallet, accountId, key, returnBase, house),
     confirmTopup: (wallet, sessionId) => stub.confirmTopup(wallet, sessionId),
+    // «Tu nombre y tu cara»: optional (OPTIONAL_DESK_METHODS). A binding without them
+    // answers as workerd does for a till older than the method, so /api/profile says 503.
+    profile: (wallet) =>
+      typeof desk.profile === 'function' ? stub.profile(wallet) : absent('profile'),
+    setProfile: (wallet, change) =>
+      typeof desk.setProfile === 'function'
+        ? stub.setProfile(wallet, change)
+        : absent('setProfile'),
   };
 }
 
@@ -158,6 +179,8 @@ export function accountsFrom(env: AccountsEnv): AccountDesk | null {
  */
 export const MAX_BODY_BYTES = 8_192;
 const ID_MAX = 100;
+/** A name as typed, before the till trims and counts it (60 characters): bounded, never judged here. */
+const PROFILE_TEXT_MAX = 1_000;
 /** A fresh signature's token: its claims hold the signed lines, in any of the five languages. */
 const TOKEN_MAX = 4_096;
 /** A signature in hex: 132 characters from an ordinary wallet, more from a smart account. */
@@ -348,13 +371,23 @@ function buildSchemas() {
     members: z.number(),
     mayEdit: z.boolean(),
   });
-  const memberDetail = z.object({
-    wallet: z.string(),
-    owner: z.boolean(),
-    addedAt: z.string(),
-    roleIds: z.array(z.string()),
-    assignable: z.array(z.string()),
-  });
+  const memberDetail = z
+    .object({
+      wallet: z.string(),
+      owner: z.boolean(),
+      addedAt: z.string(),
+      roleIds: z.array(z.string()),
+      assignable: z.array(z.string()),
+      // «Tu nombre y tu cara» (STD-053): what the member published, absent when nothing.
+      name: z.string().optional(),
+      avatar: z.string().nullable().optional(),
+    })
+    // The avatar's id never travels on: a browser gets its baked thumbnail, or null.
+    .transform(({ name, avatar, ...member }): DeskMemberDetail =>
+      name === undefined
+        ? member
+        : { ...member, name, face: avatar == null ? null : faceSrc(avatar) },
+    );
   const roles = z.union([
     z.object({
       ok: z.literal(true),
@@ -392,6 +425,22 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  // «Tu nombre y tu cara»: the till's answer for one's own profile, and what the browser may send.
+  const profile = z.union([
+    z.object({
+      ok: z.literal(true),
+      profile: z
+        .object({ name: z.string(), avatar: z.string().nullable(), updatedAt: z.string() })
+        .nullable(),
+    }),
+    refusal,
+  ]);
+  const profileRequest = z.union([
+    z
+      .object({ name: z.string().max(PROFILE_TEXT_MAX), avatar: z.string().max(ID_MAX).nullable() })
+      .strict(),
+    z.object({ remove: z.literal(true) }).strict(),
+  ]);
   return {
     request,
     proof,
@@ -406,6 +455,8 @@ function buildSchemas() {
     log,
     topup,
     confirm,
+    profile,
+    profileRequest,
   };
 }
 
@@ -1107,4 +1158,97 @@ export async function answerSignature(
   });
   log({ level: 'info', kind: 'saldo-signature', action: act.action, outcome: 'issued' });
   return answer({ sign: { message, token, expiresAt: new Date(expiresAt).toISOString() } });
+}
+
+// ---- «Tu nombre y tu cara» (2026-10-16, STD-053): GET and POST /api/profile -------------
+//
+// One's own name and Bazar avatar, and nobody else's: the wallet is the
+// session's, always, and a body is read by strict shapes that know no
+// wallet. Nobody is shown before choosing — the till writes nothing until a
+// name is saved — and «Dejar de mostrarlo» is a delete. Fellow members see
+// what is published through the roles view, never through this door.
+
+/** The till's refusal of a profile, in its own words: 400, the person can put it right. */
+const refusedProfile = (problems: readonly string[]): Response =>
+  answer({ error: 'refused', problems }, 400);
+
+const PROFILE_BODY = 'body: { name, avatar } or { remove: true }';
+
+/** One's own profile as a browser is answered it: the avatar's id (it is yours) and its face; not when. */
+function ownProfile(profile: { name: string; avatar: string | null } | null): OwnProfile | null {
+  if (profile === null) return null;
+  const { name, avatar } = profile;
+  return { name, avatar, face: avatar === null ? null : faceSrc(avatar) };
+}
+
+type ProfileAnswer = z.infer<ReturnType<typeof buildSchemas>['profile']>;
+
+/** Ask the desk about a profile: a till older than the method is 503, one that fails 502, by rule. */
+async function askProfile(
+  log: Log,
+  action: string,
+  call: () => Promise<unknown>,
+): Promise<
+  | { readonly ok: true; readonly value: ProfileAnswer }
+  | { readonly ok: false; readonly response: Response }
+> {
+  let raw: unknown;
+  try {
+    raw = await call();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(NOT_IMPLEMENTED)) {
+      noted(log, action, 'not-implemented');
+      return { ok: false, response: notBound() };
+    }
+    return { ok: false, response: failed(log, action, 'threw', error) };
+  }
+  const parsed = shapes().profile.safeParse(raw);
+  if (!parsed.success) return { ok: false, response: failed(log, action, 'answer-shape') };
+  return { ok: true, value: parsed.data };
+}
+
+/** GET /api/profile: what the session's wallet published — `{ name, avatar, face }` — or null. */
+export async function answerProfile(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (wallet === null) return signedOut();
+  if (desk === null) return notBound();
+  const you = wallet.toLowerCase();
+  const asked = await askProfile(log, 'profile', () => desk.profile(you));
+  if (!asked.ok) return asked.response;
+  if (!asked.value.ok) return refusedProfile(asked.value.problems);
+  return answer({ ok: true, profile: ownProfile(asked.value.profile) });
+}
+
+/**
+ * POST /api/profile (JSON only, like POST /api/saldo): `{ name, avatar }`
+ * publishes or replaces the session wallet's name and avatar — the avatar
+ * one of the Bazar's with a baked thumbnail (lib/profile-avatars.ts), or
+ * null — and `{ remove: true }` stops showing them: the till deletes the
+ * row. The name goes as written: the till trims it and decides.
+ */
+export async function answerSetProfile(
+  desk: AccountDesk | null,
+  wallet: string | null,
+  request: Request,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (wallet === null) return signedOut();
+  const body = await bodyOf(request);
+  if (!body.ok) return body.response;
+  const read = shapes().profileRequest.safeParse(body.json);
+  if (!read.success) return answer({ error: PROFILE_BODY }, 400);
+  const change: DeskProfileChange =
+    'remove' in read.data ? null : { name: read.data.name, avatar: read.data.avatar };
+  if (change?.avatar != null && !isProfileAvatar(change.avatar)) {
+    return refusedProfile([PROFILE_AVATAR_PROBLEM]);
+  }
+  if (desk === null) return notBound();
+  const you = wallet.toLowerCase();
+  const asked = await askProfile(log, 'set-profile', () => desk.setProfile(you, change));
+  if (!asked.ok) return asked.response;
+  if (!asked.value.ok) return refusedProfile(asked.value.problems);
+  return answer({ ok: true, profile: ownProfile(asked.value.profile) });
 }

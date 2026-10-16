@@ -256,7 +256,7 @@ describe('POST /api/profile: publish, replace or stop showing them', () => {
       { remove: true, wallet: `0x${'cd'.repeat(20)}` },
       null,
       [],
-      'Rima',
+      '"Rima"',
     ]) {
       const answer = await answerSetProfile(desk, ME, post(body), quiet);
       expect(answer.status, JSON.stringify(body)).toBe(400);

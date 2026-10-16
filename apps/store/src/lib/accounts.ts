@@ -191,6 +191,17 @@ export interface DeskMemberDetail {
   roleIds: string[];
   /** The roles the asker may give to or take from this member. */
   assignable: string[];
+  /**
+   * What the member published (cut «Tu nombre y tu cara», 2026-10-16,
+   * STD-053), absent when they published nothing: `name`, the name fellow
+   * members read instead of a short wallet; `face`, the baked 1x thumbnail
+   * of their Bazar avatar (`/thumbs/1x/<id>.webp`), or null for none. The
+   * till sends `avatar`, the avatar's id: the store turns it into `face`
+   * and never hands the id to a browser (lib/accounts-source.ts).
+   */
+  name?: string | null;
+  face?: string | null;
+  avatar?: string | null;
 }
 
 export interface DeskRoles {
@@ -347,6 +358,10 @@ export interface AccountDesk {
     house?: boolean,
   ): Promise<DeskTopupAnswer>;
   confirmTopup(wallet: string, sessionId: string): Promise<DeskConfirmAnswer>;
+  /** «Tu nombre y tu cara»: what the wallet published, to the wallet itself (optional: see below). */
+  profile(wallet: string): Promise<DeskProfileAnswer>;
+  /** Publishes or replaces the wallet's name and avatar, or stops showing them (null: erased). */
+  setProfile(wallet: string, change: DeskProfileChange): Promise<DeskProfileAnswer>;
 }
 
 /**
@@ -382,14 +397,23 @@ export const DESK_METHODS = [
   'log',
   'startTopup',
   'confirmTopup',
+  'profile',
+  'setProfile',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
  * The desk methods a till may still lack: the store and the till deploy on
  * their own, so for the minutes between the two a till without `directory`
  * is a desk all the same — the house just keeps the organizations it is in.
+ * So is one without `profile` and `setProfile` (cut «Tu nombre y tu cara»):
+ * Saldo and the panel keep working, and /api/profile answers 503 until the
+ * till has them.
  */
-export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = ['directory'];
+export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
+  'directory',
+  'profile',
+  'setProfile',
+];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
 export const TOPUP_KEYS: readonly TopupKey[] = ['10', '50', '100'];
@@ -971,4 +995,45 @@ export function stepPosition(
   const top = roles.filter((entry) => entry.position > 0).length;
   const to = role.position + step;
   return to >= 1 && to <= top ? to : null;
+}
+
+// ---- «Tu nombre y tu cara» (2026-10-16, STD-053): one's own name and Bazar avatar ----
+
+/** What the till keeps of a person who published: the name, a Bazar avatar's id or none, and when. */
+export interface DeskProfile {
+  name: string;
+  avatar: string | null;
+  updatedAt: string;
+}
+
+/** One's own profile, or null while nothing is published. */
+export type DeskProfileAnswer = { ok: true; profile: DeskProfile | null } | DeskRefusal;
+
+/** `{ name, avatar }` publishes or replaces them; null stops showing them — the till deletes the row. */
+export type DeskProfileChange = { name: string; avatar: string | null } | null;
+
+/** One's own profile as GET and POST /api/profile answer it: the avatar's id (it is yours) and its face. */
+export interface OwnProfile {
+  readonly name: string;
+  readonly avatar: string | null;
+  readonly face: string | null;
+}
+
+const isTextOrNull = (value: unknown): value is string | null =>
+  value === null || typeof value === 'string';
+
+/**
+ * GET or POST /api/profile, read in the browser: `{ profile }` — the three
+ * fields it knows, or null when nothing is published — or null when the
+ * body is not that.
+ */
+export function readOwnProfile(json: unknown): { readonly profile: OwnProfile | null } | null {
+  if (!isRecord(json) || json['ok'] !== true || !('profile' in json)) return null;
+  const { profile } = json;
+  if (profile === null) return { profile: null };
+  if (!isRecord(profile)) return null;
+  const { name, avatar, face } = profile;
+  return typeof name === 'string' && isTextOrNull(avatar) && isTextOrNull(face)
+    ? { profile: { name, avatar, face } }
+    : null;
 }

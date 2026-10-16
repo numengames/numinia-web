@@ -1,0 +1,451 @@
+---
+/**
+ * «Tu nombre en la ciudad» (cut «Tu nombre y tu cara», 2026-10-16): the
+ * settings section where a person may publish a name and one of the Bazar's
+ * avatars for the people of their organizations — and, while the alpha
+ * lasts, the house's staff when it enters to help — and nobody else
+ * (numinia-archive STD-053: «Nobody is shown before choosing», «Only fellow
+ * members see who it is»).
+ *
+ * Only with a session: the section is `data-session-in`, which the chrome's
+ * one session read shows. It says who will see the name before it asks for
+ * one. The input starts with the published name or, when there is none, the
+ * name of the citizen profile kept on this device (the sheet's own record,
+ * read, never written: no new key, LEG-003 §3.1) — a suggestion in the
+ * person's own browser: nothing is sent until «Guardar». The avatars are the
+ * Bazar's own, as radio cards with their baked 1x thumbnails, built here at
+ * build time (lib/profile-avatars.ts), «Sin avatar» first and chosen: no
+ * picture is ever uploaded. «Dejar de mostrarlo» asks first, then deletes.
+ *
+ *   data-profile-name      the section; `data-words` carries what the script says
+ *   data-profile-status    the polite live region: loading, saved, removed
+ *   data-profile-problem   the till's refusals, in plain words
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { PROFILE_NAME_UI } from '../../i18n/profile-name';
+import { PROFILE_AVATARS } from '../../lib/profile-avatars';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = PROFILE_NAME_UI[locale];
+---
+
+<section
+  id="nombre"
+  aria-labelledby="s-nombre"
+  data-profile-name
+  data-session-in
+  hidden
+  data-words={JSON.stringify(t)}
+>
+  <h2 id="s-nombre" class="etiqueta">{t.title}</h2>
+  <div class="tarjeta nombre">
+    <p class="quien" data-profile-who>{t.who}</p>
+    <p class="nota">{t.kept}</p>
+    <p class="estado" data-profile-status role="status" aria-live="polite"></p>
+    <p class="problema" data-profile-problem role="alert" hidden></p>
+    <p class="nota" data-profile-unavailable hidden>{t.unavailable}</p>
+    <form data-profile-form hidden novalidate>
+      <div class="campo">
+        <label for="profile-name">{t.nameLabel}</label>
+        <input
+          id="profile-name"
+          name="name"
+          type="text"
+          autocomplete="nickname"
+          aria-describedby="profile-name-hint"
+          data-metric="settings-profile-name"
+        />
+        <p id="profile-name-hint" class="nota">{t.nameHint}</p>
+      </div>
+      <fieldset class="caras">
+        <legend>{t.avatarLegend}</legend>
+        <div class="caras-rejilla">
+          <label class="cara">
+            <input type="radio" name="avatar" value="" checked data-metric="settings-profile-avatar" />
+            <span class="cara-vacia" aria-hidden="true"></span>
+            <span class="cara-nombre">{t.noAvatar}</span>
+          </label>
+          {
+            PROFILE_AVATARS.map((avatar) => (
+              <label class="cara">
+                <input
+                  type="radio"
+                  name="avatar"
+                  value={avatar.id}
+                  data-metric="settings-profile-avatar"
+                />
+                <img src={avatar.face} alt="" width="96" height="72" loading="lazy" decoding="async" />
+                <span class="cara-nombre">{avatar.name}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+      <div class="acciones">
+        <button type="submit" class="btn btn-primario" data-metric="settings-profile-save">
+          {t.save}
+        </button>
+        <button
+          type="button"
+          class="btn btn-fantasma"
+          data-profile-remove
+          hidden
+          data-metric="settings-profile-remove"
+        >
+          {t.remove}
+        </button>
+      </div>
+      <div class="confirmar" data-profile-confirm hidden>
+        <p>{t.removeQuestion}</p>
+        <div class="acciones">
+          <button
+            type="button"
+            class="btn btn-destructivo"
+            data-profile-remove-yes
+            data-metric="settings-profile-remove-yes"
+          >
+            {t.removeYes}
+          </button>
+          <button
+            type="button"
+            class="btn btn-fantasma"
+            data-profile-remove-no
+            data-metric="settings-profile-remove-no"
+          >
+            {t.removeNo}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  import type { OwnProfile } from '../../lib/accounts';
+  import { SHEET_RECORD_KEY } from '../../lib/citizen-profile';
+  import { pageSessionClient } from '../../lib/island-session';
+  import {
+    prefillName,
+    profileOutcome,
+    readProfileName,
+    type ProfileOutcome,
+  } from '../../lib/profile-name';
+  import type { ProfileNameMessages } from '../../i18n/profile-name';
+
+  const section = document.querySelector<HTMLElement>('[data-profile-name]');
+  if (section) wire(section);
+
+  function wire(root: HTMLElement): void {
+    const words = JSON.parse(root.dataset['words'] ?? '{}') as ProfileNameMessages;
+    const pick = <T extends Element>(selector: string): T => root.querySelector(selector) as T;
+    const form = pick<HTMLFormElement>('[data-profile-form]');
+    const input = pick<HTMLInputElement>('#profile-name');
+    const status = pick<HTMLElement>('[data-profile-status]');
+    const problem = pick<HTMLElement>('[data-profile-problem]');
+    const unavailable = pick<HTMLElement>('[data-profile-unavailable]');
+    const remove = pick<HTMLButtonElement>('[data-profile-remove]');
+    const confirm = pick<HTMLElement>('[data-profile-confirm]');
+    const yes = pick<HTMLButtonElement>('[data-profile-remove-yes]');
+    const no = pick<HTMLButtonElement>('[data-profile-remove-no]');
+    const radios = [...root.querySelectorAll<HTMLInputElement>('input[name="avatar"]')];
+    let busy = false;
+
+    const say = (text: string): void => {
+      status.textContent = text;
+    };
+    const sayProblem = (text: string | null): void => {
+      problem.textContent = text ?? '';
+      problem.hidden = text === null;
+      if (text === null) input.removeAttribute('aria-invalid');
+    };
+    /** The sheet's own record on this device, read only: the name it holds is a suggestion. */
+    const record = (): string | null => {
+      try {
+        return window.localStorage.getItem(SHEET_RECORD_KEY);
+      } catch {
+        return null;
+      }
+    };
+    const chosen = (): string | null => {
+      const value = radios.find((radio) => radio.checked)?.value ?? '';
+      return value === '' ? null : value;
+    };
+    const closeConfirm = (): void => {
+      confirm.hidden = true;
+    };
+
+    /** The form as the till now keeps it: the name (or the suggestion), the avatar, the way out. */
+    const show = (profile: OwnProfile | null, said: string): void => {
+      input.value = prefillName(profile, record());
+      const avatar = profile?.avatar ?? '';
+      radios.forEach((radio) => (radio.checked = radio.value === avatar));
+      remove.hidden = profile === null;
+      closeConfirm();
+      unavailable.hidden = true;
+      form.hidden = false;
+      say(said);
+    };
+
+    /** What any answer does: a profile is shown; anything else is said, and the form kept or hidden. */
+    const answered = (outcome: ProfileOutcome, said: string, loading: boolean): void => {
+      if (outcome.kind === 'profile') {
+        sayProblem(null);
+        show(outcome.profile, said);
+        return;
+      }
+      say('');
+      if (outcome.kind === 'problem') {
+        sayProblem(words.problems[outcome.problem]);
+        if (outcome.problem === 'name') input.setAttribute('aria-invalid', 'true');
+      } else if (outcome.kind === 'unavailable') {
+        form.hidden = true;
+        unavailable.hidden = false;
+      } else if (outcome.kind === 'signed-out') {
+        form.hidden = true;
+        sayProblem(words.signedOut);
+      } else {
+        // A first read that failed shows nothing it does not know; a failed save keeps the form.
+        if (loading) form.hidden = true;
+        sayProblem(words.failed);
+      }
+    };
+
+    const ask = async (body?: unknown): Promise<ProfileOutcome> => {
+      try {
+        const response = await fetch('/api/profile', {
+          method: body === undefined ? 'GET' : 'POST',
+          credentials: 'same-origin',
+          headers: {
+            accept: 'application/json',
+            ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        });
+        const json: unknown = await response.json().catch(() => null);
+        return profileOutcome(response.status, json);
+      } catch {
+        return { kind: 'failed' };
+      }
+    };
+
+    const load = async (): Promise<void> => {
+      say(words.loading);
+      root.setAttribute('aria-busy', 'true');
+      const outcome = await ask();
+      root.removeAttribute('aria-busy');
+      const published = outcome.kind === 'profile' && outcome.profile !== null;
+      answered(outcome, published ? words.published : words.notPublished, true);
+    };
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (busy) return;
+      const name = readProfileName(input.value);
+      if (name === undefined) {
+        sayProblem(words.problems.name);
+        input.setAttribute('aria-invalid', 'true');
+        input.focus();
+        return;
+      }
+      busy = true;
+      sayProblem(null);
+      say(words.saving);
+      void ask({ name, avatar: chosen() }).then((outcome) => {
+        busy = false;
+        answered(outcome, words.saved, false);
+      });
+    });
+
+    remove.addEventListener('click', () => {
+      remove.hidden = true;
+      confirm.hidden = false;
+      no.focus();
+    });
+    no.addEventListener('click', () => {
+      closeConfirm();
+      remove.hidden = false;
+      remove.focus();
+    });
+    yes.addEventListener('click', () => {
+      if (busy) return;
+      busy = true;
+      say(words.removing);
+      void ask({ remove: true }).then((outcome) => {
+        busy = false;
+        answered(outcome, words.removed, false);
+        if (outcome.kind === 'profile') input.focus();
+      });
+    });
+
+    // The page's one session read may tell a listener twice (it joined while the read was in
+    // flight): the profile is asked once per wallet signed in, and again only if that changes.
+    let loadedFor: string | null = null;
+    void pageSessionClient(window).then((client) =>
+      client.subscribe((session) => {
+        const wallet = session.status === 'in' ? session.address : null;
+        if (wallet === loadedFor) return;
+        loadedFor = wallet;
+        if (wallet !== null) void load();
+        else form.hidden = true;
+      }),
+    );
+  }
+</script>
+
+<style>
+  /* The settings page's own section, heading and card measures (its styles are scoped to it). */
+  section {
+    margin-top: var(--s6);
+  }
+  h2 {
+    margin: 0 0 var(--s3);
+    font-weight: 500;
+  }
+  .tarjeta {
+    max-width: 46rem;
+  }
+  .nombre {
+    display: grid;
+    gap: var(--s3);
+  }
+  .nombre p {
+    margin: 0;
+  }
+  .quien {
+    color: var(--texto);
+    line-height: 1.55;
+    max-width: 65ch;
+  }
+  .nota {
+    color: var(--texto-2);
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  /* The live region is always there (an announcement needs it in place), its line kept. */
+  .estado {
+    color: var(--verdemar);
+    font-size: 0.875rem;
+    min-height: 1.4em;
+  }
+  .problema {
+    color: var(--texto);
+    font-size: 0.875rem;
+    padding: var(--s2) var(--s3);
+    border-left: 3px solid #d33440;
+    background: var(--elevada);
+  }
+  form {
+    display: grid;
+    gap: var(--s4);
+    min-width: 0;
+  }
+  .campo {
+    display: grid;
+    gap: var(--s1);
+  }
+  .campo label {
+    font-weight: 500;
+  }
+  .campo input {
+    font: inherit;
+    color: var(--texto);
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    padding: var(--s2) var(--s3);
+    min-height: 44px;
+    width: 100%;
+    max-width: 30rem;
+    min-width: 0;
+  }
+  .campo input[aria-invalid='true'] {
+    border-color: #d33440;
+  }
+  .caras {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .caras legend {
+    font-weight: 500;
+    padding: 0;
+    margin-bottom: var(--s2);
+  }
+  /* §9.8 radio cards: the chosen one dresses in ink. */
+  .caras-rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+    gap: var(--s2);
+  }
+  .cara {
+    position: relative;
+    display: grid;
+    gap: var(--s1);
+    align-content: start;
+    padding: var(--s2);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
+    cursor: pointer;
+    min-width: 0;
+  }
+  .cara:has(input:checked) {
+    border-color: var(--texto);
+    box-shadow: inset 0 0 0 1px var(--texto);
+  }
+  .cara:has(input:focus-visible) {
+    outline: 2px solid #018ea1;
+    outline-offset: 2px;
+  }
+  .cara input {
+    position: absolute;
+    top: var(--s2);
+    left: var(--s2);
+    margin: 0;
+    accent-color: var(--texto);
+  }
+  .cara img,
+  .cara-vacia {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: calc(var(--radio-control) - 2px);
+    background: var(--elevada);
+  }
+  .cara-vacia {
+    display: block;
+    border: 1px dashed var(--linea-f);
+    box-sizing: border-box;
+  }
+  .cara-nombre {
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: var(--texto-2);
+    overflow-wrap: anywhere;
+  }
+  .cara:has(input:checked) .cara-nombre {
+    color: var(--texto);
+  }
+  .acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+  }
+  .confirmar {
+    display: grid;
+    gap: var(--s3);
+    padding: var(--s3);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--elevada);
+  }
+  [hidden] {
+    display: none !important;
+  }
+</style>
