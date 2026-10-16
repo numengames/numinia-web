@@ -445,6 +445,17 @@ export interface AccountDesk {
     before?: number | null,
     house?: boolean,
   ): Promise<DeskHappeningsAnswer>;
+  /**
+   * The house opens the organization of every community in one call (at most
+   * 50): each one as `ensureCommunityTeam` does, the house a member and an
+   * administrator of every one. Answers each account with whether this very
+   * call opened it. Only the house (`house` true) asks.
+   */
+  openAllCommunities(
+    wallet: string,
+    house: boolean,
+    communities: readonly { readonly id: string; readonly name: string }[],
+  ): Promise<DeskOpenAllAnswer>;
 }
 
 /**
@@ -492,6 +503,7 @@ export const DESK_METHODS = [
   'settings',
   'changeSettings',
   'happenings',
+  'openAllCommunities',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -506,6 +518,7 @@ export const DESK_METHODS = [
  * And one without `ensureCommunityTeam`: /api/admin/community-team answers 503.
  * And one without `settings`, `changeSettings` and `happenings` (cut «Ajustes de la
  * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
+ * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -521,6 +534,7 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'settings',
   'changeSettings',
   'happenings',
+  'openAllCommunities',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -1261,6 +1275,10 @@ export interface DeskHome {
 /** The till account of a community: its id and name, and whether this very call opened it. */
 export type DeskEnsureAnswer =
   { ok: true; account: { id: string; name: string; created: boolean } } | DeskRefusal;
+
+/** Every community's account after the house opened them all, in the order asked. */
+export type DeskOpenAllAnswer =
+  { ok: true; accounts: { id: string; name: string; created: boolean }[] } | DeskRefusal;
 
 export type DeskPlaceAnswer = { ok: true; placed: number } | DeskRefusal;
 

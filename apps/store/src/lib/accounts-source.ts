@@ -180,6 +180,11 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.happenings === 'function'
         ? stub.happenings(wallet, accountId, before, house)
         : absent('happenings'),
+    // Cut 7: the house opens every community at once. Optional too: 503 without it.
+    openAllCommunities: (wallet, house, communities) =>
+      typeof desk.openAllCommunities === 'function'
+        ? stub.openAllCommunities(wallet, house, communities)
+        : absent('openAllCommunities'),
   };
 }
 

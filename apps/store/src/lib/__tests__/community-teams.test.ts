@@ -14,6 +14,7 @@ import {
   answerCommunities,
   answerCommunityTeam,
   communityAccountId,
+  readAllBody,
   readCommunityBody,
   readCommunityId,
 } from '../community-teams';
@@ -47,13 +48,24 @@ function deskThat(answer: () => Promise<unknown>): AccountDesk {
   return { ensureCommunityTeam: vi.fn(answer) } as unknown as AccountDesk;
 }
 
+function openAllDesk(answer: () => Promise<unknown>): AccountDesk {
+  return { openAllCommunities: vi.fn(answer) } as unknown as AccountDesk;
+}
+
+const everyOne = {
+  ok: true,
+  accounts: [
+    { id: 'acc_t_1', name: 'Numen Games', created: false },
+    { id: 'acc_t_2', name: 'Reset', created: true },
+  ],
+};
+
 /** A bound till with every method a desk needs but the new one. */
 function oldBinding(): Record<string, unknown> {
   return Object.fromEntries(
-    DESK_METHODS.filter((method) => method !== 'ensureCommunityTeam').map((method) => [
-      method,
-      vi.fn(async () => ({ ok: true })),
-    ]),
+    DESK_METHODS.filter(
+      (method) => method !== 'ensureCommunityTeam' && method !== 'openAllCommunities',
+    ).map((method) => [method, vi.fn(async () => ({ ok: true }))]),
   );
 }
 
@@ -84,6 +96,23 @@ describe('reading what a browser sends', () => {
     expect(readCommunityBody(['reset'])).toBeNull();
     expect(readCommunityBody(null)).toBeNull();
     expect(readCommunityBody('reset')).toBeNull();
+  });
+});
+
+describe('reading { all: true }', () => {
+  it('is exactly that and nothing else', () => {
+    expect(readAllBody({ all: true })).toBe(true);
+    for (const bad of [
+      { all: false },
+      { all: 'yes' },
+      { all: true, x: 1 },
+      {},
+      [true],
+      null,
+      'all',
+    ]) {
+      expect(readAllBody(bad)).toBe(false);
+    }
   });
 });
 
@@ -163,7 +192,7 @@ describe('POST /api/admin/community-team', () => {
     expect((await run(post('not json'))).status).toBe(400);
     const bad = await run(post({ community: 'Reset' }));
     expect(bad.status).toBe(400);
-    expect(await json(bad)).toEqual({ error: 'body: { community }' });
+    expect(await json(bad)).toEqual({ error: 'body: { community } or { all: true }' });
     expect(desk.ensureCommunityTeam).not.toHaveBeenCalled();
   });
 
@@ -224,6 +253,56 @@ describe('POST /api/admin/community-team', () => {
   });
 });
 
+describe('POST /api/admin/community-team with { all: true }', () => {
+  const run = (
+    desk: AccountDesk | null,
+    asker: Asker | null = HOUSE,
+    body: unknown = { all: true },
+  ) => answerCommunityTeam(desk, asker, register, post(body), quiet);
+
+  it('has the till open the whole register as the house and says how many are open', async () => {
+    const desk = openAllDesk(async () => everyOne);
+    const reply = await run(desk);
+    expect(reply.status).toBe(200);
+    expect(await json(reply)).toEqual({ ok: true, opened: 2, accounts: everyOne.accounts });
+    expect(desk.openAllCommunities).toHaveBeenCalledWith(HOUSE.wallet.toLowerCase(), true, [
+      { id: 'numen-games', name: 'Numen Games' },
+      { id: 'reset', name: 'Reset' },
+    ]);
+  });
+
+  it('is 403 for any other session and never asks the till', async () => {
+    const desk = openAllDesk(async () => everyOne);
+    for (const asker of [ADMIN, null]) expect((await run(desk, asker)).status).toBe(403);
+    expect(desk.openAllCommunities).not.toHaveBeenCalled();
+  });
+
+  it('is 503 without a till or with one older than this cut, 502 when it fails or answers oddly', async () => {
+    expect((await run(null)).status).toBe(503);
+    const older = openAllDesk(async () => {
+      throw new TypeError(`The desk ${NOT_IMPLEMENTED} "openAllCommunities".`);
+    });
+    expect((await run(older)).status).toBe(503);
+    const failing = openAllDesk(async () => {
+      throw new Error('boom');
+    });
+    expect((await run(failing)).status).toBe(502);
+    expect((await run(openAllDesk(async () => ({ ok: true })))).status).toBe(502);
+  });
+
+  it('carries the till’s refusal: 403 when it is about the house, else 400', async () => {
+    const refuse = (problem: string) =>
+      run(openAllDesk(async () => ({ ok: false, problems: [problem] })));
+    expect((await refuse('only the house opens the organization of a community')).status).toBe(403);
+    const bad = await refuse('communities must be 1 to 50 communities');
+    expect(bad.status).toBe(400);
+    expect(await json(bad)).toEqual({
+      error: 'refused',
+      problems: ['communities must be 1 to 50 communities'],
+    });
+  });
+});
+
 describe('a till older than the store (boundAccounts)', () => {
   it('is still a desk without the method, and says it does not implement it', async () => {
     const desk = boundAccounts(oldBinding());
@@ -238,5 +317,17 @@ describe('a till older than the store (boundAccounts)', () => {
     const desk = boundAccounts({ ...oldBinding(), ensureCommunityTeam });
     expect(await desk?.ensureCommunityTeam(HOUSE.wallet, true, 'reset', 'Reset')).toEqual(opened);
     expect(ensureCommunityTeam).toHaveBeenCalledWith(HOUSE.wallet, true, 'reset', 'Reset');
+  });
+
+  it('is still a desk without openAllCommunities, and passes the call through to one that has it', async () => {
+    const old = boundAccounts(oldBinding());
+    await expect(old?.openAllCommunities(HOUSE.wallet, true, [])).rejects.toThrow(
+      /does not implement/,
+    );
+    const openAllCommunities = vi.fn(async () => everyOne);
+    const desk = boundAccounts({ ...oldBinding(), openAllCommunities });
+    const asked = [{ id: 'reset', name: 'Reset' }];
+    expect(await desk?.openAllCommunities(HOUSE.wallet, true, asked)).toEqual(everyOne);
+    expect(openAllCommunities).toHaveBeenCalledWith(HOUSE.wallet, true, asked);
   });
 });
