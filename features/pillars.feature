@@ -1,17 +1,18 @@
 Feature: Three pillars (MISSION-004)
-  The site is organized as La Ciudad, Assets, and LAP — since the app shell
-  (the Oracle's design, 2026-10-14, v0.83.0) the places live in a sidebar,
-  a tab bar on a phone: Para ti, Explorar (Comunidades, Calendario, Bazar),
-  Perteneces, Live and Perfil, then «Más». The top bar carries no menu:
-  the door and ⋮ (the mode, the language, the settings). The footer, folded
-  at the sidebar's foot, names the house's three sites and the legal texts;
-  NWOS, GitHub and Discord left it. The sections exist in every locale, and
-  no internal link is broken. Verified against the build output.
+  The site is organized as La Ciudad, Assets, and LAP — since v3 «La ciudad
+  y tú» (v0.112.0) in two mirrored rails: on the left the city (Buscar,
+  Ahora, Comunidades, Encuentros, Mundos, Bazar), on the right you (the door
+  or your face, Crear, Avisos, Tus comunidades, Tu saldo, Tu botín, the
+  settings, the appearance and the language); a phone gets a bottom bar of
+  four city places and «Tú». The footer, folded at the city rail's foot,
+  names the house's three sites and the legal texts; NWOS, GitHub and
+  Discord left it. The sections exist in every locale, and no internal link
+  is broken. Verified against the build output.
 
-  Scenario: The app shell carries the places, the door and ⋮ on every page, no menu
+  Scenario: The app shell carries both rails and the phone's bar on every page
     Given the store application has been built
     Then every page bar carries the scarab, the search, the mode and the door
-    And every page sidebar and tab bar carry the five places
+    And every page city rail, your rail and phone bar carry their places
     And every page footer names the three sister sites and no social links
 
   Scenario: The pillar sections exist in every locale

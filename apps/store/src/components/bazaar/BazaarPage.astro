@@ -117,9 +117,11 @@ const shelves = communityShelves(COMMUNITIES, items.length);
 
 <style is:global>
   /* Island internals — global by necessity (Astro scoping stops at React).
-     Three panes from 74rem (the island's WIDE query): filters, cards,
-     preview + queue. Below it the preview opens as a sheet; below 54rem
-     the filters ride above the cards as rows of chips. */
+     Three panes from a 56rem page (the island's WIDE_REM): filters, cards,
+     preview + queue. Below it the preview opens as a sheet; below a 44rem
+     page the filters ride above the cards as rows of chips. Since v0.112.0
+     the page's width, not the window's, decides: two rails take theirs and
+     fold on their own (the container `pagina` is the shell's <main>). */
   [data-bazaar] {
     --bazaar-arriba: 88px;
     display: grid;
@@ -147,7 +149,7 @@ const shelves = communityShelves(COMMUNITIES, items.length);
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
   }
-  @media (min-width: 54rem) {
+  @container pagina (min-width: 44rem) {
     [data-bazaar] {
       grid-template-columns: 12.5rem minmax(0, 1fr);
     }
@@ -167,7 +169,7 @@ const shelves = communityShelves(COMMUNITIES, items.length);
   /* The third pane exists only while a good is chosen (data-open): beside
      the 252px sidebar a reserved empty preview left the cards one column at
      1280 (v0.89.0). Closed, the queue rides under the filters. */
-  @media (min-width: 74rem) {
+  @container pagina (min-width: 56rem) {
     [data-bazaar] {
       grid-template-columns: 13rem minmax(0, 1fr);
     }
@@ -190,12 +192,12 @@ const shelves = communityShelves(COMMUNITIES, items.length);
       scrollbar-width: thin;
     }
   }
-  /* From 74rem to 90rem (a 1280 or 1366 laptop) the three panes are tight:
-     with the 13rem rail and the 21rem preview, a chosen good left ONE card
-     per row. A slimmer rail and preview, and cards that may be 12rem wide,
-     keep two (v0.91.0). The rail is slim closed as well, so opening a good
-     never moves it. */
-  @media (min-width: 74rem) and (max-width: 89.99rem) {
+  /* From a 56rem to a 72rem page the three panes are tight: with the 13rem
+     rail and the 21rem preview, a chosen good left ONE card per row. A
+     slimmer rail and preview, and cards that may be 12rem wide, keep two
+     (v0.91.0). The rail is slim closed as well, so opening a good never
+     moves it. */
+  @container pagina (min-width: 56rem) and (max-width: 71.99rem) {
     [data-bazaar] {
       grid-template-columns: 11rem minmax(0, 1fr);
       gap: var(--s4);
@@ -210,11 +212,16 @@ const shelves = communityShelves(COMMUNITIES, items.length);
       grid-template-columns: minmax(0, 1fr);
     }
   }
-  @media (max-width: 73.99rem) {
-    /* The inline preview waits for a wide screen; until the island knows
+  @container pagina (max-width: 55.99rem) {
+    /* The inline preview waits for a wide page; until the island knows
        the width, its empty state must not flash in the left column. */
     [data-bazaar] .previa {
       display: none;
+    }
+    /* Two panes beside two rails (a 1280 laptop): cards may be 12rem, so
+       three still sit in a row. */
+    [data-bazaar][data-bazaar] .bazaar-grid {
+      grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
     }
   }
 
@@ -280,7 +287,7 @@ const shelves = communityShelves(COMMUNITIES, items.length);
     line-height: 1.45;
     color: var(--texto-2);
   }
-  @media (max-width: 53.99rem) {
+  @container pagina (max-width: 43.99rem) {
     [data-bazaar] .bazaar-filters .grupo + .grupo {
       margin-top: var(--s3);
     }

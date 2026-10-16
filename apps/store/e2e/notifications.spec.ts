@@ -21,33 +21,33 @@ async function signedIn(page: Page): Promise<void> {
 const tab = (page: Page, id: string) => page.locator(`[data-metric="notifications-tab-${id}"]`);
 const panel = (page: Page, id: string) => page.locator(`[data-panel="${id}"]`);
 
-test('«Más» rings the bell for the notifications, and no longer lists the updates', async ({
+test('your rail rings the bell for the notices, and nothing lists the updates', async ({
   page,
 }) => {
   await page.goto('/es/');
-  await page.locator('[data-metric="nav-more"]').click();
-  const bell = page.locator('.lat [data-metric="nav-more-notifications"]');
+  const bell = page.locator('.rail-tu [data-metric="you-notices"]');
   await expect(bell).toBeVisible();
   await expect(bell).toHaveAttribute('href', '/es/notifications/');
-  await expect(bell).toHaveText('Notificaciones');
-  await expect(page.locator('.lat [data-metric="footer-updates"]')).toHaveCount(0);
+  await expect(bell).toHaveText('Avisos');
+  await expect(page.locator('[data-metric="footer-updates"]')).toHaveCount(0);
   // The version in the footer is the updates' one door.
-  await expect(page.locator('[data-metric="footer-version"]')).toHaveAttribute(
+  await expect(page.locator('.rail-ciudad [data-metric="footer-version"]')).toHaveAttribute(
     'href',
     '/es/updates/',
   );
-  // No link to the updates anywhere but the footer's version.
+  // No link to the updates anywhere but the footer's version (the rail's
+  // copy and the phone's copy of the same footer).
   const doors = await page
     .locator('a[href$="/updates/"]')
-    .evaluateAll((links) => links.map((link) => link.getAttribute('data-metric')));
+    .evaluateAll((links) => [...new Set(links.map((link) => link.getAttribute('data-metric')))]);
   expect(doors).toEqual(['footer-version']);
 });
 
-test('on a phone the compact «Más» list carries the notifications too', async ({ page }) => {
+test('on a phone the «Tú» sheet carries the notices too', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/es/');
-  const item = page.locator('.mas-movil [data-metric="nav-more-notifications"]');
-  await item.scrollIntoViewIfNeeded();
+  await page.locator('[data-metric="tab-you"]').click();
+  const item = page.locator('#hoja-tu [data-metric="sheet-notices"]');
   await expect(item).toBeVisible();
   await expect(item).toHaveAttribute('href', '/es/notifications/');
 });

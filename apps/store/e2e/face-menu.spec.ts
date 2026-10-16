@@ -1,12 +1,14 @@
 /**
- * «El menú de la cara» (cut 9) in a real browser against the built site. As in
- * session-chrome.spec.ts the e2e server has no auth secrets, so the session,
- * the till's overview and the profile are played by the browser
- * (`page.route`), shaped as the routes send them. What is under test is what
- * the menu does with each answer: the published name, the balance with its
- * figure, one door per organization the person is in (never the ones the
- * house only enters), no presence at all, the keyboard (tab order, Escape
- * gives the focus back) and axe on a phone and on a desktop.
+ * «El menú de la cara» (cut 9; since v0.112.0 «Tu menú», opened from your
+ * face at the head of the right rail) in a real browser against the built
+ * site. As in session-chrome.spec.ts the e2e server has no auth secrets, so
+ * the session, the till's overview and the profile are played by the
+ * browser (`page.route`), shaped as the routes send them. What is under
+ * test is what the menu does with each answer: the published name and
+ * face, the balance with its figure, one door per organization the person
+ * is in (never the ones the house only enters), no presence at all, the
+ * keyboard (tab order, Escape gives the focus back) and axe on a phone (the
+ * «Tú» sheet) and on a desktop.
  */
 
 import AxeBuilder from '@axe-core/playwright';
@@ -59,19 +61,26 @@ const open = async (page: Page, path = '/es/communities/'): Promise<void> => {
   await page.locator('[data-metric="chrome-account"]').click();
 };
 
+const MENU = '#menu-cara';
+
 test.describe('the face menu', () => {
-  test('shows the name published, the rank, the balance and one door per panel', async ({
+  test('opens from your face on the right rail: the name published, the rank, the balance and one door per panel', async ({
     page,
   }) => {
     await signedIn(page, [PERSONAL, HOUSE, GAMES, TARUGO], {
       name: 'Pablo',
-      avatar: null,
-      face: null,
+      avatar: 'avatar-arla',
+      face: '/thumbs/1x/avatar-arla.webp',
     });
     await open(page);
-    const menu = page.locator('details[data-session-in] .cima-pop');
+    const menu = page.locator(MENU);
+    await expect(menu).toBeVisible();
+    // The menu floats next to its button, outside the rail.
+    const button = await page.locator('[data-metric="chrome-account"]').boundingBox();
+    const box = await menu.boundingBox();
+    expect(box && button && box.y >= button.y + button.height).toBe(true);
     await expect(menu.locator('[data-face-name]')).toHaveText('Pablo');
-    await expect(menu.locator('.cima-rango [data-rank-name="oracle"]')).toHaveText('Oráculo');
+    await expect(menu.locator('.pop-rango [data-rank-name="oracle"]')).toHaveText('Oráculo');
     await expect(menu.locator('[data-metric="chrome-profile"]')).toHaveText('Tu perfil');
     const balance = menu.locator('[data-metric="chrome-balance"]');
     await expect(balance).toContainText('Tu saldo');
@@ -88,12 +97,19 @@ test.describe('the face menu', () => {
     await expect(menu.locator('[data-metric="chrome-panels"]')).toBeHidden();
     await expect(menu.locator('[data-metric="chrome-account-settings"]')).toHaveText('Ajustes');
     await expect(menu.locator('[data-metric="chrome-sign-out"]')).toHaveText('Cerrar sesión');
+    // The head of the rail takes your published name and face too.
+    const head = page.locator('[data-metric="chrome-account"]');
+    await expect(head.locator('[data-face-name]')).toHaveText('Pablo');
+    await expect(head.locator('img[data-face-img]')).toHaveAttribute(
+      'src',
+      '/thumbs/1x/avatar-arla.webp',
+    );
   });
 
   test('has no presence: no status, no phrase, no disabled control', async ({ page }) => {
     await signedIn(page, [PERSONAL, GAMES]);
     await open(page);
-    const menu = page.locator('details[data-session-in] .cima-pop');
+    const menu = page.locator(MENU);
     await expect(menu.getByText(/estado|en línea|online/i)).toHaveCount(0);
     await expect(menu.locator('[disabled], [aria-disabled="true"], button')).toHaveCount(0);
   });
@@ -103,7 +119,7 @@ test.describe('the face menu', () => {
   }) => {
     await signedIn(page, [], null, 'down');
     await open(page);
-    const menu = page.locator('details[data-session-in] .cima-pop');
+    const menu = page.locator(MENU);
     await expect(menu.locator('[data-face-name]')).toHaveText('0x42e6…ca26');
     await expect(menu.locator('[data-metric="chrome-balance"]')).toBeVisible();
     await expect(menu.locator('[data-face-balance]')).toBeHidden();
@@ -116,8 +132,8 @@ test.describe('the face menu', () => {
   }) => {
     await signedIn(page, [PERSONAL, GAMES]);
     await page.goto('/es/communities/');
-    const summary = page.locator('[data-metric="chrome-account"]');
-    await summary.focus();
+    const face = page.locator('[data-metric="chrome-account"]');
+    await face.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-metric="chrome-panel-org"]')).toBeVisible();
     const order: string[] = [];
@@ -135,8 +151,16 @@ test.describe('the face menu', () => {
       'chrome-sign-out',
     ]);
     await page.keyboard.press('Escape');
-    await expect(page.locator('details[data-session-in]')).not.toHaveAttribute('open', '');
-    await expect(summary).toBeFocused();
+    await expect(page.locator(MENU)).toBeHidden();
+    await expect(face).toBeFocused();
+  });
+
+  test('a click outside closes it', async ({ page }) => {
+    await signedIn(page, [PERSONAL]);
+    await open(page);
+    await expect(page.locator(MENU)).toBeVisible();
+    await page.mouse.click(800, 6);
+    await expect(page.locator(MENU)).toBeHidden();
   });
 
   test('every language says it in its own words', async ({ page }) => {
@@ -149,23 +173,33 @@ test.describe('the face menu', () => {
     ];
     for (const [path, profile, panels, signOut] of words) {
       await open(page, path);
-      await expect(page.locator('[data-metric="chrome-profile"]')).toHaveText(profile);
-      await expect(page.locator('[data-face-panels-label]')).toHaveText(panels);
-      await expect(page.locator('[data-metric="chrome-sign-out"]')).toHaveText(signOut);
+      const menu = page.locator(MENU);
+      await expect(menu.locator('[data-metric="chrome-profile"]')).toHaveText(profile);
+      await expect(menu.locator('[data-face-panels-label]')).toHaveText(panels);
+      await expect(menu.locator('[data-metric="chrome-sign-out"]')).toHaveText(signOut);
     }
   });
 
-  for (const [name, size] of [
-    ['phone 390', { width: 390, height: 844 }],
-    ['desktop', { width: 1280, height: 800 }],
-  ] as const) {
-    test(`is axe clean on ${name}`, async ({ page }) => {
-      await page.setViewportSize(size);
-      await signedIn(page, [PERSONAL, GAMES, TARUGO], { name: 'Pablo', avatar: null, face: null });
-      await open(page);
-      await expect(page.locator('[data-metric="chrome-panel-org"]').first()).toBeVisible();
-      const results = await new AxeBuilder({ page }).include('header.cima').analyze();
-      expect(results.violations).toEqual([]);
-    });
-  }
+  test('is axe clean on a desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await signedIn(page, [PERSONAL, GAMES, TARUGO], { name: 'Pablo', avatar: null, face: null });
+    await open(page);
+    await expect(page.locator('[data-metric="chrome-panel-org"]').first()).toBeVisible();
+    const results = await new AxeBuilder({ page }).include(MENU).include('.rail-tu').analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test('on a phone the same is yours in the «Tú» sheet, axe clean', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signedIn(page, [PERSONAL, GAMES]);
+    await page.goto('/es/communities/');
+    await page.locator('[data-metric="tab-you"]').click();
+    const sheet = page.locator('#hoja-tu');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('[data-metric="sheet-card"]')).toContainText('0x42e6…ca26');
+    await expect(sheet.locator('[data-metric="sheet-card"]')).toContainText('Oráculo');
+    await expect(sheet.locator('[data-metric="sheet-sign-out"]')).toBeVisible();
+    const results = await new AxeBuilder({ page }).include('#hoja-tu').analyze();
+    expect(results.violations).toEqual([]);
+  });
 });

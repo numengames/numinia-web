@@ -92,15 +92,17 @@ test('phone · primary controls meet the 44px touch target', async ({ page }) =>
   }
 });
 
-test('phone · the chrome stays compact — one bar on top, the tab bar below', async ({ page }) => {
+test('phone · the chrome stays compact — one header on top, the bottom bar below', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/es/');
   await page.waitForLoadState('networkidle');
-  // The app shell (v0.83.0): Khepri, search, the door and ⋮ in one 64px row,
-  // and the five places in a tab bar at least 56px tall at the bottom.
-  const top = await page.locator('header.cima').evaluate((el) => el.getBoundingClientRect());
+  // v3 «La ciudad y tú»: Khepri, Bazar and search in one 56px header, and
+  // four places plus «Tú» in a bottom bar at least 56px tall.
+  const top = await page.locator('header.borde-movil').evaluate((el) => el.getBoundingClientRect());
   expect(top.height).toBeLessThanOrEqual(64);
-  const tabs = await page.locator('nav.pestanas-app').evaluate((el) => el.getBoundingClientRect());
+  const tabs = await page.locator('nav.barra-movil').evaluate((el) => el.getBoundingClientRect());
   expect(tabs.height).toBeGreaterThanOrEqual(56);
   expect(tabs.bottom).toBeLessThanOrEqual(800);
 });

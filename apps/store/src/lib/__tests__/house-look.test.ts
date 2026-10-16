@@ -129,7 +129,7 @@ describe('the rails', () => {
   it('mirror the position, never the reading: icon and word from the left on both rails', async () => {
     const css = await read(SHELL);
     expect(rule(css, /\n\.rail-item/)).not.toMatch(/flex-direction:\s*row-reverse/);
-    expect(rule(css, /\.rail-tu \.rail-n/)).toMatch(/margin-left:\s*-6px/);
+    expect(rule(css, /\n\.rail-n/)).toMatch(/margin-left:\s*-6px/);
   });
 
   it('tint icons and words with the link colour, never with a box', async () => {

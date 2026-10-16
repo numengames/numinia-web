@@ -127,20 +127,21 @@ for (const mode of MODES) {
   });
 }
 
-test('keyboard: the chrome walks in order and the focus ring is the system turquoise', async ({
+test('keyboard: skip link, the city, the page, then you — and the focus ring is the system turquoise', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto('/es/legal/cookies/');
   await page.waitForLoadState('networkidle');
   const stops: string[] = [];
   let sawSystemOutline = false;
-  for (let i = 0; i < 24; i += 1) {
+  for (let i = 0; i < 200 && !stops.includes('you-settings'); i += 1) {
     await page.keyboard.press('Tab');
     const info = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement;
       const style = getComputedStyle(el);
       return {
-        metric: el.dataset['metric'] ?? el.tagName.toLowerCase(),
+        metric: el.closest('main') ? 'main' : (el.dataset['metric'] ?? el.tagName.toLowerCase()),
         outlineColor: style.outlineColor,
         outlineWidth: style.outlineWidth,
       };
@@ -151,27 +152,29 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
       sawSystemOutline = true;
     }
   }
-  // The app shell's reading order (the Oracle's design, 2026-10-14): the
-  // skip link, the sidebar top to bottom — brand, fold, search, the places,
-  // the call to sign in — then the top bar's door and ⋮. The folded
-  // footer at the foot of the sidebar sits between the two.
+  // v3 «La ciudad y tú»: the skip link, the city's rail top to bottom —
+  // brand, fold, search, its places, «Ahora en la ciudad», its foot — then
+  // the page, then your rail: fold, the door, «Crear», your places, settings.
   const expected = [
     'nav-skip',
     'nav-home',
     'nav-collapse',
     'nav-search',
-    'nav-for-you',
-    'nav-explore',
+    'nav-now',
     'nav-communities',
-    'nav-calendar',
+    'nav-encounters',
+    'nav-worlds',
     'nav-bazaar',
-    'nav-belong',
-    'nav-live',
-    'nav-profile',
-    'nav-more',
-    'nav-sign-in',
+    'nav-more-how',
+    'footer-epitaph',
+    'main',
+    'you-collapse',
     'chrome-sign-in',
-    'chrome-more',
+    'you-create',
+    'you-notices',
+    'you-your-communities',
+    'you-loot',
+    'you-settings',
   ];
   expect(stops[0], stops.join(' → ')).toBe('nav-skip');
   const positions = expected.map((metric) => stops.indexOf(metric));
@@ -180,12 +183,15 @@ test('keyboard: the chrome walks in order and the focus ring is the system turqu
     [...positions].sort((a, b) => a - b),
     stops.join(' → '),
   ).toEqual(positions);
+  // Nothing of the rails comes back once the page has been reached.
+  expect(stops.lastIndexOf('main'), stops.join(' → ')).toBeLessThan(stops.indexOf('you-collapse'));
   expect(sawSystemOutline, `outlines seen on: ${stops.join(' → ')}`).toBe(true);
 });
 
-/* The app shell at both ends of the screen (1440 desktop, 390 phone), in
-   both modes, with its menus open and the sidebar folded: the chrome is on
-   every page, so its own states are measured here, not only the pages. */
+/* The app shell at three widths (1600 both rails open, 1280 yours folded,
+   390 a phone), in both modes, with its menus open and the rails folded:
+   the chrome is on every page, so its own states are measured here, not
+   only the pages. */
 const SHELL_PAGES = [
   '/',
   '/es/',
@@ -197,7 +203,8 @@ const SHELL_PAGES = [
   '/updates/',
 ];
 const SHELL_VIEWPORTS = [
-  { name: 'desktop 1440', width: 1440, height: 900 },
+  { name: 'desktop 1600', width: 1600, height: 900 },
+  { name: 'laptop 1280', width: 1280, height: 800 },
   { name: 'phone 390', width: 390, height: 844 },
 ];
 
@@ -244,26 +251,36 @@ for (const mode of MODES) {
         });
       }
 
-      test('WCAG A/AA with ⋮ and the folded footer open', async ({ page }) => {
+      test('WCAG A/AA with the folded footer open, then with the menus or the «Tú» sheet open', async ({
+        page,
+      }) => {
         await page.goto('/es/');
         await page.waitForLoadState('networkidle');
-        await page.locator('[data-metric="chrome-more"]').click();
-        await page.locator('[data-lang-menu] summary').click();
         for (const fold of await page.locator('.pie-pliegue:visible > summary').all()) {
           await fold.click();
+        }
+        expect(await axe(page)).toEqual([]);
+        if (viewport.width < 768) {
+          await page.locator('[data-metric="tab-you"]').click();
+          await expect(page.locator('#hoja-tu')).toBeVisible();
+        } else {
+          await page.locator('[data-metric="you-create"]').click();
+          await expect(page.locator('#menu-crear')).toBeVisible();
         }
         const violations = await axe(page);
         expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
       });
 
-      if (viewport.width > 860) {
-        test('WCAG A/AA with «Más» open, then with the sidebar folded', async ({ page }) => {
+      if (viewport.width >= 768) {
+        test('WCAG A/AA with both rails folded, a tooltip showing', async ({ page }) => {
           await page.goto('/es/');
           await page.waitForLoadState('networkidle');
-          await page.locator('[data-metric="nav-more"]').click();
-          expect(await axe(page)).toEqual([]);
-          await page.keyboard.press('Escape');
-          await page.locator('[data-metric="nav-collapse"]').click();
+          for (const side of ['nav-collapse', 'you-collapse']) {
+            const fold = page.locator(`[data-metric="${side}"]`);
+            if ((await fold.getAttribute('aria-expanded')) === 'true') await fold.click();
+          }
+          await page.locator('[data-metric="nav-communities"]').hover();
+          await expect(page.locator('#rail-tip')).toBeVisible();
           const violations = await axe(page);
           expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
         });

@@ -181,7 +181,7 @@ test.describe('the door', () => {
     await signedIn(page, 'nomad', [PERSONAL]);
     await page.goto('/es/communities/');
     await page.locator('[data-metric="chrome-account"]').click();
-    const entries = page.locator('details[data-session-in] .cima-pop a.opc');
+    const entries = page.locator('#menu-cara a.opc');
     await expect(entries).toHaveCount(5);
     expect(
       await entries.evaluateAll((all) => all.map((a) => a.getAttribute('data-metric'))),
@@ -195,7 +195,7 @@ test.describe('the door', () => {
     const door = page.locator('[data-metric="chrome-panels"]');
     await expect(door).toHaveText('Paneles');
     await expect(door).toHaveAttribute('href', '/es/panel/');
-    // The same icon the sidebar gives Perteneces: it is already in the page's sprite.
+    // The same icon your rail gives «Tus comunidades»: it is already in the page's sprite.
     await expect(door.locator('svg use')).toHaveAttribute('href', '#i-users-three');
   });
 
@@ -387,19 +387,20 @@ test.describe('the organization in the address', () => {
     await expect(page.locator('[data-org-name]')).toHaveText('Numen Games');
   });
 
-  test('Perteneces stays lit while you are in the panel', async ({ page }) => {
+  test('«Tus comunidades» stays lit while you are in the panel, and «Tú» on a phone', async ({
+    page,
+  }) => {
     await signedIn(page, 'nomad');
     await page.goto('/es/panel/');
     await ready(page);
-    await expect(page.locator('[data-metric="nav-belong"]')).toHaveAttribute(
+    await expect(page.locator('[data-metric="you-your-communities"]')).toHaveAttribute(
       'aria-current',
       'true',
     );
-    await expect(page.locator('[data-metric="tab-belong"]')).toHaveAttribute(
+    await expect(page.locator('[data-metric="tab-you"]')).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('[data-metric="nav-communities"]')).not.toHaveAttribute(
       'aria-current',
-      'true',
     );
-    await expect(page.locator('[data-metric="nav-profile"]')).not.toHaveAttribute('aria-current');
   });
 });
 

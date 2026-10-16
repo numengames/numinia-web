@@ -61,7 +61,11 @@ const BUDGETS: readonly Budget[] = [
   // wallet vendor is unchanged. Raised 1040→1050 the same day, with the
   // balanced two-column door and the wallet's permission line (Pablo's
   // walkthrough): measured 1039.6KB, a hair under the old line.
-  { path: '/lap/session/', totalKB: 1050, jsKB: 900, imgKB: 10 },
+  // Raised 1050→1062 on 2026-10-16 (v0.112.0, «La ciudad y tú»): the chrome's
+  // two rails, the phone's bar and «Tú» sheet and their menus are in every
+  // page's HTML (~11KB more markup than the sidebar and top bar); measured
+  // 1051KB, the wallet vendor unchanged.
+  { path: '/lap/session/', totalKB: 1062, jsKB: 900, imgKB: 10 },
 ];
 
 interface Weight {

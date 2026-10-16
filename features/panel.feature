@@ -28,9 +28,9 @@ Feature: The organization panel
     Given the store application has been built
     Then every locale's account menu offers the panels between the profile and the settings, for people who are in
 
-  Scenario: The panel belongs to Perteneces
+  Scenario: The panel belongs to «Tus comunidades»
     Given the store application has been built
-    Then the panel pages light Perteneces in the sidebar and in the tab bar
+    Then the panel pages light «Tus comunidades» on your rail and «Tú» on the phone bar
 
   Scenario: The members and roles screens of the panel are served with the walls of a page where the wallet signs
     Given the store application has been built

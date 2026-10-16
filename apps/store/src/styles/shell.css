@@ -85,6 +85,9 @@ html[data-rail-you='collapsed'] {
   min-width: 0;
   padding: var(--s5) var(--s7) var(--s8);
   overflow-x: clip;
+  /* The page's own width for the work surfaces (the Bazar's panes): two
+     rails that fold on their own make the window's width meaningless. */
+  container: pagina / inline-size;
 }
 :where(.app-centro) > main:focus {
   outline: none;
@@ -264,20 +267,18 @@ html[data-rail-you='collapsed'] .rail-tu .rail-plegar .icono {
 .rail-item[aria-current] .icono {
   color: var(--enlace);
 }
+/* The counter rides right after its word (8 px), on both rails alike. */
 .rail-n {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
+  margin-left: -6px;
   color: var(--texto-3);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 .rail-n[hidden] {
   display: none;
-}
-.rail-tu .rail-n {
-  margin-left: -6px;
 }
 .rail-vivo {
   color: var(--enlace);
@@ -573,6 +574,7 @@ html[data-rail-you='collapsed'] .rail-tu .rail-cab {
   padding: 0;
 }
 html[data-rail-city='collapsed'] .rail-ciudad .rail-t,
+html[data-rail-city='collapsed'] .rail-ciudad .vivo-txt,
 html[data-rail-you='collapsed'] .rail-tu .rail-t {
   position: absolute;
   width: 1px;
@@ -583,15 +585,7 @@ html[data-rail-you='collapsed'] .rail-tu .rail-t {
 }
 html[data-rail-city='collapsed']
   .rail-ciudad
-  :is(
-    .rail-palabra,
-    kbd,
-    .rail-eti,
-    .vivo-txt,
-    .pie-pliegue,
-    .pie-firma,
-    .rail-n:not([data-live-total])
-  ),
+  :is(.rail-palabra, kbd, .rail-eti, .pie-pliegue, .pie-firma, .rail-n:not([data-live-total])),
 html[data-rail-you='collapsed'] .rail-tu :is(.caja-caret, .rail-txt, .pie-seg, .rail-n) {
   display: none;
 }

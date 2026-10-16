@@ -298,17 +298,24 @@ Then(
       const html = await read(this.distDir, locale.prefix, 'index.html');
       const account = html.indexOf('data-metric="chrome-account"');
       assert.ok(account >= 0, `${where}: no account menu`);
-      const details = html.lastIndexOf('<details', account);
-      const detailsTag = html.slice(details, html.indexOf('>', details) + 1);
-      assert.ok(
-        hasFlag(detailsTag, 'data-session-in'),
-        `${where}: the menu shows to people who are out`,
+      // The face that opens the menu shows only to people who are in.
+      const faceTag = html.slice(
+        html.lastIndexOf('<button', account),
+        html.indexOf('>', account) + 1,
       );
       assert.ok(
-        hasFlag(detailsTag, 'hidden'),
-        `${where}: the menu is not hidden until the session`,
+        hasFlag(faceTag, 'data-session-in'),
+        `${where}: the face shows to people who are out`,
       );
-      const menu = html.slice(details, html.indexOf('</details>', details));
+      assert.ok(hasFlag(faceTag, 'hidden'), `${where}: the face is not hidden until the session`);
+      assert.equal(attr(faceTag, 'popovertarget'), 'menu-cara', `${where}: the face opens no menu`);
+      const start = html.indexOf('<div id="menu-cara"');
+      assert.ok(start >= 0, `${where}: no face menu`);
+      assert.ok(
+        hasFlag(html.slice(start, html.indexOf('>', start) + 1), 'popover'),
+        `${where}: the face menu is not a popover`,
+      );
+      const menu = html.slice(start, html.indexOf('<div id="menu-crear"', start));
       const order = [
         'chrome-profile',
         'chrome-panels',
@@ -339,28 +346,32 @@ Then(
   },
 );
 
-Then('the panel pages light Perteneces in the sidebar and in the tab bar', async function () {
-  for await (const { where, html } of panelPages(this.distDir)) {
-    const sidebar = /<aside class="lat"[\s\S]*?<\/aside>/.exec(html);
-    const tabs = /<nav class="pestanas-app"[\s\S]*?<\/nav>/.exec(html);
-    assert.ok(sidebar && tabs, `${where}: no sidebar or tab bar`);
-    assert.equal(
-      attr(tagWith(sidebar[0], 'data-metric="nav-belong"'), 'aria-current'),
-      'true',
-      `${where}: sidebar`,
-    );
-    assert.equal(
-      attr(tagWith(tabs[0], 'data-metric="tab-belong"'), 'aria-current'),
-      'true',
-      `${where}: tab bar`,
-    );
-    assert.equal(
-      attr(tagWith(sidebar[0], 'data-metric="nav-profile"'), 'aria-current'),
-      null,
-      `${where}: Perfil lit too`,
-    );
-  }
-});
+Then(
+  'the panel pages light «Tus comunidades» on your rail and «Tú» on the phone bar',
+  async function () {
+    for await (const { where, html } of panelPages(this.distDir)) {
+      const rail = /<aside class="rail rail-tu"[\s\S]*?<\/aside>/.exec(html);
+      const tabs = /<nav class="barra-movil"[\s\S]*?<\/nav>/.exec(html);
+      const city = /<aside class="rail rail-ciudad"[\s\S]*?<\/aside>/.exec(html);
+      assert.ok(rail && tabs && city, `${where}: no rails or phone bar`);
+      assert.equal(
+        attr(tagWith(rail[0], 'data-metric="you-your-communities"'), 'aria-current'),
+        'true',
+        `${where}: your rail`,
+      );
+      assert.equal(
+        attr(tagWith(tabs[0], 'data-metric="tab-you"'), 'aria-current'),
+        'true',
+        `${where}: phone bar`,
+      );
+      assert.equal(
+        attr(tagWith(city[0], 'data-metric="nav-communities"'), 'aria-current'),
+        null,
+        `${where}: Comunidades lit too`,
+      );
+    }
+  },
+);
 
 Then(
   "the members and roles pages of the panel have the wallet's walls in every locale",

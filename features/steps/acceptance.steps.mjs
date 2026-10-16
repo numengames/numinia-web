@@ -529,50 +529,70 @@ Then('every page bar carries the scarab, the search, the mode and the door', asy
       'nav-home',
       'nav-search',
       'chrome-mode',
+      'chrome-mode-system',
+      'chrome-mode-day',
       'chrome-sign-in',
-      'chrome-more',
+      'chrome-account',
+      'you-create',
     ]) {
       assert.ok(html.includes(`data-metric="${metric}"`), `${page}: missing ${metric}`);
     }
-    for (const metric of ['nav-city', 'nav-assets', 'nav-lap', 'nav-gallery', 'chrome-menu']) {
+    for (const metric of [
+      'nav-city',
+      'nav-assets',
+      'nav-lap',
+      'nav-gallery',
+      'chrome-menu',
+      'chrome-more',
+      'nav-more',
+      'nav-for-you',
+      'nav-explore',
+    ]) {
       assert.ok(!html.includes(`data-metric="${metric}"`), `${page}: old menu entry ${metric}`);
     }
   }
 });
 
-Then('every page sidebar and tab bar carry the five places', async function () {
-  const places = ['for-you', 'explore', 'belong', 'live', 'profile'];
+Then('every page city rail, your rail and phone bar carry their places', async function () {
+  const city = ['now', 'communities', 'encounters', 'worlds', 'bazaar'];
+  const yours = ['notices', 'your-communities', 'balance', 'loot'];
   for (const page of SHELL_PAGES) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
-    const sidebar = /<aside class="lat"[\s\S]*?<\/aside>/.exec(html);
-    assert.ok(sidebar, `${page}: sidebar missing`);
-    const tabs = /<nav class="pestanas-app"[\s\S]*?<\/nav>/.exec(html);
-    assert.ok(tabs, `${page}: tab bar missing`);
-    for (const place of places) {
+    const left = /<aside class="rail rail-ciudad"[\s\S]*?<\/aside>/.exec(html);
+    assert.ok(left, `${page}: the city's rail is missing`);
+    const right = /<aside class="rail rail-tu"[\s\S]*?<\/aside>/.exec(html);
+    assert.ok(right, `${page}: your rail is missing`);
+    const tabs = /<nav class="barra-movil"[\s\S]*?<\/nav>/.exec(html);
+    assert.ok(tabs, `${page}: the phone's bottom bar is missing`);
+    for (const place of city) {
       assert.ok(
-        sidebar[0].includes(`data-metric="nav-${place}"`),
-        `${page}: sidebar lacks ${place}`,
+        left[0].includes(`data-metric="nav-${place}"`),
+        `${page}: city rail lacks ${place}`,
       );
-      assert.ok(tabs[0].includes(`data-metric="tab-${place}"`), `${page}: tab bar lacks ${place}`);
     }
-    for (const metric of [
-      'nav-communities',
-      'nav-calendar',
-      'nav-bazaar',
-      'nav-more',
-      'nav-sign-in',
-    ]) {
-      assert.ok(sidebar[0].includes(`data-metric="${metric}"`), `${page}: sidebar lacks ${metric}`);
+    for (const place of yours) {
+      assert.ok(
+        right[0].includes(`data-metric="you-${place}"`),
+        `${page}: your rail lacks ${place}`,
+      );
     }
-    // Exactly one place is the current one, and the tab bar agrees.
+    for (const place of ['now', 'communities', 'encounters', 'worlds', 'you']) {
+      assert.ok(
+        tabs[0].includes(`data-metric="tab-${place}"`),
+        `${page}: phone bar lacks ${place}`,
+      );
+    }
+    // The rails read the same way: the right one is never written backwards.
+    assert.ok(!right[0].includes('dir="rtl"'), `${page}: your rail reads backwards`);
+    // Exactly the same city place is current in the rail and in the phone bar.
     const current = (block) =>
       [...block.matchAll(/aria-current="page"[^>]*data-metric="(?:nav|tab)-([a-z-]+)"/g)].map(
         (m) => m[1],
       );
     assert.deepEqual(
       current(tabs[0]),
-      current(sidebar[0]).filter((id) => places.includes(id)),
-      `${page}: the sidebar and the tab bar light different places`,
+      current(left[0]).filter((id) => id !== 'bazaar'),
+      `${page}: the city rail and the phone bar light different places`,
     );
   }
 });

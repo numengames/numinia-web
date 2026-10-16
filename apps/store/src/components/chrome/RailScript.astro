@@ -87,13 +87,16 @@
     }),
   );
 
-  /* The menus: next to the button that opened them. */
+  /* The menus: next to the button that opened them; the buttons say whether
+     their menu is open (the CSS and a screen reader both read it). */
   document.querySelectorAll<HTMLElement>('[data-rail-menu]').forEach((menu) =>
     menu.addEventListener('toggle', () => {
       const open = menu.matches(':popover-open');
-      const button = [
+      const buttons = [
         ...document.querySelectorAll<HTMLElement>(`[popovertarget="${menu.id}"]`),
-      ].find((element) => element.checkVisibility());
+      ];
+      buttons.forEach((element) => element.setAttribute('aria-expanded', String(open)));
+      const button = buttons.find((element) => element.checkVisibility());
       menu.toggleAttribute('data-placed', open && button !== undefined);
       if (!open || !button) return;
       const width = Math.min(300, innerWidth - 16);

@@ -36,10 +36,10 @@ test('the door is one panel over the app, labelled by its title, with no rail an
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveAttribute('aria-modal', 'true');
   // The app shell is behind it, out of the keyboard's way.
-  await expect(page.locator('aside.lat')).toHaveCount(1);
-  expect(await page.locator('aside.lat').evaluate((el) => el.closest('[inert]') !== null)).toBe(
-    true,
-  );
+  await expect(page.locator('aside.rail-ciudad')).toHaveCount(1);
+  expect(
+    await page.locator('aside.rail-ciudad').evaluate((el) => el.closest('[inert]') !== null),
+  ).toBe(true);
   // DES-009's canonical veil and a 480 px panel.
   const veil = await page
     .locator('[data-sign-in-door]')
