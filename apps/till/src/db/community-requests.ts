@@ -56,8 +56,24 @@ import { column, instant, text, type Row, type TillDatabase } from './repository
 
 export type RequestAnswer = { readonly ok: true; readonly request: CommunityRequest } | Refusal;
 
+/**
+ * Where the wallet stands towards one community, for the strip of its page
+ * to offer the right ask: a member asks nothing; a claim only while nobody
+ * is the titular. Both false while the organization is not open.
+ */
+export interface CommunityStanding {
+  readonly member: boolean;
+  readonly hasOwner: boolean;
+}
+
 export type MyRequestsAnswer =
-  { readonly ok: true; readonly requests: readonly CommunityRequest[] } | Refusal;
+  | {
+      readonly ok: true;
+      readonly requests: readonly CommunityRequest[];
+      /** Present when one community was asked about. */
+      readonly standing?: CommunityStanding;
+    }
+  | Refusal;
 
 export type RequestsAnswer =
   { readonly ok: true; readonly requests: readonly CommunityRequestEntry[] } | Refusal;
@@ -179,7 +195,10 @@ export async function requestCommunity(
   return { ok: true, request: requestOf(row) };
 }
 
-/** `AccountDesk.myCommunityRequests`: the wallet's own requests, newest first; `community` narrows them. */
+/**
+ * `AccountDesk.myCommunityRequests`: the wallet's own requests, newest first;
+ * `community` narrows them to one, and then says where the wallet stands.
+ */
 export async function myCommunityRequests(
   db: TillDatabase,
   sentWallet: unknown,
@@ -195,7 +214,22 @@ export async function myCommunityRequests(
     );
   }
   const { results } = await db.prepare(SELECT_MINE).bind(wallet, community).all<Row>();
-  return { ok: true, requests: results.map(requestOf) };
+  const requests = results.map(requestOf);
+  if (community === null) return { ok: true, requests };
+  return { ok: true, requests, standing: await standingOf(db, wallet, community) };
+}
+
+async function standingOf(
+  db: TillDatabase,
+  wallet: string,
+  community: string,
+): Promise<CommunityStanding> {
+  const org = await loadOrganization(db, await communityAccountId(community));
+  if (org === null) return { member: false, hasOwner: false };
+  return {
+    member: memberIn(org, wallet) !== undefined,
+    hasOwner: org.members.some((member) => member.isOwner),
+  };
 }
 
 /** Who decides, and on whose behalf; `org` is null while the organization is not open yet. */

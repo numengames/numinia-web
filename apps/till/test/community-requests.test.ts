@@ -124,10 +124,12 @@ describe('asking for a community', () => {
     expect(join.note).toBeNull();
     const mine = await s.desk.myCommunityRequests(PABLO, 'numen-games');
     expect(mine.ok && mine.requests.map((request) => request.kind)).toEqual(['join', 'claim']);
+    expect(mine.ok && mine.standing).toEqual({ member: false, hasOwner: false });
     const all = await s.desk.myCommunityRequests(PABLO);
     expect(all.ok && all.requests.length).toBe(2);
+    expect(all.ok && 'standing' in all).toBe(false);
     const none = await s.desk.myCommunityRequests(MARIA, 'numen-games');
-    expect(none).toEqual({ ok: true, requests: [] });
+    expect(none).toEqual({ ok: true, requests: [], standing: { member: false, hasOwner: false } });
     expect(await s.desk.myCommunityRequests('x', 'Numen')).toEqual({
       ok: false,
       problems: [PROBLEMS.wallet, COMMUNITY_PROBLEMS.community],
