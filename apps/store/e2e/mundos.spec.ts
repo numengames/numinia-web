@@ -270,6 +270,128 @@ test.describe('the house places worlds', () => {
   });
 });
 
+test.describe('the «IA» section of a world’s page', () => {
+  const KEY = `ed25519:${'Q'.repeat(43)}`;
+  /** Optional: IA_SHOTS_DIR=<dir> keeps a picture of each state for a person to look at. */
+  const shot = async (page: Page, name: string): Promise<void> => {
+    const dir = process.env.IA_SHOTS_DIR;
+    if (dir) await page.screenshot({ path: `${dir}/${name}.png`, fullPage: true });
+  };
+
+  test('the people who manage a world invite an AI, see it arrive and remove it', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    await page.goto(worldPage('agora-plaza'));
+    const section = page.locator('[data-world-ai]');
+    await expect(section.getByRole('heading', { name: 'IA' })).toBeVisible();
+    await expect(section.locator('[data-world-ai-empty]')).toContainText(
+      'Este mundo aún no tiene IAs.',
+    );
+    await shot(page, '01-empty');
+
+    await section.locator('[data-metric="ai-invite"]').click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await dialog.locator('[data-metric="ai-invite-name"]').fill('Hermes Pablo');
+    await dialog.locator('[data-metric="ai-invite-ability-build"]').check();
+    await shot(page, '02-step-1');
+    await dialog.locator('[data-metric="ai-invite-next"]').click();
+    await expect(dialog.locator('[data-world-ai-command]')).toHaveText(
+      'node tools/agente.ts nuevo hermes-pablo --nombre "Hermes Pablo"',
+    );
+    // The next step waits for a public key of the engine's own shape.
+    await dialog.locator('[data-metric="ai-invite-key"]').fill('ed25519:corta');
+    await expect(dialog.getByRole('alert')).toContainText('ed25519:');
+    await expect(dialog.locator('[data-metric="ai-invite-next"]')).toBeDisabled();
+    await shot(page, '03-step-2-bad-key');
+    await dialog.locator('[data-metric="ai-invite-key"]').fill(KEY);
+    await shot(page, '04-step-2');
+    await dialog.locator('[data-metric="ai-invite-next"]').click();
+    await shot(page, '05-step-3');
+    await dialog.locator('[data-metric="ai-invite-add"]').click();
+    await expect(dialog).toBeHidden();
+
+    const row = section.locator('[data-world-ai-agent="hermes-pablo"]');
+    await expect(row).toContainText('Hermes Pablo');
+    await expect(row.locator('[data-world-ai-ability]')).toHaveText('Puede también construir');
+    await expect(row.locator('[data-presence]')).toHaveAttribute('data-presence', 'waiting');
+    await shot(page, '06-waiting');
+
+    // Asking again for the same name is refused in plain words, before any call.
+    await section.locator('[data-metric="ai-invite"]').click();
+    await dialog.locator('[data-metric="ai-invite-name"]').fill('Hermes Pablo');
+    await dialog.locator('[data-metric="ai-invite-next"]').click();
+    await expect(dialog.getByText('Ya hay una IA con ese nombre')).toBeVisible();
+    await shot(page, '07-name-taken');
+    await dialog.locator('[data-metric="ai-invite-cancel"]').click();
+
+    // Remove, with a confirmation that can be declined.
+    await row.locator('[data-metric="ai-remove"]').click();
+    await expect(row).toContainText('¿Quitar a Hermes Pablo?');
+    await shot(page, '08-confirm');
+    await row.locator('[data-metric="ai-remove-no"]').click();
+    await expect(row).toBeVisible();
+    await row.locator('[data-metric="ai-remove"]').click();
+    await row.locator('[data-metric="ai-remove-yes"]').click();
+    await expect(section.locator('[data-world-ai-agent]')).toHaveCount(0);
+    await expect(section.locator('[data-world-ai-empty]')).toBeVisible();
+  });
+
+  test('fits a phone and is clean for axe, dialog included, in every language', async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await signIn(context, ADMIN, 'nomad');
+    for (const [prefix, title, invite] of [
+      ['/es', 'IA', 'Invitar a una IA'],
+      ['', 'AI', 'Invite an AI'],
+      ['/ja', 'AI', 'AIを招待する'],
+      ['/ko', 'AI', 'AI 초대하기'],
+      ['/pt-br', 'IA', 'Convidar uma IA'],
+    ] as const) {
+      await page.goto(worldPage('agora-plaza', prefix));
+      const section = page.locator('[data-world-ai]');
+      await expect(section.getByRole('heading', { name: title, exact: true })).toBeVisible();
+      await section.getByRole('button', { name: invite }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await settle(page);
+      expect(await overflow(page)).toBeLessThanOrEqual(0);
+      const dialog = page.locator('dialog[open]');
+      expect(
+        await dialog.evaluate((element) => element.scrollWidth - element.clientWidth),
+      ).toBeLessThanOrEqual(0);
+      if (prefix === '/es') {
+        await shot(page, '09-phone-dialog');
+        const found = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(found.violations.map((v) => v.id)).toEqual([]);
+      }
+      await page.locator('[data-metric="ai-invite-cancel"]').click();
+      if (prefix === '/es') {
+        await settle(page);
+        await shot(page, '10-phone-section');
+        const found = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(found.violations.map((v) => v.id)).toEqual([]);
+      }
+    }
+  });
+
+  test('anyone else does not see the section at all', async ({ browser }) => {
+    const stranger = await browser.newContext();
+    const page = await stranger.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
+    await expect(page.locator('[data-world-ai]')).toHaveCount(0);
+    await stranger.close();
+  });
+});
+
 test.describe('only the house places', () => {
   test('a person who is not the house cannot read or write placements', async ({
     page,

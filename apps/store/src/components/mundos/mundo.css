@@ -115,9 +115,16 @@
 }
 .mundo-ia-confirmar {
   display: flex;
+  flex: 1 1 100%;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s2);
+}
+.mundo-ia-confirmar .saldo-nota {
+  flex: 1 1 14rem;
+}
+.mundo-ia-lista .mundo-ia-confirmar .btn {
+  margin-inline-start: 0;
 }
 .mundo-ia-dialogo {
   width: min(36rem, calc(100% - 2rem));
