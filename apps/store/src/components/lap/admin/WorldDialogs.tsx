@@ -33,6 +33,7 @@ import {
   nameOwner,
   placeAllowed,
   problemFields,
+  roomWritesDns,
   rowPlace,
   type AddressDns,
   type DraftField,
@@ -42,7 +43,7 @@ import {
   type WorldCardInfo,
   type WorldRow,
 } from '../../../lib/worlds';
-import { checkAddress } from '../../../lib/worlds-source';
+import { askAddress, writeDns } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { busy, problemText, stepText, useFleetAction, type Step } from './fleet-action';
 import { CodeBox, Cover, type CodeMode, type WorldAction } from './WorldViews';
@@ -162,6 +163,64 @@ export function StepLine({
   );
 }
 
+/** The room writing a world's DNS record before the wallet signs: nothing yet, on its way, or refused. */
+export type DnsWriteStep =
+  | { readonly at: 'idle' }
+  | { readonly at: 'writing' }
+  | { readonly at: 'failed'; readonly problem: string };
+
+/**
+ * Points the address at the machine through the room's DNS desk when the
+ * wizard's line said the room would (`create`, `move`); true when the
+ * signed request may go on. A refusal stops it: nothing is asked of the
+ * machine for an address that would not reach it.
+ */
+export function useDnsWrite() {
+  const [dnsStep, setDnsStep] = useState<DnsWriteStep>({ at: 'idle' });
+  const prepare = async (dns: DnsState, domain: string, machine: string): Promise<boolean> => {
+    if (!roomWritesDns(dns)) return true;
+    setDnsStep({ at: 'writing' });
+    const wrote = await writeDns(fetch, 'point', domain, machine);
+    if (!wrote.ok) {
+      setDnsStep({ at: 'failed', problem: wrote.problem });
+      return false;
+    }
+    setDnsStep({ at: 'idle' });
+    return true;
+  };
+  const resetDns = (): void => setDnsStep({ at: 'idle' });
+  return { dnsStep, prepare, resetDns };
+}
+
+/** The line that says the room is writing the address's record, or why it could not. */
+export function DnsWriteLine({
+  step,
+  domain,
+  machine,
+  room,
+}: {
+  readonly step: DnsWriteStep;
+  readonly domain: string;
+  readonly machine: string;
+  readonly room: WorldsRoomMessages;
+}) {
+  if (step.at === 'writing') {
+    return (
+      <p className="estado paso-firma" aria-live="polite" data-step="dns">
+        <LunaEspera /> {fill(room.wizard.dnsWriting, { d: domain, m: machine })}
+      </p>
+    );
+  }
+  if (step.at === 'failed') {
+    return (
+      <p className="fallo" role="alert" data-problem={`dns-${step.problem}`}>
+        {fill(room.wizard.dnsWriteFailed, { d: domain, m: machine, code: step.problem })}
+      </p>
+    );
+  }
+  return null;
+}
+
 export function Field({
   id,
   label,
@@ -257,6 +316,8 @@ export function AddressLine({
     elsewhere: words.dnsElsewhere,
     none: words.dnsNone,
     unknown: words.dnsUnknown,
+    create: words.dnsCreate,
+    move: words.dnsMove,
   };
   const tone: Readonly<Record<DnsState, string>> = {
     checking: 'neutro',
@@ -264,6 +325,8 @@ export function AddressLine({
     elsewhere: 'mal',
     none: 'aviso',
     unknown: 'aviso',
+    create: 'bien',
+    move: 'aviso',
   };
   return (
     <p className="linea-dns" data-tono={tone[dns]} aria-live="polite">
@@ -312,6 +375,7 @@ export function NewWorldDialog({
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
   const { step: flow, run, reset } = useFleetAction(wallet, listens);
+  const { dnsStep, prepare, resetDns } = useDnsWrite();
   useOnProgress(flow, onChanged);
 
   const clear = (): void => {
@@ -320,6 +384,7 @@ export function NewWorldDialog({
     setLabel('');
     setZone(WORLD_ZONES[0]);
     reset();
+    resetDns();
   };
 
   // Nothing typed is ever thrown away: closing the wizard keeps the draft, and
@@ -353,7 +418,7 @@ export function NewWorldDialog({
     let alive = true;
     setDns('checking');
     const timer = setTimeout(() => {
-      void checkAddress(fetch, domain, draft.server).then((answer) => {
+      void askAddress(fetch, domain, draft.server).then((answer) => {
         if (alive) setDns(answer);
       });
     }, 400);
@@ -388,9 +453,11 @@ export function NewWorldDialog({
     setStep((current) => current + 1);
   };
 
-  const create = (): void => {
+  const create = async (): Promise<void> => {
     if (!('order' in result)) return;
     const order = result.order;
+    // The address first: a world whose record the room writes gets it before the wallet signs.
+    if (!(await prepare(dns, order.domain, order.server))) return;
     void run({
       kind: 'CreateWorld',
       machine: order.server,
@@ -405,7 +472,7 @@ export function NewWorldDialog({
 
   const order = 'order' in result ? result.order : null;
   const title = chosen?.title ?? order?.id ?? draft.id;
-  const sending = busy(flow);
+  const sending = busy(flow) || dnsStep.at === 'writing';
 
   return (
     <Modal open={open} label={room.wizard.title} onClose={close} dismissable={!sending}>
@@ -669,6 +736,7 @@ export function NewWorldDialog({
                   })}
                 </p>
               )}
+              <DnsWriteLine step={dnsStep} domain={domain} machine={draft.server} room={room} />
               <StepLine step={flow} machine={draft.server} room={room} sessionHref={sessionHref} />
             </>
           )}
@@ -719,7 +787,7 @@ export function NewWorldDialog({
                 type="button"
                 className="btn btn-primario"
                 disabled={order === null || sending}
-                onClick={create}
+                onClick={() => void create()}
                 data-metric="worlds-wizard-create"
               >
                 {room.wizard.create}
@@ -803,8 +871,17 @@ export function ActionDialog({
   // dialog has done its job: the machine does the rest and the card shows it.
   const closeNow = useRef(close);
   closeNow.current = close;
+  // A deleted world's address goes with it: the fleet's own record, if it
+  // made one (a record by hand stays). Asked once the machine took the delete;
+  // a failure leaves only a record pointing at a machine without that world.
+  const released = useRef<string | null>(null);
   useEffect(() => {
-    if (step.at === 'accepted') closeNow.current();
+    if (step.at !== 'accepted') return;
+    if (action === 'delete' && place !== null && released.current !== place.domain) {
+      released.current = place.domain;
+      void writeDns(fetch, 'release', place.domain, place.server);
+    }
+    closeNow.current();
   }, [step.at]);
 
   const submit = (): void => {

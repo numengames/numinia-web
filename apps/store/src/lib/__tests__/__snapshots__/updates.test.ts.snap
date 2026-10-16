@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-16 09:29",
+    "entries": [
+      {
+        "text": "A world’s address is written by the fleet itself: no more records made by hand in Cloudflare for a world on a machine other than open-1. While you type the address, the wizard asks who answers for it — nobody yet, a record of the fleet, or one made by hand — and says what will happen: «the room will create it towards the machine», «it will move it», «it already points there», or, for a record made by hand that points elsewhere, choose another name. When you create the world, or bring it back from its zip, the room writes the record (A, DNS only) before your wallet signs; if it cannot, nothing is asked of the machine and it says why. Deleting a world deletes the record the fleet made for it; a record made by hand is never touched. The records are written by the till, which holds the only key, limited to the DNS of numinia.com and numen.games; this site holds none. In all five languages.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.100.0",
+  },
+  {
     "date": "2026-10-16 06:02",
     "entries": [
       {

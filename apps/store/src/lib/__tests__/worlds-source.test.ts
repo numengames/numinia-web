@@ -10,6 +10,7 @@ import {
   ENGINE_RELEASE_RETRY_MS,
   ENGINE_RELEASE_TTL_MS,
   ENGINE_RELEASE_URL,
+  askAddress,
   checkAddress,
   forgetEngineRelease,
   latestEngine,
@@ -19,6 +20,7 @@ import {
   probeWorlds,
   readFace,
   readFaces,
+  writeDns,
 } from '../worlds-source';
 
 const ORDER: WorldOrder = {
@@ -279,5 +281,80 @@ describe('latestEngine — the Numinia Engine’s newest build, from its release
     // With no clock given, now.
     expect(await latestEngine(fakeFetch(() => ok(RELEASE)).fetch)).toEqual(RELEASE);
     forgetEngineRelease();
+  });
+});
+
+describe('askAddress — the till’s DNS desk first, public DNS when it is not there', () => {
+  const HOST = 'vps-1e2f105f.vps.ovh.ca';
+  const look = (record: string, ips: string[], machineIp: string | null): Response =>
+    ok({ ok: true, domain: 'torre.numinia.com', record, ips, machine: null, machineIp });
+
+  it('asks the room’s own route with the address and the machine', async () => {
+    const { fetch, calls } = fakeFetch(() => look('none', [], '192.0.2.20'));
+    expect(await askAddress(fetch, 'torre.numinia.com', 'bronte-xs-ca-003')).toBe('create');
+    expect(calls[0]?.url).toBe('/api/admin/dns?domain=torre.numinia.com&machine=bronte-xs-ca-003');
+  });
+
+  it('reads each answer of the desk', async () => {
+    const ask = (answer: Response): Promise<string> =>
+      askAddress(fakeFetch(() => answer).fetch, 'torre.numinia.com', 'bronte-xs-ca-003');
+    expect(await ask(look('fleet', ['192.0.2.20'], '192.0.2.20'))).toBe('machine');
+    expect(await ask(look('fleet', ['192.0.2.10'], '192.0.2.20'))).toBe('move');
+    expect(await ask(look('hand', ['192.0.2.20'], '192.0.2.20'))).toBe('machine');
+    expect(await ask(look('hand', ['198.51.100.7'], '192.0.2.20'))).toBe('elsewhere');
+  });
+
+  it('falls back to public DNS when the desk refuses, fails or is not bound', async () => {
+    const doh = (name: string): Response =>
+      ok({ Status: 0, Answer: [{ type: 1, data: name === HOST ? '192.0.2.20' : '192.0.2.10' }] });
+    for (const desk of [
+      () => ok({ ok: false, problem: 'not-configured' }),
+      () => fail(503),
+      () => {
+        throw new Error('offline');
+      },
+    ]) {
+      const { fetch } = fakeFetch((call) => {
+        if (call.url.startsWith('/api/admin/dns')) return desk();
+        return doh(new URL(call.url).searchParams.get('name') ?? '');
+      });
+      expect(await askAddress(fetch, 'torre.numinia.com', 'bronte-xs-ca-003')).toBe('elsewhere');
+    }
+  });
+});
+
+describe('writeDns — the room asks its desk to write or delete a record', () => {
+  it('posts the act, the address and the machine as JSON, and reads what was done', async () => {
+    const { fetch, calls } = fakeFetch(() =>
+      ok({ ok: true, domain: 'torre.numinia.com', done: 'created', ip: '192.0.2.20' }),
+    );
+    expect(await writeDns(fetch, 'point', 'torre.numinia.com', 'bronte-xs-ca-003')).toEqual({
+      ok: true,
+      done: 'created',
+    });
+    expect(calls[0]).toMatchObject({
+      method: 'POST',
+      url: '/api/admin/dns',
+      body: { action: 'point', domain: 'torre.numinia.com', machine: 'bronte-xs-ca-003' },
+    });
+  });
+
+  it('says why not: the desk’s problem, the route’s error, nothing readable, no answer', async () => {
+    const write = (answer: () => Response): Promise<unknown> =>
+      writeDns(fakeFetch(answer).fetch, 'release', 'torre.numinia.com', 'open-1');
+    expect(await write(() => ok({ ok: false, problem: 'taken' }))).toEqual({
+      ok: false,
+      problem: 'taken',
+    });
+    expect(await write(() => ok({ error: 'not-bound' }, 503))).toEqual({
+      ok: false,
+      problem: 'not-bound',
+    });
+    expect(await write(() => text('<html>', 502))).toEqual({ ok: false, problem: 'unexpected' });
+    expect(
+      await write(() => {
+        throw new Error('offline');
+      }),
+    ).toEqual({ ok: false, problem: 'unreachable' });
   });
 });

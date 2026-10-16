@@ -5,13 +5,17 @@
  * loading picture, for a world the Summa has no card for), and the Numinia
  * Engine's newest published build.
  *
- * The machines are read through their doors (lib/fleet.ts). Nothing here
- * writes anywhere, and nothing here needs a key.
+ * The machines are read through their doors (lib/fleet.ts). The one write
+ * is a world's DNS record, asked of the room's own route (askAddress,
+ * writeDns), which hands it to the till's DNS desk: nothing here needs a
+ * key.
  */
 
 import {
   compareDns,
+  dnsFromDesk,
   machineHost,
+  readDeskLook,
   readDohAnswer,
   readEngineRelease,
   readProbe,
@@ -153,6 +157,75 @@ export async function checkAddress(
   ]);
   if (address === null || own === null) return 'unknown';
   return compareDns(address, own);
+}
+
+/** The room's own door to the till's DNS desk (pages/api/admin/dns.ts). */
+export const DNS_ROUTE = '/api/admin/dns';
+
+/**
+ * Where an address points and whose record it is, asked of the till's DNS
+ * desk through the room; when the desk is not there (not bound, no token,
+ * a failure) the room falls back to public DNS (checkAddress), as before
+ * the desk existed. Never throws.
+ */
+export async function askAddress(
+  fetchImpl: Fetch,
+  domain: string,
+  machine: string,
+  timeoutMs = 4000,
+): Promise<AddressDns> {
+  try {
+    const query = new URLSearchParams({ domain, machine });
+    const response = await fetchImpl(`${DNS_ROUTE}?${query.toString()}`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (response.ok) {
+      const look = readDeskLook(await response.json());
+      if (look !== null) return dnsFromDesk(look);
+    }
+  } catch {
+    // The desk did not answer: public DNS below.
+  }
+  return checkAddress(fetchImpl, domain, machine, timeoutMs);
+}
+
+/** What the desk did with an address, or why it did not (its problem code, `unreachable`, `unexpected`). */
+export type DnsWrite =
+  { readonly ok: true; readonly done: string } | { readonly ok: false; readonly problem: string };
+
+/**
+ * Asks the room to point an address at a machine (`point`) or to delete the
+ * fleet's record of it (`release`). Never throws.
+ */
+export async function writeDns(
+  fetchImpl: Fetch,
+  action: 'point' | 'release',
+  domain: string,
+  machine: string,
+  timeoutMs = 15_000,
+): Promise<DnsWrite> {
+  let response: Response;
+  try {
+    response = await fetchImpl(DNS_ROUTE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ action, domain, machine }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch {
+    return { ok: false, problem: 'unreachable' };
+  }
+  const body = (await response.json().catch(() => null)) as {
+    ok?: unknown;
+    done?: unknown;
+    problem?: unknown;
+    error?: unknown;
+  } | null;
+  if (body?.ok === true && typeof body.done === 'string') return { ok: true, done: body.done };
+  if (typeof body?.problem === 'string') return { ok: false, problem: body.problem };
+  if (typeof body?.error === 'string') return { ok: false, problem: body.error };
+  return { ok: false, problem: 'unexpected' };
 }
 
 /** Probe any list of worlds by address, in parallel (the legacy list has no state to filter on). */
