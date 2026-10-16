@@ -1,0 +1,38 @@
+/* A world's page (cut 4). The cards are Saldo's (saldo-marco); secondary
+   words are --texto-2 (AA on a card); every grid child may shrink. */
+.mundo-cabecera {
+  margin-bottom: var(--s5);
+}
+.mundo-cabecera h1 {
+  margin: var(--s1) 0 0;
+  overflow-wrap: anywhere;
+}
+.mundo-cabecera .etiqueta {
+  margin: 0;
+  color: var(--texto-2);
+}
+.mundo-pagina {
+  display: grid;
+  gap: var(--s4);
+  max-width: 44rem;
+  min-width: 0;
+}
+.mundo-pagina h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.mundo-pagina .etiqueta {
+  margin: 0;
+  color: var(--texto-2);
+}
+.mundo-enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mundo-enlaces .btn {
+  text-decoration: none;
+}

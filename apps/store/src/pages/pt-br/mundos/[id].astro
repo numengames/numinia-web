@@ -1,0 +1,12 @@
+---
+import WorldPage from '../../../components/mundos/WorldPage.astro';
+import { WORLD_ID_SHAPE } from '../../../lib/mundos';
+
+export const prerender = false;
+
+const id = Astro.params.id ?? '';
+// An id that is not shaped like a fleet's never reaches the page (nor the API).
+if (!WORLD_ID_SHAPE.test(id)) return new Response(null, { status: 404 });
+---
+
+<WorldPage locale="pt-br" worldId={id} />

@@ -1,0 +1,123 @@
+/**
+ * A world's own page (cut 4): public for now. The page is a shell (its address
+ * names the world); this reads GET /api/mundos/<id> — no session needed — and
+ * says whose the world is. People who belong to the world's organization (and
+ * the house) get an «Administración» block besides: the organization that
+ * pays for a world is the one that administers it. Nothing is stored.
+ */
+
+import { useCallback, useEffect, useState } from 'react';
+import type { SupportedLocale } from '@numinia/domain';
+import type { WorldPageMessages } from '../../i18n/mundos';
+import { loadWorldPage, type PageSheet } from '../../lib/mundos';
+import { PIECES, pieceHref } from '../../lib/panel';
+import { LunaEspera } from '../chrome/LunaEspera';
+
+type Read = { readonly at: 'loading' } | PageSheet;
+
+/** The panel's pieces the administration block leads to, in the order it draws them. */
+const MANAGE_PIECES = ['venues', 'members', 'balance'] as const;
+
+export function WorldView({
+  worldId,
+  locale,
+  words,
+  homeHref,
+}: {
+  readonly worldId: string;
+  readonly locale: SupportedLocale;
+  readonly words: WorldPageMessages;
+  /** The site's start, where «Volver» leads. */
+  readonly homeHref: string;
+}) {
+  const [read, setRead] = useState<Read>({ at: 'loading' });
+
+  const load = useCallback(async (): Promise<void> => {
+    setRead({ at: 'loading' });
+    setRead(await loadWorldPage(fetch, worldId));
+  }, [worldId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const page = read.at === 'ready' ? read.page : null;
+  const home = page?.home ?? null;
+
+  return (
+    <div className="mundo-pagina" data-world-page={worldId} data-state={read.at}>
+      {read.at === 'loading' && (
+        <p className="saldo-estado" role="status">
+          <LunaEspera /> {words.loading}
+        </p>
+      )}
+      {read.at === 'failed' && (
+        <div className="saldo-marco saldo-fallo" role="alert" data-world-failed>
+          <p>{words.failed}</p>
+          <div>
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={() => void load()}
+              data-metric="world-page-retry"
+            >
+              {words.retry}
+            </button>
+          </div>
+        </div>
+      )}
+      {read.at === 'missing' && (
+        <div className="saldo-marco" data-world-missing>
+          <h2>{words.missingTitle}</h2>
+          <p className="saldo-nota">{words.missing}</p>
+          <div>
+            <a className="btn btn-fantasma" href={homeHref} data-metric="world-page-home">
+              {words.back}
+            </a>
+          </div>
+        </div>
+      )}
+      {page !== null && (
+        <section
+          className="saldo-marco mundo-casa"
+          data-world-home={home === null ? 'none' : 'org'}
+        >
+          <p className="etiqueta">{words.homeLabel}</p>
+          {home === null ? (
+            <>
+              <h2 data-world-org>{words.unplaced}</h2>
+              <p className="saldo-nota">{words.unplacedNote}</p>
+            </>
+          ) : (
+            <h2 data-world-org>{home.accountName}</h2>
+          )}
+        </section>
+      )}
+      {page !== null && page.manage && home !== null && (
+        <section
+          className="saldo-marco mundo-admin"
+          aria-labelledby="mundo-admin-t"
+          data-world-manage
+        >
+          <h2 id="mundo-admin-t">{words.manage.title}</h2>
+          <p className="saldo-nota">{words.manage.note}</p>
+          <ul className="mundo-enlaces">
+            {MANAGE_PIECES.map((id) => {
+              const piece = PIECES.find((entry) => entry.id === id);
+              const href = piece === undefined ? null : pieceHref(locale, piece, home.accountId);
+              return (
+                href !== null && (
+                  <li key={id}>
+                    <a className="btn btn-fantasma" href={href} data-metric={`world-page-${id}`}>
+                      {words.manage[id]}
+                    </a>
+                  </li>
+                )
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

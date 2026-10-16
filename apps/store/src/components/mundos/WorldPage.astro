@@ -1,0 +1,37 @@
+---
+/**
+ * A world's page, /mundos/<id>/ in five locales (cut 4): public for now. The
+ * page names the world from its address and the island (./WorldView.tsx)
+ * reads GET /api/mundos/<id>: whose it is and, for people of its
+ * organization, the «Administración» block. Rendered on demand like the
+ * Codex's chapters: a world's id is a fleet's, not a build's.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { MUNDOS_UI } from '../../i18n/mundos';
+import { localeHref } from '../../lib/app-nav';
+import { WorldView } from './WorldView';
+import './mundo.css';
+
+interface Props {
+  locale: SupportedLocale;
+  worldId: string;
+}
+
+const { locale, worldId } = Astro.props;
+const words = MUNDOS_UI[locale].page;
+---
+
+<BaseLayout locale={locale} title={`${worldId} — Numinia`} description={words.eyebrow} wide>
+  <header class="mundo-cabecera">
+    <p class="etiqueta">{words.eyebrow}</p>
+    <h1 class="display-m mono" data-world-id>{worldId}</h1>
+  </header>
+  <WorldView
+    client:load
+    worldId={worldId}
+    locale={locale}
+    words={words}
+    homeHref={localeHref(locale, '/')}
+  />
+</BaseLayout>

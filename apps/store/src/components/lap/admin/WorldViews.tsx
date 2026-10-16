@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react';
+import type { PlacementMessages } from '../../../i18n/mundos';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { formatSize } from '../../../lib/fleet';
 import {
@@ -20,6 +21,7 @@ import {
   worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
+import type { WorldHome } from '../../../lib/worlds-homes-types';
 import { LunaEspera } from '../../chrome/LunaEspera';
 
 /** `update`: move a world of the Numinia Engine to its newest build (UpdateWorld). */
@@ -52,6 +54,24 @@ export interface TransferView {
 
 export type TransferAction = 'stop' | 'retry' | 'discard' | 'pick';
 
+/**
+ * What a row says about its organization (cut 4): whose it is, a checkbox to
+ * choose it for a bulk placement, and the house's «Asignar a una organización».
+ * Absent while the room has not the house's list of placements.
+ */
+export interface PlacementView {
+  readonly words: PlacementMessages;
+  /** Each world's home; null when the list could not be read (rows say so once, above). */
+  readonly homes: ReadonlyMap<string, WorldHome> | null;
+  readonly selected: ReadonlySet<string>;
+  readonly onToggle: (row: WorldRow) => void;
+  readonly onAssign: (row: WorldRow) => void;
+  /** Only a world the fleet really has can be placed (not one still arriving from a zip). */
+  readonly canPlace: (row: WorldRow) => boolean;
+  /** A world's own public page, under the visitor's locale. */
+  readonly pageHref: (worldId: string) => string;
+}
+
 interface ViewProps {
   readonly rows: readonly WorldRow[];
   readonly room: WorldsRoomMessages;
@@ -60,6 +80,7 @@ interface ViewProps {
   /** The uploads this tab runs, by world. */
   readonly transfers?: ReadonlyMap<string, TransferView> | undefined;
   readonly onTransfer?: ((row: WorldRow, action: TransferAction) => void) | undefined;
+  readonly placement?: PlacementView | undefined;
 }
 
 const PER_GROUP = 6;
@@ -516,6 +537,48 @@ function reasonOf(
 const codeOf = (transfer: TransferView | undefined): string | null =>
   transfer === undefined || (transfer.state === 'failed' && !transfer.retry) ? null : transfer.code;
 
+/** A world's organization, its page, and what the house does with it: choose it, or assign it. */
+function HomeLine({ row, placement }: { row: WorldRow; placement: PlacementView }) {
+  const { words, homes } = placement;
+  if (!placement.canPlace(row)) return null;
+  const home = homes?.get(row.id) ?? null;
+  return (
+    <div className="casa" data-home-of={row.id} data-placed={home === null ? 'no' : 'yes'}>
+      <label className="casa-elegir">
+        <input
+          type="checkbox"
+          checked={placement.selected.has(row.id)}
+          onChange={() => placement.onToggle(row)}
+          data-metric="worlds-select"
+        />
+        <span className="visually-hidden">{fill(words.select, { w: row.title })}</span>
+      </label>
+      <p className="casa-nombre">
+        <span className="etiqueta">{words.homeLabel}</span>
+        <span data-home-name>{home === null ? words.unplaced : home.accountName}</span>
+      </p>
+      <div className="casa-botones">
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          aria-label={fill(words.assignLabel, { w: row.title })}
+          onClick={() => placement.onAssign(row)}
+          data-metric="worlds-assign"
+        >
+          {words.assign}
+        </button>
+        <a
+          className="btn btn-fantasma"
+          href={placement.pageHref(row.id)}
+          data-metric="worlds-page-link"
+        >
+          {words.openPage}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function WorldCard({
   row,
   room,
@@ -523,6 +586,7 @@ function WorldCard({
   onCode,
   transfer,
   onTransfer,
+  placement,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
@@ -530,6 +594,7 @@ function WorldCard({
   onCode: ViewProps['onCode'];
   transfer: TransferView | undefined;
   onTransfer: ViewProps['onTransfer'];
+  placement: ViewProps['placement'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
@@ -570,6 +635,7 @@ function WorldCard({
             )}
           </dl>
         )}
+        {placement !== undefined && <HomeLine row={row} placement={placement} />}
         {code !== null && <NewCode row={row} code={code} room={room} />}
         <CodeLine row={row} room={room} onCode={onCode} />
         <Foot
@@ -584,7 +650,15 @@ function WorldCard({
   );
 }
 
-export function CardsView({ rows, room, onAction, onCode, transfers, onTransfer }: ViewProps) {
+export function CardsView({
+  rows,
+  room,
+  onAction,
+  onCode,
+  transfers,
+  onTransfer,
+  placement,
+}: ViewProps) {
   return (
     <div className="rejilla">
       {rows.map((row) => (
@@ -596,6 +670,7 @@ export function CardsView({ rows, room, onAction, onCode, transfers, onTransfer 
           onCode={onCode}
           transfer={transfers?.get(row.id)}
           onTransfer={onTransfer}
+          placement={placement}
         />
       ))}
     </div>
@@ -608,6 +683,7 @@ export function ListView({
   onAction,
   transfers,
   onTransfer,
+  placement,
 }: Omit<ViewProps, 'onCode'>) {
   return (
     <div className="tabla-envoltura">
@@ -638,6 +714,7 @@ export function ListView({
                       <Badges row={row} room={room} />
                     </span>
                   </div>
+                  {placement !== undefined && <HomeLine row={row} placement={placement} />}
                 </td>
                 <td>
                   <StatusPill row={row} room={room} transfer={transfer} />
@@ -675,7 +752,15 @@ export function ListView({
   );
 }
 
-export function ServersView({ rows, room, onAction, onCode, transfers, onTransfer }: ViewProps) {
+export function ServersView({
+  rows,
+  room,
+  onAction,
+  onCode,
+  transfers,
+  onTransfer,
+  placement,
+}: ViewProps) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const toggle = (key: string): void =>
     setOpen((current) => {
@@ -704,6 +789,7 @@ export function ServersView({ rows, room, onAction, onCode, transfers, onTransfe
               onCode={onCode}
               transfers={transfers}
               onTransfer={onTransfer}
+              placement={placement}
             />
             {group.rows.length > PER_GROUP && (
               <button

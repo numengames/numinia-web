@@ -20,6 +20,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import type { SupportedLocale } from '@numinia/domain';
+import type { PlacementMessages } from '../../../i18n/mundos';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
   bootstrapLine,
@@ -40,6 +42,7 @@ import {
   type ImportTicket,
   type MachineHealth,
 } from '../../../lib/fleet';
+import { counted, homesByWorld, loadHomes, worldHref } from '../../../lib/mundos';
 import {
   ENGINE_NAMES,
   fill,
@@ -60,16 +63,19 @@ import {
   type WorldRow,
   type WorldStatus,
 } from '../../../lib/worlds';
+import type { WorldHome } from '../../../lib/worlds-homes-types';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { problemText } from './fleet-action';
 import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
 import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
+import { PlaceDialog, type PlaceAsk } from './WorldPlace';
 import {
   CardsView,
   ListView,
   ServersView,
   pageLang,
   type CodeMode,
+  type PlacementView,
   type TransferAction,
   type TransferView,
   type WorldAction,
@@ -352,10 +358,15 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
 export function WorldsPanel({
   labels,
   room,
+  mundos,
+  locale,
   sessionHref,
 }: {
   labels: WorldsLabels;
   room: WorldsRoomMessages;
+  /** The words of each world's organization and of the house's placement (cut 4). */
+  mundos: PlacementMessages;
+  locale: SupportedLocale;
   /** The LAP's Session page in this locale: where the wallet is connected again. */
   sessionHref: string;
 }) {
@@ -380,6 +391,21 @@ export function WorldsPanel({
   tracked.current = transfers;
   const scrollTo = useRef<string | null>(null);
   const restored = useRef(false);
+  // Cut 4: which organization each world belongs to, the rows chosen for a bulk placement.
+  const [homes, setHomes] = useState<ReadonlyMap<string, WorldHome> | null>(null);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [homesFailed, setHomesFailed] = useState(false);
+  const [placing, setPlacing] = useState<PlaceAsk | null>(null);
+  const [placedNote, setPlacedNote] = useState<string | null>(null);
+  const readHomes = useCallback(async (): Promise<void> => {
+    const sheet = await loadHomes(fetch);
+    setHomes(sheet.at === 'ready' ? homesByWorld(sheet.items) : null);
+    setHomesFailed(sheet.at !== 'ready');
+  }, []);
+  const fleetReady = panel.at === 'ready';
+  useEffect(() => {
+    if (fleetReady) void readHomes();
+  }, [fleetReady, readHomes]);
 
   const load = useCallback(() => {
     let alive = true;
@@ -880,6 +906,27 @@ export function WorldsPanel({
     if (world === null) setSource({ kind: 'file', file });
     else void resume(world, file);
   };
+  const knownIds = new Set(known.map((row) => row.id));
+  const chosenRows = known.filter((row) => picked.has(row.id));
+  const shownIds = shown.filter((row) => knownIds.has(row.id)).map((row) => row.id);
+  const allShownPicked = shownIds.length > 0 && shownIds.every((id) => picked.has(id));
+  const placement: PlacementView = {
+    words: mundos,
+    homes,
+    selected: picked,
+    onToggle: (row) =>
+      setPicked((now) => {
+        const next = new Set(now);
+        if (!next.delete(row.id)) next.add(row.id);
+        return next;
+      }),
+    onAssign: (row) => {
+      setPlacedNote(null);
+      setPlacing({ worlds: [{ id: row.id, title: row.title }] });
+    },
+    canPlace: (row) => knownIds.has(row.id),
+    pageHref: (worldId) => worldHref(locale, worldId),
+  };
   const lang = pageLang();
   const zipMax = Math.max(0, ...importers.map((importer) => importer.zipMaxBytes));
   const noticeRow =
@@ -1021,6 +1068,56 @@ export function WorldsPanel({
         </div>
       )}
 
+      {shown.length > 0 && (
+        <div className="casas-barra" data-place-bar>
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            onClick={() => setPicked(allShownPicked ? new Set() : new Set(shownIds))}
+            data-metric="worlds-select-shown"
+          >
+            {allShownPicked ? mundos.clear : fill(mundos.selectShown, { n: shownIds.length })}
+          </button>
+          {chosenRows.length > 0 && (
+            <>
+              <span className="nota" role="status" data-picked-count>
+                {fill(counted(mundos.chosen, chosenRows.length), { n: chosenRows.length })}
+              </span>
+              <button
+                type="button"
+                className="btn btn-primario"
+                onClick={() => {
+                  setPlacedNote(null);
+                  setPlacing({
+                    worlds: chosenRows.map((row) => ({ id: row.id, title: row.title })),
+                  });
+                }}
+                data-metric="worlds-assign-chosen"
+              >
+                {fill(mundos.assignChosen, { n: chosenRows.length })}
+              </button>
+              <button
+                type="button"
+                className="btn btn-silencioso"
+                onClick={() => setPicked(new Set())}
+                data-metric="worlds-select-clear"
+              >
+                {mundos.clear}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {homesFailed && (
+        <p className="nota fallo" data-homes-failed>
+          {mundos.homesFailed}
+        </p>
+      )}
+      {placedNote !== null && (
+        <p className="nota exito" role="status" data-placed-note>
+          {placedNote}
+        </p>
+      )}
       {shown.length === 0 && rows.length === 0 && <p className="estado vacio">{room.empty}</p>}
       {shown.length === 0 && rows.length > 0 && <p className="estado vacio">{room.noMatch}</p>}
       {shown.length > 0 && view === 'cards' && (
@@ -1031,6 +1128,7 @@ export function WorldsPanel({
           onCode={onCode}
           transfers={transferViews}
           onTransfer={onTransfer}
+          placement={placement}
         />
       )}
       {shown.length > 0 && view === 'list' && (
@@ -1040,6 +1138,7 @@ export function WorldsPanel({
           onAction={onAction}
           transfers={transferViews}
           onTransfer={onTransfer}
+          placement={placement}
         />
       )}
       {shown.length > 0 && view === 'servers' && (
@@ -1050,6 +1149,7 @@ export function WorldsPanel({
           onCode={onCode}
           transfers={transferViews}
           onTransfer={onTransfer}
+          placement={placement}
         />
       )}
 
@@ -1171,6 +1271,17 @@ export function WorldsPanel({
         sessionHref={sessionHref}
         warning={changeMachine === null ? null : notObeying(changeMachine)}
         listens={listens}
+      />
+      <PlaceDialog
+        ask={placing}
+        words={mundos}
+        onClose={() => setPlacing(null)}
+        onPlaced={(message) => {
+          setPlacing(null);
+          setPicked(new Set());
+          setPlacedNote(message);
+          void readHomes();
+        }}
       />
       <WorldCodeDialog
         ask={codeAsk}

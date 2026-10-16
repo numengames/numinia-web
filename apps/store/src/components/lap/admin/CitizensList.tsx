@@ -18,44 +18,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { CensusListMessages } from '../../../i18n/census-list';
-import { fill, readOverview, readResult, type Citizen } from '../../../lib/accounts';
+import { fill, readResult, type Citizen } from '../../../lib/accounts';
 import {
   isHouseSession,
   loadCitizens,
   personLines,
   seenAt,
-  teamsToJoin,
   type CitizensSheet,
 } from '../../../lib/census-list';
 import { pageSessionClient } from '../../../lib/island-session';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { PeopleGlyph } from '../../panel/PeopleGlyph';
+import { readTeams, type Teams } from './org-teams';
 
 type Sheet = { readonly at: 'waiting' } | { readonly at: 'loading' } | CitizensSheet;
-
-type Teams =
-  | { readonly at: 'loading' }
-  | { readonly at: 'failed' }
-  | {
-      readonly at: 'ready';
-      readonly teams: readonly { readonly id: string; readonly name: string }[];
-    };
 
 /** Typing settles for this long before the list is asked again. */
 const SEARCH_PAUSE_MS = 250;
 
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };
-
-/** The organizations the house can enter: Saldo's overview lists them all for the house. */
-async function readTeams(): Promise<Teams> {
-  try {
-    const response = await fetch('/api/saldo', { headers: { accept: 'application/json' } });
-    const accounts = response.ok ? readOverview(await response.json()) : null;
-    return accounts === null ? { at: 'failed' } : { at: 'ready', teams: teamsToJoin(accounts) };
-  } catch {
-    return { at: 'failed' };
-  }
-}
 
 /** Adds the wallet to the organization as a member: true when the till did it. */
 async function addMember(accountId: string, wallet: string): Promise<boolean> {

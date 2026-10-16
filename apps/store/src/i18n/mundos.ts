@@ -34,6 +34,8 @@ export interface PlacementMessages {
   readonly assignChosen: string;
   readonly chosen: Counted;
   readonly clear: string;
+  /** Chooses every world the filters show: «Elegir los {n} que se ven». */
+  readonly selectShown: string;
   /** The dialog's title for one world and for several. */
   readonly titleOne: string;
   readonly titleMany: string;
@@ -106,6 +108,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       assignChosen: 'Asignar a una organización ({n})',
       chosen: { one: '{n} mundo elegido', other: '{n} mundos elegidos' },
       clear: 'Quitar la selección',
+      selectShown: 'Elegir los {n} que se ven',
       titleOne: 'Asignar «{w}» a una organización',
       titleMany: 'Asignar {n} mundos a una organización',
       orgLabel: 'Organización',
@@ -168,6 +171,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       assignChosen: 'Assign to an organization ({n})',
       chosen: { one: '{n} world chosen', other: '{n} worlds chosen' },
       clear: 'Clear the selection',
+      selectShown: 'Choose the {n} shown',
       titleOne: 'Assign “{w}” to an organization',
       titleMany: 'Assign {n} worlds to an organization',
       orgLabel: 'Organization',
@@ -230,6 +234,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       assignChosen: '組織に割り当てる（{n}）',
       chosen: { one: '{n}件のワールドを選択中', other: '{n}件のワールドを選択中' },
       clear: '選択を解除',
+      selectShown: '表示中の{n}件を選ぶ',
       titleOne: '「{w}」を組織に割り当てる',
       titleMany: '{n}件のワールドを組織に割り当てる',
       orgLabel: '組織',
@@ -292,6 +297,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       assignChosen: '조직에 배정 ({n})',
       chosen: { one: '월드 {n}개 선택됨', other: '월드 {n}개 선택됨' },
       clear: '선택 해제',
+      selectShown: '표시된 {n}개 선택',
       titleOne: '“{w}”을(를) 조직에 배정',
       titleMany: '월드 {n}개를 조직에 배정',
       orgLabel: '조직',
@@ -354,6 +360,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       assignChosen: 'Atribuir a uma organização ({n})',
       chosen: { one: '{n} mundo escolhido', other: '{n} mundos escolhidos' },
       clear: 'Limpar a seleção',
+      selectShown: 'Escolher os {n} exibidos',
       titleOne: 'Atribuir “{w}” a uma organização',
       titleMany: 'Atribuir {n} mundos a uma organização',
       orgLabel: 'Organização',

@@ -6,6 +6,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { LAP_UI } from '../../../i18n/lap';
+import { MUNDOS_UI } from '../../../i18n/mundos';
 import { WORLDS_UI } from '../../../i18n/worlds';
 import { signInHref } from '../../../lib/app-nav';
 import LapShell from '../LapShell.astro';
@@ -40,6 +41,8 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     client:load
     labels={labels}
     room={WORLDS_UI[locale]}
+    mundos={MUNDOS_UI[locale].placement}
+    locale={locale}
     sessionHref={sessionHref}
   />
 </LapShell>
@@ -985,6 +988,65 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     display: flex;
     flex-wrap: wrap;
     gap: var(--s2);
+  }
+
+  /* Cut 4: each world's organization, the rows chosen and the bulk bar */
+  [data-worlds-panel] .casas-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+  }
+  [data-worlds-panel] .casa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+    min-width: 0;
+    margin-top: var(--s2);
+  }
+  [data-worlds-panel] .casa-elegir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+  }
+  [data-worlds-panel] .casa-elegir input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--ambar);
+  }
+  [data-worlds-panel] .casa-nombre {
+    display: flex;
+    flex: 1 1 8rem;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto);
+    overflow-wrap: anywhere;
+  }
+  [data-worlds-panel] .casa[data-placed='no'] .casa-nombre span:last-child {
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .casa-botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  [data-worlds-panel] .casa-botones .btn {
+    min-height: 32px;
+    padding: 4px var(--s3);
+    font-size: 0.8rem;
+  }
+  [data-worlds-panel] .nota.exito {
+    margin-bottom: var(--s3);
+    color: var(--verdemar);
   }
 
   @media (max-width: 40rem) {
