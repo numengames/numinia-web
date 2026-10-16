@@ -362,6 +362,18 @@ export interface AccountDesk {
   profile(wallet: string): Promise<DeskProfileAnswer>;
   /** Publishes or replaces the wallet's name and avatar, or stops showing them (null: erased). */
   setProfile(wallet: string, change: DeskProfileChange): Promise<DeskProfileAnswer>;
+  /** «El censo»: the wallet signed in now (first time kept, last time moved; optional: see below). */
+  signedIn(wallet: string): Promise<DeskSignedInAnswer>;
+  /**
+   * «El censo»: everyone who has signed in, newest first, a search and pages
+   * of 200 — to the house alone (`house` true); anyone else is refused.
+   */
+  citizens(
+    wallet: string,
+    house: boolean,
+    query?: string,
+    cursor?: string | null,
+  ): Promise<DeskCitizensAnswer>;
 }
 
 /**
@@ -399,6 +411,8 @@ export const DESK_METHODS = [
   'confirmTopup',
   'profile',
   'setProfile',
+  'signedIn',
+  'citizens',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -407,12 +421,15 @@ export const DESK_METHODS = [
  * is a desk all the same — the house just keeps the organizations it is in.
  * So is one without `profile` and `setProfile` (cut «Tu nombre y tu cara»):
  * Saldo and the panel keep working, and /api/profile answers 503 until the
- * till has them.
+ * till has them. And one without `signedIn` and `citizens` (cut «El censo»):
+ * a sign-in records nothing, and /api/admin/citizens answers 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
   'profile',
   'setProfile',
+  'signedIn',
+  'citizens',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -430,6 +447,8 @@ export const TEAM_NAME_MAX = 60;
 export const NOT_MEMBER = 'not a member';
 /** The directory of organizations is the house's alone (the till's `ORG_PROBLEMS.notHouse`). */
 export const NOT_HOUSE = 'only the house reads the directory of organizations';
+/** The till's refusal of the list of who has signed in to anyone but the house (cut «El censo»). */
+export const NOT_HOUSE_CENSUS = 'only the house reads the list of who has signed in';
 /** A `house` flag that is neither true nor false (the till's `ORG_PROBLEMS.house`). */
 export const HOUSE_BOOLEAN = 'house must be true or false';
 export const NOT_CONFIGURED = 'payments are not configured';
@@ -1035,5 +1054,69 @@ export function readOwnProfile(json: unknown): { readonly profile: OwnProfile | 
   const { name, avatar, face } = profile;
   return typeof name === 'string' && isTextOrNull(avatar) && isTextOrNull(face)
     ? { profile: { name, avatar, face } }
+    : null;
+}
+
+// ---- «El censo» (2026-10-16, STD-053): who has signed in, for the house alone ----
+
+/** One person of the till's list: when they came first and last, what they published, how many organizations. */
+export interface DeskCitizen {
+  wallet: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  /** The name they published; absent, with the avatar, when none. */
+  name?: string;
+  /** The Bazar avatar's id: the store turns it into `face` and never hands it on. */
+  avatar?: string | null;
+  organizations: number;
+}
+
+export type DeskCitizensAnswer =
+  { ok: true; people: DeskCitizen[]; total: number; next: string | null } | DeskRefusal;
+
+export type DeskSignedInAnswer = { ok: true } | DeskRefusal;
+
+/** One person as /api/admin/citizens answers the browser: a face path, never an avatar id. */
+export interface Citizen {
+  readonly wallet: string;
+  readonly firstSeenAt: string;
+  readonly lastSeenAt: string;
+  readonly name: string | null;
+  readonly face: string | null;
+  readonly organizations: number;
+}
+
+/** A page of the list as the browser reads it. */
+export interface CitizensPage {
+  readonly people: readonly Citizen[];
+  readonly total: number;
+  readonly next: string | null;
+}
+
+function readCitizen(value: unknown): Citizen | null {
+  if (!isRecord(value)) return null;
+  const { wallet, firstSeenAt, lastSeenAt, name, face, organizations } = value;
+  return typeof wallet === 'string' &&
+    typeof firstSeenAt === 'string' &&
+    typeof lastSeenAt === 'string' &&
+    isTextOrNull(name) &&
+    isTextOrNull(face) &&
+    typeof organizations === 'number'
+    ? { wallet, firstSeenAt, lastSeenAt, name, face, organizations }
+    : null;
+}
+
+/**
+ * GET /api/admin/citizens, read in the browser: the page of people — the
+ * fields it knows and no other —, the total and the next cursor; or null
+ * when the body is not that.
+ */
+export function readCitizens(json: unknown): CitizensPage | null {
+  if (!isRecord(json) || json['ok'] !== true) return null;
+  const { people, total, next } = json;
+  if (!Array.isArray(people) || typeof total !== 'number' || !isTextOrNull(next)) return null;
+  const read = people.map(readCitizen);
+  return read.every((person): person is Citizen => person !== null)
+    ? { people: read, total, next }
     : null;
 }

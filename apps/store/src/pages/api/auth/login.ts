@@ -7,6 +7,11 @@
  *
  * No session is created without a current acceptance: the UI gate can be
  * bypassed, this endpoint cannot.
+ *
+ * Once the cookie is set, the till notes that the wallet signed in (cut «El
+ * censo», 2026-10-16: the first and the last time, nothing else) — best
+ * effort, after the answer, through the Worker's waitUntil: nothing the till
+ * does can slow or break a sign-in (lib/accounts-source.ts `recordSignIn`).
  */
 
 import type { APIRoute } from 'astro';
@@ -18,6 +23,8 @@ import {
   SESSION_COOKIE,
 } from '../../../lib/auth/server';
 import { isCurrentLegalAcceptance, LEGAL_CORPUS_VERSION } from '../../../lib/legal';
+import { accountsFrom, deferFrom, recordSignIn } from '../../../lib/accounts-source';
+import { runtimeBinding } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
@@ -50,7 +57,7 @@ export const GET: APIRoute = async ({ url }) => {
   return Response.json(payload);
 };
 
-export const POST: APIRoute = async ({ request, cookies, url }) => {
+export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
   if (!authConfigured()) {
     return Response.json({ error: 'Auth not configured' }, { status: 503 });
   }
@@ -95,5 +102,10 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
     path: '/',
     maxAge: 60 * 60,
   });
+  recordSignIn(
+    accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE }),
+    verified.payload.address,
+    deferFrom(locals),
+  );
   return Response.json({ ok: true });
 };
