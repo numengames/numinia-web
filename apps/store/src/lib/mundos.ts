@@ -81,16 +81,23 @@ export function readOrgWorlds(json: unknown): readonly OrgWorld[] | null {
   return worlds;
 }
 
-/** What a world's page draws: whose it is, and whether the visitor manages it. */
+/** What a world's page draws: whose it is, whether the visitor manages it, and where it is served. */
 export interface WorldPage {
   readonly worldId: string;
   readonly home: { readonly accountId: string; readonly accountName: string } | null;
   readonly manage: boolean;
+  /** The world's own address, the guest link «Entrar» falls back to; null when unknown. */
+  readonly url: string | null;
 }
+
+/** An address a browser may be sent to: https and nothing else. */
+const isHttps = (value: unknown): value is string =>
+  typeof value === 'string' && /^https:\/\/[^\s]+$/.test(value);
 
 export function readWorldPage(json: unknown): WorldPage | null {
   if (!isRecord(json) || !isText(json.worldId) || typeof json.manage !== 'boolean') return null;
-  if (json.home === null) return { worldId: json.worldId, home: null, manage: json.manage };
+  const url = isHttps(json.url) ? json.url : null;
+  if (json.home === null) return { worldId: json.worldId, home: null, manage: json.manage, url };
   if (!isRecord(json.home) || !isText(json.home.accountId) || !isText(json.home.accountName)) {
     return null;
   }
@@ -98,7 +105,39 @@ export function readWorldPage(json: unknown): WorldPage | null {
     worldId: json.worldId,
     home: { accountId: json.home.accountId, accountName: json.home.accountName },
     manage: json.manage,
+    url,
   };
+}
+
+/** A world's pass endpoint: POST, the session says who enters. */
+export function passApiUrl(worldId: string): string {
+  return `/api/mundos/${encodeURIComponent(worldId)}/pass`;
+}
+
+/**
+ * «Entrar»: where to send the browser for this world — the address with the
+ * pass after `#` for a person of its organization, the plain address for a
+ * guest. Falls back to `fallback` (the guest address the page already has,
+ * or null) when the endpoint is unavailable, says 503 or answers oddly;
+ * null when there is no address at all. Never throws.
+ */
+export async function enterWorld(
+  fetcher: Fetch,
+  worldId: string,
+  fallback: string | null,
+): Promise<string | null> {
+  try {
+    const response = await fetcher(passApiUrl(worldId), {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: '{}',
+    });
+    const json: unknown = await response.json().catch(() => null);
+    if (isRecord(json) && isHttps(json.url)) return json.url;
+  } catch {
+    // The guest link below is the answer.
+  }
+  return fallback;
 }
 
 /** The placements by world: a world is placed once, so the map has one home per id. */

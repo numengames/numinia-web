@@ -87,7 +87,10 @@ export function readPlaceBody(
 
 /** A machine as the fleet reads it: an open door lists its worlds; a closed one lists nothing. */
 type FleetView =
-  | { readonly open: true; readonly worlds: readonly { readonly id: string }[] }
+  | {
+      readonly open: true;
+      readonly worlds: readonly { readonly id: string; readonly domain?: string | null }[];
+    }
   | { readonly open: false };
 
 /** Every world id of the fleet's open machines, and of the worlds run by hand. */
@@ -101,13 +104,32 @@ export function fleetWorldIds(
   ]);
 }
 
+/**
+ * The host each world is served at (its `domain`): the fleet's open machines
+ * first, then the worlds run by hand. A world with no domain has no host and
+ * is left out; the first host seen for an id wins.
+ */
+export function fleetWorldHosts(
+  views: readonly FleetView[],
+  legacy: readonly { readonly id: string; readonly domain?: string | null }[],
+): ReadonlyMap<string, string> {
+  const hosts = new Map<string, string>();
+  const worlds = [...views.flatMap((view) => (view.open ? view.worlds : [])), ...legacy];
+  for (const world of worlds) {
+    if (typeof world.domain === 'string' && world.domain !== '' && !hosts.has(world.id)) {
+      hosts.set(world.id, world.domain);
+    }
+  }
+  return hosts;
+}
+
 // ---- Answers ---------------------------------------------------------------
 
 type Log = (event: Readonly<Record<string, unknown>>) => void;
 
 /** The answers name people's organizations: private to the browser that asked, never stored. */
 const HEADERS = { 'cache-control': 'private, no-store' } as const;
-const answer = (body: unknown, status = 200): Response =>
+export const answer = (body: unknown, status = 200): Response =>
   Response.json(body, { status, headers: HEADERS });
 const forbidden = (): Response => answer({ error: 'forbidden' }, 403);
 const notBound = (): Response => answer({ error: 'not-bound' }, 503);
@@ -141,7 +163,7 @@ const SHAPES = {
 } as const;
 
 /** Ask the desk and read its answer: the answer, or the response to send when it is missing, failed or odd. */
-async function ask<S extends z.ZodType>(
+export async function ask<S extends z.ZodType>(
   log: Log,
   action: string,
   call: () => Promise<unknown>,
@@ -297,8 +319,9 @@ export async function answerOrgWorlds(
 /**
  * GET /api/mundos/<worldId>: one world's page data, public — `{ worldId,
  * home, manage }` — where `home` is its organization or null and `manage`
- * says the session is a member, an owner or the house. A world the fleet
- * does not have (`known`) is 404, whoever asks.
+ * says the session is a member, an owner or the house, and `url` is the
+ * address the world is served at (`https://<host>/`) or null when its host is
+ * not known. A world the fleet does not have (`known`) is 404, whoever asks.
  */
 export async function answerWorld(
   desk: AccountDesk | null,
@@ -306,6 +329,7 @@ export async function answerWorld(
   worldId: string,
   known: ReadonlySet<string>,
   log: Log = logEvent,
+  hosts: ReadonlyMap<string, string> = new Map(),
 ): Promise<Response> {
   const id = readWorldId(worldId);
   if (id === undefined || !known.has(id)) return answer({ error: 'not-found' }, 404);
@@ -319,5 +343,10 @@ export async function answerWorld(
   if (!asked.ok) return asked.response;
   return 'problems' in asked.value
     ? refused(asked.value.problems)
-    : answer({ worldId: id, home: asked.value.home, manage: asked.value.manage });
+    : answer({
+        worldId: id,
+        home: asked.value.home,
+        manage: asked.value.manage,
+        url: hosts.has(id) ? `https://${hosts.get(id)}/` : null,
+      });
 }

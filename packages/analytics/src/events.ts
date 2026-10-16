@@ -127,6 +127,6 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `worlds-assign-chosen` (the chosen rows), `worlds-page-link` (to the
 //   world's own page), `worlds-assign-org`, `worlds-assign-save`,
 //   `worlds-assign-cancel` (the dialog).
-// - The panel's «Sedes»: `panel-venue-open`, `panel-venues-retry`.
-// - A world's page: `world-page-retry`, `world-page-home`,
+// - The panel's «Sedes»: `panel-venue-open`, `panel-venue-enter`, `panel-venues-retry`.
+// - A world's page: `world-enter`, `world-page-retry`, `world-page-home`,
 //   `world-page-venues`, `world-page-members`, `world-page-balance`.

@@ -11,7 +11,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { VenuesMessages } from '../../i18n/mundos';
 import type { PanelMessages } from '../../i18n/panel';
 import { fill } from '../../lib/accounts';
-import { counted, loadOrgWorlds, worldHref, type Sheet } from '../../lib/mundos';
+import { counted, enterWorld, loadOrgWorlds, worldHref, type Sheet } from '../../lib/mundos';
 import type { OrgWorld } from '../../lib/worlds-homes';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame } from './PanelFrame';
@@ -29,6 +29,7 @@ function Venues({
   readonly words: VenuesMessages;
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
+  const [failed, setFailed] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     setRead({ at: 'loading' });
@@ -38,6 +39,17 @@ function Venues({
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** «Entrar»: the world's address (with the pass for a member); the world's page when there is none. */
+  const enter = useCallback(async (worldId: string): Promise<void> => {
+    setFailed(false);
+    const address = await enterWorld(fetch, worldId, null);
+    if (address === null) {
+      setFailed(true);
+      return;
+    }
+    window.location.assign(address);
+  }, []);
 
   return (
     <section className="sedes" data-venues data-state={read.at}>
@@ -88,6 +100,18 @@ function Venues({
                   <strong className="mono sedes-nombre">{world.worldId}</strong>
                 </span>
                 <a
+                  className="btn btn-primario"
+                  href={worldHref(locale, world.worldId)}
+                  aria-label={fill(words.enterLabel, { w: world.worldId })}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void enter(world.worldId);
+                  }}
+                  data-metric="panel-venue-enter"
+                >
+                  {words.enter}
+                </a>
+                <a
                   className="btn btn-fantasma"
                   href={worldHref(locale, world.worldId)}
                   aria-label={fill(words.openLabel, { w: world.worldId })}
@@ -98,6 +122,11 @@ function Venues({
               </li>
             ))}
           </ul>
+          {failed && (
+            <p className="saldo-nota" role="alert" data-venue-enter-failed>
+              {words.enterFailed}
+            </p>
+          )}
         </>
       )}
     </section>
