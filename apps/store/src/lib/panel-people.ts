@@ -217,7 +217,10 @@ export function sameSet(
  * unknown, since a till without them (or with anything else) must still
  * draw today's wallet-only row.
  */
-type ShownMember = DeskMemberDetail & { readonly name?: unknown; readonly face?: unknown };
+type ShownMember = Omit<DeskMemberDetail, 'name' | 'face'> & {
+  readonly name?: unknown;
+  readonly face?: unknown;
+};
 
 /** What a person chose to show: a name and a face, each one or nothing. */
 interface Shown {

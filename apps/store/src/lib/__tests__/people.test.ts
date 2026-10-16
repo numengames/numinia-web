@@ -117,4 +117,34 @@ describe('the list of people (STD-053 PRS-004, design §5.4)', () => {
     const view = peopleOf(organization([member(MARIA, ['role_00000000000000ff'])]), MARIA);
     expect(view.groups.map((group) => group.id)).toEqual(['rest']);
   });
+
+  it('names a member who published a name, with their face when they chose one (STD-053)', () => {
+    const face = '/thumbs/1x/avatar-arla-mncdhz3l.webp';
+    const view = peopleOf(
+      organization([
+        { ...member(PABLO, [], true), name: 'Pablo', face },
+        { ...member(MARIA), name: 'María', face: null },
+        member(FER),
+      ]),
+      FER,
+    );
+    const people = view.groups.flatMap((group) => group.people);
+    expect(people.map((person) => [person.name, person.face, person.short])).toEqual([
+      ['Pablo', face, '0xabab…abab'],
+      ['María', null, '0xcdcd…cdcd'],
+      [undefined, undefined, '0x1212…1212'],
+    ]);
+    // Whoever published nothing has no name or face key at all: nothing is made up.
+    expect(Object.keys(people[2] ?? {}).sort()).toEqual(['color', 'owner', 'short', 'you']);
+  });
+
+  it('never carries an avatar’s id, only the face the store made of it', () => {
+    const view = peopleOf(
+      organization([
+        { ...member(MARIA), name: 'María', face: null, avatar: 'avatar-arla-mncdhz3l' },
+      ]),
+      MARIA,
+    );
+    expect(JSON.stringify(view)).not.toContain('avatar-arla-mncdhz3l');
+  });
 });

@@ -7,7 +7,9 @@
  *
  * A pure model: it takes what the till says (`roles`) and gives what the
  * browser may see. A browser is never sent a whole wallet — a short one is
- * enough to tell people apart — nor anything the till did not say.
+ * enough to tell people apart — nor anything the till did not say. What a
+ * member published (a name, a face) is passed on as it came; the store has
+ * already turned an avatar's id into its face (lib/accounts-source.ts).
  */
 
 import { shortWallet, type DeskMemberDetail, type DeskRole, type DeskRoles } from './accounts';
@@ -20,6 +22,13 @@ export interface Person {
   readonly you: boolean;
   /** The colour of their highest role that has one, or null. */
   readonly color: string | null;
+  /**
+   * What they published (cut «Tu nombre y tu cara», STD-053), absent when
+   * they published nothing: the name fellow members read, and the baked
+   * thumbnail of their Bazar avatar (or null). Never the avatar's id.
+   */
+  readonly name?: string;
+  readonly face?: string | null;
 }
 
 export interface PeopleGroup {
@@ -52,6 +61,7 @@ export function peopleOf(organization: DeskRoles, you: string): PeopleList {
     owner: member.owner,
     you: member.wallet === you,
     color: heldBy(member).find((role) => role.color !== null)?.color ?? null,
+    ...(typeof member.name === 'string' ? { name: member.name, face: member.face ?? null } : {}),
   });
   const shown = [
     ...topDown.filter((role) => role.hoist).map(({ id, name, color }) => ({ id, name, color })),

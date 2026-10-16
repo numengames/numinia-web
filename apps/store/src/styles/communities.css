@@ -480,3 +480,30 @@ html:not([data-js='on']) .flechas {
   flex: none;
   background: var(--linea);
 }
+/* «Tu nombre y tu cara» (2026-10-16): a member's face, round, and their name over the short wallet. */
+.gente-cara {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  background: var(--elevada);
+}
+.gente-inicial {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  border: 1px solid var(--linea-f);
+  color: var(--texto);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.gente-quien {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.gente-nombre {
+  overflow-wrap: anywhere;
+}

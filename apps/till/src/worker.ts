@@ -57,6 +57,7 @@ import {
   type TopupStart,
 } from './db/accounts';
 import { headcount, type HeadcountAnswer } from './db/headcount';
+import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
   assignRole,
   createRole,
@@ -431,6 +432,23 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** When the buyer comes back: the session's state, credited once when paid. */
   async confirmTopup(wallet: unknown, sessionId: unknown): Promise<TopupConfirm> {
     return confirmTopup(this.env.TILL_DB, paymentsFor(this.env), wallet, sessionId, new Date());
+  }
+
+  // ---- «Tu nombre y tu cara» (2026-10-16, STD-053): a name and a Bazar avatar of one's own ----
+
+  /** What the wallet published — its name and avatar — or null: to the wallet itself. */
+  async profile(wallet: unknown): Promise<ProfileAnswer> {
+    return profileAnswer(this.env.TILL_DB, wallet);
+  }
+
+  /**
+   * Publishes or replaces the wallet's name and avatar (`{ name, avatar }`),
+   * or stops showing them (`null`): the row is deleted, and no history kept.
+   * Only the people who share an organization with it, and the house where
+   * it enters, are ever shown them (`roles`).
+   */
+  async setProfile(wallet: unknown, change: unknown): Promise<ProfileAnswer> {
+    return changeProfile(this.env.TILL_DB, wallet, change, new Date());
   }
 }
 

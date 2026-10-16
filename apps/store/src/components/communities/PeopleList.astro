@@ -14,6 +14,12 @@
  * cannot be kept when the colour is a person's choice), and an owner is told
  * in words, not only by a mark (1.4.1). Styles: styles/communities.css.
  *
+ * «Tu nombre y tu cara» (2026-10-16, STD-053): a person who published a name
+ * is shown by it, the short wallet kept as a second, smaller line; one who
+ * chose a Bazar avatar, by its face too — only ever a baked thumbnail of
+ * this site (`/thumbs/1x/<id>.webp`), decorative (`alt=""`): the name says
+ * who it is. Whoever published nothing is their short wallet, as before.
+ *
  *   data-people="<community>"   the slot, hidden until there is something to say
  *
  * Templates come from the page's messages; "{n}" is the number.
@@ -48,6 +54,7 @@ const words = {
     if (!slot) return;
     var words = JSON.parse(slot.getAttribute('data-words'));
     var colour = /^#[0-9a-fA-F]{6}$/;
+    var face = /^\/thumbs\/1x\/[a-z0-9][a-z0-9-]{0,63}\.webp$/;
     function node(tag, className, text) {
       var el = document.createElement(tag);
       if (className) el.className = className;
@@ -65,7 +72,30 @@ const words = {
         dot.style.backgroundColor = entry.color;
       }
       li.appendChild(dot);
-      li.appendChild(node('span', 'mono small', entry.short));
+      // «Tu nombre y tu cara»: the face and the name a member published, else the short wallet.
+      var named = typeof entry.name === 'string' && entry.name !== '';
+      if (typeof entry.face === 'string' && face.test(entry.face)) {
+        var img = node('img', 'gente-cara');
+        img.setAttribute('src', entry.face);
+        img.setAttribute('alt', '');
+        img.setAttribute('loading', 'lazy');
+        img.setAttribute('width', '24');
+        img.setAttribute('height', '24');
+        li.appendChild(img);
+      } else if (named) {
+        // No avatar chosen: the name's first letter in the same round mark, as the prototype draws it.
+        var initial = node('span', 'gente-cara gente-inicial', Array.from(entry.name)[0]);
+        initial.setAttribute('aria-hidden', 'true');
+        li.appendChild(initial);
+      }
+      if (named) {
+        var who = node('span', 'gente-quien');
+        who.appendChild(node('span', 'gente-nombre', entry.name));
+        who.appendChild(node('span', 'mono small texto-2', entry.short));
+        li.appendChild(who);
+      } else {
+        li.appendChild(node('span', 'mono small', entry.short));
+      }
       if (entry.owner) li.appendChild(node('span', 'chip ambar', words.owner));
       if (entry.you) li.appendChild(node('span', 'small texto-2', '(' + words.you + ')'));
       return li;

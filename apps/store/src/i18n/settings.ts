@@ -45,7 +45,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
   es: {
     title: 'Ajustes',
     intro:
-      'Cómo se ve, en qué idioma habla y qué guarda esta plataforma. Todo vive en tu navegador.',
+      'Cómo se ve, en qué idioma habla y qué guarda esta plataforma. Todo vive en tu navegador, salvo el nombre que decidas mostrar.',
     appearance: 'Apariencia',
     mode: 'Modo',
     modeDiurno: 'Diurno',
@@ -71,7 +71,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     locked: 'Aún no',
     data: 'Tus datos',
     dataNote:
-      'No guardamos tu ficha ni tu actividad en ningún servidor: tu ficha es un archivo tuyo y tus preferencias viven en este navegador.',
+      'No guardamos tu ficha ni tu actividad en ningún servidor: tu ficha es un archivo tuyo y tus preferencias viven en este navegador. Solo si tú lo publicas, guardamos tu nombre y tu avatar para tus organizaciones («Tu nombre en la ciudad», más arriba), hasta que dejes de mostrarlo.',
     about: 'Acerca de',
     version: 'Versión',
     designSystem: 'Sistema de diseño',
@@ -82,7 +82,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
   en: {
     title: 'Settings',
     intro:
-      'How this platform looks, which language it speaks, and what it keeps. Everything lives in your browser.',
+      'How this platform looks, which language it speaks, and what it keeps. Everything lives in your browser, except the name you choose to show.',
     appearance: 'Appearance',
     mode: 'Mode',
     modeDiurno: 'Diurno',
@@ -107,7 +107,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     locked: 'Not yet',
     data: 'Your data',
     dataNote:
-      'We keep neither your sheet nor your activity on any server: your sheet is a file you own and your preferences live in this browser.',
+      'We keep neither your sheet nor your activity on any server: your sheet is a file you own and your preferences live in this browser. Only if you publish them do we keep your name and avatar for your organizations («Your name in the city», above), until you stop showing them.',
     about: 'About',
     version: 'Version',
     designSystem: 'Design system',
@@ -117,7 +117,8 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
   },
   ja: {
     title: '設定',
-    intro: 'このプラットフォームの見え方、言語、保存するもの。すべてブラウザの中にあります。',
+    intro:
+      'このプラットフォームの見え方、言語、保存するもの。表示すると決めた名前を除き、すべてブラウザの中にあります。',
     appearance: '外観',
     mode: 'モード',
     modeDiurno: 'ディウルノ(昼)',
@@ -142,7 +143,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     locked: 'まだ',
     data: 'あなたのデータ',
     dataNote:
-      'シートも行動履歴もサーバーには保存しません。シートはあなたのファイルであり、設定はこのブラウザにあります。',
+      'シートも行動履歴もサーバーには保存しません。シートはあなたのファイルであり、設定はこのブラウザにあります。あなたが公開した場合に限り、名前とアバターを組織のために保存します（上の「まちでのあなたの名前」）。表示をやめるまで保存されます。',
     about: '情報',
     version: 'バージョン',
     designSystem: 'デザインシステム',
@@ -152,7 +153,8 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
   },
   ko: {
     title: '설정',
-    intro: '이 플랫폼의 외관, 언어, 그리고 무엇을 저장하는지. 모든 것은 브라우저 안에 있습니다.',
+    intro:
+      '이 플랫폼의 외관, 언어, 그리고 무엇을 저장하는지. 표시하기로 한 이름을 빼면 모든 것은 브라우저 안에 있습니다.',
     appearance: '외관',
     mode: '모드',
     modeDiurno: '디우르노(낮)',
@@ -177,7 +179,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     locked: '아직',
     data: '당신의 데이터',
     dataNote:
-      '시트도 활동도 서버에 저장하지 않습니다. 시트는 당신의 파일이고, 설정은 이 브라우저에 있습니다.',
+      '시트도 활동도 서버에 저장하지 않습니다. 시트는 당신의 파일이고, 설정은 이 브라우저에 있습니다. 직접 공개한 경우에만 조직을 위해 이름과 아바타를 보관합니다(위의 «도시에서 쓰는 내 이름»). 표시를 중단할 때까지 보관됩니다.',
     about: '정보',
     version: '버전',
     designSystem: '디자인 시스템',
@@ -187,7 +189,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
   'pt-br': {
     title: 'Configurações',
     intro:
-      'Como esta plataforma se vê, em que idioma fala e o que guarda. Tudo vive no seu navegador.',
+      'Como esta plataforma se vê, em que idioma fala e o que guarda. Tudo vive no seu navegador, exceto o nome que você decidir mostrar.',
     appearance: 'Aparência',
     mode: 'Modo',
     modeDiurno: 'Diurno',
@@ -212,7 +214,7 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     locked: 'Ainda não',
     data: 'Seus dados',
     dataNote:
-      'Não guardamos sua ficha nem sua atividade em nenhum servidor: sua ficha é um arquivo seu e suas preferências vivem neste navegador.',
+      'Não guardamos sua ficha nem sua atividade em nenhum servidor: sua ficha é um arquivo seu e suas preferências vivem neste navegador. Só se você publicar, guardamos seu nome e seu avatar para as suas organizações («Seu nome na cidade», mais acima), até você deixar de mostrá-los.',
     about: 'Sobre',
     version: 'Versão',
     designSystem: 'Sistema de design',

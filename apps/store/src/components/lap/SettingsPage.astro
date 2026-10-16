@@ -19,6 +19,7 @@ import { DEFAULT_HIDDEN, HIDEABLE_SECTIONS, isUnderConstruction } from '../../li
 import { CURRENT_VERSION } from '../../lib/updates';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
+import ProfileNameSection from './ProfileNameSection.astro';
 
 interface Props {
   locale: SupportedLocale;
@@ -97,6 +98,9 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
         </div>
       </div>
     </section>
+
+    <!-- «Tu nombre en la ciudad» (cut «Tu nombre y tu cara», 2026-10-16): only with a session. -->
+    <ProfileNameSection locale={locale} />
 
     <section aria-labelledby="s-appearance">
       <h2 id="s-appearance" class="etiqueta">{t.appearance}</h2>

@@ -36,3 +36,13 @@ export function thumbSrcSet(assetId: string): string | null {
 export function previewSrc(assetId: string): string | null {
   return PREVIEWS.has(assetId) ? `/thumbs/preview/${assetId}.webp` : null;
 }
+
+/**
+ * A person's face beside their name (cut «Tu nombre y tu cara», 2026-10-16):
+ * the 1x cut of the Bazar avatar they chose — a few KB, drawn small and
+ * round. Null for anything the build did not bake: the path is only ever
+ * made from an id in the manifest, never from whatever was sent.
+ */
+export function faceSrc(assetId: string): string | null {
+  return LOCAL.has(assetId) ? `/thumbs/1x/${assetId}.webp` : null;
+}

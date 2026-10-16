@@ -12,8 +12,10 @@ import {
   NOT_CONFIGURED,
   NOT_HOUSE,
   NOT_MEMBER,
+  OPTIONAL_DESK_METHODS,
   OWNER_ONLY,
   OWN_ROLES,
+  readOwnProfile,
   bucketsOf,
   chartBars,
   checkoutTarget,
@@ -62,6 +64,69 @@ describe('the desk contract', () => {
   it('has the directory among the methods a binding must have, right after the overview', () => {
     expect(DESK_METHODS.slice(0, 3)).toEqual(['overview', 'directory', 'createTeam']);
     expect(new Set(DESK_METHODS).size).toBe(DESK_METHODS.length);
+  });
+
+  it('ends with one’s own name and avatar, which a till older than the store may still lack', () => {
+    expect(DESK_METHODS.slice(-2)).toEqual(['profile', 'setProfile']);
+    expect([...OPTIONAL_DESK_METHODS].sort()).toEqual(['directory', 'profile', 'setProfile']);
+    for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
+  });
+});
+
+describe('reading /api/profile in the browser (cut «Tu nombre y tu cara»)', () => {
+  const face = '/thumbs/1x/avatar-arla-mncdhz3l.webp';
+
+  it('reads one’s own profile, or that nothing is published', () => {
+    expect(
+      readOwnProfile({
+        ok: true,
+        profile: { name: 'Rima', avatar: 'avatar-arla-mncdhz3l', face },
+      }),
+    ).toEqual({ profile: { name: 'Rima', avatar: 'avatar-arla-mncdhz3l', face } });
+    expect(
+      readOwnProfile({ ok: true, profile: { name: 'Rima', avatar: null, face: null } }),
+    ).toEqual({ profile: { name: 'Rima', avatar: null, face: null } });
+    expect(readOwnProfile({ ok: true, profile: null })).toEqual({ profile: null });
+  });
+
+  it('keeps only the three fields it knows, and refuses any other body', () => {
+    expect(
+      readOwnProfile({
+        ok: true,
+        profile: { name: 'Rima', avatar: null, face: null, updatedAt: 'x', wallet: WALLET },
+      }),
+    ).toEqual({ profile: { name: 'Rima', avatar: null, face: null } });
+    for (const body of [
+      null,
+      'Rima',
+      {},
+      { ok: false, profile: null },
+      { ok: true },
+      { ok: true, profile: 'Rima' },
+      { ok: true, profile: { name: 1, avatar: null, face: null } },
+      { ok: true, profile: { name: 'Rima', face: null } },
+      { ok: true, profile: { name: 'Rima', avatar: 2, face: null } },
+      { ok: true, profile: { name: 'Rima', avatar: null } },
+      { ok: true, profile: { name: 'Rima', avatar: null, face: 3 } },
+    ]) {
+      expect(readOwnProfile(body), JSON.stringify(body)).toBeNull();
+    }
+  });
+
+  it('lets a member carry a published name and face through the roles view, and none', () => {
+    const member = { wallet: WALLET, owner: false, addedAt: 'a', roleIds: [], assignable: [] };
+    const view = {
+      ok: true,
+      accountId: 'acc',
+      as: 'member',
+      roles: [],
+      members: [{ ...member, name: 'Rima', face }, { ...member, name: 'Ana', face: null }, member],
+    };
+    expect(readRolesView(view)?.members.map((one) => [one.name, one.face])).toEqual([
+      ['Rima', face],
+      ['Ana', null],
+      [undefined, undefined],
+    ]);
   });
 });
 

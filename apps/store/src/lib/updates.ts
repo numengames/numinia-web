@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.101.0',
+    date: '2026-10-16 10:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Your name in the city», a new section of Settings for whoever has signed in: a name you type and, if you like, one of the Bazaar’s avatars — never a photo of yours. Nothing leaves your browser until you press «Save»; from then on the people of your organizations see it, and nobody else. «Stop showing it» erases it for real, with no copy kept in any history. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'Where people are listed — a community’s people, the panel’s Members, who holds each role — a fellow member now reads the name and the avatar each person chose, with the short wallet underneath; whoever chose none still shows as the short wallet. Anyone outside the organization still sees only how many they are.',
+      },
+    ],
+  },
+  {
     version: 'v0.100.0',
     date: '2026-10-16 09:29',
     entries: [
