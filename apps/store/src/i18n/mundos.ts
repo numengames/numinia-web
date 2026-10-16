@@ -11,6 +11,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import { ORG_CHOICE_WORDS, type OrgChoiceMessages } from './org-choices';
 
 /** A count in its two forms (languages without plurals repeat one). */
 export interface Counted {
@@ -19,7 +20,7 @@ export interface Counted {
 }
 
 /** What the Worlds room adds: each world's organization and the house's placement. */
-export interface PlacementMessages {
+export interface PlacementMessages extends OrgChoiceMessages {
   /** A world's organization, as its label says it. */
   readonly homeLabel: string;
   readonly unplaced: string;
@@ -112,6 +113,7 @@ export interface MundosMessages {
 export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
   es: {
     placement: {
+      ...ORG_CHOICE_WORDS.es,
       homeLabel: 'Organización',
       unplaced: 'Sin organización',
       openPage: 'Ver su página',
@@ -183,6 +185,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
   },
   en: {
     placement: {
+      ...ORG_CHOICE_WORDS.en,
       homeLabel: 'Organization',
       unplaced: 'No organization',
       openPage: 'See its page',
@@ -254,6 +257,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
   },
   ja: {
     placement: {
+      ...ORG_CHOICE_WORDS.ja,
       homeLabel: '組織',
       unplaced: '組織なし',
       openPage: 'ページを見る',
@@ -325,6 +329,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
   },
   ko: {
     placement: {
+      ...ORG_CHOICE_WORDS.ko,
       homeLabel: '조직',
       unplaced: '조직 없음',
       openPage: '페이지 보기',
@@ -396,6 +401,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
   },
   'pt-br': {
     placement: {
+      ...ORG_CHOICE_WORDS['pt-br'],
       homeLabel: 'Organização',
       unplaced: 'Sem organização',
       openPage: 'Ver a página',

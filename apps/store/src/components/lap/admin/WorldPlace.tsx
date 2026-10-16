@@ -11,7 +11,9 @@ import { useEffect, useState } from 'react';
 import type { PlacementMessages } from '../../../i18n/mundos';
 import { fill } from '../../../lib/accounts';
 import { counted, placeWorlds } from '../../../lib/mundos';
+import { accountOf } from '../../../lib/org-choices';
 import { LunaEspera } from '../../chrome/LunaEspera';
+import { OrgOptions } from './OrgOptions';
 import { readTeams, type Teams } from './org-teams';
 import { Modal } from './WorldDialogs';
 
@@ -52,9 +54,9 @@ export function PlaceDialog({
     };
   }, [ask]);
 
-  const list = teams.at === 'ready' ? teams.teams : [];
+  const list = teams.at === 'ready' ? teams.choices : [];
   // The organization picked, or the first of the list until one is.
-  const choice = list.find((team) => team.id === chosen)?.id ?? list[0]?.id ?? '';
+  const choice = list.find((team) => team.key === chosen) ?? list[0] ?? null;
   const count = ask?.worlds.length ?? 0;
   const title =
     count === 1
@@ -62,14 +64,18 @@ export function PlaceDialog({
       : fill(words.titleMany, { n: count });
 
   const save = async (): Promise<void> => {
-    if (ask === null || choice === '') return;
+    if (ask === null || choice === null) return;
     setSaving(true);
     setProblem(null);
-    const result = await placeWorlds(
-      fetch,
-      ask.worlds.map((world) => world.id),
-      choice,
-    );
+    // A community the house has not used yet gets its account now, then the worlds go there.
+    const account = await accountOf(fetch, choice);
+    const result = account.ok
+      ? await placeWorlds(
+          fetch,
+          ask.worlds.map((world) => world.id),
+          account.accountId,
+        )
+      : account;
     setSaving(false);
     if (!result.ok) {
       setProblem(
@@ -81,8 +87,7 @@ export function PlaceDialog({
       );
       return;
     }
-    const org = list.find((team) => team.id === choice)?.name ?? choice;
-    onPlaced(fill(counted(words.placed, result.placed), { n: result.placed, org }));
+    onPlaced(fill(counted(words.placed, result.placed), { n: result.placed, org: choice.label }));
   };
 
   return (
@@ -107,17 +112,18 @@ export function PlaceDialog({
             <label htmlFor="mundos-org">{words.orgLabel}</label>
             <select
               id="mundos-org"
-              value={choice}
+              value={choice?.key ?? ''}
               onChange={(event) => setChosen(event.target.value)}
               data-metric="worlds-assign-org"
             >
-              {list.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
+              <OrgOptions list={list} words={words} />
             </select>
           </div>
+        )}
+        {choice !== null && choice.community !== null && choice.accountId === null && (
+          <p className="nota" data-opens-home>
+            {words.opensHome}
+          </p>
         )}
         <p className="nota">{words.moves}</p>
         {problem !== null && (
@@ -139,7 +145,7 @@ export function PlaceDialog({
             type="button"
             className="btn btn-primario"
             onClick={() => void save()}
-            disabled={saving || choice === ''}
+            disabled={saving || choice === null}
             data-espera={saving ? '' : undefined}
             data-metric="worlds-assign-save"
           >
