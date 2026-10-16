@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.104.0',
+    date: '2026-10-16 14:20',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Enter» on every world’s page, and on each world in the panel’s Venues. If you belong to the world’s organization, numinia.com sends you in with a short signed pass — your name, if you chose one, and your roles there — so the world knows who you are and what you may do. If you do not, or are not signed in, you go in as a guest. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'For worlds’ engines: the pass is a signed token that lasts ten minutes and carries no wallet, and the key that checks it is published at /.well-known/world-pass-key.json.',
+      },
+    ],
+  },
+  {
     version: 'v0.103.0',
     date: '2026-10-16 11:58',
     entries: [
