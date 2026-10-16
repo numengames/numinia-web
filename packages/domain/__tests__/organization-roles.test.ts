@@ -448,6 +448,17 @@ describe('STD-052: the roles an organisation is born with', () => {
     expect(validateOrganizationRoles(roles)).toEqual([]);
   });
 
+  it('Team: Administration orange, Finance blue, Member green, the base role none', () => {
+    const roles = rolesFromTemplate('team', 'en', (i) => `t${i}`);
+    expect(roles.map((r) => r.color)).toEqual(['#d98324', '#2f7fa8', '#3d8b5f', null]);
+    expect(rolesFromTemplate('community', 'en', (i) => `c${i}`).map((r) => r.color)).toEqual([
+      null,
+      null,
+      null,
+    ]);
+    expect(validateOrganizationRoles(roles)).toEqual([]);
+  });
+
   // MIS-179's table, cell by cell: the four roles of ADR-070 are the Team template.
   describe('Team: every cell of the four team roles of ADR-070 still holds', () => {
     const roles = rolesFromTemplate('team', 'en', (i) => ['adm', 'fin', 'mem', 'base'][i] ?? 'x');

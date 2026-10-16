@@ -124,6 +124,8 @@ export interface TemplateRole {
   readonly name: LocalizedString;
   readonly permissions: readonly OrganizationPermission[];
   readonly hoist: boolean;
+  /** `#rrggbb` in lower case, one of the Roles editor's swatches; absent = no colour. */
+  readonly color?: string;
 }
 
 /** The roles an organisation is born with (STD-052), from the top of the list down. */
