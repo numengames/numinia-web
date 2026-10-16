@@ -194,8 +194,9 @@ const Heading = heading;
     left: 12px;
     z-index: 2;
   }
+  /* Opaque: over a dark cover a see-through chip loses the 4.5:1 its words need (axe, day mode). */
   .mt-estado .chip {
-    background: color-mix(in srgb, var(--fondo) 88%, transparent);
+    background: var(--fondo);
     min-height: 24px;
     cursor: default;
   }
