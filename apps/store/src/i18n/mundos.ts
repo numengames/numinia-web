@@ -77,6 +77,72 @@ export interface VenuesMessages {
   readonly enterFailed: string;
 }
 
+/** The «IA» section of a world's page (the world's HTTP door for outside AI agents). */
+export interface WorldAiMessages {
+  readonly title: string;
+  readonly note: string;
+  readonly loading: string;
+  readonly empty: string;
+  readonly invite: string;
+  readonly listLabel: string;
+  /** What an AI may do, as a row says it. */
+  readonly talk: string;
+  readonly build: string;
+  /** Presence: connected right now, not connected, just added and not yet in. */
+  readonly on: string;
+  readonly off: string;
+  readonly waiting: string;
+  readonly remove: string;
+  /** `{name}`: the row's button, for screen readers. */
+  readonly removeLabel: string;
+  readonly removeAsk: string;
+  readonly removeYes: string;
+  readonly removeNo: string;
+  readonly removing: string;
+  readonly dialog: {
+    readonly title: string;
+    /** `{n}` of 3. */
+    readonly step: string;
+    readonly nameLabel: string;
+    readonly nameHint: string;
+    /** `{max}` in `long`. */
+    readonly nameProblems: {
+      readonly empty: string;
+      readonly long: string;
+      readonly chars: string;
+      readonly taken: string;
+    };
+    readonly abilityLabel: string;
+    readonly abilityTalk: string;
+    readonly abilityBuild: string;
+    readonly next: string;
+    readonly back: string;
+    readonly cancel: string;
+    readonly commandTitle: string;
+    readonly commandNote: string;
+    readonly copy: string;
+    readonly copied: string;
+    readonly keyLabel: string;
+    readonly keyInvalid: string;
+    readonly add: string;
+    readonly adding: string;
+  };
+  /** One plain sentence per way the door can fail (lib/world-door.ts DoorFailure). */
+  readonly failures: {
+    readonly unreachable: string;
+    readonly disabled: string;
+    readonly expired: string;
+    readonly 'no-pass': string;
+    readonly forbidden: string;
+    readonly duplicate: string;
+    readonly 'too-big': string;
+    readonly starting: string;
+    readonly invalid: string;
+    readonly 'not-found': string;
+    readonly other: string;
+  };
+}
+
 /** A world's own page. */
 export interface WorldPageMessages {
   readonly loading: string;
@@ -115,6 +181,8 @@ export interface WorldPageMessages {
   /** Under the button, for everyone else. */
   readonly enterGuest: string;
   readonly enterFailed: string;
+  /** «IA», for whoever manages the world: the AIs that come in through the world's door. */
+  readonly ai: WorldAiMessages;
 }
 
 export interface MundosMessages {
@@ -204,6 +272,69 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'Entras con tu nombre y tus roles de {org}',
       enterGuest: 'Entras como invitado',
       enterFailed: 'No se pudo abrir el mundo. Inténtalo de nuevo.',
+      ai: {
+        title: 'IA',
+        note: 'Las IAs que entran en este mundo. Solo ves esta sección porque puedes administrarlo.',
+        loading: 'Leyendo las IAs…',
+        empty:
+          'Este mundo aún no tiene IAs. Una IA entra como una persona más: mira, habla y, si tú quieres, construye.',
+        invite: 'Invitar a una IA',
+        listLabel: 'IAs de este mundo',
+        talk: 'Puede mirar y hablar',
+        build: 'Puede también construir',
+        on: 'conectada',
+        off: 'dormida',
+        waiting: 'esperando',
+        remove: 'Quitar',
+        removeLabel: 'Quitar a {name}',
+        removeAsk: '¿Quitar a {name}? Ya no podrá entrar en este mundo.',
+        removeYes: 'Sí, quitar',
+        removeNo: 'No, dejarla',
+        removing: 'Quitando…',
+        dialog: {
+          title: 'Invitar a una IA',
+          step: 'Paso {n} de 3',
+          nameLabel: '¿Cómo se llama?',
+          nameHint: 'Es el nombre que verán las personas en el mundo.',
+          nameProblems: {
+            empty: 'Escribe un nombre.',
+            long: 'Ese nombre es demasiado largo (máximo {max} caracteres).',
+            chars: 'Usa solo letras, números, espacios, punto, guion o guion bajo.',
+            taken: 'Ya hay una IA con ese nombre. Elige otro.',
+          },
+          abilityLabel: '¿Qué puede hacer?',
+          abilityTalk: 'Solo mirar y hablar',
+          abilityBuild: 'Mirar, hablar y también construir',
+          next: 'Siguiente',
+          back: 'Atrás',
+          cancel: 'Cancelar',
+          commandTitle: 'Su llave',
+          commandNote:
+            'Ejecuta esta línea en el ordenador donde vive tu IA, dentro de la carpeta numinia-engine. Crea su llave en ese ordenador (la privada no sale de allí) y te enseña una línea que empieza por ed25519:',
+          copy: 'Copiar',
+          copied: 'Copiado',
+          keyLabel: 'Pega aquí esa línea (la clave pública)',
+          keyInvalid:
+            'Esa línea no es una clave pública: debe ser ed25519: seguido de 43 letras o números.',
+          add: 'Añadir',
+          adding: 'Añadiendo…',
+        },
+        failures: {
+          unreachable: 'El mundo no responde. Arráncalo y vuelve a intentarlo.',
+          disabled: 'Este mundo aún no acepta IAs desde numinia.com (necesita el motor nuevo).',
+          expired: 'Tu permiso ha caducado y no se ha podido renovar. Recarga la página.',
+          'no-pass':
+            'numinia.com no te ha dado permiso para hablar con el mundo. Recarga la página e inténtalo de nuevo.',
+          forbidden:
+            'Tu permiso no deja gestionar las IAs de este mundo: hace falta poder administrar la organización.',
+          duplicate: 'Ya hay una IA con ese nombre en este mundo. Elige otro nombre.',
+          'too-big': 'Lo que enviaste es demasiado grande. Prueba con un nombre más corto.',
+          starting: 'El mundo está arrancando. Espera un momento y vuelve a intentarlo.',
+          invalid: 'El mundo no acepta esos datos.',
+          'not-found': 'Esa IA ya no está en este mundo.',
+          other: 'Algo ha salido mal. Inténtalo de nuevo.',
+        },
+      },
     },
   },
   en: {
@@ -286,6 +417,70 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'You go in with your name and your roles in {org}',
       enterGuest: 'You go in as a guest',
       enterFailed: 'Could not open the world. Try again.',
+      ai: {
+        title: 'AI',
+        note: 'The AIs that come into this world. You see this section because you can administer it.',
+        loading: 'Reading the AIs…',
+        empty:
+          'This world has no AIs yet. An AI comes in like any other person: it looks, talks and, if you let it, builds.',
+        invite: 'Invite an AI',
+        listLabel: 'AIs in this world',
+        talk: 'Can look and talk',
+        build: 'Can also build',
+        on: 'connected',
+        off: 'asleep',
+        waiting: 'waiting',
+        remove: 'Remove',
+        removeLabel: 'Remove {name}',
+        removeAsk: 'Remove {name}? It will no longer be able to enter this world.',
+        removeYes: 'Yes, remove',
+        removeNo: 'No, keep it',
+        removing: 'Removing…',
+        dialog: {
+          title: 'Invite an AI',
+          step: 'Step {n} of 3',
+          nameLabel: 'What is it called?',
+          nameHint: 'The name people will see in the world.',
+          nameProblems: {
+            empty: 'Write a name.',
+            long: 'That name is too long ({max} characters at most).',
+            chars: 'Use only letters, numbers, spaces, dot, hyphen or underscore.',
+            taken: 'There is already an AI with that name. Pick another.',
+          },
+          abilityLabel: 'What can it do?',
+          abilityTalk: 'Only look and talk',
+          abilityBuild: 'Look, talk and also build',
+          next: 'Next',
+          back: 'Back',
+          cancel: 'Cancel',
+          commandTitle: 'Its key',
+          commandNote:
+            'Run this line on the computer where your AI lives, inside the numinia-engine folder. It makes the key on that computer (the private half never leaves it) and shows you a line that starts with ed25519:',
+          copy: 'Copy',
+          copied: 'Copied',
+          keyLabel: 'Paste that line here (the public key)',
+          keyInvalid:
+            'That line is not a public key: it must be ed25519: followed by 43 letters or numbers.',
+          add: 'Add',
+          adding: 'Adding…',
+        },
+        failures: {
+          unreachable: 'The world does not answer. Start it and try again.',
+          disabled:
+            'This world does not accept AIs from numinia.com yet (it needs the new engine).',
+          expired: 'Your permission has expired and could not be renewed. Reload the page.',
+          'no-pass':
+            'numinia.com did not give you permission to talk to the world. Reload the page and try again.',
+          forbidden:
+            'Your permission does not let you manage this world’s AIs: you need to be able to administer the organization.',
+          duplicate: 'There is already an AI with that name in this world. Pick another name.',
+          'too-big': 'What you sent is too large. Try a shorter name.',
+          starting: 'The world is starting up. Wait a moment and try again.',
+          invalid: 'The world does not accept that data.',
+          'not-found': 'That AI is no longer in this world.',
+          other: 'Something went wrong. Try again.',
+        },
+      },
     },
   },
   ja: {
@@ -368,6 +563,68 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: '{org}での名前とロールで入ります',
       enterGuest: 'ゲストとして入ります',
       enterFailed: 'ワールドを開けませんでした。もう一度お試しください。',
+      ai: {
+        title: 'AI',
+        note: 'このワールドに入るAIです。管理できる人にだけ、このセクションが表示されます。',
+        loading: 'AIを読み込み中…',
+        empty:
+          'このワールドにはまだAIがいません。AIは他の人と同じように入ります。見て、話して、許可すれば建てることもできます。',
+        invite: 'AIを招待する',
+        listLabel: 'このワールドのAI',
+        talk: '見る・話すことができます',
+        build: '建てることもできます',
+        on: '接続中',
+        off: '待機中',
+        waiting: '接続待ち',
+        remove: '削除',
+        removeLabel: '{name}を削除',
+        removeAsk: '{name}を削除しますか？ このワールドには入れなくなります。',
+        removeYes: '削除する',
+        removeNo: 'やめる',
+        removing: '削除中…',
+        dialog: {
+          title: 'AIを招待する',
+          step: 'ステップ {n} / 3',
+          nameLabel: '名前は？',
+          nameHint: 'ワールドで人に見える名前です。',
+          nameProblems: {
+            empty: '名前を入力してください。',
+            long: '名前が長すぎます（最大{max}文字）。',
+            chars: '文字・数字・スペース・ピリオド・ハイフン・アンダースコアだけ使えます。',
+            taken: 'その名前のAIはすでにいます。別の名前にしてください。',
+          },
+          abilityLabel: '何ができますか？',
+          abilityTalk: '見る・話すだけ',
+          abilityBuild: '見る・話す・建てる',
+          next: '次へ',
+          back: '戻る',
+          cancel: 'キャンセル',
+          commandTitle: 'AIのキー',
+          commandNote:
+            'AIが動いているコンピューターで、numinia-engine フォルダの中でこの1行を実行してください。そのコンピューター上でキーを作ります（秘密鍵はそこから出ません）。ed25519: で始まる1行が表示されます。',
+          copy: 'コピー',
+          copied: 'コピーしました',
+          keyLabel: 'その1行（公開鍵）をここに貼り付け',
+          keyInvalid: '公開鍵ではありません。ed25519: に続けて英数字43文字にしてください。',
+          add: '追加',
+          adding: '追加中…',
+        },
+        failures: {
+          unreachable: 'ワールドが応答しません。起動してからもう一度お試しください。',
+          disabled:
+            'このワールドはまだ numinia.com からのAIを受け付けません（新しいエンジンが必要です）。',
+          expired: '権限の期限が切れ、更新できませんでした。ページを再読み込みしてください。',
+          'no-pass':
+            'numinia.com からワールドと話す権限を受け取れませんでした。ページを再読み込みしてもう一度お試しください。',
+          forbidden: 'このワールドのAIを管理する権限がありません。組織を管理できる必要があります。',
+          duplicate: 'このワールドには同じ名前のAIがすでにいます。別の名前にしてください。',
+          'too-big': '送った内容が大きすぎます。名前を短くしてください。',
+          starting: 'ワールドが起動中です。少し待ってからもう一度お試しください。',
+          invalid: 'ワールドがそのデータを受け付けませんでした。',
+          'not-found': 'そのAIはもうこのワールドにいません。',
+          other: '問題が起きました。もう一度お試しください。',
+        },
+      },
     },
   },
   ko: {
@@ -450,6 +707,67 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: '{org}에서의 이름과 역할로 입장합니다',
       enterGuest: '게스트로 입장합니다',
       enterFailed: '월드를 열 수 없습니다. 다시 시도해 주세요.',
+      ai: {
+        title: 'AI',
+        note: '이 월드에 들어오는 AI입니다. 이 월드를 관리할 수 있는 사람에게만 이 섹션이 보입니다.',
+        loading: 'AI를 읽는 중…',
+        empty:
+          '이 월드에는 아직 AI가 없습니다. AI는 다른 사람처럼 들어옵니다. 보고, 말하고, 허락하면 만들기도 합니다.',
+        invite: 'AI 초대하기',
+        listLabel: '이 월드의 AI',
+        talk: '보고 말할 수 있음',
+        build: '만들 수도 있음',
+        on: '접속 중',
+        off: '잠든 상태',
+        waiting: '기다리는 중',
+        remove: '제거',
+        removeLabel: '{name} 제거',
+        removeAsk: '{name}을(를) 제거할까요? 더 이상 이 월드에 들어올 수 없습니다.',
+        removeYes: '네, 제거',
+        removeNo: '아니요, 그대로 두기',
+        removing: '제거 중…',
+        dialog: {
+          title: 'AI 초대하기',
+          step: '{n}/3단계',
+          nameLabel: '이름이 무엇인가요?',
+          nameHint: '월드에서 사람들에게 보이는 이름입니다.',
+          nameProblems: {
+            empty: '이름을 입력하세요.',
+            long: '이름이 너무 깁니다(최대 {max}자).',
+            chars: '글자, 숫자, 공백, 마침표, 하이픈, 밑줄만 쓸 수 있습니다.',
+            taken: '같은 이름의 AI가 이미 있습니다. 다른 이름을 고르세요.',
+          },
+          abilityLabel: '무엇을 할 수 있나요?',
+          abilityTalk: '보고 말하기만',
+          abilityBuild: '보고, 말하고, 만들기도',
+          next: '다음',
+          back: '뒤로',
+          cancel: '취소',
+          commandTitle: 'AI의 키',
+          commandNote:
+            'AI가 있는 컴퓨터에서 numinia-engine 폴더 안에 이 한 줄을 실행하세요. 그 컴퓨터에서 키를 만들고(개인 키는 그곳을 떠나지 않습니다) ed25519: 로 시작하는 한 줄을 보여 줍니다.',
+          copy: '복사',
+          copied: '복사됨',
+          keyLabel: '그 한 줄(공개 키)을 여기에 붙여넣기',
+          keyInvalid: '공개 키가 아닙니다. ed25519: 뒤에 영문자·숫자 43자가 와야 합니다.',
+          add: '추가',
+          adding: '추가 중…',
+        },
+        failures: {
+          unreachable: '월드가 응답하지 않습니다. 월드를 시작한 뒤 다시 시도하세요.',
+          disabled: '이 월드는 아직 numinia.com의 AI를 받지 않습니다(새 엔진이 필요합니다).',
+          expired: '권한이 만료되었고 갱신하지 못했습니다. 페이지를 새로고침하세요.',
+          'no-pass':
+            'numinia.com에서 월드와 대화할 권한을 받지 못했습니다. 페이지를 새로고침하고 다시 시도하세요.',
+          forbidden: '이 월드의 AI를 관리할 권한이 없습니다. 조직을 관리할 수 있어야 합니다.',
+          duplicate: '이 월드에 같은 이름의 AI가 이미 있습니다. 다른 이름을 고르세요.',
+          'too-big': '보낸 내용이 너무 큽니다. 더 짧은 이름을 써 보세요.',
+          starting: '월드가 시작하는 중입니다. 잠시 기다린 뒤 다시 시도하세요.',
+          invalid: '월드가 그 데이터를 받아들이지 않습니다.',
+          'not-found': '그 AI는 더 이상 이 월드에 없습니다.',
+          other: '문제가 생겼습니다. 다시 시도하세요.',
+        },
+      },
     },
   },
   'pt-br': {
@@ -532,6 +850,70 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'Você entra com seu nome e seus papéis em {org}',
       enterGuest: 'Você entra como convidado',
       enterFailed: 'Não foi possível abrir o mundo. Tente de novo.',
+      ai: {
+        title: 'IA',
+        note: 'As IAs que entram neste mundo. Você vê esta seção porque pode administrá-lo.',
+        loading: 'Lendo as IAs…',
+        empty:
+          'Este mundo ainda não tem IAs. Uma IA entra como uma pessoa qualquer: olha, fala e, se você deixar, constrói.',
+        invite: 'Convidar uma IA',
+        listLabel: 'IAs deste mundo',
+        talk: 'Pode olhar e falar',
+        build: 'Pode também construir',
+        on: 'conectada',
+        off: 'dormindo',
+        waiting: 'aguardando',
+        remove: 'Remover',
+        removeLabel: 'Remover {name}',
+        removeAsk: 'Remover {name}? Ela não poderá mais entrar neste mundo.',
+        removeYes: 'Sim, remover',
+        removeNo: 'Não, manter',
+        removing: 'Removendo…',
+        dialog: {
+          title: 'Convidar uma IA',
+          step: 'Passo {n} de 3',
+          nameLabel: 'Como ela se chama?',
+          nameHint: 'É o nome que as pessoas verão no mundo.',
+          nameProblems: {
+            empty: 'Escreva um nome.',
+            long: 'Esse nome é longo demais (no máximo {max} caracteres).',
+            chars: 'Use só letras, números, espaços, ponto, hífen ou sublinhado.',
+            taken: 'Já existe uma IA com esse nome. Escolha outro.',
+          },
+          abilityLabel: 'O que ela pode fazer?',
+          abilityTalk: 'Só olhar e falar',
+          abilityBuild: 'Olhar, falar e também construir',
+          next: 'Próximo',
+          back: 'Voltar',
+          cancel: 'Cancelar',
+          commandTitle: 'A chave dela',
+          commandNote:
+            'Execute esta linha no computador onde sua IA vive, dentro da pasta numinia-engine. Ela cria a chave nesse computador (a privada não sai de lá) e mostra uma linha que começa com ed25519:',
+          copy: 'Copiar',
+          copied: 'Copiado',
+          keyLabel: 'Cole aqui essa linha (a chave pública)',
+          keyInvalid:
+            'Essa linha não é uma chave pública: deve ser ed25519: seguido de 43 letras ou números.',
+          add: 'Adicionar',
+          adding: 'Adicionando…',
+        },
+        failures: {
+          unreachable: 'O mundo não responde. Inicie-o e tente de novo.',
+          disabled:
+            'Este mundo ainda não aceita IAs a partir do numinia.com (precisa do motor novo).',
+          expired: 'Sua permissão expirou e não foi possível renová-la. Recarregue a página.',
+          'no-pass':
+            'O numinia.com não lhe deu permissão para falar com o mundo. Recarregue a página e tente de novo.',
+          forbidden:
+            'Sua permissão não deixa gerenciar as IAs deste mundo: é preciso poder administrar a organização.',
+          duplicate: 'Já existe uma IA com esse nome neste mundo. Escolha outro nome.',
+          'too-big': 'O que você enviou é grande demais. Tente um nome mais curto.',
+          starting: 'O mundo está iniciando. Espere um momento e tente de novo.',
+          invalid: 'O mundo não aceita esses dados.',
+          'not-found': 'Essa IA não está mais neste mundo.',
+          other: 'Algo deu errado. Tente de novo.',
+        },
+      },
     },
   },
 };

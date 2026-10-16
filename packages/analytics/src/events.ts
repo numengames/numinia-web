@@ -145,3 +145,11 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's «Sedes»: `panel-venue-open`, `panel-venue-enter`, `panel-venues-retry`.
 // - A world's page: `world-enter`, `world-page-retry`, `world-page-home`,
 //   `world-page-venues`, `world-page-members`, `world-page-balance`.
+
+// ---- «IA» on a world's page (cut 2026-10-16): its data-metric ids -----------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The section, for whoever manages the world: `ai-invite` (opens the dialog),
+//   `ai-retry`, `ai-remove`, `ai-remove-yes`, `ai-remove-no`.
+// - The invitation dialog: `ai-invite-name`, `ai-invite-ability-talk`,
+//   `ai-invite-ability-build`, `ai-invite-next`, `ai-invite-back`, `ai-invite-copy`,
+//   `ai-invite-key`, `ai-invite-add`, `ai-invite-cancel`.

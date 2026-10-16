@@ -14,6 +14,7 @@ import { enterersOf, personLabel, shownPeople } from '../../lib/world-people';
 import { enterWorld, loadWorldPage, type PageSheet } from '../../lib/mundos';
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
+import { AiSection } from './AiSection';
 
 type Read = { readonly at: 'loading' } | PageSheet;
 
@@ -92,12 +93,15 @@ export function WorldView({
   locale,
   words,
   homeHref,
+  fixture,
 }: {
   readonly worldId: string;
   readonly locale: SupportedLocale;
   readonly words: WorldPageMessages;
   /** The site's start, where «Volver» leads. */
   readonly homeHref: string;
+  /** DATA_SOURCE=fixture: the «IA» section talks to an in-memory door. */
+  readonly fixture: boolean;
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
   const [entering, setEntering] = useState(false);
@@ -215,6 +219,15 @@ export function WorldView({
       )}
       {page !== null && page.manage && home !== null && (
         <Enters org={home.accountId} words={words} />
+      )}
+      {page !== null && page.manage && home !== null && (
+        <AiSection
+          worldId={worldId}
+          worldUrl={page.url}
+          words={words.ai}
+          retryLabel={words.retry}
+          fixture={fixture}
+        />
       )}
       {page !== null && page.manage && home !== null && (
         <section

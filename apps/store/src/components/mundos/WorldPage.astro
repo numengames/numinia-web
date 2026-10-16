@@ -10,6 +10,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { MUNDOS_UI } from '../../i18n/mundos';
 import { localeHref } from '../../lib/app-nav';
+import { runtimeEnv } from '../../lib/runtime-env';
 import { WorldView } from './WorldView';
 import '../saldo/saldo.css';
 import './mundo.css';
@@ -21,6 +22,8 @@ interface Props {
 
 const { locale, worldId } = Astro.props;
 const words = MUNDOS_UI[locale].page;
+// Under DATA_SOURCE=fixture the «IA» section talks to an in-memory door, not a real world.
+const fixture = runtimeEnv()['DATA_SOURCE'] === 'fixture';
 ---
 
 <BaseLayout locale={locale} title={`${worldId} — Numinia`} description={words.eyebrow} wide>
@@ -34,5 +37,6 @@ const words = MUNDOS_UI[locale].page;
     locale={locale}
     words={words}
     homeHref={localeHref(locale, '/')}
+    fixture={fixture}
   />
 </BaseLayout>
