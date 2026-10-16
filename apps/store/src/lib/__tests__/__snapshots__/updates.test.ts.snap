@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-16 22:15",
+    "entries": [
+      {
+        "text": "Numen Games is no longer one more card on «Communities»: it sits at the top right, in a sphere with the oracle and a ring with one dot per community. Drag it or use the arrow keys to turn it; it turns once when it arrives and then stays still. With a mouse a dot says its name and goes on a click; on a touch screen the first tap says the name and brings it to the front, the second goes. At most twelve dots, the communities with the soonest encounter; the rest in a «+N» that leads to the list. On a phone the card lies down and the place chips are one row that slides.",
+        "type": "NEW",
+      },
+      {
+        "text": "The page of Numen Games tells what the house is: the community of communities. What it does and why, a line of the canon, the door to the Agora and «How it is played», the big sphere with every community, the three linked rings (the motive, the model, the story), the metagame — the ranks, the Gates, the seasons, the seals, the Codex — what it keeps, its gatherings, its people, its archive, and the epitaph under the Khepri. In all five languages.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.112.0",
+  },
+  {
     "date": "2026-10-16 23:10",
     "entries": [
       {

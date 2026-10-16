@@ -3,15 +3,23 @@
  * /communities/ — every published community, with a search box and filters
  * by place. The list renders whole without JavaScript; the box and the
  * chips filter the cards already on the page (inline script, no fetch).
+ *
+ * v3 «La esfera y la casa»: Numen Games is not one more card. It leaves
+ * the grid and sits at the head's top right, in its sphere — one dot per
+ * community on the ring (lib/house-sphere.ts) — with a line and a door to
+ * its own page; under 960 px the card lies down (sphere left, text right).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { HOUSE_UI } from '../../i18n/house';
 import { PLACE_IDS, placeShort, searchText, type PlaceId } from '../../lib/communities';
+import { communityActivity, ringChoice } from '../../lib/house-sphere';
 import { COMMUNITIES, RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
 import CommunityCard from './CommunityCard.astro';
 import Countdown from './Countdown.astro';
+import HouseSphere from './HouseSphere.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -20,10 +28,16 @@ interface Props {
 
 const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
+const hui = HOUSE_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 
+// The house brings the others together: it is not one of them on this page.
+const house = COMMUNITIES.find((community) => community.state === 'founder');
+const others = COMMUNITIES.filter((community) => community !== house);
+const ring = ringChoice(others, (community) => communityActivity(community, RITUALS));
+
 const counts = new Map<PlaceId, number>();
-for (const community of COMMUNITIES) {
+for (const community of others) {
   for (const place of community.places) counts.set(place, (counts.get(place) ?? 0) + 1);
 }
 const places = PLACE_IDS.filter((place) => (counts.get(place) ?? 0) > 0);
@@ -31,11 +45,35 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
 ---
 
 <BaseLayout locale={locale} title={`${ui.indexTitle} — Numinia`} description={ui.indexLead}>
-  <p class="migas"><a href={`${prefix}/`}>Numinia</a> / {ui.crumbCommunities}</p>
-  <div class="cabeza">
+  <div class="com-cab">
+  <div class="cabeza com-cab-txt">
+    <p class="migas"><a href={`${prefix}/`}>Numinia</a> / {ui.crumbCommunities}</p>
     <p class="etiqueta entrada">{ui.indexEyebrow}</p>
     <h1 class="display-m entrada-1">{ui.indexTitle}</h1>
     <p class="desc entrada-2">{ui.indexLead}</p>
+  </div>
+  {
+    house && (
+      <figure class="casa-card" data-house-figure>
+        <div class="casa-visual">
+          <HouseSphere locale={locale} dots={ring.shown} rest={ring.rest.length} restHref="#communities" />
+        </div>
+        <figcaption>
+          <h2>
+            <a href={`${prefix}/communities/${house.id}/`} data-metric="communities-house-title">
+              {house.name}
+            </a>
+          </h2>
+          <p class="sub">{hui.cardLine}</p>
+          <p class="casa-txt">{hui.cardText}</p>
+          <a class="casa-entra" href={`${prefix}/communities/${house.id}/`} data-metric="communities-house-enter">
+            {hui.cardCta} <span aria-hidden="true">→</span>
+          </a>
+        </figcaption>
+      </figure>
+    )
+  }
+  <div class="com-cab-busca">
     <form class="busca entrada-3" role="search" action={`${prefix}/communities/`} method="get">
       <Icon name="magnifying-glass" size={20} />
       <input
@@ -48,13 +86,14 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
         data-metric="communities-search"
       />
     </form>
-    <p class="small texto-2 cuenta" id="count" aria-live="polite" data-template={ui.countLine}>
-      {fill(ui.countLine, { n: COMMUNITIES.length, m: placesWithSomeone })}
+    <p class="small texto-2 cuenta">
+      <span id="count" aria-live="polite" data-template={ui.countLine}
+        >{fill(ui.countLine, { n: others.length, m: placesWithSomeone })}</span
+      >{house && <span>{hui.countHouse}</span>}
     </p>
-  </div>
   <div class="filtros" role="group" aria-label={ui.filterLabel} data-filters>
     <button type="button" class="chip" data-place="" aria-pressed="true" data-metric="communities-filter">
-      {ui.filterAll} · {COMMUNITIES.length}
+      {ui.filterAll} · {others.length}
     </button>
     {
       places.map((place) => (
@@ -64,9 +103,11 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
       ))
     }
   </div>
+  </div>
+  </div>
   <div class="rejilla" id="communities">
     {
-      COMMUNITIES.map((community) => (
+      others.map((community) => (
         <CommunityCard
           community={community}
           rituals={RITUALS}
@@ -170,13 +211,138 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
     pointer-events: none;
   }
   .cuenta {
+    margin: var(--s3) 0;
+  }
+  /* The head: the words left, the house's sphere top right, the search under the words. */
+  .com-cab {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    grid-template-areas: 'txt casa' 'busca casa';
+    gap: var(--s4) var(--s7);
+    align-items: end;
+    margin-bottom: var(--s5);
+  }
+  .com-cab-txt {
+    grid-area: txt;
+    margin-bottom: 0;
+  }
+  .com-cab-busca {
+    grid-area: busca;
+    align-self: start;
+    min-width: 0;
+  }
+  .casa-card {
+    grid-area: casa;
+    align-self: center;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    text-align: center;
+    min-width: 0;
+  }
+  .casa-visual {
+    width: 100%;
+  }
+  .casa-card h2 {
+    margin: var(--s2) 0 0;
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+  }
+  .casa-card h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .casa-card h2 a:hover {
+    color: var(--enlace);
+  }
+  .sub {
+    font: 500 0.7rem var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    margin: 4px 0 var(--s3);
+  }
+  .casa-txt {
+    color: var(--texto-2);
+    margin: 0 auto var(--s3);
+    max-width: 34ch;
+    font-size: 0.95rem;
+  }
+  .casa-entra {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 24px;
+    font-weight: 500;
+    color: var(--enlace);
+  }
+  @media (max-width: 1180px) {
+    .com-cab {
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+      gap: var(--s4) var(--s5);
+    }
+  }
+  /* Under 960 px the house's card lies down: the small sphere left, its words right. */
+  @media (max-width: 960px) {
+    .com-cab {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: 'txt' 'casa' 'busca';
+      align-items: start;
+    }
+    .casa-card {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr);
+      align-items: center;
+      gap: var(--s3);
+      text-align: left;
+      padding: var(--s3) var(--s4) var(--s3) var(--s2);
+      border: 1px solid color-mix(in srgb, var(--ambar) 35%, transparent);
+      border-radius: var(--radio-marco);
+      background: color-mix(in srgb, var(--ambar) 5%, transparent);
+    }
+    .casa-card :global(.esfera-gira) {
+      display: none;
+    }
+    .casa-card h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+    .casa-card .sub {
+      margin: 2px 0 var(--s2);
+    }
+    .casa-txt {
+      margin: 0 0 var(--s2);
+      font-size: 0.9rem;
+    }
   }
   .filtros {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s2);
-    margin-bottom: var(--s5);
+    margin-bottom: 0;
+  }
+  /* On a phone the place chips are one row that slides, never four lines.
+     The row is the positioned ancestor, so nothing inside escapes its
+     scroll and widens the page. */
+  @media (max-width: 767px) {
+    .filtros {
+      position: relative;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 2px;
+    }
+    .filtros::-webkit-scrollbar {
+      display: none;
+    }
+    .filtros .chip {
+      flex: none;
+      scroll-snap-align: start;
+    }
   }
   /* Without JavaScript the chips could filter nothing. */
   :global(html:not([data-js='on'])) .filtros {
