@@ -8,8 +8,9 @@
  * acceptance.steps.mjs stays untouched.
  */
 import { strict as assert } from 'node:assert';
+import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createPublicKey, generateKeyPairSync, randomBytes, verify } from 'node:crypto';
 import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
@@ -54,6 +55,8 @@ async function startStore() {
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   const secret = randomBytes(32).toString('hex');
+  // A throwaway world-pass key: the server signs with it, the scenario verifies with what it publishes.
+  const passKey = generateKeyPairSync('ed25519').privateKey;
   const child = spawn(process.execPath, ['dist/server/entry.mjs'], {
     cwd: storeRoot,
     env: {
@@ -64,6 +67,7 @@ async function startStore() {
       AUTH_SESSION_SECRET: secret,
       THIRDWEB_SECRET_KEY: randomBytes(32).toString('hex'),
       ADMIN_WALLET_ADDRESSES: ORACLE,
+      WORLD_PASS_PRIVATE_KEY: passKey.export({ format: 'der', type: 'pkcs8' }).toString('base64'),
     },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
@@ -233,6 +237,65 @@ Then('the page offers the administration', function () {
   assert.equal(this.reply.json.manage, true);
 });
 
+// ---- «Entrar»: the world pass (cut 5) --------------------------------------------
+
+When('anyone presses Entrar on the world', async function () {
+  const worldId = await unplacedWorld(this);
+  await ask(this, null, `/api/mundos/${worldId}/pass`, post({}));
+  this.entered = this.reply;
+});
+
+When('a member of {string} presses Entrar on the world', async function (_org) {
+  const worldId = await unplacedWorld(this);
+  await ask(this, 'member', `/api/mundos/${worldId}/pass`, post({}));
+  this.entered = this.reply;
+});
+
+Then("they are sent to the world's plain address, with no pass", async function () {
+  assert.equal(this.entered.status, 200);
+  assert.equal(this.entered.json.pass, false);
+  const url = new URL(this.entered.json.url);
+  assert.equal(url.protocol, 'https:');
+  assert.equal(url.hash, '');
+});
+
+Then(
+  "they are sent to the world's address with a pass the published key verifies",
+  async function () {
+    const worldId = await unplacedWorld(this);
+    assert.equal(this.entered.status, 200);
+    assert.equal(this.entered.json.pass, true);
+    const url = new URL(this.entered.json.url);
+    assert.equal(url.protocol, 'https:');
+    const token = url.hash.replace(/^#pass=/, '');
+    const [head, body, signature] = token.split('.');
+    assert.ok(head && body && signature, 'the pass is not three parts');
+    await ask(this, null, '/.well-known/world-pass-key.json');
+    assert.equal(this.reply.status, 200);
+    const published = this.reply.json;
+    assert.equal(published.alg, 'Ed25519');
+    const key = createPublicKey({
+      key: { kty: 'OKP', crv: 'Ed25519', x: published.publicKey },
+      format: 'jwk',
+    });
+    assert.ok(
+      verify(null, Buffer.from(`${head}.${body}`), key, Buffer.from(signature, 'base64url')),
+      'the signature does not verify with the published key',
+    );
+    const header = JSON.parse(Buffer.from(head, 'base64url').toString('utf8'));
+    assert.deepEqual(header, { alg: 'EdDSA', typ: 'numinia-world-pass', kid: published.kid });
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    assert.equal(payload.v, 1);
+    assert.equal(payload.iss, 'numinia.com');
+    assert.equal(payload.aud, worldId);
+    assert.equal(payload.org, await idOf(this, 'Numen Games'));
+    assert.equal(payload.exp - payload.iat, 600);
+    assert.match(payload.sub, /^p_[0-9a-f]{32}$/);
+    assert.ok(payload.perm.includes('enter-worlds'), 'a member may enter');
+    assert.ok(!body.includes(MEMBER.slice(2)), 'the pass must not carry the wallet');
+  },
+);
+
 // ---- The built pages ----------------------------------------------------------
 
 const LOCALES = [
@@ -284,7 +347,9 @@ const CUT_METRICS = [
   'worlds-assign-save',
   'worlds-assign-cancel',
   'panel-venue-open',
+  'panel-venue-enter',
   'panel-venues-retry',
+  'world-enter',
   'world-page-retry',
   'world-page-home',
   'world-page-venues',

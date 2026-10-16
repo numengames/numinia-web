@@ -36,6 +36,14 @@ Feature: Mundos ↔ organizaciones — every world belongs to one organization, 
     When a member of "Numen Games" asks for the page of the world
     Then the page offers the administration
 
+  Scenario: Entrar sends a guest to the world as a guest and a member with a signed pass
+    Given the built store is running with the house's wallet on the Oracle list
+    When the Oracle assigns the unplaced world to "Numen Games"
+    And anyone presses Entrar on the world
+    Then they are sent to the world's plain address, with no pass
+    When a member of "Numen Games" presses Entrar on the world
+    Then they are sent to the world's address with a pass the published key verifies
+
   Scenario: Sedes and the placement exist in every locale, with registered controls
     Given the store application has been built
     Then every locale has the panel's Sedes with its words
