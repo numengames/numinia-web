@@ -16,14 +16,22 @@ import { PIECES } from '../panel';
 
 describe('which pieces may be turned off', () => {
   it('are built pieces other than the summary and the settings', () => {
-    expect([...SWITCHABLE_PIECES]).toEqual(['venues', 'members', 'gente', 'roles', 'balance']);
+    expect([...SWITCHABLE_PIECES]).toEqual([
+      'venues',
+      'members',
+      'gente',
+      'roles',
+      'agents',
+      'balance',
+    ]);
     for (const id of SWITCHABLE_PIECES) {
       expect(PIECES.find((piece) => piece.id === id)?.kind).toBe('built');
     }
     expect(isSwitchable('roles')).toBe(true);
     expect(isSwitchable('summary')).toBe(false);
     expect(isSwitchable('settings')).toBe(false);
-    expect(isSwitchable('agents')).toBe(false);
+    expect(isSwitchable('agents')).toBe(true);
+    expect(isSwitchable('gatherings')).toBe(false);
   });
 
   it('are on unless named as off', () => {

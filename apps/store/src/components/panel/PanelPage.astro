@@ -3,7 +3,7 @@
  * «El panel»: an organization's panel — the screen the account menu's
  * «Paneles» opens. Five faces of one frame: `summary` (Resumen), `venues`
  * (Sedes: ./PanelSedes.tsx, the organization's worlds), `members`
- * (Miembros), `roles` (Roles) and `balance` (Saldo y consumo); the people's
+ * (Miembros), `roles` (Roles), `agents` (Agentes: the community's AIs) and `balance` (Saldo y consumo); the people's
  * two are «La gente» (./PanelMiembros.tsx, ./PanelRoles.tsx), the balance
  * hosts the screen Saldo already has, for the organization the address
  * names (`?org=<account id>`, lib/panel.ts). The page is static and the
@@ -22,17 +22,21 @@ import { PANEL_SETTINGS_UI } from '../../i18n/panel-settings';
 import { MUNDOS_UI } from '../../i18n/mundos';
 import { PEOPLE_UI } from '../../i18n/panel-people';
 import { GENTE_UI } from '../../i18n/panel-gente';
+import { AGENTES_UI } from '../../i18n/panel-agentes';
 import { SALDO_UI } from '../../i18n/saldo';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
 import { PanelGente } from './PanelGente';
+import { PanelAgentes } from './PanelAgentes';
 import { PanelAjustes } from './PanelAjustes';
 import { PanelRoles } from './PanelRoles';
 import { PanelSedes } from './PanelSedes';
 import PanelSummary from './PanelSummary.astro';
 import { PanelSaldo } from './PanelSaldo';
 import '../saldo/saldo.css';
+// The invitation dialog is the world page's own (its rules, not a copy).
+import '../mundos/mundo.css';
 import './panel.css';
 
 interface Props {
@@ -101,6 +105,21 @@ const homeHref = localeHref(locale, '/panel/');
         ui={SALDO_UI[locale]}
         people={PEOPLE_UI[locale]}
         gente={GENTE_UI[locale]}
+      />
+    )
+  }
+  {
+    face === 'agents' && (
+      <PanelAgentes
+        client:load
+        locale={locale}
+        words={words}
+        signIn={signIn}
+        saldoHref={saldoHref}
+        ui={SALDO_UI[locale]}
+        people={PEOPLE_UI[locale]}
+        agentes={AGENTES_UI[locale]}
+        world={MUNDOS_UI[locale].page.ai.dialog}
       />
     )
   }

@@ -14,6 +14,7 @@ import coins from '../../../../../packages/ui/src/icons/coins.svg?raw';
 import craneTower from '../../../../../packages/ui/src/icons/crane-tower.svg?raw';
 import gear from '../../../../../packages/ui/src/icons/gear.svg?raw';
 import house from '../../../../../packages/ui/src/icons/house.svg?raw';
+import moon from '../../../../../packages/ui/src/icons/moon.svg?raw';
 import packageIcon from '../../../../../packages/ui/src/icons/package.svg?raw';
 import planet from '../../../../../packages/ui/src/icons/planet.svg?raw';
 import robot from '../../../../../packages/ui/src/icons/robot.svg?raw';
@@ -24,24 +25,26 @@ import users from '../../../../../packages/ui/src/icons/users.svg?raw';
 import usersThree from '../../../../../packages/ui/src/icons/users-three.svg?raw';
 import type { PieceIcon } from '../../lib/panel';
 
-const GLYPHS: Readonly<Record<PieceIcon | 'caret-down' | 'crane-tower' | 'squares-four', string>> =
-  {
-    house,
-    buildings,
-    'calendar-blank': calendarBlank,
-    'users-three': usersThree,
-    'shield-check': shieldCheck,
-    'squares-four': squaresFour,
-    robot,
-    scroll,
-    package: packageIcon,
-    coins,
-    gear,
-    users,
-    planet,
-    'caret-down': caretDown,
-    'crane-tower': craneTower,
-  };
+const GLYPHS: Readonly<
+  Record<PieceIcon | 'caret-down' | 'crane-tower' | 'moon' | 'squares-four', string>
+> = {
+  house,
+  buildings,
+  'calendar-blank': calendarBlank,
+  'users-three': usersThree,
+  'shield-check': shieldCheck,
+  'squares-four': squaresFour,
+  robot,
+  scroll,
+  package: packageIcon,
+  coins,
+  gear,
+  users,
+  planet,
+  'caret-down': caretDown,
+  'crane-tower': craneTower,
+  moon,
+};
 
 export function PanelGlyph({
   name,

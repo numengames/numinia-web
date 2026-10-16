@@ -53,6 +53,7 @@ const PAGES = [
   '/es/panel/', // the organization panel without a session: the door (signed in it is measured in panel.spec.ts)
   '/es/panel/miembros/', // signed in: members.spec.ts and panel-gente.spec.ts
   '/es/panel/roles/',
+  '/es/panel/agentes/', // without a session: the door; signed in, in both modes: panel-agentes.spec.ts
   '/es/panel/saldo/',
   '/support/', // the help page (v0.70.0)
 ];
