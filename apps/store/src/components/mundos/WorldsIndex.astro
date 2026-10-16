@@ -1,0 +1,176 @@
+---
+/**
+ * «Mundos» (/mundos/ in five locales, v3 cut C): every public world the
+ * site knows — the fleet's worlds the house has placed in a community —
+ * with the one world card (WorldCard.astro) and filters as chips: Todos,
+ * Con gente ahora, De la ciudad, De comunidades — each only when some world
+ * answers to it. Rendered on demand like a world's own page (/mundos/<id>/):
+ * the fleet is read now, not at build.
+ *
+ * Without JavaScript every card shows and the chips stay away; «Entrar»
+ * then needs the world's own page («Su página»).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AHORA_UI } from '../../i18n/ahora';
+import { worldFilters } from '../../lib/world-index';
+import { loadWorldIndex } from './world-index-data';
+import WorldCard from './WorldCard.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const a = AHORA_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const index = await loadWorldIndex();
+const cards = index.ok ? index.cards : [];
+const chips = worldFilters(cards);
+const chipName = {
+  all: a.filterAll,
+  people: a.filterPeople,
+  city: a.filterCity,
+  communities: a.filterCommunities,
+} as const;
+---
+
+<BaseLayout locale={locale} title={`${a.worldsTitle} — Numinia`} description={a.worldsLead} wide>
+  <header class="titulo-vista">
+    <p class="migas"><a href={`${prefix}/`} data-metric="worlds-crumb">{a.crumbHome}</a> / {a.worldsTitle}</p>
+    <h1 class="display-m">{a.worldsTitle}</h1>
+    <p class="lead">{a.worldsLead}</p>
+  </header>
+
+  {
+    cards.length > 0 && (
+      <div class="filtros" role="group" aria-label={a.filterLabel} data-world-filters>
+        {chips.map((chip) => (
+          <button
+            type="button"
+            class="chip"
+            aria-pressed={chip.id === 'all' ? 'true' : 'false'}
+            data-world-filter={chip.id}
+            data-metric={`worlds-filter-${chip.id}`}
+          >
+            {chipName[chip.id]} · {chip.count}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  {
+    cards.length > 0 ? (
+      <div class="mundos-rejilla" data-world-grid>
+        {cards.map((card) => (
+          <WorldCard card={card} locale={locale} />
+        ))}
+      </div>
+    ) : (
+      <p class="vacio" data-world-index-empty>
+        {index.ok ? a.emptyAll : a.unreadable}
+      </p>
+    )
+  }
+  <p class="vacio" data-world-filter-empty hidden>{a.emptyFilter}</p>
+  {cards.some((card) => card.inside !== null) && <p class="nota small">{a.countNote}</p>}
+</BaseLayout>
+
+<script>
+  import { enterWorld } from '../../lib/mundos';
+
+  // The chips: one filter at a time, «all» by default.
+  const grid = document.querySelector<HTMLElement>('[data-world-grid]');
+  const empty = document.querySelector<HTMLElement>('[data-world-filter-empty]');
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-world-filter]')];
+  for (const chip of chips) {
+    chip.addEventListener('click', () => {
+      const wanted = chip.dataset.worldFilter ?? 'all';
+      for (const other of chips) other.setAttribute('aria-pressed', String(other === chip));
+      let shown = 0;
+      for (const card of grid?.querySelectorAll<HTMLElement>('[data-world-card]') ?? []) {
+        const match = (card.dataset.filters ?? '').split(' ').includes(wanted);
+        card.hidden = !match;
+        if (match) shown += 1;
+      }
+      if (empty) empty.hidden = shown > 0;
+    });
+  }
+
+  // «Entrar»: the pass for a member, the plain address for a guest (lib/mundos.ts).
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-enter]')) {
+    button.addEventListener('click', () => {
+      const label = button.querySelector('span');
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      if (label) label.textContent = button.dataset.entering ?? '';
+      void enterWorld(fetch, button.dataset.worldEnter ?? '', button.dataset.worldUrl || null).then(
+        (address) => window.location.assign(address ?? button.dataset.worldPage ?? '/'),
+      );
+    });
+  }
+
+  // A state's explanation closes with Esc, and opens again on the next hover or focus.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    for (const tip of document.querySelectorAll<HTMLElement>('[data-tip]')) {
+      if (tip.matches(':hover, :focus-within')) tip.setAttribute('data-tip-off', '');
+    }
+  });
+  for (const tip of document.querySelectorAll<HTMLElement>('[data-tip]')) {
+    const reopen = (): void => tip.removeAttribute('data-tip-off');
+    tip.addEventListener('pointerleave', reopen);
+    tip.addEventListener('focusout', reopen);
+  }
+  // A page restored from the back/forward cache must not keep a button working.
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-enter]')) {
+      button.removeAttribute('aria-busy');
+      button.disabled = (button.closest<HTMLElement>('[data-world-card]')?.dataset.state ?? '') === 'works' || !button.dataset.worldUrl;
+    }
+  });
+</script>
+
+<style>
+  .titulo-vista {
+    margin-bottom: var(--s5);
+  }
+  .titulo-vista h1 {
+    margin: var(--s2) 0 var(--s3);
+  }
+  .titulo-vista .lead {
+    color: var(--texto-2);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin: 0 0 var(--s5);
+  }
+  .filtros .chip {
+    min-height: 32px;
+  }
+  :global(html:not([data-js='on'])) .filtros {
+    display: none;
+  }
+  .mundos-rejilla {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+  }
+  .mundos-rejilla > :global([hidden]) {
+    display: none;
+  }
+  .vacio[hidden] {
+    display: none;
+  }
+  .nota {
+    color: var(--texto-2);
+    margin-top: var(--s5);
+  }
+</style>

@@ -13,7 +13,8 @@
  *   data-live-slide="<community>"   (the front page's frame) asks for the count too
  *
  * Once read, the counts also go out as a `numinia:inside` event (detail: the
- * map), for the front page's featured frame.
+ * map) and stay on <html data-inside-read>, for the front page's featured
+ * frame (its script may run before or after the answer).
  *
  * Templates come from the page's messages; "{n}" is the number.
  */
@@ -57,6 +58,7 @@ const templates = { none: ui.insideNone, one: ui.insideOne, many: ui.insideMany 
           el.hidden = !anyone;
         });
         // The front page's featured frame opens a world with people from the same count.
+        document.documentElement.setAttribute('data-inside-read', JSON.stringify(inside));
         document.dispatchEvent(new CustomEvent('numinia:inside', { detail: inside }));
       })
       .catch(function () {});

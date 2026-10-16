@@ -215,31 +215,35 @@ const live = COMMUNITIES.flatMap((community) => {
 
   <Countdown ui={ui} />
   <InsideCount ui={ui} />
-  <script is:inline>
+  <script>
     /* The hours of the encounters are the visitor's: say whose. */
-    try {
-      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (zone) {
-        document.querySelectorAll('[data-tz]').forEach(function (el) {
-          el.textContent = ': ' + zone.replace(/_/g, ' ') + '.';
-        });
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone) {
+      for (const el of document.querySelectorAll('[data-tz]')) {
+        el.textContent = `: ${zone.replace(/_/g, ' ')}.`;
       }
-    } catch (error) {
-      /* Without the zone the line simply ends. */
     }
     /* The encounters' strip: two cards per step, wrapping at the ends.
        Without JavaScript it scrolls by hand. */
-    document.querySelectorAll('[data-step]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var s = document.getElementById(b.getAttribute('aria-controls'));
-        if (!s) return;
-        var w = Number(s.getAttribute('data-step-px')) || s.clientWidth;
-        var end = s.scrollWidth - s.clientWidth;
-        var x = s.scrollLeft;
-        x = b.getAttribute('data-step') === '1' ? (x >= end - 2 ? 0 : Math.min(x + w, end)) : x <= 2 ? end : Math.max(x - w, 0);
-        s.scrollTo({ left: x, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    for (const button of document.querySelectorAll<HTMLElement>('[data-step]')) {
+      button.addEventListener('click', () => {
+        const strip = document.getElementById(button.getAttribute('aria-controls') ?? '');
+        if (!strip) return;
+        const width = Number(strip.dataset.stepPx) || strip.clientWidth;
+        const end = strip.scrollWidth - strip.clientWidth;
+        const x = strip.scrollLeft;
+        const left =
+          button.dataset.step === '1'
+            ? x >= end - 2
+              ? 0
+              : Math.min(x + width, end)
+            : x <= 2
+              ? end
+              : Math.max(x - width, 0);
+        const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        strip.scrollTo({ left, behavior: still ? 'auto' : 'smooth' });
       });
-    });
+    }
   </script>
 </BaseLayout>
 

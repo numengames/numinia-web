@@ -33,6 +33,14 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'NEW',
         text: 'The front page is «Now», the same for everyone. At the top, one featured thing at a time in a wide frame — the nearest encounter with «Count me in», or a world with people inside with «Enter the world» once the world itself says someone is there — and arrows to see the next; nothing moves by itself. Then the upcoming encounters in your own time zone, the three communities that meet soonest, and the four newest goods of the Bazar. On a phone, «Inside right now» lists the worlds with people, only when there are. The questions the front page used to answer moved to «How it works». In all five languages.',
       },
+      {
+        type: 'NEW',
+        text: '«Worlds» (/mundos/): every world of the city a community holds, with one world card used everywhere — its picture, whether it is on, off or under works (with what that means, on hover or focus), how many are inside when the world itself says so, and whose it is — with «Enter» and «Its page». Chips filter them: all, with people now, of the city, of communities; a chip with nothing behind it is not drawn. A world’s own page shows the same card. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: 'The Bazar says whose shelf is whose: a line above the finder with one chip per community that has uploaded something — today Numen Games, whose goods are everyone’s — and never a chip with zero.',
+      },
     ],
   },
   {

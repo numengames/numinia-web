@@ -61,8 +61,15 @@ const BUDGETS = {
       the published name and the person's organizations — and writes them into
       the markup the page already has (~1.9KB with its two pure readers,
       lib/face-menu.ts). Still no external JS and nothing is asked before the
-      menu opens. Landing sits at ~19KB. */
-  landingInlineScriptBytes: 19_500,
+      menu opens. Landing sits at ~19KB.
+      Raised 19500→21000 on 2026-10-16 (v0.111.0, v3 «Ahora»): the front
+      page became «Ahora» — the featured frame shows one thing at a time and
+      steps with its arrows (never by itself, WCAG 2.2.2), and it opens a
+      world with people from the live count the site already reads, which the
+      home now asks for too (~1.6KB in all, the frame's script bundled and
+      minified). The visitor face's mail form left (~0.6KB). Still no
+      external JS. Landing sits at ~20.6KB. */
+  landingInlineScriptBytes: 21_000,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */

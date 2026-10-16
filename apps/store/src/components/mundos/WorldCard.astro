@@ -1,0 +1,301 @@
+---
+/**
+ * A world's card (v3, cut C): the same everywhere a world is shown — the
+ * index of worlds (/mundos/) and the world's own page. Its picture (the
+ * world's own, or the placeholder scene), its state with the line that
+ * explains it (a tooltip that stays while the pointer is on it and closes
+ * with Esc), how many are inside when the world said so, whose it is and its
+ * community, and «Entrar» (the pass flow of lib/mundos.ts) with «Su página».
+ * Nothing the data does not hold: no capacity, no machine sheet.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { AHORA_UI } from '../../i18n/ahora';
+import { fill } from '../../i18n/communities';
+import { worldHref } from '../../lib/mundos';
+import { filtersOf, type WorldCard } from '../../lib/world-index';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  card: WorldCard;
+  locale: SupportedLocale;
+  /** The index draws «Entrar» and «Su página»; the world's own page has its own. */
+  actions?: boolean;
+  heading?: 'h2' | 'h3';
+}
+
+const { card, locale, actions = true, heading = 'h3' } = Astro.props;
+const a = AHORA_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const page = worldHref(locale, card.id);
+const state = card.state === null ? null : a.states[card.state];
+const tip = `estado-${card.id}`;
+const insideText =
+  card.inside === null
+    ? null
+    : card.inside === 0
+      ? a.insideNone
+      : card.inside === 1
+        ? a.insideOne
+        : fill(a.insideMany, { n: card.inside });
+const owner = (card.city ? a.keptBy : a.homeOf).split('{x}');
+const Heading = heading;
+---
+
+<article
+  class="tarjeta mundo-t"
+  data-world-card={card.id}
+  data-filters={filtersOf(card).join(' ')}
+  data-state={card.state ?? ''}
+>
+  <a class="mt-portada" href={page} tabindex="-1" aria-hidden="true">
+    {
+      card.cover ? (
+        <img src={card.cover} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <span class="escena">
+          <span class="suelo" />
+          <span class="faro" />
+        </span>
+      )
+    }
+    {
+      card.state === 'on' && insideText !== null && (
+        <span class="mt-sobre">
+          <span class="pastilla" data-count={card.inside}>
+            {(card.inside ?? 0) > 0 && <span class="punto" />}
+            {insideText}
+          </span>
+        </span>
+      )
+    }
+  </a>
+  {
+    state && (
+      <span class="mt-estado tip" data-tip>
+        <span class:list={['chip', { vivo: card.state === 'on', ambar: card.state === 'works' }]} tabindex="0" aria-describedby={tip}>
+          {card.state === 'on' && <span class="punto" />}
+          {state.label}
+        </span>
+        <span class="bocadillo" role="tooltip" id={tip}>
+          {state.note}
+        </span>
+      </span>
+    )
+  }
+  <div class="mt-cuerpo">
+    <Heading class="mt-nombre">
+      <a href={page} data-metric="worlds-card-title">
+        {card.name}
+      </a>
+    </Heading>
+    <p class="de">
+      {owner[0]}
+      {
+        card.community.id === null ? (
+          card.community.name
+        ) : (
+          <a href={`${prefix}/communities/${card.community.id}/`} data-metric="worlds-card-community">
+            {card.community.name}
+          </a>
+        )
+      }
+      {owner[1]}
+    </p>
+    {
+      card.inside !== null && (
+        <ul class="mt-datos">
+          <li>
+            <Icon name="users" size={16} />
+            <span class="mono">{card.inside}</span>
+            <span class="oculto">{a.insideLabel}</span>
+          </li>
+        </ul>
+      )
+    }
+    {
+      actions && (
+        <div class="mt-acc">
+          <button
+            type="button"
+            class="btn btn-fantasma btn-sm"
+            data-world-enter={card.id}
+            data-world-url={card.url ?? ''}
+            data-world-page={page}
+            data-entering={a.entering}
+            disabled={card.state === 'works' || card.url === null}
+            data-metric="worlds-card-enter"
+          >
+            <Icon name="play" size={16} />
+            <span>{a.enter}</span>
+          </button>
+          <a class="btn btn-sm su-pagina" href={page} data-metric="worlds-card-page">
+            {a.itsPage}
+          </a>
+        </div>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .mundo-t {
+    position: relative;
+    padding: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .mt-portada {
+    display: block;
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-bottom: 1px solid var(--linea);
+    border-radius: var(--radio-marco) var(--radio-marco) 0 0;
+    overflow: hidden;
+  }
+  .mt-portada img,
+  .mt-portada .escena {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .mt-sobre {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+  }
+  .pastilla {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    color: var(--texto);
+    background: color-mix(in srgb, var(--fondo) 85%, transparent);
+    border: 1px solid var(--linea-f);
+  }
+  .punto {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--enlace);
+  }
+  .chip .punto {
+    background: currentColor;
+  }
+  .mt-estado {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+  }
+  .mt-estado .chip {
+    background: color-mix(in srgb, var(--fondo) 88%, transparent);
+    min-height: 24px;
+    cursor: default;
+  }
+  .bocadillo {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: max-content;
+    max-width: 240px;
+    padding: var(--s2) var(--s3);
+    border-radius: var(--radio-control);
+    background: var(--elevada);
+    border: 1px solid var(--linea-f);
+    color: var(--texto-2);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 120ms var(--ciclo);
+  }
+  /* The bubble's own box keeps it open while the pointer is on it; Esc closes it (data-tip-off). */
+  .tip:hover .bocadillo,
+  .tip:focus-within .bocadillo {
+    visibility: visible;
+    opacity: 1;
+  }
+  .tip[data-tip-off] .bocadillo {
+    visibility: hidden;
+    opacity: 0;
+  }
+  .mt-cuerpo {
+    padding: var(--s4) 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .mt-nombre {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .mt-nombre a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .mt-nombre a:hover,
+  .mt-nombre a:focus-visible {
+    color: var(--enlace);
+  }
+  .de {
+    margin: 0;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  .mt-datos {
+    list-style: none;
+    margin: var(--s2) 0 0;
+    padding: var(--s3) 0 0;
+    border-top: 1px solid var(--linea);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s4);
+  }
+  .mt-datos li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
+  .oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .mt-acc {
+    margin-top: auto;
+    padding-top: var(--s3);
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .mt-acc .btn {
+    gap: 6px;
+  }
+  .su-pagina {
+    color: var(--enlace);
+    background: transparent;
+    border-color: transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bocadillo {
+      transition: none;
+    }
+  }
+</style>

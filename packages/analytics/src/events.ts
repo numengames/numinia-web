@@ -184,5 +184,6 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - «Cómo funciona»: `how-faq` (a question, moved from the front page).
 // - The index of worlds /mundos/: `worlds-filter-<all|people|city|communities>`,
 //   `worlds-card-enter` («Entrar»), `worlds-card-page` («Su página»),
-//   `worlds-card-title`, `worlds-card-community`.
+//   `worlds-card-title`, `worlds-card-community`, `worlds-crumb`; a world's
+//   page: `world-page-index` (its crumb back to the index).
 // - The Bazar: `bazaar-community-shelf` (a community's chip).

@@ -1,0 +1,202 @@
+/**
+ * The index of worlds (/mundos/, v3 cut C): which worlds it lists and what
+ * each card says — only what the fleet, the till and the worlds said.
+ */
+
+import { describe, expect, it } from 'vitest';
+import {
+  filtersOf,
+  readOwner,
+  worldCards,
+  worldFilters,
+  worldState,
+  type CommunityAccounts,
+  type FleetEntry,
+  type WorldOwner,
+} from '../world-index';
+
+const HOUSE: CommunityAccounts = {
+  id: 'numen-games',
+  name: 'Numen Games',
+  founder: true,
+  accounts: ['acc_team_numen_games', 'acc_t_house'],
+};
+const RESET: CommunityAccounts = {
+  id: 'reset',
+  name: 'Reset',
+  founder: false,
+  accounts: ['acc_t_reset'],
+};
+
+const owner = (accountId: string, accountName = accountId): WorldOwner => ({
+  accountId,
+  accountName,
+});
+
+describe('worldState', () => {
+  it('says on, off or under works from the phase', () => {
+    expect(worldState('running', null)).toBe('on');
+    expect(worldState('stopped', 3)).toBe('off');
+    for (const phase of ['creating', 'importing', 'uploading', 'updating'] as const) {
+      expect(worldState(phase, null)).toBe('works');
+    }
+  });
+
+  it('says nothing for a world on its way, and «on» for a hand-run one only when it answered', () => {
+    expect(worldState('starting', null)).toBeNull();
+    expect(worldState('stopping', 2)).toBeNull();
+    expect(worldState('deleting', null)).toBeNull();
+    expect(worldState(null, null)).toBeNull();
+    expect(worldState(null, 0)).toBe('on');
+  });
+});
+
+describe('readOwner', () => {
+  it('reads the till’s public answer: an owner, or nobody', () => {
+    expect(
+      readOwner({ ok: true, home: { accountId: 'a', accountName: 'A', placedAt: 'x' } }),
+    ).toEqual({ accountId: 'a', accountName: 'A' });
+    expect(readOwner({ ok: true, home: null, manage: false })).toBeNull();
+  });
+
+  it('keeps nothing from a refusal or an odd answer', () => {
+    expect(readOwner({ ok: false, problems: ['x'] })).toBeUndefined();
+    expect(readOwner(null)).toBeUndefined();
+    expect(readOwner([])).toBeUndefined();
+    expect(readOwner({ ok: true, home: 'a' })).toBeUndefined();
+    expect(readOwner({ ok: true, home: { accountId: 'a', accountName: '' } })).toBeUndefined();
+    expect(readOwner({ ok: true, home: { accountId: 1, accountName: 'A' } })).toBeUndefined();
+  });
+});
+
+describe('worldCards', () => {
+  const fleet: readonly FleetEntry[] = [
+    { id: 'agora-plaza', phase: 'running', domain: 'agora.numen.games' },
+    { id: 'bosque', phase: 'stopped', domain: 'bosque.numinia.com' },
+    { id: 'old-plaza', phase: 'deleting', domain: 'old-plaza.numinia.com' },
+    { id: 'tower', phase: 'creating', domain: null },
+    { id: 'demo', phase: null, domain: 'demo.numinia.com' },
+    { id: 'agora-plaza', phase: 'stopped', domain: 'twice.numinia.com' },
+    { id: 'lost', phase: 'running', domain: 'lost.numinia.com' },
+  ];
+  const owners = new Map<string, WorldOwner | null>([
+    ['agora-plaza', owner('acc_team_numen_games', 'Numen Games')],
+    ['bosque', owner('acc_t_reset', 'Reset')],
+    ['old-plaza', owner('acc_t_reset', 'Reset')],
+    ['tower', owner('acc_t_house', 'Numen Games')],
+    ['demo', null],
+  ]);
+
+  it('lists placed worlds only, once each, never one being deleted', () => {
+    const cards = worldCards({ fleet, owners, communities: [HOUSE, RESET] });
+    expect(cards.map((card) => card.id)).toEqual(['agora-plaza', 'tower', 'bosque']);
+  });
+
+  it('says only what it was told: no count, no picture, the id for a name', () => {
+    const [agora, tower, bosque] = worldCards({ fleet, owners, communities: [HOUSE, RESET] });
+    expect(agora).toEqual({
+      id: 'agora-plaza',
+      name: 'agora-plaza',
+      state: 'on',
+      inside: null,
+      cover: null,
+      url: 'https://agora.numen.games/',
+      community: { id: 'numen-games', name: 'Numen Games' },
+      city: true,
+    });
+    expect(tower).toMatchObject({ state: 'works', url: null, city: true });
+    expect(bosque).toMatchObject({
+      state: 'off',
+      city: false,
+      community: { id: 'reset', name: 'Reset' },
+    });
+  });
+
+  it('names an owner the register lacks by the till’s own name', () => {
+    const [card] = worldCards({
+      fleet: [{ id: 'x', phase: 'running', domain: 'x.numinia.com' }],
+      owners: new Map([['x', owner('acc_t_unknown', 'Somebody')]]),
+      communities: [HOUSE],
+    });
+    expect(card?.community).toEqual({ id: null, name: 'Somebody' });
+    expect(card?.city).toBe(false);
+  });
+
+  it('takes the count and the face the worlds gave, the picture only from the world itself', () => {
+    const cards = worldCards({
+      fleet,
+      owners,
+      communities: [HOUSE, RESET],
+      inside: { bosque: 4, 'agora-plaza': null, tower: 0 },
+      faces: {
+        'agora-plaza': { title: 'La Plaza del Ágora', image: 'https://agora.numen.games/p.webp' },
+        bosque: { title: null, image: 'https://elsewhere.example/p.webp' },
+        tower: { title: 'Torre', image: 'https://tower/p.webp' },
+      },
+    });
+    const byId = Object.fromEntries(cards.map((card) => [card.id, card]));
+    expect(byId['agora-plaza']).toMatchObject({
+      name: 'La Plaza del Ágora',
+      cover: 'https://agora.numen.games/p.webp',
+      inside: null,
+    });
+    expect(byId['bosque']).toMatchObject({ name: 'bosque', cover: null, inside: 4 });
+    expect(byId['tower']).toMatchObject({ name: 'tower', cover: null, inside: 0 });
+    // The ones with people first.
+    expect(cards[0]?.id).toBe('bosque');
+  });
+
+  it('puts the city’s first between equals, then orders by name', () => {
+    const cards = worldCards({
+      fleet: [
+        { id: 'b', phase: 'running', domain: 'b.numinia.com' },
+        { id: 'a', phase: 'running', domain: 'a.numinia.com' },
+        { id: 'c', phase: 'running', domain: 'c.numinia.com' },
+      ],
+      owners: new Map([
+        ['a', owner('acc_t_reset')],
+        ['b', owner('acc_t_reset')],
+        ['c', owner('acc_t_house')],
+      ]),
+      communities: [HOUSE, RESET],
+    });
+    expect(cards.map((card) => card.id)).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('filters', () => {
+  const [withPeople, city, community] = worldCards({
+    fleet: [
+      { id: 'busy', phase: 'running', domain: 'busy.numinia.com' },
+      { id: 'agora', phase: 'running', domain: 'agora.numinia.com' },
+      { id: 'quiet', phase: 'stopped', domain: 'quiet.numinia.com' },
+    ],
+    owners: new Map([
+      ['busy', owner('acc_t_reset')],
+      ['agora', owner('acc_t_house')],
+      ['quiet', owner('acc_t_reset')],
+    ]),
+    communities: [HOUSE, RESET],
+    inside: { busy: 2, agora: 0 },
+  });
+
+  it('says which filters a card answers to', () => {
+    expect(filtersOf(withPeople!)).toEqual(['all', 'people', 'communities']);
+    expect(filtersOf(city!)).toEqual(['all', 'city']);
+    expect(filtersOf(community!)).toEqual(['all', 'communities']);
+  });
+
+  it('draws a chip only when some world answers to it, «all» always', () => {
+    expect(worldFilters([withPeople!, city!, community!])).toEqual([
+      { id: 'all', count: 3 },
+      { id: 'people', count: 1 },
+      { id: 'city', count: 1 },
+      { id: 'communities', count: 2 },
+    ]);
+    expect(worldFilters([community!])).toEqual([
+      { id: 'all', count: 1 },
+      { id: 'communities', count: 1 },
+    ]);
+    expect(worldFilters([])).toEqual([{ id: 'all', count: 0 }]);
+  });
+});

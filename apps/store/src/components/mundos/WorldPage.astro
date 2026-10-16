@@ -5,13 +5,23 @@
  * reads GET /api/mundos/<id>: whose it is and, for people of its
  * organization, the «Administración» block. Rendered on demand like the
  * Codex's chapters: a world's id is a fleet's, not a build's.
+ *
+ * v3 (cut C): the world is shown with the same card as in the index of
+ * worlds (/mundos/) — its picture, its state, who is inside when the world
+ * says so and its community — without the card's own buttons (the island
+ * below has «Entrar»). A world the index does not list (nobody placed it
+ * yet) shows no card: the island says what it can.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AHORA_UI } from '../../i18n/ahora';
 import { MUNDOS_UI } from '../../i18n/mundos';
 import { localeHref } from '../../lib/app-nav';
 import { runtimeEnv } from '../../lib/runtime-env';
+import { loadWorldIndex } from './world-index-data';
+import WorldCard from './WorldCard.astro';
 import { WorldView } from './WorldView';
+import '../../styles/communities.css';
 import '../saldo/saldo.css';
 import './mundo.css';
 
@@ -22,15 +32,30 @@ interface Props {
 
 const { locale, worldId } = Astro.props;
 const words = MUNDOS_UI[locale].page;
+const a = AHORA_UI[locale];
 // Under DATA_SOURCE=fixture the «IA» section talks to an in-memory door, not a real world.
 const fixture = runtimeEnv()['DATA_SOURCE'] === 'fixture';
+const index = await loadWorldIndex();
+const card = index.ok ? index.cards.find((entry) => entry.id === worldId) : undefined;
 ---
 
-<BaseLayout locale={locale} title={`${worldId} — Numinia`} description={words.eyebrow} wide>
+<BaseLayout locale={locale} title={`${card?.name ?? worldId} — Numinia`} description={words.eyebrow} wide>
   <header class="mundo-cabecera">
+    <p class="migas">
+      <a href={localeHref(locale, '/mundos/')} data-metric="world-page-index">{a.worldsTitle}</a>
+      {' / '}
+      <span class="mono">{worldId}</span>
+    </p>
     <p class="etiqueta">{words.eyebrow}</p>
     <h1 class="display-m mono" data-world-id>{worldId}</h1>
   </header>
+  {
+    card && (
+      <div class="mundo-tarjeta" data-world-page-card>
+        <WorldCard card={card} locale={locale} actions={false} heading="h2" />
+      </div>
+    )
+  }
   <WorldView
     client:load
     worldId={worldId}
@@ -40,3 +65,13 @@ const fixture = runtimeEnv()['DATA_SOURCE'] === 'fixture';
     fixture={fixture}
   />
 </BaseLayout>
+
+<style>
+  .mundo-cabecera .migas {
+    margin: 0 0 var(--s3);
+  }
+  .mundo-tarjeta {
+    max-width: 560px;
+    margin: 0 0 var(--s5);
+  }
+</style>

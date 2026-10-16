@@ -34,6 +34,8 @@ const PAGES = [
   '/es/rituals/numinia-anniversary-2026/', // the world stage, with a real world
   '/es/rituals/trg26/', // the world stage, home still to open
   '/es/communities/trgcon/', // the follow button and the home card
+  '/es/mundos/', // the index of worlds (v3 «Ahora y Mundos»): cards, filters, state tooltips
+  '/es/mundos/agora-plaza/', // a world's page with its card
   '/es/lap/',
   '/es/lap/character/',
   '/es/lap/codex/', // gated: what axe sees is the door, which must be accessible too
@@ -188,6 +190,8 @@ const SHELL_PAGES = [
   '/',
   '/es/',
   '/es/communities/',
+  '/es/mundos/',
+  '/es/bazaar/',
   '/es/lap/',
   '/es/legal/cookies/',
   '/updates/',

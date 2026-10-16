@@ -223,62 +223,61 @@ const laterParts = a.laterInCity.split('{x}');
   )
 }
 
-<script is:inline>
-  (function () {
-    /* One slide at a time: the arrows step through the slides that may show
-       (an encounter always; a world only while the live count says someone
-       is inside), wrapping at the ends. Nothing advances by itself. */
-    var root = document.getElementById('destacado');
-    if (!root) return;
-    var all = [].slice.call(root.querySelectorAll('[data-featured-slide]'));
-    var pie = root.querySelector('[data-featured-pie]');
-    var count = root.querySelector('[data-featured-count]');
-    var label = root.getAttribute('data-slide-of') || '{n} / {m}';
-    var current = null;
-    var touched = false;
-    function shown() {
-      return all.filter(function (slide) {
-        return !slide.hasAttribute('data-live-slide') || slide.getAttribute('data-live') === '1';
-      });
-    }
-    function show(slide) {
-      var list = shown();
-      if (list.indexOf(slide) === -1) slide = list[0];
-      if (!slide) return;
-      all.forEach(function (s) {
-        s.hidden = s !== slide;
-      });
+<script>
+  /* One slide at a time: the arrows step through the slides that may show
+     (an encounter always; a world only while the live count says someone is
+     inside), wrapping at the ends. Nothing advances by itself. */
+  type Inside = Readonly<Record<string, number | null>>;
+  const root = document.getElementById('destacado');
+  if (root) {
+    const all = [...root.querySelectorAll<HTMLElement>('[data-featured-slide]')];
+    const pie = root.querySelector<HTMLElement>('[data-featured-pie]');
+    const count = root.querySelector<HTMLElement>('[data-featured-count]');
+    const label = root.dataset.slideOf ?? '{n} / {m}';
+    let current: HTMLElement | undefined;
+    let touched = false;
+    const shown = (): HTMLElement[] =>
+      all.filter((slide) => slide.dataset.liveSlide === undefined || slide.dataset.live === '1');
+    const show = (wanted: HTMLElement | undefined): void => {
+      const list = shown();
+      const slide = wanted !== undefined && list.includes(wanted) ? wanted : list[0];
+      if (slide === undefined) return;
+      for (const other of all) other.hidden = other !== slide;
       current = slide;
-      var n = list.indexOf(slide) + 1;
-      slide.setAttribute('aria-label', label.replace('{n}', n).replace('{m}', list.length));
-      root.setAttribute('data-current', String(all.indexOf(slide)));
-      if (count) count.textContent = n + ' / ' + list.length;
+      const n = list.indexOf(slide) + 1;
+      slide.setAttribute('aria-label', label.replace('{n}', String(n)).replace('{m}', String(list.length)));
+      root.dataset.current = String(all.indexOf(slide));
+      if (count) count.textContent = `${n} / ${list.length}`;
       if (pie) pie.hidden = list.length < 2;
-    }
-    root.querySelectorAll('[data-featured-step]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var list = shown();
-        var step = Number(button.getAttribute('data-featured-step'));
-        var at = (list.indexOf(current) + step + list.length) % list.length;
+    };
+    const live = (inside: Inside): void => {
+      let first: HTMLElement | undefined;
+      for (const slide of all) {
+        const id = slide.dataset.liveSlide;
+        if (id === undefined) continue;
+        const n = inside[id];
+        const open = typeof n === 'number' && n > 0;
+        slide.dataset.live = open ? '1' : '0';
+        if (open && first === undefined) first = slide;
+      }
+      show(!touched && first !== undefined ? first : current);
+    };
+    for (const button of root.querySelectorAll<HTMLElement>('[data-featured-step]')) {
+      button.addEventListener('click', () => {
+        const list = shown();
+        const at = current === undefined ? 0 : list.indexOf(current);
         touched = true;
-        show(list[at]);
+        show(list[(at + Number(button.dataset.featuredStep) + list.length) % list.length]);
       });
-    });
-    document.addEventListener('numinia:inside', function (event) {
-      var inside = (event && event.detail) || {};
-      var first = null;
-      all.forEach(function (slide) {
-        var id = slide.getAttribute('data-live-slide');
-        if (!id) return;
-        var n = inside[id];
-        var open = typeof n === 'number' && n > 0;
-        slide.setAttribute('data-live', open ? '1' : '0');
-        if (open && !first) first = slide;
-      });
-      show(!touched && first ? first : current);
+    }
+    // The live count (InsideCount.astro) may have been read before this ran, or arrive later.
+    document.addEventListener('numinia:inside', (event) => {
+      if (event instanceof CustomEvent) live((event.detail ?? {}) as Inside);
     });
     show(shown()[0]);
-  })();
+    const read = document.documentElement.dataset.insideRead;
+    if (read) live(JSON.parse(read) as Inside);
+  }
 </script>
 
 <style>

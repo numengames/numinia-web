@@ -1,0 +1,8 @@
+---
+import WorldsIndex from '../../../components/mundos/WorldsIndex.astro';
+
+// The fleet is read now, like a world's own page: its worlds are not a build's.
+export const prerender = false;
+---
+
+<WorldsIndex locale="pt-br" />

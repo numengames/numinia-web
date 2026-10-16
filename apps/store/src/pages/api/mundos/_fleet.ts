@@ -12,6 +12,7 @@ import { readMachine, type MachineView } from '../../../lib/fleet';
 import { runtimeBinding } from '../../../lib/runtime-env';
 import { FLEET_MACHINES } from '../../../lib/worlds';
 import { fleetWorldHosts, fleetWorldIds } from '../../../lib/worlds-homes';
+import type { FleetEntry } from '../../../lib/world-index';
 
 export const desk = () =>
   accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE });
@@ -43,4 +44,20 @@ export async function fleetWorlds(): Promise<{
 }> {
   const { views, legacy } = await fleet();
   return { ids: fleetWorldIds(views, legacy), hosts: fleetWorldHosts(views, legacy) };
+}
+
+/**
+ * Every world the fleet lists, as the index of worlds (/mundos/) reads it:
+ * its id, its phase and its address; a world run by hand names no phase.
+ */
+export async function fleetEntries(): Promise<readonly FleetEntry[]> {
+  const { views, legacy } = await fleet();
+  return [
+    ...views.flatMap((view) =>
+      view.open
+        ? view.worlds.map((world) => ({ id: world.id, phase: world.phase, domain: world.domain }))
+        : [],
+    ),
+    ...legacy.map((world) => ({ id: world.id, phase: null, domain: world.domain ?? null })),
+  ];
 }
