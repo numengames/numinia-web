@@ -449,6 +449,71 @@ describe('GET /api/saldo/statement', () => {
     );
     expect(broken.status).toBe(502);
   });
+
+  it('carries what a till of this cut adds: the split, each world, the minutes, the pace and the tariff', async () => {
+    const added = {
+      spend: [{ bucket: '2026-10-13', cents: 12, runningCents: 10, stoppedCents: 2 }],
+      lines: [
+        {
+          id: 'L2',
+          kind: 'world_day',
+          at: 'a',
+          amountCents: -12,
+          day: '2026-10-13',
+          worldId: 'agora',
+          size: '2g',
+          minutesRunning: 960,
+          minutesStopped: 480,
+        },
+      ],
+      worlds: [{ worldId: 'agora', size: '2g', daysRunning: 1, cents: 12 }],
+      pace: { sevenDaysCents: 12, monthCents: 12, monthWorlds: 1 },
+      tariff: {
+        startsOn: '2026-10-13',
+        sizes: { '2g': { runningCentsPerDay: 60, stoppedCentsPerDay: 5 } },
+        rules: { keepDaysAtZero: 90, noticeDaysForRise: 30 },
+      },
+    };
+    const desk = fakeDesk({ statement: async () => ({ ...STATEMENT, ...added }) });
+    const body = (await (await answerStatement(desk, ME, url('cuenta=acc'), quiet)).json()) as {
+      statement: Record<string, unknown>;
+    };
+    expect(body.statement['spend']).toEqual(added.spend);
+    expect(body.statement['worlds']).toEqual(added.worlds);
+    expect(body.statement['pace']).toEqual(added.pace);
+    expect(body.statement['tariff']).toEqual(added.tariff);
+    expect(body.statement['lines']).toEqual([
+      {
+        kind: 'world_day',
+        at: 'a',
+        amountCents: -12,
+        day: '2026-10-13',
+        worldId: 'agora',
+        size: '2g',
+        minutesRunning: 960,
+        minutesStopped: 480,
+      },
+    ]);
+    // A till before this cut: none of it, and the answer is the same as ever.
+    const before = (await (
+      await answerStatement(fakeDesk(), ME, url('cuenta=acc'), quiet)
+    ).json()) as {
+      statement: Record<string, unknown>;
+    };
+    expect(before.statement).not.toHaveProperty('worlds');
+    expect(before.statement).not.toHaveProperty('pace');
+    expect(before.statement).not.toHaveProperty('tariff');
+    // Mistyped, the answer is out of shape, as any other field would be.
+    const mistyped = await answerStatement(
+      fakeDesk({
+        statement: async () => ({ ...STATEMENT, ...added, pace: { sevenDaysCents: '12' } }),
+      }),
+      ME,
+      url('cuenta=acc'),
+      quiet,
+    );
+    expect(mistyped.status).toBe(502);
+  });
 });
 
 describe('GET /api/saldo/roles and /api/saldo/log', () => {

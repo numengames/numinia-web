@@ -131,35 +131,125 @@ test('your own account: the balance, the low-balance warning, usage and movement
   await expect(page.locator('[data-metric="nav-saldo"]')).toBeVisible();
 });
 
-test('switching to an organization shows its balance and its team', async ({ page }) => {
+/** What a till of this cut adds to the personal statement: the split, the worlds, the minutes, the pace, the tariff. */
+function statementOfThisCut() {
+  const { statement, ...rest } = statementOf(PERSONAL);
+  const day = (daysAgo: number, world: string, size: string, running: number, amount: number) => ({
+    kind: 'world_day',
+    at: `${today(daysAgo - 1)}T00:30:00.000Z`,
+    amountCents: amount,
+    day: today(daysAgo),
+    worldId: world,
+    size,
+    minutesRunning: running,
+    minutesStopped: 1440 - running,
+  });
+  return {
+    ...rest,
+    statement: {
+      ...statement,
+      spend: [
+        { bucket: today(2), cents: 68, runningCents: 60, stoppedCents: 8 },
+        { bucket: today(1), cents: 3, runningCents: 0, stoppedCents: 3 },
+      ],
+      spendTotalCents: 71,
+      lines: [
+        day(1, 'taller', '1g', 0, -3),
+        day(2, 'agora', '4g', 720, -65),
+        day(2, 'taller', '1g', 0, -3),
+        { kind: 'topup', at: `${today(20)}T10:00:00.000Z`, amountCents: 1000, vatCents: 210 },
+      ],
+      worlds: [
+        { worldId: 'agora', size: '4g', daysRunning: 1, cents: 65 },
+        { worldId: 'taller', size: '1g', daysRunning: 0, cents: 6 },
+      ],
+      pace: { sevenDaysCents: 71, monthCents: 71, monthWorlds: 2 },
+      tariff: {
+        startsOn: today(40),
+        sizes: {
+          '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 },
+          '1g': { runningCentsPerDay: 30, stoppedCentsPerDay: 3 },
+        },
+        rules: { keepDaysAtZero: 90, noticeDaysForRise: 30 },
+      },
+    },
+  };
+}
+
+test('a till of this cut: runway, this month, stacked bars, worlds, the balance after each line and the rules', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.route('**/api/saldo/statement?*', (route: Route) =>
+    route.fulfill({ json: statementOfThisCut() }),
+  );
+  await page.goto('/es/saldo/');
+  await expect(page.locator('[data-saldo-runway]')).toContainText(
+    'Te da para unos 41 días al ritmo de los últimos 7 días',
+  );
+  await expect(page.locator('[data-saldo-month]')).toHaveText(/0,71\s€/);
+  await expect(page.locator('[data-saldo-month-worlds]')).toContainText('2 sedes con cargo');
+  const chart = page.locator('[data-saldo-chart]');
+  await expect(chart).toHaveAttribute('data-saldo-stacked', '');
+  await expect(chart.locator('[data-saldo-bar]')).toHaveCount(30);
+  const busiest = chart.locator('[data-saldo-bar] title', { hasText: '0,68' });
+  await expect(busiest).toContainText(/encendida 0,60\s€/);
+  await expect(busiest).toContainText(/apagada 0,08\s€/);
+  await expect(page.locator('[data-saldo-legend]')).toBeVisible();
+  const worlds = page.locator('[data-saldo-worlds] tbody tr');
+  await expect(worlds).toHaveCount(2);
+  await expect(worlds.first().locator('td')).toHaveText(['agora', '4g', '1', /0,65\s€/]);
+  await expect(page.locator('[data-saldo-after]')).toHaveText([
+    /4,20\s€/,
+    /4,23\s€/,
+    /4,88\s€/,
+    /4,91\s€/,
+  ]);
+  const rules = page.locator('[data-saldo-rules]');
+  await expect(rules).toContainText(/0,30\s€ al día encendida y 0,03\s€ apagada/);
+  await expect(rules).toContainText(/1,20\s€ al día encendida y 0,10\s€ apagada/);
+  await expect(rules).toContainText('Es tu cuenta personal: solo tú recargas y ves estos datos');
+});
+
+test('a till before this cut: one-colour bars, no table of worlds, no runway and no rules', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/es/saldo/');
+  await expect(page.locator('[data-saldo-chart]')).toBeVisible();
+  await expect(page.locator('[data-saldo-chart]')).not.toHaveAttribute('data-saldo-stacked', '');
+  await expect(page.locator('[data-saldo-legend]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-worlds]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-runway]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-rules]')).toHaveCount(0);
+  // The movements still carry the balance after each line.
+  await expect(page.locator('[data-saldo-after]').first()).toHaveText(/4,20\s€/);
+});
+
+test('switching to an organization shows its balance and the way to its members, not a Team section', async ({
+  page,
+}) => {
   await signedIn(page);
   await page.goto('/es/saldo/');
   await page.locator('#saldo-cuenta').selectOption('acc_t');
   await expect(page.locator('[data-saldo-balance]')).toHaveText(/18,80\s€/);
   await expect(page.locator('[data-saldo-low]')).toHaveCount(0);
-  const team = page.locator('[data-saldo-team]');
-  await expect(team).toBeVisible();
-  await expect(team.locator('tbody tr')).toHaveCount(2);
-  await expect(team).toContainText('(tú)');
+  await expect(page.locator('[data-saldo-team]')).toHaveCount(0);
+  const link = page.locator('[data-saldo-members-link] a');
+  await expect(link).toHaveText('Miembros y roles');
+  await expect(link).toHaveAttribute('href', '/es/panel/miembros/?org=acc_t');
 });
 
-test('a member sees only what the roles let them do, and who could do the rest', async ({
+test('a member who may top up sees the top-up, and the members of the organization are a link away', async ({
   page,
 }) => {
   await signedIn(page, MEMBER_ACCESS);
   await page.goto('/es/saldo/');
   await page.locator('#saldo-cuenta').selectOption('acc_t');
-  const team = page.locator('[data-saldo-team]');
-  await expect(team).toBeVisible();
-  // Every member may top up and leave; nothing else is offered.
-  await expect(page.locator('[data-metric="saldo-pay"]')).toBeVisible();
-  await expect(team.locator('[data-metric="saldo-rename"]')).toHaveCount(0);
-  await expect(team.locator('[data-metric="saldo-member-add"]')).toHaveCount(0);
-  await expect(team.locator('[data-metric="saldo-member-role"]')).toHaveCount(0);
-  await expect(team.locator('[data-metric="saldo-member-remove"]')).toHaveCount(1);
-  await expect(team.locator('[data-metric="saldo-member-remove"]')).toHaveText('Salir');
-  await expect(team.locator('[data-saldo-no-invite]')).toContainText('«Invitar»');
-  await expect(team.locator('[data-saldo-no-invite]')).toContainText('Administration y Finance');
+  await expect(page.locator('[data-saldo-kpi="balance"] [data-metric="saldo-pay"]')).toBeVisible();
+  await expect(page.locator('[data-metric="saldo-rename"]')).toHaveCount(0);
+  await expect(page.locator('[data-metric="saldo-member-add"]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-members-link]')).toBeVisible();
 });
 
 test('without the top-up permission the form is replaced by the sentence that says who has it', async ({
@@ -204,14 +294,14 @@ test('the way back confirms the payment and shows the new balance', async ({ pag
 });
 
 for (const colorScheme of ['dark', 'light'] as const) {
-  test(`the signed-in panel, with an organization's team, passes axe (${colorScheme})`, async ({
+  test(`the signed-in panel, for an organization, passes axe (${colorScheme})`, async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme });
     await signedIn(page);
     await page.goto('/es/saldo/');
     await page.locator('#saldo-cuenta').selectOption('acc_t');
-    await expect(page.locator('[data-saldo-team]')).toBeVisible();
+    await expect(page.locator('[data-saldo-members-link]')).toBeVisible();
     await page.evaluate(() =>
       Promise.all(
         document

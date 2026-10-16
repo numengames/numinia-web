@@ -356,6 +356,60 @@ describe('reading the API in the browser', () => {
     expect(readYou(null)).toBeNull();
   });
 
+  it('reads what a till of this cut adds, and drops any of it that is out of shape', () => {
+    const statement = {
+      account: ACCOUNT,
+      balanceCents: 420,
+      lowBalance: true,
+      lots: [],
+      spend: [{ bucket: '2026-10-13', cents: 68, runningCents: 60, stoppedCents: 8 }],
+      spendTotalCents: 68,
+      lines: [
+        {
+          kind: 'world_day',
+          at: '2026-10-14T00:30:00.000Z',
+          amountCents: -65,
+          day: '2026-10-13',
+          worldId: 'agora',
+          size: '4g',
+          minutesRunning: 720,
+          minutesStopped: 720,
+        },
+      ],
+      worlds: [{ worldId: 'agora', size: '4g', daysRunning: 1, cents: 65 }],
+      pace: { sevenDaysCents: 65, monthCents: 65, monthWorlds: 1 },
+      tariff: {
+        startsOn: '2026-10-13',
+        sizes: { '4g': { runningCentsPerDay: 120, stoppedCentsPerDay: 10 } },
+        rules: { keepDaysAtZero: 90, noticeDaysForRise: 30 },
+      },
+    };
+    expect(readStatement({ statement })).toEqual(statement);
+    // A till before this cut sends none of it: the statement is read all the same.
+    const { worlds, pace, tariff, ...before } = statement;
+    expect([worlds, pace, tariff].every(Boolean)).toBe(true);
+    expect(readStatement({ statement: before })).toEqual(before);
+    // Out of shape, each is dropped on its own and the rest is kept.
+    const dropped = readStatement({
+      statement: {
+        ...statement,
+        worlds: [{ worldId: 'agora', size: '4g', daysRunning: '1', cents: 65 }],
+        pace: { sevenDaysCents: 65 },
+        tariff: { ...statement.tariff, sizes: { '4g': { runningCentsPerDay: 'x' } } },
+      },
+    });
+    expect(dropped).toEqual(before);
+    expect(
+      readStatement({ statement: { ...statement, worlds: 'x', pace: null, tariff: [] } }),
+    ).toEqual(before);
+    expect(
+      readStatement({ statement: { ...statement, tariff: { ...statement.tariff, rules: {} } } }),
+    ).not.toHaveProperty('tariff');
+    expect(
+      readStatement({ statement: { ...statement, tariff: { ...statement.tariff, startsOn: 7 } } }),
+    ).not.toHaveProperty('tariff');
+  });
+
   it('reads a POST’s result, or nothing', () => {
     expect(readResult({ result: { ok: true, url: 'u' } })).toEqual({ ok: true, url: 'u' });
     expect(readResult({ result: { ok: false, problems: ['a', 1] } })).toEqual({
