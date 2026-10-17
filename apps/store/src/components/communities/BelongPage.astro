@@ -1,12 +1,13 @@
 ---
 /**
  * «Perteneces» (/belong/, the app shell v0.83.0): your communities and what
- * happens in them. «Sigues» lists the communities this browser follows —
- * the list lives in `numinia-follows` (written by the «Seguir» button), and
- * the little each card needs is embedded here as JSON at build, so nothing
- * is asked of a server. «Perteneces a»: membership does not exist yet —
- * signed out, a door to sign in; signed in (the page's one session read,
- * `data-session-in/out`), one plain sentence that it will appear here.
+ * happens in them. «Sigues» lists the communities your account follows —
+ * the till keeps them (cut «Seguir», GET /api/follow), and the little each
+ * card needs is embedded here as JSON at build, so the page only asks for
+ * the ids once a session is in; each card has a quiet «Dejar de seguir».
+ * «Perteneces a»: membership does not exist yet — signed out, a door to sign
+ * in; signed in (the page's one session read, `data-session-in/out`), one
+ * plain sentence that it will appear here.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -56,6 +57,11 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
           <span class="small texto-2"><span data-next-when></span><span class="falta" data-countdown></span></span>
         </p>
         <p class="small texto-2" data-none>{ui.toAnnounce}</p>
+        <p class="dejar">
+          <button type="button" class="btn btn-fantasma btn-sm" data-unfollow data-metric="belong-unfollow">
+            {ui.unfollow}
+          </button>
+        </p>
       </li>
     </template>
     <script
@@ -91,45 +97,169 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
     </p>
   </section>
 
-  <script is:inline data-follows-key={FOLLOWS_KEY}>
-    /* «Sigues»: the ids this browser keeps, drawn from the entries embedded
-       at build (text only, never markup). «Perteneces a»: the session read
-       as the LAP reads it; a signed-in visitor sees the sentence, not the door. */
+  <script is:inline data-follows-key={FOLLOWS_KEY} data-follow-words={JSON.stringify({ unfollowed: ui.unfollowed, failed: ui.followFailed })}>
+    /* «Sigues»: the ids the till keeps for your account (GET /api/follow once
+       the chrome says the session is in), drawn from the entries embedded at
+       build (text only, never markup). «Dejar de seguir» POSTs the change and
+       takes the card away. The list this browser used to keep
+       (`numinia-follows`) is carried over once, as the community page does:
+       each id POSTed, the key cleared only when every one went through. */
     (function () {
-      var key = document.currentScript.getAttribute('data-follows-key');
-      var ids = [];
-      try {
-        var stored = JSON.parse(localStorage.getItem(key) || '[]');
-        if (Array.isArray(stored)) ids = stored;
-      } catch (e) {}
+      var script = document.currentScript;
+      var key = script.getAttribute('data-follows-key');
+      var words = JSON.parse(script.getAttribute('data-follow-words'));
       var data = document.querySelector('[data-follows-data]');
       var entries = data ? JSON.parse(data.textContent || '[]') : [];
       var list = document.querySelector('[data-follows-list]');
+      var empty = document.querySelector('[data-follows-empty]');
       var template = document.querySelector('[data-follow-card]');
-      var shown = entries.filter(function (entry) {
-        return ids.indexOf(entry.id) >= 0;
-      });
-      if (list && template && shown.length > 0) {
+      var toast = null;
+      var hide = 0;
+
+      function signedIn() {
+        return document.documentElement.getAttribute('data-session') === 'in';
+      }
+      function say(text, tone) {
+        if (!toast) {
+          toast = document.createElement('p');
+          toast.className = 'aviso';
+          toast.setAttribute('role', 'status');
+          document.body.appendChild(toast);
+        }
+        toast.setAttribute('data-tono', tone);
+        toast.textContent = text;
+        toast.hidden = false;
+        clearTimeout(hide);
+        hide = setTimeout(function () {
+          toast.hidden = true;
+        }, 4000);
+      }
+      function read(response) {
+        return response.ok ? response.json() : Promise.resolve(null);
+      }
+      function post(communityId, on) {
+        return fetch('/api/follow', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ communityId: communityId, on: on }),
+        }).then(read);
+      }
+      function stored() {
+        try {
+          var kept = JSON.parse(localStorage.getItem(key) || '[]');
+          return Array.isArray(kept)
+            ? kept.filter(function (entry) {
+                return typeof entry === 'string';
+              })
+            : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      function carryOver() {
+        var ids = stored();
+        if (ids.length === 0) return Promise.resolve();
+        return ids
+          .reduce(function (chain, communityId) {
+            return chain.then(function (allOk) {
+              return post(communityId, true)
+                .then(function (view) {
+                  return allOk && view !== null;
+                })
+                .catch(function () {
+                  return false;
+                });
+            });
+          }, Promise.resolve(true))
+          .then(function (allOk) {
+            if (allOk) {
+              try {
+                localStorage.removeItem(key);
+              } catch (e) {}
+            }
+          });
+      }
+      /* The rail's «Tus comunidades» figure, one less when a card goes. */
+      function countDown() {
+        document.querySelectorAll('[data-you-count="communities"]').forEach(function (figure) {
+          var n = parseInt(figure.textContent || '0', 10) - 1;
+          figure.hidden = !(n > 0);
+          figure.textContent = n > 0 ? String(n) : '';
+        });
+      }
+      function card(entry) {
+        var item = template.content.firstElementChild.cloneNode(true);
+        var name = item.querySelector('[data-name]');
+        name.textContent = entry.name;
+        name.setAttribute('href', entry.href);
+        item.querySelector('[data-line]').textContent = entry.line;
+        if (entry.next) {
+          var title = item.querySelector('[data-next-title]');
+          title.textContent = entry.next.title;
+          title.setAttribute('href', entry.next.href);
+          item.querySelector('[data-next-when]').textContent = entry.next.when;
+          item.querySelector('[data-countdown]').setAttribute('data-countdown', entry.next.start);
+          item.querySelector('[data-none]').remove();
+        } else {
+          item.querySelector('[data-next]').remove();
+        }
+        var button = item.querySelector('[data-unfollow]');
+        button.setAttribute('data-unfollow', entry.id);
+        button.setAttribute('aria-label', button.textContent.trim() + ': ' + entry.name);
+        button.addEventListener('click', function () {
+          button.disabled = true;
+          post(entry.id, false)
+            .then(function (view) {
+              if (!view) {
+                say(words.failed, 'aviso');
+                button.disabled = false;
+                return;
+              }
+              item.remove();
+              countDown();
+              if (!list.children.length) {
+                list.hidden = true;
+                empty.hidden = false;
+              }
+              say(words.unfollowed, 'exito');
+            })
+            .catch(function () {
+              say(words.failed, 'aviso');
+              button.disabled = false;
+            });
+        });
+        return item;
+      }
+      function paint(ids) {
+        var shown = entries.filter(function (entry) {
+          return ids.indexOf(entry.id) >= 0;
+        });
+        if (!list || !template || shown.length === 0) return;
         shown.forEach(function (entry) {
-          var card = template.content.firstElementChild.cloneNode(true);
-          var name = card.querySelector('[data-name]');
-          name.textContent = entry.name;
-          name.setAttribute('href', entry.href);
-          card.querySelector('[data-line]').textContent = entry.line;
-          if (entry.next) {
-            var title = card.querySelector('[data-next-title]');
-            title.textContent = entry.next.title;
-            title.setAttribute('href', entry.next.href);
-            card.querySelector('[data-next-when]').textContent = entry.next.when;
-            card.querySelector('[data-countdown]').setAttribute('data-countdown', entry.next.start);
-            card.querySelector('[data-none]').remove();
-          } else {
-            card.querySelector('[data-next]').remove();
-          }
-          list.appendChild(card);
+          list.appendChild(card(entry));
         });
         list.hidden = false;
-        document.querySelector('[data-follows-empty]').hidden = true;
+        empty.hidden = true;
+      }
+      function load() {
+        carryOver()
+          .then(function () {
+            return fetch('/api/follow', { headers: { accept: 'application/json' } });
+          })
+          .then(read)
+          .then(function (view) {
+            if (view && Array.isArray(view.mine)) paint(view.mine);
+          })
+          .catch(function () {});
+      }
+      if (signedIn()) load();
+      else {
+        var watcher = new MutationObserver(function () {
+          if (!signedIn()) return;
+          watcher.disconnect();
+          load();
+        });
+        watcher.observe(document.documentElement, { attributes: true, attributeFilter: ['data-session'] });
       }
     })();
   </script>
@@ -180,6 +310,10 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
   }
   .falta:not(:empty)::before {
     content: ' · ';
+  }
+  /* «Dejar de seguir»: quiet, at the foot of the card. */
+  .dejar {
+    margin-top: var(--s2) !important;
   }
   .puerta {
     flex-wrap: wrap;

@@ -1,7 +1,8 @@
 ---
 /**
- * The counters of your rail (cut I): beside «Tu agenda» and «Tus mundos»,
- * a figure once a session is in — read once per page, one GET each
+ * The counters of your rail (cut I; «Tus comunidades» since cut «Seguir»):
+ * beside «Tus comunidades», «Tu agenda» and «Tus mundos», a figure once a
+ * session is in — read once per page, one GET each
  * (lib/you-counts.ts), painted into every figure the markup has (the rail,
  * the phone's «Tú» sheet). Never a «0», nothing asked signed out.
  *
@@ -25,6 +26,7 @@
     void loadYouCounts((input, init) => fetch(input, init), ends, Date.now()).then((counts) => {
       paintCount(all('[data-you-count="agenda"]'), counts.agenda);
       paintCount(all('[data-you-count="worlds"]'), counts.worlds);
+      paintCount(all('[data-you-count="communities"]'), counts.communities);
     });
   });
 </script>

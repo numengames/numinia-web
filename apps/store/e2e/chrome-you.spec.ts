@@ -4,12 +4,18 @@
  * «Tú» sheet, in the folded rail's tooltips — in five languages, and their
  * counters appear only once there is something to count: how many
  * encounters you are going to that are still ahead (`/api/rsvp`), how many
- * worlds your communities have (`/api/mundos/mine`). Signed out nothing is
- * asked and nothing is shown. The e2e server has no auth secrets, so the
- * session and the two reads are played by the browser (`page.route`).
+ * worlds your communities have (`/api/mundos/mine`) — and, since cut
+ * «Seguir», how many communities you belong to or follow (`/api/follow`,
+ * each counted once). Signed out nothing is asked and nothing is shown. The
+ * e2e server has no auth secrets, so the session and the reads are played
+ * by the browser (`page.route`).
  */
 
+import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
+
+const sha = async (text: string): Promise<string> =>
+  createHash('sha256').update(text).digest('hex');
 
 const WALLET = '0x42e6000000000000000000000000000000ca26';
 /** An encounter still to come when this spec was written (the register's). */
@@ -27,7 +33,12 @@ const LOCALES = [
 
 async function signedIn(
   page: Page,
-  reads: { readonly mine: readonly string[]; readonly worlds: number } | null,
+  reads: {
+    readonly mine: readonly string[];
+    readonly worlds: number;
+    readonly teams?: readonly string[];
+    readonly follows?: readonly string[];
+  } | null,
 ): Promise<{ asked: () => string[] }> {
   const asked: string[] = [];
   await page.route('**/api/auth/session', (route) =>
@@ -44,7 +55,24 @@ async function signedIn(
     asked.push('mine');
     return reads === null
       ? route.fulfill({ status: 401, json: { error: 'signed-out' } })
-      : route.fulfill({ status: 200, json: { ok: true, count: reads.worlds, communities: [] } });
+      : route.fulfill({
+          status: 200,
+          json: {
+            ok: true,
+            count: reads.worlds,
+            communities: (reads.teams ?? []).map((accountId) => ({
+              accountId,
+              name: accountId,
+              worldIds: [],
+            })),
+          },
+        });
+  });
+  await page.route('**/api/follow**', (route) => {
+    asked.push(new URL(route.request().url()).search === '' ? 'follow' : 'follow-ids');
+    return reads === null
+      ? route.fulfill({ status: 401, json: { error: 'signed-out' } })
+      : route.fulfill({ status: 200, json: { mine: reads.follows ?? [], counts: {} } });
   });
   return { asked: () => asked };
 }
@@ -128,13 +156,25 @@ test.describe('the counters', () => {
   test('signed in, each read once; the figures say what is ahead and what your communities have', async ({
     page,
   }) => {
-    const session = await signedIn(page, { mine: [TRG, HELD], worlds: 3 });
+    // The till's id for the community «trgcon» (lib/you-counts.ts derives it the same way):
+    // belonging to it and following it count as one.
+    const trgcon = 'acc_t_' + (await sha('numinia-till community trgcon')).slice(0, 32);
+    const session = await signedIn(page, {
+      mine: [TRG, HELD],
+      worlds: 3,
+      teams: [trgcon, 'acc_t_other'],
+      follows: ['trgcon', 'merge'],
+    });
     await page.goto('/es/');
     const agenda = page.locator('.rail-tu [data-metric="you-agenda"] [data-you-count]');
     const worlds = page.locator('.rail-tu [data-metric="you-worlds"] [data-you-count]');
+    const communities = page.locator(
+      '.rail-tu [data-metric="you-your-communities"] [data-you-count]',
+    );
     await expect(agenda).toBeVisible();
     await expect(agenda).toHaveText('1');
     await expect(worlds).toHaveText('3');
+    await expect(communities).toHaveText('3');
     // The phone sheet's figures are painted too (hidden with the sheet, but written).
     await expect(page.locator('#hoja-tu [data-metric="sheet-worlds"] [data-you-count]')).toHaveText(
       '3',
@@ -145,7 +185,7 @@ test.describe('the counters', () => {
         .asked()
         .filter((read) => read !== 'rsvp-ids')
         .sort(),
-    ).toEqual(['mine', 'rsvp']);
+    ).toEqual(['follow', 'mine', 'rsvp']);
   });
 
   test('never a «0»: with no RSVP ahead and no world the figures stay hidden', async ({ page }) => {
@@ -154,6 +194,9 @@ test.describe('the counters', () => {
     await expect(page.locator('[data-metric="chrome-account"]')).toBeVisible();
     await expect(page.locator('.rail-tu [data-metric="you-agenda"] [data-you-count]')).toBeHidden();
     await expect(page.locator('.rail-tu [data-metric="you-worlds"] [data-you-count]')).toBeHidden();
+    await expect(
+      page.locator('.rail-tu [data-metric="you-your-communities"] [data-you-count]'),
+    ).toBeHidden();
   });
 
   test('a refusal leaves the figures hidden', async ({ page }) => {
@@ -172,6 +215,10 @@ test.describe('the counters', () => {
     });
     await page.route('**/api/mundos/mine', (route) => {
       asked.push('mine');
+      return route.fulfill({ status: 401, json: { error: 'signed-out' } });
+    });
+    await page.route('**/api/follow**', (route) => {
+      asked.push('follow');
       return route.fulfill({ status: 401, json: { error: 'signed-out' } });
     });
     await page.goto('/es/');

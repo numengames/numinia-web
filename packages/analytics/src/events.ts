@@ -240,3 +240,10 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `my-worlds-community` (a community's name, to its page),
 //   `my-worlds-all` (the empty state's link to /mundos/); the cards keep
 //   `worlds-card-*`.
+
+// ---- v3 «Seguir» for real (cut L, 2026-10-17): its data-metric ids --------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - A community's page: `community-follow` stays the toggle («Seguir» /
+//   «Sigues», now written to the till; signed out it is still the door).
+// - «Perteneces» /belong/: `belong-unfollow` («Dejar de seguir» on a followed
+//   community's card); `belong-community` and `belong-ritual` stay.

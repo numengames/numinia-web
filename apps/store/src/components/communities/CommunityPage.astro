@@ -59,7 +59,15 @@ const world = worldOf(community, commons, locale);
 const counted = community.sede !== undefined && sedeDomain(community.sede.href) !== null;
 // The new ritual's draft starts on the day the page was built; the Oracle sets the real one.
 const today = new Date().toISOString().slice(0, 10);
-const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
+const followWords = JSON.stringify({
+  off: ui.follow,
+  on: ui.following,
+  followed: ui.followed,
+  unfollowed: ui.unfollowed,
+  failed: ui.followFailed,
+  one: ui.followerOne,
+  many: ui.followerMany,
+});
 ---
 
 <BaseLayout
@@ -88,7 +96,7 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
           type="button"
           class="btn btn-primario seguir"
           data-follow={community.id}
-          data-follow-labels={followLabels}
+          data-follow-words={followWords}
           data-follow-signin={signInHref(locale, `/communities/${community.id}/`)}
           aria-pressed="false"
           data-metric="community-follow"
@@ -108,6 +116,7 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
             </div>
           )
         }
+        <span class="small texto-2 siguen" data-follow-count={community.id} hidden></span>
       </div>
       {!founder && <ClaimStrip locale={locale} communityId={community.id} />}
     </div>
@@ -314,65 +323,152 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
   <Countdown ui={ui} />
   {counted && <InsideCount ui={ui} />}
   <script is:inline data-follows-key={FOLLOWS_KEY}>
-    /* «Follow»: the community's id in this browser's list (a JSON array),
-       read back by /belong/. Nothing leaves the browser. Without JavaScript
-       the button hides: there is nowhere to keep the choice.
+    /* «Follow» for real (cut «Seguir»): the toggle writes to the till through
+       /api/follow, so «Sigues» means the city remembers it, from any browser.
+       Signed out the button is the door to sign in, coming back here — never
+       a «Sigues» that followed nobody. Who is here is the chrome's one answer,
+       published on `html[data-session]` after load; once it says «in» the
+       page asks /api/follow for this community (am I following, how many do).
 
-       Following takes a session. Without one the button is the door to sign
-       in, coming back here — never a «Sigues» that followed nobody (the live
-       QA pass of 2026-10-17 found exactly that lie, surviving a reload while
-       the rail still said «Entra y se llenan»). Who is here is the chrome's
-       one answer, published on `html[data-session]` after load. */
+       The list this browser used to keep (`numinia-follows`, a JSON array of
+       ids) is carried over once: each id is POSTed, and the key is cleared
+       only when every one of them went through — a till down leaves it for
+       next time. The key stays declared in lib/consent.ts and the cookie
+       notice until this carry-over code goes.
+
+       Without JavaScript the button hides: there is nowhere to act. */
     (function () {
       var key = document.currentScript.getAttribute('data-follows-key');
-      function read() {
+      var button = document.querySelector('button[data-follow]');
+      if (!button) return;
+      var id = button.getAttribute('data-follow');
+      var words = JSON.parse(button.getAttribute('data-follow-words'));
+      var door = button.getAttribute('data-follow-signin');
+      var label = button.querySelector('[data-follow-label]');
+      var counter = document.querySelector('[data-follow-count="' + id + '"]');
+      var toast = null;
+      var hide = 0;
+
+      function signedIn() {
+        return document.documentElement.getAttribute('data-session') === 'in';
+      }
+      function say(text, tone) {
+        if (!toast) {
+          toast = document.createElement('p');
+          toast.className = 'aviso';
+          toast.setAttribute('role', 'status');
+          document.body.appendChild(toast);
+        }
+        toast.setAttribute('data-tono', tone);
+        toast.textContent = text;
+        toast.hidden = false;
+        clearTimeout(hide);
+        hide = setTimeout(function () {
+          toast.hidden = true;
+        }, 4000);
+      }
+      function paint(view) {
+        var on = view.mine.indexOf(id) >= 0;
+        button.setAttribute('aria-pressed', String(on));
+        button.classList.toggle('btn-primario', !on);
+        button.classList.toggle('btn-fantasma', on);
+        label.textContent = on ? words.on : words.off;
+        var n = view.counts[id];
+        var some = typeof n === 'number' && n > 0;
+        if (counter) {
+          counter.hidden = !some;
+          counter.textContent = some ? (n === 1 ? words.one : words.many.replace('{n}', String(n))) : '';
+        }
+      }
+      function read(response) {
+        return response.ok ? response.json() : Promise.resolve(null);
+      }
+      function post(communityId, on) {
+        return fetch('/api/follow', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', accept: 'application/json' },
+          body: JSON.stringify({ communityId: communityId, on: on }),
+        }).then(read);
+      }
+      /* The ids this browser kept before the till knew: each POSTed once. */
+      function stored() {
         try {
           var list = JSON.parse(localStorage.getItem(key) || '[]');
           return Array.isArray(list)
-            ? list.filter(function (id) {
-                return typeof id === 'string';
+            ? list.filter(function (entry) {
+                return typeof entry === 'string';
               })
             : [];
         } catch (e) {
           return [];
         }
       }
-      function signedIn() {
-        return document.documentElement.getAttribute('data-session') === 'in';
+      function carryOver() {
+        var ids = stored();
+        if (ids.length === 0) return Promise.resolve();
+        return ids
+          .reduce(function (chain, communityId) {
+            return chain.then(function (allOk) {
+              return post(communityId, true)
+                .then(function (view) {
+                  return allOk && view !== null;
+                })
+                .catch(function () {
+                  return false;
+                });
+            });
+          }, Promise.resolve(true))
+          .then(function (allOk) {
+            if (allOk) {
+              try {
+                localStorage.removeItem(key);
+              } catch (e) {}
+            }
+          });
       }
-      document.querySelectorAll('[data-follow]').forEach(function (button) {
-        var id = button.getAttribute('data-follow');
-        var labels = JSON.parse(button.getAttribute('data-follow-labels'));
-        var door = button.getAttribute('data-follow-signin');
-        function paint(on) {
-          button.setAttribute('aria-pressed', String(on));
-          button.classList.toggle('btn-primario', !on);
-          button.classList.toggle('btn-fantasma', on);
-          button.querySelector('[data-follow-label]').textContent = on ? labels.on : labels.off;
-        }
-        function sync() {
-          paint(signedIn() && read().indexOf(id) >= 0);
-        }
-        sync();
-        /* The chrome answers who is here after load: repaint when it does. */
-        new MutationObserver(sync).observe(document.documentElement, {
-          attributes: true,
-          attributeFilter: ['data-session'],
+      function load() {
+        carryOver()
+          .then(function () {
+            return fetch('/api/follow?ids=' + id, { headers: { accept: 'application/json' } });
+          })
+          .then(read)
+          .then(function (view) {
+            if (view) paint(view);
+          })
+          .catch(function () {});
+      }
+      if (signedIn()) load();
+      else {
+        /* The chrome answers who is here after load: ask once it says «in». */
+        var watcher = new MutationObserver(function () {
+          if (!signedIn()) return;
+          watcher.disconnect();
+          load();
         });
-        button.addEventListener('click', function () {
-          if (!signedIn()) {
-            window.location.href = door;
-            return;
-          }
-          var list = read();
-          var at = list.indexOf(id);
-          if (at >= 0) list.splice(at, 1);
-          else list.push(id);
-          try {
-            localStorage.setItem(key, JSON.stringify(list));
-          } catch (e) {}
-          paint(at < 0);
-        });
+        watcher.observe(document.documentElement, { attributes: true, attributeFilter: ['data-session'] });
+      }
+      button.addEventListener('click', function () {
+        if (!signedIn()) {
+          window.location.href = door;
+          return;
+        }
+        var on = button.getAttribute('aria-pressed') !== 'true';
+        button.disabled = true;
+        post(id, on)
+          .then(function (view) {
+            if (!view) {
+              say(words.failed, 'aviso');
+              return;
+            }
+            paint(view);
+            say(on ? words.followed : words.unfollowed, 'exito');
+          })
+          .catch(function () {
+            say(words.failed, 'aviso');
+          })
+          .then(function () {
+            button.disabled = false;
+          });
       });
     })();
   </script>
@@ -434,6 +530,13 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
   }
   .acciones-com {
     gap: var(--s3);
+  }
+  /* «N personas la siguen»: a quiet figure beside the links, only when somebody does. */
+  .siguen {
+    margin: 0;
+  }
+  .siguen[hidden] {
+    display: none;
   }
   /* The follow button shows the state you are in: + to follow, ✓ when you do. */
   .seguir .si-no,

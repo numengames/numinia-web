@@ -1,8 +1,9 @@
 /**
  * The communities pages of the app shell (v0.83.0), in a real browser
  * against the built server: «Seguir» without a session is the door to sign
- * in (nothing is followed and no false state is shown), «Perteneces» lists
- * what this browser follows, the door «Perteneces a» shows a visitor without
+ * in (nothing is followed and no false state is shown), «Perteneces» shows
+ * its empty «Sigues» to a visitor without a session (the list lives in the
+ * account since cut «Seguir»: e2e/follows.spec.ts), the door «Perteneces a» shows a visitor without
  * a session, and the retired city addresses landing on «Cómo funciona» in
  * their own locale.
  */
@@ -29,23 +30,16 @@ test('without a session, «Seguir» is the door to sign in and nothing is follow
   await expect(follow).toContainText('Seguir');
 });
 
-test('«Perteneces» lists what this browser follows', async ({ page }) => {
-  // The list itself, seeded as a signed-in browser would have left it
-  // (following needs a session; the list only reads the browser's own).
+test('without a session, «Sigues» is empty and the browser list is not read', async ({ page }) => {
   await page.goto('/es/belong/');
   await page.evaluate(() => localStorage.setItem('numinia-follows', '["trgcon"]'));
   await page.reload();
-  const card = page.locator('[data-follows-list] .seguida');
-  await expect(card).toHaveCount(1);
-  await expect(card.locator('h3 a')).toHaveAttribute('href', '/es/communities/trgcon/');
-  await expect(card.locator('[data-next-title]')).toHaveAttribute('href', '/es/rituals/trg26/');
-  await expect(page.locator('[data-follows-empty]')).toBeHidden();
-
-  // And back: an empty list says so.
-  await page.evaluate(() => localStorage.removeItem('numinia-follows'));
-  await page.reload();
+  await page.waitForLoadState('networkidle');
   await expect(page.locator('[data-follows-empty]')).toBeVisible();
   await expect(page.locator('[data-follows-list]')).toBeHidden();
+  // Not carried over either: that takes a session.
+  expect(await page.evaluate(() => localStorage.getItem('numinia-follows'))).toBe('["trgcon"]');
+  await page.evaluate(() => localStorage.removeItem('numinia-follows'));
 });
 
 test('without a session, «Perteneces a» is a door to sign in that comes back here', async ({

@@ -147,6 +147,9 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
                   <span class="rail-n mono" data-you-count="agenda" data-ritual-ends={ends} hidden />
                 )}
                 {item.id === 'worlds' && <span class="rail-n mono" data-you-count="worlds" hidden />}
+                {item.id === 'your-communities' && (
+                  <span class="rail-n mono" data-you-count="communities" hidden />
+                )}
               </a>
             </li>
           );
