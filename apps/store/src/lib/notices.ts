@@ -39,8 +39,8 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 /** An encounter is announced this far ahead, and «Entrar» appears this close. */
-export const ENCOUNTER_AHEAD_MS = 14 * DAY_MS;
-export const ENCOUNTER_SOON_MS = 2 * HOUR_MS;
+const ENCOUNTER_AHEAD_MS = 14 * DAY_MS;
+const ENCOUNTER_SOON_MS = 2 * HOUR_MS;
 
 /** A template with `{subject}` split around it. */
 export function parts(template: string, subject: string): Notice['text'] {

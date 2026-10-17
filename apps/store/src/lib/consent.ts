@@ -50,6 +50,9 @@ export const STORED_KEYS = [
   // visitor follows (the follow button on a community's page writes it).
   'numinia-sidebar',
   'numinia-follows',
+  // «Avisos» (v0.120.0): the newest notice you saw, so the bell's dot
+  // shows only for what is newer.
+  'numinia-notices-seen',
 ] as const;
 
 export interface ConsentRecord {

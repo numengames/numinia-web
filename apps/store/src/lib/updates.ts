@@ -35,7 +35,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       },
       {
         type: 'NEW',
-        text: 'A dot, never a number. Signed in, your rail’s bell — and the «Tú» tab and sheet on a phone — show a small amber dot when there is something newer than the last time you opened «Avisos»; the visit itself makes it go. One read of /api/notices, private and never stored; a source that fails is skipped rather than breaking the page.',
+        text: 'A dot, never a number. Signed in, your rail’s bell — and the «Tú» tab and sheet on a phone — show a small dot when there is something newer than the last time you opened «Avisos»; the visit itself makes it go. One read of /api/notices, private and never stored; a source that fails is skipped rather than breaking the page.',
       },
     ],
   },

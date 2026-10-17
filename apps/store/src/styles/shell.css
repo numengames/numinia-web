@@ -294,14 +294,14 @@ html[data-rail-you='collapsed'] .rail-tu .rail-plegar .icono {
 .punto-vivo[hidden] {
   display: none;
 }
-/* The bell's dot: amber, never a number («tecnología tranquila»). */
+/* The bell's dot: the link voice, never a number («tecnología tranquila»). */
 .punto-aviso {
   display: inline-block;
   flex: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ambar);
+  background: var(--enlace);
 }
 .punto-aviso[hidden],
 [data-notices-dot][hidden] {

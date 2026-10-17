@@ -265,7 +265,6 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
      and `data-session` on <html> tells the stylesheet. */
   import { pageSession, rankLevel } from '../../lib/session-client';
   import { formatBalance, loadFace, panelLink } from '../../lib/face-menu';
-  import { loadNotices, readSeen } from '../../lib/notices-client';
 
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
@@ -300,32 +299,6 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
         pill.textContent = pill.dataset[state] ?? '';
       });
     });
-  });
-
-  /* The bell's dot: signed in, one read of /api/notices with the moment
-     last seen (lib/notices-client.ts); something newer shows the dot — on
-     the rail, in the phone's sheet and on the «Tú» tab — never a number.
-     On «Avisos» itself the page reads and marks seen, so nothing is asked
-     twice; its event hides the dot. */
-  const dots = (): HTMLElement[] => all('[data-notices-dot]');
-  const showDots = (on: boolean): void => dots().forEach((dot) => (dot.hidden = !on));
-  document.addEventListener('numinia:notices-seen', () => showDots(false));
-  let noticesRead = false;
-  pageSession().subscribe((session) => {
-    if (session.status !== 'in' || noticesRead || document.querySelector('[data-notices]')) return;
-    noticesRead = true;
-    const storage = ((): Storage | null => {
-      try {
-        return window.localStorage;
-      } catch {
-        return null;
-      }
-    })();
-    void loadNotices(
-      (input, init) => fetch(input, init),
-      document.documentElement.lang || 'es',
-      readSeen(storage),
-    ).then((loaded) => showDots(loaded.ok && loaded.answer.unseen > 0));
   });
 
   /* «Tu menú»: the first time it opens it asks the till (and the profile)
@@ -377,4 +350,46 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
       door.hidden = true;
     });
   });
+</script>
+
+<script>
+  /* The bell's dot — its own script, with no import, so the one above
+     stays small enough to be inlined (the landing ships no external JS).
+     Signed in (the session reader above writes `data-session` on <html>),
+     one read of /api/notices with the moment last seen — the same key
+     lib/notices-client.ts keeps, `numinia-notices-seen` — and something
+     newer shows the dot on the rail, the phone's sheet and the «Tú» tab;
+     never a number. On «Avisos» itself the page reads and marks seen, so
+     nothing is asked twice; its event hides the dot. */
+  const SEEN = 'numinia-notices-seen';
+  const dots = [...document.querySelectorAll<HTMLElement>('[data-notices-dot]')];
+  const showDots = (on: boolean): void => dots.forEach((dot) => (dot.hidden = !on));
+  document.addEventListener('numinia:notices-seen', () => showDots(false));
+  let noticesRead = false;
+  const readDot = (): void => {
+    const html = document.documentElement;
+    if (noticesRead || html.dataset['session'] !== 'in' || document.querySelector('[data-notices]')) {
+      return;
+    }
+    noticesRead = true;
+    let since: string | null = null;
+    try {
+      since = localStorage.getItem(SEEN);
+    } catch {
+      since = null;
+    }
+    const query = new URLSearchParams({ locale: html.lang || 'es' });
+    if (since) query.set('since', since);
+    fetch(`/api/notices?${query.toString()}`, { headers: { accept: 'application/json' } })
+      .then((response) => response.json() as Promise<{ unseen?: unknown }>)
+      .then(
+        (body) => showDots(typeof body?.unseen === 'number' && body.unseen > 0),
+        () => showDots(false),
+      );
+  };
+  new MutationObserver(readDot).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-session'],
+  });
+  readDot();
 </script>

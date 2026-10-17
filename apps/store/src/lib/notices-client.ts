@@ -9,7 +9,7 @@
 import type { NoticeAction, NoticeKind } from './notices';
 import type { NoticeRow, NoticesAnswer } from './notices-source';
 
-export const NOTICES_API = '/api/notices';
+const NOTICES_API = '/api/notices';
 /** Where the browser keeps the newest moment it saw. */
 export const SEEN_KEY = 'numinia-notices-seen';
 
