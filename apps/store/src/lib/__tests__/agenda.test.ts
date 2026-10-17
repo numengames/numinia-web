@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { agendaOf, isPast } from '../agenda';
+import { agendaEnds, agendaOf, isPast } from '../agenda';
 import { parseRitual, type Ritual } from '../communities';
 
 const NOW = new Date('2026-10-17T12:00:00.000Z');
@@ -63,5 +63,15 @@ describe('agendaOf', () => {
     expect(agenda.upcoming.map((ritual) => ritual.id)).toEqual(['a-twin', 'soon']);
     expect(agenda.past).toEqual([]);
     expect(agendaOf([], ALL, NOW)).toEqual({ upcoming: [], past: [] });
+  });
+});
+
+describe('agendaEnds', () => {
+  it('maps each encounter still to come to the millisecond it ends; the ones over are left out', () => {
+    const ends = agendaEnds(ALL, NOW);
+    expect(Object.keys(ends).sort()).toEqual(['later', 'soon', 'timed-on', 'today']);
+    expect(ends['timed-on']).toBe(Date.parse('2026-10-17T13:00:00Z'));
+    expect(ends['soon']).toBeGreaterThan(NOW.getTime());
+    expect(agendaEnds([], NOW)).toEqual({});
   });
 });

@@ -27,6 +27,19 @@ export interface UpdateVersion {
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
     version: 'v0.120.0',
+    date: '2026-10-17 07:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Your bar fills up: «Your agenda» and «Your worlds» now sit between «Your communities» and «Your balance» — in the right rail, in the phone’s «You» sheet and in the folded rail’s tooltips, in all five languages. Beside each, a counter when there is something to count: how many encounters you said you are going to that are still ahead, how many worlds your communities have. Never a «0», nothing asked without a session.',
+      },
+      {
+        type: 'NEW',
+        text: '«Your worlds» (/mis-mundos/): the 3D spaces of the communities you belong to, grouped by community — each community’s name opens its page, each world keeps its card with «Enter» and «Its page». A community without a world yet says so; with no world at all the page points to the city’s «Worlds». Without a session it explains and offers to sign in. In all five languages.',
+      },
+    ],
+  },
+  {
     date: '2026-10-17 08:30',
     entries: [
       {

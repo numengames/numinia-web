@@ -33,3 +33,20 @@ export function agendaOf(
     past: mine.filter((ritual) => isPast(ritual, now)).sort((a, b) => bySoonest(b, a)),
   };
 }
+
+/**
+ * When each encounter still to come ends, in milliseconds, by id — what the
+ * chrome writes into the markup so the rail's «Tu agenda» counter can tell,
+ * in the browser, which of your RSVPs are still ahead (lib/you-counts.ts).
+ * Encounters already over at `now` are left out.
+ */
+export function agendaEnds(
+  rituals: readonly Ritual[],
+  now: Date,
+): Readonly<Record<string, number>> {
+  return Object.fromEntries(
+    rituals
+      .filter((ritual) => !isPast(ritual, now))
+      .map((ritual) => [ritual.id, ritualEndMs(ritual)]),
+  );
+}

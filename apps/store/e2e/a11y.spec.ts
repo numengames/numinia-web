@@ -173,6 +173,8 @@ test('keyboard: skip link, the city, the page, then you — and the focus ring i
     'you-create',
     'you-notices',
     'you-your-communities',
+    'you-agenda',
+    'you-worlds',
     'you-loot',
     'you-settings',
   ];
