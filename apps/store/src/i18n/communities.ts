@@ -89,6 +89,15 @@ export interface CommunitiesMessages {
   readonly crumbCommunities: string;
   readonly follow: string;
   readonly following: string;
+  /** Toasts of the follow toggle, and its failure. */
+  readonly followed: string;
+  readonly unfollowed: string;
+  readonly followFailed: string;
+  /** «Dejar de seguir» on /belong/. */
+  readonly unfollow: string;
+  /** «N personas la siguen» under the name: one and many; {n} is the figure. */
+  readonly followerOne: string;
+  readonly followerMany: string;
   readonly rituals: string;
   readonly inYourHour: string;
   readonly subscribe: string;
@@ -307,6 +316,12 @@ const ES: CommunitiesMessages = {
   crumbCommunities: 'Comunidades',
   follow: 'Seguir',
   following: 'Sigues',
+  followed: 'Sigues esta comunidad.',
+  unfollowed: 'Ya no sigues esta comunidad.',
+  followFailed: 'No se pudo guardar. Prueba de nuevo.',
+  unfollow: 'Dejar de seguir',
+  followerOne: '1 persona la sigue',
+  followerMany: '{n} personas la siguen',
   rituals: 'Encuentros',
   inYourHour: 'en tu hora',
   subscribe: 'Suscribirte',
@@ -430,8 +445,7 @@ const ES: CommunitiesMessages = {
   belongTitle: 'Perteneces',
   belongLead: 'Tus comunidades y lo que pasa en ellas.',
   followsTitle: 'Sigues',
-  followsHelp:
-    'Las comunidades que sigues desde este navegador, cada una con su próximo encuentro.',
+  followsHelp: 'Las comunidades que sigues desde tu cuenta, cada una con su próximo encuentro.',
   followsEmpty: 'Aún no sigues ninguna. Pulsa «Seguir» en la página de una comunidad.',
   memberOfTitle: 'Perteneces a',
   memberDoor: 'Entra para ver las comunidades a las que perteneces.',
@@ -527,6 +541,12 @@ const EN: CommunitiesMessages = {
   crumbCommunities: 'Communities',
   follow: 'Follow',
   following: 'Following',
+  followed: 'You follow this community.',
+  unfollowed: 'You no longer follow this community.',
+  followFailed: 'It could not be saved. Try again.',
+  unfollow: 'Unfollow',
+  followerOne: '1 person follows it',
+  followerMany: '{n} people follow it',
   rituals: 'Gatherings',
   inYourHour: 'in your hour',
   subscribe: 'Subscribe',
@@ -649,7 +669,7 @@ const EN: CommunitiesMessages = {
   belongTitle: 'You belong',
   belongLead: 'Your communities and what happens in them.',
   followsTitle: 'You follow',
-  followsHelp: 'The communities you follow from this browser, each with its next gathering.',
+  followsHelp: 'The communities you follow from your account, each with its next gathering.',
   followsEmpty: 'You follow none yet. Press “Follow” on a community’s page.',
   memberOfTitle: 'You belong to',
   memberDoor: 'Sign in to see the communities you belong to.',
@@ -769,6 +789,12 @@ const JA: CommunitiesMessages = {
   crumbCommunities: 'コミュニティ',
   follow: 'フォロー',
   following: 'フォロー中',
+  followed: 'このコミュニティをフォローしました。',
+  unfollowed: 'このコミュニティのフォローを解除しました。',
+  followFailed: '保存できませんでした。もう一度お試しください。',
+  unfollow: 'フォロー解除',
+  followerOne: '1人がフォロー中',
+  followerMany: '{n}人がフォロー中',
   rituals: '集まり',
   inYourHour: 'あなたの時間で',
   subscribe: '購読する',
@@ -857,7 +883,7 @@ const JA: CommunitiesMessages = {
   belongTitle: '所属',
   belongLead: 'あなたのコミュニティと、そこで起きていること。',
   followsTitle: 'フォロー中',
-  followsHelp: 'このブラウザでフォローしているコミュニティと、それぞれの次の集まり。',
+  followsHelp: 'アカウントでフォローしているコミュニティと、それぞれの次の集まり。',
   followsEmpty:
     'まだ何もフォローしていません。コミュニティのページで「フォロー」を押してください。',
   memberOfTitle: '所属コミュニティ',
@@ -977,6 +1003,12 @@ const KO: CommunitiesMessages = {
   crumbCommunities: '커뮤니티',
   follow: '팔로우',
   following: '팔로잉',
+  followed: '이 커뮤니티를 팔로우합니다.',
+  unfollowed: '이 커뮤니티를 더 이상 팔로우하지 않습니다.',
+  followFailed: '저장하지 못했습니다. 다시 시도하세요.',
+  unfollow: '팔로우 취소',
+  followerOne: '1명이 팔로우 중',
+  followerMany: '{n}명이 팔로우 중',
   rituals: '모임',
   inYourHour: '당신의 시간으로',
   subscribe: '구독',
@@ -1065,7 +1097,7 @@ const KO: CommunitiesMessages = {
   belongTitle: '소속',
   belongLead: '당신의 커뮤니티와 그곳에서 일어나는 일.',
   followsTitle: '팔로우 중',
-  followsHelp: '이 브라우저에서 팔로우하는 커뮤니티와 각각의 다음 모임.',
+  followsHelp: '계정에서 팔로우하는 커뮤니티와 각각의 다음 모임.',
   followsEmpty: '아직 팔로우하는 커뮤니티가 없습니다. 커뮤니티 페이지에서 「팔로우」를 누르세요.',
   memberOfTitle: '소속 커뮤니티',
   memberDoor: '로그인하면 소속된 커뮤니티를 볼 수 있습니다.',
@@ -1185,6 +1217,12 @@ const PT_BR: CommunitiesMessages = {
   crumbCommunities: 'Comunidades',
   follow: 'Seguir',
   following: 'Seguindo',
+  followed: 'Você segue esta comunidade.',
+  unfollowed: 'Você não segue mais esta comunidade.',
+  followFailed: 'Não foi possível salvar. Tente de novo.',
+  unfollow: 'Deixar de seguir',
+  followerOne: '1 pessoa a segue',
+  followerMany: '{n} pessoas a seguem',
   rituals: 'Encontros',
   inYourHour: 'na sua hora',
   subscribe: 'Assinar',
@@ -1273,7 +1311,7 @@ const PT_BR: CommunitiesMessages = {
   belongTitle: 'Você pertence',
   belongLead: 'Suas comunidades e o que acontece nelas.',
   followsTitle: 'Você segue',
-  followsHelp: 'As comunidades que você segue neste navegador, cada uma com seu próximo encontro.',
+  followsHelp: 'As comunidades que você segue na sua conta, cada uma com seu próximo encontro.',
   followsEmpty: 'Você ainda não segue nenhuma. Toque em «Seguir» na página de uma comunidade.',
   memberOfTitle: 'Você pertence a',
   memberDoor: 'Entre para ver as comunidades às quais você pertence.',

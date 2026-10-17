@@ -150,6 +150,9 @@ const mine = isPersonal(basePath);
             )}
             {item.id === 'agenda' && <span class="ht-n mono" data-you-count="agenda" hidden />}
             {item.id === 'worlds' && <span class="ht-n mono" data-you-count="worlds" hidden />}
+            {item.id === 'your-communities' && (
+              <span class="ht-n mono" data-you-count="communities" hidden />
+            )}
           </a>
         );
       })

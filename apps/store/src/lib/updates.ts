@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.126.0',
+    date: '2026-10-17 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: "«Follow» on a community page is now a real act: the city remembers which communities you follow, in your account and not in one browser. The button says «Following» once you do, from any device; press it again and a toast says you no longer follow. Under the community's name, «N people follow it» appears when somebody does — never a zero. «You belong» (/belong/) lists the communities you follow from your account, each with a quiet «Unfollow»; the communities this browser used to keep for you are carried over the first time you open a page signed in, then forgotten here. The rail's «Your communities» shows how many you belong to or follow, counted once each.",
+      },
+    ],
+  },
+  {
     version: 'v0.125.0',
     date: '2026-10-17 08:49',
     entries: [

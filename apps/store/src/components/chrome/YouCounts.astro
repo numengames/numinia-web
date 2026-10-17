@@ -1,7 +1,8 @@
 ---
 /**
- * The counters of your rail (cut I): beside «Tu agenda» and «Tus mundos»,
- * a figure once a session is in — read once per page, one GET each
+ * The counters of your rail (cut I; «Tus comunidades» since cut «Seguir»):
+ * beside «Tus comunidades», «Tu agenda» and «Tus mundos», a figure once a
+ * session is in — read once per page, one GET each
  * (lib/you-counts.ts), painted into every figure the markup has (the rail,
  * the phone's «Tú» sheet). Never a «0», nothing asked signed out.
  *
@@ -18,13 +19,18 @@
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
   ];
-  onceSignedIn(window as SessionWindowLike, () => {
+  const paint = () => {
     const ends = readEnds(
       document.querySelector<HTMLElement>('[data-you-count="agenda"]')?.dataset['ritualEnds'],
     );
     void loadYouCounts((input, init) => fetch(input, init), ends, Date.now()).then((counts) => {
       paintCount(all('[data-you-count="agenda"]'), counts.agenda);
       paintCount(all('[data-you-count="worlds"]'), counts.worlds);
+      paintCount(all('[data-you-count="communities"]'), counts.communities);
     });
-  });
+  };
+  onceSignedIn(window as SessionWindowLike, paint);
+  // A page that changed what is counted (a follow carried over, «Dejar de
+  // seguir») asks for a fresh read; the rail never guesses the new figure.
+  document.addEventListener('numinia:you-counts', paint);
 </script>

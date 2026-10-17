@@ -7,9 +7,14 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  FOLLOW_PATH,
   MY_WORLDS_API_PATH,
   RSVP_PATH,
+  communitiesCount,
+  communityAccountId,
   loadYouCounts,
+  readFollowMine,
+  readMyTeamIds,
   onceSignedIn,
   paintCount,
   readEnds,
@@ -126,32 +131,77 @@ describe('onceSignedIn', () => {
   });
 });
 
+describe('reading /api/follow and the organizations of /api/mundos/mine', () => {
+  it('takes the ids followed, and the account ids of the teams, only text', () => {
+    expect(readFollowMine({ mine: ['la-tarugo', 7], counts: {} })).toEqual(['la-tarugo']);
+    expect(readFollowMine({ error: 'signed-out' })).toBeNull();
+    expect(
+      readMyTeamIds({
+        ok: true,
+        count: 0,
+        communities: [{ accountId: 'acc_t_1', name: 'A', worldIds: [] }, { name: 'B' }, 7],
+      }),
+    ).toEqual(['acc_t_1']);
+    expect(readMyTeamIds({ ok: false })).toBeNull();
+    expect(readMyTeamIds({ ok: true, count: 0 })).toBeNull();
+    expect(readMyTeamIds(null)).toBeNull();
+  });
+});
+
+describe('communitiesCount', () => {
+  it('derives the till’s account id for a community, as lib/community-teams.ts does', async () => {
+    const id = await communityAccountId('la-tarugo');
+    expect(id).toMatch(/^acc_t_[0-9a-f]{32}$/);
+    expect(await communityAccountId('la-tarugo')).toBe(id);
+    expect(await communityAccountId('merge')).not.toBe(id);
+  });
+  it('counts the organizations you are in and the communities you follow, each once', async () => {
+    const tarugo = await communityAccountId('la-tarugo');
+    expect(await communitiesCount([], [])).toBe(0);
+    expect(
+      await communitiesCount([tarugo, 'acc_t_other'], ['la-tarugo', 'la-tarugo', 'merge']),
+    ).toBe(3);
+    expect(await communitiesCount([], ['merge'])).toBe(1);
+  });
+});
+
+const NONE = { agenda: null, worlds: null, communities: null };
+
 describe('loadYouCounts', () => {
-  it('asks both once and answers the two counts, 0 as nothing', async () => {
+  it('asks the three once and answers the counts, 0 as nothing', async () => {
     const asked: string[] = [];
     const counts = await loadYouCounts(
       (path, init) => {
         asked.push(path);
         return answering({
           [RSVP_PATH]: { mine: ['trg26', 'old'], counts: {} },
-          [MY_WORLDS_API_PATH]: { ok: true, count: 3 },
+          [MY_WORLDS_API_PATH]: {
+            ok: true,
+            count: 3,
+            communities: [{ accountId: 'acc_t_one', name: 'One', worldIds: ['w'] }],
+          },
+          [FOLLOW_PATH]: { mine: ['la-tarugo', 'merge'], counts: {} },
         })(path, init);
       },
       ENDS,
       NOW,
     );
-    expect(asked.sort()).toEqual([MY_WORLDS_API_PATH, RSVP_PATH].sort());
-    expect(counts).toEqual({ agenda: 1, worlds: 3 });
+    expect(asked.sort()).toEqual([FOLLOW_PATH, MY_WORLDS_API_PATH, RSVP_PATH].sort());
+    expect(counts).toEqual({ agenda: 1, worlds: 3, communities: 3 });
   });
   it('a refusal, a failure or an empty answer leaves each figure hidden', async () => {
-    expect(await loadYouCounts(answering({}), ENDS, NOW)).toEqual({ agenda: null, worlds: null });
+    expect(await loadYouCounts(answering({}), ENDS, NOW)).toEqual(NONE);
     expect(
       await loadYouCounts(
-        answering({ [RSVP_PATH]: { mine: [] }, [MY_WORLDS_API_PATH]: { ok: true, count: 0 } }),
+        answering({
+          [RSVP_PATH]: { mine: [] },
+          [MY_WORLDS_API_PATH]: { ok: true, count: 0, communities: [] },
+          [FOLLOW_PATH]: { mine: [] },
+        }),
         ENDS,
         NOW,
       ),
-    ).toEqual({ agenda: null, worlds: null });
+    ).toEqual(NONE);
     expect(
       await loadYouCounts(
         async () => {
@@ -160,7 +210,7 @@ describe('loadYouCounts', () => {
         ENDS,
         NOW,
       ),
-    ).toEqual({ agenda: null, worlds: null });
+    ).toEqual(NONE);
   });
 });
 

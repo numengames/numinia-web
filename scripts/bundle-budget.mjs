@@ -89,8 +89,13 @@ const BUDGETS = {
       of its own (~1.1KB, lib/you-counts.ts bundled and minified, sharing no
       module with the others so it stays inline) asks /api/rsvp and
       /api/mundos/mine once the session is in and paints the figures; nothing
-      is asked signed out. Still no external JS. Landing sits near ~28.6KB. */
-  landingInlineScriptBytes: 29_500,
+      is asked signed out. Still no external JS. Landing sits near ~28.6KB.
+      Then raised 29500→30500 on 2026-10-17 (v0.125.0, cut «Seguir»): the
+      rail's counter now also asks /api/follow (communities = organizations ∪
+      follows, each once) and the bell's dot («Avisos», v0.123.0) landed in
+      the same window; together ~1.3KB more inline. Still no external JS.
+      Landing sits near ~29.9KB. */
+  landingInlineScriptBytes: 30_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */

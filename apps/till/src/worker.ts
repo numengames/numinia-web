@@ -73,6 +73,14 @@ import {
 } from './db/community-requests';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import {
+  follow,
+  followCounts,
+  myFollows,
+  unfollow,
+  type FollowCountsAnswer,
+  type MyFollowsAnswer,
+} from './db/follows';
+import {
   myRsvps,
   rsvp,
   rsvpCounts,
@@ -550,6 +558,28 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** How many people are going to each of up to 100 encounters: public, who they are told to nobody. */
   async rsvpCounts(ritualIds: unknown): Promise<RsvpCountsAnswer> {
     return rsvpCounts(this.env.TILL_DB, ritualIds);
+  }
+
+  // ---- «Seguir» (2026-10-17): who follows which community ----
+
+  /** The wallet follows the community `communityId`; answers all the ids it follows. */
+  async follow(wallet: unknown, communityId: unknown): Promise<MyFollowsAnswer> {
+    return follow(this.env.TILL_DB, wallet, communityId, new Date());
+  }
+
+  /** The wallet no longer follows `communityId`; the row goes, no history kept. */
+  async unfollow(wallet: unknown, communityId: unknown): Promise<MyFollowsAnswer> {
+    return unfollow(this.env.TILL_DB, wallet, communityId);
+  }
+
+  /** The community ids the wallet follows, to the wallet itself. */
+  async myFollows(wallet: unknown): Promise<MyFollowsAnswer> {
+    return myFollows(this.env.TILL_DB, wallet);
+  }
+
+  /** How many people follow each of up to 100 communities: public, who they are told to nobody. */
+  async followCounts(communityIds: unknown): Promise<FollowCountsAnswer> {
+    return followCounts(this.env.TILL_DB, communityIds);
   }
 
   // ---- «Una comunidad ES una organización» (2026-10-16): the house opens a community's account ----
