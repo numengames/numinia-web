@@ -103,6 +103,25 @@ export const REQUEST_TYPES = {
    * changes. The machine fetches it, then makes that one container anew.
    */
   UpdateWorld: [text('machine'), text('world'), text('image'), text('nonce'), whole('expires')],
+  /**
+   * An engine build the house publishes as the newest: what the machines'
+   * release timer follows (numinia-assets release.py). Signed by the release
+   * key, not by an Oracle, and numbered by `seq` instead of a nonce. The room
+   * only mirrors the type so the vectors prove it; it never asks for one.
+   */
+  FleetRelease: [text('engine'), text('image'), text('commit'), whole('seq'), whole('issuedAt')],
+  /**
+   * One world held on an image the release timer must not move (an empty
+   * image lifts the hold), with the reason written in the signed request.
+   */
+  PinWorld: [
+    text('machine'),
+    text('world'),
+    text('image'),
+    text('reason'),
+    text('nonce'),
+    whole('expires'),
+  ],
 } as const satisfies Readonly<Record<string, readonly TypeField[]>>;
 
 export type RequestKind = keyof typeof REQUEST_TYPES;

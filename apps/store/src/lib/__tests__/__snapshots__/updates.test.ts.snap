@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-17 13:10",
+    "entries": [
+      {
+        "text": "The fleet room now knows two more signed requests the machines understand: the engine release the house publishes as the newest, and a pin that holds one world on its image. Nothing new on screen yet: the room only mirrors the types and checks them against the same 13 test vectors the machines verify.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.130.0",
+  },
+  {
     "date": "2026-10-17 13:00",
     "entries": [
       {
