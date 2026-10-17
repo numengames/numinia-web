@@ -168,6 +168,29 @@ describe('lineOf', () => {
   });
 });
 
+describe('goodTitle', () => {
+  it('keeps a title a person wrote', async () => {
+    const { goodTitle } = await importBazaar();
+    expect(goodTitle('Pot Vapor 02')).toBe('Pot Vapor 02');
+    expect(goodTitle('  Avatar  Lyra ')).toBe('Avatar Lyra');
+    expect(goodTitle('AU_Numen_Cthulhu_Black_Final_Signed')).toBe(
+      'AU_Numen_Cthulhu_Black_Final_Signed',
+    );
+    expect(goodTitle('portfolio 0.1.4')).toBe('portfolio 0.1.4');
+  });
+
+  it('says nothing when the catalogue holds only the file’s own name', async () => {
+    const { goodTitle } = await importBazaar();
+    expect(goodTitle('med 1')).toBeNull();
+    expect(goodTitle('med (2)')).toBeNull();
+    expect(goodTitle('favicon')).toBeNull();
+    expect(goodTitle('emote_floating')).toBeNull();
+    expect(goodTitle('cover.png')).toBeNull();
+    expect(goodTitle('Scene.GLB')).toBeNull();
+    expect(goodTitle('   ')).toBeNull();
+  });
+});
+
 describe('pictures are pictures', () => {
   it('knows which formats are their own picture', () => {
     expect(PICTURE_FORMATS.every((format) => BAZAAR_FORMATS.includes(format))).toBe(true);

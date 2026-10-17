@@ -7,6 +7,7 @@ import { ARCHIVE_MESSAGES, BAZAAR_MESSAGES } from '../../i18n/messages';
 import { VIEWER_MESSAGES } from '../../i18n/viewer';
 import { downloadUrl } from '../../lib/archive';
 import { bazaarHref } from '../../lib/bazaar-view';
+import { goodTitle, lineOf } from '../../lib/bazaar';
 import type { CatalogedAsset } from '../../lib/data';
 import { findCard, loadSumma } from '../../lib/summa';
 import SummaCard from './SummaCard.astro';
@@ -22,7 +23,13 @@ const t = ARCHIVE_MESSAGES[locale];
 // The way back leads to the Bazaar (v0.83.0): the Archive's index went out.
 const bazaar = BAZAAR_MESSAGES[locale];
 const binaryUrl = downloadUrl(asset);
-const description = asset.description || `${asset.format.toUpperCase()} · CC0 · Numinia`;
+// Only what a person wrote: never the uploader's file name as a title, and
+// never its English stamp as a description («VRM asset uploaded via Numinia
+// Admin»). With no title the good is named by its kind, which is true.
+const title = goodTitle(asset.name);
+const heading = title ?? bazaar.kinds[category];
+const line = lineOf(asset.description);
+const description = line ?? `${asset.format.toUpperCase()} · CC0 · Numinia`;
 // Summa experiment: a legacy id with a card in the archive gets the card
 // rendered beside its record; the record itself does not change.
 const card = findCard(await loadSumma(), asset.id);
@@ -30,7 +37,7 @@ const card = findCard(await loadSumma(), asset.id);
 
 <BaseLayout
   locale={locale}
-  title={`${asset.name} — Numinia`}
+  title={`${heading} — Numinia`}
   description={description}
   ogImage={asset.thumbnailUrl ?? undefined}
 >
@@ -38,17 +45,17 @@ const card = findCard(await loadSumma(), asset.id);
   <nav class="miga" aria-label={bazaar.breadcrumbLabel}>
     <a href={bazaarHref(locale)} data-metric="archive-back">{bazaar.title}</a>
     <span aria-hidden="true">/</span>
-    <span aria-current="page">{asset.name}</span>
+    <span aria-current="page">{heading}</span>
   </nav>
 
   <article>
-    <h1>{asset.name}</h1>
-    {asset.description && <p>{asset.description}</p>}
+    <h1>{heading}</h1>
+    {line && <p>{line}</p>}
 
     <section aria-label={bazaar.previewLabel}>
       {asset.format === 'png' || asset.format === 'jpg' ? (
         binaryUrl ? (
-          <img src={binaryUrl} alt={asset.name} loading="lazy" />
+          <img src={binaryUrl} alt={heading} loading="lazy" />
         ) : (
           <p>{t.downloadUnavailable}</p>
         )

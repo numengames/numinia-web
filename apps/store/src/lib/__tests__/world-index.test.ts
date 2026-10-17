@@ -6,9 +6,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   filtersOf,
+  readableWorldName,
   readOwner,
   worldCards,
   worldFilters,
+  worldName,
   worldState,
   type CommunityAccounts,
   type FleetEntry,
@@ -48,6 +50,27 @@ describe('worldState', () => {
     expect(worldState('deleting', null)).toBeNull();
     expect(worldState(null, null)).toBeNull();
     expect(worldState(null, 0)).toBe('on');
+  });
+});
+
+describe('readableWorldName / worldName', () => {
+  it('reads a slug as words, never prints it raw', () => {
+    expect(readableWorldName('agora-plaza')).toBe('Agora Plaza');
+    expect(readableWorldName('mystery-at-the-printing-house')).toBe(
+      'Mystery At The Printing House',
+    );
+    expect(readableWorldName('alchemiststower')).toBe('Alchemiststower');
+    expect(readableWorldName('pablofm_2')).toBe('Pablofm 2');
+  });
+
+  it('keeps the id when there is nothing in it to read', () => {
+    expect(readableWorldName('--')).toBe('--');
+    expect(readableWorldName('')).toBe('');
+  });
+
+  it('prefers the title the world states of itself', () => {
+    expect(worldName('La Plaza del Ágora', 'agora-plaza')).toBe('La Plaza del Ágora');
+    expect(worldName(null, 'agora-plaza')).toBe('Agora Plaza');
   });
 });
 
@@ -92,11 +115,11 @@ describe('worldCards', () => {
     expect(cards.map((card) => card.id)).toEqual(['agora-plaza', 'tower', 'bosque']);
   });
 
-  it('says only what it was told: no count, no picture, the id for a name', () => {
+  it('says only what it was told: no count, no picture, the id read as words', () => {
     const [agora, tower, bosque] = worldCards({ fleet, owners, communities: [HOUSE, RESET] });
     expect(agora).toEqual({
       id: 'agora-plaza',
-      name: 'agora-plaza',
+      name: 'Agora Plaza',
       state: 'on',
       inside: null,
       cover: null,
@@ -112,14 +135,14 @@ describe('worldCards', () => {
     });
   });
 
-  it('names an owner the register lacks by the till’s own name', () => {
-    const [card] = worldCards({
-      fleet: [{ id: 'x', phase: 'running', domain: 'x.numinia.com' }],
-      owners: new Map([['x', owner('acc_t_unknown', 'Somebody')]]),
-      communities: [HOUSE],
-    });
-    expect(card?.community).toEqual({ id: null, name: 'Somebody' });
-    expect(card?.city).toBe(false);
+  it('leaves out a world whose owner is no community of the city', () => {
+    expect(
+      worldCards({
+        fleet: [{ id: 'portfolio', phase: 'running', domain: 'portfolio.numinia.com' }],
+        owners: new Map([['portfolio', owner('acc_t_unknown', 'Somebody')]]),
+        communities: [HOUSE],
+      }),
+    ).toEqual([]);
   });
 
   it('takes the count and the face the worlds gave, the picture only from the world itself', () => {
@@ -140,8 +163,9 @@ describe('worldCards', () => {
       cover: 'https://agora.numen.games/p.webp',
       inside: null,
     });
-    expect(byId['bosque']).toMatchObject({ name: 'bosque', cover: null, inside: 4 });
-    expect(byId['tower']).toMatchObject({ name: 'tower', cover: null, inside: 0 });
+    expect(byId['bosque']).toMatchObject({ name: 'Bosque', cover: null, inside: 4 });
+    // «tower» has no address: its face is not believed, so its id is read as words.
+    expect(byId['tower']).toMatchObject({ name: 'Tower', cover: null, inside: 0 });
     // The ones with people first.
     expect(cards[0]?.id).toBe('bosque');
   });

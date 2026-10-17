@@ -1022,3 +1022,22 @@ export function icsFeed(
   lines.push('END:VCALENDAR');
   return `${lines.map(foldLine).join('\r\n')}\r\n`;
 }
+
+/** The four forms «{n} comunidades en {m} lugares» takes (i18n/communities.ts). */
+export interface CountForms {
+  readonly oneOne: string;
+  readonly oneMany: string;
+  readonly manyOne: string;
+  readonly manyMany: string;
+}
+
+/**
+ * The line that counts the communities found and the places they are in,
+ * in the form the two counts call for: «1 comunidad en 2 lugares», never
+ * «1 comunidades». A language without plurals gives the same line in all
+ * four forms, so it reads the same whichever is picked.
+ */
+export function countForm(forms: CountForms, communities: number, places: number): string {
+  if (communities === 1) return places === 1 ? forms.oneOne : forms.oneMany;
+  return places === 1 ? forms.manyOne : forms.manyMany;
+}

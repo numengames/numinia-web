@@ -121,6 +121,14 @@ const room = (prefix = '/es') => `${origin}${prefix}/lap/admin/worlds/`;
 const venues = (org: string, prefix = '/es') => `${origin}${prefix}/panel/sedes/?org=${org}`;
 const worldPage = (id: string, prefix = '/es') => `${origin}${prefix}/mundos/${id}/`;
 
+/** A world's id as the screens read it: «agora-plaza» → «Agora Plaza». */
+const asWords = (id: string): string =>
+  id
+    .split(/[-_]+/)
+    .filter((word) => word !== '')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
 /** Finite animations (the dialog's, the waiting moon's entrance) end before axe measures contrast. */
 async function settle(page: Page): Promise<void> {
   await page.evaluate(() =>
@@ -208,7 +216,8 @@ test.describe('the house places worlds', () => {
     );
     await card.locator('[data-metric="panel-venue-open"]').click();
     await expect(page).toHaveURL(worldPage(world));
-    await expect(page.locator('[data-world-id]')).toHaveText(world);
+    // The heading names the world, never its raw id (lib/world-index.ts).
+    await expect(page.locator('[data-world-id]')).toHaveText(asWords(world));
     await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
     // «Quién entra»: read from the organization's roles, with the people who may.
     const enters = page.locator('[data-world-enters]');

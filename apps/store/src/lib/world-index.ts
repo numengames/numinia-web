@@ -53,8 +53,8 @@ export interface WorldCard {
   readonly cover: string | null;
   /** Where the world is served, the guest link «Entrar» falls back to; null when unknown. */
   readonly url: string | null;
-  /** The community it belongs to: its register id when the register has it. */
-  readonly community: { readonly id: string | null; readonly name: string };
+  /** The community it belongs to: always one of the register's, with its page. */
+  readonly community: { readonly id: string; readonly name: string };
   /** A world of the city: the founder's, kept for everyone. */
   readonly city: boolean;
 }
@@ -101,9 +101,36 @@ function faceOf(face: WorldFace | undefined, domain: string | null): WorldFace {
 }
 
 /**
+ * A world's name when no better one was said: its own id read as words
+ * («agora-plaza» → «Agora Plaza», «alchemiststower» → «Alchemiststower»).
+ * A screen never prints a raw slug; an id with nothing to read in it keeps
+ * its id, which is still better than an empty heading.
+ */
+export function readableWorldName(id: string): string {
+  const words = id
+    .split(/[-_]+/)
+    .filter((word) => word !== '')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1));
+  return words.length === 0 ? id : words.join(' ');
+}
+
+/**
+ * A world's name as every screen says it: the title the world states of
+ * itself, else its id read as words — the index's card and the world's own
+ * heading say the same thing, because both ask this.
+ */
+export function worldName(title: string | null, id: string): string {
+  return title ?? readableWorldName(id);
+}
+
+/**
  * The cards of the index: every placed world the fleet has (once each, the
  * first listing wins), never one being deleted — the ones with people
  * first, then the city's, then by name.
+ *
+ * Public means placed in a community of the register: a world the till
+ * gives no owner, or whose owner is no community of the city, is an
+ * internal one and is left out.
  */
 export function worldCards(input: {
   readonly fleet: readonly FleetEntry[];
@@ -122,20 +149,19 @@ export function worldCards(input: {
     const community = input.communities.find((candidate) =>
       candidate.accounts.includes(owner.accountId),
     );
+    if (community === undefined) continue;
     const counted = input.inside?.[entry.id];
     const inside = typeof counted === 'number' ? counted : null;
     const face = faceOf(input.faces?.[entry.id], entry.domain);
     cards.push({
       id: entry.id,
-      name: face.title ?? entry.id,
+      name: worldName(face.title, entry.id),
       state: worldState(entry.phase, inside),
       inside,
       cover: face.image,
       url: entry.domain === null ? null : `https://${entry.domain}/`,
-      community: community
-        ? { id: community.id, name: community.name }
-        : { id: null, name: owner.accountName },
-      city: community?.founder === true,
+      community: { id: community.id, name: community.name },
+      city: community.founder,
     });
   }
   return cards.sort(

@@ -19,6 +19,7 @@ import { MUNDOS_UI } from '../../i18n/mundos';
 import { localeHref } from '../../lib/app-nav';
 import { runtimeEnv } from '../../lib/runtime-env';
 import { loadWorldIndex } from './world-index-data';
+import { readableWorldName } from '../../lib/world-index';
 import WorldCard from './WorldCard.astro';
 import { WorldView } from './WorldView';
 import '../../styles/communities.css';
@@ -37,17 +38,20 @@ const a = AHORA_UI[locale];
 const fixture = runtimeEnv()['DATA_SOURCE'] === 'fixture';
 const index = await loadWorldIndex();
 const card = index.ok ? index.cards.find((entry) => entry.id === worldId) : undefined;
+// The heading and the index's card say the same name: the card's when the
+// world is listed, the id read as words when it is not. Never a raw slug.
+const name = card?.name ?? readableWorldName(worldId);
 ---
 
-<BaseLayout locale={locale} title={`${card?.name ?? worldId} — Numinia`} description={words.eyebrow} wide>
+<BaseLayout locale={locale} title={`${name} — Numinia`} description={words.eyebrow} wide>
   <header class="mundo-cabecera">
     <p class="migas">
       <a href={localeHref(locale, '/mundos/')} data-metric="world-page-index">{a.worldsTitle}</a>
       {' / '}
-      <span class="mono">{worldId}</span>
+      <span>{name}</span>
     </p>
     <p class="etiqueta">{words.eyebrow}</p>
-    <h1 class="display-m mono" data-world-id>{worldId}</h1>
+    <h1 class="display-m" data-world-id>{name}</h1>
   </header>
   {
     card && (
