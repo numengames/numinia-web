@@ -107,6 +107,7 @@ async function signIn(context: BrowserContext, wallet: string, rank: 'oracle' | 
 const panel = (page: Page) => page.locator('[data-org-panel]');
 const rail = (page: Page) => page.locator('[data-org-rail]');
 const piece = (page: Page, id: string) => page.locator(`[data-settings-piece="${id}"]`);
+const aiAgentCard = (page: Page) => page.locator('[data-settings-ai-agent]');
 
 async function ready(page: Page): Promise<void> {
   await expect(panel(page)).toHaveAttribute('data-state', 'ready');
@@ -152,13 +153,16 @@ test.describe('Ajustes', () => {
     await expect(house).toContainText('sale en el registro, con nombre');
     await expect(house.getByRole('switch')).toHaveCount(0);
     await expect(house.getByRole('button')).toHaveCount(0);
-    // The organization's built-in AI agent (Historia 1): read-only, cheapest model, a trial cap.
+    // The organization's built-in AI agent (Historia 1 data, Historia 4 switch).
     const aiAgent = page.locator('[data-settings-ai-agent]');
     await expect(aiAgent).toHaveAttribute('data-ai-agent-enabled', 'true');
     await expect(aiAgent).toContainText('Agente IA: activo · gpt-5-nano · tope');
     await expect(aiAgent.locator('[data-ai-agent-line]')).toContainText(/1,50\s*US\$/);
-    await expect(aiAgent.getByRole('switch')).toHaveCount(0);
-    await expect(aiAgent.getByRole('button')).toHaveCount(0);
+    await expect(aiAgent.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await expect(aiAgent.getByRole('switch')).toHaveAttribute(
+      'data-metric',
+      'panel-settings-ai-agent-toggle',
+    );
     // The rail has the new piece as a link, no longer «En construcción».
     await expect(rail(page).locator('a[data-metric="panel-nav-settings"]')).toHaveAttribute(
       'aria-current',
@@ -233,6 +237,56 @@ test.describe('Ajustes', () => {
     await expect(page.locator('[data-settings-now]')).toContainText('Sedes · Encuentros · Titular');
   });
 
+  test('turning the AI agent off and on updates the card, the switch and persists', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, OWNER, 'nomad');
+    await openSettings(page);
+    const aiAgent = aiAgentCard(page);
+    await aiAgent.getByRole('switch').click();
+    await expect(page.locator('[data-settings-status]')).toHaveAttribute(
+      'data-settings-status',
+      'saved',
+    );
+    await expect(aiAgent).toHaveAttribute('data-ai-agent-enabled', 'false');
+    await expect(aiAgent).toContainText('Agente IA: inactivo · gpt-5-nano · tope');
+    await expect(aiAgent.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    // It persists: another visit still has it off.
+    await page.reload();
+    await ready(page);
+    await expect(aiAgentCard(page)).toHaveAttribute('data-ai-agent-enabled', 'false');
+    // Turning it back on works the same way.
+    await aiAgentCard(page).getByRole('switch').click();
+    await expect(page.locator('[data-settings-status]')).toHaveAttribute(
+      'data-settings-status',
+      'saved',
+    );
+    await expect(aiAgentCard(page)).toHaveAttribute('data-ai-agent-enabled', 'true');
+    await expect(aiAgentCard(page)).toContainText('Agente IA: activo · gpt-5-nano · tope');
+  });
+
+  test('says no when the till refuses the AI agent toggle, and changes nothing on the screen', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, OWNER, 'nomad');
+    await openSettings(page);
+    await page.route('**/api/saldo/settings', (route) =>
+      route.request().method() === 'POST'
+        ? route.fulfill({ status: 403, json: { error: 'refused', problems: ['nope'] } })
+        : route.fallback(),
+    );
+    await aiAgentCard(page).getByRole('switch').click();
+    await expect(page.locator('[data-settings-status]')).toHaveAttribute(
+      'data-settings-status',
+      'failed',
+    );
+    await expect(page.locator('[data-settings-status]')).toContainText('No se ha podido guardar');
+    await expect(aiAgentCard(page)).toHaveAttribute('data-ai-agent-enabled', 'true');
+    await expect(aiAgentCard(page)).toContainText('Agente IA: activo · gpt-5-nano · tope');
+  });
+
   test('a member reads them but cannot change them: switches and presets are off, and it says why', async ({
     page,
     context,
@@ -246,6 +300,7 @@ test.describe('Ajustes', () => {
       await expect(piece(page, id).getByRole('switch')).toBeDisabled();
     }
     await expect(page.locator('.gente-seg button').first()).toBeDisabled();
+    await expect(aiAgentCard(page).getByRole('switch')).toBeDisabled();
   });
 
   test('a piece that is off, reached by a member, says so and who can turn it on', async ({

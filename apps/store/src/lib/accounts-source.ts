@@ -603,6 +603,7 @@ function buildSchemas() {
       accountId: id,
       off: z.array(z.enum(SWITCHABLE_PIECES)).max(SWITCHABLE_PIECES.length).optional(),
       vocabulary: z.enum(VOCABULARIES).optional(),
+      aiAgentEnabled: z.boolean().optional(),
     })
     .strict();
   const profileRequest = z.union([
@@ -1005,8 +1006,12 @@ export async function answerChangeSettings(
     const where = issue === undefined || issue.path.length === 0 ? '' : `${issue.path.join('.')}: `;
     return answer({ error: `${where}${issue?.message ?? 'invalid'}` }, 400);
   }
-  if (read.data.off === undefined && read.data.vocabulary === undefined) {
-    return answer({ error: 'off or vocabulary is required' }, 400);
+  if (
+    read.data.off === undefined &&
+    read.data.vocabulary === undefined &&
+    read.data.aiAgentEnabled === undefined
+  ) {
+    return answer({ error: 'off, vocabulary or aiAgentEnabled is required' }, 400);
   }
   if (desk === null) return notBound();
   const { you, house } = whoIs(asker);

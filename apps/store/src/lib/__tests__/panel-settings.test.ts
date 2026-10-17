@@ -16,6 +16,7 @@ import {
   withVocabulary,
 } from '../panel-settings';
 import { PIECES } from '../panel';
+import { PANEL_SETTINGS_UI } from '../../i18n/panel-settings';
 
 describe('which pieces may be turned off', () => {
   it('are built pieces other than the summary and the settings', () => {
@@ -110,5 +111,15 @@ describe('the organization’s built-in AI agent (Historia 1): cheapest model, a
       expect(written).toMatch(/\$|US\$/);
     }
     expect(formatUsdCents(100, 'en')).toBe('$1.00');
+  });
+});
+
+describe('the organization’s built-in AI agent (Historia 4): a switch, every locale', () => {
+  it('has a non-empty switch label, and a different line for on and off, in every locale', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const ui = PANEL_SETTINGS_UI[locale].aiAgent;
+      expect(ui.switchLabel.trim().length).toBeGreaterThan(0);
+      expect(ui.lineOn).not.toBe(ui.lineOff);
+    }
   });
 });
