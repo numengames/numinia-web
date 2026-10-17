@@ -70,15 +70,28 @@ test.describe('Mundos, the index of worlds', () => {
     await page.goto('/es/mundos/');
     await expect(page.locator('h1')).toHaveText('Mundos');
     const cards = page.locator('[data-world-card]');
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(3);
     await expect(page.locator('[data-world-card="old-plaza"]')).toHaveCount(0);
-    await expect(page.locator('[data-world-card="bosque"] .chip')).toHaveText('Apagado');
+    // «bosque» belongs to an organization that is no community of the city:
+    // the public list leaves it out (lib/world-index.ts).
+    await expect(page.locator('[data-world-card="bosque"]')).toHaveCount(0);
     await expect(page.locator('[data-world-card="agora-plaza"] .chip').first()).toHaveText(
       /Encendido/,
     );
+    // A card names its world; it never prints the raw id.
+    await expect(
+      page.locator('[data-world-card="agora-plaza"] [data-metric="worlds-card-title"]'),
+    ).toHaveText('Agora Plaza');
+    await expect(
+      page.locator('[data-world-card="alchemists-tower"] [data-metric="worlds-card-title"]'),
+    ).toHaveText('Alchemists Tower');
     await expect(
       page.locator('[data-world-card="agora-plaza"] [data-metric="worlds-card-page"]'),
     ).toHaveAttribute('href', '/es/mundos/agora-plaza/');
+    // Every card's community leads to its page.
+    await expect(
+      page.locator('[data-world-card="agora-plaza"] [data-metric="worlds-card-community"]'),
+    ).toHaveAttribute('href', '/es/communities/numen-games/');
     // No count the worlds did not give, no capacity.
     await expect(page.locator('[data-world-card] .mt-datos')).toHaveCount(0);
   });
@@ -86,24 +99,25 @@ test.describe('Mundos, the index of worlds', () => {
   test('the chips filter the worlds, and a chip of nothing is never drawn', async ({ page }) => {
     await page.goto('/es/mundos/');
     const chips = page.locator('[data-world-filter]');
-    await expect(chips).toHaveText(['Todos · 4', 'De la ciudad · 3', 'De comunidades · 1']);
-    await page.locator('[data-world-filter="communities"]').click();
-    await expect(page.locator('[data-world-card]:visible')).toHaveCount(1);
-    await expect(page.locator('[data-world-card="bosque"]')).toBeVisible();
-    await expect(page.locator('[data-world-filter="communities"]')).toHaveAttribute(
+    // Nobody is inside and every placed world is the city's: those two chips alone.
+    await expect(chips).toHaveText(['Todos · 3', 'De la ciudad · 3']);
+    await expect(page.locator('[data-world-filter="communities"]')).toHaveCount(0);
+    await expect(page.locator('[data-world-filter="people"]')).toHaveCount(0);
+    await page.locator('[data-world-filter="city"]').click();
+    await expect(page.locator('[data-world-card]:visible')).toHaveCount(3);
+    await expect(page.locator('[data-world-filter="city"]')).toHaveAttribute(
       'aria-pressed',
       'true',
     );
-    await page.locator('[data-world-filter="city"]').click();
-    await expect(page.locator('[data-world-card]:visible')).toHaveCount(3);
     await page.locator('[data-world-filter="all"]').click();
-    await expect(page.locator('[data-world-card]:visible')).toHaveCount(4);
+    await expect(page.locator('[data-world-card]:visible')).toHaveCount(3);
+    await expect(page.locator('[data-world-filter="all"]')).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('a state explains itself on focus and closes with Esc', async ({ page }) => {
     await page.goto('/es/mundos/');
-    const chip = page.locator('[data-world-card="bosque"] [data-tip] .chip');
-    const bubble = page.locator('[data-world-card="bosque"] [role="tooltip"]');
+    const chip = page.locator('[data-world-card="agora-plaza"] [data-tip] .chip');
+    const bubble = page.locator('[data-world-card="agora-plaza"] [role="tooltip"]');
     await chip.focus();
     await expect(bubble).toBeVisible();
     await page.keyboard.press('Escape');
@@ -114,7 +128,7 @@ test.describe('Mundos, the index of worlds', () => {
     test(`${path} exists in its language`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.status()).toBe(200);
-      await expect(page.locator('[data-world-card]')).toHaveCount(4);
+      await expect(page.locator('[data-world-card]')).toHaveCount(3);
     });
   }
 

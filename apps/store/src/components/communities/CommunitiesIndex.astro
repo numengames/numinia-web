@@ -13,7 +13,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import { HOUSE_UI } from '../../i18n/house';
-import { PLACE_IDS, placeShort, searchText, type PlaceId } from '../../lib/communities';
+import { PLACE_IDS, countForm, placeShort, searchText, type PlaceId } from '../../lib/communities';
 import { communityActivity, ringChoice } from '../../lib/house-sphere';
 import { COMMUNITIES, RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
@@ -87,8 +87,17 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
       />
     </form>
     <p class="small texto-2 cuenta">
-      <span id="count" aria-live="polite" data-template={ui.countLine}
-        >{fill(ui.countLine, { n: others.length, m: placesWithSomeone })}</span
+      <span
+        id="count"
+        aria-live="polite"
+        data-one-one={ui.countLine.oneOne}
+        data-one-many={ui.countLine.oneMany}
+        data-many-one={ui.countLine.manyOne}
+        data-many-many={ui.countLine.manyMany}
+        >{fill(countForm(ui.countLine, others.length, placesWithSomeone), {
+          n: others.length,
+          m: placesWithSomeone,
+        })}</span
       >{house && <span>{hui.countHouse}</span>}
     </p>
   <div class="filtros" role="group" aria-label={ui.filterLabel} data-filters>
@@ -155,7 +164,13 @@ const placesWithSomeone = places.filter((place) => place !== 'tba').length;
         });
         none.hidden = shown > 0;
         if (shown === 0) none.querySelector('[data-none-text]').textContent = none.getAttribute('data-template').replace('{q}', q);
-        count.textContent = count.getAttribute('data-template').replace('{n}', shown).replace('{m}', Object.keys(places).length);
+        var found = Object.keys(places).length;
+        /* Singular or plural for each of the two counts: «1 comunidad en 2 lugares». */
+        var form =
+          shown === 1
+            ? found === 1 ? 'data-one-one' : 'data-one-many'
+            : found === 1 ? 'data-many-one' : 'data-many-many';
+        count.textContent = count.getAttribute(form).replace('{n}', shown).replace('{m}', found);
       }
       box.addEventListener('input', apply);
       box.form.addEventListener('submit', function (event) {

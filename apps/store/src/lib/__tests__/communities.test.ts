@@ -15,6 +15,7 @@ import {
   calendarMonth,
   calendarMonths,
   countedSedes,
+  countForm,
   dayAndMonth,
   editHref,
   newRitualHref,
@@ -911,5 +912,22 @@ describe('the iCalendar feed', () => {
     expect(feed.match(/BEGIN:VEVENT/g)).toHaveLength(RITUALS.length);
     for (const line of feed.split('\r\n'))
       expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
+  });
+});
+
+describe('countForm', () => {
+  const FORMS = {
+    oneOne: '{n} comunidad en {m} lugar',
+    oneMany: '{n} comunidad en {m} lugares',
+    manyOne: '{n} comunidades en {m} lugar',
+    manyMany: '{n} comunidades en {m} lugares',
+  };
+
+  it('picks the form each of the two counts calls for', () => {
+    expect(countForm(FORMS, 1, 1)).toBe(FORMS.oneOne);
+    expect(countForm(FORMS, 1, 2)).toBe(FORMS.oneMany);
+    expect(countForm(FORMS, 3, 1)).toBe(FORMS.manyOne);
+    expect(countForm(FORMS, 3, 2)).toBe(FORMS.manyMany);
+    expect(countForm(FORMS, 0, 0)).toBe(FORMS.manyMany);
   });
 });

@@ -90,15 +90,9 @@ const Heading = heading;
     </Heading>
     <p class="de">
       {owner[0]}
-      {
-        card.community.id === null ? (
-          card.community.name
-        ) : (
-          <a href={`${prefix}/communities/${card.community.id}/`} data-metric="worlds-card-community">
-            {card.community.name}
-          </a>
-        )
-      }
+      <a href={`${prefix}/communities/${card.community.id}/`} data-metric="worlds-card-community">
+        {card.community.name}
+      </a>
       {owner[1]}
     </p>
     {

@@ -70,8 +70,17 @@ export interface CommunitiesMessages {
   readonly searchLabel: string;
   readonly filterLabel: string;
   readonly filterAll: string;
-  /** "{n}" communities, "{m}" places. */
-  readonly countLine: string;
+  /**
+   * «{n} comunidades en {m} lugares» in the four forms a count needs: one
+   * community or several, one place or several. A language without plurals
+   * repeats the same line in all four.
+   */
+  readonly countLine: {
+    readonly oneOne: string;
+    readonly oneMany: string;
+    readonly manyOne: string;
+    readonly manyMany: string;
+  };
   /** "{q}" is the query. */
   readonly noResults: string;
   readonly noResultsCta: string;
@@ -115,7 +124,6 @@ export interface CommunitiesMessages {
   readonly decidedByCommunity: string;
   readonly district: string;
   readonly toChoose: string;
-  readonly itsFile: string;
   readonly claimTitle: string;
   readonly claimText: string;
   readonly claimCta: string;
@@ -283,11 +291,16 @@ const ES: CommunitiesMessages = {
   indexTitle: 'Las comunidades',
   indexLead:
     'Las que tienen sede en Numinia. A una comunidad oculta se llega con su enlace; una privada solo la ven sus miembros.',
-  searchPlaceholder: 'Busca por nombre, ciudad o encuentro',
+  searchPlaceholder: 'Nombre, ciudad o encuentro',
   searchLabel: 'Buscar una comunidad',
   filterLabel: 'Filtrar por lugar',
   filterAll: 'Todas',
-  countLine: '{n} comunidades en {m} lugares',
+  countLine: {
+    oneOne: '{n} comunidad en {m} lugar',
+    oneMany: '{n} comunidad en {m} lugares',
+    manyOne: '{n} comunidades en {m} lugar',
+    manyMany: '{n} comunidades en {m} lugares',
+  },
   noResults: 'Ninguna comunidad con «{q}». ¿Es la tuya?',
   noResultsCta: 'Abre tu sede',
 
@@ -336,7 +349,6 @@ const ES: CommunitiesMessages = {
   decidedByCommunity: 'Lo decide la comunidad al hacerla suya',
   district: 'Distrito',
   toChoose: 'Por elegir',
-  itsFile: 'Su fichero',
   claimTitle: '¿Es tu comunidad?',
   claimText:
     'Hazla tuya: entras y pasas a llevarla. Tú decides qué se ve, cómo se llama cada cosa y quién entra.',
@@ -499,11 +511,16 @@ const EN: CommunitiesMessages = {
   indexTitle: 'The communities',
   indexLead:
     'Those with a home in Numinia. A hidden community is reached by its link; a private one is seen by its members only.',
-  searchPlaceholder: 'Search by name, city or gathering',
+  searchPlaceholder: 'Name, city or gathering',
   searchLabel: 'Search for a community',
   filterLabel: 'Filter by place',
   filterAll: 'All',
-  countLine: '{n} communities in {m} places',
+  countLine: {
+    oneOne: '{n} community in {m} place',
+    oneMany: '{n} community in {m} places',
+    manyOne: '{n} communities in {m} place',
+    manyMany: '{n} communities in {m} places',
+  },
   noResults: 'No community matches “{q}”. Is it yours?',
   noResultsCta: 'Open your home',
 
@@ -551,7 +568,6 @@ const EN: CommunitiesMessages = {
   decidedByCommunity: 'The community decides when it makes the home its own',
   district: 'District',
   toChoose: 'To choose',
-  itsFile: 'Its file',
   claimTitle: 'Is this your community?',
   claimText:
     'Make it yours: you come in and take it over. You decide what is shown, what each thing is called and who gets in.',
@@ -738,11 +754,16 @@ const JA: CommunitiesMessages = {
   indexTitle: 'コミュニティ',
   indexLead:
     'Numinia に拠点を持つコミュニティ。非公開のものはリンクから、プライベートなものはメンバーだけが見られます。',
-  searchPlaceholder: '名前、都市、集まりで検索',
+  searchPlaceholder: '名前、都市、集まり',
   searchLabel: 'コミュニティを検索',
   filterLabel: '場所で絞り込む',
   filterAll: 'すべて',
-  countLine: '{m} か所に {n} のコミュニティ',
+  countLine: {
+    oneOne: '{m} か所に {n} のコミュニティ',
+    oneMany: '{m} か所に {n} のコミュニティ',
+    manyOne: '{m} か所に {n} のコミュニティ',
+    manyMany: '{m} か所に {n} のコミュニティ',
+  },
   noResults: '「{q}」に当たるコミュニティはありません。あなたのコミュニティですか？',
   noResultsCta: '拠点を開く',
   crumbCommunities: 'コミュニティ',
@@ -772,7 +793,6 @@ const JA: CommunitiesMessages = {
   byInvitation: '招待制',
   district: '地区',
   toChoose: '未選択',
-  itsFile: 'ファイル',
   claimTitle: 'あなたのコミュニティですか？',
   claimCta: '私のコミュニティです',
   usesTitle: 'この空間が使っているもの',
@@ -942,11 +962,16 @@ const KO: CommunitiesMessages = {
   indexTitle: '커뮤니티',
   indexLead:
     'Numinia에 거점을 둔 커뮤니티. 숨겨진 커뮤니티는 링크로, 비공개 커뮤니티는 구성원만 볼 수 있습니다.',
-  searchPlaceholder: '이름, 도시, 모임으로 검색',
+  searchPlaceholder: '이름, 도시, 모임',
   searchLabel: '커뮤니티 검색',
   filterLabel: '장소로 필터',
   filterAll: '전체',
-  countLine: '{m}곳의 {n}개 커뮤니티',
+  countLine: {
+    oneOne: '{m}곳의 {n}개 커뮤니티',
+    oneMany: '{m}곳의 {n}개 커뮤니티',
+    manyOne: '{m}곳의 {n}개 커뮤니티',
+    manyMany: '{m}곳의 {n}개 커뮤니티',
+  },
   noResults: '“{q}”에 맞는 커뮤니티가 없습니다. 당신의 커뮤니티인가요?',
   noResultsCta: '거점 열기',
   crumbCommunities: '커뮤니티',
@@ -976,7 +1001,6 @@ const KO: CommunitiesMessages = {
   byInvitation: '초대제',
   district: '구역',
   toChoose: '미정',
-  itsFile: '파일',
   claimTitle: '당신의 커뮤니티인가요?',
   claimCta: '내 커뮤니티입니다',
   usesTitle: '이 공간이 쓰는 것',
@@ -1146,11 +1170,16 @@ const PT_BR: CommunitiesMessages = {
   indexTitle: 'As comunidades',
   indexLead:
     'As que têm sede na Numinia. A uma comunidade oculta se chega pelo link; uma privada só os membros veem.',
-  searchPlaceholder: 'Busque por nome, cidade ou encontro',
+  searchPlaceholder: 'Nome, cidade ou encontro',
   searchLabel: 'Buscar uma comunidade',
   filterLabel: 'Filtrar por lugar',
   filterAll: 'Todas',
-  countLine: '{n} comunidades em {m} lugares',
+  countLine: {
+    oneOne: '{n} comunidade em {m} lugar',
+    oneMany: '{n} comunidade em {m} lugares',
+    manyOne: '{n} comunidades em {m} lugar',
+    manyMany: '{n} comunidades em {m} lugares',
+  },
   noResults: 'Nenhuma comunidade com “{q}”. É a sua?',
   noResultsCta: 'Abra sua sede',
   crumbCommunities: 'Comunidades',
@@ -1180,7 +1209,6 @@ const PT_BR: CommunitiesMessages = {
   byInvitation: 'Por convite',
   district: 'Distrito',
   toChoose: 'A escolher',
-  itsFile: 'Seu arquivo',
   claimTitle: 'É a sua comunidade?',
   claimCta: 'É a minha comunidade',
   usesTitle: 'O que este espaço usa',

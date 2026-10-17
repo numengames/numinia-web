@@ -61,6 +61,28 @@ export function lineOf(description: string): string | null {
 }
 
 /**
+ * Some goods reached the catalogue with the name of the file they came in
+ * («med 1», «med (2)», «cover.png»): the uploader's file name, not a title
+ * anybody wrote. These are the three marks of one — a known asset
+ * extension, the duplicate marker a download folder adds, and an
+ * uncapitalised stub with at most a trailing counter.
+ */
+const FILE_EXTENSION = /\.(glb|gltf|vrm|hyp|png|jpe?g|webp|mp3|mp4|zip|fbx)$/i;
+const COPY_MARKER = /\(\d+\)$/;
+const UNCAPITALISED_STUB = /^[a-z][a-z0-9_-]*(?: ?\d+)?$/;
+
+/**
+ * A good's title as a page says it, or null when the catalogue holds only
+ * the file's own name: nothing beats a file name on a public page.
+ */
+export function goodTitle(name: string): string | null {
+  const title = name.trim().replace(/\s+/g, ' ');
+  if (title === '') return null;
+  if (FILE_EXTENSION.test(title) || COPY_MARKER.test(title)) return null;
+  return UNCAPITALISED_STUB.test(title) ? null : title;
+}
+
+/**
  * A good's card picture: its baked 480px WebP when the build has one (a
  * picture's own file is baked too: scripts/build-thumbs.mjs), else the
  * catalogue's thumbnail, else — for a PNG or JPG — the picture itself, so a

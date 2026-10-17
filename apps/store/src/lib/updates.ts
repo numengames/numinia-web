@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.120.0',
+    date: '2026-10-17 08:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The first sixty seconds, in words a newcomer reads. «Worlds» names each world instead of printing its address: the name the world states of itself, or its id read as words («agora-plaza» → «Agora Plaza») — and the card in the list and the heading of the world’s own page now say the same name. Worlds the data places in no community of the city no longer appear in the public list. A world’s page calls who holds it its «Community», never its «organization». In the Bazaar, a good shows no description when all the catalogue holds is the upload tool’s English stamp («VRM asset uploaded via Numinia Admin»), and no title when all it holds is the file’s own name («med (2)») — the kind of good names it instead. The public pages of communities and gatherings no longer print the repository path of the file behind them. And «1 comunidad en 2 lugares» reads as it should, singular and plural, with a search box whose placeholder fits inside it. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.119.0',
     date: '2026-10-17 12:00',
     entries: [
