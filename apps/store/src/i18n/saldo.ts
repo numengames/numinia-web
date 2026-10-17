@@ -105,6 +105,9 @@ export interface SaldoMessages {
     readonly label: string;
     readonly low: string;
     readonly lowNote: string;
+    /** With nothing that costs (cut «gratis»): the balance block says so, for a community and for your own account. */
+    readonly free: string;
+    readonly freePersonal: string;
     readonly spent: string;
     /** `{range}`: «30 días». */
     readonly spentOf: string;
@@ -136,6 +139,8 @@ export interface SaldoMessages {
     readonly note: string;
     /** Who sells the top-up and what the bank statement says (a buyer who does not recognise it may dispute). */
     readonly seller: string;
+    /** On an account that spends nothing: the short line over the secondary top-up. */
+    readonly optional: string;
     readonly amounts: string;
     readonly pay: string;
     readonly opening: string;
@@ -300,7 +305,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       personal: 'Tu cuenta',
       newTeam: 'Nueva organización',
       newTeamName: 'Nombre de la organización',
-      newTeamNote: 'Tendrá su propio saldo y tú serás quien la administra.',
+      newTeamNote: 'Abrirla es gratis. Solo pagas cuando le des un mundo que esté en marcha.',
       create: 'Crear',
       cancel: 'Cancelar',
       nameInvalid: 'Escribe un nombre de 1 a 60 caracteres.',
@@ -310,6 +315,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       label: 'Saldo · no caduca',
       low: 'Saldo bajo',
       lowNote: 'Te queda menos de 10\u00a0€. Recarga para que tus sedes sigan abiertas.',
+      free: 'Esta comunidad no gasta nada todavía. Pagarás solo cuando tenga un mundo en marcha.',
+      freePersonal:
+        'Tu cuenta no gasta nada todavía. Pagarás solo cuando tengas un mundo en marcha.',
       spent: 'Gastado este periodo',
       spentOf: 'en los últimos {range}',
     },
@@ -331,6 +339,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       note: 'Elige cuánto añadir. El pago se hace en Stripe, en otra pestaña.',
       seller:
         'La recarga la vende Link (Stripe), que te enviará la factura. En tu extracto bancario aparecerá como LINK.COM* NUMEN GAMES.',
+      optional: 'Si quieres, deja saldo preparado para entonces.',
       amounts: 'Importe de la recarga',
       pay: 'Pagar con Stripe',
       opening: 'Abriendo Stripe…',
@@ -563,7 +572,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       personal: 'Your account',
       newTeam: 'New organization',
       newTeamName: "Organization's name",
-      newTeamNote: 'It will have its own balance, and you will run it.',
+      newTeamNote: 'Opening it is free. You pay only when you give it a world that is running.',
       create: 'Create',
       cancel: 'Cancel',
       nameInvalid: 'Write a name of 1 to 60 characters.',
@@ -573,6 +582,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       label: 'Balance · never expires',
       low: 'Low balance',
       lowNote: 'Less than €10 left. Top up to keep your homes open.',
+      free: 'This community spends nothing yet. You will pay only when it has a world running.',
+      freePersonal:
+        'Your account spends nothing yet. You will pay only when you have a world running.',
       spent: 'Spent this period',
       spentOf: 'over the last {range}',
     },
@@ -594,6 +606,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       note: 'Choose how much to add. You pay on Stripe, in another tab.',
       seller:
         'The top-up is sold by Link (Stripe), which sends you the invoice. On your bank statement it will appear as LINK.COM* NUMEN GAMES.',
+      optional: 'If you like, leave some balance ready for then.',
       amounts: 'Top-up amount',
       pay: 'Pay with Stripe',
       opening: 'Opening Stripe…',
@@ -820,7 +833,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       personal: 'あなたのアカウント',
       newTeam: '新しい組織',
       newTeamName: '組織の名前',
-      newTeamNote: '組織には専用の残高があり、あなたが管理者になります。',
+      newTeamNote: '開設は無料です。稼働中のワールドを与えたときにだけ支払いが発生します。',
       create: '作成',
       cancel: 'キャンセル',
       nameInvalid: '1〜60文字の名前を入力してください。',
@@ -830,6 +843,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       label: '残高 · 有効期限なし',
       low: '残高わずか',
       lowNote: '残りが10ユーロ未満です。拠点を開いたままにするにはチャージしてください。',
+      free: 'このコミュニティはまだ何も消費していません。支払いが必要になるのは、稼働中のワールドを持ったときだけです。',
+      freePersonal:
+        'あなたのアカウントはまだ何も消費していません。支払いが必要になるのは、稼働中のワールドを持ったときだけです。',
       spent: '今期の利用額',
       spentOf: '直近{range}',
     },
@@ -851,6 +867,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       note: '追加する金額を選んでください。支払いは別タブのStripeで行います。',
       seller:
         'チャージの販売者はLink（Stripe）で、請求書はLinkから届きます。銀行の明細には「LINK.COM* NUMEN GAMES」と表示されます。',
+      optional: 'よければ、そのときに備えて残高を用意しておけます。',
       amounts: 'チャージ金額',
       pay: 'Stripeで支払う',
       opening: 'Stripeを開いています…',
@@ -1076,7 +1093,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       personal: '내 계정',
       newTeam: '새 조직',
       newTeamName: '조직 이름',
-      newTeamNote: '조직은 자체 잔액을 가지며, 내가 관리자가 됩니다.',
+      newTeamNote: '여는 것은 무료입니다. 가동 중인 월드를 줄 때만 비용을 냅니다.',
       create: '만들기',
       cancel: '취소',
       nameInvalid: '1~60자의 이름을 입력해 주세요.',
@@ -1086,6 +1103,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       label: '잔액 · 만료 없음',
       low: '잔액 부족',
       lowNote: '10유로 미만 남았습니다. 거점을 계속 열어 두려면 충전하세요.',
+      free: '이 커뮤니티는 아직 아무것도 쓰지 않습니다. 가동 중인 월드가 생길 때만 비용을 냅니다.',
+      freePersonal:
+        '내 계정은 아직 아무것도 쓰지 않습니다. 가동 중인 월드가 생길 때만 비용을 냅니다.',
       spent: '이번 기간 사용액',
       spentOf: '최근 {range}',
     },
@@ -1107,6 +1127,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       note: '추가할 금액을 고르세요. 결제는 다른 탭의 Stripe에서 합니다.',
       seller:
         '충전은 Link(Stripe)가 판매하며, 영수증도 Link가 보냅니다. 은행 명세서에는 「LINK.COM* NUMEN GAMES」로 표시됩니다.',
+      optional: '원한다면 그때를 위해 잔액을 미리 준비해 둘 수 있습니다.',
       amounts: '충전 금액',
       pay: 'Stripe로 결제',
       opening: 'Stripe 여는 중…',
@@ -1329,7 +1350,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       personal: 'Sua conta',
       newTeam: 'Nova organização',
       newTeamName: 'Nome da organização',
-      newTeamNote: 'Ela terá seu próprio saldo, e você será quem a administra.',
+      newTeamNote: 'Abri-la é grátis. Você só paga quando der a ela um mundo em funcionamento.',
       create: 'Criar',
       cancel: 'Cancelar',
       nameInvalid: 'Escreva um nome de 1 a 60 caracteres.',
@@ -1339,6 +1360,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       label: 'Saldo · não expira',
       low: 'Saldo baixo',
       lowNote: 'Restam menos de 10\u00a0€. Recarregue para manter suas sedes abertas.',
+      free: 'Esta comunidade não gasta nada ainda. Você pagará só quando ela tiver um mundo em funcionamento.',
+      freePersonal:
+        'Sua conta não gasta nada ainda. Você pagará só quando tiver um mundo em funcionamento.',
       spent: 'Gasto neste período',
       spentOf: 'nos últimos {range}',
     },
@@ -1360,6 +1384,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       note: 'Escolha quanto adicionar. O pagamento é feito no Stripe, em outra aba.',
       seller:
         'A recarga é vendida pela Link (Stripe), que lhe envia a fatura. No extrato bancário aparecerá como LINK.COM* NUMEN GAMES.',
+      optional: 'Se quiser, deixe saldo preparado para esse momento.',
       amounts: 'Valor da recarga',
       pay: 'Pagar com Stripe',
       opening: 'Abrindo o Stripe…',

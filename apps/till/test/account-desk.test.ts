@@ -318,6 +318,7 @@ describe('the statement', () => {
     if (!answer.ok) throw new Error(answer.problems.join());
     expect(answer.balanceCents).toBe(965);
     expect(answer.lowBalance).toBe(true);
+    expect(answer.hasCosts).toBe(true);
     expect(answer.lots).toEqual([
       { lineId: 'L1', at: '2026-10-10T09:00:00.000Z', amountCents: 1000, remainderCents: 940 },
       { lineId: 'L3', at: '2026-10-13T10:00:00.000Z', amountCents: 25, remainderCents: 25 },
@@ -337,11 +338,26 @@ describe('the statement', () => {
     const own = await personal(desk);
     const answer = await desk.statement(PABLO, own, '12m');
     expect(answer.ok && answer.members).toBeUndefined();
+    expect(answer.ok && answer.hasCosts).toBe(false);
     expect(answer.ok && answer.spend).toHaveLength(12);
     expect(await desk.statement(STRANGER, own, '30d')).toEqual({
       ok: false,
       problems: [PROBLEMS.notMember],
     });
+  });
+
+  it('says a just-opened organization costs nothing, and one with a world placed does', async () => {
+    const { desk, sqlite } = scene();
+    const numen = await team(desk);
+    const fresh = await desk.statement(PABLO, numen, '30d');
+    expect(fresh.ok && fresh.hasCosts).toBe(false);
+    expect(fresh.ok && fresh.lowBalance).toBe(true);
+    sqlite.exec(`
+      INSERT INTO world_placements (world_id, account_id, placed_by, placed_at)
+        VALUES ('w-placed', '${numen}', '${PABLO}', '2026-10-14T12:00:00.000Z');
+    `);
+    const placed = await desk.statement(PABLO, numen, '30d');
+    expect(placed.ok && placed.hasCosts).toBe(true);
   });
 
   /** An organization with two worlds of different sizes and a version that prices three sizes. */

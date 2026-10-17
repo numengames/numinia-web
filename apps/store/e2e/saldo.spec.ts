@@ -240,6 +240,84 @@ test('switching to an organization shows its balance and the way to its members,
   await expect(link).toHaveAttribute('href', '/es/panel/miembros/?org=acc_t');
 });
 
+/** A just-opened organization at 0 €: the till says it has nothing that costs. */
+const FRESH = { id: 'acc_f', kind: 'team', name: 'Ateneo', role: 'owner', balanceCents: 0 };
+
+async function withFresh(page: Page): Promise<void> {
+  await signedIn(page, MEMBER_ACCESS);
+  await page.route('**/api/saldo/statement?*', (route: Route) => {
+    const id = new URL(route.request().url()).searchParams.get('cuenta');
+    if (id !== FRESH.id) {
+      return route.fulfill({ json: statementOf(PERSONAL, null) });
+    }
+    const empty = statementOf(TEAM, MEMBER_ACCESS);
+    return route.fulfill({
+      json: {
+        ...empty,
+        statement: {
+          ...empty.statement,
+          account: FRESH,
+          balanceCents: 0,
+          lowBalance: true,
+          hasCosts: false,
+          spend: [],
+          spendTotalCents: 0,
+          lines: [],
+          pace: { sevenDaysCents: 0, monthCents: 0, monthWorlds: 0 },
+        },
+      },
+    });
+  });
+  await page.route('**/api/saldo', (route: Route) => {
+    if (route.request().method() === 'GET') {
+      return route.fulfill({ json: { accounts: [PERSONAL, FRESH] } });
+    }
+    return route.fulfill({ json: { result: { ok: true, members: [] } } });
+  });
+}
+
+test('an organization with nothing that costs shows no low-balance warning: the free line, and the top-up as a secondary act', async ({
+  page,
+}) => {
+  await withFresh(page);
+  await page.goto('/es/saldo/');
+  await page.locator('#saldo-cuenta').selectOption('acc_f');
+  await expect(page.locator('[data-saldo-balance]')).toHaveText(/0,00\s€/);
+  await expect(page.locator('[data-saldo-low]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-runway]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-free]')).toHaveText(
+    'Esta comunidad no gasta nada todavía. Pagarás solo cuando tenga un mundo en marcha.',
+  );
+  await expect(page.locator('[data-saldo-topup]')).toHaveAttribute('data-saldo-topup', 'secondary');
+  await expect(page.locator('[data-saldo-optional]')).toBeVisible();
+  await expect(page.locator('[data-metric="saldo-pay"]')).toHaveClass(/btn-fantasma/);
+  await expect(page.locator('[data-saldo-panel] .btn-primario')).toHaveCount(0);
+});
+
+test('an account with a world and less than 10 € keeps the warning and the top-up as the main act', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/es/saldo/');
+  await expect(page.locator('[data-saldo-low]')).toContainText('Saldo bajo');
+  await expect(page.locator('[data-saldo-free]')).toHaveCount(0);
+  await expect(page.locator('[data-saldo-topup]')).toHaveAttribute('data-saldo-topup', 'primary');
+  await expect(page.locator('[data-metric="saldo-pay"]')).toHaveClass(/btn-primario/);
+});
+
+test('«Nueva organización» says opening one is free, with no price and no top-up', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/es/saldo/');
+  await page.locator('[data-metric="saldo-new-team"]').click();
+  await expect(page.locator('#saldo-nueva-nota')).toHaveText(
+    'Abrirla es gratis. Solo pagas cuando le des un mundo que esté en marcha.',
+  );
+  await expect(page.locator('.saldo-nueva')).not.toContainText('€');
+  await expect(page.locator('.saldo-nueva a')).toHaveCount(0);
+});
+
 test('a member who may top up sees the top-up, and the members of the organization are a link away', async ({
   page,
 }) => {

@@ -381,6 +381,7 @@ function buildSchemas() {
       account,
       balanceCents: z.number(),
       lowBalance: z.boolean(),
+      hasCosts: z.boolean().optional(),
       lots: z.array(
         z.object({
           lineId: z.string(),

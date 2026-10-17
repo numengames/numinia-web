@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.116.0',
+    date: '2026-10-16 23:30',
+    entries: [
+      {
+        type: 'UPD',
+        text: "Opening a community is free, and the screen says so. In «Nueva organización»: «Opening it is free. You pay only when you give it a world that is running.» On «Saldo», an account with nothing that costs — no world placed in it, none charged to it — shows no «Low balance» warning: the balance stays in sight and the line reads «This community spends nothing yet. You will pay only when it has a world running.»; the top-up is there, as a quiet, secondary act. An account with a world and less than 10 € keeps the warning and the top-up as today. The organization panel's summary follows the same rule. The till now says whether an account has anything that costs. In all five languages.",
+      },
+    ],
+  },
+  {
     version: 'v0.115.0',
     date: '2026-10-16 23:01',
     entries: [

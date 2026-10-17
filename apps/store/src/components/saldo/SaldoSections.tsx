@@ -21,9 +21,11 @@ import {
   formatBucket,
   formatEuros,
   formatTopup,
+  hasCosts,
   lineLabel,
   signedEuros,
   spendSeries,
+  warnsLowBalance,
   type DeskAccess,
   type DeskLine,
   type DeskStatement,
@@ -90,14 +92,22 @@ function TopupForm({
   ui,
   lang,
   controls,
+  secondary,
 }: {
   readonly ui: SaldoMessages;
   readonly lang: string;
   readonly controls: TopupControls;
+  /** On an account that spends nothing: a short line first, and the pay button a ghost, not the screen's primary act. */
+  readonly secondary: boolean;
 }) {
   const { amount, onAmount, onPay, state } = controls;
   return (
-    <div className="saldo-recarga">
+    <div className="saldo-recarga" data-saldo-topup={secondary ? 'secondary' : 'primary'}>
+      {secondary && (
+        <p className="saldo-nota" data-saldo-optional>
+          {ui.topup.optional}
+        </p>
+      )}
       <div className="saldo-importes" role="group" aria-label={ui.topup.amounts}>
         {TOPUP_KEYS.map((key) => (
           <button
@@ -115,7 +125,7 @@ function TopupForm({
       <div>
         <button
           type="button"
-          className="btn btn-primario"
+          className={secondary ? 'btn btn-fantasma' : 'btn btn-primario'}
           onClick={onPay}
           disabled={state.at === 'opening'}
           data-metric="saldo-pay"
@@ -172,8 +182,9 @@ export function Kpis({
   readonly noTopup: string;
 }) {
   const { pace, tariff } = statement;
+  const costs = hasCosts(statement);
   const runway = runwayOf(statement.balanceCents, pace);
-  const lasts = runway === null ? null : runwayText(ui, runway);
+  const lasts = runway === null || !costs ? null : runwayText(ui, runway);
   const worlds =
     pace === undefined
       ? ''
@@ -200,7 +211,12 @@ export function Kpis({
             {lasts}
           </p>
         )}
-        {statement.lowBalance && (
+        {!costs && (
+          <p className="saldo-nota" data-saldo-free>
+            {statement.account.kind === 'personal' ? ui.balance.freePersonal : ui.balance.free}
+          </p>
+        )}
+        {warnsLowBalance(statement) && (
           <p className="saldo-bajo" data-saldo-low>
             <strong>{ui.balance.low}</strong> · {ui.balance.lowNote}
           </p>
@@ -210,7 +226,7 @@ export function Kpis({
             {noTopup}
           </p>
         ) : (
-          <TopupForm ui={ui} lang={lang} controls={topup} />
+          <TopupForm ui={ui} lang={lang} controls={topup} secondary={!costs} />
         )}
       </section>
       {pace !== undefined && (

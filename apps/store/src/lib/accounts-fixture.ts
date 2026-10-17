@@ -1059,6 +1059,7 @@ export function createAccountsFixtureDesk(
         account: accountOf(book, who, as),
         balanceCents,
         lowBalance: balanceCents < 1000,
+        hasCosts: book.lines.some((line) => line.kind === 'world_day'),
         lots: lotsOf(book.lines),
         spend,
         spendTotalCents: total,
