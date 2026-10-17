@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { SUPPORTED_LOCALES } from '@numinia/domain';
 import { PANEL_UI } from '../../i18n/panel';
 import {
+  DEFAULT_AI_MODEL,
+  DEFAULT_AI_TRIAL_CAP_CENTS,
   DEFAULT_VOCABULARY,
   HAPPENINGS_PAGE,
   SWITCHABLE_PIECES,
   VOCABULARIES,
+  formatUsdCents,
   isOn,
   isSwitchable,
   isVocabulary,
@@ -90,5 +93,22 @@ describe('the three presets of «Cómo se llama cada cosa»', () => {
       expect(simple).not.toEqual(numinia);
       expect(simple?.venues).not.toBe(PANEL_UI[locale].names.venues);
     }
+  });
+});
+
+describe('the organization’s built-in AI agent (Historia 1): cheapest model, a $1-2 trial cap', () => {
+  it('names a cheap-tier model id and a trial cap of 150 USD cents — $1.50, inside $1-2', () => {
+    expect(DEFAULT_AI_MODEL).toBe('gpt-5-nano');
+    expect(DEFAULT_AI_TRIAL_CAP_CENTS).toBeGreaterThanOrEqual(100);
+    expect(DEFAULT_AI_TRIAL_CAP_CENTS).toBeLessThanOrEqual(200);
+  });
+
+  it('formats the trial cap as a dollar amount, in every locale', () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const written = formatUsdCents(DEFAULT_AI_TRIAL_CAP_CENTS, locale);
+      expect(written).toMatch(/1[.,]50/);
+      expect(written).toMatch(/\$|US\$/);
+    }
+    expect(formatUsdCents(100, 'en')).toBe('$1.00');
   });
 });

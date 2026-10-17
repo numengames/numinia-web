@@ -581,6 +581,11 @@ function buildSchemas() {
       off: z.array(z.string()),
       vocabulary: z.enum(VOCABULARIES),
       mayEdit: z.boolean(),
+      aiAgent: z.object({
+        enabled: z.boolean(),
+        model: z.string(),
+        trialCapCents: z.number(),
+      }),
     }),
     refusal,
   ]);

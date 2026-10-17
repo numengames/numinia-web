@@ -36,6 +36,13 @@ export interface PanelSettingsMessages {
     readonly text: string;
     readonly alpha: string;
   };
+  readonly aiAgent: {
+    readonly title: string;
+    /** `{model}`, `{cap}`: «Agente IA: activo · gpt-5-nano · tope $1.50». */
+    readonly lineOn: string;
+    readonly lineOff: string;
+    readonly note: string;
+  };
   readonly readOnly: string;
   readonly saving: string;
   readonly saved: string;
@@ -65,6 +72,12 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       text: 'La casa entra a ayudar con la comunidad y su sede; lo que hace sale en el registro, con nombre.',
       alpha: 'Durante la alfa está fijo en «Siempre».',
     },
+    aiAgent: {
+      title: 'Agente IA',
+      lineOn: 'Agente IA: activo · {model} · tope {cap}',
+      lineOff: 'Agente IA: inactivo · {model} · tope {cap}',
+      note: 'Cada comunidad nace con un agente de IA de modelo barato y un tope de prueba. Encenderlo o apagarlo llega en otra entrega.',
+    },
     readOnly: 'Solo quien administra la comunidad puede cambiar esto.',
     saving: 'Guardando…',
     saved: 'Guardado.',
@@ -91,6 +104,12 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: "The house's access",
       text: 'The house comes in to help with the community and its venue; what it does appears in the log, by name.',
       alpha: 'During the alpha this is fixed on “Always”.',
+    },
+    aiAgent: {
+      title: 'AI agent',
+      lineOn: 'AI agent: active · {model} · cap {cap}',
+      lineOff: 'AI agent: inactive · {model} · cap {cap}',
+      note: 'Every community is born with a cheap-model AI agent and a trial cap. Switching it on or off ships in a later cut.',
     },
     readOnly: 'Only whoever manages the community can change this.',
     saving: 'Saving…',
@@ -119,6 +138,12 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       text: 'ハウスはコミュニティとその拠点を手伝うために入ります。その操作は記録に名前つきで残ります。',
       alpha: 'アルファ期間中は「常に」に固定されています。',
     },
+    aiAgent: {
+      title: 'AIエージェント',
+      lineOn: 'AIエージェント: 稼働中 · {model} · 上限 {cap}',
+      lineOff: 'AIエージェント: 停止中 · {model} · 上限 {cap}',
+      note: 'コミュニティは誕生時から、安価なモデルのAIエージェントと試用上限を持ちます。オン/オフの切り替えは今後の更新で提供されます。',
+    },
     readOnly: 'これを変更できるのはコミュニティの管理者だけです。',
     saving: '保存中…',
     saved: '保存しました。',
@@ -146,6 +171,12 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       text: '하우스는 커뮤니티와 그 거점을 돕기 위해 들어옵니다. 하우스가 한 일은 이름과 함께 기록에 남습니다.',
       alpha: '알파 기간에는 「항상」으로 고정되어 있습니다.',
     },
+    aiAgent: {
+      title: 'AI 에이전트',
+      lineOn: 'AI 에이전트: 활성 · {model} · 한도 {cap}',
+      lineOff: 'AI 에이전트: 비활성 · {model} · 한도 {cap}',
+      note: '커뮤니티는 생성될 때부터 저가 모델 AI 에이전트와 체험 한도를 갖습니다. 켜고 끄는 기능은 다음 업데이트에서 제공됩니다.',
+    },
     readOnly: '이 설정은 커뮤니티 관리자만 바꿀 수 있습니다.',
     saving: '저장 중…',
     saved: '저장했습니다.',
@@ -172,6 +203,12 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'Acesso da casa',
       text: 'A casa entra para ajudar com a comunidade e a sua sede; o que faz aparece no registro, com nome.',
       alpha: 'Durante a alfa isto fica fixo em «Sempre».',
+    },
+    aiAgent: {
+      title: 'Agente de IA',
+      lineOn: 'Agente de IA: ativo · {model} · limite {cap}',
+      lineOff: 'Agente de IA: inativo · {model} · limite {cap}',
+      note: 'Cada comunidade nasce com um agente de IA de modelo barato e um limite de teste. Ligar ou desligar chega em outra entrega.',
     },
     readOnly: 'Só quem administra a comunidade pode mudar isto.',
     saving: 'Salvando…',

@@ -175,6 +175,7 @@ async function stage(
           off: options.off ?? [],
           vocabulary: 'mixed',
           mayEdit: true,
+          aiAgent: { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 },
         },
       },
     }),

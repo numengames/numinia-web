@@ -127,10 +127,11 @@ test.describe('Ajustes', () => {
     await openSettings(page);
     await expect(page.locator('h1')).toHaveText('Ajustes');
     const cards = page.locator('.ajustes-tarjeta');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(4);
     await expect(cards.nth(0)).toContainText('Piezas');
     await expect(cards.nth(1)).toContainText('Cómo se llama cada cosa');
     await expect(cards.nth(2)).toContainText('Acceso de la casa');
+    await expect(cards.nth(3)).toContainText('Agente IA');
     // The eight screens that exist; summary and settings are always on, the other six have a switch.
     await expect(page.locator('[data-settings-piece]')).toHaveCount(8);
     for (const id of ['summary', 'settings']) {
@@ -151,6 +152,13 @@ test.describe('Ajustes', () => {
     await expect(house).toContainText('sale en el registro, con nombre');
     await expect(house.getByRole('switch')).toHaveCount(0);
     await expect(house.getByRole('button')).toHaveCount(0);
+    // The organization's built-in AI agent (Historia 1): read-only, cheapest model, a trial cap.
+    const aiAgent = page.locator('[data-settings-ai-agent]');
+    await expect(aiAgent).toHaveAttribute('data-ai-agent-enabled', 'true');
+    await expect(aiAgent).toContainText('Agente IA: activo · gpt-5-nano · tope');
+    await expect(aiAgent.locator('[data-ai-agent-line]')).toContainText(/1,50\s*US\$/);
+    await expect(aiAgent.getByRole('switch')).toHaveCount(0);
+    await expect(aiAgent.getByRole('button')).toHaveCount(0);
     // The rail has the new piece as a link, no longer «En construcción».
     await expect(rail(page).locator('a[data-metric="panel-nav-settings"]')).toHaveAttribute(
       'aria-current',
@@ -254,6 +262,7 @@ test.describe('Ajustes', () => {
             off: ['roles'],
             vocabulary: 'mixed',
             mayEdit: false,
+            aiAgent: { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 },
           },
         },
       }),
@@ -296,7 +305,7 @@ test.describe('Ajustes', () => {
       await signIn(context, OWNER, 'nomad');
       await openSettings(page, NUMEN, `${locale}/panel/ajustes/`);
       await expect(page.locator('h1')).toHaveText(title);
-      await expect(page.locator('.ajustes-tarjeta')).toHaveCount(3);
+      await expect(page.locator('.ajustes-tarjeta')).toHaveCount(4);
       await expect(rail(page).locator('a[data-metric="panel-nav-settings"]')).toHaveAttribute(
         'href',
         new RegExp(`^${locale}/panel/ajustes/`),
