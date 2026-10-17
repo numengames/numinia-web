@@ -30,6 +30,9 @@ import {
 } from '../../lib/communities';
 import Icon from '../chrome/Icon.astro';
 import Cover from './Cover.astro';
+import RsvpAction from './RsvpAction.astro';
+import { AGENDA_UI } from '../../i18n/agenda';
+import { signInHref } from '../../lib/app-nav';
 
 /** A world a live count can open: its community and its door. */
 interface LiveWorld {
@@ -49,6 +52,9 @@ interface Props {
 const { slides, live, later, locale, prefix } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const a = AHORA_UI[locale];
+const agenda = AGENDA_UI[locale];
+// «Me apunto» signed out leads to the door and back to the front page.
+const signIn = signInHref(locale, '/');
 const total = slides.length;
 const imageOf = (community: Community, ritual?: Ritual) => {
   const picture = ritual?.image ?? community.image;
@@ -147,6 +153,7 @@ const laterParts = a.laterInCity.split('{x}');
                 {ritual?.city && <span class="chip ambar">{a.ofTheCity}</span>}
               </div>
               <h2>{ritual ? pick(ritual.title, locale) : community.name}</h2>
+              {ritual && <p class="van" data-rsvp-count={ritual.id} hidden></p>}
               {ritual ? (
                 <p>
                   {whenLong(ritual, locale)} · {pick(ritual.where, locale)}.{' '}
@@ -162,13 +169,20 @@ const laterParts = a.laterInCity.split('{x}');
               <div class="fila acciones">
                 {ritual ? (
                   <>
+                    <RsvpAction
+                      locale={locale}
+                      ritualId={ritual.id}
+                      signIn={signIn}
+                      metric="home-featured-rsvp"
+                      large
+                    />
                     <a
-                      class="btn btn-primario btn-grande"
+                      class="btn btn-fantasma"
                       href={`/rituals/${ritual.id}.ics`}
                       data-metric="home-featured-calendar"
                     >
-                      <Icon name="calendar-plus" size={20} />
-                      {a.signMeUp}
+                      <Icon name="calendar-plus" size={18} />
+                      {agenda.addToCalendar}
                     </a>
                     <a
                       class="btn btn-fantasma"
@@ -346,6 +360,10 @@ const laterParts = a.laterInCity.split('{x}');
     margin: 0;
     color: var(--texto-2);
     max-width: 52ch;
+  }
+  .info .van {
+    color: var(--texto);
+    font-weight: 500;
   }
   .info p a {
     color: var(--texto);

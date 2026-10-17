@@ -896,6 +896,59 @@ Then('every city address redirects to how it works in its own locale', async fun
   assert.ok(!/\/city\/<\/loc>/.test(sitemap), 'sitemap lists a retired city address');
 });
 
+// --- «Me apunto» for real and «Tu agenda» (cut F, v0.116.0) ---
+
+Then(
+  'every upcoming encounter page offers «Me apunto» as a toggle and the calendar as a second action',
+  async function () {
+    // The built page carries both faces — the door signed out, the toggle
+    // signed in — and the .ics as the ghost button; no count is painted at
+    // build (it is asked once the session is in, and only shown above zero).
+    const dir = path.join(this.distDir, 'es', 'rituals');
+    let upcoming = 0;
+    for (const id of readdirSync(dir)) {
+      const html = await readFile(path.join(dir, id, 'index.html'), 'utf8').catch(() => null);
+      if (html === null) continue;
+      const held = /class="chip"[^>]*>Celebrado</.test(html);
+      if (held) {
+        assert.ok(!html.includes('data-rsvp="'), `${id} is held and still offers «Me apunto»`);
+        continue;
+      }
+      upcoming += 1;
+      assert.ok(
+        html.includes(`data-rsvp="${id}"`) && html.includes('aria-pressed="false"'),
+        `${id} lacks the RSVP toggle`,
+      );
+      assert.ok(html.includes('data-metric="ritual-rsvp-sign-in"'), `${id} lacks the door`);
+      assert.ok(
+        /class="btn btn-fantasma" href="\/rituals\/[^"]+\.ics" data-metric="ritual-add-calendar"[^<]*(<[^>]*>[^<]*)*?Añadir a mi calendario<\/a>/.test(
+          html,
+        ),
+        `${id} lacks «Añadir a mi calendario» as a ghost button`,
+      );
+      assert.ok(html.includes(`data-rsvp-count="${id}" hidden`), `${id} paints a count at build`);
+      assert.ok(html.includes('data-metric="ritual-your-agenda"'), `${id} lacks «Tu agenda»`);
+    }
+    assert.ok(upcoming >= 1, 'no upcoming encounter page to check');
+  },
+);
+
+Then('the agenda page is rendered on demand under every locale prefix', async function () {
+  const server = await readFile(path.join(this.distDir, '..', 'server', 'entry.mjs'), 'utf8');
+  for (const prefix of LOCALE_PREFIXES) {
+    const pathname = prefix ? `/${prefix}/agenda` : '/agenda';
+    assert.ok(
+      server.includes(`"pathname":"${pathname}","prerender":false`),
+      `${pathname} is not an on-demand route`,
+    );
+    const file = await readFile(
+      path.join(this.distDir, prefix, 'agenda', 'index.html'),
+      'utf8',
+    ).catch(() => null);
+    assert.equal(file, null, `${pathname} was built as a static file`);
+  }
+});
+
 Then('every community page carries the follow button', async function () {
   // The house's page is a narrative since v3 (features/house.feature): no card, no follow.
   for (const id of publishedCommunityIds().filter((entry) => entry !== 'numen-games')) {

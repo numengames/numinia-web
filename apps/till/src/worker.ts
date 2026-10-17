@@ -64,6 +64,14 @@ import {
 } from './db/community-teams';
 import { citizens, recordSignIn, type CitizensAnswer, type SignedInAnswer } from './db/census';
 import {
+  myRsvps,
+  rsvp,
+  rsvpCounts,
+  unrsvp,
+  type MyRsvpsAnswer,
+  type RsvpCountsAnswer,
+} from './db/rsvps';
+import {
   homeOf,
   placeWorld,
   placements,
@@ -511,6 +519,28 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     cursor?: unknown,
   ): Promise<CitizensAnswer> {
     return citizens(this.env.TILL_DB, wallet, house, query, cursor);
+  }
+
+  // ---- «Tu agenda» (2026-10-17): who is going to which encounter ----
+
+  /** The wallet says it is going to the encounter `ritualId`; answers all the ids it is going to. */
+  async rsvp(wallet: unknown, ritualId: unknown): Promise<MyRsvpsAnswer> {
+    return rsvp(this.env.TILL_DB, wallet, ritualId, new Date());
+  }
+
+  /** The wallet is no longer going to `ritualId`; the row goes, no history kept. */
+  async unrsvp(wallet: unknown, ritualId: unknown): Promise<MyRsvpsAnswer> {
+    return unrsvp(this.env.TILL_DB, wallet, ritualId);
+  }
+
+  /** The ritual ids the wallet said it is going to, to the wallet itself. */
+  async myRsvps(wallet: unknown): Promise<MyRsvpsAnswer> {
+    return myRsvps(this.env.TILL_DB, wallet);
+  }
+
+  /** How many people are going to each of up to 100 encounters: public, who they are told to nobody. */
+  async rsvpCounts(ritualIds: unknown): Promise<RsvpCountsAnswer> {
+    return rsvpCounts(this.env.TILL_DB, ritualIds);
   }
 
   // ---- «Una comunidad ES una organización» (2026-10-16): the house opens a community's account ----

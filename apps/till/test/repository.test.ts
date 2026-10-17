@@ -120,6 +120,7 @@ describe('the migration', () => {
       '0009_numen_games_roles.sql',
       '0010_organization_settings.sql',
       '0011_organization_agents.sql',
+      '0012_ritual_rsvps.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -136,6 +137,7 @@ describe('the migration', () => {
         'keep_marks',
         'ledger_lines',
         'organization_settings',
+        'ritual_rsvps',
         'stripe_cursor',
         'tariff_versions',
         'team_agent_passes',

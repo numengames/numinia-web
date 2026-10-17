@@ -1,0 +1,189 @@
+---
+/**
+ * «Tu agenda» (cut F, 2026-10-17): the encounters you said you are going to
+ * with «Me apunto», soonest first, with the existing ritual card; the ones
+ * already over folded under «Ya pasaron · N»; empty, a line and the way to
+ * the encounters. Rendered on demand (the page is a person's: it reads the
+ * session cookie and asks the till), never cached, never a static file.
+ * Signed out it explains and offers the door, which comes back here. The
+ * till not there yet is said plainly.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AGENDA_UI } from '../../i18n/agenda';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { agendaOf } from '../../lib/agenda';
+import { localeHref, signInHref } from '../../lib/app-nav';
+import { SESSION_COOKIE } from '../../lib/auth/server';
+import { sessionWallet } from '../../lib/auth/session-wallet';
+import { rsvpsFrom } from '../../lib/rsvp-source';
+import { runtimeBinding } from '../../lib/runtime-env';
+import Icon from '../chrome/Icon.astro';
+import Countdown from './Countdown.astro';
+import { RITUALS, communityOf } from './register';
+import RitualCard from './RitualCard.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const words = AGENDA_UI[locale];
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const signIn = signInHref(locale, '/agenda/');
+const encountersHref = localeHref(locale, '/calendar/');
+
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const wallet = await sessionWallet(Astro.cookies.get(SESSION_COOKIE)?.value);
+const desk = rsvpsFrom({
+  binding: runtimeBinding('TILL_ACCOUNTS'),
+  dataSource: process.env.DATA_SOURCE,
+});
+
+type State = 'out' | 'unavailable' | 'ok';
+let state: State = 'out';
+let ids: readonly string[] = [];
+if (wallet !== null) {
+  state = 'unavailable';
+  if (desk !== null) {
+    try {
+      const answer: unknown = await desk.myRsvps(wallet.toLowerCase());
+      if (
+        typeof answer === 'object' &&
+        answer !== null &&
+        'ok' in answer &&
+        answer.ok === true &&
+        'ritualIds' in answer &&
+        Array.isArray(answer.ritualIds)
+      ) {
+        ids = answer.ritualIds.filter((id): id is string => typeof id === 'string');
+        state = 'ok';
+      }
+    } catch {
+      state = 'unavailable';
+    }
+  }
+}
+const agenda = agendaOf(ids, RITUALS, new Date());
+---
+
+<BaseLayout locale={locale} title={`${words.title} — Numinia`} description={words.lead} wide>
+  <header class="titulo-vista">
+    <h1 class="display-m">{words.title}</h1>
+    <p class="lead">{words.lead}</p>
+  </header>
+
+  {
+    state === 'out' && (
+      <section class="tarjeta puerta" data-agenda="out">
+        <Icon name="check-circle" size={28} />
+        <p class="texto-2">{words.signedOutLead}</p>
+        <a class="btn btn-primario" href={signIn} data-metric="agenda-sign-in">
+          {words.signIn}
+        </a>
+      </section>
+    )
+  }
+  {
+    state === 'unavailable' && (
+      <p class="vacio" data-agenda="unavailable">
+        <Icon name="hourglass" size={24} />
+        <span>{words.unavailable}</span>
+      </p>
+    )
+  }
+  {
+    state === 'ok' &&
+      (agenda.upcoming.length > 0 ? (
+        <ul class="lista-rit" data-agenda="upcoming">
+          {agenda.upcoming.map((ritual) => (
+            <li>
+              <RitualCard
+                ritual={ritual}
+                community={communityOf(ritual.community)}
+                locale={locale}
+                prefix={prefix}
+                ui={ui}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="vacio" data-agenda="empty">
+          <Icon name="calendar-blank" size={24} />
+          <span>
+            {words.emptyTitle}.{' '}
+            <a href={encountersHref} data-metric="agenda-encounters">
+              {words.seeEncounters}
+            </a>
+          </span>
+        </p>
+      ))
+  }
+  {
+    state === 'ok' && agenda.past.length > 0 && (
+      <details class="pasados" data-agenda="past">
+        <summary data-metric="agenda-past">{fill(words.past, { n: agenda.past.length })}</summary>
+        <ul class="lista-rit">
+          {agenda.past.map((ritual) => (
+            <li>
+              <RitualCard
+                ritual={ritual}
+                community={communityOf(ritual.community)}
+                locale={locale}
+                prefix={prefix}
+                ui={ui}
+              />
+            </li>
+          ))}
+        </ul>
+      </details>
+    )
+  }
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<style>
+  .puerta {
+    display: grid;
+    gap: var(--s4);
+    justify-items: start;
+    max-width: 36rem;
+  }
+  .puerta p {
+    margin: 0;
+  }
+  .pasados {
+    margin-top: var(--s6);
+  }
+  .pasados summary {
+    cursor: pointer;
+    min-height: 24px;
+    color: var(--texto-2);
+    font-weight: 500;
+    padding: var(--s2) 0;
+  }
+  .pasados[open] summary {
+    margin-bottom: var(--s4);
+  }
+  .lista-rit {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 40rem) {
+    .lista-rit {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .lista-rit > * {
+    min-width: 0;
+  }
+</style>

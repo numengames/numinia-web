@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.118.0',
+    date: '2026-10-17 23:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Count me in» is for real: on an encounter’s page and on the featured encounter of «Now», a signed-in person presses «Count me in» and the city remembers it — the button becomes «Going», pressing it again says «No longer going». Under the title, «N people are going» appears only once someone is. Adding the encounter to your own calendar stays as a second action. Without a session the button leads to sign in and back. In all five languages.',
+      },
+      {
+        type: 'NEW',
+        text: '«Your agenda» (/agenda/): the encounters you said you are going to, soonest first, with the past ones folded under «Already happened»; empty, it points to «Encounters». Without a session it explains and offers to sign in. The encounter page links to it. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.117.0',
     date: '2026-10-16 23:13',
     entries: [

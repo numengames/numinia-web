@@ -30,7 +30,6 @@ export interface AhoraMessages {
   readonly worldLead: string;
   /** The line under a world slide: "{x}" is the next encounter's name, linked. */
   readonly laterInCity: string;
-  readonly signMeUp: string;
   readonly seeEncounter: string;
   /** "{x}" is the community's name, linked. */
   readonly byCommunity: string;
@@ -88,7 +87,6 @@ const ES: AhoraMessages = {
   ofTheCity: 'De la ciudad',
   worldLead: 'Se abre en el navegador, sin instalar nada.',
   laterInCity: 'Luego en la ciudad: {x}.',
-  signMeUp: 'Me apunto',
   seeEncounter: 'Ver el encuentro',
   byCommunity: 'De {x}.',
   nowInside: 'Ahora mismo, dentro',
@@ -148,7 +146,6 @@ const EN: AhoraMessages = {
   ofTheCity: 'Of the city',
   worldLead: 'It opens in the browser, nothing to install.',
   laterInCity: 'Later in the city: {x}.',
-  signMeUp: 'Count me in',
   seeEncounter: 'See the encounter',
   byCommunity: 'By {x}.',
   nowInside: 'Inside right now',
@@ -205,7 +202,6 @@ const JA: AhoraMessages = {
   ofTheCity: '都市のもの',
   worldLead: 'ブラウザで開きます。インストールは不要です。',
   laterInCity: 'このあと都市で：{x}。',
-  signMeUp: '参加する',
   seeEncounter: '集まりを見る',
   byCommunity: '主催：{x}。',
   nowInside: 'いま中にいる人',
@@ -262,7 +258,6 @@ const KO: AhoraMessages = {
   ofTheCity: '도시의 것',
   worldLead: '브라우저에서 열립니다. 설치할 것이 없습니다.',
   laterInCity: '이후 도시에서: {x}.',
-  signMeUp: '참여할게요',
   seeEncounter: '모임 보기',
   byCommunity: '주최: {x}.',
   nowInside: '지금 안에 있는 곳',
@@ -319,7 +314,6 @@ const PT_BR: AhoraMessages = {
   ofTheCity: 'Da cidade',
   worldLead: 'Abre no navegador, sem instalar nada.',
   laterInCity: 'Depois na cidade: {x}.',
-  signMeUp: 'Eu vou',
   seeEncounter: 'Ver o encontro',
   byCommunity: 'De {x}.',
   nowInside: 'Agora mesmo, dentro',
