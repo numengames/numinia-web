@@ -51,82 +51,39 @@ const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(communit
      the place, the mode as a chip. */
   interface Row {
     readonly id: string;
-    readonly communityId: string;
     readonly communityName: string;
     readonly title: string;
     readonly start: string;
     readonly allDay: boolean;
-    readonly mode: 'in-person' | 'online' | 'mixed';
+    readonly mode: string;
     readonly where: string;
     readonly worldId: string | null;
   }
 
-  const LOCALE_TAG: Record<string, string> = {
-    es: 'es-ES',
-    en: 'en-GB',
-    ja: 'ja-JP',
-    ko: 'ko-KR',
-    'pt-br': 'pt-BR',
-  };
-
-  function dayParts(row: Row, locale: string): { day: string; month: string; time: string } {
-    const tag = LOCALE_TAG[locale] ?? 'en-GB';
-    const date = new Date(row.allDay ? `${row.start}T00:00:00Z` : row.start);
-    const day = new Intl.DateTimeFormat(tag, { day: 'numeric', timeZone: 'UTC' }).format(date);
-    const month = new Intl.DateTimeFormat(tag, { month: 'short', timeZone: 'UTC' })
-      .format(date)
-      .replace(/\./g, '')
-      .toUpperCase();
-    const time = row.allDay
-      ? ''
-      : `${new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(date)} UTC`;
-    return { day, month, time };
-  }
+  const esc = (text: string): string =>
+    text.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
   function fill(slot: HTMLElement): void {
     const list = slot.querySelector<HTMLElement>('[data-rituals-live-list]');
     if (!list) return;
-    const { query, world, prefix, locale, metricRow } = slot.dataset;
+    const { query, world, prefix = '', locale = 'en', metricRow = 'rituals-live-row' } = slot.dataset;
     const modes = JSON.parse(slot.dataset['modes'] ?? '{}') as Record<string, string>;
-    void fetch(`/api/rituals?${query ?? 'upcoming=1'}`, { headers: { accept: 'application/json' } })
+    const part = (date: Date, options: Intl.DateTimeFormatOptions): string =>
+      new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(date);
+    void fetch(`/api/rituals?${query ?? 'upcoming=1'}`)
       .then(async (response) => {
         if (!response.ok) return;
-        const body = (await response.json()) as { ok?: boolean; rituals?: Row[] };
+        const body = (await response.json()) as { rituals?: Row[] };
         const rows = (body.rituals ?? []).filter((row) => !world || row.worldId === world);
         if (rows.length === 0) return;
-        list.replaceChildren(
-          ...rows.map((row) => {
-            const parts = dayParts(row, locale ?? 'en');
-            const li = document.createElement('li');
-            li.dataset['ritualsLiveRow'] = row.id;
-            const date = document.createElement('span');
-            date.className = 'fecha';
-            const strong = document.createElement('b');
-            strong.textContent = parts.day;
-            date.append(strong, parts.month);
-            const body = document.createElement('div');
-            body.className = 'fila-enc';
-            const text = document.createElement('div');
-            const h3 = document.createElement('h3');
-            const link = document.createElement('a');
-            link.href = `${prefix ?? ''}/rituals/${row.id}/`;
-            link.dataset['metric'] = metricRow ?? 'rituals-live-row';
-            link.textContent = row.title;
-            h3.append(link);
-            const p = document.createElement('p');
-            p.textContent = `${row.communityName} · ${row.where}${parts.time ? ` · ${parts.time}` : ''}`;
-            text.append(h3, p);
-            const chips = document.createElement('span');
-            chips.className = 'fila modo';
-            const chip = document.createElement('span');
-            chip.className = 'chip';
-            chip.textContent = modes[row.mode] ?? row.mode;
-            chips.append(chip);
-            body.append(text, chips);
-            li.append(date, body);
-            return li;
-          }),
-        );
+        list.innerHTML = rows
+          .map((row) => {
+            const date = new Date(row.allDay ? `${row.start}T00:00:00Z` : row.start);
+            const time = row.allDay ? '' : ` · ${part(date, { hour: '2-digit', minute: '2-digit' })} UTC`;
+            const month = part(date, { month: 'short' }).replace(/\./g, '').toUpperCase();
+            return `<li data-rituals-live-row="${esc(row.id)}"><span class="fecha"><b>${part(date, { day: 'numeric' })}</b>${esc(month)}</span><div class="fila-enc"><div><h3><a href="${esc(prefix)}/rituals/${esc(row.id)}/" data-metric="${esc(metricRow)}">${esc(row.title)}</a></h3><p>${esc(`${row.communityName} · ${row.where}${time}`)}</p></div><span class="fila modo"><span class="chip">${esc(modes[row.mode] ?? row.mode)}</span></span></div></li>`;
+          })
+          .join('');
         slot.hidden = false;
       })
       .catch(() => undefined);
@@ -135,7 +92,8 @@ const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(communit
   for (const slot of document.querySelectorAll<HTMLElement>('[data-rituals-live]')) fill(slot);
 </script>
 
-<style>
+<style is:global>
+  /* Global, under .rituales-vivos alone: the rows are made in the browser and carry no scope. */
   .rituales-vivos {
     margin-top: var(--s4);
   }

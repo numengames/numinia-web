@@ -116,8 +116,9 @@ test.describe('desktop', () => {
     await expect(menu).toBeVisible();
     await expect(button).toHaveAttribute('aria-expanded', 'true');
     const links = menu.locator('a');
-    await expect(links).toHaveCount(1);
+    await expect(links).toHaveCount(2);
     await expect(links.first()).toHaveAttribute('href', '/es/how-it-works/#open');
+    await expect(links.nth(1)).toHaveAttribute('href', '/es/crear/encuentro/');
     const menuBox = await menu.boundingBox();
     const rail = await box(page, 'aside.rail-tu');
     expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(rail.x + rail.width);

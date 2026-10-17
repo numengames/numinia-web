@@ -116,7 +116,7 @@ async function runnerFor(
 }
 
 /** What `createRitual` is sent, as one record. */
-export interface RitualDraft {
+interface RitualDraft {
   readonly communityId?: unknown;
   readonly title?: unknown;
   readonly start?: unknown;

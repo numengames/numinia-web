@@ -381,8 +381,7 @@ const worldsJson = JSON.stringify(Object.fromEntries(mine.map((c) => [c.id, worl
             ritual?: { id: string };
           } | null;
           if (response.ok && body?.ok === true && body.ritual) {
-            sessionStorage.setItem('ritual-published', body.ritual.id);
-            location.assign(`${prefix}/rituals/${body.ritual.id}/`);
+            location.assign(`${prefix}/rituals/${body.ritual.id}/?publicado=1`);
             return;
           }
           say('general', response.status === 403 ? words.refused : words.failed);

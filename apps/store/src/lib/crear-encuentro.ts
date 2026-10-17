@@ -43,7 +43,7 @@ export function administered(
 }
 
 /** How people meet, as the form's radios say it: `world` is online in the community's world. */
-export type MeetHow = 'in-person' | 'online' | 'world';
+type MeetHow = 'in-person' | 'online' | 'world';
 
 /** The form's fields as the browser reads them, every one a string (empty for nothing). */
 export interface EncounterFields {

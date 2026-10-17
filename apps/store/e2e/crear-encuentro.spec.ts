@@ -143,8 +143,8 @@ test('an administrator fills the form, publishes, and lands on the page with the
   await form.locator('#enc-sitio').fill('La Nave, Madrid');
   await form.locator('#enc-nota').fill('Trae portátil.');
   await form.locator('[data-metric="create-encounter-publish"]').click();
-  await page.waitForURL(/\/es\/rituals\/rit_[0-9a-f]{16}\/$/);
-  published = page.url().split('/').filter(Boolean).at(-1) ?? '';
+  await page.waitForURL(/\/es\/rituals\/rit_[0-9a-f]{16}\/(\?publicado=1)?$/);
+  published = /rit_[0-9a-f]{16}/.exec(page.url())?.[0] ?? '';
   expect(published).toMatch(/^rit_[0-9a-f]{16}$/);
   await expect(page.locator('h1')).toHaveText('Taller de Hyperfy');
   await expect(page.locator('[data-ritual-toast]')).toHaveText(
@@ -167,8 +167,9 @@ test('the encounter appears in the calendar list and on «Ahora» through the li
   await expect(page.locator(`[data-rituals-live-row="${published}"]`)).toBeVisible();
   await page.goto(`${origin}/es/communities/numen-games/`);
   await expect(page.locator(`[data-rituals-live-row="${published}"]`)).toBeVisible();
-  const feed = await page.request.get(`${origin}/calendar.ics`);
-  expect(await feed.text()).toContain('Taller de Hyperfy');
+  const ics = await page.request.get(`${origin}/rituals/${published}.ics`);
+  expect(ics.status()).toBe(200);
+  expect(await ics.text()).toContain('Taller de Hyperfy');
 });
 
 test('its creator cancels it through the dialog; the page says so and the lists lose it', async ({

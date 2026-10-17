@@ -37,7 +37,7 @@ import RsvpAction from './RsvpAction.astro';
 import '../../styles/communities.css';
 
 /** «Crear → Un encuentro» (cut M): an encounter of the till — whether it is cancelled, and whether this visitor may cancel it. */
-export interface TillState {
+interface TillState {
   readonly cancelledAt: string | null;
   readonly mayCancel: boolean;
 }
@@ -313,21 +313,25 @@ const sourceDate = ritual.source
   <Countdown ui={ui} />
   {counted && <InsideCount ui={ui} />}
   <script>
-    /* «Publicado…»: the toast the form left for this page, said once. The
+    /* «Publicado…»: the toast the form asks for (`?publicado=1`, dropped from the address), said once. The
        cancel dialog: confirm, POST /api/ritual/cancel, then reload — the
        page says it is cancelled; Esc or «No» keeps it. */
     import { CREAR_ENCUENTRO_UI } from '../../i18n/crear-encuentro';
     const locale = document.documentElement.lang as keyof typeof CREAR_ENCUENTRO_UI;
     const words = CREAR_ENCUENTRO_UI[locale] ?? CREAR_ENCUENTRO_UI.en;
-    const id = location.pathname.split('/').filter(Boolean).at(-1) ?? '';
-    if (sessionStorage.getItem('ritual-published') === id) {
-      sessionStorage.removeItem('ritual-published');
+    const url = new URL(location.href);
+    if (url.searchParams.get('publicado') === '1') {
+      url.searchParams.delete('publicado');
+      history.replaceState(null, '', url);
       const toast = document.createElement('p');
       toast.className = 'aviso';
       toast.dataset['tono'] = 'exito';
       toast.dataset['ritualToast'] = '';
       toast.setAttribute('role', 'status');
       toast.textContent = words.published;
+      // Beside the right rail, not under it: the rail is fixed and the toast is too.
+      const rail = document.querySelector('aside.rail-tu')?.getBoundingClientRect().width ?? 0;
+      if (rail > 0) toast.style.right = `calc(${rail}px + var(--s5))`;
       document.body.append(toast);
       window.setTimeout(() => toast.remove(), 6000);
     }

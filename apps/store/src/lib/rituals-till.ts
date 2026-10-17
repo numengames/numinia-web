@@ -297,7 +297,7 @@ export async function answerCancelRitual(
 const PUBLIC_HEADERS = { 'cache-control': 'public, max-age=60' } as const;
 
 /** What the public list carries: the row and the community's name, for a browser to draw a row. */
-export interface PublicRitual extends DeskRitual {
+interface PublicRitual extends DeskRitual {
   readonly communityName: string;
 }
 

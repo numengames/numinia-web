@@ -58,7 +58,6 @@ function isOnDemand(clean) {
     /^\/crear\/encuentro\/?$/.test(withoutLocale) ||
     /^\/rituals\/rit_[0-9a-f]{16}\/?$/.test(withoutLocale) ||
     /^\/rituals\/[^/]+\.ics$/.test(withoutLocale) ||
-    /^\/calendar\.ics$/.test(withoutLocale) ||
     withoutLocale.startsWith('/api/')
   );
 }
