@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.125.0',
+    date: '2026-10-17 08:49',
+    entries: [
+      {
+        type: 'FIX',
+        text: "The epitaph card, at the foot of the city's rail (the skull beside the version number): it now always renders fully above everything else, right on top of the skull. Before, the card could be cut off by the rail's own edge — most visibly with the rail folded to its icons, where the card is wider than the folded rail itself and most of it used to disappear behind the page.",
+      },
+    ],
+  },
+  {
     version: 'v0.124.0',
     date: '2026-10-17 11:00',
     entries: [

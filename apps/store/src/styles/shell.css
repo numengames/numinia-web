@@ -944,6 +944,23 @@ html[data-js='on'] .pop-fijo:not([data-placed]) {
   visibility: hidden;
   opacity: 0;
 }
+/* The rail that holds the footer scrolls and clips its own box (`.rail`,
+   above): `position: absolute` keeps the bubble a hostage of that box when
+   its content is taller than the rail's viewport slice. With JS, the
+   footer's own script places it `fixed` in the window instead — the same
+   escape the rail menus already use — so it always paints above everything,
+   never cut by the rail's edge. Hidden until placed, so it never flashes at
+   its static (pre-JS) spot. */
+html[data-js='on'] .bocadillo {
+  position: fixed;
+  inset: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0;
+}
+html[data-js='on'] .bocadillo:not([data-placed]) {
+  visibility: hidden;
+}
 .epitafio:hover .bocadillo,
 .epitafio:focus-within .bocadillo,
 .epitafio[data-open] .bocadillo {

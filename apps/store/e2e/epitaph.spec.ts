@@ -50,10 +50,43 @@ test.describe('footer epitaph', () => {
     for (const fold of [false, true]) {
       if (fold) await page.locator('[data-metric="nav-collapse"]').click();
       await skull.click();
-      const tip = await page.locator('footer:visible .bocadillo').boundingBox();
-      expect(tip!.x).toBeGreaterThanOrEqual(0);
-      expect(tip!.y).toBeGreaterThanOrEqual(0);
-      expect(tip!.y + tip!.height).toBeLessThanOrEqual(900);
+      const tip = page.locator('footer:visible .bocadillo');
+      // The card fades in (shell.css `.bocadillo` transition): wait for it
+      // to settle before reading geometry or paint, or we'd be checking a
+      // half-faded frame, not the card a person actually sees.
+      await expect(tip).toHaveCSS('opacity', '1');
+      const box = await tip.boundingBox();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+
+      // boundingBox() is geometry (getBoundingClientRect()): it says nothing
+      // about whether an ANCESTOR's overflow paints over the bubble. The
+      // rail (`.rail`, shell.css) scrolls and clips its own box — folded,
+      // its 72px width is far short of the bubble's 224px — so check what
+      // actually PAINTS at the bubble's own edges, not just its geometry.
+      const edges = await page.evaluate(
+        ({ box }) => {
+          const inset = 12; // past the card's 8px border-radius corners
+          const points: [string, number, number][] = [
+            ['top', box.x + box.width / 2, box.y + inset],
+            ['bottom', box.x + box.width / 2, box.y + box.height - inset],
+            ['left', box.x + inset, box.y + box.height / 2],
+            ['right', box.x + box.width - inset, box.y + box.height / 2],
+          ];
+          return points.map(([edge, x, y]) => ({
+            edge,
+            onTip: document.elementFromPoint(x, y)?.closest('.bocadillo') !== null,
+          }));
+        },
+        { box },
+      );
+      for (const { edge, onTip } of edges) {
+        expect(onTip, `the bubble's ${edge} edge is painted (not covered by an ancestor)`).toBe(
+          true,
+        );
+      }
+
       await page.keyboard.press('Escape');
     }
   });

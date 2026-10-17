@@ -169,17 +169,37 @@ const LEGAL = [
 <script>
   // The epitaph: click/tap toggles it (aria-expanded), Escape closes it and
   // keeps it hushed until the pointer or the focus leaves the skull. Each
-  // copy of the footer (the rail's, the phone's) has its own.
+  // copy of the footer (the rail's, the phone's) has its own. The bubble
+  // floats `fixed` in the window (lib/epitaph-tip.ts): the rail it sits in
+  // scrolls and clips its own box, so it is placed and re-placed every time
+  // it is about to show, read straight off the skull's own position.
+  import { placeEpitaph } from '../../lib/epitaph-tip';
+
   document.querySelectorAll<HTMLElement>('[data-epitaph]').forEach((box) => {
     const button = box.querySelector('button');
-    if (!button) return;
+    const tip = box.querySelector<HTMLElement>('.bocadillo');
+    if (!button || !tip) return;
+    const place = (): void => {
+      const anchor = button.getBoundingClientRect();
+      const point = placeEpitaph(
+        anchor,
+        { width: tip.offsetWidth, height: tip.offsetHeight },
+        { width: innerWidth, height: innerHeight },
+      );
+      tip.style.top = `${point.top}px`;
+      tip.style.left = `${point.left}px`;
+      tip.toggleAttribute('data-placed', true);
+    };
     const set = (open: boolean): void => {
       button.setAttribute('aria-expanded', String(open));
       box.toggleAttribute('data-open', open);
     };
+    box.addEventListener('mouseenter', place);
+    box.addEventListener('focusin', place);
     button.addEventListener('click', () => {
       const open = button.getAttribute('aria-expanded') !== 'true';
       box.removeAttribute('data-hushed');
+      if (open) place();
       set(open);
     });
     document.addEventListener('keydown', (event) => {
@@ -195,5 +215,15 @@ const LEGAL = [
     document.addEventListener('click', (event) => {
       if (event.target instanceof Node && !box.contains(event.target)) set(false);
     });
+    addEventListener('resize', () => {
+      if (box.hasAttribute('data-open') || box.matches(':hover, :focus-within')) place();
+    });
+    document.addEventListener(
+      'scroll',
+      () => {
+        if (box.hasAttribute('data-open') || box.matches(':hover, :focus-within')) place();
+      },
+      { capture: true, passive: true },
+    );
   });
 </script>
