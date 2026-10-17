@@ -233,6 +233,21 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.decideCommunityRequest === 'function'
         ? stub.decideCommunityRequest(wallet, requestId, accept, house, name)
         : absent('decideCommunityRequest'),
+    // «Crear → Un encuentro» for real (cut M): optional too. Without them the ritual routes say 503.
+    createRitual: (wallet, draft, house) =>
+      typeof desk.createRitual === 'function'
+        ? stub.createRitual(wallet, draft, house)
+        : absent('createRitual'),
+    cancelRitual: (wallet, ritualId, house) =>
+      typeof desk.cancelRitual === 'function'
+        ? stub.cancelRitual(wallet, ritualId, house)
+        : absent('cancelRitual'),
+    ritualsOf: (communityIds, upcoming) =>
+      typeof desk.ritualsOf === 'function'
+        ? stub.ritualsOf(communityIds, upcoming)
+        : absent('ritualsOf'),
+    ritual: (ritualId) =>
+      typeof desk.ritual === 'function' ? stub.ritual(ritualId) : absent('ritual'),
   };
 }
 

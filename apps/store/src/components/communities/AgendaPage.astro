@@ -12,15 +12,17 @@ import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AGENDA_UI } from '../../i18n/agenda';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { accountsFrom } from '../../lib/accounts-source';
 import { agendaOf } from '../../lib/agenda';
 import { AGENDA_PATH, localeHref, signInHref } from '../../lib/app-nav';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionWallet } from '../../lib/auth/session-wallet';
 import { rsvpsFrom } from '../../lib/rsvp-source';
+import { allRituals, tillRituals } from '../../lib/rituals-till';
 import { runtimeBinding } from '../../lib/runtime-env';
 import Icon from '../chrome/Icon.astro';
 import Countdown from './Countdown.astro';
-import { RITUALS, communityOf } from './register';
+import { COMMUNITIES, RITUALS, communityOf } from './register';
 import RitualCard from './RitualCard.astro';
 import '../../styles/communities.css';
 
@@ -67,7 +69,14 @@ if (wallet !== null) {
     }
   }
 }
-const agenda = agendaOf(ids, RITUALS, new Date());
+// The encounters published from the site (cut M) count too: the same till, read once more.
+const now = new Date();
+const rows = await tillRituals(
+  accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE }),
+  null,
+  false,
+);
+const agenda = agendaOf(ids, allRituals(RITUALS, rows, COMMUNITIES, now.getTime()), now);
 ---
 
 <BaseLayout locale={locale} title={`${words.title} — Numinia`} description={words.lead} wide>

@@ -33,6 +33,8 @@ import { loadArchive } from '../lib/archive';
 import { goodCard, newestGoods } from '../lib/goods';
 import { COMMUNITIES, RITUALS, communityOf } from './communities/register';
 import Icon from './chrome/Icon.astro';
+import RitualsLive from './encuentros/RitualsLive.astro';
+import { CREAR_ENCUENTRO_UI } from '../i18n/crear-encuentro';
 import Featured from './communities/Featured.astro';
 import CommunityCard from './communities/CommunityCard.astro';
 import RitualCard from './communities/RitualCard.astro';
@@ -151,6 +153,7 @@ const live = COMMUNITIES.flatMap((community) => {
         ))
       }
     </div>
+    <RitualsLive locale={locale} metric="landing-ritual" heading={CREAR_ENCUENTRO_UI[locale].liveHeading} />
   </section>
 
   <section class="bloque" id="alive">

@@ -259,7 +259,9 @@ export type DeskLogAct =
   | 'agent-role-given'
   | 'agent-role-taken'
   | 'request-accepted'
-  | 'request-declined';
+  | 'request-declined'
+  | 'ritual-created'
+  | 'ritual-cancelled';
 
 export interface DeskLogLine {
   seq: number;
@@ -613,7 +615,54 @@ export interface AccountDesk {
     house?: boolean,
     name?: string,
   ): Promise<DeskRequestAnswer>;
+  /**
+   * «Crear → Un encuentro» for real (cut M): the house or an administrator of
+   * the community's organization publishes an encounter (optional: an older
+   * till answers 503). Logged in «Qué ha pasado».
+   */
+  createRitual(wallet: string, draft: DeskRitualDraft, house?: boolean): Promise<DeskRitualAnswer>;
+  /** The same people cancel it; once. Logged (optional). */
+  cancelRitual(wallet: string, ritualId: string, house?: boolean): Promise<DeskRitualAnswer>;
+  /** Public: the not cancelled encounters of `communityIds` (null: all); `upcoming` keeps those not over (optional). */
+  ritualsOf(communityIds: readonly string[] | null, upcoming: boolean): Promise<DeskRitualsAnswer>;
+  /** Public: one encounter by its till id, cancelled or not; null when there is none (optional). */
+  ritual(ritualId: string): Promise<DeskRitualOneAnswer>;
 }
+
+/** «Crear → Un encuentro»: an encounter as the till keeps it. */
+export type DeskRitualMode = 'in-person' | 'online' | 'mixed';
+
+export interface DeskRitual {
+  id: string;
+  communityId: string;
+  title: string;
+  /** YYYY-MM-DD for a whole-day encounter, an instant ending in Z for a timed one. */
+  start: string;
+  end: string;
+  allDay: boolean;
+  mode: DeskRitualMode;
+  where: string;
+  note: string | null;
+  worldId: string | null;
+  createdBy: string;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface DeskRitualDraft {
+  communityId: string;
+  title: string;
+  start: string;
+  end: string | null;
+  mode: DeskRitualMode;
+  where: string;
+  note: string | null;
+  worldId: string | null;
+}
+
+export type DeskRitualAnswer = { ok: true; ritual: DeskRitual } | DeskRefusal;
+export type DeskRitualsAnswer = { ok: true; rituals: DeskRitual[] } | DeskRefusal;
+export type DeskRitualOneAnswer = { ok: true; ritual: DeskRitual | null } | DeskRefusal;
 
 /** «Hazla tuya»: what a person asks of a community — to run it, or to be in it. */
 export type DeskRequestKind = 'claim' | 'join';
@@ -712,6 +761,10 @@ export const DESK_METHODS = [
   'myCommunityRequests',
   'communityRequests',
   'decideCommunityRequest',
+  'createRitual',
+  'cancelRitual',
+  'ritualsOf',
+  'ritual',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -728,7 +781,8 @@ export const DESK_METHODS = [
  * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
  * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
  * And one without the eight agent methods (cut «IAs de organización»): the agents
- * routes and /api/agents/pass answer 503.
+ * routes and /api/agents/pass answer 503. And one without the four of «Crear → Un
+ * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -757,6 +811,10 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'myCommunityRequests',
   'communityRequests',
   'decideCommunityRequest',
+  'createRitual',
+  'cancelRitual',
+  'ritualsOf',
+  'ritual',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

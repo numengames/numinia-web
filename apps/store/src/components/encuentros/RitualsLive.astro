@@ -1,0 +1,152 @@
+---
+/**
+ * «Crear → Un encuentro» for real (cut M, 2026-10-17): the live slot of a
+ * static page. The encounters published from the site live in the till, and
+ * the calendar, «Ahora», a community's page and a world's page are static
+ * files: each draws this slot, hidden, and the browser fills it from
+ * /api/rituals?upcoming=1 — one row per encounter, like the list's own rows
+ * (day, name, who holds it, where, how). Hidden until there is something
+ * (like PeopleList), so a page without any looks as before. `community`
+ * narrows to one community; `worldId` keeps only the encounters that
+ * happen in that world (its home, or an online one placed there).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+
+interface Props {
+  locale: SupportedLocale;
+  /** The data-metric of each row's link. */
+  metric: string;
+  heading?: string;
+  community?: string;
+  worldId?: string;
+}
+
+const { locale, metric, heading, community, worldId } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(community)}` : ''}`;
+---
+
+<section
+  class="rituales-vivos"
+  data-rituals-live
+  data-query={query}
+  data-world={worldId}
+  data-prefix={prefix}
+  data-locale={locale}
+  data-metric-row={metric}
+  data-modes={JSON.stringify(ui.modes)}
+  hidden
+>
+  {heading && <h2 class="titulo-s" data-rituals-live-heading>{heading}</h2>}
+  <ul class="agenda-lista" data-rituals-live-list></ul>
+</section>
+
+<script>
+  /* One fetch per slot; a till that is not there (503) or a failure leaves
+     the slot hidden. Rows are built from the answer's own fields: the day
+     in the page's language (the browser's Intl, UTC as the register's dates
+     are), the name as a link to the encounter's page, the community and
+     the place, the mode as a chip. */
+  interface Row {
+    readonly id: string;
+    readonly communityName: string;
+    readonly title: string;
+    readonly start: string;
+    readonly allDay: boolean;
+    readonly mode: string;
+    readonly where: string;
+    readonly worldId: string | null;
+  }
+
+  const esc = (text: string): string =>
+    text.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+
+  function fill(slot: HTMLElement): void {
+    const list = slot.querySelector<HTMLElement>('[data-rituals-live-list]');
+    if (!list) return;
+    const { query, world, prefix = '', locale = 'en', metricRow = 'rituals-live-row' } = slot.dataset;
+    const modes = JSON.parse(slot.dataset['modes'] ?? '{}') as Record<string, string>;
+    const part = (date: Date, options: Intl.DateTimeFormatOptions): string =>
+      new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(date);
+    void fetch(`/api/rituals?${query ?? 'upcoming=1'}`)
+      .then(async (response) => {
+        if (!response.ok) return;
+        const body = (await response.json()) as { rituals?: Row[] };
+        const rows = (body.rituals ?? []).filter((row) => !world || row.worldId === world);
+        if (rows.length === 0) return;
+        list.innerHTML = rows
+          .map((row) => {
+            const date = new Date(row.allDay ? `${row.start}T00:00:00Z` : row.start);
+            const time = row.allDay ? '' : ` · ${part(date, { hour: '2-digit', minute: '2-digit' })} UTC`;
+            const month = part(date, { month: 'short' }).replace(/\./g, '').toUpperCase();
+            return `<li data-rituals-live-row="${esc(row.id)}"><span class="fecha"><b>${part(date, { day: 'numeric' })}</b>${esc(month)}</span><div class="fila-enc"><div><h3></h3><p>${esc(`${row.communityName} · ${row.where}${time}`)}</p></div><span class="fila modo"><span class="chip">${esc(modes[row.mode] ?? row.mode)}</span></span></div></li>`;
+          })
+          .join('');
+        // The link is made by hand: the page's own link gate reads every href it finds in the HTML, this one included.
+        rows.forEach((row, index) => {
+          const link = document.createElement('a');
+          link.setAttribute('href', `${prefix}/rituals/${row.id}/`);
+          link.dataset['metric'] = metricRow;
+          link.textContent = row.title;
+          list.children[index]?.querySelector('h3')?.append(link);
+        });
+        slot.hidden = false;
+      })
+      .catch(() => undefined);
+  }
+
+  for (const slot of document.querySelectorAll<HTMLElement>('[data-rituals-live]')) fill(slot);
+</script>
+
+<style is:global>
+  /* Global, under .rituales-vivos alone: the rows are made in the browser and carry no scope. */
+  .rituales-vivos {
+    margin-top: var(--s4);
+  }
+  .rituales-vivos h2 {
+    margin: 0 0 var(--s3);
+  }
+  .rituales-vivos .agenda-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s3);
+  }
+  .rituales-vivos li {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr;
+    gap: var(--s3);
+    align-items: start;
+  }
+  .rituales-vivos .fecha {
+    display: grid;
+    justify-items: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--texto-2);
+  }
+  .rituales-vivos .fecha b {
+    font-size: 1.375rem;
+    line-height: 1.1;
+    color: var(--texto);
+  }
+  .rituales-vivos .fila-enc {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s3);
+    align-items: start;
+    min-width: 0;
+  }
+  .rituales-vivos h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .rituales-vivos p {
+    margin: var(--s1) 0 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+</style>

@@ -87,17 +87,21 @@ export const PHONE_ITEMS: readonly Place<CityId>[] = CITY_ITEMS.filter(
 );
 
 /** «Crear», the twin of «Buscar»: only destinations that exist. */
-export type CreateId = 'community';
+export type CreateId = 'community' | 'encounter';
 
 export interface CreateItem {
   readonly id: CreateId;
   readonly path: string;
-  readonly icon: 'house';
+  readonly icon: 'house' | 'calendar-plus';
 }
 
-/** Encounters (the panel's piece is `soon`) and worlds (no create page) are not here yet. */
+/** «Crear → Un encuentro» (cut M): the form that publishes an encounter of a community you run. */
+export const CREATE_ENCOUNTER_PATH = '/crear/encuentro/';
+
+/** Worlds (no create page) are not here yet. */
 export const CREATE_ITEMS: readonly CreateItem[] = [
   { id: 'community', path: '/how-it-works/#open', icon: 'house' },
+  { id: 'encounter', path: CREATE_ENCOUNTER_PATH, icon: 'calendar-plus' },
 ];
 
 /** The search lives on the communities index until the global search dialog. */

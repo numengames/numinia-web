@@ -89,6 +89,15 @@ import {
   type RsvpCountsAnswer,
 } from './db/rsvps';
 import {
+  cancelRitual,
+  createRitual,
+  ritualById,
+  ritualsOf,
+  type RitualAnswer,
+  type RitualsAnswer,
+} from './db/rituals';
+import type { TillRitual } from './lib/rituals';
+import {
   homeOf,
   placeWorld,
   placements,
@@ -690,6 +699,34 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
       name,
       new Date(),
     );
+  }
+
+  // ---- «Crear → Un encuentro» for real (cut M, 2026-10-17): encounters published from numinia.com ----
+
+  /**
+   * The house or an administrator of the community's organization publishes
+   * an encounter: `draft` is `{ communityId, title, start, end?, mode, where,
+   * note?, worldId? }`. Logged in «Qué ha pasado».
+   */
+  async createRitual(wallet: unknown, draft: unknown, house?: unknown): Promise<RitualAnswer> {
+    return createRitual(this.env.TILL_DB, wallet, house, draft, new Date());
+  }
+
+  /** The same people cancel an encounter; once. Logged. */
+  async cancelRitual(wallet: unknown, ritualId: unknown, house?: unknown): Promise<RitualAnswer> {
+    return cancelRitual(this.env.TILL_DB, wallet, house, ritualId, new Date());
+  }
+
+  /** Public: the not cancelled encounters of `communityIds` (null: all); `upcoming` keeps those not over. */
+  async ritualsOf(communityIds?: unknown, upcoming?: unknown): Promise<RitualsAnswer> {
+    return ritualsOf(this.env.TILL_DB, communityIds, upcoming, new Date());
+  }
+
+  /** Public: one encounter by its till id, cancelled or not; `ritual` is null when there is none. */
+  async ritual(
+    ritualId: unknown,
+  ): Promise<{ readonly ok: true; readonly ritual: TillRitual | null } | Refusal> {
+    return ritualById(this.env.TILL_DB, ritualId);
   }
 
   // ---- «IAs de organización» (2026-10-17): the AIs an organization sends into its worlds ----

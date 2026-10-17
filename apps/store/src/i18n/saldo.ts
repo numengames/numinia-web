@@ -530,6 +530,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-role-taken': 'Rol quitado a una IA',
         'request-accepted': 'Petición aceptada',
         'request-declined': 'Petición rechazada',
+        'ritual-created': 'Encuentro publicado',
+        'ritual-cancelled': 'Encuentro cancelado',
       },
     },
     referrals: {
@@ -793,6 +795,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-role-taken': 'Role taken from an AI',
         'request-accepted': 'Request accepted',
         'request-declined': 'Request declined',
+        'ritual-created': 'Gathering published',
+        'ritual-cancelled': 'Gathering cancelled',
       },
     },
     referrals: {
@@ -1055,6 +1059,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-role-taken': 'AIからロールを削除',
         'request-accepted': '申請を承認',
         'request-declined': '申請を却下',
+        'ritual-created': '集まりを公開',
+        'ritual-cancelled': '集まりを中止',
       },
     },
     referrals: {
@@ -1314,6 +1320,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-role-taken': 'AI의 역할 회수',
         'request-accepted': '요청 수락',
         'request-declined': '요청 거절',
+        'ritual-created': '모임 게시됨',
+        'ritual-cancelled': '모임 취소됨',
       },
     },
     referrals: {
@@ -1581,6 +1589,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'agent-role-taken': 'Papel retirado de uma IA',
         'request-accepted': 'Pedido aceito',
         'request-declined': 'Pedido recusado',
+        'ritual-created': 'Encontro publicado',
+        'ritual-cancelled': 'Encontro cancelado',
       },
     },
     referrals: {

@@ -1,0 +1,47 @@
+---
+/**
+ * «Crear → Un encuentro» for real (cut M, 2026-10-17): the page of an
+ * encounter published from the site (/rituals/rit_…/), rendered on demand —
+ * it asks the till for the row and reads the session to know whether this
+ * visitor may cancel it (its creator, an administrator of the community, or
+ * the house). The same RitualPage the files get, with the till's state: a
+ * cancelled one says so. 404 when the till has none, or it is not there.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { accountsFrom } from '../../lib/accounts-source';
+import { SESSION_COOKIE } from '../../lib/auth/server';
+import { sessionAsker } from '../../lib/auth/session-wallet';
+import { ritualFromTill, tillRitual } from '../../lib/rituals-till';
+import { runtimeBinding } from '../../lib/runtime-env';
+import { COMMUNITIES } from './register';
+import RitualPage from './RitualPage.astro';
+
+interface Props {
+  locale: SupportedLocale;
+  id: string;
+}
+
+const { locale, id } = Astro.props;
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const desk = accountsFrom({
+  binding: runtimeBinding('TILL_ACCOUNTS'),
+  dataSource: process.env.DATA_SOURCE,
+});
+const row = await tillRitual(desk, id);
+const community = row === null ? undefined : COMMUNITIES.find((c) => c.id === row.communityId);
+if (row === null || community === undefined) return new Response(null, { status: 404 });
+
+const asker = await sessionAsker(Astro.cookies.get(SESSION_COOKIE)?.value);
+// The creator and the house see «Cancelar»; the till decides for anyone else who runs the community.
+const mayCancel =
+  asker !== null && (asker.house || asker.wallet.toLowerCase() === row.createdBy.toLowerCase());
+const ritual = ritualFromTill(row, community.name, Date.now());
+---
+
+<RitualPage
+  locale={locale}
+  ritual={ritual}
+  community={community}
+  till={{ cancelledAt: row.cancelledAt, mayCancel }}
+/>

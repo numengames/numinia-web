@@ -14,6 +14,7 @@
 import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AGENDA_UI } from '../../i18n/agenda';
+import { CREAR_ENCUENTRO_UI } from '../../i18n/crear-encuentro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import {
@@ -35,15 +36,25 @@ import InsideCount from './InsideCount.astro';
 import RsvpAction from './RsvpAction.astro';
 import '../../styles/communities.css';
 
+/** «Crear → Un encuentro» (cut M): an encounter of the till — whether it is cancelled, and whether this visitor may cancel it. */
+interface TillState {
+  readonly cancelledAt: string | null;
+  readonly mayCancel: boolean;
+}
+
 interface Props {
   locale: SupportedLocale;
   ritual: Ritual;
   community: Community;
+  /** Present for an encounter published from the site; absent for a file of the register. */
+  till?: TillState;
 }
 
-const { locale, ritual, community } = Astro.props;
+const { locale, ritual, community, till } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const agenda = AGENDA_UI[locale];
+const crear = CREAR_ENCUENTRO_UI[locale];
+const cancelled = till?.cancelledAt != null;
 // «Me apunto» signed out leads to the door and back here; «Tu agenda» is the page of what you said.
 const signIn = signInHref(locale, `/rituals/${ritual.id}/`);
 const agendaHref = localeHref(locale, '/agenda/');
@@ -141,8 +152,10 @@ const sourceDate = ritual.source
         {ritual.mode && <span class="chip">{ui.modes[ritual.mode]}</span>}
         {ritual.city && <span class="chip ambar">{ui.ofTheCity}</span>}
         {ritual.status === 'held' && <span class="chip">{ui.heldChip}</span>}
+        {cancelled && <span class="chip ambar" data-ritual-cancelled>{crear.cancelled}</span>}
       </div>
       <h1 class="display-m">{pick(ritual.title, locale)}</h1>
+      {cancelled && <p class="desc" data-ritual-cancelled-lead>{crear.cancelledLead}</p>}
       <p class="van" data-rsvp-count={ritual.id} hidden></p>
       <p class="desc">
         {ritual.city ? ui.cityKeeps : ui.organisedBy}{' '}
@@ -151,7 +164,7 @@ const sourceDate = ritual.source
       </p>
     </div>
     <div class="acciones-rit">
-      {ritual.status !== 'held' && (
+      {ritual.status !== 'held' && till === undefined && (
         <RsvpAction locale={locale} ritualId={ritual.id} signIn={signIn} metric="ritual-rsvp" />
       )}
       <a class="btn btn-fantasma" href={icsHref} data-metric="ritual-add-calendar">
@@ -171,6 +184,30 @@ const sourceDate = ritual.source
       <span class="aviso-copia" data-share-note data-copied={ui.linkCopied} role="status"></span>
     </div>
   </div>
+  {
+    till?.mayCancel === true && !cancelled && (
+      <div class="cancelar-rit" data-ritual-cancel-root data-ritual-id={ritual.id}>
+        <button type="button" class="btn btn-fantasma btn-sm" data-ritual-cancel data-metric="ritual-cancel">
+          {crear.cancel}
+        </button>
+        <dialog class="cancelar-dialogo" data-ritual-cancel-dialog aria-labelledby="cancelar-titulo">
+          <form method="dialog">
+            <h2 id="cancelar-titulo" class="titulo-s">{crear.cancelAsk}</h2>
+            <p class="texto-2">{crear.cancelLead}</p>
+            <p class="fallo" role="alert" data-ritual-cancel-problem hidden>{crear.failed}</p>
+            <div class="acciones">
+              <button type="button" class="btn btn-fantasma" data-ritual-cancel-keep data-metric="ritual-cancel-keep">
+                {crear.cancelKeep}
+              </button>
+              <button type="button" class="btn btn-primario" data-ritual-cancel-confirm data-metric="ritual-cancel-confirm">
+                {crear.cancelConfirm}
+              </button>
+            </div>
+          </form>
+        </dialog>
+      </div>
+    )
+  }
 
   <div class="dos">
     <div class="pila">
@@ -254,6 +291,7 @@ const sourceDate = ritual.source
           </section>
         )
       }
+      {till === undefined && (
       <section class="tarjeta" data-session-ranks="oracle" hidden>
         <h2 class="card-h2"><Icon name="github-logo" size={20} />{ui.editRitual}</h2>
         <p class="small texto-2" style="margin: 0 0 var(--s4)">{ui.editNote}</p>
@@ -268,11 +306,66 @@ const sourceDate = ritual.source
           {ui.editOpen}
         </a>
       </section>
+      )}
     </div>
   </div>
 
   <Countdown ui={ui} />
   {counted && <InsideCount ui={ui} />}
+  <script>
+    /* «Publicado…»: the toast the form asks for (`?publicado=1`, dropped from the address), said once. The
+       cancel dialog: confirm, POST /api/ritual/cancel, then reload — the
+       page says it is cancelled; Esc or «No» keeps it. */
+    import { CREAR_ENCUENTRO_UI } from '../../i18n/crear-encuentro';
+    const locale = document.documentElement.lang as keyof typeof CREAR_ENCUENTRO_UI;
+    const words = CREAR_ENCUENTRO_UI[locale] ?? CREAR_ENCUENTRO_UI.en;
+    const url = new URL(location.href);
+    if (url.searchParams.get('publicado') === '1') {
+      url.searchParams.delete('publicado');
+      history.replaceState(null, '', url);
+      const toast = document.createElement('p');
+      toast.className = 'aviso';
+      toast.dataset['tono'] = 'exito';
+      toast.dataset['ritualToast'] = '';
+      toast.setAttribute('role', 'status');
+      toast.textContent = words.published;
+      // Beside the right rail, not under it: the rail is fixed and the toast is too.
+      const rail = document.querySelector('aside.rail-tu')?.getBoundingClientRect().width ?? 0;
+      if (rail > 0) toast.style.right = `calc(${rail}px + var(--s5))`;
+      document.body.append(toast);
+      window.setTimeout(() => toast.remove(), 6000);
+    }
+    const root = document.querySelector<HTMLElement>('[data-ritual-cancel-root]');
+    const dialog = root?.querySelector<HTMLDialogElement>('[data-ritual-cancel-dialog]');
+    if (root && dialog) {
+      const open = root.querySelector<HTMLButtonElement>('[data-ritual-cancel]');
+      const problem = dialog.querySelector<HTMLElement>('[data-ritual-cancel-problem]');
+      open?.addEventListener('click', () => dialog.showModal());
+      dialog.querySelector('[data-ritual-cancel-keep]')?.addEventListener('click', () => dialog.close());
+      dialog.addEventListener('close', () => open?.focus());
+      dialog.querySelector<HTMLButtonElement>('[data-ritual-cancel-confirm]')?.addEventListener('click', (event) => {
+        const button = event.currentTarget as HTMLButtonElement;
+        button.disabled = true;
+        void fetch('/api/ritual/cancel', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ritualId: root.dataset['ritualId'] }),
+        })
+          .then((response) => {
+            if (response.ok) {
+              location.reload();
+              return;
+            }
+            if (problem) problem.hidden = false;
+            button.disabled = false;
+          })
+          .catch(() => {
+            if (problem) problem.hidden = false;
+            button.disabled = false;
+          });
+      });
+    }
+  </script>
   <script is:inline>
     /* Share: the device's own sheet where there is one, else the address
        copied to the clipboard and said aloud. Without JavaScript the button
@@ -485,5 +578,32 @@ const sourceDate = ritual.source
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+  }
+  .cancelar-rit {
+    margin: var(--s3) 0 0;
+  }
+  .cancelar-dialogo {
+    width: min(28rem, calc(100% - 2rem));
+    padding: var(--s5);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-marco);
+    background: var(--elevada);
+    color: inherit;
+  }
+  .cancelar-dialogo::backdrop {
+    background: rgba(20, 17, 15, 0.5);
+  }
+  .cancelar-dialogo h2,
+  .cancelar-dialogo p {
+    margin: 0 0 var(--s3);
+  }
+  .cancelar-dialogo .fallo {
+    color: var(--ambar);
+    font-size: 0.875rem;
+  }
+  .cancelar-dialogo .acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--s2);
   }
 </style>

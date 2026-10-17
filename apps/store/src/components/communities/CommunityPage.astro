@@ -28,6 +28,7 @@ import {
 } from '../../lib/communities';
 import { RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
+import RitualsLive from '../encuentros/RitualsLive.astro';
 import Cover from './Cover.astro';
 import RitualCard from './RitualCard.astro';
 import Countdown from './Countdown.astro';
@@ -179,6 +180,7 @@ const followWords = JSON.stringify({
               </p>
             )
           }
+          <RitualsLive locale={locale} metric="community-ritual" community={community.id} />
           <p class="etiqueta corta" style="margin-top: var(--s5)">{ui.heldLabel}</p>
           {
             past.length > 0 ? (
