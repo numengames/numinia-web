@@ -60,7 +60,6 @@ const door = FRONT_DOOR[locale];
     </div>
     <div class="historia">
       <div class="relato">
-        {t.storyNotice && <p class="aviso-idioma small">{t.storyNotice}</p>}
         {t.story.map((line) => <p>{line}</p>)}
         <a href="https://numinia.org" target="_blank" rel="noopener noreferrer" data-metric="how-archive">
           {t.readArchive}
@@ -134,11 +133,6 @@ const door = FRONT_DOOR[locale];
     color: var(--texto-2);
     max-width: 62ch;
     margin: 0 0 var(--s4);
-  }
-  .relato .aviso-idioma {
-    font-size: 0.875rem;
-    border-left: 2px solid var(--enlace);
-    padding-left: var(--s3);
   }
   .relato a {
     display: inline-flex;

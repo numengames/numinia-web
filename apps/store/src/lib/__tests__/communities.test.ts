@@ -408,6 +408,25 @@ describe('texts and places', () => {
     expect(pickList({ en: ['a'], es: ['b'] }, 'pt-br')).toEqual(['a']);
   });
 
+  it('reads ja, ko and pt-br where the file carries them, English where it does not', () => {
+    const text = { en: 'Home', es: 'Sede', ja: '拠点', 'pt-br': 'Sede' };
+    expect(pick(text, 'ja')).toBe('拠点');
+    expect(pick(text, 'pt-br')).toBe('Sede');
+    expect(pick(text, 'ko')).toBe('Home');
+    expect(pick(text, 'xx')).toBe('Home');
+  });
+
+  it('parses the extra locales of a text and refuses an empty one', () => {
+    expect(community({ kind: { en: 'Studio', es: 'Estudio', ko: '스튜디오' } }).kind).toEqual({
+      en: 'Studio',
+      es: 'Estudio',
+      ko: '스튜디오',
+    });
+    expect(() => community({ kind: { en: 'Studio', es: 'Estudio', ja: ' ' } })).toThrow(
+      '"ja" must be a non-empty string',
+    );
+  });
+
   it('knows every place in both languages, short and long', () => {
     expect(PLACE_IDS).toContain('buenos-aires');
     expect(placesLine(['madrid', 'buenos-aires'], 'es')).toBe(
@@ -554,7 +573,9 @@ describe('dates as text', () => {
       /\./,
     );
     const late = ritual({ start: '2026-10-31T23:30Z', end: '2026-11-01T01:00Z' });
-    expect(dayAndMonth(late, 'ja')).toEqual({ day: 31, month: 'Oct' });
+    expect(dayAndMonth(late, 'ja')).toEqual({ day: 31, month: '10月' });
+    expect(dayAndMonth(late, 'pt-br')).toEqual({ day: 31, month: 'out' });
+    expect(dayAndMonth(late, 'xx')).toEqual({ day: 31, month: 'Oct' });
   });
 });
 

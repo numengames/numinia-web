@@ -13,10 +13,17 @@
 
 import { WORLD_ZONES } from './worlds';
 
-/** A text in the two content languages; the other locales read English. */
+/**
+ * A text in the content languages. Spanish and English are required of every
+ * file; ja, ko and pt-br are written where the house translated them (its own
+ * page), and a file without them reads English.
+ */
 export interface Localized {
   readonly en: string;
   readonly es: string;
+  readonly ja?: string;
+  readonly ko?: string;
+  readonly 'pt-br'?: string;
 }
 
 /** A list of lines in the two content languages (a programme, a note). */
@@ -25,9 +32,19 @@ export interface LocalizedList {
   readonly es: readonly string[];
 }
 
-/** The text of a localized pair for a site locale: Spanish or English. */
+/** The content locales a file may carry beyond Spanish and English. */
+const EXTRA_LOCALES = ['ja', 'ko', 'pt-br'] as const;
+type ExtraLocale = (typeof EXTRA_LOCALES)[number];
+
+function isExtraLocale(locale: string): locale is ExtraLocale {
+  return (EXTRA_LOCALES as readonly string[]).includes(locale);
+}
+
+/** The text of a localized mapping for a site locale; English where a file lacks the locale. */
 export function pick(text: Localized, locale: string): string {
-  return locale === 'es' ? text.es : text.en;
+  if (locale === 'es') return text.es;
+  if (isExtraLocale(locale)) return text[locale] ?? text.en;
+  return text.en;
 }
 
 /** The lines of a localized list for a site locale. */
@@ -214,7 +231,15 @@ function bool(raw: Raw, key: string, fallback: boolean, where: string): boolean 
 
 function localized(value: unknown, where: string): Localized {
   const raw = record(value, where);
-  return { en: str(raw, 'en', where), es: str(raw, 'es', where) };
+  const text: { en: string; es: string; ja?: string; ko?: string; 'pt-br'?: string } = {
+    en: str(raw, 'en', where),
+    es: str(raw, 'es', where),
+  };
+  for (const locale of EXTRA_LOCALES) {
+    const extra = optStr(raw, locale, where);
+    if (extra !== undefined) text[locale] = extra;
+  }
+  return text;
 }
 
 /** A string serves both languages (a proper name); a mapping gives each its own. */
@@ -522,7 +547,13 @@ export function searchText(
 // shifts with the server's zone; a timed one is shown in UTC with its label
 // and the page's script shows it in the reader's hour.
 
-const CONTENT_LOCALE = (locale: string): string => (locale === 'es' ? 'es-ES' : 'en-GB');
+const CONTENT_LOCALES: Readonly<Record<string, string>> = {
+  es: 'es-ES',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  'pt-br': 'pt-BR',
+};
+const CONTENT_LOCALE = (locale: string): string => CONTENT_LOCALES[locale] ?? 'en-GB';
 
 function noDots(text: string): string {
   return text.replace(/\./g, '');

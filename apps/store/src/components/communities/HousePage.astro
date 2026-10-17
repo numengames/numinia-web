@@ -78,7 +78,7 @@ const seals = [
       <p class="sub">{hui.cardLine}</p>
       <p class="lead">{hui.lead}</p>
       <p class="texto-2 resumen">{pick(community.summary, locale)}</p>
-      <blockquote class="cita" lang={hui.canonLang}>
+      <blockquote class="cita">
         <p>{hui.quote}</p>
         <cite>{hui.quoteSource}</cite>
       </blockquote>
@@ -158,7 +158,7 @@ const seals = [
         <li><b>{hui.rings[1].title}</b><span>{hui.rings[1].text}</span></li>
         <li>
           <b>{hui.rings[2].title}</b>
-          <span><span lang={hui.canonLang}>{hui.rings[2].text}</span> {hui.storyTail}</span>
+          <span>{hui.rings[2].text} {hui.storyTail}</span>
         </li>
       </ol>
     </div>

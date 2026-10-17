@@ -50,8 +50,6 @@ export interface FrontDoorMessages {
   readonly yoursCode: string;
   readonly cityEyebrow: string;
   readonly cityLine: string;
-  /** Set where the city's line is read in another language than the page's. */
-  readonly cityNotice: string | undefined;
   readonly readStory: string;
   readonly faqEyebrow: string;
   readonly faqTitle: string;
@@ -69,6 +67,12 @@ const CITY_ES =
   'A comienzos del siglo XX, un científico conocido como Holberins concibió Numinia para reunir el conocimiento humano en un único espacio compartido. Un incendio la destruyó en 1920, pero él había guardado su esencia en los Registros Akáshicos, y un siglo después la ciudad renació.';
 const CITY_EN =
   'At the beginning of the 20th century, a scientist known as Holberins conceived Numinia to gather human knowledge in a single shared space. A fire destroyed it in 1920, but he had kept its essence in the Akashic Records, and a century later the city was reborn.';
+const CITY_JA =
+  '20世紀のはじめ、ホルベリンスという科学者が、人類の知をひとつの共有された空間に集めるために Numinia を構想しました。1920年の火災がそれを滅ぼしましたが、彼はその本質をアカシック・レコードに残していて、一世紀の後に都市はよみがえりました。';
+const CITY_KO =
+  '20세기 초, 홀베린스라는 과학자가 인류의 지식을 하나의 공유 공간에 모으기 위해 Numinia를 구상했습니다. 1920년 화재가 도시를 파괴했지만, 그는 그 본질을 아카식 레코드에 간직해 두었고, 한 세기 뒤에 도시는 다시 태어났습니다.';
+const CITY_PT =
+  'No começo do século XX, um cientista conhecido como Holberins concebeu Numinia para reunir o conhecimento humano em um único espaço compartilhado. Um incêndio a destruiu em 1920, mas ele havia guardado sua essência nos Registros Akáshicos, e um século depois a cidade renasceu.';
 
 const ES: FrontDoorMessages = {
   eyebrow: 'Numinia',
@@ -102,7 +106,6 @@ const ES: FrontDoorMessages = {
   yoursCode: 'El código',
   cityEyebrow: 'La ciudad',
   cityLine: CITY_ES,
-  cityNotice: undefined,
   readStory: 'Lee su historia',
   faqEyebrow: 'Preguntas',
   faqTitle: 'Lo que la gente pregunta',
@@ -162,7 +165,6 @@ const EN: FrontDoorMessages = {
   yoursCode: 'The code',
   cityEyebrow: 'The city',
   cityLine: CITY_EN,
-  cityNotice: undefined,
   readStory: 'Read its story',
   faqEyebrow: 'Questions',
   faqTitle: 'What people ask',
@@ -221,8 +223,7 @@ const JA: FrontDoorMessages = {
   yoursBazaar: 'バザール',
   yoursCode: 'コード',
   cityEyebrow: '都市',
-  cityLine: CITY_EN,
-  cityNotice: 'この物語は現在、スペイン語と英語で提供されています。',
+  cityLine: CITY_JA,
   readStory: 'その歴史を読む',
   faqEyebrow: '質問',
   faqTitle: 'よくある質問',
@@ -278,8 +279,7 @@ const KO: FrontDoorMessages = {
   yoursBazaar: '바자르',
   yoursCode: '코드',
   cityEyebrow: '도시',
-  cityLine: CITY_EN,
-  cityNotice: '이 이야기는 현재 스페인어와 영어로 제공됩니다.',
+  cityLine: CITY_KO,
   readStory: '그 역사 읽기',
   faqEyebrow: '질문',
   faqTitle: '자주 묻는 질문',
@@ -335,8 +335,7 @@ const PT_BR: FrontDoorMessages = {
   yoursBazaar: 'O Bazar',
   yoursCode: 'O código',
   cityEyebrow: 'A cidade',
-  cityLine: CITY_EN,
-  cityNotice: 'Esta narrativa está disponível em espanhol e inglês por enquanto.',
+  cityLine: CITY_PT,
   readStory: 'Leia a história',
   faqEyebrow: 'Perguntas',
   faqTitle: 'O que as pessoas perguntam',

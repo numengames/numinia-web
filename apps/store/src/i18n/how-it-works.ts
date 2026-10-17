@@ -45,8 +45,6 @@ export interface HowItWorksMessages {
   readonly whyEyebrow: string;
   readonly whyTitle: string;
   readonly story: readonly [string, string, string];
-  /** Set where the story is read in another language than the page's. */
-  readonly storyNotice: string | undefined;
   readonly storyImageAlt: string;
   readonly readArchive: string;
 }
@@ -62,6 +60,24 @@ const STORY_EN: readonly [string, string, string] = [
   'At the beginning of the 20th century, five initiates, led by a scientist known as Holberins, conceived Numinia as an experiment to gather human knowledge in a single shared space, where science, art and philosophy could speak without borders.',
   'Before its destruction by fire in 1920, Holberins projected the essence of the city into the Akashic Records, a universal memory where the ideas, symbols and echoes of everything that happens, has happened and will happen remain.',
   'Thanks to that, a century later, Numinia was reborn, invoked by the Oracles.',
+];
+
+const STORY_JA: readonly [string, string, string] = [
+  '20世紀のはじめ、ホルベリンスという科学者に率いられた五人の入門者が、人類の知をひとつの共有された空間に集める実験として Numinia を構想しました。科学、芸術、哲学が境界なく語り合える場所です。',
+  '1920年の火災で滅びる前に、ホルベリンスは都市の本質をアカシック・レコードに投影しました。起こること、起こったこと、これから起こることすべての思想、象徴、残響がとどまる普遍の記憶です。',
+  'そのおかげで、一世紀の後、Numinia はオラクルたちに呼び起こされてよみがえりました。',
+];
+
+const STORY_KO: readonly [string, string, string] = [
+  '20세기 초, 홀베린스라는 과학자가 이끄는 다섯 명의 입문자가 인류의 지식을 하나의 공유 공간에 모으는 실험으로 Numinia를 구상했습니다. 과학, 예술, 철학이 경계 없이 대화할 수 있는 곳이었습니다.',
+  '1920년 화재로 파괴되기 전에 홀베린스는 도시의 본질을 아카식 레코드에 투영했습니다. 일어나는 일, 일어났던 일, 일어날 모든 일의 생각과 상징과 메아리가 남는 보편의 기억입니다.',
+  '그 덕분에 한 세기 뒤, Numinia는 오라클들의 부름으로 다시 태어났습니다.',
+];
+
+const STORY_PT: readonly [string, string, string] = [
+  'No começo do século XX, cinco iniciados, liderados por um cientista conhecido como Holberins, conceberam Numinia como um experimento para reunir o conhecimento humano em um único espaço compartilhado, onde ciência, arte e filosofia pudessem dialogar sem fronteiras.',
+  'Antes da destruição por um incêndio em 1920, Holberins projetou a essência da cidade nos Registros Akáshicos, uma memória universal onde permanecem as ideias, os símbolos e os ecos de tudo o que acontece, aconteceu e vai acontecer.',
+  'Graças a isso, um século depois, Numinia pôde renascer, invocada pelos Oráculos.',
 ];
 
 const ES: HowItWorksMessages = {
@@ -109,7 +125,6 @@ const ES: HowItWorksMessages = {
   whyEyebrow: 'La ciudad',
   whyTitle: 'Por qué una ciudad',
   story: STORY_ES,
-  storyNotice: undefined,
   storyImageAlt: 'Un globo suspendido sobre el gran tablero del Complejo Bildung',
   readArchive: 'Lee su historia en el Archivo',
 };
@@ -159,7 +174,6 @@ const EN: HowItWorksMessages = {
   whyEyebrow: 'The city',
   whyTitle: 'Why a city',
   story: STORY_EN,
-  storyNotice: undefined,
   storyImageAlt: 'A globe suspended above the great board of the Bildung Complex',
   readArchive: 'Read its story in the Archive',
 };
@@ -208,8 +222,7 @@ const JA: HowItWorksMessages = {
   write: 'お問い合わせ',
   whyEyebrow: '都市',
   whyTitle: 'なぜ都市なのか',
-  story: STORY_EN,
-  storyNotice: 'この物語は現在、スペイン語と英語で提供されています。',
+  story: STORY_JA,
   storyImageAlt: 'ビルドゥング・コンプレックスの大きな盤の上に浮かぶ球体',
   readArchive: 'アーカイブでその歴史を読む',
 };
@@ -258,8 +271,7 @@ const KO: HowItWorksMessages = {
   write: '연락하기',
   whyEyebrow: '도시',
   whyTitle: '왜 도시인가',
-  story: STORY_EN,
-  storyNotice: '이 이야기는 현재 스페인어와 영어로 제공됩니다.',
+  story: STORY_KO,
   storyImageAlt: '빌둥 콤플렉스의 거대한 판 위에 떠 있는 구체',
   readArchive: '아카이브에서 그 역사 읽기',
 };
@@ -308,8 +320,7 @@ const PT_BR: HowItWorksMessages = {
   write: 'Escreva para nós',
   whyEyebrow: 'A cidade',
   whyTitle: 'Por que uma cidade',
-  story: STORY_EN,
-  storyNotice: 'Esta narrativa está disponível em espanhol e inglês por enquanto.',
+  story: STORY_PT,
   storyImageAlt: 'Um globo suspenso sobre o grande tabuleiro do Complexo Bildung',
   readArchive: 'Leia a história no Arquivo',
 };
