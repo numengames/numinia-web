@@ -16,7 +16,7 @@ import type { SupportedLocale } from '@numinia/domain';
 export type CityId = 'now' | 'communities' | 'encounters' | 'worlds' | 'bazaar';
 
 /** What is yours, in the right rail's order (each the twin of a city place). */
-export type YouId = 'notices' | 'your-communities' | 'balance' | 'loot';
+export type YouId = 'notices' | 'your-communities' | 'agenda' | 'worlds' | 'balance' | 'loot';
 
 /** Phosphor regular icons the places use; the current one draws its fill. */
 export type PlaceIcon =
@@ -45,6 +45,12 @@ export const NOTIFICATIONS_PATH = '/notifications/';
 /** The organization panel (the face menu's «Paneles»): «Tus comunidades»' section. */
 export const PANEL_PATH = '/panel/';
 
+/** «Tu agenda»: the encounters you said you are going to. */
+export const AGENDA_PATH = '/agenda/';
+
+/** «Tus mundos»: the worlds of the communities you belong to. */
+export const MY_WORLDS_PATH = '/mis-mundos/';
+
 export const CITY_ITEMS: readonly Place<CityId>[] = [
   // «Ahora» is the front page; /live/ (the homes with people in) belongs to it.
   { id: 'now', path: '/', icon: 'broadcast', sections: ['/live/'] },
@@ -68,6 +74,9 @@ export const YOU_ITEMS: readonly Place<YouId>[] = [
     icon: 'users-three',
     sections: ['/belong/', PANEL_PATH],
   },
+  // «Tu agenda» and «Tus mundos» (cut I): the twins of Encuentros and Mundos, with their icons.
+  { id: 'agenda', path: AGENDA_PATH, icon: 'calendar-blank', sections: [AGENDA_PATH] },
+  { id: 'worlds', path: MY_WORLDS_PATH, icon: 'planet', sections: [MY_WORLDS_PATH] },
   { id: 'balance', path: '/saldo/', icon: 'coins', sections: ['/saldo/'], signedInOnly: true },
   { id: 'loot', path: '/lap/loot/', icon: 'backpack', sections: ['/lap/loot/'] },
 ];
@@ -133,6 +142,8 @@ export function navIcon(item: Place<string>, state: NavState): PlaceIcon | `${Pl
 const PERSONAL_PATHS: readonly string[] = [
   NOTIFICATIONS_PATH,
   '/belong/',
+  AGENDA_PATH,
+  MY_WORLDS_PATH,
   '/saldo/',
   PROFILE_PATH,
   PANEL_PATH,

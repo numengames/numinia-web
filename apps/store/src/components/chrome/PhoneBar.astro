@@ -142,6 +142,8 @@ const mine = isPersonal(basePath);
             {item.id === 'balance' && (
               <span class="ht-n mono" data-face-balance data-locale={locale} hidden />
             )}
+            {item.id === 'agenda' && <span class="ht-n mono" data-you-count="agenda" hidden />}
+            {item.id === 'worlds' && <span class="ht-n mono" data-you-count="worlds" hidden />}
           </a>
         );
       })

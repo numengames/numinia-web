@@ -106,6 +106,8 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     you: {
       notices: 'Avisos',
       'your-communities': 'Tus comunidades',
+      agenda: 'Tu agenda',
+      worlds: 'Tus mundos',
       balance: 'Tu saldo',
       loot: 'Tu botín',
     },
@@ -175,6 +177,8 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     you: {
       notices: 'Notices',
       'your-communities': 'Your communities',
+      agenda: 'Your agenda',
+      worlds: 'Your worlds',
       balance: 'Your balance',
       loot: 'Your loot',
     },
@@ -245,6 +249,8 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     you: {
       notices: 'お知らせ',
       'your-communities': 'あなたのコミュニティ',
+      agenda: 'あなたの予定',
+      worlds: 'あなたのワールド',
       balance: '残高',
       loot: '戦利品',
     },
@@ -315,6 +321,8 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     you: {
       notices: '알림',
       'your-communities': '내 커뮤니티',
+      agenda: '내 일정',
+      worlds: '내 월드',
       balance: '내 잔액',
       loot: '내 전리품',
     },
@@ -379,6 +387,8 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     you: {
       notices: 'Avisos',
       'your-communities': 'Suas comunidades',
+      agenda: 'Sua agenda',
+      worlds: 'Seus mundos',
       balance: 'Seu saldo',
       loot: 'Seu espólio',
     },

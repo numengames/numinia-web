@@ -216,3 +216,13 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `community-request-cancel`.
 // - «Peticiones» (the panel's Members, the house's Census): `request-accept`,
 //   `request-decline`.
+
+// ---- v3 «Tu agenda» and «Tus mundos» in your rail (cut I, 2026-10-17): its data-metric ids ----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - Your rail and the phone's «Tú» sheet: `you-agenda`, `you-worlds`,
+//   `sheet-agenda`, `sheet-worlds` (the two new places, as the rail's
+//   `you-<id>` / `sheet-<id>` rule already names them).
+// - «Tus mundos» /mis-mundos/: `my-worlds-sign-in` (the door, signed out),
+//   `my-worlds-community` (a community's name, to its page),
+//   `my-worlds-all` (the empty state's link to /mundos/); the cards keep
+//   `worlds-card-*`.

@@ -83,8 +83,14 @@ const BUDGETS = {
       apunto» on the featured encounter is real — one script (~1.7KB,
       bundled and minified, no import so it stays inline) asks /api/rsvp
       once the session is in, toggles the button, fills «N personas van»
-      and says it in a toast. Still no external JS. On top of the chrome the landing sits near ~27.5KB. */
-  landingInlineScriptBytes: 28_500,
+      and says it in a toast. Still no external JS. On top of the chrome the landing sits near ~27.5KB.
+      Then raised 28500→29500 on 2026-10-17 (v0.120.0, cut «Tu agenda · Tus
+      mundos»): the two new places of your rail carry a counter — one script
+      of its own (~1.1KB, lib/you-counts.ts bundled and minified, sharing no
+      module with the others so it stays inline) asks /api/rsvp and
+      /api/mundos/mine once the session is in and paints the figures; nothing
+      is asked signed out. Still no external JS. Landing sits near ~28.6KB. */
+  landingInlineScriptBytes: 29_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */

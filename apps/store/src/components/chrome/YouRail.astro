@@ -8,7 +8,9 @@
  *
  *   fold                     [ your face, name, rank ]  → «Tu menú»
  *   [ plus  Crear  ▾ ]                                  → the Crear menu
- *   Avisos · Tus comunidades · Tu saldo (signed in) · Tu botín
+ *   Avisos · Tus comunidades · Tu agenda · Tus mundos · Tu saldo (signed in) · Tu botín
+ *   (a counter after «Tu agenda», «Tus mundos» and «Tu saldo» when there is
+ *   something to count; the first two are YouCounts.astro's, the balance the menu's)
  *   Ajustes · Aspecto [Sistema|Noche|Día] · Idioma [EN|ES|PT|日本|한국]
  *   Cerrar sesión (signed in)
  *
@@ -25,6 +27,7 @@
 import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { agendaEnds } from '../../lib/agenda';
 import {
   CREATE_ITEMS,
   PANEL_PATH,
@@ -40,6 +43,7 @@ import {
 } from '../../lib/app-nav';
 import Icon from './Icon.astro';
 import LanguageMenu from './LanguageMenu.astro';
+import { RITUALS } from '../communities/register';
 
 interface Props {
   locale: SupportedLocale;
@@ -53,6 +57,8 @@ const ui = APP_SHELL_UI[locale];
 const belong = YOU_ITEMS.find((item) => item.id === 'your-communities')!;
 const panelIcon = navIcon(belong, navState(belong, basePath));
 const ranks = RANK_DEFINITIONS.map((rank) => ({ id: rank.id, name: rank.name[locale] }));
+// When each upcoming encounter ends: the «Tu agenda» counter tells your RSVPs still ahead with it.
+const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
 ---
 
 <aside class="rail rail-tu" aria-label={ui.youRail} data-rail="you">
@@ -132,6 +138,10 @@ const ranks = RANK_DEFINITIONS.map((rank) => ({ id: rank.id, name: rank.name[loc
                 {item.id === 'balance' && (
                   <span class="rail-n mono" data-face-balance data-locale={locale} hidden />
                 )}
+                {item.id === 'agenda' && (
+                  <span class="rail-n mono" data-you-count="agenda" data-ritual-ends={ends} hidden />
+                )}
+                {item.id === 'worlds' && <span class="rail-n mono" data-you-count="worlds" hidden />}
               </a>
             </li>
           );

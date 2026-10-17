@@ -49,13 +49,20 @@ describe('the places', () => {
     ]);
   });
 
-  it('yours: Avisos, Tus comunidades, Tu saldo (signed in only), Tu botín', () => {
+  it('yours: Avisos, Tus comunidades, Tu agenda, Tus mundos, Tu saldo (signed in only), Tu botín', () => {
     expect(YOU_ITEMS.map((item) => [item.id, item.path, item.signedInOnly === true])).toEqual([
       ['notices', '/notifications/', false],
       ['your-communities', '/belong/', false],
+      ['agenda', '/agenda/', false],
+      ['worlds', '/mis-mundos/', false],
       ['balance', '/saldo/', true],
       ['loot', '/lap/loot/', false],
     ]);
+  });
+
+  it('Tu agenda and Tus mundos wear the icons of their twins, Encuentros and Mundos', () => {
+    expect(yours('agenda').icon).toBe(city('encounters').icon);
+    expect(yours('worlds').icon).toBe(city('worlds').icon);
   });
 
   it('each city place has its own Phosphor icon', () => {
@@ -109,6 +116,8 @@ describe('which place a page lights', () => {
       expect(litYou(path), path).toBe('your-communities');
     }
     expect(litYou('/notifications/')).toBe('notices');
+    expect(litYou('/agenda/')).toBe('agenda');
+    expect(litYou('/mis-mundos/')).toBe('worlds');
     expect(litYou('/saldo/')).toBe('balance');
     expect(litYou('/lap/loot/')).toBe('loot');
     expect(litYou('/lap/settings/')).toBeNull();
@@ -125,6 +134,8 @@ describe('which place a page lights', () => {
     for (const path of [
       '/notifications/',
       '/belong/',
+      '/agenda/',
+      '/mis-mundos/',
       '/saldo/',
       '/lap/',
       '/lap/loot/',
