@@ -15,7 +15,13 @@ import type { PanelMessages } from '../../i18n/panel';
 import type { PanelSettingsMessages } from '../../i18n/panel-settings';
 import { fill, type DeskSettings, type DeskSettingsChange } from '../../lib/accounts';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
-import { VOCABULARIES, isOn, isSwitchable, type Vocabulary } from '../../lib/panel-settings';
+import {
+  VOCABULARIES,
+  formatUsdCents,
+  isOn,
+  isSwitchable,
+  type Vocabulary,
+} from '../../lib/panel-settings';
 import { loadSettings, saveSettings } from '../../lib/panel-settings-client';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame, type PanelContext } from './PanelFrame';
@@ -31,12 +37,14 @@ function Settings({
   base,
   panel,
   ui,
+  locale,
 }: {
   readonly org: string;
   /** The panel's own words, before any preset: what «Mixto» says. */
   readonly base: PanelMessages;
   readonly panel: PanelContext;
   readonly ui: PanelSettingsMessages;
+  readonly locale: SupportedLocale;
 }) {
   const { update } = panel;
   const [read, setRead] = useState<Read>({ at: 'loading' });
@@ -193,6 +201,25 @@ function Settings({
         <p className="saldo-nota">{ui.house.alpha}</p>
       </section>
 
+      <section
+        className="tarjeta ajustes-tarjeta"
+        aria-labelledby="settings-ai-agent-t"
+        data-settings-ai-agent
+        data-ai-agent-enabled={mine.aiAgent.enabled ? 'true' : 'false'}
+      >
+        <h2 className="ajustes-h2" id="settings-ai-agent-t">
+          <PanelGlyph name="robot" size={18} />
+          {ui.aiAgent.title}
+        </h2>
+        <p data-ai-agent-line>
+          {fill(mine.aiAgent.enabled ? ui.aiAgent.lineOn : ui.aiAgent.lineOff, {
+            model: mine.aiAgent.model,
+            cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
+          })}
+        </p>
+        <p className="saldo-nota">{ui.aiAgent.note}</p>
+      </section>
+
       <p className="saldo-nota" role="status" data-settings-status={saving}>
         {saving === 'saving' && ui.saving}
         {saving === 'saved' && ui.saved}
@@ -217,7 +244,9 @@ export function PanelAjustes({
 }) {
   return (
     <PanelFrame locale={locale} face="settings" words={words} signIn={signIn} saldoHref={saldoHref}>
-      {(team, panel) => <Settings key={team.id} org={team.id} base={words} panel={panel} ui={ui} />}
+      {(team, panel) => (
+        <Settings key={team.id} org={team.id} base={words} panel={panel} ui={ui} locale={locale} />
+      )}
     </PanelFrame>
   );
 }

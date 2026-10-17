@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.128.0',
+    date: '2026-10-17 10:50',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Every community now gets its own built-in AI agent the moment the house opens its organization — cheapest model, a $1.50 trial budget, switched on — and every community already open got the same default, once, retroactively. The community\u2019s Ajustes screen shows it: «Agente IA: activo · gpt-5-nano · tope $1.50». This is the data model and the read-only indicator only: no real call to the model, no engine wiring, no spend metering and no on/off switch yet — those arrive in later cuts.',
+      },
+    ],
+  },
+  {
     version: 'v0.127.0',
     date: '2026-10-17 12:30',
     entries: [

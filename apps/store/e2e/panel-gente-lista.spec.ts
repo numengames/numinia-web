@@ -114,7 +114,14 @@ async function signedIn(
   await page.route('**/api/saldo/settings?*', (route) =>
     route.fulfill({
       json: {
-        settings: { ok: true, accountId: GAMES.id, off, vocabulary: 'mixed', mayEdit: true },
+        settings: {
+          ok: true,
+          accountId: GAMES.id,
+          off,
+          vocabulary: 'mixed',
+          mayEdit: true,
+          aiAgent: { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 },
+        },
       },
     }),
   );

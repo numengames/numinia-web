@@ -276,6 +276,19 @@ export interface DeskLogLine {
 export type DeskLogAnswer = { ok: true; accountId: string; lines: DeskLogLine[] } | DeskRefusal;
 
 /**
+ * «El cerebro barato de cada comunidad» (Historia 1, kanban numinia-com
+ * t_ec70b2e3): the organization's built-in AI agent, read-only here (the
+ * on/off switch, real calls, spend metering and balance are stories 2-4,
+ * out of this cut). Every organization shows one, the till's default or a
+ * stored row.
+ */
+export interface DeskAiAgent {
+  enabled: boolean;
+  model: string;
+  trialCapCents: number;
+}
+
+/**
  * «Ajustes de la comunidad» (cut 8): which pieces of the panel an organization
  * has switched off, the preset of its words, and whether the asker may change
  * them. Nothing stored is today's behaviour: `off` empty, `mixed`.
@@ -286,6 +299,7 @@ export interface DeskSettings {
   off: string[];
   vocabulary: 'simple' | 'mixed' | 'numinia';
   mayEdit: boolean;
+  aiAgent: DeskAiAgent;
 }
 export type DeskSettingsAnswer = DeskSettings | DeskRefusal;
 export interface DeskSettingsChange {
@@ -1387,13 +1401,29 @@ export function readLog(json: unknown): DeskLogLine[] | null {
 /** GET /api/saldo/settings: the settings of the organization, or null when the body is not that. */
 export function readSettings(json: unknown): DeskSettings | null {
   if (!isRecord(json) || !isRecord(json['settings'])) return null;
-  const { accountId, off, vocabulary, mayEdit } = json['settings'];
+  const { accountId, off, vocabulary, mayEdit, aiAgent } = json['settings'];
+  const brain = isRecord(aiAgent) ? aiAgent : null;
   return typeof accountId === 'string' &&
     Array.isArray(off) &&
     off.every((piece) => typeof piece === 'string') &&
     isVocabulary(vocabulary) &&
-    typeof mayEdit === 'boolean'
-    ? { ok: true, accountId, off: off as string[], vocabulary, mayEdit }
+    typeof mayEdit === 'boolean' &&
+    brain !== null &&
+    typeof brain['enabled'] === 'boolean' &&
+    typeof brain['model'] === 'string' &&
+    typeof brain['trialCapCents'] === 'number'
+    ? {
+        ok: true,
+        accountId,
+        off: off as string[],
+        vocabulary,
+        mayEdit,
+        aiAgent: {
+          enabled: brain['enabled'],
+          model: brain['model'],
+          trialCapCents: brain['trialCapCents'],
+        },
+      }
     : null;
 }
 

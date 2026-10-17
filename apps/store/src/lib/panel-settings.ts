@@ -36,6 +36,14 @@ export type Vocabulary = (typeof VOCABULARIES)[number];
 /** Today's behaviour: the wording the panel already had. */
 export const DEFAULT_VOCABULARY: Vocabulary = 'mixed';
 
+/**
+ * «El cerebro barato de cada comunidad» (Historia 1): copied exactly from
+ * apps/till/src/lib/ai-brain.ts — the organization's built-in AI agent's
+ * default model and trial cap, for the fixture desk (no till behind it).
+ */
+export const DEFAULT_AI_MODEL = 'gpt-5-nano';
+export const DEFAULT_AI_TRIAL_CAP_CENTS = 150;
+
 /** «Qué ha pasado» shows this many lines at a time (the till pages the same). */
 export const HAPPENINGS_PAGE = 30;
 
@@ -97,4 +105,19 @@ export function withVocabulary(
     names: { ...words.names, venues: terms.venues, gatherings: terms.gatherings },
     standing: { ...words.standing, as: { ...words.standing.as, owner: terms.owner } },
   };
+}
+
+/**
+ * «El cerebro barato de cada comunidad» (Historia 1): the AI agent's trial
+ * cap as a reader's own locale writes a dollar amount — «$1.50», «1,50 US$».
+ * `trialCapCents` is USD cents (the till's own unit for this figure, unlike
+ * every other amount in the panel, which is EUR).
+ */
+export function formatUsdCents(trialCapCents: number, locale: SupportedLocale): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(trialCapCents / 100);
 }

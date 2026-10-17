@@ -23,6 +23,7 @@ import {
   boundAccounts,
 } from '../accounts-source';
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS } from '../panel-settings';
 
 const NOW = new Date('2026-10-15T12:00:00.000Z');
 const ME = `0x${'ab'.repeat(20)}`;
@@ -62,6 +63,11 @@ describe('the fixture desk: settings', () => {
       off: [],
       vocabulary: 'mixed',
       mayEdit: true,
+      aiAgent: {
+        enabled: true,
+        model: DEFAULT_AI_MODEL,
+        trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      },
     });
   });
 
@@ -307,7 +313,14 @@ describe('reading the answers in the browser', () => {
   };
 
   it('reads settings, or null when the body is not that', () => {
-    const settings = { accountId: 'a', off: ['roles'], vocabulary: 'simple', mayEdit: false };
+    const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 };
+    const settings = {
+      accountId: 'a',
+      off: ['roles'],
+      vocabulary: 'simple',
+      mayEdit: false,
+      aiAgent,
+    };
     expect(readSettings({ settings })).toEqual({ ok: true, ...settings });
     for (const value of [
       null,
@@ -318,6 +331,10 @@ describe('reading the answers in the browser', () => {
       { settings: { ...settings, off: [1] } },
       { settings: { ...settings, vocabulary: 'x' } },
       { settings: { ...settings, mayEdit: 'yes' } },
+      { settings: { ...settings, aiAgent: null } },
+      { settings: { ...settings, aiAgent: { ...aiAgent, enabled: 'yes' } } },
+      { settings: { ...settings, aiAgent: { ...aiAgent, model: 3 } } },
+      { settings: { ...settings, aiAgent: { ...aiAgent, trialCapCents: '150' } } },
     ]) {
       expect(readSettings(value)).toBeNull();
     }

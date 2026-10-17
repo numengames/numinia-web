@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { loadSettings, saveSettings } from '../panel-settings-client';
 
-const settings = { accountId: 'acc t', off: ['roles'], vocabulary: 'simple', mayEdit: true };
+const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 };
+const settings = {
+  accountId: 'acc t',
+  off: ['roles'],
+  vocabulary: 'simple',
+  mayEdit: true,
+  aiAgent,
+};
 const answer =
   (body: unknown, status = 200) =>
   () =>

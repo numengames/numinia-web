@@ -133,6 +133,8 @@ import {
 } from './community-requests';
 import { RITUAL_PROBLEMS, readRitualDraft, readTillRitualId } from './rituals-till';
 import {
+  DEFAULT_AI_MODEL,
+  DEFAULT_AI_TRIAL_CAP_CENTS,
   DEFAULT_VOCABULARY,
   HAPPENINGS_PAGE,
   SWITCHABLE_PIECES,
@@ -989,6 +991,7 @@ export function createAccountsFixtureDesk(
     accountId: book.id,
     ...copy(settingsOf(book)),
     mayEdit: accessIn(book, who, as).permissions.has('manage-organization'),
+    aiAgent: { enabled: true, model: DEFAULT_AI_MODEL, trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS },
   });
   /** The till's reading of a change: only `off` (pieces that may be off) and `vocabulary`. */
   const readSettingsChange = (
