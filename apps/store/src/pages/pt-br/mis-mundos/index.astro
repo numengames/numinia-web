@@ -1,0 +1,8 @@
+---
+import MyWorldsPage from '../../../components/mundos/MyWorldsPage.astro';
+
+// A person's page: it reads the session and asks the till, so it is rendered on demand.
+export const prerender = false;
+---
+
+<MyWorldsPage locale="pt-br" />

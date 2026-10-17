@@ -34,7 +34,8 @@ async function signedIn(
     route.fulfill({ status: 200, json: { address: WALLET, rank: 'nomad' } }),
   );
   await page.route('**/api/rsvp**', (route) => {
-    asked.push('rsvp');
+    // The page's own «Me apunto» asks `?ids=…`; the rail's read carries no query.
+    asked.push(new URL(route.request().url()).search === '' ? 'rsvp' : 'rsvp-ids');
     return reads === null
       ? route.fulfill({ status: 401, json: { error: 'signed-out' } })
       : route.fulfill({ status: 200, json: { mine: reads.mine, counts: {} } });
@@ -139,7 +140,12 @@ test.describe('the counters', () => {
       '3',
     );
     await page.waitForLoadState('networkidle');
-    expect(session.asked().sort()).toEqual(['mine', 'rsvp']);
+    expect(
+      session
+        .asked()
+        .filter((read) => read !== 'rsvp-ids')
+        .sort(),
+    ).toEqual(['mine', 'rsvp']);
   });
 
   test('never a «0»: with no RSVP ahead and no world the figures stay hidden', async ({ page }) => {

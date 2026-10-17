@@ -1,0 +1,237 @@
+---
+/**
+ * «Tus mundos» (/mis-mundos/ in five locales, cut I, 2026-10-17): the 3D
+ * spaces of the communities you belong to, grouped by community — the
+ * community's name (a link to its page when the register has one), then its
+ * worlds with the one world card (WorldCard.astro: «Entrar» is the pass
+ * flow, «Su página» its page). A community without a world says so; with no
+ * world at all the page points to the city's /mundos/. Rendered on demand
+ * (it reads the session cookie and asks the till), never cached. Signed out
+ * it explains and offers the door, which comes back here. The till not
+ * there yet is said plainly.
+ *
+ * The wireframe's «your own world in five steps» is not built (no backend):
+ * nothing of it is drawn, no dead control.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { fill } from '../../i18n/communities';
+import { MY_WORLDS_UI } from '../../i18n/my-worlds';
+import { MY_WORLDS_PATH, localeHref, signInHref } from '../../lib/app-nav';
+import { SESSION_COOKIE } from '../../lib/auth/server';
+import { sessionWallet } from '../../lib/auth/session-wallet';
+import { myWorlds, type MyCommunityWorlds } from '../../lib/my-worlds';
+import type { WorldCard as Card } from '../../lib/world-index';
+import Icon from '../chrome/Icon.astro';
+import { desk } from '../../pages/api/mundos/_fleet';
+import { loadWorldIndex } from './world-index-data';
+import WorldCard from './WorldCard.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const words = MY_WORLDS_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const signIn = signInHref(locale, MY_WORLDS_PATH);
+const allWorldsHref = localeHref(locale, '/mundos/');
+
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const wallet = await sessionWallet(Astro.cookies.get(SESSION_COOKIE)?.value);
+
+/** A community of yours with the cards of its worlds the index knows, and its page when the register has it. */
+interface Group {
+  readonly community: MyCommunityWorlds;
+  readonly cards: readonly Card[];
+  readonly pageId: string | null;
+}
+
+type State = 'out' | 'unavailable' | 'ok';
+let state: State = 'out';
+let groups: readonly Group[] = [];
+if (wallet !== null) {
+  state = 'unavailable';
+  const till = desk();
+  const mine = till === null ? null : await myWorlds(till, wallet);
+  const index = mine === null ? null : await loadWorldIndex();
+  if (mine !== null && index !== null && index.ok) {
+    const byId = new Map(index.cards.map((card) => [card.id, card] as const));
+    groups = mine.communities.map((community) => {
+      const cards = community.worldIds.flatMap((id) => {
+        const card = byId.get(id);
+        return card === undefined ? [] : [card];
+      });
+      return { community, cards, pageId: cards[0]?.community.id ?? null };
+    });
+    state = 'ok';
+  }
+}
+const anyWorld = groups.some((group) => group.cards.length > 0);
+---
+
+<BaseLayout locale={locale} title={`${words.title} — Numinia`} description={words.lead} wide>
+  <header class="titulo-vista">
+    <h1 class="display-m">{words.title}</h1>
+    <p class="lead">{words.lead}</p>
+  </header>
+
+  {
+    state === 'out' && (
+      <section class="tarjeta puerta" data-my-worlds="out">
+        <Icon name="planet" size={28} />
+        <p class="texto-2">{words.signedOutLead}</p>
+        <a class="btn btn-primario" href={signIn} data-metric="my-worlds-sign-in">
+          {words.signIn}
+        </a>
+      </section>
+    )
+  }
+  {
+    state === 'unavailable' && (
+      <p class="vacio" data-my-worlds="unavailable">
+        <Icon name="hourglass" size={24} />
+        <span>{words.unavailable}</span>
+      </p>
+    )
+  }
+  {
+    state === 'ok' && !anyWorld && (
+      <p class="vacio" data-my-worlds="empty">
+        <Icon name="planet" size={24} />
+        <span>
+          {words.emptyTitle}.{' '}
+          <a href={allWorldsHref} data-metric="my-worlds-all">
+            {words.seeAll}
+          </a>
+        </span>
+      </p>
+    )
+  }
+  {
+    state === 'ok' &&
+      anyWorld &&
+      groups.map((group) => (
+        <section class="comunidad-mia" data-my-worlds-community={group.community.accountId}>
+          <h2 class="cm-nombre">
+            {group.pageId === null ? (
+              <span>{fill(words.worldsOfCommunity, { name: group.community.name })}</span>
+            ) : (
+              <a
+                href={`${prefix}/communities/${group.pageId}/`}
+                aria-label={fill(words.communityPage, { name: group.community.name })}
+                data-metric="my-worlds-community"
+              >
+                {group.community.name}
+              </a>
+            )}
+            {group.cards.length > 0 && <span class="cm-n mono">{group.cards.length}</span>}
+          </h2>
+          {group.cards.length > 0 ? (
+            <div class="mundos-rejilla">
+              {group.cards.map((card) => (
+                <WorldCard card={card} locale={locale} />
+              ))}
+            </div>
+          ) : (
+            <p class="texto-2 cm-vacia">{words.noneHere}</p>
+          )}
+        </section>
+      ))
+  }
+</BaseLayout>
+
+<script>
+  import { enterWorld } from '../../lib/mundos';
+
+  // «Entrar»: the pass for a member, the plain address for a guest (lib/mundos.ts) — as the index does.
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-enter]')) {
+    button.addEventListener('click', () => {
+      const label = button.querySelector('span');
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      if (label) label.textContent = button.dataset.entering ?? '';
+      void enterWorld(fetch, button.dataset.worldEnter ?? '', button.dataset.worldUrl || null).then(
+        (address) => window.location.assign(address ?? button.dataset.worldPage ?? '/'),
+      );
+    });
+  }
+
+  // A state's explanation closes with Esc, and opens again on the next hover or focus.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    for (const tip of document.querySelectorAll<HTMLElement>('[data-tip]')) {
+      if (tip.matches(':hover, :focus-within')) tip.setAttribute('data-tip-off', '');
+    }
+  });
+  for (const tip of document.querySelectorAll<HTMLElement>('[data-tip]')) {
+    const reopen = (): void => tip.removeAttribute('data-tip-off');
+    tip.addEventListener('pointerleave', reopen);
+    tip.addEventListener('focusout', reopen);
+  }
+  // A page restored from the back/forward cache must not keep a button working.
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-enter]')) {
+      button.removeAttribute('aria-busy');
+      button.disabled =
+        (button.closest<HTMLElement>('[data-world-card]')?.dataset.state ?? '') === 'works' ||
+        !button.dataset.worldUrl;
+    }
+  });
+</script>
+
+<style>
+  .titulo-vista {
+    margin-bottom: var(--s5);
+  }
+  .titulo-vista h1 {
+    margin: var(--s2) 0 var(--s3);
+  }
+  .titulo-vista .lead {
+    color: var(--texto-2);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .puerta {
+    display: grid;
+    gap: var(--s4);
+    justify-items: start;
+    max-width: 36rem;
+  }
+  .puerta p {
+    margin: 0;
+  }
+  .comunidad-mia + .comunidad-mia {
+    margin-top: var(--s6);
+  }
+  .cm-nombre {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s2);
+    margin: 0 0 var(--s4);
+    font-size: 1.44rem;
+  }
+  .cm-nombre a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .cm-nombre a:hover {
+    text-decoration: underline;
+  }
+  .cm-n {
+    color: var(--texto-2);
+    font-weight: 400;
+    font-size: 1rem;
+  }
+  .cm-vacia {
+    margin: 0;
+  }
+  .mundos-rejilla {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+  }
+</style>
