@@ -52,6 +52,7 @@ import {
   rowPlace,
   slot,
   slugify,
+  fleetEngine,
   updateFor,
   worldCards,
   worldUrl,
@@ -1102,5 +1103,74 @@ describe('the DNS desk’s answer, as the wizard reads it', () => {
     ]) {
       expect(readDeskLook(bad)).toBeNull();
     }
+  });
+});
+
+describe('fleetEngine: the newest build and who is behind it', () => {
+  const door = (alias: string, updates?: boolean) => ({
+    alias,
+    open: true,
+    ...(updates === undefined ? {} : { updates }),
+  });
+  const row = (id: string, server: string, image: string) => ({
+    id,
+    order: { ...VALID, id, server, image },
+  });
+  const old = row('atrium', 'bronte', ENGINE_OLD);
+  const fresh = row('lantern', 'bronte', RELEASE.image);
+  const hyper = row('agora', 'open-1', DEFAULT_IMAGE);
+
+  it('says the whole fleet is up to date', () => {
+    expect(fleetEngine([fresh], [door('bronte', true)], RELEASE)).toEqual({
+      current: RELEASE,
+      laggards: [],
+      total: 1,
+      otherEngine: 0,
+    });
+  });
+
+  it('lists the one world behind, and whether one signature moves it', () => {
+    const got = fleetEngine(
+      [old, fresh, row('third', 'bronte', ENGINE_OLD)],
+      [door('bronte', true)],
+      RELEASE,
+    );
+    expect(got.laggards.map((l) => l.id)).toEqual(['atrium', 'third']);
+    expect(got.laggards[0]).toEqual({
+      id: 'atrium',
+      server: 'bronte',
+      build: 'sha-c57dbb7',
+      canUpdate: true,
+    });
+    expect(got.total).toBe(3);
+  });
+
+  it('counts Hyperfy worlds apart, never as behind', () => {
+    const got = fleetEngine([old, hyper, hyper], [door('bronte', true)], RELEASE);
+    expect(got.otherEngine).toBe(2);
+    expect(got.total).toBe(1);
+    expect(got.laggards).toHaveLength(1);
+  });
+
+  it('keeps a world behind on a door without updates, but offers no button', () => {
+    for (const machines of [[door('bronte', false)], [door('bronte')], []]) {
+      const got = fleetEngine([old], machines, RELEASE);
+      expect(got.laggards).toEqual([
+        { id: 'atrium', server: 'bronte', build: 'sha-c57dbb7', canUpdate: false },
+      ]);
+    }
+  });
+
+  it('names nobody behind while there is no release', () => {
+    expect(fleetEngine([old, hyper], [door('bronte', true)], null)).toEqual({
+      current: null,
+      laggards: [],
+      total: 1,
+      otherEngine: 1,
+    });
+  });
+
+  it('ignores a world being deleted (no order)', () => {
+    expect(fleetEngine([{ id: 'gone', order: null }], [], RELEASE).total).toBe(0);
   });
 });

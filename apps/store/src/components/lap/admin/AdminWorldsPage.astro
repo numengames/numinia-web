@@ -555,6 +555,36 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     flex-direction: column;
   }
 
+  /* The fleet's engine: newest build and who is behind it */
+  [data-worlds-panel] .motor-flota {
+    margin-bottom: var(--s4);
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--superficie);
+  }
+  [data-worlds-panel] .motor-flota p {
+    margin: var(--s1) 0 0;
+    font-size: 0.9rem;
+  }
+  [data-worlds-panel] .motor-flota ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    margin: var(--s2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-worlds-panel] .motor-flota li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    font-size: 0.9rem;
+  }
+  [data-worlds-panel] .motor-flota .nota-motor {
+    color: var(--texto-2);
+  }
   /* The machines, each through its door */
   [data-worlds-panel] .maquinas {
     margin-bottom: var(--s5);

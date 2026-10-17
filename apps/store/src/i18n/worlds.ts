@@ -125,6 +125,25 @@ export interface WorldsRoomMessages {
     /** The engines its door says it runs: `{e}`. */
     readonly engines: string;
   };
+  /** The fleet's engine banner above the machines. */
+  readonly fleetEngine: {
+    /** Heading. */
+    readonly title: string;
+    /** The newest build: `{b}` its build string. */
+    readonly current: string;
+    /** Nobody is behind. */
+    readonly upToDate: string;
+    /** `{n}` the count of worlds behind it. */
+    readonly behind: string;
+    /** One laggard's line: `{id}`, `{m}` machine, `{b}` build. */
+    readonly laggard: string;
+    /** Its machine does not take updates. */
+    readonly manual: string;
+    /** `{n}` the count of worlds of another engine, left out. */
+    readonly otherEngine: string;
+    /** No release published yet. */
+    readonly none: string;
+  };
   /** One signed request on its way: `{m}` is the machine. */
   readonly steps: {
     readonly signing: string;
@@ -476,6 +495,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Peticiones en espera: {n}.',
       freeing: 'Borrando {d}…',
       engines: 'motores: {e}',
+    },
+    fleetEngine: {
+      title: 'Motor de la flota',
+      current: 'Versión vigente: {b}',
+      upToDate: 'Toda la flota al día.',
+      behind: 'Mundos por detrás: {n}',
+      laggard: '{id} · {m} · {b}',
+      manual: 'Su máquina no actualiza sola.',
+      otherEngine: 'Mundos con otro motor: {n} (no cuentan como rezagados).',
+      none: 'Aún no hay versión publicada.',
     },
     steps: {
       signing: 'Tu cartera te pide firmar…',
@@ -846,6 +875,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Requests waiting: {n}.',
       freeing: 'Deleting {d}…',
       engines: 'engines: {e}',
+    },
+    fleetEngine: {
+      title: 'Fleet engine',
+      current: 'Current version: {b}',
+      upToDate: 'The whole fleet is up to date.',
+      behind: 'Worlds behind: {n}',
+      laggard: '{id} · {m} · {b}',
+      manual: 'Its machine does not take updates.',
+      otherEngine: 'Worlds on another engine: {n} (not counted as behind).',
+      none: 'No version published yet.',
     },
     steps: {
       signing: 'Your wallet asks you to sign…',
@@ -1225,6 +1264,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       freeing: '{d} を削除中…',
       engines: 'エンジン：{e}',
     },
+    fleetEngine: {
+      title: 'フリートのエンジン',
+      current: '最新バージョン：{b}',
+      upToDate: 'フリート全体が最新です。',
+      behind: '遅れているワールド：{n}',
+      laggard: '{id} · {m} · {b}',
+      manual: 'このマシンは更新を受け付けません。',
+      otherEngine: '別のエンジンのワールド：{n}（遅れには数えません）。',
+      none: '公開されたバージョンはまだありません。',
+    },
     steps: {
       signing: 'ウォレットが署名を求めています…',
       sending: '{m} にリクエストを送信中…',
@@ -1600,6 +1649,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       freeing: '{d} 삭제 중…',
       engines: '엔진: {e}',
     },
+    fleetEngine: {
+      title: '플릿 엔진',
+      current: '현재 버전: {b}',
+      upToDate: '플릿 전체가 최신입니다.',
+      behind: '뒤처진 월드: {n}',
+      laggard: '{id} · {m} · {b}',
+      manual: '이 머신은 업데이트를 받지 않습니다.',
+      otherEngine: '다른 엔진의 월드: {n}(뒤처짐에 포함하지 않음).',
+      none: '게시된 버전이 아직 없습니다.',
+    },
     steps: {
       signing: '지갑이 서명을 요청합니다…',
       sending: '{m}(으)로 요청을 보내는 중…',
@@ -1972,6 +2031,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       waiting: 'Pedidos em espera: {n}.',
       freeing: 'Apagando {d}…',
       engines: 'motores: {e}',
+    },
+    fleetEngine: {
+      title: 'Motor da frota',
+      current: 'Versão vigente: {b}',
+      upToDate: 'Toda a frota está em dia.',
+      behind: 'Mundos atrasados: {n}',
+      laggard: '{id} · {m} · {b}',
+      manual: 'A máquina dele não atualiza.',
+      otherEngine: 'Mundos com outro motor: {n} (não contam como atrasados).',
+      none: 'Ainda não há versão publicada.',
     },
     steps: {
       signing: 'Sua carteira pede que você assine…',

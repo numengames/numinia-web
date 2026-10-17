@@ -628,6 +628,58 @@ export function updateFor(
   return machine?.open === true && machine.updates === true ? engine.image : null;
 }
 
+/** A world of the Numinia Engine on a build other than the newest. */
+export interface EngineLaggard {
+  readonly id: string;
+  readonly server: string;
+  /** The build it is ordered with, short (`sha-c57dbb7`). */
+  readonly build: string;
+  /** Its machine takes updates: one signature moves it. */
+  readonly canUpdate: boolean;
+}
+
+/** The fleet's engine at a glance: the newest build and who is behind it. */
+export interface FleetEngine {
+  readonly current: EngineRelease | null;
+  readonly laggards: readonly EngineLaggard[];
+  /** Worlds of the Numinia Engine (the ones that can lag). */
+  readonly total: number;
+  /** Worlds of another engine (Hyperfy): not behind, just different. */
+  readonly otherEngine: number;
+}
+
+/**
+ * The newest Numinia Engine build and the worlds behind it, from the orders
+ * and the release alone (no door says what runs). Worlds of another engine
+ * count apart; a world being deleted (no order) counts nowhere; with no
+ * release nobody is behind.
+ */
+export function fleetEngine(
+  rows: readonly Pick<WorldRow, 'id' | 'order'>[],
+  machines: readonly Pick<MachineSummary, 'alias' | 'open' | 'updates'>[],
+  engine: EngineRelease | null,
+): FleetEngine {
+  const laggards: EngineLaggard[] = [];
+  let total = 0;
+  let otherEngine = 0;
+  for (const { id, order } of rows) {
+    if (order === null) continue;
+    if (engineOf(order.image) !== 'numinia-engine') {
+      otherEngine += 1;
+      continue;
+    }
+    total += 1;
+    if (engine === null || order.image === engine.image) continue;
+    laggards.push({
+      id,
+      server: order.server,
+      build: buildTag(order.image),
+      canUpdate: updateFor(order, machines, engine) !== null,
+    });
+  }
+  return { current: engine, laggards, total, otherEngine };
+}
+
 // ---------------------------------------------------------------------------
 // Rows: order × phase × card × probe → what the room shows
 // ---------------------------------------------------------------------------
