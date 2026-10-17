@@ -18,6 +18,7 @@
  */
 
 import { readAccountId, readWallet } from '../lib/accounts';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS } from '../lib/ai-brain';
 import { ORG_PROBLEMS, readHouse } from '../lib/organizations';
 import {
   DEFAULT_VOCABULARY,
@@ -42,6 +43,20 @@ interface SettingsView {
   readonly vocabulary: Vocabulary;
   /** The asker may change them (`manage-organization`). */
   readonly mayEdit: boolean;
+  /**
+   * «El cerebro barato de cada comunidad» (Historia 1): the organization's
+   * built-in AI agent, read-only here (the switch is a later story). Every
+   * organization shows one, stored or (for one founded by hand, not yet
+   * wired to insert a row) the same default computed on read.
+   */
+  readonly aiAgent: AiBrainView;
+}
+
+/** The organization's built-in AI agent as the panel shows it (Historia 1: read-only). */
+interface AiBrainView {
+  readonly enabled: boolean;
+  readonly model: string;
+  readonly trialCapCents: number;
 }
 
 export type SettingsAnswer = SettingsView | Refusal;
@@ -71,6 +86,9 @@ export type HappeningsAnswer =
 const SELECT_SETTINGS =
   'SELECT pieces_off, vocabulary FROM organization_settings WHERE account_id = ?1';
 
+const SELECT_AI_BRAIN =
+  'SELECT enabled, model, trial_cap_cents FROM organization_ai_brain WHERE account_id = ?1';
+
 /** The row is written only while the organization still holds the revision that was read. */
 const UPSERT_SETTINGS = `
   INSERT INTO organization_settings (account_id, pieces_off, vocabulary, updated_at)
@@ -96,6 +114,25 @@ async function settingsRow(
   return {
     off: storedOff(text(row, 'pieces_off')),
     vocabulary: text(row, 'vocabulary') as Vocabulary,
+  };
+}
+
+/**
+ * «El cerebro barato de cada comunidad» (Historia 1): the organization's
+ * built-in AI agent, stored (every community from `ensureCommunityTeam` on,
+ * and every organization the backfill of migration 0016 reached) or, when
+ * there is no row yet, the same house-wide default — so a screen never
+ * tells the two apart.
+ */
+async function aiBrainRow(db: TillDatabase, accountId: string): Promise<AiBrainView> {
+  const row = await db.prepare(SELECT_AI_BRAIN).bind(accountId).first<Row>();
+  if (row === null) {
+    return { enabled: true, model: DEFAULT_AI_MODEL, trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS };
+  }
+  return {
+    enabled: cents(row, 'enabled') === 1,
+    model: text(row, 'model'),
+    trialCapCents: cents(row, 'trial_cap_cents'),
   };
 }
 
@@ -138,6 +175,7 @@ export async function settings(
     accountId: asker.accountId,
     ...(await settingsRow(db, asker.accountId)),
     mayEdit: entered.acting.access.permissions.has('manage-organization'),
+    aiAgent: await aiBrainRow(db, asker.accountId),
   };
 }
 
@@ -191,7 +229,14 @@ export async function changeSettings(
     ]);
     if (!written) return refuse(PROBLEMS.meanwhile);
   }
-  return { ok: true, accountId: org.accountId, off, vocabulary, mayEdit: true };
+  return {
+    ok: true,
+    accountId: org.accountId,
+    off,
+    vocabulary,
+    mayEdit: true,
+    aiAgent: await aiBrainRow(db, org.accountId),
+  };
 }
 
 /** A `team_log` row joined with its author's published name. */

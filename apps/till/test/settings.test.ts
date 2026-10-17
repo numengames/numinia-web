@@ -4,8 +4,11 @@
  * binding calls it. One describe per rule or per door.
  */
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { PROBLEMS } from '../src/db/accounts';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS } from '../src/lib/ai-brain';
 import { ORG_PROBLEMS } from '../src/lib/organizations';
 import {
   DEFAULT_VOCABULARY,
@@ -18,7 +21,7 @@ import {
   storedOff,
 } from '../src/lib/settings';
 import { AccountDesk } from '../src/worker';
-import { migratedTill } from './sqlite-d1';
+import { migratedTill, migrationFiles, sqliteD1 } from './sqlite-d1';
 
 const wallet = (pair: string): string => `0x${pair.repeat(20)}`;
 const PABLO = wallet('ab');
@@ -57,6 +60,9 @@ const acts = (s: Scene, id: string): string[] =>
     .prepare('SELECT act FROM team_log WHERE account_id = ? ORDER BY seq')
     .all(id)
     .map((row) => String(row['act']));
+
+const MIGRATIONS_DIR = fileURLToPath(new URL('../migrations/', import.meta.url).href);
+const AI_BRAIN_MIGRATION = '0016_organization_ai_brain.sql';
 
 describe('the rules of the settings', () => {
   it('reads pieces: each once, only the ones that may be turned off, in the order of the panel', () => {
@@ -135,6 +141,11 @@ describe('settings', () => {
       off: [],
       vocabulary: 'mixed',
       mayEdit: false,
+      aiAgent: {
+        enabled: true,
+        model: DEFAULT_AI_MODEL,
+        trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      },
     });
     expect(settingsOf(await s.desk.settings(PABLO, id)).mayEdit).toBe(true);
   });
@@ -294,5 +305,58 @@ describe('happenings', () => {
     const reads = acts(s, id).filter((act) => act === 'house-read').length;
     await s.desk.happenings(HOUSE, id, 1000, true);
     expect(acts(s, id).filter((act) => act === 'house-read')).toHaveLength(reads);
+  });
+});
+
+describe('settings: the organization’s built-in AI agent (Historia 1)', () => {
+  it('shows the house-wide default to an organization founded by hand, with no stored row', async () => {
+    const s = scene();
+    const id = await team(s);
+    expect(settingsOf(await s.desk.settings(PABLO, id)).aiAgent).toEqual({
+      enabled: true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    expect(
+      s.sqlite.prepare('SELECT * FROM organization_ai_brain WHERE account_id = ?').all(id),
+    ).toEqual([]);
+  });
+});
+
+describe('migration 0015: the backfill of every organization already open', () => {
+  it('gives the same default to an organization open before this migration ran, once', () => {
+    const shim = sqliteD1();
+    const files = migrationFiles().filter((name) => name !== AI_BRAIN_MIGRATION);
+    for (const name of files) {
+      shim.sqlite.exec(readFileSync(`${MIGRATIONS_DIR}${name}`, 'utf8'));
+    }
+    // A community's and a by-hand organization's account, both already open before this
+    // migration — exactly what production holds the day it ships — plus a personal account,
+    // which is not an organization and must stay untouched.
+    shim.sqlite.exec(`
+      INSERT INTO accounts (id, kind, created_at) VALUES
+        ('acc_t_old1', 'team', '2026-01-01T00:00:00.000Z'),
+        ('acc_t_old2', 'team', '2026-02-02T00:00:00.000Z'),
+        ('acc_p_old', 'personal', '2026-01-01T00:00:00.000Z')`);
+    shim.sqlite.exec(readFileSync(`${MIGRATIONS_DIR}${AI_BRAIN_MIGRATION}`, 'utf8'));
+    const rows = shim.sqlite
+      .prepare(
+        'SELECT account_id, enabled, model, trial_cap_cents FROM organization_ai_brain ORDER BY account_id',
+      )
+      .all();
+    expect(rows).toEqual([
+      {
+        account_id: 'acc_t_old1',
+        enabled: 1,
+        model: DEFAULT_AI_MODEL,
+        trial_cap_cents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      },
+      {
+        account_id: 'acc_t_old2',
+        enabled: 1,
+        model: DEFAULT_AI_MODEL,
+        trial_cap_cents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      },
+    ]);
   });
 });

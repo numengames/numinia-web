@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { PROBLEMS, TEAMS_PER_FOUNDER } from '../src/db/accounts';
 import type { EnsureAnswer } from '../src/db/community-teams';
 import { readAccountId } from '../src/lib/accounts';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS } from '../src/lib/ai-brain';
 import {
   COMMUNITY_PROBLEMS,
   communityAccountId,
@@ -196,6 +197,24 @@ describe('ensureCommunityTeam: the house opens a community’s account', () => {
     const third = accountOf(await other.ensureCommunityTeam(MARIA, true, 'numen-games', 'B'));
     expect(two.id).toBe(one.id);
     expect(third.id).not.toBe(one.id);
+  });
+
+  it('is born with the house-wide default AI agent (Historia 1), once, not again on a second call', async () => {
+    const { desk, sqlite } = scene();
+    const { id } = accountOf(await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen'));
+    const row = (): unknown =>
+      sqlite
+        .prepare(
+          'SELECT enabled, model, trial_cap_cents FROM organization_ai_brain WHERE account_id = ?',
+        )
+        .get(id);
+    expect(row()).toEqual({
+      enabled: 1,
+      model: DEFAULT_AI_MODEL,
+      trial_cap_cents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen');
+    expect(count(sqlite, 'organization_ai_brain WHERE account_id = ?', id)).toBe(1);
   });
 });
 

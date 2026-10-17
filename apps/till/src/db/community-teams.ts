@@ -21,6 +21,7 @@
  */
 
 import { DEFAULT_LOCALE } from '@numinia/domain';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS } from '../lib/ai-brain';
 import { readWallet, readTeamName } from '../lib/accounts';
 import {
   COMMUNITY_PROBLEMS,
@@ -50,6 +51,14 @@ const INSERT_PROFILE = `
   INSERT INTO team_profiles (account_id, name, created_by, created_at)
   SELECT ?1, ?2, ?3, ?4
    WHERE NOT EXISTS (SELECT 1 FROM team_profiles WHERE account_id = ?1)`;
+
+// «El cerebro barato de cada comunidad» (Historia 1): the community's
+// built-in AI agent is born with the house-wide defaults the moment the
+// organization itself is — once, idempotent, same as the profile above.
+const INSERT_AI_BRAIN = `
+  INSERT INTO organization_ai_brain (account_id, enabled, model, trial_cap_cents, created_at)
+  SELECT ?1, 1, ?2, ?3, ?4
+   WHERE NOT EXISTS (SELECT 1 FROM organization_ai_brain WHERE account_id = ?1)`;
 
 /** The birth line is written last, so the roles, written before it, are written only while there is none. */
 const OPENED = `NOT EXISTS (SELECT 1 FROM team_log WHERE account_id = ?1 AND act = 'organization-created')`;
@@ -104,6 +113,7 @@ export async function ensureCommunityTeam(
   const results = await db.batch<Row>([
     db.prepare(INSERT_ACCOUNT).bind(id, at),
     db.prepare(INSERT_PROFILE).bind(id, name, wallet, at),
+    db.prepare(INSERT_AI_BRAIN).bind(id, DEFAULT_AI_MODEL, DEFAULT_AI_TRIAL_CAP_CENTS, at),
     ...roles.map((role) =>
       db
         .prepare(INSERT_ROLE)
