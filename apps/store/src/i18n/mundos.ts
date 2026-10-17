@@ -190,6 +190,43 @@ export interface WorldPageMessages {
   readonly enterFailed: string;
   /** «IA», for whoever manages the world: the AIs that come in through the world's door. */
   readonly ai: WorldAiMessages;
+  /** The world's own page as the wireframe draws it (cut K): hero, lead, facts, encounters, machine, community. */
+  readonly own: WorldOwnMessages;
+}
+
+/** The world's page, v3 cut K. `{x}` is the community's name; `{machine}` the machine's. */
+export interface WorldOwnMessages {
+  /** Under «Entrar» in the hero. */
+  readonly heroLine: string;
+  /** «Compartir» and its toasts. */
+  readonly share: string;
+  readonly shareCopied: string;
+  readonly shareFailed: string;
+  /** «Gestionarlo»: scrolls to the «Administración» block. */
+  readonly manageAct: string;
+  /** After the lead: whose the world is. */
+  readonly leadKept: string;
+  readonly leadHome: string;
+  readonly facts: {
+    readonly inside: string;
+    readonly keeper: string;
+    readonly enters: string;
+  };
+  readonly encounters: {
+    readonly title: string;
+    readonly none: string;
+    /** Link to the community's calendar when there is none. */
+    readonly calendar: string;
+    readonly toCalendar: string;
+  };
+  readonly machine: {
+    readonly title: string;
+    readonly runsOn: string;
+  };
+  readonly community: {
+    readonly keptForCity: string;
+    readonly home: string;
+  };
 }
 
 export interface MundosMessages {
@@ -284,6 +321,25 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'Entras con tu nombre y tus roles de {org}',
       enterGuest: 'Entras como invitado',
       enterFailed: 'No se pudo abrir el mundo. Inténtalo de nuevo.',
+      own: {
+        heroLine:
+          'Entras con tu nombre y tu avatar. Lo que puedes hacer dentro lo dicen tus roles.',
+        share: 'Compartir',
+        shareCopied: 'Enlace copiado',
+        shareFailed: 'No se pudo copiar el enlace.',
+        manageAct: 'Gestionarlo',
+        leadKept: 'Es de todos; lo cuida {x}.',
+        leadHome: 'Es la sede de {x}.',
+        facts: { inside: 'Dentro ahora', keeper: 'Quién lo cuida', enters: 'Quién entra' },
+        encounters: {
+          title: 'Encuentros aquí',
+          none: 'Ningún encuentro anunciado aquí todavía.',
+          calendar: 'Ver el calendario de {x}',
+          toCalendar: 'A mi calendario',
+        },
+        machine: { title: 'Su máquina', runsOn: 'Corre en {machine}' },
+        community: { keptForCity: 'Lo cuida para la ciudad', home: 'Su sede' },
+      },
       ai: {
         title: 'IA',
         note: 'Las IAs que entran en este mundo. Solo ves esta sección porque puedes administrarlo.',
@@ -434,6 +490,25 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'You go in with your name and your roles in {org}',
       enterGuest: 'You go in as a guest',
       enterFailed: 'Could not open the world. Try again.',
+      own: {
+        heroLine:
+          'You go in with your name and your avatar. What you can do inside, your roles say.',
+        share: 'Share',
+        shareCopied: 'Link copied',
+        shareFailed: 'Could not copy the link.',
+        manageAct: 'Manage it',
+        leadKept: 'It is everyone’s; {x} keeps it.',
+        leadHome: 'It is the home of {x}.',
+        facts: { inside: 'Inside now', keeper: 'Who keeps it', enters: 'Who goes in' },
+        encounters: {
+          title: 'Encounters here',
+          none: 'No encounter announced here yet.',
+          calendar: 'See the calendar of {x}',
+          toCalendar: 'To my calendar',
+        },
+        machine: { title: 'Its machine', runsOn: 'Runs on {machine}' },
+        community: { keptForCity: 'Keeps it for the city', home: 'Its home' },
+      },
       ai: {
         title: 'AI',
         note: 'The AIs that come into this world. You see this section because you can administer it.',
@@ -588,6 +663,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: '{org}での名前とロールで入ります',
       enterGuest: 'ゲストとして入ります',
       enterFailed: 'ワールドを開けませんでした。もう一度お試しください。',
+      own: {
+        heroLine: '自分の名前とアバターで入ります。中でできることはロールが決めます。',
+        share: '共有',
+        shareCopied: 'リンクをコピーしました',
+        shareFailed: 'リンクをコピーできませんでした。',
+        manageAct: '管理する',
+        leadKept: 'みんなのものです。{x}が管理しています。',
+        leadHome: '{x}の拠点です。',
+        facts: { inside: '今いる人', keeper: '管理者', enters: '入れる人' },
+        encounters: {
+          title: 'ここでの集い',
+          none: 'ここでの集いはまだ告知されていません。',
+          calendar: '{x}のカレンダーを見る',
+          toCalendar: 'カレンダーへ',
+        },
+        machine: { title: 'そのマシン', runsOn: '{machine}で動いています' },
+        community: { keptForCity: '都市のために管理', home: 'その拠点' },
+      },
       ai: {
         title: 'AI',
         note: 'このワールドに入るAIです。管理できる人にだけ、このセクションが表示されます。',
@@ -737,6 +830,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: '{org}에서의 이름과 역할로 입장합니다',
       enterGuest: '게스트로 입장합니다',
       enterFailed: '월드를 열 수 없습니다. 다시 시도해 주세요.',
+      own: {
+        heroLine: '내 이름과 아바타로 들어갑니다. 안에서 할 수 있는 일은 역할이 정합니다.',
+        share: '공유',
+        shareCopied: '링크를 복사했습니다',
+        shareFailed: '링크를 복사할 수 없습니다.',
+        manageAct: '관리하기',
+        leadKept: '모두의 것입니다. {x}이(가) 관리합니다.',
+        leadHome: '{x}의 거점입니다.',
+        facts: { inside: '지금 안에', keeper: '관리하는 곳', enters: '들어갈 수 있는 사람' },
+        encounters: {
+          title: '이곳의 모임',
+          none: '아직 이곳에 예고된 모임이 없습니다.',
+          calendar: '{x}의 달력 보기',
+          toCalendar: '내 달력에',
+        },
+        machine: { title: '그 머신', runsOn: '{machine}에서 실행 중' },
+        community: { keptForCity: '도시를 위해 관리', home: '그 거점' },
+      },
       ai: {
         title: 'AI',
         note: '이 월드에 들어오는 AI입니다. 이 월드를 관리할 수 있는 사람에게만 이 섹션이 보입니다.',
@@ -885,6 +996,25 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
       enterMember: 'Você entra com seu nome e seus papéis em {org}',
       enterGuest: 'Você entra como convidado',
       enterFailed: 'Não foi possível abrir o mundo. Tente de novo.',
+      own: {
+        heroLine:
+          'Você entra com seu nome e seu avatar. O que pode fazer lá dentro, seus papéis dizem.',
+        share: 'Compartilhar',
+        shareCopied: 'Link copiado',
+        shareFailed: 'Não foi possível copiar o link.',
+        manageAct: 'Gerenciar',
+        leadKept: 'É de todos; {x} cuida dele.',
+        leadHome: 'É a sede de {x}.',
+        facts: { inside: 'Dentro agora', keeper: 'Quem cuida', enters: 'Quem entra' },
+        encounters: {
+          title: 'Encontros aqui',
+          none: 'Nenhum encontro anunciado aqui ainda.',
+          calendar: 'Ver o calendário de {x}',
+          toCalendar: 'Ao meu calendário',
+        },
+        machine: { title: 'Sua máquina', runsOn: 'Roda em {machine}' },
+        community: { keptForCity: 'Cuida dele para a cidade', home: 'Sua sede' },
+      },
       ai: {
         title: 'IA',
         note: 'As IAs que entram neste mundo. Você vê esta seção porque pode administrá-lo.',

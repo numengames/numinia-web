@@ -1,12 +1,16 @@
 /**
- * A world's own page (cut 4): public for now. The page is a shell (its address
- * names the world); this reads GET /api/mundos/<id> — no session needed — and
- * says whose the world is. People who belong to the world's organization (and
- * the house) get an «Administración» block besides: the organization that
- * pays for a world is the one that administers it. Nothing is stored.
+ * A world's own page: the island. The page (./WorldPage.astro) draws the
+ * hero, the facts, the encounters, the machine and the community from what
+ * the server read; this reads GET /api/mundos/<id> — no session needed —
+ * and says whose the world is. It draws into the page's slots: «Entrar»
+ * (the pass flow) in the hero for a signed-in person, «Gestionarlo» and
+ * «Quién entra» for the people of the world's organization (and the
+ * house), who also get the «Administración» block below: the organization
+ * that pays for a world is the one that administers it. Nothing is stored.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { SupportedLocale } from '@numinia/domain';
 import type { WorldPageMessages } from '../../i18n/mundos';
 import { fill, readRoles, type DeskRoles } from '../../lib/accounts';
@@ -21,10 +25,34 @@ type Read = { readonly at: 'loading' } | PageSheet;
 /** The panel's pieces the administration block leads to, in the order it draws them. */
 const MANAGE_PIECES = ['venues', 'members', 'balance'] as const;
 
+/** The page's slots this island draws into (WorldPage.astro). */
+const SLOTS = {
+  enter: '[data-world-enter-slot]',
+  manage: '[data-world-manage-slot]',
+  enters: '[data-world-enters-slot]',
+} as const;
+
+/** A slot of the page, emptied of what the server put there, once the island is in the browser; null on the server. */
+function useSlot(selector: string): HTMLElement | null {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const found = document.querySelector<HTMLElement>(selector);
+    if (found !== null) found.replaceChildren();
+    setSlot(found);
+  }, [selector]);
+  return slot;
+}
+
+/** Draws `children` into the page's slot. */
+function Into({ selector, children }: { readonly selector: string; readonly children: ReactNode }) {
+  const slot = useSlot(selector);
+  return slot === null ? null : createPortal(children, slot);
+}
+
 /**
  * «Quién entra», read from the organization's roles — what the till already says to people in
  * it and to the house: nothing is asked twice and nothing is made up. Where the till does not
- * answer, the block is not drawn.
+ * answer, the block is not drawn; the fact in the page keeps the guest line.
  */
 function Enters({ org, words }: { readonly org: string; readonly words: WorldPageMessages }) {
   const [view, setView] = useState<DeskRoles | null>(null);
@@ -47,44 +75,54 @@ function Enters({ org, words }: { readonly org: string; readonly words: WorldPag
   if (view === null) return null;
   const found = enterersOf(view);
   const { list, rest } = shownPeople(found.people);
+  const rule = found.everyone
+    ? words.enters.everyone
+    : found.roles.length > 0
+      ? found.roles.map((role) => role.name).join(' · ')
+      : words.enters.owners;
   return (
-    <section
-      className="saldo-marco mundo-entran"
-      aria-labelledby="mundo-entran-t"
-      data-world-enters
-    >
-      <h2 id="mundo-entran-t">{words.enters.title}</h2>
-      {found.everyone ? (
-        <p className="saldo-nota">{words.enters.everyone}</p>
-      ) : (
-        found.roles.length > 0 && (
-          <>
-            <p className="saldo-nota">{words.enters.roles}</p>
-            <p className="saldo-chips">
-              {found.roles.map((role) => (
-                <span key={role.id} className="saldo-chip" data-world-enter-role>
-                  {role.name}
-                </span>
-              ))}
-            </p>
-          </>
-        )
-      )}
-      <p className="saldo-nota">{words.enters.owners}</p>
-      <h3 className="etiqueta">{words.enters.people}</h3>
-      {list.length === 0 ? (
-        <p className="saldo-nota">{words.enters.none}</p>
-      ) : (
-        <ul className="mundo-gente" data-world-people>
-          {list.map((member) => (
-            <li key={member.wallet} data-world-person>
-              {personLabel(member)}
-            </li>
-          ))}
-          {rest > 0 && <li className="saldo-nota">{fill(words.enters.more, { n: rest })}</li>}
-        </ul>
-      )}
-    </section>
+    <>
+      <Into selector={SLOTS.enters}>
+        <span data-world-enters-rule>{rule}</span>
+      </Into>
+      <section
+        className="saldo-marco mundo-entran"
+        aria-labelledby="mundo-entran-t"
+        data-world-enters
+      >
+        <h2 id="mundo-entran-t">{words.enters.title}</h2>
+        {found.everyone ? (
+          <p className="saldo-nota">{words.enters.everyone}</p>
+        ) : (
+          found.roles.length > 0 && (
+            <>
+              <p className="saldo-nota">{words.enters.roles}</p>
+              <p className="saldo-chips">
+                {found.roles.map((role) => (
+                  <span key={role.id} className="saldo-chip" data-world-enter-role>
+                    {role.name}
+                  </span>
+                ))}
+              </p>
+            </>
+          )
+        )}
+        <p className="saldo-nota">{words.enters.owners}</p>
+        <h3 className="etiqueta">{words.enters.people}</h3>
+        {list.length === 0 ? (
+          <p className="saldo-nota">{words.enters.none}</p>
+        ) : (
+          <ul className="mundo-gente" data-world-people>
+            {list.map((member) => (
+              <li key={member.wallet} data-world-person>
+                {personLabel(member)}
+              </li>
+            ))}
+            {rest > 0 && <li className="saldo-nota">{fill(words.enters.more, { n: rest })}</li>}
+          </ul>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -94,6 +132,7 @@ export function WorldView({
   words,
   homeHref,
   fixture,
+  placed,
 }: {
   readonly worldId: string;
   readonly locale: SupportedLocale;
@@ -102,6 +141,8 @@ export function WorldView({
   readonly homeHref: string;
   /** DATA_SOURCE=fixture: the «IA» section talks to an in-memory door. */
   readonly fixture: boolean;
+  /** Whether the page already drew the world's community (the index lists it). */
+  readonly placed: boolean;
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
   const [entering, setEntering] = useState(false);
@@ -127,6 +168,7 @@ export function WorldView({
 
   const page = read.at === 'ready' ? read.page : null;
   const home = page?.home ?? null;
+  const manages = page !== null && page.manage && home !== null;
 
   /** Works out the address (with the pass for a member) and goes there; says so when there is none. */
   const enter = useCallback(
@@ -178,6 +220,39 @@ export function WorldView({
         </div>
       )}
       {page !== null && (
+        <Into selector={SLOTS.enter}>
+          <span data-world-enter>
+            <button
+              type="button"
+              className="btn btn-primario btn-grande"
+              onClick={() => void enter(page.url)}
+              disabled={entering}
+              aria-busy={entering}
+              data-metric="world-enter"
+            >
+              {entering ? words.entering : words.enter}
+            </button>
+            {enterFailed && (
+              <span className="mh-fallo" role="alert" data-world-enter-failed>
+                {words.enterFailed}
+              </span>
+            )}
+          </span>
+        </Into>
+      )}
+      {manages && (
+        <Into selector={SLOTS.manage}>
+          <a
+            className="btn btn-fantasma"
+            href="#mundo-admin"
+            data-world-manage-act
+            data-metric="world-manage-act"
+          >
+            {words.own.manageAct}
+          </a>
+        </Into>
+      )}
+      {page !== null && !placed && (
         <section
           className="saldo-marco mundo-casa"
           data-world-home={home === null ? 'none' : 'org'}
@@ -193,34 +268,8 @@ export function WorldView({
           )}
         </section>
       )}
-      {page !== null && (
-        <section className="saldo-marco mundo-entrar" data-world-enter>
-          <button
-            type="button"
-            className="btn btn-primario"
-            onClick={() => void enter(page.url)}
-            disabled={entering}
-            aria-busy={entering}
-            data-metric="world-enter"
-          >
-            {entering ? words.entering : words.enter}
-          </button>
-          <p className="saldo-nota" data-world-enter-note>
-            {home !== null && page.manage
-              ? fill(words.enterMember, { org: home.accountName })
-              : words.enterGuest}
-          </p>
-          {enterFailed && (
-            <p className="saldo-nota" role="alert" data-world-enter-failed>
-              {words.enterFailed}
-            </p>
-          )}
-        </section>
-      )}
-      {page !== null && page.manage && home !== null && (
-        <Enters org={home.accountId} words={words} />
-      )}
-      {page !== null && page.manage && home !== null && (
+      {manages && <Enters org={home.accountId} words={words} />}
+      {manages && (
         <AiSection
           worldId={worldId}
           worldUrl={page.url}
@@ -229,10 +278,12 @@ export function WorldView({
           fixture={fixture}
         />
       )}
-      {page !== null && page.manage && home !== null && (
+      {manages && (
         <section
           className="saldo-marco mundo-admin"
+          id="mundo-admin"
           aria-labelledby="mundo-admin-t"
+          tabIndex={-1}
           data-world-manage
         >
           <h2 id="mundo-admin-t">{words.manage.title}</h2>

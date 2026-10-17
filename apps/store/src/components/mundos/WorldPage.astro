@@ -1,26 +1,38 @@
 ---
 /**
- * A world's page, /mundos/<id>/ in five locales (cut 4): public for now. The
- * page names the world from its address and the island (./WorldView.tsx)
- * reads GET /api/mundos/<id>: whose it is and, for people of its
- * organization, the «Administración» block. Rendered on demand like the
- * Codex's chapters: a world's id is a fleet's, not a build's.
+ * A world's page, /mundos/<id>/ in five locales — as the wireframe draws it
+ * (v3 cut K, 2026-10-17): the cover full-width with the name over it and
+ * «Entrar» (the pass flow; signed out, the door and back), the state chips,
+ * the title, the lead with its community linked, «Compartir» and — for the
+ * community's people — «Gestionarlo»; three facts; «Encuentros aquí»; the
+ * machine sheet; the community's card. Rendered on demand like the Codex's
+ * chapters: a world's id is a fleet's, not a build's.
  *
- * v3 (cut C): the world is shown with the same card as in the index of
- * worlds (/mundos/) — its picture, its state, who is inside when the world
- * says so and its community — without the card's own buttons (the island
- * below has «Entrar»). A world the index does not list (nobody placed it
- * yet) shows no card: the island says what it can.
+ * Everything here is what the data holds: the index's card (its picture,
+ * its state, who is inside when the world said so, its community), the
+ * register's encounters (lib/world-page.ts says which happen here), the
+ * fleet's machine. Nothing the data does not hold: no capacity, no people's
+ * faces, no machine figures. The island (./WorldView.tsx) reads
+ * GET /api/mundos/<id> — whose it is — and draws «Entrar», «Gestionarlo»,
+ * «Quién entra» and the «Administración» block into this page's slots.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AHORA_UI } from '../../i18n/ahora';
+import { AGENDA_UI } from '../../i18n/agenda';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import { MUNDOS_UI } from '../../i18n/mundos';
-import { localeHref } from '../../lib/app-nav';
+import { localeHref, signInHref } from '../../lib/app-nav';
+import { dayAndMonth, pick } from '../../lib/communities';
 import { runtimeEnv } from '../../lib/runtime-env';
-import { loadWorldIndex } from './world-index-data';
 import { readableWorldName } from '../../lib/world-index';
-import WorldCard from './WorldCard.astro';
+import { hostOf, machineSheet, worldEncounters, worldLead } from '../../lib/world-page';
+import { fleetMachines } from '../../pages/api/mundos/_fleet';
+import { COMMUNITIES, RITUALS } from '../communities/register';
+import Cover from '../communities/Cover.astro';
+import RsvpAction from '../communities/RsvpAction.astro';
+import Icon from '../chrome/Icon.astro';
+import { loadWorldIndex } from './world-index-data';
 import { WorldView } from './WorldView';
 import '../../styles/communities.css';
 import '../saldo/saldo.css';
@@ -33,7 +45,11 @@ interface Props {
 
 const { locale, worldId } = Astro.props;
 const words = MUNDOS_UI[locale].page;
+const own = words.own;
 const a = AHORA_UI[locale];
+const agenda = AGENDA_UI[locale];
+const ui = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
 // Under DATA_SOURCE=fixture the «IA» section talks to an in-memory door, not a real world.
 const fixture = runtimeEnv()['DATA_SOURCE'] === 'fixture';
 const index = await loadWorldIndex();
@@ -41,25 +57,275 @@ const card = index.ok ? index.cards.find((entry) => entry.id === worldId) : unde
 // The heading and the index's card say the same name: the card's when the
 // world is listed, the id read as words when it is not. Never a raw slug.
 const name = card?.name ?? readableWorldName(worldId);
+const community = card ? COMMUNITIES.find((entry) => entry.id === card.community.id) : undefined;
+const communityHref = card ? `${prefix}/communities/${card.community.id}/` : null;
+const encounters =
+  card && index.ok
+    ? worldEncounters(
+        { id: card.id, domain: hostOf(card.url ?? undefined), community: card.community.id },
+        index.cards.map((entry) => ({ id: entry.id, community: entry.community.id })),
+        COMMUNITIES,
+        RITUALS,
+      )
+    : [];
+let machines: ReadonlyMap<string, string> = new Map();
+try {
+  machines = await fleetMachines();
+} catch {
+  machines = new Map();
+}
+const sheet = machineSheet(machines.get(worldId) ?? null);
+const signIn = signInHref(locale, `/mundos/${worldId}/`);
+const state = card?.state ? a.states[card.state] : null;
+const insideText =
+  card === undefined || card.inside === null
+    ? null
+    : card.inside === 0
+      ? a.insideNone
+      : card.inside === 1
+        ? a.insideOne
+        : fill(a.insideMany, { n: card.inside });
+const whose = card ? (card.city ? own.leadKept : own.leadHome).split('{x}') : null;
+const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ?? Astro.url).href;
 ---
 
 <BaseLayout locale={locale} title={`${name} — Numinia`} description={words.eyebrow} wide>
-  <header class="mundo-cabecera">
-    <p class="migas">
-      <a href={localeHref(locale, '/mundos/')} data-metric="world-page-index">{a.worldsTitle}</a>
-      {' / '}
-      <span>{name}</span>
-    </p>
-    <p class="etiqueta">{words.eyebrow}</p>
-    <h1 class="display-m" data-world-id>{name}</h1>
+  <p class="migas mundo-migas">
+    <a href={localeHref(locale, '/mundos/')} data-metric="world-page-index">{a.worldsTitle}</a>
+    {' / '}
+    <span>{name}</span>
+  </p>
+
+  <section class="mundo-hero" data-world-hero data-cover={card?.cover ? 'own' : 'house'}>
+    {
+      card?.cover ? (
+        <img class="mh-fondo" src={card.cover} alt="" loading="eager" decoding="async" />
+      ) : (
+        <div class="mh-fondo mh-casa">
+          <Cover id={worldId} name={name} variant="cover" eager art />
+        </div>
+      )
+    }
+    <div class="mh-velo" aria-hidden="true"></div>
+    <div class="mh-centro">
+      <p class="mh-nombre" aria-hidden="true">{name}</p>
+      <a
+        class="btn btn-primario btn-grande"
+        href={signIn}
+        data-session-out
+        data-world-enter-door
+        data-metric="world-enter-sign-in"
+      >
+        <Icon name="play" size={20} />
+        {words.enter}
+      </a>
+      <span class="mh-entrar" data-session-in hidden data-world-enter-slot></span>
+      <p class="mh-linea">{own.heroLine}</p>
+    </div>
+    {
+      card?.state === 'on' && insideText !== null && (
+        <span class="mh-abajo">
+          <span class="pastilla" data-world-inside={card.inside}>
+            {(card.inside ?? 0) > 0 && <span class="punto" />}
+            {insideText}
+          </span>
+        </span>
+      )
+    }
+  </section>
+
+  <header class="mundo-cabeza">
+    <div class="mundo-cabeza-texto">
+      <p class="fila chips" data-world-chips>
+        {
+          state && card && (
+            <span class="mundo-tip" data-tip>
+              <span
+                class:list={['chip', { vivo: card.state === 'on', ambar: card.state === 'works' }]}
+                tabindex="0"
+                aria-describedby={`estado-${worldId}`}
+                data-world-state={card.state}
+              >
+                {card.state === 'on' && <span class="punto" />}
+                {state.label}
+              </span>
+              <span class="bocadillo" role="tooltip" id={`estado-${worldId}`}>
+                {state.note}
+              </span>
+            </span>
+          )
+        }
+        {card?.city && <span class="chip ambar">{a.ofTheCity}</span>}
+      </p>
+      <h1 class="display-m" data-world-id>{name}</h1>
+      {
+        card && community && whose && communityHref && (
+          <p class="de mundo-lead" data-world-lead>
+            {worldLead(community, locale)}{' '}
+            {whose[0]}
+            <a href={communityHref} data-metric="world-lead-community">
+              {card.community.name}
+            </a>
+            {whose[1]}
+          </p>
+        )
+      }
+    </div>
+    <div class="fila mundo-actos">
+      <button
+        type="button"
+        class="btn btn-fantasma"
+        data-world-share
+        data-share-title={name}
+        data-share-url={pageUrl}
+        data-share-copied={own.shareCopied}
+        data-share-failed={own.shareFailed}
+        data-metric="world-share"
+      >
+        <Icon name="share-network" size={18} />
+        {own.share}
+      </button>
+      <span data-world-manage-slot></span>
+    </div>
   </header>
-  {
-    card && (
-      <div class="mundo-tarjeta" data-world-page-card>
-        <WorldCard card={card} locale={locale} actions={false} heading="h2" />
-      </div>
-    )
-  }
+
+  <dl class="mundo-datos tarjeta" data-world-facts>
+    {
+      card && card.inside !== null && (
+        <div class="dato" data-world-fact="inside">
+          <dt class="etiqueta">
+            <Icon name="users" size={14} />
+            {own.facts.inside}
+          </dt>
+          <dd class="mono">{card.inside}</dd>
+        </div>
+      )
+    }
+    {
+      card && communityHref && (
+        <div class="dato" data-world-fact="keeper">
+          <dt class="etiqueta">
+            <Icon name="planet" size={14} />
+            {own.facts.keeper}
+          </dt>
+          <dd>
+            <a href={communityHref} data-world-org data-metric="world-fact-community">
+              {card.community.name}
+            </a>
+          </dd>
+        </div>
+      )
+    }
+    <div class="dato" data-world-fact="enters">
+      <dt class="etiqueta">
+        <Icon name="lock-key" size={14} />
+        {own.facts.enters}
+      </dt>
+      <dd data-world-enters-slot>{words.enterGuest}</dd>
+    </div>
+  </dl>
+
+  <div class="mundo-dos">
+    <div class="pila">
+      <section class="tarjeta mundo-encuentros" aria-labelledby="mundo-enc-t" data-world-encounters>
+        <h2 id="mundo-enc-t">
+          <Icon name="calendar-blank" size={18} />
+          {own.encounters.title}
+        </h2>
+        {
+          encounters.length > 0 ? (
+            <ul class="agenda-lista">
+              {encounters.map((ritual) => {
+                const date = dayAndMonth(ritual, locale);
+                return (
+                  <li data-world-encounter={ritual.id}>
+                    <span class="fecha">
+                      <b>{date.day}</b>
+                      {date.month}
+                    </span>
+                    <div class="fila-enc">
+                      <div>
+                        <h3>
+                          <a href={`${prefix}/rituals/${ritual.id}/`} data-metric="world-encounter">
+                            {pick(ritual.title, locale)}
+                          </a>
+                        </h3>
+                        <p>
+                          {pick(ritual.where, locale)}
+                          {ritual.mode && ` · ${ui.modes[ritual.mode]}`}
+                        </p>
+                      </div>
+                      <span class="fila modo">
+                        <a
+                          class="btn btn-fantasma btn-sm"
+                          href={`/rituals/${ritual.id}.ics`}
+                          data-metric="world-encounter-calendar"
+                        >
+                          <Icon name="calendar-plus" size={16} />
+                          {own.encounters.toCalendar}
+                        </a>
+                        <RsvpAction
+                          locale={locale}
+                          ritualId={ritual.id}
+                          signIn={signIn}
+                          metric="world-encounter-rsvp"
+                        />
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p class="vacio" data-world-encounters-none>
+              <Icon name="hourglass" size={24} />
+              <span>
+                {own.encounters.none}{' '}
+                {card && communityHref && (
+                  <a href={`${communityHref}#encuentros`} data-metric="world-encounters-calendar">
+                    {fill(own.encounters.calendar, { x: card.community.name })}
+                  </a>
+                )}
+              </span>
+            </p>
+          )
+        }
+      </section>
+    </div>
+    <div class="pila">
+      {
+        sheet && (
+          <section class="tarjeta mundo-maquina" aria-labelledby="mundo-maq-t" data-world-machine>
+            <h2 id="mundo-maq-t">
+              <Icon name="monitor" size={18} />
+              {own.machine.title}
+            </h2>
+            <p data-world-machine-name>{fill(own.machine.runsOn, { machine: sheet.name })}</p>
+          </section>
+        )
+      }
+      {
+        card && community && communityHref && (
+          <a class="tarjeta mini-com" href={communityHref} data-world-community data-metric="world-community-card">
+            <Cover
+              id={community.id}
+              name={community.name}
+              image={
+                community.image
+                  ? { src: community.image.src, alt: pick(community.image.alt, locale) }
+                  : undefined
+              }
+            />
+            <span class="mini-com-texto">
+              <b>{community.name}</b>
+              <span>{card.city ? own.community.keptForCity : own.community.home}</span>
+            </span>
+          </a>
+        )
+      }
+    </div>
+  </div>
+
   <WorldView
     client:load
     worldId={worldId}
@@ -67,15 +333,52 @@ const name = card?.name ?? readableWorldName(worldId);
     words={words}
     homeHref={localeHref(locale, '/')}
     fixture={fixture}
+    placed={card !== undefined}
   />
 </BaseLayout>
 
-<style>
-  .mundo-cabecera .migas {
-    margin: 0 0 var(--s3);
+<script>
+  /* «Compartir»: the browser's share sheet where there is one, the
+     clipboard where there is not — then a toast says «Enlace copiado». */
+  import { shareLink, shareToolsOf } from '../../lib/world-page';
+
+  let toast: HTMLElement | null = null;
+  let hide = 0;
+  const say = (text: string, tone: 'exito' | 'aviso'): void => {
+    if (!toast) {
+      toast = document.createElement('p');
+      toast.className = 'aviso';
+      toast.setAttribute('role', 'status');
+      toast.dataset['worldToast'] = '';
+      document.body.append(toast);
+    }
+    toast.dataset['tono'] = tone;
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(hide);
+    hide = window.setTimeout(() => {
+      if (toast) toast.hidden = true;
+    }, 4000);
+  };
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-share]')) {
+    button.addEventListener('click', () => {
+      const { shareTitle, shareUrl, shareCopied, shareFailed } = button.dataset;
+      void shareLink(shareToolsOf(navigator), shareTitle ?? '', shareUrl ?? location.href).then(
+        (outcome) => {
+          if (outcome === 'copied') say(shareCopied ?? '', 'exito');
+          if (outcome === 'failed') say(shareFailed ?? '', 'aviso');
+        },
+      );
+    });
   }
-  .mundo-tarjeta {
-    max-width: 560px;
-    margin: 0 0 var(--s5);
+
+  /* The state chip's tooltip closes with Esc, as the card's does. */
+  for (const tip of document.querySelectorAll<HTMLElement>('[data-world-chips] [data-tip]')) {
+    tip.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') tip.setAttribute('data-tip-off', '');
+    });
+    tip.addEventListener('focusout', () => tip.removeAttribute('data-tip-off'));
+    tip.addEventListener('mouseleave', () => tip.removeAttribute('data-tip-off'));
   }
-</style>
+</script>

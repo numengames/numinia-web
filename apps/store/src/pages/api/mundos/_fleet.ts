@@ -61,3 +61,20 @@ export async function fleetEntries(): Promise<readonly FleetEntry[]> {
     ...legacy.map((world) => ({ id: world.id, phase: null, domain: world.domain ?? null })),
   ];
 }
+
+/**
+ * Which machine runs each world (its alias), as the fleet's doors say it:
+ * the first machine that lists a world keeps it. A world run by hand is on
+ * no machine of the fleet and is not in the map.
+ */
+export async function fleetMachines(): Promise<ReadonlyMap<string, string>> {
+  const { views } = await fleet();
+  const machines = new Map<string, string>();
+  for (const view of views) {
+    if (!view.open) continue;
+    for (const world of view.worlds) {
+      if (!machines.has(world.id)) machines.set(world.id, view.alias);
+    }
+  }
+  return machines;
+}

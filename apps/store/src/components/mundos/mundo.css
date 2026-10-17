@@ -1,16 +1,289 @@
 /* A world's page (cut 4). The cards are Saldo's (saldo-marco); secondary
    words are --texto-2 (AA on a card); every grid child may shrink. */
-.mundo-cabecera {
+.mundo-migas {
+  margin: 0 0 var(--s3);
+}
+
+/* ---- The hero (cut K): the cover full-width, the name and «Entrar» over it ---- */
+.mundo-hero {
+  position: relative;
+  min-height: clamp(300px, 56.25vw, 520px);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-marco);
+  overflow: hidden;
+  background: var(--elevada);
+  display: grid;
+  place-items: center;
   margin-bottom: var(--s5);
 }
-.mundo-cabecera h1 {
-  margin: var(--s1) 0 0;
+.mundo-hero .mh-fondo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mundo-hero .mh-casa .cover {
+  height: 100%;
+  border-bottom: 0;
+}
+/* The house illustration alone behind the name: the monogram would read as a second title. */
+.mundo-hero .mh-casa .monogram b {
+  display: none;
+}
+.mundo-hero .mh-velo {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 70% at 50% 55%, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.3));
+}
+.mundo-hero .mh-centro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--s3);
+  padding: var(--s5) var(--s4);
+  text-align: center;
+  max-width: 36rem;
+  color: #fff;
+}
+.mundo-hero .mh-nombre {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.4vw, 2.2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+}
+.mundo-hero .mh-linea {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+.mundo-hero .btn-grande {
+  min-height: 52px;
+  padding: 0 var(--s5);
+  font-size: 1.05rem;
+  gap: var(--s2);
+}
+.mundo-hero .mh-entrar {
+  display: grid;
+  justify-items: center;
+  gap: var(--s2);
+}
+.mundo-hero .mh-fallo {
+  font-size: 0.85rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  padding: var(--s1) var(--s3);
+  border-radius: var(--radio-control);
+}
+.mundo-hero .mh-abajo {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1;
+}
+.mundo-hero .pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--texto);
+  background: color-mix(in srgb, var(--fondo) 85%, transparent);
+  border: 1px solid var(--linea-f);
+}
+.mundo-hero .punto,
+.mundo-cabeza .punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--enlace);
+}
+.mundo-cabeza .chip .punto {
+  background: currentColor;
+}
+
+/* ---- Under the hero: chips, the title, the lead, the two quiet acts ---- */
+.mundo-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--s5);
+}
+.mundo-cabeza-texto {
+  min-width: 0;
+  flex: 1 1 24rem;
+}
+.mundo-cabeza .chips {
+  margin: 0 0 var(--s2);
+}
+.mundo-cabeza h1 {
+  margin: 0;
   overflow-wrap: anywhere;
 }
-.mundo-cabecera .etiqueta {
+.mundo-lead {
+  margin: var(--s2) 0 0;
+  color: var(--texto-2);
+  max-width: 44rem;
+}
+.mundo-actos {
+  gap: var(--s2);
+  flex: 0 0 auto;
+}
+.mundo-actos .btn {
+  gap: 6px;
+  text-decoration: none;
+}
+.mundo-actos span:empty {
+  display: none;
+}
+.mundo-cabeza .mundo-tip {
+  position: relative;
+}
+.mundo-cabeza .chip {
+  min-height: 24px;
+  cursor: default;
+}
+.mundo-cabeza .bocadillo {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 3;
+  width: max-content;
+  max-width: 240px;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radio-control);
+  background: var(--elevada);
+  border: 1px solid var(--linea-f);
+  color: var(--texto-2);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms var(--ciclo);
+}
+.mundo-cabeza .mundo-tip:hover .bocadillo,
+.mundo-cabeza .mundo-tip:focus-within .bocadillo {
+  visibility: visible;
+  opacity: 1;
+}
+.mundo-cabeza .mundo-tip[data-tip-off] .bocadillo {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* ---- Three facts in a row ---- */
+.mundo-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: var(--s4);
+  margin: 0 0 var(--s4);
+}
+.mundo-datos .dato {
+  display: grid;
+  gap: var(--s1);
+  min-width: 0;
+}
+.mundo-datos dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   color: var(--texto-2);
 }
+.mundo-datos dd {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Two columns: the encounters; the machine and the community ---- */
+.mundo-dos {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  margin-bottom: var(--s5);
+}
+@media (max-width: 56.25rem) {
+  .mundo-dos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.mundo-dos .pila {
+  gap: var(--s4);
+  min-width: 0;
+}
+.mundo-dos h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.mundo-encuentros .fila-enc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  align-items: center;
+  justify-content: space-between;
+}
+.mundo-encuentros .fila-enc > div {
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+.mundo-encuentros .modo .btn {
+  gap: 6px;
+  text-decoration: none;
+}
+.mundo-encuentros .vacio span {
+  overflow-wrap: anywhere;
+}
+.mundo-maquina p {
+  margin: 0;
+  color: var(--texto);
+}
+.tarjeta.mini-com {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+.mini-com-texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--s4) 18px 18px;
+}
+.mini-com-texto b {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.mini-com-texto span {
+  color: var(--texto-2);
+  font-size: 0.875rem;
+}
+.mini-com:hover b,
+.mini-com:focus-visible b {
+  color: var(--enlace);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mundo-cabeza .bocadillo {
+    transition: none;
+  }
+}
+
 .mundo-pagina {
   display: grid;
   gap: var(--s4);

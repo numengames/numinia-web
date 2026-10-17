@@ -241,17 +241,18 @@ test.describe('the house places worlds', () => {
     await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
     await expect(page.locator('[data-world-manage]')).toHaveCount(0);
     // Who may enter is for the people of the organization: a stranger is not shown the list.
-    await expect(page.locator('[data-world-enter]')).toBeVisible();
+    // Signed out, «Entrar» is the door, which comes back here.
+    await expect(page.locator('[data-world-enter-door]')).toBeVisible();
     await expect(page.locator('[data-world-enters]')).toHaveCount(0);
-    // The same page in the other languages: on screen the word is «Comunidad».
+    // The same page in the other languages: on screen the community is named, never «organización».
     for (const [prefix, label] of [
-      ['', 'Community'],
-      ['/ja', 'コミュニティ'],
-      ['/ko', '커뮤니티'],
-      ['/pt-br', 'Comunidade'],
+      ['', 'Who keeps it'],
+      ['/ja', '管理者'],
+      ['/ko', '관리하는 곳'],
+      ['/pt-br', 'Quem cuida'],
     ] as const) {
       await page.goto(worldPage(world, prefix));
-      await expect(page.locator('[data-world-page] .etiqueta').first()).toHaveText(label);
+      await expect(page.locator('[data-world-fact="keeper"] .etiqueta')).toHaveText(label);
     }
     // A world the fleet does not have is a 404 in every language, not a page with a message.
     for (const prefix of ['', '/es', '/ja', '/ko', '/pt-br']) {
@@ -664,5 +665,139 @@ test.describe('fit and finish', () => {
     await settle(page);
     const axe = await new AxeBuilder({ page }).include('dialog[open]').analyze();
     expect(axe.violations).toEqual([]);
+  });
+});
+
+test.describe('the world’s page as the wireframe draws it (cut K)', () => {
+  test('a stranger: the hero with the door as «Entrar», the facts, no «Gestionarlo», the machine, the community', async ({
+    browser,
+  }) => {
+    const stranger = await browser.newContext();
+    const page = await stranger.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    // The hero: the name over the cover, «Entrar» signed out is the door that comes back here.
+    const hero = page.locator('[data-world-hero]');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.mh-nombre')).toHaveText('Agora Plaza');
+    const door = hero.locator('[data-world-enter-door]');
+    await expect(door).toBeVisible();
+    await expect(door).toHaveText(/Entrar/);
+    await expect(door).toHaveAttribute(
+      'href',
+      `/es/lap/session/?vuelta=${encodeURIComponent('/es/mundos/agora-plaza/')}`,
+    );
+    await expect(hero).toContainText('Entras con tu nombre y tu avatar');
+    // The fixture's worlds say nobody: no pill, no «Dentro ahora», no invented capacity.
+    await expect(hero.locator('[data-world-inside]')).toHaveCount(0);
+    await expect(page.locator('[data-world-fact="inside"]')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/\d+ de \d+/);
+    // The chips as the card paints them, the title, the lead with its community linked.
+    await expect(page.locator('[data-world-state="on"]')).toHaveText(/Encendido/);
+    await expect(page.locator('[data-world-chips] .chip.ambar')).toHaveText('De la ciudad');
+    await expect(page.locator('h1[data-world-id]')).toHaveText('Agora Plaza');
+    const lead = page.locator('[data-world-lead]');
+    await expect(lead).toContainText('Es de todos; lo cuida Numen Games.');
+    await expect(lead.locator('a')).toHaveAttribute('href', '/es/communities/numen-games/');
+    // The facts: who keeps it (linked), who goes in (the guest line for a stranger).
+    await expect(page.locator('[data-world-fact="keeper"] [data-world-org]')).toHaveText(
+      'Numen Games',
+    );
+    await expect(page.locator('[data-world-fact="enters"] dd')).toHaveText('Entras como invitado');
+    // «Gestionarlo» is for the community's people alone.
+    await expect(page.locator('[data-world-share]')).toBeVisible();
+    await expect(page.locator('[data-world-manage-act]')).toHaveCount(0);
+    await expect(page.locator('[data-world-manage]')).toHaveCount(0);
+    // «Su máquina»: the fleet names the machine and nothing else — one line, as words.
+    await expect(page.locator('[data-world-machine-name]')).toHaveText('Corre en Open 1');
+    await expect(page.locator('body')).not.toContainText(/estimado|EJEMPLO|ping/i);
+    // The community's card at the end.
+    const community = page.locator('[data-world-community]');
+    await expect(community).toHaveAttribute('href', '/es/communities/numen-games/');
+    await expect(community).toContainText('Numen Games');
+    await expect(community).toContainText('Lo cuida para la ciudad');
+    await stranger.close();
+  });
+
+  test('«Encuentros aquí» with none says so and leads to the community’s calendar', async ({
+    browser,
+  }) => {
+    const stranger = await browser.newContext();
+    const page = await stranger.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    const none = page.locator('[data-world-encounters-none]');
+    await expect(none).toContainText('Ningún encuentro anunciado aquí todavía.');
+    await expect(none.locator('a')).toHaveAttribute(
+      'href',
+      '/es/communities/numen-games/#encuentros',
+    );
+    await expect(page.locator('[data-world-encounter]')).toHaveCount(0);
+    await stranger.close();
+  });
+
+  test('«Compartir» copies the link and says so', async ({ browser }) => {
+    const context = await browser.newContext({
+      permissions: ['clipboard-read', 'clipboard-write'],
+    });
+    const page = await context.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    await page.locator('[data-world-share]').click();
+    await expect(page.locator('[data-world-toast]')).toHaveText('Enlace copiado');
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toMatch(/\/es\/mundos\/agora-plaza\/$/);
+    await context.close();
+  });
+
+  test('signed in: «Entrar» is the pass flow in the hero; one of the community: «Gestionarlo» and «Quién entra»', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    await page.goto(worldPage('agora-plaza'));
+    const hero = page.locator('[data-world-hero]');
+    const enter = hero.locator('[data-world-enter-slot] [data-metric="world-enter"]');
+    await expect(enter).toBeVisible();
+    await expect(enter).toHaveText('Entrar');
+    await expect(hero.locator('[data-world-enter-door]')).toBeHidden();
+    // Only one primary button on the screen.
+    await expect(page.locator('main .btn-primario:visible')).toHaveCount(1);
+    // «Quién entra»: the organization's rule, read from the till, replaces the guest line.
+    await expect(page.locator('[data-world-fact="enters"] [data-world-enters-rule]')).toHaveText(
+      /Entra cualquier persona de la comunidad|Los titulares entran siempre|\S+/,
+    );
+    await expect(page.locator('[data-world-fact="enters"] dd')).not.toHaveText(
+      'Entras como invitado',
+    );
+    // «Gestionarlo» reveals the «Administración» block.
+    const act = page.locator('[data-world-manage-act]');
+    await expect(act).toBeVisible();
+    await expect(act).toHaveText('Gestionarlo');
+    await act.click();
+    await expect(page.locator('[data-world-manage]')).toBeInViewport();
+    await expect(page.locator('[data-world-manage] h2')).toHaveText('Administración');
+  });
+
+  test('clean for axe, in night and day, and fits a 390 px phone', async ({ browser }) => {
+    const stranger = await browser.newContext();
+    const page = await stranger.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    await expect(page.locator('[data-world-org]')).toBeVisible();
+    await settle(page);
+    for (const mode of ['nocturno', 'diurno']) {
+      await page.evaluate((wanted) => {
+        document.documentElement.dataset['modo'] = wanted;
+      }, mode);
+      const axe = await new AxeBuilder({ page })
+        .include('[data-world-hero]')
+        .include('.mundo-cabeza')
+        .include('[data-world-facts]')
+        .include('.mundo-dos')
+        .analyze();
+      expect(axe.violations).toEqual([]);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(worldPage('agora-plaza'));
+    await expect(page.locator('[data-world-hero]')).toBeVisible();
+    expect(await overflow(page)).toBeLessThanOrEqual(0);
+    await stranger.close();
   });
 });
