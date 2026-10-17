@@ -76,6 +76,9 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
     const probe = async (): Promise<void> => {
       try {
         const response = await fetch('/api/admin/census');
+        // Read the body whatever the status: an unread body keeps the
+        // request open in the browser and the page never goes idle.
+        await response.text().catch(() => '');
         if (stopped) return;
         if (response.status === 403) return setPanel({ at: 'forbidden' });
         if (response.status === 503) return setPanel({ at: 'unconfigured' });

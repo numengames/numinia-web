@@ -33,17 +33,27 @@ const RETRIES = 6;
 const RETRY_MS = 5_000;
 
 /**
- * Whether anyone is signed in: the till answers 401 when nobody is. A
- * network fault is not a sign-out, so it keeps the signed-in path (which
- * ends in its own honest «we could not read it»).
+ * Who is here, as the chrome publishes it on `html[data-session]` — the
+ * page's ONE session read (lib/session-client.ts). This island asks the
+ * server nothing of its own: without a session it draws the door and stops,
+ * so the page really does go idle.
  */
-async function hasSession(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/saldo', { headers: { accept: 'application/json' } });
-    return response.status !== 401;
-  } catch {
-    return true;
-  }
+function signedInSoon(): Promise<boolean> {
+  const read = (): string | null => document.documentElement.getAttribute('data-session');
+  const known = read();
+  if (known !== null) return Promise.resolve(known === 'in');
+  return new Promise((resolve) => {
+    const watcher = new MutationObserver(() => {
+      const value = read();
+      if (value === null) return;
+      watcher.disconnect();
+      resolve(value === 'in');
+    });
+    watcher.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-session'],
+    });
+  });
 }
 
 async function confirm(sessionId: string): Promise<State> {
@@ -53,8 +63,10 @@ async function confirm(sessionId: string): Promise<State> {
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ action: 'confirm', sessionId }),
     });
-    if (response.status === 401) return { at: 'signed-out' };
+    // Read the body whatever the status: an unread body keeps the request
+    // open in the browser and the page never goes idle.
     const json: unknown = await response.json().catch(() => null);
+    if (response.status === 401) return { at: 'signed-out' };
     const result = response.ok ? readResult(json) : null;
     if (result === null || !result.ok) return { at: 'unknown' };
     if (result['state'] === 'paid') {
@@ -92,14 +104,18 @@ export function SaldoVuelta({
       }
     };
     const run = async (): Promise<void> => {
-      // Who is here comes first: a stranger gets the door, never an error.
-      if (!(await hasSession())) {
+      const { sessionId, cancelled } = vueltaParams(window.location.search);
+      // Nothing was charged: true for anybody, it claims nothing about an
+      // account, and it needs neither a session nor a request.
+      if (cancelled) return setState({ at: 'cancelled' });
+      // No session: the door, and not one request from this island.
+      if (!(await signedInSoon())) {
         if (!stopped) setState({ at: 'signed-out' });
         return;
       }
       if (stopped) return;
-      const { sessionId, cancelled } = vueltaParams(window.location.search);
-      if (cancelled) return setState({ at: 'cancelled' });
+      // Signed in and nobody sent them here by a payment: the honest
+      // «we could not find this top-up in your account».
       if (sessionId === null) return setState({ at: 'unknown' });
       await ask(sessionId, RETRIES);
     };
