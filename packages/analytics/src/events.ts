@@ -162,6 +162,12 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's «Sedes»: `panel-venue-open`, `panel-venue-enter`, `panel-venues-retry`.
 // - A world's page: `world-enter`, `world-page-retry`, `world-page-home`,
 //   `world-page-venues`, `world-page-members`, `world-page-balance`.
+// - A world's page as the wireframe draws it (cut K, 2026-10-17):
+//   `world-enter-sign-in` (the door, signed out), `world-share`,
+//   `world-manage-act` («Gestionarlo»), `world-lead-community`,
+//   `world-fact-community`, `world-encounter`, `world-encounter-calendar`,
+//   `world-encounter-rsvp` (+ `-sign-in`), `world-encounters-calendar`
+//   (none yet → the community's calendar), `world-community-card`.
 
 // ---- «IA» on a world's page (cut 2026-10-16): its data-metric ids -----------------
 // No new event and no new prop: each travels as `cta_click.metricId`.

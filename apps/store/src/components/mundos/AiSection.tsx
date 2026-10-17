@@ -471,7 +471,8 @@ export function AiSection({
         <div>
           <button
             type="button"
-            className="btn btn-primario"
+            // The hero's «Entrar» is the page's one primary button (cut K): this one is quiet.
+            className="btn btn-fantasma"
             onClick={() => setInviting(true)}
             disabled={failure === 'expired'}
             data-metric="ai-invite"

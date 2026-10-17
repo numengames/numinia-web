@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.124.0',
+    date: '2026-10-17 11:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A world’s own page, as the city drew it: its picture full-width with the name over it and one «Enter» — the pass flow for a signed-in person, the door that comes back for anyone else —, the state chips, the title, what the world is with its community linked, «Share» (the browser’s share sheet, or the link copied with a word that says so) and, for the community’s people, «Manage it». Three facts in a row: who is inside when the world says so, who keeps it, who goes in. «Encounters here»: the community’s upcoming encounters that happen in this world — its home, or an online encounter of a community with one world — with «To my calendar» and «I’m going»; none yet says so and leads to the community’s calendar. «Its machine» says only what the fleet knows: the machine’s name. The community’s card closes the page. In all five languages; nothing the data does not hold.',
+      },
+    ],
+  },
+  {
     version: 'v0.123.0',
     date: '2026-10-17 07:45',
     entries: [
