@@ -70,13 +70,21 @@ describe('onSale', () => {
     state: 'not on sale',
     link: '',
   };
-  it('needs both the state and an https link', () => {
+  it('needs the state, an https link and a link that can really charge', () => {
     expect(onSale(base)).toBe(false);
     expect(onSale({ ...base, state: 'on sale' })).toBe(false);
     expect(onSale({ ...base, link: 'https://buy.stripe.com/x' })).toBe(false);
     expect(onSale({ ...base, state: 'on sale', link: 'http://buy.stripe.com/x' })).toBe(false);
     expect(onSale({ ...base, state: 'on sale', link: 'https://buy.stripe.com/x' })).toBe(true);
-    expect(onSale({ ...base, state: 'test', link: 'https://buy.stripe.com/test_x' })).toBe(true);
+  });
+
+  it('never puts the pass on sale behind a test link', () => {
+    // A test link charges nothing: a price beside it is a price nobody can pay.
+    expect(onSale({ ...base, state: 'on sale', link: 'https://buy.stripe.com/test_x' })).toBe(
+      false,
+    );
+    expect(onSale({ ...base, state: 'test', link: 'https://buy.stripe.com/test_x' })).toBe(false);
+    expect(onSale({ ...base, state: 'test', link: 'https://buy.stripe.com/x' })).toBe(false);
     expect(onSale({ ...base, state: 'test' })).toBe(false);
   });
 
@@ -104,12 +112,12 @@ describe('pickGood / loadSeasonPass', () => {
     expect(() => pickGood([], 'nope')).toThrow(/nope/);
   });
 
-  it('loads the Season I pass from the committed record: payable, in test mode', () => {
+  it('loads the Season I pass from the committed record: a test link, so not on sale', () => {
     const pass = loadSeasonPass();
     expect(pass.id).toBe(SEASON_ONE_PASS_ID);
     expect(pass.priceEur).toBe(9.99);
-    expect(onSale(pass)).toBe(true);
     expect(isTestLink(pass)).toBe(true);
+    expect(onSale(pass)).toBe(false);
   });
 });
 

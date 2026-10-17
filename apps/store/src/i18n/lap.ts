@@ -149,7 +149,8 @@ export interface LapMessages {
     readonly passGives: string;
     readonly vatIncluded: string;
     readonly buy: string;
-    readonly comingSoon: string;
+    /** What the card says while the pass cannot really be bought. */
+    readonly notForSale: string;
     readonly datesPending: string;
     readonly record: string;
     readonly freeTrack: string;
@@ -161,7 +162,6 @@ export interface LapMessages {
     readonly fog: string;
     readonly signIn: string;
     readonly withdrawal: string;
-    readonly testNote: string;
   };
   readonly codexTitle: string;
   readonly codexIntro: string;
@@ -317,7 +317,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Todo lo que la ciudad custodia: formato, categoría y en qué capas vive cada binario.',
       forbidden: 'Zona de Oráculos',
       forbiddenNote:
-        'Esta sala pide rango de Archonte o superior. Entra con la cartera que lo tiene y volverá a abrirse.',
+        'Esta sala pide rango de Arconte o superior. Entra con la cartera que lo tiene y volverá a abrirse.',
       loading: 'Consultando el archivo…',
       search: 'Buscar por nombre o id…',
       all: 'Todos',
@@ -441,7 +441,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'El botín dorado de las ocho puertas, la entrada a la octava —El Velo— y un token del pase de la Temporada I en la wallet con la que entras.',
       vatIncluded: 'IVA incluido · pago único',
       buy: 'Comprar el pase',
-      comingSoon: 'Próximamente',
+      notForSale:
+        'El pase todavía no está en venta. Cuando lo esté, el precio y el botón aparecerán aquí.',
       datesPending: 'Las fechas de la temporada aún no están fijadas.',
       record: 'El precio y lo que entrega salen de su ficha en el archivo',
       freeTrack: 'Gratis',
@@ -455,8 +456,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Entra con tu wallet para ver tu avance: cada botín que tengas cuenta como puerta cruzada.',
       withdrawal:
         'Quiero el contenido ya y entiendo que pierdo los 14 días para desistir de la compra.',
-      testNote:
-        'Modo de prueba: no se cobra nada. Para probarlo usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. La página de pago muestra aún el producto del café.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:
@@ -662,7 +661,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'The gold reward of all eight doors, entry to the eighth — The Veil — and a Season I pass token in the wallet you sign in with.',
       vatIncluded: 'VAT included · one-off payment',
       buy: 'Buy the pass',
-      comingSoon: 'Coming soon',
+      notForSale:
+        'The pass is not for sale yet. When it is, the price and the button will be here.',
       datesPending: 'The season’s dates are not set yet.',
       record: 'The price and what it delivers come from its record in the archive',
       freeTrack: 'Free',
@@ -676,8 +676,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'Sign in with your wallet to see your progress: every reward you hold counts as a door crossed.',
       withdrawal:
         'I want the content now and understand I lose the 14 days to withdraw from the purchase.',
-      testNote:
-        'Test mode: nothing is charged. To try it, use the card 4242 4242 4242 4242, any future date and any CVC. The payment page still shows the coffee’s product.',
     },
     codexTitle: 'Codex of identities',
     codexIntro:
@@ -879,7 +877,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         '8つの扉すべての金の報酬、8番目の扉「ヴェール」への入場、そしてサインインしたウォレットへのシーズンIパストークン。',
       vatIncluded: '税込 · 一回払い',
       buy: 'パスを購入',
-      comingSoon: '近日公開',
+      notForSale: 'パスはまだ販売していない。販売が始まれば、価格と購入ボタンがここに出る。',
       datesPending: 'シーズンの日程はまだ決まっていない。',
       record: '価格と内容はアーカイブの記録から読み込まれる',
       freeTrack: '無料',
@@ -892,8 +890,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signIn:
         'ウォレットでサインインすると進行状況が見られる。持っている報酬ごとに扉を通過したことになる。',
       withdrawal: '今すぐコンテンツを受け取り、購入を撤回できる14日間を失うことを理解している。',
-      testNote:
-        'テストモード:料金は発生しない。試すにはカード 4242 4242 4242 4242、任意の将来の日付、任意のCVCを使う。支払いページにはまだコーヒーの商品が表示される。',
     },
     codexTitle: 'アイデンティティのコデックス',
     codexIntro: 'ヌミニアに属する形:あなたは誰か、何を知るか、何を追うか。',
@@ -1090,7 +1086,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         '여덟 문 모두의 황금 보상, 여덟 번째 문 «베일» 입장, 그리고 로그인한 지갑으로 받는 시즌 I 패스 토큰.',
       vatIncluded: '부가세 포함 · 일회 결제',
       buy: '패스 구매',
-      comingSoon: '곧 출시',
+      notForSale: '패스는 아직 판매하지 않는다. 판매가 시작되면 가격과 구매 버튼이 여기에 나온다.',
       datesPending: '시즌 일정은 아직 정해지지 않았다.',
       record: '가격과 제공 내용은 아카이브의 기록에서 읽어 온다',
       freeTrack: '무료',
@@ -1104,8 +1100,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         '지갑으로 로그인하면 진행 상황을 볼 수 있다. 보유한 보상마다 문을 통과한 것으로 친다.',
       withdrawal:
         '지금 바로 콘텐츠를 받기를 원하며, 구매를 철회할 수 있는 14일을 잃는다는 것을 이해한다.',
-      testNote:
-        '테스트 모드: 요금이 청구되지 않는다. 카드 4242 4242 4242 4242, 미래의 아무 날짜, 아무 CVC로 시험해 보라. 결제 페이지에는 아직 커피 상품이 표시된다.',
     },
     codexTitle: '정체성 코덱스',
     codexIntro: '누미니아에 속하는 방법: 당신은 누구인지, 무엇을 아는지, 무엇을 추구하는지.',
@@ -1343,7 +1337,8 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
         'A recompensa dourada das oito portas, a entrada na oitava — O Véu — e um token do passe da Temporada I na carteira com que você entra.',
       vatIncluded: 'IVA incluído · pagamento único',
       buy: 'Comprar o passe',
-      comingSoon: 'Em breve',
+      notForSale:
+        'O passe ainda não está à venda. Quando estiver, o preço e o botão aparecerão aqui.',
       datesPending: 'As datas da temporada ainda não foram definidas.',
       record: 'O preço e o que ele entrega vêm do seu registro no arquivo',
       freeTrack: 'Grátis',
@@ -1356,8 +1351,6 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       signIn:
         'Entre com sua carteira para ver seu avanço: cada recompensa que você tiver conta como porta atravessada.',
       withdrawal: 'Quero o conteúdo agora e entendo que perco os 14 dias para desistir da compra.',
-      testNote:
-        'Modo de teste: nada é cobrado. Para testar, use o cartão 4242 4242 4242 4242, qualquer data futura e qualquer CVC. A página de pagamento ainda mostra o produto do café.',
     },
     codexTitle: 'Códice de identidades',
     codexIntro:

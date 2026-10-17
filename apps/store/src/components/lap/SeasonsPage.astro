@@ -12,14 +12,18 @@
  * holders only.
  *
  * Price and payment link come from the archive record OPS-016 (STD-033
- * PAY-003). Buying is one button on this page — no cart. Before it, the
- * separate withdrawal acknowledgement EU consumer law asks for immediate
- * digital content (CRD art. 16(m); CPC key principles on in-game purchases).
+ * PAY-003). The pass is on sale only when its link can really take money:
+ * while it is a processor TEST link the card shows one honest line and no
+ * price, no button, no consent tick — nobody is offered a price they cannot
+ * pay. Buying, when it is on sale, is one button on this page — no cart.
+ * Before it, the separate withdrawal acknowledgement EU consumer law asks
+ * for immediate digital content (CRD art. 16(m); CPC key principles on
+ * in-game purchases).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { SEASON_ONE, rewardOn, seasonMinutes } from '@numinia/domain';
 import { LAP_UI } from '../../i18n/lap';
-import { formatEur, isTestLink, loadSeasonPass, onSale } from '../../lib/season-pass';
+import { formatEur, loadSeasonPass, onSale } from '../../lib/season-pass';
 import { doorStates, NOBODY } from '../../lib/season-progress';
 import Icon from '../chrome/Icon.astro';
 import LapShell from './LapShell.astro';
@@ -36,7 +40,6 @@ const doors = [...season.adventures].sort((a, b) => a.order - b.order);
 const states = doorStates(season, NOBODY);
 const pass = loadSeasonPass();
 const payable = onSale(pass);
-const testMode = payable && isTestLink(pass);
 const intl = locale === 'pt-br' ? 'pt-BR' : locale;
 const total = doors.length;
 const price = formatEur(pass.priceEur, intl);
@@ -124,14 +127,18 @@ const price = formatEur(pass.priceEur, intl);
                 </p>
                 <p class="bloqueo">{s.locked}</p>
                 <p class="enniebla">{s.fog}</p>
+                {/* No world address, no link: an anchor without href is not
+                    a link, so a locked or unbuilt door can never jump the
+                    page to the top. The script sets the href for a pass
+                    holder when the API hands the gated address over. */}
                 <a
                   class="btn btn-fantasma entrar"
-                  href={door.worldUrl ?? '#'}
+                  href={door.worldUrl ?? undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-enter
                   data-gated={door.requiresPass ? 'true' : undefined}
-                  hidden={door.requiresPass}
+                  hidden={door.requiresPass || door.worldUrl === null}
                   data-metric="season-door-enter"
                   title={door.description[locale]}
                 >
@@ -148,8 +155,14 @@ const price = formatEur(pass.priceEur, intl);
     <section class="compra tarjeta" data-season-pass data-on-sale={payable ? 'true' : 'false'}>
       <div class="oferta">
         <p class="etiqueta">{s.passTitle}</p>
-        <p class="precio">{price}</p>
-        <p class="letra">{s.vatIncluded}</p>
+        {
+          payable && (
+            <>
+              <p class="precio">{price}</p>
+              <p class="letra">{s.vatIncluded}</p>
+            </>
+          )
+        }
         <p class="desc">{s.passGives}</p>
       </div>
       <div class="pago">
@@ -172,16 +185,13 @@ const price = formatEur(pass.priceEur, intl);
                 >
                   {s.buy} · {price}
                 </a>
-                {testMode && (
-                  <p class="nota" role="note" data-test-note>
-                    {s.testNote}
-                  </p>
-                )}
               </>
             ) : (
-              <button class="btn btn-primario" type="button" disabled data-metric="season-pass-soon">
-                {s.comingSoon}
-              </button>
+              /* Not on sale: one honest line. No price nobody can pay, no
+                 button that leads to a test checkout, no consent to tick. */
+              <p class="nota" role="note" data-not-for-sale>
+                {s.notForSale}
+              </p>
             )
           }
         </div>
@@ -545,6 +555,11 @@ const price = formatEur(pass.priceEur, intl);
     font-size: 0.8rem;
     padding-inline: var(--s2);
     margin-top: var(--s1);
+  }
+  /* `.btn` sets display, so `hidden` needs saying again here: a gated or
+     unbuilt door must stay out of sight and out of the tab order. */
+  .entrar[hidden] {
+    display: none;
   }
   .bloqueo,
   .enniebla {

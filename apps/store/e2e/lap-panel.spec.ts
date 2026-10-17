@@ -99,7 +99,19 @@ test('Temporadas: the doors come first, the pass below them', async ({ page }) =
   expect(progress).toBeLessThan(doors);
   expect(doors).toBeLessThan(pass);
   await expect(page.locator('[data-progress]')).toHaveText('0 de 8 puertas cruzadas');
-  await expect(page.locator('[data-season-pass]')).toContainText('9,99');
+  // The pass is behind a processor test link: no price, no buy button, no
+  // test card in front of a stranger — one honest line instead.
+  const card = page.locator('[data-season-pass]');
+  await expect(card).toHaveAttribute('data-on-sale', 'false');
+  await expect(card).toContainText('El pase todavía no está en venta');
+  await expect(card).not.toContainText('9,99');
+  await expect(card).not.toContainText('4242');
+  await expect(page.locator('[data-buy-link]')).toHaveCount(0);
+  await expect(page.locator('[data-withdrawal]')).toHaveCount(0);
+  // The eighth door is locked, not a link that jumps the page to the top.
+  const eighth = page.locator('[data-door="adv-008"] [data-enter]');
+  await expect(eighth).toBeHidden();
+  await expect(eighth).not.toHaveAttribute('href', '#');
 });
 
 test('Estadísticas opens with the city, counted from the register, and «Ahora dentro» live', async ({
