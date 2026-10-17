@@ -50,6 +50,7 @@ const PAGES = [
   '/es/lap/admin/census/',
   '/es/lap/admin/prices/',
   '/es/saldo/', // without a session: the door (the panel is measured in saldo.spec.ts)
+  '/es/saldo/vuelta/', // without a session: the same door as «Saldo», never an error
   // /es/saldo/miembros/ only sends to /es/panel/miembros/ now: measured there.
   '/es/saldo/referidos/',
   '/es/panel/', // the organization panel without a session: the door (signed in it is measured in panel.spec.ts)
