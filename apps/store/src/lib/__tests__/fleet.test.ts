@@ -78,7 +78,7 @@ const EXPIRES = 1893456000;
  * and its signer, a stranger's signature, and the keccak checks. The machine
  * verifies the same file.
  */
-const ORACLE = '0x9d45e13f44b7d40aff8265bd755e4095724df86b';
+const ORACLE = '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489';
 const VECTORS = [
   {
     type: 'CreateWorld',
@@ -95,8 +95,8 @@ const VECTORS = [
     },
     digest: '0x6390352cb3395b9e08c31daaec3288413a5800cef65a6569164809637382ca1d',
     signature:
-      '0xef45b8300e044da1a6335bd8cb897797c13cebd0cd93f96a3c8922fcc7bdac6d2c364cde11b1342aad8c99a73f436805c32ed5c4450794ccdadcce36effbd40c1c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x37a165953f6b87bc28ba743d7879144fcecefb92a9903b4fa43d9acaac0d0ae9711aee8521a99bb3fb190cce5a8fdee1cded04bbd1f6fbb726f402b61a91fa241c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'DeleteWorld',
@@ -109,8 +109,8 @@ const VECTORS = [
     },
     digest: '0x4a05422e004fb6b333ed98bbc3d487bdbd231f0ebbf1e6d12516123f4f890a67',
     signature:
-      '0x1a9e36146a418fb09b44018c9248fb5ead1b42b97adc1876d6fee3b53143c6e155b9beb7badfb1b8c849ba9553637a686ea786e34bf1095c48720a76461ab3a91b',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x6caafe34361cd9905842d3d0a4e6473eaf7a2d4a332780256067c2fdc2d0d41e05226ee88a38104f9cd2868beecb9c5857ecbf6c2f9a56e13755d3214e46379e1b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'StopWorld',
@@ -122,8 +122,8 @@ const VECTORS = [
     },
     digest: '0xcce8832bb8c525e8a94356bd6e02d9d3e39d4fa88b0d9cf49eff9e7eaf8965d1',
     signature:
-      '0xc527c4889277e154bd8798478f1187f39da7bef34db4e405bb168c8e9464b9754494ce39ff535b8996f9f737099b04851719835010cc923260308389d88ce6871c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x673f6a0420ea47557cd08c1724d633c64aa4011ec0e52d803770f9729372000f68daf3304277c131270d00bcd66ba3091fe7944b309441c08f2a503f410f61281b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'StartWorld',
@@ -135,8 +135,8 @@ const VECTORS = [
     },
     digest: '0xd84f2ea0aea5ef8176282fb8b08b92dfdc169109ed22205f2271d8c372d82a26',
     signature:
-      '0xffc9bc29629161cb2cf8b601c6e1d64206545da180c404944c1e2e6a0dc9d1f007c4bc8832efe9099712e866254f3b35cbc72e70a7aab6c62c82ea09fbfeb5de1b',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x4b33ba0ee3b151f58189f57a747f6f9be907d1f2fa4ac758c3de3af6ee700f447ab2e4abdc69280cdd909103c4847042e173583f85d44dce41c289559d99f4ab1b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'DownloadWorld',
@@ -148,8 +148,8 @@ const VECTORS = [
     },
     digest: '0xe03580fe93dd2192b20cd5fe6cba48e25020390d9e46e608440cfd5ec2651a27',
     signature:
-      '0xa292ba6e7885cc224dbec0c3219c52fafb44139213935adb6b14cb1420921b2316129d8c0d05dda299fbb53194665ea8f152b88358985f2e0d0087dd40481c0d1c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x90c9a1edb0b83038df2ec991be166a0cae37bc52ad556c869eef169a259adda571b32aeb68844b04bf1f2dc1a474b708b12651677253d1c4aafad4b5d58a59331b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'ShowAdminCode',
@@ -160,8 +160,8 @@ const VECTORS = [
     },
     digest: '0x026533a50e419d03f37105c6f319572c0500f9b65237935ac8670b8dd46ecfe9',
     signature:
-      '0x36e2fe6fbaf9d26f8654eef7f047418688dbd393e302262d4aa70967a66d8c24525e50a990f9300f94b8c7cb77a53f85812c91759492d747755dab4a59ff079e1c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x0b1b5f1375168666ab023eb2cb2e04468ab2ebb0953797c83d2642c0fc06daaf0ccac54e5447f362829be5a08ba5b77073a24bd6f9db6e08f81ef3e8e9dce7e11c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'ShowWorldCode',
@@ -173,8 +173,8 @@ const VECTORS = [
     },
     digest: '0xf69173093218a76e67036e4059ad590d73a16d98de0532caf0ab55464aae3dfd',
     signature:
-      '0x5865796088c94c8ac85b72ad7192a4d74b665c19f8e38fd1c07becd9f3066430253e286e2326280fbb1110a90e332913594cefb0b05626b4711aced42a7c102f1c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x163474e6a8d1c784b2153f7ff12dc53246a6cd872b627c495bde22a4a842d2707e24e50ef2c32ab6b8a9c770ff4e3beab16cd175a520833f4d95805f5ecac4f21b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'RotateWorldCode',
@@ -186,8 +186,8 @@ const VECTORS = [
     },
     digest: '0x167365fbf09a8fbe0cd684c20bce0ea5e0ceb682a44775f09ebd45137ba1ed82',
     signature:
-      '0x7ee206a0eb620549dc0c619f1796ac7281f5e9a885650244857647b7ea03a1a0083a589ef21b486fe021df49dd0a6c42f127fe9caac9de50557bbc5299eab60a1c',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0xd0c78ff0b65a9f5d634bf86de4687ff1429f03b685939730ef7f2036464383ca693d26faf502d4d2e88977850ae4710aebd4e0a0a65da9e559c3bb2938c2d3691c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'ImportWorld',
@@ -206,8 +206,8 @@ const VECTORS = [
     },
     digest: '0x772dc4f6286f22eca4f7eb4bcfc2d0211b060fb1417a9a19415feed1a4999ebe',
     signature:
-      '0x7f324d04ea7dd8e8c9248ee3294194851c2b4e56a091ff2527781f097d92576948972860d0aac3b893c1e95f9f2c6f012589b695dd63820e75121e8560ca91e21b',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x7e07c9dcd7b8c344200ebc7abf30bd9f7da4f9f8426cd951d5129ec34c3354a87bf1044ad0c5951be01cd66064eb9c0481e27d2b9d1eb8da1d6abae89c0d89631b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
   {
     type: 'UpdateWorld',
@@ -220,8 +220,53 @@ const VECTORS = [
     },
     digest: '0x43cabdd5396fb9a42e85e9f001424dad6c43c5a282f9a1e075c700b9736ab598',
     signature:
-      '0x6867abbe16f8f9b69d7db996601a61880def50867068d38a5abc052895f3411359a01b63978236b66dad94940e953c82fa20ace8e7b77c7e15b284509ce174b41b',
-    signer: '0x9d45e13f44b7d40aff8265bd755e4095724df86b',
+      '0x3b7c12feb755920eb8d43a17d073392ad82e1ecd37a1d806f1b69c2cb6a68ec74a0915321127fefd348218cdebc5e93e314504aa1978c9556cace9a8b92a0ce71c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+  },
+  {
+    type: 'FleetRelease',
+    message: {
+      engine: 'numinia-engine',
+      image:
+        'ghcr.io/numengames/numinia-engine@sha256:abababababababababababababababababababababababababababababababab',
+      commit: 'f4d8475a1c2e9b7d03665f8e1a4b2c9d7e6f5a43',
+      seq: 7,
+      issuedAt: 1893456000,
+    },
+    digest: '0xb577c6cc0d0fc62c3974dd3686d9e7c2e69f810d62a66625f851dd5a1c3f436b',
+    signature:
+      '0xcfd95263c120fb1127c676243d30e13e6d8df25b724e518a687e690d04d536f969bebfcbfef9d896f7b96cae36498be4be0f9d6c3c5e55ca22347f33b190c46e1b',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+  },
+  {
+    type: 'PinWorld',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      image: 'ghcr.io/numengames/numinia-engine:sha-f4d8475',
+      reason: 'client demo until Friday',
+      nonce: '9123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xf22c718fb4699360f01d365ae9a4c4dc67a4b54a33a6bea2194aed7a814806a8',
+    signature:
+      '0x604a419977a8fbd9d4264f8ff84c3783fcd72e63c0438a1847e222e6a841436057422d54c48572b78163fa856ebbac4474d11c8efd193528f81235e58d0038be1c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+  },
+  {
+    type: 'PinWorld',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      image: '',
+      reason: 'demo over',
+      nonce: 'a123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xd6390dd7bd98b75943878cf7f3cac790a5ca9da764d1333e7437efe1f82474bf',
+    signature:
+      '0x164b1d58700f11dc155547aefe08d3e9de61de8e5b078a9ffe812c65dae599954f94d96600f11a048e25f191b5ef2f303a17070f4bf52ce8d3a0322b8274e4451c',
+    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
   },
 ] as const;
 const STRANGER = {
@@ -233,18 +278,25 @@ const STRANGER = {
     expires: 1893456000,
   },
   signature:
-    '0xb33535cbc5dbe7c7d9213a5e3d7f1750e7fefe2b32c6fabefb4dfef12d9e944d3bccf4a32f4d2732dce5a31f14808534312a5e756a8fc4dfe46f9adc427095d91b',
-  signer: '0x801e3d1cd483514ec2c7b26b9c37f7b4f2ef5a6c',
+    '0x66890d42dd4578c060169ed144d005d349ccebc169a08536b1612f8b941e446b3f3223b3f65a53bc62ad95977f87e3ead9779e94c7afb85cb0e5cc22a1b78dff1c',
+  signer: '0x6be737acfd99e343797611a8d7365919ea575e9a',
 } as const;
 const KECCAK = [
-  { input: '', hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470' },
-  { input: 'abc', hex: '0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45' },
+  {
+    input: '',
+    hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
+  },
+  {
+    input: 'abc',
+    hex: '0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45',
+  },
   {
     input: 'Numinia Fleet',
     hex: '0xb16b402dbf9c3f6bbba1d461e221c2198f91541497686217ec102aaa34590238',
   },
   {
-    input: 'x'.repeat(200),
+    input:
+      'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     hex: '0x3c3800defb6a25a70a2737e0716eeb5d270559ad3cad8f6abddac58802d7158e',
   },
 ] as const;
@@ -253,7 +305,7 @@ const NOW_MS = (EXPIRES - REQUEST_SECONDS) * 1000;
 
 describe('the requests the room builds', () => {
   it('hashes every kind exactly as the machine does, and each signature recovers to its signer', async () => {
-    expect(VECTORS.map((vector) => vector.type)).toEqual(Object.keys(REQUEST_TYPES));
+    expect([...new Set(VECTORS.map((vector) => vector.type))]).toEqual(Object.keys(REQUEST_TYPES));
     for (const vector of VECTORS) {
       const request: FleetRequest = { type: vector.type, message: vector.message };
       const data = typedData(request) as unknown as Parameters<typeof hashTypedData>[0];
@@ -412,7 +464,7 @@ describe('addresses and small words', () => {
   });
 
   it('shortens a wallet, leaves a short text alone, and sizes files', () => {
-    expect(shortWallet(ORACLE)).toBe('0x9d45…f86b');
+    expect(shortWallet(ORACLE)).toBe('0xf688…b489');
     expect(shortWallet('0x1234')).toBe('0x1234');
     expect(formatBytes(840)).toBe('840 B');
     expect(formatBytes(12_700)).toBe('12.4 KB');

@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.130.0',
+    date: '2026-10-17 13:10',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The fleet room now knows two more signed requests the machines understand: the engine release the house publishes as the newest, and a pin that holds one world on its image. Nothing new on screen yet: the room only mirrors the types and checks them against the same 13 test vectors the machines verify.',
+      },
+    ],
+  },
+  {
     version: 'v0.129.0',
     date: '2026-10-17 13:00',
     entries: [

@@ -768,6 +768,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         RotateWorldCode: 'cambió el código de {w}',
         ImportWorld: 'trajo {w}',
         UpdateWorld: 'actualizó {w}',
+        FleetRelease: 'publicó una versión del motor',
+        PinWorld: 'fijó {w}',
       },
     },
     fieldNames: {
@@ -1153,6 +1155,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         RotateWorldCode: 'changed the code of {w}',
         ImportWorld: 'brought back {w}',
         UpdateWorld: 'updated {w}',
+        FleetRelease: 'published an engine release',
+        PinWorld: 'pinned {w}',
       },
     },
     fieldNames: {
@@ -1539,6 +1543,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         RotateWorldCode: '{w} のコードを変更',
         ImportWorld: '{w} を zip から戻した',
         UpdateWorld: '{w} を更新した',
+        FleetRelease: 'エンジンのリリースを公開した',
+        PinWorld: '{w} を固定した',
       },
     },
     fieldNames: {
@@ -1919,6 +1925,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         RotateWorldCode: '{w}의 코드 변경',
         ImportWorld: '{w}을(를) zip에서 가져옴',
         UpdateWorld: '{w} 업데이트함',
+        FleetRelease: '엔진 릴리스를 게시함',
+        PinWorld: '{w} 고정함',
       },
     },
     fieldNames: {
@@ -2304,6 +2312,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         RotateWorldCode: 'trocou o código de {w}',
         ImportWorld: 'trouxe {w}',
         UpdateWorld: 'atualizou {w}',
+        FleetRelease: 'publicou uma versão do motor',
+        PinWorld: 'fixou {w}',
       },
     },
     fieldNames: {
