@@ -937,9 +937,8 @@ Then('the agenda page is rendered on demand under every locale prefix', async fu
   const server = await readFile(path.join(this.distDir, '..', 'server', 'entry.mjs'), 'utf8');
   for (const prefix of LOCALE_PREFIXES) {
     const pathname = prefix ? `/${prefix}/agenda` : '/agenda';
-    assert.match(
-      server,
-      new RegExp(`"pathname":"${pathname.replace(/[/-]/g, '\\$&')}","prerender":false`),
+    assert.ok(
+      server.includes(`"pathname":"${pathname}","prerender":false`),
       `${pathname} is not an on-demand route`,
     );
     const file = await readFile(
