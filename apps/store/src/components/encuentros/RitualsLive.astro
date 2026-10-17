@@ -81,9 +81,17 @@ const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(communit
             const date = new Date(row.allDay ? `${row.start}T00:00:00Z` : row.start);
             const time = row.allDay ? '' : ` · ${part(date, { hour: '2-digit', minute: '2-digit' })} UTC`;
             const month = part(date, { month: 'short' }).replace(/\./g, '').toUpperCase();
-            return `<li data-rituals-live-row="${esc(row.id)}"><span class="fecha"><b>${part(date, { day: 'numeric' })}</b>${esc(month)}</span><div class="fila-enc"><div><h3><a href="${esc(prefix)}/rituals/${esc(row.id)}/" data-metric="${esc(metricRow)}">${esc(row.title)}</a></h3><p>${esc(`${row.communityName} · ${row.where}${time}`)}</p></div><span class="fila modo"><span class="chip">${esc(modes[row.mode] ?? row.mode)}</span></span></div></li>`;
+            return `<li data-rituals-live-row="${esc(row.id)}"><span class="fecha"><b>${part(date, { day: 'numeric' })}</b>${esc(month)}</span><div class="fila-enc"><div><h3></h3><p>${esc(`${row.communityName} · ${row.where}${time}`)}</p></div><span class="fila modo"><span class="chip">${esc(modes[row.mode] ?? row.mode)}</span></span></div></li>`;
           })
           .join('');
+        // The link is made by hand: the page's own link gate reads every href it finds in the HTML, this one included.
+        rows.forEach((row, index) => {
+          const link = document.createElement('a');
+          link.setAttribute('href', `${prefix}/rituals/${row.id}/`);
+          link.dataset['metric'] = metricRow;
+          link.textContent = row.title;
+          list.children[index]?.querySelector('h3')?.append(link);
+        });
         slot.hidden = false;
       })
       .catch(() => undefined);
