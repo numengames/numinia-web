@@ -1,22 +1,22 @@
 ---
 /**
- * «Notificaciones» (/notifications/, the «Más» bell; the Oracle,
- * 2026-10-15, after platform.claude.com's page): a title, two tabs —
- * «Actualizaciones» and «Solicitudes» — and the empty states. Nothing sends
- * notifications yet, so the empty states are the truth today; no source is
- * invented here.
+ * «Avisos» (/notifications/, the bell; cut J «La ciudad y tú», 2026-10-17,
+ * wireframe v3 #avisos): what concerns you, and only that — one list newest
+ * first, four chips to narrow it (client-side, `aria-pressed` buttons), each
+ * row a small icon, a sentence with its subject in bold, when, and at most
+ * two quiet actions. No red numbers: the bar shows a dot when there is
+ * something new (YouRail / PhoneBar), and opening this page is «seen».
  *
- * Signed out, the page shows the door instead of the tabs. Which face shows
- * is painted by the chrome's one session read (`data-session-out` /
- * `data-session-in`, TopBar.astro); this page never asks for the session
- * itself. The tabs follow the ARIA tabs pattern with a tiny inline script —
- * no framework, no storage; `?tab=requests` opens the second tab, and
- * choosing a tab writes it back into the address.
+ * Signed out, the page shows the door. Which face shows is painted by the
+ * chrome's one session read (`data-session-out` / `data-session-in`); this
+ * page asks /api/notices once (lib/notices-client.ts) and paints the rows
+ * from the template below. «Aceptar» decides a request through the decide
+ * route; «Ahora no» only hides the row for this visit.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
-import { NOTIFICATIONS_UI, type NotificationsTab } from '../../i18n/notifications';
+import { NOTIFICATIONS_UI, type NoticeFilter } from '../../i18n/notifications';
 import { NOTIFICATIONS_PATH, signInHref } from '../../lib/app-nav';
 import Icon from '../chrome/Icon.astro';
 
@@ -27,12 +27,16 @@ interface Props {
 const { locale } = Astro.props;
 const t = NOTIFICATIONS_UI[locale];
 const shell = APP_SHELL_UI[locale];
-const TABS: readonly NotificationsTab[] = ['updates', 'requests'];
+const CHIPS: readonly NoticeFilter[] = ['all', 'encounter', 'world', 'community'];
+const prefix = locale === 'en' ? '' : `/${locale}`;
 ---
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.description}>
   <div class="avisos-pagina">
-    <h1>{t.title}</h1>
+    <div class="cabecera-avisos">
+      <h1>{t.title}</h1>
+      <p class="texto-2">{t.lead}</p>
+    </div>
 
     <div class="vacio-avisos puerta-avisos" data-session-out data-notifications-door>
       <span class="vacio-icono"><Icon name="bell" size={28} /></span>
@@ -47,129 +51,319 @@ const TABS: readonly NotificationsTab[] = ['updates', 'requests'];
       </a>
     </div>
 
-    <div data-session-in hidden data-notifications>
-      <div class="pestanas-avisos" role="tablist" aria-label={t.title}>
+    <section
+      class="tarjeta avisos"
+      data-session-in
+      hidden
+      data-notices
+      data-locale={locale}
+      data-prefix={prefix}
+      aria-labelledby="avisos-lista-titulo"
+    >
+      <h2 id="avisos-lista-titulo" class="visually-hidden">{t.listLabel}</h2>
+      <div class="chips-avisos" role="group" aria-label={t.chipsLabel}>
         {
-          TABS.map((tab, index) => (
+          CHIPS.map((chip) => (
             <button
               type="button"
-              role="tab"
-              id={`avisos-tab-${tab}`}
-              aria-controls={`avisos-panel-${tab}`}
-              aria-selected={index === 0 ? 'true' : 'false'}
-              tabindex={index === 0 ? 0 : -1}
-              data-tab={tab}
-              data-metric={`notifications-tab-${tab}`}
+              aria-pressed={chip === 'all' ? 'true' : 'false'}
+              data-chip={chip}
+              data-metric={`notifications-chip-${chip}`}
             >
-              {t.tabs[tab]}
+              {t.chips[chip]}
             </button>
           ))
         }
       </div>
-      {
-        TABS.map((tab, index) => (
-          <section
-            class="vacio-avisos"
-            role="tabpanel"
-            id={`avisos-panel-${tab}`}
-            aria-labelledby={`avisos-tab-${tab}`}
-            tabindex="0"
-            hidden={index !== 0}
-            data-panel={tab}
-          >
-            <span class="vacio-icono">
-              <Icon name="bell" size={28} />
-            </span>
-            <h2 class="vacio-titulo">{t.empty[tab].title}</h2>
-            <p class="vacio-texto">{t.empty[tab].text}</p>
-          </section>
-        ))
-      }
-    </div>
+      <p class="aviso-estado small" role="status" aria-live="polite" data-notices-status></p>
+      <ul class="lista-avisos" data-notices-list></ul>
+      <div class="vacio-avisos" data-notices-empty hidden>
+        <span class="vacio-icono"><Icon name="bell" size={28} /></span>
+        <h3 class="vacio-titulo">{t.empty.title}</h3>
+        <p class="vacio-texto">{t.empty.text}</p>
+      </div>
+      <div class="vacio-avisos" data-notices-failed hidden>
+        <p class="vacio-texto">{t.failed}</p>
+        <button type="button" class="btn btn-fantasma btn-sm" data-notices-retry data-metric="notifications-retry">
+          {t.retry}
+        </button>
+      </div>
+      <template data-notice-row>
+        <li class="fila-aviso" data-notice>
+          <span class="ico-aviso" data-kind-icon="encounter" role="img" aria-label={t.kinds.encounter}>
+            <Icon name="calendar-blank" size={18} />
+          </span>
+          <span class="ico-aviso" data-kind-icon="world" role="img" aria-label={t.kinds.world}>
+            <Icon name="broadcast" size={18} />
+          </span>
+          <span class="ico-aviso" data-kind-icon="community" role="img" aria-label={t.kinds.community}>
+            <Icon name="users-three" size={18} />
+          </span>
+          <div class="aviso-cuerpo">
+            <p class="aviso-texto"><span data-before></span><b data-subject></b><span data-after></span></p>
+            <time class="aviso-cuando small" data-when></time>
+            <div class="aviso-acciones" data-actions>
+              <a class="btn btn-fantasma btn-sm" data-action="calendar" data-metric="notifications-calendar">
+                {t.actions.calendar}
+              </a>
+              <a
+                class="btn btn-fantasma btn-sm"
+                data-action="enter"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-metric="notifications-enter"
+              >
+                {t.actions.enter}
+              </a>
+              <button type="button" class="btn btn-fantasma btn-sm" data-action="accept" data-metric="notifications-accept">
+                {t.actions.accept}
+              </button>
+              <button type="button" class="btn btn-silencioso btn-sm" data-action="later" data-metric="notifications-later">
+                {t.actions.later}
+              </button>
+            </div>
+          </div>
+        </li>
+      </template>
+      <span data-words-accepted hidden>{t.acceptedNow}</span>
+      <span data-words-accept-failed hidden>{t.acceptFailed}</span>
+    </section>
   </div>
-
-  <script is:inline>
-    /* The tabs (ARIA tabs, automatic activation): a click or an arrow key
-       selects a tab and shows its panel; `?tab=requests` opens on the
-       second, and each choice is written back into the address. */
-    (function () {
-      var root = document.querySelector('[data-notifications]');
-      if (!root) return;
-      var tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
-      function select(tab, focus) {
-        tabs.forEach(function (other) {
-          var on = other === tab;
-          other.setAttribute('aria-selected', on ? 'true' : 'false');
-          other.tabIndex = on ? 0 : -1;
-          var panel = document.getElementById(other.getAttribute('aria-controls'));
-          if (panel) panel.hidden = !on;
-        });
-        if (focus) tab.focus();
-      }
-      function remember(tab) {
-        var url = new URL(window.location.href);
-        if (tab.getAttribute('data-tab') === 'requests') url.searchParams.set('tab', 'requests');
-        else url.searchParams.delete('tab');
-        window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
-      }
-      var wanted = new URLSearchParams(window.location.search).get('tab');
-      tabs.forEach(function (tab, index) {
-        if (tab.getAttribute('data-tab') === wanted) select(tab, false);
-        tab.addEventListener('click', function () {
-          select(tab, false);
-          remember(tab);
-        });
-        tab.addEventListener('keydown', function (event) {
-          var next = null;
-          if (event.key === 'ArrowRight') next = tabs[(index + 1) % tabs.length];
-          else if (event.key === 'ArrowLeft') next = tabs[(index - 1 + tabs.length) % tabs.length];
-          else if (event.key === 'Home') next = tabs[0];
-          else if (event.key === 'End') next = tabs[tabs.length - 1];
-          if (!next) return;
-          event.preventDefault();
-          select(next, true);
-          remember(next);
-        });
-      });
-    })();
-  </script>
 </BaseLayout>
+
+<script>
+  /* The one fetch of the page (lib/notices-client.ts): the rows are cloned
+     from the template, the chips narrow them without a reload, and the
+     newest moment is kept as «seen» — the bell's dot goes. «Aceptar» posts
+     the decision (lib/community-requests-client.ts) and the row leaves;
+     «Ahora no» only hides it for this visit. */
+  import { decide } from '../../lib/community-requests-client';
+  import { loadNotices, markSeen, readSeen } from '../../lib/notices-client';
+  import type { NoticeRow } from '../../lib/notices-source';
+
+  const root = document.querySelector<HTMLElement>('[data-notices]');
+  if (root) {
+    const list = root.querySelector<HTMLElement>('[data-notices-list]')!;
+    const template = root.querySelector<HTMLTemplateElement>('template[data-notice-row]')!;
+    const empty = root.querySelector<HTMLElement>('[data-notices-empty]')!;
+    const failed = root.querySelector<HTMLElement>('[data-notices-failed]')!;
+    const status = root.querySelector<HTMLElement>('[data-notices-status]')!;
+    const chips = [...root.querySelectorAll<HTMLButtonElement>('[data-chip]')];
+    const locale = root.dataset['locale'] ?? 'es';
+    const prefix = root.dataset['prefix'] ?? '';
+    const word = (key: string): string =>
+      root.querySelector<HTMLElement>(`[data-words-${key}]`)?.textContent?.trim() ?? '';
+    const storage = ((): Storage | null => {
+      try {
+        return window.localStorage;
+      } catch {
+        return null;
+      }
+    })();
+    let filter = 'all';
+
+    const localHref = (href: string): string => (href.startsWith('/') ? `${prefix}${href}` : href);
+
+    function apply(): void {
+      const rows = [...list.querySelectorAll<HTMLElement>('[data-notice]')];
+      rows.forEach((row) => {
+        row.hidden = filter !== 'all' && row.dataset['kind'] !== filter;
+      });
+      const shown = rows.filter((row) => !row.hidden).length;
+      empty.hidden = shown > 0 || !failed.hidden;
+    }
+
+    function paint(row: NoticeRow): HTMLElement {
+      const clone = template.content.firstElementChild!.cloneNode(true) as HTMLElement;
+      clone.dataset['kind'] = row.kind;
+      clone.dataset['noticeId'] = row.id;
+      clone.querySelectorAll<HTMLElement>('[data-kind-icon]').forEach((icon) => {
+        if (icon.dataset['kindIcon'] !== row.kind) icon.remove();
+      });
+      clone.querySelector('[data-before]')!.textContent = row.text.before;
+      clone.querySelector('[data-subject]')!.textContent = row.text.subject;
+      clone.querySelector('[data-after]')!.textContent = row.text.after;
+      const when = clone.querySelector<HTMLTimeElement>('[data-when]')!;
+      when.textContent = row.when;
+      when.dateTime = row.at;
+      const actions = clone.querySelector<HTMLElement>('[data-actions]')!;
+      const wanted = new Map((row.actions ?? []).map((action) => [action.id, action]));
+      actions.querySelectorAll<HTMLElement>('[data-action]').forEach((element) => {
+        const action = wanted.get(element.dataset['action'] as never);
+        if (action === undefined) {
+          element.remove();
+          return;
+        }
+        if ('href' in action) (element as HTMLAnchorElement).href = localHref(action.href);
+        else element.dataset['request'] = action.request;
+        if ('community' in action) element.dataset['community'] = action.community;
+      });
+      if (wanted.size === 0) actions.remove();
+      return clone;
+    }
+
+    async function load(): Promise<void> {
+      failed.hidden = true;
+      empty.hidden = true;
+      list.replaceChildren();
+      const loaded = await loadNotices((input, init) => fetch(input, init), locale, readSeen(storage));
+      if (!loaded.ok) {
+        failed.hidden = false;
+        return;
+      }
+      loaded.answer.notices.forEach((row) => list.append(paint(row)));
+      markSeen(storage, loaded.answer.notices);
+      document.dispatchEvent(new CustomEvent('numinia:notices-seen'));
+      apply();
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        filter = chip.dataset['chip'] ?? 'all';
+        chips.forEach((other) => other.setAttribute('aria-pressed', other === chip ? 'true' : 'false'));
+        apply();
+      });
+    });
+
+    root.querySelector('[data-notices-retry]')?.addEventListener('click', () => void load());
+
+    list.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+      const row = button?.closest<HTMLElement>('[data-notice]');
+      if (!button || !row) return;
+      if (button.dataset['action'] === 'later') {
+        row.remove();
+        apply();
+        return;
+      }
+      button.disabled = true;
+      void decide(
+        (input, init) => fetch(input, init),
+        button.dataset['request'] ?? '',
+        true,
+        button.dataset['community'] ?? '',
+      ).then((decided) => {
+        if (decided.ok) {
+          row.remove();
+          status.textContent = word('accepted');
+          apply();
+        } else {
+          button.disabled = false;
+          status.textContent = word('accept-failed');
+        }
+      });
+    });
+
+    void load();
+  }
+</script>
 
 <style>
   .avisos-pagina {
     max-width: 60rem;
     padding-top: var(--s5);
   }
-  h1 {
+  .cabecera-avisos {
     margin: 0 0 var(--s5);
   }
-  /* Two tabs on a hairline, the chosen one underlined in ink. */
-  .pestanas-avisos {
+  .cabecera-avisos h1 {
+    margin: 0 0 var(--s2);
+  }
+  .cabecera-avisos p {
+    margin: 0;
+    max-width: 60ch;
+    line-height: 1.5;
+  }
+  .avisos {
+    max-width: 780px;
+    padding: var(--s4);
+  }
+  /* The chips: small buttons on a hairline, the pressed one in ink. */
+  .chips-avisos {
     display: flex;
-    gap: var(--s5);
+    flex-wrap: wrap;
+    gap: var(--s2);
+    padding-bottom: var(--s3);
     border-bottom: 1px solid var(--linea);
-    margin-bottom: var(--s5);
   }
-  [role='tab'] {
-    min-height: 44px;
-    padding: 0 0 var(--s1);
-    margin-bottom: -1px;
+  .chips-avisos button {
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radio-control);
     background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
     color: var(--texto-2);
-    font: inherit;
+    font: 500 0.8rem var(--sans);
     cursor: pointer;
-    transition:
-      color 120ms var(--ciclo),
-      border-color 120ms var(--ciclo);
   }
-  [role='tab']:hover {
+  .chips-avisos button:hover {
     color: var(--texto);
   }
-  [role='tab'][aria-selected='true'] {
+  .chips-avisos button[aria-pressed='true'] {
+    border-color: var(--linea-f);
+    background: var(--elevada);
     color: var(--texto);
-    border-bottom-color: var(--texto);
+  }
+  .aviso-estado {
+    min-height: 1em;
+    margin: var(--s2) 0 0;
+    color: var(--texto-2);
+  }
+  .aviso-estado:empty {
+    margin: 0;
+    min-height: 0;
+  }
+  /* The rows: icon, sentence, when, actions; a hairline between. */
+  .lista-avisos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .fila-aviso {
+    display: flex;
+    gap: var(--s3);
+    padding: var(--s4) 0;
+    border-bottom: 1px solid var(--linea);
+  }
+  .fila-aviso:last-child {
+    border-bottom: 0;
+  }
+  .fila-aviso[hidden] {
+    display: none;
+  }
+  .ico-aviso {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    color: var(--texto-2);
+  }
+  .aviso-cuerpo {
+    min-width: 0;
+    flex: 1;
+  }
+  .aviso-texto {
+    margin: 0;
+    line-height: 1.5;
+  }
+  .aviso-cuando {
+    display: block;
+    margin-top: 2px;
+    color: var(--texto-2);
+  }
+  .aviso-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+    margin-top: var(--s3);
+  }
+  .aviso-acciones .btn {
+    text-decoration: none;
   }
   /* The empty states: an icon in a round well, a title, one line. */
   .vacio-avisos {
@@ -200,13 +394,21 @@ const TABS: readonly NotificationsTab[] = ['updates', 'requests'];
   }
   .vacio-texto {
     margin: 0;
-    max-width: 40ch;
+    max-width: 44ch;
     color: var(--texto-2);
     line-height: 1.5;
   }
   .puerta-avisos .btn {
     margin-top: var(--s3);
     text-decoration: none;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   [hidden] {
     display: none !important;

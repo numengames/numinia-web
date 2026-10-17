@@ -34,6 +34,8 @@ export interface AppShellMessages {
   readonly nowInCity: string;
   /** The live dot's spoken name (someone is inside a world now). */
   readonly liveDot: string;
+  /** The bell's dot spoken name (something new in Avisos). */
+  readonly noticesDot: string;
   /** The left rail's foot. */
   readonly how: string;
   readonly open: string;
@@ -113,6 +115,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     nowInCity: 'Ahora en la ciudad',
     liveDot: 'Hay gente dentro ahora',
+    noticesDot: 'Hay algo nuevo',
     how: 'Cómo funciona',
     open: 'Abre la sede de tu comunidad',
     back: 'Invítanos a un café',
@@ -184,6 +187,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     nowInCity: 'Now in the city',
     liveDot: 'People are inside now',
+    noticesDot: 'Something new',
     how: 'How it works',
     open: "Open your community's home",
     back: 'Buy us a coffee',
@@ -256,6 +260,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     nowInCity: 'いま街で',
     liveDot: 'いま中に人がいます',
+    noticesDot: '新しいお知らせがあります',
     how: '使い方',
     open: 'コミュニティの拠点を開く',
     back: 'コーヒーをおごる',
@@ -328,6 +333,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     nowInCity: '지금 도시에서',
     liveDot: '지금 안에 사람이 있어요',
+    noticesDot: '새로운 알림이 있어요',
     how: '이용 방법',
     open: '커뮤니티의 거점 열기',
     back: '커피 한 잔 사 주기',
@@ -394,6 +400,7 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
     },
     nowInCity: 'Agora na cidade',
     liveDot: 'Há gente dentro agora',
+    noticesDot: 'Há algo novo',
     how: 'Como funciona',
     open: 'Abra a sede da sua comunidade',
     back: 'Pague-nos um café',

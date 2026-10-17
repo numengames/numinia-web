@@ -294,6 +294,19 @@ html[data-rail-you='collapsed'] .rail-tu .rail-plegar .icono {
 .punto-vivo[hidden] {
   display: none;
 }
+/* The bell's dot: the link voice, never a number («tecnología tranquila»). */
+.punto-aviso {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--enlace);
+}
+.punto-aviso[hidden],
+[data-notices-dot][hidden] {
+  display: none;
+}
 .rail-sep {
   flex: none;
   height: 1px;
@@ -586,7 +599,9 @@ html[data-rail-you='collapsed'] .rail-tu .rail-t {
 html[data-rail-city='collapsed']
   .rail-ciudad
   :is(.rail-palabra, kbd, .rail-eti, .pie-pliegue, .pie-firma, .rail-n:not([data-live-total])),
-html[data-rail-you='collapsed'] .rail-tu :is(.caja-caret, .rail-txt, .pie-seg, .rail-n) {
+html[data-rail-you='collapsed']
+  .rail-tu
+  :is(.caja-caret, .rail-txt, .pie-seg, .rail-n:not([data-notices-dot])) {
   display: none;
 }
 html[data-rail-city='collapsed'] .rail-ciudad .rail-caja,
@@ -643,6 +658,13 @@ html[data-rail-city='collapsed'] .rail-ciudad [data-live-total] {
 }
 html[data-rail-city='collapsed'] .rail-ciudad [data-live-n] {
   display: none;
+}
+/* Folded, the bell's dot stays too (mirrored: the rail is on the right). */
+html[data-rail-you='collapsed'] .rail-tu [data-notices-dot] {
+  position: absolute;
+  top: 7px;
+  left: 9px;
+  margin: 0;
 }
 
 /* ---- The folded rails' tooltip ----------------------------------------- */

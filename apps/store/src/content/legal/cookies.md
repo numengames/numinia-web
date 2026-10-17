@@ -6,9 +6,9 @@ uid: ""
 title: "Cookie Policy — Numen Games"
 type: legal
 status: draft
-version: "2.2.0"
+version: "2.3.0"
 created: "2026-09-18T17:00:00+02:00"
-updated: "2026-10-14T12:00:00+02:00"
+updated: "2026-10-17T12:00:00+02:00"
 author: "ursa"
 owner: "oracle"
 tags: [legal, cookies, privacy, gdpr, lssi, website, numen-games, enforceable]
@@ -48,6 +48,10 @@ review_flags: |
   sidebar's fold (`numinia-sidebar`) and the communities a visitor
   follows (`numinia-follows`). Both are preferences set by the
   visitor's own action and stay on the device.
+  Re-measured 2026-10-17 (v2.3.0): numinia.com's «Avisos» keeps the
+  moment of the newest notice you saw (`numinia-notices-seen`), so the
+  bell shows a dot only for what is newer. Set by your own visit; it
+  stays on the device.
 ---
 
 <!--
@@ -104,6 +108,7 @@ of that kind.
 | `numinia-lap-personaje` | local storage | The character sheet you fill in the player area, so it is there when you return. It stays on your device; nothing is sent. | You edit the sheet | Until you delete it from the sheet or clear it | Preference — set only when you act |
 | `numinia-sidebar` | local storage | Whether you folded the side bar (folded or open). | You fold or unfold it | Until you clear it | Preference — set only when you act |
 | `numinia-follows` | local storage | The communities you follow, so the site can show them and their rituals to you. It stays on your device; nothing is sent. | You press *Follow* on a community's page | Until you unfollow or clear it | Preference — set only when you act |
+| `numinia-notices-seen` | local storage | The moment of the newest notice you saw in *Avisos*, so the bell shows a dot only for what is newer. It stays on your device; nothing is sent. | You open *Avisos* while signed in | Until you clear it | Preference — set only when you act |
 | `thirdweb:*`, `walletToken-*`, `thirdwebEwsWalletUserId-*`, `thirdwebEwsWalletUserDetails-*`, `a-*`, `walletConnectSessions-*` | local storage, written by the sign-in provider (thirdweb) | Remember which wallet you connected and keep the wallet the provider created for you usable on this device. | You sign in | Until you sign out or clear it | Yes — only if you sign in; part of the sign-in you asked for |
 
 **Measurement.** numinia.com counts what is clicked on the page to learn

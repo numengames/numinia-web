@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-17 07:45",
+    "entries": [
+      {
+        "text": "«Avisos» for real. The bell’s page is one list of what concerns you, newest first — an encounter you are going to that starts within two weeks («empieza en 3 días. Vas.», with «A mi calendario», and «Entrar» once it is two hours away), people inside a home of one of your communities («Hay 5 personas en…», with «Entrar»), a request you decide («quiere entrar en…», with «Aceptar» / «Ahora no»), and the answer to your own («te ha aceptado. Ya eres Titular.»). Four chips — Todo, Encuentros, Sedes, Comunidades — narrow it without a reload; when there is nothing, «Estás al día». In five languages, with the time as a person says it («hoy», «hace 3 min», «ayer», «lun»).",
+        "type": "NEW",
+      },
+      {
+        "text": "A dot, never a number. Signed in, your rail’s bell — and the «Tú» tab and sheet on a phone — show a small dot when there is something newer than the last time you opened «Avisos»; the visit itself makes it go. One read of /api/notices, private and never stored; a source that fails is skipped rather than breaking the page.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.123.0",
+  },
+  {
     "date": "2026-10-17 09:50",
     "entries": [
       {

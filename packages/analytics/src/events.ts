@@ -104,6 +104,14 @@ export function buildEvent<Name extends AnalyticsEventName>(
   };
 }
 
+// ---- v3 «Avisos» (cut J, 2026-10-17): its data-metric ids ---------------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The chips: `notifications-chip-<all|encounter|world|community>`; the rows'
+//   actions: `notifications-calendar` (the `.ics`), `notifications-enter` (a
+//   world's door), `notifications-accept` (decides a request), `notifications-later`
+//   (hides it this visit); `notifications-retry` when the list could not be read.
+//   `notifications-sign-in` (the door) stays from before; the tabs' ids are gone.
+
 // ---- W1 «El dinero» (cut 2026-10-16): its data-metric ids --------------------
 // No new event and no new prop: each travels as `cta_click.metricId`.
 // - Saldo y consumo: `saldo-csv` (the movements as a CSV made in the browser),
