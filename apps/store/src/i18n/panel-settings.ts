@@ -42,6 +42,7 @@ export interface PanelSettingsMessages {
     readonly lineOn: string;
     readonly lineOff: string;
     readonly note: string;
+    readonly switchLabel: string;
   };
   readonly readOnly: string;
   readonly saving: string;
@@ -76,7 +77,8 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'Agente IA',
       lineOn: 'Agente IA: activo · {model} · tope {cap}',
       lineOff: 'Agente IA: inactivo · {model} · tope {cap}',
-      note: 'Cada comunidad nace con un agente de IA de modelo barato y un tope de prueba. Encenderlo o apagarlo llega en otra entrega.',
+      note: 'Cada comunidad nace con un agente de IA de modelo barato y un tope de prueba.',
+      switchLabel: 'Encender o apagar el agente IA',
     },
     readOnly: 'Solo quien administra la comunidad puede cambiar esto.',
     saving: 'Guardando…',
@@ -109,7 +111,8 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'AI agent',
       lineOn: 'AI agent: active · {model} · cap {cap}',
       lineOff: 'AI agent: inactive · {model} · cap {cap}',
-      note: 'Every community is born with a cheap-model AI agent and a trial cap. Switching it on or off ships in a later cut.',
+      note: 'Every community is born with a cheap-model AI agent and a trial cap.',
+      switchLabel: 'Turn the AI agent on or off',
     },
     readOnly: 'Only whoever manages the community can change this.',
     saving: 'Saving…',
@@ -142,7 +145,8 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'AIエージェント',
       lineOn: 'AIエージェント: 稼働中 · {model} · 上限 {cap}',
       lineOff: 'AIエージェント: 停止中 · {model} · 上限 {cap}',
-      note: 'コミュニティは誕生時から、安価なモデルのAIエージェントと試用上限を持ちます。オン/オフの切り替えは今後の更新で提供されます。',
+      note: 'コミュニティは誕生時から、安価なモデルのAIエージェントと試用上限を持ちます。',
+      switchLabel: 'AIエージェントのオン/オフを切り替える',
     },
     readOnly: 'これを変更できるのはコミュニティの管理者だけです。',
     saving: '保存中…',
@@ -175,7 +179,8 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'AI 에이전트',
       lineOn: 'AI 에이전트: 활성 · {model} · 한도 {cap}',
       lineOff: 'AI 에이전트: 비활성 · {model} · 한도 {cap}',
-      note: '커뮤니티는 생성될 때부터 저가 모델 AI 에이전트와 체험 한도를 갖습니다. 켜고 끄는 기능은 다음 업데이트에서 제공됩니다.',
+      note: '커뮤니티는 생성될 때부터 저가 모델 AI 에이전트와 체험 한도를 갖습니다.',
+      switchLabel: 'AI 에이전트 켜기/끄기',
     },
     readOnly: '이 설정은 커뮤니티 관리자만 바꿀 수 있습니다.',
     saving: '저장 중…',
@@ -208,7 +213,8 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       title: 'Agente de IA',
       lineOn: 'Agente de IA: ativo · {model} · limite {cap}',
       lineOff: 'Agente de IA: inativo · {model} · limite {cap}',
-      note: 'Cada comunidade nasce com um agente de IA de modelo barato e um limite de teste. Ligar ou desligar chega em outra entrega.',
+      note: 'Cada comunidade nasce com um agente de IA de modelo barato e um limite de teste.',
+      switchLabel: 'Ligar ou desligar o agente de IA',
     },
     readOnly: 'Só quem administra a comunidade pode mudar isto.',
     saving: 'Salvando…',

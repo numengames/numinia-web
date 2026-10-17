@@ -111,6 +111,33 @@ describe('the fixture desk: settings', () => {
     expect((await loose(ME, NUMEN, { off: 'roles' })).ok).toBe(false);
   });
 
+  it('turns the AI agent off and on, logging each flip', async () => {
+    const desk = fresh();
+    const off = settingsOf(await desk.changeSettings(ME, NUMEN, { aiAgentEnabled: false }));
+    expect(off.aiAgent).toEqual({
+      enabled: false,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    expect(settingsOf(await desk.settings(ME, NUMEN)).aiAgent.enabled).toBe(false);
+    const on = settingsOf(await desk.changeSettings(ME, NUMEN, { aiAgentEnabled: true }));
+    expect(on.aiAgent.enabled).toBe(true);
+    const lines = happened(await desk.happenings(ME, NUMEN)).lines;
+    expect(lines.map((line) => line.detail)).toEqual([
+      { aiAgentEnabled: 'true' },
+      { aiAgentEnabled: 'false' },
+    ]);
+  });
+
+  it('writes nothing when the AI agent is already in the asked state', async () => {
+    const desk = fresh();
+    const before = happened(await desk.happenings(ME, NUMEN)).lines.length;
+    expect(
+      settingsOf(await desk.changeSettings(ME, NUMEN, { aiAgentEnabled: true })).aiAgent.enabled,
+    ).toBe(true);
+    expect(happened(await desk.happenings(ME, NUMEN)).lines).toHaveLength(before);
+  });
+
   it('lets a plain member read but not change; a stranger neither', async () => {
     const desk = fresh();
     expect(settingsOf(await desk.settings(INSTITUTE_PLAIN, INSTITUTE))).toMatchObject({
@@ -231,6 +258,30 @@ describe('the door: /api/saldo/settings and /api/saldo/happened', () => {
       body: 'x',
     });
     expect((await answerChangeSettings(desk, asker(), notJson, quiet)).status).toBe(415);
+  });
+
+  it('changes the AI agent’s switch through the door, and refuses a malformed value', async () => {
+    const desk = fresh();
+    const changed = await answerChangeSettings(
+      desk,
+      asker(),
+      post({ accountId: NUMEN, aiAgentEnabled: false }),
+      quiet,
+    );
+    expect(changed.status).toBe(200);
+    expect((await json(changed))['settings']).toMatchObject({
+      aiAgent: { enabled: false },
+    });
+    expect(
+      (
+        await answerChangeSettings(
+          desk,
+          asker(),
+          post({ accountId: NUMEN, aiAgentEnabled: 'no' }),
+          quiet,
+        )
+      ).status,
+    ).toBe(400);
   });
 
   it('answers a page of «Qué ha pasado» and refuses a cursor that is not a number', async () => {

@@ -59,4 +59,20 @@ describe('saving the settings in the browser', () => {
     expect(await saveSettings(() => Promise.resolve(new Response('x')), 'a', {})).toBeNull();
     expect(await saveSettings(() => Promise.reject(new Error('offline')), 'a', {})).toBeNull();
   });
+
+  it('posts aiAgentEnabled (Historia 4’s switch) the same way', async () => {
+    const sent: { url: string; init: RequestInit | undefined }[] = [];
+    await saveSettings(
+      (url, init) => {
+        sent.push({ url, init });
+        return answer({ settings: { ...settings, aiAgent: { ...aiAgent, enabled: false } } })();
+      },
+      'acc_t_1',
+      { aiAgentEnabled: false },
+    );
+    expect(JSON.parse(String(sent[0]?.init?.body))).toEqual({
+      accountId: 'acc_t_1',
+      aiAgentEnabled: false,
+    });
+  });
 });

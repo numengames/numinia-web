@@ -109,6 +109,9 @@ function Settings({
       : mine.off.filter((candidate) => candidate !== piece);
     void save({ off });
   };
+  const toggleAiAgent = (): void => {
+    void save({ aiAgentEnabled: !mine.aiAgent.enabled });
+  };
 
   return (
     <div className="ajustes" data-settings data-state="ready">
@@ -211,13 +214,27 @@ function Settings({
           <PanelGlyph name="robot" size={18} />
           {ui.aiAgent.title}
         </h2>
-        <p data-ai-agent-line>
-          {fill(mine.aiAgent.enabled ? ui.aiAgent.lineOn : ui.aiAgent.lineOff, {
-            model: mine.aiAgent.model,
-            cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
-          })}
-        </p>
-        <p className="saldo-nota">{ui.aiAgent.note}</p>
+        <div className="ajustes-pieza">
+          <span className="ajustes-pieza-cuerpo">
+            <p data-ai-agent-line>
+              {fill(mine.aiAgent.enabled ? ui.aiAgent.lineOn : ui.aiAgent.lineOff, {
+                model: mine.aiAgent.model,
+                cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
+              })}
+            </p>
+            <p className="saldo-nota">{ui.aiAgent.note}</p>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={mine.aiAgent.enabled}
+            aria-label={ui.aiAgent.switchLabel}
+            className="gente-interruptor"
+            disabled={!editable || saving === 'saving'}
+            onClick={toggleAiAgent}
+            data-metric="panel-settings-ai-agent-toggle"
+          />
+        </div>
       </section>
 
       <p className="saldo-nota" role="status" data-settings-status={saving}>
