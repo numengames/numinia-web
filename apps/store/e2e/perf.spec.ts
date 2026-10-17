@@ -34,7 +34,9 @@ const BUDGETS: readonly Budget[] = [
   // «Cómo funciona» took the old /city/ line (v0.83.0): text, six templates
   // and one lazy illustration of the city's story. Zero external JS.
   { path: '/how-it-works/', totalKB: 420, jsKB: 0, imgKB: 160 },
-  { path: '/lap/', totalKB: 260, jsKB: 30, imgKB: 10 },
+  // 260→270 on 2026-10-17 (v0.126.0, «Seguir»): the chrome's inline scripts
+  // (counters, the bell's dot, follows) ride on every page; /lap/ measured 261KB.
+  { path: '/lap/', totalKB: 270, jsKB: 30, imgKB: 10 },
   // The book plane pays for its paper: four self-hosted Alegreya faces +
   // Geist + the grain put the cover at ~706KB (measured 2026-08-18), all
   // immutable-cached statics — while the reader itself stays at ~6KB JS.
