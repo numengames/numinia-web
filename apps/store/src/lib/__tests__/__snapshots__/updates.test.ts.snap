@@ -13,6 +13,44 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.120.0",
   },
   {
+    "date": "2026-10-17 12:00",
+    "entries": [
+      {
+        "text": "«Hazla tuya» for real. On a community’s page, signed in, «Es mi comunidad» opens a small dialog — one optional line, «Cuéntanos quién eres» — and records a claim; while nobody runs the community yet. Once somebody does, the strip offers «Quiero entrar» instead, the same way. Afterwards the strip says it was asked: the house confirms a claim, the community sees a join. A member sees neither; signed out, the button leads to sign in and back, as before.",
+        "type": "NEW",
+      },
+      {
+        "text": "«Peticiones»: whoever decides sees them in one place. In the organization panel’s Members, on top and only when there are open ones — the person with the face and name they published, what they ask, their note, when — with «Aceptar» and «Rechazar». Accepting a claim opens the organization if needed and makes the person its titular; accepting a join makes them a member; declining only writes it down. Every decision goes to «Qué ha pasado». In the house’s Census, the same list across every community, newest first, with the community’s name.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.119.0",
+  },
+  {
+    "date": "2026-10-17 23:30",
+    "entries": [
+      {
+        "text": "«Count me in» is for real: on an encounter’s page and on the featured encounter of «Now», a signed-in person presses «Count me in» and the city remembers it — the button becomes «Going», pressing it again says «No longer going». Under the title, «N people are going» appears only once someone is. Adding the encounter to your own calendar stays as a second action. Without a session the button leads to sign in and back. In all five languages.",
+        "type": "NEW",
+      },
+      {
+        "text": "«Your agenda» (/agenda/): the encounters you said you are going to, soonest first, with the past ones folded under «Already happened»; empty, it points to «Encounters». Without a session it explains and offers to sign in. The encounter page links to it. In all five languages.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.118.0",
+  },
+  {
+    "date": "2026-10-16 23:13",
+    "entries": [
+      {
+        "text": "Nothing on screen falls back to English any more in Japanese, Korean or Brazilian Portuguese: the Numen Games page reads its canon line («Nobody signs up for Numinia…»), the city’s story (Holberins, the fire of 1920, the rebirth a century later) and the three rings in your own language, «How it works» tells the city’s story in your language without the «available in Spanish and English» notice, and the community pages and calendar say their notes (standing dates, the chronicle, the archive, «make it yours», the .ics line) in your language too. The Numen Games file itself (what it is, its weekly gatherings, who keeps it) and the two city gatherings carry the five languages, and dates on the community pages are written the Japanese, Korean and Brazilian way.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.117.0",
+  },
+  {
     "date": "2026-10-16 23:30",
     "entries": [
       {

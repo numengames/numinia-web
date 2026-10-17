@@ -234,9 +234,7 @@ test.describe('the house places worlds', () => {
     );
   });
 
-  test('anyone opens the world page: the organization, and no Administración', async ({
-    browser,
-  }) => {
+  test('anyone opens the world page: its community, and no Administración', async ({ browser }) => {
     const stranger = await browser.newContext();
     const page = await stranger.newPage();
     await page.goto(worldPage(world));
@@ -245,12 +243,12 @@ test.describe('the house places worlds', () => {
     // Who may enter is for the people of the organization: a stranger is not shown the list.
     await expect(page.locator('[data-world-enter]')).toBeVisible();
     await expect(page.locator('[data-world-enters]')).toHaveCount(0);
-    // The same page in the other languages, and one a world never was.
+    // The same page in the other languages: on screen the word is «Comunidad».
     for (const [prefix, label] of [
-      ['', 'Organization'],
-      ['/ja', '組織'],
-      ['/ko', '조직'],
-      ['/pt-br', 'Organização'],
+      ['', 'Community'],
+      ['/ja', 'コミュニティ'],
+      ['/ko', '커뮤니티'],
+      ['/pt-br', 'Comunidade'],
     ] as const) {
       await page.goto(worldPage(world, prefix));
       await expect(page.locator('[data-world-page] .etiqueta').first()).toHaveText(label);
