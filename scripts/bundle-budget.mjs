@@ -95,13 +95,13 @@ const BUDGETS = {
       follows, each once) and the bell's dot («Avisos», v0.123.0) landed in
       the same window; together ~1.3KB more inline. Still no external JS.
       Landing sits near ~29.9KB.
-      Then raised 30500→32000 on 2026-10-17 (v0.127.0, cut M «Crear → Un
+      Then raised 30500→32500 on 2026-10-17 (v0.127.0, cut M «Crear → Un
       encuentro»): the encounters published from the site live in the till,
       and the landing is a static file, so its «Más encuentros» slot
       (RitualsLive.astro, ~1.5KB minified, sharing no module so it stays
       inline) asks /api/rituals?upcoming=1 once and draws the rows, hidden
-      until there is one. Still no external JS. Landing sits near ~31.5KB. */
-  landingInlineScriptBytes: 32_000,
+      until there is one. Still no external JS. Landing sits at ~32.0KB measured. */
+  landingInlineScriptBytes: 32_500,
   /** Any single non-3D JS chunk. */
   chunkBytes: 200_000,
   /** 3D island chunks (three.js + three-vrm are legitimately heavy). */
