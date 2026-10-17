@@ -4,9 +4,17 @@
  * "not configured" while D23 pends (503), absence as an answer — and every
  * grant the server accepts became an audited commit before this island
  * hears back. Oracle is not offered: the allowlist is its only source.
+ *
+ * The door shows from the first paint, like its sisters /lap/admin/worlds/
+ * and /lap/admin/prices/: on mount the island asks the room whether it may
+ * be in it (GET /api/admin/census, which reads the session before anything
+ * else), and a visitor without rank is never handed the form. Before this,
+ * the whole desk was drawn for anyone and the refusal arrived only after a
+ * search — the live QA pass of 2026-10-17 found it. The API was already
+ * closed; this is what the screen says.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LunaEspera } from '../../chrome/LunaEspera';
 
 interface RankOption {
@@ -42,6 +50,7 @@ interface CensusRecord {
 const WALLET = /^0x[0-9a-fA-F]{40}$/;
 
 type Panel =
+  | { at: 'asking' }
   | { at: 'idle' }
   | { at: 'loading' }
   | { at: 'forbidden' }
@@ -52,11 +61,37 @@ type Panel =
 
 export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: RankOption[] }) {
   const [wallet, setWallet] = useState('');
-  const [panel, setPanel] = useState<Panel>({ at: 'idle' });
+  const [panel, setPanel] = useState<Panel>({ at: 'asking' });
   const [rank, setRank] = useState(ranks[0]?.id ?? 'citizen');
   const [note, setNote] = useState('');
   /* §10.1-07: an async button wears the waiting dots while it works. */
   const [busy, setBusy] = useState<'lookup' | 'grant' | null>(null);
+
+  /* May this wallet be in the room? The route reads the session first, so a
+     call with no wallet answers 403 (no rank), 503 (D23 pending) or 400
+     (in, and no wallet was asked for) — enough to draw the door or the desk
+     before anybody types. */
+  useEffect(() => {
+    let stopped = false;
+    const probe = async (): Promise<void> => {
+      try {
+        const response = await fetch('/api/admin/census');
+        // Read the body whatever the status: an unread body keeps the
+        // request open in the browser and the page never goes idle.
+        await response.text().catch(() => '');
+        if (stopped) return;
+        if (response.status === 403) return setPanel({ at: 'forbidden' });
+        if (response.status === 503) return setPanel({ at: 'unconfigured' });
+        setPanel({ at: 'idle' });
+      } catch {
+        if (!stopped) setPanel({ at: 'error' });
+      }
+    };
+    void probe();
+    return () => {
+      stopped = true;
+    };
+  }, []);
 
   const lookup = async (): Promise<void> => {
     setNote('');
@@ -102,6 +137,38 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
     }
   };
 
+  /* While the room is being asked, the waiting line and nothing else: the
+     desk is never drawn for someone who may not be at it. */
+  if (panel.at === 'asking') {
+    return (
+      <div data-census-panel>
+        <p className="estado">
+          <LunaEspera /> {labels.loading}
+        </p>
+      </div>
+    );
+  }
+
+  /* Refused or not configured: the door alone, from the first paint — no
+     form, no promise of a search this wallet cannot run (its sisters
+     /lap/admin/worlds/ and /lap/admin/prices/ read the same way). */
+  if (panel.at === 'forbidden' || panel.at === 'unconfigured') {
+    return (
+      <div data-census-panel>
+        {panel.at === 'unconfigured' ? (
+          <p className="estado aviso">{labels.unconfigured}</p>
+        ) : (
+          <div className="tarjeta refuso" role="note">
+            <p>
+              <strong>{labels.forbidden}</strong>
+            </p>
+            <p>{labels.forbiddenNote}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div data-census-panel>
       <div className="busqueda">
@@ -133,15 +200,6 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
       )}
       {panel.at === 'invalid' && <p className="estado aviso">{labels.invalidWallet}</p>}
       {panel.at === 'error' && <p className="estado aviso">{labels.failed}</p>}
-      {panel.at === 'unconfigured' && <p className="estado aviso">{labels.unconfigured}</p>}
-      {panel.at === 'forbidden' && (
-        <div className="tarjeta refuso" role="note">
-          <p>
-            <strong>{labels.forbidden}</strong>
-          </p>
-          <p>{labels.forbiddenNote}</p>
-        </div>
-      )}
 
       {panel.at === 'ready' && (
         <div className="tarjeta ficha">

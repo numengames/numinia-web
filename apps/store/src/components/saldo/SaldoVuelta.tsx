@@ -6,6 +6,13 @@
  * shown; still processing → it asks again a few times; cancelled → nothing
  * was charged. The till credits a payment once whoever asks first — this
  * page or the minute's poll.
+ *
+ * A stranger with no session is not told «we could not find this top-up in
+ * your account» (the live QA pass of 2026-10-17 found exactly that greeting
+ * on a page nobody had been sent to): the till answers 401 and the page
+ * shows the same polite door «Saldo» shows — «Entra para ver tu saldo…».
+ * That «we could not find it» belongs only to someone signed in whose
+ * top-up really is missing.
  */
 
 import { useEffect, useState } from 'react';
@@ -15,6 +22,7 @@ import { LunaEspera } from '../chrome/LunaEspera';
 
 type State =
   | { readonly at: 'checking' }
+  | { readonly at: 'signed-out' }
   | { readonly at: 'paid'; readonly balanceCents: number }
   | { readonly at: 'processing' }
   | { readonly at: 'cancelled' }
@@ -24,6 +32,30 @@ type State =
 const RETRIES = 6;
 const RETRY_MS = 5_000;
 
+/**
+ * Who is here, as the chrome publishes it on `html[data-session]` — the
+ * page's ONE session read (lib/session-client.ts). This island asks the
+ * server nothing of its own: without a session it draws the door and stops,
+ * so the page really does go idle.
+ */
+function signedInSoon(): Promise<boolean> {
+  const read = (): string | null => document.documentElement.getAttribute('data-session');
+  const known = read();
+  if (known !== null) return Promise.resolve(known === 'in');
+  return new Promise((resolve) => {
+    const watcher = new MutationObserver(() => {
+      const value = read();
+      if (value === null) return;
+      watcher.disconnect();
+      resolve(value === 'in');
+    });
+    watcher.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-session'],
+    });
+  });
+}
+
 async function confirm(sessionId: string): Promise<State> {
   try {
     const response = await fetch('/api/saldo', {
@@ -31,7 +63,10 @@ async function confirm(sessionId: string): Promise<State> {
       headers: { 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({ action: 'confirm', sessionId }),
     });
+    // Read the body whatever the status: an unread body keeps the request
+    // open in the browser and the page never goes idle.
     const json: unknown = await response.json().catch(() => null);
+    if (response.status === 401) return { at: 'signed-out' };
     const result = response.ok ? readResult(json) : null;
     if (result === null || !result.ok) return { at: 'unknown' };
     if (result['state'] === 'paid') {
@@ -47,33 +82,63 @@ export function SaldoVuelta({
   ui,
   lang,
   saldoHref,
+  signIn,
 }: {
   readonly ui: SaldoMessages;
   readonly lang: string;
   readonly saldoHref: string;
+  /** The door, landing on «Saldo»: the balance is what the person came for. */
+  readonly signIn: string;
 }) {
   const [state, setState] = useState<State>({ at: 'checking' });
 
   useEffect(() => {
-    const { sessionId, cancelled } = vueltaParams(window.location.search);
-    if (cancelled) return setState({ at: 'cancelled' });
-    if (sessionId === null) return setState({ at: 'unknown' });
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const ask = async (left: number): Promise<void> => {
+    const ask = async (sessionId: string, left: number): Promise<void> => {
       const next = await confirm(sessionId);
       if (stopped) return;
       setState(next);
       if (next.at === 'processing' && left > 0) {
-        timer = setTimeout(() => void ask(left - 1), RETRY_MS);
+        timer = setTimeout(() => void ask(sessionId, left - 1), RETRY_MS);
       }
     };
-    void ask(RETRIES);
+    const run = async (): Promise<void> => {
+      const { sessionId, cancelled } = vueltaParams(window.location.search);
+      // Nothing was charged: true for anybody, it claims nothing about an
+      // account, and it needs neither a session nor a request.
+      if (cancelled) return setState({ at: 'cancelled' });
+      // No session: the door, and not one request from this island.
+      if (!(await signedInSoon())) {
+        if (!stopped) setState({ at: 'signed-out' });
+        return;
+      }
+      if (stopped) return;
+      // Signed in and nobody sent them here by a payment: the honest
+      // «we could not find this top-up in your account».
+      if (sessionId === null) return setState({ at: 'unknown' });
+      await ask(sessionId, RETRIES);
+    };
+    void run();
     return () => {
       stopped = true;
       if (timer !== undefined) clearTimeout(timer);
     };
   }, []);
+
+  if (state.at === 'signed-out') {
+    return (
+      <div className="saldo-marco saldo-fuera" data-saldo-vuelta="signed-out" data-saldo-signed-out>
+        <h2>{ui.signedOut.title}</h2>
+        <p className="saldo-nota">{ui.signedOut.text}</p>
+        <div>
+          <a className="btn btn-primario" href={signIn} data-metric="saldo-sign-in">
+            {ui.signedOut.cta}
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="saldo-marco saldo-vuelta" data-saldo-vuelta={state.at} aria-live="polite">

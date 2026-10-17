@@ -398,10 +398,33 @@ for (const colorScheme of ['dark', 'light'] as const) {
 test('a cancelled checkout says nothing was charged, and Referrals says it is coming', async ({
   page,
 }) => {
+  // «Nothing was charged» claims nothing about an account, so it is told to
+  // anybody, with no session and no request of its own.
   await page.goto('/es/saldo/vuelta/?cancelled=1');
   await expect(page.locator('[data-saldo-vuelta="cancelled"]')).toContainText(
     'No se ha cobrado nada',
   );
   await page.goto('/es/saldo/referidos/');
   await expect(page.locator('[data-saldo-referrals]')).toBeVisible();
+});
+
+test('the way back from a top-up greets a stranger with the door, not an error', async ({
+  page,
+}) => {
+  const asked: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/api/saldo')) asked.push(request.url());
+  });
+  await page.goto('/es/saldo/vuelta/');
+  const door = page.locator('[data-saldo-vuelta="signed-out"]');
+  // The same words «Saldo» uses, never «No encontramos esta recarga».
+  await expect(door).toContainText('Entra para ver tu saldo');
+  await expect(page.locator('[data-saldo-vuelta]')).not.toContainText('No encontramos');
+  await expect(door.locator('[data-metric="saldo-sign-in"]')).toHaveAttribute(
+    'href',
+    `/es/lap/session/?vuelta=${encodeURIComponent('/es/saldo/')}`,
+  );
+  // And it asked the till nothing: without a session there is nothing to ask.
+  await page.waitForLoadState('networkidle');
+  expect(asked).toEqual([]);
 });

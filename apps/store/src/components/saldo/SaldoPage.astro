@@ -68,7 +68,17 @@ const title =
       />
     )
   }
-  {face === 'vuelta' && <SaldoVuelta client:load ui={ui} lang={locale} saldoHref={saldoHref} />}
+  {
+    face === 'vuelta' && (
+      <SaldoVuelta
+        client:load
+        ui={ui}
+        lang={locale}
+        saldoHref={saldoHref}
+        signIn={signInHref(locale, '/saldo/')}
+      />
+    )
+  }
   {
     face === 'referidos' && (
       <div class="saldo-marco saldo-pronto" data-saldo-referrals>
