@@ -378,9 +378,12 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
     } catch {
       since = null;
     }
-    const query = new URLSearchParams({ locale: html.lang || 'es' });
-    if (since) query.set('since', since);
-    fetch(`/api/notices?${query.toString()}`, { headers: { accept: 'application/json' } })
+    // Built by hand: the thanks pages must never read their address, and
+    // this script is inlined on every page.
+    const query =
+      `locale=${encodeURIComponent(html.lang || 'es')}` +
+      (since ? `&since=${encodeURIComponent(since)}` : '');
+    fetch(`/api/notices?${query}`, { headers: { accept: 'application/json' } })
       .then((response) => response.json() as Promise<{ unseen?: unknown }>)
       .then(
         (body) => showDots(typeof body?.unseen === 'number' && body.unseen > 0),
