@@ -85,8 +85,10 @@ export async function loadNotices(
     const response = await fetchFn(`${NOTICES_API}?${query.toString()}`, {
       headers: { accept: 'application/json' },
     });
+    // Read the body whatever the status: an unread body keeps the request open.
+    const json: unknown = await response.json().catch(() => null);
     if (response.status === 401) return { ok: false, why: 'signed-out' };
-    const answer = response.ok ? readAnswer(await response.json().catch(() => null)) : null;
+    const answer = response.ok ? readAnswer(json) : null;
     return answer === null ? { ok: false, why: 'other' } : { ok: true, answer };
   } catch {
     return { ok: false, why: 'other' };

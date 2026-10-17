@@ -76,6 +76,7 @@ const mine = isPersonal(basePath);
           <img alt="" width="26" height="26" data-face-img hidden />
         </span>
       </span>
+      <span class="punto-aviso bm-vivo" data-notices-dot role="img" aria-label={ui.noticesDot} hidden />
     </span>
     <span>{ui.youWord}</span>
   </button>
@@ -139,6 +140,11 @@ const mine = isPersonal(basePath);
           >
             <Icon name={navIcon(item, state)} size={22} use />
             <span>{ui.you[item.id]}</span>
+            {item.id === 'notices' && (
+              <span class="ht-n" data-notices-dot hidden>
+                <span class="punto-aviso" role="img" aria-label={ui.noticesDot} />
+              </span>
+            )}
             {item.id === 'balance' && (
               <span class="ht-n mono" data-face-balance data-locale={locale} hidden />
             )}

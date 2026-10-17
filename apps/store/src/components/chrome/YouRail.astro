@@ -135,6 +135,11 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
               >
                 <Icon name={navIcon(item, state)} size={24} use />
                 <span class="rail-t">{ui.you[item.id]}</span>
+                {item.id === 'notices' && (
+                  <span class="rail-n" data-notices-dot hidden>
+                    <span class="punto-aviso" role="img" aria-label={ui.noticesDot} />
+                  </span>
+                )}
                 {item.id === 'balance' && (
                   <span class="rail-n mono" data-face-balance data-locale={locale} hidden />
                 )}
@@ -260,6 +265,7 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
      and `data-session` on <html> tells the stylesheet. */
   import { pageSession, rankLevel } from '../../lib/session-client';
   import { formatBalance, loadFace, panelLink } from '../../lib/face-menu';
+  import { loadNotices, readSeen } from '../../lib/notices-client';
 
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
@@ -294,6 +300,32 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
         pill.textContent = pill.dataset[state] ?? '';
       });
     });
+  });
+
+  /* The bell's dot: signed in, one read of /api/notices with the moment
+     last seen (lib/notices-client.ts); something newer shows the dot — on
+     the rail, in the phone's sheet and on the «Tú» tab — never a number.
+     On «Avisos» itself the page reads and marks seen, so nothing is asked
+     twice; its event hides the dot. */
+  const dots = (): HTMLElement[] => all('[data-notices-dot]');
+  const showDots = (on: boolean): void => dots().forEach((dot) => (dot.hidden = !on));
+  document.addEventListener('numinia:notices-seen', () => showDots(false));
+  let noticesRead = false;
+  pageSession().subscribe((session) => {
+    if (session.status !== 'in' || noticesRead || document.querySelector('[data-notices]')) return;
+    noticesRead = true;
+    const storage = ((): Storage | null => {
+      try {
+        return window.localStorage;
+      } catch {
+        return null;
+      }
+    })();
+    void loadNotices(
+      (input, init) => fetch(input, init),
+      document.documentElement.lang || 'es',
+      readSeen(storage),
+    ).then((loaded) => showDots(loaded.ok && loaded.answer.unseen > 0));
   });
 
   /* «Tu menú»: the first time it opens it asks the till (and the profile)
