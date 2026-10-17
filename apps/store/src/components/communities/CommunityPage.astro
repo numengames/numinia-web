@@ -88,6 +88,7 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
           class="btn btn-primario seguir"
           data-follow={community.id}
           data-follow-labels={followLabels}
+          data-follow-signin={signInHref(locale, `/communities/${community.id}/`)}
           aria-pressed="false"
           data-metric="community-follow"
         >
@@ -314,7 +315,13 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
   <script is:inline data-follows-key={FOLLOWS_KEY}>
     /* «Follow»: the community's id in this browser's list (a JSON array),
        read back by /belong/. Nothing leaves the browser. Without JavaScript
-       the button hides: there is nowhere to keep the choice. */
+       the button hides: there is nowhere to keep the choice.
+
+       Following takes a session. Without one the button is the door to sign
+       in, coming back here — never a «Sigues» that followed nobody (the live
+       QA pass of 2026-10-17 found exactly that lie, surviving a reload while
+       the rail still said «Entra y se llenan»). Who is here is the chrome's
+       one answer, published on `html[data-session]` after load. */
     (function () {
       var key = document.currentScript.getAttribute('data-follows-key');
       function read() {
@@ -329,17 +336,33 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
           return [];
         }
       }
+      function signedIn() {
+        return document.documentElement.getAttribute('data-session') === 'in';
+      }
       document.querySelectorAll('[data-follow]').forEach(function (button) {
         var id = button.getAttribute('data-follow');
         var labels = JSON.parse(button.getAttribute('data-follow-labels'));
+        var door = button.getAttribute('data-follow-signin');
         function paint(on) {
           button.setAttribute('aria-pressed', String(on));
           button.classList.toggle('btn-primario', !on);
           button.classList.toggle('btn-fantasma', on);
           button.querySelector('[data-follow-label]').textContent = on ? labels.on : labels.off;
         }
-        paint(read().indexOf(id) >= 0);
+        function sync() {
+          paint(signedIn() && read().indexOf(id) >= 0);
+        }
+        sync();
+        /* The chrome answers who is here after load: repaint when it does. */
+        new MutationObserver(sync).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-session'],
+        });
         button.addEventListener('click', function () {
+          if (!signedIn()) {
+            window.location.href = door;
+            return;
+          }
           var list = read();
           var at = list.indexOf(id);
           if (at >= 0) list.splice(at, 1);
