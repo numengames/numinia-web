@@ -87,6 +87,10 @@ import {
   type DeskDirectoryEntry,
   type DeskLine,
   type DeskLogAct,
+  type DeskRitual,
+  type DeskRitualAnswer,
+  type DeskRitualOneAnswer,
+  type DeskRitualsAnswer,
   type DeskLogAnswer,
   type DeskHeadcountAnswer,
   type DeskLogLine,
@@ -127,6 +131,7 @@ import {
   readRequestKind,
   readRequestNote,
 } from './community-requests';
+import { RITUAL_PROBLEMS, readRitualDraft, readTillRitualId } from './rituals-till';
 import {
   DEFAULT_VOCABULARY,
   HAPPENINGS_PAGE,
@@ -890,6 +895,32 @@ export function createAccountsFixtureDesk(
     const as = standing(book, who, house);
     if (as === null || as === 'member') return refuse(REQUEST_PROBLEMS.notAllowed);
     return { book, as };
+  };
+
+  // ---- «Crear → Un encuentro» for real (cut M): the encounters, in memory ----
+
+  const rituals: DeskRitual[] = [];
+  let ritualSeq = 0;
+
+  /**
+   * Who runs a community's encounters: an owner («admin» in the seed, which
+   * holds the administrator role) of its organization, or the house. The
+   * organization is the one the house opened under the derived id or, in
+   * the seed, the team named `acc_team_<community>` (the register's `team`).
+   */
+  const runnerFor = async (
+    who: string,
+    house: boolean,
+    community: string,
+  ): Promise<Entry | DeskRefusal> => {
+    const seeded = `acc_team_${community.replace(/-/g, '_')}`;
+    const book =
+      communityBooks.get(await communityAccountId(community)) ??
+      booksOf(who).find((candidate) => candidate.kind === 'team' && candidate.id === seeded);
+    if (book === undefined) return refuse(RITUAL_PROBLEMS.noOrganization);
+    const as = standing(book, who, house);
+    if (as === null || as === 'member') return refuse(RITUAL_PROBLEMS.notAllowed);
+    return { who, book, as };
   };
 
   /** An organization the wallet belongs to — or, for the house, any — or why not. */
@@ -1857,6 +1888,72 @@ export function createAccountsFixtureDesk(
         request: request.id,
       });
       return { ok: true, request: copy(request) };
+    },
+
+    // ---- «Crear → Un encuentro» for real (cut M, 2026-10-17): encounters published from the site ----
+
+    createRitual: async (wallet, draft, house): Promise<DeskRitualAnswer> => {
+      const asking = asker(wallet, house ?? false);
+      const read = readRitualDraft(draft);
+      if ('ok' in asking || read === null) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(read === null ? [RITUAL_PROBLEMS.draft] : []),
+        );
+      }
+      const runner = await runnerFor(asking.who, asking.house, read.communityId);
+      if ('ok' in runner) return runner;
+      ritualSeq += 1;
+      const ritual: DeskRitual = {
+        id: `rit_${ritualSeq.toString(16).padStart(16, '0')}`,
+        ...read,
+        end: read.end ?? read.start,
+        allDay: !read.start.includes('T'),
+        createdBy: asking.who,
+        createdAt: now().toISOString(),
+        cancelledAt: null,
+      };
+      rituals.push(ritual);
+      record(runner, 'ritual-created', ritual.id, { title: ritual.title });
+      return { ok: true, ritual: copy(ritual) };
+    },
+
+    cancelRitual: async (wallet, ritualId, house): Promise<DeskRitualAnswer> => {
+      const asking = asker(wallet, house ?? false);
+      const id = readTillRitualId(ritualId);
+      if ('ok' in asking || id === undefined) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(id === undefined ? [RITUAL_PROBLEMS.ritualId] : []),
+        );
+      }
+      const ritual = rituals.find((candidate) => candidate.id === id);
+      if (ritual === undefined) return refuse(RITUAL_PROBLEMS.noSuchRitual);
+      if (ritual.cancelledAt !== null) return refuse(RITUAL_PROBLEMS.cancelled);
+      const runner = await runnerFor(asking.who, asking.house, ritual.communityId);
+      if ('ok' in runner) return runner;
+      ritual.cancelledAt = now().toISOString();
+      record(runner, 'ritual-cancelled', ritual.id, { title: ritual.title });
+      return { ok: true, ritual: copy(ritual) };
+    },
+
+    ritualsOf: async (communityIds, upcoming): Promise<DeskRitualsAnswer> => {
+      const today = now().toISOString().slice(0, 10);
+      const list = rituals.filter(
+        (ritual) =>
+          ritual.cancelledAt === null &&
+          (communityIds === null || communityIds.includes(ritual.communityId)) &&
+          (!upcoming || ritual.end.slice(0, 10) >= today),
+      );
+      list.sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id));
+      return { ok: true, rituals: copy(list) };
+    },
+
+    ritual: async (ritualId): Promise<DeskRitualOneAnswer> => {
+      const id = readTillRitualId(ritualId);
+      if (id === undefined) return refuse(RITUAL_PROBLEMS.ritualId);
+      const ritual = rituals.find((candidate) => candidate.id === id);
+      return { ok: true, ritual: ritual === undefined ? null : copy(ritual) };
     },
 
     ...agents,

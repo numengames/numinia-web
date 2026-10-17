@@ -6,21 +6,11 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "date": "2026-10-17 12:00",
     "entries": [
       {
-        "text": "«Follow» on a community page is now a real act: the city remembers which communities you follow, in your account and not in one browser. The button says «Following» once you do, from any device; press it again and a toast says you no longer follow. Under the community's name, «N people follow it» appears when somebody does — never a zero. «You belong» (/belong/) lists the communities you follow from your account, each with a quiet «Unfollow»; the communities this browser used to keep for you are carried over the first time you open a page signed in, then forgotten here. The rail's «Your communities» shows how many you belong to or follow, counted once each.",
+        "text": "«Crear → Un encuentro» for real. Whoever runs a community — its Titular, an administrator of its organization, or the house — publishes an encounter from the site: /crear/encuentro/ asks for the community (only the ones you run; one is preselected), a title, the day with an optional time and end, how people meet (in person, online, or in the community’s world when it has one), the place and a note of up to 600 characters. «Publicar» takes you to the new encounter’s page with a word that says it is already in the city’s calendar. It appears in the Encounters list and month grid, on «Ahora», on the community’s page, on its world’s «Encounters here», in your agenda and in the .ics feeds, next to the encounters of the register, with «I’m going» as any other. Its creator and the house see «Cancel this encounter» on its page; a cancelled one says so there and leaves every list. «Crear» in the rail and the phone’s sheet now offers it, after the community, in five languages; the Oracle-only GitHub link stays.",
         "type": "NEW",
       },
     ],
     "version": "v0.126.0",
-  },
-  {
-    "date": "2026-10-17 08:49",
-    "entries": [
-      {
-        "text": "The epitaph card, at the foot of the city's rail (the skull beside the version number): it now always renders fully above everything else, right on top of the skull. Before, the card could be cut off by the rail's own edge — most visibly with the rail folded to its icons, where the card is wider than the folded rail itself and most of it used to disappear behind the page.",
-        "type": "FIX",
-      },
-    ],
-    "version": "v0.125.0",
   },
   {
     "date": "2026-10-17 11:00",

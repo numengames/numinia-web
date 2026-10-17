@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.127.0',
+    date: '2026-10-17 12:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Crear → Un encuentro» for real. Whoever runs a community — its Titular, an administrator of its organization, or the house — publishes an encounter from the site: /crear/encuentro/ asks for the community (only the ones you run; one is preselected), a title, the day with an optional time and end, how people meet (in person, online, or in the community’s world when it has one), the place and a note of up to 600 characters. «Publicar» takes you to the new encounter’s page with a word that says it is already in the city’s calendar. It appears in the Encounters list and month grid, on «Ahora», on the community’s page, on its world’s «Encounters here», in your agenda and in the .ics feeds, next to the encounters of the register, with «I’m going» as any other. Its creator and the house see «Cancel this encounter» on its page; a cancelled one says so there and leaves every list. «Crear» in the rail and the phone’s sheet now offers it, after the community, in five languages; the Oracle-only GitHub link stays.',
+      },
+    ],
+  },
+  {
     version: 'v0.126.0',
     date: '2026-10-17 12:00',
     entries: [
@@ -42,9 +52,6 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       {
         type: 'FIX',
         text: "The epitaph card, at the foot of the city's rail (the skull beside the version number): it now always renders fully above everything else, right on top of the skull. Before, the card could be cut off by the rail's own edge — most visibly with the rail folded to its icons, where the card is wider than the folded rail itself and most of it used to disappear behind the page.",
-      },
-    ],
-  },
   {
     version: 'v0.124.0',
     date: '2026-10-17 11:00',
