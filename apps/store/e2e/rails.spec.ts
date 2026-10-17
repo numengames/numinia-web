@@ -98,11 +98,31 @@ test.describe('desktop', () => {
     expect(tipBox!.x).toBeGreaterThanOrEqual(0);
   });
 
-  test('open, no tooltip shows: the words are there', async ({ page }) => {
+  test('open, tooltip still shows alongside the words', async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/es/');
+    await expect(page.locator('html')).toHaveAttribute('data-rail-city', 'expanded');
     await page.locator('.rail-ciudad [data-metric="nav-worlds"]').hover();
-    await expect(page.locator('#rail-tip')).toBeHidden();
+    const tip = page.locator('#rail-tip');
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText('Mundos');
+  });
+
+  test('«Ajustes», deployed or folded, shows its tooltip (t_03a63d35)', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto('/es/');
+    const tip = page.locator('#rail-tip');
+    await expect(page.locator('html')).toHaveAttribute('data-rail-you', 'expanded');
+    await page.locator('.rail-tu [data-metric="you-settings"]').hover();
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText('Ajustes');
+    await page.keyboard.press('Escape');
+    await expect(tip).toBeHidden();
+    await page.locator('[data-rail-fold="you"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-rail-you', 'collapsed');
+    await page.locator('.rail-tu [data-metric="you-settings"]').hover();
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText('Ajustes');
   });
 
   test('«Crear» opens beside its button with only real destinations, and Escape gives the focus back', async ({

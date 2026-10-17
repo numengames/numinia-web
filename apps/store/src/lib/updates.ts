@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.133.0',
+    date: '2026-10-17 23:35',
+    entries: [
+      {
+        type: 'FIX',
+        text: "Your rail's buttons (Ajustes and the rest) show their tooltip on hover or focus whether the rail is deployed with its labels or folded to its icons — a visible label is not a substitute for the hover cue.",
+      },
+    ],
+  },
+  {
     version: 'v0.132.0',
     date: '2026-10-17 22:30',
     entries: [
