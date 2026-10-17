@@ -13,7 +13,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AGENDA_UI } from '../../i18n/agenda';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
 import { agendaOf } from '../../lib/agenda';
-import { localeHref, signInHref } from '../../lib/app-nav';
+import { AGENDA_PATH, localeHref, signInHref } from '../../lib/app-nav';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionWallet } from '../../lib/auth/session-wallet';
 import { rsvpsFrom } from '../../lib/rsvp-source';
@@ -32,7 +32,7 @@ const { locale } = Astro.props;
 const words = AGENDA_UI[locale];
 const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const signIn = signInHref(locale, '/agenda/');
+const signIn = signInHref(locale, AGENDA_PATH);
 const encountersHref = localeHref(locale, '/calendar/');
 
 Astro.response.headers.set('cache-control', 'private, no-store');

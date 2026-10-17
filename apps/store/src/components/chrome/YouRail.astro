@@ -9,7 +9,8 @@
  *   fold                     [ your face, name, rank ]  → «Tu menú»
  *   [ plus  Crear  ▾ ]                                  → the Crear menu
  *   Avisos · Tus comunidades · Tu agenda · Tus mundos · Tu saldo (signed in) · Tu botín
- *   (a counter after «Tu agenda», «Tus mundos» and «Tu saldo» when there is something to count)
+ *   (a counter after «Tu agenda», «Tus mundos» and «Tu saldo» when there is
+ *   something to count; the first two are YouCounts.astro's, the balance the menu's)
  *   Ajustes · Aspecto [Sistema|Noche|Día] · Idioma [EN|ES|PT|日本|한국]
  *   Cerrar sesión (signed in)
  *
@@ -259,32 +260,15 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
      and `data-session` on <html> tells the stylesheet. */
   import { pageSession, rankLevel } from '../../lib/session-client';
   import { formatBalance, loadFace, panelLink } from '../../lib/face-menu';
-  import { loadYouCounts, paintCount, readEnds } from '../../lib/you-counts';
 
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
   ];
 
-  /* The counters beside «Tu agenda» and «Tus mundos» (cut I): read once per
-     page, the first time the session says you are in — one GET each — and
-     painted wherever the markup has a figure (the rail, the phone's sheet).
-     Nothing is shown for 0, nothing is asked signed out. */
-  let countsRead = false;
-  const readCounts = (): void => {
-    if (countsRead) return;
-    countsRead = true;
-    const ends = readEnds(document.querySelector<HTMLElement>('[data-you-count="agenda"]')?.dataset['ritualEnds']);
-    void loadYouCounts((input, init) => fetch(input, init), ends, Date.now()).then((counts) => {
-      paintCount(all('[data-you-count="agenda"]'), counts.agenda);
-      paintCount(all('[data-you-count="worlds"]'), counts.worlds);
-    });
-  };
-
   pageSession().subscribe((session) => {
     const signedIn = session.status === 'in';
     const rank = signedIn ? session.rank : '';
     document.documentElement.dataset['session'] = signedIn ? 'in' : 'out';
-    if (signedIn) readCounts();
     all('[data-session-in]').forEach((element) => (element.hidden = !signedIn));
     all('[data-session-out]').forEach((element) => (element.hidden = signedIn));
     all('[data-session-ranks]').forEach((element) => {

@@ -17,6 +17,7 @@ import PhoneHeader from '../components/chrome/PhoneHeader.astro';
 import PhoneBar from '../components/chrome/PhoneBar.astro';
 import RailScript from '../components/chrome/RailScript.astro';
 import RailTips from '../components/chrome/RailTips.astro';
+import YouCounts from '../components/chrome/YouCounts.astro';
 import ShellFooter from '../components/chrome/ShellFooter.astro';
 import CookieNotice from '../components/chrome/CookieNotice.astro';
 import Starfield from '../components/chrome/Starfield.astro';
@@ -183,6 +184,7 @@ const urlFor = (target: SupportedLocale): string =>
     {chrome && <PhoneBar locale={locale} basePath={basePath} />}
     {chrome && <RailScript />}
     {chrome && <RailTips />}
+    {chrome && <YouCounts />}
     {/* Every page asks, the chromeless Codex included (LEG-003 §4). */}
     <CookieNotice />
     <script>

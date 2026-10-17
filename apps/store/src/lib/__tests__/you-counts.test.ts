@@ -10,11 +10,13 @@ import {
   MY_WORLDS_API_PATH,
   RSVP_PATH,
   loadYouCounts,
+  onceSignedIn,
   paintCount,
   readEnds,
   readMyWorldsCount,
   readRsvpMine,
   upcomingCount,
+  type SessionWindowLike,
 } from '../you-counts';
 
 const NOW = Date.UTC(2026, 9, 17, 12);
@@ -71,6 +73,58 @@ const answering =
     path in bodies
       ? new Response(JSON.stringify(bodies[path]), { status: 200 })
       : new Response('{"error":"signed-out"}', { status: 401 });
+
+describe('onceSignedIn', () => {
+  type Listener = (session: { status: string }) => void;
+  const window = (
+    published: boolean,
+  ): { win: SessionWindowLike; emit: (status: string) => void; publish: () => void } => {
+    const listeners: Listener[] = [];
+    const client = {
+      subscribe: (listener: Listener) => {
+        listeners.push(listener);
+      },
+    };
+    const target = new EventTarget() as SessionWindowLike;
+    if (published) target.numiniaSession = client;
+    return {
+      win: target,
+      emit: (status) => listeners.forEach((listener) => listener({ status })),
+      publish: () => {
+        target.numiniaSession = client;
+        target.dispatchEvent(new Event('numinia:session-ready'));
+      },
+    };
+  };
+  it('calls once, the first time the session is in, with the client already published', () => {
+    const { win, emit } = window(true);
+    let calls = 0;
+    onceSignedIn(win, () => (calls += 1));
+    emit('out');
+    expect(calls).toBe(0);
+    emit('in');
+    emit('in');
+    expect(calls).toBe(1);
+  });
+  it('waits for the chrome to publish its client', () => {
+    const { win, emit, publish } = window(false);
+    let calls = 0;
+    onceSignedIn(win, () => (calls += 1));
+    emit('in');
+    expect(calls).toBe(0);
+    publish();
+    emit('in');
+    expect(calls).toBe(1);
+  });
+  it('a ready event with no client published calls nothing', () => {
+    const { win, emit } = window(false);
+    let calls = 0;
+    onceSignedIn(win, () => (calls += 1));
+    win.dispatchEvent(new Event('numinia:session-ready'));
+    emit('in');
+    expect(calls).toBe(0);
+  });
+});
 
 describe('loadYouCounts', () => {
   it('asks both once and answers the two counts, 0 as nothing', async () => {

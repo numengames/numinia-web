@@ -1,0 +1,30 @@
+---
+/**
+ * The counters of your rail (cut I): beside «Tu agenda» and «Tus mundos»,
+ * a figure once a session is in — read once per page, one GET each
+ * (lib/you-counts.ts), painted into every figure the markup has (the rail,
+ * the phone's «Tú» sheet). Never a «0», nothing asked signed out.
+ *
+ * Its own script, apart from the rail's: it imports one module nobody else
+ * does and stays under the bundler's inline limit, so the front page keeps
+ * shipping no external JavaScript (scripts/bundle-budget.mjs). The session
+ * comes off the client the chrome publishes on the window.
+ */
+---
+
+<script>
+  import { loadYouCounts, onceSignedIn, paintCount, readEnds, type SessionWindowLike } from '../../lib/you-counts';
+
+  const all = (selector: string): HTMLElement[] => [
+    ...document.querySelectorAll<HTMLElement>(selector),
+  ];
+  onceSignedIn(window as SessionWindowLike, () => {
+    const ends = readEnds(
+      document.querySelector<HTMLElement>('[data-you-count="agenda"]')?.dataset['ritualEnds'],
+    );
+    void loadYouCounts((input, init) => fetch(input, init), ends, Date.now()).then((counts) => {
+      paintCount(all('[data-you-count="agenda"]'), counts.agenda);
+      paintCount(all('[data-you-count="worlds"]'), counts.worlds);
+    });
+  });
+</script>

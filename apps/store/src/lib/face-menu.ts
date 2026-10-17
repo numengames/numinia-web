@@ -76,8 +76,8 @@ export function readFace(saldo: unknown, profile: unknown): FaceMenu {
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** One JSON body, or null for any status but 200 or any failure (the rail's counters read with it too). */
-export async function bodyOf(fetcher: Fetch, path: string): Promise<unknown> {
+/** One JSON body, or null for any status but 200 or any failure. */
+async function bodyOf(fetcher: Fetch, path: string): Promise<unknown> {
   try {
     const response = await fetcher(path, {
       credentials: 'same-origin',
