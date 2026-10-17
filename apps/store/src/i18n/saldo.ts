@@ -169,6 +169,8 @@ export interface SaldoMessages {
     readonly bar: string;
     /** The table of worlds of the period: its name and columns. */
     readonly worlds: string;
+    /** The per-world chart's accessible label. `{total}`: the period's spend. */
+    readonly worldsChartLabel: string;
     readonly world: string;
     readonly size: string;
     readonly daysRunning: string;
@@ -363,6 +365,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       stopped: 'Apagada',
       bar: '{when} · {total} — encendida {running} · apagada {stopped}',
       worlds: 'Cada sede en el periodo',
+      worldsChartLabel: 'Gasto por sede: {total} en total',
       world: 'Sede',
       size: 'Tamaño',
       daysRunning: 'Días encendida',
@@ -634,6 +637,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       stopped: 'Off',
       bar: '{when} · {total} — on {running} · off {stopped}',
       worlds: 'Each home in the period',
+      worldsChartLabel: 'Spend per home: {total} total',
       world: 'Home',
       size: 'Size',
       daysRunning: 'Days on',
@@ -899,6 +903,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       stopped: '停止中',
       bar: '{when} · {total} — 稼働 {running} · 停止 {stopped}',
       worlds: '期間中の各拠点',
+      worldsChartLabel: '拠点別の支出: 合計 {total}',
       world: '拠点',
       size: 'サイズ',
       daysRunning: '稼働日数',
@@ -1163,6 +1168,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       stopped: '꺼짐',
       bar: '{when} · {total} — 켜짐 {running} · 꺼짐 {stopped}',
       worlds: '기간 중 거점별',
+      worldsChartLabel: '거점별 지출: 총 {total}',
       world: '거점',
       size: '크기',
       daysRunning: '켜진 날',
@@ -1424,6 +1430,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       stopped: 'Desligada',
       bar: '{when} · {total} — ligada {running} · desligada {stopped}',
       worlds: 'Cada sede no período',
+      worldsChartLabel: 'Gasto por sede: {total} no total',
       world: 'Sede',
       size: 'Tamanho',
       daysRunning: 'Dias ligada',

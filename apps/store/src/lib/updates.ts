@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.132.0',
+    date: '2026-10-17 22:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: "A community's «Saldo y consumo» now charts what each of its worlds spends, a bar per world, with the exact euro figure beside it in the same table as before — real figures from the till alone, nothing invented.",
+      },
+    ],
+  },
+  {
     version: 'v0.131.0',
     date: '2026-10-17 13:20',
     entries: [

@@ -44,6 +44,8 @@ import {
   splitSeries,
   stackedBars,
   topupRoles,
+  worldBars,
+  worldsTotal,
   type Runway,
 } from '../../lib/saldo-view';
 
@@ -268,6 +270,7 @@ export function Kpis({
 
 const CHART_W = 600;
 const CHART_H = 160;
+const WORLDS_CHART_H = 120;
 
 /**
  * Usage per day or month: from a till of this cut, each bar stacked running
@@ -405,37 +408,76 @@ export function Usage({
         )}
       </div>
       {worlds.length > 0 && (
-        <div
-          className="saldo-tabla"
-          tabIndex={0}
-          role="region"
-          aria-label={ui.usage.worlds}
-          data-saldo-worlds
-        >
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{ui.usage.world}</th>
-                <th scope="col">{ui.usage.size}</th>
-                <th scope="col" className="num">
-                  {ui.usage.daysRunning}
-                </th>
-                <th scope="col" className="num">
-                  {ui.usage.amount}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {worlds.map((world) => (
-                <tr key={world.worldId}>
-                  <td>{world.worldId}</td>
-                  <td className="mono">{world.size}</td>
-                  <td className="num mono">{world.daysRunning}</td>
-                  <td className="num mono">{formatEuros(world.cents, lang)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="saldo-mundos" data-saldo-worlds-chart>
+          <div className="saldo-cabeza-texto">
+            <h3 className="etiqueta">{ui.usage.worlds}</h3>
+          </div>
+          <div className="saldo-mundos-cuerpo">
+            <figure className="saldo-grafica saldo-mundos-grafica">
+              <svg
+                viewBox={`0 0 ${CHART_W} ${WORLDS_CHART_H}`}
+                preserveAspectRatio="none"
+                role="img"
+                aria-label={fill(ui.usage.worldsChartLabel, {
+                  total: formatEuros(worldsTotal(worlds), lang),
+                })}
+                data-saldo-worlds-bars
+              >
+                <line
+                  x1="0"
+                  y1={WORLDS_CHART_H - 0.5}
+                  x2={CHART_W}
+                  y2={WORLDS_CHART_H - 0.5}
+                  className="eje"
+                />
+                {worldBars(worlds, CHART_W, WORLDS_CHART_H).map((bar) => (
+                  <rect
+                    key={bar.worldId}
+                    x={bar.x}
+                    y={bar.y}
+                    width={bar.width}
+                    height={bar.height}
+                    rx="2"
+                    data-saldo-world-bar
+                  >
+                    <title>{`${bar.worldId} · ${formatEuros(bar.cents, lang)}`}</title>
+                  </rect>
+                ))}
+              </svg>
+            </figure>
+            <div
+              className="saldo-tabla"
+              tabIndex={0}
+              role="region"
+              aria-label={ui.usage.worlds}
+              data-saldo-worlds
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">{ui.usage.world}</th>
+                    <th scope="col">{ui.usage.size}</th>
+                    <th scope="col" className="num">
+                      {ui.usage.daysRunning}
+                    </th>
+                    <th scope="col" className="num">
+                      {ui.usage.amount}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {worlds.map((world) => (
+                    <tr key={world.worldId}>
+                      <td>{world.worldId}</td>
+                      <td className="mono">{world.size}</td>
+                      <td className="num mono">{world.daysRunning}</td>
+                      <td className="num mono">{formatEuros(world.cents, lang)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </section>
