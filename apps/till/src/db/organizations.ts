@@ -73,7 +73,9 @@ export type LogAct =
   | 'agent-role-given'
   | 'agent-role-taken'
   | 'request-accepted'
-  | 'request-declined';
+  | 'request-declined'
+  | 'ritual-created'
+  | 'ritual-cancelled';
 
 const KNOWN: ReadonlySet<unknown> = new Set(ORGANIZATION_PERMISSIONS);
 const SETTINGS: ReadonlySet<unknown> = new Set(HOUSE_ACCESS_SETTINGS);

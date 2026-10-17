@@ -123,6 +123,7 @@ describe('the migration', () => {
       '0012_ritual_rsvps.sql',
       '0013_community_requests.sql',
       '0014_community_follows.sql',
+      '0015_rituals.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -142,6 +143,7 @@ describe('the migration', () => {
         'ledger_lines',
         'organization_settings',
         'ritual_rsvps',
+        'rituals',
         'stripe_cursor',
         'tariff_versions',
         'team_agent_passes',
