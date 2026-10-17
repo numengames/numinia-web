@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.129.0',
+    date: '2026-10-17 13:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Worlds room now says which Numinia Engine build is the newest and which worlds are behind it. Above the machines, «Fleet engine» shows the current build and either «The whole fleet is up to date» or «N worlds behind», each with its machine, its build and an «Update» button when its machine takes updates (otherwise it says so). Hyperfy worlds are counted apart as a different engine, never as behind. In five languages; nothing changes on the machines.',
+      },
+    ],
+  },
+  {
     version: 'v0.128.0',
     date: '2026-10-17 10:50',
     entries: [

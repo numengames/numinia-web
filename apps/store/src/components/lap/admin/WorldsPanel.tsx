@@ -49,6 +49,7 @@ import {
   fill,
   filterRows,
   fleetServers,
+  fleetEngine,
   fleetStats,
   importMachines,
   listedRows,
@@ -257,6 +258,69 @@ function CopyLine({ line, room }: { readonly line: string; readonly room: Worlds
         {copied ? room.machines.copied : room.machines.copy}
       </button>
     </div>
+  );
+}
+
+/** The newest Numinia Engine build and the worlds behind it, above the machines. */
+function FleetEngineBanner({
+  fleet,
+  room,
+  onAction,
+}: {
+  readonly fleet: Fleet;
+  readonly room: WorldsRoomMessages;
+  readonly onAction: (row: WorldRow, action: WorldAction) => void;
+}) {
+  const text = room.fleetEngine;
+  const summary = fleetEngine(fleet.rows, fleet.machines, fleet.engine);
+  const { current, laggards, otherEngine } = summary;
+  return (
+    <section
+      className="motor-flota"
+      aria-label={text.title}
+      data-fleet-engine={current === null ? '' : current.build}
+      data-laggards={laggards.length}
+    >
+      <h2 className="etiqueta">{text.title}</h2>
+      <p className="mono">
+        {current === null ? text.none : fill(text.current, { b: current.build })}
+      </p>
+      {current !== null && laggards.length === 0 && <p role="status">{text.upToDate}</p>}
+      {laggards.length > 0 && (
+        <>
+          <p role="status">{fill(text.behind, { n: String(laggards.length) })}</p>
+          <ul>
+            {laggards.map((laggard) => {
+              const row = fleet.rows.find((candidate) => candidate.id === laggard.id);
+              return (
+                <li key={laggard.id} data-laggard={laggard.id}>
+                  <span className="mono">
+                    {fill(text.laggard, { id: laggard.id, m: laggard.server, b: laggard.build })}
+                  </span>
+                  {laggard.canUpdate && row !== undefined ? (
+                    <button
+                      type="button"
+                      className="btn btn-fantasma"
+                      onClick={() => onAction(row, 'update')}
+                      data-metric="worlds-fleet-update"
+                    >
+                      {room.actions.update}
+                    </button>
+                  ) : (
+                    <span className="nota-motor">{text.manual}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+      {otherEngine > 0 && (
+        <p className="nota-motor" data-other-engine={otherEngine}>
+          {fill(text.otherEngine, { n: String(otherEngine) })}
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -1016,6 +1080,7 @@ export function WorldsPanel({
         ))}
       </dl>
 
+      <FleetEngineBanner fleet={fleet} room={room} onAction={onAction} />
       <Machines fleet={fleet} room={room} />
 
       <div className="controles">
