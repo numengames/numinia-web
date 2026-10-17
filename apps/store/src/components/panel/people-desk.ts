@@ -82,6 +82,8 @@ export interface PeopleDesk {
   readonly notice: Notice | null;
   readonly say: (notice: Notice | null) => void;
   readonly reload: () => Promise<void>;
+  /** Reads the organization again without clearing the screen (the people changed elsewhere). */
+  readonly refresh: () => Promise<void>;
   /** One change: the organization as it is now, or null (the notice says why). */
   readonly act: (body: Readonly<Record<string, unknown>>) => Promise<DeskRoles | null>;
   /** The person takes themself out: true when the till did it (nothing is read again: they are out). */
@@ -137,6 +139,10 @@ export function usePeopleDesk(
 
   const reload = useCallback(async (): Promise<void> => {
     setSheet({ at: 'loading' });
+    await read();
+  }, [read]);
+
+  const refresh = useCallback(async (): Promise<void> => {
     await read();
   }, [read]);
 
@@ -211,5 +217,16 @@ export function usePeopleDesk(
     [busy, sheet, org, ui, problemText],
   );
 
-  return { sheet, busy, signing, notice, say: setNotice, reload, act, leave, problemText };
+  return {
+    sheet,
+    busy,
+    signing,
+    notice,
+    say: setNotice,
+    reload,
+    refresh,
+    act,
+    leave,
+    problemText,
+  };
 }

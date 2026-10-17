@@ -1,0 +1,289 @@
+---
+/**
+ * «Hazla tuya» for real (cut G): the strip under a community's card. Signed
+ * out it is what it was — «¿Es tu comunidad?» and a button to sign in and
+ * come back. Signed in, the browser asks the store where the person stands
+ * (GET /api/community-request?comunidad=): a member sees nothing; while
+ * nobody is the titular the strip offers «Es mi comunidad» (a claim); once
+ * somebody is, «Quiero entrar» (a join). Both open one small dialog with one
+ * optional line — «Cuéntanos quién eres», up to 280 characters — and POST the
+ * ask; the strip then says it was asked. Nothing is sent to anybody: the
+ * house or the community sees it in «Peticiones». Wireframe v3 #hazla-tuya.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+import { COMMUNITY_REQUESTS_UI } from '../../i18n/community-requests';
+import { signInHref } from '../../lib/app-nav';
+import { NOTE_MAX } from '../../lib/community-requests-client';
+
+interface Props {
+  locale: SupportedLocale;
+  communityId: string;
+}
+
+const { locale, communityId } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const t = COMMUNITY_REQUESTS_UI[locale].strip;
+const back = signInHref(locale, `/communities/${communityId}/`);
+---
+
+<div
+  class="franja"
+  data-claim-strip
+  data-community={communityId}
+  data-words={JSON.stringify(t)}
+>
+  <p data-claim-face="claim">
+    <strong>{ui.claimTitle}</strong> {ui.claimText}
+  </p>
+  <p data-claim-face="join" hidden>
+    <strong>{t.joinTitle}</strong> {t.joinText}
+  </p>
+  <p data-claim-face="sent" role="status" hidden></p>
+  <a class="btn btn-primario" href={back} data-metric="community-claim" data-claim-signin>
+    {ui.claimCta}
+  </a>
+  <button
+    type="button"
+    class="btn btn-primario"
+    data-metric="community-claim-open"
+    data-claim-ask="claim"
+    hidden
+  >
+    {ui.claimCta}
+  </button>
+  <button
+    type="button"
+    class="btn btn-primario"
+    data-metric="community-join-open"
+    data-claim-ask="join"
+    hidden
+  >
+    {t.joinCta}
+  </button>
+
+  <dialog class="peticion-dialogo" data-claim-dialog aria-labelledby="peticion-titulo">
+    <form method="dialog" data-claim-form novalidate>
+      <div class="peticion-cabeza">
+        <h2 id="peticion-titulo" data-claim-title>{t.claimDialog}</h2>
+      </div>
+      <div class="peticion-cuerpo">
+        <div class="peticion-campo">
+          <label for="peticion-nota">{t.noteLabel}</label>
+          <input
+            id="peticion-nota"
+            name="note"
+            type="text"
+            maxlength={NOTE_MAX}
+            autocomplete="off"
+            aria-describedby="peticion-nota-ayuda"
+            data-metric="community-request-note"
+          />
+          <p id="peticion-nota-ayuda" class="peticion-ayuda">{t.noteHelp}</p>
+        </div>
+        <p class="peticion-fallo" role="alert" data-claim-problem hidden></p>
+        <div class="peticion-acciones">
+          <button
+            type="button"
+            class="btn btn-fantasma"
+            data-claim-cancel
+            data-metric="community-request-cancel"
+          >
+            {t.cancel}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primario"
+            data-claim-send
+            data-metric="community-request-send"
+          >
+            {t.send}
+          </button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+</div>
+
+<script>
+  import type { DeskRequestKind } from '../../lib/accounts';
+  import {
+    loadMine,
+    sendRequest,
+    stripFace,
+    type Mine,
+    type MineSheet,
+  } from '../../lib/community-requests-client';
+  import type { CommunityRequestsMessages } from '../../i18n/community-requests';
+  import { pageSessionClient } from '../../lib/island-session';
+
+  const strip = document.querySelector<HTMLElement>('[data-claim-strip]');
+  if (strip) wire(strip);
+
+  function wire(root: HTMLElement): void {
+    const words = JSON.parse(root.dataset['words'] ?? '{}') as CommunityRequestsMessages['strip'];
+    const community = root.dataset['community'] ?? '';
+    const pick = <T extends Element>(selector: string): T => root.querySelector(selector) as T;
+    const faces = [...root.querySelectorAll<HTMLElement>('[data-claim-face]')];
+    const sent = pick<HTMLElement>('[data-claim-face="sent"]');
+    const signIn = pick<HTMLAnchorElement>('[data-claim-signin]');
+    const asks = [...root.querySelectorAll<HTMLButtonElement>('[data-claim-ask]')];
+    const dialog = pick<HTMLDialogElement>('[data-claim-dialog]');
+    const form = pick<HTMLFormElement>('[data-claim-form]');
+    const title = pick<HTMLElement>('[data-claim-title]');
+    const note = pick<HTMLInputElement>('#peticion-nota');
+    const problem = pick<HTMLElement>('[data-claim-problem]');
+    const send = pick<HTMLButtonElement>('[data-claim-send]');
+    const cancel = pick<HTMLButtonElement>('[data-claim-cancel]');
+    let kind: DeskRequestKind = 'claim';
+    let busy = false;
+    // Only the newest read may paint.
+    let asked = 0;
+
+    /** One face at a time: the sentence and its button; nothing when there is nothing to ask. */
+    const show = (face: 'claim' | 'join' | 'sent' | 'none' | 'out', said = ''): void => {
+      faces.forEach((p) => (p.hidden = p.dataset['claimFace'] !== (face === 'out' ? 'claim' : face)));
+      sent.textContent = said;
+      signIn.hidden = face !== 'out';
+      asks.forEach((button) => (button.hidden = button.dataset['claimAsk'] !== face));
+      root.hidden = face === 'none';
+    };
+
+    const paint = (mine: Mine): void => {
+      const face = stripFace(mine);
+      if (face.face === 'sent') {
+        show('sent', face.kind === 'claim' ? words.sentClaim : words.sentJoin);
+      } else {
+        show(face.face);
+      }
+    };
+
+    const answered = (sheet: MineSheet): void => {
+      if (sheet.at === 'ready') paint(sheet.mine);
+      // Signed out, or a store without this door: the strip is what it was, the way to sign in.
+      else show('out');
+    };
+
+    const read = async (): Promise<void> => {
+      const mine = ++asked;
+      const sheet = await loadMine(fetch, community);
+      if (mine === asked) answered(sheet);
+    };
+
+    const sayProblem = (text: string | null): void => {
+      problem.textContent = text ?? '';
+      problem.hidden = text === null;
+      if (text === null) note.removeAttribute('aria-invalid');
+      else note.setAttribute('aria-invalid', 'true');
+    };
+
+    const open = (which: DeskRequestKind): void => {
+      kind = which;
+      title.textContent = which === 'claim' ? words.claimDialog : words.joinDialog;
+      note.value = '';
+      sayProblem(null);
+      dialog.showModal();
+      note.focus();
+    };
+
+    asks.forEach((button) =>
+      button.addEventListener('click', () => open(button.dataset['claimAsk'] as DeskRequestKind)),
+    );
+    cancel.addEventListener('click', () => dialog.close());
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      send.disabled = true;
+      void sendRequest(fetch, community, kind, note.value).then((result) => {
+        busy = false;
+        send.disabled = false;
+        if (result.ok) {
+          dialog.close();
+          show('sent', result.request.kind === 'claim' ? words.sentClaim : words.sentJoin);
+          return;
+        }
+        if (result.why === 'signed-out') {
+          dialog.close();
+          show('out');
+          return;
+        }
+        sayProblem(result.why === 'note' ? words.badNote : words.failed);
+      });
+    });
+
+    void pageSessionClient(window).then((client) => {
+      const hear = (view: { readonly status: string }): void => {
+        if (view.status === 'in') void read();
+        else {
+          asked += 1;
+          show('out');
+        }
+      };
+      client.subscribe(hear);
+      void client.current().then(hear);
+    });
+  }
+</script>
+
+<style>
+  .peticion-dialogo {
+    width: min(32rem, calc(100% - 2rem));
+    padding: 0;
+    color: var(--texto);
+    background: var(--superficie);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+  }
+  .peticion-dialogo::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .peticion-cabeza {
+    padding: var(--s4) var(--s5);
+    border-bottom: 1px solid var(--linea);
+  }
+  .peticion-cabeza h2 {
+    margin: 0;
+    font-size: 1.44rem;
+    font-weight: 400;
+  }
+  .peticion-cuerpo {
+    display: grid;
+    gap: var(--s3);
+    padding: var(--s4) var(--s5);
+  }
+  .peticion-campo {
+    display: grid;
+    gap: var(--s1);
+  }
+  .peticion-campo input {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px var(--s3);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+  }
+  .peticion-campo input[aria-invalid='true'] {
+    border-color: var(--ambar);
+  }
+  .peticion-ayuda,
+  .peticion-fallo {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .peticion-fallo {
+    color: var(--ambar);
+  }
+  .peticion-acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--s2);
+    flex-wrap: wrap;
+  }
+</style>

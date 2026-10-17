@@ -10,7 +10,6 @@ import type { SupportedLocale } from '@numinia/domain';
 import { AGORA_PLAZA } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
-import { signInHref } from '../../lib/app-nav';
 import {
   editHref,
   FOLLOWS_KEY,
@@ -34,6 +33,7 @@ import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
 import PeopleList from './PeopleList.astro';
 import SpaceUses from './SpaceUses.astro';
+import ClaimStrip from './ClaimStrip.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -107,22 +107,7 @@ const followLabels = JSON.stringify({ off: ui.follow, on: ui.following });
           )
         }
       </div>
-      {
-        !founder && (
-          <div class="franja">
-            <p>
-              <strong>{ui.claimTitle}</strong> {ui.claimText}
-            </p>
-            <a
-              class="btn btn-primario"
-              href={signInHref(locale, `/communities/${community.id}/`)}
-              data-metric="community-claim"
-            >
-              {ui.claimCta}
-            </a>
-          </div>
-        )
-      }
+      {!founder && <ClaimStrip locale={locale} communityId={community.id} />}
     </div>
 
     <SpaceUses

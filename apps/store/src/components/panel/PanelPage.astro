@@ -24,6 +24,9 @@ import { PEOPLE_UI } from '../../i18n/panel-people';
 import { GENTE_UI } from '../../i18n/panel-gente';
 import { AGENTES_UI } from '../../i18n/panel-agentes';
 import { SALDO_UI } from '../../i18n/saldo';
+import { COMMUNITY_REQUESTS_UI } from '../../i18n/community-requests';
+import { communityOfAccount } from '../../lib/community-accounts';
+import { REGISTER } from '../communities/register';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import { PanelMiembros } from './PanelMiembros';
@@ -55,6 +58,8 @@ const signIn = signInHref(locale, here);
 const saldoHref = localeHref(locale, '/saldo/');
 // The panel's door: where leaving an organization lands.
 const homeHref = localeHref(locale, '/panel/');
+// Which community each organization is of, for Members' «Peticiones».
+const communities = face === 'members' ? await communityOfAccount(REGISTER) : {};
 ---
 
 <BaseLayout
@@ -91,6 +96,8 @@ const homeHref = localeHref(locale, '/panel/');
         homeHref={homeHref}
         ui={SALDO_UI[locale]}
         people={PEOPLE_UI[locale]}
+        communities={communities}
+        requests={COMMUNITY_REQUESTS_UI[locale].list}
       />
     )
   }

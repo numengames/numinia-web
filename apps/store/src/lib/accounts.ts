@@ -257,7 +257,9 @@ export type DeskLogAct =
   | 'agent-state'
   | 'agent-removed'
   | 'agent-role-given'
-  | 'agent-role-taken';
+  | 'agent-role-taken'
+  | 'request-accepted'
+  | 'request-declined';
 
 export interface DeskLogLine {
   seq: number;
@@ -576,7 +578,81 @@ export interface AccountDesk {
     aud: string,
     t: number,
   ): Promise<DeskClaimAnswer>;
+  /**
+   * «Hazla tuya» for real: the signed-in wallet claims a community (`claim`)
+   * or asks to join it (`join`), with an optional note; one open request per
+   * kind, asking again finds it (optional: an older till answers 503).
+   */
+  requestCommunity(
+    wallet: string,
+    communityId: string,
+    kind: DeskRequestKind,
+    note: string | null,
+  ): Promise<DeskRequestAnswer>;
+  /** The wallet's own requests, newest first; `communityId` narrows them (optional). */
+  myCommunityRequests(wallet: string, communityId?: string | null): Promise<DeskMyRequestsAnswer>;
+  /**
+   * The open requests of one community — to the house or an administrator of
+   * its organization — or, with no community, every open one, to the house
+   * alone; each with what the asker published (optional).
+   */
+  communityRequests(
+    wallet: string,
+    house: boolean,
+    communityId?: string | null,
+  ): Promise<DeskRequestsAnswer>;
+  /**
+   * Accepts or declines an open request; `name` is the community's name, for
+   * the house to open the organization when a claim is accepted before it is
+   * open. Logged in «Qué ha pasado» (optional).
+   */
+  decideCommunityRequest(
+    wallet: string,
+    requestId: string,
+    accept: boolean,
+    house?: boolean,
+    name?: string,
+  ): Promise<DeskRequestAnswer>;
 }
+
+/** «Hazla tuya»: what a person asks of a community — to run it, or to be in it. */
+export type DeskRequestKind = 'claim' | 'join';
+type DeskRequestState = 'open' | 'accepted' | 'declined';
+
+export interface DeskCommunityRequest {
+  id: string;
+  communityId: string;
+  wallet: string;
+  kind: DeskRequestKind;
+  note: string | null;
+  state: DeskRequestState;
+  createdAt: string;
+  decidedAt: string | null;
+  decidedBy: string | null;
+}
+
+/** A request as the ones who decide see it: with what the asker published. */
+export interface DeskCommunityRequestEntry extends DeskCommunityRequest {
+  name: string | null;
+  avatar: string | null;
+}
+
+/** Where one stands towards a community: a member asks nothing; a claim only while nobody is the titular. */
+export interface DeskCommunityStanding {
+  member: boolean;
+  hasOwner: boolean;
+}
+
+export type DeskRequestAnswer = { ok: true; request: DeskCommunityRequest } | DeskRefusal;
+export type DeskMyRequestsAnswer =
+  | {
+      ok: true;
+      requests: DeskCommunityRequest[];
+      /** Present when one community was asked about. */
+      standing?: DeskCommunityStanding;
+    }
+  | DeskRefusal;
+export type DeskRequestsAnswer = { ok: true; requests: DeskCommunityRequestEntry[] } | DeskRefusal;
 
 /**
  * Who is asking the desk, decided once per request from the verified
@@ -632,6 +708,10 @@ export const DESK_METHODS = [
   'takeAgentRole',
   'agentPass',
   'claimAgentPass',
+  'requestCommunity',
+  'myCommunityRequests',
+  'communityRequests',
+  'decideCommunityRequest',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -673,6 +753,10 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'takeAgentRole',
   'agentPass',
   'claimAgentPass',
+  'requestCommunity',
+  'myCommunityRequests',
+  'communityRequests',
+  'decideCommunityRequest',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

@@ -16,8 +16,14 @@ import { LAP_UI } from '../../../i18n/lap';
 import LapShell from '../LapShell.astro';
 import { CENSUS_LIST_UI } from '../../../i18n/census-list';
 import { SALDO_UI } from '../../../i18n/saldo';
+import { COMMUNITY_REQUESTS_UI } from '../../../i18n/community-requests';
+import { communityNames } from '../../../lib/community-accounts';
+import { REGISTER } from '../../communities/register';
 import { CensusPanel } from './CensusPanel';
+import { CensusRequests } from './CensusRequests';
 import { CitizensList } from './CitizensList';
+import '../../saldo/saldo.css';
+import '../../panel/panel.css';
 
 interface Props {
   locale: SupportedLocale;
@@ -30,6 +36,8 @@ const ranks = RANK_DEFINITIONS.filter((rank) => rank.id !== 'oracle').map((rank)
   name: rank.name[locale],
 }));
 const listWords = CENSUS_LIST_UI[locale];
+const requestWords = COMMUNITY_REQUESTS_UI[locale].list;
+const names = communityNames(REGISTER);
 const labels = {
   ...t.census,
   forbidden: t.admin.forbidden,
@@ -48,6 +56,15 @@ const labels = {
     <h1>{t.census.title}</h1>
     <p class="intro">{t.census.intro}</p>
   </header>
+  <section class="censo-peticiones" data-census-requests data-session-ranks="oracle" hidden>
+    <CensusRequests
+      client:load
+      locale={locale}
+      words={requestWords}
+      ui={SALDO_UI[locale]}
+      communities={names}
+    />
+  </section>
   <section
     class="censo-entradas"
     data-citizens="list"
@@ -70,6 +87,9 @@ const labels = {
 <style>
   .cabecera {
     margin-bottom: var(--s5);
+  }
+  .censo-peticiones {
+    margin-bottom: var(--s6);
   }
   h1 {
     font-size: 2.074rem;
