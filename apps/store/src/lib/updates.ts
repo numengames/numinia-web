@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.131.0',
+    date: '2026-10-17 13:20',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Agente IA», in Ajustes, now has a real on/off switch: whoever administers the community can turn the built-in AI agent off — the card says so, in five languages — and back on, the same way every other piece of the panel already switches.',
+      },
+    ],
+  },
+  {
     version: 'v0.130.0',
     date: '2026-10-17 13:10',
     entries: [

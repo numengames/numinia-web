@@ -305,6 +305,8 @@ export type DeskSettingsAnswer = DeskSettings | DeskRefusal;
 export interface DeskSettingsChange {
   off?: string[] | undefined;
   vocabulary?: 'simple' | 'mixed' | 'numinia' | undefined;
+  /** «Existe un interruptor funcional para apagar el agente» (Historia 4). */
+  aiAgentEnabled?: boolean | undefined;
 }
 
 /** A line of the log for «Qué ha pasado»: the log's line plus the author's published name. */

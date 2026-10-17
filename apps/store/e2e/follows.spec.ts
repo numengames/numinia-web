@@ -252,6 +252,10 @@ test.describe('signed in', () => {
     await expect(button).toHaveAttribute('aria-pressed', 'true');
     await expect(button).toBeEnabled();
     await expect(page.locator(`[data-follow-count="${TRGCON}"]`)).toBeVisible();
+    // The click leaves the synthetic mouse resting on the button, which keeps
+    // its :hover state (and the hover-only text colour) painted for the axe
+    // scan; a phone has no mouse, so move it away before measuring contrast.
+    await page.mouse.move(0, 0);
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);
   });

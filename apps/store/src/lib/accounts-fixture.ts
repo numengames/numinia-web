@@ -984,6 +984,7 @@ export function createAccountsFixtureDesk(
 
   // ---- «Ajustes de la comunidad»: shared by every wallet's copy, as the till's organization_settings ----
   const settings = new WeakMap<Book, { off: SwitchablePiece[]; vocabulary: Vocabulary }>();
+  const aiAgentEnabled = new WeakMap<Book, boolean>();
   const settingsOf = (book: Book): { off: SwitchablePiece[]; vocabulary: Vocabulary } =>
     settings.get(book) ?? { off: [], vocabulary: DEFAULT_VOCABULARY };
   const settingsView = ({ book, who, as }: Entry): DeskSettings => ({
@@ -991,31 +992,47 @@ export function createAccountsFixtureDesk(
     accountId: book.id,
     ...copy(settingsOf(book)),
     mayEdit: accessIn(book, who, as).permissions.has('manage-organization'),
-    aiAgent: { enabled: true, model: DEFAULT_AI_MODEL, trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS },
+    aiAgent: {
+      enabled: aiAgentEnabled.get(book) ?? true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    },
   });
-  /** The till's reading of a change: only `off` (pieces that may be off) and `vocabulary`. */
+  /** The till's reading of a change: `off`, `vocabulary` and/or `aiAgentEnabled`. */
   const readSettingsChange = (
     change: unknown,
-  ): { off?: SwitchablePiece[]; vocabulary?: Vocabulary } | { problems: string[] } => {
+  ):
+    | { off?: SwitchablePiece[]; vocabulary?: Vocabulary; aiAgentEnabled?: boolean }
+    | { problems: string[] } => {
     const sent =
       typeof change === 'object' && change !== null ? (change as Record<string, unknown>) : {};
     const keys = Object.keys(sent);
     const off = sent['off'];
     const vocabulary = sent['vocabulary'];
+    const aiAgent = sent['aiAgentEnabled'];
     const offOk =
       off === undefined ||
       (Array.isArray(off) &&
         off.every((piece) => typeof piece === 'string' && isSwitchable(piece)) &&
         new Set(off).size === off.length);
     const vocabularyOk = vocabulary === undefined || isVocabulary(vocabulary);
-    if (keys.length === 0 || keys.some((key) => key !== 'off' && key !== 'vocabulary')) {
-      return { problems: ['change must be an object with off and/or vocabulary, nothing else'] };
+    const aiAgentOk = aiAgent === undefined || typeof aiAgent === 'boolean';
+    if (
+      keys.length === 0 ||
+      keys.some((key) => key !== 'off' && key !== 'vocabulary' && key !== 'aiAgentEnabled')
+    ) {
+      return {
+        problems: [
+          'change must be an object with off, vocabulary and/or aiAgentEnabled, nothing else',
+        ],
+      };
     }
-    if (!offOk || !vocabularyOk) {
+    if (!offOk || !vocabularyOk || !aiAgentOk) {
       return {
         problems: [
           ...(offOk ? [] : ['off must be a list of pieces, each once']),
           ...(vocabularyOk ? [] : ['vocabulary must be one of: simple, mixed, numinia']),
+          ...(aiAgentOk ? [] : ['aiAgentEnabled must be a boolean']),
         ],
       };
     }
@@ -1024,6 +1041,7 @@ export function createAccountsFixtureDesk(
         ? {}
         : { off: SWITCHABLE_PIECES.filter((piece) => (off as string[]).includes(piece)) }),
       ...(vocabulary === undefined ? {} : { vocabulary: vocabulary as Vocabulary }),
+      ...(typeof aiAgent === 'boolean' ? { aiAgentEnabled: aiAgent } : {}),
     };
   };
 
@@ -1674,13 +1692,22 @@ export function createAccountsFixtureDesk(
       const before = settingsOf(found.book);
       const off = read.off ?? before.off;
       const vocabulary = read.vocabulary ?? before.vocabulary;
+      const beforeAiAgent = aiAgentEnabled.get(found.book) ?? true;
+      const nextAiAgent = read.aiAgentEnabled ?? beforeAiAgent;
       const piecesChanged = off.join() !== before.off.join();
       const wordsChanged = vocabulary !== before.vocabulary;
+      const aiAgentChanged = nextAiAgent !== beforeAiAgent;
       if (piecesChanged || wordsChanged) {
         settings.set(found.book, { off, vocabulary });
         record(found, 'settings-changed', null, {
           ...(piecesChanged ? { off: off.join(',') } : {}),
           ...(wordsChanged ? { vocabulary } : {}),
+        });
+      }
+      if (aiAgentChanged) {
+        aiAgentEnabled.set(found.book, nextAiAgent);
+        record(found, 'settings-changed', null, {
+          aiAgentEnabled: nextAiAgent ? 'true' : 'false',
         });
       }
       return settingsView(found);

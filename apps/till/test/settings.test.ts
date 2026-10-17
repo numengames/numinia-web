@@ -95,17 +95,24 @@ describe('the rules of the settings', () => {
     }
   });
 
-  it('reads a change: only off and vocabulary, at least one, each valid', () => {
+  it('reads a change: off, vocabulary and/or aiAgentEnabled, at least one, each valid', () => {
     expect(readChange({ off: ['roles'] })).toEqual({ change: { off: ['roles'] } });
     expect(readChange({ vocabulary: 'numinia' })).toEqual({ change: { vocabulary: 'numinia' } });
     expect(readChange({ off: [], vocabulary: 'simple' })).toEqual({
       change: { off: [], vocabulary: 'simple' },
+    });
+    expect(readChange({ aiAgentEnabled: false })).toEqual({ change: { aiAgentEnabled: false } });
+    expect(readChange({ off: ['roles'], aiAgentEnabled: true })).toEqual({
+      change: { off: ['roles'], aiAgentEnabled: true },
     });
     for (const value of [null, 'x', [], {}, { other: 1 }, { off: [], other: 1 }]) {
       expect(readChange(value)).toEqual({ problems: [SETTINGS_PROBLEMS.change] });
     }
     expect(readChange({ off: ['summary'] })).toEqual({ problems: [SETTINGS_PROBLEMS.off] });
     expect(readChange({ vocabulary: 'x' })).toEqual({ problems: [SETTINGS_PROBLEMS.vocabulary] });
+    expect(readChange({ aiAgentEnabled: 'yes' })).toEqual({
+      problems: [SETTINGS_PROBLEMS.aiAgentEnabled],
+    });
     expect(readChange({ off: 1, vocabulary: 1 })).toEqual({
       problems: [SETTINGS_PROBLEMS.off, SETTINGS_PROBLEMS.vocabulary],
     });
@@ -255,6 +262,119 @@ describe('changeSettings', () => {
     });
     expect(settingsOf(await s.desk.settings(PABLO, id)).off).toEqual([]);
     expect(acts(s, id)).not.toContain('settings-changed');
+  });
+});
+
+describe('changeSettings: the organization’s built-in AI agent (Historia 4, the on/off switch)', () => {
+  it('turns the AI agent off and on, keeping its model and trial cap, each flip a line of the log', async () => {
+    const s = scene();
+    const id = await team(s);
+    const off = settingsOf(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: false }));
+    expect(off.aiAgent).toEqual({
+      enabled: false,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    expect(settingsOf(await s.desk.settings(MARIA, id)).aiAgent.enabled).toBe(false);
+    const on = settingsOf(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: true }));
+    expect(on.aiAgent).toEqual({
+      enabled: true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    const lines = linesOf(await s.desk.happenings(PABLO, id)).lines.filter(
+      (line) => line.act === 'settings-changed',
+    );
+    expect(lines.map((line) => line.detail)).toEqual([
+      { aiAgentEnabled: 'true' },
+      { aiAgentEnabled: 'false' },
+    ]);
+  });
+
+  it('writes nothing when the switch is already in the asked state', async () => {
+    const s = scene();
+    const id = await team(s);
+    const before = acts(s, id).length;
+    expect(
+      settingsOf(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: true })).aiAgent.enabled,
+    ).toBe(true);
+    expect(acts(s, id)).toHaveLength(before);
+  });
+
+  it('changes a piece and the AI agent in the same call as one write, one race to lose', async () => {
+    const s = scene();
+    const id = await team(s);
+    const both = settingsOf(
+      await s.desk.changeSettings(PABLO, id, { off: ['roles'], aiAgentEnabled: false }),
+    );
+    expect(both).toMatchObject({ off: ['roles'], aiAgent: { enabled: false } });
+    const stored = settingsOf(await s.desk.settings(MARIA, id));
+    expect(stored.off).toEqual(['roles']);
+    expect(stored.aiAgent.enabled).toBe(false);
+  });
+
+  it('is for whoever may manage the organization, not a member, not a stranger', async () => {
+    const s = scene();
+    const id = await team(s);
+    expect((await s.desk.changeSettings(MARIA, id, { aiAgentEnabled: false })).ok).toBe(false);
+    expect(await s.desk.changeSettings(STRANGER, id, { aiAgentEnabled: false })).toEqual({
+      ok: false,
+      problems: [PROBLEMS.notMember],
+    });
+    expect(settingsOf(await s.desk.settings(PABLO, id)).aiAgent.enabled).toBe(true);
+  });
+
+  it('refuses a malformed aiAgentEnabled, naming what is wrong, and writes nothing', async () => {
+    const s = scene();
+    const id = await team(s);
+    expect(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: 'off' })).toEqual({
+      ok: false,
+      problems: [SETTINGS_PROBLEMS.aiAgentEnabled],
+    });
+    expect(settingsOf(await s.desk.settings(PABLO, id)).aiAgent.enabled).toBe(true);
+  });
+
+  it('says so when the organization changed meanwhile, and writes nothing', async () => {
+    const s = scene();
+    const id = await team(s);
+    const racing: typeof s.db = {
+      ...s.db,
+      batch: async <T = unknown>(statements: D1PreparedStatement[]) => {
+        s.sqlite.exec('UPDATE team_profiles SET revision = revision + 1');
+        return s.db.batch<T>(statements);
+      },
+    };
+    const raced = new AccountDesk(ctx, { TILL_DB: racing });
+    expect(await raced.changeSettings(PABLO, id, { aiAgentEnabled: false })).toEqual({
+      ok: false,
+      problems: [PROBLEMS.meanwhile],
+    });
+    expect(settingsOf(await s.desk.settings(PABLO, id)).aiAgent.enabled).toBe(true);
+    expect(acts(s, id)).not.toContain('settings-changed');
+  });
+
+  it('turns off an organization founded by hand, with no stored row yet, born on the default model and cap', async () => {
+    const s = scene();
+    const id = await team(s);
+    expect(
+      s.sqlite.prepare('SELECT * FROM organization_ai_brain WHERE account_id = ?').all(id),
+    ).toEqual([]);
+    const off = settingsOf(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: false }));
+    expect(off.aiAgent).toEqual({
+      enabled: false,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    const row = s.sqlite
+      .prepare(
+        'SELECT enabled, model, trial_cap_cents FROM organization_ai_brain WHERE account_id = ?',
+      )
+      .get(id) as { enabled: number; model: string; trial_cap_cents: number };
+    expect(row).toEqual({
+      enabled: 0,
+      model: DEFAULT_AI_MODEL,
+      trial_cap_cents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
   });
 });
 
