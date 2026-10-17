@@ -132,11 +132,15 @@ test.describe('Mundos, the index of worlds', () => {
     });
   }
 
-  test('a world’s page shows the same card, without its buttons', async ({ page }) => {
+  test('a world’s page says the same as its card — its name, its state, its community — in a hero, no card', async ({
+    page,
+  }) => {
     await page.goto('/es/mundos/agora-plaza/');
-    const card = page.locator('[data-world-page-card] [data-world-card="agora-plaza"]');
-    await expect(card).toBeVisible();
-    await expect(card.locator('[data-metric="worlds-card-enter"]')).toHaveCount(0);
+    await expect(page.locator('[data-world-hero] .mh-nombre')).toHaveText('Agora Plaza');
+    await expect(page.locator('[data-world-state="on"]')).toHaveText(/Encendido/);
+    await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
+    await expect(page.locator('[data-world-card]')).toHaveCount(0);
+    await expect(page.locator('[data-metric="worlds-card-enter"]')).toHaveCount(0);
   });
 });
 

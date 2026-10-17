@@ -777,15 +777,12 @@ test.describe('the world’s page as the wireframe draws it (cut K)', () => {
   });
 
   test('clean for axe, in night and day, and fits a 390 px phone', async ({ browser }) => {
-    const stranger = await browser.newContext();
-    const page = await stranger.newPage();
-    await page.goto(worldPage('agora-plaza'));
-    await expect(page.locator('[data-world-org]')).toBeVisible();
-    await settle(page);
-    for (const mode of ['nocturno', 'diurno']) {
-      await page.evaluate((wanted) => {
-        document.documentElement.dataset['modo'] = wanted;
-      }, mode);
+    for (const colorScheme of ['dark', 'light'] as const) {
+      const stranger = await browser.newContext({ colorScheme });
+      const page = await stranger.newPage();
+      await page.goto(worldPage('agora-plaza'));
+      await expect(page.locator('[data-world-org]')).toBeVisible();
+      await settle(page);
       const axe = await new AxeBuilder({ page })
         .include('[data-world-hero]')
         .include('.mundo-cabeza')
@@ -793,11 +790,13 @@ test.describe('the world’s page as the wireframe draws it (cut K)', () => {
         .include('.mundo-dos')
         .analyze();
       expect(axe.violations).toEqual([]);
+      await stranger.close();
     }
-    await page.setViewportSize({ width: 390, height: 844 });
+    const phone = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await phone.newPage();
     await page.goto(worldPage('agora-plaza'));
     await expect(page.locator('[data-world-hero]')).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(0);
-    await stranger.close();
+    await phone.close();
   });
 });

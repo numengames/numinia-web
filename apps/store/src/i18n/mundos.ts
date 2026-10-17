@@ -195,7 +195,7 @@ export interface WorldPageMessages {
 }
 
 /** The world's page, v3 cut K. `{x}` is the community's name; `{machine}` the machine's. */
-export interface WorldOwnMessages {
+interface WorldOwnMessages {
   /** Under «Entrar» in the hero. */
   readonly heroLine: string;
   /** «Compartir» and its toasts. */
