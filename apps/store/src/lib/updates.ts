@@ -26,7 +26,7 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.125.0',
+    version: 'v0.126.0',
     date: '2026-10-17 12:00',
     entries: [
       {
@@ -36,6 +36,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     ],
   },
   {
+    version: 'v0.125.0',
     date: '2026-10-17 08:49',
     entries: [
       {

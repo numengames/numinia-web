@@ -249,6 +249,7 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
           .then(read)
           .then(function (view) {
             if (view && Array.isArray(view.mine)) paint(view.mine);
+            document.dispatchEvent(new CustomEvent('numinia:you-counts'));
           })
           .catch(function () {});
       }

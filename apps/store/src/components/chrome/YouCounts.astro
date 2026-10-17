@@ -19,7 +19,7 @@
   const all = (selector: string): HTMLElement[] => [
     ...document.querySelectorAll<HTMLElement>(selector),
   ];
-  onceSignedIn(window as SessionWindowLike, () => {
+  const paint = () => {
     const ends = readEnds(
       document.querySelector<HTMLElement>('[data-you-count="agenda"]')?.dataset['ritualEnds'],
     );
@@ -28,5 +28,9 @@
       paintCount(all('[data-you-count="worlds"]'), counts.worlds);
       paintCount(all('[data-you-count="communities"]'), counts.communities);
     });
-  });
+  };
+  onceSignedIn(window as SessionWindowLike, paint);
+  // A page that changed what is counted (a follow carried over, «Dejar de
+  // seguir») asks for a fresh read; the rail never guesses the new figure.
+  document.addEventListener('numinia:you-counts', paint);
 </script>

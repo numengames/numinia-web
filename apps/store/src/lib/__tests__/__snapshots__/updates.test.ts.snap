@@ -10,7 +10,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
-    "version": "v0.125.0",
+    "version": "v0.126.0",
   },
   {
     "date": "2026-10-17 08:49",
@@ -20,6 +20,7 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "FIX",
       },
     ],
+    "version": "v0.125.0",
   },
   {
     "date": "2026-10-17 11:00",
