@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-17 09:50",
+    "entries": [
+      {
+        "text": "The first sixty seconds: four doors that used to lie now tell the truth. The season pass is no longer offered at a price nobody could pay — while its payment link is the processor's test link the card says, in all five languages, that the pass is not for sale yet, and the price, the buy button, the withdrawal tick and the test-card instructions are gone; the eighth door, «The Veil», is the locked state it always was and no longer a link that jumped the page to its top. «Follow» on a community page takes a visitor without a session to the same sign-in door the rest of the site uses, coming back to the page, instead of turning into «Following» without following anybody. The way back from a top-up (/saldo/vuelta/) greets a stranger with the same polite door «Balance» shows — «Sign in to see your balance» — and keeps «we could not find this top-up in your account» for someone signed in whose top-up really is missing. The Census desk shows its «Oracles only» door from the first paint, like the Worlds and Prices rooms, instead of drawing the whole form to anyone and refusing only after a search; and the rank it asks for is spelled «Arconte», as everywhere else.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.122.0",
+  },
+  {
     "date": "2026-10-17 07:00",
     "entries": [
       {
