@@ -1,0 +1,504 @@
+---
+/**
+ * «Crear → Un encuentro» for real (cut M, 2026-10-17): /crear/encuentro/ in
+ * five locales — the form that publishes an encounter of a community you
+ * run. The community (only the ones you administer, read from the till's
+ * overview; one alone is preselected), a name, the day with an optional
+ * time and end, how people meet (in person, online, or in the community's
+ * world when it has one), the place and a note of up to 600 characters.
+ * «Publicar» posts to /api/ritual and goes to the new encounter's page,
+ * which says it is already in the city's calendar.
+ *
+ * Rendered on demand (it reads the session cookie and asks the till), never
+ * cached. Signed out it explains and offers the door, which comes back
+ * here. Running no community, it says so and points to «Hazla tuya». The
+ * till not there yet is said plainly.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CREAR_ENCUENTRO_UI } from '../../i18n/crear-encuentro';
+import { accountsFrom } from '../../lib/accounts-source';
+import { CREATE_ENCOUNTER_PATH, localeHref, signInHref } from '../../lib/app-nav';
+import { SESSION_COOKIE } from '../../lib/auth/server';
+import { sessionWallet } from '../../lib/auth/session-wallet';
+import { communityAccountId } from '../../lib/community-teams';
+import { NOTE_MAX, TITLE_MAX, WHERE_MAX, administered, type RunCommunity } from '../../lib/crear-encuentro';
+import { runtimeBinding } from '../../lib/runtime-env';
+import { COMMUNITIES } from '../communities/register';
+import Icon from '../chrome/Icon.astro';
+import { loadWorldIndex } from '../mundos/world-index-data';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CREAR_ENCUENTRO_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const signIn = signInHref(locale, CREATE_ENCOUNTER_PATH);
+const claimHref = localeHref(locale, '/communities/');
+
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const wallet = await sessionWallet(Astro.cookies.get(SESSION_COOKIE)?.value);
+
+type State = 'out' | 'unavailable' | 'none' | 'ok';
+let state: State = 'out';
+let mine: readonly RunCommunity[] = [];
+/** The worlds of each community you run, as the index knows them: `{ id, name }`. */
+const worlds = new Map<string, readonly { id: string; name: string }[]>();
+if (wallet !== null) {
+  state = 'unavailable';
+  const desk = accountsFrom({
+    binding: runtimeBinding('TILL_ACCOUNTS'),
+    dataSource: process.env.DATA_SOURCE,
+  });
+  if (desk !== null) {
+    try {
+      const answer: unknown = await desk.overview(wallet.toLowerCase());
+      if (
+        typeof answer === 'object' &&
+        answer !== null &&
+        'accounts' in answer &&
+        Array.isArray(answer.accounts)
+      ) {
+        const derived = new Map<string, string>();
+        for (const community of COMMUNITIES) {
+          derived.set(community.id, await communityAccountId(community.id));
+        }
+        mine = administered(answer.accounts, COMMUNITIES, derived);
+        state = mine.length === 0 ? 'none' : 'ok';
+      }
+    } catch {
+      state = 'unavailable';
+    }
+  }
+  if (state === 'ok') {
+    const index = await loadWorldIndex();
+    if (index.ok) {
+      for (const card of index.cards) {
+        const list = worlds.get(card.community.id) ?? [];
+        worlds.set(card.community.id, [...list, { id: card.id, name: card.name }]);
+      }
+    }
+  }
+}
+const one = mine.length === 1 ? mine[0] : undefined;
+const anyWorld = mine.some((community) => (worlds.get(community.id) ?? []).length > 0);
+const worldsJson = JSON.stringify(Object.fromEntries(mine.map((c) => [c.id, worlds.get(c.id) ?? []])));
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead}>
+  <header class="titulo-vista">
+    <p class="migas"><a href={`${prefix}/`}>Numinia</a> / {t.title}</p>
+    <h1 class="display-m">{t.title}</h1>
+    <p class="lead">{t.lead}</p>
+  </header>
+
+  {
+    state === 'out' && (
+      <section class="tarjeta puerta" data-create-encounter="out">
+        <Icon name="calendar-plus" size={28} />
+        <p class="texto-2">{t.signedOutLead}</p>
+        <a class="btn btn-primario" href={signIn} data-metric="create-encounter-sign-in">
+          {t.signIn}
+        </a>
+      </section>
+    )
+  }
+  {
+    state === 'unavailable' && (
+      <p class="vacio" data-create-encounter="unavailable">
+        <Icon name="hourglass" size={24} />
+        <span>{t.unavailable}</span>
+      </p>
+    )
+  }
+  {
+    state === 'none' && (
+      <section class="tarjeta puerta" data-create-encounter="none">
+        <Icon name="users-three" size={28} />
+        <p class="titulo-s">{t.noneTitle}</p>
+        <p class="texto-2">{t.noneLead}</p>
+        <a class="btn btn-primario" href={claimHref} data-metric="create-encounter-claim">
+          {t.claimOne}
+        </a>
+      </section>
+    )
+  }
+  {
+    state === 'ok' && (
+      <form
+        class="tarjeta crear-enc"
+        data-create-encounter="form"
+        data-words={JSON.stringify({
+          problems: t.problems,
+          refused: t.refused,
+          failed: t.failed,
+          publishing: t.publishing,
+          publish: t.publish,
+          published: t.published,
+        })}
+        data-worlds={worldsJson}
+        data-prefix={prefix}
+        novalidate
+      >
+        <div class="campo">
+          <label for="enc-comunidad">{t.community}</label>
+          {one ? (
+            <>
+              <input type="hidden" name="community" value={one.id} />
+              <p class="valor" id="enc-comunidad">
+                {one.name}
+              </p>
+            </>
+          ) : (
+            <select id="enc-comunidad" name="community" required data-metric="create-encounter-community">
+              {mine.map((community) => (
+                <option value={community.id}>{community.name}</option>
+              ))}
+            </select>
+          )}
+          <p class="fallo" data-problem="community" role="alert" hidden />
+        </div>
+
+        <div class="campo">
+          <label for="enc-titulo">{t.titleField}</label>
+          <input
+            id="enc-titulo"
+            name="title"
+            type="text"
+            required
+            maxlength={TITLE_MAX}
+            autocomplete="off"
+            aria-describedby="enc-titulo-ayuda"
+            data-metric="create-encounter-title"
+          />
+          <p id="enc-titulo-ayuda" class="ayuda">{t.titleHelp}</p>
+          <p class="fallo" data-problem="title" role="alert" hidden />
+        </div>
+
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="enc-dia">{t.day}</label>
+            <input id="enc-dia" name="day" type="date" required data-metric="create-encounter-day" />
+          </div>
+          <div class="campo">
+            <label for="enc-hora">{t.time}</label>
+            <input
+              id="enc-hora"
+              name="time"
+              type="time"
+              aria-describedby="enc-hora-ayuda"
+              data-metric="create-encounter-time"
+            />
+          </div>
+        </div>
+        <p id="enc-hora-ayuda" class="ayuda">{t.timeHelp}</p>
+        <p class="fallo" data-problem="day" role="alert" hidden />
+
+        <div class="fila-campos">
+          <div class="campo">
+            <label for="enc-fin-dia">{t.endDay}</label>
+            <input id="enc-fin-dia" name="endDay" type="date" data-metric="create-encounter-end" />
+          </div>
+          <div class="campo">
+            <label for="enc-fin-hora">{t.endTime}</label>
+            <input
+              id="enc-fin-hora"
+              name="endTime"
+              type="time"
+              aria-describedby="enc-fin-ayuda"
+              data-metric="create-encounter-end"
+            />
+          </div>
+        </div>
+        <p id="enc-fin-ayuda" class="ayuda">{t.endHelp}</p>
+        <p class="fallo" data-problem="end" role="alert" hidden />
+
+        <fieldset class="campo modos">
+          <legend>{t.how}</legend>
+          <label class="chip-radio">
+            <input type="radio" name="how" value="in-person" checked data-metric="create-encounter-mode" />
+            <span>{t.inPerson}</span>
+          </label>
+          <label class="chip-radio">
+            <input type="radio" name="how" value="online" data-metric="create-encounter-mode" />
+            <span>{t.online}</span>
+          </label>
+          <label class="chip-radio" data-how-world hidden={!anyWorld}>
+            <input type="radio" name="how" value="world" data-metric="create-encounter-mode" />
+            <span>{t.inWorld}</span>
+          </label>
+          <p class="fallo" data-problem="how" role="alert" hidden />
+        </fieldset>
+
+        <div class="campo" data-world-field hidden>
+          <label for="enc-mundo">{t.world}</label>
+          <select id="enc-mundo" name="world" data-metric="create-encounter-world" />
+          <p class="fallo" data-problem="world" role="alert" hidden />
+        </div>
+
+        <div class="campo">
+          <label for="enc-sitio">{t.where}</label>
+          <input
+            id="enc-sitio"
+            name="where"
+            type="text"
+            required
+            maxlength={WHERE_MAX}
+            autocomplete="off"
+            aria-describedby="enc-sitio-ayuda"
+            data-metric="create-encounter-where"
+          />
+          <p id="enc-sitio-ayuda" class="ayuda">{t.whereHelp}</p>
+          <p class="fallo" data-problem="where" role="alert" hidden />
+        </div>
+
+        <div class="campo">
+          <label for="enc-nota">{t.note}</label>
+          <textarea
+            id="enc-nota"
+            name="note"
+            rows="4"
+            maxlength={NOTE_MAX}
+            aria-describedby="enc-nota-ayuda"
+            data-metric="create-encounter-note"
+          />
+          <p id="enc-nota-ayuda" class="ayuda">{t.noteHelp}</p>
+          <p class="fallo" data-problem="note" role="alert" hidden />
+        </div>
+
+        <p class="fallo general" data-problem="general" role="alert" hidden />
+        <div class="acciones">
+          <button type="submit" class="btn btn-primario" data-metric="create-encounter-publish">
+            {t.publish}
+          </button>
+        </div>
+      </form>
+    )
+  }
+</BaseLayout>
+
+<script>
+  import { draftFrom, localInstant, type EncounterFields, type FieldProblem } from '../../lib/crear-encuentro';
+  import type { CrearEncuentroMessages } from '../../i18n/crear-encuentro';
+
+  type Words = Pick<
+    CrearEncuentroMessages,
+    'problems' | 'refused' | 'failed' | 'publishing' | 'publish' | 'published'
+  >;
+
+  const form = document.querySelector<HTMLFormElement>('[data-create-encounter="form"]');
+  if (form) wire(form);
+
+  function wire(root: HTMLFormElement): void {
+    const words = JSON.parse(root.dataset['words'] ?? '{}') as Words;
+    const worlds = JSON.parse(root.dataset['worlds'] ?? '{}') as Record<
+      string,
+      readonly { id: string; name: string }[]
+    >;
+    const prefix = root.dataset['prefix'] ?? '';
+    const field = (name: string): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null =>
+      root.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+    const value = (name: string): string => {
+      const element = root.elements.namedItem(name);
+      if (element instanceof RadioNodeList) return element.value;
+      return (element as HTMLInputElement | null)?.value ?? '';
+    };
+    const problems = Array.from(root.querySelectorAll<HTMLElement>('[data-problem]'));
+    const say = (problem: FieldProblem | 'general' | null, text = ''): void => {
+      for (const line of problems) {
+        const mine = line.dataset['problem'] === problem;
+        line.hidden = !mine;
+        line.textContent = mine ? text : '';
+      }
+    };
+
+    // «En su mundo» shows the community's worlds; a community without any hides the option.
+    const worldField = root.querySelector<HTMLElement>('[data-world-field]');
+    const worldSelect = field('world') as HTMLSelectElement | null;
+    const worldOption = root.querySelector<HTMLElement>('[data-how-world]');
+    const refreshWorlds = (): void => {
+      const list = worlds[value('community')] ?? [];
+      if (worldSelect) {
+        worldSelect.replaceChildren(
+          ...list.map((world) => {
+            const option = document.createElement('option');
+            option.value = world.id;
+            option.textContent = world.name;
+            return option;
+          }),
+        );
+      }
+      if (worldOption) worldOption.hidden = list.length === 0;
+      if (list.length === 0 && value('how') === 'world') {
+        const first = root.querySelector<HTMLInputElement>('input[name="how"][value="in-person"]');
+        if (first) first.checked = true;
+      }
+      if (worldField) worldField.hidden = value('how') !== 'world';
+    };
+    field('community')?.addEventListener('change', refreshWorlds);
+    for (const radio of root.querySelectorAll<HTMLInputElement>('input[name="how"]')) {
+      radio.addEventListener('change', refreshWorlds);
+    }
+    refreshWorlds();
+
+    const submit = root.querySelector<HTMLButtonElement>('[data-metric="create-encounter-publish"]');
+    root.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const fields: EncounterFields = {
+        community: value('community'),
+        title: value('title'),
+        day: value('day'),
+        time: value('time'),
+        endDay: value('endDay'),
+        endTime: value('endTime'),
+        how: value('how'),
+        world: value('world'),
+        where: value('where'),
+        note: value('note'),
+      };
+      const read = draftFrom(fields, localInstant);
+      if (!read.ok) {
+        say(read.problem, words.problems[read.problem]);
+        return;
+      }
+      say(null);
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent = words.publishing;
+      }
+      void fetch('/api/ritual', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(read.draft),
+      })
+        .then(async (response) => {
+          const body = (await response.json().catch(() => null)) as {
+            ok?: boolean;
+            ritual?: { id: string };
+          } | null;
+          if (response.ok && body?.ok === true && body.ritual) {
+            sessionStorage.setItem('ritual-published', body.ritual.id);
+            location.assign(`${prefix}/rituals/${body.ritual.id}/`);
+            return;
+          }
+          say('general', response.status === 403 ? words.refused : words.failed);
+        })
+        .catch(() => say('general', words.failed))
+        .finally(() => {
+          if (submit) {
+            submit.disabled = false;
+            submit.textContent = words.publish;
+          }
+        });
+    });
+  }
+</script>
+
+<style>
+  .puerta {
+    display: grid;
+    justify-items: start;
+    gap: var(--s3);
+    padding: var(--s5);
+  }
+  .puerta p {
+    margin: 0;
+  }
+  .crear-enc {
+    display: grid;
+    gap: var(--s4);
+    padding: var(--s5);
+    max-width: 44rem;
+  }
+  .campo {
+    display: grid;
+    gap: var(--s1);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .campo label,
+  .campo legend {
+    font-weight: 600;
+  }
+  .campo .valor {
+    margin: 0;
+  }
+  .campo input,
+  .campo select,
+  .campo textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px var(--s3);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+  }
+  .campo textarea {
+    resize: vertical;
+  }
+  .fila-campos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s3);
+  }
+  .modos {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, max-content));
+    grid-auto-flow: row;
+    align-items: center;
+    gap: var(--s2);
+  }
+  .modos legend {
+    margin-bottom: var(--s1);
+  }
+  .modos .fallo {
+    grid-column: 1 / -1;
+  }
+  .chip-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 40px;
+    padding: 0 var(--s3);
+    border: 1px solid var(--linea-f);
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .chip-radio:has(input:checked) {
+    border-color: var(--turquesa);
+  }
+  .chip-radio input {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--turquesa);
+  }
+  .ayuda,
+  .fallo {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .fallo {
+    color: var(--ambar);
+  }
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+  }
+  @media (max-width: 480px) {
+    .fila-campos {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

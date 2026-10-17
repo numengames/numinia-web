@@ -247,3 +247,17 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   «Sigues», now written to the till; signed out it is still the door).
 // - «Perteneces» /belong/: `belong-unfollow` («Dejar de seguir» on a followed
 //   community's card); `belong-community` and `belong-ritual` stay.
+// ---- v3 «Crear → Un encuentro» for real (cut M, 2026-10-17): its data-metric ids ----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - «Crear» in your rail and the phone's sheet: `you-create-encounter`,
+//   `sheet-create-encounter` (the rail's `you-create-<id>` / `sheet-create-<id>` rule).
+// - The form /crear/encuentro/: `create-encounter-sign-in` (the door, signed
+//   out), `create-encounter-claim` (the empty state's link to «Hazla tuya»),
+//   `create-encounter-community`, `create-encounter-title`,
+//   `create-encounter-day`, `create-encounter-time`, `create-encounter-end`,
+//   `create-encounter-mode`, `create-encounter-world`, `create-encounter-where`,
+//   `create-encounter-note`, `create-encounter-publish`.
+// - An encounter's page: `ritual-cancel` (opens the confirm dialog),
+//   `ritual-cancel-confirm`, `ritual-cancel-keep`; a live row of the till in a
+//   list keeps the list's own id (`encuentros-row`, `calendar-ritual`,
+//   `landing-ritual`, `community-ritual`, `world-encounter`).
