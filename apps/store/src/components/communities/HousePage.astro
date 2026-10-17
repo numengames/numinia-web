@@ -29,6 +29,7 @@ import { communityActivity, ringChoice } from '../../lib/house-sphere';
 import { symbolId } from '../../lib/svg-sprite';
 import { COMMUNITIES, RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
+import RitualsLive from '../encuentros/RitualsLive.astro';
 import Countdown from './Countdown.astro';
 import HouseSphere from './HouseSphere.astro';
 import PeopleList from './PeopleList.astro';
@@ -272,6 +273,7 @@ const seals = [
           </p>
         )
       }
+      <RitualsLive locale={locale} metric="community-ritual" community={community.id} />
       {
         community.weekly.length > 0 && (
           <div class="tarjeta">

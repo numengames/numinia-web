@@ -1,0 +1,10 @@
+---
+import TillRitualPage from '../../../../components/communities/TillRitualPage.astro';
+
+// An encounter of the till: read on demand, never a static file (a file's id is a slug, never rit_…).
+export const prerender = false;
+
+const { hex } = Astro.params;
+---
+
+<TillRitualPage locale="ko" id={`rit_${hex}`} />

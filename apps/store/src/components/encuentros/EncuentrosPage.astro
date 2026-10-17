@@ -12,6 +12,7 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { CREAR_ENCUENTRO_UI } from '../../i18n/crear-encuentro';
 import { ENCUENTROS_UI } from '../../i18n/encuentros';
 import {
   calendarMonths,
@@ -24,6 +25,7 @@ import { byMonth } from '../../lib/encuentros';
 import { RITUALS, communityOf } from '../communities/register';
 import Icon from '../chrome/Icon.astro';
 import Countdown from '../communities/Countdown.astro';
+import RitualsLive from './RitualsLive.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -33,6 +35,7 @@ interface Props {
 const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const t = ENCUENTROS_UI[locale];
+const live = CREAR_ENCUENTRO_UI[locale].liveHeading;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const coming = upcoming(RITUALS);
 const groups = byMonth(coming, locale);
@@ -109,6 +112,7 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
         </p>
       )
     }
+    <RitualsLive locale={locale} metric="encuentros-row" heading={live} />
   </div>
 
   <div class="meses" data-enc-panel="month" hidden>

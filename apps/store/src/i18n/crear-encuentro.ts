@@ -56,6 +56,8 @@ export interface CrearEncuentroMessages {
   readonly cancelKeep: string;
   readonly cancelled: string;
   readonly cancelledLead: string;
+  /** Over the live rows of a list: the encounters published from the site. */
+  readonly liveHeading: string;
 }
 
 const ES: CrearEncuentroMessages = {
@@ -109,6 +111,7 @@ const ES: CrearEncuentroMessages = {
   cancelKeep: 'No, dejarlo',
   cancelled: 'Cancelado',
   cancelledLead: 'Este encuentro se canceló. Ya no está en el calendario.',
+  liveHeading: 'Más encuentros',
 };
 
 const EN: CrearEncuentroMessages = {
@@ -162,6 +165,7 @@ const EN: CrearEncuentroMessages = {
   cancelKeep: 'No, keep it',
   cancelled: 'Cancelled',
   cancelledLead: 'This gathering was cancelled. It is no longer in the calendar.',
+  liveHeading: 'More gatherings',
 };
 
 const JA: CrearEncuentroMessages = {
@@ -213,6 +217,7 @@ const JA: CrearEncuentroMessages = {
   cancelKeep: 'いいえ、残す',
   cancelled: '中止',
   cancelledLead: 'この集まりは中止されました。カレンダーにはもうありません。',
+  liveHeading: 'ほかの集まり',
 };
 
 const KO: CrearEncuentroMessages = {
@@ -265,6 +270,7 @@ const KO: CrearEncuentroMessages = {
   cancelKeep: '아니요, 남겨 둡니다',
   cancelled: '취소됨',
   cancelledLead: '이 모임은 취소되었습니다. 더는 달력에 없습니다.',
+  liveHeading: '다른 모임',
 };
 
 const PT_BR: CrearEncuentroMessages = {
@@ -318,6 +324,7 @@ const PT_BR: CrearEncuentroMessages = {
   cancelKeep: 'Não, deixar',
   cancelled: 'Cancelado',
   cancelledLead: 'Este encontro foi cancelado. Já não está no calendário.',
+  liveHeading: 'Mais encontros',
 };
 
 export const CREAR_ENCUENTRO_UI: Readonly<Record<SupportedLocale, CrearEncuentroMessages>> = {

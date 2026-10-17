@@ -32,6 +32,7 @@ import { COMMUNITIES, RITUALS } from '../communities/register';
 import Cover from '../communities/Cover.astro';
 import RsvpAction from '../communities/RsvpAction.astro';
 import Icon from '../chrome/Icon.astro';
+import RitualsLive from '../encuentros/RitualsLive.astro';
 import { loadWorldIndex } from './world-index-data';
 import { WorldView } from './WorldView';
 import '../../styles/communities.css';
@@ -290,6 +291,14 @@ const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ??
             </p>
           )
         }
+        {card && (
+          <RitualsLive
+            locale={locale}
+            metric="world-encounter"
+            community={card.community.id}
+            worldId={worldId}
+          />
+        )}
       </section>
     </div>
     <div class="pila">
