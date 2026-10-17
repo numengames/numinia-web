@@ -12,6 +12,7 @@ import {
   splitSeries,
   stackedBars,
   topupRoles,
+  worldBars,
   worldsTotal,
 } from '../saldo-view';
 
@@ -286,5 +287,36 @@ describe('the little figures the screen prints', () => {
     expect(topupRoles(access)).toEqual(['Administración', 'Finanzas']);
     expect(topupRoles({ ...access, holders: {} })).toEqual([]);
     expect(topupRoles(null)).toBeNull();
+  });
+});
+
+describe('the per-world chart', () => {
+  it('sorts the worlds costliest first, the costliest bar full height', () => {
+    const bars = worldBars(
+      [
+        { worldId: 'a', size: '1g', daysRunning: 1, cents: 30 },
+        { worldId: 'b', size: '4g', daysRunning: 3, cents: 120 },
+      ],
+      400,
+      100,
+    );
+    expect(bars.map((bar) => bar.worldId)).toEqual(['b', 'a']);
+    expect(bars[0]).toMatchObject({ worldId: 'b', cents: 120, x: 20, width: 160, height: 100 });
+    expect(bars[1]).toMatchObject({ worldId: 'a', cents: 30, height: 25 });
+  });
+
+  it('never vanishes a world that cost something, and draws nothing flat for no cost or no worlds', () => {
+    const bars = worldBars(
+      [
+        { worldId: 'a', size: '1g', daysRunning: 1, cents: 1 },
+        { worldId: 'b', size: '1g', daysRunning: 0, cents: 0 },
+        { worldId: 'c', size: '4g', daysRunning: 5, cents: 10000 },
+      ],
+      100,
+      50,
+    );
+    expect(bars.find((bar) => bar.worldId === 'a')).toMatchObject({ height: 1 });
+    expect(bars.find((bar) => bar.worldId === 'b')).toMatchObject({ height: 0 });
+    expect(worldBars([], 100, 50)).toEqual([]);
   });
 });

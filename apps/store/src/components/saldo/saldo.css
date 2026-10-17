@@ -359,6 +359,31 @@
 .saldo-grafica g:hover rect {
   filter: brightness(1.25);
 }
+/* «Cada sede en el periodo»: the per-world chart beside its numeric table —
+   real figures only, the same DeskWorld[] the table reads. Stacked on a
+   narrow screen, side by side once there is room. */
+.saldo-mundos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.saldo-mundos-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+}
+.saldo-mundos-grafica svg {
+  height: 120px;
+}
+.saldo-mundos-grafica rect {
+  fill: var(--turquesa);
+}
+@container saldo (min-width: 560px) {
+  .saldo-mundos-cuerpo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
 .saldo-uso-pie {
   display: flex;
   flex-wrap: wrap;

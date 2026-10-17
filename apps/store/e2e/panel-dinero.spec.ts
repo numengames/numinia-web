@@ -297,6 +297,33 @@ test.describe('an organization at /panel/saldo/', () => {
     await expect(link).toHaveAttribute('href', `/es/panel/miembros/?org=${NUMEN}`);
     await expect(link).toHaveAttribute('data-metric', 'saldo-members-link');
   });
+
+  test('«Cada sede en el periodo» draws a bar per world next to the numeric table, real till figures', async ({
+    page,
+  }) => {
+    const TARUGO = 'acc_team_la_tarugo';
+    const TARUGO_ADMIN = '0x00000000000000000000000000000000000000e5';
+    await signIn(page.context(), TARUGO_ADMIN, 'nomad');
+    await page.goto(`${origin}/es/panel/saldo/?org=${TARUGO}`);
+    const chart = page.locator('[data-saldo-worlds-chart]');
+    await expect(chart).toBeVisible();
+    const bars = chart.locator('[data-saldo-world-bar]');
+    const worldRows = chart.locator('[data-saldo-worlds] tbody tr');
+    const barCount = await bars.count();
+    expect(barCount).toBeGreaterThan(0);
+    expect(barCount).toBe(await worldRows.count());
+    // Every bar's title names a real world and its real euro figure, the
+    // same the table beside it prints — never invented.
+    const titles = await bars.locator('title').allTextContents();
+    const cells = await worldRows.locator('td:first-child').allTextContents();
+    for (const world of cells) {
+      expect(titles.some((title) => title.startsWith(world))).toBe(true);
+    }
+    await page.screenshot({
+      path: 'test-results/la-tarugo-saldo.png',
+      fullPage: true,
+    });
+  });
 });
 
 test.describe('the panel’s Resumen', () => {

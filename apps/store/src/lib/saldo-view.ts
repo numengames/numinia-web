@@ -207,6 +207,40 @@ export function worldsTotal(worlds: readonly DeskWorld[]): number {
   return worlds.reduce((sum, world) => sum + world.cents, 0);
 }
 
+/** One world's bar in the per-world chart's own units (0..width, 0..height). */
+export interface WorldBar {
+  readonly worldId: string;
+  readonly cents: number;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * The bars of the per-world chart in a `width` × `height` box: the worlds of
+ * the period, costliest first, one slot each, a fifth of it as a gap, the
+ * costliest world full height and a world that cost something at least one
+ * unit tall so it never vanishes. Real figures only — the same `DeskWorld[]`
+ * the numeric table beside it reads, never invented.
+ */
+export function worldBars(worlds: readonly DeskWorld[], width: number, height: number): WorldBar[] {
+  const sorted = [...worlds].sort((a, b) => b.cents - a.cents);
+  const max = sorted.reduce((top, world) => Math.max(top, world.cents), 0);
+  const slot = sorted.length === 0 ? 0 : width / sorted.length;
+  return sorted.map((world, i) => {
+    const tall = max === 0 ? 0 : Math.max(world.cents > 0 ? 1 : 0, (world.cents / max) * height);
+    return {
+      worldId: world.worldId,
+      cents: world.cents,
+      x: i * slot + slot * 0.1,
+      y: height - tall,
+      width: slot * 0.8,
+      height: tall,
+    };
+  });
+}
+
 /** A size of the tariff with its two prices. */
 export interface PricedSize extends DeskSizePrice {
   readonly size: string;
