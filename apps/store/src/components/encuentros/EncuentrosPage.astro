@@ -1,0 +1,350 @@
+---
+/**
+ * «Encuentros» (/calendar/, v3 lane 2): the upcoming encounters of the whole
+ * city. The list is the default — one section per month, each row with its
+ * day, its name, who holds it, where, how and the countdown; «Mes» swaps it
+ * for the month grid. Both views are built; the switch only hides one, so a
+ * reader without JavaScript gets the list and never a dead switch (the group
+ * stays hidden until the script runs). The feed to subscribe to is the same
+ * register as an .ics file. Days outside a month are empty cells: the faded
+ * digits the old grid drew failed AA contrast.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { ENCUENTROS_UI } from '../../i18n/encuentros';
+import {
+  calendarMonths,
+  dayAndMonth,
+  firstMonth,
+  pick,
+  upcoming,
+} from '../../lib/communities';
+import { byMonth } from '../../lib/encuentros';
+import { RITUALS, communityOf } from '../communities/register';
+import Icon from '../chrome/Icon.astro';
+import Countdown from '../communities/Countdown.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const ui = COMMUNITIES_UI[locale];
+const t = ENCUENTROS_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const coming = upcoming(RITUALS);
+const groups = byMonth(coming, locale);
+const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, coming, locale);
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead}>
+  <header class="titulo-vista">
+    <p class="migas"><a href={`${prefix}/`}>Numinia</a> / {t.title}</p>
+    <h1 class="display-m">{t.title}</h1>
+    <p class="lead">{t.lead}</p>
+  </header>
+
+  <div class="barra-enc">
+    <div class="vistas" role="group" aria-label={t.viewsLabel} data-enc-views hidden>
+      <button type="button" data-enc-view="list" aria-pressed="true" data-metric="encuentros-view-list">
+        <Icon name="list" size={16} />
+        {t.viewList}
+      </button>
+      <button type="button" data-enc-view="month" aria-pressed="false" data-metric="encuentros-view-month">
+        <Icon name="calendar-blank" size={16} />
+        {t.viewMonth}
+      </button>
+    </div>
+    <a class="btn btn-fantasma btn-sm" href="/calendar.ics" data-metric="calendar-subscribe">
+      <Icon name="calendar-plus" size={16} />
+      {ui.subscribeCity}
+    </a>
+  </div>
+
+  <div data-enc-panel="list">
+    {
+      groups.length > 0 ? (
+        groups.map((group) => (
+          <section class="mes-lista" aria-labelledby={`mes-${group.key}`}>
+            <h2 id={`mes-${group.key}`}>{group.label}</h2>
+            <ul class="agenda-lista">
+              {group.rituals.map((ritual) => {
+                const date = dayAndMonth(ritual, locale);
+                return (
+                  <li data-enc-row={ritual.id}>
+                    <span class="fecha">
+                      <b>{date.day}</b>
+                      {date.month}
+                    </span>
+                    <div class="fila-enc">
+                      <div>
+                        <h3>
+                          <a href={`${prefix}/rituals/${ritual.id}/`} data-metric="encuentros-row">
+                            {pick(ritual.title, locale)}
+                          </a>
+                        </h3>
+                        <p>
+                          {ritual.city ? ui.ofTheCity : communityOf(ritual.community).name} ·{' '}
+                          {pick(ritual.where, locale)}
+                          <span class="falta" data-countdown={ritual.start} />
+                        </p>
+                      </div>
+                      <span class="fila modo">
+                        {ritual.mode && <span class="chip">{ui.modes[ritual.mode]}</span>}
+                        {ritual.city && <span class="chip ambar">{ui.ofTheCity}</span>}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
+      ) : (
+        <p class="vacio">
+          <Icon name="hourglass" size={24} />
+          <span>{t.empty}</span>
+        </p>
+      )
+    }
+  </div>
+
+  <div class="meses" data-enc-panel="month" hidden>
+    {
+      months.map((month) => (
+        <section class="tarjeta mes">
+          <h2>
+            {month.label}
+            <span>{month.count === 1 ? ui.ritualOne : fill(ui.ritualMany, { n: month.count })}</span>
+          </h2>
+          <table class="cal">
+            <thead>
+              <tr>
+                {ui.weekdays.map((day) => (
+                  <th scope="col">{day}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {month.weeks.map((week) => (
+                <tr>
+                  {week.map((cell) => (
+                    <td class:list={{ fuera: !cell.inMonth }}>
+                      {cell.inMonth && <span class="n">{cell.day}</span>}
+                      {cell.rituals.map((ritual) => (
+                        <a
+                          class:list={['ev', ritual.city ? 'ciudad' : (ritual.mode ?? 'tba')]}
+                          href={`${prefix}/rituals/${ritual.id}/`}
+                          title={pick(ritual.title, locale)}
+                          data-metric="calendar-ritual"
+                        >
+                          {pick(ritual.title, locale)}
+                        </a>
+                      ))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))
+    }
+  </div>
+
+  <p class="small texto-2 nota">{t.note}</p>
+
+  <Countdown ui={ui} />
+</BaseLayout>
+
+<script>
+  // The switch: shown only once this runs, so it never sits there dead.
+  const group = document.querySelector<HTMLElement>('[data-enc-views]');
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-enc-view]'));
+  const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-enc-panel]'));
+  if (group) {
+    group.hidden = false;
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const view = button.dataset['encView'];
+        for (const other of buttons) other.setAttribute('aria-pressed', String(other === button));
+        for (const panel of panels) panel.hidden = panel.dataset['encPanel'] !== view;
+      });
+    }
+  }
+</script>
+
+<style>
+  .barra-enc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 var(--s5);
+  }
+  .vistas {
+    display: inline-flex;
+    border: 1px solid var(--linea-f);
+    border-radius: 9999px;
+    padding: 2px;
+  }
+  .vistas[hidden] {
+    display: none;
+  }
+  .vistas button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--texto-2);
+    background: transparent;
+    border: 0;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    min-height: 36px;
+    cursor: pointer;
+  }
+  .vistas button[aria-pressed='true'] {
+    color: var(--texto);
+    background: color-mix(in srgb, var(--enlace) 14%, transparent);
+  }
+  .vistas button:focus-visible {
+    outline: 2px solid var(--enlace);
+    outline-offset: 2px;
+  }
+  .mes-lista {
+    margin: 0 0 var(--s6);
+  }
+  .mes-lista h2 {
+    margin: 0 0 var(--s2);
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .fila-enc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s4);
+    align-items: center;
+    justify-content: space-between;
+  }
+  .fila-enc > div {
+    min-width: 0;
+    flex: 1 1 18rem;
+  }
+  .falta:not(:empty)::before {
+    content: ' · ';
+  }
+  .falta {
+    color: var(--enlace);
+  }
+  .nota {
+    margin: var(--s4) 0 var(--s8);
+    max-width: 70ch;
+  }
+  .meses {
+    display: grid;
+    gap: var(--s4);
+    grid-template-columns: 1fr;
+  }
+  .meses[hidden] {
+    display: none;
+  }
+  @media (min-width: 53.75rem) {
+    .meses {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .mes {
+    padding: var(--s4);
+  }
+  .mes h2 {
+    margin: 0 0 var(--s3);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mes h2 span {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .cal {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 2px;
+  }
+  .cal th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+    text-align: center;
+    padding: 4px 0 6px;
+  }
+  .cal td {
+    vertical-align: top;
+    min-width: 0;
+    height: 62px;
+    border: 1px solid var(--linea);
+    border-radius: 4px;
+    padding: 3px 4px;
+    background: var(--fondo);
+  }
+  /* Days of the next or last month: an empty, quieter cell (no faded digits under AA). */
+  .cal td.fuera {
+    background: transparent;
+    border-style: dashed;
+  }
+  .cal .n {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--texto-2);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .ev {
+    display: block;
+    font-size: 0.68rem;
+    line-height: 1.2;
+    padding: 2px 4px;
+    margin-top: 2px;
+    border-radius: 3px;
+    text-decoration: none;
+    color: var(--texto);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-left: 3px solid var(--texto-2);
+    background: color-mix(in srgb, var(--texto-2) 14%, transparent);
+  }
+  .ev.in-person {
+    border-left-color: var(--ambar);
+    background: color-mix(in srgb, var(--ambar) 16%, transparent);
+  }
+  .ev.online {
+    border-left-color: var(--turquesa);
+    background: color-mix(in srgb, var(--turquesa) 20%, transparent);
+  }
+  .ev.mixed {
+    border-left-color: var(--enlace);
+    background: color-mix(in srgb, var(--enlace) 16%, transparent);
+  }
+  .ev.ciudad {
+    border-left-color: var(--ambar);
+    background: transparent;
+    border-top: 1px dashed color-mix(in srgb, var(--ambar) 50%, transparent);
+    border-bottom: 1px dashed color-mix(in srgb, var(--ambar) 50%, transparent);
+  }
+</style>

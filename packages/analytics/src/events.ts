@@ -187,3 +187,8 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `worlds-card-title`, `worlds-card-community`, `worlds-crumb`; a world's
 //   page: `world-page-index` (its crumb back to the index).
 // - The Bazar: `bazaar-community-shelf` (a community's chip).
+// ---- v3 lane 2 «Encuentros» (2026-10-16): its data-metric ids -------------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - /calendar/: `encuentros-view-list`, `encuentros-view-month` (the switch),
+//   `encuentros-row` (a row of the list, to the encounter's page); the grid and
+//   the feed keep `calendar-ritual` and `calendar-subscribe`.
