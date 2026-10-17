@@ -24,9 +24,11 @@ export const DEFAULT_VOCABULARY: Vocabulary = 'mixed';
 export const HAPPENINGS_PAGE = 30;
 
 export const SETTINGS_PROBLEMS = {
-  change: 'change must be an object with off (a list of pieces) and/or vocabulary, nothing else',
+  change:
+    'change must be an object with off (a list of pieces), vocabulary and/or aiAgentEnabled, nothing else',
   off: `off must be a list of pieces, each once, among: ${SWITCHABLE_PIECES.join(', ')}`,
   vocabulary: `vocabulary must be one of: ${VOCABULARIES.join(', ')}`,
+  aiAgentEnabled: 'aiAgentEnabled must be a boolean',
   before: 'before must be the number of a line of the log, or null',
 } as const;
 
@@ -34,6 +36,11 @@ export const SETTINGS_PROBLEMS = {
 export interface SettingsChange {
   readonly off?: readonly SwitchablePiece[];
   readonly vocabulary?: Vocabulary;
+  /**
+   * «Existe un interruptor funcional para apagar el agente» (Historia 4):
+   * turns the organization's built-in AI agent on or off.
+   */
+  readonly aiAgentEnabled?: boolean;
 }
 
 function isPiece(value: unknown): value is SwitchablePiece {
@@ -65,20 +72,28 @@ export function readChange(
   }
   const sent = value as Readonly<Record<string, unknown>>;
   const keys = Object.keys(sent);
-  if (keys.length === 0 || keys.some((key) => key !== 'off' && key !== 'vocabulary')) {
+  if (
+    keys.length === 0 ||
+    keys.some((key) => key !== 'off' && key !== 'vocabulary' && key !== 'aiAgentEnabled')
+  ) {
     return { problems: [SETTINGS_PROBLEMS.change] };
   }
   const off = 'off' in sent ? readOff(sent['off']) : undefined;
   const vocabulary = 'vocabulary' in sent ? readVocabulary(sent['vocabulary']) : undefined;
+  const aiAgentEnabled = 'aiAgentEnabled' in sent ? sent['aiAgentEnabled'] : undefined;
   const problems = [
     ...('off' in sent && off === undefined ? [SETTINGS_PROBLEMS.off] : []),
     ...('vocabulary' in sent && vocabulary === undefined ? [SETTINGS_PROBLEMS.vocabulary] : []),
+    ...('aiAgentEnabled' in sent && typeof aiAgentEnabled !== 'boolean'
+      ? [SETTINGS_PROBLEMS.aiAgentEnabled]
+      : []),
   ];
   if (problems.length > 0) return { problems };
   return {
     change: {
       ...(off === undefined ? {} : { off }),
       ...(vocabulary === undefined ? {} : { vocabulary }),
+      ...(typeof aiAgentEnabled === 'boolean' ? { aiAgentEnabled } : {}),
     },
   };
 }

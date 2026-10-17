@@ -44,15 +44,16 @@ interface SettingsView {
   /** The asker may change them (`manage-organization`). */
   readonly mayEdit: boolean;
   /**
-   * «El cerebro barato de cada comunidad» (Historia 1): the organization's
-   * built-in AI agent, read-only here (the switch is a later story). Every
-   * organization shows one, stored or (for one founded by hand, not yet
-   * wired to insert a row) the same default computed on read.
+   * «El cerebro barato de cada comunidad» (Historia 1) and «Existe un
+   * interruptor funcional para apagar el agente» (Historia 4, which adds
+   * `changeSettings`'s `aiAgentEnabled`): the organization's built-in AI
+   * agent. Every organization shows one, stored or (for one founded by
+   * hand, not yet wired to insert a row) the same default computed on read.
    */
   readonly aiAgent: AiBrainView;
 }
 
-/** The organization's built-in AI agent as the panel shows it (Historia 1: read-only). */
+/** The organization's built-in AI agent as the panel shows it. */
 interface AiBrainView {
   readonly enabled: boolean;
   readonly model: string;
@@ -97,6 +98,21 @@ const UPSERT_SETTINGS = `
   ON CONFLICT (account_id) DO UPDATE
      SET pieces_off = excluded.pieces_off, vocabulary = excluded.vocabulary,
          updated_at = excluded.updated_at`;
+
+/**
+ * «Existe un interruptor funcional para apagar el agente» (Historia 4): the
+ * row is written only while the organization still holds the revision that
+ * was read, exactly like `UPSERT_SETTINGS`. `model` and `trial_cap_cents`
+ * are bound from what was just read (stored, or the house-wide default) so
+ * a flip never invents a model or a cap — it only ever touches `enabled`;
+ * `created_at` is used only the first time a row is born this way.
+ */
+const UPSERT_AI_BRAIN = `
+  INSERT INTO organization_ai_brain (account_id, enabled, model, trial_cap_cents, created_at)
+  SELECT ?1, ?2, ?3, ?4, ?5
+   WHERE (SELECT revision FROM team_profiles WHERE account_id = ?1) = ?6
+  ON CONFLICT (account_id) DO UPDATE
+     SET enabled = excluded.enabled`;
 
 const SELECT_HAPPENINGS = `
   SELECT l.seq, l.at, l.actor, l.as_house, l.act, l.subject, l.detail,
@@ -204,12 +220,16 @@ export async function changeSettings(
   if (refused !== null) return refused;
   const { org, acting } = entered;
   const before = await settingsRow(db, org.accountId);
+  const beforeAiAgent = await aiBrainRow(db, org.accountId);
   const off = change.off ?? before.off;
   const vocabulary = change.vocabulary ?? before.vocabulary;
+  const aiAgentEnabled = change.aiAgentEnabled ?? beforeAiAgent.enabled;
   const piecesChanged = off.join() !== before.off.join();
   const wordsChanged = vocabulary !== before.vocabulary;
+  const aiAgentChanged = aiAgentEnabled !== beforeAiAgent.enabled;
+  const statements: D1PreparedStatement[] = [];
   if (piecesChanged || wordsChanged) {
-    const written = await commit(db, org, [
+    statements.push(
       db
         .prepare(UPSERT_SETTINGS)
         .bind(org.accountId, JSON.stringify(off), vocabulary, now.toISOString(), org.revision),
@@ -226,7 +246,38 @@ export async function changeSettings(
         },
         org.revision,
       ),
-    ]);
+    );
+  }
+  if (aiAgentChanged) {
+    statements.push(
+      db
+        .prepare(UPSERT_AI_BRAIN)
+        .bind(
+          org.accountId,
+          aiAgentEnabled ? 1 : 0,
+          beforeAiAgent.model,
+          beforeAiAgent.trialCapCents,
+          now.toISOString(),
+          org.revision,
+        ),
+      logLine(
+        db,
+        org.accountId,
+        now,
+        acting,
+        'settings-changed',
+        null,
+        { aiAgentEnabled: aiAgentEnabled ? 'true' : 'false' },
+        org.revision,
+      ),
+    );
+  }
+  // Both pieces of the write happen under the same guard-and-raise: `commit`
+  // raises the organization's revision once, so two separate calls here
+  // (one per table) would make the second always lose the race against
+  // its own first write — this is why both go in a single `commit`.
+  if (statements.length > 0) {
+    const written = await commit(db, org, statements);
     if (!written) return refuse(PROBLEMS.meanwhile);
   }
   return {
