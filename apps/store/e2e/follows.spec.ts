@@ -24,6 +24,7 @@ const PABLO = `0x${'ab'.repeat(20)}`;
 const MARIA = `0x${'cd'.repeat(20)}`;
 const LUIS = `0x${'ef'.repeat(20)}`;
 const ANA = `0x${'12'.repeat(20)}`;
+const EVA = `0x${'34'.repeat(20)}`;
 /** Communities of the register. */
 const TRGCON = 'trgcon';
 const MERGE = 'merge';
@@ -239,12 +240,17 @@ test.describe('signed in', () => {
 
   test('on a phone, «Seguir» and the count read the same', async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await signIn(context, ANA);
+    // A wallet of its own: the fixture desk is per server process, and the
+    // tests above left theirs following.
+    await signIn(context, EVA);
     await page.goto(communityPage(TRGCON));
     const button = page.locator(follow);
+    await expect(page.locator('html')).toHaveAttribute('data-session', 'in');
     await expect(button).toBeVisible();
+    await expect(button).toHaveAttribute('aria-pressed', 'false');
     await button.click();
     await expect(button).toHaveAttribute('aria-pressed', 'true');
+    await expect(button).toBeEnabled();
     await expect(page.locator(`[data-follow-count="${TRGCON}"]`)).toBeVisible();
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);
