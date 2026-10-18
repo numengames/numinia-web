@@ -13,12 +13,46 @@
  * shows the same polite door «Saldo» shows — «Entra para ver tu saldo…».
  * That «we could not find it» belongs only to someone signed in whose
  * top-up really is missing.
+ *
+ * Paid (t_ef680bad): the plain «you can close this tab» is replaced by a
+ * centered thank-you card with the house's established celebration — one
+ * burst of stars in the sky's colours (STD-023 velo.cielo), the same
+ * construction as the Backer thanks page (support/ThanksPage.astro), never
+ * generic confetti. CSS only, played once, still under reduced motion
+ * (CEL-011). The card then sends the buyer on to Saldo by itself; the
+ * «back» link lets them go sooner.
  */
 
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { SaldoMessages } from '../../i18n/saldo';
 import { fill, formatEuros, readResult, vueltaParams } from '../../lib/accounts';
 import { LunaEspera } from '../chrome/LunaEspera';
+import coins from '../../../../../packages/ui/src/icons/coins.svg?raw';
+
+/** How long the paid card stays before it sends the buyer on to Saldo. */
+const GRACIA_REDIRECT_MS = 5_000;
+
+/** The celebration's 24 stars: angle, distance, size and delay, each on the
+    sky's rarity palette (one amber), same construction as ThanksPage.astro. */
+const GRACIA_COLORS = [
+  'arena',
+  'arena',
+  'arena',
+  'verde',
+  'azul',
+  'violeta',
+  'arena',
+  'verde',
+  'ambar',
+] as const;
+const GRACIA_STARS = Array.from({ length: 24 }, (_, i) => ({
+  angle: Math.round((360 / 24) * i + ((i * 37) % 11)),
+  distance: 90 + ((i * 53) % 90),
+  size: 4 + ((i * 7) % 5),
+  delay: (i % 5) * 40,
+  color: GRACIA_COLORS[i % GRACIA_COLORS.length],
+}));
 
 type State =
   | { readonly at: 'checking' }
@@ -126,6 +160,16 @@ export function SaldoVuelta({
     };
   }, []);
 
+  // The celebration's one way on: once paid, it sends the buyer to the
+  // balance by itself — the «back» link below lets them go sooner.
+  useEffect(() => {
+    if (state.at !== 'paid') return;
+    const timer = setTimeout(() => {
+      window.location.assign(saldoHref);
+    }, GRACIA_REDIRECT_MS);
+    return () => clearTimeout(timer);
+  }, [state.at, saldoHref]);
+
   if (state.at === 'signed-out') {
     return (
       <div className="saldo-marco saldo-fuera" data-saldo-vuelta="signed-out" data-saldo-signed-out>
@@ -148,15 +192,41 @@ export function SaldoVuelta({
         </p>
       )}
       {state.at === 'paid' && (
-        <>
-          <h2>{ui.vuelta.done}</h2>
-          <p className="saldo-cifra-m mono">
+        <div className="saldo-gracias" data-saldo-gracias>
+          <div className="saldo-gracias-burst" aria-hidden="true">
+            {/* Safe: a build-time ?raw import of our own repo-owned SVG
+                (packages/ui/src/icons/coins.svg), the same pattern as
+                PanelGlyph.tsx and WorldGlyph.tsx — never user input. */}
+            <span
+              className="icono saldo-gracias-moneda"
+              dangerouslySetInnerHTML={{ __html: coins }}
+            />
+            {GRACIA_STARS.map((star, i) => (
+              <span
+                key={i}
+                className={`saldo-gracias-estrella saldo-gracias-${star.color}`}
+                style={
+                  {
+                    '--a': `${star.angle}deg`,
+                    '--d': `${star.distance}px`,
+                    '--s': `${star.size}px`,
+                    '--t': `${star.delay}ms`,
+                  } as CSSProperties
+                }
+              />
+            ))}
+          </div>
+          <h2 className="entrada-1">{ui.vuelta.done}</h2>
+          <p className="saldo-cifra-m mono entrada-2">
             {fill(ui.vuelta.balanceNow, { b: formatEuros(state.balanceCents, lang) })}
           </p>
-          <p className="saldo-nota" data-saldo-seller>
+          <p className="saldo-nota entrada-2" data-saldo-seller>
             {ui.topup.seller}
           </p>
-        </>
+          <p className="saldo-nota saldo-gracias-redirect entrada-3" role="status">
+            {ui.vuelta.redirecting}
+          </p>
+        </div>
       )}
       {state.at === 'processing' && (
         <>
