@@ -89,9 +89,9 @@ const followWords = JSON.stringify({
         {!founder && <span class="chip">{ui.openedByHouse}</span>}
         {community.operator && <span class="chip turquesa">{fill(ui.runBy, { x: community.operator })}</span>}
       </div>
-      <h1 class="display-m">{community.name}</h1>
+      <h1 class="display-m" data-community-field="name">{community.name}</h1>
       <span class="lugar-linea"><Icon name="map-pin" size={16} />{placesLine(community.places, locale)}</span>
-      <p class="desc">{pick(community.summary, locale)}</p>
+      <p class="desc" data-community-field="summary">{pick(community.summary, locale)}</p>
       <div class="fila acciones-com">
         <button
           type="button"
