@@ -17,6 +17,16 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
     "version": "v0.141.0",
   },
   {
+    "date": "2026-10-18 14:30",
+    "entries": [
+      {
+        "text": "The fleet’s machines can now read the engine release an Oracle signed from a public address, /fleet/release.json: the till keeps the latest signed record, refuses an old number and a stranger’s signature, and anyone can read it. Nothing changes on screen yet; the «Publish» button of the Worlds room comes next.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.140.0",
+  },
+  {
     "date": "2026-10-18 10:50",
     "entries": [
       {
