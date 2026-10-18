@@ -17,7 +17,15 @@
  * asks for an order the machine would refuse.
  */
 
-import type { DoorFeature, DoorPhase, Heartbeat, Imports, UploadProgress } from './fleet';
+import type {
+  DoorFeature,
+  DoorPhase,
+  Heartbeat,
+  Imports,
+  ReleaseState,
+  UploadProgress,
+  WorldPin,
+} from './fleet';
 import type { SummaCard } from './summa';
 import type { WorldHome } from './worlds-homes';
 
@@ -303,7 +311,7 @@ export interface MachineSummary {
   readonly reason: string | null;
   /** Whether its reconciler keeps up (lib/fleet.ts `machineHealth`); null when its door says nothing. */
   readonly heartbeat: Heartbeat | null;
-  /** What its door listens to besides requests: `events` = it takes the room's beacons. */
+  /** What its door listens to besides requests: `events` = it takes the room's beacons, `pin` = a PinWorld. */
   readonly listens: readonly DoorFeature[];
   /**
    * The numinia-assets commit it was installed from, as its door says (40
@@ -325,6 +333,8 @@ export interface MachineSummary {
   readonly engines?: readonly Engine[] | null;
   /** Whether its door says it moves a world to another build of its engine (`updates`). */
   readonly updates?: boolean;
+  /** What its self-updating pass is doing, as its door says (`release`); absent when it says nothing. */
+  readonly release?: ReleaseState;
 }
 
 /** The engines a machine runs: those its door names, or Hyperfy alone when it names none. */
@@ -637,6 +647,12 @@ export interface EngineLaggard {
   readonly build: string;
   /** Its machine takes updates: one signature moves it. */
   readonly canUpdate: boolean;
+  /** Held on a build, with the reason; absent when it follows the fleet. */
+  readonly pinned?: { readonly reason: string; readonly build: string };
+  /** Why its last move to a new build failed (its machine's own words); absent when none did. */
+  readonly failed?: string;
+  /** Its machine takes a pin: the hold can be lifted from here. */
+  readonly canPin?: boolean;
 }
 
 /** The fleet's engine at a glance: the newest build and who is behind it. */
@@ -656,14 +672,14 @@ export interface FleetEngine {
  * release nobody is behind.
  */
 export function fleetEngine(
-  rows: readonly Pick<WorldRow, 'id' | 'order'>[],
+  rows: readonly Pick<WorldRow, 'id' | 'order' | 'pin' | 'updateError' | 'canPin'>[],
   machines: readonly Pick<MachineSummary, 'alias' | 'open' | 'updates'>[],
   engine: EngineRelease | null,
 ): FleetEngine {
   const laggards: EngineLaggard[] = [];
   let total = 0;
   let otherEngine = 0;
-  for (const { id, order } of rows) {
+  for (const { id, order, pin, updateError, canPin } of rows) {
     if (order === null) continue;
     if (engineOf(order.image) !== 'numinia-engine') {
       otherEngine += 1;
@@ -676,9 +692,66 @@ export function fleetEngine(
       server: order.server,
       build: buildTag(order.image),
       canUpdate: updateFor(order, machines, engine) !== null,
+      ...(pin ? { pinned: { reason: pin.reason, build: buildTag(pin.image) } } : {}),
+      ...(updateError ? { failed: updateError } : {}),
+      ...(canPin ? { canPin } : {}),
     });
   }
   return { current: engine, laggards, total, otherEngine };
+}
+
+/** Whether a machine's door says it takes a PinWorld: the only one a pin is offered to. */
+export function machineTakesPin(
+  machines: readonly (Pick<MachineSummary, 'alias' | 'open'> &
+    Partial<Pick<MachineSummary, 'listens'>>)[],
+  alias: string,
+): boolean {
+  const machine = machines.find((candidate) => candidate.alias === alias);
+  return machine?.open === true && machine.listens?.includes('pin') === true;
+}
+
+/** A world held on a build, as the banner lists it. */
+export interface PinnedWorld {
+  readonly id: string;
+  readonly server: string;
+  readonly build: string;
+  readonly reason: string;
+  /** Its machine takes a pin: the hold can be lifted from here. */
+  readonly canPin: boolean;
+}
+
+/** Every world held on a build, in the order of the rows. */
+export function pinnedWorlds(
+  rows: readonly Pick<WorldRow, 'id' | 'order' | 'pin' | 'canPin'>[],
+): PinnedWorld[] {
+  return rows.flatMap(({ id, order, pin, canPin }) =>
+    order === null || !pin
+      ? []
+      : [
+          {
+            id,
+            server: order.server,
+            build: buildTag(pin.image),
+            reason: pin.reason,
+            canPin: canPin === true,
+          },
+        ],
+  );
+}
+
+/**
+ * The image a pin holds a world on, from what the Oracle typed: a short
+ * build (`sha-c57dbb7`, the world's own engine) or a whole image of the
+ * house's registry in that same engine. Null for anything else: the
+ * machine refuses another engine's build, and so does the room.
+ */
+export function pinImage(order: Pick<WorldOrder, 'image'>, typed: string): string | null {
+  const wanted = typed.trim();
+  const own = /^(.+?)(?::sha-[0-9a-f]{7,40}|@sha256:[0-9a-f]{64})$/.exec(order.image)?.[1];
+  if (own === undefined || !own.startsWith(REGISTRY)) return null;
+  if (/^sha-[0-9a-f]{7,40}$/.test(wanted)) return `${own}:${wanted}`;
+  const whole = wanted.startsWith(`${own}:`) || wanted.startsWith(`${own}@`);
+  return whole && IMAGE.test(wanted) ? wanted : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -734,6 +807,12 @@ export interface WorldRow {
    * (updateFor); absent or null when there is none to offer.
    */
   readonly update?: string | null;
+  /** The build its machine holds it on, with the reason; absent when it follows the fleet. */
+  readonly pin?: WorldPin;
+  /** Why its last move to a new build failed, in its machine's words; absent when none did. */
+  readonly updateError?: string;
+  /** Its machine's door says it takes a pin: «Fijar a otra versión» is offered (machineTakesPin). */
+  readonly canPin?: boolean;
 }
 
 /** A world its machine is deleting after its order already went. */
@@ -756,6 +835,10 @@ export interface RowsInput {
   readonly orders: readonly WorldOrder[];
   /** What each order's machine says is happening to it; an order missing here is settled. */
   readonly phases?: Readonly<Record<string, DoorPhase>>;
+  /** The builds worlds are held on, by id (gatherFleet). */
+  readonly pins?: Readonly<Record<string, WorldPin>>;
+  /** Why a world's last move to a new build failed, by id (gatherFleet). */
+  readonly updateErrors?: Readonly<Record<string, string>>;
   readonly leaving?: readonly LeavingWorld[];
   readonly arriving?: readonly ArrivingWorld[];
   readonly cards: readonly WorldCardInfo[];
@@ -764,7 +847,8 @@ export interface RowsInput {
   /** Read from each world's own page when the Summa has no card for it. */
   readonly faces?: Readonly<Record<string, WorldFace>>;
   /** The machines as their doors answered, and the newest engine build: what «Actualizar» offers. */
-  readonly machines?: readonly Pick<MachineSummary, 'alias' | 'open' | 'updates'>[];
+  readonly machines?: readonly (Pick<MachineSummary, 'alias' | 'open' | 'updates'> &
+    Partial<Pick<MachineSummary, 'listens'>>)[];
   readonly engine?: EngineRelease | null;
 }
 
@@ -801,6 +885,8 @@ export function buildRows(input: RowsInput): WorldRow[] {
   const cards = new Map(input.cards.map((card) => [card.slug, card]));
   const faces = input.faces ?? {};
   const phases = input.phases ?? {};
+  const pins = input.pins ?? {};
+  const updateErrors = input.updateErrors ?? {};
   const machines = input.machines ?? [];
   const engine = input.engine ?? null;
   const rows: WorldRow[] = input.orders.map((order) => {
@@ -821,6 +907,9 @@ export function buildRows(input: RowsInput): WorldRow[] {
       place: { server: order.server, domain: order.domain },
       upload: null,
       update: updateFor(order, machines, engine),
+      ...(pins[order.id] === undefined ? {} : { pin: pins[order.id] }),
+      ...(updateErrors[order.id] === undefined ? {} : { updateError: updateErrors[order.id] }),
+      ...(machineTakesPin(machines, order.server) ? { canPin: true } : {}),
     };
   });
   const taken = new Set(input.orders.map((order) => order.id));

@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.141.0',
+    date: '2026-10-18 17:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'In the worlds room an Oracle can hold a world on another version of its engine: «Fijar a otra versión» asks for the build and one line of reason, and the machine leaves the world alone when the fleet updates; «Quitar el fijado» lets it follow the fleet again. Both are one signature, offered only on a machine that says it takes a pin.',
+      },
+      {
+        type: 'UPD',
+        text: 'The engine banner of the worlds room now lists the worlds held on a version with their reason, says which laggard is held on purpose and which one failed to update (and why), and shows when a machine has stopped its own updates, with its reason and the time of its last pass.',
+      },
+    ],
+  },
+  {
     version: 'v0.140.0',
     date: '2026-10-18 14:30',
     entries: [

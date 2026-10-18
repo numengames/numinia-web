@@ -13,6 +13,7 @@ import type { PlacementMessages } from '../../../i18n/mundos';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { formatSize } from '../../../lib/fleet';
 import {
+  buildTag,
   describeStatus,
   engineTag,
   fill,
@@ -25,8 +26,12 @@ import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { WorldGlyph } from './WorldGlyph';
 
-/** `update`: move a world of the Numinia Engine to its newest build (UpdateWorld). */
-export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update';
+/**
+ * `update`: move a world of the Numinia Engine to its newest build
+ * (UpdateWorld); `pin`: hold it on another build, with a reason, and
+ * `unpin`: let it follow the fleet again (both PinWorld).
+ */
+export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update' | 'pin' | 'unpin';
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
@@ -408,6 +413,31 @@ function Actions({
           <WorldGlyph name="arrows-clockwise" />
         </button>
       )}
+      {/* Only on a machine whose door says it takes a pin: never a button the machine would not obey. */}
+      {order && row.canPin && row.pin === undefined && (
+        <button
+          type="button"
+          className="btn btn-fantasma btn-icono"
+          onClick={() => onAction(row, 'pin')}
+          aria-label={room.actions.pin}
+          data-tip={room.actions.pin}
+          data-metric="worlds-pin"
+        >
+          <WorldGlyph name="map-pin" />
+        </button>
+      )}
+      {order && row.canPin && row.pin !== undefined && (
+        <button
+          type="button"
+          className="btn btn-fantasma btn-icono"
+          onClick={() => onAction(row, 'unpin')}
+          aria-label={room.actions.unpin}
+          data-tip={room.actions.unpin}
+          data-metric="worlds-unpin"
+        >
+          <WorldGlyph name="x" />
+        </button>
+      )}
       {order && (
         <button
           type="button"
@@ -667,6 +697,11 @@ function WorldCard({
               </div>
             )}
           </dl>
+        )}
+        {row.pin !== undefined && (
+          <p className="nota" data-pinned={row.pin.image}>
+            {fill(room.fleetEngine.cardPinned, { b: buildTag(row.pin.image), r: row.pin.reason })}
+          </p>
         )}
         {placement !== undefined && <HomeLine row={row} placement={placement} />}
         {code !== null && <NewCode row={row} code={code} room={room} />}
