@@ -8,13 +8,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Asker } from '../accounts';
 import { NOT_IMPLEMENTED } from '../accounts';
+import { fixtureAccounts, resetFixtureAccountsForTests } from '../accounts-source';
 import {
+  NO_SUCH_RITUAL,
   RSVP_IDS_MAX,
   answerRsvpChange,
   answerRsvps,
   boundRsvps,
   createRsvpFixtureDesk,
   fixtureRsvps,
+  fixtureTillRitualCheck,
+  isRsvpRitualId,
   readRsvpBody,
   readRsvpIds,
   resetFixtureRsvpsForTests,
@@ -26,7 +30,29 @@ const WALLET = `0x${'ab'.repeat(20)}`;
 const OTHER = `0x${'cd'.repeat(20)}`;
 const asker: Asker = { wallet: WALLET.toUpperCase().replace('0X', '0x'), house: false };
 const KNOWN: ReadonlySet<string> = new Set(['trg26', 'merge-madrid-2026']);
+const TILL_ID = 'rit_0123456789abcdef';
+const HOUSE = `0x${'99'.repeat(20)}`;
 const log = vi.fn();
+
+/** A till encounter (cut M) published into the fixture accounts desk by the house. */
+async function publish(): Promise<string> {
+  const answer = await fixtureAccounts().createRitual(
+    HOUSE,
+    {
+      communityId: 'numen-games',
+      title: 'Taller de Hyperfy',
+      start: '2026-11-03',
+      end: null,
+      mode: 'in-person',
+      where: 'La Nave, Madrid',
+      note: null,
+      worldId: null,
+    },
+    true,
+  );
+  if (!answer.ok) throw new Error(answer.problems.join());
+  return answer.ritual.id;
+}
 
 const url = (ids?: string): URL =>
   new URL(`https://numinia.com/api/rsvp${ids === undefined ? '' : `?ids=${ids}`}`);
@@ -40,6 +66,7 @@ const post = (body: unknown, type = 'application/json'): Request =>
 
 afterEach(() => {
   resetFixtureRsvpsForTests();
+  resetFixtureAccountsForTests();
   log.mockReset();
 });
 
@@ -121,6 +148,33 @@ describe('the fixture desk', () => {
     expect(await desk.unrsvp(OTHER, 'nothing')).toEqual({ ok: true, ritualIds: ['trg26'] });
     expect(await desk.unrsvp(`0x${'ef'.repeat(20)}`, 'trg26')).toEqual({ ok: true, ritualIds: [] });
   });
+
+  it('refuses, as the till does, a till id that names no live encounter; «ya no voy» is always fine', async () => {
+    const open = vi.fn(async (id: string) => id === TILL_ID);
+    const desk = createRsvpFixtureDesk(open);
+    expect(await desk.rsvp(WALLET, TILL_ID)).toEqual({ ok: true, ritualIds: [TILL_ID] });
+    expect(await desk.rsvp(WALLET, 'rit_ffffffffffffffff')).toEqual({
+      ok: false,
+      problems: [NO_SUCH_RITUAL],
+    });
+    expect(await desk.rsvp(WALLET, 'trg26')).toEqual({ ok: true, ritualIds: [TILL_ID, 'trg26'] });
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(await desk.unrsvp(WALLET, 'rit_ffffffffffffffff')).toEqual({
+      ok: true,
+      ritualIds: [TILL_ID, 'trg26'],
+    });
+  });
+
+  it('asks the fixture accounts desk by default: published yes, cancelled or unknown no', async () => {
+    expect(await fixtureTillRitualCheck(TILL_ID)).toBe(false);
+    expect(await fixtureTillRitualCheck('not-an-id')).toBe(false);
+    const id = await publish();
+    expect(await fixtureTillRitualCheck(id)).toBe(true);
+    expect(await fixtureRsvps().rsvp(WALLET, id)).toEqual({ ok: true, ritualIds: [id] });
+    const cancelled = await fixtureAccounts().cancelRitual(HOUSE, id, true);
+    expect(cancelled.ok).toBe(true);
+    expect(await fixtureTillRitualCheck(id)).toBe(false);
+  });
 });
 
 describe('what the browser sends', () => {
@@ -133,6 +187,10 @@ describe('what the browser sends', () => {
       'merge-madrid-2026',
     ]);
     expect(readRsvpIds('trg26,unknown', KNOWN)).toBeNull();
+    expect(readRsvpIds(`trg26,${TILL_ID}`, KNOWN)).toEqual(['trg26', TILL_ID]);
+    expect(readRsvpIds('rit_0123456789ABCDEF', KNOWN)).toBeNull();
+    expect(isRsvpRitualId(TILL_ID, KNOWN)).toBe(true);
+    expect(isRsvpRitualId('rit_', KNOWN)).toBe(false);
     expect(readRsvpIds('TRG26', KNOWN)).toBeNull();
     expect(readRsvpIds('trg26,', KNOWN)).toBeNull();
     const many = new Set(Array.from({ length: 101 }, (_, index) => `r${index}`));
@@ -142,6 +200,8 @@ describe('what the browser sends', () => {
 
   it('reads { ritualId, on } and nothing looser', () => {
     expect(readRsvpBody({ ritualId: 'trg26', on: true })).toEqual({ ritualId: 'trg26', on: true });
+    expect(readRsvpBody({ ritualId: TILL_ID, on: true })).toEqual({ ritualId: TILL_ID, on: true });
+    expect(readRsvpBody({ ritualId: 'rit_nope', on: true })).toBeNull();
     expect(readRsvpBody({ ritualId: 'trg26', on: false, extra: 1 })).toEqual({
       ritualId: 'trg26',
       on: false,
@@ -197,7 +257,7 @@ describe('GET /api/rsvp', () => {
 
   it('is 400 for an id the register lacks', async () => {
     expect(await status(await answerRsvps(fixtureRsvps(), asker, url('nope'), KNOWN, log))).toEqual(
-      [400, { error: 'ids must name encounters of the register' }],
+      [400, { error: 'ids must name encounters of the register or the till' }],
     );
   });
 
@@ -287,6 +347,25 @@ describe('POST /api/rsvp', () => {
       ),
     ).toEqual([404, { error: 'unknown-ritual' }]);
     expect(await desk.myRsvps(WALLET)).toEqual({ ok: true, ritualIds: [] });
+  });
+
+  it('takes a till encounter: 404 while the till has no live one, the view once it does', async () => {
+    const desk = fixtureRsvps();
+    expect(
+      await status(
+        await answerRsvpChange(desk, asker, post({ ritualId: TILL_ID, on: true }), KNOWN, log),
+      ),
+    ).toEqual([404, { error: 'unknown-ritual' }]);
+    const id = await publish();
+    expect(
+      await status(
+        await answerRsvpChange(desk, asker, post({ ritualId: id, on: true }), KNOWN, log),
+      ),
+    ).toEqual([200, { mine: [id], counts: { [id]: 1 } }]);
+    expect(await status(await answerRsvps(desk, asker, url(`trg26,${id}`), KNOWN, log))).toEqual([
+      200,
+      { mine: [id], counts: { trg26: 0, [id]: 1 } },
+    ]);
   });
 
   it('is 400 for a till that refuses the change', async () => {

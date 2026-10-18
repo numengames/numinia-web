@@ -12,10 +12,19 @@
  * without a session, 503 without a till (or one older than the RPCs), 502
  * when it fails, 404 for an encounter the register lacks. The till trusts
  * the store for WHO (the session's wallet) and decides itself WHAT.
+ *
+ * Since cut O (2026-10-18) an encounter published from the city (cut M, a
+ * `rit_` id in the till's own table) takes «Me apunto» too: the store never
+ * keeps a static set of those ids — it lets a well-formed `rit_` id through
+ * and trusts the till, which answers «no such encounter» (→ 404) for one it
+ * does not have or has cancelled. The fixture desk asks the fixture
+ * accounts desk the same question, so a fixture build behaves alike.
  */
 
 import { z } from 'zod';
 import type { Asker } from './accounts';
+import { fixtureAccounts } from './accounts-source';
+import { isTillRitualId } from './rituals-till';
 import { logEvent } from './telemetry';
 import { answer, ask, bodyOf, notBound, type Log } from './worlds-homes';
 
@@ -46,8 +55,24 @@ export function boundRsvps(binding: unknown): RsvpDesk | null {
   };
 }
 
-/** The in-memory desk of a fixture build: who said «voy» to what, per wallet, nothing else. */
-export function createRsvpFixtureDesk(): RsvpDesk {
+/** The words the till uses to refuse a `rit_` id it has no live encounter for (apps/till/src/lib/rsvps.ts). */
+export const NO_SUCH_RITUAL = 'no such encounter in the till, or it is cancelled';
+
+/** Whether a `rit_` id names an encounter one can still go to; a fixture build asks its fixture accounts desk. */
+export type TillRitualCheck = (ritualId: string) => Promise<boolean>;
+
+/** The fixture accounts desk's answer: the row is there and not cancelled. */
+export const fixtureTillRitualCheck: TillRitualCheck = async (ritualId) => {
+  const asked = await fixtureAccounts().ritual(ritualId);
+  return asked.ok && asked.ritual !== null && asked.ritual.cancelledAt === null;
+};
+
+/**
+ * The in-memory desk of a fixture build: who said «voy» to what, per wallet,
+ * nothing else — and, like the till, a refusal for a `rit_` id that names no
+ * live encounter (`isOpen`, the fixture accounts desk by default).
+ */
+export function createRsvpFixtureDesk(isOpen: TillRitualCheck = fixtureTillRitualCheck): RsvpDesk {
   const going = new Map<string, Set<string>>();
   const mine = (wallet: string): { ok: true; ritualIds: string[] } => ({
     ok: true,
@@ -55,6 +80,9 @@ export function createRsvpFixtureDesk(): RsvpDesk {
   });
   return {
     rsvp: async (wallet, ritualId) => {
+      if (isTillRitualId(ritualId) && !(await isOpen(ritualId))) {
+        return { ok: false, problems: [NO_SUCH_RITUAL] };
+      }
       const set = going.get(wallet) ?? new Set<string>();
       set.add(ritualId);
       going.set(wallet, set);
@@ -106,7 +134,12 @@ export const RSVP_IDS_MAX = 100;
 
 const RITUAL_ID = /^[a-z0-9-]{1,100}$/;
 
-/** `?ids=a,b,c`: the ritual ids to count, each a slug the register knows; null when any is not. */
+/** A file slug the register knows, or a well-formed id of the till's own table (the till vouches for those). */
+export function isRsvpRitualId(id: string, known: ReadonlySet<string>): boolean {
+  return (RITUAL_ID.test(id) && known.has(id)) || isTillRitualId(id);
+}
+
+/** `?ids=a,b,c`: the ritual ids to count, each a slug the register knows or a till id; null when any is not. */
 export function readRsvpIds(
   value: string | null,
   known: ReadonlySet<string>,
@@ -114,7 +147,7 @@ export function readRsvpIds(
   if (value === null || value === '') return [];
   const ids = [...new Set(value.split(','))];
   if (ids.length > RSVP_IDS_MAX) return null;
-  return ids.every((id) => RITUAL_ID.test(id) && known.has(id)) ? ids : null;
+  return ids.every((id) => isRsvpRitualId(id, known)) ? ids : null;
 }
 
 export interface RsvpChange {
@@ -126,7 +159,11 @@ export interface RsvpChange {
 export function readRsvpBody(json: unknown): RsvpChange | null {
   if (typeof json !== 'object' || json === null) return null;
   const { ritualId, on } = json as Record<string, unknown>;
-  if (typeof ritualId !== 'string' || !RITUAL_ID.test(ritualId) || typeof on !== 'boolean') {
+  if (
+    typeof ritualId !== 'string' ||
+    !(RITUAL_ID.test(ritualId) || isTillRitualId(ritualId)) ||
+    typeof on !== 'boolean'
+  ) {
     return null;
   }
   return { ritualId, on };
@@ -163,7 +200,12 @@ async function viewOf(
 ): Promise<Response> {
   const mine = await ask(log, 'myRsvps', mineCall, SHAPES.mine);
   if (!mine.ok) return mine.response;
-  if ('problems' in mine.value) return refused(mine.value.problems);
+  if ('problems' in mine.value) {
+    // The till has no live encounter under that `rit_` id: for the page it is as if the register lacked it.
+    return mine.value.problems.includes(NO_SUCH_RITUAL)
+      ? unknownRitual()
+      : refused(mine.value.problems);
+  }
   const counted = await ask(log, 'rsvpCounts', () => desk.rsvpCounts(ids), SHAPES.counts);
   if (!counted.ok) return counted.response;
   if ('problems' in counted.value) return refused(counted.value.problems);
@@ -187,7 +229,8 @@ export async function answerRsvps(
   if (asker === null) return signedOut();
   if (desk === null) return notBound();
   const ids = readRsvpIds(url.searchParams.get('ids'), known);
-  if (ids === null) return answer({ error: 'ids must name encounters of the register' }, 400);
+  if (ids === null)
+    return answer({ error: 'ids must name encounters of the register or the till' }, 400);
   const wallet = asker.wallet.toLowerCase();
   return viewOf(desk, wallet, ids, log, () => desk.myRsvps(wallet));
 }
@@ -196,8 +239,8 @@ export async function answerRsvps(
  * POST /api/rsvp, JSON `{ ritualId, on }`: the session's wallet says it is
  * going (`on: true`) or no longer going. Answers the same view as GET, with
  * the count of that very encounter. 401 without a session, 404 for an
- * encounter the register lacks, 400 for a body out of shape, 503 without a
- * till, 502 when it fails.
+ * encounter neither the register nor the till has, 400 for a body out of
+ * shape, 503 without a till, 502 when it fails.
  */
 export async function answerRsvpChange(
   desk: RsvpDesk | null,
@@ -212,7 +255,7 @@ export async function answerRsvpChange(
   if (!body.ok) return body.response;
   const change = readRsvpBody(body.json);
   if (change === null) return answer({ error: 'body must be { ritualId, on }' }, 400);
-  if (!known.has(change.ritualId)) return unknownRitual();
+  if (!isRsvpRitualId(change.ritualId, known)) return unknownRitual();
   const wallet = asker.wallet.toLowerCase();
   return viewOf(desk, wallet, [change.ritualId], log, () =>
     change.on ? desk.rsvp(wallet, change.ritualId) : desk.unrsvp(wallet, change.ritualId),

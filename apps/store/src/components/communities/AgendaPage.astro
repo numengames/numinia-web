@@ -117,6 +117,14 @@ const agenda = agendaOf(ids, allRituals(RITUALS, rows, COMMUNITIES, now.getTime(
                 prefix={prefix}
                 ui={ui}
               />
+              <a
+                class="btn btn-fantasma btn-sm ics"
+                href={`/rituals/${ritual.id}.ics`}
+                data-metric="agenda-ics"
+              >
+                <Icon name="calendar-plus" size={16} />
+                {words.addToCalendar}
+              </a>
             </li>
           ))}
         </ul>
@@ -157,6 +165,10 @@ const agenda = agendaOf(ids, allRituals(RITUALS, rows, COMMUNITIES, now.getTime(
 </BaseLayout>
 
 <style>
+  .lista-rit li .ics {
+    margin-top: var(--s2);
+  }
+
   .puerta {
     display: grid;
     gap: var(--s4);

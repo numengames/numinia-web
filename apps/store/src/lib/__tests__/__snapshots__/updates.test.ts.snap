@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-18 13:40",
+    "entries": [
+      {
+        "text": "An encounter published from the city now takes «Me apunto» on its page like any other: it shows in your agenda with its calendar file, and brings the same «Avisos» notice when it is near.",
+        "type": "NEW",
+      },
+      {
+        "text": "The month grid of /calendar/ shows the encounters published from the city on their days, and a live calendar feed beside the static one carries them too.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.138.0",
+  },
+  {
     "date": "2026-10-18 11:28",
     "entries": [
       {

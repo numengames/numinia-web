@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.138.0',
+    date: '2026-10-18 13:40',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'An encounter published from the city now takes «Me apunto» on its page like any other: it shows in your agenda with its calendar file, and brings the same «Avisos» notice when it is near.',
+      },
+      {
+        type: 'NEW',
+        text: 'The month grid of /calendar/ shows the encounters published from the city on their days, and a live calendar feed beside the static one carries them too.',
+      },
+    ],
+  },
+  {
     version: 'v0.137.0',
     date: '2026-10-18 11:28',
     entries: [

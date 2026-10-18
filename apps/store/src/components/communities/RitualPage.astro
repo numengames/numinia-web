@@ -164,7 +164,7 @@ const sourceDate = ritual.source
       </p>
     </div>
     <div class="acciones-rit">
-      {ritual.status !== 'held' && till === undefined && (
+      {ritual.status !== 'held' && !cancelled && (
         <RsvpAction locale={locale} ritualId={ritual.id} signIn={signIn} metric="ritual-rsvp" />
       )}
       <a class="btn btn-fantasma" href={icsHref} data-metric="ritual-add-calendar">

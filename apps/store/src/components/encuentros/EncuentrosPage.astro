@@ -8,6 +8,13 @@
  * stays hidden until the script runs). The feed to subscribe to is the same
  * register as an .ics file. Days outside a month are empty cells: the faded
  * digits the old grid drew failed AA contrast.
+ *
+ * The encounters published from the city (cut M) are not in the built page:
+ * the live slot fetches them and, since cut O, tells the grid (the
+ * `numinia:rituals-live` event), which hangs each on its day's cell —
+ * `data-day="YYYY-MM-DD"` — from the `<template>` below, never from HTML
+ * strings. Beside the static feed, a live one (`/calendar-live.ics`) carries
+ * them too.
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -60,10 +67,21 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
         {t.viewMonth}
       </button>
     </div>
-    <a class="btn btn-fantasma btn-sm" href="/calendar.ics" data-metric="calendar-subscribe">
-      <Icon name="calendar-plus" size={16} />
-      {ui.subscribeCity}
-    </a>
+    <span class="fila suscribir">
+      <a class="btn btn-fantasma btn-sm" href="/calendar.ics" data-metric="calendar-subscribe">
+        <Icon name="calendar-plus" size={16} />
+        {ui.subscribeCity}
+      </a>
+      <a
+        class="btn btn-fantasma btn-sm"
+        href="/calendar-live.ics"
+        data-metric="calendar-subscribe-live"
+        title={t.subscribeLiveTitle}
+      >
+        <Icon name="calendar-plus" size={16} />
+        {t.subscribeLive}
+      </a>
+    </span>
   </div>
 
   <div data-enc-panel="list">
@@ -115,13 +133,26 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
     <RitualsLive locale={locale} metric="encuentros-row" heading={live} />
   </div>
 
-  <div class="meses" data-enc-panel="month" hidden>
+  <div
+    class="meses"
+    data-enc-panel="month"
+    data-enc-grid
+    data-prefix={prefix}
+    data-one={ui.ritualOne}
+    data-many={ui.ritualMany}
+    hidden
+  >
+    <template data-enc-live-ev>
+      <a class="ev" data-metric="calendar-ritual" data-enc-live-ev-link></a>
+    </template>
     {
       months.map((month) => (
         <section class="tarjeta mes">
           <h2>
             {month.label}
-            <span>{month.count === 1 ? ui.ritualOne : fill(ui.ritualMany, { n: month.count })}</span>
+            <span data-month-count={`${month.year}-${String(month.month).padStart(2, '0')}`} data-n={month.count}>
+              {month.count === 1 ? ui.ritualOne : fill(ui.ritualMany, { n: month.count })}
+            </span>
           </h2>
           <table class="cal">
             <thead>
@@ -135,7 +166,14 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
               {month.weeks.map((week) => (
                 <tr>
                   {week.map((cell) => (
-                    <td class:list={{ fuera: !cell.inMonth }}>
+                    <td
+                      class:list={{ fuera: !cell.inMonth }}
+                      data-day={
+                        cell.inMonth
+                          ? `${month.year}-${String(month.month).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}`
+                          : undefined
+                      }
+                    >
                       {cell.inMonth && <span class="n">{cell.day}</span>}
                       {cell.rituals.map((ritual) => (
                         <a
@@ -164,6 +202,67 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
 </BaseLayout>
 
 <script>
+  /* The grid learns the till's encounters from the live slot's one read
+     (RitualsLive.astro announces its rows): one clone of the template per
+     day the encounter covers, hung on that day's cell, and the month's
+     count brought up to date. A day outside the four months built is
+     simply not there; nothing is written as HTML. */
+  interface LiveRow {
+    readonly id: string;
+    readonly title: string;
+    readonly start: string;
+    readonly end: string;
+    readonly allDay: boolean;
+    readonly mode: string;
+  }
+  const DAY_MS = 86_400_000;
+  const dayKey = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+  const daysOf = (row: LiveRow): string[] => {
+    const startMs = Date.parse(row.allDay ? `${row.start}T00:00:00Z` : row.start);
+    const endMs = row.allDay ? Date.parse(`${row.end}T00:00:00Z`) + DAY_MS : Date.parse(row.end);
+    if (Number.isNaN(startMs) || Number.isNaN(endMs)) return [];
+    const days: string[] = [];
+    const firstDay = Math.floor(startMs / DAY_MS) * DAY_MS;
+    for (let ms = firstDay; ms < endMs && days.length < 31; ms += DAY_MS) days.push(dayKey(ms));
+    return days.length === 0 ? [dayKey(startMs)] : days;
+  };
+  function paintGrid(rows: readonly LiveRow[]): void {
+    const grid = document.querySelector<HTMLElement>('[data-enc-grid]');
+    const template = grid?.querySelector<HTMLTemplateElement>('template[data-enc-live-ev]');
+    if (!grid || !template) return;
+    const prefix = grid.dataset['prefix'] ?? '';
+    const counted = new Set<string>();
+    for (const row of rows) {
+      for (const day of daysOf(row)) {
+        const cell = grid.querySelector<HTMLElement>(`td[data-day="${day}"]`);
+        if (!cell || cell.querySelector(`[data-enc-live="${row.id}"]`)) continue;
+        const clone = template.content.cloneNode(true) as DocumentFragment;
+        const link = clone.querySelector<HTMLAnchorElement>('[data-enc-live-ev-link]');
+        if (!link) continue;
+        link.classList.add(row.mode || 'tba');
+        link.setAttribute('href', `${prefix}/rituals/${row.id}/`);
+        link.title = row.title;
+        link.textContent = row.title;
+        link.dataset['encLive'] = row.id;
+        delete link.dataset['encLiveEvLink'];
+        cell.append(clone);
+      }
+      const startDay = daysOf(row)[0];
+      const monthKey = startDay?.slice(0, 7);
+      const count = grid.querySelector<HTMLElement>(`[data-month-count="${monthKey}"]`);
+      if (!count || counted.has(row.id)) continue;
+      counted.add(row.id);
+      const n = Number(count.dataset['n'] ?? '0') + 1;
+      count.dataset['n'] = String(n);
+      count.textContent =
+        n === 1 ? (grid.dataset['one'] ?? '') : (grid.dataset['many'] ?? '').replace('{n}', String(n));
+    }
+  }
+  document.addEventListener('numinia:rituals-live', (event) => {
+    const rows = (event as CustomEvent<readonly LiveRow[]>).detail;
+    if (Array.isArray(rows)) paintGrid(rows);
+  });
+
   // The switch: shown only once this runs, so it never sits there dead.
   const group = document.querySelector<HTMLElement>('[data-enc-views]');
   const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-enc-view]'));
@@ -197,6 +296,10 @@ const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, 
   }
   .vistas[hidden] {
     display: none;
+  }
+  .suscribir {
+    gap: var(--s2);
+    flex-wrap: wrap;
   }
   .vistas button {
     display: inline-flex;
