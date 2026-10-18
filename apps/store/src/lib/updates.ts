@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.140.0',
+    date: '2026-10-18 14:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The fleet’s machines can now read the engine release an Oracle signed from a public address, /fleet/release.json: the till keeps the latest signed record, refuses an old number and a stranger’s signature, and anyone can read it. Nothing changes on screen yet; the «Publish» button of the Worlds room comes next.',
+      },
+    ],
+  },
+  {
     version: 'v0.139.0',
     date: '2026-10-18 10:50',
     entries: [
