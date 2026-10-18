@@ -214,18 +214,32 @@ export interface CommunitiesMessages {
   readonly addRitual: string;
   readonly editNote: string;
 
-  // ── «Perteneces» (/belong/)
+  // ── «Tus comunidades» (/belong/, cut N)
   readonly belongTitle: string;
   readonly belongLead: string;
-  readonly followsTitle: string;
-  readonly followsHelp: string;
-  readonly followsEmpty: string;
-  readonly memberOfTitle: string;
+  /** «Las que llevas»: the organizations you administer. */
+  readonly leadTitle: string;
+  readonly leadHelp: string;
+  readonly leadEmpty: string;
+  /** «A las que perteneces»: the rest you are in. */
+  readonly memberTitle: string;
+  readonly memberEmpty: string;
+  /** «Las que sigues»: the follows that are neither. */
+  readonly followTitle: string;
+  readonly followEmpty: string;
+  readonly findMore: string;
   readonly memberDoor: string;
   readonly signIn: string;
-  readonly memberSoon: string;
-  /** "{n}" is the number of communities on the site. */
-  readonly exploreAll: string;
+  /** The card's lines: «La sigues», «próximo: {x}», «sin encuentro a la vista», «en {x}». */
+  readonly youFollow: string;
+  readonly nextShort: string;
+  readonly noEncounter: string;
+  readonly atPlace: string;
+  readonly itsPanel: string;
+  /** The foot: «¿Llevas una que aún no está?» · «Ábrele sede» · «¿Ya está? Hazla tuya desde su página». */
+  readonly footAsk: string;
+  readonly footOpen: string;
+  readonly footClaim: string;
 
   // ── countdown templates for the page script ("{n}" is the number)
   readonly countNow: string;
@@ -442,16 +456,27 @@ const ES: CommunitiesMessages = {
   editNote:
     'Solo lo ves tú, como Oráculo. Se abre el archivo en GitHub: al guardar queda una propuesta de cambio, y se publica cuando otra persona la aprueba.',
 
-  belongTitle: 'Perteneces',
-  belongLead: 'Tus comunidades y lo que pasa en ellas.',
-  followsTitle: 'Sigues',
-  followsHelp: 'Las comunidades que sigues desde tu cuenta, cada una con su próximo encuentro.',
-  followsEmpty: 'Aún no sigues ninguna. Pulsa «Seguir» en la página de una comunidad.',
-  memberOfTitle: 'Perteneces a',
+  belongTitle: 'Tus comunidades',
+  belongLead:
+    'Las que llevas, a las que perteneces y las que sigues. Seguir no te hace miembro: solo te trae sus encuentros a tu agenda.',
+  leadTitle: 'Las que llevas',
+  leadHelp: 'Tienen panel: su sede, su gente, sus encuentros y su saldo.',
+  leadEmpty: 'Todavía no llevas ninguna. ¿Es tuya? Hazla tuya desde su página.',
+  memberTitle: 'A las que perteneces',
+  memberEmpty: 'Aún no perteneces a ninguna comunidad.',
+  followTitle: 'Las que sigues',
+  followEmpty: 'No sigues ninguna.',
+  findMore: 'Buscar más',
   memberDoor: 'Entra para ver las comunidades a las que perteneces.',
   signIn: 'Iniciar sesión',
-  memberSoon: 'Cuando una comunidad te haga miembro, aparecerá aquí.',
-  exploreAll: 'o explora las {n} comunidades →',
+  youFollow: 'La sigues',
+  nextShort: 'próximo: {x}',
+  noEncounter: 'sin encuentro a la vista',
+  atPlace: 'en {x}',
+  itsPanel: 'Su panel',
+  footAsk: '¿Llevas una que aún no está?',
+  footOpen: 'Ábrele sede',
+  footClaim: '¿Ya está? Hazla tuya desde su página',
 
   countNow: 'ahora',
   countTomorrow: 'mañana',
@@ -666,16 +691,27 @@ const EN: CommunitiesMessages = {
   editNote:
     'Only you see this, as an Oracle. The file opens in GitHub: saving leaves a proposed change, published once someone else approves it.',
 
-  belongTitle: 'You belong',
-  belongLead: 'Your communities and what happens in them.',
-  followsTitle: 'You follow',
-  followsHelp: 'The communities you follow from your account, each with its next gathering.',
-  followsEmpty: 'You follow none yet. Press “Follow” on a community’s page.',
-  memberOfTitle: 'You belong to',
+  belongTitle: 'Your communities',
+  belongLead:
+    'The ones you lead, the ones you belong to and the ones you follow. Following does not make you a member: it only brings their encounters to your agenda.',
+  leadTitle: 'The ones you lead',
+  leadHelp: 'They have a panel: their home, their people, their encounters and their balance.',
+  leadEmpty: 'You lead none yet. Is it yours? Make it yours from its page.',
+  memberTitle: 'The ones you belong to',
+  memberEmpty: 'You belong to no community yet.',
+  followTitle: 'The ones you follow',
+  followEmpty: 'You follow none.',
+  findMore: 'Find more',
   memberDoor: 'Sign in to see the communities you belong to.',
   signIn: 'Sign in',
-  memberSoon: 'When a community makes you a member, it will appear here.',
-  exploreAll: 'or explore the {n} communities →',
+  youFollow: 'You follow it',
+  nextShort: 'next: {x}',
+  noEncounter: 'no encounter in sight',
+  atPlace: 'in {x}',
+  itsPanel: 'Its panel',
+  footAsk: 'Do you lead one that is not here yet?',
+  footOpen: 'Open its home',
+  footClaim: 'Already here? Make it yours from its page',
 
   countNow: 'now',
   countTomorrow: 'tomorrow',
@@ -880,17 +916,28 @@ const JA: CommunitiesMessages = {
   addRitual: '集まりを追加',
   editNote:
     'オラクルであるあなたにだけ表示されます。ファイルがGitHubで開きます。保存すると変更の提案になり、別の人が承認すると公開されます。',
-  belongTitle: '所属',
-  belongLead: 'あなたのコミュニティと、そこで起きていること。',
-  followsTitle: 'フォロー中',
-  followsHelp: 'アカウントでフォローしているコミュニティと、それぞれの次の集まり。',
-  followsEmpty:
-    'まだ何もフォローしていません。コミュニティのページで「フォロー」を押してください。',
-  memberOfTitle: '所属コミュニティ',
+  belongTitle: 'あなたのコミュニティ',
+  belongLead:
+    '率いているもの、所属しているもの、フォローしているもの。フォローしてもメンバーにはなりません。その集まりがあなたの予定に届くだけです。',
+  leadTitle: '率いているコミュニティ',
+  leadHelp: 'パネルがあります。拠点、人々、集まり、残高。',
+  leadEmpty:
+    'まだ率いているコミュニティはありません。あなたのものなら、そのページから自分のものにしてください。',
+  memberTitle: '所属しているコミュニティ',
+  memberEmpty: 'まだどのコミュニティにも所属していません。',
+  followTitle: 'フォローしているコミュニティ',
+  followEmpty: 'フォローしているコミュニティはありません。',
+  findMore: 'もっと探す',
   memberDoor: 'ログインすると、所属しているコミュニティが表示されます。',
   signIn: 'ログイン',
-  memberSoon: 'コミュニティがあなたをメンバーにすると、ここに表示されます。',
-  exploreAll: 'または {n} のコミュニティを見る →',
+  youFollow: 'フォロー中',
+  nextShort: '次回: {x}',
+  noEncounter: '予定されている集まりはありません',
+  atPlace: '{x} にて',
+  itsPanel: 'パネル',
+  footAsk: 'まだここにないコミュニティを率いていますか？',
+  footOpen: '拠点を開く',
+  footClaim: 'もうありますか？そのページから自分のものにしてください',
   countNow: '開催中',
   countTomorrow: '明日',
   countDays: '{n} 日後',
@@ -1094,16 +1141,27 @@ const KO: CommunitiesMessages = {
   addRitual: '모임 추가',
   editNote:
     '오라클인 당신에게만 보입니다. 파일이 GitHub에서 열립니다. 저장하면 변경 제안이 남고, 다른 사람이 승인하면 게시됩니다.',
-  belongTitle: '소속',
-  belongLead: '당신의 커뮤니티와 그곳에서 일어나는 일.',
-  followsTitle: '팔로우 중',
-  followsHelp: '계정에서 팔로우하는 커뮤니티와 각각의 다음 모임.',
-  followsEmpty: '아직 팔로우하는 커뮤니티가 없습니다. 커뮤니티 페이지에서 「팔로우」를 누르세요.',
-  memberOfTitle: '소속 커뮤니티',
+  belongTitle: '내 커뮤니티',
+  belongLead:
+    '이끄는 곳, 속한 곳, 팔로우하는 곳. 팔로우해도 구성원이 되지는 않습니다. 그곳의 모임이 당신의 일정에 올 뿐입니다.',
+  leadTitle: '이끄는 커뮤니티',
+  leadHelp: '패널이 있습니다. 거점, 사람들, 모임, 잔액.',
+  leadEmpty: '아직 이끄는 커뮤니티가 없습니다. 당신 것인가요? 그 페이지에서 내 것으로 만드세요.',
+  memberTitle: '속한 커뮤니티',
+  memberEmpty: '아직 속한 커뮤니티가 없습니다.',
+  followTitle: '팔로우하는 커뮤니티',
+  followEmpty: '팔로우하는 커뮤니티가 없습니다.',
+  findMore: '더 찾기',
   memberDoor: '로그인하면 소속된 커뮤니티를 볼 수 있습니다.',
   signIn: '로그인',
-  memberSoon: '커뮤니티가 당신을 구성원으로 받으면 여기에 나타납니다.',
-  exploreAll: '또는 {n}개 커뮤니티 둘러보기 →',
+  youFollow: '팔로우 중',
+  nextShort: '다음: {x}',
+  noEncounter: '예정된 모임 없음',
+  atPlace: '{x}에서',
+  itsPanel: '패널',
+  footAsk: '아직 여기 없는 커뮤니티를 이끌고 있나요?',
+  footOpen: '거점 열기',
+  footClaim: '이미 있나요? 그 페이지에서 내 것으로 만드세요',
   countNow: '진행 중',
   countTomorrow: '내일',
   countDays: '{n}일 후',
@@ -1308,16 +1366,27 @@ const PT_BR: CommunitiesMessages = {
   addRitual: 'Adicionar um encontro',
   editNote:
     'Só você vê isto, como Oráculo. O arquivo abre no GitHub: ao salvar fica uma proposta de mudança, publicada quando outra pessoa a aprova.',
-  belongTitle: 'Você pertence',
-  belongLead: 'Suas comunidades e o que acontece nelas.',
-  followsTitle: 'Você segue',
-  followsHelp: 'As comunidades que você segue na sua conta, cada uma com seu próximo encontro.',
-  followsEmpty: 'Você ainda não segue nenhuma. Toque em «Seguir» na página de uma comunidade.',
-  memberOfTitle: 'Você pertence a',
+  belongTitle: 'Suas comunidades',
+  belongLead:
+    'As que você lidera, às que pertence e as que segue. Seguir não faz de você membro: só traz os encontros delas para a sua agenda.',
+  leadTitle: 'As que você lidera',
+  leadHelp: 'Têm painel: sua sede, sua gente, seus encontros e seu saldo.',
+  leadEmpty: 'Você ainda não lidera nenhuma. É sua? Faça dela sua a partir da página dela.',
+  memberTitle: 'Às que você pertence',
+  memberEmpty: 'Você ainda não pertence a nenhuma comunidade.',
+  followTitle: 'As que você segue',
+  followEmpty: 'Você não segue nenhuma.',
+  findMore: 'Buscar mais',
   memberDoor: 'Entre para ver as comunidades às quais você pertence.',
   signIn: 'Entrar',
-  memberSoon: 'Quando uma comunidade fizer de você um membro, ela aparecerá aqui.',
-  exploreAll: 'ou explore as {n} comunidades →',
+  youFollow: 'Você a segue',
+  nextShort: 'próximo: {x}',
+  noEncounter: 'sem encontro à vista',
+  atPlace: 'em {x}',
+  itsPanel: 'Seu painel',
+  footAsk: 'Lidera uma que ainda não está aqui?',
+  footOpen: 'Abra a sede dela',
+  footClaim: 'Já está? Faça dela sua a partir da página dela',
   countNow: 'agora',
   countTomorrow: 'amanhã',
   countDays: 'em {n} dias',
