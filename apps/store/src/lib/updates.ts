@@ -26,6 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.135.0',
+    date: '2026-10-18 09:25',
+    missions: ['t_a856c570'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'In /lap/admin/worlds/, the house can rename an existing world or server: a rename action opens a dialog, the new name shows right away and still shows after a reload.',
+      },
+    ],
+  },
+  {
     version: 'v0.134.0',
     date: '2026-10-18 05:59',
     entries: [

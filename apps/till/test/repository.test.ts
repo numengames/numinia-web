@@ -125,6 +125,7 @@ describe('the migration', () => {
       '0014_community_follows.sql',
       '0015_rituals.sql',
       '0016_organization_ai_brain.sql',
+      '0017_world_names.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -158,6 +159,7 @@ describe('the migration', () => {
         'team_roles',
         'wallet_profiles',
         'wallet_sign_ins',
+        'world_names',
         'world_placement_log',
         'world_placements',
         'worlds',

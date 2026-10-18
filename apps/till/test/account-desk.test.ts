@@ -123,6 +123,7 @@ describe('the desk', () => {
       'removeAgent',
       'removeMember',
       'renameTeam',
+      'renameWorld',
       'requestCommunity',
       'ritual',
       'ritualsOf',
@@ -139,6 +140,7 @@ describe('the desk', () => {
       'takeRole',
       'unfollow',
       'unrsvp',
+      'worldNames',
       'worldsOf',
     ]);
   });

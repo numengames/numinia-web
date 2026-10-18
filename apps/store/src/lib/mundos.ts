@@ -20,6 +20,8 @@ export const HOMES_API = '/api/admin/worlds/homes';
 export const PLACE_API = '/api/admin/worlds/place';
 /** The most worlds one placement request carries (the API's own limit). */
 export const PLACE_MAX = 50;
+/** Where the house renames one existing world (or server). */
+export const RENAME_API = '/api/admin/worlds/rename';
 
 /** What a world's id looks like in an address (the fleet's ids: `agora-plaza`, `pablofm-2`): lib/worlds-homes.ts's own rule. */
 export const WORLD_ID_SHAPE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -87,6 +89,27 @@ export function readHomes(json: unknown): readonly WorldHome[] | null {
   if (!isRecord(json) || !Array.isArray(json.homes)) return null;
   const homes = json.homes.map(readHome);
   return homes.every((home): home is WorldHome => home !== null) ? homes : null;
+}
+
+/** One world's own name, and since when (card t_a856c570, 2026-10-18). */
+export interface WorldName {
+  readonly worldId: string;
+  readonly name: string;
+  readonly renamedAt: string;
+}
+
+function readName(value: unknown): WorldName | null {
+  if (!isRecord(value)) return null;
+  const { worldId, name, renamedAt } = value;
+  if (!isText(worldId) || !isText(name) || !isText(renamedAt)) return null;
+  return { worldId, name, renamedAt };
+}
+
+/** Every world the house has renamed, as the API answers them; null when the body is not that. */
+export function readNames(json: unknown): readonly WorldName[] | null {
+  if (!isRecord(json) || !Array.isArray(json.names)) return null;
+  const names = json.names.map(readName);
+  return names.every((entry): entry is WorldName => entry !== null) ? names : null;
 }
 
 /** An organization's worlds as the API answers them; null when the body is not that. */
@@ -164,6 +187,11 @@ export function homesByWorld(homes: readonly WorldHome[]): ReadonlyMap<string, W
   return new Map(homes.map((home) => [home.worldId, home]));
 }
 
+/** The renamed worlds, by id: a world is renamed once, so the map has one name per id. */
+export function namesByWorld(names: readonly WorldName[]): ReadonlyMap<string, string> {
+  return new Map(names.map((entry) => [entry.worldId, entry.name]));
+}
+
 /** One read of a list, as a screen draws it. */
 export type Sheet<T> =
   | { readonly at: 'ready'; readonly items: readonly T[] }
@@ -185,9 +213,30 @@ async function loadSheet<T>(
   }
 }
 
-/** The house's placements; never throws. */
-export function loadHomes(fetcher: Fetch): Promise<Sheet<WorldHome>> {
-  return loadSheet(fetcher, HOMES_API, readHomes);
+/**
+ * The house's placements, and every world it has renamed (card t_a856c570,
+ * 2026-10-18) — one GET, not two, so a reload does not spend the admin-read
+ * rate limit twice over.
+ */
+export async function loadHomes(fetcher: Fetch): Promise<{
+  readonly homes: Sheet<WorldHome>;
+  readonly names: Sheet<WorldName>;
+}> {
+  try {
+    const response = await fetcher(HOMES_API, { headers: { accept: 'application/json' } });
+    if (response.status === 401 || response.status === 403) {
+      return { homes: { at: 'forbidden' }, names: { at: 'forbidden' } };
+    }
+    const json = response.ok ? await response.json().catch(() => null) : null;
+    const homes = response.ok ? readHomes(json) : null;
+    const names = response.ok ? readNames(json) : null;
+    return {
+      homes: homes === null ? { at: 'failed' } : { at: 'ready', items: homes },
+      names: names === null ? { at: 'failed' } : { at: 'ready', items: names },
+    };
+  } catch {
+    return { homes: { at: 'failed' }, names: { at: 'failed' } };
+  }
 }
 
 /** The worlds an organization has; never throws. */
@@ -247,4 +296,26 @@ export async function placeWorlds(
     return { ok: false, why: 'failed' };
   }
   return { ok: true, placed };
+}
+
+/** What renaming a world came to (card t_a856c570, 2026-10-18). */
+export type Rename =
+  | { readonly ok: true; readonly name: string }
+  | { readonly ok: false; readonly why: 'forbidden' | 'failed' };
+
+/** Renames one existing world (or server); the name persists for the next load. */
+export async function renameWorld(fetcher: Fetch, worldId: string, name: string): Promise<Rename> {
+  try {
+    const response = await fetcher(RENAME_API, {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ worldId, name }),
+    });
+    if (response.status === 403) return { ok: false, why: 'forbidden' };
+    const json: unknown = response.ok ? await response.json().catch(() => null) : null;
+    if (!isRecord(json) || !isText(json.name)) return { ok: false, why: 'failed' };
+    return { ok: true, name: json.name };
+  } catch {
+    return { ok: false, why: 'failed' };
+  }
 }

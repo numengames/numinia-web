@@ -7,16 +7,20 @@ import {
   passApiUrl,
   PLACE_API,
   PLACE_MAX,
+  RENAME_API,
   WORLD_ID_SHAPE,
   homesByWorld,
   loadHomes,
   loadOrgWorlds,
   loadWorldPage,
+  namesByWorld,
   orgWorldsUrl,
   placeWorlds,
   readHomes,
+  readNames,
   readOrgWorlds,
   readWorldPage,
+  renameWorld,
   worldApiUrl,
   worldHref,
   worldPageStatus,
@@ -87,6 +91,18 @@ describe('the readers', () => {
     expect(readOrgWorlds({ worlds: [null] })).toBeNull();
   });
 
+  it('read the house’s own names for worlds, or say the body is not that', () => {
+    expect(readNames({ names: [{ worldId: 'w', name: 'N', renamedAt: 't' }] })).toEqual([
+      { worldId: 'w', name: 'N', renamedAt: 't' },
+    ]);
+    expect(readNames({ names: [] })).toEqual([]);
+    expect(readNames({})).toBeNull();
+    expect(readNames(null)).toBeNull();
+    expect(readNames({ names: [null] })).toBeNull();
+    expect(readNames({ names: [{ worldId: 'w', name: 'N' }] })).toBeNull();
+    expect(readNames({ names: [{ worldId: 'w', name: 3, renamedAt: 't' }] })).toBeNull();
+  });
+
   it('read a world’s page, placed or not', () => {
     expect(
       readWorldPage({
@@ -124,23 +140,52 @@ describe('the readers', () => {
     expect(homesByWorld([home]).get('agora-plaza')?.accountName).toBe('Numen Games');
     expect(homesByWorld([]).size).toBe(0);
   });
+
+  it('index the renamed worlds by id', () => {
+    const named = { worldId: 'agora-plaza', name: 'Ágora', renamedAt: 't' };
+    expect(namesByWorld([named]).get('agora-plaza')).toBe('Ágora');
+    expect(namesByWorld([]).size).toBe(0);
+  });
 });
 
 describe('the loads', () => {
-  it('load the placements, and name each way it can fail', async () => {
-    const ok = vi.fn(async () => answer(200, { homes: [home] }));
-    expect(await loadHomes(ok)).toEqual({ at: 'ready', items: [home] });
+  it('load the placements, and the house’s own names along with them', async () => {
+    const ok = vi.fn(async () =>
+      answer(200, {
+        homes: [home],
+        names: [{ worldId: 'agora-plaza', name: 'Ágora', renamedAt: 't' }],
+      }),
+    );
+    expect(await loadHomes(ok)).toEqual({
+      homes: { at: 'ready', items: [home] },
+      names: { at: 'ready', items: [{ worldId: 'agora-plaza', name: 'Ágora', renamedAt: 't' }] },
+    });
     expect(ok).toHaveBeenCalledWith(HOMES_API, { headers: { accept: 'application/json' } });
-    expect(await loadHomes(async () => answer(403, {}))).toEqual({ at: 'forbidden' });
-    expect(await loadHomes(async () => answer(401, {}))).toEqual({ at: 'forbidden' });
-    expect(await loadHomes(async () => answer(500, {}))).toEqual({ at: 'failed' });
-    expect(await loadHomes(async () => answer(200, 'not json'))).toEqual({ at: 'failed' });
-    expect(await loadHomes(async () => answer(200, { homes: 3 }))).toEqual({ at: 'failed' });
+    expect(await loadHomes(async () => answer(403, {}))).toEqual({
+      homes: { at: 'forbidden' },
+      names: { at: 'forbidden' },
+    });
+    expect(await loadHomes(async () => answer(401, {}))).toEqual({
+      homes: { at: 'forbidden' },
+      names: { at: 'forbidden' },
+    });
+    expect(await loadHomes(async () => answer(500, {}))).toEqual({
+      homes: { at: 'failed' },
+      names: { at: 'failed' },
+    });
+    expect(await loadHomes(async () => answer(200, 'not json'))).toEqual({
+      homes: { at: 'failed' },
+      names: { at: 'failed' },
+    });
+    expect(await loadHomes(async () => answer(200, { homes: 3, names: [] }))).toEqual({
+      homes: { at: 'failed' },
+      names: { at: 'ready', items: [] },
+    });
     expect(
       await loadHomes(async () => {
         throw new Error('offline');
       }),
-    ).toEqual({ at: 'failed' });
+    ).toEqual({ homes: { at: 'failed' }, names: { at: 'failed' } });
   });
 
   it('load an organization’s worlds', async () => {
@@ -151,6 +196,15 @@ describe('the loads', () => {
     });
     expect(ok).toHaveBeenCalledWith('/api/mundos?org=acc_1', expect.anything());
     expect(await loadOrgWorlds(async () => answer(403, {}), 'acc_1')).toEqual({ at: 'forbidden' });
+    expect(await loadOrgWorlds(async () => answer(500, {}), 'acc_1')).toEqual({ at: 'failed' });
+    expect(await loadOrgWorlds(async () => answer(200, 'not json'), 'acc_1')).toEqual({
+      at: 'failed',
+    });
+    expect(
+      await loadOrgWorlds(async () => {
+        throw new Error('offline');
+      }, 'acc_1'),
+    ).toEqual({ at: 'failed' });
   });
 
   it('load a world’s page: found, unknown, or not answered', async () => {
@@ -261,6 +315,49 @@ describe('placing worlds', () => {
     const fetcher = vi.fn();
     expect(await placeWorlds(fetcher, [], 'acc_1')).toEqual({ ok: true, placed: 0 });
     expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
+describe('renaming a world (or server), card t_a856c570', () => {
+  it('sends the world id and the new name, and answers it back', async () => {
+    const fetcher = vi.fn(async () => answer(200, { worldId: 'w', name: 'La Reserva Nueva' }));
+    expect(await renameWorld(fetcher, 'w', 'La Reserva Nueva')).toEqual({
+      ok: true,
+      name: 'La Reserva Nueva',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe(RENAME_API);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(String(init.body))).toEqual({ worldId: 'w', name: 'La Reserva Nueva' });
+  });
+
+  it('says forbidden for 403, failed for anything else out of shape', async () => {
+    expect(await renameWorld(async () => answer(403, {}), 'w', 'x')).toEqual({
+      ok: false,
+      why: 'forbidden',
+    });
+    expect(await renameWorld(async () => answer(400, {}), 'w', 'x')).toEqual({
+      ok: false,
+      why: 'failed',
+    });
+    expect(await renameWorld(async () => answer(200, { worldId: 'w' }), 'w', 'x')).toEqual({
+      ok: false,
+      why: 'failed',
+    });
+    expect(await renameWorld(async () => answer(200, 'no'), 'w', 'x')).toEqual({
+      ok: false,
+      why: 'failed',
+    });
+    expect(
+      await renameWorld(
+        async () => {
+          throw new Error('offline');
+        },
+        'w',
+        'x',
+      ),
+    ).toEqual({ ok: false, why: 'failed' });
   });
 });
 

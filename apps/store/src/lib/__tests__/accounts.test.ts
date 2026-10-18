@@ -72,16 +72,16 @@ describe('the desk contract', () => {
   });
 
   it('has one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-29, -27)).toEqual(['profile', 'setProfile']);
+    expect(DESK_METHODS.slice(-31, -29)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
   });
 
   it('has the census (cut «El censo»), optional too: a till without it changes nothing', () => {
-    expect(DESK_METHODS.slice(-27, -25)).toEqual(['signedIn', 'citizens']);
+    expect(DESK_METHODS.slice(-29, -27)).toEqual(['signedIn', 'citizens']);
   });
 
   it('has where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-25, -21)).toEqual([
+    expect(DESK_METHODS.slice(-27, -23)).toEqual([
       'placeWorld',
       'placements',
       'worldsOf',
@@ -110,6 +110,7 @@ describe('the desk contract', () => {
       'placements',
       'profile',
       'removeAgent',
+      'renameWorld',
       'requestCommunity',
       'ritual',
       'ritualsOf',
@@ -117,6 +118,7 @@ describe('the desk contract', () => {
       'settings',
       'signedIn',
       'takeAgentRole',
+      'worldNames',
       'worldsOf',
     ]);
   });

@@ -14,6 +14,7 @@ import {
   FLEET_MACHINES,
   WORLD_ZONES,
   addressOwner,
+  applyNames,
   buildRows,
   buildTag,
   compareDns,
@@ -759,6 +760,16 @@ describe('the place: machine, address and whether it is free', () => {
     expect(ids).not.toContain('gone');
     expect(ids).not.toContain('circle');
     expect(ids).not.toContain('old');
+  });
+
+  it('overrides a row’s title with the house’s own name, leaving the rest untouched', () => {
+    const named = applyNames(rows, new Map([['agora', 'La Reserva Nueva']]));
+    expect(named.find((row) => row.id === 'agora')?.title).toBe('La Reserva Nueva');
+    expect(named.find((row) => row.id === 'forge')?.title).toBe(
+      rows.find((row) => row.id === 'forge')?.title,
+    );
+    expect(applyNames(rows, null)).toEqual(rows);
+    expect(applyNames(rows, new Map())).toEqual(rows);
   });
 
   it('reads a DNS-over-HTTPS answer: A records only, no such name is empty, a failure is null', () => {

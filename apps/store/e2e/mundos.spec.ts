@@ -104,16 +104,22 @@ async function signIn(context: BrowserContext, wallet: string, rank: string): Pr
 }
 
 /** The fleet's world ids and the placements, as the house reads them (the server is the truth). */
-async function fleetState(page: Page): Promise<{ ids: string[]; placed: Map<string, string> }> {
+async function fleetState(
+  page: Page,
+): Promise<{ ids: string[]; placed: Map<string, string>; provisioned: Set<string> }> {
   const fleet = await page.request.get(`${origin}/api/admin/worlds`);
   expect(fleet.status()).toBe(200);
-  const rows = ((await fleet.json()) as { rows: { id: string }[] }).rows;
+  const rows = ((await fleet.json()) as { rows: { id: string; order: unknown; status: string }[] })
+    .rows;
   const homes = await page.request.get(`${origin}/api/admin/worlds/homes`);
   expect(homes.status()).toBe(200);
   const list = ((await homes.json()) as { homes: { worldId: string; accountId: string }[] }).homes;
   return {
     ids: rows.map((row) => row.id),
     placed: new Map(list.map((home) => [home.worldId, home.accountId])),
+    provisioned: new Set(
+      rows.filter((row) => row.order !== null && row.status !== 'changing').map((row) => row.id),
+    ),
   };
 }
 
@@ -798,5 +804,73 @@ test.describe('the world’s page as the wireframe draws it (cut K)', () => {
     await expect(page.locator('[data-world-hero]')).toBeVisible();
     expect(await overflow(page)).toBeLessThanOrEqual(0);
     await phone.close();
+  });
+});
+
+test.describe('t_a856c570: the house renames an existing world, and it persists', () => {
+  test.describe.configure({ mode: 'serial' });
+  let world = '';
+
+  test('renames a world from its card, and the new name shows at once', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    const state = await fleetState(page);
+    // A rename does not care whether a world is already assigned to an
+    // organization — only that it exists and has a steady machine, so the
+    // card shows the button. Any provisioned world but the one other tests
+    // name by id directly (agora-plaza) does. Run last so its state changes
+    // cannot affect any of the room's other, unrelated tests.
+    const steady = state.ids.filter((id) => id !== 'agora-plaza' && state.provisioned.has(id));
+    expect(steady.length).toBeGreaterThanOrEqual(1);
+    world = steady[0] ?? '';
+
+    await page.goto(room());
+    const renameButton = page.locator(`[data-rename-for="${world}"]`);
+    await expect(renameButton).toBeVisible();
+    await renameButton.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading')).toContainText('nombre');
+    await dialog.locator('#mundos-rename').fill('La Reserva Nueva');
+    await dialog.locator('[data-metric="worlds-rename-save"]').click();
+    await expect(page.locator('[data-renamed-note]')).toHaveText('Nombre guardado.');
+    await expect(page.locator(`[data-world="${world}"] h3`)).toHaveText('La Reserva Nueva');
+  });
+
+  test('the new name survives a reload', async ({ page, context }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.goto(room());
+    await expect(page.locator(`[data-world="${world}"] h3`)).toHaveText('La Reserva Nueva');
+    await page.reload();
+    await expect(page.locator(`[data-world="${world}"] h3`)).toHaveText('La Reserva Nueva');
+    // The till itself, not just the screen: what the room reads on a fresh load.
+    const homesAfterReload = await page.request.get(`${origin}/api/admin/worlds/homes`);
+    expect(homesAfterReload.status()).toBe(200);
+    const { names: list } = (await homesAfterReload.json()) as {
+      names: { worldId: string; name: string }[];
+    };
+    expect(list.find((entry) => entry.worldId === world)?.name).toBe('La Reserva Nueva');
+  });
+
+  test('only the house renames, and a body out of shape is refused', async ({ page, context }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await context.clearCookies();
+    await signIn(context, ADMIN, 'nomad');
+    const refused = await page.request.post(`${origin}/api/admin/worlds/rename`, {
+      data: { worldId: world, name: 'Should not land' },
+    });
+    expect(refused.status()).toBe(403);
+
+    await context.clearCookies();
+    await signIn(context, HOUSE, 'oracle');
+    const bad = await page.request.post(`${origin}/api/admin/worlds/rename`, {
+      data: { worldId: world, name: '' },
+    });
+    expect(bad.status()).toBe(400);
+    // Still the renamed name: the refused attempt wrote nothing.
+    await page.goto(room());
+    await expect(page.locator(`[data-world="${world}"] h3`)).toHaveText('La Reserva Nueva');
   });
 });
