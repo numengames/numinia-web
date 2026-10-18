@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-18 19:50",
+    "entries": [
+      {
+        "text": "The worlds index (/mundos/) now lists every world that is on before the ones that are off, whatever the ones off had: among the ones on, the ones with more people still come first.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.143.0",
+  },
+  {
     "date": "2026-10-18 17:40",
     "entries": [
       {
