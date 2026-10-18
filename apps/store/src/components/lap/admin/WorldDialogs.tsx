@@ -15,8 +15,14 @@
  */
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import type { SupportedLocale } from '@numinia/domain';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
+import { ORG_CHOICE_WORDS } from '../../../i18n/org-choices';
+import { readStatement } from '../../../lib/accounts';
+import { localeHref } from '../../../lib/app-nav';
 import { copyFileUrl, formatBytes } from '../../../lib/fleet';
+import { accountOf, type OrgChoice } from '../../../lib/org-choices';
+import { hasBalanceToPowerOn } from '../../../lib/world-power';
 import {
   DEFAULT_IMAGE,
   ENGINE_NAMES,
@@ -46,7 +52,22 @@ import {
 import { askAddress, writeDns } from '../../../lib/worlds-source';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { busy, problemText, stepText, useFleetAction, type Step } from './fleet-action';
+import { OrgOptions } from './OrgOptions';
+import { readTeams, type Teams } from './org-teams';
 import { CodeBox, Cover, type CodeMode, type WorldAction } from './WorldViews';
+
+/** «Poder y saldo» (MVL-B): whether a new world starts running or not. */
+export type WorldPower = 'on' | 'off';
+
+/** `Teams` (org-teams.ts) plus a state before the wizard has ever asked. */
+export type TeamsState = Teams | { readonly at: 'idle' };
+
+/** The organization's balance for the wizard's confirm step, or where it is. */
+export type PowerBalance =
+  | { readonly at: 'idle' }
+  | { readonly at: 'checking' }
+  | { readonly at: 'ready'; readonly cents: number; readonly accountId: string }
+  | { readonly at: 'failed' };
 
 export function Modal({
   open,
@@ -348,6 +369,7 @@ export function NewWorldDialog({
   listens,
   engines,
   release,
+  locale,
 }: {
   readonly open: boolean;
   readonly onClose: () => void;
@@ -368,12 +390,18 @@ export function NewWorldDialog({
   readonly engines: (alias: string) => readonly Engine[];
   /** The Numinia Engine's newest published build; null while there is none (its option stays off). */
   readonly release: EngineRelease | null;
+  /** For the top-up link in «Poder y saldo»'s balance block. */
+  readonly locale: SupportedLocale;
 }) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<OrderDraft>(() => emptyDraft(machines[0]));
   const [label, setLabel] = useState('');
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
+  const [power, setPower] = useState<WorldPower>('on');
+  const [teams, setTeams] = useState<TeamsState>({ at: 'idle' });
+  const [orgKey, setOrgKey] = useState('');
+  const [balance, setBalance] = useState<PowerBalance>({ at: 'idle' });
   const { step: flow, run, reset } = useFleetAction(wallet, listens);
   const { dnsStep, prepare, resetDns } = useDnsWrite();
   useOnProgress(flow, onChanged);
@@ -383,6 +411,9 @@ export function NewWorldDialog({
     setDraft(emptyDraft(machines[0]));
     setLabel('');
     setZone(WORLD_ZONES[0]);
+    setPower('on');
+    setOrgKey('');
+    setBalance({ at: 'idle' });
     reset();
     resetDns();
   };
@@ -442,6 +473,64 @@ export function NewWorldDialog({
     engine === 'numinia-engine' ? (release?.image ?? null) : DEFAULT_IMAGE;
   const drafted = engineOf(draft.image.trim());
   const engineOffered = drafted === null || offered.includes(drafted);
+
+  // Reaching the confirm step with «Encendido» chosen: the organizations are
+  // read once, the way «Asignar a una organización» reads them.
+  useEffect(() => {
+    if (step !== 3 || power !== 'on' || teams.at !== 'idle') return;
+    let alive = true;
+    setTeams({ at: 'loading' });
+    void readTeams().then((read) => {
+      if (alive) setTeams(read);
+    });
+    return () => {
+      alive = false;
+    };
+    // teams.at is read, not a dependency: setting it to 'loading' here must
+    // not retrigger this same effect (it would cancel its own fetch).
+  }, [step, power]);
+
+  const list = teams.at === 'ready' ? teams.choices : [];
+  const orgChoice: OrgChoice | null = list.find((choice) => choice.key === orgKey) ?? null;
+
+  // The chosen organization's balance: ensured an account first (a community
+  // not yet used has none), then read the same statement Saldo itself reads.
+  useEffect(() => {
+    if (power !== 'on' || orgChoice === null) {
+      setBalance({ at: 'idle' });
+      return undefined;
+    }
+    let alive = true;
+    setBalance({ at: 'checking' });
+    void (async () => {
+      const account = await accountOf(fetch, orgChoice);
+      if (!account.ok) {
+        if (alive) setBalance({ at: 'failed' });
+        return;
+      }
+      const response = await fetch(
+        `/api/saldo/statement?${new URLSearchParams({ cuenta: account.accountId, rango: '7d' }).toString()}`,
+        { headers: { accept: 'application/json' } },
+      );
+      const json: unknown = response.ok ? await response.json().catch(() => null) : null;
+      const statement = json === null ? null : readStatement(json);
+      if (!alive) return;
+      setBalance(
+        statement === null
+          ? { at: 'failed' }
+          : { at: 'ready', cents: statement.balanceCents, accountId: account.accountId },
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [power, orgChoice?.key]);
+
+  // Off never looks at balance; on blocks until the chosen organization has
+  // enough — the same rule (lib/world-power.ts) Numen Games will reuse later.
+  const powerReady =
+    power === 'off' ||
+    (orgChoice !== null && balance.at === 'ready' && hasBalanceToPowerOn(balance.cents));
 
   const canNext =
     (step === 0 && draft.id.trim() !== '' && taken === null) ||
@@ -738,6 +827,88 @@ export function NewWorldDialog({
               )}
               <DnsWriteLine step={dnsStep} domain={domain} machine={draft.server} room={room} />
               <StepLine step={flow} machine={draft.server} room={room} sessionHref={sessionHref} />
+              <div className="campo" data-power-choice>
+                <span className="etiqueta">{room.wizard.powerLabel}</span>
+                <div role="radiogroup" aria-label={room.wizard.powerLabel} className="fichas">
+                  {(['on', 'off'] as const).map((choice) => (
+                    <button
+                      key={choice}
+                      type="button"
+                      role="radio"
+                      aria-checked={power === choice}
+                      className="ficha-mundo"
+                      onClick={() => setPower(choice)}
+                      data-metric="worlds-wizard-power"
+                      data-power={choice}
+                    >
+                      {choice === 'on' ? room.wizard.powerOn : room.wizard.powerOff}
+                    </button>
+                  ))}
+                </div>
+                <span className="pista">{room.wizard.powerHint}</span>
+              </div>
+              {power === 'on' && (
+                <div className="campo" data-power-balance>
+                  {teams.at === 'loading' && (
+                    <p className="estado">
+                      <LunaEspera /> {room.wizard.orgLoading}
+                    </p>
+                  )}
+                  {teams.at === 'failed' && (
+                    <p className="estado fallo" role="alert">
+                      {room.wizard.orgFailed}
+                    </p>
+                  )}
+                  {teams.at === 'ready' && (
+                    <>
+                      <label className="etiqueta" htmlFor="mundo-org">
+                        {room.wizard.orgLabel}
+                      </label>
+                      <select
+                        id="mundo-org"
+                        value={orgKey}
+                        onChange={(event) => setOrgKey(event.target.value)}
+                        data-metric="worlds-wizard-org"
+                      >
+                        <option value="">{room.wizard.orgNone}</option>
+                        <OrgOptions list={list} words={ORG_CHOICE_WORDS[locale]} />
+                      </select>
+                    </>
+                  )}
+                  {orgChoice !== null && balance.at === 'checking' && (
+                    <p className="estado" aria-live="polite">
+                      <LunaEspera /> {room.wizard.balanceChecking}
+                    </p>
+                  )}
+                  {orgChoice !== null &&
+                    balance.at === 'ready' &&
+                    hasBalanceToPowerOn(balance.cents) && (
+                      <p className="estado" data-balance-ok>
+                        {room.wizard.balanceOk}
+                      </p>
+                    )}
+                  {orgChoice !== null &&
+                    balance.at === 'ready' &&
+                    !hasBalanceToPowerOn(balance.cents) && (
+                      <p className="fallo" role="alert" data-balance-blocked>
+                        {fill(room.wizard.balanceBlocked, { org: orgChoice.label })}{' '}
+                        <a
+                          href={`${localeHref(locale, '/panel/saldo/')}?org=${encodeURIComponent(
+                            balance.accountId,
+                          )}`}
+                          data-metric="worlds-wizard-topup"
+                        >
+                          {room.wizard.topUpLink}
+                        </a>
+                      </p>
+                    )}
+                  {orgChoice !== null && balance.at === 'failed' && (
+                    <p className="fallo" role="alert">
+                      {room.wizard.orgFailed}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
           <div className="pie">
@@ -786,7 +957,7 @@ export function NewWorldDialog({
               <button
                 type="button"
                 className="btn btn-primario"
-                disabled={order === null || sending}
+                disabled={order === null || sending || !powerReady}
                 onClick={() => void create()}
                 data-metric="worlds-wizard-create"
               >

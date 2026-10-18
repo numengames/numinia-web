@@ -1375,6 +1375,7 @@ export function WorldsPanel({
           machineEngines(fleet.machines.find((machine) => machine.alias === alias))
         }
         release={fleet.engine}
+        locale={locale}
       />
       <ImportDialog
         source={source}
