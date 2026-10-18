@@ -371,6 +371,23 @@ test('the way back confirms the payment and shows the new balance', async ({ pag
   expect(posted).toEqual(['confirm']);
 });
 
+test('the paid state shows a centered thank-you card with the celebration, then sends the buyer to Saldo (t_ef680bad)', async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.goto('/es/saldo/vuelta/?session_id=cs_test_e2e');
+  const card = page.locator('[data-saldo-gracias]');
+  await expect(card).toBeVisible();
+  // The old plain message is gone.
+  await expect(card).not.toContainText('ya puedes cerrar esta pestaña');
+  await expect(card).toContainText('¡Gracias!');
+  // The celebration: the burst's stars, decorative and numínica (never a
+  // generic confetti icon).
+  await expect(card.locator('.saldo-gracias-estrella')).toHaveCount(24);
+  // It sends the buyer on to Saldo by itself (the balance page, not the lab).
+  await page.waitForURL(/\/es\/saldo\/$/, { timeout: 10_000 });
+});
+
 for (const colorScheme of ['dark', 'light'] as const) {
   test(`the signed-in panel, for an organization, passes axe (${colorScheme})`, async ({
     page,
