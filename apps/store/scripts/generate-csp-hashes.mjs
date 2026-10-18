@@ -47,10 +47,10 @@
  * ships and what the e2e suite runs against.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';
 
@@ -60,6 +60,10 @@ const SRC_DIR = join(APP_DIR, 'src');
 const PAGES_DIR = join(SRC_DIR, 'pages');
 const DIST_CLIENT_DIR = join(APP_DIR, 'dist', 'client');
 const DIST_SERVER_ENTRY = join(APP_DIR, 'dist', 'server', 'entry.mjs');
+// A throwaway Node-adapter build, used ONLY to probe on-demand routes when
+// the real build targets Cloudflare (see probeServerEntry() below).
+const PROBE_DIR = join(APP_DIR, 'dist-csp-probe');
+const PROBE_SERVER_ENTRY = join(PROBE_DIR, 'server', 'entry.mjs');
 const OUT_FILE = join(SRC_DIR, 'lib', 'csp-hashes.generated.ts');
 const HARVEST = process.argv.includes('--harvest');
 const LOCALE_DIRS = new Set(['es', 'ja', 'ko', 'pt-br']);
@@ -130,6 +134,38 @@ function sampleWorldRoute() {
   }
 }
 
+/** `dist/server/entry.mjs` is a Cloudflare Workers module (`export default
+ * { fetch(request, env, ctx) {...} }`) whenever this build set
+ * DEPLOY_TARGET=cloudflare (see astro.config.mjs) — spawning that file with
+ * plain `node` doesn't boot a server at all; it throws (no `addEventListener`/
+ * Workers globals) or just hangs until waitForServer's timeout. Caught live
+ * on the production (Cloudflare Workers Builds) run, 2026-10-18: the harvest
+ * pass crashed the whole `npm run build`, there of all places, because CI
+ * never sets DEPLOY_TARGET and never hit this. The island hydration
+ * bootstraps this step hashes are client-side bundles (dist/client) — same
+ * bytes regardless of which server adapter rendered the HTML around them —
+ * so when the real build targets Cloudflare, this throws away a disposable
+ * Node-adapter build (DEPLOY_TARGET unset) into dist-csp-probe/, probes
+ * THAT instead, and deletes it afterward; the real dist/ is untouched. */
+function probeServerEntry() {
+  if (process.env.DEPLOY_TARGET !== 'cloudflare') {
+    return existsSync(DIST_SERVER_ENTRY) ? DIST_SERVER_ENTRY : null;
+  }
+  try {
+    execFileSync('npx', ['astro', 'build', '--outDir', PROBE_DIR], {
+      stdio: 'ignore',
+      env: { ...process.env, DEPLOY_TARGET: '' },
+      cwd: APP_DIR,
+    });
+    return existsSync(PROBE_SERVER_ENTRY) ? PROBE_SERVER_ENTRY : null;
+  } catch (err) {
+    console.warn(
+      `csp-hashes: disposable Node probe build failed, skipping on-demand routes: ${err.message}`,
+    );
+    return null;
+  }
+}
+
 async function freePort() {
   return await new Promise((resolve, reject) => {
     const srv = createServer();
@@ -154,12 +190,13 @@ async function waitForServer(url, attempts = 50) {
 }
 
 async function harvestOnDemandRoutes(hashes) {
-  if (!existsSync(DIST_SERVER_ENTRY)) return;
+  const entry = probeServerEntry();
+  if (!entry) return;
   const routes = [...findOnDemandStaticRoutes(), sampleWorldRoute()].filter(Boolean);
   if (routes.length === 0) return;
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
-  const child = spawn(process.execPath, [DIST_SERVER_ENTRY], {
+  const child = spawn(process.execPath, [entry], {
     env: {
       ...process.env,
       HOST: '127.0.0.1',
@@ -184,6 +221,7 @@ async function harvestOnDemandRoutes(hashes) {
     console.log(`csp-hashes: harvested ${scanned}/${routes.length} on-demand route(s)`);
   } finally {
     child.kill();
+    if (entry === PROBE_SERVER_ENTRY) rmSync(PROBE_DIR, { recursive: true, force: true });
   }
 }
 
@@ -210,15 +248,24 @@ const sistemaJs = readFileSync(join(SRC_DIR, 'scripts', 'sistema.js'), 'utf8');
 hashes.add(sha256Base64(sistemaJs));
 
 if (HARVEST) {
-  // Kind 2: every inline script in the built, prerendered static output —
-  // island hydration bootstraps included.
-  if (existsSync(DIST_CLIENT_DIR)) {
-    for (const file of listFiles(DIST_CLIENT_DIR, '.html')) {
-      harvestHtml(readFileSync(file, 'utf8'), hashes);
+  try {
+    // Kind 2: every inline script in the built, prerendered static output —
+    // island hydration bootstraps included.
+    if (existsSync(DIST_CLIENT_DIR)) {
+      for (const file of listFiles(DIST_CLIENT_DIR, '.html')) {
+        harvestHtml(readFileSync(file, 'utf8'), hashes);
+      }
     }
+    // Kind 3: the same, for on-demand routes dist/client never sees.
+    await harvestOnDemandRoutes(hashes);
+  } catch (err) {
+    // Never let a harvesting problem (sandboxed build container, a route
+    // that started failing, anything) take the whole `npm run build` down
+    // with it — kind-1 hashes alone still ship a working, if narrower, CSP.
+    console.warn(
+      `csp-hashes: harvest step failed, continuing with ${hashes.size} hash(es) so far: ${err.message}`,
+    );
   }
-  // Kind 3: the same, for on-demand routes dist/client never sees.
-  await harvestOnDemandRoutes(hashes);
 }
 
 const sorted = [...hashes].sort();
