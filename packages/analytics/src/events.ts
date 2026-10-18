@@ -273,3 +273,11 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `belong-explore` (the same from the empty state), `belong-open-home`
 //   («Ábrele sede») and `belong-claim» («Hazla tuya desde su página») at the
 //   foot; `belong-sign-in` stays as the door.
+// ---- v3 cut O (2026-10-18): till encounters are whole ----
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - /calendar/: `calendar-subscribe-live` (the on-demand feed beside the
+//   static one, files + the till's rows); a till row hung on the month grid
+//   keeps `calendar-ritual`. «Me apunto» on a till encounter's page keeps
+//   `ritual-rsvp` / `ritual-rsvp-sign-in`.
+// - /agenda/: `agenda-ics` (each upcoming encounter's calendar file, the
+//   till's included — the file's page has the same under `ritual-add-calendar`).

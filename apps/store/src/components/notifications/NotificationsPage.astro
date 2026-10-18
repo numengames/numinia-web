@@ -162,7 +162,9 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
     })();
     let filter = 'all';
 
-    const localHref = (href: string): string => (href.startsWith('/') ? `${prefix}${href}` : href);
+    // A page gets the locale's prefix; a calendar file (`.ics`) has one route for every locale.
+    const localHref = (href: string): string =>
+      href.startsWith('/') && !href.endsWith('.ics') ? `${prefix}${href}` : href;
 
     function apply(): void {
       const rows = [...list.querySelectorAll<HTMLElement>('[data-notice]')];

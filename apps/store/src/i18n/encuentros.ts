@@ -19,6 +19,9 @@ export interface EncuentrosMessages {
   readonly empty: string;
   /** Under the list: each community has its own feed. */
   readonly note: string;
+  /** The on-demand feed beside the static one: files and the encounters published from the city. */
+  readonly subscribeLive: string;
+  readonly subscribeLiveTitle: string;
 }
 
 const ES: EncuentrosMessages = {
@@ -29,6 +32,9 @@ const ES: EncuentrosMessages = {
   viewMonth: 'Mes',
   empty: 'No hay encuentros anunciados por ahora.',
   note: 'Los encuentros con hora se guardan en UTC. Los de día entero se ven igual en todo el mundo. Cada comunidad tiene también el suyo, para suscribirse desde su página.',
+  subscribeLive: 'Con los publicados desde la ciudad',
+  subscribeLiveTitle:
+    'Calendario en vivo: los encuentros del registro y los publicados desde la ciudad.',
 };
 
 const EN: EncuentrosMessages = {
@@ -39,6 +45,9 @@ const EN: EncuentrosMessages = {
   viewMonth: 'Month',
   empty: 'No gatherings announced for now.',
   note: 'Timed gatherings are kept in UTC. Whole-day ones look the same everywhere. Each community also has its own, to subscribe to from its page.',
+  subscribeLive: 'With the ones published from the city',
+  subscribeLiveTitle:
+    "Live calendar: the register's gatherings and the ones published from the city.",
 };
 
 const JA: EncuentrosMessages = {
@@ -49,6 +58,8 @@ const JA: EncuentrosMessages = {
   viewMonth: '月',
   empty: '今のところ告知された集まりはありません。',
   note: '時刻のある集まりは UTC で保存されます。終日の集まりはどこでも同じ日に見えます。各コミュニティにも独自のカレンダーがあり、そのページから購読できます。',
+  subscribeLive: '都市から公開された集まりも含めて',
+  subscribeLiveTitle: 'ライブカレンダー: 登録簿の集まりと、都市から公開された集まり。',
 };
 
 const KO: EncuentrosMessages = {
@@ -59,6 +70,8 @@ const KO: EncuentrosMessages = {
   viewMonth: '월',
   empty: '지금은 공지된 모임이 없습니다.',
   note: '시간이 있는 모임은 UTC로 저장됩니다. 종일 모임은 어디서나 같은 날로 보입니다. 각 커뮤니티에도 자체 달력이 있어 그 페이지에서 구독할 수 있습니다.',
+  subscribeLive: '도시에서 공개한 모임 포함',
+  subscribeLiveTitle: '실시간 달력: 등록부의 모임과 도시에서 공개한 모임.',
 };
 
 const PT_BR: EncuentrosMessages = {
@@ -69,6 +82,8 @@ const PT_BR: EncuentrosMessages = {
   viewMonth: 'Mês',
   empty: 'Nenhum encontro anunciado por enquanto.',
   note: 'Encontros com horário são guardados em UTC. Os de dia inteiro aparecem iguais no mundo todo. Cada comunidade também tem o seu, para assinar na página dela.',
+  subscribeLive: 'Com os publicados pela cidade',
+  subscribeLiveTitle: 'Calendário ao vivo: os encontros do registro e os publicados pela cidade.',
 };
 
 export const ENCUENTROS_UI: Readonly<Record<SupportedLocale, EncuentrosMessages>> = {

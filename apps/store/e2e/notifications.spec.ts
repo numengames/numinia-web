@@ -162,7 +162,8 @@ test('signed in, one list of the four kinds, newest first, with the quiet action
   );
   const calendar = rows(page).nth(3).locator('[data-metric="notifications-calendar"]');
   await expect(calendar).toHaveText('A mi calendario');
-  await expect(calendar).toHaveAttribute('href', '/es/rituals/numinia-anniversary-2026.ics');
+  // The calendar file has one route for every locale: no `/es` prefix (cut O fixed the prefixed, dead link).
+  await expect(calendar).toHaveAttribute('href', '/rituals/numinia-anniversary-2026.ics');
   await expect(page.locator('[data-notices-empty]')).toBeHidden();
   await page.waitForLoadState('networkidle');
   expect(asked).toHaveLength(1);

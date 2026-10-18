@@ -8,6 +8,12 @@
  * the words (es by default). 401 signed out; private, never stored. A
  * source that fails is skipped (lib/notices-source.ts). Under
  * DATA_SOURCE=fixture the list is the fixture's, one of every kind.
+ *
+ * Since cut O the encounters published from the city (cut M, the till's
+ * rows) count like the files: the register handed to the notices is the
+ * merge of both, so an RSVP on a till encounter brings the same notice. A
+ * fixture build keeps its canned list and adds, from its own fixture desks,
+ * the notices of the till encounters the session said «voy» to.
  */
 
 import type { APIRoute } from 'astro';
@@ -18,8 +24,9 @@ import { accountsFrom } from '../../lib/accounts-source';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionAsker } from '../../lib/auth/session-wallet';
 import { communityOfAccount } from '../../lib/community-accounts';
-import { fixtureNotices } from '../../lib/notices';
+import { encounterNotices, fixtureNotices, sortNotices } from '../../lib/notices';
 import { gatherNotices, presentNotices, type NoticePorts } from '../../lib/notices-source';
+import { allRituals, isTillRitualId, tillRituals } from '../../lib/rituals-till';
 import { rsvpsFrom } from '../../lib/rsvp-source';
 import { runtimeBinding } from '../../lib/runtime-env';
 import { logEvent } from '../../lib/telemetry';
@@ -47,13 +54,29 @@ export const GET: APIRoute = async ({ cookies, url }) => {
   const words = NOTIFICATIONS_UI[locale].words;
   const since = url.searchParams.get('since');
   const now = new Date();
-  if (process.env.DATA_SOURCE === 'fixture') {
-    const body = presentNotices(fixtureNotices(locale, now, words, REGISTER), since, now, locale);
-    return new Response(JSON.stringify(body), { headers: HEADERS });
-  }
   const binding = runtimeBinding('TILL_ACCOUNTS');
   const desk = accountsFrom({ binding, dataSource: process.env.DATA_SOURCE });
   const rsvps = rsvpsFrom({ binding, dataSource: process.env.DATA_SOURCE });
+  const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+  // The files and the till's rows, as every list shows them (cut M); the till not there leaves the files.
+  const rituals = allRituals(RITUALS, await tillRituals(desk, null, true), REGISTER, now.getTime());
+  if (process.env.DATA_SOURCE === 'fixture') {
+    const mine = rsvps === null ? null : await rsvps.myRsvps(asker.wallet.toLowerCase());
+    const tillIds =
+      typeof mine === 'object' &&
+      mine !== null &&
+      'ritualIds' in mine &&
+      Array.isArray(mine.ritualIds)
+        ? mine.ritualIds.filter((id): id is string => typeof id === 'string' && isTillRitualId(id))
+        : [];
+    const notices = sortNotices([
+      ...fixtureNotices(locale, now, words, REGISTER),
+      ...encounterNotices(tillIds, { rituals, communities: REGISTER, commons, locale, now, words }),
+    ]);
+    return new Response(JSON.stringify(presentNotices(notices, since, now, locale)), {
+      headers: HEADERS,
+    });
+  }
   const ports: NoticePorts = {
     myRsvps: rsvps === null ? unbound : (wallet) => rsvps.myRsvps(wallet),
     overview: desk === null ? unbound : (wallet) => desk.overview(wallet),
@@ -64,9 +87,9 @@ export const GET: APIRoute = async ({ cookies, url }) => {
   };
   const register = {
     communities: REGISTER,
-    rituals: RITUALS,
+    rituals,
     accountToCommunity: await communityOfAccount(REGISTER),
-    commons: { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] },
+    commons,
   };
   const notices = await gatherNotices(ports, asker, register, locale, words, now, logEvent);
   return new Response(JSON.stringify(presentNotices(notices, since, now, locale)), {

@@ -54,6 +54,7 @@ const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(communit
     readonly communityName: string;
     readonly title: string;
     readonly start: string;
+    readonly end: string;
     readonly allDay: boolean;
     readonly mode: string;
     readonly where: string;
@@ -75,6 +76,8 @@ const query = `upcoming=1${community ? `&comunidad=${encodeURIComponent(communit
         if (!response.ok) return;
         const body = (await response.json()) as { rituals?: Row[] };
         const rows = (body.rituals ?? []).filter((row) => !world || row.worldId === world);
+        // The month grid of /calendar/ (cut O) paints the same rows: one read for both.
+        document.dispatchEvent(new CustomEvent('numinia:rituals-live', { detail: rows }));
         if (rows.length === 0) return;
         list.innerHTML = rows
           .map((row) => {
