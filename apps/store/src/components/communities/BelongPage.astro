@@ -186,8 +186,12 @@ const json = (value: unknown): string => JSON.stringify(value).replace(/</g, '\\
     type BelongFact,
     type CountdownWords,
   } from '../../lib/belong';
-  import { panelLink } from '../../lib/face-menu';
   import { enterWorld } from '../../lib/mundos';
+
+  /* `<panel door>?org=<id>`, as lib/face-menu's `panelLink` writes it. Not
+     imported: the rail's script shares that module, and a shared chunk would
+     push the rail's script out of the landing's inline budget. */
+  const panelLink = (door: string, id: string): string => `${door}?org=${encodeURIComponent(id)}`;
 
   interface Words {
     readonly admin: string;
@@ -566,7 +570,7 @@ const json = (value: unknown): string => JSON.stringify(value).replace(/</g, '\\
   .tc-acto:focus-visible {
     text-decoration: underline;
   }
-  .vacio a {
+  .vacio a:not(.btn) {
     color: var(--enlace);
   }
   .pie-tuyas {

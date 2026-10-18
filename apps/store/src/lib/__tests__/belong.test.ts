@@ -15,6 +15,7 @@ import {
   readBelongFollows,
   readBelongOrgs,
   readBelongWorlds,
+  type BelongCard,
   type BelongFact,
 } from '../belong';
 import { parseCommunity, parseRitual } from '../communities';
@@ -160,7 +161,8 @@ describe('groupBelong', () => {
       new Map([['acc_team_numen_games', ['agora', 'forest']]]),
       baked,
     );
-    expect(groups.lead.map((card) => [card.key, card.name, card.worldIds])).toEqual([
+    const brief = (card: BelongCard) => [card.key, card.name, card.worldIds];
+    expect(groups.lead.map(brief)).toEqual([
       ['acc_team_alpha', 'Alpha', []],
       ['numen-games', 'Numen Games', ['agora', 'forest']],
       ['acc_team_other', 'Zeta', []],

@@ -23,10 +23,10 @@ import {
 } from './communities';
 
 /** What a card says about the person's standing in the community. */
-export type BelongRole = 'admin' | 'member' | 'follow';
+type BelongRole = 'admin' | 'member' | 'follow';
 
 /** The next encounter as a card writes it. */
-export interface BelongNext {
+interface BelongNext {
   readonly title: string;
   readonly href: string;
   /** `YYYY-MM-DD` or an ISO instant, as the register writes it. */

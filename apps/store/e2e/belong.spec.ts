@@ -141,7 +141,7 @@ test.describe('signed in', () => {
     await page.goto(belongPage());
     await expect(page.locator('html')).toHaveAttribute('data-session', 'in');
     await expect(page.locator('[data-belong-sections]')).toBeVisible();
-    await expect(page.locator('[data-session-out]')).toBeHidden();
+    await expect(page.locator('.puerta[data-session-out]')).toBeHidden();
 
     // «Las que llevas»: Numen Games, Titular, its panel and its world to enter.
     const leading = page.locator(lead);
