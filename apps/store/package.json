@@ -6,11 +6,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "build": "node ../../scripts/share-card.mjs && astro build",
+    "dev": "node scripts/generate-csp-hashes.mjs && astro dev",
+    "build": "node scripts/generate-csp-hashes.mjs && node ../../scripts/share-card.mjs && astro build",
     "preview": "astro preview",
     "type-check": "astro check",
     "lint": "eslint src --no-error-on-unmatched-pattern",
+    "pretest": "node scripts/generate-csp-hashes.mjs",
     "test": "vitest run --coverage",
     "e2e": "playwright test",
     "test:mutation": "stryker run"
