@@ -152,7 +152,8 @@ export function sqliteD1(): Shim {
   return { db, sqlite };
 }
 
-const MIGRATIONS = fileURLToPath(new URL('../migrations/', import.meta.url).href);
+/** The till's migrations folder, for a test that applies them one by one. */
+export const MIGRATIONS = fileURLToPath(new URL('../migrations/', import.meta.url).href);
 
 /** The till's migrations, in order, as wrangler applies them. */
 export function migrationFiles(): string[] {

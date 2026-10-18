@@ -6,17 +6,20 @@
  * One describe per rule or per door.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PROBLEMS } from '../src/db/accounts';
 import {
   RITUAL_ID_MAX,
   RSVP_COUNT_MAX,
   RSVP_PROBLEMS,
+  isTillRitualId,
   readRitualId,
   readRitualIds,
 } from '../src/lib/rsvps';
 import { AccountDesk } from '../src/worker';
-import { migratedTill } from './sqlite-d1';
+import { MIGRATIONS, migratedTill, migrationFiles, sqliteD1 } from './sqlite-d1';
 
 const NOW = new Date('2026-10-17T09:30:00.000Z');
 const wallet = (pair: string): string => `0x${pair.repeat(20)}`;
@@ -24,7 +27,24 @@ const PABLO = wallet('ab');
 const MARIA = wallet('cd');
 const TRG = 'trg26';
 const MERGE = 'merge-madrid-2026';
+const TILL_ID = 'rit_0123456789abcdef';
+const HOUSE = wallet('99');
 const ctx = {} as ExecutionContext;
+
+/** A till encounter (cut M) PABLO can say «me apunto» to; published by the house. */
+async function publish(desk: AccountDesk, title = 'Taller de Hyperfy'): Promise<string> {
+  const team = await desk.ensureCommunityTeam(HOUSE, true, 'numen-games', 'Numen Games');
+  if (!team.ok) throw new Error(team.problems.join());
+  const answer = await desk.createRitual(HOUSE, {
+    communityId: 'numen-games',
+    title,
+    start: '2026-11-03',
+    mode: 'in-person',
+    where: 'La Nave, Madrid',
+  });
+  if (!answer.ok) throw new Error(answer.problems.join());
+  return answer.ritual.id;
+}
 
 type Shim = ReturnType<typeof migratedTill>;
 
@@ -52,11 +72,12 @@ afterEach(() => {
 });
 
 describe('the rules of an RSVP', () => {
-  it('reads a ritual id as numinia.com names its files: a lowercase slug, 100 characters at most', () => {
+  it('reads a ritual id as numinia.com names its files (a lowercase slug, 100 characters at most) or as the till names its own (rit_ and 16 hex)', () => {
     expect(RITUAL_ID_MAX).toBe(100);
     expect(readRitualId(TRG)).toBe(TRG);
     expect(readRitualId(MERGE)).toBe(MERGE);
     expect(readRitualId('a'.repeat(100))).toBe('a'.repeat(100));
+    expect(readRitualId(TILL_ID)).toBe(TILL_ID);
     for (const bad of [
       '',
       'a'.repeat(101),
@@ -64,6 +85,9 @@ describe('the rules of an RSVP', () => {
       'trg 26',
       'trg_26',
       '../x',
+      'rit_',
+      'rit_0123456789ABCDEF',
+      `${TILL_ID}0`,
       7,
       null,
       undefined,
@@ -71,12 +95,14 @@ describe('the rules of an RSVP', () => {
     ]) {
       expect(readRitualId(bad), JSON.stringify(bad)).toBeUndefined();
     }
+    expect(isTillRitualId(TILL_ID)).toBe(true);
+    expect(isTillRitualId(TRG)).toBe(false);
   });
 
   it('reads a list of ids to count, duplicates dropped, 100 at most', () => {
     expect(RSVP_COUNT_MAX).toBe(100);
     expect(readRitualIds([])).toEqual([]);
-    expect(readRitualIds([TRG, MERGE, TRG])).toEqual([TRG, MERGE]);
+    expect(readRitualIds([TRG, MERGE, TRG, TILL_ID])).toEqual([TRG, MERGE, TILL_ID]);
     expect(readRitualIds(Array.from({ length: 100 }, (_, index) => `r${index}`))).toHaveLength(100);
     for (const bad of [
       Array.from({ length: 101 }, (_, index) => `r${index}`),
@@ -93,13 +119,15 @@ describe('the rules of an RSVP', () => {
 
   it('words its refusals plainly', () => {
     expect(RSVP_PROBLEMS).toEqual({
-      ritualId: 'ritualId must be a lowercase slug of 100 characters at most',
-      ritualIds: 'ritualIds must be a list of 0 to 100 lowercase slugs',
+      ritualId:
+        'ritualId must be a lowercase slug of 100 characters at most, or an encounter id of the till (rit_ and 16 hex)',
+      ritualIds: 'ritualIds must be a list of 0 to 100 lowercase slugs or till encounter ids',
+      noSuchRitual: 'no such encounter in the till, or it is cancelled',
     });
   });
 });
 
-describe('migration 0012: one row per encounter and wallet, and nothing else', () => {
+describe('migrations 0012 and 0018: one row per encounter and wallet, and nothing else', () => {
   it('is a STRICT table keyed by (ritual_id, wallet), indexed by wallet', () => {
     const { sqlite } = migratedTill();
     expect(
@@ -130,7 +158,7 @@ describe('migration 0012: one row per encounter and wallet, and nothing else', (
     ).toEqual([{ name: 'ritual_rsvps_by_wallet' }]);
   });
 
-  it('refuses at the database an id out of shape, a wallet out of shape, or an instant that is not one', () => {
+  it('refuses at the database an id out of shape, a wallet out of shape, or an instant that is not one; takes a till id since 0018', () => {
     const { sqlite } = migratedTill();
     const insert = (row: { id?: string; wallet?: string; at?: string }): void => {
       sqlite
@@ -139,10 +167,14 @@ describe('migration 0012: one row per encounter and wallet, and nothing else', (
       sqlite.prepare('DELETE FROM ritual_rsvps').run();
     };
     insert({});
+    insert({ id: TILL_ID });
     for (const row of [
       { id: '' },
       { id: 'TRG26' },
       { id: 'trg 26' },
+      { id: 'trg_26' },
+      { id: 'rit_' },
+      { id: `${TILL_ID}0` },
       { id: 'a'.repeat(101) },
       { wallet: PABLO.toUpperCase().replace('0X', '0x') },
       { wallet: PABLO.slice(0, 41) },
@@ -209,7 +241,7 @@ describe('the account desk: «me apunto» and «ya no voy»', () => {
       expect(await desk.unrsvp(bad, TRG)).toEqual(badWallet);
       expect(await desk.myRsvps(bad)).toEqual(badWallet);
     }
-    for (const bad of ['TRG26', '', 7, undefined]) {
+    for (const bad of ['TRG26', '', 'rit_', 7, undefined]) {
       expect(await desk.rsvp(PABLO, bad)).toEqual(badId);
       expect(await desk.unrsvp(PABLO, bad)).toEqual(badId);
     }
@@ -222,6 +254,58 @@ describe('the account desk: «me apunto» and «ya no voy»', () => {
       problems: [PROBLEMS.wallet, RSVP_PROBLEMS.ritualId],
     });
     expect(rows(sqlite)).toEqual([]);
+  });
+});
+
+describe('the account desk: «me apunto» on an encounter published from the city (cut O)', () => {
+  it('remembers it like a file’s, counts it, and lets go of it', async () => {
+    const { desk, sqlite } = scene();
+    const id = await publish(desk);
+    expect(await desk.rsvp(PABLO, id)).toEqual({ ok: true, ritualIds: [id] });
+    expect(await desk.rsvp(PABLO, TRG)).toEqual({ ok: true, ritualIds: [id, TRG] });
+    expect(rows(sqlite).map((row) => row['ritual_id'])).toEqual([id, TRG]);
+    expect(await desk.rsvpCounts([id, TRG])).toEqual({ ok: true, counts: { [id]: 1, [TRG]: 1 } });
+    expect(await desk.unrsvp(PABLO, id)).toEqual({ ok: true, ritualIds: [TRG] });
+  });
+
+  it('refuses a till id that names no encounter, or a cancelled one, and writes nothing', async () => {
+    const { desk, sqlite } = scene();
+    const refused = { ok: false, problems: [RSVP_PROBLEMS.noSuchRitual] };
+    expect(await desk.rsvp(PABLO, TILL_ID)).toEqual(refused);
+    const id = await publish(desk);
+    const cancelled = await desk.cancelRitual(HOUSE, id, true);
+    expect(cancelled.ok).toBe(true);
+    expect(await desk.rsvp(PABLO, id)).toEqual(refused);
+    expect(rows(sqlite)).toEqual([]);
+    // «Ya no voy» on one that is gone is fine: there is nothing to keep.
+    expect(await desk.unrsvp(PABLO, TILL_ID)).toEqual({ ok: true, ritualIds: [] });
+  });
+
+  it('keeps the RSVPs already said when 0018 rebuilds the table', () => {
+    const { sqlite } = sqliteD1();
+    const files = migrationFiles();
+    const rebuild = files.find((name) => name.startsWith('0018_'));
+    if (rebuild === undefined) throw new Error('migration 0018 is missing');
+    const migrate = (name: string): void => {
+      sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
+    };
+    for (const name of files.filter((name) => name < rebuild)) migrate(name);
+    sqlite
+      .prepare('INSERT INTO ritual_rsvps (ritual_id, wallet, created_at) VALUES (?, ?, ?)')
+      .run(TRG, PABLO, NOW.toISOString());
+    expect(() =>
+      sqlite
+        .prepare('INSERT INTO ritual_rsvps (ritual_id, wallet, created_at) VALUES (?, ?, ?)')
+        .run(TILL_ID, PABLO, NOW.toISOString()),
+    ).toThrow(/CHECK constraint failed/);
+    for (const name of files.filter((name) => name >= rebuild)) migrate(name);
+    expect(rows(sqlite)).toEqual([
+      { ritual_id: TRG, wallet: PABLO, created_at: NOW.toISOString() },
+    ]);
+    sqlite
+      .prepare('INSERT INTO ritual_rsvps (ritual_id, wallet, created_at) VALUES (?, ?, ?)')
+      .run(TILL_ID, PABLO, NOW.toISOString());
+    expect(count(sqlite, 'ritual_rsvps')).toBe(2);
   });
 });
 

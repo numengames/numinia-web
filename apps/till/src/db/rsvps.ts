@@ -11,9 +11,13 @@
  */
 
 import { readWallet } from '../lib/accounts';
-import { RSVP_PROBLEMS, readRitualId, readRitualIds } from '../lib/rsvps';
+import { RSVP_PROBLEMS, isTillRitualId, readRitualId, readRitualIds } from '../lib/rsvps';
 import { PROBLEMS, refuse, type Refusal } from './accounts';
 import { cents, text, type Row, type TillDatabase } from './repository';
+
+/** A till encounter one can still go to: in 0015's `rituals` and not cancelled. */
+const SELECT_OPEN_TILL_RITUAL =
+  'SELECT 1 AS yes FROM rituals WHERE id = ?1 AND cancelled_at IS NULL';
 
 /** The wallet's RSVPs after a change or on request: the ritual ids, soonest said first. */
 interface MyRsvps {
@@ -65,6 +69,13 @@ export async function rsvp(
       ...(wallet === undefined ? [PROBLEMS.wallet] : []),
       ...(ritualId === undefined ? [RSVP_PROBLEMS.ritualId] : []),
     );
+  }
+  // A file slug is the site's to vouch for (the store drops the ids that no
+  // longer name a file); a till id is this table's neighbour, so the till
+  // itself refuses one that is not there or is cancelled (cut O).
+  if (isTillRitualId(ritualId)) {
+    const open = await db.prepare(SELECT_OPEN_TILL_RITUAL).bind(ritualId).first<Row>();
+    if (open === null) return refuse(RSVP_PROBLEMS.noSuchRitual);
   }
   await db.prepare(INSERT_RSVP).bind(ritualId, wallet, now.toISOString()).run();
   return mine(db, wallet);
