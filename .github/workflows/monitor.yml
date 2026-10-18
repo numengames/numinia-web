@@ -29,6 +29,6 @@ jobs:
       checks: |
         / 200
         /es/ 200
-        /city/ 200
+        /how-it-works/ 200
         /lap/ 200
         /api/auth/session 401
