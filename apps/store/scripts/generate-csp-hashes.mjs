@@ -87,7 +87,7 @@ function listFiles(dir, extension) {
 // over this repo's own trusted source/output tree, not an HTML sanitizer
 // over untrusted input — a missed script tag only means a stricter CSP
 // (the hash list under-reports), never a bypass that lets anything through.
-const SCRIPT_TAG_RE = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi; // codeql[js/bad-tag-filter]
+const SCRIPT_TAG_RE = /<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi; // codeql[js/bad-tag-filter]
 
 function sha256Base64(text) {
   return createHash('sha256').update(text, 'utf8').digest('base64');
