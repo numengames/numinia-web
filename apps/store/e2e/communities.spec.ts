@@ -35,8 +35,8 @@ test('without a session, «Sigues» is empty and the browser list is not read', 
   await page.evaluate(() => localStorage.setItem('numinia-follows', '["trgcon"]'));
   await page.reload();
   await page.waitForLoadState('networkidle');
-  await expect(page.locator('[data-follows-empty]')).toBeVisible();
-  await expect(page.locator('[data-follows-list]')).toBeHidden();
+  await expect(page.locator('[data-belong-sections]')).toBeHidden();
+  await expect(page.locator('[data-belong-follow]')).toBeHidden();
   // Not carried over either: that takes a session.
   expect(await page.evaluate(() => localStorage.getItem('numinia-follows'))).toBe('["trgcon"]');
   await page.evaluate(() => localStorage.removeItem('numinia-follows'));
@@ -51,7 +51,8 @@ test('without a session, «Perteneces a» is a door to sign in that comes back h
     'href',
     '/lap/session/?vuelta=%2Fbelong%2F',
   );
-  await expect(page.locator('p.vacio[data-session-in]')).toBeHidden();
+  await expect(page.locator('[data-belong-sections]')).toBeHidden();
+  await expect(page.locator('[data-session-out] [data-metric="belong-sign-in"]')).toBeVisible();
 });
 
 test('the retired city addresses open «Cómo funciona» in their own locale', async ({ page }) => {

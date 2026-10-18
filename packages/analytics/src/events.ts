@@ -261,3 +261,15 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `ritual-cancel-confirm`, `ritual-cancel-keep`; a live row of the till in a
 //   list keeps the list's own id (`encuentros-row`, `calendar-ritual`,
 //   `landing-ritual`, `community-ritual`, `world-encounter`).
+
+// ---- v3 «Tus comunidades» (cut N, 2026-10-17): its data-metric ids --------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - /belong/, every card: `belong-community` (the name), `belong-community-page`
+//   («Su página»), `belong-panel` («Su panel», admins only), `belong-enter`
+//   («Entrar» through the pass flow into the organization's world),
+//   `belong-enter-home` («Entrar» into a community's own home), `belong-ritual`
+//   («Ver el encuentro»), `belong-unfollow` stays on the followed cards.
+// - The page: `belong-find-more` («Buscar más» beside «Las que sigues»),
+//   `belong-explore` (the same from the empty state), `belong-open-home`
+//   («Ábrele sede») and `belong-claim» («Hazla tuya desde su página») at the
+//   foot; `belong-sign-in` stays as the door.

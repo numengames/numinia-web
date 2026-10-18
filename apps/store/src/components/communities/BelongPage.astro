@@ -1,22 +1,29 @@
 ---
 /**
- * «Perteneces» (/belong/, the app shell v0.83.0): your communities and what
- * happens in them. «Sigues» lists the communities your account follows —
- * the till keeps them (cut «Seguir», GET /api/follow), and the little each
- * card needs is embedded here as JSON at build, so the page only asks for
- * the ids once a session is in; each card has a quiet «Dejar de seguir».
- * «Perteneces a»: membership does not exist yet — signed out, a door to sign
- * in; signed in (the page's one session read, `data-session-in/out`), one
- * plain sentence that it will appear here.
+ * «Tus comunidades» (/belong/, cut N, wireframe v3 #mis-comunidades): the
+ * communities that are yours, in three sections — «Las que llevas» (the
+ * organizations you administer, with their panel), «A las que perteneces»
+ * (the rest you are in) and «Las que sigues» (the follows the till keeps,
+ * cut L). The page is static: signed out it is the door; once the session
+ * is in, one read of `overview` + GET /api/follow + GET /api/mundos/mine in
+ * parallel, grouped by lib/belong.ts and painted into the three slots from
+ * a `<template>` and the facts baked here at build (cover, name, place,
+ * next encounter). Text only (`textContent`), never markup. The live pill
+ * («N dentro ahora») comes from /api/live, numbers only, and only when the
+ * world said someone is inside.
  */
-import type { SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, type SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { COMMUNITIES_UI, fill } from '../../i18n/communities';
-import { signInHref } from '../../lib/app-nav';
-import { FOLLOWS_KEY, followEntries } from '../../lib/communities';
+import { AHORA_UI } from '../../i18n/ahora';
+import { COMMUNITIES_UI } from '../../i18n/communities';
+import { SALDO_UI } from '../../i18n/saldo';
+import { CREATE_ITEMS, PANEL_PATH, localeHref, signInHref } from '../../lib/app-nav';
+import { belongFacts } from '../../lib/belong';
+import { FOLLOWS_KEY } from '../../lib/communities';
+import { communityAccountId } from '../../lib/community-teams';
 import { COMMUNITIES, RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
-import Countdown from './Countdown.astro';
+import Cover from './Cover.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -25,8 +32,38 @@ interface Props {
 
 const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
+const a = AHORA_UI[locale];
+const roles = SALDO_UI[locale].roles;
 const prefix = locale === 'en' ? '' : `/${locale}`;
-const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const facts = await belongFacts(COMMUNITIES, RITUALS, locale, prefix, commons, communityAccountId);
+const openPath = CREATE_ITEMS.find((item) => item.id === 'community')?.path ?? '/communities/';
+/** What the page's script says, in the page's language (text only). */
+const words = {
+  admin: roles.owner,
+  member: roles.member,
+  youFollow: ui.youFollow,
+  nextShort: ui.nextShort,
+  noEncounter: ui.noEncounter,
+  atPlace: ui.atPlace,
+  insideOne: a.insideOne,
+  insideMany: a.insideMany,
+  entering: a.entering,
+  unfollowed: ui.unfollowed,
+  failed: ui.followFailed,
+  countdown: {
+    now: ui.countNow,
+    tomorrow: ui.countTomorrow,
+    days: ui.countDays,
+    weeks: ui.countWeeks,
+    months: ui.countMonths,
+    held: ui.countHeld,
+  },
+  panelDoor: localeHref(locale, PANEL_PATH),
+  worldPage: `${prefix}/mundos/`,
+  followsKey: FOLLOWS_KEY,
+};
+const json = (value: unknown): string => JSON.stringify(value).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout locale={locale} title={`${ui.belongTitle} — Numinia`} description={ui.belongLead}>
@@ -35,295 +72,532 @@ const entries = followEntries(COMMUNITIES, RITUALS, locale, prefix);
     <p class="lead">{ui.belongLead}</p>
   </header>
 
-  <section class="bloque" id="follows">
-    <div class="cabecera-bloque">
-      <div>
-        <h2 class="titulo-m">{ui.followsTitle}</h2>
-        <p class="ayuda">{ui.followsHelp}</p>
+  <div class="vacio puerta" data-session-out>
+    <Icon name="users-three" size={24} />
+    <span>{ui.memberDoor}</span>
+    <a class="btn btn-primario btn-sm" href={signInHref(locale, '/belong/')} data-metric="belong-sign-in">
+      <Icon name="sign-in" size={16} />
+      {ui.signIn}
+    </a>
+  </div>
+
+  <div data-belong-sections hidden>
+    <section class="bloque" id="lead" aria-labelledby="lead-title">
+      <div class="cabecera-bloque">
+        <div>
+          <h2 class="titulo-m" id="lead-title">{ui.leadTitle}</h2>
+          <p class="ayuda">{ui.leadHelp}</p>
+        </div>
       </div>
-    </div>
-    <ul class="seguidas" data-follows-list hidden></ul>
-    <p class="vacio" data-follows-empty>
-      <Icon name="users-three" size={24} />
-      <span>{ui.followsEmpty}</span>
-    </p>
-    <template data-follow-card>
-      <li class="tarjeta seguida">
+      <ul class="tuyas" data-belong-lead hidden></ul>
+      <p class="vacio" data-belong-lead-empty>
+        <Icon name="house" size={24} />
+        <span>{ui.leadEmpty}</span>
+      </p>
+    </section>
+
+    <section class="bloque" id="member" aria-labelledby="member-title">
+      <div class="cabecera-bloque">
+        <div>
+          <h2 class="titulo-m" id="member-title">{ui.memberTitle}</h2>
+        </div>
+      </div>
+      <ul class="tuyas" data-belong-member hidden></ul>
+      <p class="vacio" data-belong-member-empty>
+        <Icon name="users-three" size={24} />
+        <span>{ui.memberEmpty}</span>
+      </p>
+    </section>
+
+    <section class="bloque" id="follows" aria-labelledby="follow-title">
+      <div class="cabecera-bloque">
+        <div>
+          <h2 class="titulo-m" id="follow-title">{ui.followTitle}</h2>
+        </div>
+        <a class="btn btn-fantasma btn-sm" href={`${prefix}/communities/`} data-metric="belong-find-more">
+          {ui.findMore}
+        </a>
+      </div>
+      <ul class="tuyas" data-belong-follow hidden></ul>
+      <p class="vacio" data-belong-follow-empty>
+        <Icon name="users-three" size={24} />
+        <span>{ui.followEmpty}</span>
+        <a href={`${prefix}/communities/`} data-metric="belong-explore">{ui.findMore} →</a>
+      </p>
+    </section>
+  </div>
+
+  <footer class="pie-tuyas">
+    <span class="texto-2">{ui.footAsk}</span>
+    <a href={localeHref(locale, openPath)} data-metric="belong-open-home">
+      <Icon name="house" size={16} />
+      {ui.footOpen}
+    </a>
+    <a href={`${prefix}/communities/`} data-metric="belong-claim">
+      <Icon name="users-three" size={16} />
+      {ui.footClaim}
+    </a>
+  </footer>
+
+  <template data-belong-card>
+    <li class="tarjeta tuya">
+      <div class="tc-portada" data-cover>
+        <Cover id="belong" name="Numinia" image={{ src: '', alt: '' }} />
+        <Cover id="belong" name="Numinia" />
+        <span class="chip vivo pastilla" data-live hidden><span class="punto"></span><span data-live-text></span></span>
+      </div>
+      <div class="cuerpo">
         <h3><a data-name data-metric="belong-community"></a></h3>
-        <p class="small texto-2" data-line></p>
-        <p class="proximo" data-next>
-          <span class="etiqueta corta">{ui.nextRitual}</span>
-          <a data-next-title data-metric="belong-ritual"></a>
-          <span class="small texto-2"><span data-next-when></span><span class="falta" data-countdown></span></span>
-        </p>
-        <p class="small texto-2" data-none>{ui.toAnnounce}</p>
-        <p class="dejar">
-          <button type="button" class="btn btn-fantasma btn-sm" data-unfollow data-metric="belong-unfollow">
-            {ui.unfollow}
+        <p class="small texto-2 tc-linea" data-line></p>
+        <div class="tc-acciones">
+          <span class="tc-enlaces">
+            <a data-page data-metric="belong-community-page">{a.itsPage}</a>
+            <a data-panel data-metric="belong-panel" hidden>{ui.itsPanel}</a>
+            <button type="button" class="tc-quieto" data-unfollow data-metric="belong-unfollow" hidden>
+              {ui.unfollow}
+            </button>
+          </span>
+          <button type="button" class="btn btn-fantasma btn-sm" data-world-enter data-metric="belong-enter" hidden>
+            <Icon name="play" size={16} />
+            <span>{a.enter}</span>
           </button>
-        </p>
-      </li>
-    </template>
-    <script
-      is:inline
-      type="application/json"
-      data-follows-data
-      set:html={JSON.stringify(entries).replace(/</g, '\\u003c')}
-    />
-  </section>
-
-  <section class="bloque" id="member">
-    <div class="cabecera-bloque">
-      <div>
-        <h2 class="titulo-m">{ui.memberOfTitle}</h2>
+          <a class="btn btn-fantasma btn-sm" data-enter-link data-metric="belong-enter-home" hidden>
+            <Icon name="play" size={16} />
+            <span>{a.enter}</span>
+          </a>
+          <a class="tc-acto" data-see-ritual data-metric="belong-ritual" hidden>{a.seeEncounter}</a>
+        </div>
       </div>
-    </div>
-    <div class="vacio puerta" data-session-out>
-      <Icon name="users-three" size={24} />
-      <span>{ui.memberDoor}</span>
-      <a class="btn btn-primario btn-sm" href={signInHref(locale, '/belong/')} data-metric="belong-sign-in">
-        <Icon name="sign-in" size={16} />
-        {ui.signIn}
-      </a>
-    </div>
-    <p class="vacio" data-session-in hidden>
-      <Icon name="hourglass" size={24} />
-      <span>{ui.memberSoon}</span>
-    </p>
-    <p class="explorar">
-      <a href={`${prefix}/communities/`} data-metric="belong-explore">
-        {fill(ui.exploreAll, { n: COMMUNITIES.length })}
-      </a>
-    </p>
-  </section>
-
-  <script is:inline data-follows-key={FOLLOWS_KEY} data-follow-words={JSON.stringify({ unfollowed: ui.unfollowed, failed: ui.followFailed })}>
-    /* «Sigues»: the ids the till keeps for your account (GET /api/follow once
-       the chrome says the session is in), drawn from the entries embedded at
-       build (text only, never markup). «Dejar de seguir» POSTs the change and
-       takes the card away. The list this browser used to keep
-       (`numinia-follows`) is carried over once, as the community page does:
-       each id POSTed, the key cleared only when every one went through. */
-    (function () {
-      var script = document.currentScript;
-      var key = script.getAttribute('data-follows-key');
-      var words = JSON.parse(script.getAttribute('data-follow-words'));
-      var data = document.querySelector('[data-follows-data]');
-      var entries = data ? JSON.parse(data.textContent || '[]') : [];
-      var list = document.querySelector('[data-follows-list]');
-      var empty = document.querySelector('[data-follows-empty]');
-      var template = document.querySelector('[data-follow-card]');
-      var toast = null;
-      var hide = 0;
-
-      function signedIn() {
-        return document.documentElement.getAttribute('data-session') === 'in';
-      }
-      function say(text, tone) {
-        if (!toast) {
-          toast = document.createElement('p');
-          toast.className = 'aviso';
-          toast.setAttribute('role', 'status');
-          document.body.appendChild(toast);
-        }
-        toast.setAttribute('data-tono', tone);
-        toast.textContent = text;
-        toast.hidden = false;
-        clearTimeout(hide);
-        hide = setTimeout(function () {
-          toast.hidden = true;
-        }, 4000);
-      }
-      function read(response) {
-        return response.ok ? response.json() : Promise.resolve(null);
-      }
-      function post(communityId, on) {
-        return fetch('/api/follow', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', accept: 'application/json' },
-          body: JSON.stringify({ communityId: communityId, on: on }),
-        }).then(read);
-      }
-      function stored() {
-        try {
-          var kept = JSON.parse(localStorage.getItem(key) || '[]');
-          return Array.isArray(kept)
-            ? kept.filter(function (entry) {
-                return typeof entry === 'string';
-              })
-            : [];
-        } catch (e) {
-          return [];
-        }
-      }
-      function carryOver() {
-        var ids = stored();
-        if (ids.length === 0) return Promise.resolve();
-        return ids
-          .reduce(function (chain, communityId) {
-            return chain.then(function (allOk) {
-              return post(communityId, true)
-                .then(function (view) {
-                  return allOk && view !== null;
-                })
-                .catch(function () {
-                  return false;
-                });
-            });
-          }, Promise.resolve(true))
-          .then(function (allOk) {
-            if (allOk) {
-              try {
-                localStorage.removeItem(key);
-              } catch (e) {}
-            }
-          });
-      }
-      /* The rail's «Tus comunidades» figure, one less when a card goes. */
-      function countDown() {
-        document.querySelectorAll('[data-you-count="communities"]').forEach(function (figure) {
-          var n = parseInt(figure.textContent || '0', 10) - 1;
-          figure.hidden = !(n > 0);
-          figure.textContent = n > 0 ? String(n) : '';
-        });
-      }
-      function card(entry) {
-        var item = template.content.firstElementChild.cloneNode(true);
-        var name = item.querySelector('[data-name]');
-        name.textContent = entry.name;
-        name.setAttribute('href', entry.href);
-        item.querySelector('[data-line]').textContent = entry.line;
-        if (entry.next) {
-          var title = item.querySelector('[data-next-title]');
-          title.textContent = entry.next.title;
-          title.setAttribute('href', entry.next.href);
-          item.querySelector('[data-next-when]').textContent = entry.next.when;
-          item.querySelector('[data-countdown]').setAttribute('data-countdown', entry.next.start);
-          item.querySelector('[data-none]').remove();
-        } else {
-          item.querySelector('[data-next]').remove();
-        }
-        var button = item.querySelector('[data-unfollow]');
-        button.setAttribute('data-unfollow', entry.id);
-        button.setAttribute('aria-label', button.textContent.trim() + ': ' + entry.name);
-        button.addEventListener('click', function () {
-          button.disabled = true;
-          post(entry.id, false)
-            .then(function (view) {
-              if (!view) {
-                say(words.failed, 'aviso');
-                button.disabled = false;
-                return;
-              }
-              item.remove();
-              countDown();
-              if (!list.children.length) {
-                list.hidden = true;
-                empty.hidden = false;
-              }
-              say(words.unfollowed, 'exito');
-            })
-            .catch(function () {
-              say(words.failed, 'aviso');
-              button.disabled = false;
-            });
-        });
-        return item;
-      }
-      function paint(ids) {
-        var shown = entries.filter(function (entry) {
-          return ids.indexOf(entry.id) >= 0;
-        });
-        if (!list || !template || shown.length === 0) return;
-        shown.forEach(function (entry) {
-          list.appendChild(card(entry));
-        });
-        list.hidden = false;
-        empty.hidden = true;
-      }
-      function load() {
-        carryOver()
-          .then(function () {
-            return fetch('/api/follow', { headers: { accept: 'application/json' } });
-          })
-          .then(read)
-          .then(function (view) {
-            if (view && Array.isArray(view.mine)) paint(view.mine);
-            document.dispatchEvent(new CustomEvent('numinia:you-counts'));
-          })
-          .catch(function () {});
-      }
-      if (signedIn()) load();
-      else {
-        var watcher = new MutationObserver(function () {
-          if (!signedIn()) return;
-          watcher.disconnect();
-          load();
-        });
-        watcher.observe(document.documentElement, { attributes: true, attributeFilter: ['data-session'] });
-      }
-    })();
-  </script>
-  <Countdown ui={ui} />
+    </li>
+  </template>
+  <script is:inline type="application/json" data-belong-facts set:html={json(facts)} />
+  <script is:inline type="application/json" data-belong-words set:html={json(words)} />
 </BaseLayout>
 
+<script>
+  import {
+    countdownLine,
+    daysUntil,
+    groupBelong,
+    readBelongFollows,
+    readBelongOrgs,
+    readBelongWorlds,
+    type BelongCard,
+    type BelongFact,
+    type CountdownWords,
+  } from '../../lib/belong';
+  import { enterWorld } from '../../lib/mundos';
+
+  /* `<panel door>?org=<id>`, as lib/face-menu's `panelLink` writes it. Not
+     imported: the rail's script shares that module, and a shared chunk would
+     push the rail's script out of the landing's inline budget. */
+  const panelLink = (door: string, id: string): string => `${door}?org=${encodeURIComponent(id)}`;
+
+  interface Words {
+    readonly admin: string;
+    readonly member: string;
+    readonly youFollow: string;
+    readonly nextShort: string;
+    readonly noEncounter: string;
+    readonly atPlace: string;
+    readonly insideOne: string;
+    readonly insideMany: string;
+    readonly entering: string;
+    readonly unfollowed: string;
+    readonly failed: string;
+    readonly countdown: CountdownWords;
+    readonly panelDoor: string;
+    readonly worldPage: string;
+    readonly followsKey: string;
+  }
+
+  const read = <T,>(selector: string): T =>
+    JSON.parse(document.querySelector(selector)?.textContent ?? 'null') as T;
+  const facts = read<readonly BelongFact[]>('[data-belong-facts]');
+  const words = read<Words>('[data-belong-words]');
+  const template = document.querySelector<HTMLTemplateElement>('[data-belong-card]');
+  const sections = document.querySelector<HTMLElement>('[data-belong-sections]');
+  const door = document.querySelector<HTMLElement>('[data-session-out]');
+
+  const signedIn = (): boolean => document.documentElement.getAttribute('data-session') === 'in';
+
+  let toast: HTMLParagraphElement | null = null;
+  let hide = 0;
+  function say(text: string, tone: 'exito' | 'aviso'): void {
+    if (toast === null) {
+      toast = document.createElement('p');
+      toast.className = 'aviso';
+      toast.setAttribute('role', 'status');
+      document.body.appendChild(toast);
+    }
+    toast.setAttribute('data-tono', tone);
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(hide);
+    hide = window.setTimeout(() => {
+      if (toast) toast.hidden = true;
+    }, 4000);
+  }
+
+  async function bodyOf(path: string, init?: RequestInit): Promise<unknown> {
+    try {
+      const response = await fetch(path, {
+        ...init,
+        headers: { accept: 'application/json', ...(init?.headers ?? {}) },
+      });
+      return response.ok ? ((await response.json()) as unknown) : null;
+    } catch {
+      return null;
+    }
+  }
+  const postFollow = (communityId: string, on: boolean): Promise<unknown> =>
+    bodyOf('/api/follow', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ communityId, on }),
+    });
+
+  /* The list this browser used to keep (`numinia-follows`) is carried over
+     once, as the community page does: each id POSTed, the key cleared only
+     when every one went through. */
+  async function carryOver(): Promise<void> {
+    let kept: unknown;
+    try {
+      kept = JSON.parse(localStorage.getItem(words.followsKey) ?? '[]');
+    } catch {
+      kept = [];
+    }
+    const ids = Array.isArray(kept) ? kept.filter((id): id is string => typeof id === 'string') : [];
+    if (ids.length === 0) return;
+    let allOk = true;
+    for (const id of ids) allOk = (await postFollow(id, true)) !== null && allOk;
+    if (allOk) {
+      try {
+        localStorage.removeItem(words.followsKey);
+      } catch {
+        // The key stays; it is carried over next time.
+      }
+    }
+  }
+
+  /* The rail's «Tus comunidades» figure, one less when a followed card goes. */
+  function countDown(): void {
+    for (const figure of document.querySelectorAll<HTMLElement>('[data-you-count="communities"]')) {
+      const n = parseInt(figure.textContent ?? '0', 10) - 1;
+      figure.hidden = !(n > 0);
+      figure.textContent = n > 0 ? String(n) : '';
+    }
+  }
+
+  function roleLine(card: BelongCard): string {
+    const community = card.community;
+    if (card.role === 'follow') {
+      const next = community?.next ?? null;
+      if (next === null) return `${words.youFollow} · ${words.noEncounter}`;
+      const days = daysUntil(next.start, new Date());
+      const when = days === null ? '' : `, ${countdownLine(days, words.countdown)}`;
+      return `${words.youFollow} · ${words.nextShort.replace('{x}', next.title)}${when}`;
+    }
+    const role = card.role === 'admin' ? words.admin : words.member;
+    const place = community?.world?.name ?? community?.place ?? null;
+    return place === null ? role : `${role} · ${words.atPlace.replace('{x}', place)}`;
+  }
+
+  function must<T extends Element>(root: ParentNode, selector: string): T {
+    const found = root.querySelector<T>(selector);
+    if (found === null) throw new Error(`the card has no ${selector}`);
+    return found;
+  }
+
+  function paintCard(card: BelongCard, list: HTMLElement): HTMLElement {
+    if (template === null) throw new Error('the page has no card template');
+    const item = template.content.firstElementChild?.cloneNode(true) as HTMLElement;
+    const community = card.community;
+    const covers = item.querySelectorAll<HTMLElement>('[data-cover] .cover');
+    const [withImage, withMonogram] = [covers[0], covers[1]];
+    if (community?.cover && withImage && withMonogram) {
+      const img = must<HTMLImageElement>(withImage, 'img');
+      img.src = community.cover.src;
+      img.alt = community.cover.alt;
+      withMonogram.remove();
+    } else if (withImage && withMonogram) {
+      withImage.remove();
+      must<HTMLElement>(withMonogram, 'b').textContent =
+        community?.monogram ?? card.name.trim().charAt(0).toUpperCase();
+    }
+    const live = must<HTMLElement>(item, '[data-live]');
+    if (community?.counted) live.setAttribute('data-live', community.id);
+    else live.remove();
+
+    const name = must<HTMLAnchorElement>(item, '[data-name]');
+    name.textContent = card.name;
+    const page = must<HTMLAnchorElement>(item, '[data-page]');
+    if (community) {
+      name.href = community.href;
+      page.href = community.href;
+    } else {
+      // An organization the register has no page for: its name stays a name.
+      const plain = document.createElement('span');
+      plain.textContent = card.name;
+      name.replaceWith(plain);
+      page.remove();
+    }
+    must<HTMLElement>(item, '[data-line]').textContent = roleLine(card);
+
+    const panel = must<HTMLAnchorElement>(item, '[data-panel]');
+    if (card.role === 'admin' && card.accountId !== null) {
+      panel.href = panelLink(words.panelDoor, card.accountId);
+      panel.hidden = false;
+    } else panel.remove();
+
+    const unfollow = must<HTMLButtonElement>(item, '[data-unfollow]');
+    if (card.role === 'follow') {
+      unfollow.hidden = false;
+      unfollow.setAttribute('aria-label', `${unfollow.textContent?.trim() ?? ''}: ${card.name}`);
+      unfollow.addEventListener('click', async () => {
+        unfollow.disabled = true;
+        const view = await postFollow(card.key, false);
+        if (view === null) {
+          say(words.failed, 'aviso');
+          unfollow.disabled = false;
+          return;
+        }
+        item.remove();
+        countDown();
+        showList(list, list.children.length > 0);
+        say(words.unfollowed, 'exito');
+      });
+    } else unfollow.remove();
+
+    const enter = must<HTMLButtonElement>(item, '[data-world-enter]');
+    const enterLink = must<HTMLAnchorElement>(item, '[data-enter-link]');
+    const see = must<HTMLAnchorElement>(item, '[data-see-ritual]');
+    const worldId = card.worldIds[0];
+    if (worldId !== undefined) {
+      enter.setAttribute('data-world-enter', worldId);
+      enter.hidden = false;
+      enterLink.remove();
+      see.remove();
+      enter.addEventListener('click', () => {
+        const label = enter.querySelector('span');
+        enter.disabled = true;
+        enter.setAttribute('aria-busy', 'true');
+        if (label) label.textContent = words.entering;
+        void enterWorld(fetch, worldId, null).then((address) =>
+          window.location.assign(address ?? `${words.worldPage}${encodeURIComponent(worldId)}/`),
+        );
+      });
+    } else if (community?.world) {
+      enterLink.href = community.world.href;
+      enterLink.hidden = false;
+      enter.remove();
+      see.remove();
+    } else if (community?.next) {
+      see.href = community.next.href;
+      see.hidden = false;
+      enter.remove();
+      enterLink.remove();
+    } else {
+      enter.remove();
+      enterLink.remove();
+      see.remove();
+    }
+    return item;
+  }
+
+  function showList(list: HTMLElement, shown: boolean): void {
+    list.hidden = !shown;
+    const empty = list.nextElementSibling as HTMLElement | null;
+    if (empty) empty.hidden = shown;
+  }
+
+  function paintSection(name: 'lead' | 'member' | 'follow', cards: readonly BelongCard[]): void {
+    const list = document.querySelector<HTMLElement>(`[data-belong-${name}]`);
+    if (list === null) return;
+    for (const card of cards) list.appendChild(paintCard(card, list));
+    showList(list, cards.length > 0);
+  }
+
+  /* «N dentro ahora», only when the world said someone is inside (numbers only). */
+  async function paintLive(): Promise<void> {
+    const pills = document.querySelectorAll<HTMLElement>('[data-live]');
+    if (pills.length === 0) return;
+    const body = await bodyOf('/api/live');
+    const inside =
+      typeof body === 'object' && body !== null ? (body as Record<string, unknown>)['inside'] : null;
+    if (typeof inside !== 'object' || inside === null) return;
+    for (const pill of pills) {
+      const n = (inside as Record<string, unknown>)[pill.getAttribute('data-live') ?? ''];
+      if (typeof n !== 'number' || n <= 0) continue;
+      must<HTMLElement>(pill, '[data-live-text]').textContent =
+        n === 1 ? words.insideOne : words.insideMany.replace('{n}', String(n));
+      pill.hidden = false;
+    }
+  }
+
+  async function load(): Promise<void> {
+    await carryOver();
+    const [overview, follows, worlds] = await Promise.all([
+      bodyOf('/api/saldo'),
+      bodyOf('/api/follow'),
+      bodyOf('/api/mundos/mine'),
+    ]);
+    const groups = groupBelong(
+      readBelongOrgs(overview) ?? [],
+      readBelongFollows(follows),
+      readBelongWorlds(worlds),
+      facts,
+    );
+    paintSection('lead', groups.lead);
+    paintSection('member', groups.member);
+    paintSection('follow', groups.follow);
+    if (door) door.hidden = true;
+    if (sections) sections.hidden = false;
+    document.dispatchEvent(new CustomEvent('numinia:you-counts'));
+    await paintLive();
+  }
+
+  if (signedIn()) void load();
+  else {
+    const watcher = new MutationObserver(() => {
+      if (!signedIn()) return;
+      watcher.disconnect();
+      void load();
+    });
+    watcher.observe(document.documentElement, { attributes: true, attributeFilter: ['data-session'] });
+  }
+</script>
+
 <style>
-  .seguidas {
+  .titulo-vista .lead {
+    max-width: 62ch;
+  }
+  .puerta {
+    flex-wrap: wrap;
+    margin-top: var(--s6);
+  }
+  .puerta span {
+    flex: 1 1 16rem;
+  }
+  .tuyas {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
     gap: var(--s4);
-    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   }
-  .seguidas > * {
+  .tuyas > * {
     min-width: 0;
   }
-  .seguida {
-    gap: var(--s2);
+  .tuya {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
   }
-  .seguida h3 {
-    margin: 0;
-    font-size: 1.15rem;
-    font-weight: 600;
+  .tc-portada {
+    position: relative;
   }
-  .seguida h3 a {
+  /* The live pill over the cover, only painted when someone is inside. */
+  .pastilla {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    background: var(--fondo);
+    min-height: 24px;
+  }
+  .tuya h3 a {
     color: inherit;
     text-decoration: none;
   }
-  .seguida h3 a:hover,
-  .seguida h3 a:focus-visible {
+  .tuya h3 a:hover,
+  .tuya h3 a:focus-visible {
     color: var(--enlace);
   }
-  .seguida p {
+  .tuya .cuerpo p {
     margin: 0;
   }
-  .proximo {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border-top: 1px solid var(--linea);
+  .tc-acciones {
+    margin-top: auto;
     padding-top: var(--s3);
-    margin-top: auto !important;
-  }
-  .proximo .etiqueta {
-    margin: 0;
-  }
-  .falta:not(:empty)::before {
-    content: ' · ';
-  }
-  /* «Dejar de seguir»: quiet, at the foot of the card. */
-  .dejar {
-    margin-top: var(--s2) !important;
-  }
-  .puerta {
+    display: flex;
+    gap: var(--s2) var(--s3);
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
   }
-  .puerta span {
-    flex: 1 1 16rem;
+  .tc-enlaces {
+    display: flex;
+    gap: var(--s3);
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
   }
-  .explorar {
-    margin: var(--s4) 0 0;
+  .tc-enlaces a,
+  .tc-acto {
+    color: var(--enlace);
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .tc-acto {
+    font-size: 0.875rem;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  /* «Dejar de seguir»: quiet, a word among the links. */
+  .tc-quieto {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--texto-2);
+    cursor: pointer;
+    min-height: 24px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .tc-quieto:hover,
+  .tc-quieto:focus-visible {
+    color: var(--texto);
+  }
+  .tc-quieto:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .tc-acto:hover,
+  .tc-acto:focus-visible {
+    text-decoration: underline;
+  }
+  .vacio a:not(.btn) {
+    color: var(--enlace);
+  }
+  .pie-tuyas {
+    margin-top: var(--s8);
+    padding-top: var(--s5);
+    border-top: 1px solid var(--linea);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3) var(--s5);
+    align-items: center;
+    font-size: 0.9rem;
+  }
+  .pie-tuyas span {
+    flex: 1 1 14rem;
+  }
+  .pie-tuyas a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--enlace);
+    text-decoration: none;
+    min-height: 24px;
+    font-weight: 500;
+  }
+  .pie-tuyas a:hover,
+  .pie-tuyas a:focus-visible {
+    text-decoration: underline;
   }
   [hidden] {
     display: none !important;

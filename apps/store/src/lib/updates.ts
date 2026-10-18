@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.136.0',
+    date: '2026-10-18 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Your communities» (/belong/) as the city drew it. Three sections, each with real cards — cover, name, who you are there and where, «Its page» and the act on the right: «The ones you lead» (the communities whose organization you administer, with «Its panel» and «Enter» into their world), «The ones you belong to» (the rest you are in) and «The ones you follow» (the follows of your account, each with its next encounter — «next: TRG26, in 5 days» — or «no encounter in sight», a quiet «Unfollow» and «Find more»). Following does not make you a member, and the lead says so. When a world says someone is inside, the card wears «N inside now»; never a made-up figure. Each section has its own one-line empty state; the foot asks «Do you lead one that is not here yet?» with «Open its home» and «Already here? Make it yours from its page». Signed out, the page is the door. One read once the session is in; in five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.135.0',
     date: '2026-10-18 09:25',
     missions: ['t_a856c570'],
