@@ -1010,6 +1010,10 @@ export function createAccountsFixtureDesk(
       enabled: aiAgentEnabled.get(book) ?? true,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      // Historia 2 (spend metering) lives in the till only; the fixture
+      // desk has no engine calls to meter, so the trial always reads
+      // unspent here — never a lie, since the fixture never spends it.
+      spentCents: 0,
     },
   });
   /** The till's reading of a change: `off`, `vocabulary` and/or `aiAgentEnabled`. */

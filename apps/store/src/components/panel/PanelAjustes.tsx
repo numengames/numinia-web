@@ -222,6 +222,19 @@ function Settings({
                 cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
               })}
             </p>
+            <p className="saldo-nota" data-ai-agent-spend>
+              {mine.aiAgent.spentCents >= mine.aiAgent.trialCapCents
+                ? fill(ui.aiAgent.exhausted, {
+                    cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
+                  })
+                : fill(ui.aiAgent.remaining, {
+                    left: formatUsdCents(
+                      mine.aiAgent.trialCapCents - mine.aiAgent.spentCents,
+                      locale,
+                    ),
+                    cap: formatUsdCents(mine.aiAgent.trialCapCents, locale),
+                  })}
+            </p>
             <p className="saldo-nota">{ui.aiAgent.note}</p>
           </span>
           <button

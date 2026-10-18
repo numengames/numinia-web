@@ -67,6 +67,7 @@ describe('the fixture desk: settings', () => {
         enabled: true,
         model: DEFAULT_AI_MODEL,
         trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+        spentCents: 0,
       },
     });
   });
@@ -118,6 +119,7 @@ describe('the fixture desk: settings', () => {
       enabled: false,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
     });
     expect(settingsOf(await desk.settings(ME, NUMEN)).aiAgent.enabled).toBe(false);
     const on = settingsOf(await desk.changeSettings(ME, NUMEN, { aiAgentEnabled: true }));
@@ -364,7 +366,7 @@ describe('reading the answers in the browser', () => {
   };
 
   it('reads settings, or null when the body is not that', () => {
-    const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 };
+    const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150, spentCents: 0 };
     const settings = {
       accountId: 'a',
       off: ['roles'],
@@ -386,6 +388,7 @@ describe('reading the answers in the browser', () => {
       { settings: { ...settings, aiAgent: { ...aiAgent, enabled: 'yes' } } },
       { settings: { ...settings, aiAgent: { ...aiAgent, model: 3 } } },
       { settings: { ...settings, aiAgent: { ...aiAgent, trialCapCents: '150' } } },
+      { settings: { ...settings, aiAgent: { ...aiAgent, spentCents: '0' } } },
     ]) {
       expect(readSettings(value)).toBeNull();
     }
