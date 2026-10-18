@@ -59,7 +59,7 @@ jobs:
         run: |
           set -e
           sleep 10
-          for path in / /city/ /lap/; do
+          for path in / /how-it-works/ /lap/; do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://numinia.com$path")
             echo "GET $path -> $code"
             [ "$code" = "200" ]

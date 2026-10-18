@@ -165,6 +165,10 @@ test.describe('signed in', () => {
     await expect(button).toContainText('Sigues');
     await expect(page.locator(`[data-follow-count="${TRGCON}"]`)).toHaveText('1 persona la sigue');
     await expect(page.locator(railCount)).toHaveText('2');
+    // The button swaps primary → ghost in the same tick it says «Sigues»; scan only once the
+    // ghost paint has landed, not mid-swap (axe read the old teal fill: contrast 3.82).
+    await expect(button).toHaveClass(/btn-fantasma/);
+    await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);
 
