@@ -182,6 +182,27 @@ export async function enterWorld(
   return fallback;
 }
 
+/**
+ * «Entrar» in a new tab, card t_677de28a: open a blank tab on the click
+ * itself — so the browser's popup blocker allows it — then send that tab
+ * to the pass address once `enterWorld` resolves; close it when there is
+ * none. The current tab keeps whatever the person had open.
+ */
+export async function enterWorldInTab(
+  fetcher: Fetch,
+  worldId: string,
+  fallback: string | null,
+  tab: Window | null,
+): Promise<string | null> {
+  const address = await enterWorld(fetcher, worldId, fallback);
+  if (address === null) {
+    tab?.close();
+    return null;
+  }
+  if (tab) tab.location.href = address;
+  return address;
+}
+
 /** The placements by world: a world is placed once, so the map has one home per id. */
 export function homesByWorld(homes: readonly WorldHome[]): ReadonlyMap<string, WorldHome> {
   return new Map(homes.map((home) => [home.worldId, home]));

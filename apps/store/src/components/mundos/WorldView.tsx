@@ -15,7 +15,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { WorldPageMessages } from '../../i18n/mundos';
 import { fill, readRoles, type DeskRoles } from '../../lib/accounts';
 import { enterersOf, personLabel, shownPeople } from '../../lib/world-people';
-import { enterWorld, loadWorldPage, type PageSheet } from '../../lib/mundos';
+import { enterWorldInTab, loadWorldPage, type PageSheet } from '../../lib/mundos';
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { AiSection } from './AiSection';
@@ -170,18 +170,20 @@ export function WorldView({
   const home = page?.home ?? null;
   const manages = page !== null && page.manage && home !== null;
 
-  /** Works out the address (with the pass for a member) and goes there; says so when there is none. */
+  /**
+   * Opens a new tab (card t_677de28a) on the click, works out the address
+   * (with the pass for a member) and sends that tab there — the current
+   * tab keeps whatever the person had open; says so when there is none.
+   */
   const enter = useCallback(
     async (fallback: string | null): Promise<void> => {
       setEntering(true);
       setEnterFailed(false);
-      const address = await enterWorld(fetch, worldId, fallback);
-      if (address === null) {
-        setEntering(false);
-        setEnterFailed(true);
-        return;
-      }
-      window.location.assign(address);
+      const tab = window.open(fallback ?? undefined, '_blank');
+      if (tab) tab.opener = null;
+      const address = await enterWorldInTab(fetch, worldId, fallback, tab);
+      setEntering(false);
+      if (address === null) setEnterFailed(true);
     },
     [worldId],
   );
