@@ -79,7 +79,7 @@ const chipName = {
 </BaseLayout>
 
 <script>
-  import { enterWorld } from '../../lib/mundos';
+  import { enterWorldInTab } from '../../lib/mundos';
 
   // The chips: one filter at a time, «all» by default.
   const grid = document.querySelector<HTMLElement>('[data-world-grid]');
@@ -99,16 +99,19 @@ const chipName = {
     });
   }
 
-  // «Entrar»: the pass for a member, the plain address for a guest (lib/mundos.ts).
+  // «Entrar»: the pass for a member, the plain address for a guest (lib/mundos.ts),
+  // in a new tab (card t_677de28a) — the tab opens on the click itself so
+  // the browser allows it.
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-world-enter]')) {
     button.addEventListener('click', () => {
       const label = button.querySelector('span');
+      const page = button.dataset.worldPage ?? '/';
+      const tab = window.open(page, '_blank');
+      if (tab) tab.opener = null;
       button.disabled = true;
       button.setAttribute('aria-busy', 'true');
       if (label) label.textContent = button.dataset.entering ?? '';
-      void enterWorld(fetch, button.dataset.worldEnter ?? '', button.dataset.worldUrl || null).then(
-        (address) => window.location.assign(address ?? button.dataset.worldPage ?? '/'),
-      );
+      void enterWorldInTab(fetch, button.dataset.worldEnter ?? '', button.dataset.worldUrl || null, tab);
     });
   }
 
