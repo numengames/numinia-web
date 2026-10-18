@@ -125,8 +125,9 @@ export function worldName(title: string | null, id: string): string {
 
 /**
  * The cards of the index: every placed world the fleet has (once each, the
- * first listing wins), never one being deleted — the ones with people
- * first, then the city's, then by name.
+ * first listing wins), never one being deleted — the ones that are off go
+ * last; among the rest, the ones with people first, then the city's, then
+ * by name.
  *
  * Public means placed in a community of the register: a world the till
  * gives no owner, or whose owner is no community of the city, is an
@@ -166,6 +167,7 @@ export function worldCards(input: {
   }
   return cards.sort(
     (a, b) =>
+      Number(a.state === 'off') - Number(b.state === 'off') ||
       (b.inside ?? 0) - (a.inside ?? 0) ||
       Number(b.city) - Number(a.city) ||
       a.name.localeCompare(b.name, 'es'),
