@@ -30,7 +30,7 @@ const image = ritual.image ? { src: ritual.image.src, alt: pick(ritual.image.alt
   href={`${prefix}/rituals/${ritual.id}/`}
   data-metric="ritual-card"
 >
-  <Cover id={community.id} name={community.name} image={image} />
+  <Cover id={community.id} name={community.name} image={image} art ritualMode={ritual.mode} />
   <div class="cuerpo">
     <span class="cuando">
       <Icon name="calendar-blank" size={14} />

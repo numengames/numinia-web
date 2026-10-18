@@ -48,6 +48,7 @@ import {
   ENGINE_NAMES,
   fill,
   filterRows,
+  fleetHomes,
   fleetServers,
   fleetEngine,
   fleetStats,
@@ -59,6 +60,7 @@ import {
   rowPlace,
   slot,
   type EngineRelease,
+  type HomeOption,
   type MachineSummary,
   type StatusFilter,
   type WorldCardInfo,
@@ -440,6 +442,7 @@ export function WorldsPanel({
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [server, setServer] = useState('');
+  const [home, setHome] = useState('');
   const [wizard, setWizard] = useState(false);
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
@@ -537,10 +540,11 @@ export function WorldsPanel({
     [panel],
   );
   const visible = useMemo(
-    () => filterRows(rows, { query, status, server }),
-    [rows, query, status, server],
+    () => filterRows(rows, { query, status, server, home }, homes),
+    [rows, query, status, server, home, homes],
   );
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));
+  const homeOptions: readonly HomeOption[] = useMemo(() => fleetHomes(rows, homes), [rows, homes]);
 
   // While a machine creates, stops, starts or deletes a world, keep the room current.
   const changing = known.some((row) => row.status === 'changing');
@@ -1106,6 +1110,23 @@ export function WorldsPanel({
               {servers.map((name) => (
                 <option key={name} value={name}>
                   {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {homeOptions.length > 0 && (
+          <label className="organizacion">
+            <span className="visually-hidden">{room.homeFilter}</span>
+            <select
+              value={home}
+              onChange={(event) => setHome(event.target.value)}
+              data-metric="worlds-home-filter"
+            >
+              <option value="">{room.allHomes}</option>
+              {homeOptions.map((option) => (
+                <option key={option.accountId} value={option.accountId}>
+                  {option.accountName}
                 </option>
               ))}
             </select>

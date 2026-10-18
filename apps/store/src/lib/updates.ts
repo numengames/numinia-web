@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.134.0',
+    date: '2026-10-18 05:59',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'An encounter with no picture of its own fills its card with art picked by its mode (in person / online / hybrid) instead of a blank rectangle.',
+      },
+      {
+        type: 'NEW',
+        text: 'The home page can open with a short, skippable intro narrating what worlds are, before «Destacado» shows — once seen, it does not repeat.',
+      },
+      {
+        type: 'FIX',
+        text: 'The Worlds room list filters by organization without ever cutting a world’s name or description short.',
+      },
+    ],
+  },
+  {
     version: 'v0.133.0',
     date: '2026-10-17 23:35',
     entries: [

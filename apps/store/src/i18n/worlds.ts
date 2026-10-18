@@ -27,6 +27,8 @@ export interface WorldsRoomMessages {
   readonly allStates: string;
   readonly allServers: string;
   readonly serverFilter: string;
+  readonly allHomes: string;
+  readonly homeFilter: string;
   readonly views: {
     readonly label: string;
     readonly cards: string;
@@ -414,6 +416,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     allStates: 'Todos',
     allServers: 'Todos los servidores',
     serverFilter: 'Servidor',
+    allHomes: 'Todas las organizaciones',
+    homeFilter: 'Organización',
     views: { label: 'Vista', cards: 'Tarjetas', list: 'Lista', servers: 'Por servidor' },
     status: {
       running: 'En marcha',
@@ -796,6 +800,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     allStates: 'All',
     allServers: 'All servers',
     serverFilter: 'Server',
+    allHomes: 'All organizations',
+    homeFilter: 'Organization',
     views: { label: 'View', cards: 'Cards', list: 'List', servers: 'By server' },
     status: {
       running: 'Running',
@@ -1184,6 +1190,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     allStates: 'すべて',
     allServers: 'すべてのサーバー',
     serverFilter: 'サーバー',
+    allHomes: 'すべての組織',
+    homeFilter: '組織',
     views: { label: '表示', cards: 'カード', list: 'リスト', servers: 'サーバー別' },
     status: {
       running: '稼働中',
@@ -1571,6 +1579,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     allStates: '전체',
     allServers: '모든 서버',
     serverFilter: '서버',
+    allHomes: '모든 조직',
+    homeFilter: '조직',
     views: { label: '보기', cards: '카드', list: '목록', servers: '서버별' },
     status: {
       running: '실행 중',
@@ -1958,6 +1968,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     allStates: 'Todos',
     allServers: 'Todos os servidores',
     serverFilter: 'Servidor',
+    allHomes: 'Todas as organizações',
+    homeFilter: 'Organização',
     views: { label: 'Visão', cards: 'Cartões', list: 'Lista', servers: 'Por servidor' },
     status: {
       running: 'Em execução',
