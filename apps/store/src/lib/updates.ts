@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.135.0',
+    date: '2026-10-18 11:28',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The Worlds room card actions (Open, Stop, Start, Update, Download, Delete, Show, Change code, Assign) are now icon-only buttons with a hover/focus tooltip, not text buttons.',
+      },
+      {
+        type: 'NEW',
+        text: 'Creating a world now asks on or off power at the confirm step: off keeps today’s free behaviour, on requires picking the paying organization and needs a positive prepaid balance before «Crear» unblocks.',
+      },
+    ],
+  },
+  {
     version: 'v0.134.0',
     date: '2026-10-18 05:59',
     entries: [

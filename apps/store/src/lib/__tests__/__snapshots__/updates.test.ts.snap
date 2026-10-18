@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-18 11:28",
+    "entries": [
+      {
+        "text": "The Worlds room card actions (Open, Stop, Start, Update, Download, Delete, Show, Change code, Assign) are now icon-only buttons with a hover/focus tooltip, not text buttons.",
+        "type": "FIX",
+      },
+      {
+        "text": "Creating a world now asks on or off power at the confirm step: off keeps today’s free behaviour, on requires picking the paying organization and needs a positive prepaid balance before «Crear» unblocks.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.135.0",
+  },
+  {
     "date": "2026-10-18 05:59",
     "entries": [
       {
