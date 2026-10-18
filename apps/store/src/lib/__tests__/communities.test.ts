@@ -171,10 +171,10 @@ describe('idFromPath', () => {
 });
 
 describe('the organizations the register links', () => {
-  it('links Numen Games to the fixture desk’s organization, and no other community yet', () => {
+  it('links Numen Games to its real till account, and no other community yet', () => {
     expect(
       REGISTER.filter((entry) => entry.team !== undefined).map((entry) => [entry.id, entry.team]),
-    ).toEqual([['numen-games', 'acc_team_numen_games']]);
+    ).toEqual([['numen-games', 'acc_t_2e2dd18c880ba974da1512dc7cde2431']]);
   });
 });
 

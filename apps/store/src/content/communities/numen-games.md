@@ -85,8 +85,7 @@ people:
   ja: オラクルたちとそのエージェント(Ursa、Nimrod、Senet…)
   ko: 오라클들과 그 에이전트들(Ursa, Nimrod, Senet…)
   pt-br: Os Oráculos e seus agentes (Ursa, Nimrod, Senet…)
-# The organization whose people this page lists. This id is the fixture
-# desk's (DATA_SOURCE=fixture): in production the till has no such account,
-# so the list stays hidden until the real id of Numen Games is written here.
-team: acc_team_numen_games
+# The organization whose people this page lists (STD-053 PRS-004): the real
+# id of Numen Games's account in the till, annotated 2026-10-16.
+team: acc_t_2e2dd18c880ba974da1512dc7cde2431
 ---
