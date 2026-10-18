@@ -26,36 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.140.0',
-    date: '2026-10-18 14:30',
-    entries: [
-      {
-        type: 'NEW',
-        text: 'The fleet’s machines can now read the engine release an Oracle signed from a public address, /fleet/release.json: the till keeps the latest signed record, refuses an old number and a stranger’s signature, and anyone can read it. Nothing changes on screen yet; the «Publish» button of the Worlds room comes next.',
-      },
-    ],
-  },
-  {
-    version: 'v0.139.0',
-    date: '2026-10-18 10:50',
-    entries: [
-      {
-        type: 'NEW',
-        text: '«Gatherings» in an organization’s panel is no longer under construction: it lists its community’s gatherings — the coming ones, nearest first, and those already held, latest first — each with its date, its place and the way to its page, plus the way to the community’s page and to subscribe to its calendar. They are the same gatherings the community’s page shows; an organization with no page in Communities yet says so instead of an empty list. In all five languages.',
-      },
-    ],
-  },
-  {
     version: 'v0.138.0',
-    date: '2026-10-18 13:40',
+    date: '2026-10-18 13:05',
+    missions: ['t_371c917d'],
     entries: [
       {
         type: 'NEW',
-        text: 'An encounter published from the city now takes «Me apunto» on its page like any other: it shows in your agenda with its calendar file, and brings the same «Avisos» notice when it is near.',
+        text: 'A community of the register with no titular yet can now be renamed and have its summary filled in from its own page, by an Oracle — the edit persists and the public page shows it, no longer purely the register’s file.',
       },
       {
         type: 'NEW',
-        text: 'The month grid of /calendar/ shows the encounters published from the city on their days, and a live calendar feed beside the static one carries them too.',
+        text: 'An Oracle adds themself as a community’s titular and first member in one step from its page, reusing «Hazla tuya»’s claim and decision — no separate request-and-decide round trip.',
       },
     ],
   },
