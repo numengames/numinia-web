@@ -36,6 +36,7 @@ import { PanelAjustes } from './PanelAjustes';
 import { PanelRoles } from './PanelRoles';
 import { PanelSedes } from './PanelSedes';
 import PanelSummary from './PanelSummary.astro';
+import PanelGatherings from './PanelGatherings.astro';
 import { PanelSaldo } from './PanelSaldo';
 import '../saldo/saldo.css';
 // The invitation dialog is the world page's own (its rules, not a copy).
@@ -83,6 +84,11 @@ const communities = face === 'members' ? await communityOfAccount(REGISTER) : {}
         saldoHref={saldoHref}
         venues={MUNDOS_UI[locale].venues}
       />
+    )
+  }
+  {
+    face === 'gatherings' && (
+      <PanelGatherings locale={locale} words={words} signIn={signIn} saldoHref={saldoHref} />
     )
   }
   {

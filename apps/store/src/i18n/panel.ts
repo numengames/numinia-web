@@ -128,6 +128,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Ajustes',
     },
     leads: {
+      gatherings:
+        'Los encuentros de la comunidad: los próximos y los ya celebrados, cada uno con su página.',
       agents: 'Las IAs de la comunidad: cuáles hay, si están encendidas y en qué estado.',
       summary: 'Lo que hay en el panel de esta organización, de un vistazo.',
       venues: 'Las sedes de la organización: los mundos que la casa le ha asignado.',
@@ -142,7 +144,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Cada comunidad enciende solo las piezas que usa y decide cómo se llama cada cosa.',
     },
     notes: {
-      gatherings: 'Publicar, mover y cerrar encuentros; quién va y su crónica.',
       memory: 'El archivo de la organización: sus ficheros, en su repositorio.',
       bazaar: 'Los objetos que la organización sube al Bazar.',
     },
@@ -201,6 +202,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Settings',
     },
     leads: {
+      gatherings:
+        'The community’s gatherings: the coming ones and those already held, each with its page.',
       agents:
         "The community's AIs: which there are, whether they are on, and what state they are in.",
       summary: "What is in this organization's panel, at a glance.",
@@ -217,7 +220,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
         'Each community switches on only the pieces it uses and decides what each thing is called.',
     },
     notes: {
-      gatherings: 'Publish, move and close gatherings; who is going and their chronicle.',
       memory: "The organization's archive: its files, in its own repository.",
       bazaar: 'The items the organization puts in the Bazaar.',
     },
@@ -276,6 +278,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: '設定',
     },
     leads: {
+      gatherings: 'コミュニティの集まり：これからのものと開催済みのもの、それぞれのページへ。',
       agents: 'コミュニティのAI：どのAIがいて、オンかオフか、どんな状態か。',
       summary: 'この組織のパネルにあるものを、ひと目で。',
       venues: '組織の拠点：ハウスが組織に割り当てたワールド。',
@@ -289,7 +292,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'コミュニティは使う機能だけをオンにし、各項目の呼び名を決めます。',
     },
     notes: {
-      gatherings: '集まりの公開・日程の変更・終了、参加者とその記録。',
       memory: '組織のアーカイブ：そのファイルを、組織自身のリポジトリで。',
       bazaar: '組織がバザールに出すアイテム。',
     },
@@ -348,6 +350,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: '설정',
     },
     leads: {
+      gatherings: '커뮤니티의 모임: 다가오는 모임과 이미 열린 모임, 각각의 페이지로.',
       agents: '커뮤니티의 AI: 어떤 AI가 있고, 켜져 있는지, 어떤 상태인지.',
       summary: '이 조직의 패널에 있는 것을 한눈에.',
       venues: '조직의 거점: 하우스가 조직에 배정한 월드.',
@@ -361,7 +364,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: '커뮤니티는 쓰는 기능만 켜고, 각 항목을 무엇이라 부를지 정합니다.',
     },
     notes: {
-      gatherings: '모임 게시, 일정 변경, 종료, 참석자와 기록.',
       memory: '조직의 아카이브: 조직 자신의 저장소에 있는 파일들.',
       bazaar: '조직이 바자르에 올리는 아이템.',
     },
@@ -420,6 +422,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Configurações',
     },
     leads: {
+      gatherings:
+        'Os encontros da comunidade: os próximos e os já realizados, cada um com a sua página.',
       agents: 'As IAs da comunidade: quais existem, se estão ligadas e em que estado.',
       summary: 'O que há no painel desta organização, num relance.',
       venues: 'As sedes da organização: os mundos que a casa atribuiu a ela.',
@@ -434,7 +438,6 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       settings: 'Cada comunidade liga só as peças que usa e decide como se chama cada coisa.',
     },
     notes: {
-      gatherings: 'Publicar, mover e encerrar encontros; quem vai e a crônica.',
       memory: 'O arquivo da organização: seus arquivos, no seu repositório.',
       bazaar: 'Os objetos que a organização publica no Bazar.',
     },

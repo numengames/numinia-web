@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.139.0',
+    date: '2026-10-18 10:50',
+    entries: [
+      {
+        type: 'NEW',
+        text: '«Gatherings» in an organization’s panel is no longer under construction: it lists its community’s gatherings — the coming ones, nearest first, and those already held, latest first — each with its date, its place and the way to its page, plus the way to the community’s page and to subscribe to its calendar. They are the same gatherings the community’s page shows; an organization with no page in Communities yet says so instead of an empty list. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.138.0',
     date: '2026-10-18 13:40',
     entries: [

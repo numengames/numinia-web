@@ -20,6 +20,7 @@ const LOCALES = [
     prefix: '',
     summary: 'Overview',
     venues: 'Homes',
+    gatherings: 'Gatherings',
     members: 'Members',
     roles: 'Roles',
     gente: 'People',
@@ -33,6 +34,7 @@ const LOCALES = [
     prefix: 'es',
     summary: 'Resumen',
     venues: 'Sedes',
+    gatherings: 'Encuentros',
     members: 'Miembros',
     roles: 'Roles',
     gente: 'Gente',
@@ -46,6 +48,7 @@ const LOCALES = [
     prefix: 'ja',
     summary: '概要',
     venues: '拠点',
+    gatherings: '集まり',
     members: 'メンバー',
     roles: 'ロール',
     gente: 'ピープル',
@@ -59,6 +62,7 @@ const LOCALES = [
     prefix: 'ko',
     summary: '개요',
     venues: '거점',
+    gatherings: '모임',
     members: '구성원',
     roles: '역할',
     gente: '사람들',
@@ -72,6 +76,7 @@ const LOCALES = [
     prefix: 'pt-br',
     summary: 'Resumo',
     venues: 'Sedes',
+    gatherings: 'Encontros',
     members: 'Membros',
     roles: 'Papéis',
     gente: 'Gente',
@@ -87,6 +92,7 @@ const LOCALES = [
 const FACES = [
   { segment: '', piece: 'summary' },
   { segment: 'sedes/', piece: 'venues' },
+  { segment: 'encuentros/', piece: 'gatherings' },
   { segment: 'miembros/', piece: 'members' },
   { segment: 'roles/', piece: 'roles' },
   { segment: 'gente/', piece: 'gente' },
@@ -108,8 +114,18 @@ const PIECES = [
   'balance',
   'settings',
 ];
-const BUILT = ['summary', 'venues', 'members', 'roles', 'gente', 'agents', 'balance', 'settings'];
-const SOON = ['gatherings', 'memory', 'bazaar'];
+const BUILT = [
+  'summary',
+  'venues',
+  'gatherings',
+  'members',
+  'roles',
+  'gente',
+  'agents',
+  'balance',
+  'settings',
+];
+const SOON = ['memory', 'bazaar'];
 const ROOMS = ['census', 'worlds', 'prices', 'assets'];
 
 const base = (prefix) => (prefix ? `/${prefix}` : '');
@@ -211,6 +227,7 @@ Then('every panel page draws the rail of pieces the same way in every locale', a
     const hrefs = {
       summary: `${prefix}/panel/`,
       venues: `${prefix}/panel/sedes/`,
+      gatherings: `${prefix}/panel/encuentros/`,
       members: `${prefix}/panel/miembros/`,
       roles: `${prefix}/panel/roles/`,
       gente: `${prefix}/panel/gente/`,
@@ -460,3 +477,29 @@ Then("Saldo's members tab leads to the panel's Miembros in every locale", async 
     );
   }
 });
+
+Then(
+  "every locale's Encuentros page carries its communities' encounters from the register, and none kept on file",
+  async function () {
+    for (const locale of LOCALES) {
+      const prefix = base(locale.prefix);
+      const where = `${prefix}/panel/encuentros/`;
+      const html = await panelPage(this.distDir, locale.prefix, 'encuentros/');
+      // The island's props: Numen Games by its `team:`, with its encounter's page in this locale.
+      assert.ok(html.includes('acc_team_numen_games'), `${where}: Numen Games is not reached`);
+      assert.ok(
+        html.includes(`${prefix}/rituals/numinia-anniversary-2026/`),
+        `${where}: its encounter has no page in «${locale.prefix || 'en'}»`,
+      );
+      assert.ok(
+        html.includes('/communities/numen-games/calendar.ics'),
+        `${where}: no calendar to subscribe to`,
+      );
+      // A community the house keeps on file is listed under no account.
+      assert.ok(
+        !html.includes('/communities/adigital/calendar.ics'),
+        `${where}: a community kept on file is listed`,
+      );
+    }
+  },
+);

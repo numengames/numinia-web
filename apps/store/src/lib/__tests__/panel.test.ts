@@ -40,11 +40,12 @@ describe('the pieces of the panel', () => {
     ]);
   });
 
-  it('eight are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
+  it('nine are built, and each has its own address under /panel/ (Spanish slugs, like Saldo)', () => {
     const built = PIECES.filter((entry) => entry.kind === 'built');
     expect(built.map((entry) => [entry.id, entry.path])).toEqual([
       ['summary', '/panel/'],
       ['venues', '/panel/sedes/'],
+      ['gatherings', '/panel/encuentros/'],
       ['members', '/panel/miembros/'],
       ['roles', '/panel/roles/'],
       ['gente', '/panel/gente/'],
@@ -61,9 +62,9 @@ describe('the pieces of the panel', () => {
     expect(PIECES[at]?.icon).toBe('shield-check');
   });
 
-  it('three are not built yet, and a piece not built has no address to fail on', () => {
+  it('two are not built yet, and a piece not built has no address to fail on', () => {
     const soon = PIECES.filter((entry) => entry.kind === 'soon');
-    expect(soon.map((entry) => entry.id)).toEqual(['gatherings', 'memory', 'bazaar']);
+    expect(soon.map((entry) => entry.id)).toEqual(['memory', 'bazaar']);
     for (const entry of soon) expect(entry.path).toBeNull();
   });
 
@@ -106,6 +107,9 @@ describe('where a piece leads', () => {
     expect(pieceHref('pt-br', piece('balance'), 'acc_t_1')).toBe('/pt-br/panel/saldo/?org=acc_t_1');
     expect(pieceHref('ja', piece('venues'), 'acc_t_1')).toBe('/ja/panel/sedes/?org=acc_t_1');
     expect(pieceHref('es', piece('agents'), 'acc_t_1')).toBe('/es/panel/agentes/?org=acc_t_1');
+    expect(pieceHref('es', piece('gatherings'), 'acc_t_1')).toBe(
+      '/es/panel/encuentros/?org=acc_t_1',
+    );
   });
 
   it('has no ?org= before an organization is known', () => {
@@ -122,7 +126,7 @@ describe('where a piece leads', () => {
   });
 
   it('leads nowhere when the piece is not built: never a link that fails', () => {
-    for (const id of ['gatherings', 'memory', 'bazaar']) {
+    for (const id of ['memory', 'bazaar']) {
       expect(pieceHref('es', piece(id), 'acc_t_1')).toBeNull();
     }
   });

@@ -1230,6 +1230,50 @@
   text-align: center;
 }
 
+/* ---- «Encuentros»: its community's encounters (v3, carril 5) ----------- */
+/* The community on top with its two ways out, then two lists in the Sedes
+   card's shape; secondary words are --texto-2 (AA on a card). */
+.encuentros {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+}
+.encuentros-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s4);
+}
+.encuentros-cabeza .btn {
+  text-decoration: none;
+}
+.encuentros-h2 {
+  margin: var(--s4) 0 0;
+}
+.encuentros-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s3);
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+}
+.encuentros-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s4);
+  color: var(--texto-2);
+}
+.encuentros-titulo {
+  overflow-wrap: break-word;
+  font-weight: 500;
+}
+
 /* ---- «Ajustes» (cut 8): the pieces, the words and the house's access, one card each ---- */
 .ajustes {
   display: flex;
