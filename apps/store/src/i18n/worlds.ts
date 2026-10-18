@@ -98,6 +98,10 @@ export interface WorldsRoomMessages {
     readonly importZip: string;
     /** Moves a world of the Numinia Engine to its newest build. */
     readonly update: string;
+    /** Holds a world on another build, with a reason; the machine's updates leave it alone. */
+    readonly pin: string;
+    /** Lets a held world follow the fleet's build again. */
+    readonly unpin: string;
     readonly more: string;
     readonly less: string;
   };
@@ -145,6 +149,22 @@ export interface WorldsRoomMessages {
     readonly otherEngine: string;
     /** No release published yet. */
     readonly none: string;
+    /** Worlds held on a build: `{n}` the count. */
+    readonly pinned: string;
+    /** One held world: `{id}`, `{m}` machine, `{b}` build, `{r}` the reason it was held. */
+    readonly pinnedLine: string;
+    /** A laggard that is held on purpose: `{id}`, `{m}`, `{b}`, `{r}`. */
+    readonly laggardPinned: string;
+    /** A laggard whose last update failed: `{id}`, `{m}`, `{b}`, `{e}` its machine's words. */
+    readonly laggardFailed: string;
+    /** A machine stopped its updates: `{m}`, `{r}` the reason it gave. */
+    readonly halted: string;
+    /** A machine stopped its updates and gave no reason: `{m}`. */
+    readonly haltedNoReason: string;
+    /** A machine's last pass of the self-updating timer: `{m}`, `{a}` what it did, `{when}` the time. */
+    readonly lastPass: string;
+    /** On a world's card, when it is held: `{b}` build, `{r}` reason. */
+    readonly cardPinned: string;
   };
   /** One signed request on its way: `{m}` is the machine. */
   readonly steps: {
@@ -317,6 +337,20 @@ export interface WorldsRoomMessages {
     readonly updateTitle: string;
     readonly updateIntro: string;
     readonly updateConfirm: string;
+    /** Hold a world on a build: `{t}` its name, `{b}` its build now. */
+    readonly pinTitle: string;
+    readonly pinIntro: string;
+    readonly pinBuild: string;
+    readonly pinBuildHint: string;
+    readonly pinBadBuild: string;
+    readonly pinReason: string;
+    readonly pinConfirm: string;
+    /** Let it follow the fleet again: `{t}`, `{b}` the build it is held on, `{r}` the reason. */
+    readonly unpinTitle: string;
+    readonly unpinIntro: string;
+    /** What the reason line starts with, to be kept or changed. */
+    readonly unpinReasonDefault: string;
+    readonly unpinConfirm: string;
     /** Before signing, when the machine is not obeying: `{m}`. */
     readonly notObeying: string;
   };
@@ -506,6 +540,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       newWorld: 'Nuevo mundo',
       importZip: 'Traer de un zip',
       update: 'Actualizar',
+      pin: 'Fijar a otra versión',
+      unpin: 'Quitar el fijado',
       more: 'Ver {n} más',
       less: 'Ver menos',
     },
@@ -538,6 +574,14 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manual: 'Su máquina no actualiza sola.',
       otherEngine: 'Mundos con otro motor: {n} (no cuentan como rezagados).',
       none: 'Aún no hay versión publicada.',
+      pinned: 'Mundos fijados a una versión: {n}',
+      pinnedLine: '{id} · {m} · {b} (fijado: {r})',
+      laggardPinned: '{id} · {m} · {b} (fijado: {r})',
+      laggardFailed: '{id} · {m} · {b} (falló: {e})',
+      halted: '{m} ha parado las actualizaciones: {r}',
+      haltedNoReason: '{m} ha parado las actualizaciones.',
+      lastPass: 'Última pasada de {m}: {a}, {when}.',
+      cardPinned: 'Fijado en {b}: {r}',
     },
     steps: {
       signing: 'Tu cartera te pide firmar…',
@@ -710,6 +754,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       updateIntro:
         '{t} pasa de la versión {from} a la {to} del Numinia Engine. La máquina descarga la nueva, guarda el mundo y lo reinicia con ella: quien esté dentro se desconecta unos segundos. Sus datos y su aventura se quedan.',
       updateConfirm: 'Firmar y actualizar',
+      pinTitle: 'Fijar {t} a otra versión',
+      pinIntro:
+        '{t} se queda en la versión que elijas y las actualizaciones de la flota no la mueven. La máquina descarga esa versión, guarda el mundo y lo reinicia con ella: quien esté dentro se desconecta unos segundos.',
+      pinBuild: 'Versión',
+      pinBuildHint: 'Una versión de su motor (ahora: {b})',
+      pinBadBuild:
+        'No es una versión de su motor. Escribe sha- y las cifras de la versión, o la imagen entera.',
+      pinReason: 'Motivo (una línea, obligatorio)',
+      pinConfirm: 'Firmar y fijar',
+      unpinTitle: 'Quitar el fijado de {t}',
+      unpinIntro:
+        '{t} vuelve a seguir la versión de la flota: la próxima pasada de su máquina la actualizará. Ahora está fijado en {b}: {r}',
+      unpinReasonDefault: 'Vuelve a seguir la flota',
+      unpinConfirm: 'Firmar y quitar el fijado',
       notObeying: '{m} no obedece ahora mismo: tu petición esperará en su cola hasta que vuelva.',
     },
     copy: {
@@ -914,6 +972,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       newWorld: 'New world',
       importZip: 'Bring from a zip',
       update: 'Update',
+      pin: 'Pin to another version',
+      unpin: 'Remove the pin',
       more: 'Show {n} more',
       less: 'Show less',
     },
@@ -946,6 +1006,14 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manual: 'Its machine does not take updates.',
       otherEngine: 'Worlds on another engine: {n} (not counted as behind).',
       none: 'No version published yet.',
+      pinned: 'Worlds pinned to a version: {n}',
+      pinnedLine: '{id} · {m} · {b} (pinned: {r})',
+      laggardPinned: '{id} · {m} · {b} (pinned: {r})',
+      laggardFailed: '{id} · {m} · {b} (failed: {e})',
+      halted: '{m} has stopped its updates: {r}',
+      haltedNoReason: '{m} has stopped its updates.',
+      lastPass: 'Last pass of {m}: {a}, {when}.',
+      cardPinned: 'Pinned to {b}: {r}',
     },
     steps: {
       signing: 'Your wallet asks you to sign…',
@@ -1119,6 +1187,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       updateIntro:
         '{t} moves from build {from} to build {to} of the Numinia Engine. The machine fetches the new build, saves the world and restarts it with it: anyone inside is disconnected for a few seconds. Its data and its adventure stay.',
       updateConfirm: 'Sign and update',
+      pinTitle: 'Pin {t} to another version',
+      pinIntro:
+        "{t} stays on the version you choose and the fleet's updates do not move it. The machine fetches that version, saves the world and restarts it on it: whoever is inside is disconnected for a few seconds.",
+      pinBuild: 'Version',
+      pinBuildHint: 'A version of its engine (now: {b})',
+      pinBadBuild:
+        "That is not a version of its engine. Write sha- and the version's digits, or the whole image.",
+      pinReason: 'Reason (one line, required)',
+      pinConfirm: 'Sign and pin',
+      unpinTitle: 'Remove the pin from {t}',
+      unpinIntro:
+        "{t} follows the fleet's version again: its machine's next pass will update it. It is pinned to {b} now: {r}",
+      unpinReasonDefault: 'Follows the fleet again',
+      unpinConfirm: 'Sign and remove the pin',
       notObeying:
         '{m} is not obeying right now: your request will wait in its queue until it comes back.',
     },
@@ -1328,6 +1410,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       newWorld: '新しいワールド',
       importZip: 'zip から戻す',
       update: '更新',
+      pin: '別のバージョンに固定',
+      unpin: '固定を解除',
       more: 'さらに {n} 件',
       less: '表示を減らす',
     },
@@ -1362,6 +1446,14 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manual: 'このマシンは更新を受け付けません。',
       otherEngine: '別のエンジンのワールド：{n}（遅れには数えません）。',
       none: '公開されたバージョンはまだありません。',
+      pinned: 'バージョンに固定されたワールド: {n}',
+      pinnedLine: '{id} · {m} · {b}(固定: {r})',
+      laggardPinned: '{id} · {m} · {b}(固定: {r})',
+      laggardFailed: '{id} · {m} · {b}(失敗: {e})',
+      halted: '{m} は更新を停止しました: {r}',
+      haltedNoReason: '{m} は更新を停止しました。',
+      lastPass: '{m} の直近の実行: {a}、{when}。',
+      cardPinned: '{b} に固定: {r}',
     },
     steps: {
       signing: 'ウォレットが署名を求めています…',
@@ -1533,6 +1625,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       updateIntro:
         '{t} は Numinia Engine のビルド {from} から {to} に移ります。マシンが新しいビルドを取得し、ワールドを保存して再起動します：中にいる人は数秒切断されます。データとアドベンチャーはそのまま残ります。',
       updateConfirm: '署名して更新',
+      pinTitle: '{t} を別のバージョンに固定',
+      pinIntro:
+        '{t} は選んだバージョンに留まり、フリートの更新では動きません。マシンがそのバージョンを取得し、ワールドを保存してそのバージョンで再起動します。中にいる人は数秒間切断されます。',
+      pinBuild: 'バージョン',
+      pinBuildHint: 'このワールドのエンジンのバージョン(現在: {b})',
+      pinBadBuild:
+        'このワールドのエンジンのバージョンではありません。sha- とバージョンの数字、またはイメージ全体を入力してください。',
+      pinReason: '理由(1行、必須)',
+      pinConfirm: '署名して固定',
+      unpinTitle: '{t} の固定を解除',
+      unpinIntro:
+        '{t} はフリートのバージョンに再び従います。マシンの次の実行で更新されます。現在 {b} に固定されています: {r}',
+      unpinReasonDefault: 'フリートに再び従う',
+      unpinConfirm: '署名して固定を解除',
       notObeying: '{m} はいま指示どおりに動いていません：リクエストは戻るまでキューで待ちます。',
     },
     copy: {
@@ -1741,6 +1847,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       newWorld: '새 월드',
       importZip: 'zip에서 가져오기',
       update: '업데이트',
+      pin: '다른 버전으로 고정',
+      unpin: '고정 해제',
       more: '{n}개 더 보기',
       less: '접기',
     },
@@ -1775,6 +1883,14 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manual: '이 머신은 업데이트를 받지 않습니다.',
       otherEngine: '다른 엔진의 월드: {n}(뒤처짐에 포함하지 않음).',
       none: '게시된 버전이 아직 없습니다.',
+      pinned: '버전에 고정된 월드: {n}',
+      pinnedLine: '{id} · {m} · {b} (고정: {r})',
+      laggardPinned: '{id} · {m} · {b} (고정: {r})',
+      laggardFailed: '{id} · {m} · {b} (실패: {e})',
+      halted: '{m}이(가) 업데이트를 멈췄습니다: {r}',
+      haltedNoReason: '{m}이(가) 업데이트를 멈췄습니다.',
+      lastPass: '{m}의 마지막 실행: {a}, {when}.',
+      cardPinned: '{b}에 고정: {r}',
     },
     steps: {
       signing: '지갑이 서명을 요청합니다…',
@@ -1944,6 +2060,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       updateIntro:
         '{t}은(는) Numinia Engine 빌드 {from}에서 {to}(으)로 옮깁니다. 머신이 새 빌드를 받고, 월드를 저장한 뒤 새 빌드로 다시 시작합니다. 안에 있는 사람은 몇 초 동안 연결이 끊깁니다. 데이터와 어드벤처는 그대로 남습니다.',
       updateConfirm: '서명하고 업데이트',
+      pinTitle: '{t}을(를) 다른 버전으로 고정',
+      pinIntro:
+        '{t}은(는) 고른 버전에 머물며 플릿의 업데이트로 움직이지 않습니다. 머신이 그 버전을 받아 월드를 저장하고 그 버전으로 다시 시작합니다. 안에 있는 사람은 몇 초간 연결이 끊깁니다.',
+      pinBuild: '버전',
+      pinBuildHint: '이 월드 엔진의 버전 (현재: {b})',
+      pinBadBuild:
+        '이 월드 엔진의 버전이 아닙니다. sha-와 버전 숫자, 또는 이미지 전체를 입력하세요.',
+      pinReason: '이유 (한 줄, 필수)',
+      pinConfirm: '서명하고 고정',
+      unpinTitle: '{t}의 고정 해제',
+      unpinIntro:
+        '{t}은(는) 다시 플릿의 버전을 따릅니다. 머신의 다음 실행에서 업데이트됩니다. 지금은 {b}에 고정되어 있습니다: {r}',
+      unpinReasonDefault: '다시 플릿을 따름',
+      unpinConfirm: '서명하고 고정 해제',
       notObeying:
         '{m}이(가) 지금 명령을 따르지 않습니다: 요청은 돌아올 때까지 대기열에서 기다립니다.',
     },
@@ -2153,6 +2283,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       newWorld: 'Novo mundo',
       importZip: 'Trazer de um zip',
       update: 'Atualizar',
+      pin: 'Fixar noutra versão',
+      unpin: 'Tirar a fixação',
       more: 'Ver mais {n}',
       less: 'Ver menos',
     },
@@ -2185,6 +2317,14 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       manual: 'A máquina dele não atualiza.',
       otherEngine: 'Mundos com outro motor: {n} (não contam como atrasados).',
       none: 'Ainda não há versão publicada.',
+      pinned: 'Mundos fixados a uma versão: {n}',
+      pinnedLine: '{id} · {m} · {b} (fixado: {r})',
+      laggardPinned: '{id} · {m} · {b} (fixado: {r})',
+      laggardFailed: '{id} · {m} · {b} (falhou: {e})',
+      halted: '{m} parou as atualizações: {r}',
+      haltedNoReason: '{m} parou as atualizações.',
+      lastPass: 'Última passagem de {m}: {a}, {when}.',
+      cardPinned: 'Fixado em {b}: {r}',
     },
     steps: {
       signing: 'Sua carteira pede que você assine…',
@@ -2354,6 +2494,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       updateIntro:
         '{t} passa da versão {from} para a {to} do Numinia Engine. A máquina baixa a nova, salva o mundo e o reinicia com ela: quem estiver dentro se desconecta por alguns segundos. Os dados e a aventura ficam.',
       updateConfirm: 'Assinar e atualizar',
+      pinTitle: 'Fixar {t} noutra versão',
+      pinIntro:
+        '{t} fica na versão que escolheres e as atualizações da frota não a movem. A máquina baixa essa versão, guarda o mundo e reinicia-o com ela: quem estiver dentro desconecta-se alguns segundos.',
+      pinBuild: 'Versão',
+      pinBuildHint: 'Uma versão do motor dele (agora: {b})',
+      pinBadBuild:
+        'Não é uma versão do motor dele. Escreve sha- e os dígitos da versão, ou a imagem inteira.',
+      pinReason: 'Motivo (uma linha, obrigatório)',
+      pinConfirm: 'Assinar e fixar',
+      unpinTitle: 'Tirar a fixação de {t}',
+      unpinIntro:
+        '{t} volta a seguir a versão da frota: a próxima passagem da máquina atualiza-o. Agora está fixado em {b}: {r}',
+      unpinReasonDefault: 'Volta a seguir a frota',
+      unpinConfirm: 'Assinar e tirar a fixação',
       notObeying: '{m} não obedece agora: seu pedido vai esperar na fila até ela voltar.',
     },
     copy: {

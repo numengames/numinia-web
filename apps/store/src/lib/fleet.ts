@@ -170,6 +170,15 @@ export type Ask =
       readonly world: string;
       /** The build to move to: another of the world's own engine. */
       readonly image: string;
+    }
+  | {
+      readonly kind: 'PinWorld';
+      readonly machine: string;
+      readonly world: string;
+      /** The build to hold the world on; empty lifts the hold. */
+      readonly image: string;
+      /** Why, in one line (1 to 200 characters): written in the signed request. */
+      readonly reason: string;
     };
 
 /** The requests whose answer is an admin code, the one thing the Oracle asked for. */
@@ -674,19 +683,100 @@ export interface BeaconEvent {
 export const BEACON_MAX_EVENTS = 20;
 const BEACON_MAX_MS = 86_400_000;
 
-/** What a door may listen to besides signed requests: `events`, the room's beacons. */
-export type DoorFeature = 'events';
-const DOOR_FEATURES: readonly DoorFeature[] = ['events'];
+/**
+ * What a door may listen to besides signed requests: `events`, the room's
+ * beacons; `pin`, a PinWorld (hold a world on a build, or lift the hold).
+ */
+export type DoorFeature = 'events' | 'pin';
+const DOOR_FEATURES: readonly DoorFeature[] = ['events', 'pin'];
 
 /**
- * What a door says it listens to, from its `/machine` (`listens: [...]`): the
- * room sends a beacon only to a door that says it takes them, so a machine
- * older than the beacons never sees one.
+ * What a door says it listens to, from its `/machine`: a list (`listens:
+ * ['events']`, the beacons' form) or a map (`listens: {pin: true}`, the
+ * form of `pin`). The room sends a beacon, or offers a pin, only to a door
+ * that says it takes it, so a machine older than either never sees one.
  */
 export function readListens(body: unknown): DoorFeature[] {
-  if (!isObj(body) || !Array.isArray(body['listens'])) return [];
-  const said: readonly unknown[] = body['listens'];
-  return DOOR_FEATURES.filter((feature) => said.includes(feature));
+  if (!isObj(body)) return [];
+  const listens = body['listens'];
+  if (Array.isArray(listens)) {
+    const said: readonly unknown[] = listens;
+    return DOOR_FEATURES.filter((feature) => said.includes(feature));
+  }
+  if (!isObj(listens)) return [];
+  return DOOR_FEATURES.filter((feature) => listens[feature] === true);
+}
+
+const PIN_IMAGE = /^[a-z0-9./_-]+(?::sha-[0-9a-f]{7,40}|@sha256:[0-9a-f]{64})$/;
+const ONE_LINE = {
+  test: (text: string): boolean =>
+    text.length >= 1 &&
+    text.length <= 200 &&
+    Array.from(text).every((char) => {
+      const code = char.charCodeAt(0);
+      return code > 31 && code !== 127;
+    }),
+};
+const STAMP = /^[0-9T:.\-+Z ]{1,32}$/;
+
+/** What the room asks of a pin's reason: one line, 1 to 200 characters, no control character. */
+export function validReason(reason: string): boolean {
+  return ONE_LINE.test(reason);
+}
+
+/** A world held on one build, as its machine says it (`/worlds` → `pin`). */
+export interface WorldPin {
+  readonly image: string;
+  readonly reason: string;
+  readonly at: string;
+}
+
+/** A door's `pin` on one world; null unless the image is the house's own shape and the rest is plain text. */
+export function readPin(value: unknown): WorldPin | null {
+  if (!isObj(value)) return null;
+  const { image, reason, at } = value;
+  if (typeof image !== 'string' || !PIN_IMAGE.test(image)) return null;
+  if (typeof reason !== 'string' || !ONE_LINE.test(reason)) return null;
+  return { image, reason, at: typeof at === 'string' && STAMP.test(at) ? at : '' };
+}
+
+/** A door's `updateError` on one world: the reason its last move to a new build failed; null when it says none. */
+export function readUpdateError(value: unknown): string | null {
+  return typeof value === 'string' && ONE_LINE.test(value) ? value : null;
+}
+
+/**
+ * What the machine's self-updating pass is doing (`/machine` → `release`): the
+ * build it aims at, whether it halted (and why), and its last pass.
+ */
+export interface ReleaseState {
+  readonly target: string | null;
+  readonly commit: string | null;
+  readonly halted: boolean;
+  readonly haltedReason: string | null;
+  readonly lastPass: { readonly at: string; readonly action: string } | null;
+}
+
+/** A door's `release`; null when it says nothing (a machine older than the self-updating pass). */
+export function readRelease(body: unknown): ReleaseState | null {
+  if (!isObj(body) || !isObj(body['release'])) return null;
+  const { target, commit, halted, haltedReason, lastPass } = body['release'];
+  const pass =
+    isObj(lastPass) &&
+    typeof lastPass['at'] === 'string' &&
+    STAMP.test(lastPass['at']) &&
+    typeof lastPass['action'] === 'string' &&
+    ONE_LINE.test(lastPass['action'])
+      ? { at: lastPass['at'], action: lastPass['action'] }
+      : null;
+  return {
+    target: typeof target === 'string' && PIN_IMAGE.test(target) ? target : null,
+    commit: typeof commit === 'string' && /^[0-9a-f]{7,40}$/.test(commit) ? commit : null,
+    halted: halted === true,
+    haltedReason:
+      typeof haltedReason === 'string' && ONE_LINE.test(haltedReason) ? haltedReason : null,
+    lastPass: pass,
+  };
 }
 
 /** What a door says about worlds brought back from their zip: the biggest zip it takes. */
@@ -796,6 +886,10 @@ export interface DoorWorld {
   readonly domain: string | null;
   /** For a world whose zip is on its way: how much of it the machine has; null otherwise. */
   readonly upload: UploadProgress | null;
+  /** The build it is held on, with the reason; absent unless its door says so (readPin). */
+  readonly pin?: WorldPin;
+  /** Why its last move to a new build failed; absent unless its door says so (readUpdateError). */
+  readonly updateError?: string;
 }
 
 const isCount = (value: unknown): value is number =>
@@ -848,7 +942,17 @@ export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null
     );
     if (problems.length === 0) {
       const order = JSON.parse(source) as WorldOrder;
-      worlds.push({ id, phase: phase as DoorPhase, order, domain: order.domain, upload: null });
+      const pin = readPin(item['pin']);
+      const updateError = readUpdateError(item['updateError']);
+      worlds.push({
+        id,
+        phase: phase as DoorPhase,
+        order,
+        domain: order.domain,
+        upload: null,
+        ...(pin === null ? {} : { pin }),
+        ...(updateError === null ? {} : { updateError }),
+      });
     } else if (phase === 'deleting') {
       worlds.push({ id, phase, order: null, domain: host, upload: null });
     }
@@ -955,6 +1059,8 @@ export type MachineView =
       readonly engines?: readonly Engine[] | null;
       /** Whether it moves a world to another build of its engine (readUpdates). */
       readonly updates?: boolean;
+      /** What its self-updating pass is doing (readRelease); null when its door says nothing. */
+      readonly release?: ReleaseState | null;
     }
   | {
       readonly alias: string;
@@ -981,6 +1087,7 @@ export async function readMachine(
   }
   const read = readDoorWorlds(worlds.body, alias);
   if (read === null) return { alias, open: false, reason: 'shape' };
+  const release = machine.ok ? readRelease(machine.body) : null;
   return {
     alias,
     open: true,
@@ -992,6 +1099,7 @@ export async function readMachine(
     imports: machine.ok ? readImports(machine.body) : null,
     engines: machine.ok ? readEngines(machine.body) : null,
     updates: machine.ok && readUpdates(machine.body),
+    ...(machine.ok && release !== null ? { release } : {}),
   };
 }
 
@@ -1004,6 +1112,10 @@ export interface GatheredFleet {
   /** Worlds on their way back from their zip: no order yet. */
   readonly arriving: readonly ArrivingWorld[];
   readonly history: readonly DoorLogEntry[];
+  /** The worlds held on a build, by id (those whose door says so). */
+  readonly pins: Readonly<Record<string, WorldPin>>;
+  /** Why a world's last move to a new build failed, by id. */
+  readonly updateErrors: Readonly<Record<string, string>>;
 }
 
 /**
@@ -1015,6 +1127,8 @@ export interface GatheredFleet {
 export function gatherFleet(views: readonly MachineView[], historyLines = 30): GatheredFleet {
   const orders: WorldOrder[] = [];
   const phases: Record<string, DoorPhase> = {};
+  const pins: Record<string, WorldPin> = {};
+  const updateErrors: Record<string, string> = {};
   const leaving: LeavingWorld[] = [];
   const arriving: ArrivingWorld[] = [];
   const taken = new Set<string>();
@@ -1026,6 +1140,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       if (world.order) {
         orders.push(world.order);
         phases[world.id] = world.phase;
+        if (world.pin !== undefined) pins[world.id] = world.pin;
+        if (world.updateError !== undefined) updateErrors[world.id] = world.updateError;
       } else if (world.phase === 'uploading' || world.phase === 'importing') {
         arriving.push({
           id: world.id,
@@ -1055,9 +1171,12 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       imports: view.open ? (view.imports ?? null) : null,
       engines: view.open ? (view.engines ?? null) : null,
       updates: view.open && view.updates === true,
+      ...(view.open && view.release ? { release: view.release } : {}),
     })),
     orders,
     phases,
+    pins,
+    updateErrors,
     leaving,
     arriving,
     history: mergeLogs(

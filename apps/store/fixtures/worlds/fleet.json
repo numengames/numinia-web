@@ -1,5 +1,5 @@
 {
-  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on three imaginary machines whose doors answer and a fourth whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none and takes no zips. Neither names its engines, so they run Hyperfy alone; bronte-xs-ca-003's door names both (`engines`) and takes updates (`updates`): `atrium` runs an older Numinia Engine build than the newest release (`engine`, imaginary like every build here), so the room offers to update it, and `lantern-hall` is being moved to that build (`updating`). Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on three imaginary machines whose doors answer and a fourth whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none and takes no zips. Neither names its engines, so they run Hyperfy alone; bronte-xs-ca-003's door names both (`engines`) and takes updates (`updates`): `atrium` runs an older Numinia Engine build than the newest release (`engine`, imaginary like every build here), so the room offers to update it (its last move failed: `updateError`, and the machine halted: `release`), and `lantern-hall` is being moved to that build (`updating`) and is held on it (`pin`); this machine's door also says it takes a pin (`listens`). Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
   "machines": [
     {
       "alias": "open-1",
@@ -270,6 +270,8 @@
             "image": "ghcr.io/numengames/numinia-engine:sha-c57dbb7cc4c51b0834184f1dd47b311e47fde234",
             "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
           }
+        ,
+          "updateError": "its new build did not answer its health check"
         },
         {
           "id": "lantern-hall",
@@ -283,6 +285,11 @@
             "domain": "lantern.numinia.com",
             "image": "ghcr.io/numengames/numinia-engine:sha-0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
             "limits": { "memory": "2g", "cpus": "1.5", "maxUploadMb": 50 }
+          },
+          "pin": {
+            "image": "ghcr.io/numengames/numinia-engine:sha-0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+            "reason": "client demo until Friday",
+            "at": "2026-10-12T09:30:00Z"
           }
         }
       ],
@@ -303,11 +310,18 @@
         "lastRun": { "at": "2026-10-12T09:44:40Z", "ok": true, "rule": null },
         "waiting": { "requests": 0, "since": null }
       },
-      "listens": ["events"],
+      "listens": ["events", "pin"],
       "recipe": "880ff114c8cf2b4f4705300e8bc0224c7dbf0a41",
       "imports": { "zipMaxBytes": 2147483648 },
       "engines": ["numinia-hyperfy2", "numinia-engine"],
-      "updates": true
+      "updates": true,
+      "release": {
+        "target": "ghcr.io/numengames/numinia-engine:sha-0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+        "commit": "0d15ea5e0d15ea5e0d15ea5e0d15ea5e0d15ea5e",
+        "halted": true,
+        "haltedReason": "atrium did not answer its health check on the new build; it went back to the old one",
+        "lastPass": { "at": "2026-10-12T09:40:30Z", "action": "rolled-back" }
+      }
     },
     { "alias": "open-3", "open": false, "reason": "timeout" }
   ],

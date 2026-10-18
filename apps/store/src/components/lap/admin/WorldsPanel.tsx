@@ -51,6 +51,7 @@ import {
   fleetHomes,
   fleetServers,
   fleetEngine,
+  pinnedWorlds,
   fleetStats,
   importMachines,
   applyNames,
@@ -278,6 +279,13 @@ function FleetEngineBanner({
   const text = room.fleetEngine;
   const summary = fleetEngine(fleet.rows, fleet.machines, fleet.engine);
   const { current, laggards, otherEngine } = summary;
+  const pinned = pinnedWorlds(fleet.rows);
+  // Only the doors that publish the self-updating pass say anything here.
+  const releases = fleet.machines.flatMap((machine) =>
+    machine.open && machine.release !== undefined
+      ? [{ alias: machine.alias, release: machine.release }]
+      : [],
+  );
   return (
     <section
       className="motor-flota"
@@ -299,9 +307,27 @@ function FleetEngineBanner({
               return (
                 <li key={laggard.id} data-laggard={laggard.id}>
                   <span className="mono">
-                    {fill(text.laggard, { id: laggard.id, m: laggard.server, b: laggard.build })}
+                    {laggard.pinned !== undefined
+                      ? fill(text.laggardPinned, {
+                          id: laggard.id,
+                          m: laggard.server,
+                          b: laggard.build,
+                          r: laggard.pinned.reason,
+                        })
+                      : laggard.failed !== undefined
+                        ? fill(text.laggardFailed, {
+                            id: laggard.id,
+                            m: laggard.server,
+                            b: laggard.build,
+                            e: laggard.failed,
+                          })
+                        : fill(text.laggard, {
+                            id: laggard.id,
+                            m: laggard.server,
+                            b: laggard.build,
+                          })}
                   </span>
-                  {laggard.canUpdate && row !== undefined ? (
+                  {laggard.pinned !== undefined ? null : laggard.canUpdate && row !== undefined ? (
                     <button
                       type="button"
                       className="btn btn-fantasma"
@@ -318,6 +344,62 @@ function FleetEngineBanner({
             })}
           </ul>
         </>
+      )}
+      {pinned.length > 0 && (
+        <>
+          <p role="status">{fill(text.pinned, { n: String(pinned.length) })}</p>
+          <ul data-pinned-worlds={pinned.length}>
+            {pinned.map((world) => {
+              const row = fleet.rows.find((candidate) => candidate.id === world.id);
+              return (
+                <li key={world.id} data-pinned-world={world.id}>
+                  <span className="mono">
+                    {fill(text.pinnedLine, {
+                      id: world.id,
+                      m: world.server,
+                      b: world.build,
+                      r: world.reason,
+                    })}
+                  </span>
+                  {world.canPin && row !== undefined && (
+                    <button
+                      type="button"
+                      className="btn btn-fantasma"
+                      onClick={() => onAction(row, 'unpin')}
+                      data-metric="worlds-fleet-unpin"
+                    >
+                      {room.actions.unpin}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+      {releases.length > 0 && (
+        <ul data-release-passes>
+          {releases.map(({ alias, release }) => (
+            <li key={alias} data-release={alias} data-halted={release.halted}>
+              {release.halted && (
+                <p className="aviso-maquina" data-tono="aviso" role="note">
+                  {release.haltedReason === null
+                    ? fill(text.haltedNoReason, { m: alias })
+                    : fill(text.halted, { m: alias, r: release.haltedReason })}
+                </p>
+              )}
+              {release.lastPass !== null && (
+                <p className="nota-motor">
+                  {fill(text.lastPass, {
+                    m: alias,
+                    a: release.lastPass.action,
+                    when: release.lastPass.at,
+                  })}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
       {otherEngine > 0 && (
         <p className="nota-motor" data-other-engine={otherEngine}>

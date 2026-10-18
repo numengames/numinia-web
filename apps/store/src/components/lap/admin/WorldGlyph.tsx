@@ -14,20 +14,24 @@ import arrowSquareOut from '../../../../../../packages/ui/src/icons/arrow-square
 import arrowsClockwise from '../../../../../../packages/ui/src/icons/arrows-clockwise.svg?raw';
 import downloadSimple from '../../../../../../packages/ui/src/icons/download-simple.svg?raw';
 import eye from '../../../../../../packages/ui/src/icons/eye.svg?raw';
+import mapPin from '../../../../../../packages/ui/src/icons/map-pin.svg?raw';
 import play from '../../../../../../packages/ui/src/icons/play.svg?raw';
 import stop from '../../../../../../packages/ui/src/icons/stop.svg?raw';
 import trash from '../../../../../../packages/ui/src/icons/trash.svg?raw';
 import userPlus from '../../../../../../packages/ui/src/icons/user-plus.svg?raw';
+import x from '../../../../../../packages/ui/src/icons/x.svg?raw';
 
 const GLYPHS = {
   'arrow-square-out': arrowSquareOut,
   'arrows-clockwise': arrowsClockwise,
   'download-simple': downloadSimple,
   eye,
+  'map-pin': mapPin,
   play,
   stop,
   trash,
   'user-plus': userPlus,
+  x,
 } as const;
 
 export function WorldGlyph({

@@ -20,7 +20,7 @@ import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { ORG_CHOICE_WORDS } from '../../../i18n/org-choices';
 import { readStatement } from '../../../lib/accounts';
 import { localeHref } from '../../../lib/app-nav';
-import { copyFileUrl, formatBytes } from '../../../lib/fleet';
+import { copyFileUrl, formatBytes, validReason } from '../../../lib/fleet';
 import { accountOf, type OrgChoice } from '../../../lib/org-choices';
 import { hasBalanceToPowerOn } from '../../../lib/world-power';
 import {
@@ -37,6 +37,7 @@ import {
   inHouseZone,
   joinDomain,
   nameOwner,
+  pinImage,
   placeAllowed,
   problemFields,
   roomWritesDns,
@@ -1000,10 +1001,16 @@ export function ActionDialog({
   const { step, run, reset } = useFleetAction(wallet, listens);
   useOnProgress(step, onChanged);
 
+  // A pin: the build to hold the world on and the reason, one line, always written.
+  const [build, setBuild] = useState('');
+  const [reason, setReason] = useState('');
+
   useEffect(() => {
     setTyped('');
+    setBuild('');
+    setReason(change?.action === 'unpin' ? room.change.unpinReasonDefault : '');
     reset();
-  }, [change, reset]);
+  }, [change, reset, room.change.unpinReasonDefault]);
 
   const row = change?.row ?? null;
   const action = change?.action ?? 'stop';
@@ -1016,6 +1023,8 @@ export function ActionDialog({
     delete: words.deleteTitle,
     download: words.downloadTitle,
     update: words.updateTitle,
+    pin: words.pinTitle,
+    unpin: words.unpinTitle,
   };
   const confirms: Readonly<Record<WorldAction, string>> = {
     stop: words.stopConfirm,
@@ -1023,14 +1032,22 @@ export function ActionDialog({
     delete: words.deleteConfirm,
     download: words.downloadConfirm,
     update: words.updateConfirm,
+    pin: words.pinConfirm,
+    unpin: words.unpinConfirm,
   };
   const title = row ? fill(titles[action], { t: row.title }) : '';
+  // A pin names a build of the world's own engine; a hold is lifted only where there is one.
+  const pinTo = row?.order ? pinImage(row.order, build) : null;
+  const reasonText = reason.trim();
+  const pinReady = validReason(reasonText);
   // The build an update moves the world to: the newest of its engine, as the room read it.
   const target = row?.update ?? null;
   // A delete is confirmed by typing the world's whole address, as it is written.
   const confirmed =
     (action !== 'delete' || (place !== null && typed.trim().toLowerCase() === place.domain)) &&
-    (action !== 'update' || target !== null);
+    (action !== 'update' || target !== null) &&
+    (action !== 'pin' || (pinTo !== null && pinReady)) &&
+    (action !== 'unpin' || (row?.pin !== undefined && pinReady));
   const sending = busy(step);
 
   const close = (): void => {
@@ -1063,6 +1080,10 @@ export function ActionDialog({
     else if (action === 'start') void run({ kind: 'StartWorld', ...world });
     else if (action === 'update' && target !== null) {
       void run({ kind: 'UpdateWorld', ...world, image: target });
+    } else if (action === 'pin' && pinTo !== null) {
+      void run({ kind: 'PinWorld', ...world, image: pinTo, reason: reasonText });
+    } else if (action === 'unpin') {
+      void run({ kind: 'PinWorld', ...world, image: '', reason: reasonText });
     } else void run({ kind: 'DownloadWorld', ...world });
   };
 
@@ -1136,6 +1157,64 @@ export function ActionDialog({
                 {target}
               </p>
             </>
+          )}
+          {action === 'pin' && row?.order && (
+            <>
+              <p>{fill(words.pinIntro, { t: row.title })}</p>
+              <label className="campo" htmlFor="mundo-fijar-version">
+                <span className="texto-confirmar">{words.pinBuild}</span>
+                <input
+                  id="mundo-fijar-version"
+                  className="mono"
+                  value={build}
+                  placeholder={fill(words.pinBuildHint, { b: buildTag(row.order.image) })}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  aria-invalid={build.trim() !== '' && pinTo === null}
+                  aria-describedby={
+                    build.trim() !== '' && pinTo === null ? 'mundo-fijar-mal' : undefined
+                  }
+                  onChange={(event) => setBuild(event.target.value)}
+                  data-metric="worlds-field"
+                />
+              </label>
+              {build.trim() !== '' && pinTo === null && (
+                <p id="mundo-fijar-mal" className="nota" role="alert" data-pin-bad>
+                  {words.pinBadBuild}
+                </p>
+              )}
+              {pinTo !== null && (
+                <p className="nota mono huella" data-pin-image>
+                  {pinTo}
+                </p>
+              )}
+            </>
+          )}
+          {action === 'unpin' && row?.pin !== undefined && (
+            <p data-unpin-from={row.pin.image}>
+              {fill(words.unpinIntro, {
+                t: row.title,
+                b: buildTag(row.pin.image),
+                r: row.pin.reason,
+              })}
+            </p>
+          )}
+          {(action === 'pin' || action === 'unpin') && (
+            <label className="campo" htmlFor="mundo-fijar-motivo">
+              <span className="texto-confirmar">{words.pinReason}</span>
+              <input
+                id="mundo-fijar-motivo"
+                value={reason}
+                maxLength={200}
+                autoComplete="off"
+                onChange={(event) => setReason(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && confirmed && !sending) submit();
+                }}
+                data-metric="worlds-field"
+              />
+            </label>
           )}
           {action === 'delete' && row && place && (
             <>
