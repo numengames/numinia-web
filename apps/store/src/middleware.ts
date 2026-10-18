@@ -6,7 +6,6 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { INLINE_SCRIPT_HASHES } from './lib/csp-hashes.generated';
 import { checkRate } from './lib/rate-limit';
 import { primeFromWorkerd } from './lib/runtime-env';
 import { capMessage, logEvent } from './lib/telemetry';
@@ -19,11 +18,11 @@ import { capMessage, logEvent } from './lib/telemetry';
    worlds room, where an Oracle signs each request to a fleet machine, and
    Saldo's members tab, where giving «Administrador» or «Gestionar roles» is
    signed again (STD-051 ORG-008).
-   `script-src` no longer carries 'unsafe-inline': every page's only inline
-   scripts are the small `is:inline` boot/telemetry ones, whose BODY text is
-   static (their per-page data travels in a `data-*` attribute, which CSP
-   hashing never looks at) — scripts/generate-csp-hashes.mjs hashes them at
-   build time. `connect-src` drops the open `https:` too: the client never
+   `script-src` keeps 'unsafe-inline': a hash list cannot work here — the
+   Cloudflare build wraps every island bootstrap in a shim (`globalThis.
+   process??={}`) that a Node-built hash never sees, so one missed hash
+   blocked every script, the sign-in included (2026-10-18).
+   `connect-src` drops the open `https:` too: the client never
    fetches an external host directly — every chain/CDN binary goes through
    the same-origin `/api/media` proxy (src/lib/media-proxy.ts) precisely so
    pages never need that allowance; `blob:` stays for three.js's
@@ -32,7 +31,7 @@ import { capMessage, logEvent } from './lib/telemetry';
    wallet SDK's RPC host is the user's own choice, not ours to allowlist. */
 const CSP_STRICT = [
   "default-src 'self'",
-  `script-src 'self' ${INLINE_SCRIPT_HASHES.join(' ')}`,
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
