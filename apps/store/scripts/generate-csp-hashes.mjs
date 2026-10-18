@@ -83,7 +83,7 @@ function listFiles(dir, extension) {
 // Matches a script tag with a body (not self-closing), capturing its
 // attributes and its literal body text — used on both .astro sources
 // (is:inline only) and built .html output (every inline script).
-const SCRIPT_TAG_RE = /<script\b([^>]*)>([\s\S]*?)<\/script>/g;
+const SCRIPT_TAG_RE = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
 
 function sha256Base64(text) {
   return createHash('sha256').update(text, 'utf8').digest('base64');
