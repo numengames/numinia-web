@@ -128,6 +128,7 @@ describe('the migration', () => {
       '0017_world_names.sql',
       '0018_rsvps_till_rituals.sql',
       '0019_fleet_releases.sql',
+      '0020_organization_ai_brain_spend.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(

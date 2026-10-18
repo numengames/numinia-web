@@ -20,6 +20,7 @@ import {
   readVocabulary,
   storedOff,
 } from '../src/lib/settings';
+import { recordAiSpend } from '../src/db/settings';
 import { AccountDesk } from '../src/worker';
 import { migratedTill, migrationFiles, sqliteD1 } from './sqlite-d1';
 
@@ -63,6 +64,7 @@ const acts = (s: Scene, id: string): string[] =>
 
 const MIGRATIONS_DIR = fileURLToPath(new URL('../migrations/', import.meta.url).href);
 const AI_BRAIN_MIGRATION = '0016_organization_ai_brain.sql';
+const AI_BRAIN_SPEND_MIGRATION = '0020_organization_ai_brain_spend.sql';
 
 describe('the rules of the settings', () => {
   it('reads pieces: each once, only the ones that may be turned off, in the order of the panel', () => {
@@ -152,6 +154,7 @@ describe('settings', () => {
         enabled: true,
         model: DEFAULT_AI_MODEL,
         trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+        spentCents: 0,
       },
     });
     expect(settingsOf(await s.desk.settings(PABLO, id)).mayEdit).toBe(true);
@@ -274,6 +277,7 @@ describe('changeSettings: the organization’s built-in AI agent (Historia 4, th
       enabled: false,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
     });
     expect(settingsOf(await s.desk.settings(MARIA, id)).aiAgent.enabled).toBe(false);
     const on = settingsOf(await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: true }));
@@ -281,6 +285,7 @@ describe('changeSettings: the organization’s built-in AI agent (Historia 4, th
       enabled: true,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
     });
     const lines = linesOf(await s.desk.happenings(PABLO, id)).lines.filter(
       (line) => line.act === 'settings-changed',
@@ -364,6 +369,7 @@ describe('changeSettings: the organization’s built-in AI agent (Historia 4, th
       enabled: false,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
     });
     const row = s.sqlite
       .prepare(
@@ -374,6 +380,69 @@ describe('changeSettings: the organization’s built-in AI agent (Historia 4, th
       enabled: 0,
       model: DEFAULT_AI_MODEL,
       trial_cap_cents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+  });
+});
+
+describe('recordAiSpend (Historia 2: the trial meters itself and stops at the cap)', () => {
+  it('adds cost to an organization with no row yet, born on the house default', async () => {
+    const s = scene();
+    const id = await team(s);
+    const after = await recordAiSpend(s.db, id, 40, new Date('2026-10-18T10:00:00.000Z'));
+    expect(after).toEqual({
+      enabled: true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 40,
+    });
+  });
+
+  it('accumulates across calls, staying on while short of the cap', async () => {
+    const s = scene();
+    const id = await team(s);
+    await recordAiSpend(s.db, id, 60, new Date());
+    const after = await recordAiSpend(s.db, id, 50, new Date());
+    expect(after).toEqual({
+      enabled: true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 110,
+    });
+  });
+
+  it('turns the agent off itself the instant spend reaches the cap, never past it', async () => {
+    const s = scene();
+    const id = await team(s);
+    await recordAiSpend(s.db, id, 100, new Date());
+    const after = await recordAiSpend(s.db, id, 90, new Date());
+    expect(after).toEqual({
+      enabled: false,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+    });
+    expect(settingsOf(await s.desk.settings(MARIA, id)).aiAgent).toEqual(after);
+  });
+
+  it('stays off once stopped, even if asked to spend again', async () => {
+    const s = scene();
+    const id = await team(s);
+    await recordAiSpend(s.db, id, DEFAULT_AI_TRIAL_CAP_CENTS, new Date());
+    const again = await recordAiSpend(s.db, id, 5, new Date());
+    expect(again.enabled).toBe(false);
+    expect(again.spentCents).toBe(DEFAULT_AI_TRIAL_CAP_CENTS);
+  });
+
+  it('a switch-off by hand (Historia 4) still meters spend, without turning it back on', async () => {
+    const s = scene();
+    const id = await team(s);
+    await s.desk.changeSettings(PABLO, id, { aiAgentEnabled: false });
+    const after = await recordAiSpend(s.db, id, 20, new Date());
+    expect(after).toEqual({
+      enabled: false,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 20,
     });
   });
 });
@@ -436,6 +505,7 @@ describe('settings: the organization’s built-in AI agent (Historia 1)', () => 
       enabled: true,
       model: DEFAULT_AI_MODEL,
       trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
     });
     expect(
       s.sqlite.prepare('SELECT * FROM organization_ai_brain WHERE account_id = ?').all(id),
@@ -446,7 +516,9 @@ describe('settings: the organization’s built-in AI agent (Historia 1)', () => 
 describe('migration 0015: the backfill of every organization already open', () => {
   it('gives the same default to an organization open before this migration ran, once', () => {
     const shim = sqliteD1();
-    const files = migrationFiles().filter((name) => name !== AI_BRAIN_MIGRATION);
+    const files = migrationFiles().filter(
+      (name) => name !== AI_BRAIN_MIGRATION && name !== AI_BRAIN_SPEND_MIGRATION,
+    );
     for (const name of files) {
       shim.sqlite.exec(readFileSync(`${MIGRATIONS_DIR}${name}`, 'utf8'));
     }
@@ -459,6 +531,7 @@ describe('migration 0015: the backfill of every organization already open', () =
         ('acc_t_old2', 'team', '2026-02-02T00:00:00.000Z'),
         ('acc_p_old', 'personal', '2026-01-01T00:00:00.000Z')`);
     shim.sqlite.exec(readFileSync(`${MIGRATIONS_DIR}${AI_BRAIN_MIGRATION}`, 'utf8'));
+    shim.sqlite.exec(readFileSync(`${MIGRATIONS_DIR}${AI_BRAIN_SPEND_MIGRATION}`, 'utf8'));
     const rows = shim.sqlite
       .prepare(
         'SELECT account_id, enabled, model, trial_cap_cents FROM organization_ai_brain ORDER BY account_id',
