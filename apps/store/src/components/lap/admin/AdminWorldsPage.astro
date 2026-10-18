@@ -419,6 +419,15 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     color: var(--verdemar);
     border-color: var(--verdemar);
   }
+  /* Icon-only card actions (MVL-B): square, icon centered, no label text —
+     the name travels as aria-label and as the house's [data-tip] (sistema.css). */
+  [data-worlds-panel] .btn-icono {
+    width: 32px;
+    min-height: 32px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
   /* Each world's own admin code, on its card, above its actions */
   [data-worlds-panel] .codigo-mundo {
     display: flex;

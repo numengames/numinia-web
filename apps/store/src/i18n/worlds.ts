@@ -228,6 +228,21 @@ export interface WorldsRoomMessages {
     readonly cpusLabel: string;
     readonly uploadLabel: string;
     readonly confirmIntro: string;
+    /** «Poder y saldo» (MVL-B): whether the new world starts running or not. */
+    readonly powerLabel: string;
+    readonly powerOn: string;
+    readonly powerOff: string;
+    readonly powerHint: string;
+    /** The organization whose prepaid balance pays for it, asked only when it starts on. */
+    readonly orgLabel: string;
+    readonly orgNone: string;
+    readonly orgLoading: string;
+    readonly orgFailed: string;
+    readonly balanceChecking: string;
+    /** `{org}` the organization's name. */
+    readonly balanceBlocked: string;
+    readonly balanceOk: string;
+    readonly topUpLink: string;
     readonly invalid: string;
     readonly next: string;
     readonly back: string;
@@ -610,6 +625,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploadLabel: 'Subida máxima (MB)',
       confirmIntro:
         'Tu cartera te pedirá firmar esta petición. La máquina comprueba la firma y crea el mundo; nadie más tiene que aprobar nada.',
+      powerLabel: '¿Arranca al crearse?',
+      powerOn: 'Encendido',
+      powerOff: 'Apagado',
+      powerHint:
+        'Encendido gasta saldo desde ya: hace falta elegir qué organización lo paga y que tenga saldo. Apagado no comprueba ni gasta saldo.',
+      orgLabel: 'Organización que lo paga',
+      orgNone: 'Elige una organización',
+      orgLoading: 'Leyendo las organizaciones…',
+      orgFailed: 'No se pudieron leer las organizaciones.',
+      balanceChecking: 'Comprobando el saldo…',
+      balanceBlocked:
+        '«{org}» no tiene saldo suficiente para arrancar un mundo ahora. Recarga su saldo antes de encenderlo.',
+      balanceOk: 'Saldo suficiente: puede arrancar encendido.',
+      topUpLink: 'Recargar saldo',
       invalid: 'Revisa: {fields}.',
       next: 'Siguiente',
       back: 'Atrás',
@@ -1005,6 +1034,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploadLabel: 'Largest upload (MB)',
       confirmIntro:
         'Your wallet will ask you to sign this request. The machine checks the signature and creates the world; nobody else has to approve anything.',
+      powerLabel: 'Starts running?',
+      powerOn: 'On',
+      powerOff: 'Off',
+      powerHint:
+        'On spends balance from the start: pick which organization pays for it, and it needs balance. Off checks and spends nothing.',
+      orgLabel: 'Organization that pays for it',
+      orgNone: 'Choose an organization',
+      orgLoading: 'Reading the organizations…',
+      orgFailed: 'The organizations could not be read.',
+      balanceChecking: 'Checking the balance…',
+      balanceBlocked:
+        '«{org}» has no balance to start a world now. Top up its balance before turning it on.',
+      balanceOk: 'Enough balance: it can start on.',
+      topUpLink: 'Top up balance',
       invalid: 'Check: {fields}.',
       next: 'Next',
       back: 'Back',
@@ -1407,6 +1450,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploadLabel: '最大アップロード (MB)',
       confirmIntro:
         'ウォレットがこのリクエストへの署名を求めます。マシンが署名を確認してワールドを作成します。ほかの誰の承認も要りません。',
+      powerLabel: '作成時に起動しますか？',
+      powerOn: 'オン',
+      powerOff: 'オフ',
+      powerHint:
+        'オンにすると最初から残高を使います：支払う組織を選び、残高が必要です。オフは残高を確認も消費もしません。',
+      orgLabel: '支払う組織',
+      orgNone: '組織を選んでください',
+      orgLoading: '組織を読み込み中…',
+      orgFailed: '組織を読み込めませんでした。',
+      balanceChecking: '残高を確認中…',
+      balanceBlocked:
+        '「{org}」には今ワールドを起動する残高がありません。起動する前に残高を補充してください。',
+      balanceOk: '残高は十分です：オンで起動できます。',
+      topUpLink: '残高を補充する',
       invalid: '確認してください：{fields}。',
       next: '次へ',
       back: '戻る',
@@ -1804,6 +1861,19 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploadLabel: '최대 업로드 (MB)',
       confirmIntro:
         '지갑이 이 요청에 서명하라고 합니다. 머신이 서명을 확인하고 월드를 만듭니다. 다른 누구의 승인도 필요 없습니다.',
+      powerLabel: '만들 때 바로 켜나요?',
+      powerOn: '켜짐',
+      powerOff: '꺼짐',
+      powerHint:
+        '켜짐은 처음부터 잔액을 씁니다: 비용을 낼 조직을 고르고, 잔액이 있어야 합니다. 꺼짐은 잔액을 확인하거나 쓰지 않습니다.',
+      orgLabel: '비용을 내는 조직',
+      orgNone: '조직을 선택하세요',
+      orgLoading: '조직을 불러오는 중…',
+      orgFailed: '조직을 불러올 수 없습니다.',
+      balanceChecking: '잔액 확인 중…',
+      balanceBlocked: '«{org}»에는 지금 월드를 켤 잔액이 없습니다. 켜기 전에 잔액을 충전하세요.',
+      balanceOk: '잔액이 충분합니다: 켜진 채로 시작할 수 있습니다.',
+      topUpLink: '잔액 충전하기',
       invalid: '확인하세요: {fields}.',
       next: '다음',
       back: '뒤로',
@@ -2200,6 +2270,20 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploadLabel: 'Envio máximo (MB)',
       confirmIntro:
         'Sua carteira vai pedir que você assine este pedido. A máquina confere a assinatura e cria o mundo; ninguém mais precisa aprovar nada.',
+      powerLabel: 'Começa ligado?',
+      powerOn: 'Ligado',
+      powerOff: 'Desligado',
+      powerHint:
+        'Ligado gasta saldo desde já: é preciso escolher qual organização paga e que ela tenha saldo. Desligado não confere nem gasta saldo.',
+      orgLabel: 'Organização que paga',
+      orgNone: 'Escolha uma organização',
+      orgLoading: 'Lendo as organizações…',
+      orgFailed: 'Não foi possível ler as organizações.',
+      balanceChecking: 'Conferindo o saldo…',
+      balanceBlocked:
+        '«{org}» não tem saldo suficiente para ligar um mundo agora. Recarregue o saldo antes de ligá-lo.',
+      balanceOk: 'Saldo suficiente: pode começar ligado.',
+      topUpLink: 'Recarregar saldo',
       invalid: 'Revise: {fields}.',
       next: 'Seguinte',
       back: 'Voltar',
