@@ -23,6 +23,7 @@ import {
 } from '../../../lib/worlds';
 import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
+import { WorldGlyph } from './WorldGlyph';
 
 /** `update`: move a world of the Numinia Engine to its newest build (UpdateWorld). */
 export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update';
@@ -357,64 +358,76 @@ function Actions({
     <div className="acciones">
       {open !== null && (
         <a
-          className="btn btn-fantasma abrir"
+          className="btn btn-fantasma btn-icono abrir"
           href={worldUrl(open)}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={room.actions.open}
+          data-tip={room.actions.open}
           data-metric="worlds-open"
         >
-          {room.actions.open}
+          <WorldGlyph name="arrow-square-out" />
         </a>
       )}
       {order && order.state === 'running' && (
         <button
           type="button"
-          className="btn btn-fantasma"
+          className="btn btn-fantasma btn-icono"
           onClick={() => onAction(row, 'stop')}
+          aria-label={room.actions.stop}
+          data-tip={room.actions.stop}
           data-metric="worlds-stop"
         >
-          {room.actions.stop}
+          <WorldGlyph name="stop" />
         </button>
       )}
       {order && order.state === 'stopped' && (
         <button
           type="button"
-          className="btn btn-fantasma"
+          className="btn btn-fantasma btn-icono"
           onClick={() => onAction(row, 'start')}
+          aria-label={room.actions.start}
+          data-tip={room.actions.start}
           data-metric="worlds-start"
         >
-          {room.actions.start}
+          <WorldGlyph name="play" />
         </button>
       )}
       {/* A world of the Numinia Engine whose machine takes updates, on an older build than the newest. */}
       {order && row.update && (
         <button
           type="button"
-          className="btn btn-fantasma"
+          className="btn btn-fantasma btn-icono"
           onClick={() => onAction(row, 'update')}
+          aria-label={room.actions.update}
+          data-tip={room.actions.update}
           data-metric="worlds-update"
         >
-          {room.actions.update}
+          <WorldGlyph name="arrows-clockwise" />
         </button>
       )}
       {order && (
         <button
           type="button"
-          className="btn btn-fantasma"
+          className="btn btn-fantasma btn-icono"
           onClick={() => onAction(row, 'download')}
+          aria-label={room.actions.download}
+          data-tip={room.actions.download}
           data-metric="worlds-download"
         >
-          {room.actions.download}
+          <WorldGlyph name="download-simple" />
         </button>
       )}
       {order && (
         <button
           type="button"
-          className="btn btn-fantasma peligro"
+          className="btn btn-fantasma btn-icono peligro"
           onClick={() => onAction(row, 'delete')}
+          aria-label={room.actions.delete}
+          data-tip={room.actions.delete}
           data-metric="worlds-delete"
         >
-          {room.actions.delete}
+          <WorldGlyph name="trash" />
         </button>
       )}
     </div>
@@ -489,19 +502,23 @@ function CodeLine({
       <span className="etiqueta">{room.code.label}</span>
       <button
         type="button"
-        className="btn btn-fantasma"
+        className="btn btn-fantasma btn-icono"
         onClick={() => onCode(row, 'show')}
+        aria-label={room.code.show}
+        data-tip={room.code.show}
         data-metric="worlds-code-show"
       >
-        {room.code.show}
+        <WorldGlyph name="eye" />
       </button>
       <button
         type="button"
-        className="btn btn-fantasma"
+        className="btn btn-fantasma btn-icono"
         onClick={() => onCode(row, 'rotate')}
+        aria-label={room.code.rotate}
+        data-tip={room.code.rotate}
         data-metric="worlds-code-rotate"
       >
-        {room.code.rotate}
+        <WorldGlyph name="arrows-clockwise" />
       </button>
     </div>
   );
@@ -560,12 +577,13 @@ function HomeLine({ row, placement }: { row: WorldRow; placement: PlacementView 
       <div className="casa-botones">
         <button
           type="button"
-          className="btn btn-fantasma"
+          className="btn btn-fantasma btn-icono"
           aria-label={fill(words.assignLabel, { w: row.title })}
+          data-tip={words.assign}
           onClick={() => placement.onAssign(row)}
           data-metric="worlds-assign"
         >
-          {words.assign}
+          <WorldGlyph name="user-plus" />
         </button>
         <a
           className="btn btn-fantasma"
