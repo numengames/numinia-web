@@ -137,7 +137,8 @@ const laterParts = a.laterInCity.split('{x}');
                 name={community.name}
                 image={imageOf(community, ritual)}
                 eager={index === 0}
-                art={index === 0}
+                art
+                ritualMode={ritual?.mode}
               />
             </div>
             <div class="velo" aria-hidden="true" />
