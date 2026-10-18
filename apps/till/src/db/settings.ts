@@ -53,11 +53,19 @@ interface SettingsView {
   readonly aiAgent: AiBrainView;
 }
 
-/** The organization's built-in AI agent as the panel shows it. */
+/**
+ * The organization's built-in AI agent as the panel shows it.
+ *
+ * `spentCents` (Historia 2, kanban t_ec70b2e3) is how much of the trial the
+ * agent has used so far — always `<= trialCapCents` once `enabled` turns
+ * false on its own account of it; a manual switch-off (Historia 4) can
+ * still leave `spentCents` short of the cap.
+ */
 interface AiBrainView {
   readonly enabled: boolean;
   readonly model: string;
   readonly trialCapCents: number;
+  readonly spentCents: number;
 }
 
 export type SettingsAnswer = SettingsView | Refusal;
@@ -88,7 +96,7 @@ const SELECT_SETTINGS =
   'SELECT pieces_off, vocabulary FROM organization_settings WHERE account_id = ?1';
 
 const SELECT_AI_BRAIN =
-  'SELECT enabled, model, trial_cap_cents FROM organization_ai_brain WHERE account_id = ?1';
+  'SELECT enabled, model, trial_cap_cents, spent_cents FROM organization_ai_brain WHERE account_id = ?1';
 
 /** The row is written only while the organization still holds the revision that was read. */
 const UPSERT_SETTINGS = `
@@ -113,6 +121,23 @@ const UPSERT_AI_BRAIN = `
    WHERE (SELECT revision FROM team_profiles WHERE account_id = ?1) = ?6
   ON CONFLICT (account_id) DO UPDATE
      SET enabled = excluded.enabled`;
+
+/**
+ * «El cerebro barato de cada comunidad» (Historia 2): adds `?2` cents to
+ * `spent_cents` and, the instant the new total reaches the trial cap, turns
+ * `enabled` off in the same write — the agent stops itself without a
+ * second query. A row born here (an organization with none yet) starts
+ * already spent by `?2`, never below zero and never past the cap unnoticed.
+ * No revision guard: unlike `UPSERT_SETTINGS`/`UPSERT_AI_BRAIN`, this is not
+ * a person's edit racing another person's edit — it is usage accumulating,
+ * so every call must land, including two in-flight at once.
+ */
+const RECORD_AI_SPEND = `
+  INSERT INTO organization_ai_brain (account_id, enabled, model, trial_cap_cents, spent_cents, created_at)
+  VALUES (?1, (?2 < ?3), ?4, ?3, MIN(?2, ?3), ?5)
+  ON CONFLICT (account_id) DO UPDATE
+     SET spent_cents = MIN(spent_cents + ?2, trial_cap_cents),
+         enabled = enabled AND (spent_cents + ?2 < trial_cap_cents)`;
 
 const SELECT_HAPPENINGS = `
   SELECT l.seq, l.at, l.actor, l.as_house, l.act, l.subject, l.detail,
@@ -143,13 +168,43 @@ async function settingsRow(
 async function aiBrainRow(db: TillDatabase, accountId: string): Promise<AiBrainView> {
   const row = await db.prepare(SELECT_AI_BRAIN).bind(accountId).first<Row>();
   if (row === null) {
-    return { enabled: true, model: DEFAULT_AI_MODEL, trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS };
+    return {
+      enabled: true,
+      model: DEFAULT_AI_MODEL,
+      trialCapCents: DEFAULT_AI_TRIAL_CAP_CENTS,
+      spentCents: 0,
+    };
   }
   return {
     enabled: cents(row, 'enabled') === 1,
     model: text(row, 'model'),
     trialCapCents: cents(row, 'trial_cap_cents'),
+    spentCents: cents(row, 'spent_cents'),
   };
+}
+
+/**
+ * «El cerebro barato de cada comunidad» (Historia 2): meters `costCents` of
+ * usage against the organization's trial and, the instant the running total
+ * reaches the cap, turns the agent off — the agent stops itself, the
+ * community stays connected (ACC-02's own call, not this one, decides who
+ * may still read/write the rest of the organization). No wallet, no house:
+ * the caller is the engine's own AI run-time, already holding the
+ * organization's AI access token (numinia-engine#19) by the time it calls
+ * this — a server-to-server act, not a person's, so there is nothing here
+ * for a browser argument to misread.
+ */
+export async function recordAiSpend(
+  db: TillDatabase,
+  accountId: string,
+  costCents: number,
+  now: Date,
+): Promise<AiBrainView> {
+  await db
+    .prepare(RECORD_AI_SPEND)
+    .bind(accountId, costCents, DEFAULT_AI_TRIAL_CAP_CENTS, DEFAULT_AI_MODEL, now.toISOString())
+    .run();
+  return aiBrainRow(db, accountId);
 }
 
 /** Reads the three arguments every method takes, or the refusal of what it cannot read. */

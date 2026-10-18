@@ -43,6 +43,11 @@ export interface PanelSettingsMessages {
     readonly lineOff: string;
     readonly note: string;
     readonly switchLabel: string;
+    /** «Historia 2 (kanban t_ec70b2e3): what the trial still has. */
+    /** `{left}`, `{cap}`: «Te quedan $0.90 de tu prueba de $1.50». */
+    readonly remaining: string;
+    /** `{cap}`: shown instead of `remaining` once the trial is spent. */
+    readonly exhausted: string;
   };
   readonly readOnly: string;
   readonly saving: string;
@@ -79,6 +84,9 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       lineOff: 'Agente IA: inactivo · {model} · tope {cap}',
       note: 'Cada comunidad nace con un agente de IA de modelo barato y un tope de prueba.',
       switchLabel: 'Encender o apagar el agente IA',
+      remaining: 'Te quedan {left} de tu prueba de {cap}.',
+      exhausted:
+        'Has agotado tu prueba de {cap}: el agente se ha parado solo. La comunidad sigue conectada; recárgalo para seguir usándolo.',
     },
     readOnly: 'Solo quien administra la comunidad puede cambiar esto.',
     saving: 'Guardando…',
@@ -113,6 +121,9 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       lineOff: 'AI agent: inactive · {model} · cap {cap}',
       note: 'Every community is born with a cheap-model AI agent and a trial cap.',
       switchLabel: 'Turn the AI agent on or off',
+      remaining: '{left} left of your {cap} trial.',
+      exhausted:
+        'Your {cap} trial is spent: the agent stopped itself. The community stays connected; recharge it to keep using it.',
     },
     readOnly: 'Only whoever manages the community can change this.',
     saving: 'Saving…',
@@ -147,6 +158,9 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       lineOff: 'AIエージェント: 停止中 · {model} · 上限 {cap}',
       note: 'コミュニティは誕生時から、安価なモデルのAIエージェントと試用上限を持ちます。',
       switchLabel: 'AIエージェントのオン/オフを切り替える',
+      remaining: '試用枠{cap}のうち、残り{left}です。',
+      exhausted:
+        '試用枠{cap}を使い切り、エージェントは自ら停止しました。コミュニティの接続は続いています。チャージすると再び使えます。',
     },
     readOnly: 'これを変更できるのはコミュニティの管理者だけです。',
     saving: '保存中…',
@@ -181,6 +195,9 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       lineOff: 'AI 에이전트: 비활성 · {model} · 한도 {cap}',
       note: '커뮤니티는 생성될 때부터 저가 모델 AI 에이전트와 체험 한도를 갖습니다.',
       switchLabel: 'AI 에이전트 켜기/끄기',
+      remaining: '체험 한도 {cap} 중 {left} 남았습니다.',
+      exhausted:
+        '체험 한도 {cap}을 다 써서 에이전트가 스스로 멈췄습니다. 커뮤니티는 계속 연결되어 있습니다. 충전하면 다시 쓸 수 있습니다.',
     },
     readOnly: '이 설정은 커뮤니티 관리자만 바꿀 수 있습니다.',
     saving: '저장 중…',
@@ -215,6 +232,9 @@ export const PANEL_SETTINGS_UI: Readonly<Record<SupportedLocale, PanelSettingsMe
       lineOff: 'Agente de IA: inativo · {model} · limite {cap}',
       note: 'Cada comunidade nasce com um agente de IA de modelo barato e um limite de teste.',
       switchLabel: 'Ligar ou desligar o agente de IA',
+      remaining: 'Restam {left} do seu teste de {cap}.',
+      exhausted:
+        'Seu teste de {cap} acabou: o agente parou por conta própria. A comunidade continua conectada; recarregue para usá-lo de novo.',
     },
     readOnly: 'Só quem administra a comunidade pode mudar isto.',
     saving: 'Salvando…',

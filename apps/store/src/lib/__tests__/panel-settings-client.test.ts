@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadSettings, saveSettings } from '../panel-settings-client';
 
-const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 };
+const aiAgent = { enabled: true, model: 'gpt-5-nano', trialCapCents: 150, spentCents: 0 };
 const settings = {
   accountId: 'acc t',
   off: ['roles'],

@@ -120,7 +120,7 @@ async function signedIn(
           off,
           vocabulary: 'mixed',
           mayEdit: true,
-          aiAgent: { enabled: true, model: 'gpt-5-nano', trialCapCents: 150 },
+          aiAgent: { enabled: true, model: 'gpt-5-nano', trialCapCents: 150, spentCents: 0 },
         },
       },
     }),
