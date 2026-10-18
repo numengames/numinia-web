@@ -512,6 +512,18 @@ export interface AccountDesk {
   /** The organization one world belongs to — public: `wallet` may be null — and whether the caller may manage it. */
   homeOf(worldId: string, wallet?: string | null, house?: boolean): Promise<DeskHomeOfAnswer>;
   /**
+   * Card t_a856c570 (2026-10-18): the house renames an existing world (or
+   * server); the new name persists and overrides the world's own title.
+   */
+  renameWorld(
+    wallet: string,
+    house: boolean,
+    worldId: string,
+    name: string,
+  ): Promise<DeskRenameAnswer>;
+  /** Every world the house has renamed, to the house alone. */
+  worldNames(wallet: string, house: boolean): Promise<DeskNamesAnswer>;
+  /**
    * «Una comunidad ES una organización»: the house opens the till account of a
    * community of the register the first time it uses it — the account's id is
    * derived from the community's (`communityAccountId`), so asking twice finds
@@ -760,6 +772,8 @@ export const DESK_METHODS = [
   'placements',
   'worldsOf',
   'homeOf',
+  'renameWorld',
+  'worldNames',
   'ensureCommunityTeam',
   'settings',
   'changeSettings',
@@ -810,6 +824,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'placements',
   'worldsOf',
   'homeOf',
+  'renameWorld',
+  'worldNames',
   'ensureCommunityTeam',
   'settings',
   'changeSettings',
@@ -1625,3 +1641,14 @@ export type DeskHomeOfAnswer =
       manage: boolean;
     }
   | DeskRefusal;
+
+/** One world's own name, and since when (card t_a856c570, 2026-10-18). */
+export interface DeskName {
+  worldId: string;
+  name: string;
+  renamedAt: string;
+}
+
+export type DeskRenameAnswer = { ok: true; worldId: string; name: string } | DeskRefusal;
+
+export type DeskNamesAnswer = { ok: true; names: DeskName[] } | DeskRefusal;

@@ -12,7 +12,7 @@ import deskSeed from '../../../fixtures/accounts/desk.json';
 import homesSeed from '../../../fixtures/worlds/homes.json';
 import type { AccountDesk, DeskHome } from '../accounts';
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
-import { PLACEMENT_PROBLEMS } from '../worlds-homes';
+import { PLACEMENT_PROBLEMS, NAME_PROBLEMS } from '../worlds-homes';
 
 const NOW = new Date('2026-10-16T09:30:00.000Z');
 const HOUSE = `0x${'99'.repeat(20)}`;
@@ -203,6 +203,77 @@ describe('the home of one world', () => {
         BAD_WALLET,
         'house must be true or false',
       ],
+    });
+  });
+});
+
+describe('renaming a world (or server), card t_a856c570', () => {
+  it('lets the house rename, and the name rides along on every later read', async () => {
+    const on = desk();
+    expect(await on.renameWorld(HOUSE, true, 'bosque', 'La Reserva Nueva')).toEqual({
+      ok: true,
+      worldId: 'bosque',
+      name: 'La Reserva Nueva',
+    });
+    expect(await on.worldNames(HOUSE, true)).toEqual({
+      ok: true,
+      names: [{ worldId: 'bosque', name: 'La Reserva Nueva', renamedAt: NOW.toISOString() }],
+    });
+  });
+
+  it('keeps one name per world: renaming again replaces it, not adds to it', async () => {
+    const on = desk();
+    await on.renameWorld(HOUSE, true, 'bosque', 'First');
+    await on.renameWorld(HOUSE, true, 'bosque', 'Second');
+    const out = await on.worldNames(HOUSE, true);
+    expect(out).toEqual({
+      ok: true,
+      names: [{ worldId: 'bosque', name: 'Second', renamedAt: NOW.toISOString() }],
+    });
+  });
+
+  it('sorts several names by world id', async () => {
+    const on = desk();
+    await on.renameWorld(HOUSE, true, 'forge', 'Forge Renamed');
+    await on.renameWorld(HOUSE, true, 'bosque', 'Bosque Renamed');
+    const out = await on.worldNames(HOUSE, true);
+    expect(out.ok && out.names.map((n) => n.worldId)).toEqual(['bosque', 'forge']);
+  });
+
+  it('refuses anyone who is not the house, and changes nothing', async () => {
+    const on = desk();
+    const notHouse = { ok: false, problems: [NAME_PROBLEMS.notHouse] };
+    expect(await on.renameWorld(ME, undefined, 'bosque', 'Nope')).toEqual(notHouse);
+    expect(await on.renameWorld(ME, false, 'bosque', 'Nope')).toEqual(notHouse);
+    expect(await on.worldNames(ME, false)).toEqual(notHouse);
+    expect((await on.worldNames(HOUSE, true)) as { names: unknown[] }).toEqual({
+      ok: true,
+      names: [],
+    });
+  });
+
+  it('answers a world id or a name out of shape in words', async () => {
+    const on = desk();
+    expect(await on.renameWorld(HOUSE, true, 'Bad Id', 'ok')).toEqual({
+      ok: false,
+      problems: ['worldId must be a world id: lowercase letters, digits and single hyphens'],
+    });
+    expect(await on.renameWorld(HOUSE, true, 'bosque', '')).toEqual({
+      ok: false,
+      problems: ['name must be 1 to 80 characters, with no leading or trailing blank'],
+    });
+    expect(await on.renameWorld('nobody', 'yes', 7, 1)).toEqual({
+      ok: false,
+      problems: [
+        BAD_WALLET,
+        'house must be true or false',
+        'worldId must be a world id: lowercase letters, digits and single hyphens',
+        'name must be 1 to 80 characters, with no leading or trailing blank',
+      ],
+    });
+    expect(await on.worldNames('nobody', 'x')).toEqual({
+      ok: false,
+      problems: [BAD_WALLET, 'house must be true or false'],
     });
   });
 });

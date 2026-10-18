@@ -43,7 +43,7 @@ import {
   type MachineHealth,
 } from '../../../lib/fleet';
 import { openAllCommunities } from '../../../lib/org-choices';
-import { counted, homesByWorld, loadHomes, worldHref } from '../../../lib/mundos';
+import { counted, homesByWorld, loadHomes, namesByWorld, worldHref } from '../../../lib/mundos';
 import {
   ENGINE_NAMES,
   fill,
@@ -53,6 +53,7 @@ import {
   fleetEngine,
   fleetStats,
   importMachines,
+  applyNames,
   listedRows,
   machineChoices,
   machineEngines,
@@ -73,6 +74,7 @@ import { problemText } from './fleet-action';
 import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
 import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
 import { PlaceDialog, type PlaceAsk } from './WorldPlace';
+import { WorldRenameDialog, type RenameAsk } from './WorldRenameDialog';
 import {
   CardsView,
   ListView,
@@ -465,6 +467,10 @@ export function WorldsPanel({
   const [homesFailed, setHomesFailed] = useState(false);
   const [placing, setPlacing] = useState<PlaceAsk | null>(null);
   const [placedNote, setPlacedNote] = useState<string | null>(null);
+  // Card t_a856c570 (2026-10-18): the house's own names for worlds (and servers).
+  const [names, setNames] = useState<ReadonlyMap<string, string> | null>(null);
+  const [renaming, setRenaming] = useState<RenameAsk | null>(null);
+  const [renamedNote, setRenamedNote] = useState<string | null>(null);
   // Cut 7: the house opens every community's organization at once.
   const [openingAll, setOpeningAll] = useState(false);
   const [openedNote, setOpenedNote] = useState<{
@@ -484,8 +490,9 @@ export function WorldsPanel({
   };
   const readHomes = useCallback(async (): Promise<void> => {
     const sheet = await loadHomes(fetch);
-    setHomes(sheet.at === 'ready' ? homesByWorld(sheet.items) : null);
-    setHomesFailed(sheet.at !== 'ready');
+    setHomes(sheet.homes.at === 'ready' ? homesByWorld(sheet.homes.items) : null);
+    setHomesFailed(sheet.homes.at !== 'ready');
+    setNames(sheet.names.at === 'ready' ? namesByWorld(sheet.names.items) : null);
   }, []);
   const fleetReady = panel.at === 'ready';
   useEffect(() => {
@@ -528,7 +535,8 @@ export function WorldsPanel({
   // Every world the room knows, those being deleted included (a name or an
   // address is not free until they are gone); the list shows the others.
   const known = panel.at === 'ready' ? panel.fleet.rows : [];
-  const rows = useMemo(() => listedRows(known), [known]);
+  // Card t_a856c570 (2026-10-18): the house's own names override each row's title.
+  const rows = useMemo(() => applyNames(listedRows(known), names), [known, names]);
   const stats = useMemo(() => fleetStats(rows), [rows]);
   const servers = useMemo(() => fleetServers(rows), [rows]);
   const machines = useMemo(
@@ -916,6 +924,7 @@ export function WorldsPanel({
   };
   const onAction = (row: WorldRow, action: WorldAction): void => setChange({ row, action });
   const onCode = (row: WorldRow, mode: CodeMode): void => setCodeAsk({ row, mode });
+  const onRename = (row: WorldRow): void => setRenaming({ id: row.id, title: row.title });
   const viewName: Readonly<Record<View, string>> = {
     cards: room.views.cards,
     list: room.views.list,
@@ -1246,6 +1255,11 @@ export function WorldsPanel({
           {placedNote}
         </p>
       )}
+      {renamedNote !== null && (
+        <p className="nota exito" role="status" data-renamed-note>
+          {renamedNote}
+        </p>
+      )}
       {shown.length === 0 && rows.length === 0 && <p className="estado vacio">{room.empty}</p>}
       {shown.length === 0 && rows.length > 0 && <p className="estado vacio">{room.noMatch}</p>}
       {shown.length > 0 && view === 'cards' && (
@@ -1254,6 +1268,7 @@ export function WorldsPanel({
           room={room}
           onAction={onAction}
           onCode={onCode}
+          onRename={onRename}
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
@@ -1275,6 +1290,7 @@ export function WorldsPanel({
           room={room}
           onAction={onAction}
           onCode={onCode}
+          onRename={onRename}
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
@@ -1408,6 +1424,16 @@ export function WorldsPanel({
           setPlacing(null);
           setPicked(new Set());
           setPlacedNote(message);
+          void readHomes();
+        }}
+      />
+      <WorldRenameDialog
+        ask={renaming}
+        room={room}
+        onClose={() => setRenaming(null)}
+        onRenamed={(message) => {
+          setRenaming(null);
+          setRenamedNote(message);
           void readHomes();
         }}
       />

@@ -59,6 +59,41 @@ export function readWorldId(value: unknown): string | undefined {
     : undefined;
 }
 
+/** Card t_a856c570 (2026-10-18): the till's own words (src/lib/world-names.ts). */
+export const NAME_PROBLEMS = {
+  notHouse: 'only the house renames a world',
+  world: 'worldId must be a world id: lowercase letters, digits and single hyphens',
+  name: 'name must be 1 to 80 characters, with no leading or trailing blank',
+} as const;
+
+const WORLD_NAME_MAX = 80;
+// eslint-disable-next-line no-control-regex -- deliberately matches control characters to reject them
+const CONTROL_CHAR = /[\u0000-\u001f\u007f]/;
+
+/** A world's new name as the Lab sends it, or undefined when it is not that. */
+export function readWorldName(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (trimmed !== value || trimmed.length < 1 || trimmed.length > WORLD_NAME_MAX) {
+    return undefined;
+  }
+  return CONTROL_CHAR.test(trimmed) ? undefined : trimmed;
+}
+
+/** The body of a rename — exactly `{ worldId, name }` — or null. */
+export function readRenameBody(
+  json: unknown,
+): { readonly worldId: string; readonly name: string } | null {
+  if (typeof json !== 'object' || json === null || Array.isArray(json)) return null;
+  const keys = Object.keys(json);
+  const { worldId, name } = json as Readonly<Record<string, unknown>>;
+  const id = readWorldId(worldId);
+  const read = readWorldName(name);
+  return keys.length === 2 && id !== undefined && read !== undefined
+    ? { worldId: id, name: read }
+    : null;
+}
+
 /** 1 to 50 world ids, each once, in the order sent; or undefined when it is not that. */
 export function readWorldIds(value: unknown): string[] | undefined {
   if (!Array.isArray(value) || value.length < 1 || value.length > WORLD_IDS_MAX) return undefined;
@@ -160,6 +195,17 @@ const SHAPES = {
     z.object({ ok: z.literal(true), home: home.nullable(), manage: z.boolean() }),
     refusal,
   ]),
+  rename: z.union([
+    z.object({ ok: z.literal(true), worldId: z.string(), name: z.string() }),
+    refusal,
+  ]),
+  names: z.union([
+    z.object({
+      ok: z.literal(true),
+      names: z.array(z.object({ worldId: z.string(), name: z.string(), renamedAt: z.string() })),
+    }),
+    refusal,
+  ]),
 } as const;
 
 /** Ask the desk and read its answer: the answer, or the response to send when it is missing, failed or odd. */
@@ -201,11 +247,13 @@ export async function ask<S extends z.ZodType>(
 function refused(problems: readonly string[]): Response {
   const status = problems.includes(PLACEMENT_PROBLEMS.notHouse)
     ? 403
-    : problems.includes(PLACEMENT_PROBLEMS.notMember)
+    : problems.includes(NAME_PROBLEMS.notHouse)
       ? 403
-      : problems.includes(PLACEMENT_PROBLEMS.noAccount)
-        ? 404
-        : 400;
+      : problems.includes(PLACEMENT_PROBLEMS.notMember)
+        ? 403
+        : problems.includes(PLACEMENT_PROBLEMS.noAccount)
+          ? 404
+          : 400;
   return answer({ error: 'refused', problems }, status);
 }
 
@@ -230,9 +278,28 @@ export async function answerHomes(
     SHAPES.placements,
   );
   if (!asked.ok) return asked.response;
-  return 'problems' in asked.value
-    ? refused(asked.value.problems)
-    : answer({ homes: asked.value.homes });
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  // Card t_a856c570 (2026-10-18): the names ride along on the same GET, so
+  // the room's reload does not cost the admin-read rate limit a second
+  // request every time it draws the fleet.
+  const names = await namesQuietly(desk, asker, log);
+  return answer({ homes: asked.value.homes, names });
+}
+
+/** Every renamed world, or an empty list when the till cannot say: never fails `answerHomes`. */
+async function namesQuietly(
+  desk: AccountDesk,
+  asker: Asker,
+  log: Log,
+): Promise<readonly { worldId: string; name: string; renamedAt: string }[]> {
+  if (typeof desk.worldNames !== 'function') return [];
+  const asked = await ask(
+    log,
+    'worldNames',
+    () => desk.worldNames(lowercase(asker), true),
+    SHAPES.names,
+  );
+  return asked.ok && !('problems' in asked.value) ? asked.value.names : [];
 }
 
 /** The JSON body of a request, or the response that refuses it. */
@@ -349,4 +416,36 @@ export async function answerWorld(
         manage: asked.value.manage,
         url: hosts.has(id) ? `https://${hosts.get(id)}/` : null,
       });
+}
+
+/**
+ * POST /api/admin/worlds/rename, JSON `{ worldId, name }` (card t_a856c570,
+ * 2026-10-18): the house renames that existing world (or server) — `{
+ * worldId, name }` — persisted so a reload still shows it. 403 for any
+ * other session before the body is read; 400 for a body out of shape.
+ */
+export async function answerRename(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  request: Request,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null || !asker.house) return forbidden();
+  const body = await bodyOf(request);
+  if (!body.ok) return body.response;
+  const read = readRenameBody(body.json);
+  if (read === null) {
+    return answer({ error: `body: { worldId: a world id, name: 1 to 80 characters }` }, 400);
+  }
+  if (desk === null) return notBound();
+  const asked = await ask(
+    log,
+    'renameWorld',
+    () => desk.renameWorld(lowercase(asker), true, read.worldId, read.name),
+    SHAPES.rename,
+  );
+  if (!asked.ok) return asked.response;
+  return 'problems' in asked.value
+    ? refused(asked.value.problems)
+    : answer({ worldId: asked.value.worldId, name: asked.value.name });
 }

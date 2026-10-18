@@ -3,6 +3,19 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-18 09:25",
+    "entries": [
+      {
+        "text": "In /lap/admin/worlds/, the house can rename an existing world or server: a rename action opens a dialog, the new name shows right away and still shows after a reload.",
+        "type": "NEW",
+      },
+    ],
+    "missions": [
+      "t_a856c570",
+    ],
+    "version": "v0.135.0",
+  },
+  {
     "date": "2026-10-18 05:59",
     "entries": [
       {

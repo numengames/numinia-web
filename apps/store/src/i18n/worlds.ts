@@ -266,6 +266,20 @@ export interface WorldsRoomMessages {
     /** Before signing, when the machine's door says no recipe: it does not know these requests yet. */
     readonly notYet: string;
   };
+  /**
+   * Card t_a856c570 (2026-10-18): renaming an existing world (or server)
+   * from its card. `{t}` the world's current title.
+   */
+  readonly rename: {
+    readonly label: string;
+    readonly title: string;
+    readonly fieldLabel: string;
+    readonly save: string;
+    readonly cancel: string;
+    readonly forbidden: string;
+    readonly failed: string;
+    readonly saved: string;
+  };
   readonly change: {
     readonly stopTitle: string;
     readonly startTitle: string;
@@ -629,6 +643,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       chat: 'En el chat del mundo escribe /admin {code} y quedarás como administrador en ese navegador.',
       notYet:
         '{m} todavía no da un código por mundo: relanza su línea (en Máquinas) y vuelve a intentarlo.',
+    },
+    rename: {
+      label: 'Cambiar nombre',
+      title: 'Cambiar el nombre de {t}',
+      fieldLabel: 'Nuevo nombre',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      forbidden: 'Solo la casa puede cambiar el nombre.',
+      failed: 'No se pudo guardar el nombre ({detail}).',
+      saved: 'Nombre guardado.',
     },
     change: {
       stopTitle: 'Parar {t}',
@@ -1014,6 +1038,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       chat: 'Type /admin {code} in the world’s chat and you are its admin in that browser.',
       notYet:
         '{m} does not give a code per world yet: run its line again (under Machines) and try once more.',
+    },
+    rename: {
+      label: 'Rename',
+      title: 'Rename {t}',
+      fieldLabel: 'New name',
+      save: 'Save',
+      cancel: 'Cancel',
+      forbidden: 'Only the house may rename it.',
+      failed: 'Could not save the name ({detail}).',
+      saved: 'Name saved.',
     },
     change: {
       stopTitle: 'Stop {t}',
@@ -1406,6 +1440,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       notYet:
         '{m} はまだワールドごとのコードを出せません。「マシン」にあるその行をもう一度実行してから、やり直してください。',
     },
+    rename: {
+      label: '名前を変更',
+      title: '{t} の名前を変更',
+      fieldLabel: '新しい名前',
+      save: '保存',
+      cancel: 'キャンセル',
+      forbidden: '名前を変更できるのはハウスだけです。',
+      failed: '名前を保存できませんでした（{detail}）。',
+      saved: '名前を保存しました。',
+    },
     change: {
       stopTitle: '{t} を停止',
       startTitle: '{t} を起動',
@@ -1794,6 +1838,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       notYet:
         '{m}은(는) 아직 월드마다 코드를 주지 못합니다. 머신 목록에 있는 그 줄을 다시 실행한 뒤 다시 시도하세요.',
     },
+    rename: {
+      label: '이름 변경',
+      title: '{t} 이름 변경',
+      fieldLabel: '새 이름',
+      save: '저장',
+      cancel: '취소',
+      forbidden: '하우스만 이름을 변경할 수 있습니다.',
+      failed: '이름을 저장하지 못했습니다 ({detail}).',
+      saved: '이름을 저장했습니다.',
+    },
     change: {
       stopTitle: '{t} 정지',
       startTitle: '{t} 시작',
@@ -2178,6 +2232,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       chat: 'No chat do mundo escreva /admin {code} e você fica como administrador nesse navegador.',
       notYet:
         '{m} ainda não dá um código por mundo: rode a linha dela de novo (em Máquinas) e tente outra vez.',
+    },
+    rename: {
+      label: 'Renomear',
+      title: 'Renomear {t}',
+      fieldLabel: 'Novo nome',
+      save: 'Salvar',
+      cancel: 'Cancelar',
+      forbidden: 'Só a casa pode renomear.',
+      failed: 'Não foi possível salvar o nome ({detail}).',
+      saved: 'Nome salvo.',
     },
     change: {
       stopTitle: 'Parar {t}',
