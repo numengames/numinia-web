@@ -166,8 +166,24 @@ describe('worldCards', () => {
     expect(byId['bosque']).toMatchObject({ name: 'Bosque', cover: null, inside: 4 });
     // «tower» has no address: its face is not believed, so its id is read as words.
     expect(byId['tower']).toMatchObject({ name: 'Tower', cover: null, inside: 0 });
-    // The ones with people first.
-    expect(cards[0]?.id).toBe('bosque');
+    // The ones that are on, with people first.
+    expect(cards[0]?.id).toBe('agora-plaza');
+  });
+
+  it('puts every world that is on before the ones off, even with fewer people', () => {
+    const cards = worldCards({
+      fleet: [
+        { id: 'quiet-on', phase: 'running', domain: 'quiet-on.numinia.com' },
+        { id: 'busy-off', phase: 'stopped', domain: 'busy-off.numinia.com' },
+      ],
+      owners: new Map([
+        ['quiet-on', owner('acc_t_reset')],
+        ['busy-off', owner('acc_t_reset')],
+      ]),
+      communities: [HOUSE, RESET],
+      inside: { 'quiet-on': 0, 'busy-off': 40 },
+    });
+    expect(cards.map((card) => card.id)).toEqual(['quiet-on', 'busy-off']);
   });
 
   it('puts the city’s first between equals, then orders by name', () => {

@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.142.0',
+    date: '2026-10-18 19:50',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The worlds index (/mundos/) now lists every world that is on before the ones that are off, whatever the ones off had: among the ones on, the ones with more people still come first.',
+      },
+    ],
+  },
+  {
     version: 'v0.141.0',
     date: '2026-10-18 17:00',
     entries: [
