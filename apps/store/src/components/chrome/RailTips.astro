@@ -1,10 +1,12 @@
 ---
 /**
- * The folded rails' tooltip (v3, «La ciudad y tú»; WCAG 1.4.13): when a
- * rail is folded to its icons, pointing at or focusing one of them names
- * it beside the rail, towards the page. The tooltip stays while the pointer
- * is on it (a short grace lets the pointer cross the gap), and Esc
- * dismisses it. Every icon keeps its accessible name; this only shows it.
+ * The rails' tooltip (v3, «La ciudad y tú»; WCAG 1.4.13): pointing at or
+ * focusing a rail button names it beside the rail, towards the page,
+ * whether the rail is folded to its icons or deployed with its labels —
+ * a visible label is not a substitute for the hover/focus cue, so both
+ * states show it. The tooltip stays while the pointer is on it (a short
+ * grace lets the pointer cross the gap), and Esc dismisses it. Every icon
+ * keeps its accessible name; this only shows it.
  */
 ---
 
@@ -13,7 +15,6 @@
 <script>
   import { placeTip } from '../../lib/rail-tip';
 
-  const root = document.documentElement;
   const tip = document.getElementById('rail-tip');
   let owner: HTMLElement | null = null;
   let timer = 0;
@@ -28,8 +29,7 @@
   };
   const show = (element: HTMLElement): void => {
     const side = element.closest<HTMLElement>('[data-rail]')?.dataset['rail'];
-    const flag = side === 'you' ? 'railYou' : 'railCity';
-    if (!tip || (side !== 'city' && side !== 'you') || root.dataset[flag] !== 'collapsed') {
+    if (!tip || (side !== 'city' && side !== 'you')) {
       return hide();
     }
     clearTimeout(timer);
