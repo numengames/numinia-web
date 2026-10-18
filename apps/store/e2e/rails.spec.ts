@@ -155,6 +155,30 @@ test.describe('desktop', () => {
     await page.waitForURL('**/es/communities/');
   });
 
+  test('t_7c4d3d1e: «Entrar al mundo» opens at the top of your rail once a world has people', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.route('**/api/live', (route) =>
+      route.fulfill({ status: 200, json: { inside: { vic: 3 } } }),
+    );
+    await page.goto('/es/');
+    const door = page.locator('[data-metric="you-live-world"]');
+    await expect(door).toBeVisible();
+    await expect(door).toHaveText('Entrar al mundo');
+    await expect(door).toHaveAttribute('href', 'https://vic.numinia.com/');
+    await expect(door).toHaveAttribute('target', '_blank');
+  });
+
+  test('t_7c4d3d1e: nobody inside, no door at the top of your rail (the fixture answers zero)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto('/es/');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-metric="you-live-world"]')).toBeHidden();
+  });
+
   test('the appearance is a segmented control that remembers', async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/es/');

@@ -276,16 +276,19 @@ export interface DeskLogLine {
 export type DeskLogAnswer = { ok: true; accountId: string; lines: DeskLogLine[] } | DeskRefusal;
 
 /**
- * «El cerebro barato de cada comunidad» (Historia 1, kanban numinia-com
- * t_ec70b2e3): the organization's built-in AI agent, read-only here (the
- * on/off switch, real calls, spend metering and balance are stories 2-4,
- * out of this cut). Every organization shows one, the till's default or a
- * stored row.
+ * «Ajustes de la comunidad»'s fourth card (Historia 1 of kanban numinia-com
+ * t_ec70b2e3): the organization's built-in AI agent, read-only here except
+ * for `enabled` (Historia 4's switch). `spentCents` (Historia 2) is how
+ * much of `trialCapCents` the trial has used; the till turns `enabled` off
+ * itself the instant it reaches the cap. The real call to a model provider
+ * and the recharge screen remain out of this cut — see
+ * work/kanban-ola/PREGUNTAS-t_ec70b2e3.md.
  */
 export interface DeskAiAgent {
   enabled: boolean;
   model: string;
   trialCapCents: number;
+  spentCents: number;
 }
 
 /**
@@ -1447,7 +1450,8 @@ export function readSettings(json: unknown): DeskSettings | null {
     brain !== null &&
     typeof brain['enabled'] === 'boolean' &&
     typeof brain['model'] === 'string' &&
-    typeof brain['trialCapCents'] === 'number'
+    typeof brain['trialCapCents'] === 'number' &&
+    typeof brain['spentCents'] === 'number'
     ? {
         ok: true,
         accountId,
@@ -1458,6 +1462,7 @@ export function readSettings(json: unknown): DeskSettings | null {
           enabled: brain['enabled'],
           model: brain['model'],
           trialCapCents: brain['trialCapCents'],
+          spentCents: brain['spentCents'],
         },
       }
     : null;

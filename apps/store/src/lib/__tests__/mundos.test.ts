@@ -4,6 +4,7 @@ import {
   HOMES_API,
   counted,
   enterWorld,
+  enterWorldInTab,
   passApiUrl,
   PLACE_API,
   PLACE_MAX,
@@ -254,6 +255,28 @@ describe('entering a world', () => {
         guest,
       ),
     ).toBe(guest);
+  });
+});
+
+describe('entering a world in a new tab, card t_677de28a', () => {
+  it('sends the already-open tab to the address and returns it', async () => {
+    const ask = vi.fn(async () => answer(200, { url: 'https://w.numen.games/#pass=a.b.c' }));
+    const tab = { location: { href: '' }, close: vi.fn() } as unknown as Window;
+    expect(await enterWorldInTab(ask, 'w', null, tab)).toBe('https://w.numen.games/#pass=a.b.c');
+    expect(tab.location.href).toBe('https://w.numen.games/#pass=a.b.c');
+    expect(tab.close).not.toHaveBeenCalled();
+  });
+
+  it('closes the tab and answers null when there is no address at all', async () => {
+    const down = async () => answer(500, 'oops');
+    const tab = { location: { href: '' }, close: vi.fn() } as unknown as Window;
+    expect(await enterWorldInTab(down, 'w', null, tab)).toBe(null);
+    expect(tab.close).toHaveBeenCalledOnce();
+  });
+
+  it('does nothing to a null tab (the popup blocker got it first)', async () => {
+    const ask = vi.fn(async () => answer(200, { url: 'https://w.numen.games/' }));
+    expect(await enterWorldInTab(ask, 'w', null, null)).toBe('https://w.numen.games/');
   });
 });
 

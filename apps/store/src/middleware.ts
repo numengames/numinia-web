@@ -6,27 +6,38 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { INLINE_SCRIPT_HASHES } from './lib/csp-hashes.generated';
 import { checkRate } from './lib/rate-limit';
 import { primeFromWorkerd } from './lib/runtime-env';
 import { capMessage, logEvent } from './lib/telemetry';
 
-/* MISSION-025: the walls. Static pages get these via public/_headers (the
-   assets layer serves them before the Worker); SSR responses get them here.
-   The pages where a wallet signs keep a relaxed connect/frame set: wallet
-   SDKs talk to vendor hosts and user-configured RPCs that no allowlist
-   survives. Those are the login, the worlds room, where an Oracle signs
-   each request to a fleet machine, and Saldo's members tab, where giving
-   «Administrador» or «Gestionar roles» is signed again (STD-051 ORG-008). */
+/* MISSION-025 + security hardening (2026-10-18): the walls. Static pages get
+   these via public/_headers (the assets layer serves them before the
+   Worker); SSR responses get them here. The pages where a wallet signs keep
+   a relaxed connect/frame set: wallet SDKs talk to vendor hosts and
+   user-configured RPCs that no allowlist survives. Those are the login, the
+   worlds room, where an Oracle signs each request to a fleet machine, and
+   Saldo's members tab, where giving «Administrador» or «Gestionar roles» is
+   signed again (STD-051 ORG-008).
+   `script-src` no longer carries 'unsafe-inline': every page's only inline
+   scripts are the small `is:inline` boot/telemetry ones, whose BODY text is
+   static (their per-page data travels in a `data-*` attribute, which CSP
+   hashing never looks at) — scripts/generate-csp-hashes.mjs hashes them at
+   build time. `connect-src` drops the open `https:` too: the client never
+   fetches an external host directly — every chain/CDN binary goes through
+   the same-origin `/api/media` proxy (src/lib/media-proxy.ts) precisely so
+   pages never need that allowance; `blob:` stays for three.js's
+   GLB-embedded-texture fetches (connect-src governs fetch, not img-src —
+   learned live, v0.38.1). The relaxed CSP_SESSION keeps `https:` because a
+   wallet SDK's RPC host is the user's own choice, not ours to allowlist. */
 const CSP_STRICT = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' ${INLINE_SCRIPT_HASHES.join(' ')}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
   "font-src 'self'",
-  // blob: because three.js fetches GLB-embedded textures via blob URLs
-  // (connect-src governs fetch, not img-src — learned live, v0.38.1).
-  "connect-src 'self' blob: https:",
+  "connect-src 'self' blob:",
   "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -34,7 +45,7 @@ const CSP_STRICT = [
   "object-src 'none'",
 ].join('; ');
 const CSP_SESSION =
-  CSP_STRICT.replace("connect-src 'self' blob: https:", "connect-src 'self' blob: https: wss:") +
+  CSP_STRICT.replace("connect-src 'self' blob:", "connect-src 'self' blob: https: wss:") +
   '; frame-src https:';
 
 function isSessionPath(pathname: string): boolean {

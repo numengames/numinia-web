@@ -26,7 +26,17 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.142.0',
+    version: 'v0.144.0',
+    date: '2026-10-18 19:50',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The worlds index (/mundos/) now lists every world that is on before the ones that are off, whatever the ones off had: among the ones on, the ones with more people still come first.',
+      },
+    ],
+  },
+  {
+    version: 'v0.143.0',
     date: '2026-10-18 18:20',
     missions: ['t_371c917d'],
     entries: [
@@ -41,6 +51,16 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       {
         type: 'NEW',
         text: 'The «Top-up done» screen now celebrates a successful recharge with the house’s star-burst card instead of a plain «you can close this tab» line, shows the updated balance and the seller note, and sends the buyer on to their balance page by itself after a few seconds (the back link still works sooner).',
+      },
+    ],
+  },
+  {
+    version: 'v0.142.0',
+    date: '2026-10-18 17:40',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Your rail (top-right of every page) now carries the same direct door the front page’s featured frame shows once a world has people inside: «Entrar al mundo» opens it straight away, without scrolling to the frame or waiting on its slide.',
       },
     ],
   },

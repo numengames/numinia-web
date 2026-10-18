@@ -601,6 +601,7 @@ function buildSchemas() {
         enabled: z.boolean(),
         model: z.string(),
         trialCapCents: z.number(),
+        spentCents: z.number(),
       }),
     }),
     refusal,
