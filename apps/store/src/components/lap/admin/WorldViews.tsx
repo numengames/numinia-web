@@ -78,6 +78,8 @@ interface ViewProps {
   readonly room: WorldsRoomMessages;
   readonly onAction: (row: WorldRow, action: WorldAction) => void;
   readonly onCode: (row: WorldRow, mode: CodeMode) => void;
+  /** Card t_a856c570 (2026-10-18): renames an existing world (or server). */
+  readonly onRename: (row: WorldRow) => void;
   /** The uploads this tab runs, by world. */
   readonly transfers?: ReadonlyMap<string, TransferView> | undefined;
   readonly onTransfer?: ((row: WorldRow, action: TransferAction) => void) | undefined;
@@ -486,10 +488,12 @@ function CodeLine({
   row,
   room,
   onCode,
+  onRename,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
   onCode: ViewProps['onCode'];
+  onRename: ViewProps['onRename'];
 }) {
   if (row.order === null || row.status === 'changing') return null;
   return (
@@ -519,6 +523,15 @@ function CodeLine({
         data-metric="worlds-code-rotate"
       >
         <WorldGlyph name="arrows-clockwise" />
+      </button>
+      <button
+        type="button"
+        className="btn btn-fantasma"
+        onClick={() => onRename(row)}
+        data-metric="worlds-rename"
+        data-rename-for={row.id}
+      >
+        {room.rename.label}
       </button>
     </div>
   );
@@ -602,6 +615,7 @@ function WorldCard({
   room,
   onAction,
   onCode,
+  onRename,
   transfer,
   onTransfer,
   placement,
@@ -610,6 +624,7 @@ function WorldCard({
   room: WorldsRoomMessages;
   onAction: ViewProps['onAction'];
   onCode: ViewProps['onCode'];
+  onRename: ViewProps['onRename'];
   transfer: TransferView | undefined;
   onTransfer: ViewProps['onTransfer'];
   placement: ViewProps['placement'];
@@ -655,7 +670,7 @@ function WorldCard({
         )}
         {placement !== undefined && <HomeLine row={row} placement={placement} />}
         {code !== null && <NewCode row={row} code={code} room={room} />}
-        <CodeLine row={row} room={room} onCode={onCode} />
+        <CodeLine row={row} room={room} onCode={onCode} onRename={onRename} />
         <Foot
           row={row}
           room={room}
@@ -673,6 +688,7 @@ export function CardsView({
   room,
   onAction,
   onCode,
+  onRename,
   transfers,
   onTransfer,
   placement,
@@ -686,6 +702,7 @@ export function CardsView({
           room={room}
           onAction={onAction}
           onCode={onCode}
+          onRename={onRename}
           transfer={transfers?.get(row.id)}
           onTransfer={onTransfer}
           placement={placement}
@@ -702,7 +719,7 @@ export function ListView({
   transfers,
   onTransfer,
   placement,
-}: Omit<ViewProps, 'onCode'>) {
+}: Omit<ViewProps, 'onCode' | 'onRename'>) {
   return (
     <div className="tabla-envoltura">
       <table>
@@ -775,6 +792,7 @@ export function ServersView({
   room,
   onAction,
   onCode,
+  onRename,
   transfers,
   onTransfer,
   placement,
@@ -805,6 +823,7 @@ export function ServersView({
               room={room}
               onAction={onAction}
               onCode={onCode}
+              onRename={onRename}
               transfers={transfers}
               onTransfer={onTransfer}
               placement={placement}

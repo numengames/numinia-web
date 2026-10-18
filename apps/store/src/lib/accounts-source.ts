@@ -162,6 +162,13 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
         : absent('worldsOf'),
     homeOf: (worldId, wallet, house) =>
       typeof desk.homeOf === 'function' ? stub.homeOf(worldId, wallet, house) : absent('homeOf'),
+    // Card t_a856c570 (2026-10-18): optional too. Without them the rename routes say 503.
+    renameWorld: (wallet, house, worldId, name) =>
+      typeof desk.renameWorld === 'function'
+        ? stub.renameWorld(wallet, house, worldId, name)
+        : absent('renameWorld'),
+    worldNames: (wallet, house) =>
+      typeof desk.worldNames === 'function' ? stub.worldNames(wallet, house) : absent('worldNames'),
     // «Una comunidad ES una organización»: optional too. Without it the community route says 503.
     ensureCommunityTeam: (wallet, house, communityId, name) =>
       typeof desk.ensureCommunityTeam === 'function'

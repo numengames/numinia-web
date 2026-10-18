@@ -844,7 +844,7 @@ Then(
     const markers = {
       'how-it-works': ['id="open"', 'mailto:hola@numengames.com', 'data-metric="how-step-bazaar"'],
       live: ['id="now"', 'id="next"', 'data-countdown='],
-      belong: ['data-follows-data', '/lap/session/', 'data-metric="belong-explore"'],
+      belong: ['data-belong-facts', '/lap/session/', 'data-metric="belong-explore"'],
     };
     for (const prefix of LOCALE_PREFIXES) {
       for (const slug of slugs) {
@@ -863,9 +863,9 @@ Then(
         }
       }
     }
-    // «Perteneces» embeds what it draws: every published community, nothing else.
+    // «Tus comunidades» embeds what it draws: every published community, nothing else.
     const belong = await readFile(path.join(this.distDir, 'belong', 'index.html'), 'utf8');
-    const json = /data-follows-data[^>]*>([\s\S]*?)<\/script>/.exec(belong);
+    const json = /data-belong-facts[^>]*>([\s\S]*?)<\/script>/.exec(belong);
     assert.ok(json, 'belong: no embedded communities');
     const ids = JSON.parse(json[1]).map((entry) => entry.id);
     assert.deepEqual([...ids].sort(), publishedCommunityIds().sort(), 'belong: embedded ids');

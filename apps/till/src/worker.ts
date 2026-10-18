@@ -107,6 +107,12 @@ import {
   type PlacementsAnswer,
   type WorldsOfAnswer,
 } from './db/world-placements';
+import {
+  renameWorld,
+  worldNames,
+  type RenameAnswer,
+  type WorldNamesAnswer,
+} from './db/world-names';
 import { headcount, type HeadcountAnswer } from './db/headcount';
 import {
   changeSettings,
@@ -858,6 +864,23 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
    */
   async homeOf(worldId: unknown, wallet?: unknown, house?: unknown): Promise<HomeOfAnswer> {
     return homeOf(this.env.TILL_DB, worldId, wallet, house);
+  }
+
+  // ---- A world's own name (card t_a856c570, 2026-10-18) ----
+
+  /** The house renames one existing world (or server); the new name persists past a reload. */
+  async renameWorld(
+    wallet: unknown,
+    house: unknown,
+    worldId: unknown,
+    name: unknown,
+  ): Promise<RenameAnswer> {
+    return renameWorld(this.env.TILL_DB, wallet, house, worldId, name, new Date());
+  }
+
+  /** Every world the house has renamed, to the house alone. */
+  async worldNames(wallet: unknown, house?: unknown): Promise<WorldNamesAnswer> {
+    return worldNames(this.env.TILL_DB, wallet, house);
   }
 }
 

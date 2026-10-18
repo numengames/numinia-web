@@ -899,6 +899,22 @@ export function listedRows(rows: readonly WorldRow[]): WorldRow[] {
   return rows.filter((row) => row.phase !== 'deleting');
 }
 
+/**
+ * Card t_a856c570 (2026-10-18): the house's own name for a world overrides
+ * its card's or its own page's title, wherever the room shows it — the
+ * search box included. A name absent from `names` leaves the row as it was.
+ */
+export function applyNames(
+  rows: readonly WorldRow[],
+  names: ReadonlyMap<string, string> | null,
+): WorldRow[] {
+  if (names === null || names.size === 0) return [...rows];
+  return rows.map((row) => {
+    const named = names.get(row.id);
+    return named === undefined ? row : { ...row, title: named };
+  });
+}
+
 export interface FleetStats {
   readonly total: number;
   readonly running: number;

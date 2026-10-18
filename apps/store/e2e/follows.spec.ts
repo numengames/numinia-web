@@ -165,15 +165,19 @@ test.describe('signed in', () => {
     await expect(button).toContainText('Sigues');
     await expect(page.locator(`[data-follow-count="${TRGCON}"]`)).toHaveText('1 persona la sigue');
     await expect(page.locator(railCount)).toHaveText('2');
+    // The button swaps primary → ghost in the same tick it says «Sigues»; scan only once the
+    // ghost paint has landed, not mid-swap (axe read the old teal fill: contrast 3.82).
+    await expect(button).toHaveClass(/btn-fantasma/);
+    await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);
 
     await page.goto(belongPage());
-    const card = page.locator('[data-follows-list] .seguida');
+    const card = page.locator('[data-belong-follow] .tuya');
     await expect(card).toHaveCount(1);
     await expect(card.locator('h3 a')).toHaveAttribute('href', `/es/communities/${TRGCON}/`);
-    await expect(card.locator('[data-next-title]')).toHaveAttribute('href', '/es/rituals/trg26/');
-    await expect(page.locator('[data-follows-empty]')).toBeHidden();
+    await expect(card.locator('[data-see-ritual]')).toHaveAttribute('href', '/es/rituals/trg26/');
+    await expect(page.locator('[data-belong-follow-empty]')).toBeHidden();
     await expect(page.locator(railCount)).toHaveText('2');
     const belongScan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(belongScan.violations).toEqual([]);
@@ -181,8 +185,8 @@ test.describe('signed in', () => {
     await card.locator('[data-metric="belong-unfollow"]').click();
     await expect(page.locator('.aviso[role="status"]')).toHaveText(/Ya no sigues/);
     await expect(card).toHaveCount(0);
-    await expect(page.locator('[data-follows-empty]')).toBeVisible();
-    await expect(page.locator('[data-follows-list]')).toBeHidden();
+    await expect(page.locator('[data-belong-follow-empty]')).toBeVisible();
+    await expect(page.locator('[data-belong-follow]')).toBeHidden();
     await expect(page.locator(railCount)).toHaveText('1');
 
     await page.goto(communityPage(TRGCON));
@@ -229,7 +233,7 @@ test.describe('signed in', () => {
     await page.goto(belongPage());
     await page.evaluate((key) => localStorage.setItem(key, JSON.stringify(['trgcon'])), KEY);
     await page.reload();
-    const card = page.locator('[data-follows-list] .seguida');
+    const card = page.locator('[data-belong-follow] .tuya');
     await expect(card).toHaveCount(1);
     await expect(card.locator('h3 a')).toHaveAttribute('href', `/es/communities/${TRGCON}/`);
     await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), KEY)).toBeNull();

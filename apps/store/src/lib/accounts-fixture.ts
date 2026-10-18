@@ -76,6 +76,8 @@ import {
   type DeskPlaceAnswer,
   type DeskPlacementsAnswer,
   type DeskWorldsOfAnswer,
+  type DeskRenameAnswer,
+  type DeskNamesAnswer,
   type DeskConfirmAnswer,
   type DeskCommunityRequest,
   type DeskMyRequestsAnswer,
@@ -144,7 +146,14 @@ import {
   type Vocabulary,
 } from './panel-settings';
 import { readProfileChange } from './profile-name';
-import { PLACEMENT_PROBLEMS, readAccountId, readWorldId, readWorldIds } from './worlds-homes';
+import {
+  PLACEMENT_PROBLEMS,
+  NAME_PROBLEMS,
+  readAccountId,
+  readWorldId,
+  readWorldIds,
+  readWorldName,
+} from './worlds-homes';
 
 /** One line of the seed, dated in days before today. */
 export interface SeedLine {
@@ -633,6 +642,11 @@ export function createAccountsFixtureDesk(
           ];
     }),
   );
+  /**
+   * Card t_a856c570 (2026-10-18): a world's own name, overriding its title,
+   * as the till's `world_names` — one per world, shared by every wallet's copy.
+   */
+  const names = new Map<string, { name: string; renamedAt: string }>();
   /** What a member published, as the till's roles view adds it: absent when nothing. */
   const publishedBy = (wallet: string): Pick<DeskMemberDetail, 'name' | 'avatar'> => {
     const profile = profiles.get(wallet);
@@ -1629,6 +1643,34 @@ export function createAccountsFixtureDesk(
       const book = who === null ? undefined : booksOf(who).find((c) => c.id === home.accountId);
       const member = who !== null && book !== undefined && roleIn(book, who) !== null;
       return { ok: true, home: { ...home }, manage: flag || member };
+    },
+
+    // ---- A world's own name (card t_a856c570, 2026-10-18) ----
+
+    renameWorld: async (wallet, house, worldId, name): Promise<DeskRenameAnswer> => {
+      const asking = asker(wallet, house);
+      const id = readWorldId(worldId);
+      const clean = readWorldName(name);
+      if ('ok' in asking || id === undefined || clean === undefined) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(id === undefined ? [NAME_PROBLEMS.world] : []),
+          ...(clean === undefined ? [NAME_PROBLEMS.name] : []),
+        );
+      }
+      if (!asking.house) return refuse(NAME_PROBLEMS.notHouse);
+      names.set(id, { name: clean, renamedAt: now().toISOString() });
+      return { ok: true, worldId: id, name: clean };
+    },
+
+    worldNames: async (wallet, house): Promise<DeskNamesAnswer> => {
+      const asking = asker(wallet, house);
+      if ('ok' in asking) return asking;
+      if (!asking.house) return refuse(NAME_PROBLEMS.notHouse);
+      const list = [...names.entries()]
+        .map(([worldId, named]) => ({ worldId, ...named }))
+        .sort((a, b) => a.worldId.localeCompare(b.worldId));
+      return { ok: true, names: list };
     },
 
     // ---- «Una comunidad ES una organización» (cut 6): the house opens a community's account ----

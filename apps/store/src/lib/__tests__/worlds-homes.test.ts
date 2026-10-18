@@ -12,16 +12,20 @@ import type { AccountDesk, Asker } from '../accounts';
 import { boundAccounts, resetFixtureAccountsForTests } from '../accounts-source';
 import {
   PLACEMENT_PROBLEMS,
+  NAME_PROBLEMS,
   answerHomes,
   answerOrgWorlds,
   answerPlace,
+  answerRename,
   answerWorld,
   fleetWorldHosts,
   fleetWorldIds,
   readAccountId,
   readPlaceBody,
+  readRenameBody,
   readWorldIds,
   readWorldId,
+  readWorldName,
 } from '../worlds-homes';
 
 const HOUSE: Asker = { wallet: `0x${'99'.repeat(20)}`, house: true };
@@ -67,6 +71,11 @@ function fakeDesk(overrides: Partial<Record<keyof AccountDesk, unknown>> = {}): 
       ok: true,
       home: { accountId: RESET, accountName: 'Reset', placedAt: PLACED_AT },
       manage: true,
+    }),
+    renameWorld: answering({ ok: true, worldId: 'bosque', name: 'La Reserva Nueva' }),
+    worldNames: answering({
+      ok: true,
+      names: [{ worldId: 'bosque', name: 'La Reserva Nueva', renamedAt: PLACED_AT }],
     }),
     ...overrides,
   } as AccountDesk;
@@ -145,6 +154,39 @@ describe('the words of the placement', () => {
       noAccount: 'no such organization',
       notMember: 'only the organization’s members and the house see its worlds',
     });
+    expect(NAME_PROBLEMS).toEqual({
+      notHouse: 'only the house renames a world',
+      world: 'worldId must be a world id: lowercase letters, digits and single hyphens',
+      name: 'name must be 1 to 80 characters, with no leading or trailing blank',
+    });
+  });
+
+  it('reads a world’s new name, 1 to 80 characters, no leading, trailing or control characters', () => {
+    expect(readWorldName('La Reserva Nueva')).toBe('La Reserva Nueva');
+    expect(readWorldName('x'.repeat(80))).toHaveLength(80);
+    for (const value of ['', ' x', 'x ', 'x'.repeat(81), 'bad\u0007name', 7, null, undefined]) {
+      expect(readWorldName(value), JSON.stringify(value)).toBeUndefined();
+    }
+  });
+
+  it('reads a rename body of exactly a world id and a name, nothing else', () => {
+    expect(readRenameBody({ worldId: 'bosque', name: 'La Reserva Nueva' })).toEqual({
+      worldId: 'bosque',
+      name: 'La Reserva Nueva',
+    });
+    for (const body of [
+      null,
+      'x',
+      [],
+      {},
+      { worldId: 'bosque' },
+      { name: 'La Reserva Nueva' },
+      { worldId: 'Bad', name: 'La Reserva Nueva' },
+      { worldId: 'bosque', name: '' },
+      { worldId: 'bosque', name: 'La Reserva Nueva', house: true },
+    ]) {
+      expect(readRenameBody(body), JSON.stringify(body)).toBeNull();
+    }
   });
 
   it('lists the ids of the fleet’s open machines and of the worlds run by hand', () => {
@@ -204,6 +246,7 @@ describe('GET /api/admin/worlds/homes: where every world stands, to the house al
     expect(out.status).toBe(200);
     expect(await json(out)).toEqual({
       homes: [{ worldId: 'bosque', accountId: RESET, accountName: 'Reset', placedAt: PLACED_AT }],
+      names: [{ worldId: 'bosque', name: 'La Reserva Nueva', renamedAt: PLACED_AT }],
     });
     expect(desk.placements).toHaveBeenCalledWith(HOUSE.wallet, true);
   });
@@ -228,6 +271,74 @@ describe('GET /api/admin/worlds/homes: where every world stands, to the house al
     expect((await answerHomes(notHouse, HOUSE, quiet)).status).toBe(403);
     const other = fakeDesk({ placements: answering({ ok: false, problems: ['other'] }) });
     const out = await answerHomes(other, HOUSE, quiet);
+    expect(out.status).toBe(400);
+    expect(await json(out)).toEqual({ error: 'refused', problems: ['other'] });
+  });
+
+  it('answers an empty list of names, never failing, when the till cannot say', async () => {
+    const { worldNames: _omit, ...rest } = fakeDesk() as unknown as Record<string, unknown>;
+    const older = rest as unknown as AccountDesk;
+    expect(await json(await answerHomes(older, HOUSE, quiet))).toMatchObject({ names: [] });
+    const refusing = fakeDesk({
+      worldNames: answering({ ok: false, problems: ['other'] }),
+    });
+    expect(await json(await answerHomes(refusing, HOUSE, quiet))).toMatchObject({ names: [] });
+    const broken = fakeDesk({ worldNames: vi.fn().mockRejectedValue(new Error('boom')) });
+    expect(await json(await answerHomes(broken, HOUSE, quiet))).toMatchObject({ names: [] });
+  });
+});
+
+describe('POST /api/admin/worlds/rename: the house renames an existing world (or server)', () => {
+  it('refuses with 403 whoever is not the house, before reading the body', async () => {
+    const desk = fakeDesk();
+    for (const asker of [null, ADMIN]) {
+      const out = await answerRename(desk, asker, post('not json'), quiet);
+      expect(out.status).toBe(403);
+      expect(await json(out)).toEqual({ error: 'forbidden' });
+    }
+    expect(desk.renameWorld).not.toHaveBeenCalled();
+  });
+
+  it('renames as the house with its own wallet and answers the new name', async () => {
+    const desk = fakeDesk();
+    const out = await answerRename(
+      desk,
+      HOUSE,
+      post({ worldId: 'bosque', name: 'La Reserva Nueva' }),
+      quiet,
+    );
+    expect(out.status).toBe(200);
+    expect(out.headers.get('cache-control')).toBe('private, no-store');
+    expect(await json(out)).toEqual({ worldId: 'bosque', name: 'La Reserva Nueva' });
+    expect(desk.renameWorld).toHaveBeenCalledWith(HOUSE.wallet, true, 'bosque', 'La Reserva Nueva');
+  });
+
+  it('answers 400 for a body out of shape', async () => {
+    const desk = fakeDesk();
+    expect((await answerRename(desk, HOUSE, post('{oops'), quiet)).status).toBe(400);
+    expect(
+      (await answerRename(desk, HOUSE, post({ worldId: 'bosque', name: '' }), quiet)).status,
+    ).toBe(400);
+    expect(desk.renameWorld).not.toHaveBeenCalled();
+  });
+
+  it('says 503 without a till, 502 when it fails', async () => {
+    const body = { worldId: 'bosque', name: 'La Reserva Nueva' };
+    expect((await answerRename(null, HOUSE, post(body), quiet)).status).toBe(503);
+    const broken = fakeDesk({ renameWorld: vi.fn().mockRejectedValue(new Error('boom')) });
+    expect((await answerRename(broken, HOUSE, post(body), quiet)).status).toBe(502);
+    const odd = fakeDesk({ renameWorld: answering({ ok: true, worldId: 1, name: 'x' }) });
+    expect((await answerRename(odd, HOUSE, post(body), quiet)).status).toBe(502);
+  });
+
+  it('turns the till’s refusals into 403 for the house’s word and 400 for the rest', async () => {
+    const body = { worldId: 'bosque', name: 'La Reserva Nueva' };
+    const notHouse = fakeDesk({
+      renameWorld: answering({ ok: false, problems: [NAME_PROBLEMS.notHouse] }),
+    });
+    expect((await answerRename(notHouse, HOUSE, post(body), quiet)).status).toBe(403);
+    const other = fakeDesk({ renameWorld: answering({ ok: false, problems: ['other'] }) });
+    const out = await answerRename(other, HOUSE, post(body), quiet);
     expect(out.status).toBe(400);
     expect(await json(out)).toEqual({ error: 'refused', problems: ['other'] });
   });
@@ -448,19 +559,21 @@ describe('GET /api/mundos/<id>: one world, public, with a flag for who may manag
 });
 
 describe('a till older than the store (boundAccounts)', () => {
-  /** Every method but the four of this cut. */
+  /** Every method but the six of this cut. */
   function older(): Record<string, unknown> {
     const {
       placeWorld: _a,
       placements: _b,
       worldsOf: _c,
       homeOf: _d,
+      renameWorld: _e,
+      worldNames: _f,
       ...rest
     } = fakeDesk() as unknown as Record<string, unknown>;
     return rest;
   }
 
-  it('is still a desk, and says it does not implement the four new methods', async () => {
+  it('is still a desk, and says it does not implement the six new methods', async () => {
     const desk = boundAccounts(older());
     expect(desk).not.toBeNull();
     await expect(desk?.placements(HOUSE.wallet, true)).rejects.toThrow(/does not implement/);
@@ -469,18 +582,26 @@ describe('a till older than the store (boundAccounts)', () => {
     );
     await expect(desk?.worldsOf(HOUSE.wallet, true, RESET)).rejects.toThrow(/does not implement/);
     await expect(desk?.homeOf('a', null, false)).rejects.toThrow(/does not implement/);
+    await expect(desk?.renameWorld(HOUSE.wallet, true, 'a', 'x')).rejects.toThrow(
+      /does not implement/,
+    );
+    await expect(desk?.worldNames(HOUSE.wallet, true)).rejects.toThrow(/does not implement/);
   });
 
-  it('passes the four calls through to a till that has them, as methods of the stub', async () => {
+  it('passes the six calls through to a till that has them, as methods of the stub', async () => {
     const stub = fakeDesk();
     const desk = boundAccounts(stub);
     await desk?.placeWorld(HOUSE.wallet, true, ['a'], RESET);
     await desk?.placements(HOUSE.wallet, true);
     await desk?.worldsOf(HOUSE.wallet, true, RESET);
     await desk?.homeOf('a', HOUSE.wallet, true);
+    await desk?.renameWorld(HOUSE.wallet, true, 'a', 'x');
+    await desk?.worldNames(HOUSE.wallet, true);
     expect(stub.placeWorld).toHaveBeenCalledWith(HOUSE.wallet, true, ['a'], RESET);
     expect(stub.placements).toHaveBeenCalledWith(HOUSE.wallet, true);
     expect(stub.worldsOf).toHaveBeenCalledWith(HOUSE.wallet, true, RESET);
     expect(stub.homeOf).toHaveBeenCalledWith('a', HOUSE.wallet, true);
+    expect(stub.renameWorld).toHaveBeenCalledWith(HOUSE.wallet, true, 'a', 'x');
+    expect(stub.worldNames).toHaveBeenCalledWith(HOUSE.wallet, true);
   });
 });
