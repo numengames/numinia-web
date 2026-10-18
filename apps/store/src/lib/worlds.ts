@@ -19,6 +19,7 @@
 
 import type { DoorFeature, DoorPhase, Heartbeat, Imports, UploadProgress } from './fleet';
 import type { SummaCard } from './summa';
+import type { WorldHome } from './worlds-homes';
 
 /** Names a world may not take: the machine's front service, and the old book's table of contents. */
 export const RESERVED_IDS: readonly string[] = ['index', 'caddy'];
@@ -924,15 +925,23 @@ export interface RowFilter {
   readonly status: StatusFilter;
   /** '' = every server. */
   readonly server: string;
+  /** An organization's id (accountId); '' or absent = every organization. */
+  readonly home?: string;
 }
 
-/** Search over id, title, card, address and server; then status; then server. */
-export function filterRows(rows: readonly WorldRow[], filter: RowFilter): WorldRow[] {
+/** Search over id, title, card, address and server; then status, server and organization. */
+export function filterRows(
+  rows: readonly WorldRow[],
+  filter: RowFilter,
+  homes: ReadonlyMap<string, WorldHome> | null = null,
+): WorldRow[] {
   const needle = filter.query.trim().toLowerCase();
+  const home = filter.home ?? '';
   return rows.filter((row) => {
     const place = rowPlace(row);
     if (filter.status !== 'all' && row.status !== filter.status) return false;
     if (filter.server !== '' && place?.server !== filter.server) return false;
+    if (home !== '' && homes?.get(row.id)?.accountId !== home) return false;
     if (needle === '') return true;
     const haystack = [row.id, row.title, row.order?.card, place?.domain, place?.server]
       .filter((part): part is string => part !== undefined)
@@ -950,6 +959,28 @@ export function fleetServers(rows: readonly WorldRow[]): string[] {
     if (place) names.add(place.server);
   }
   return [...names].sort();
+}
+
+/** One organization, as the filter's dropdown offers it. */
+export interface HomeOption {
+  readonly accountId: string;
+  readonly accountName: string;
+}
+
+/** Every organization some listed world stands in, by name. */
+export function fleetHomes(
+  rows: readonly WorldRow[],
+  homes: ReadonlyMap<string, WorldHome> | null,
+): HomeOption[] {
+  if (homes === null) return [];
+  const byId = new Map<string, string>();
+  for (const row of rows) {
+    const home = homes.get(row.id);
+    if (home !== undefined) byId.set(home.accountId, home.accountName);
+  }
+  return [...byId.entries()]
+    .map(([accountId, accountName]) => ({ accountId, accountName }))
+    .sort((a, b) => a.accountName.localeCompare(b.accountName));
 }
 
 export interface ServerGroup {

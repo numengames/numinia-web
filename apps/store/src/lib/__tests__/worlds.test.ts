@@ -27,6 +27,7 @@ import {
   engineTag,
   fill,
   filterRows,
+  fleetHomes,
   fleetServers,
   fleetStats,
   formatUptime,
@@ -827,6 +828,39 @@ describe('the figures, the filters and the views', () => {
     expect(filterRows(rows, { ...all, query: 'no-card' }).map((row) => row.id)).toEqual(['orphan']);
     expect(filterRows(rows, { ...all, query: 'circle' }).map((row) => row.id)).toEqual(['circle']);
     expect(filterRows(rows, { ...all, query: 'nothing-like-it' })).toEqual([]);
+  });
+
+  it('filters by organization, and lists every organization some world stands in', () => {
+    const rows = sampleRows();
+    const all = { query: '', status: 'all', server: '' } as const;
+    const homes = new Map([
+      ['agora', { worldId: 'agora', accountId: 'acc-reset', accountName: 'Reset', placedAt: '' }],
+      ['circle', { worldId: 'circle', accountId: 'acc-reset', accountName: 'Reset', placedAt: '' }],
+      [
+        'forge',
+        {
+          worldId: 'forge',
+          accountId: 'acc-ai',
+          accountName: 'Active Inference',
+          placedAt: '',
+        },
+      ],
+    ]);
+    expect(filterRows(rows, { ...all, home: 'acc-reset' }, homes).map((row) => row.id)).toEqual([
+      'agora',
+      'circle',
+    ]);
+    expect(filterRows(rows, { ...all, home: 'acc-ai' }, homes).map((row) => row.id)).toEqual([
+      'forge',
+    ]);
+    // No homes read yet, or no filter chosen: every row passes.
+    expect(filterRows(rows, { ...all, home: 'acc-reset' }, null)).toEqual([]);
+    expect(filterRows(rows, all, homes)).toHaveLength(7);
+    expect(fleetHomes(rows, null)).toEqual([]);
+    expect(fleetHomes(rows, homes)).toEqual([
+      { accountId: 'acc-ai', accountName: 'Active Inference' },
+      { accountId: 'acc-reset', accountName: 'Reset' },
+    ]);
   });
 
   it('lists the servers and groups by them, the unplaced last', () => {

@@ -509,16 +509,22 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     display: block;
     font-weight: 500;
     color: var(--texto);
+    overflow-wrap: anywhere;
   }
   [data-worlds-panel] .id {
     display: block;
     font-size: 0.75rem;
     color: var(--texto-3);
+    overflow-wrap: anywhere;
   }
   [data-worlds-panel] .secundario {
     font-size: 0.8rem;
     color: var(--texto-2);
-    white-space: nowrap;
+  }
+  [data-worlds-panel] td .direccion,
+  [data-worlds-panel] td .detalle {
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   /* By server */
