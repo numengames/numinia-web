@@ -2,9 +2,12 @@
 /**
  * The picture at the head of a community or a ritual: a house illustration
  * when the file names one; otherwise a monogram over a dimmed illustration
- * chosen by the id. Never a third party's photo (rights, and the budget).
+ * chosen by the id (or, for a ritual, by its mode — in person / online /
+ * mixed — so an encounter without a picture still reads as its own kind of
+ * gathering, not a blank card). Never a third party's photo (rights, and
+ * the budget): the fill images are the house's own, not final per-type art.
  */
-import { monogram } from '../../lib/communities';
+import { monogram, type RitualMode } from '../../lib/communities';
 
 interface Props {
   id: string;
@@ -18,13 +21,23 @@ interface Props {
    *  covers and the featured card), or the plain gradient (the cards, so
    *  the front door stays within its image budget). */
   art?: boolean;
+  /** An encounter without a picture: pick the dimmed illustration by its
+   *  mode instead of the id's hash, so the fill matches the gathering. */
+  ritualMode?: RitualMode | undefined;
 }
 
-const { id, name, image, variant = 'card', eager = false, art = false } = Astro.props;
+const { id, name, image, variant = 'card', eager = false, art = false, ritualMode } = Astro.props;
 
 /** The house illustrations a community without a picture borrows, dimmed. */
 const ART = ['/images/art/genesis.webp', '/images/art/builder.webp', '/images/art/play.webp', '/images/art/city.webp', '/images/art/interpret.webp', '/images/art/citizens.webp'];
+/** Fill by event mode (mechanism only — the real per-mode art is Pablo's call). */
+const RITUAL_ART: Record<RitualMode, string> = {
+  'in-person': '/images/art/city.webp',
+  online: '/images/art/interpret.webp',
+  mixed: '/images/art/builder.webp',
+};
 const hash = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+const fillSrc = ritualMode ? RITUAL_ART[ritualMode] : ART[hash % ART.length];
 const loading = eager ? 'eager' : 'lazy';
 ---
 
@@ -34,7 +47,7 @@ const loading = eager ? 'eager' : 'lazy';
       <img src={image.src} alt={image.alt} loading={loading} decoding="async" />
     ) : (
       <div class="monogram" aria-hidden="true">
-        {art && <img src={ART[hash % ART.length]} alt="" loading={loading} decoding="async" />}
+        {art && <img src={fillSrc} alt="" loading={loading} decoding="async" />}
         <b>{monogram(name)}</b>
       </div>
     )
