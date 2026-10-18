@@ -6,6 +6,7 @@
  * left, a counter right after its word. Sticky, 256 px, 72 px folded (kept
  * under `numinia-sidebar-you`).
  *
+ *   [ Entrar al mundo ]                                 → t_7c4d3d1e, while a world has people
  *   fold                     [ your face, name, rank ]  → «Tu menú»
  *   [ plus  Crear  ▾ ]                                  → the Crear menu
  *   Avisos · Tus comunidades · Tu agenda · Tus mundos · Tu saldo (signed in) · Tu botín
@@ -23,11 +24,21 @@
  * button, and their links follow the button in the tab order); the shell
  * script places them next to their button. There is no presence: no
  * status, no status phrase — never a control that does nothing.
+ *
+ * «Entrar al mundo» (t_7c4d3d1e): the front page's featured frame already
+ * takes you straight into an open world once someone is inside
+ * (Featured.astro, «la puerta de entrada»); this rail — the top-right of
+ * every page — carries the same direct door, so it never depends on
+ * scrolling to the frame or on which slide it shows. Own read of
+ * `/api/live` (lib/live-now.ts, the same shape CityRail reads): nothing
+ * shows while nobody answers or nobody is inside — never an invented door.
  */
-import { RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
+import { AGORA_PLAZA, RANK_DEFINITIONS, type SupportedLocale } from '@numinia/domain';
 import { CHROME_MESSAGES } from '../../i18n/messages';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
+import { COMMUNITIES_UI } from '../../i18n/communities';
 import { agendaEnds } from '../../lib/agenda';
+import { sedeDomain, worldOf } from '../../lib/communities';
 import {
   CREATE_ITEMS,
   PANEL_PATH,
@@ -43,7 +54,7 @@ import {
 } from '../../lib/app-nav';
 import Icon from './Icon.astro';
 import LanguageMenu from './LanguageMenu.astro';
-import { RITUALS } from '../communities/register';
+import { COMMUNITIES, RITUALS } from '../communities/register';
 
 interface Props {
   locale: SupportedLocale;
@@ -54,14 +65,44 @@ interface Props {
 const { locale, basePath } = Astro.props;
 const t = CHROME_MESSAGES[locale];
 const ui = APP_SHELL_UI[locale];
+const words = COMMUNITIES_UI[locale];
 const belong = YOU_ITEMS.find((item) => item.id === 'your-communities')!;
 const panelIcon = navIcon(belong, navState(belong, basePath));
 const ranks = RANK_DEFINITIONS.map((rank) => ({ id: rank.id, name: rank.name[locale] }));
 // When each upcoming encounter ends: the «Tu agenda» counter tells your RSVPs still ahead with it.
 const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
+// The same homes CityRail's «Ahora en la ciudad» counts, so the same worlds
+// may open a direct door here too (lib/live-now.ts reads the live count).
+const commons = { href: AGORA_PLAZA.worldUrl, name: AGORA_PLAZA.name[locale] };
+const homes = COMMUNITIES.flatMap((community) => {
+  const world = worldOf(community, commons, locale);
+  const counted = community.sede !== undefined && sedeDomain(community.sede.href) !== null;
+  return world && counted ? [{ id: community.id, world }] : [];
+});
 ---
 
 <aside class="rail rail-tu" aria-label={ui.youRail} data-rail="you">
+  {
+    homes.length > 0 && (
+      <div class="rail-vivo-puerta" data-live-door hidden>
+        {homes.map(({ id, world }) => (
+          <a
+            href={world.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="rail-caja rail-entrar-vivo"
+            data-live-door-row={id}
+            data-rail-tip={world.name}
+            data-metric="you-live-world"
+            hidden
+          >
+            <Icon name="play" size={18} use />
+            <span class="rail-t">{words.enterWorld}</span>
+          </a>
+        ))}
+      </div>
+    )
+  }
   <div class="rail-cab">
     <button
       type="button"
@@ -399,3 +440,59 @@ const ends = JSON.stringify(agendaEnds(RITUALS, new Date()));
   });
   readDot();
 </script>
+
+<script>
+  /* «Entrar al mundo» at the top of this rail (t_7c4d3d1e): the same door
+     Featured.astro shows once a world answers someone inside, read
+     straight from /api/live (CityRail reads the same endpoint for its own
+     «Ahora en la ciudad» list) — nobody inside, no answer or no
+     JavaScript: nothing shows here either.
+
+     The parsing is inlined on purpose, not imported from lib/live-now: a
+     second entry point importing that module would force Vite to split it
+     into a shared chunk, pulling this script (and CityRail's) out of the
+     page — breaking the zero-JS promise Layer 0 pages make (e2e/perf.spec.ts).
+     lib/live-now.ts stays the one tested definition; its own unit test
+     pins the shape this copies. */
+  const doorIsOpen = (body: unknown, id: string): boolean => {
+    if (typeof body !== 'object' || body === null) return false;
+    const inside = (body as Record<string, unknown>)['inside'];
+    if (typeof inside !== 'object' || inside === null) return false;
+    const n = (inside as Record<string, unknown>)[id];
+    return typeof n === 'number' && Number.isInteger(n) && n > 0;
+  };
+
+  const door = document.querySelector<HTMLElement>('[data-live-door]');
+  if (door) {
+    fetch('/api/live', { headers: { accept: 'application/json' } })
+      .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
+      .then((body) => {
+        let any = false;
+        door.querySelectorAll<HTMLAnchorElement>('[data-live-door-row]').forEach((row) => {
+          const open = doorIsOpen(body, row.dataset['liveDoorRow'] ?? '');
+          row.hidden = !open;
+          if (open) any = true;
+        });
+        door.hidden = !any;
+      })
+      .catch(() => undefined);
+  }
+</script>
+
+<style>
+  .rail-vivo-puerta {
+    padding: 0 var(--s3) var(--s2);
+  }
+  .rail-vivo-puerta[hidden] {
+    display: none;
+  }
+  .rail-entrar-vivo {
+    justify-content: flex-start;
+    width: 100%;
+    color: var(--enlace);
+    border-color: var(--enlace);
+  }
+  .rail-entrar-vivo[hidden] {
+    display: none;
+  }
+</style>
