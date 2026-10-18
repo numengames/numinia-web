@@ -1,0 +1,114 @@
+---
+/**
+ * «Mundos» intro (feat/intro-mundos-portada): a few skippable seconds on the
+ * home page that build up a short phrase about worlds before the page
+ * underneath — Landing.astro's Featured and the rest — is free to show.
+ *
+ * Isolated on purpose: this file owns the whole sequence; index.astro only
+ * mounts it above <Landing />, never inside it, so Landing's own markup and
+ * logic stay untouched. The overlay is `position: fixed`, so removing it
+ * once finished causes no layout shift to anything below.
+ *
+ * Progressive build-up: three lines fade in one after another (CSS
+ * animation-delay, no JS timers needed for that part), then the whole
+ * overlay fades out on its own — gone well under 3s even if nobody skips it.
+ * Any click, tap or key ends it immediately. `prefers-reduced-motion:
+ * reduce` is honored twice, per the house convention (Starfield.astro,
+ * Landing.astro's strip script): the CSS media query hides the overlay
+ * outright, and the inline script checks `matchMedia` before starting any
+ * timer, so a reduced-motion visitor never sees it animate at all.
+ *
+ * No import, no shared module: the inline `<script>` below stays inline in
+ * the build (bundle-budget.mjs forbids landing pages from loading external
+ * JS) and well inside the landing's inline-script byte budget.
+ */
+---
+
+<div id="worlds-intro" role="presentation" aria-hidden="true">
+  <p class="wi-linea wi-1">Somewhere, right now,</p>
+  <p class="wi-linea wi-2">a world is running —</p>
+  <p class="wi-linea wi-3">this is Numinia.</p>
+</div>
+
+<script>
+  const overlay = document.getElementById('worlds-intro');
+  if (overlay) {
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      // No animation at all: straight to the page underneath.
+      overlay.remove();
+    } else {
+      let gone = false;
+      const finish = (): void => {
+        if (gone) return;
+        gone = true;
+        overlay.remove();
+      };
+      overlay.addEventListener('click', finish);
+      overlay.addEventListener('touchstart', finish, { passive: true });
+      document.addEventListener('keydown', finish);
+      // Hard cap, in case the fade-out animation itself never fires.
+      setTimeout(finish, 1900);
+    }
+  }
+</script>
+
+<style>
+  #worlds-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s3, 0.75em);
+    background: var(--fondo, #14110f);
+    color: var(--texto, #f9ebdc);
+    font-family: var(--sans, system-ui, sans-serif);
+    font-size: clamp(1.1rem, 4vw, 1.9rem);
+    text-align: center;
+    padding: var(--s5, 1.5rem);
+    cursor: pointer;
+    animation: wi-fuera 0.5s ease-in 1.3s forwards;
+  }
+  .wi-linea {
+    margin: 0;
+    opacity: 0;
+  }
+  .wi-1 {
+    animation: wi-linea 0.5s ease-out 0.1s forwards;
+  }
+  .wi-2 {
+    animation: wi-linea 0.5s ease-out 0.55s forwards;
+  }
+  .wi-3 {
+    animation: wi-linea 0.5s ease-out 1s forwards;
+  }
+  @keyframes wi-linea {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes wi-fuera {
+    from {
+      opacity: 1;
+      visibility: visible;
+    }
+    to {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #worlds-intro {
+      display: none;
+    }
+  }
+</style>
