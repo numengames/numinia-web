@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.145.0',
+    date: '2026-10-18 22:20',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Signing in works again: the last security change listed a fixed set of script fingerprints that the published site never matched, so the browser refused every page script and the sign-in window spun forever. Scripts on our own pages run as before.',
+      },
+    ],
+  },
+  {
     version: 'v0.144.0',
     date: '2026-10-18 19:50',
     entries: [

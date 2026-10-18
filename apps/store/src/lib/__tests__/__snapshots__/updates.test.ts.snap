@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-18 22:20",
+    "entries": [
+      {
+        "text": "Signing in works again: the last security change listed a fixed set of script fingerprints that the published site never matched, so the browser refused every page script and the sign-in window spun forever. Scripts on our own pages run as before.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.145.0",
+  },
+  {
     "date": "2026-10-18 19:50",
     "entries": [
       {
