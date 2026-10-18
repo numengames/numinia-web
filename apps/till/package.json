@@ -13,7 +13,8 @@
     "deploy": "npm run build --prefix ../../packages/domain && wrangler d1 migrations apply TILL_DB --remote && wrangler deploy"
   },
   "dependencies": {
-    "@numinia/domain": "*"
+    "@numinia/domain": "*",
+    "viem": "^2.57.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261013.1",

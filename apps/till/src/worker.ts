@@ -133,6 +133,12 @@ import {
   type AgentsAnswer,
   type ClaimAnswer,
 } from './db/agents';
+import {
+  latestRelease,
+  publishRelease,
+  type LatestAnswer,
+  type PublishAnswer,
+} from './db/fleet-release';
 import { changeProfile, profileAnswer, type ProfileAnswer } from './db/profiles';
 import {
   assignRole,
@@ -927,6 +933,24 @@ export class DnsDesk extends WorkerEntrypoint<Env> {
   /** Deletes the fleet's record of the address for this machine; one made by hand stays. */
   async release(domain: unknown, machine: unknown): Promise<DnsDone | DnsRefusal> {
     return fleetDnsFor(this.env).release(domain, machine);
+  }
+}
+
+/**
+ * The fleet's release desk (fleet auto-update, S4): the signed FleetRelease
+ * record the machines follow. `latest` is public (numinia.com serves it at
+ * /fleet/release.json); `publish` is the house's and checks the signature and
+ * `seq`. No key is held here (lib/fleet-release.ts, migration 0019).
+ */
+export class FleetDesk extends WorkerEntrypoint<Env> {
+  /** The highest-`seq` record, or `release: null` before the first. */
+  async latest(): Promise<LatestAnswer> {
+    return latestRelease(this.env.TILL_DB);
+  }
+
+  /** The house stores a record an Oracle signed; an old `seq` or a stranger's signature is refused. */
+  async publish(wallet: unknown, house: unknown, record: unknown): Promise<PublishAnswer> {
+    return publishRelease(this.env.TILL_DB, wallet, house, record, new Date());
   }
 }
 

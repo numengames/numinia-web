@@ -74,5 +74,6 @@
     { "binding": "TILL_ORACLE", "service": "numinia-till", "entrypoint": "OracleDesk" },
     { "binding": "TILL_ACCOUNTS", "service": "numinia-till", "entrypoint": "AccountDesk" },
     { "binding": "TILL_DNS", "service": "numinia-till", "entrypoint": "DnsDesk" },
+    { "binding": "TILL_FLEET", "service": "numinia-till", "entrypoint": "FleetDesk" },
   ],
 }

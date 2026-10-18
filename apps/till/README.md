@@ -235,6 +235,20 @@ IGNORE` on `(account, agent, world, second)`; a second use changes nothing and i
 No fresh wallet signature (ORG-008) is asked for giving an AI a role: an AI's pass keeps only
 `enter-worlds` and `build-in-worlds`, so a role with `manage-roles` gives it no power.
 
+## The fleet release desk
+
+`FleetDesk`, bound by numinia.com as `TILL_FLEET`, keeps the signed `FleetRelease`
+record the fleet's machines follow (design: `work/fleet-autoupdate/DISENO-FLEETRELEASE.md`).
+An Oracle signs `FleetRelease(engine, image, commit, seq, issuedAt)` with their wallet
+(EIP-712, domain «Numinia Fleet» v1 — the vectors of numinia-assets and `lib/fleet.ts`);
+`publish(wallet, house, record)` stores it when the caller is the house, the signature
+recovers to that same wallet, and `seq` is greater than every `seq` stored (one SQL
+statement, so two publications at once cannot both pass). An empty `image` is a pause;
+going back is a new record with a greater `seq`. `latest()` is public: numinia.com serves
+it at `GET /fleet/release.json` as `{ message, signature }`. The till holds no key and no
+list of Oracles: each machine checks the signature against its own signers. Table
+`fleet_releases` (migration 0019) only ever grows.
+
 ## The DNS desk
 
 `DnsDesk`, bound by numinia.com as `TILL_DNS`, writes a world's address so
@@ -295,7 +309,7 @@ creating a world is `MIS-179`/`MIS-185`.
 | `src/meter.ts`                               | `Meter`, `NoMeter`, `FakeMeter` and the fixture reader                                                                                     |
 | `src/db/repository.ts`                       | D1 for the close: one read batch, one write batch; the whole-version reader the desk uses                                                  |
 | `src/db/desk.ts`                             | D1 for the desk: one read batch per call, one guarded insert to schedule                                                                   |
-| `src/worker.ts`                              | `fetch` (health), `scheduled` (the close, the minute's poll), `OracleDesk`, `AccountDesk`, `DnsDesk`                                       |
+| `src/worker.ts`                              | `fetch` (health), `scheduled` (the close, the minute's poll), `OracleDesk`, `AccountDesk`, `DnsDesk`, `FleetDesk`                          |
 | `src/lib/accounts.ts`                        | what numinia.com sends the account desk, read; the top-up prices; spend buckets                                                            |
 | `src/lib/stripe.ts`                          | the few Stripe calls the till makes, over `fetch`                                                                                          |
 | `src/db/accounts.ts`                         | D1 for the account desk and the minute's poll                                                                                              |
