@@ -72,16 +72,16 @@ describe('the desk contract', () => {
   });
 
   it('has one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-31, -29)).toEqual(['profile', 'setProfile']);
+    expect(DESK_METHODS.slice(-33, -31)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
   });
 
   it('has the census (cut «El censo»), optional too: a till without it changes nothing', () => {
-    expect(DESK_METHODS.slice(-29, -27)).toEqual(['signedIn', 'citizens']);
+    expect(DESK_METHODS.slice(-31, -29)).toEqual(['signedIn', 'citizens']);
   });
 
   it('has where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-27, -23)).toEqual([
+    expect(DESK_METHODS.slice(-29, -25)).toEqual([
       'placeWorld',
       'placements',
       'worldsOf',
@@ -95,11 +95,13 @@ describe('the desk contract', () => {
       'changeSettings',
       'citizens',
       'claimAgentPass',
+      'communityFields',
       'communityRequests',
       'createAgent',
       'createRitual',
       'decideCommunityRequest',
       'directory',
+      'editCommunityFields',
       'ensureCommunityTeam',
       'giveAgentRole',
       'happenings',
@@ -124,20 +126,20 @@ describe('the desk contract', () => {
   });
 
   it('has opening a community’s account (cut «Una comunidad ES una organización»), optional too', () => {
-    expect(DESK_METHODS.at(-21)).toBe('ensureCommunityTeam');
+    expect(DESK_METHODS.at(-23)).toBe('ensureCommunityTeam');
   });
 
   it('has the settings and «Qué ha pasado» (cut «Ajustes de la comunidad»), optional too', () => {
-    expect(DESK_METHODS.slice(-20, -17)).toEqual(['settings', 'changeSettings', 'happenings']);
+    expect(DESK_METHODS.slice(-22, -19)).toEqual(['settings', 'changeSettings', 'happenings']);
   });
 
   it('has opening every community at once (cut 7), optional too', () => {
-    expect(DESK_METHODS.at(-17)).toBe('openAllCommunities');
+    expect(DESK_METHODS.at(-19)).toBe('openAllCommunities');
     expect(OPTIONAL_DESK_METHODS).toContain('openAllCommunities');
   });
 
-  it('has the AIs of an organization (cut «IAs de organización»), then «Hazla tuya» (cut G) and ends with «Un encuentro» (cut M), optional too', () => {
-    expect(DESK_METHODS.slice(-16)).toEqual([
+  it('has the AIs of an organization (cut «IAs de organización»), then «Hazla tuya» (cut G) and ends with «Un encuentro» (cut M), then the Oracle’s card edit (card t_371c917d), optional too', () => {
+    expect(DESK_METHODS.slice(-18)).toEqual([
       'agents',
       'createAgent',
       'changeAgent',
@@ -154,8 +156,10 @@ describe('the desk contract', () => {
       'cancelRitual',
       'ritualsOf',
       'ritual',
+      'editCommunityFields',
+      'communityFields',
     ]);
-    for (const method of DESK_METHODS.slice(-16)) expect(OPTIONAL_DESK_METHODS).toContain(method);
+    for (const method of DESK_METHODS.slice(-18)) expect(OPTIONAL_DESK_METHODS).toContain(method);
   });
 
   it('knows the till’s refusal of the list of who has signed in, in its own words', () => {

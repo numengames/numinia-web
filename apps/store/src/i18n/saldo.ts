@@ -271,6 +271,9 @@ export interface SaldoMessages {
     readonly title: string;
     readonly checking: string;
     readonly done: string;
+    /** Under the headline of the celebration card: it says the page is
+        about to move on by itself (t_ef680bad). */
+    readonly redirecting: string;
     /** `{b}`: the balance after the top-up. */
     readonly balanceNow: string;
     readonly processing: string;
@@ -545,7 +548,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     vuelta: {
       title: 'Recarga',
       checking: 'Comprobando el pago…',
-      done: 'Recarga hecha · ya puedes cerrar esta pestaña',
+      done: '¡Gracias! Tu recarga está hecha',
+      redirecting: 'Te llevamos a tu saldo en unos segundos…',
       balanceNow: 'Saldo ahora: {b}',
       processing: 'Aún se está procesando',
       processingNote: 'Stripe todavía no lo ha confirmado. Lo volvemos a mirar en unos segundos.',
@@ -811,7 +815,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     vuelta: {
       title: 'Top-up',
       checking: 'Checking the payment…',
-      done: 'Top-up done · you can close this tab',
+      done: 'Thank you! Your top-up is done',
+      redirecting: 'Taking you to your balance in a few seconds…',
       balanceNow: 'Balance now: {b}',
       processing: 'Still processing',
       processingNote: 'Stripe has not confirmed it yet. We will look again in a few seconds.',
@@ -1076,7 +1081,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     vuelta: {
       title: 'チャージ',
       checking: '支払いを確認しています…',
-      done: 'チャージ完了 · このタブは閉じて大丈夫です',
+      done: 'ありがとうございます！チャージが完了しました',
+      redirecting: '数秒後に残高のページへ移動します…',
       balanceNow: '現在の残高：{b}',
       processing: 'まだ処理中です',
       processingNote: 'Stripeからの確認がまだです。数秒後にもう一度確認します。',
@@ -1338,7 +1344,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     vuelta: {
       title: '충전',
       checking: '결제를 확인하는 중…',
-      done: '충전 완료 · 이 탭은 닫아도 됩니다',
+      done: '감사합니다! 충전이 완료되었습니다',
+      redirecting: '잠시 후 잔액 페이지로 이동합니다…',
       balanceNow: '현재 잔액: {b}',
       processing: '아직 처리 중입니다',
       processingNote: 'Stripe가 아직 확인하지 않았습니다. 몇 초 뒤에 다시 확인합니다.',
@@ -1608,7 +1615,8 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
     vuelta: {
       title: 'Recarga',
       checking: 'Verificando o pagamento…',
-      done: 'Recarga feita · você já pode fechar esta aba',
+      done: 'Obrigado! Sua recarga está feita',
+      redirecting: 'Vamos te levar para o seu saldo em alguns segundos…',
       balanceNow: 'Saldo agora: {b}',
       processing: 'Ainda em processamento',
       processingNote: 'O Stripe ainda não confirmou. Vamos olhar de novo em alguns segundos.',

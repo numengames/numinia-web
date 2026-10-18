@@ -103,10 +103,48 @@ const back = signInHref(locale, `/communities/${communityId}/`);
       </div>
     </form>
   </dialog>
+
+  <!--
+    Card t_371c917d (2026-10-18): the Oracle's own panel, while the community
+    has no titular yet — rename it, fill in its summary, add themself as the
+    first member in one step. Hidden unless the session's rank is `oracle`
+    (lib/census-list.ts HOUSE_RANK) and the community's standing says nobody
+    is the titular; shown by the same script that paints the strip above.
+  -->
+  <div class="oraculo-ficha" data-oracle-panel hidden>
+    <p class="oraculo-titulo">{locale === 'es' ? 'Herramientas del Oráculo' : 'Oracle tools'}</p>
+    <button
+      type="button"
+      class="btn btn-primario"
+      data-oracle-join
+      data-metric="community-oracle-join"
+    >
+      {locale === 'es' ? 'Añadirme como Titular' : 'Add myself as titular'}
+    </button>
+    <p class="oraculo-estado" role="status" data-oracle-join-said hidden></p>
+    <form data-oracle-fields novalidate>
+      <div class="peticion-campo">
+        <label for="oraculo-nombre">{locale === 'es' ? 'Nombre' : 'Name'}</label>
+        <input id="oraculo-nombre" name="name" type="text" maxlength="80" autocomplete="off" />
+      </div>
+      <div class="peticion-campo">
+        <label for="oraculo-resumen">{locale === 'es' ? 'Resumen' : 'Summary'}</label>
+        <input id="oraculo-resumen" name="summary" type="text" maxlength="600" autocomplete="off" />
+      </div>
+      <p class="peticion-fallo" role="alert" data-oracle-fields-problem hidden></p>
+      <div class="peticion-acciones">
+        <button type="submit" class="btn btn-primario" data-oracle-fields-save>
+          {locale === 'es' ? 'Guardar' : 'Save'}
+        </button>
+      </div>
+      <p class="oraculo-estado" role="status" data-oracle-fields-said hidden></p>
+    </form>
+  </div>
 </div>
 
 <script>
   import type { DeskRequestKind } from '../../lib/accounts';
+  import { loadFields, oracleClaim, saveFields } from '../../lib/community-fields-client';
   import {
     loadMine,
     sendRequest,
@@ -116,6 +154,9 @@ const back = signInHref(locale, `/communities/${communityId}/`);
   } from '../../lib/community-requests-client';
   import type { CommunityRequestsMessages } from '../../i18n/community-requests';
   import { pageSessionClient } from '../../lib/island-session';
+
+  /** The session's house rank (lib/census-list.ts HOUSE_RANK): an Oracle. */
+  const HOUSE_RANK = 'oracle';
 
   const strip = document.querySelector<HTMLElement>('[data-claim-strip]');
   if (strip) wire(strip);
@@ -135,8 +176,18 @@ const back = signInHref(locale, `/communities/${communityId}/`);
     const problem = pick<HTMLElement>('[data-claim-problem]');
     const send = pick<HTMLButtonElement>('[data-claim-send]');
     const cancel = pick<HTMLButtonElement>('[data-claim-cancel]');
+    const oraclePanel = pick<HTMLElement>('[data-oracle-panel]');
+    const oracleJoin = pick<HTMLButtonElement>('[data-oracle-join]');
+    const oracleJoinSaid = pick<HTMLElement>('[data-oracle-join-said]');
+    const fieldsForm = pick<HTMLFormElement>('[data-oracle-fields]');
+    const fieldsSave = pick<HTMLButtonElement>('[data-oracle-fields-save]');
+    const fieldsProblem = pick<HTMLElement>('[data-oracle-fields-problem]');
+    const fieldsSaid = pick<HTMLElement>('[data-oracle-fields-said]');
+    const nameInput = pick<HTMLInputElement>('#oraculo-nombre');
+    const summaryInput = pick<HTMLInputElement>('#oraculo-resumen');
     let kind: DeskRequestKind = 'claim';
     let busy = false;
+    let oracleBusy = false;
     // Only the newest read may paint.
     let asked = 0;
 
@@ -156,6 +207,7 @@ const back = signInHref(locale, `/communities/${communityId}/`);
       } else {
         show(face.face);
       }
+      oraclePanel.hidden = mine.standing.hasOwner || oraclePanel.dataset['house'] !== '1';
     };
 
     const answered = (sheet: MineSheet): void => {
@@ -213,16 +265,93 @@ const back = signInHref(locale, `/communities/${communityId}/`);
       });
     });
 
+    // Card t_371c917d (2026-10-18): the Oracle's one-step join.
+    oracleJoin.addEventListener('click', () => {
+      if (oracleBusy) return;
+      oracleBusy = true;
+      oracleJoin.disabled = true;
+      void oracleClaim(fetch, community).then((result) => {
+        oracleBusy = false;
+        oracleJoin.disabled = false;
+        oracleJoinSaid.hidden = false;
+        if (result.ok) {
+          oracleJoinSaid.textContent =
+            root.ownerDocument.documentElement.lang === 'es'
+              ? 'Ya eres titular y primer miembro.'
+              : 'You are now titular and the first member.';
+          void read();
+          return;
+        }
+        oracleJoinSaid.textContent =
+          root.ownerDocument.documentElement.lang === 'es'
+            ? 'No se pudo. Prueba de nuevo.'
+            : 'It could not be done. Try again.';
+      });
+    });
+
+    // Card t_371c917d (2026-10-18): the Oracle renames the card, or fills in its summary.
+    fieldsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = nameInput.value.trim();
+      const summary = summaryInput.value.trim();
+      if (name === '' && summary === '') return;
+      fieldsSave.disabled = true;
+      fieldsProblem.hidden = true;
+      void saveFields(fetch, community, {
+        ...(name === '' ? {} : { name }),
+        ...(summary === '' ? {} : { summary }),
+      }).then((result) => {
+        fieldsSave.disabled = false;
+        if (result.ok) {
+          fieldsSaid.hidden = false;
+          fieldsSaid.textContent =
+            root.ownerDocument.documentElement.lang === 'es' ? 'Guardado.' : 'Saved.';
+          applyOverride(result.fields);
+          return;
+        }
+        fieldsProblem.hidden = false;
+        fieldsProblem.textContent =
+          root.ownerDocument.documentElement.lang === 'es'
+            ? 'No se pudo guardar. Prueba de nuevo.'
+            : 'It could not be saved. Try again.';
+      });
+    });
+
     void pageSessionClient(window).then((client) => {
-      const hear = (view: { readonly status: string }): void => {
-        if (view.status === 'in') void read();
-        else {
+      const hear = (view: { readonly status: string; readonly rank?: string }): void => {
+        if (view.status === 'in') {
+          oraclePanel.dataset['house'] = view.rank === HOUSE_RANK ? '1' : '0';
+          void read();
+        } else {
           asked += 1;
+          oraclePanel.dataset['house'] = '0';
           show('out');
         }
+        if (oraclePanel.dataset['house'] !== '1') oraclePanel.hidden = true;
       };
       client.subscribe(hear);
       void client.current().then(hear);
+    });
+  }
+
+  /** Public, for anyone: the community's own page shows the Oracle's edit, not the register's file. */
+  function applyOverride(fields: { readonly name: string | null; readonly summary: string | null }): void {
+    if (fields.name !== null) {
+      document
+        .querySelectorAll<HTMLElement>('[data-community-field="name"]')
+        .forEach((el) => (el.textContent = fields.name));
+    }
+    if (fields.summary !== null) {
+      document
+        .querySelectorAll<HTMLElement>('[data-community-field="summary"]')
+        .forEach((el) => (el.textContent = fields.summary));
+    }
+  }
+
+  const page = document.querySelector<HTMLElement>('[data-claim-strip]');
+  if (page) {
+    void loadFields(fetch, page.dataset['community'] ?? '').then((fields) => {
+      if (fields) applyOverride(fields);
     });
   }
 </script>
