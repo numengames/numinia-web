@@ -255,6 +255,15 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
         : absent('ritualsOf'),
     ritual: (ritualId) =>
       typeof desk.ritual === 'function' ? stub.ritual(ritualId) : absent('ritual'),
+    // Card t_371c917d (2026-10-18): optional too. Without them the fields routes say 503.
+    editCommunityFields: (wallet, house, communityId, fields) =>
+      typeof desk.editCommunityFields === 'function'
+        ? stub.editCommunityFields(wallet, house, communityId, fields)
+        : absent('editCommunityFields'),
+    communityFields: (communityId) =>
+      typeof desk.communityFields === 'function'
+        ? stub.communityFields(communityId)
+        : absent('communityFields'),
   };
 }
 

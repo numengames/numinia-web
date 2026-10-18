@@ -26,12 +26,31 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.143.0',
+    version: 'v0.144.0',
     date: '2026-10-18 19:50',
     entries: [
       {
         type: 'UPD',
         text: 'The worlds index (/mundos/) now lists every world that is on before the ones that are off, whatever the ones off had: among the ones on, the ones with more people still come first.',
+      },
+    ],
+  },
+  {
+    version: 'v0.143.0',
+    date: '2026-10-18 18:20',
+    missions: ['t_371c917d'],
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A community of the register with no titular yet can now be renamed and have its summary filled in from its own page, by an Oracle — the edit persists and the public page shows it, no longer purely the register’s file.',
+      },
+      {
+        type: 'NEW',
+        text: 'An Oracle adds themself as a community’s titular and first member in one step from its page, reusing «Hazla tuya»’s claim and decision — no separate request-and-decide round trip.',
+      },
+      {
+        type: 'NEW',
+        text: 'The «Top-up done» screen now celebrates a successful recharge with the house’s star-burst card instead of a plain «you can close this tab» line, shows the updated balance and the seller note, and sends the buyer on to their balance page by itself after a few seconds (the back link still works sooner).',
       },
     ],
   },

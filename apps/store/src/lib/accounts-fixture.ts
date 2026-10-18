@@ -106,6 +106,7 @@ import {
   type DeskRolesAnswer,
   type DeskSettings,
   type DeskSettingsAnswer,
+  type DeskCommunityFieldsAnswer,
   type DeskHappeningsAnswer,
   type DeskOverview,
   type DeskPace,
@@ -126,6 +127,11 @@ import {
   type TopupKey,
 } from './accounts';
 import { createAgentsFixture, type HostEntry } from './agents-fixture';
+import {
+  COMMUNITY_FIELDS_PROBLEMS,
+  communityFieldName,
+  communityFieldSummary,
+} from './community-fields';
 import { communityAccountId, readCommunityId } from './community-teams';
 import {
   REQUEST_PROBLEMS,
@@ -647,6 +653,15 @@ export function createAccountsFixtureDesk(
    * as the till's `world_names` — one per world, shared by every wallet's copy.
    */
   const names = new Map<string, { name: string; renamedAt: string }>();
+  /**
+   * Card t_371c917d (2026-10-18): a community's house override, as the
+   * till's `community_fields` — one per community, shared by every wallet's
+   * copy. Written only while the community has no titular yet.
+   */
+  const communityFieldOverrides = new Map<
+    string,
+    { name: string | null; summary: string | null; editedBy: string | null; editedAt: string }
+  >();
   /** What a member published, as the till's roles view adds it: absent when nothing. */
   const publishedBy = (wallet: string): Pick<DeskMemberDetail, 'name' | 'avatar'> => {
     const profile = profiles.get(wallet);
@@ -2030,6 +2045,63 @@ export function createAccountsFixtureDesk(
       if (id === undefined) return refuse(RITUAL_PROBLEMS.ritualId);
       const ritual = rituals.find((candidate) => candidate.id === id);
       return { ok: true, ritual: ritual === undefined ? null : copy(ritual) };
+    },
+
+    // ---- Card t_371c917d (2026-10-18): a community's house override, while it has no titular ----
+
+    editCommunityFields: async (
+      wallet,
+      house,
+      communityId,
+      fields,
+    ): Promise<DeskCommunityFieldsAnswer> => {
+      const asking = asker(wallet, house);
+      const community = readCommunityId(communityId);
+      const name = fields.name === undefined ? undefined : communityFieldName(fields.name);
+      const summary =
+        fields.summary === undefined ? undefined : communityFieldSummary(fields.summary);
+      if (
+        'ok' in asking ||
+        community === undefined ||
+        (fields.name !== undefined && name === undefined) ||
+        (fields.summary !== undefined && summary === undefined)
+      ) {
+        return refuse(
+          ...('ok' in asking ? asking.problems : []),
+          ...(community === undefined ? [COMMUNITY_FIELDS_PROBLEMS.community] : []),
+          ...(fields.name !== undefined && name === undefined
+            ? [COMMUNITY_FIELDS_PROBLEMS.name]
+            : []),
+          ...(fields.summary !== undefined && summary === undefined
+            ? [COMMUNITY_FIELDS_PROBLEMS.summary]
+            : []),
+        );
+      }
+      if (!asking.house) return refuse(COMMUNITY_FIELDS_PROBLEMS.notHouse);
+      if (name === undefined && summary === undefined) {
+        return refuse(COMMUNITY_FIELDS_PROBLEMS.nothing);
+      }
+      const book = communityBooks.get(await communityAccountId(community));
+      if (book !== undefined && book.members.some((member) => member.role === 'admin')) {
+        return refuse(COMMUNITY_FIELDS_PROBLEMS.hasOwner);
+      }
+      const previous = communityFieldOverrides.get(community);
+      const written = {
+        name: name ?? previous?.name ?? null,
+        summary: summary ?? previous?.summary ?? null,
+        editedBy: asking.who,
+        editedAt: now().toISOString(),
+      };
+      communityFieldOverrides.set(community, written);
+      return { ok: true, fields: { communityId: community, ...written } };
+    },
+
+    communityFields: async (communityId): Promise<DeskCommunityFieldsAnswer> => {
+      const community = readCommunityId(communityId);
+      if (community === undefined) return refuse(COMMUNITY_FIELDS_PROBLEMS.community);
+      const written = communityFieldOverrides.get(community);
+      if (written === undefined) return { ok: true, fields: null };
+      return { ok: true, fields: { communityId: community, ...written } };
     },
 
     ...agents,

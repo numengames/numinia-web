@@ -658,6 +658,20 @@ export interface AccountDesk {
   ritualsOf(communityIds: readonly string[] | null, upcoming: boolean): Promise<DeskRitualsAnswer>;
   /** Public: one encounter by its till id, cancelled or not; null when there is none (optional). */
   ritual(ritualId: string): Promise<DeskRitualOneAnswer>;
+  /**
+   * Card t_371c917d (2026-10-18): while a community of the register has no
+   * titular yet, the house (an Oracle) renames it and fills in its summary
+   * from its own page — the override persists and survives a reload, the
+   * same way a world's own name does (optional: an older till answers 503).
+   */
+  editCommunityFields(
+    wallet: string,
+    house: boolean,
+    communityId: string,
+    fields: DeskCommunityFieldsChange,
+  ): Promise<DeskCommunityFieldsAnswer>;
+  /** Public: a community's house override, if any — null while nobody has edited it (optional). */
+  communityFields(communityId: string): Promise<DeskCommunityFieldsAnswer>;
 }
 
 /** «Crear → Un encuentro»: an encounter as the till keeps it. */
@@ -798,6 +812,8 @@ export const DESK_METHODS = [
   'cancelRitual',
   'ritualsOf',
   'ritual',
+  'editCommunityFields',
+  'communityFields',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -850,6 +866,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'cancelRitual',
   'ritualsOf',
   'ritual',
+  'editCommunityFields',
+  'communityFields',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];
@@ -1657,3 +1675,26 @@ export interface DeskName {
 export type DeskRenameAnswer = { ok: true; worldId: string; name: string } | DeskRefusal;
 
 export type DeskNamesAnswer = { ok: true; names: DeskName[] } | DeskRefusal;
+
+/**
+ * Card t_371c917d (2026-10-18): a community's house override — a name
+ * and/or a summary (one string, both content languages, as the register's
+ * `nameOrLocalized` does for a proper name) written over the register's
+ * file. `null` while nobody has edited it.
+ */
+export interface DeskCommunityFields {
+  readonly communityId: string;
+  readonly name: string | null;
+  readonly summary: string | null;
+  readonly editedBy: string | null;
+  readonly editedAt: string;
+}
+
+/** What the Oracle sends to edit a community's card: either piece, or both. */
+export interface DeskCommunityFieldsChange {
+  readonly name?: string;
+  readonly summary?: string;
+}
+
+export type DeskCommunityFieldsAnswer =
+  { ok: true; fields: DeskCommunityFields | null } | DeskRefusal;
