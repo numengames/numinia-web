@@ -446,18 +446,30 @@ const homes = COMMUNITIES.flatMap((community) => {
      Featured.astro shows once a world answers someone inside, read
      straight from /api/live (CityRail reads the same endpoint for its own
      «Ahora en la ciudad» list) — nobody inside, no answer or no
-     JavaScript: nothing shows here either. */
-  import { peopleInside } from '../../lib/live-now';
+     JavaScript: nothing shows here either.
+
+     The parsing is inlined on purpose, not imported from lib/live-now: a
+     second entry point importing that module would force Vite to split it
+     into a shared chunk, pulling this script (and CityRail's) out of the
+     page — breaking the zero-JS promise Layer 0 pages make (e2e/perf.spec.ts).
+     lib/live-now.ts stays the one tested definition; its own unit test
+     pins the shape this copies. */
+  const doorIsOpen = (body: unknown, id: string): boolean => {
+    if (typeof body !== 'object' || body === null) return false;
+    const inside = (body as Record<string, unknown>)['inside'];
+    if (typeof inside !== 'object' || inside === null) return false;
+    const n = (inside as Record<string, unknown>)[id];
+    return typeof n === 'number' && Number.isInteger(n) && n > 0;
+  };
 
   const door = document.querySelector<HTMLElement>('[data-live-door]');
   if (door) {
     fetch('/api/live', { headers: { accept: 'application/json' } })
       .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
       .then((body) => {
-        const counts = peopleInside(body);
         let any = false;
         door.querySelectorAll<HTMLAnchorElement>('[data-live-door-row]').forEach((row) => {
-          const open = (counts[row.dataset['liveDoorRow'] ?? ''] ?? 0) > 0;
+          const open = doorIsOpen(body, row.dataset['liveDoorRow'] ?? '');
           row.hidden = !open;
           if (open) any = true;
         });
