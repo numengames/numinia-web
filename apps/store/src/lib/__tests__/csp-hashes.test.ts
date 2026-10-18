@@ -13,7 +13,7 @@ describe('INLINE_SCRIPT_HASHES', () => {
   it('is a non-empty list of CSP sha256 source expressions', () => {
     expect(INLINE_SCRIPT_HASHES.length).toBeGreaterThan(0);
     for (const entry of INLINE_SCRIPT_HASHES) {
-      expect(entry).toMatch(/^sha256-[A-Za-z0-9+/]+=*$/);
+      expect(entry).toMatch(/^'sha256-[A-Za-z0-9+/]+=*'$/);
     }
   });
 

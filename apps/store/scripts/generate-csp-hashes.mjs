@@ -3,59 +3,202 @@
  * CSP inline-script hash generator (security hardening, 2026-10-18).
  *
  * `script-src 'unsafe-inline'` let ANY inline script run, including one
- * smuggled in through stored content. Astro's `is:inline` scripts are the
- * only ones that ship literally inside the HTML (plain `<script>` tags get
- * bundled by Vite into external, already-hashed-by-filename files, so they
- * never need an allowance here). Every `is:inline` script body in this app
- * is static source text — none of them interpolate per-request data into
- * the script BODY (data varies only in `data-*` attributes, which CSP
- * hashing ignores), so a build-time SHA-256 of each body is stable across
- * requests and locales. `type="application/json"` blocks are inert (the
- * browser never executes them) and are skipped — they don't need a hash.
+ * smuggled in through stored content. Three kinds of inline script ship
+ * literally inside the HTML and need a hash:
+ *   1. Astro's `is:inline` scripts (this app's boot/telemetry/widget code) —
+ *      found by scanning the `.astro` sources below.
+ *   2. Astro/Vite's own small hydration bootstraps for `client:*` islands,
+ *      which Astro inlines as `<script type="module">...</script>` rather
+ *      than an external file when they're small — these only exist AFTER a
+ *      build, so they're harvested from `dist/client/**.html` when present
+ *      (caught live, 2026-10-18: the first version of this generator only
+ *      scanned sources, missed these, and silently broke every island on
+ *      every page — the VRM/world-filter islands included).
+ *   3. The same kind-2 bootstraps, but on a page that sets
+ *      `export const prerender = false` (reads live/session data, so Astro
+ *      never writes it to dist/client) — kind 2's scan misses these. Caught
+ *      live, 2026-10-18: /crear/encuentro/'s publish button never fired
+ *      because its hydration script was one of these. After the first
+ *      build, this script spins the real server on a free port and fetches
+ *      every *static-path* on-demand route (one per unique page template;
+ *      locale copies share the same compiled script, so only the default
+ *      locale is probed) to harvest their inline scripts too. Pages that are
+ *      BOTH on-demand AND dynamically segmented (e.g. `mundos/[id]`, a
+ *      specific world; `rituals/rit_[hex]`, a one-off invite code) can't be
+ *      probed generically — `mundos/[id]` is covered by sampling one id from
+ *      the fixture dataset below; `rituals/rit_[hex]` is not probed (no
+ *      stable sample exists) and is a known gap — if it only reuses chunks
+ *      already hashed from other pages it is fine; if it ever ships its own
+ *      distinct inline script, that script will need adding here by hand.
+ * None of the three kinds interpolates per-request data into the script
+ * BODY (an is:inline script's per-page data travels in a `data-*`
+ * attribute, which CSP hashing ignores; an island's hydration bootstrap is
+ * the same compiled code for a given build regardless of the data it
+ * hydrates), so a build-time SHA-256 of each body is stable across requests
+ * and locales. `type="application/json"` blocks are inert (the browser
+ * never executes them) and are skipped — they don't need a hash.
  *
- * Run by `npm run build` and `npm test` (see package.json) so the hash list
- * in `src/lib/csp-hashes.generated.ts` never drifts from the source.
+ * Because kinds 2 and 3 only exist after a build, `npm run build` runs this
+ * script, builds, runs it again with --harvest (now the dist and a live
+ * server exist, so kinds 2 and 3 get added), then builds again so the final
+ * server bundle ships with the complete list. `npm test`/`npm run dev` only
+ * get kind 1 (no build precedes them) — acceptable, since neither is the
+ * CSP-enforcing gate; the built-and-rebuilt `npm run build` output is what
+ * ships and what the e2e suite runs against.
  */
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const SRC_DIR = join(here, '..', 'src');
+const APP_DIR = join(here, '..');
+const SRC_DIR = join(APP_DIR, 'src');
+const PAGES_DIR = join(SRC_DIR, 'pages');
+const DIST_CLIENT_DIR = join(APP_DIR, 'dist', 'client');
+const DIST_SERVER_ENTRY = join(APP_DIR, 'dist', 'server', 'entry.mjs');
 const OUT_FILE = join(SRC_DIR, 'lib', 'csp-hashes.generated.ts');
+const HARVEST = process.argv.includes('--harvest');
+const LOCALE_DIRS = new Set(['es', 'ja', 'ko', 'pt-br']);
 
-/** Depth-first .astro file listing (node_modules and dist never appear under src/). */
-function listAstroFiles(dir) {
+/** Depth-first file listing by extension (node_modules never appears under src/ or dist/). */
+function listFiles(dir, extension) {
   const out = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
-    if (st.isDirectory()) out.push(...listAstroFiles(full));
-    else if (name.endsWith('.astro')) out.push(full);
+    if (st.isDirectory()) out.push(...listFiles(full, extension));
+    else if (name.endsWith(extension)) out.push(full);
   }
   return out;
 }
 
-// Matches an is:inline script tag with a body (not self-closing), capturing
-// its attributes and its literal body text.
-const INLINE_SCRIPT_RE =
-  /<script\s+((?:(?!\/?>)[^])*?is:inline(?:(?!\/?>)[^])*?)>([\s\S]*?)<\/script>/g;
+// Matches a script tag with a body (not self-closing), capturing its
+// attributes and its literal body text — used on both .astro sources
+// (is:inline only) and built .html output (every inline script).
+const SCRIPT_TAG_RE = /<script\b([^>]*)>([\s\S]*?)<\/script>/g;
 
 function sha256Base64(text) {
   return createHash('sha256').update(text, 'utf8').digest('base64');
 }
 
+function shouldHash(attrs, body) {
+  if (/type\s*=\s*["']application\/json["']/.test(attrs)) return false; // inert, no hash needed
+  return body.trim().length > 0;
+}
+
+function harvestHtml(html, hashes) {
+  let match;
+  while ((match = SCRIPT_TAG_RE.exec(html))) {
+    const [, attrs, body] = match;
+    if (!shouldHash(attrs, body)) continue;
+    hashes.add(sha256Base64(body));
+  }
+}
+
+/** Default-locale, static-path, on-demand (prerender=false) page routes:
+ * one per unique page template, root/locale-free only — a locale copy of
+ * the same .astro component compiles the same inline/hydration scripts. */
+function findOnDemandStaticRoutes() {
+  const routes = [];
+  for (const file of listFiles(PAGES_DIR, '.astro')) {
+    const rel = file.slice(PAGES_DIR.length + 1);
+    const segments = rel.split('/');
+    if (LOCALE_DIRS.has(segments[0])) continue; // a locale copy; same template
+    if (rel.includes('[')) continue; // dynamic segment — handled by sampling below, or skipped
+    if (!readFileSync(file, 'utf8').includes('prerender = false')) continue; // already in dist/client
+    const name = segments.at(-1).replace(/\.astro$/, '');
+    const urlSegments = name === 'index' ? segments.slice(0, -1) : [...segments.slice(0, -1), name];
+    routes.push(`/${urlSegments.join('/')}/`);
+  }
+  return routes;
+}
+
+/** One concrete /mundos/<id>/ sample, from the same fixture `_fleet.ts` reads. */
+function sampleWorldRoute() {
+  try {
+    const fleet = JSON.parse(
+      readFileSync(join(APP_DIR, 'fixtures', 'worlds', 'fleet.json'), 'utf8'),
+    );
+    const slug = fleet?.cards?.[0]?.slug;
+    return slug ? `/mundos/${slug}/` : null;
+  } catch {
+    return null; // no fixture to sample from — fine, mundos/[id] hashes come from wherever else uses the same chunks
+  }
+}
+
+async function freePort() {
+  return await new Promise((resolve, reject) => {
+    const srv = createServer();
+    srv.listen(0, () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+    srv.on('error', reject);
+  });
+}
+
+async function waitForServer(url, attempts = 50) {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const res = await fetch(url);
+      if (res.status) return;
+    } catch {
+      await sleep(200);
+    }
+  }
+  throw new Error(`csp-hashes: server never answered at ${url}`);
+}
+
+async function harvestOnDemandRoutes(hashes) {
+  if (!existsSync(DIST_SERVER_ENTRY)) return;
+  const routes = [...findOnDemandStaticRoutes(), sampleWorldRoute()].filter(Boolean);
+  if (routes.length === 0) return;
+  const port = await freePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const child = spawn(process.execPath, [DIST_SERVER_ENTRY], {
+    env: {
+      ...process.env,
+      HOST: '127.0.0.1',
+      PORT: String(port),
+      DATA_SOURCE: process.env.DATA_SOURCE ?? 'fixture',
+    },
+    stdio: 'ignore',
+  });
+  try {
+    await waitForServer(origin);
+    let scanned = 0;
+    for (const route of routes) {
+      try {
+        const res = await fetch(`${origin}${route}`);
+        if (!res.ok) continue;
+        harvestHtml(await res.text(), hashes);
+        scanned += 1;
+      } catch {
+        // a route that fails to render (e.g. no fixture sample) contributes nothing — not fatal
+      }
+    }
+    console.log(`csp-hashes: harvested ${scanned}/${routes.length} on-demand route(s)`);
+  } finally {
+    child.kill();
+  }
+}
+
 const hashes = new Set();
 
-for (const file of listAstroFiles(SRC_DIR)) {
+// Kind 1: is:inline scripts, from the .astro sources (also catches session-
+// only SSR routes a static build never prerenders, e.g. /panel/*, /lap/*).
+for (const file of listFiles(SRC_DIR, '.astro')) {
   const text = readFileSync(file, 'utf8');
   let match;
-  while ((match = INLINE_SCRIPT_RE.exec(text))) {
+  while ((match = SCRIPT_TAG_RE.exec(text))) {
     const [, attrs, body] = match;
-    if (/type\s*=\s*["']application\/json["']/.test(attrs)) continue; // inert, no hash needed
+    if (!/\bis:inline\b/.test(attrs)) continue;
     if (/set:html=/.test(attrs)) continue; // resolved separately below (raw-imported source)
-    if (!body.trim()) continue;
+    if (!shouldHash(attrs, body)) continue;
     hashes.add(sha256Base64(body));
   }
 }
@@ -66,10 +209,27 @@ for (const file of listAstroFiles(SRC_DIR)) {
 const sistemaJs = readFileSync(join(SRC_DIR, 'scripts', 'sistema.js'), 'utf8');
 hashes.add(sha256Base64(sistemaJs));
 
+if (HARVEST) {
+  // Kind 2: every inline script in the built, prerendered static output —
+  // island hydration bootstraps included.
+  if (existsSync(DIST_CLIENT_DIR)) {
+    for (const file of listFiles(DIST_CLIENT_DIR, '.html')) {
+      harvestHtml(readFileSync(file, 'utf8'), hashes);
+    }
+  }
+  // Kind 3: the same, for on-demand routes dist/client never sees.
+  await harvestOnDemandRoutes(hashes);
+}
+
 const sorted = [...hashes].sort();
-const banner = `/**\n * GENERATED FILE — do not edit by hand.\n * Run \`node scripts/generate-csp-hashes.mjs\` (also wired into \`build\`\n * and \`test\`) to refresh after changing any \`is:inline\` script body.\n */\n`;
+const banner = `/**\n * GENERATED FILE — do not edit by hand.\n * Run \`node scripts/generate-csp-hashes.mjs\` (also wired into \`build\`,\n * twice, around \`astro build\` — see this script's own header comment) to\n * refresh after changing any inline script body.\n */\n`;
+// Each array entry's STRING VALUE must itself carry the single quotes CSP
+// requires around a hash-source (`'sha256-...'`), not just look quoted in
+// this file's source — otherwise the browser sees a bare, invalid token and
+// silently drops it (caught live: dropped hashes blocked every is:inline
+// script, which hid the world-filter chips behind their JS-only toggle).
 const body = `${banner}export const INLINE_SCRIPT_HASHES: readonly string[] = [\n${sorted
-  .map((h) => `  'sha256-${h}',`)
+  .map((h) => `  ${JSON.stringify(`'sha256-${h}'`)},`)
   .join('\n')}\n];\n`;
 
 writeFileSync(OUT_FILE, body);
