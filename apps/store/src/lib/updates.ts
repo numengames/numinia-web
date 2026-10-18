@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.142.0',
+    date: '2026-10-18 17:40',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Your rail (top-right of every page) now carries the same direct door the front page’s featured frame shows once a world has people inside: «Entrar al mundo» opens it straight away, without scrolling to the frame or waiting on its slide.',
+      },
+    ],
+  },
+  {
     version: 'v0.141.0',
     date: '2026-10-18 17:00',
     entries: [
