@@ -15,6 +15,7 @@ import {
   type TokenExchangeCallbackResult,
 } from '@cloudflare/workers-oauth-provider';
 import { handleDefault } from './authorize';
+import { resolveStaticBearer } from './bearer';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTHORIZE_PATH,
@@ -82,6 +83,8 @@ export const PROVIDER_OPTIONS = {
   allowTokenExchangeGrant: false,
   scopesSupported: [SCOPE_WORLDS, SCOPE_OFFLINE],
   requiredScopes: [SCOPE_WORLDS],
+  // A panel token pasted as a static bearer, for clients without OAuth (story W11, bearer.ts).
+  resolveExternalToken: resolveStaticBearer,
   resourceMetadata: {
     resource: RESOURCE,
     authorization_servers: [ORIGIN],

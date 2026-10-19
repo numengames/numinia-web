@@ -35,6 +35,8 @@ export interface Env {
   LIMIT_REGISTER?: RateLimit;
   /** Cloudflare's rate limiting binding for `/authorize`, per address (story W10, limites.ts). */
   LIMIT_AUTHORIZE?: RateLimit;
+  /** Cloudflare's rate limiting binding for panel tokens checked at `/mcp`, per address (story W11). */
+  LIMIT_BEARER?: RateLimit;
 }
 
 /** How the relay sends a request to numinia.com. */

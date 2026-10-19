@@ -11,6 +11,7 @@
  * and can act); only a call the protocol cannot carry out — no tool by that
  * name, no `name` — is a JSON-RPC error (`-32602`).
  */
+import { isStaticBearer } from './bearer';
 import type { Env } from './env';
 import { TOOLS, callTool, isTool, type ToolCall } from './herramientas';
 import { bodyTools, callBodyTool, isBodyTool, serverInstructions } from './herramientas-cuerpo';
@@ -116,7 +117,8 @@ export async function handleMcp(request: Request, env: Env, ctx: McpContext): Pr
   const call: ToolCall = {
     env,
     props: ctx.props,
-    accessToken: typeof token === 'string' ? token : null,
+    // A pasted panel token (story W11) has no grant to find: it goes no further than the props.
+    accessToken: typeof token === 'string' && !isStaticBearer(ctx.props) ? token : null,
   };
   return reply(id, await answerOf(message.method, message.params, call));
 }

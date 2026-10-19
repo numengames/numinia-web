@@ -56,7 +56,8 @@
   "services": [{ "binding": "STORE", "service": "numinia-web" }],
   // Per-address limits on the two doors anyone can knock without a token
   // (story W10, src/limites.ts): /register (dynamic client registration) 10
-  // a minute, /authorize 30 a minute. Cloudflare's rate limiting binding:
+  // a minute, /authorize 30 a minute; and panel tokens pasted as a static
+  // bearer, 300 checks a minute (story W11). Cloudflare's rate limiting binding:
   // nothing to create, the namespace ids are numbers the account picks and
   // must not reuse for another limit (none other exists today). Counted
   // per Cloudflare location, eventually consistent: it stops a loop.
@@ -70,6 +71,12 @@
       "name": "LIMIT_AUTHORIZE",
       "namespace_id": "4102",
       "simple": { "limit": 30, "period": 60 },
+    },
+    {
+      // Panel tokens pasted as a static bearer, checked at /mcp (story W11).
+      "name": "LIMIT_BEARER",
+      "namespace_id": "4103",
+      "simple": { "limit": 300, "period": 60 },
     },
   ],
   "kv_namespaces": [

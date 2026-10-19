@@ -12,12 +12,12 @@ The OAuth protocol is Cloudflare's `@cloudflare/workers-oauth-provider`
 (MIT, pinned at 1.2.3): it stores tokens and codes only as hashes and
 encrypts each grant's props with a key only the token holder can unwrap.
 
-## What it answers (stories W5–W10)
+## What it answers (stories W5–W11)
 
 | path                                            | answer                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /mcp` without a valid token               | `401`, `WWW-Authenticate: Bearer realm="OAuth", resource_metadata="https://mcp.numinia.com/.well-known/oauth-protected-resource/mcp", scope="mundos"`                                                                                                                                                                                                                                                                              |
-| `POST /mcp` with a token                        | JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601`. `initialize` carries `instructions`: how to get a body, then the bridge's own `INSTRUCCIONES` (without `oir`)                                                                                                                                              |
+| `POST /mcp` with a token                        | an OAuth access token, or the AI's `ntk_` token from Panel › Agents (static bearer, below). JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601`. `initialize` carries `instructions`: how to get a body, then the bridge's own `INSTRUCCIONES` (without `oir`)                                                  |
 | `GET /.well-known/oauth-protected-resource/mcp` | RFC 9728: `resource` = `https://mcp.numinia.com/mcp` exactly, `authorization_servers` = `["https://mcp.numinia.com"]`, `scopes_supported` = `["mundos"]`                                                                                                                                                                                                                                                                           |
 | `GET /.well-known/oauth-authorization-server`   | RFC 8414: PKCE `S256` only, `none` among the token endpoint auth methods, `client_id_metadata_document_supported: true`, `registration_endpoint`, scopes `mundos` and `offline_access`                                                                                                                                                                                                                                             |
 | `POST /register`                                | dynamic client registration (RFC 7591), the fallback for clients without CIMD; a client is kept 90 days; at most 10 a minute per address (`429` `too_many_requests`, `Retry-After: 60`)                                                                                                                                                                                                                                            |
@@ -32,6 +32,36 @@ token 30 days from its last use (the code exchange, then each refresh:
 `invalid_grant` after that), rotated on every use (the previous one stays
 valid until the new one is first used).
 
+## The static bearer (story W11)
+
+A client that cannot do OAuth — Hermes with `headers`, a script, Claude's
+static header — pastes `https://mcp.numinia.com/mcp` and the AI's `ntk_`
+token from Panel › Agents, and sends `Authorization: Bearer ntk_…` on every
+`/mcp` call. The OAuth library finds no grant for it and hands it to the
+library's `resolveExternalToken` hook (`src/bearer.ts`), which asks
+numinia.com `GET /api/agents/me` with the token alone (no query: numinia.com
+finds the agent by the token's hash). The request then carries the same
+props a grant would — `{ accountId, agentId, token, via: 'panel', hear:
+false }` — so the tools, the body `Cuerpo` (named `<org>.<agent>`) and
+numinia.com's meter (60 a minute per AI) are the same as with OAuth.
+
+- Nothing is cached: every call checks the token again, so a token revoked
+  or renewed in the panel is refused on the very next call. A body inside a
+  world leaves at its next check (at most a minute).
+- A token that is not shaped like a panel token, unknown, revoked, renewed
+  or of a key agent: the library's ordinary `401 invalid_token` with the
+  `WWW-Authenticate` challenge, the same whatever the reason. numinia.com
+  busy: `429` `temporarily_unavailable`, `Retry-After: 60`; numinia.com
+  unreachable, not configured or not understood (an older numinia.com
+  without the token-alone ask answers `400`): `503`. Neither says anything
+  of the token.
+- No grant stands behind a pasted token, so there is none to revoke when
+  numinia.com stops accepting it: the tools say the token no longer works
+  and that whoever set the AI up copies its new one from Panel › Agents.
+- Each address may have 300 panel tokens checked a minute
+  (`LIMIT_BEARER`, `src/limites.ts`): numinia.com counts the relay's calls
+  per agent only, which an unknown token has not.
+
 ## Limits and the way to numinia.com (story W10)
 
 `/register` and `/authorize` are the two doors anyone can knock without a
@@ -42,7 +72,7 @@ person retries, an office shares an address). Over the limit, `429` with
 `Retry-After: 60`: the OAuth error JSON for `/register`, the plain page
 «wait a minute» in the person's language for `/authorize`. The count is
 Cloudflare's rate limiting binding (`ratelimits` in `wrangler.jsonc`,
-`LIMIT_REGISTER`, `LIMIT_AUTHORIZE`): per Cloudflare location and eventually
+`LIMIT_REGISTER`, `LIMIT_AUTHORIZE`, and W11's `LIMIT_BEARER`): per Cloudflare location and eventually
 consistent, so it stops a loop, not a swarm. Without the binding, or if it
 fails, a counter in the isolate's memory keeps the same limits.
 
@@ -180,9 +210,11 @@ Nothing deploys this Worker on push. Before the first `npm run deploy`:
    `MCP_HANDOFF` service binding points at its `HandOffDesk` entrypoint.
    `STORE_ORIGIN` is a var in `wrangler.jsonc` (no secret to set). This
    Worker's own `STORE` binding points at `numinia-web`, which already
-   exists, so this order works.
+   exists, so this order works. Pasted panel tokens (W11) need numinia.com's
+   token-alone `GET /api/agents/me`: until numinia.com deploys it, they get
+   a `503`, never a `401`.
 3. The rate limiting bindings need nothing created: their `namespace_id`s
-   (`4101`, `4102`) are numbers the account picks; check no other Worker of
+   (`4101`, `4102`, `4103`) are numbers the account picks; check no other Worker of
    the account uses them for another limit. Never turn on the zone's
    «Remove visitor IP headers» managed transform: numinia.com's limits read
    `cf-connecting-ip`.

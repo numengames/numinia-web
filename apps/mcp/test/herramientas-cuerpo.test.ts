@@ -292,6 +292,38 @@ async function settle(ms = 0): Promise<void> {
   await vi.advanceTimersByTimeAsync(ms);
 }
 
+/** One turn of the real event loop (`setImmediate` is not faked): the fake clock stays still. */
+const realTurn = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
+
+/**
+ * Turns the real event loop, without moving the fake clock, until `ready()`.
+ * A call reaches the bridge only after the OAuth library's real WebCrypto
+ * work, which runs off the event loop: how long that takes depends on the
+ * machine, so the fake clock must not move until the call is there.
+ */
+async function until(ready: () => boolean): Promise<void> {
+  while (!ready()) await realTurn();
+}
+
+/**
+ * Runs the fake clock 100 ms at a time, with a real turn in between, until
+ * `pending` settles, and gives its value; the cap turns a call that never
+ * answers into a clear failure rather than vitest's timeout.
+ */
+async function settleUntil<T>(pending: Promise<T>, capMs = 60_000): Promise<T> {
+  let done = false;
+  const mark = (): void => {
+    done = true;
+  };
+  void pending.then(mark, mark);
+  for (let ms = 0; !done && ms < capMs; ms += 100) {
+    await settle(100);
+    await realTurn();
+  }
+  if (!done) throw new Error(`no answer after ${capMs} ms of the fake clock`);
+  return pending;
+}
+
 /** Connect an AI and take it into the Torre; the body inside, named and with the catalog. */
 async function inside(record: Agent): Promise<string> {
   const access = await connect(record);
@@ -513,9 +545,15 @@ describe('entrar and the world tools', () => {
     world.answers = false;
     const access = await connect(agent('claude-de-ana'));
     structured(await tool(access, 'entrar', { mundo: 'torre' }));
+    // The bridge waits 5 s for the world on the fake clock, from when the call reaches it
+    // (`dentro`): the clock moves only once it is there, however slow the machine.
+    const waits = vi.spyOn(
+      PuenteMundo.prototype as unknown as { dentro(): Promise<unknown> },
+      'dentro',
+    );
     const pending = tool(access, 'mirar', {});
-    await settle(6000);
-    expect(failed(await pending)).toContain('no estoy conectado al mundo');
+    await until(() => waits.mock.calls.length > 0);
+    expect(failed(await settleUntil(pending))).toContain('no estoy conectado al mundo');
   });
 
   it('refuses what numinia.com refuses: switched off, a world not its own, numinia.com down', async () => {

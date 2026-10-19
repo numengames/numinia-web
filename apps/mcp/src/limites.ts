@@ -13,6 +13,14 @@
  * `local`. `/token`, `/mcp` and `/vuelta` are not counted here: the first
  * two need a credential the library checks, the last one a one-time request.
  *
+ * One more count (story W11), inside `/mcp`: a panel token pasted as a
+ * static bearer (bearer.ts) is checked by asking numinia.com, one call per
+ * request, and numinia.com counts the relay's calls only per agent — which
+ * an unknown token has not. So each address may have
+ * {@link BEARER_PER_MINUTE} panel tokens checked a minute
+ * ({@link bearerAllowed}): far above what one client sends (numinia.com
+ * allows an AI 60), low enough that guessing tokens costs numinia.com little.
+ *
  * The count is Cloudflare's rate limiting binding (`ratelimits` in
  * wrangler.jsonc, {@link LIMITS}: a namespace id the house picks, no
  * resource to create; windows of 60 s). It counts per Cloudflare location
@@ -29,12 +37,14 @@ import { stopPage } from './pages';
 export const REGISTER_PER_MINUTE = 10;
 /** Authorization starts a minute per address. */
 export const AUTHORIZE_PER_MINUTE = 30;
+/** Panel tokens checked a minute per address (story W11). */
+export const BEARER_PER_MINUTE = 300;
 /** The binding's window (it allows only 10 or 60 seconds). */
 export const LIMIT_WINDOW_SECONDS = 60;
 
 interface Door {
-  readonly name: 'register' | 'authorize';
-  readonly binding: 'LIMIT_REGISTER' | 'LIMIT_AUTHORIZE';
+  readonly name: 'register' | 'authorize' | 'bearer';
+  readonly binding: 'LIMIT_REGISTER' | 'LIMIT_AUTHORIZE' | 'LIMIT_BEARER';
   readonly limit: number;
 }
 
@@ -48,6 +58,13 @@ interface Window {
   count: number;
   resetAt: number;
 }
+
+/** The count of panel tokens checked at `/mcp` (story W11, bearer.ts). */
+export const BEARER_DOOR: Door = {
+  name: 'bearer',
+  binding: 'LIMIT_BEARER',
+  limit: BEARER_PER_MINUTE,
+};
 
 /** The fallback counter: per isolate, per door and address. */
 const windows = new Map<string, Window>();
@@ -87,6 +104,18 @@ async function allowed(door: Door, address: string, env: Env, now: number): Prom
   return countInMemory(key, door.limit, now);
 }
 
+/** The caller's address: Cloudflare's, or `local` on a run without the edge. */
+const addressOf = (request: Request): string => request.headers.get('cf-connecting-ip') ?? 'local';
+
+/** Whether this address may have one more panel token checked this minute (story W11). */
+export function bearerAllowed(
+  request: Request,
+  env: Env,
+  now: number = Date.now(),
+): Promise<boolean> {
+  return allowed(BEARER_DOOR, addressOf(request), env, now);
+}
+
 /**
  * Null when the request may go on (any path but the two doors, or within the
  * limit); else the answer that asks it to wait a minute: for `/register` the
@@ -99,8 +128,7 @@ export async function overLimit(
 ): Promise<Response | null> {
   const door = LIMITS[new URL(request.url).pathname];
   if (door === undefined) return null;
-  const address = request.headers.get('cf-connecting-ip') ?? 'local';
-  if (await allowed(door, address, env, now)) return null;
+  if (await allowed(door, addressOf(request), env, now)) return null;
   const wait = { 'Retry-After': String(LIMIT_WINDOW_SECONDS) };
   if (door.name === 'authorize') return stopPage(request, 'busy', 429, wait);
   return Response.json(

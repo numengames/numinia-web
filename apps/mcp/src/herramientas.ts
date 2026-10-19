@@ -18,10 +18,14 @@
  * without its setting, and a token revoked or renewed on numinia.com
  * (`401`): then the relay revokes this OAuth grant with the library's
  * `revokeGrant`, so the client's next call is a `401` and it has to connect
- * again. The AI's token is never in a tool result, an error or a log line.
+ * again. A panel token pasted as a static bearer (story W11, bearer.ts) has
+ * no grant to revoke: the tool says the token no longer works, and the next
+ * call is a `401` all the same, since every call checks the token again.
+ * The AI's token is never in a tool result, an error or a log line.
  */
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { z } from 'zod';
+import { STATIC_REVOKED, isStaticBearer } from './bearer';
 import { storeFetch, storeOrigin, type Env } from './env';
 import { askMe, type Me } from './me';
 
@@ -170,7 +174,7 @@ export interface ToolCall {
   readonly env: Env;
   /** `ctx.props`, the grant's props as the library decrypted them. */
   readonly props: unknown;
-  /** `ctx.auth.token`, the client's access token: only to find this grant to revoke. */
+  /** `ctx.auth.token`, the client's OAuth access token: only to find this grant to revoke; null for a pasted panel token. */
   readonly accessToken: string | null;
 }
 
@@ -302,6 +306,7 @@ export async function callTool(name: string, args: unknown, call: ToolCall): Pro
     case 'ok':
       return name === WHO_AM_I ? whoAmI(answer.me) : worlds(answer.me);
     case 'revoked':
+      if (isStaticBearer(call.props)) return failure(STATIC_REVOKED);
       await endGrant(call.env.OAUTH_PROVIDER, call.accessToken);
       return failure(ERRORS.revoked);
     case 'busy':

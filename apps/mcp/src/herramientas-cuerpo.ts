@@ -16,6 +16,11 @@
  * `<material fiable="no">` block, and what the world or the AI's pass
  * forbids (asleep, no building here, a build refused) comes back as the
  * world's refusal, an `isError` result the AI reads.
+ *
+ * A panel token pasted as a static bearer (story W11, bearer.ts) drives the
+ * same body under the same name; it comes with no grant, so when
+ * numinia.com stops accepting the token the body leaves with nothing to
+ * revoke, and the AI is told the token no longer works.
  */
 import { z } from 'zod';
 import {
@@ -24,8 +29,16 @@ import {
   type HerramientaMcp,
   type PedirPase,
 } from '../vendor/puente-mundo.mjs';
+import { STATIC_REVOKED, isStaticBearer } from './bearer';
 import { HOUSE_LIBRARY } from './biblioteca';
-import { HEAR_TOOL, URL_AIS_HEAR, bodyOf, worldTools, type BodyGrant } from './cuerpo';
+import {
+  HEAR_TOOL,
+  URL_AIS_HEAR,
+  bodyOf,
+  worldTools,
+  type BodyAnswer,
+  type BodyGrant,
+} from './cuerpo';
 import { ENTER_TOOL, ERRORS, type ToolCall, type ToolResult } from './herramientas';
 
 /** The tool that takes the body out of its world. */
@@ -200,15 +213,22 @@ export async function callBodyTool(
     }
 
     const grant = await grantOf(call);
+    // The body's word for a token numinia.com refused speaks of a grant: a pasted one has none.
+    const refused = (answer: BodyAnswer): ToolResult =>
+      failure(
+        !answer.ok && answer.reason === 'revoked' && isStaticBearer(call.props)
+          ? STATIC_REVOKED
+          : answer.text,
+      );
     if (name === ENTER_TOOL) {
       const { mundo } = enterShape.parse(args);
       const entered = await body.entrar({ props: ask, mundo, grant });
-      if (!entered.ok) return failure(entered.text);
+      if (!entered.ok) return refused(entered);
       return success({ world: entered.world, state: entered.state, note: entered.text });
     }
 
     const used = await body.usar({ props: ask, grant, tool: { name, arguments: args ?? {} } });
-    if (!used.ok || used.result === undefined) return failure(used.text);
+    if (!used.ok || used.result === undefined) return refused(used);
     if (used.result.isError) return failure(used.result.text);
     return { content: [{ type: 'text', text: used.result.text }] };
   } catch {

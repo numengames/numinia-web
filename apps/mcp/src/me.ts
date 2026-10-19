@@ -3,7 +3,10 @@
  * /api/agents/me?org=&agent=` with the AI's `ntk_` token as the Bearer
  * (story W1, apps/store/src/lib/agent-me.ts). `/vuelta` asks it once before
  * issuing a code (story W6); the tools `quien_soy` and `mundos` ask it on
- * every call (story W7).
+ * every call (story W7). A client that pastes the panel's token instead of
+ * connecting with OAuth (story W11, bearer.ts) is asked with the token
+ * alone, `GET /api/agents/me` with no query ({@link askMeByToken}): the
+ * relay does not know yet whose it is, and numinia.com finds it by its hash.
  *
  * The answer is read against W1's contract and sorted into what a caller
  * can act on:
@@ -71,10 +74,26 @@ export async function askMe(
   send: StoreFetch = (input, init) => fetch(input, init),
 ): Promise<MeAnswer> {
   const query = new URLSearchParams({ org: ask.accountId, agent: ask.agentId });
+  return askAt(`${store}/api/agents/me?${query.toString()}`, ask.token, send);
+}
+
+/**
+ * GET `<store>/api/agents/me` with the token alone (story W11): whose it
+ * is, as {@link askMe} answers it. Never throws.
+ */
+export async function askMeByToken(
+  store: string,
+  token: string,
+  send: StoreFetch = (input, init) => fetch(input, init),
+): Promise<MeAnswer> {
+  return askAt(`${store}/api/agents/me`, token, send);
+}
+
+async function askAt(url: string, token: string, send: StoreFetch): Promise<MeAnswer> {
   let response: Response;
   try {
-    response = await send(`${store}/api/agents/me?${query.toString()}`, {
-      headers: { Authorization: `Bearer ${ask.token}`, Accept: 'application/json' },
+    response = await send(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       redirect: 'manual',
     });
   } catch {

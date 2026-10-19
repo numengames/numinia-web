@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getOAuthApi } from '@cloudflare/workers-oauth-provider';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LIMIT_WINDOW_SECONDS, LIMITS, resetLimitsForTests } from '../src/limites';
+import { BEARER_DOOR, LIMIT_WINDOW_SECONDS, LIMITS, resetLimitsForTests } from '../src/limites';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   CLIENT_REGISTRATION_TTL_SECONDS,
@@ -334,14 +334,14 @@ describe('wrangler.jsonc', () => {
     expect(site.name).toBe('numinia-web');
   });
 
-  it('limits /register and /authorize per address with the rate limiting binding (story W10)', () => {
+  it('limits /register, /authorize (story W10) and panel tokens (W11) per address with the rate limiting binding', () => {
     const limits = config.ratelimits as {
       name: string;
       namespace_id: string;
       simple: { limit: number; period: number };
     }[];
     const byBinding = Object.fromEntries(
-      Object.values(LIMITS).map((door) => [door.binding, door.limit]),
+      [...Object.values(LIMITS), BEARER_DOOR].map((door) => [door.binding, door.limit]),
     );
     expect(limits.map((limit) => limit.name).sort()).toEqual(Object.keys(byBinding).sort());
     for (const limit of limits) {
