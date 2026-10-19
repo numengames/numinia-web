@@ -45,6 +45,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'NEW',
         text: 'The screen where you allow an app to connect an AI to your community, in all five languages. It says which app asks and, in large letters, the computer it will go back to, with a warning when that is your own computer. You pick the community, whether it is a new AI with its name or one you connected before, and its role — only the roles you can give. It says plainly what the AI can and cannot do, and that for now it will not hear what is said near it. «Allow» connects it; «Cancel» connects nothing. If you are not signed in, you sign in and come back to the same screen. A link that is missing something shows no form at all.',
       },
+      {
+        type: 'NEW',
+        text: 'Connecting an app like Claude to your community now goes all the way. After you press «Allow», numinia.com hands the AI’s access token straight to Numinia’s connection service, without it ever passing through your browser or appearing in any address, and your browser goes back to the app, which is now connected. The screen first checks that the app is still waiting for that very request and that it is the app and the computer you saw; if not, or if more than ten minutes have passed, nothing is connected and the screen asks you to start again from your app. Only the browser that started the request can finish it, and only once. The app stays connected while it keeps working: if it goes 30 days without being used it has to ask again, and after 90 days it always asks again.',
+      },
     ],
   },
   {

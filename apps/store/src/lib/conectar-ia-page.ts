@@ -1,10 +1,11 @@
 /**
- * «MCP remoto», story W4: the «Conecta tu IA» consent page, /conectar-ia/ in
- * five locales, and its POST /api/conectar-ia. The decision itself is W3's
- * (lib/conectar-ia.ts `connectAi`); this file is what the page reads and
- * what the POST answers.
+ * «MCP remoto», stories W4 and W6: the «Conecta tu IA» consent page,
+ * /conectar-ia/ in five locales, and its POST /api/conectar-ia. The decision
+ * itself is W3's (lib/conectar-ia.ts `connectAi`); this file is what the
+ * page reads and what the POST answers; the hand-off of the token to the
+ * relay is lib/relay-handoff.ts.
  *
- * ## The request contract (the relay, W6, will be its only caller)
+ * ## The request contract (the relay, `apps/mcp`, is its only caller)
  *
  * IN — the relay's `/authorize` sends the browser to
  *
@@ -19,8 +20,9 @@
  *     (16–128 of `[A-Za-z0-9_-]`).
  *   Each is checked with Zod and the page fails closed: one missing or
  *   wrong and it shows no form, only «go back to your AI and ask again».
- *   W6 makes `req` short-lived and binds `app`/`host` to it with a
- *   signature the store checks; until then they are taken as they come.
+ *   The relay keeps `req` 10 minutes and once; the POST asks it (`check`)
+ *   whether it is still waiting for `req` with this very `app` and `host`
+ *   before any AI is made, so an edited link connects nothing.
  *
  * OUT — the page posts JSON (same origin) to /api/conectar-ia:
  *
@@ -29,16 +31,16 @@
  *
  *   and gets `200 { ok: true, connection: { req, action, accountId,
  *   agentId, name, via, hear }, next }`. The AI's token is NEVER in the
- *   answer: it goes to `handOff` (below), whose answer is `next`, the
- *   address the browser goes to. Today `handOff` keeps nothing and `next`
- *   is null, so the page says «done, go back to your app» (the placeholder);
- *   W6 replaces it with one that seals the token for the relay and answers
- *   the relay's `/vuelta?req=…` — the browser never carries the secret in
- *   clear. A refusal answers `{ ok: false, refusal }` — a key of
- *   i18n/conectar-ia.ts `refusals` (400 unreadable, 401 signed out, 403
- *   not allowed or `forbidden` cross-site, 404 no such AI, 409 the name is
- *   taken, 502/503 the till); a body that is not JSON, the store's usual
- *   `{ error }` (415/413/400).
+ *   answer: it goes to the relay through its service binding (`handOff`,
+ *   lib/relay-handoff.ts), which seals it for the browser that started the
+ *   request and answers `next`, the relay's `/vuelta?req=…`, where the
+ *   page sends the browser. With the fixture (CI, screenshots) `next` is
+ *   null and the page says «done, go back to your app». A refusal answers
+ *   `{ ok: false, refusal }` — a key of i18n/conectar-ia.ts `refusals`
+ *   (400 unreadable or a request the relay is not waiting for, 401 signed
+ *   out, 403 not allowed or `forbidden` cross-site, 404 no such AI, 409 the
+ *   name is taken, 502/503 the till or the relay); a body that is not JSON,
+ *   the store's usual `{ error }` (415/413/400).
  *
  * ## CSRF
  *
@@ -60,6 +62,7 @@ import {
   reconnectable,
   type ConnectOutcome,
 } from './conectar-ia';
+import type { Relay } from './relay-handoff';
 import { logEvent } from './telemetry';
 
 /** The page, without its locale prefix. */
@@ -252,20 +255,6 @@ export interface ConsentConnection {
   readonly hear: boolean;
 }
 
-/**
- * Where the AI's token goes once the till has it, and the address the
- * browser goes to next (or null: stay and say «done»). W6 seals it for the
- * relay; it must never log, store in clear or answer the token.
- */
-export type HandOff = (connection: ConsentConnection, token: string) => Promise<string | null>;
-
-/**
- * The placeholder until the relay exists (W6): it keeps nothing. The AI is
- * made (or its old token killed) and nobody holds the new token, which is
- * harmless — the panel's «renew» or the next consent gives a fresh one.
- */
-export const keepNothing: HandOff = async () => null;
-
 /** The context of one POST: this site's origin and the request's. */
 export interface ConsentContext {
   readonly origin: string;
@@ -295,21 +284,28 @@ const STATUS: Readonly<Record<Failure['refusal'], number>> = {
 
 const no = (refusal: string, status: number): Response => answer({ ok: false, refusal }, status);
 
-/** POST /api/conectar-ia: connect the AI the person allowed, or say why not. */
+/** A relay's «no» as the POST answers it: a request it is not waiting for, 400; down, 503. */
+const RELAY_STATUS = { request: 400, unavailable: 503 } as const;
+
+/**
+ * POST /api/conectar-ia: connect the AI the person allowed and hand its
+ * token to the relay, or say why not. Without a relay (no binding, not the
+ * fixture) nothing is made: 503.
+ */
 export async function answerConsent(
   desk: AccountDesk | null,
   asker: Asker | null,
   request: Request,
   context: ConsentContext,
+  relay: Relay | null,
   log: Log = logEvent,
-  handOff: HandOff = keepNothing,
   draw: () => Promise<FreshToken> = newToken,
 ): Promise<Response> {
   if (context.requestOrigin === null || context.requestOrigin !== context.origin) {
     return no('forbidden', 403);
   }
   if (asker === null) return no('signed-out', 401);
-  if (desk === null) return no('unavailable', 503);
+  if (desk === null || relay === null) return no('unavailable', 503);
   const body = await bodyOf(request);
   if (!body.ok) return body.response;
   const parsed = shapes().body.safeParse(body.json);
@@ -319,6 +315,9 @@ export async function answerConsent(
     new URLSearchParams({ app: sent.app, host: sent.host, req: sent.req }).toString(),
   );
   if (consentAsk === null) return no('request', 400);
+  // Before anything is made: is the relay waiting for this request, as the page showed it?
+  const waiting = await relay.check(consentAsk);
+  if (waiting !== 'ok') return no(waiting, RELAY_STATUS[waiting]);
 
   const outcome = await connectAi(
     desk,
@@ -347,6 +346,10 @@ export async function answerConsent(
   };
   // By rule only: never the token, never the request id.
   log({ level: 'info', kind: 'agent-consent', action: connection.action, via: connection.via });
-  const next = await handOff(connection, outcome.token);
-  return answer({ ok: true, connection, next });
+  // Made: the token goes to the relay and nowhere else. Should the relay
+  // refuse now (its 10 minutes ran out meanwhile), nobody holds the token,
+  // which is harmless — the panel's «renew» or the next consent gives a fresh one.
+  const kept = await relay.handOff(connection, outcome.token);
+  if (!kept.ok) return no(kept.refusal, RELAY_STATUS[kept.refusal]);
+  return answer({ ok: true, connection, next: kept.next });
 }

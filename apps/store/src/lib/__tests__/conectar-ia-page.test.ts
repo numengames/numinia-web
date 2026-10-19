@@ -1,8 +1,9 @@
 /**
- * «MCP remoto», story W4: what the «Conecta tu IA» consent page reads
- * (its query, fail closed; the communities and roles on offer) and what its
- * POST answers (lib/conectar-ia-page.ts) — the origin check, the body, every
- * refusal named, and the token that never leaves for the browser.
+ * «MCP remoto», stories W4 and W6: what the «Conecta tu IA» consent page
+ * reads (its query, fail closed; the communities and roles on offer) and
+ * what its POST answers (lib/conectar-ia-page.ts) — the origin check, the
+ * body, every refusal named, the relay asked before anything is made, and
+ * the token that goes to the relay and never to the browser.
  */
 
 import { describe, expect, it, vi } from 'vitest';
@@ -16,10 +17,9 @@ import {
   answerConsent,
   consentChoices,
   consentHref,
-  keepNothing,
   readConsentAsk,
-  type ConsentConnection,
 } from '../conectar-ia-page';
+import { fixtureRelay, vueltaHref, type Relay } from '../relay-handoff';
 
 const ORG = 'acc_team_numen_games';
 const OTHER = 'acc_team_reset';
@@ -36,6 +36,7 @@ const asker = (house = false): Asker => ({ wallet: ME, house });
 
 const FRESH = { token: `ntk_${'x'.repeat(43)}`, hash: 'f'.repeat(64), prefix: 'xxxxxxxx' };
 const draw = async () => FRESH;
+const relay = fixtureRelay;
 
 const query = (over: Record<string, string> = {}): string =>
   new URLSearchParams({ app: 'Claude', host: 'claude.ai', req: REQ, ...over }).toString();
@@ -265,23 +266,32 @@ describe('the POST: who may send it', () => {
   it('refuses, 403, a request without an Origin or from another site — before reading anything', async () => {
     const desk = { agents: vi.fn() } as unknown as AccountDesk;
     for (const requestOrigin of [null, 'https://evil.example', 'http://numinia.com']) {
-      const response = await answerConsent(desk, asker(), post(body()), {
-        origin: ORIGIN,
-        requestOrigin,
-      });
+      const response = await answerConsent(
+        desk,
+        asker(),
+        post(body()),
+        { origin: ORIGIN, requestOrigin },
+        relay,
+      );
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({ ok: false, refusal: 'forbidden' });
     }
     expect((desk as unknown as { agents: ReturnType<typeof vi.fn> }).agents).not.toHaveBeenCalled();
   });
 
-  it('answers 401 signed out and 503 without a till', async () => {
-    const out = await answerConsent(fixture(), null, post(body()), same, quiet);
+  it('answers 401 signed out, and 503 without a till or without a relay', async () => {
+    const out = await answerConsent(fixture(), null, post(body()), same, relay, quiet);
     expect(out.status).toBe(401);
     expect(await out.json()).toEqual({ ok: false, refusal: 'signed-out' });
-    const none = await answerConsent(null, asker(), post(body()), same, quiet);
+    const none = await answerConsent(null, asker(), post(body()), same, relay, quiet);
     expect(none.status).toBe(503);
     expect(await none.json()).toEqual({ ok: false, refusal: 'unavailable' });
+    const desk = fixture();
+    const noRelay = await answerConsent(desk, asker(), post(body()), same, null, quiet, draw);
+    expect([noRelay.status, (await noRelay.json()).refusal]).toEqual([503, 'unavailable']);
+    // Nothing was made.
+    const listed = await desk.agents(ME, ORG);
+    expect(listed.ok && listed.agents.some((agent) => agent.id === 'claude-de-ana')).toBe(false);
   });
 
   it('takes JSON only (a cross-site form cannot send it), and only the shape it names', async () => {
@@ -290,6 +300,7 @@ describe('the POST: who may send it', () => {
       asker(),
       post('req=x', { 'content-type': 'application/x-www-form-urlencoded' }),
       same,
+      relay,
       quiet,
     );
     expect(form.status).toBe(415);
@@ -299,7 +310,7 @@ describe('the POST: who may send it', () => {
       body({ roleId: 7 }),
       { req: REQ },
     ]) {
-      const response = await answerConsent(fixture(), asker(), post(wrong), same, quiet);
+      const response = await answerConsent(fixture(), asker(), post(wrong), same, relay, quiet);
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ ok: false, refusal: 'request' });
     }
@@ -308,25 +319,32 @@ describe('the POST: who may send it', () => {
       body({ host: 'claude ai' }),
       body({ app: ' ' }),
     ]) {
-      const response = await answerConsent(fixture(), asker(), post(badAsk), same, quiet);
+      const response = await answerConsent(fixture(), asker(), post(badAsk), same, relay, quiet);
       expect(response.status).toBe(400);
     }
   });
 });
 
 describe('the POST: connecting', () => {
-  it('makes the AI, hands its token over and never answers it', async () => {
+  it('makes the AI, hands its token to the relay and never answers it', async () => {
     const desk = fixture();
     const log = vi.fn();
-    const handOff = vi.fn(async (_connection: ConsentConnection, _token: string) => null);
+    const check = vi.fn(fixtureRelay.check);
+    const handOff = vi.fn(fixtureRelay.handOff);
     const response = await answerConsent(
       desk,
       asker(),
       post(body({ roleId: MEMBER_ROLE, host: 'LOCALHOST' })),
       same,
+      { check, handOff },
       log,
-      handOff,
     );
+    expect(check).toHaveBeenCalledWith({
+      app: 'Claude',
+      host: 'localhost',
+      req: REQ,
+      loopback: true,
+    });
     expect(response.status).toBe(200);
     const text = await response.text();
     expect(text).not.toContain('ntk_');
@@ -360,8 +378,9 @@ describe('the POST: connecting', () => {
 
   it('reconnects one already made, and sends the browser where the hand-off says', async () => {
     const desk = fixture();
-    const first = await answerConsent(desk, asker(), post(body()), same, quiet, keepNothing, draw);
+    const first = await answerConsent(desk, asker(), post(body()), same, relay, quiet, draw);
     expect(first.status).toBe(200);
+    const next = vueltaHref(REQ);
     const again = await answerConsent(
       desk,
       asker(),
@@ -373,36 +392,59 @@ describe('the POST: connecting', () => {
         }),
       ),
       same,
+      { check: relay.check, handOff: async () => ({ ok: true, next }) },
       quiet,
-      async () => 'https://relay.numinia.com/vuelta?req=abc',
     );
     expect(await again.json()).toMatchObject({
       ok: true,
       connection: { action: 'renew', agentId: 'claude-de-ana', via: 'mcp:chatgpt.com' },
-      next: 'https://relay.numinia.com/vuelta?req=abc',
+      next: 'https://mcp.numinia.com/vuelta?req=req_0123456789abcdef',
     });
   });
 
-  it('the placeholder hand-off keeps nothing', async () => {
-    expect(
-      await keepNothing(
-        {
-          req: REQ,
-          action: 'create',
-          accountId: ORG,
-          agentId: 'a',
-          name: 'A',
-          via: 'mcp:claude.ai',
-          hear: false,
-        },
-        FRESH.token,
-      ),
-    ).toBeNull();
+  it('makes nothing when the relay is not waiting for the request, or is down', async () => {
+    for (const [said, status] of [
+      ['request', 400],
+      ['unavailable', 503],
+    ] as const) {
+      const desk = fixture();
+      const handOff = vi.fn(fixtureRelay.handOff);
+      const refusing: Relay = { check: async () => said, handOff };
+      const response = await answerConsent(
+        desk,
+        asker(),
+        post(body()),
+        same,
+        refusing,
+        quiet,
+        draw,
+      );
+      expect([response.status, (await response.json()).refusal]).toEqual([status, said]);
+      expect(handOff).not.toHaveBeenCalled();
+      const listed = await desk.agents(ME, ORG);
+      expect(listed.ok && listed.agents.some((agent) => agent.id === 'claude-de-ana')).toBe(false);
+    }
+  });
+
+  it('says so when the relay refuses the hand-off (its 10 minutes ran out meanwhile)', async () => {
+    for (const refusal of ['request', 'unavailable'] as const) {
+      const refusing: Relay = {
+        check: fixtureRelay.check,
+        handOff: async () => ({ ok: false, refusal }),
+      };
+      const response = await answerConsent(fixture(), asker(), post(body()), same, refusing, quiet);
+      const text = await response.text();
+      expect([response.status, JSON.parse(text).refusal]).toEqual([
+        refusal === 'request' ? 400 : 503,
+        refusal,
+      ]);
+      expect(text).not.toContain('ntk_');
+    }
   });
 
   it('names every refusal with its status', async () => {
     const desk = fixture();
-    await answerConsent(desk, asker(), post(body()), same, quiet, keepNothing, draw);
+    await answerConsent(desk, asker(), post(body()), same, relay, quiet, draw);
     const cases: [Record<string, unknown>, number, string][] = [
       [body(), 409, 'taken'],
       [body({ ai: { kind: 'new', name: '' } }), 400, 'name'],
@@ -411,15 +453,7 @@ describe('the POST: connecting', () => {
       [body({ accountId: OTHER }), 403, 'till'],
     ];
     for (const [sent, status, refusal] of cases) {
-      const response = await answerConsent(
-        desk,
-        asker(),
-        post(sent),
-        same,
-        quiet,
-        keepNothing,
-        draw,
-      );
+      const response = await answerConsent(desk, asker(), post(sent), same, relay, quiet, draw);
       expect([response.status, (await response.json()).refusal]).toEqual([status, refusal]);
     }
     const house = await answerConsent(
@@ -427,8 +461,8 @@ describe('the POST: connecting', () => {
       asker(true),
       post(body({ accountId: OTHER })),
       same,
+      relay,
       quiet,
-      keepNothing,
       draw,
     );
     expect([house.status, (await house.json()).refusal]).toEqual([403, 'house']);
@@ -440,20 +474,12 @@ describe('the POST: connecting', () => {
         throw new Error(`AccountDesk ${NOT_IMPLEMENTED} agents`);
       }),
     } as unknown as AccountDesk;
-    const unbound = await answerConsent(
-      notBound,
-      asker(),
-      post(body()),
-      same,
-      quiet,
-      keepNothing,
-      draw,
-    );
+    const unbound = await answerConsent(notBound, asker(), post(body()), same, relay, quiet, draw);
     expect([unbound.status, (await unbound.json()).refusal]).toEqual([503, 'unavailable']);
     const down = {
       agents: vi.fn(async () => Promise.reject(new Error('down'))),
     } as unknown as AccountDesk;
-    const failed = await answerConsent(down, asker(), post(body()), same, quiet, keepNothing, draw);
+    const failed = await answerConsent(down, asker(), post(body()), same, relay, quiet, draw);
     expect([failed.status, (await failed.json()).refusal]).toEqual([502, 'failed']);
   });
 });
