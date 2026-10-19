@@ -28,3 +28,22 @@ the hash, so an edit by hand or a half-done refresh fails the tests.
    `test/cuerpo.test.ts` (`VENDORED_SHA256`).
 4. If the bridge's API changed, update `puente-mundo.d.mts`, then
    `npm test --workspace @numinia/mcp`.
+
+## The house's library (`biblioteca.json`)
+
+What an AI may place with `colocar`: the engine's own list of house models,
+each by the sha256 the worlds serve it by. The bridge only sends a model's
+hash, never a file; `src/biblioteca.ts` reads the id, name and hash, and the
+schema of `colocar` lists the ids (story W9).
+
+|          |                                                                                                       |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| upstream | `numengames/numinia-engine`, `features/objetos/biblioteca.json`                                       |
+| commit   | `240002dcc5e3d81c174939f3b6f6c16ce4e35c4b` (the bridge's commit; the file last changed in `36281cc8`) |
+| bytes    | 1 664, sha256 `dd78ba1f7d27046a421d9cf71ea71f9b61c3d6b9ffb715cc4c234cd99b711855`                      |
+| licence  | AGPL-3.0-only, © 2026 Numen Games S.L. (each model's own licence is in the file: CC0 or own work)     |
+
+Copied byte for byte, with no header (it is JSON); `test/herramientas-cuerpo.test.ts`
+checks its hash against this table. Refresh it with the bridge: copy the
+engine's file on the same commit and put its size and `sha256sum` here and in
+that test (`LIBRARY_SHA256`).

@@ -2,7 +2,7 @@
  * The relay's first tools (story W7), through the Worker as a client meets
  * them: a real grant made with the library's own helpers (props as
  * `/vuelta` writes them), its access token on `POST /mcp`, and a fake
- * numinia.com behind `GET /api/agents/me`. `tools/list` shows both;
+ * numinia.com behind `GET /api/agents/me`. `tools/list` shows both first;
  * `mundos` gives what `/me` gives; `quien_soy`'s id is stable across calls
  * and reconnections; a switched-off AI is told so and gets no worlds;
  * numinia.com down is a tool error, not a protocol error; a `401` revokes
@@ -242,15 +242,17 @@ function errorText(answer: ToolAnswer): string {
 }
 
 describe('tools/list', () => {
-  it('shows quien_soy and mundos, with no input and a short description for an AI', async () => {
+  it('shows quien_soy and mundos first, with no input and a short description for an AI', async () => {
     const { access } = await connect();
     const response = await post(access, { method: 'tools/list' });
     const { result } = (await response.json()) as {
       result: { tools: { name: string; description: string; inputSchema: unknown }[] };
     };
-    expect(result.tools.map((listed) => listed.name)).toEqual(['quien_soy', 'mundos']);
-    expect(result.tools).toEqual(TOOLS);
-    for (const listed of result.tools) {
+    // The body's tools follow (herramientas-cuerpo.test.ts).
+    const own = result.tools.slice(0, 2);
+    expect(own.map((listed) => listed.name)).toEqual(['quien_soy', 'mundos']);
+    expect(own).toEqual(TOOLS);
+    for (const listed of own) {
       expect(listed.inputSchema).toEqual({
         type: 'object',
         properties: {},
@@ -494,9 +496,9 @@ describe('what a call brings', () => {
   it('answers an unknown tool or a call without a name with Invalid params', async () => {
     const { access } = await connect();
     const unknown = (await (
-      await post(access, { method: 'tools/call', params: { name: 'entrar' } })
+      await post(access, { method: 'tools/call', params: { name: 'volar' } })
     ).json()) as { error: { code: number; message: string } };
-    expect(unknown.error).toEqual({ code: -32602, message: 'Unknown tool: entrar' });
+    expect(unknown.error).toEqual({ code: -32602, message: 'Unknown tool: volar' });
     for (const params of [undefined, { arguments: {} }, { name: 7 }, []]) {
       const body = (await (await post(access, { method: 'tools/call', params })).json()) as {
         error: { code: number };

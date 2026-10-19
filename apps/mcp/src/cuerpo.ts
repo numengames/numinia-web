@@ -15,8 +15,11 @@
  *   renews the pass 8 minutes after each one, before it ends.
  * - `salir`: leaves; every timer stops (the bridge's 20 Hz clock and pass
  *   renewal, this object's alarm), so workerd may evict the object.
- * - `usar`: what each MCP call made through the body will call (story W9):
- *   it keeps the body from idling out and hands it the newest token.
+ * - `usar`: what each MCP call made through the body calls (story W9,
+ *   herramientas-cuerpo.ts): it keeps the body from idling out, hands it the
+ *   newest token and, given a world tool, runs it through the bridge's own
+ *   MCP server (`ServidorMcp`: the tool's schema checked, the world's
+ *   refusals kept as the answer, untrusted world text inside `<material>`).
  *
  * Rules: a body leaves by itself after 10 minutes without MCP calls; it
  * asks `/me` at most once a minute (each beat, and on `entrar`); a
@@ -35,19 +38,22 @@
  * and the next alarm of the new instance only frees its seat.
  *
  * `oir` stays off for AIs connected by URL ({@link URL_AIS_HEAR}): the
- * world tools W9 exposes come through {@link worldTools}, without it, and
- * what the bridge hears is dropped every minute.
+ * world tools a body runs come through {@link worldTools}, without it, and
+ * what the bridge hears is dropped every minute. What it may place is the
+ * house's library (biblioteca.ts).
  */
 import { getOAuthApi } from '@cloudflare/workers-oauth-provider';
 import { DurableObject } from 'cloudflare:workers';
 import { z } from 'zod';
 import {
   PuenteMundo,
+  ServidorMcp,
   estadoDelPase,
   pedirPaseToken,
   type HerramientaMcp,
   type RespuestaPase,
 } from '../vendor/puente-mundo.mjs';
+import { HOUSE_LIBRARY } from './biblioteca';
 import { storeOrigin, type Env } from './env';
 import { standingOf } from './herramientas';
 import { askMe, type MeAnswer, type MeAsk } from './me';
@@ -87,12 +93,26 @@ const enterShape = z.object({
   mundo: z.string().min(1).max(200),
   grant: grantShape.optional(),
 });
-const useShape = z.object({ props: propsShape, grant: grantShape.optional() });
+const toolShape = z.object({ name: z.string().min(1).max(64), arguments: z.unknown() });
+const useShape = z.object({
+  props: propsShape,
+  grant: grantShape.optional(),
+  tool: toolShape.optional(),
+});
+/** What the bridge's MCP server answers a `tools/call` with. */
+const toolReply = z.object({
+  result: z.object({
+    content: z.array(z.object({ text: z.string() })).min(1),
+    isError: z.boolean().optional(),
+  }),
+});
 
 /** The grant a body came with: what to revoke when numinia.com says `401`. */
 export type BodyGrant = z.infer<typeof grantShape>;
 /** What `entrar` takes: the grant's props, the world's id (from `mundos`) and the grant. */
 export type EnterAsk = z.input<typeof enterShape>;
+/** What `usar` takes: the grant's props, the grant and, for a world tool, its name and arguments. */
+export type UseAsk = z.input<typeof useShape>;
 
 /** Why a body could not do what it was asked. */
 export type Refusal =
@@ -131,7 +151,8 @@ export const REFUSALS: Record<Refusal, string> = {
   input: 'That is not a body request this server understands.',
   unconfigured: 'This server cannot take bodies into worlds right now (it is not configured).',
   'other-ai': 'This body belongs to another AI.',
-  'not-inside': 'You are not in any world: call «entrar» first.',
+  'not-inside':
+    'You are not in any world yet: enter one first with «entrar» {"mundo": "<id>"} (the ids come from «mundos»).',
   revoked:
     'This connection has ended: your token was revoked or renewed on numinia.com (Panel › Agents). Your app has to connect again.',
   busy: 'Too many requests for this AI right now (numinia.com allows 60 a minute). Wait a minute, then try again.',
@@ -148,13 +169,20 @@ export const REFUSALS: Record<Refusal, string> = {
   full: 'Your organization already has 3 AIs inside worlds, the most at once. Try again when one leaves.',
 };
 
-/** What `entrar` and `usar` answer. */
+/** What a world tool answered: the bridge's text, and whether it is a refusal. */
+export interface ToolOutcome {
+  readonly text: string;
+  readonly isError: boolean;
+}
+
+/** What `entrar` and `usar` answer; `result` when `usar` ran a world tool. */
 export type BodyAnswer =
   | {
       readonly ok: true;
       readonly world: string;
       readonly state: 'activa' | 'dormida' | null;
       readonly text: string;
+      readonly result?: ToolOutcome;
     }
   | { readonly ok: false; readonly reason: Refusal; readonly text: string };
 
@@ -199,6 +227,15 @@ const ME_REFUSAL = {
   malformed: 'odd',
   refused: 'odd',
 } as const satisfies Record<string, Refusal>;
+
+/** An answer from inside a world. */
+type Inside = Extract<BodyAnswer, { ok: true }>;
+
+/** A call `usar` let through: the body, and the world tool to run, if any. */
+interface InUse {
+  readonly body: Body;
+  readonly tool: { readonly name: string; readonly arguments: unknown } | null;
+}
 
 const refuse = (reason: Refusal): BodyAnswer => ({ ok: false, reason, text: REFUSALS[reason] });
 const ignore = (): undefined => undefined;
@@ -261,6 +298,7 @@ class Body {
       url: o.ws,
       id: o.me.agentId,
       mundo: o.world,
+      biblioteca: HOUSE_LIBRARY,
       pedirPase: (aud) => o.hooks.pass(this, aud),
       log: (line) => o.hooks.note(this, line),
     });
@@ -301,17 +339,26 @@ export class Cuerpo extends DurableObject<Env> {
     });
   }
 
-  /** One MCP call through the body (story W9): it is in use, with this token. */
+  /**
+   * One MCP call through the body (story W9): it is in use, with this
+   * token; given a world tool, the bridge runs it. The tool runs outside
+   * this object's queue, so a slow world (a build waits for its answer)
+   * holds up neither the alarm nor another call.
+   */
   async usar(input: unknown): Promise<BodyAnswer> {
-    return this.serial(async () => {
+    const used = await this.serial(async (): Promise<BodyAnswer | InUse> => {
       const parsed = useShape.safeParse(input);
       if (!parsed.success) return refuse('input');
       const body = this.inside;
       if (body === null) return refuse('not-inside');
       if (!owns(body, parsed.data.props)) return refuse('other-ai');
       this.touch(body, parsed.data.props.token, parsed.data.grant ?? null);
-      return inAnswer(body, `You are in «${body.world}».`);
+      return { body, tool: parsed.data.tool ?? null };
     });
+    if (!('body' in used)) return used;
+    const answer = inAnswer(used.body, `You are in «${used.body.world}».`);
+    if (used.tool === null) return answer;
+    return { ...answer, result: await this.run(used.body, used.tool.name, used.tool.arguments) };
   }
 
   /** Where the body is and why it last left; never a token or a pass. */
@@ -437,6 +484,30 @@ export class Cuerpo extends DurableObject<Env> {
       void this.serial(() => this.end(body, PASS_REFUSAL[answer.motivo]));
     }
     return answer;
+  }
+
+  /** A world tool through the bridge's own MCP server, over the tools a URL-connected AI may use. */
+  private async run(body: Body, name: string, args: unknown): Promise<ToolOutcome> {
+    const server = new ServidorMcp({
+      nombre: 'numinia',
+      version: '1',
+      herramientas: () => worldTools(body.bridge),
+      log: (line) => this.note(body, line),
+    });
+    const reply = toolReply.safeParse(
+      await server.atender({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name, arguments: args },
+      }),
+    );
+    if (!reply.success) return { text: `This body has no tool «${name}».`, isError: true };
+    const text = reply.data.result.content.map((part) => part.text).join('\n');
+    return {
+      text: text.split(body.token).join('«token»'),
+      isError: reply.data.result.isError === true,
+    };
   }
 
   private note(body: Body, line: string): void {
@@ -582,6 +653,6 @@ function settleFirst(body: Body, answer: RespuestaPase | null): void {
   resolve?.(answer);
 }
 
-function inAnswer(body: Body, text: string): BodyAnswer {
+function inAnswer(body: Body, text: string): Inside {
   return { ok: true, world: body.world, state: body.bridge.estado, text };
 }

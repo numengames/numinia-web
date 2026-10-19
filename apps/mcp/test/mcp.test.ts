@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { TOOLS } from '../src/herramientas';
+import { bodyTools, serverInstructions } from '../src/herramientas-cuerpo';
 import { PROTOCOL_VERSIONS, SERVER_INFO, handleMcp } from '../src/mcp';
 import { MemoryKv } from './memory-kv';
 
@@ -68,6 +69,7 @@ describe('handleMcp', () => {
         protocolVersion: '2025-06-18',
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
+        instructions: serverInstructions(),
       },
     });
   });
@@ -92,7 +94,7 @@ describe('handleMcp', () => {
     expect(await (await rpc({ id: 3, method: 'tools/list' })).json()).toEqual({
       jsonrpc: '2.0',
       id: 3,
-      result: { tools: TOOLS },
+      result: { tools: [...TOOLS, ...bodyTools()] },
     });
   });
 

@@ -19,6 +19,7 @@ import {
 } from '../src/config';
 import worker, { PROVIDER_OPTIONS, type Env } from '../src/worker';
 import { TOOLS } from '../src/herramientas';
+import { bodyTools } from '../src/herramientas-cuerpo';
 import { MemoryKv } from './memory-kv';
 
 const ORIGIN = 'https://mcp.numinia.com';
@@ -260,7 +261,7 @@ describe('PKCE and token lifetimes', () => {
     expect(grantTtl).toBeLessThanOrEqual(REFRESH_TOKEN_TTL_SECONDS);
     expect(REFRESH_TOKEN_TTL_SECONDS).toBe(2_592_000);
 
-    // The access token opens /mcp, which lists no tools yet (W7 adds them).
+    // The access token opens /mcp, which lists the relay's tools and the body's.
     const listed = await call('/mcp', {
       method: 'POST',
       headers: {
@@ -270,7 +271,11 @@ describe('PKCE and token lifetimes', () => {
       body: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list' }),
     });
     expect(listed.status).toBe(200);
-    expect(await json(listed)).toEqual({ jsonrpc: '2.0', id: 7, result: { tools: TOOLS } });
+    expect(await json(listed)).toEqual({
+      jsonrpc: '2.0',
+      id: 7,
+      result: { tools: [...TOOLS, ...bodyTools()] },
+    });
 
     // Refreshing rotates the refresh token and restarts its 30 days.
     const refreshed = await tokenRequest({

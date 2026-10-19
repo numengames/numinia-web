@@ -1,8 +1,9 @@
 /**
  * The MCP endpoint behind the token check: JSON-RPC over Streamable HTTP,
  * written by hand (no SDK). It lists and calls the relay's own tools,
- * `quien_soy` and `mundos` (herramientas.ts, story W7); W8 and W9 add the
- * body in the world. One POST is one message and the relay keeps no
+ * `quien_soy` and `mundos` (herramientas.ts, story W7), then the body's:
+ * `entrar`, `salir` and the bridge's world tools, each run by the AI's own
+ * Durable Object `Cuerpo` (herramientas-cuerpo.ts, story W9). One POST is one message and the relay keeps no
  * session, as the 2026-07-28 transport asks; the `initialize` of earlier
  * revisions is answered so clients of either era connect.
  *
@@ -12,6 +13,7 @@
  */
 import type { Env } from './env';
 import { TOOLS, callTool, isTool, type ToolCall } from './herramientas';
+import { bodyTools, callBodyTool, isBodyTool, serverInstructions } from './herramientas-cuerpo';
 
 /** Revisions whose `initialize` the relay answers, newest first. */
 export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
@@ -52,8 +54,9 @@ async function toolsCall(params: unknown, call: ToolCall): Promise<RpcAnswer> {
     return { error: { code: INVALID_PARAMS, message: 'Invalid params: a tool name is required' } };
   }
   const { name } = params;
-  if (!isTool(name)) return { error: { code: INVALID_PARAMS, message: `Unknown tool: ${name}` } };
-  return { result: await callTool(name, params.arguments, call) };
+  if (isTool(name)) return { result: await callTool(name, params.arguments, call) };
+  if (isBodyTool(name)) return { result: await callBodyTool(name, params.arguments, call) };
+  return { error: { code: INVALID_PARAMS, message: `Unknown tool: ${name}` } };
 }
 
 async function answerOf(method: string, params: unknown, call: ToolCall): Promise<RpcAnswer> {
@@ -72,11 +75,12 @@ function resultOf(method: string, params: unknown): unknown {
         protocolVersion: protocolFor(params),
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
+        instructions: serverInstructions(),
       };
     case 'ping':
       return {};
     case 'tools/list':
-      return { tools: TOOLS };
+      return { tools: [...TOOLS, ...bodyTools()] };
     default:
       return undefined;
   }

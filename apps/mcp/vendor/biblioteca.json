@@ -1,0 +1,42 @@
+{
+  "schema": "numinia-engine/biblioteca@1",
+  "describe": "Lo que se puede colocar en el mundo hoy (H1). Cada modelo por su sha256; el fichero vive en activos/ y el servidor lo sirve en /a/<sha256>.glb. Solo CC0 u obra propia (docs/SABER.md §3.3). test/objetos.test.ts comprueba que cada sha256 es el de su fichero.",
+  "modelos": [
+    {
+      "id": "bloque",
+      "nombre": "Bloque",
+      "modelo": "32fce59977a24c3c15eb40084c700c1537e59853747f92ce1d01c6fd65958588",
+      "fichero": "activos/casa/bloque.glb",
+      "licencia": "CC0-1.0",
+      "autor": "Numen Games (obra propia)",
+      "fuente": "tools/hacer-bloque.mjs"
+    },
+    {
+      "id": "farolillo",
+      "nombre": "Farolillo",
+      "modelo": "911db167762103bbf472a72941f59c22f0c8953d631185b3225d89d87e89baaa",
+      "fichero": "activos/casa/farolillo.glb",
+      "licencia": "CC0-1.0",
+      "autor": "Numen Games (obra propia)",
+      "fuente": "tools/hacer-farolillo.mjs"
+    },
+    {
+      "id": "robot",
+      "nombre": "Robot",
+      "modelo": "047f5e5fb3bb6d378bd1df16ca6137f2a596c99b3a1b5690b4020c05aaf6f319",
+      "fichero": "activos/robot/RobotExpressive.glb",
+      "licencia": "CC0-1.0",
+      "autor": "Tomás Laulhé (Quaternius); cambios de Don McCurdy",
+      "fuente": "https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive"
+    },
+    {
+      "id": "loma",
+      "nombre": "Loma (terreno)",
+      "modelo": "bc858f7faf1aeb21d71ad88a4f6c908a0170a6903f5f706a11e2c7fda5431cf2",
+      "fichero": "activos/terreno/loma.glb",
+      "licencia": "CC0-1.0",
+      "autor": "Numen Games (obra propia)",
+      "fuente": "tools/hacer-terreno.mjs"
+    }
+  ]
+}

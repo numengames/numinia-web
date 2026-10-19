@@ -29,7 +29,7 @@ import { askMe, type Me } from './me';
 export const WHO_AM_I = 'quien_soy';
 export const WORLDS = 'mundos';
 
-/** The tool that will take the AI into a world (story W8) and its argument. */
+/** The tool that takes the AI into a world (herramientas-cuerpo.ts, story W9). */
 export const ENTER_TOOL = 'entrar';
 
 /** The permission that lets an AI into its organization's worlds (the till's act). */
@@ -258,7 +258,7 @@ function worlds(me: Me): ToolResult {
   return success({
     organization: me.org,
     worlds: list,
-    note: `To enter one, call «${ENTER_TOOL}» with {"mundo": "<id>"} (coming soon on this server).`,
+    note: `To enter one, call «${ENTER_TOOL}» with {"mundo": "<id>"}.`,
   });
 }
 

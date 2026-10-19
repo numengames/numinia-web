@@ -1,5 +1,6 @@
 # Verbatim copies of the generated kit — digest-pinned in design-source.json
 packages/ui/src/sistema.css
 apps/store/src/scripts/sistema.js
-# Vendored engine bundle — hash-pinned in apps/mcp/vendor/VENDOR.md
+# Vendored engine files — hash-pinned in apps/mcp/vendor/VENDOR.md
 apps/mcp/vendor/puente-mundo.mjs
+apps/mcp/vendor/biblioteca.json

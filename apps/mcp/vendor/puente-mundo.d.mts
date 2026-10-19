@@ -21,6 +21,14 @@ export interface HerramientaMcp {
   ejecutar: (args: Record<string, unknown>) => Promise<string> | string;
 }
 
+/** One model of a library the body may place (obra.ts `Modelo3D`). */
+export interface Modelo3D {
+  readonly id: string;
+  readonly nombre: string;
+  /** Its sha256: what the world knows it by. */
+  readonly modelo: string;
+}
+
 /** One line heard near the body (kept for `oir`). */
 export interface Oida {
   n: number;
@@ -51,6 +59,7 @@ export declare class PuenteMundo {
     id: string;
     pedirPase?: PedirPase;
     mundo?: string;
+    biblioteca?: readonly Modelo3D[];
     renovarMs?: number;
     log?: (line: string) => void;
     ahora?: () => number;
@@ -62,6 +71,27 @@ export declare class PuenteMundo {
   parar(): void;
   herramientas(): HerramientaMcp[];
 }
+
+/** One JSON-RPC answer of {@link ServidorMcp} (mcp.ts). */
+export type RespuestaRpc =
+  | { jsonrpc: '2.0'; id: unknown; result: unknown }
+  | { jsonrpc: '2.0'; id: unknown; error: { code: number; message: string } };
+
+/** The bridge's MCP server: checks a call's arguments against the tool's schema, runs it, keeps its errors as results. */
+export declare class ServidorMcp {
+  constructor(o: {
+    nombre: string;
+    version: string;
+    herramientas: () => HerramientaMcp[];
+    instrucciones?: string;
+    log?: (line: string) => void;
+  });
+  /** One parsed message → its answer (null for a notification). Never throws. */
+  atender(m: unknown): Promise<RespuestaRpc | RespuestaRpc[] | null>;
+}
+
+/** What the bridge tells the model about itself (MCP initialize «instructions»). */
+export declare const INSTRUCCIONES: string;
 
 /** The token way: POST /api/agents/pass with `Authorization: Bearer <token>`. Throws on a token of the wrong shape. */
 export declare function pedirPaseToken(o: {
