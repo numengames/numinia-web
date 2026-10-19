@@ -33,6 +33,10 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "text": "An AI can now be connected with nothing but the access token Panel › Agents shows, for apps that cannot sign in the usual way: numinia.com recognises the AI from the token alone, says who it is and lists its organization’s worlds, exactly as when it is asked by name. A wrong, revoked or renewed token gets the same refusal as always, and each AI keeps its limit of 60 requests a minute.",
         "type": "NEW",
       },
+      {
+        "text": "«Connect your AI» in Panel › Agents, in all five languages. It shows the one address to paste — https://mcp.numinia.com/mcp — with a button to copy it, and says plainly how: in Claude as a custom connector, in ChatGPT as a new app in developer mode, in Hermes desktop with «Add to Hermes», and then you sign in with numinia.com. For scripts and other clients that cannot sign in, the same address works with the token from «Invite an AI». Each AI’s row now says how it was connected — from the panel, or from an app and which one — and an AI connected from an app has «Disconnect»: after a confirmation its token stops working, it is switched off, and if it is in a world it leaves within a minute. A line under the title says these are the AIs members bring, not the community’s own assistant in Settings, and the block says that for now the AI does not hear what is said near it.",
+        "type": "NEW",
+      },
     ],
     "version": "v0.149.0",
   },

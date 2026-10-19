@@ -53,7 +53,7 @@ const isStrings = (value: unknown): value is string[] =>
 function readAgent(value: unknown): DeskAgent | null {
   if (!isRecord(value)) return null;
   const { id, name, auth, publicKey, enabled, state, status, responsible, responsibleName } = value;
-  const { tokenPrefix, tokenCreatedAt } = value;
+  const { tokenPrefix, tokenCreatedAt, via } = value;
   const { createdAt, updatedAt, roleIds, assignable, mayEdit } = value;
   if (
     typeof id !== 'string' ||
@@ -62,6 +62,7 @@ function readAgent(value: unknown): DeskAgent | null {
     (publicKey !== undefined && typeof publicKey !== 'string') ||
     (tokenPrefix !== undefined && typeof tokenPrefix !== 'string') ||
     (tokenCreatedAt !== undefined && typeof tokenCreatedAt !== 'string') ||
+    (via !== undefined && typeof via !== 'string') ||
     typeof enabled !== 'boolean' ||
     typeof state !== 'string' ||
     !STATES.includes(state) ||
@@ -84,6 +85,7 @@ function readAgent(value: unknown): DeskAgent | null {
     ...(tokenPrefix === undefined || tokenCreatedAt === undefined
       ? {}
       : { tokenPrefix, tokenCreatedAt }),
+    ...(via === undefined ? {} : { via }),
     enabled,
     // The closed lists were checked above.
     state: state as AgentState,
@@ -276,7 +278,8 @@ export type Change =
   | { readonly state: AgentState }
   | { readonly giveRole: string }
   | { readonly takeRole: string }
-  | { readonly renewToken: true };
+  | { readonly renewToken: true }
+  | { readonly revokeToken: true };
 
 export function changeBody(accountId: string, id: string, change: Change): Record<string, unknown> {
   return { accountId, id, ...change };
@@ -317,6 +320,64 @@ export function connectCommand(input: {
     'hermes mcp test numinia-mundo',
   ].join('\n');
 }
+
+/**
+ * The relay's address (apps/mcp, `RESOURCE`): the one URL a person pastes in
+ * Claude, ChatGPT or Hermes. Written here because lib/relay-handoff.ts, which
+ * holds `RELAY_ORIGIN`, carries zod; a test pins the two together.
+ */
+export const RELAY_URL = 'https://mcp.numinia.com/mcp';
+
+/** The name the relay takes in a person's Hermes (`hermes mcp add <name>`). */
+const HERMES_NAME = 'numinia';
+
+/**
+ * Hermes desktop's «Add to Hermes» link for the relay with its login
+ * (hermes-agent docs, MCP config reference › «Add to Hermes link»:
+ * `hermes://mcp/install?name=NAME&config=BASE64`, the config as base64url
+ * JSON with a `url`; `auth: oauth` makes Hermes sign in through the browser).
+ * Opening it installs nothing: Hermes shows the config and asks first.
+ */
+export function hermesInstallLink(url: string = RELAY_URL): string {
+  const config = btoa(JSON.stringify({ url, auth: 'oauth' }))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `hermes://mcp/install?name=${HERMES_NAME}&config=${config}`;
+}
+
+/**
+ * The line for a client that cannot sign in (Hermes on a server, a script's
+ * Hermes): the same address with the panel's token. `hermes mcp add --auth
+ * header` asks for «API key / Bearer token» and sends it in the
+ * Authorization header as a bearer token, which the relay takes (W11).
+ */
+export const hermesTokenCommand = (url: string = RELAY_URL): string =>
+  `hermes mcp add ${HERMES_NAME} --url ${url} --auth header`;
+
+/** How an AI was connected, as its row says it: from the panel, from an app by URL (and its host), or not known. */
+export type Connection =
+  { readonly kind: 'panel' } | { readonly kind: 'url'; readonly host: string } | null;
+
+const VIA_URL = /^mcp:([a-z0-9.-]{1,253})$/;
+
+export function connectionOf(agent: Pick<DeskAgent, 'via'>): Connection {
+  if (agent.via === 'panel') return { kind: 'panel' };
+  const host = VIA_URL.exec(agent.via ?? '')?.[1];
+  return host === undefined ? null : { kind: 'url', host };
+}
+
+/**
+ * Whether the row offers «Desconectar»: an AI connected from an app by URL
+ * that still holds its token, to someone who may handle it. It is the panel's
+ * revoke (`revokeToken`): the till drops the token and switches it off, and
+ * the relay drops its connection the next time it asks.
+ */
+export const disconnectable = (agent: DeskAgent): boolean =>
+  agent.mayEdit &&
+  agent.auth === 'token' &&
+  agent.tokenPrefix !== undefined &&
+  connectionOf(agent)?.kind === 'url';
 
 /** The row's token line parts: the prefix as shown (`ntk_ab12cd34…`) and the day it was made. */
 export function tokenLine(

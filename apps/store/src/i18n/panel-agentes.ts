@@ -89,6 +89,41 @@ export interface AgentesMessages {
     readonly renewNo: string;
     readonly renewing: string;
   };
+  /** Under the title: whose AIs these are — not Ajustes › «Agente IA», the community's own assistant. */
+  readonly subtitle: string;
+  /** «Conecta tu IA» (paso 2): the relay's address and how each kind of app uses it. */
+  readonly url: {
+    readonly title: string;
+    readonly intro: string;
+    /** The address's label, for screen readers. */
+    readonly label: string;
+    readonly claude: string;
+    readonly chatgpt: string;
+    readonly hermes: string;
+    /** The «Add to Hermes» link (hermes://mcp/install). */
+    readonly hermesAdd: string;
+    /** Clients that cannot sign in: the address with the panel's token; the Hermes line follows. */
+    readonly noLogin: string;
+    readonly copyCommand: string;
+    /** An AI connected by URL does not hear nearby chat for now. */
+    readonly hear: string;
+  };
+  /** How a row's AI is connected (`via`), and «Desconectar» for one connected from an app. */
+  readonly connection: {
+    readonly panel: string;
+    /** `{host}`: the app's host. */
+    readonly url: string;
+    /** `{host}`: an AI connected by URL whose token was revoked. */
+    readonly urlNone: string;
+    readonly disconnect: string;
+    /** `{name}`: the row's button, for screen readers. */
+    readonly disconnectLabel: string;
+    /** `{name}`, `{host}`. */
+    readonly disconnectAsk: string;
+    readonly disconnectYes: string;
+    readonly disconnectNo: string;
+    readonly disconnecting: string;
+  };
   /** What the invitation adds to the world's (the roles of «También construir»). */
   readonly dialog: {
     readonly rolesLabel: string;
@@ -185,6 +220,37 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: 'No, dejarlo',
       renewing: 'Renovando…',
     },
+    subtitle:
+      'IAs que traen los miembros. El asistente propio de la comunidad es otra cosa: está en Ajustes › Agente IA.',
+    url: {
+      title: 'Conecta tu IA',
+      intro:
+        'Pega esta dirección en tu IA y entra con numinia.com: eliges la comunidad, el nombre de la IA y su rol.',
+      label: 'Dirección para tu IA',
+      claude:
+        'En Claude: añade un conector personalizado y pega la dirección. Se abre numinia.com para que entres.',
+      chatgpt:
+        'En ChatGPT: activa el modo desarrollador, crea una app nueva y pega la dirección. Se abre numinia.com para que entres.',
+      hermes:
+        'En Hermes de escritorio: «Añadir a Hermes» lo deja preparado; confírmalo y entra con numinia.com.',
+      hermesAdd: 'Añadir a Hermes',
+      noLogin:
+        'Sin inicio de sesión (scripts, Hermes en un servidor): la misma dirección con el token de «Invitar a una IA» › «Con un token». En Hermes, esta línea te pide el token:',
+      copyCommand: 'Copiar la línea',
+      hear: 'Por ahora la IA no oye lo que se habla cerca de ella en los mundos.',
+    },
+    connection: {
+      panel: 'Conectada desde el panel',
+      url: 'Conectada desde {host}',
+      urlNone: 'Desconectada. Para volver, conéctala otra vez desde {host}.',
+      disconnect: 'Desconectar',
+      disconnectLabel: 'Desconectar a {name}',
+      disconnectAsk:
+        '¿Desconectar a {name}? Se apaga y su conexión desde {host} deja de valer. Si está en un mundo, sale en su siguiente comprobación: un minuto como mucho.',
+      disconnectYes: 'Sí, desconectar',
+      disconnectNo: 'No, dejarla',
+      disconnecting: 'Desconectando…',
+    },
     dialog: {
       rolesLabel: '¿Con qué roles?',
       rolesHint: 'Tendrá el acceso de estos roles, recortado a lo que puedes tú.',
@@ -278,6 +344,37 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: 'No, keep it',
       renewing: 'Renewing…',
     },
+    subtitle:
+      'AIs that members bring. The community’s own assistant is something else: it is in Settings › AI agent.',
+    url: {
+      title: 'Connect your AI',
+      intro:
+        'Paste this address into your AI and sign in with numinia.com: you pick the community, the AI’s name and its role.',
+      label: 'Address for your AI',
+      claude:
+        'In Claude: add a custom connector and paste the address. numinia.com opens for you to sign in.',
+      chatgpt:
+        'In ChatGPT: turn on developer mode, create a new app and paste the address. numinia.com opens for you to sign in.',
+      hermes:
+        'In Hermes desktop: «Add to Hermes» sets it up; confirm it and sign in with numinia.com.',
+      hermesAdd: 'Add to Hermes',
+      noLogin:
+        'Without signing in (scripts, Hermes on a server): the same address with the token from «Invite an AI» › «With a token». In Hermes, this line asks you for the token:',
+      copyCommand: 'Copy the line',
+      hear: 'For now the AI does not hear what is said near it in the worlds.',
+    },
+    connection: {
+      panel: 'Connected from the panel',
+      url: 'Connected from {host}',
+      urlNone: 'Disconnected. To come back, connect it again from {host}.',
+      disconnect: 'Disconnect',
+      disconnectLabel: 'Disconnect {name}',
+      disconnectAsk:
+        'Disconnect {name}? It is switched off and its connection from {host} stops working. If it is in a world, it leaves at its next check: within a minute.',
+      disconnectYes: 'Yes, disconnect',
+      disconnectNo: 'No, keep it',
+      disconnecting: 'Disconnecting…',
+    },
     dialog: {
       rolesLabel: 'With which roles?',
       rolesHint: 'It will have the access of these roles, cut down to what you can do.',
@@ -369,6 +466,37 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewYes: 'はい、更新',
       renewNo: 'いいえ',
       renewing: '更新中…',
+    },
+    subtitle:
+      'メンバーが連れてくるAIです。コミュニティ自身のアシスタントは別のもので、設定 › AIエージェント にあります。',
+    url: {
+      title: 'AIをつなぐ',
+      intro:
+        'このアドレスをAIに貼り付けて、numinia.comでログインします。コミュニティ、AIの名前、ロールを選びます。',
+      label: 'AI用のアドレス',
+      claude:
+        'Claudeでは：カスタムコネクタを追加してアドレスを貼り付けます。numinia.comが開くのでログインします。',
+      chatgpt:
+        'ChatGPTでは：開発者モードをオンにし、新しいアプリを作成してアドレスを貼り付けます。numinia.comが開くのでログインします。',
+      hermes:
+        'Hermesデスクトップでは：「Hermesに追加」で準備できます。確認してnuminia.comでログインします。',
+      hermesAdd: 'Hermesに追加',
+      noLogin:
+        'ログインなし（スクリプト、サーバー上のHermes）：同じアドレスに「AIを招待」›「トークンで接続」のトークンを使います。Hermesでは、この1行がトークンを尋ねます：',
+      copyCommand: 'この行をコピー',
+      hear: '今のところ、AIは世界の中で近くの会話を聞きません。',
+    },
+    connection: {
+      panel: 'パネルから接続',
+      url: '{host} から接続',
+      urlNone: '接続が切れています。戻すには {host} からもう一度接続してください。',
+      disconnect: '接続を切る',
+      disconnectLabel: '{name} の接続を切る',
+      disconnectAsk:
+        '{name} の接続を切りますか？オフになり、{host} からの接続は無効になります。世界にいる場合は、次の確認で退出します（長くても1分）。',
+      disconnectYes: 'はい、切る',
+      disconnectNo: 'いいえ、残す',
+      disconnecting: '切断中…',
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -462,6 +590,37 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: '아니요',
       renewing: '갱신 중…',
     },
+    subtitle:
+      '멤버가 데려오는 AI입니다. 커뮤니티 자체의 도우미는 다른 것으로, 설정 › AI 에이전트에 있습니다.',
+    url: {
+      title: 'AI 연결하기',
+      intro:
+        '이 주소를 AI에 붙여 넣고 numinia.com으로 로그인하세요. 커뮤니티, AI 이름, 역할을 고릅니다.',
+      label: 'AI용 주소',
+      claude:
+        'Claude에서: 사용자 지정 커넥터를 추가하고 주소를 붙여 넣으세요. numinia.com이 열리면 로그인합니다.',
+      chatgpt:
+        'ChatGPT에서: 개발자 모드를 켜고 새 앱을 만든 뒤 주소를 붙여 넣으세요. numinia.com이 열리면 로그인합니다.',
+      hermes:
+        'Hermes 데스크톱에서: «Hermes에 추가»로 준비됩니다. 확인하고 numinia.com으로 로그인하세요.',
+      hermesAdd: 'Hermes에 추가',
+      noLogin:
+        '로그인 없이 (스크립트, 서버의 Hermes): 같은 주소에 «AI 초대» › «토큰으로»의 토큰을 씁니다. Hermes에서는 이 한 줄이 토큰을 묻습니다:',
+      copyCommand: '이 줄 복사',
+      hear: '지금은 AI가 세계에서 근처의 대화를 듣지 않습니다.',
+    },
+    connection: {
+      panel: '패널에서 연결됨',
+      url: '{host}에서 연결됨',
+      urlNone: '연결이 끊겼습니다. 다시 쓰려면 {host}에서 다시 연결하세요.',
+      disconnect: '연결 끊기',
+      disconnectLabel: '{name} 연결 끊기',
+      disconnectAsk:
+        '{name}의 연결을 끊을까요? 꺼지고 {host}에서의 연결은 더 이상 유효하지 않습니다. 세계에 있다면 다음 확인 때 나갑니다(길어도 1분).',
+      disconnectYes: '네, 끊기',
+      disconnectNo: '아니요, 그대로 둠',
+      disconnecting: '끊는 중…',
+    },
     dialog: {
       rolesLabel: '어떤 역할로 할까요?',
       rolesHint: '이 역할들의 권한을 갖되, 당신이 할 수 있는 범위로 줄어듭니다.',
@@ -554,6 +713,37 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewYes: 'Sim, renovar',
       renewNo: 'Não, manter',
       renewing: 'Renovando…',
+    },
+    subtitle:
+      'IAs que os membros trazem. O assistente próprio da comunidade é outra coisa: fica em Configurações › Agente de IA.',
+    url: {
+      title: 'Conecte sua IA',
+      intro:
+        'Cole este endereço na sua IA e entre com numinia.com: você escolhe a comunidade, o nome da IA e o papel dela.',
+      label: 'Endereço para a sua IA',
+      claude:
+        'No Claude: adicione um conector personalizado e cole o endereço. O numinia.com abre para você entrar.',
+      chatgpt:
+        'No ChatGPT: ative o modo desenvolvedor, crie um app novo e cole o endereço. O numinia.com abre para você entrar.',
+      hermes:
+        'No Hermes para desktop: «Adicionar ao Hermes» deixa tudo pronto; confirme e entre com numinia.com.',
+      hermesAdd: 'Adicionar ao Hermes',
+      noLogin:
+        'Sem login (scripts, Hermes num servidor): o mesmo endereço com o token de «Convidar uma IA» › «Com um token». No Hermes, esta linha pede o token:',
+      copyCommand: 'Copiar a linha',
+      hear: 'Por enquanto a IA não ouve o que se fala perto dela nos mundos.',
+    },
+    connection: {
+      panel: 'Conectada pelo painel',
+      url: 'Conectada de {host}',
+      urlNone: 'Desconectada. Para voltar, conecte de novo a partir de {host}.',
+      disconnect: 'Desconectar',
+      disconnectLabel: 'Desconectar {name}',
+      disconnectAsk:
+        'Desconectar {name}? Ela é desligada e a conexão de {host} deixa de valer. Se estiver num mundo, sai na próxima verificação: em um minuto, no máximo.',
+      disconnectYes: 'Sim, desconectar',
+      disconnectNo: 'Não, manter',
+      disconnecting: 'Desconectando…',
     },
     dialog: {
       rolesLabel: 'Com quais papéis?',
