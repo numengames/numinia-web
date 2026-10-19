@@ -126,6 +126,9 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `panel-agentes-role-select`, `panel-agentes-role-give`, `panel-agentes-role-take`,
 //   `panel-agentes-remove` (+ `-yes`, `-no`), `panel-agentes-invite` and the invitation's
 //   `panel-agentes-invite-<name|ability-talk|ability-build|role|copy|key|next|back|cancel|add>`.
+// - Their token way (cut 2, 2026-10-17): the invitation's `panel-agentes-invite-<via-token|via-key|add-token>`,
+//   the show-once screen's `panel-agentes-token-<copy|copy-connect|done>` and a row's
+//   `panel-agentes-token-renew` (+ `-yes`, `-no`).
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----

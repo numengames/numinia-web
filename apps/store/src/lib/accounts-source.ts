@@ -203,6 +203,14 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.changeAgent === 'function'
         ? stub.changeAgent(wallet, accountId, agentId, change, house)
         : absent('changeAgent'),
+    renewAgentToken: (wallet, accountId, agentId, tokenHash, tokenPrefix, house) =>
+      typeof desk.renewAgentToken === 'function'
+        ? stub.renewAgentToken(wallet, accountId, agentId, tokenHash, tokenPrefix, house)
+        : absent('renewAgentToken'),
+    revokeAgentToken: (wallet, accountId, agentId, house) =>
+      typeof desk.revokeAgentToken === 'function'
+        ? stub.revokeAgentToken(wallet, accountId, agentId, house)
+        : absent('revokeAgentToken'),
     removeAgent: (wallet, accountId, agentId, house) =>
       typeof desk.removeAgent === 'function'
         ? stub.removeAgent(wallet, accountId, agentId, house)

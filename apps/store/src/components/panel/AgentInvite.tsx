@@ -1,14 +1,17 @@
 /**
- * The invitation to an AI of the community, in the panel's «Agentes»: three
- * steps like the world's own (components/mundos/AiSection.tsx — its words,
- * its slug rule and its key rule are reused, lib/world-door.ts):
- *   1. the name and what it may do — «Solo mirar y hablar» carries no role,
- *      «Mirar, hablar y también construir» takes roles among the ones the
- *      asker may assign;
- *   2. the one line that makes its key where it lives, and the public key
- *      it prints, pasted;
- *   3. the summary and «Añadir».
- * Nothing is sent before the last step.
+ * The invitation to an AI of the community, in the panel's «Agentes»: the
+ * world's own (components/mundos/AiSection.tsx — its words, its slug rule and
+ * its key rule are reused, lib/world-door.ts), with the way to connect chosen
+ * at the top of step 1:
+ *   1. how it connects — «Con un token (lo más fácil)», the default, or «Con mi
+ *      propia llave (avanzado)» — the name and what it may do («Solo mirar y
+ *      hablar» carries no role, «Mirar, hablar y también construir» takes roles
+ *      among the ones the asker may assign). With a token, «Añadir» sends it
+ *      and the secret is shown once (./AgentToken.tsx); the invitation is over.
+ *   2. (key way) the one line that makes its key where it lives, and the
+ *      public key it prints, pasted;
+ *   3. (key way) the summary and «Añadir».
+ * Nothing is sent before «Añadir».
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -26,12 +29,20 @@ import {
 } from '../../lib/world-door';
 import { RoleDot } from './PeopleBits';
 
-export interface Draft {
-  readonly id: string;
-  readonly name: string;
-  readonly publicKey: string;
-  readonly roleIds: readonly string[];
-}
+export type Draft =
+  | {
+      readonly auth: 'key';
+      readonly id: string;
+      readonly name: string;
+      readonly publicKey: string;
+      readonly roleIds: readonly string[];
+    }
+  | {
+      readonly auth: 'token';
+      readonly id: string;
+      readonly name: string;
+      readonly roleIds: readonly string[];
+    };
 
 export function InviteDialog({
   world,
@@ -52,6 +63,7 @@ export function InviteDialog({
   readonly onAdd: (draft: Draft) => Promise<Failure | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [via, setVia] = useState<'token' | 'key'>('token');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState('');
   const [ability, setAbility] = useState<Ability>('talk');
@@ -94,12 +106,12 @@ export function InviteDialog({
   const add = async (): Promise<void> => {
     setBusy(true);
     setFailed(null);
-    const result = await onAdd({
-      id,
-      name: name.trim(),
-      publicKey: key.trim(),
-      roleIds: roleIdsFor(ability, picked),
-    });
+    const common = { id, name: name.trim(), roleIds: roleIdsFor(ability, picked) };
+    const result = await onAdd(
+      via === 'token'
+        ? { auth: 'token', ...common }
+        : { auth: 'key', publicKey: key.trim(), ...common },
+    );
     setBusy(false);
     if (result !== null) setFailed(result);
   };
@@ -122,11 +134,48 @@ export function InviteDialog({
     >
       <div className="mundo-ia-cabeza">
         <h2>{world.title}</h2>
-        <p className="saldo-nota">{fill(world.step, { n: step })}</p>
+        {via === 'key' && <p className="saldo-nota">{fill(world.step, { n: step })}</p>}
       </div>
       <div className="mundo-ia-cuerpo">
         {step === 1 && (
           <>
+            <fieldset className="mundo-ia-opciones agentes-via" data-agentes-via={via}>
+              <legend>{words.access.legend}</legend>
+              <label
+                className="agentes-opcion"
+                data-agentes-via-option="token"
+                data-selected={via === 'token'}
+              >
+                <input
+                  type="radio"
+                  name="agentes-via"
+                  checked={via === 'token'}
+                  onChange={() => setVia('token')}
+                  data-metric="panel-agentes-invite-via-token"
+                />
+                <span className="agentes-opcion-cuerpo">
+                  <span className="agentes-opcion-nombre">{words.access.viaToken}</span>
+                  <span className="saldo-nota">{words.access.viaTokenHint}</span>
+                </span>
+              </label>
+              <label
+                className="agentes-opcion"
+                data-agentes-via-option="key"
+                data-selected={via === 'key'}
+              >
+                <input
+                  type="radio"
+                  name="agentes-via"
+                  checked={via === 'key'}
+                  onChange={() => setVia('key')}
+                  data-metric="panel-agentes-invite-via-key"
+                />
+                <span className="agentes-opcion-cuerpo">
+                  <span className="agentes-opcion-nombre">{words.access.viaKey}</span>
+                  <span className="saldo-nota">{words.access.viaKeyHint}</span>
+                </span>
+              </label>
+            </fieldset>
             <label className="mundo-ia-campo">
               <span>{world.nameLabel}</span>
               <input
@@ -278,7 +327,7 @@ export function InviteDialog({
             {world.back}
           </button>
         )}
-        {step === 1 && (
+        {step === 1 && via === 'key' && (
           <button
             type="button"
             className="btn btn-primario"
@@ -289,6 +338,21 @@ export function InviteDialog({
             data-metric="panel-agentes-invite-next"
           >
             {world.next}
+          </button>
+        )}
+        {step === 1 && via === 'token' && (
+          <button
+            type="button"
+            className="btn btn-primario"
+            onClick={() => {
+              setTouched(true);
+              if (nameError === null && rolesError === null) void add();
+            }}
+            disabled={busy}
+            aria-busy={busy}
+            data-metric="panel-agentes-invite-add-token"
+          >
+            {busy ? words.access.adding : words.access.add}
           </button>
         )}
         {step === 2 && (

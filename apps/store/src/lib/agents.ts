@@ -13,16 +13,27 @@
  *   sig    Ed25519 (base64url, 64 bytes) over the ASCII bytes of
  *          `numinia-agent-pass:<org>:<agent>:<aud>:<t>` with the agent's key
  *   t      seconds since the epoch; |now − t| ≤ 60
+ * ── The other way in: an access token (cut 2, POST /api/agents/pass) ────────
+ *   header Authorization: Bearer ntk_<43 base64url>   body { org, agent, aud }
+ * A token is `ntk_` and 32 random bytes in base64url. It is shown once, when
+ * the panel creates or renews it, and only its SHA-256 (hex) and its first 8
+ * characters are kept: the till holds them, this file draws and hashes. A bearer
+ * is a secret, not a signature, so it needs no nonce and no `t`.
+ *
  * The key the till keeps for the agent is `ed25519:` + the 32 raw bytes in
  * base64url (43 characters), the engine's rule (tools/agente.ts).
  */
 
-import { b64urlDecode } from './world-pass';
+import { b64urlDecode, b64urlEncode } from './world-pass';
 
 export const AGENT_PROBLEMS = {
   agentId:
     'agentId must be 1 to 32 characters: lower case letters, digits and hyphens, none at either end',
-  draft: 'agent must be an object with id, name, publicKey and, if any, roleIds',
+  draft:
+    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds',
+  tokenHash: 'tokenHash must be the SHA-256 of a token: 64 lower case hexadecimal characters',
+  tokenPrefix: 'tokenPrefix must be 8 base64url characters',
+  notToken: 'that agent connects with a key, not a token',
   name: 'name must be 1 to 40 characters, none of them a control character',
   publicKey: 'publicKey must be ed25519: and 43 base64url characters (a 32-byte key)',
   roleIds: 'roleIds must be a list of at most 10 role ids',
@@ -116,3 +127,66 @@ export async function verifyRequest(
 /** Whether `t` is within the window of `now` (both in seconds). */
 export const inWindow = (t: number, now: number): boolean =>
   Math.abs(now - t) <= PASS_WINDOW_SECONDS;
+
+// ---- Access tokens ---------------------------------------------------------
+
+/** What every token starts with, so a leaked one is recognised by a scanner. */
+export const TOKEN_PREFIX = 'ntk_';
+const TOKEN = /^ntk_[A-Za-z0-9_-]{43}$/;
+const TOKEN_HASH = /^[0-9a-f]{64}$/;
+const TOKEN_PREFIX_TEXT = /^[A-Za-z0-9_-]{8}$/;
+
+/** A SHA-256 in lower case hex, as the till reads a token hash. */
+export const isTokenHash = (value: unknown): value is string =>
+  typeof value === 'string' && TOKEN_HASH.test(value);
+
+/** The 8 base64url characters kept to tell tokens apart, as the till reads them. */
+export const isTokenPrefix = (value: unknown): value is string =>
+  typeof value === 'string' && TOKEN_PREFIX_TEXT.test(value);
+
+export interface FreshToken {
+  /** The secret. Shown once; never stored, logged or put in an error. */
+  readonly token: string;
+  /** SHA-256 of the token, in lower case hex: what the till keeps. */
+  readonly hash: string;
+  /** The 8 characters after `ntk_`, to tell tokens apart in a list. */
+  readonly prefix: string;
+}
+
+const hex = (bytes: ArrayBuffer): string =>
+  [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+
+/** SHA-256 of a token's text, in lower case hex. */
+export async function hashToken(token: string): Promise<string> {
+  return hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token)));
+}
+
+/** A new token: 32 bytes from `crypto.getRandomValues`, 43 base64url characters. */
+export async function newToken(): Promise<FreshToken> {
+  const token = `${TOKEN_PREFIX}${b64urlEncode(crypto.getRandomValues(new Uint8Array(32)))}`;
+  return {
+    token,
+    hash: await hashToken(token),
+    prefix: token.slice(TOKEN_PREFIX.length, TOKEN_PREFIX.length + 8),
+  };
+}
+
+/** The token a request carries as `Authorization: Bearer <token>`, or null when it is not shaped like one. */
+export function bearerOf(header: string | null): string | null {
+  const match = header === null ? null : /^Bearer ([^\s]+)$/.exec(header);
+  const token = match?.[1] ?? '';
+  return TOKEN.test(token) ? token : null;
+}
+
+/**
+ * Whether two strings are the same, looking at every character of the longer
+ * one whatever the first difference (a constant-time comparison of secrets:
+ * a length that differs is a difference, found at the end).
+ */
+export function sameSecret(a: string, b: string): boolean {
+  let difference = a.length ^ b.length;
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    difference |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return difference === 0;
+}

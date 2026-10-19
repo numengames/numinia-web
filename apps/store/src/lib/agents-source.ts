@@ -6,14 +6,21 @@
  * log). Nothing here judges a permission.
  *
  *   GET    ?cuenta=<account id>              → { agents: DeskAgents }
- *   POST   { accountId, id, name, publicKey, roleIds? }      create (the asker answers for it)
+ *   POST   { accountId, id, name, publicKey, roleIds? }      create by key (the asker answers for it)
+ *          { accountId, id, name, auth: 'token', roleIds? }   create by token → { agents, token }
  *   PATCH  { accountId, id, enabled?, state? }               the switch and/or the state
+ *          { accountId, id, renewToken: true }               a new token (the old one stops) → { agents, token }
+ *          { accountId, id, revokeToken: true }              revoke the token and switch it off
  *          { accountId, id, giveRole: <role id> }            give a role
  *          { accountId, id, takeRole: <role id> }            take a role
  *   DELETE ?cuenta=<account id>&agente=<agent id>            remove
  *
  * Every answer to a write is the same `{ agents }` as the read, so the panel
- * redraws from it. A refusal is 403 `{ error: 'refused', problems }`; a
+ * redraws from it. The two that make a token (create by token, renew) add
+ * `token`: the secret, `ntk_` and 43 base64url characters, drawn here from 32
+ * random bytes and shown ONCE. Only its SHA-256 and its first 8 characters go
+ * to the till; the secret is in no log, no error and no telemetry, and the
+ * answer is `no-store`. A refusal is 403 `{ error: 'refused', problems }`; a
  * body out of shape 400; no session 401; no till 503; a till that fails 502
  * (lib/accounts-source.ts). Changes reach the world in at most 10 minutes —
  * the engine acts on the pass, which an AI renews every ~8.
@@ -25,7 +32,7 @@
  */
 
 import { z } from 'zod';
-import type { AccountDesk, Asker } from './accounts';
+import type { AccountDesk, Asker, DeskAgentDraft } from './accounts';
 import {
   accountOf,
   answer,
@@ -37,7 +44,7 @@ import {
   whoIs,
   type Log,
 } from './accounts-source';
-import { AGENT_STATES } from './agents';
+import { AGENT_STATES, newToken, type FreshToken } from './agents';
 import { logEvent } from './telemetry';
 
 const ID_MAX = 100;
@@ -49,12 +56,21 @@ function buildSchemas() {
   // The agent's id, name and key are judged by the till (the same words as the fixture).
   const agentId = z.string().min(1).max(ID_MAX);
   const roleId = z.string().regex(/^role_[0-9a-f]{16}$/, 'a role id');
-  const create = z
+  const createKey = z
     .object({
       accountId,
       id: agentId,
       name: z.string().max(400),
       publicKey: z.string().max(200),
+      roleIds: z.array(roleId).max(10).optional(),
+    })
+    .strict();
+  const createToken = z
+    .object({
+      accountId,
+      id: agentId,
+      name: z.string().max(400),
+      auth: z.literal('token'),
       roleIds: z.array(roleId).max(10).optional(),
     })
     .strict();
@@ -72,6 +88,8 @@ function buildSchemas() {
       }),
     z.object({ accountId, id: agentId, giveRole: roleId }).strict(),
     z.object({ accountId, id: agentId, takeRole: roleId }).strict(),
+    z.object({ accountId, id: agentId, renewToken: z.literal(true) }).strict(),
+    z.object({ accountId, id: agentId, revokeToken: z.literal(true) }).strict(),
   ]);
   const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
   const agents = z.union([
@@ -92,7 +110,10 @@ function buildSchemas() {
         z.object({
           id: z.string(),
           name: z.string(),
-          publicKey: z.string(),
+          auth: z.enum(['key', 'token']),
+          publicKey: z.string().optional(),
+          tokenPrefix: z.string().optional(),
+          tokenCreatedAt: z.string().optional(),
           enabled: z.boolean(),
           state: z.enum(AGENT_STATES),
           status: z.enum(['apagada', 'sin-responsable', 'sin-permiso', ...AGENT_STATES]),
@@ -108,7 +129,7 @@ function buildSchemas() {
     }),
     refusal,
   ]);
-  return { create, patch, agents };
+  return { createKey, createToken, patch, agents };
 }
 
 const shapes = (): ReturnType<typeof buildSchemas> => (built ??= buildSchemas());
@@ -179,20 +200,34 @@ export async function answerAgentWrite(
   const s = shapes();
 
   if (method === 'POST') {
-    const read = s.create.safeParse(body.json);
+    const viaToken =
+      typeof body.json === 'object' &&
+      body.json !== null &&
+      (body.json as Record<string, unknown>)['auth'] !== undefined;
+    const read = viaToken ? s.createToken.safeParse(body.json) : s.createKey.safeParse(body.json);
     if (!read.success) return badBody(read.error);
     if (desk === null) return notBound();
     const { you, house } = whoIs(asker);
     const { accountId, ...agent } = read.data;
+    // The secret is drawn here; the till is given its hash and prefix only.
+    const fresh = 'auth' in agent ? await newToken() : null;
+    const draft: DeskAgentDraft =
+      'auth' in agent
+        ? {
+            ...agent,
+            tokenHash: (fresh as FreshToken).hash,
+            tokenPrefix: (fresh as FreshToken).prefix,
+          }
+        : agent;
     const asked = await ask(
       log,
       'create-agent',
-      () => desk.createAgent(you, accountId, agent, house),
+      () => desk.createAgent(you, accountId, draft, house),
       s.agents,
     );
     if (!asked.ok) return asked.response;
     if ('problems' in asked.value) return refused(asked.value.problems);
-    return answer({ agents: asked.value });
+    return answer({ agents: asked.value, ...(fresh === null ? {} : { token: fresh.token }) });
   }
 
   // PATCH: the only other method the route exports.
@@ -201,6 +236,8 @@ export async function answerAgentWrite(
   if (desk === null) return notBound();
   const { you, house } = whoIs(asker);
   const change = read.data;
+  // A renewal draws the new secret here; the till is given its hash and prefix only.
+  const fresh = 'renewToken' in change ? await newToken() : null;
   const asked = await ask(
     log,
     'change-agent',
@@ -211,6 +248,13 @@ export async function answerAgentWrite(
       if ('takeRole' in change) {
         return desk.takeAgentRole(you, change.accountId, change.id, change.takeRole, house);
       }
+      if ('renewToken' in change) {
+        const { hash, prefix } = fresh as NonNullable<typeof fresh>;
+        return desk.renewAgentToken(you, change.accountId, change.id, hash, prefix, house);
+      }
+      if ('revokeToken' in change) {
+        return desk.revokeAgentToken(you, change.accountId, change.id, house);
+      }
       const { accountId, id, ...rest } = change;
       return desk.changeAgent(you, accountId, id, rest, house);
     },
@@ -218,5 +262,5 @@ export async function answerAgentWrite(
   );
   if (!asked.ok) return asked.response;
   if ('problems' in asked.value) return refused(asked.value.problems);
-  return answer({ agents: asked.value });
+  return answer({ agents: asked.value, ...(fresh === null ? {} : { token: fresh.token }) });
 }
