@@ -101,6 +101,8 @@ const RATE_RULES: ReadonlyArray<{
     key: 'agents-write',
     limit: 30,
   },
+  // «Conecta tu IA»: «Permitir» creates an AI or renews its token — a write on the till.
+  { test: (m, p) => m === 'POST' && p === '/api/conectar-ia', key: 'connect-ai', limit: 30 },
   // An AI's bridge renews its pass every ~8 minutes; the doorman only stops a loop.
   { test: (m, p) => m === 'POST' && p === '/api/agents/pass', key: 'agent-pass', limit: 120 },
   // The relay asks who an AI is at most once a minute per AI while it works.

@@ -1,0 +1,531 @@
+---
+/**
+ * «MCP remoto», story W4: the «Conecta tu IA» consent, /conectar-ia/ in five
+ * locales (DISENO-MCP-REMOTO.md §1 step 4 and §2 (d)). An MCP client (Claude,
+ * ChatGPT, Hermes…) asks to act in Numinia worlds; the relay (W6) sends the
+ * browser here with `?app=&host=&req=` (contract in lib/conectar-ia-page.ts).
+ *
+ * One screen: which app asks and, in large type, the machine it goes back
+ * to, with a warning apart when that is this computer (localhost); then the
+ * community (only those where the person may add or reconnect an AI), which
+ * AI it is (a new one with its name, or one already connected this way,
+ * whose old connection stops), its role (only roles the person can give),
+ * what it may and may not do — and that, for now, it does not hear what is
+ * said nearby (Pablo, 2026-10-19: hearing waits for the lawyers). «Permitir»
+ * posts to /api/conectar-ia; «Cancelar» connects nothing.
+ *
+ * Rendered on demand (it reads the session cookie and asks the till), never
+ * cached. A link that is missing something shows no form at all (fail
+ * closed). Signed out it still says who asks and where it goes back to, and
+ * offers the door, which comes back here (lib/island-session.ts).
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { CONECTAR_IA_UI } from '../../i18n/conectar-ia';
+import { fill } from '../../i18n/communities';
+import { accountsFrom } from '../../lib/accounts-source';
+import { signInHref } from '../../lib/app-nav';
+import { SESSION_COOKIE } from '../../lib/auth/server';
+import { sessionAsker } from '../../lib/auth/session-wallet';
+import { URL_AIS_HEAR } from '../../lib/conectar-ia';
+import {
+  CONSENT_API,
+  consentChoices,
+  consentHref,
+  readConsentAsk,
+  type ConsentOrg,
+} from '../../lib/conectar-ia-page';
+import { runtimeBinding } from '../../lib/runtime-env';
+import Icon from '../chrome/Icon.astro';
+
+interface Props {
+  locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const t = CONECTAR_IA_UI[locale];
+
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+const ask = readConsentAsk(Astro.url.search);
+type State = 'bad' | 'out' | 'unavailable' | 'none' | 'ok';
+let state: State = 'bad';
+let orgs: readonly ConsentOrg[] = [];
+if (ask !== null) {
+  const asker = await sessionAsker(Astro.cookies.get(SESSION_COOKIE)?.value);
+  const desk = accountsFrom({
+    binding: runtimeBinding('TILL_ACCOUNTS'),
+    dataSource: process.env.DATA_SOURCE,
+  });
+  const choices = await consentChoices(desk, asker);
+  if (choices.ok) {
+    orgs = choices.orgs;
+    state = orgs.length === 0 ? 'none' : 'ok';
+  } else {
+    state = choices.reason === 'signed-out' ? 'out' : 'unavailable';
+  }
+}
+const [asksBefore = '', asksAfter = ''] = t.asks.split('{app}');
+const signIn = ask === null ? '' : signInHref(locale, consentHref(ask));
+const one = orgs.length === 1 ? orgs[0] : undefined;
+const words = JSON.stringify({
+  allow: t.allow,
+  allowing: t.allowing,
+  done: t.done,
+  refusals: t.refusals,
+});
+---
+
+<BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead}>
+  <meta slot="head" name="robots" content="noindex" />
+  <header class="titulo-vista">
+    <h1 class="display-m">{t.title}</h1>
+  </header>
+
+  {
+    ask === null ? (
+      <section class="tarjeta conectar" data-consent="bad">
+        <Icon name="lock-key" size={28} />
+        <p class="titulo-s">{t.badTitle}</p>
+        <p class="texto-2">{t.badLead}</p>
+      </section>
+    ) : (
+      <section
+        class="tarjeta conectar"
+        data-consent={state}
+        data-words={words}
+        data-api={CONSENT_API}
+      >
+        <p class="pide">
+          {asksBefore}
+          <strong data-consent-app>{ask.app}</strong>
+          {asksAfter}
+        </p>
+        <p class="vuelve">{t.returnsTo}</p>
+        <p class="maquina mono" data-consent-host>
+          {ask.host}
+        </p>
+        {ask.loopback && (
+          <p class="alerta-maquina" role="note" data-consent-loopback>
+            {t.loopback}
+          </p>
+        )}
+
+        <div data-consent-body>
+          {state === 'out' && (
+            <div class="puerta">
+              <p class="texto-2">{t.signedOutLead}</p>
+              <a class="btn btn-primario" href={signIn} data-metric="connect-ai-sign-in">
+                <Icon name="sign-in" size={18} />
+                {t.signIn}
+              </a>
+            </div>
+          )}
+          {state === 'unavailable' && <p class="texto-2">{t.unavailable}</p>}
+          {state === 'none' && (
+            <div class="puerta">
+              <p class="titulo-s">{t.noneTitle}</p>
+              <p class="texto-2">{t.noneLead}</p>
+            </div>
+          )}
+          {state === 'ok' && (
+            <form id="ci-form" class="formulario" data-consent-form novalidate>
+              <input type="hidden" name="req" value={ask.req} />
+              <input type="hidden" name="app" value={ask.app} />
+              <input type="hidden" name="host" value={ask.host} />
+
+              <div class="campo">
+                <label for="ci-org">{t.community}</label>
+                {one ? (
+                  <>
+                    <input type="hidden" name="accountId" value={one.accountId} />
+                    <p class="valor" id="ci-org">
+                      {one.name}
+                    </p>
+                  </>
+                ) : (
+                  <select id="ci-org" name="accountId" data-metric="connect-ai-community">
+                    {orgs.map((org) => (
+                      <option value={org.accountId}>{org.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {orgs.map((org, i) => (
+                <div class="por-comunidad" data-consent-org={org.accountId} hidden={i !== 0}>
+                  <fieldset class="campo">
+                    <legend>{t.which}</legend>
+                    {org.mayCreate && (
+                      <label class="opcion">
+                        <input
+                          type="radio"
+                          name={`ai-${i}`}
+                          value="new"
+                          checked
+                          data-metric="connect-ai-new"
+                        />
+                        <span>{t.newAi}</span>
+                      </label>
+                    )}
+                    {org.mayCreate && (
+                      <div class="campo nombre" data-consent-name>
+                        <label for={`ci-name-${i}`}>{t.nameLabel}</label>
+                        <input
+                          id={`ci-name-${i}`}
+                          name={`name-${i}`}
+                          type="text"
+                          value={ask.app}
+                          maxlength={40}
+                          autocomplete="off"
+                          data-metric="connect-ai-name"
+                        />
+                      </div>
+                    )}
+                    {org.again.map((agent, j) => (
+                      <label class="opcion">
+                        <input
+                          type="radio"
+                          name={`ai-${i}`}
+                          value={agent.id}
+                          checked={!org.mayCreate && j === 0}
+                          data-metric="connect-ai-again"
+                        />
+                        <span>
+                          {fill(t.again, { name: agent.name })}
+                          <span class="ayuda"> {t.againNote}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+
+                  <div class="campo">
+                    <p class="etiqueta-campo" id={`ci-role-label-${i}`}>
+                      {t.role}
+                    </p>
+                    {org.mayCreate && (
+                      <select
+                        name={`role-${i}-new`}
+                        aria-labelledby={`ci-role-label-${i}`}
+                        aria-describedby="ci-role-help"
+                        data-consent-role="new"
+                        data-metric="connect-ai-role"
+                      >
+                        <option value="">{t.roleNone}</option>
+                        {org.roles.map((role) => (
+                          <option value={role.id}>{role.name}</option>
+                        ))}
+                      </select>
+                    )}
+                    {org.again.map((agent, j) => (
+                      <select
+                        name={`role-${i}-${agent.id}`}
+                        aria-labelledby={`ci-role-label-${i}`}
+                        aria-describedby="ci-role-help"
+                        data-consent-role={agent.id}
+                        data-metric="connect-ai-role"
+                        hidden={org.mayCreate || j !== 0}
+                      >
+                        <option value="">{t.roleKeep}</option>
+                        {agent.roles.map((role) => (
+                          <option value={role.id}>{role.name}</option>
+                        ))}
+                      </select>
+                    ))}
+                    <p class="ayuda" id="ci-role-help">
+                      {t.roleHelp}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              <ul class="lineas">
+                <li>{t.can}</li>
+                <li data-consent-hear={URL_AIS_HEAR ? 'on' : 'off'}>
+                  {URL_AIS_HEAR ? fill(t.hearOn, { app: ask.app }) : t.hearOff}
+                </li>
+                <li>{t.cannot}</li>
+                <li>{t.answer}</li>
+              </ul>
+              <p class="fallo" data-consent-problem role="alert" hidden />
+            </form>
+          )}
+
+          <div class="acciones">
+            <button
+              type="button"
+              class="btn btn-fantasma"
+              data-consent-cancel
+              data-metric="connect-ai-cancel"
+            >
+              {t.cancel}
+            </button>
+            {state === 'ok' && (
+              <button
+                type="submit"
+                form="ci-form"
+                class="btn btn-primario"
+                data-consent-allow
+                data-metric="connect-ai-allow"
+              >
+                {t.allow}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <p class="final" data-consent-done role="status" hidden />
+        <p class="final" data-consent-cancelled role="status" hidden>
+          {t.cancelled}
+        </p>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<script>
+  import type { ConectarIaMessages } from '../../i18n/conectar-ia';
+
+  type Words = Pick<ConectarIaMessages, 'allow' | 'allowing' | 'done' | 'refusals'>;
+
+  const root = document.querySelector<HTMLElement>('[data-consent]');
+  if (root && root.dataset['consent'] !== 'bad') wire(root);
+
+  function wire(card: HTMLElement): void {
+    const words = JSON.parse(card.dataset['words'] ?? '{}') as Words;
+    const body = card.querySelector<HTMLElement>('[data-consent-body]');
+    const done = card.querySelector<HTMLElement>('[data-consent-done]');
+    const cancelled = card.querySelector<HTMLElement>('[data-consent-cancelled]');
+    const end = (shown: HTMLElement | null): void => {
+      if (body) body.hidden = true;
+      if (shown) shown.hidden = false;
+    };
+
+    // «Cancelar» connects nothing. The relay (W6) will be told the person said no.
+    card.querySelector('[data-consent-cancel]')?.addEventListener('click', () => end(cancelled));
+
+    const form = card.querySelector<HTMLFormElement>('[data-consent-form]');
+    if (!form) return;
+    const value = (name: string): string => {
+      const element = form.elements.namedItem(name);
+      if (element instanceof RadioNodeList) return element.value;
+      return (element as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+    };
+    const blocks = Array.from(form.querySelectorAll<HTMLElement>('[data-consent-org]'));
+    const current = (): HTMLElement | undefined =>
+      blocks.find((block) => block.dataset['consentOrg'] === value('accountId'));
+    const index = (block: HTMLElement): number => blocks.indexOf(block);
+
+    // The community's own choices; within it, the name for a new AI and one role list per choice.
+    const refresh = (): void => {
+      const shown = current();
+      for (const block of blocks) block.hidden = block !== shown;
+      if (!shown) return;
+      const choice = value(`ai-${index(shown)}`);
+      const name = shown.querySelector<HTMLElement>('[data-consent-name]');
+      if (name) name.hidden = choice !== 'new';
+      for (const select of shown.querySelectorAll<HTMLSelectElement>('[data-consent-role]')) {
+        select.hidden = select.dataset['consentRole'] !== choice;
+      }
+    };
+    form.addEventListener('change', refresh);
+    refresh();
+
+    const problem = form.querySelector<HTMLElement>('[data-consent-problem]');
+    const say = (text: string | null): void => {
+      if (!problem) return;
+      problem.hidden = text === null;
+      problem.textContent = text ?? '';
+    };
+    const allow = card.querySelector<HTMLButtonElement>('[data-consent-allow]');
+    const refusal = (key: string | undefined): string =>
+      words.refusals[(key ?? 'failed') as keyof Words['refusals']] ?? words.refusals.failed;
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const shown = current();
+      if (!shown) return;
+      const i = index(shown);
+      const choice = value(`ai-${i}`);
+      const role = value(`role-${i}-${choice}`);
+      const sent = {
+        req: value('req'),
+        app: value('app'),
+        host: value('host'),
+        accountId: value('accountId'),
+        ai:
+          choice === 'new'
+            ? { kind: 'new', name: value(`name-${i}`) }
+            : { kind: 'again', agentId: choice },
+        roleId: role === '' ? null : role,
+      };
+      say(null);
+      if (allow) {
+        allow.disabled = true;
+        allow.textContent = words.allowing;
+      }
+      void fetch(card.dataset['api'] ?? '', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify(sent),
+      })
+        .then(async (response) => {
+          const answer = (await response.json().catch(() => null)) as {
+            ok?: boolean;
+            refusal?: string;
+            error?: string;
+            connection?: { name: string };
+            next?: string | null;
+          } | null;
+          if (response.ok && answer?.ok === true && answer.connection) {
+            if (typeof answer.next === 'string') {
+              location.assign(answer.next);
+              return;
+            }
+            if (done) {
+              done.textContent = words.done
+                .replace('{name}', answer.connection.name)
+                .replace('{app}', sent.app);
+            }
+            end(done);
+            return;
+          }
+          say(refusal(answer?.refusal ?? answer?.error));
+        })
+        .catch(() => say(words.refusals.failed))
+        .finally(() => {
+          if (allow) {
+            allow.disabled = false;
+            allow.textContent = words.allow;
+          }
+        });
+    });
+  }
+</script>
+
+<style>
+  .conectar {
+    display: grid;
+    gap: var(--s3);
+    max-width: 44rem;
+  }
+  .conectar p {
+    margin: 0;
+  }
+  .pide {
+    font-size: 1.125rem;
+  }
+  .vuelve {
+    color: var(--texto-2);
+  }
+  /* The machine it goes back to, large: the person must see it (MCP authorization). */
+  .maquina {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: 600;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .alerta-maquina {
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--linea-f);
+    border-left: 3px solid var(--ambar);
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  .puerta {
+    display: grid;
+    justify-items: start;
+    gap: var(--s3);
+  }
+  [data-consent-body] {
+    display: grid;
+    gap: var(--s4);
+    margin-top: var(--s2);
+  }
+  [data-consent-body][hidden] {
+    display: none;
+  }
+  .formulario {
+    display: grid;
+    gap: var(--s4);
+  }
+  .por-comunidad {
+    display: grid;
+    gap: var(--s4);
+  }
+  .por-comunidad[hidden] {
+    display: none;
+  }
+  .campo {
+    display: grid;
+    gap: var(--s1);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .campo[hidden] {
+    display: none;
+  }
+  .campo label:not(.opcion),
+  .campo legend,
+  .etiqueta-campo {
+    font-weight: 600;
+  }
+  .campo legend {
+    margin-bottom: var(--s1);
+  }
+  .campo input[type='text'],
+  .campo select {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 8px var(--s3);
+    font: inherit;
+    color: inherit;
+    background: var(--fondo);
+    border: 1px solid var(--linea-f);
+    border-radius: 8px;
+  }
+  .campo select[hidden] {
+    display: none;
+  }
+  .nombre {
+    margin-left: calc(18px + var(--s2));
+  }
+  .opcion {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--s2);
+    min-height: 40px;
+    padding-top: 8px;
+    cursor: pointer;
+  }
+  .opcion input {
+    margin: 3px 0 0;
+    accent-color: var(--turquesa);
+  }
+  .lineas {
+    display: grid;
+    gap: var(--s2);
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--texto-2);
+  }
+  .ayuda {
+    font-size: 0.875rem;
+    color: var(--texto-2);
+  }
+  .fallo {
+    color: var(--ambar);
+  }
+  .acciones {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--s3);
+  }
+  .final {
+    font-weight: 500;
+  }
+</style>

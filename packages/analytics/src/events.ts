@@ -289,3 +289,10 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's «Encuentros» (/panel/encuentros/): `panel-gatherings-community`
 //   (its community's page), `panel-gatherings-subscribe` (its calendar),
 //   `panel-gatherings-upcoming`, `panel-gatherings-held` (an encounter's page).
+// ---- «MCP remoto» W4 «Conecta tu IA» (2026-10-19): its data-metric ids ------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The consent /conectar-ia/: `connect-ai-sign-in` (the door, signed out),
+//   `connect-ai-community` (the community picker), `connect-ai-new` («Una
+//   nueva»), `connect-ai-name` (its name), `connect-ai-again` («Volver a
+//   conectar …»), `connect-ai-role` (the role picker), `connect-ai-allow`
+//   («Permitir») and `connect-ai-cancel` («Cancelar»).

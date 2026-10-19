@@ -41,6 +41,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'UPD',
         text: 'numinia.com now knows what to do when you connect an app like Claude to your community. It makes a new AI for your community, or, when you pick one you connected before, gives it a new token so the old connection stops and switches it back on — it never makes a second copy. It uses the same rules as the «Agents» panel: you need the permission to manage roles, a community keeps at most 20 AIs, you can only give a role you are allowed to give, and an AI of another community cannot be picked. Any app may ask, and the screen always shows where it will go back to. An AI connected this way does not hear what is said nearby yet: that waits for our lawyers.',
       },
+      {
+        type: 'NEW',
+        text: 'The screen where you allow an app to connect an AI to your community, in all five languages. It says which app asks and, in large letters, the computer it will go back to, with a warning when that is your own computer. You pick the community, whether it is a new AI with its name or one you connected before, and its role — only the roles you can give. It says plainly what the AI can and cannot do, and that for now it will not hear what is said near it. «Allow» connects it; «Cancel» connects nothing. If you are not signed in, you sign in and come back to the same screen. A link that is missing something shows no form at all.',
+      },
     ],
   },
   {

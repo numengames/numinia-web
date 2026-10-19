@@ -156,8 +156,12 @@ const APP_NAME_MAX = 40;
 export const isLoopback = (host: string): boolean =>
   host === 'localhost' || host.endsWith('.localhost') || /^127(?:\.\d{1,3}){3}$/.test(host);
 
-/** The client's name and its `via`, or null when either cannot be read. */
-function readClient(
+/**
+ * The client's name and its `via`, or null when either cannot be read. The
+ * consent page (lib/conectar-ia-page.ts) reads its query with it too, so the
+ * screen shows exactly the name and host the decision will use.
+ */
+export function readClient(
   client: ConnectClient,
 ): { readonly app: string; readonly host: string; readonly via: string } | null {
   // A registered name is free text of any length: the consent shows its first 40 characters.

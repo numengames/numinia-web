@@ -127,6 +127,20 @@ describe('where a fresh sign-in lands', () => {
     }
   });
 
+  it('goes back to the «Conecta tu IA» consent, in any locale, with its query', () => {
+    for (const consent of [
+      '/conectar-ia/?app=Claude&host=claude.ai&req=abcdefghijklmnop',
+      '/es/conectar-ia/?app=Claude&host=localhost&req=abcdefghijklmnop',
+      '/ja/conectar-ia/',
+      '/pt-br/conectar-ia/#x',
+    ]) {
+      expect(landingAfterSignIn(consent, PROFILE)).toBe(consent);
+    }
+    for (const other of ['/conectar-ia-falsa/', '/es/conectar-ia', '/fr/conectar-ia/']) {
+      expect(landingAfterSignIn(other, PROFILE)).toBe(PROFILE);
+    }
+  });
+
   it('never lands back on the door itself, nor on its way out', () => {
     for (const door of [
       '/es/lap/session/',
