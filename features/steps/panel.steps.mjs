@@ -401,8 +401,20 @@ Then(
         const route = `${base(locale.prefix)}/panel/${screen}/*`;
         const at = headers.indexOf(route);
         assert.ok(at >= 0, `_headers: no block for ${route}`);
-        const policy = headers[at + 1] ?? '';
-        assert.ok(policy.includes('Content-Security-Policy:'), `${route}: no policy under it`);
+        // The block runs while lines are indented. Cloudflare ADDS the headers of every matching rule
+        // and the browser enforces them all, so the global strict policy must be detached first.
+        const block = [];
+        for (let i = at + 1; i < headers.length && /^\s+\S/.test(headers[i] ?? ''); i += 1) {
+          block.push(headers[i]);
+        }
+        const detach = block.findIndex((l) => l.trim() === '! Content-Security-Policy');
+        const set = block.findIndex((l) => l.includes('Content-Security-Policy:'));
+        const policy = block[set] ?? '';
+        assert.ok(set >= 0, `${route}: no policy under it`);
+        assert.ok(
+          detach >= 0 && detach < set,
+          `${route}: must detach the global Content-Security-Policy before relaxing it`,
+        );
         assert.ok(
           policy.includes("connect-src 'self' blob: https: wss:"),
           `${route}: no wss for WalletConnect`,
