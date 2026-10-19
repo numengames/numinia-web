@@ -1530,6 +1530,15 @@
   white-space: pre-wrap;
   user-select: all;
 }
+.agentes-conexion code {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  border-radius: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .agentes-renovar {
   margin-top: var(--s2);
 }

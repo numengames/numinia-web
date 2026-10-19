@@ -64,10 +64,16 @@ const ROLES_VIEW = {
   members: [{ wallet: ME, owner: true, addedAt: '2026-06-03T09:00:00.000Z', roleIds: [] }],
 };
 
+const TOKEN = `ntk_${'Zy9_'.repeat(10)}abc`;
+const TOKEN_NEW = `ntk_${'Qw3-'.repeat(10)}xyz`;
+
 interface Agent {
   id: string;
   name: string;
-  publicKey: string;
+  auth: 'key' | 'token';
+  publicKey?: string;
+  tokenPrefix?: string;
+  tokenCreatedAt?: string;
   enabled: boolean;
   state: 'activa' | 'dormida';
   status: 'apagada' | 'sin-responsable' | 'sin-permiso' | 'activa' | 'dormida';
@@ -80,7 +86,10 @@ interface Agent {
   mayEdit: boolean;
 }
 
-const agent = (extra: Partial<Agent> & Pick<Agent, 'id' | 'name' | 'publicKey'>): Agent => ({
+const agent = (
+  extra: Partial<Agent> & Pick<Agent, 'id' | 'name'> & { publicKey?: string },
+): Agent => ({
+  auth: 'key',
   enabled: true,
   state: 'activa',
   status: 'activa',
@@ -194,15 +203,31 @@ async function stage(
       return route.fulfill({ status: refusal.status, json: refusal.body });
     }
     if (method === 'POST') {
-      const draft = body as { id: string; name: string; publicKey: string; roleIds?: string[] };
+      const draft = body as {
+        id: string;
+        name: string;
+        auth?: 'token';
+        publicKey?: string;
+        roleIds?: string[];
+      };
+      const viaToken = draft.auth === 'token';
       stand.agents.push(
         agent({
           id: draft.id,
           name: draft.name,
-          publicKey: draft.publicKey,
           roleIds: draft.roleIds ?? [],
+          ...(viaToken
+            ? {
+                auth: 'token' as const,
+                tokenPrefix: TOKEN.slice(4, 12),
+                tokenCreatedAt: '2026-10-17T10:00:00.000Z',
+              }
+            : { publicKey: draft.publicKey as string }),
         }),
       );
+      if (viaToken) {
+        return route.fulfill({ json: { agents: viewOf(stand), token: TOKEN } });
+      }
     } else if (method === 'PATCH') {
       const change = body as {
         id: string;
@@ -210,6 +235,7 @@ async function stage(
         state?: 'activa' | 'dormida';
         giveRole?: string;
         takeRole?: string;
+        renewToken?: true;
       };
       const entry = stand.agents.find((candidate) => candidate.id === change.id);
       if (entry !== undefined) {
@@ -220,6 +246,11 @@ async function stage(
           entry.roleIds = entry.roleIds.filter((id) => id !== change.takeRole);
         }
         entry.status = statusOf(entry);
+        if (change.renewToken === true && entry.auth === 'token') {
+          entry.tokenPrefix = TOKEN_NEW.slice(4, 12);
+          entry.tokenCreatedAt = '2026-10-17T11:00:00.000Z';
+          return route.fulfill({ json: { agents: viewOf(stand), token: TOKEN_NEW } });
+        }
       }
     } else if (method === 'DELETE') {
       const id = new URL(request.url()).searchParams.get('agente');
@@ -424,6 +455,9 @@ test.describe('Agentes — the invitation', () => {
     await page.locator('[data-metric="panel-agentes-invite"]').click();
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await expect(dialog).toBeVisible();
+    // The token is the default; the key way is the advanced one.
+    await expect(dialog.getByRole('radio', { name: /Con un token/ })).toBeChecked();
+    await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
     await expect(dialog).toContainText('Paso 1 de 3');
     await shot(page, '06-invite-step1-desktop');
 
@@ -463,6 +497,7 @@ test.describe('Agentes — the invitation', () => {
         accountId: GAMES.id,
         id: 'ariadna-dos',
         name: 'Ariadna Dos',
+        auth: 'key',
         publicKey: KEY_NEW,
         roleIds: [],
       },
@@ -474,6 +509,7 @@ test.describe('Agentes — the invitation', () => {
     await open(page);
     await page.locator('[data-metric="panel-agentes-invite"]').click();
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+    await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
     await dialog.getByLabel('¿Cómo se llama?').fill('Obrera');
     await dialog.getByRole('radio', { name: /también construir/i }).check();
     await expect(dialog.locator('[data-agentes-roles]')).toContainText('¿Con qué roles?');
@@ -502,6 +538,7 @@ test.describe('Agentes — the invitation', () => {
     await open(page);
     await page.locator('[data-metric="panel-agentes-invite"]').click();
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+    await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
     await dialog.getByLabel('¿Cómo se llama?').fill('Repetida');
     await dialog.getByRole('button', { name: 'Siguiente' }).click();
     await dialog.getByPlaceholder('ed25519:…').fill(KEY_A);
@@ -683,6 +720,7 @@ for (const [name, size] of [
 
       await page.locator('[data-metric="panel-agentes-invite"]').click();
       const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+      await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
       await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
       await dialog.getByRole('radio', { name: /también construir/i }).check();
       await shot(page, `33-step1-${tag}`);
@@ -719,6 +757,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await row(page, 'luna').getByRole('button', { name: 'No, dejarla' }).click();
       await page.locator('[data-metric="panel-agentes-invite"]').click();
       const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+      await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
       await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
       await dialog.getByRole('radio', { name: /también construir/i }).check();
       await dialog.getByRole('button', { name: 'Siguiente' }).click();
@@ -728,3 +767,206 @@ for (const scheme of ['light', 'dark'] as const) {
     });
   });
 }
+
+const tokenRow = (): Agent =>
+  agent({
+    id: 'ariadna',
+    name: 'Ariadna',
+    auth: 'token',
+    tokenPrefix: TOKEN.slice(4, 12),
+    tokenCreatedAt: '2026-10-17T10:00:00.000Z',
+  });
+
+test.describe('Agentes — the token way', () => {
+  test('is the default of the invitation: name, permission and «Añadir», then the secret once', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const stand = await stage(page);
+    await open(page);
+    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+    await expect(dialog.getByRole('radio', { name: /Con un token/ })).toBeChecked();
+    await expect(
+      dialog.getByRole('radio', { name: /Con mi propia llave \(avanzado\)/ }),
+    ).not.toBeChecked();
+    await expect(dialog).not.toContainText('Paso 1 de 3');
+    await expect(dialog.getByRole('button', { name: 'Siguiente' })).toHaveCount(0);
+    await shot(page, '01-choice-step-desktop');
+
+    await dialog.getByRole('button', { name: 'Añadir' }).click();
+    await expect(dialog).toContainText('Escribe un nombre.');
+    await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
+    await dialog.getByRole('button', { name: 'Añadir' }).click();
+
+    const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
+    await expect(once).toBeVisible();
+    await expect(once.locator('[data-agentes-token]')).toHaveText(TOKEN);
+    await expect(once.locator('[data-agentes-connect]')).toContainText(
+      'hermes mcp add numinia-mundo --command node --env',
+    );
+    await expect(once.locator('[data-agentes-connect]')).toContainText(`AGENTE_TOKEN=${TOKEN}`);
+    await expect(once.locator('[data-agentes-connect]')).toContainText('AGENTE_ORG=acc_t_games');
+    await shot(page, '02-show-once-desktop');
+    expect(stand.calls.at(-1)).toEqual({
+      method: 'POST',
+      body: { accountId: GAMES.id, id: 'ariadna', name: 'Ariadna', auth: 'token', roleIds: [] },
+    });
+
+    // Escape does not close it; «Copiar» copies the secret; only «Ya lo he copiado» closes.
+    await page.keyboard.press('Escape');
+    await expect(once).toBeVisible();
+    await once.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(once.getByRole('button', { name: 'Copiado' })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(TOKEN);
+    await once.getByRole('button', { name: 'Copiar las tres líneas' }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
+      'hermes mcp test numinia-mundo',
+    );
+    await once.getByRole('button', { name: 'Ya lo he copiado' }).click();
+    await expect(once).toBeHidden();
+
+    // The secret is gone from the page; the row has the prefix and the day.
+    await expect(page.locator('body')).not.toContainText(TOKEN);
+    const line = row(page, 'ariadna').locator('[data-agent-token-line]');
+    await expect(line).toHaveText(
+      `Token ntk_${TOKEN.slice(4, 12)}… · creado el 17 de octubre de 2026`,
+    );
+    await shot(page, '03-row-with-prefix-desktop');
+  });
+
+  test('says so when the clipboard is not available', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: undefined });
+    });
+    await page.reload();
+    await expect(page.locator('[data-org-panel]')).toHaveAttribute('data-state', 'ready');
+    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+    await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
+    await dialog.getByRole('button', { name: 'Añadir' }).click();
+    const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
+    await once.getByRole('button', { name: 'Copiar', exact: true }).click();
+    await expect(once.locator('[data-agentes-copy-failed]')).toContainText(
+      'No se ha podido copiar',
+    );
+  });
+
+  test('renews after a confirmation: «No» leaves it, «Sí» shows the new secret once', async ({
+    page,
+  }) => {
+    const stand = await stage(page, { agents: [...roster(), tokenRow()] });
+    await open(page);
+    const renewal = row(page, 'ariadna');
+    await expect(row(page, 'hermes').locator('[data-agent-renew]')).toHaveCount(0);
+    await renewal.getByRole('button', { name: 'Renovar el token de Ariadna' }).click();
+    await expect(renewal).toContainText('¿Renovar el token de Ariadna?');
+    await shot(page, '04-renew-confirm-desktop');
+    await renewal.getByRole('button', { name: 'No, dejarlo' }).click();
+    expect(stand.calls.filter((call) => call.method === 'PATCH')).toHaveLength(0);
+
+    await renewal.getByRole('button', { name: 'Renovar el token de Ariadna' }).click();
+    await renewal.getByRole('button', { name: 'Sí, renovar' }).click();
+    const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
+    await expect(once.locator('[data-agentes-token]')).toHaveText(TOKEN_NEW);
+    expect(stand.calls.at(-1)).toEqual({
+      method: 'PATCH',
+      body: { accountId: GAMES.id, id: 'ariadna', renewToken: true },
+    });
+    await once.getByRole('button', { name: 'Ya lo he copiado' }).click();
+    await expect(row(page, 'ariadna').locator('[data-agent-token-line]')).toContainText(
+      TOKEN_NEW.slice(4, 12),
+    );
+  });
+
+  test('a key AI has no token line and no renew', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    await expect(row(page, 'hermes').locator('[data-agent-token-line]')).toHaveCount(0);
+  });
+
+  test('the phone: the choice, the secret and the row fit and are axe clean', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await stage(page);
+    await open(page);
+    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
+    await shot(page, '05-choice-step-phone');
+    let results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+    await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
+    await dialog.getByRole('button', { name: 'Añadir' }).click();
+    const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
+    await expect(once).toBeVisible();
+    await shot(page, '06-show-once-phone');
+    results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await once.getByRole('button', { name: 'Ya lo he copiado' }).click();
+    await shot(page, '07-row-with-prefix-phone');
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
+
+  test('desktop: the choice, the secret and the renewal are axe clean in light and dark', async ({
+    page,
+  }) => {
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await stage(page, { agents: [tokenRow()] });
+      await open(page);
+      await row(page, 'ariadna')
+        .getByRole('button', { name: 'Renovar el token de Ariadna' })
+        .click();
+      let results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(results.violations).toEqual([]);
+      await row(page, 'ariadna').getByRole('button', { name: 'Sí, renovar' }).click();
+      const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
+      await expect(once).toBeVisible();
+      await shot(page, `08-show-once-${scheme}`);
+      results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations).toEqual([]);
+      await once.getByRole('button', { name: 'Ya lo he copiado' }).click();
+    }
+  });
+
+  for (const [path, invite, name, copied] of [
+    [
+      '/panel/agentes/',
+      'Invite an AI',
+      'Copy your token now, you won’t see it again',
+      'I have copied it',
+    ],
+    [
+      '/ja/panel/agentes/',
+      '',
+      'トークンを今すぐコピーしてください。二度と表示されません',
+      'コピーしました',
+    ],
+    ['/ko/panel/agentes/', '', '지금 토큰을 복사하세요. 다시 볼 수 없습니다', '복사했습니다'],
+    ['/pt-br/panel/agentes/', '', 'Copie seu token agora, você não o verá de novo', 'Já copiei'],
+  ] as const) {
+    test(`${path} says the show-once screen in its own words`, async ({ page }) => {
+      void invite;
+      await stage(page);
+      await open(page, path);
+      await page.locator('[data-metric="panel-agentes-invite"]').click();
+      await page.locator('dialog[open] input[type="text"]').first().fill('Ariadna');
+      await page.locator('dialog[open] [data-metric="panel-agentes-invite-add-token"]').click();
+      const once = page.getByRole('dialog', { name });
+      await expect(once).toBeVisible();
+      await expect(once.getByRole('button', { name: copied })).toBeVisible();
+      await expect(once.locator('[data-agentes-token]')).toHaveText(TOKEN);
+      await shot(
+        page,
+        `09-show-once-${path.split('/')[1] === 'panel' ? 'en' : path.split('/')[1]}`,
+      );
+    });
+  }
+});
