@@ -138,8 +138,8 @@ describe('the register on disk', () => {
 
   it('gives VIC its home in the fleet, and no other community a home yet', () => {
     const housed = REGISTER.filter((entry) => entry.sede !== undefined);
-    expect(housed.map((entry) => [entry.id, entry.sede?.href])).toEqual([
-      ['vic', 'https://vic.numinia.com/'],
+    expect(housed.map((entry) => [entry.id, entry.sede?.href, entry.sede?.world])).toEqual([
+      ['vic', 'https://vic.numinia.com/', 'vic'],
     ]);
   });
 
@@ -650,6 +650,27 @@ describe('the app shell pages (v0.83.0)', () => {
       sede: { href: 'https://numen.numen.games', name: 'Numen' },
     });
     expect(worldOf(ownFounder, commons, 'en')?.href).toBe('https://numen.numen.games');
+    expect(worldOf(ownFounder, commons, 'en')?.worldId).toBeUndefined();
+  });
+
+  it('names the fleet world of a home, so its links go through the pass door', () => {
+    const housed = parseCommunity('vic', {
+      ...COMMUNITY,
+      name: 'VIC',
+      sede: { href: 'https://vic.numinia.com/', world: 'vic' },
+    });
+    expect(housed.sede?.world).toBe('vic');
+    expect(worldOf(housed, commons, 'es')).toEqual({
+      href: 'https://vic.numinia.com/',
+      name: 'VIC',
+      worldId: 'vic',
+    });
+    expect(() =>
+      community({ sede: { href: 'https://vic.numinia.com/', world: 'VIC Hall' } }),
+    ).toThrow(/fleet id/);
+    expect(() => community({ sede: { href: 'https://vic.numinia.com/', world: 7 } })).toThrow(
+      /"world"/,
+    );
   });
 
   it('reads a home as an https address, failing closed on anything else', () => {

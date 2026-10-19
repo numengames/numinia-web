@@ -11,6 +11,7 @@
  * IO, no dates read from the clock unless they are passed in.
  */
 
+import { WORLD_ID_SHAPE } from './mundos';
 import { WORLD_ZONES } from './worlds';
 
 /**
@@ -119,6 +120,13 @@ export interface CommunityImage {
 export interface Sede {
   readonly href: string;
   readonly name: Localized | undefined;
+  /**
+   * The fleet's id of the world at `href` (`vic`), when it is a world of the
+   * house's engine: then «Entrar» asks for the person's pass, the one door
+   * every world link goes through (lib/mundos.ts `worldDoorClick`). Unset, the
+   * link is the plain address.
+   */
+  readonly world: string | undefined;
 }
 
 export interface Community {
@@ -322,9 +330,13 @@ function optSede(raw: Raw, where: string): Sede | undefined {
   const href = str(sede, 'href', `${where}.sede`);
   if (!/^https:\/\/[^/\s]+/.test(href))
     throw new Error(`${where}.sede: the home is an https address`);
+  const world = sede['world'] === undefined ? undefined : str(sede, 'world', `${where}.sede`);
+  if (world !== undefined && !WORLD_ID_SHAPE.test(world))
+    throw new Error(`${where}.sede: the world is a fleet id (lowercase words joined by hyphens)`);
   return {
     href,
     name: sede['name'] === undefined ? undefined : nameOrLocalized(sede, 'name', `${where}.sede`),
+    world,
   };
 }
 
@@ -665,6 +677,8 @@ export function dayAndMonth(
 export interface World {
   readonly href: string;
   readonly name: string;
+  /** The fleet's id when the world is the engine's: its links then go through the pass door. */
+  readonly worldId?: string | undefined;
 }
 
 /**
@@ -683,7 +697,7 @@ export function worldOf(
   if (ritual?.city === true) return commons;
   if (community.sede) {
     const name = community.sede.name ? pick(community.sede.name, locale) : community.name;
-    return { href: community.sede.href, name };
+    return { href: community.sede.href, name, worldId: community.sede.world };
   }
   if (community.state === 'founder') return commons;
   return undefined;

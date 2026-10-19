@@ -34,6 +34,7 @@ import Cover from './Cover.astro';
 import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
 import RsvpAction from './RsvpAction.astro';
+import WorldDoors from '../mundos/WorldDoors.astro';
 import '../../styles/communities.css';
 
 /** «Crear → Un encuentro» (cut M): an encounter of the till — whether it is cancelled, and whether this visitor may cancel it. */
@@ -121,6 +122,7 @@ const sourceDate = ritual.source
               href={world.href}
               target="_blank"
               rel="noopener noreferrer"
+              data-world-door={world.worldId}
               data-metric="ritual-enter-world"
             >
               <Icon name="play" size={20} />
@@ -386,6 +388,7 @@ const sourceDate = ritual.source
       });
     });
   </script>
+  <WorldDoors />
 </BaseLayout>
 
 <style>

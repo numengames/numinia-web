@@ -36,6 +36,7 @@ import InsideCount from './InsideCount.astro';
 import PeopleList from './PeopleList.astro';
 import SpaceUses from './SpaceUses.astro';
 import ClaimStrip from './ClaimStrip.astro';
+import WorldDoors from '../mundos/WorldDoors.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -242,6 +243,7 @@ const followWords = JSON.stringify({
                     href={world.href}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-world-door={world.worldId}
                     data-metric="community-enter-world"
                   >
                     <Icon name="play" size={16} />
@@ -474,6 +476,7 @@ const followWords = JSON.stringify({
       });
     })();
   </script>
+  <WorldDoors />
 </BaseLayout>
 
 <style>

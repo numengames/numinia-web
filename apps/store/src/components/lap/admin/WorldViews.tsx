@@ -12,6 +12,7 @@ import { useState } from 'react';
 import type { PlacementMessages } from '../../../i18n/mundos';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { formatSize } from '../../../lib/fleet';
+import { enterWorldInNewTab } from '../../../lib/mundos';
 import {
   buildTag,
   describeStatus,
@@ -364,17 +365,21 @@ function Actions({
   return (
     <div className="acciones">
       {open !== null && (
-        <a
+        <button
+          type="button"
           className="btn btn-fantasma btn-icono abrir"
-          href={worldUrl(open)}
-          target="_blank"
-          rel="noopener noreferrer"
+          onClick={() =>
+            // The one door (lib/mundos.ts): a new tab with the person's pass, the guest address only when none.
+            void enterWorldInNewTab(fetch, row.id, worldUrl(open), (url, target) =>
+              window.open(url, target),
+            )
+          }
           aria-label={room.actions.open}
           data-tip={room.actions.open}
           data-metric="worlds-open"
         >
           <WorldGlyph name="arrow-square-out" />
-        </a>
+        </button>
       )}
       {order && order.state === 'running' && (
         <button

@@ -203,6 +203,63 @@ export async function enterWorldInTab(
   return address;
 }
 
+/** How a page opens a tab: `window.open`, injected so this stays pure. */
+export type OpenTab = (url: string, target: string) => Window | null;
+
+/**
+ * «Entrar» from anywhere, in a new tab: a blank tab opened on the click
+ * (the popup blocker allows it), cut from this page, then sent where
+ * `enterWorldInTab` says. The one door every world link of the site goes
+ * through — the world's page, the Worlds room's «Open», a community's home.
+ */
+export function enterWorldInNewTab(
+  fetcher: Fetch,
+  worldId: string,
+  fallback: string | null,
+  open: OpenTab,
+): Promise<string | null> {
+  const tab = open('about:blank', '_blank');
+  if (tab) tab.opener = null;
+  return enterWorldInTab(fetcher, worldId, fallback, tab);
+}
+
+/** The attribute a plain world link carries so a click goes through the door: the world's fleet id. */
+export const WORLD_DOOR_ATTRIBUTE = 'data-world-door';
+
+/** The parts of a click the door reads. */
+export interface DoorClick {
+  readonly button: number;
+  readonly metaKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly shiftKey: boolean;
+  readonly altKey: boolean;
+  readonly defaultPrevented: boolean;
+}
+
+/** The parts of a link the door reads. */
+export interface DoorLink {
+  getAttribute(name: string): string | null;
+}
+
+/**
+ * Whether a click on a world link should take the pass door, and to which
+ * world: a plain left click, signed in, on a link that names a fleet world.
+ * Anything else — signed out (the world gives guests the same address), a
+ * modified or middle click, a link with no world — keeps the plain link.
+ */
+export function worldDoorClick(
+  click: DoorClick,
+  link: DoorLink | null,
+  signedIn: boolean,
+): { readonly worldId: string; readonly fallback: string | null } | null {
+  if (!signedIn || link === null || click.defaultPrevented || click.button !== 0) return null;
+  if (click.metaKey || click.ctrlKey || click.shiftKey || click.altKey) return null;
+  const worldId = link.getAttribute(WORLD_DOOR_ATTRIBUTE) ?? '';
+  if (!WORLD_ID_SHAPE.test(worldId)) return null;
+  const href = link.getAttribute('href');
+  return { worldId, fallback: href !== null && isHttps(href) ? href : null };
+}
+
 /** The placements by world: a world is placed once, so the map has one home per id. */
 export function homesByWorld(homes: readonly WorldHome[]): ReadonlyMap<string, WorldHome> {
   return new Map(homes.map((home) => [home.worldId, home]));

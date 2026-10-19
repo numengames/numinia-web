@@ -15,6 +15,7 @@ import { COMMUNITIES, RITUALS, communityOf } from './register';
 import Icon from '../chrome/Icon.astro';
 import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
+import WorldDoors from '../mundos/WorldDoors.astro';
 import '../../styles/communities.css';
 
 interface Props {
@@ -66,6 +67,7 @@ const homes = COMMUNITIES.flatMap((community) => {
                 href={world.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-world-door={world.worldId}
                 data-metric="live-now-enter"
               >
                 <Icon name="play" size={16} />
@@ -106,6 +108,7 @@ const homes = COMMUNITIES.flatMap((community) => {
               href={world.href}
               target="_blank"
               rel="noopener noreferrer"
+              data-world-door={world.worldId}
               data-metric="live-home-enter"
             >
               <Icon name="play" size={16} />
@@ -162,6 +165,7 @@ const homes = COMMUNITIES.flatMap((community) => {
 
   <Countdown ui={ui} />
   <InsideCount ui={ui} />
+  <WorldDoors />
 </BaseLayout>
 
 <style>
