@@ -11,7 +11,11 @@ import { readRoleId } from './roles';
 export const AGENT_PROBLEMS = {
   agentId:
     'agentId must be 1 to 32 characters: lower case letters, digits and hyphens, none at either end',
-  draft: 'agent must be an object with id, name, publicKey and, if any, roleIds',
+  draft:
+    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds',
+  tokenHash: 'tokenHash must be the SHA-256 of a token: 64 lower case hexadecimal characters',
+  tokenPrefix: 'tokenPrefix must be 8 base64url characters',
+  notToken: 'that agent connects with a key, not a token',
   name: 'name must be 1 to 40 characters, none of them a control character',
   publicKey: 'publicKey must be ed25519: and 43 base64url characters (a 32-byte key)',
   roleIds: 'roleIds must be a list of at most 10 role ids',
@@ -39,6 +43,8 @@ export const ROLES_PER_AGENT_MAX = 10;
 
 const AGENT_ID = /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 const WORLD_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const TOKEN_HASH = /^[0-9a-f]{64}$/;
+const TOKEN_PREFIX = /^[A-Za-z0-9_-]{8}$/;
 const KEY = /^ed25519:[A-Za-z0-9_-]{43}$/;
 // eslint-disable-next-line no-control-regex -- a name never holds a control character
 const CONTROL = /[\u0000-\u001f\u007f]/;
@@ -90,38 +96,79 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export interface AgentDraft {
+/** The SHA-256 of a token in hex, as numinia.com sends it; the till never sees the token itself. */
+export function readTokenHash(value: unknown): string | undefined {
+  return typeof value === 'string' && TOKEN_HASH.test(value) ? value : undefined;
+}
+
+/** The first 8 characters after `ntk_`, kept to tell tokens apart in a list. */
+export function readTokenPrefix(value: unknown): string | undefined {
+  return typeof value === 'string' && TOKEN_PREFIX.test(value) ? value : undefined;
+}
+
+export interface KeyDraft {
+  readonly auth: 'key';
   readonly id: string;
   readonly name: string;
   readonly publicKey: string;
   readonly roleIds: readonly string[];
 }
 
-/** A new agent: exactly id, name, publicKey and, if any, roleIds; the problems of every wrong field. */
+export interface TokenDraft {
+  readonly auth: 'token';
+  readonly id: string;
+  readonly name: string;
+  readonly tokenHash: string;
+  readonly tokenPrefix: string;
+  readonly roleIds: readonly string[];
+}
+
+export type AgentDraft = KeyDraft | TokenDraft;
+
+/**
+ * A new agent: exactly id, name, roleIds (if any) and either a publicKey
+ * (the key way) or `auth: 'token'` with tokenHash and tokenPrefix (the token
+ * way: an agent has one or the other, never both); the problems of every
+ * wrong field.
+ */
 export function readAgentDraft(value: unknown): AgentDraft | string[] {
-  const fields = ['id', 'name', 'publicKey', 'roleIds'];
+  const viaToken = isRecord(value) && value['auth'] === 'token';
+  const fields = viaToken
+    ? ['id', 'name', 'roleIds', 'auth', 'tokenHash', 'tokenPrefix']
+    : ['id', 'name', 'publicKey', 'roleIds'];
   if (!isRecord(value) || Object.keys(value).some((key) => !fields.includes(key))) {
     return [AGENT_PROBLEMS.draft];
   }
   const id = readAgentId(value['id']);
   const name = readAgentName(value['name']);
-  const publicKey = readPublicKey(value['publicKey']);
   const sent = value['roleIds'] === undefined ? [] : value['roleIds'];
   const roleIds =
     Array.isArray(sent) && sent.length <= ROLES_PER_AGENT_MAX ? sent.map(readRoleId) : undefined;
+  const publicKey = viaToken ? undefined : readPublicKey(value['publicKey']);
+  const tokenHash = viaToken ? readTokenHash(value['tokenHash']) : undefined;
+  const tokenPrefix = viaToken ? readTokenPrefix(value['tokenPrefix']) : undefined;
   const problems = [
     ...(id === undefined ? [AGENT_PROBLEMS.agentId] : []),
     ...(name === undefined ? [AGENT_PROBLEMS.name] : []),
-    ...(publicKey === undefined ? [AGENT_PROBLEMS.publicKey] : []),
+    ...(viaToken || publicKey !== undefined ? [] : [AGENT_PROBLEMS.publicKey]),
+    ...(!viaToken || tokenHash !== undefined ? [] : [AGENT_PROBLEMS.tokenHash]),
+    ...(!viaToken || tokenPrefix !== undefined ? [] : [AGENT_PROBLEMS.tokenPrefix]),
     ...(roleIds === undefined || roleIds.includes(undefined) ? [AGENT_PROBLEMS.roleIds] : []),
   ];
   if (problems.length > 0) return problems;
-  return {
+  const common = {
     id: id as string,
     name: name as string,
-    publicKey: publicKey as string,
     roleIds: [...new Set(roleIds as string[])],
   };
+  return viaToken
+    ? {
+        auth: 'token',
+        ...common,
+        tokenHash: tokenHash as string,
+        tokenPrefix: tokenPrefix as string,
+      }
+    : { auth: 'key', ...common, publicKey: publicKey as string };
 }
 
 export interface AgentChange {

@@ -35,6 +35,8 @@ import {
   readAgentDraft,
   readAgentId,
   readMoment,
+  readTokenHash,
+  readTokenPrefix,
   readWorldAudience,
   type AgentDraft,
   type AgentState,
@@ -58,11 +60,21 @@ import { publishedIn } from './profiles';
 import { entering } from './roles';
 import { instant, text, type Row, type TillDatabase } from './repository';
 
+export type AgentAuth = 'key' | 'token';
+
 /** An agent as the till keeps it. */
 interface TeamAgent {
   readonly id: string;
   readonly name: string;
-  readonly publicKey: string;
+  /** How it proves itself: an Ed25519 key it signs with, or an access token (migration 0021). */
+  readonly auth: AgentAuth;
+  /** Its public key; null for a token agent. */
+  readonly publicKey: string | null;
+  /** SHA-256 of its token in hex; null for a key agent or once the token is revoked. Never leaves the till but to the pass route. */
+  readonly tokenHash: string | null;
+  /** The first 8 characters after `ntk_`; null with the hash. */
+  readonly tokenPrefix: string | null;
+  readonly tokenCreatedAt: string | null;
   /** The wallet of the person who answers for it (ORG-011). */
   readonly responsible: string;
   readonly enabled: boolean;
@@ -79,7 +91,12 @@ export type AgentStatus = 'apagada' | 'sin-responsable' | 'sin-permiso' | AgentS
 export interface AgentDetail {
   readonly id: string;
   readonly name: string;
-  readonly publicKey: string;
+  readonly auth: AgentAuth;
+  /** Its public key (a key agent only). */
+  readonly publicKey?: string;
+  /** The first 8 characters of its token and when it was made (a token agent with a live token only); never the token or its hash. */
+  readonly tokenPrefix?: string;
+  readonly tokenCreatedAt?: string;
   readonly enabled: boolean;
   readonly state: AgentState;
   /** What the next pass will be: off, orphaned, without permission to enter, or its state. */
@@ -123,7 +140,11 @@ export interface AgentPass {
   readonly agent: {
     readonly id: string;
     readonly name: string;
-    readonly publicKey: string;
+    readonly auth: AgentAuth;
+    /** A key agent's public key. */
+    readonly publicKey?: string;
+    /** A token agent's SHA-256(token) in hex, for numinia.com to compare in constant time; absent once revoked. */
+    readonly tokenHash?: string;
     readonly enabled: boolean;
     readonly state: AgentState;
   };
@@ -144,16 +165,17 @@ export type ClaimAnswer = { readonly ok: true } | Refusal;
 const REVISION = '(SELECT revision FROM team_profiles WHERE account_id = ?1)';
 
 const SELECT_AGENTS = `
-  SELECT agent_id, name, public_key, responsible_wallet, enabled, state, created_at, updated_at
+  SELECT agent_id, name, auth_kind, public_key, token_hash, token_prefix, token_created_at,
+         responsible_wallet, enabled, state, created_at, updated_at
     FROM team_agents WHERE account_id = ?1 ORDER BY created_at, agent_id`;
 
 const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE account_id = ?1';
 
 const INSERT_AGENT = `
   INSERT INTO team_agents
-    (account_id, agent_id, name, public_key, responsible_wallet, enabled, state, created_by,
-     created_at, updated_at)
-  SELECT ?1, ?2, ?3, ?4, ?5, 1, 'activa', ?5, ?6, ?6 WHERE ${REVISION} = ?7`;
+    (account_id, agent_id, name, auth_kind, public_key, token_hash, token_prefix,
+     token_created_at, responsible_wallet, enabled, state, created_by, created_at, updated_at)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, 'activa', ?9, ?10, ?10 WHERE ${REVISION} = ?11`;
 
 const GIVE_AGENT_ROLE = `
   INSERT INTO team_agent_roles (account_id, agent_id, role_id)
@@ -167,6 +189,11 @@ const UPDATE_AGENT = `
   UPDATE team_agents SET enabled = ?3, state = ?4, updated_at = ?5
    WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?6`;
 
+const UPDATE_AGENT_TOKEN = `
+  UPDATE team_agents
+     SET token_hash = ?3, token_prefix = ?4, token_created_at = ?5, enabled = ?6, updated_at = ?8
+   WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?7`;
+
 const DELETE_AGENT = `
   DELETE FROM team_agents WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?3`;
 
@@ -176,6 +203,10 @@ export const NONCE_KEPT_SECONDS = 120;
 const SWEEP_PASSES = 'DELETE FROM team_agent_passes WHERE t < ?1';
 const CLAIM_PASS =
   'INSERT OR IGNORE INTO team_agent_passes (account_id, agent_id, aud, t) VALUES (?1, ?2, ?3, ?4)';
+
+/** A text column that may be NULL. */
+const optional = (row: Row, column: string): string | null =>
+  row[column] === null ? null : text(row, column);
 
 /** The organization's agents, read after the organization itself: a change between the two raises the revision and the guarded write refuses. */
 async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgent[]> {
@@ -195,7 +226,11 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
     return {
       id,
       name: text(row, 'name'),
-      publicKey: text(row, 'public_key'),
+      auth: text(row, 'auth_kind') as AgentAuth,
+      publicKey: optional(row, 'public_key'),
+      tokenHash: optional(row, 'token_hash'),
+      tokenPrefix: optional(row, 'token_prefix'),
+      tokenCreatedAt: optional(row, 'token_created_at'),
       responsible: text(row, 'responsible_wallet'),
       enabled: whole(row, 'enabled') === 1,
       state: text(row, 'state') as AgentState,
@@ -282,7 +317,14 @@ async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
       return {
         id: agent.id,
         name: agent.name,
-        publicKey: agent.publicKey,
+        auth: agent.auth,
+        ...(agent.publicKey === null ? {} : { publicKey: agent.publicKey }),
+        ...(agent.tokenPrefix === null
+          ? {}
+          : {
+              tokenPrefix: agent.tokenPrefix,
+              tokenCreatedAt: agent.tokenCreatedAt as string,
+            }),
         enabled: agent.enabled,
         state: agent.state,
         status: statusOf(org, agent),
@@ -364,13 +406,23 @@ export async function createAgent(
   );
   if ('problems' in entered) return entered;
   const { org, acting } = entered;
-  const { id, name, publicKey, roleIds } = draft as AgentDraft;
+  const made = draft as AgentDraft;
+  const { id, name, roleIds } = made;
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
   if (acting.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
   const held = await loadAgents(db, org.accountId);
   if (held.length >= MAX_AGENTS) return refuse(AGENT_PROBLEMS.limit);
-  if (held.some((other) => other.id === id || other.publicKey === publicKey)) {
+  const publicKey = made.auth === 'key' ? made.publicKey : null;
+  const tokenHash = made.auth === 'token' ? made.tokenHash : null;
+  if (
+    held.some(
+      (other) =>
+        other.id === id ||
+        (publicKey !== null && other.publicKey === publicKey) ||
+        (tokenHash !== null && other.tokenHash === tokenHash),
+    )
+  ) {
     return refuse(AGENT_PROBLEMS.taken);
   }
   const fresh = newAgentAccess(org, acting, []);
@@ -383,7 +435,19 @@ export async function createAgent(
   return written(db, entered, [
     db
       .prepare(INSERT_AGENT)
-      .bind(org.accountId, id, name, publicKey, acting.wallet, now.toISOString(), org.revision),
+      .bind(
+        org.accountId,
+        id,
+        name,
+        made.auth,
+        publicKey,
+        tokenHash,
+        made.auth === 'token' ? made.tokenPrefix : null,
+        made.auth === 'token' ? now.toISOString() : null,
+        acting.wallet,
+        now.toISOString(),
+        org.revision,
+      ),
     ...roleIds.map((roleId) =>
       db.prepare(GIVE_AGENT_ROLE).bind(org.accountId, id, roleId, org.revision),
     ),
@@ -397,6 +461,21 @@ export async function createAgent(
       { name, ...(roleIds.length > 0 ? { roles: roleIds.join(',') } : {}) },
       org.revision,
     ),
+    // Only the prefix is ever written: never the token, never its hash.
+    ...(made.auth === 'token'
+      ? [
+          logLine(
+            db,
+            org.accountId,
+            now,
+            acting,
+            'agent-token-created',
+            id,
+            { name, prefix: made.tokenPrefix },
+            org.revision,
+          ),
+        ]
+      : []),
   ]);
 }
 
@@ -463,6 +542,100 @@ export async function changeAgent(
           ),
         ]
       : []),
+  ]);
+}
+
+/**
+ * Gives a token agent a new token (the old one stops working at once): whoever
+ * may handle it. numinia.com draws the token and sends only its SHA-256 and
+ * first 8 characters; the log keeps the prefix. A key agent has no token.
+ */
+export async function renewAgentToken(
+  db: TillDatabase,
+  sentWallet: unknown,
+  sentAccount: unknown,
+  sentAgent: unknown,
+  sentHash: unknown,
+  sentPrefix: unknown,
+  sentHouse: unknown,
+  now: Date,
+): Promise<AgentsAnswer> {
+  const tokenHash = readTokenHash(sentHash);
+  const tokenPrefix = readTokenPrefix(sentPrefix);
+  const wrong = [
+    ...(tokenHash === undefined ? [AGENT_PROBLEMS.tokenHash] : []),
+    ...(tokenPrefix === undefined ? [AGENT_PROBLEMS.tokenPrefix] : []),
+  ];
+  const entered = await entering(db, sentWallet, sentAccount, sentHouse, wrong);
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  const found = await agentFor(db, entered, sentAgent);
+  if ('problems' in found) return found;
+  const { agent } = found;
+  const refused = handling(entered, agent);
+  if (refused !== null) return refused;
+  if (agent.auth !== 'token') return refuse(AGENT_PROBLEMS.notToken);
+  if (agent.tokenHash === tokenHash) return refuse(AGENT_PROBLEMS.taken);
+  const at = now.toISOString();
+  return written(db, entered, [
+    db
+      .prepare(UPDATE_AGENT_TOKEN)
+      .bind(
+        org.accountId,
+        agent.id,
+        tokenHash as string,
+        tokenPrefix as string,
+        at,
+        agent.enabled ? 1 : 0,
+        org.revision,
+        at,
+      ),
+    logLine(
+      db,
+      org.accountId,
+      now,
+      acting,
+      'agent-token-renewed',
+      agent.id,
+      { name: agent.name, prefix: tokenPrefix as string },
+      org.revision,
+    ),
+  ]);
+}
+
+/** Revokes a token agent's token: the agent is switched off and keeps no token until it is renewed. */
+export async function revokeAgentToken(
+  db: TillDatabase,
+  sentWallet: unknown,
+  sentAccount: unknown,
+  sentAgent: unknown,
+  sentHouse: unknown,
+  now: Date,
+): Promise<AgentsAnswer> {
+  const entered = await entering(db, sentWallet, sentAccount, sentHouse);
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  const found = await agentFor(db, entered, sentAgent);
+  if ('problems' in found) return found;
+  const { agent } = found;
+  const refused = handling(entered, agent);
+  if (refused !== null) return refused;
+  if (agent.auth !== 'token') return refuse(AGENT_PROBLEMS.notToken);
+  if (agent.tokenHash === null) return viewOf(db, entered);
+  return written(db, entered, [
+    db
+      .prepare(UPDATE_AGENT_TOKEN)
+      .bind(org.accountId, agent.id, null, null, null, 0, org.revision, now.toISOString()),
+    logLine(
+      db,
+      org.accountId,
+      now,
+      acting,
+      'agent-token-revoked',
+      agent.id,
+      { name: agent.name, prefix: agent.tokenPrefix as string },
+      org.revision,
+    ),
   ]);
 }
 
@@ -570,7 +743,9 @@ export async function agentPass(
     agent: {
       id: agent.id,
       name: agent.name,
-      publicKey: agent.publicKey,
+      auth: agent.auth,
+      ...(agent.publicKey === null ? {} : { publicKey: agent.publicKey }),
+      ...(agent.tokenHash === null ? {} : { tokenHash: agent.tokenHash }),
       enabled: agent.enabled,
       state: agent.state,
     },

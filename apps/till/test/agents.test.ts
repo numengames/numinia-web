@@ -129,7 +129,7 @@ describe('the rules of the agents', () => {
   });
 
   it('reads a draft: exactly id, name, publicKey and roleIds, each valid', () => {
-    expect(readAgentDraft(BOT)).toEqual({ ...BOT, roleIds: [] });
+    expect(readAgentDraft(BOT)).toEqual({ auth: 'key', ...BOT, roleIds: [] });
     expect(
       readAgentDraft({
         ...BOT,
@@ -137,6 +137,7 @@ describe('the rules of the agents', () => {
         roleIds: ['role_0123456789abcdef', 'role_0123456789abcdef'],
       }),
     ).toEqual({
+      auth: 'key',
       ...BOT,
       roleIds: ['role_0123456789abcdef'],
     });
@@ -506,6 +507,7 @@ describe('what a pass is made of', () => {
     const pass = await s.desk.agentPass(id, 'hermes-1');
     if (!pass.ok) throw new Error(pass.problems.join());
     expect(pass.agent).toEqual({
+      auth: 'key',
       id: 'hermes-1',
       name: 'Hermes',
       publicKey: BOT.publicKey,

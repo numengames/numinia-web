@@ -129,6 +129,8 @@ import {
   claimAgentPass,
   createAgent,
   removeAgent,
+  renewAgentToken,
+  revokeAgentToken,
   type AgentPassAnswer,
   type AgentsAnswer,
   type ClaimAnswer,
@@ -767,6 +769,37 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     house?: unknown,
   ): Promise<AgentsAnswer> {
     return changeAgent(this.env.TILL_DB, wallet, accountId, agentId, change, house, new Date());
+  }
+
+  /** A new token for a token agent (the old one stops working); numinia.com sends only its SHA-256 and prefix; logged. */
+  async renewAgentToken(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    tokenHash: unknown,
+    tokenPrefix: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return renewAgentToken(
+      this.env.TILL_DB,
+      wallet,
+      accountId,
+      agentId,
+      tokenHash,
+      tokenPrefix,
+      house,
+      new Date(),
+    );
+  }
+
+  /** Revokes a token agent's token and switches it off; logged. */
+  async revokeAgentToken(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return revokeAgentToken(this.env.TILL_DB, wallet, accountId, agentId, house, new Date());
   }
 
   /** Removes an agent; logged. */
