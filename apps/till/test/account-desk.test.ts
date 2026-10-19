@@ -83,7 +83,9 @@ describe('the desk', () => {
     expect(desk).toBeInstanceOf(WorkerEntrypoint);
     expect(Object.getOwnPropertyNames(AccountDesk.prototype).sort()).toEqual([
       'access',
+      'agentByToken',
       'agentPass',
+      'agentWorlds',
       'agents',
       'cancelRitual',
       'changeAgent',

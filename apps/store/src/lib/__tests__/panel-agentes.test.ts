@@ -12,11 +12,16 @@ import {
   changeBody,
   chipsOf,
   connectCommand,
+  connectionOf,
+  disconnectable,
   failureOf,
+  hermesInstallLink,
+  hermesTokenCommand,
   invitable,
   listUrl,
   readAgents,
   readToken,
+  RELAY_URL,
   refusalOf,
   removeUrl,
   responsibleOf,
@@ -24,6 +29,7 @@ import {
   rolesToGive,
   tokenLine,
 } from '../panel-agentes';
+import { RELAY_ORIGIN } from '../relay-handoff';
 import { agentIdFrom, nameProblem } from '../world-door';
 
 const WALLET = `0x${'ab'.repeat(20)}`;
@@ -369,5 +375,90 @@ describe('the token way', () => {
       `hermes mcp add numinia-mundo --command node --env NUMINIA_URL=https://numinia.com AGENTE_ORG=acc_t_games AGENTE_ID=hermes AGENTE_TOKEN=${TOKEN} MUNDO_URL=wss://TU-MUNDO/ws --args "$PWD/tools/mcp-mundo.ts"`,
     );
     expect(test).toBe('hermes mcp test numinia-mundo');
+  });
+});
+
+describe('the URL way (paso 2)', () => {
+  const byUrl = (extra: Partial<DeskAgent> = {}): DeskAgent =>
+    agent({
+      auth: 'token',
+      publicKey: undefined,
+      tokenPrefix: 'BBBBBBBB',
+      tokenCreatedAt: '2026-10-19T09:00:00.000Z',
+      via: 'mcp:claude.ai',
+      ...extra,
+    });
+
+  it('gives the relay’s one address (pinned to the relay’s origin)', () => {
+    expect(RELAY_URL).toBe(`${RELAY_ORIGIN}/mcp`);
+    expect(RELAY_URL).toBe('https://mcp.numinia.com/mcp');
+  });
+
+  it('builds Hermes desktop’s «Add to Hermes» link: a name and the config as base64url JSON with the login', () => {
+    const link = hermesInstallLink();
+    const url = new URL(link);
+    expect(url.protocol).toBe('hermes:');
+    expect(link.startsWith('hermes://mcp/install?')).toBe(true);
+    expect(url.searchParams.get('name')).toBe('numinia');
+    const config = url.searchParams.get('config') ?? '';
+    expect(config).toMatch(/^[A-Za-z0-9_-]+$/);
+    const json = atob(config.replace(/-/g, '+').replace(/_/g, '/'));
+    expect(JSON.parse(json)).toEqual({ url: RELAY_URL, auth: 'oauth' });
+    // Any address: the base64url alphabet, never «+», «/» or padding.
+    const other = new URL(hermesInstallLink('https://a.example/m?x=>>>??')).searchParams.get(
+      'config',
+    );
+    expect(other).toMatch(/^[A-Za-z0-9_-]+$/);
+  });
+
+  it('writes the Hermes line for a client without login: the address and the token asked for', () => {
+    expect(hermesTokenCommand()).toBe(
+      'hermes mcp add numinia --url https://mcp.numinia.com/mcp --auth header',
+    );
+    expect(hermesTokenCommand('https://a.example/mcp')).toContain('--url https://a.example/mcp');
+  });
+
+  it('reads how a row was connected, and refuses a `via` that is not text', () => {
+    const read = readAgents({ agents: view([byUrl(), agent({ via: 'panel' }), agent()]) });
+    expect(read?.agents.map((a) => a.via)).toEqual(['mcp:claude.ai', 'panel', undefined]);
+    expect(read?.agents[2]).not.toHaveProperty('via');
+    expect(readAgents({ agents: view([agent({ via: 7 } as never)]) })).toBeNull();
+  });
+
+  it('tells the panel from an app’s host, and nothing it does not know', () => {
+    expect(connectionOf({ via: 'panel' })).toEqual({ kind: 'panel' });
+    expect(connectionOf({ via: 'mcp:claude.ai' })).toEqual({ kind: 'url', host: 'claude.ai' });
+    expect(connectionOf({ via: 'mcp:chatgpt.com' })).toEqual({ kind: 'url', host: 'chatgpt.com' });
+    for (const via of [
+      undefined,
+      '',
+      'mcp:',
+      'mcp:Claude.AI',
+      'mcp:a b',
+      'mcp:<b>',
+      'url:claude.ai',
+      'mcp:a/b',
+    ]) {
+      expect(connectionOf({ via })).toBeNull();
+    }
+  });
+
+  it('offers «Desconectar» only on an app-connected row holding its token, to who may edit it', () => {
+    expect(disconnectable(byUrl())).toBe(true);
+    expect(disconnectable(byUrl({ mayEdit: false }))).toBe(false);
+    expect(disconnectable(byUrl({ tokenPrefix: undefined, tokenCreatedAt: undefined }))).toBe(
+      false,
+    );
+    expect(disconnectable(byUrl({ via: 'panel' }))).toBe(false);
+    expect(disconnectable(byUrl({ via: undefined }))).toBe(false);
+    expect(disconnectable(agent({ via: 'mcp:claude.ai' }))).toBe(false);
+  });
+
+  it('disconnects with the token’s own revoke, no new body', () => {
+    expect(changeBody('acc_t', 'claude', { revokeToken: true })).toEqual({
+      accountId: 'acc_t',
+      id: 'claude',
+      revokeToken: true,
+    });
   });
 });

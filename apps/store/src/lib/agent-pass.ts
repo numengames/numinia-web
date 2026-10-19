@@ -35,6 +35,8 @@
  * revoked token, a token that is not its own, a header that is not a token —
  * is the same generic 401 `token`: it never tells «unknown agent» from «bad
  * token». A key agent refuses a bearer and a token agent refuses a signature.
+ * The metering and the judging of the bearer are lib/agent-me.ts's, shared
+ * with GET /api/agents/me: one check, one bucket per agent for both routes.
  * The token is never logged, never in an error text, never in telemetry.
  *
  * Answers — all JSON, `no-store`; an error is `{ error, texto }`, `texto` a
@@ -54,17 +56,8 @@
 
 import { z } from 'zod';
 import type { AccountDesk } from './accounts';
-import {
-  bearerOf,
-  hashToken,
-  inWindow,
-  isAccountId,
-  isAgentId,
-  isAudience,
-  sameSecret,
-  verifyRequest,
-} from './agents';
-import { checkRate } from './rate-limit';
+import { agentPassShape, meterToken, refusedToken, tillFailed, tokenHolder } from './agent-me';
+import { inWindow, isAccountId, isAgentId, isAudience, verifyRequest } from './agents';
 import { logEvent } from './telemetry';
 import { WorldPassError, buildAgentPassPayload, signPass } from './world-pass';
 import { answer as answerOf, ask } from './accounts-source';
@@ -92,8 +85,6 @@ const TEXTOS = {
     'La petición no es la del contrato: {org, agent, aud, t, sig} en JSON, con t en segundos.',
   hora: 'La hora de la petición se aparta más de 60 segundos de la del servidor: revisa el reloj.',
   firma: 'La firma no es la de esta IA.',
-  token: 'El token no es válido para esta IA.',
-  limite: 'Demasiadas peticiones de esta IA: espera un poco.',
   apagada: 'Esta IA está apagada: no recibe pase.',
   'sin-responsable':
     'La persona que responde de esta IA ya no está en la organización o ya no puede gestionar roles: no recibe pase.',
@@ -102,7 +93,6 @@ const TEXTOS = {
   'no-existe': 'Esta organización no tiene una IA con ese nombre.',
   mundo: 'No hay un mundo con ese nombre.',
   repetida: 'Esa petición ya se usó: firma otra con la hora de ahora.',
-  caja: 'La caja de Numinia no respondió bien: vuelve a intentarlo.',
   'no-vinculado': 'Numinia no tiene la caja conectada ahora mismo.',
   'sin-clave': 'Numinia no puede firmar pases ahora mismo.',
 } as const;
@@ -111,9 +101,6 @@ type Code = keyof typeof TEXTOS;
 
 const fail = (error: Code, status: number): Response =>
   answerOf({ error, texto: TEXTOS[error] }, status);
-
-/** Requests a minute one agent may make with a token (SPEC, cut 2). */
-export const TOKEN_REQUESTS_PER_MINUTE = 60;
 
 const bearerRequest = z
   .object({
@@ -135,26 +122,7 @@ const request = z
 
 const refusal = z.object({ ok: z.literal(false), problems: z.array(z.string()) });
 const shapes = {
-  pass: z.union([
-    z.object({
-      ok: z.literal(true),
-      accountId: z.string(),
-      agent: z.object({
-        id: z.string(),
-        name: z.string(),
-        auth: z.enum(['key', 'token']),
-        publicKey: z.string().optional(),
-        tokenHash: z.string().optional(),
-        enabled: z.boolean(),
-        state: z.enum(['activa', 'dormida']),
-      }),
-      eligible: z.boolean(),
-      permissions: z.array(z.string()),
-      height: z.number(),
-      roles: z.array(z.object({ name: z.string(), color: z.string().nullable() })),
-    }),
-    refusal,
-  ]),
+  pass: agentPassShape,
   home: z.union([
     z
       .object({
@@ -166,10 +134,6 @@ const shapes = {
   ]),
   claim: z.union([z.object({ ok: z.literal(true) }), refusal]),
 };
-
-/** The failure `ask` gives for a till that failed or is not bound, in this route's words. */
-const tillFailed = (response: Response): Response =>
-  response.status === 503 ? fail('no-vinculado', 503) : fail('caja', 502);
 
 /** The JSON of a POST within limits, or the answer that refuses it. */
 async function bodyOf(
@@ -187,12 +151,6 @@ async function bodyOf(
     return { ok: false };
   }
 }
-
-/** The hash a request that has no agent to be compared with is compared with: the work is the same. */
-const NOBODY = '0'.repeat(64);
-
-/** The generic 401 of the token way. */
-const refusedToken = (): Response => fail('token', 401);
 
 type Parsed =
   | { readonly mode: 'signed'; org: string; agent: string; aud: string; t: number; sig: string }
@@ -224,22 +182,8 @@ export async function answerAgentPass(
   if (signed !== null && !inWindow(signed.t, context.now)) return fail('hora', 400);
   if (signed === null) {
     // Metered per agent whether or not it exists, before anything is looked up.
-    const verdict = checkRate(
-      `agent-token:${org}:${agent}`,
-      TOKEN_REQUESTS_PER_MINUTE,
-      60_000,
-      context.now * 1000,
-    );
-    if (!verdict.allowed) {
-      log({ level: 'warn', kind: 'throttled', rule: 'agent-token' });
-      return Response.json(
-        { error: 'limite', texto: TEXTOS.limite },
-        {
-          status: 429,
-          headers: { 'cache-control': 'no-store', 'retry-after': String(verdict.retryAfterS) },
-        },
-      );
-    }
+    const limited = meterToken(org, agent, context.now * 1000, log);
+    if (limited !== null) return limited;
   }
   if (!context.hosts.has(aud)) return fail('mundo', 404);
   if (desk === null) return fail('no-vinculado', 503);
@@ -247,14 +191,9 @@ export async function answerAgentPass(
   const found = await ask(log, 'agent-pass', () => desk.agentPass(org, agent), shapes.pass);
   if (!found.ok) return tillFailed(found.response);
 
-  if (signed === null) {
-    // The credential is judged in one way, and nothing tells why it failed.
-    const presented = bearerOf(authorization);
-    const given = await hashToken(presented ?? '');
-    const kept = 'problems' in found.value ? undefined : found.value.agent;
-    // The comparison runs even when there is nothing to compare with.
-    const equal = sameSecret(given, kept?.tokenHash ?? NOBODY);
-    if (!equal || presented === null || kept?.auth !== 'token') return refusedToken();
+  // The credential is judged in one way, and nothing tells why it failed.
+  if (signed === null && (await tokenHolder(authorization, found.value)) === null) {
+    return refusedToken();
   }
   if ('problems' in found.value) return fail('no-existe', 404);
   const held = found.value;

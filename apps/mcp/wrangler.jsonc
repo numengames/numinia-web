@@ -1,0 +1,113 @@
+{
+  // The relay (DISENO-MCP-REMOTO §2 (a), story W5): Numinia's remote MCP
+  // server and its OAuth 2.1 authorization server in one Worker, apart from
+  // numinia.com. An organization's AI pastes https://mcp.numinia.com/mcp;
+  // sign-in and consent happen on numinia.com (story W6), and the relay
+  // issues its own tokens.
+  //
+  // NOT DEPLOYED. Before the first `npm run deploy` the house creates the KV
+  // namespace below and puts its id here; the custom domain is created by
+  // that deploy. Nothing publishes this Worker on push: Workers Builds is
+  // connected to numinia.com's Worker only.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "numinia-mcp",
+  "main": "src/worker.ts",
+  // The same date as the site's Worker (root wrangler.jsonc).
+  "compatibility_date": "2026-08-15",
+  // Client ID Metadata Documents (CIMD): a client's id is an HTTPS URL the
+  // relay fetches. This flag keeps that fetch on the public internet (never
+  // a Cloudflare-internal address); without it the OAuth library switches
+  // CIMD off and stops advertising it, and Claude falls back to DCR.
+  "compatibility_flags": ["global_fetch_strictly_public"],
+  "send_metrics": false,
+  // One public address, its own domain: mcp.numinia.com. No workers.dev
+  // address and no preview address, so the OAuth issuer and the MCP
+  // resource are always the canonical https://mcp.numinia.com.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "mcp.numinia.com",
+      "custom_domain": true,
+    },
+  ],
+  // Workers Logs, as the site's Worker (the relay writes no console lines).
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+  "vars": {
+    // numinia.com (story W6): where /authorize sends the browser for the
+    // consent (/conectar-ia/) and where /vuelta asks GET /api/agents/me who
+    // a token is. Read with Zod; anything but a bare https origin and the
+    // relay starts no authorization. Not a secret.
+    "STORE_ORIGIN": "https://numinia.com",
+  },
+  // The way back to numinia.com (story W10): the relay asks
+  // /api/agents/me and /api/agents/pass through a service binding to the
+  // site's Worker (`numinia-web`, root wrangler.jsonc), not over the public
+  // internet. Such a request carries no `cf-connecting-ip`, which every
+  // internet request does and no client can remove: that is how numinia.com
+  // tells the relay's calls apart and counts each AI on its own meter
+  // instead of all of them in one address (store: lib/rate-limit.ts
+  // `fromRelay`). numinia-web already exists, so deploying this Worker first
+  // (numinia.com's MCP_HANDOFF binding points here) still works; the two
+  // bindings go opposite ways and neither needs a third deploy.
+  "services": [{ "binding": "STORE", "service": "numinia-web" }],
+  // Per-address limits on the two doors anyone can knock without a token
+  // (story W10, src/limites.ts): /register (dynamic client registration) 10
+  // a minute, /authorize 30 a minute; and panel tokens pasted as a static
+  // bearer, 300 checks a minute (story W11). Cloudflare's rate limiting binding:
+  // nothing to create, the namespace ids are numbers the account picks and
+  // must not reuse for another limit (none other exists today). Counted
+  // per Cloudflare location, eventually consistent: it stops a loop.
+  "ratelimits": [
+    {
+      "name": "LIMIT_REGISTER",
+      "namespace_id": "4101",
+      "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      "name": "LIMIT_AUTHORIZE",
+      "namespace_id": "4102",
+      "simple": { "limit": 30, "period": 60 },
+    },
+    {
+      // Panel tokens pasted as a static bearer, checked at /mcp (story W11).
+      "name": "LIMIT_BEARER",
+      "namespace_id": "4103",
+      "simple": { "limit": 300, "period": 60 },
+    },
+  ],
+  "kv_namespaces": [
+    {
+      // The OAuth library's storage: registered clients, grants and tokens,
+      // tokens and codes only as hashes and each grant's props encrypted;
+      // and the relay's pending requests (`vuelta:`, 10 minutes) with their
+      // sealed hand-offs.
+      "binding": "OAUTH_KV",
+      // `numinia-mcp-oauth`, created by the house (EU jurisdiction).
+      "id": "e805e94343654063bca4e60d3509851b",
+    },
+  ],
+  // The AIs' bodies in worlds (story W8). CUERPO: one object per AI
+  // (`<organization>.<agent>`) holding its outbound WebSocket to one world
+  // and running the engine's bridge (vendor/puente-mundo.mjs); its 20 Hz
+  // clock keeps it awake while inside (no hibernation, priced in §2 (e)).
+  // PLAZAS: one object per organization, its seats (3 bodies at once) and
+  // its body time per day, kept to bill later.
+  "durable_objects": {
+    "bindings": [
+      { "name": "CUERPO", "class_name": "Cuerpo" },
+      { "name": "PLAZAS", "class_name": "Plazas" },
+    ],
+  },
+  // SQLite-backed (what Cloudflare recommends for new classes, and the only
+  // kind on the free plan); both use only the key-value storage API.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Cuerpo", "Plazas"],
+    },
+  ],
+}

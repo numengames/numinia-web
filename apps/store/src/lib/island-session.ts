@@ -77,14 +77,23 @@ export function doorParams(search: string): DoorParams {
 const LAP_ROOM = /^\/(?:(?:es|ja|ko|pt-br)\/)?lap\/(?!session(?:[/?#]|$))/;
 
 /**
+ * The «Conecta tu IA» consent (lib/conectar-ia-page.ts), in any locale: an
+ * app is waiting on the other side, so a sign-in opened from it goes back.
+ */
+const CONSENT = /^\/(?:(?:es|ja|ko|pt-br)\/)?conectar-ia\/(?:[?#]|$)/;
+
+/**
  * Where a fresh sign-in lands. Pablo (video walkthrough, 2026-10-14): «me
  * saca de aquí, que no debería; me debería de mantener en el perfil». So it
  * is your profile — Resumen, in the page's language (`profileHref`) —
  * unless the door was opened from inside the player area (the sheet, an
- * Oracle's room): then that room, which is where you were working.
+ * Oracle's room): then that room, which is where you were working; or from
+ * the consent of «Conecta tu IA», where an app waits for the answer.
  */
 export function landingAfterSignIn(returnTo: string | null, profileHref: string): string {
-  return returnTo !== null && LAP_ROOM.test(returnTo) ? returnTo : profileHref;
+  return returnTo !== null && (LAP_ROOM.test(returnTo) || CONSENT.test(returnTo))
+    ? returnTo
+    : profileHref;
 }
 
 /** The sign-in page itself, in any of the site's locales. */

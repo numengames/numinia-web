@@ -74,7 +74,7 @@ describe('reading a token', () => {
   });
 
   it('reads a token draft: auth token, a hash and a prefix, and never a key beside them', () => {
-    expect(readAgentDraft(TOKEN)).toEqual({ ...TOKEN, roleIds: [] });
+    expect(readAgentDraft(TOKEN)).toEqual({ ...TOKEN, roleIds: [], via: 'panel' });
     expect(readAgentDraft({ ...TOKEN, roleIds: ['role_0123456789abcdef'] })).toMatchObject({
       auth: 'token',
       roleIds: ['role_0123456789abcdef'],
@@ -94,8 +94,9 @@ describe('migration 0021', () => {
   it('rebuilds team_agents keeping the data, the roles and the log, and allows a null key only for a token', async () => {
     const shim = sqliteD1();
     const names = migrationFiles();
-    expect(names.at(-1)).toBe('0021_agent_access_tokens.sql');
-    for (const name of names.slice(0, -1)) {
+    const at = names.indexOf('0021_agent_access_tokens.sql');
+    expect(at).toBeGreaterThan(0);
+    for (const name of names.slice(0, at)) {
       shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
     }
     const desk = new AccountDesk(ctx, { TILL_DB: shim.db });
@@ -155,7 +156,10 @@ describe('migration 0021', () => {
         .all(),
     ).toEqual([]);
     expect(shim.sqlite.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
-    // The agent still works through the new code, with a new act on the log.
+    // The migrations after it, then the agent still works through the new code.
+    for (const name of names.slice(at + 1)) {
+      shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
+    }
     const view = await desk.agents(PABLO, id);
     expect(view.ok && view.agents[0]).toMatchObject({
       id: 'hermes-1',
@@ -221,7 +225,7 @@ describe('creating a token agent', () => {
     expect(lines.map((line) => line['act'])).toEqual(['agent-created', 'agent-token-created']);
     expect(lines[1]).toMatchObject({
       subject: 'tok-bot',
-      detail: JSON.stringify({ name: 'Token bot', prefix: 'ab12cd34' }),
+      detail: JSON.stringify({ name: 'Token bot', prefix: 'ab12cd34', via: 'panel' }),
     });
     expect(JSON.stringify(lines)).not.toContain(HASH_A);
   });
@@ -284,7 +288,7 @@ describe('renewing a token', () => {
       .get();
     expect(line).toMatchObject({
       subject: 'tok-bot',
-      detail: JSON.stringify({ name: 'Token bot', prefix: 'zz99yy88' }),
+      detail: JSON.stringify({ name: 'Token bot', prefix: 'zz99yy88', via: 'panel' }),
     });
     expect(JSON.stringify(s.sqlite.prepare('SELECT * FROM team_log').all())).not.toContain(HASH_B);
   });

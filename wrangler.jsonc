@@ -70,10 +70,20 @@
   // passes its wallet; the till decides what that wallet may see or do. Same
   // deploy order: the till with its AccountDesk first, then this config.
   // Until it is there, «Saldo» says the till did not answer.
+  //
+  // The relay's hand-off desk («MCP remoto», story W6): when a person allows
+  // an AI on /conectar-ia, this Worker asks the relay (`numinia-mcp`,
+  // https://mcp.numinia.com) whether it is waiting for that request and then
+  // gives it the AI's fresh token, which the relay seals for the browser that
+  // started the request. `HandOffDesk` is a named RPC entrypoint of
+  // `numinia-mcp`, with no address: the token goes Worker to Worker, never
+  // through a browser, a URL or a log. Deploy order: numinia-mcp first, then
+  // this config. Until it is there, the consent answers «not now» (503).
   "services": [
     { "binding": "TILL_ORACLE", "service": "numinia-till", "entrypoint": "OracleDesk" },
     { "binding": "TILL_ACCOUNTS", "service": "numinia-till", "entrypoint": "AccountDesk" },
     { "binding": "TILL_DNS", "service": "numinia-till", "entrypoint": "DnsDesk" },
     { "binding": "TILL_FLEET", "service": "numinia-till", "entrypoint": "FleetDesk" },
+    { "binding": "MCP_HANDOFF", "service": "numinia-mcp", "entrypoint": "HandOffDesk" },
   ],
 }

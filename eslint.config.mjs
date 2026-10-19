@@ -8,6 +8,8 @@ export default tseslint.config(
     ignores: [
       // Kit copies ship as generated upstream (§13.1) — never linted, never edited.
       'apps/store/src/scripts/sistema.js',
+      // The engine's bridge, vendored byte for byte (apps/mcp/vendor/VENDOR.md).
+      'apps/mcp/vendor/puente-mundo.mjs',
       '**/dist/**',
       '**/coverage/**',
       '**/.astro/**',

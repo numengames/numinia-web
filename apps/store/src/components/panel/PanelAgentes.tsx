@@ -4,7 +4,11 @@
  * what the till says its next pass is, who answers for it and «Quitar» with
  * a confirmation — and the invitation (./AgentInvite.tsx). An AI made with a
  * token also shows its token's start and day, and «Renovar token» (with a
- * confirmation); the new secret, like the first, is shown once (./AgentToken.tsx). It talks to
+ * confirmation); the new secret, like the first, is shown once (./AgentToken.tsx). Each row
+ * says how its AI was connected (`via`: from the panel, or from an app's host);
+ * one connected from an app by URL has «Desconectar» instead of «Renovar
+ * token», which is the token's revoke. Above the list, «Conecta tu IA»
+ * (./AgentConnect.tsx) gives the relay's address. It talks to
  * /api/saldo/agents (lib/agents-source.ts), which answers the whole list
  * after every write, so the screen never guesses what changed.
  *
@@ -33,6 +37,8 @@ import {
 import {
   changeBody,
   chipsOf,
+  connectionOf,
+  disconnectable,
   failureOf,
   listUrl,
   readAgents,
@@ -46,6 +52,7 @@ import {
   type Failure,
 } from '../../lib/panel-agentes';
 import { LunaEspera } from '../chrome/LunaEspera';
+import { ConnectBlock } from './AgentConnect';
 import { InviteDialog, type Draft } from './AgentInvite';
 import { TokenOnceDialog } from './AgentToken';
 import { PanelFrame } from './PanelFrame';
@@ -169,6 +176,70 @@ function RoleGiver({
   );
 }
 
+/** «Desconectar» on a row connected from an app: a confirmation, then the token's revoke. */
+function Disconnect({
+  agent,
+  host,
+  busy,
+  words,
+  onDisconnect,
+}: {
+  readonly agent: DeskAgent;
+  readonly host: string;
+  readonly busy: boolean;
+  readonly words: AgentesMessages;
+  readonly onDisconnect: () => Promise<boolean>;
+}) {
+  const [step, setStep] = useState<'idle' | 'asking' | 'busy'>('idle');
+  const say = words.connection;
+  const label = fill(say.disconnectLabel, { name: agent.name });
+  if (step === 'idle') {
+    return (
+      <div className="agentes-renovar" data-agent-disconnect>
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          disabled={busy}
+          onClick={() => setStep('asking')}
+          aria-label={label}
+          data-metric="panel-agentes-disconnect"
+        >
+          {say.disconnect}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="agentes-renovar" data-agent-disconnect>
+      <div className="mundo-ia-confirmar agentes-confirmar" role="group" aria-label={label}>
+        <span className="saldo-nota">{fill(say.disconnectAsk, { name: agent.name, host })}</span>
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          disabled={step === 'busy'}
+          aria-busy={step === 'busy'}
+          onClick={() => {
+            setStep('busy');
+            void onDisconnect().then(() => setStep('idle'));
+          }}
+          data-metric="panel-agentes-disconnect-yes"
+        >
+          {step === 'busy' ? say.disconnecting : say.disconnectYes}
+        </button>
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          disabled={step === 'busy'}
+          onClick={() => setStep('idle')}
+          data-metric="panel-agentes-disconnect-no"
+        >
+          {say.disconnectNo}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Row({
   agent,
   view,
@@ -179,6 +250,7 @@ function Row({
   onChange,
   onRemove,
   onRenew,
+  onDisconnect,
 }: {
   readonly locale: SupportedLocale;
   readonly agent: DeskAgent;
@@ -189,8 +261,11 @@ function Row({
   readonly onChange: (change: Change) => void;
   readonly onRemove: () => Promise<boolean>;
   readonly onRenew: () => Promise<boolean>;
+  readonly onDisconnect: () => Promise<boolean>;
 }) {
   const uid = useId();
+  const connection = connectionOf(agent);
+  const host = connection?.kind === 'url' ? connection.host : null;
   const [asking, setAsking] = useState(false);
   const [renewing, setRenewing] = useState<'idle' | 'asking' | 'busy'>('idle');
   const line = tokenLine(agent);
@@ -228,7 +303,17 @@ function Row({
       <p className="agentes-linea" data-agent-status-line>
         {words.status[agent.status]}
       </p>
-      {agent.auth === 'token' && (
+      {connection !== null && (
+        <p className="saldo-nota agentes-linea" data-agent-via={connection.kind}>
+          {host === null ? words.connection.panel : fill(words.connection.url, { host })}
+        </p>
+      )}
+      {host !== null && agent.auth === 'token' && line === null && (
+        <p className="agentes-linea" data-agent-url-none>
+          {fill(words.connection.urlNone, { host })}
+        </p>
+      )}
+      {agent.auth === 'token' && host === null && (
         <p className="agentes-linea agentes-token-linea" data-agent-token-line>
           {line === null
             ? words.access.rowNone
@@ -311,7 +396,16 @@ function Row({
         )}
       </div>
 
-      {agent.mayEdit && agent.auth === 'token' && (
+      {host !== null && disconnectable(agent) && (
+        <Disconnect
+          agent={agent}
+          host={host}
+          busy={busy}
+          words={words}
+          onDisconnect={onDisconnect}
+        />
+      )}
+      {agent.mayEdit && agent.auth === 'token' && host === null && (
         <div className="agentes-renovar" data-agent-renew>
           {renewing === 'idle' ? (
             <button
@@ -547,6 +641,9 @@ function Agentes({
 
   return (
     <div className="agentes" data-agentes={sheet.at === 'failed' ? sheet.failure.kind : sheet.at}>
+      <p className="saldo-nota" data-agentes-subtitle>
+        {agentes.subtitle}
+      </p>
       <p className="agentes-aviso saldo-nota" data-agentes-notice>
         {agentes.notice}
       </p>
@@ -609,6 +706,13 @@ function Agentes({
                       agent,
                     )
                   }
+                  onDisconnect={() =>
+                    run('patch', '/api/saldo/agents', {
+                      method: 'PATCH',
+                      headers: JSON_HEADERS,
+                      body: JSON.stringify(changeBody(org, agent.id, { revokeToken: true })),
+                    })
+                  }
                 />
               ))}
             </ul>
@@ -641,6 +745,8 @@ function Agentes({
           {notice.text}
         </p>
       )}
+
+      <ConnectBlock words={agentes} />
 
       {inviting && view !== null && (
         <InviteDialog

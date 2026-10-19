@@ -31,6 +31,7 @@ import type {
   DeskKeyDraft,
   DeskTokenDraft,
   DeskAgentPassAnswer,
+  DeskAgentWorldsAnswer,
   DeskAgentsAnswer,
   DeskClaimAnswer,
   DeskLogAct,
@@ -39,17 +40,19 @@ import type {
 import {
   AGENT_PROBLEMS,
   AGENT_STATES,
+  MAX_AGENTS,
   isAccountId,
   isAgentId,
   isAudience,
+  isConnectedVia,
   isTokenHash,
   isTokenPrefix,
   publicKeyBytes,
   readAgentName,
 } from './agents';
 
-/** How many agents an organization keeps (the till's `MAX_AGENTS`). */
-export const MAX_AGENTS = 20;
+/** How many agents an organization keeps (the till's `MAX_AGENTS`, kept in lib/agents.ts). */
+export { MAX_AGENTS };
 /** How long a pass request's nonce is kept, in seconds (the till's `NONCE_KEPT_SECONDS`). */
 const NONCE_KEPT_SECONDS = 120;
 const ROLES_PER_AGENT_MAX = 10;
@@ -85,6 +88,8 @@ export interface AgentsHost {
   houseRead(entry: HostEntry, what: string): void;
   /** The name a wallet published, if any. */
   published(wallet: string): string | undefined;
+  /** The worlds placed in an organization, by id. */
+  placedIn(accountId: string): readonly string[];
   refusalOf(
     refusal: OrganizationRefusal,
     act: OrganizationAccess,
@@ -100,6 +105,8 @@ interface FixtureAgent {
   tokenHash?: string;
   tokenPrefix?: string;
   tokenCreatedAt?: string;
+  /** How it was connected: `panel` or `mcp:<client host>` (the till's `connected_via`). */
+  via: string;
   readonly responsible: string;
   enabled: boolean;
   state: AgentState;
@@ -120,6 +127,8 @@ type AgentMethods = Pick<
   | 'takeAgentRole'
   | 'agentPass'
   | 'claimAgentPass'
+  | 'agentWorlds'
+  | 'agentByToken'
 >;
 
 const refuse = (...problems: string[]): DeskRefusal => ({ ok: false, problems });
@@ -218,6 +227,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
                 tokenPrefix: agent.tokenPrefix,
                 tokenCreatedAt: agent.tokenCreatedAt as string,
               }),
+          via: agent.via,
           enabled: agent.enabled,
           state: agent.state,
           status: statusOf(entry, agent),
@@ -251,7 +261,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
 
   const stamp = (): string => now().toISOString();
 
-  return {
+  const methods: AgentMethods = {
     agents: async (wallet, accountId, house): Promise<DeskAgentsAnswer> => {
       const entry = host.enter(wallet, accountId, house);
       if ('ok' in entry) return entry;
@@ -265,6 +275,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       const entry = host.enter(wallet, accountId, house);
       if ('ok' in entry) return entry;
       const roleIds = draft?.roleIds ?? [];
+      const via = draft?.via ?? 'panel';
       const problems = [
         ...(isAgentId(draft?.id) ? [] : [AGENT_PROBLEMS.agentId]),
         ...(readAgentName(draft?.name) === undefined ? [AGENT_PROBLEMS.name] : []),
@@ -282,6 +293,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         roleIds.every((id) => ROLE_ID.test(id))
           ? []
           : [AGENT_PROBLEMS.roleIds]),
+        ...(isConnectedVia(via) ? [] : [AGENT_PROBLEMS.via]),
       ];
       if (problems.length > 0) return refuse(...problems);
       const { id, publicKey, tokenHash, tokenPrefix } = draft as DeskKeyDraft & DeskTokenDraft;
@@ -318,6 +330,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           name,
           auth: viaToken ? 'token' : 'key',
           ...(viaToken ? { tokenHash, tokenPrefix, tokenCreatedAt: at } : { publicKey }),
+          via,
           responsible: entry.who,
           enabled: true,
           state: 'activa',
@@ -329,9 +342,12 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       host.record(entry, 'agent-created', id, {
         name,
         ...(unique.length > 0 ? { roles: unique.join(',') } : {}),
+        via,
       });
       // Only the prefix is ever written: never the token, never its hash.
-      if (viaToken) host.record(entry, 'agent-token-created', id, { name, prefix: tokenPrefix });
+      if (viaToken) {
+        host.record(entry, 'agent-token-created', id, { name, prefix: tokenPrefix, via });
+      }
       return view(entry);
     },
 
@@ -395,10 +411,12 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       return view(entry);
     },
 
-    renewAgentToken: async (wallet, accountId, agentId, hash, prefix, house) => {
+    renewAgentToken: async (wallet, accountId, agentId, hash, prefix, house, sentVia) => {
+      const via = sentVia ?? 'panel';
       const problems = [
         ...(isTokenHash(hash) ? [] : [AGENT_PROBLEMS.tokenHash]),
         ...(isTokenPrefix(prefix) ? [] : [AGENT_PROBLEMS.tokenPrefix]),
+        ...(isConnectedVia(via) ? [] : [AGENT_PROBLEMS.via]),
       ];
       const found = withAgent(wallet, accountId, agentId, house);
       if ('ok' in found) return found;
@@ -412,7 +430,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       agent.tokenPrefix = prefix;
       agent.tokenCreatedAt = stamp();
       agent.updatedAt = agent.tokenCreatedAt;
-      host.record(entry, 'agent-token-renewed', agent.id, { name: agent.name, prefix });
+      agent.via = via;
+      host.record(entry, 'agent-token-renewed', agent.id, { name: agent.name, prefix, via });
       return view(entry);
     },
 
@@ -490,7 +509,30 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       nonces.set(key, t);
       return { ok: true };
     },
+
+    agentWorlds: async (accountId, agentId): Promise<DeskAgentWorldsAnswer> => {
+      if (!isAccountId(accountId) || !isAgentId(agentId)) {
+        return refuse(
+          ...(isAccountId(accountId) ? [] : ['accountId must be an account id']),
+          ...(isAgentId(agentId) ? [] : [AGENT_PROBLEMS.agentId]),
+        );
+      }
+      if (!agentsOf(accountId).some((held) => held.id === agentId)) {
+        return refuse(AGENT_PROBLEMS.noSuchAgent);
+      }
+      return { ok: true, accountId, agentId, worldIds: [...host.placedIn(accountId)].sort() };
+    },
+
+    agentByToken: async (tokenHash): Promise<DeskAgentPassAnswer> => {
+      if (!isTokenHash(tokenHash)) return refuse(AGENT_PROBLEMS.tokenHash);
+      for (const [accountId, held] of byOrg) {
+        const agent = held.find((one) => one.tokenHash === tokenHash);
+        if (agent !== undefined) return methods.agentPass(accountId, agent.id);
+      }
+      return refuse(AGENT_PROBLEMS.noSuchAgent);
+    },
   };
+  return methods;
 
   function assign(
     give: boolean,

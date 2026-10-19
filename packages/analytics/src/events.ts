@@ -129,6 +129,10 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - Their token way (cut 2, 2026-10-17): the invitation's `panel-agentes-invite-<via-token|via-key|add-token>`,
 //   the show-once screen's `panel-agentes-token-<copy|copy-connect|done>` and a row's
 //   `panel-agentes-token-renew` (+ `-yes`, `-no`).
+// - Their URL way (paso 2, W12, 2026-10-19): «Conecta tu IA»'s `panel-agentes-url-copy` (the
+//   relay's address), `panel-agentes-url-hermes` (Hermes desktop's «Add to Hermes» link) and
+//   `panel-agentes-url-copy-command` (the token line); a row connected from an app's
+//   `panel-agentes-disconnect` (+ `-yes`, `-no`), the token's revoke.
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----
@@ -289,3 +293,10 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - The panel's «Encuentros» (/panel/encuentros/): `panel-gatherings-community`
 //   (its community's page), `panel-gatherings-subscribe` (its calendar),
 //   `panel-gatherings-upcoming`, `panel-gatherings-held` (an encounter's page).
+// ---- «MCP remoto» W4 «Conecta tu IA» (2026-10-19): its data-metric ids ------------
+// No new event and no new prop: each travels as `cta_click.metricId`.
+// - The consent /conectar-ia/: `connect-ai-sign-in` (the door, signed out),
+//   `connect-ai-community` (the community picker), `connect-ai-new` («Una
+//   nueva»), `connect-ai-name` (its name), `connect-ai-again` («Volver a
+//   conectar …»), `connect-ai-role` (the role picker), `connect-ai-allow`
+//   («Permitir») and `connect-ai-cancel` («Cancelar»).

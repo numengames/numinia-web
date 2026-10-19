@@ -129,7 +129,7 @@ describe('the rules of the agents', () => {
   });
 
   it('reads a draft: exactly id, name, publicKey and roleIds, each valid', () => {
-    expect(readAgentDraft(BOT)).toEqual({ auth: 'key', ...BOT, roleIds: [] });
+    expect(readAgentDraft(BOT)).toEqual({ auth: 'key', ...BOT, roleIds: [], via: 'panel' });
     expect(
       readAgentDraft({
         ...BOT,
@@ -140,6 +140,7 @@ describe('the rules of the agents', () => {
       auth: 'key',
       ...BOT,
       roleIds: ['role_0123456789abcdef'],
+      via: 'panel',
     });
     for (const value of [null, 'x', [], { ...BOT, extra: 1 }]) {
       expect(readAgentDraft(value)).toEqual([AGENT_PROBLEMS.draft]);
@@ -239,7 +240,7 @@ describe('creating an agent', () => {
         .get('agent-created'),
     ).toMatchObject({
       subject: 'hermes-1',
-      detail: JSON.stringify({ name: 'Hermes', roles: member }),
+      detail: JSON.stringify({ name: 'Hermes', roles: member, via: 'panel' }),
     });
   });
 

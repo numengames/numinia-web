@@ -1112,6 +1112,10 @@ export function createAccountsFixtureDesk(
         record(hostEntries.get(entry) as Entry, act, subject, detail),
       houseRead: (entry, what) => houseRead(hostEntries.get(entry) as Entry, what),
       published: (wallet) => profiles.get(wallet)?.name,
+      placedIn: (accountId) =>
+        [...homes.entries()]
+          .filter(([, home]) => home.accountId === accountId)
+          .map(([worldId]) => worldId),
       refusalOf: (refusal, act, state) => refusalOf(refusal, act, state),
     },
     now,

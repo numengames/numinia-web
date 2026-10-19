@@ -6,7 +6,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { checkRate } from './lib/rate-limit';
+import { doorman } from './lib/rate-limit';
 import { primeFromWorkerd } from './lib/runtime-env';
 import { capMessage, logEvent } from './lib/telemetry';
 
@@ -75,45 +75,6 @@ export function securityHeaders(
   return headers;
 }
 
-/* MISSION-026: the doorman. Only the endpoints worth abusing — mutations
-   and gated data. Page loads and the session GET stay unmetered (every page
-   asks who you are; throttling that would DoS ourselves). */
-const RATE_RULES: ReadonlyArray<{
-  test: (method: string, path: string) => boolean;
-  key: string;
-  limit: number;
-}> = [
-  { test: (m, p) => m === 'POST' && p === '/api/auth/login', key: 'login', limit: 20 },
-  { test: (m, p) => m === 'POST' && p === '/api/admin/census', key: 'census-write', limit: 20 },
-  // The price room checks each draft with the till as the Oracle types
-  // (debounced) and schedules versions: generous, but metered like any write.
-  { test: (m, p) => m === 'POST' && p === '/api/admin/prices', key: 'prices-desk', limit: 120 },
-  { test: (m, p) => m === 'GET' && p.startsWith('/api/admin/'), key: 'admin-read', limit: 60 },
-  // «Saldo»: top-ups, organizations and members are writes on the till; the
-  // screen re-reads the balance on every return to the tab, so reads get more.
-  { test: (m, p) => m === 'POST' && p === '/api/saldo', key: 'saldo-write', limit: 30 },
-  // The lines a wallet signs before giving «Administrador» (ORG-008): the
-  // desk is only read, but each answer is a token under the session secret.
-  { test: (m, p) => m === 'POST' && p === '/api/saldo/signature', key: 'saldo-sign', limit: 30 },
-  // «IAs de organización»: creating, switching and removing an AI are writes on the till.
-  {
-    test: (m, p) => (m === 'POST' || m === 'PATCH' || m === 'DELETE') && p === '/api/saldo/agents',
-    key: 'agents-write',
-    limit: 30,
-  },
-  // An AI's bridge renews its pass every ~8 minutes; the doorman only stops a loop.
-  { test: (m, p) => m === 'POST' && p === '/api/agents/pass', key: 'agent-pass', limit: 120 },
-  { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
-  { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
-  { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },
-  // Who is inside each home: the answer is reused for 30 s per instance, so the worlds are knocked at
-  // most twice a minute whatever the traffic. Since v0.114.0 every page asks (the city rail's «Ahora en
-  // la ciudad»), so one person browsing — or an office behind one address — passes 60 a minute easily:
-  // the meter only stops a loop.
-  { test: (m, p) => m === 'GET' && p === '/api/live', key: 'live', limit: 600 },
-];
-const RATE_WINDOW_MS = 60_000;
-
 export const onRequest = defineMiddleware(async (context, next) => {
   // Cloudflare: vars and secrets only exist on cloudflare:workers' env —
   // the bundler freezes every process.env expression (lib/runtime-env.ts).
@@ -121,17 +82,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const started = Date.now();
   const { pathname } = context.url;
   const method = context.request.method;
-  const rule = RATE_RULES.find((candidate) => candidate.test(method, pathname));
-  if (rule) {
-    const ip = context.request.headers.get('cf-connecting-ip') ?? 'local';
-    const verdict = checkRate(`${rule.key}:${ip}`, rule.limit, RATE_WINDOW_MS);
-    if (!verdict.allowed) {
-      logEvent({ level: 'warn', kind: 'throttled', path: pathname, rule: rule.key });
-      return Response.json(
-        { error: 'Too many requests — the doorman asks for a pause' },
-        { status: 429, headers: { 'retry-after': String(verdict.retryAfterS) } },
-      );
-    }
+  // MISSION-026: the doorman (lib/rate-limit.ts, its rules there too). The
+  // relay's calls for an AI are counted per agent by their route instead.
+  const verdict = doorman(method, pathname, context.request.headers);
+  if (verdict !== null && !verdict.allowed) {
+    logEvent({ level: 'warn', kind: 'throttled', path: pathname, rule: verdict.rule });
+    return Response.json(
+      { error: 'Too many requests — the doorman asks for a pause' },
+      { status: 429, headers: { 'retry-after': String(verdict.retryAfterS) } },
+    );
   }
   try {
     const response = await next();
