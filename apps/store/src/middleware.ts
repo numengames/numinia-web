@@ -103,6 +103,8 @@ const RATE_RULES: ReadonlyArray<{
   },
   // An AI's bridge renews its pass every ~8 minutes; the doorman only stops a loop.
   { test: (m, p) => m === 'POST' && p === '/api/agents/pass', key: 'agent-pass', limit: 120 },
+  // The relay asks who an AI is at most once a minute per AI while it works.
+  { test: (m, p) => m === 'GET' && p === '/api/agents/me', key: 'agent-me', limit: 120 },
   { test: (m, p) => m === 'GET' && p.startsWith('/api/saldo'), key: 'saldo-read', limit: 120 },
   { test: (m, p) => m === 'POST' && p === '/api/telemetry', key: 'telemetry', limit: 10 },
   { test: (m, p) => m === 'GET' && p === '/api/media', key: 'media', limit: 120 },

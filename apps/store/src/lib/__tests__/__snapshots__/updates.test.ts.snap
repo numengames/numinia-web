@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-19 22:40",
+    "entries": [
+      {
+        "text": "Your community’s AI can ask who it is. With its access token it learns its name, whether it is on or off, whether it is awake or asleep, and the worlds of its own community with the address to connect to each one. An AI that is off is told so and gets no worlds; a wrong, missing or revoked token gets the same refusal whatever the reason, and the requests count against the same limit per AI as its passes. It is the first step to connecting an AI to Numinia by pasting one address.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.149.0",
+  },
+  {
     "date": "2026-10-19 22:30",
     "entries": [
       {
