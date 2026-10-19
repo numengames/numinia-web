@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.147.0',
+    date: '2026-10-19 20:10',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'One door into a world. The «Open» arrow on a world’s card in the Worlds room, and «Enter» on a community’s home, its encounters and «Live», led to the plain guest address, so you walked in as a guest even when signed in, with no name and no building. They now do what «Enter» does on the world’s own page: the world opens in a new tab with your pass, so it knows who you are and what you may do there, and the guest address is used only when no pass can be had or you are not signed in. The front page keeps its plain links for now, so it still loads no extra code.',
+      },
+    ],
+  },
+  {
     version: 'v0.146.0',
     date: '2026-10-19 17:00',
     entries: [

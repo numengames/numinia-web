@@ -372,7 +372,8 @@ const json = (value: unknown): string => JSON.stringify(value).replace(/</g, '\\
     const enter = must<HTMLButtonElement>(item, '[data-world-enter]');
     const enterLink = must<HTMLAnchorElement>(item, '[data-enter-link]');
     const see = must<HTMLAnchorElement>(item, '[data-see-ritual]');
-    const worldId = card.worldIds[0];
+    // The organization's own world first; else the register's fleet world for the home (one door either way).
+    const worldId = card.worldIds[0] ?? community?.world?.worldId;
     if (worldId !== undefined) {
       enter.setAttribute('data-world-enter', worldId);
       enter.hidden = false;

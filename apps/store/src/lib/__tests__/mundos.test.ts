@@ -4,6 +4,7 @@ import {
   HOMES_API,
   counted,
   enterWorld,
+  enterWorldInNewTab,
   enterWorldInTab,
   passApiUrl,
   PLACE_API,
@@ -22,7 +23,9 @@ import {
   readOrgWorlds,
   readWorldPage,
   renameWorld,
+  WORLD_DOOR_ATTRIBUTE,
   worldApiUrl,
+  worldDoorClick,
   worldHref,
   worldPageStatus,
 } from '../mundos';
@@ -277,6 +280,72 @@ describe('entering a world in a new tab, card t_677de28a', () => {
   it('does nothing to a null tab (the popup blocker got it first)', async () => {
     const ask = vi.fn(async () => answer(200, { url: 'https://w.numen.games/' }));
     expect(await enterWorldInTab(ask, 'w', null, null)).toBe('https://w.numen.games/');
+  });
+});
+
+describe('the one door into a world (enterWorldInNewTab, worldDoorClick)', () => {
+  it('opens a blank tab cut from the page, then sends it to the pass address', async () => {
+    const ask = vi.fn(async () => answer(200, { url: 'https://vic.numinia.com/#pass=a.b.c' }));
+    const tab = { opener: {}, location: { href: '' }, close: vi.fn() } as unknown as Window;
+    const open = vi.fn(() => tab);
+    expect(await enterWorldInNewTab(ask, 'vic', 'https://vic.numinia.com/', open)).toBe(
+      'https://vic.numinia.com/#pass=a.b.c',
+    );
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(tab.opener).toBeNull();
+    expect(tab.location.href).toBe('https://vic.numinia.com/#pass=a.b.c');
+    expect(ask).toHaveBeenCalledWith(
+      passApiUrl('vic'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('still answers the address when the popup blocker gave no tab', async () => {
+    const down = async () => answer(503, {});
+    expect(await enterWorldInNewTab(down, 'vic', 'https://vic.numinia.com/', () => null)).toBe(
+      'https://vic.numinia.com/',
+    );
+  });
+
+  const plain = {
+    button: 0,
+    metaKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+    altKey: false,
+    defaultPrevented: false,
+  };
+  const link = (attributes: Record<string, string>) => ({
+    getAttribute: (name: string) => attributes[name] ?? null,
+  });
+
+  it('takes a plain left click on a world link, signed in, through the door', () => {
+    const vic = link({ [WORLD_DOOR_ATTRIBUTE]: 'vic', href: 'https://vic.numinia.com/' });
+    expect(worldDoorClick(plain, vic, true)).toEqual({
+      worldId: 'vic',
+      fallback: 'https://vic.numinia.com/',
+    });
+    expect(worldDoorClick(plain, link({ [WORLD_DOOR_ATTRIBUTE]: 'vic' }), true)).toEqual({
+      worldId: 'vic',
+      fallback: null,
+    });
+    expect(
+      worldDoorClick(plain, link({ [WORLD_DOOR_ATTRIBUTE]: 'vic', href: 'javascript:x' }), true),
+    ).toEqual({ worldId: 'vic', fallback: null });
+  });
+
+  it('leaves every other click to the plain link', () => {
+    const vic = link({ [WORLD_DOOR_ATTRIBUTE]: 'vic', href: 'https://vic.numinia.com/' });
+    expect(worldDoorClick(plain, vic, false)).toBeNull();
+    expect(worldDoorClick(plain, null, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, defaultPrevented: true }, vic, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, button: 1 }, vic, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, metaKey: true }, vic, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, ctrlKey: true }, vic, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, shiftKey: true }, vic, true)).toBeNull();
+    expect(worldDoorClick({ ...plain, altKey: true }, vic, true)).toBeNull();
+    expect(worldDoorClick(plain, link({ href: 'https://vic.numinia.com/' }), true)).toBeNull();
+    expect(worldDoorClick(plain, link({ [WORLD_DOOR_ATTRIBUTE]: 'Not An Id' }), true)).toBeNull();
   });
 });
 

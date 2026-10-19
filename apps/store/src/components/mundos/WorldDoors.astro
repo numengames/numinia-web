@@ -1,0 +1,33 @@
+---
+/**
+ * The one door into a world, for plain links (H1 «una sola puerta»): a link
+ * to a world of the house's engine carries `data-world-door="<fleet id>"`
+ * (a community's home, its encounters, «Ahora en la ciudad»), and a plain
+ * left click by someone signed in goes through lib/mundos.ts
+ * `enterWorldInNewTab` — the same pass «Entrar» asks for on the world's own
+ * page — so the world knows who walks in. Signed out, a modified click or no
+ * JavaScript: the link is the world's plain guest address, as before.
+ *
+ * Included by the pages that show such links, never by the chrome: the
+ * front page and «Cómo funciona» promise zero external JavaScript
+ * (e2e/perf.spec.ts, scripts/bundle-budget.mjs), and this script shares
+ * lib/mundos.ts with the world pages, so it ships as a chunk.
+ */
+---
+
+<script>
+  import { enterWorldInNewTab, worldDoorClick, WORLD_DOOR_ATTRIBUTE } from '../../lib/mundos';
+
+  document.addEventListener('click', (event) => {
+    const link = event.target instanceof Element ? event.target.closest(`a[${WORLD_DOOR_ATTRIBUTE}]`) : null;
+    const door = worldDoorClick(event, link, document.documentElement.getAttribute('data-session') === 'in');
+    if (door === null) return;
+    event.preventDefault();
+    void enterWorldInNewTab(
+      (input, init) => fetch(input, init),
+      door.worldId,
+      door.fallback,
+      (url, target) => window.open(url, target),
+    );
+  });
+</script>

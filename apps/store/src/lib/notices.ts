@@ -289,7 +289,11 @@ export function fixtureNotices(
       ? undefined
       : {
           ...agora,
-          sede: agora.sede ?? { href: 'https://agora.numinia.xyz/', name: undefined },
+          sede: agora.sede ?? {
+            href: 'https://agora.numinia.xyz/',
+            name: undefined,
+            world: undefined,
+          },
         };
   const ritual: Ritual = {
     id: 'numinia-anniversary-2026',

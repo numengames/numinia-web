@@ -11,7 +11,13 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { VenuesMessages } from '../../i18n/mundos';
 import type { PanelMessages } from '../../i18n/panel';
 import { fill, readRoles } from '../../lib/accounts';
-import { counted, enterWorldInTab, loadOrgWorlds, worldHref, type Sheet } from '../../lib/mundos';
+import {
+  counted,
+  enterWorldInNewTab,
+  loadOrgWorlds,
+  worldHref,
+  type Sheet,
+} from '../../lib/mundos';
 import { enterCount, enterersOf } from '../../lib/world-people';
 import type { OrgWorld } from '../../lib/worlds-homes';
 import { LunaEspera } from '../chrome/LunaEspera';
@@ -62,9 +68,9 @@ function Venues({
   /** «Entrar», in a new tab (card t_677de28a): the world's address (with the pass for a member); the world's page when there is none. */
   const enter = useCallback(async (worldId: string): Promise<void> => {
     setFailed(false);
-    const tab = window.open('about:blank', '_blank');
-    if (tab) tab.opener = null;
-    const address = await enterWorldInTab(fetch, worldId, null, tab);
+    const address = await enterWorldInNewTab(fetch, worldId, null, (url, target) =>
+      window.open(url, target),
+    );
     if (address === null) setFailed(true);
   }, []);
 
