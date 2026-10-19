@@ -23,11 +23,13 @@ import {
 } from '@numinia/domain';
 import type {
   AccountDesk,
+  AgentAuth,
   AgentState,
   AgentStatus,
   DeskAgent,
   DeskAgentChange,
-  DeskAgentDraft,
+  DeskKeyDraft,
+  DeskTokenDraft,
   DeskAgentPassAnswer,
   DeskAgentsAnswer,
   DeskClaimAnswer,
@@ -40,6 +42,8 @@ import {
   isAccountId,
   isAgentId,
   isAudience,
+  isTokenHash,
+  isTokenPrefix,
   publicKeyBytes,
   readAgentName,
 } from './agents';
@@ -91,7 +95,11 @@ export interface AgentsHost {
 interface FixtureAgent {
   readonly id: string;
   readonly name: string;
-  readonly publicKey: string;
+  readonly auth: AgentAuth;
+  readonly publicKey?: string;
+  tokenHash?: string;
+  tokenPrefix?: string;
+  tokenCreatedAt?: string;
   readonly responsible: string;
   enabled: boolean;
   state: AgentState;
@@ -106,6 +114,8 @@ type AgentMethods = Pick<
   | 'createAgent'
   | 'changeAgent'
   | 'removeAgent'
+  | 'renewAgentToken'
+  | 'revokeAgentToken'
   | 'giveAgentRole'
   | 'takeAgentRole'
   | 'agentPass'
@@ -200,7 +210,14 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         return {
           id: agent.id,
           name: agent.name,
-          publicKey: agent.publicKey,
+          auth: agent.auth,
+          ...(agent.publicKey === undefined ? {} : { publicKey: agent.publicKey }),
+          ...(agent.tokenPrefix === undefined
+            ? {}
+            : {
+                tokenPrefix: agent.tokenPrefix,
+                tokenCreatedAt: agent.tokenCreatedAt as string,
+              }),
           enabled: agent.enabled,
           state: agent.state,
           status: statusOf(entry, agent),
@@ -243,14 +260,23 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
     },
 
     createAgent: async (wallet, accountId, sent, house): Promise<DeskAgentsAnswer> => {
-      const draft = sent as Partial<DeskAgentDraft> | null;
+      const draft = sent as Partial<DeskKeyDraft & DeskTokenDraft> | null;
+      const viaToken = draft?.auth === 'token';
       const entry = host.enter(wallet, accountId, house);
       if ('ok' in entry) return entry;
       const roleIds = draft?.roleIds ?? [];
       const problems = [
         ...(isAgentId(draft?.id) ? [] : [AGENT_PROBLEMS.agentId]),
         ...(readAgentName(draft?.name) === undefined ? [AGENT_PROBLEMS.name] : []),
-        ...(publicKeyBytes(draft?.publicKey) === null ? [AGENT_PROBLEMS.publicKey] : []),
+        ...(viaToken && (draft?.publicKey !== undefined || draft?.tokenHash === undefined)
+          ? [AGENT_PROBLEMS.draft]
+          : []),
+        ...(!viaToken && draft?.tokenHash !== undefined ? [AGENT_PROBLEMS.draft] : []),
+        ...(viaToken || publicKeyBytes(draft?.publicKey) !== null
+          ? []
+          : [AGENT_PROBLEMS.publicKey]),
+        ...(!viaToken || isTokenHash(draft?.tokenHash) ? [] : [AGENT_PROBLEMS.tokenHash]),
+        ...(!viaToken || isTokenPrefix(draft?.tokenPrefix) ? [] : [AGENT_PROBLEMS.tokenPrefix]),
         ...(Array.isArray(roleIds) &&
         roleIds.length <= ROLES_PER_AGENT_MAX &&
         roleIds.every((id) => ROLE_ID.test(id))
@@ -258,7 +284,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           : [AGENT_PROBLEMS.roleIds]),
       ];
       if (problems.length > 0) return refuse(...problems);
-      const { id, publicKey } = draft as DeskAgentDraft;
+      const { id, publicKey, tokenHash, tokenPrefix } = draft as DeskKeyDraft & DeskTokenDraft;
       const name = readAgentName(draft?.name) as string;
       if (!entry.access.permissions.has('manage-roles')) {
         return host.refusalOf('missing-permission', 'manage-roles', entry.state);
@@ -266,7 +292,14 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       if (entry.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
       const held = agentsOf(entry.accountId);
       if (held.length >= MAX_AGENTS) return refuse(AGENT_PROBLEMS.limit);
-      if (held.some((other) => other.id === id || other.publicKey === publicKey)) {
+      if (
+        held.some(
+          (other) =>
+            other.id === id ||
+            (!viaToken && other.publicKey === publicKey) ||
+            (viaToken && other.tokenHash === tokenHash),
+        )
+      ) {
         return refuse(AGENT_PROBLEMS.taken);
       }
       const unique = [...new Set(roleIds)];
@@ -283,7 +316,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         {
           id,
           name,
-          publicKey,
+          auth: viaToken ? 'token' : 'key',
+          ...(viaToken ? { tokenHash, tokenPrefix, tokenCreatedAt: at } : { publicKey }),
           responsible: entry.who,
           enabled: true,
           state: 'activa',
@@ -296,6 +330,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         name,
         ...(unique.length > 0 ? { roles: unique.join(',') } : {}),
       });
+      // Only the prefix is ever written: never the token, never its hash.
+      if (viaToken) host.record(entry, 'agent-token-created', id, { name, prefix: tokenPrefix });
       return view(entry);
     },
 
@@ -359,6 +395,47 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       return view(entry);
     },
 
+    renewAgentToken: async (wallet, accountId, agentId, hash, prefix, house) => {
+      const problems = [
+        ...(isTokenHash(hash) ? [] : [AGENT_PROBLEMS.tokenHash]),
+        ...(isTokenPrefix(prefix) ? [] : [AGENT_PROBLEMS.tokenPrefix]),
+      ];
+      const found = withAgent(wallet, accountId, agentId, house);
+      if ('ok' in found) return found;
+      if (problems.length > 0) return refuse(...problems);
+      const { entry, agent } = found;
+      const refused = handling(entry, agent);
+      if (refused !== null) return refused;
+      if (agent.auth !== 'token') return refuse(AGENT_PROBLEMS.notToken);
+      if (agent.tokenHash === hash) return refuse(AGENT_PROBLEMS.taken);
+      agent.tokenHash = hash;
+      agent.tokenPrefix = prefix;
+      agent.tokenCreatedAt = stamp();
+      agent.updatedAt = agent.tokenCreatedAt;
+      host.record(entry, 'agent-token-renewed', agent.id, { name: agent.name, prefix });
+      return view(entry);
+    },
+
+    revokeAgentToken: async (wallet, accountId, agentId, house) => {
+      const found = withAgent(wallet, accountId, agentId, house);
+      if ('ok' in found) return found;
+      const { entry, agent } = found;
+      const refused = handling(entry, agent);
+      if (refused !== null) return refused;
+      if (agent.auth !== 'token') return refuse(AGENT_PROBLEMS.notToken);
+      if (agent.tokenHash === undefined) return view(entry);
+      host.record(entry, 'agent-token-revoked', agent.id, {
+        name: agent.name,
+        prefix: agent.tokenPrefix as string,
+      });
+      delete agent.tokenHash;
+      delete agent.tokenPrefix;
+      delete agent.tokenCreatedAt;
+      agent.enabled = false;
+      agent.updatedAt = stamp();
+      return view(entry);
+    },
+
     giveAgentRole: async (wallet, accountId, agentId, roleId, house) =>
       assign(true, wallet, accountId, agentId, roleId, house),
     takeAgentRole: async (wallet, accountId, agentId, roleId, house) =>
@@ -381,7 +458,9 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         agent: {
           id: agent.id,
           name: agent.name,
-          publicKey: agent.publicKey,
+          auth: agent.auth,
+          ...(agent.publicKey === undefined ? {} : { publicKey: agent.publicKey }),
+          ...(agent.tokenHash === undefined ? {} : { tokenHash: agent.tokenHash }),
           enabled: agent.enabled,
           state: agent.state,
         },

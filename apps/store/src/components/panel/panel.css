@@ -1478,6 +1478,61 @@
 .agentes-linea {
   margin: 0;
 }
+.agentes-via {
+  display: grid;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  padding: 0;
+  border: 0;
+}
+.agentes-via legend {
+  padding: 0;
+  margin-bottom: var(--s2);
+  font-weight: 600;
+}
+.agentes-opcion {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  padding: var(--s3);
+  border: 1px solid var(--borde, currentColor);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.agentes-opcion[data-selected='true'] {
+  outline: 2px solid var(--acento, currentColor);
+}
+.agentes-opcion-cuerpo {
+  display: grid;
+  gap: 0.25rem;
+}
+.agentes-opcion-nombre {
+  font-weight: 600;
+}
+.agentes-token-linea {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.agentes-token-dialogo .mundo-ia-linea {
+  display: grid;
+  gap: var(--s2);
+}
+.agentes-token,
+.agentes-conexion {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: 0.375rem;
+  background: var(--fondo-suave, rgb(127 127 127 / 0.12));
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  user-select: all;
+}
+.agentes-renovar {
+  margin-top: var(--s2);
+}
 .agentes-estado {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

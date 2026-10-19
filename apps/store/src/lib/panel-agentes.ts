@@ -52,12 +52,16 @@ const isStrings = (value: unknown): value is string[] =>
 
 function readAgent(value: unknown): DeskAgent | null {
   if (!isRecord(value)) return null;
-  const { id, name, publicKey, enabled, state, status, responsible, responsibleName } = value;
+  const { id, name, auth, publicKey, enabled, state, status, responsible, responsibleName } = value;
+  const { tokenPrefix, tokenCreatedAt } = value;
   const { createdAt, updatedAt, roleIds, assignable, mayEdit } = value;
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
-    typeof publicKey !== 'string' ||
+    (auth !== 'key' && auth !== 'token') ||
+    (publicKey !== undefined && typeof publicKey !== 'string') ||
+    (tokenPrefix !== undefined && typeof tokenPrefix !== 'string') ||
+    (tokenCreatedAt !== undefined && typeof tokenCreatedAt !== 'string') ||
     typeof enabled !== 'boolean' ||
     typeof state !== 'string' ||
     !STATES.includes(state) ||
@@ -75,7 +79,11 @@ function readAgent(value: unknown): DeskAgent | null {
   return {
     id,
     name,
-    publicKey,
+    auth,
+    ...(publicKey === undefined ? {} : { publicKey }),
+    ...(tokenPrefix === undefined || tokenCreatedAt === undefined
+      ? {}
+      : { tokenPrefix, tokenCreatedAt }),
     enabled,
     // The closed lists were checked above.
     state: state as AgentState,
@@ -144,6 +152,18 @@ export function readAgents(json: unknown): DeskAgents | null {
   };
 }
 
+const TOKEN = /^ntk_[A-Za-z0-9_-]{43}$/;
+
+/**
+ * The secret a call that made a token answers with (`{ agents, token }`), or
+ * null when it carries none. Held in memory by the screen that shows it once;
+ * never stored, logged or put in a URL.
+ */
+export function readToken(json: unknown): string | null {
+  const token = isRecord(json) ? json['token'] : undefined;
+  return typeof token === 'string' && TOKEN.test(token) ? token : null;
+}
+
 /** What a call that did not give the list means, from its status and body. */
 export function failureOf(status: number, json: unknown): Failure {
   if (status === 401) return { kind: 'signed-out' };
@@ -162,13 +182,15 @@ const AGENT_SENTENCES: ReadonlyMap<string, AgentProblem> = new Map<string, Agent
   ['an organization keeps at most 20 agents', 'limit'],
   ['the house does not answer for an agent: a member creates it', 'houseCannot'],
   ['the organization has no such role', 'noSuchRole'],
+  ['that agent connects with a key, not a token', 'notToken'],
 ]);
 
 export type AgentProblem =
-  'noSuchAgent' | 'taken' | 'limit' | 'houseCannot' | 'noSuchRole' | 'invalid';
+  'noSuchAgent' | 'taken' | 'limit' | 'houseCannot' | 'noSuchRole' | 'notToken' | 'invalid';
 
 /** Prefixes of the till's field refusals: a name, a key, an id the form should have caught. */
-const FIELD_PROBLEM = /^(agentId|name|publicKey|roleIds|roleId|change|enabled|state|agent) /;
+const FIELD_PROBLEM =
+  /^(agentId|name|publicKey|tokenHash|tokenPrefix|roleIds|roleId|change|enabled|state|agent) /;
 
 /**
  * A refusal told apart: one of the agents' own, or the organization's
@@ -253,7 +275,8 @@ export type Change =
   | { readonly enabled: boolean }
   | { readonly state: AgentState }
   | { readonly giveRole: string }
-  | { readonly takeRole: string };
+  | { readonly takeRole: string }
+  | { readonly renewToken: true };
 
 export function changeBody(accountId: string, id: string, change: Change): Record<string, unknown> {
   return { accountId, id, ...change };
@@ -266,3 +289,42 @@ export const removeUrl = (accountId: string, id: string): string =>
 /** The address that lists the organization's agents (GET). */
 export const listUrl = (accountId: string): string =>
   `/api/saldo/agents?cuenta=${encodeURIComponent(accountId)}`;
+
+/**
+ * The three lines that connect an AI to the world with its token, for Hermes
+ * (`hermes mcp add --help`: `--command` the program, `--env KEY=VALUE …`, and
+ * `--args …` last). The bridge is the engine's, so the first line goes into the
+ * folder where numinia-engine is cloned and the path is made from it — no
+ * package is invented. Only the world's address is left for the person to
+ * fill in (`TU-MUNDO`). The token is the secret just shown once.
+ */
+export function connectCommand(input: {
+  readonly origin: string;
+  readonly org: string;
+  readonly id: string;
+  readonly token: string;
+}): string {
+  const env = [
+    `NUMINIA_URL=${input.origin}`,
+    `AGENTE_ORG=${input.org}`,
+    `AGENTE_ID=${input.id}`,
+    `AGENTE_TOKEN=${input.token}`,
+    'MUNDO_URL=wss://TU-MUNDO/ws',
+  ].join(' ');
+  return [
+    'cd numinia-engine',
+    `hermes mcp add numinia-mundo --command node --env ${env} --args "$PWD/tools/mcp-mundo.ts"`,
+    'hermes mcp test numinia-mundo',
+  ].join('\n');
+}
+
+/** The row's token line parts: the prefix as shown (`ntk_ab12cd34…`) and the day it was made. */
+export function tokenLine(
+  agent: DeskAgent,
+): { readonly shown: string; readonly day: string } | null {
+  if (agent.auth !== 'token' || agent.tokenPrefix === undefined) return null;
+  return {
+    shown: `ntk_${agent.tokenPrefix}…`,
+    day: (agent.tokenCreatedAt ?? '').slice(0, 10),
+  };
+}

@@ -56,6 +56,39 @@ export interface AgentesMessages {
   readonly saved: string;
   /** One plain sentence per kind of failure that is not Saldo's own. */
   readonly failures: Readonly<Record<Exclude<Failure['kind'], 'refused'> | AgentProblem, string>>;
+  /** The token way (cut 2): how to connect, the screen that shows the secret once, the row and its renewal. */
+  readonly access: {
+    readonly legend: string;
+    readonly viaToken: string;
+    readonly viaTokenHint: string;
+    readonly viaKey: string;
+    readonly viaKeyHint: string;
+    readonly add: string;
+    readonly adding: string;
+    readonly onceTitle: string;
+    readonly onceNote: string;
+    readonly tokenLabel: string;
+    readonly copy: string;
+    readonly copied: string;
+    readonly copyFailed: string;
+    readonly connectTitle: string;
+    /** `{folder}`: the engine's folder; `{world}`: the placeholder to replace. */
+    readonly connectNote: string;
+    readonly copyConnect: string;
+    readonly done: string;
+    /** `{prefix}`, `{day}`: the row's line. */
+    readonly rowLine: string;
+    /** A token agent whose token was revoked. */
+    readonly rowNone: string;
+    readonly renew: string;
+    /** `{name}`: the row's button, for screen readers. */
+    readonly renewLabel: string;
+    /** `{name}`. */
+    readonly renewAsk: string;
+    readonly renewYes: string;
+    readonly renewNo: string;
+    readonly renewing: string;
+  };
   /** What the invitation adds to the world's (the roles of «También construir»). */
   readonly dialog: {
     readonly rolesLabel: string;
@@ -118,6 +151,39 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       limit: 'La comunidad ya tiene todas las IAs que caben (20).',
       houseCannot: 'La casa no responde por una IA: la invita una persona de la comunidad.',
       noSuchRole: 'Ese rol ya no existe. Recarga la página.',
+      notToken: 'Esa IA se conecta con llave, no con token.',
+    },
+    access: {
+      legend: '¿Cómo se conecta?',
+      viaToken: 'Con un token (lo más fácil)',
+      viaTokenHint:
+        'Te damos una contraseña larga y la pegas donde tu IA la pida. No hace falta terminal ni llaves.',
+      viaKey: 'Con mi propia llave (avanzado)',
+      viaKeyHint:
+        'Tu IA crea su llave y tú pegas aquí la parte pública. La llave privada no sale de su máquina.',
+      add: 'Añadir',
+      adding: 'Añadiendo…',
+      onceTitle: 'Copia tu token ahora, no lo volverás a ver',
+      onceNote:
+        'Guárdalo donde tu IA lo pida. Si lo pierdes, renueva el token: el anterior dejará de valer.',
+      tokenLabel: 'Token',
+      copy: 'Copiar',
+      copied: 'Copiado',
+      copyFailed: 'No se ha podido copiar: selecciónalo y cópialo a mano.',
+      connectTitle: 'Conéctalo a Hermes',
+      connectNote:
+        'Pega estas tres líneas en una terminal. «{folder}» es la carpeta donde tienes el motor de Numinia. Cambia {world} por la dirección del mundo (acaba en /ws).',
+      copyConnect: 'Copiar las tres líneas',
+      done: 'Ya lo he copiado',
+      rowLine: 'Token {prefix} · creado el {day}',
+      rowNone: 'Sin token: renuévalo para que pueda volver a entrar.',
+      renew: 'Renovar token',
+      renewLabel: 'Renovar el token de {name}',
+      renewAsk:
+        '¿Renovar el token de {name}? El actual dejará de valer y la IA no entrará hasta que use el nuevo.',
+      renewYes: 'Sí, renovar',
+      renewNo: 'No, dejarlo',
+      renewing: 'Renovando…',
     },
     dialog: {
       rolesLabel: '¿Con qué roles?',
@@ -178,6 +244,39 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       limit: 'The community already has all the AIs it can hold (20).',
       houseCannot: 'The house does not answer for an AI: a person of the community invites it.',
       noSuchRole: 'That role no longer exists. Reload the page.',
+      notToken: 'That AI connects with a key, not a token.',
+    },
+    access: {
+      legend: 'How does it connect?',
+      viaToken: 'With a token (the easy way)',
+      viaTokenHint:
+        'We give you a long password and you paste it where your AI asks for it. No terminal or keys needed.',
+      viaKey: 'With my own key (advanced)',
+      viaKeyHint:
+        'Your AI makes its own key and you paste the public half here. The private key never leaves its machine.',
+      add: 'Add',
+      adding: 'Adding…',
+      onceTitle: 'Copy your token now, you won’t see it again',
+      onceNote:
+        'Keep it where your AI asks for it. If you lose it, renew the token: the old one will stop working.',
+      tokenLabel: 'Token',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyFailed: 'Could not copy: select it and copy it by hand.',
+      connectTitle: 'Connect it to Hermes',
+      connectNote:
+        'Paste these three lines in a terminal. “{folder}” is the folder where you have the Numinia engine. Change {world} to the world’s address (it ends in /ws).',
+      copyConnect: 'Copy the three lines',
+      done: 'I have copied it',
+      rowLine: 'Token {prefix} · created on {day}',
+      rowNone: 'No token: renew it so it can come back in.',
+      renew: 'Renew token',
+      renewLabel: 'Renew the token of {name}',
+      renewAsk:
+        'Renew the token of {name}? The current one will stop working and the AI will not get in until it uses the new one.',
+      renewYes: 'Yes, renew',
+      renewNo: 'No, keep it',
+      renewing: 'Renewing…',
     },
     dialog: {
       rolesLabel: 'With which roles?',
@@ -237,6 +336,39 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       limit: 'コミュニティはすでに上限（20）までAIを抱えています。',
       houseCannot: 'ハウスはAIの責任者になれません。コミュニティの人が招待します。',
       noSuchRole: 'そのロールはもうありません。ページを読み込み直してください。',
+      notToken: 'このAIはトークンではなく鍵で接続します。',
+    },
+    access: {
+      legend: '接続方法',
+      viaToken: 'トークンで接続（いちばん簡単）',
+      viaTokenHint:
+        '長いパスワードをお渡しします。AIが求める場所に貼り付けてください。ターミナルも鍵も不要です。',
+      viaKey: '自分の鍵で接続（上級者向け）',
+      viaKeyHint:
+        'AIが自分で鍵を作り、公開鍵だけをここに貼ります。秘密鍵はAIのマシンから出ません。',
+      add: '追加',
+      adding: '追加中…',
+      onceTitle: 'トークンを今すぐコピーしてください。二度と表示されません',
+      onceNote:
+        'AIが求める場所に保管してください。なくした場合はトークンを更新してください。以前のトークンは使えなくなります。',
+      tokenLabel: 'トークン',
+      copy: 'コピー',
+      copied: 'コピーしました',
+      copyFailed: 'コピーできませんでした。選択して手動でコピーしてください。',
+      connectTitle: 'Hermesに接続する',
+      connectNote:
+        'この3行をターミナルに貼り付けてください。「{folder}」はNuminiaエンジンを置いたフォルダです。{world}はワールドのアドレス（末尾が /ws）に置き換えてください。',
+      copyConnect: '3行をコピー',
+      done: 'コピーしました',
+      rowLine: 'トークン {prefix} · {day} に作成',
+      rowNone: 'トークンなし：更新すると再び入れるようになります。',
+      renew: 'トークンを更新',
+      renewLabel: '{name}のトークンを更新',
+      renewAsk:
+        '{name}のトークンを更新しますか？現在のトークンは使えなくなり、新しいトークンを使うまでAIは入れません。',
+      renewYes: 'はい、更新',
+      renewNo: 'いいえ',
+      renewing: '更新中…',
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -296,6 +428,39 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       limit: '커뮤니티가 담을 수 있는 AI(20)를 모두 채웠습니다.',
       houseCannot: '하우스는 AI의 책임자가 될 수 없습니다. 커뮤니티의 사람이 초대합니다.',
       noSuchRole: '그 역할은 더 이상 없습니다. 페이지를 다시 불러오세요.',
+      notToken: '이 AI는 토큰이 아니라 키로 연결합니다.',
+    },
+    access: {
+      legend: '어떻게 연결할까요?',
+      viaToken: '토큰으로 (가장 쉬움)',
+      viaTokenHint:
+        '긴 비밀번호를 드립니다. AI가 요구하는 곳에 붙여 넣으세요. 터미널도 키도 필요 없습니다.',
+      viaKey: '내 키로 (고급)',
+      viaKeyHint:
+        'AI가 자기 키를 만들고, 공개 키만 여기에 붙여 넣습니다. 비공개 키는 AI의 기기를 떠나지 않습니다.',
+      add: '추가',
+      adding: '추가 중…',
+      onceTitle: '지금 토큰을 복사하세요. 다시 볼 수 없습니다',
+      onceNote:
+        'AI가 요구하는 곳에 보관하세요. 잃어버리면 토큰을 갱신하세요. 이전 토큰은 더 이상 쓸 수 없습니다.',
+      tokenLabel: '토큰',
+      copy: '복사',
+      copied: '복사됨',
+      copyFailed: '복사하지 못했습니다. 선택해서 직접 복사하세요.',
+      connectTitle: 'Hermes에 연결하기',
+      connectNote:
+        '이 세 줄을 터미널에 붙여 넣으세요. “{folder}”는 Numinia 엔진이 있는 폴더입니다. {world}를 월드 주소(/ws로 끝남)로 바꾸세요.',
+      copyConnect: '세 줄 복사',
+      done: '복사했습니다',
+      rowLine: '토큰 {prefix} · {day} 생성',
+      rowNone: '토큰 없음: 갱신하면 다시 들어올 수 있습니다.',
+      renew: '토큰 갱신',
+      renewLabel: '{name}의 토큰 갱신',
+      renewAsk:
+        '{name}의 토큰을 갱신할까요? 현재 토큰은 쓸 수 없게 되고, 새 토큰을 쓸 때까지 AI는 들어올 수 없습니다.',
+      renewYes: '예, 갱신',
+      renewNo: '아니요',
+      renewing: '갱신 중…',
     },
     dialog: {
       rolesLabel: '어떤 역할로 할까요?',
@@ -356,6 +521,39 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       limit: 'A comunidade já tem todas as IAs que cabem (20).',
       houseCannot: 'A casa não responde por uma IA: quem convida é uma pessoa da comunidade.',
       noSuchRole: 'Esse papel não existe mais. Recarregue a página.',
+      notToken: 'Essa IA se conecta com chave, não com token.',
+    },
+    access: {
+      legend: 'Como ela se conecta?',
+      viaToken: 'Com um token (o mais fácil)',
+      viaTokenHint:
+        'Damos uma senha longa e você a cola onde sua IA pedir. Não precisa de terminal nem de chaves.',
+      viaKey: 'Com minha própria chave (avançado)',
+      viaKeyHint:
+        'Sua IA cria a própria chave e você cola aqui a parte pública. A chave privada não sai da máquina dela.',
+      add: 'Adicionar',
+      adding: 'Adicionando…',
+      onceTitle: 'Copie seu token agora, você não o verá de novo',
+      onceNote:
+        'Guarde onde sua IA pedir. Se perdê-lo, renove o token: o anterior deixará de valer.',
+      tokenLabel: 'Token',
+      copy: 'Copiar',
+      copied: 'Copiado',
+      copyFailed: 'Não foi possível copiar: selecione e copie à mão.',
+      connectTitle: 'Conecte ao Hermes',
+      connectNote:
+        'Cole estas três linhas em um terminal. “{folder}” é a pasta onde você tem o motor do Numinia. Troque {world} pelo endereço do mundo (termina em /ws).',
+      copyConnect: 'Copiar as três linhas',
+      done: 'Já copiei',
+      rowLine: 'Token {prefix} · criado em {day}',
+      rowNone: 'Sem token: renove para ela poder voltar a entrar.',
+      renew: 'Renovar token',
+      renewLabel: 'Renovar o token de {name}',
+      renewAsk:
+        'Renovar o token de {name}? O atual deixará de valer e a IA não entrará até usar o novo.',
+      renewYes: 'Sim, renovar',
+      renewNo: 'Não, manter',
+      renewing: 'Renovando…',
     },
     dialog: {
       rolesLabel: 'Com quais papéis?',

@@ -64,6 +64,7 @@ describe('GET /api/saldo/agents', () => {
       {
         id: 'hermes-1',
         name: 'Hermes',
+        auth: 'key',
         publicKey: BOT.publicKey,
         enabled: true,
         state: 'activa',

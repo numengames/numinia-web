@@ -2,7 +2,9 @@
  * «Agentes» inside the panel: the community's AIs, one row each — name, the
  * roles as chips, an Encendida/Apagada switch, the state (Activa / Dormida),
  * what the till says its next pass is, who answers for it and «Quitar» with
- * a confirmation — and the invitation (./AgentInvite.tsx). It talks to
+ * a confirmation — and the invitation (./AgentInvite.tsx). An AI made with a
+ * token also shows its token's start and day, and «Renovar token» (with a
+ * confirmation); the new secret, like the first, is shown once (./AgentToken.tsx). It talks to
  * /api/saldo/agents (lib/agents-source.ts), which answers the whole list
  * after every write, so the screen never guesses what changed.
  *
@@ -34,15 +36,18 @@ import {
   failureOf,
   listUrl,
   readAgents,
+  readToken,
   refusalOf,
   removeUrl,
   responsibleOf,
   rolesToGive,
+  tokenLine,
   type Change,
   type Failure,
 } from '../../lib/panel-agentes';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { InviteDialog, type Draft } from './AgentInvite';
+import { TokenOnceDialog } from './AgentToken';
 import { PanelFrame } from './PanelFrame';
 import { PanelGlyph } from './PanelGlyph';
 import { RoleDot } from './PeopleBits';
@@ -62,7 +67,7 @@ interface Notice {
 const JSON_HEADERS = { accept: 'application/json', 'content-type': 'application/json' };
 
 type Called =
-  | { readonly ok: true; readonly view: DeskAgents }
+  | { readonly ok: true; readonly view: DeskAgents; readonly token: string | null }
   | { readonly ok: false; readonly failure: Failure };
 
 /** One call to /api/saldo/agents: the list as it is now, or why not. */
@@ -72,7 +77,9 @@ async function call(url: string, init?: RequestInit): Promise<Called> {
     const json: unknown = await response.json().catch(() => null);
     if (response.ok) {
       const view = readAgents(json);
-      return view === null ? { ok: false, failure: { kind: 'failed' } } : { ok: true, view };
+      return view === null
+        ? { ok: false, failure: { kind: 'failed' } }
+        : { ok: true, view, token: readToken(json) };
     }
     return { ok: false, failure: failureOf(response.status, json) };
   } catch {
@@ -168,9 +175,12 @@ function Row({
   named,
   busy,
   words,
+  locale,
   onChange,
   onRemove,
+  onRenew,
 }: {
+  readonly locale: SupportedLocale;
   readonly agent: DeskAgent;
   readonly view: DeskAgents;
   readonly named: Named;
@@ -178,9 +188,12 @@ function Row({
   readonly words: AgentesMessages;
   readonly onChange: (change: Change) => void;
   readonly onRemove: () => Promise<boolean>;
+  readonly onRenew: () => Promise<boolean>;
 }) {
   const uid = useId();
   const [asking, setAsking] = useState(false);
+  const [renewing, setRenewing] = useState<'idle' | 'asking' | 'busy'>('idle');
+  const line = tokenLine(agent);
   const [removing, setRemoving] = useState(false);
   const chips = chipsOf(agent, named);
   const options = rolesToGive(agent, view);
@@ -215,6 +228,19 @@ function Row({
       <p className="agentes-linea" data-agent-status-line>
         {words.status[agent.status]}
       </p>
+      {agent.auth === 'token' && (
+        <p className="agentes-linea agentes-token-linea" data-agent-token-line>
+          {line === null
+            ? words.access.rowNone
+            : fill(words.access.rowLine, {
+                prefix: line.shown,
+                day: new Date(`${line.day}T00:00:00Z`).toLocaleDateString(locale, {
+                  dateStyle: 'long',
+                  timeZone: 'UTC',
+                }),
+              })}
+        </p>
+      )}
       <p className="saldo-nota agentes-linea" data-agent-responsible>
         {fill(words.responsible, { name: responsibleOf(agent) })}
       </p>
@@ -284,6 +310,55 @@ function Row({
           />
         )}
       </div>
+
+      {agent.mayEdit && agent.auth === 'token' && (
+        <div className="agentes-renovar" data-agent-renew>
+          {renewing === 'idle' ? (
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              disabled={busy}
+              onClick={() => setRenewing('asking')}
+              aria-label={fill(words.access.renewLabel, { name: agent.name })}
+              data-metric="panel-agentes-token-renew"
+            >
+              {words.access.renew}
+            </button>
+          ) : (
+            <div
+              className="mundo-ia-confirmar agentes-confirmar"
+              role="group"
+              aria-label={fill(words.access.renewLabel, { name: agent.name })}
+            >
+              <span className="saldo-nota">
+                {fill(words.access.renewAsk, { name: agent.name })}
+              </span>
+              <button
+                type="button"
+                className="btn btn-fantasma"
+                disabled={renewing === 'busy'}
+                aria-busy={renewing === 'busy'}
+                onClick={() => {
+                  setRenewing('busy');
+                  void onRenew().then(() => setRenewing('idle'));
+                }}
+                data-metric="panel-agentes-token-renew-yes"
+              >
+                {renewing === 'busy' ? words.access.renewing : words.access.renewYes}
+              </button>
+              <button
+                type="button"
+                className="btn btn-fantasma"
+                disabled={renewing === 'busy'}
+                onClick={() => setRenewing('idle')}
+                data-metric="panel-agentes-token-renew-no"
+              >
+                {words.access.renewNo}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {!agent.mayEdit ? (
         <p className="saldo-nota agentes-linea" data-agent-read-only>
@@ -365,6 +440,11 @@ function Agentes({
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [inviting, setInviting] = useState(false);
+  /** The secret just made, held only in this page's memory until «Ya lo he copiado». */
+  const [issued, setIssued] = useState<{
+    readonly agent: { readonly id: string; readonly name: string };
+    readonly token: string;
+  } | null>(null);
   const alive = useRef(true);
 
   useEffect(() => {
@@ -415,7 +495,12 @@ function Agentes({
     [agentes, people, ui, locale],
   );
 
-  const run = async (who: string, url: string, init: RequestInit): Promise<boolean> => {
+  const run = async (
+    who: string,
+    url: string,
+    init: RequestInit,
+    forAgent?: DeskAgent,
+  ): Promise<boolean> => {
     setBusy(who);
     setNotice(null);
     const result = await call(url, init);
@@ -424,6 +509,9 @@ function Agentes({
     if (result.ok) {
       setSheet({ at: 'ready', view: result.view });
       setNotice({ tone: 'status', text: agentes.saved });
+      if (result.token !== null && forAgent !== undefined) {
+        setIssued({ agent: { id: forAgent.id, name: forAgent.name }, token: result.token });
+      }
       return true;
     }
     setNotice({ tone: 'alert', text: textOf(result.failure) });
@@ -448,6 +536,9 @@ function Agentes({
     setSheet({ at: 'ready', view: result.view });
     setNotice({ tone: 'status', text: agentes.saved });
     setInviting(false);
+    if (result.token !== null) {
+      setIssued({ agent: { id: draft.id, name: draft.name }, token: result.token });
+    }
     return null;
   };
 
@@ -503,8 +594,21 @@ function Agentes({
                   named={named}
                   busy={busy !== null}
                   words={agentes}
+                  locale={locale}
                   onChange={(what) => change(agent, what)}
                   onRemove={() => run('delete', removeUrl(org, agent.id), { method: 'DELETE' })}
+                  onRenew={() =>
+                    run(
+                      'patch',
+                      '/api/saldo/agents',
+                      {
+                        method: 'PATCH',
+                        headers: JSON_HEADERS,
+                        body: JSON.stringify(changeBody(org, agent.id, { renewToken: true })),
+                      },
+                      agent,
+                    )
+                  }
                 />
               ))}
             </ul>
@@ -547,6 +651,15 @@ function Agentes({
           failureText={textOf}
           onClose={() => setInviting(false)}
           onAdd={add}
+        />
+      )}
+      {issued !== null && (
+        <TokenOnceDialog
+          words={agentes}
+          org={org}
+          agent={issued.agent}
+          token={issued.token}
+          onDone={() => setIssued(null)}
         />
       )}
     </div>

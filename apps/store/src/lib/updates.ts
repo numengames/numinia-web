@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.146.0',
+    date: '2026-10-19 17:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A token for your community’s AI. Until now an AI could only connect with its own key; now there is an easier way, and the invitation offers it first. In «Agents» you give the AI a name and a permission and numinia.com makes an access token: it is shown once, together with the three lines that connect it to Hermes, and you must tick «I have copied it» before you can close the screen. numinia.com keeps only the token’s fingerprint, never the token, so nobody can read it back later; the row shows just its first characters and the day it was made. If a token is lost, you renew it after a confirmation and the old one stops working at once; you can also remove the AI as before. The AI still gets its pass of ten minutes, never more than the person who answers for it may do, and creating, renewing and removing are written in the community’s log. The key way stays, as «With my own key (advanced)». In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.145.0',
     date: '2026-10-18 22:20',
     entries: [

@@ -538,6 +538,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'request-declined': 'Petición rechazada',
         'ritual-created': 'Encuentro publicado',
         'ritual-cancelled': 'Encuentro cancelado',
+        'agent-token-created': 'Token de una IA creado',
+        'agent-token-renewed': 'Token de una IA renovado',
+        'agent-token-revoked': 'Token de una IA revocado',
       },
     },
     referrals: {
@@ -805,6 +808,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'request-declined': 'Request declined',
         'ritual-created': 'Gathering published',
         'ritual-cancelled': 'Gathering cancelled',
+        'agent-token-created': 'AI token created',
+        'agent-token-renewed': 'AI token renewed',
+        'agent-token-revoked': 'AI token revoked',
       },
     },
     referrals: {
@@ -1071,6 +1077,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'request-declined': '申請を却下',
         'ritual-created': '集まりを公開',
         'ritual-cancelled': '集まりを中止',
+        'agent-token-created': 'AIのトークンを作成',
+        'agent-token-renewed': 'AIのトークンを更新',
+        'agent-token-revoked': 'AIのトークンを失効',
       },
     },
     referrals: {
@@ -1334,6 +1343,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'request-declined': '요청 거절',
         'ritual-created': '모임 게시됨',
         'ritual-cancelled': '모임 취소됨',
+        'agent-token-created': 'AI 토큰 생성',
+        'agent-token-renewed': 'AI 토큰 갱신',
+        'agent-token-revoked': 'AI 토큰 폐기',
       },
     },
     referrals: {
@@ -1605,6 +1617,9 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
         'request-declined': 'Pedido recusado',
         'ritual-created': 'Encontro publicado',
         'ritual-cancelled': 'Encontro cancelado',
+        'agent-token-created': 'Token de uma IA criado',
+        'agent-token-renewed': 'Token de uma IA renovado',
+        'agent-token-revoked': 'Token de uma IA revogado',
       },
     },
     referrals: {

@@ -11,15 +11,18 @@ import { AGENT_PROBLEMS, isAgentId } from '../agents';
 import {
   changeBody,
   chipsOf,
+  connectCommand,
   failureOf,
   invitable,
   listUrl,
   readAgents,
+  readToken,
   refusalOf,
   removeUrl,
   responsibleOf,
   roleIdsFor,
   rolesToGive,
+  tokenLine,
 } from '../panel-agentes';
 import { agentIdFrom, nameProblem } from '../world-door';
 
@@ -28,6 +31,7 @@ const WALLET = `0x${'ab'.repeat(20)}`;
 const agent = (extra: Partial<DeskAgent> = {}): DeskAgent => ({
   id: 'hermes',
   name: 'Hermes',
+  auth: 'key',
   publicKey: `ed25519:${'A'.repeat(43)}`,
   enabled: true,
   state: 'activa',
@@ -282,5 +286,88 @@ describe('what the island sends', () => {
       expect(isAgentId(agentIdFrom(name))).toBe(true);
     }
     expect(isAgentId(agentIdFrom('Hermes Pablo'))).toBe(true);
+  });
+});
+
+describe('the token way', () => {
+  const TOKEN = `ntk_${'B'.repeat(43)}`;
+  const tokened = (extra: Partial<DeskAgent> = {}): DeskAgent =>
+    agent({
+      auth: 'token',
+      publicKey: undefined,
+      tokenPrefix: 'BBBBBBBB',
+      tokenCreatedAt: '2026-10-17T09:00:00.000Z',
+      ...extra,
+    });
+
+  it('reads a token row with its prefix and day, and never needs a key', () => {
+    const row = tokened();
+    const read = readAgents({ agents: view([row]) });
+    expect(read?.agents[0]).toMatchObject({
+      auth: 'token',
+      tokenPrefix: 'BBBBBBBB',
+      tokenCreatedAt: '2026-10-17T09:00:00.000Z',
+    });
+    expect(read?.agents[0]).not.toHaveProperty('publicKey');
+    // A revoked token has neither.
+    const revoked = readAgents({
+      agents: view([tokened({ tokenPrefix: undefined, tokenCreatedAt: undefined })]),
+    });
+    expect(revoked?.agents[0]).not.toHaveProperty('tokenPrefix');
+  });
+
+  it('refuses a row whose way or token fields are not what the contract says', () => {
+    for (const bad of [
+      { auth: 'other' },
+      { auth: undefined },
+      { publicKey: 7 },
+      { tokenPrefix: 7 },
+      { tokenCreatedAt: 7 },
+    ]) {
+      expect(readAgents({ agents: view([agent(bad as never)]) })).toBeNull();
+    }
+  });
+
+  it('reads the secret of an answer only when it is shaped like a token', () => {
+    expect(readToken({ agents: {}, token: TOKEN })).toBe(TOKEN);
+    expect(readToken({ agents: {} })).toBeNull();
+    expect(readToken({ token: 'ntk_short' })).toBeNull();
+    expect(readToken({ token: 7 })).toBeNull();
+    expect(readToken('text')).toBeNull();
+    expect(readToken(null)).toBeNull();
+  });
+
+  it('shows the prefix and the day of a token row, and nothing for a key row', () => {
+    expect(tokenLine(tokened())).toEqual({ shown: 'ntk_BBBBBBBB…', day: '2026-10-17' });
+    expect(tokenLine(tokened({ tokenCreatedAt: undefined }))).toEqual({
+      shown: 'ntk_BBBBBBBB…',
+      day: '',
+    });
+    expect(tokenLine(tokened({ tokenPrefix: undefined }))).toBeNull();
+    expect(tokenLine(agent())).toBeNull();
+  });
+
+  it('tells «that agent connects with a key» apart and builds the renewal body', () => {
+    expect(refusalOf([AGENT_PROBLEMS.notToken])).toEqual({ kind: 'agent', problem: 'notToken' });
+    expect(changeBody('acc_t', 'hermes', { renewToken: true })).toEqual({
+      accountId: 'acc_t',
+      id: 'hermes',
+      renewToken: true,
+    });
+  });
+
+  it('writes the three lines that connect the AI to Hermes with the real flags', () => {
+    const text = connectCommand({
+      origin: 'https://numinia.com',
+      org: 'acc_t_games',
+      id: 'hermes',
+      token: TOKEN,
+    });
+    const [cd, add, test] = text.split('\n');
+    expect(cd).toBe('cd numinia-engine');
+    expect(add).toBe(
+      `hermes mcp add numinia-mundo --command node --env NUMINIA_URL=https://numinia.com AGENTE_ORG=acc_t_games AGENTE_ID=hermes AGENTE_TOKEN=${TOKEN} MUNDO_URL=wss://TU-MUNDO/ws --args "$PWD/tools/mcp-mundo.ts"`,
+    );
+    expect(test).toBe('hermes mcp test numinia-mundo');
   });
 });

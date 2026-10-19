@@ -261,7 +261,10 @@ export type DeskLogAct =
   | 'request-accepted'
   | 'request-declined'
   | 'ritual-created'
-  | 'ritual-cancelled';
+  | 'ritual-cancelled'
+  | 'agent-token-created'
+  | 'agent-token-renewed'
+  | 'agent-token-revoked';
 
 export interface DeskLogLine {
   seq: number;
@@ -327,12 +330,19 @@ export type DeskHappeningsAnswer =
  * lost manage-roles), without the permission to enter, or its state.
  */
 export type AgentState = 'activa' | 'dormida';
+/** How an AI proves itself: the Ed25519 key it signs with, or an access token (cut 2). */
+export type AgentAuth = 'key' | 'token';
 export type AgentStatus = 'apagada' | 'sin-responsable' | 'sin-permiso' | AgentState;
 
 export interface DeskAgent {
   id: string;
   name: string;
-  publicKey: string;
+  auth: AgentAuth;
+  /** A key agent's public key. */
+  publicKey?: string | undefined;
+  /** A token agent's token, as its first 8 characters after `ntk_` and when it was made; never the token or its hash. */
+  tokenPrefix?: string | undefined;
+  tokenCreatedAt?: string | undefined;
   enabled: boolean;
   state: AgentState;
   status: AgentStatus;
@@ -355,12 +365,25 @@ export interface DeskAgents {
 }
 export type DeskAgentsAnswer = DeskAgents | DeskRefusal;
 
-export interface DeskAgentDraft {
+/** A new AI by key: the engine's tools/agente.ts writes the key. */
+export interface DeskKeyDraft {
   id: string;
   name: string;
   publicKey: string;
   roleIds?: string[] | undefined;
 }
+
+/** A new AI by token: numinia.com draws the token and sends the till only its SHA-256 and prefix. */
+export interface DeskTokenDraft {
+  id: string;
+  name: string;
+  auth: 'token';
+  tokenHash: string;
+  tokenPrefix: string;
+  roleIds?: string[] | undefined;
+}
+
+export type DeskAgentDraft = DeskKeyDraft | DeskTokenDraft;
 
 export interface DeskAgentChange {
   enabled?: boolean | undefined;
@@ -371,7 +394,16 @@ export interface DeskAgentChange {
 export interface DeskAgentPass {
   ok: true;
   accountId: string;
-  agent: { id: string; name: string; publicKey: string; enabled: boolean; state: AgentState };
+  agent: {
+    id: string;
+    name: string;
+    auth: AgentAuth;
+    publicKey?: string | undefined;
+    /** SHA-256(token) in hex: the pass route compares it in constant time. Absent once revoked. */
+    tokenHash?: string | undefined;
+    enabled: boolean;
+    state: AgentState;
+  };
   eligible: boolean;
   permissions: string[];
   height: number;
@@ -580,6 +612,22 @@ export interface AccountDesk {
     accountId: string,
     agentId: string,
     change: DeskAgentChange,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  /** A new token for a token agent (the old one stops working); only its hash and prefix are sent; logged (optional). */
+  renewAgentToken(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    tokenHash: string,
+    tokenPrefix: string,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  /** Revokes a token agent's token and switches it off; logged (optional). */
+  revokeAgentToken(
+    wallet: string,
+    accountId: string,
+    agentId: string,
     house?: boolean,
   ): Promise<DeskAgentsAnswer>;
   removeAgent(
@@ -814,6 +862,8 @@ export const DESK_METHODS = [
   'ritual',
   'editCommunityFields',
   'communityFields',
+  'renewAgentToken',
+  'revokeAgentToken',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -829,7 +879,7 @@ export const DESK_METHODS = [
  * And one without `settings`, `changeSettings` and `happenings` (cut «Ajustes de la
  * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
  * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
- * And one without the eight agent methods (cut «IAs de organización»): the agents
+ * And one without the ten agent methods (cut «IAs de organización»): the agents
  * routes and /api/agents/pass answer 503. And one without the four of «Crear → Un
  * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone.
  */
@@ -868,6 +918,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'ritual',
   'editCommunityFields',
   'communityFields',
+  'renewAgentToken',
+  'revokeAgentToken',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

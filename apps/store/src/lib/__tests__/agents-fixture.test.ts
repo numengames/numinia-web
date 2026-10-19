@@ -153,6 +153,7 @@ describe('creating', () => {
       {
         id: 'hermes-1',
         name: 'Hermes',
+        auth: 'key',
         publicKey: BOT.publicKey,
         enabled: true,
         state: 'activa',
@@ -457,6 +458,7 @@ describe('what a pass is made of', () => {
       agent: {
         id: 'hermes-1',
         name: 'Hermes',
+        auth: 'key',
         publicKey: BOT.publicKey,
         enabled: true,
         state: 'activa',
@@ -533,5 +535,47 @@ describe('claiming a pass request', () => {
     for (const args of calls) {
       expect(problems(await s.desk.claimAgentPass(...args))).toEqual([AGENT_PROBLEMS.moment]);
     }
+  });
+});
+
+describe('by token: who may renew and revoke', () => {
+  const TOKEN = { id: 'tok', name: 'Tok', auth: 'token' as const };
+  const A = { tokenHash: 'a'.repeat(64), tokenPrefix: 'AAAAAAAA' };
+  const B = { tokenHash: 'b'.repeat(64), tokenPrefix: 'BBBBBBBB' };
+
+  it('refuses a stranger, and a member without manage-roles, as for any change', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A });
+    for (const who of [wallet('ee'), PLAIN]) {
+      expect(
+        problems(await s.desk.renewAgentToken(who, ORG, 'tok', B.tokenHash, B.tokenPrefix)),
+      ).toHaveLength(1);
+      expect(problems(await s.desk.revokeAgentToken(who, ORG, 'tok'))).toHaveLength(1);
+    }
+    expect(problems(await s.desk.renewAgentToken(OWNER, ORG, 'tok', 'x', B.tokenPrefix))).toEqual([
+      AGENT_PROBLEMS.tokenHash,
+    ]);
+    expect(problems(await s.desk.renewAgentToken(OWNER, ORG, 'tok', B.tokenHash, 'x'))).toEqual([
+      AGENT_PROBLEMS.tokenPrefix,
+    ]);
+    expect(
+      problems(await s.desk.renewAgentToken(OWNER, ORG, 'tok', A.tokenHash, A.tokenPrefix)),
+    ).toEqual([AGENT_PROBLEMS.taken]);
+  });
+
+  it('writes the prefix, never the hash, in the log', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A });
+    await s.desk.renewAgentToken(OWNER, ORG, 'tok', B.tokenHash, B.tokenPrefix);
+    await s.desk.revokeAgentToken(OWNER, ORG, 'tok');
+    expect(s.log.map((line) => line.act)).toEqual([
+      'agent-created',
+      'agent-token-created',
+      'agent-token-renewed',
+      'agent-token-revoked',
+    ]);
+    expect(JSON.stringify(s.log)).not.toContain(A.tokenHash);
+    expect(JSON.stringify(s.log)).not.toContain(B.tokenHash);
+    expect(s.log[2]?.detail).toEqual({ name: 'Tok', prefix: 'BBBBBBBB' });
   });
 });
