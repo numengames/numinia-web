@@ -36,10 +36,23 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
+  "vars": {
+    // numinia.com (story W6): where /authorize sends the browser for the
+    // consent (/conectar-ia/) and where /vuelta asks GET /api/agents/me who
+    // a token is. Read with Zod; anything but a bare https origin and the
+    // relay starts no authorization. Not a secret.
+    "STORE_ORIGIN": "https://numinia.com",
+  },
+  // No binding back to numinia.com: the store calls this Worker's
+  // HandOffDesk (its own service binding, MCP_HANDOFF), and the relay asks
+  // /api/agents/me over the public internet, so neither Worker needs the
+  // other deployed first except for that one binding (deploy this one first).
   "kv_namespaces": [
     {
       // The OAuth library's storage: registered clients, grants and tokens,
-      // tokens and codes only as hashes and each grant's props encrypted.
+      // tokens and codes only as hashes and each grant's props encrypted;
+      // and the relay's pending requests (`vuelta:`, 10 minutes) with their
+      // sealed hand-offs.
       "binding": "OAUTH_KV",
       // PLACEHOLDER: the house creates the namespace (`wrangler kv namespace
       // create numinia-mcp-oauth`) and replaces this with its id.

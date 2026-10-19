@@ -1,9 +1,9 @@
 /**
  * Discovery (story W5): what a client that only knows
  * https://mcp.numinia.com/mcp learns on its way to a token, and the token
- * lifetimes it ends up with. The authorization endpoint is a stub until W6,
- * so the grant in the lifetime tests is completed with the library's own
- * helpers, exactly as W6's `/vuelta` will.
+ * lifetimes it ends up with. The grant in the lifetime tests is completed
+ * with the library's own helpers, as `/vuelta` does (the whole flow through
+ * numinia.com is flujo-oauth.test.ts, story W6).
  */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   CLIENT_REGISTRATION_TTL_SECONDS,
+  CONNECTION_MAX_SECONDS,
+  REFRESH_TOKEN_IDLE_TTL_SECONDS,
   REFRESH_TOKEN_TTL_SECONDS,
   RESOURCE,
 } from '../src/config';
@@ -133,15 +135,7 @@ describe('authorization server metadata (RFC 8414)', () => {
   });
 });
 
-describe('the stub endpoints', () => {
-  it('answers /authorize with 501 and a clear message until W6', async () => {
-    const response = await call('/authorize?response_type=code&client_id=x');
-    expect(response.status).toBe(501);
-    const body = await json(response);
-    expect(body.error).toBe('temporarily_unavailable');
-    expect(String(body.error_description)).toContain('not open yet');
-  });
-
+describe('the rest', () => {
   it('answers anything else with 404', async () => {
     const response = await call('/');
     expect(response.status).toBe(404);
@@ -211,6 +205,14 @@ describe('PKCE and token lifetimes', () => {
     ).rejects.toThrow(/S256/);
   });
 
+  it('sets the lifetimes by hand: 1 h access, 30 days from last use, 90 days at most', () => {
+    expect(PROVIDER_OPTIONS.accessTokenTTL).toBe(3_600);
+    expect(PROVIDER_OPTIONS.refreshTokenTTL).toBe(2_592_000);
+    expect(PROVIDER_OPTIONS.refreshTokenIdleTTL).toBe(2_592_000);
+    expect(REFRESH_TOKEN_IDLE_TTL_SECONDS).toBe(REFRESH_TOKEN_TTL_SECONDS);
+    expect(CONNECTION_MAX_SECONDS).toBe(7_776_000);
+  });
+
   it('issues a one-hour access token and a 30-day refresh token that rotates on use', async () => {
     const helpers = getOAuthApi(PROVIDER_OPTIONS, env);
     const client = await helpers.createClient({
@@ -229,7 +231,8 @@ describe('PKCE and token lifetimes', () => {
       userId: 'agent-1',
       metadata: {},
       scope: request.scope,
-      props: {},
+      // As /vuelta writes them: the 90-day ceiling counts from connectedAt.
+      props: { connectedAt: Math.floor(Date.now() / 1000) },
     });
     const code = new URL(redirectTo).searchParams.get('code') ?? '';
 
@@ -268,7 +271,7 @@ describe('PKCE and token lifetimes', () => {
     expect(listed.status).toBe(200);
     expect(await json(listed)).toEqual({ jsonrpc: '2.0', id: 7, result: { tools: [] } });
 
-    // Refreshing rotates the refresh token.
+    // Refreshing rotates the refresh token and restarts its 30 days.
     const refreshed = await tokenRequest({
       grant_type: 'refresh_token',
       refresh_token: String(first.refresh_token),
@@ -279,6 +282,9 @@ describe('PKCE and token lifetimes', () => {
     expect(second.expires_in).toBe(ACCESS_TOKEN_TTL_SECONDS);
     expect(typeof second.refresh_token).toBe('string');
     expect(second.refresh_token).not.toBe(first.refresh_token);
+    const slid = (kv.lastWrite('grant:')?.options?.expiration ?? 0) - Math.floor(Date.now() / 1000);
+    expect(slid).toBeGreaterThanOrEqual(REFRESH_TOKEN_IDLE_TTL_SECONDS - 5);
+    expect(slid).toBeLessThanOrEqual(REFRESH_TOKEN_IDLE_TTL_SECONDS);
 
     // Once the new one is used, the first one is dead: invalid_grant.
     const third = await tokenRequest({
@@ -302,6 +308,10 @@ describe('wrangler.jsonc', () => {
 
   it('sets the flag CIMD needs, so what the tests assume is what the runtime gives', () => {
     expect(config.compatibility_flags).toContain('global_fetch_strictly_public');
+  });
+
+  it('names numinia.com as the store, a bare https origin', () => {
+    expect(config.vars).toEqual({ STORE_ORIGIN: 'https://numinia.com' });
   });
 
   it('binds the OAuth store as OAUTH_KV', () => {
