@@ -53,6 +53,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'UPD',
         text: 'Every AI connected from an app now has its own limit. Numinia’s connection service asks numinia.com for all of them from one place, so counting by address would have made one busy AI slow down every other; now each one counts only its own requests, up to 60 a minute. Anyone asking from the internet is still counted by their address too, and nothing they add to a request lets them skip that.',
       },
+      {
+        type: 'NEW',
+        text: 'An AI can now be connected with nothing but the access token Panel › Agents shows, for apps that cannot sign in the usual way: numinia.com recognises the AI from the token alone, says who it is and lists its organization’s worlds, exactly as when it is asked by name. A wrong, revoked or renewed token gets the same refusal as always, and each AI keeps its limit of 60 requests a minute.',
+      },
     ],
   },
   {

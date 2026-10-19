@@ -39,9 +39,25 @@
  * would let one AI throttle the rest), so for them this meter is the only
  * one. The token is never logged, never in an error text, never in telemetry.
  *
+ * The token alone (story W11, the relay's static bearer): a client that
+ * cannot do OAuth — Hermes, a script — holds nothing but the `ntk_` token
+ * the panel showed, so the relay asks with NO query at all:
+ *   GET /api/agents/me
+ *   Authorization: Bearer ***
+ * The till finds the agent by SHA-256(token) alone (`agentByToken`, W2: by
+ * the unique index, a revoked or renewed token has no hash left) and the
+ * answer is the same as with the query. The same generic 401 for every
+ * wrong credential (a bearer that is not shaped like a token is refused
+ * before the till is asked; the rest go through `tokenHolder` like the
+ * query's). The same meter: once the token names its agent, the request
+ * counts in THAT agent's bucket, the one /pass and the query share — it
+ * cannot be counted before, when nobody is named yet; an unknown token
+ * costs one indexed read and is counted per address by the doorman (from
+ * the internet) or by the relay (limites.ts, per caller's address).
+ *
  * Answers — all JSON, `no-store`; an error is `{ error, texto }`:
  *   200 the agent and its worlds
- *   400 `peticion` (no well-formed `org` and `agent` in the query)
+ *   400 `peticion` (only one of `org` and `agent`, or one not well formed)
  *   401 `token` (the bearer is not this agent's token, whatever the reason)
  *   429 `limite` (too many requests for this agent)
  *   502 `caja` (the till failed) · 503 `no-vinculado` (no till)
@@ -190,7 +206,54 @@ export interface AgentMeContext {
 /** The WebSocket address of a world served at `host`. */
 export const worldSocket = (host: string): string => `wss://${host}/ws`;
 
-/** GET /api/agents/me. */
+/** An agent whose token was good, and the till that said so. */
+interface Holding {
+  readonly desk: AccountDesk;
+  readonly held: HeldAgent;
+}
+
+/** The agent named by `?org=&agent=` whose token the bearer is, or the answer that refuses. */
+async function heldByQuery(
+  desk: AccountDesk | null,
+  req: Request,
+  org: string,
+  agent: string,
+  nowMs: number,
+  log: Log,
+): Promise<Holding | Response> {
+  const limited = meterToken(org, agent, nowMs, log);
+  if (limited !== null) return limited;
+  if (desk === null) return fail('no-vinculado', 503);
+  const found = await ask(log, 'agent-me', () => desk.agentPass(org, agent), agentPassShape);
+  if (!found.ok) return tillFailed(found.response);
+  const held = await tokenHolder(req.headers.get('authorization'), found.value);
+  return held === null ? refusedToken() : { desk, held };
+}
+
+/**
+ * The agent whose token the bearer is, found by the token alone (story
+ * W11), or the answer that refuses; metered in that agent's bucket once
+ * the token has named it.
+ */
+async function heldByToken(
+  desk: AccountDesk | null,
+  req: Request,
+  nowMs: number,
+  log: Log,
+): Promise<Holding | Response> {
+  const authorization = req.headers.get('authorization');
+  const presented = bearerOf(authorization);
+  if (presented === null) return refusedToken();
+  if (desk === null) return fail('no-vinculado', 503);
+  const hash = await hashToken(presented);
+  const found = await ask(log, 'agent-me-token', () => desk.agentByToken(hash), agentPassShape);
+  if (!found.ok) return tillFailed(found.response);
+  const held = await tokenHolder(authorization, found.value);
+  if (held === null) return refusedToken();
+  return meterToken(held.accountId, held.agent.id, nowMs, log) ?? { desk, held };
+}
+
+/** GET /api/agents/me: with `?org=&agent=` (W1), or with the token alone (W11). */
 export async function answerAgentMe(
   desk: AccountDesk | null,
   req: Request,
@@ -198,19 +261,26 @@ export async function answerAgentMe(
   log: Log = logEvent,
 ): Promise<Response> {
   const query = new URL(req.url).searchParams;
-  const org = query.get('org');
-  const agent = query.get('agent');
-  if (!isAccountId(org) || !isAgentId(agent)) return fail('peticion', 400);
+  const asked = { org: query.get('org'), agent: query.get('agent') };
+  const nowMs = context.now * 1000;
+  let holding: Holding | Response;
+  if (asked.org === null && asked.agent === null) {
+    holding = await heldByToken(desk, req, nowMs, log);
+  } else if (isAccountId(asked.org) && isAgentId(asked.agent)) {
+    holding = await heldByQuery(desk, req, asked.org, asked.agent, nowMs, log);
+  } else {
+    return fail('peticion', 400);
+  }
+  return holding instanceof Response ? holding : answerFor(holding, context, log);
+}
 
-  const limited = meterToken(org, agent, context.now * 1000, log);
-  if (limited !== null) return limited;
-  if (desk === null) return fail('no-vinculado', 503);
-
-  const found = await ask(log, 'agent-me', () => desk.agentPass(org, agent), agentPassShape);
-  if (!found.ok) return tillFailed(found.response);
-  const held = await tokenHolder(req.headers.get('authorization'), found.value);
-  if (held === null) return refusedToken();
-
+/** The answer for an agent whose token was good: who it is and, if it may enter, its worlds. */
+async function answerFor(
+  { desk, held }: Holding,
+  context: AgentMeContext,
+  log: Log,
+): Promise<Response> {
+  const org = held.accountId;
   const enters = held.agent.enabled && held.eligible && held.permissions.includes('enter-worlds');
   const worlds: AgentWorld[] = [];
   if (enters) {

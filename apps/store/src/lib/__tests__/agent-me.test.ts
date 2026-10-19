@@ -252,7 +252,13 @@ describe('the rest of the road', () => {
   it('refuses a query that is not the contract’s with 400, before the meter', async () => {
     const desk = fresh();
     const token = await made(desk);
-    for (const query of ['', `org=${NUMEN}`, 'agent=hermes-1', `org=no such!&agent=hermes-1`]) {
+    // No query at all is the token-alone way (story W11, agent-me-token.test.ts).
+    for (const query of [
+      `org=${NUMEN}`,
+      'agent=hermes-1',
+      'org=&agent=',
+      `org=no such!&agent=hermes-1`,
+    ]) {
       const response = await answerAgentMe(desk, me(bearer(token), query), contextOf(), quiet);
       expect(response.status).toBe(400);
       expect(await json(response)).toMatchObject({ error: 'peticion' });
