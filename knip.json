@@ -26,6 +26,9 @@
     "apps/till": {
       "entry": ["test/*.test.ts"]
     },
+    "apps/mcp": {
+      "entry": ["test/*.test.ts"]
+    },
     "packages/domain": {
       "entry": ["src/index.ts", "__tests__/*.test.ts"]
     },

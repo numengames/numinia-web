@@ -1,0 +1,49 @@
+{
+  // The relay (DISENO-MCP-REMOTO §2 (a), story W5): Numinia's remote MCP
+  // server and its OAuth 2.1 authorization server in one Worker, apart from
+  // numinia.com. An organization's AI pastes https://mcp.numinia.com/mcp;
+  // sign-in and consent happen on numinia.com (story W6), and the relay
+  // issues its own tokens.
+  //
+  // NOT DEPLOYED. Before the first `npm run deploy` the house creates the KV
+  // namespace below and puts its id here; the custom domain is created by
+  // that deploy. Nothing publishes this Worker on push: Workers Builds is
+  // connected to numinia.com's Worker only.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "numinia-mcp",
+  "main": "src/worker.ts",
+  // The same date as the site's Worker (root wrangler.jsonc).
+  "compatibility_date": "2026-08-15",
+  // Client ID Metadata Documents (CIMD): a client's id is an HTTPS URL the
+  // relay fetches. This flag keeps that fetch on the public internet (never
+  // a Cloudflare-internal address); without it the OAuth library switches
+  // CIMD off and stops advertising it, and Claude falls back to DCR.
+  "compatibility_flags": ["global_fetch_strictly_public"],
+  "send_metrics": false,
+  // One public address, its own domain: mcp.numinia.com. No workers.dev
+  // address and no preview address, so the OAuth issuer and the MCP
+  // resource are always the canonical https://mcp.numinia.com.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "mcp.numinia.com",
+      "custom_domain": true,
+    },
+  ],
+  // Workers Logs, as the site's Worker (the relay writes no console lines).
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+  "kv_namespaces": [
+    {
+      // The OAuth library's storage: registered clients, grants and tokens,
+      // tokens and codes only as hashes and each grant's props encrypted.
+      "binding": "OAUTH_KV",
+      // PLACEHOLDER: the house creates the namespace (`wrangler kv namespace
+      // create numinia-mcp-oauth`) and replaces this with its id.
+      "id": "00000000000000000000000000000000",
+    },
+  ],
+}
