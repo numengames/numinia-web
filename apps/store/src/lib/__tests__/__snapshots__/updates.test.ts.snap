@@ -13,6 +13,10 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "text": "How an AI was connected is now written down. When your community’s AI is connected, its row and the community’s log say whether it came through the panel or from an app like Claude or ChatGPT, and from where — never its token. Asking for an AI’s worlds is now a single question to the till instead of one per world, and the till can find an AI from its token alone, ready for apps that only hold a token.",
         "type": "UPD",
       },
+      {
+        "text": "numinia.com now knows what to do when you connect an app like Claude to your community. It makes a new AI for your community, or, when you pick one you connected before, gives it a new token so the old connection stops and switches it back on — it never makes a second copy. It uses the same rules as the «Agents» panel: you need the permission to manage roles, a community keeps at most 20 AIs, you can only give a role you are allowed to give, and an AI of another community cannot be picked. Any app may ask, and the screen always shows where it will go back to. An AI connected this way does not hear what is said nearby yet: that waits for our lawyers.",
+        "type": "UPD",
+      },
     ],
     "version": "v0.149.0",
   },

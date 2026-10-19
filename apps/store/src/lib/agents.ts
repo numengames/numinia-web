@@ -50,6 +50,9 @@ export const AGENT_PROBLEMS = {
   replayed: 'that request was already used',
 } as const;
 
+/** How many agents an organization keeps (the till's `MAX_AGENTS`, pinned by a test). */
+export const MAX_AGENTS = 20;
+
 /** The closed list of states; a new one is added here, in the till and in its migration's CHECK. */
 export const AGENT_STATES = ['activa', 'dormida'] as const;
 

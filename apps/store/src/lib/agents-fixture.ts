@@ -40,6 +40,7 @@ import type {
 import {
   AGENT_PROBLEMS,
   AGENT_STATES,
+  MAX_AGENTS,
   isAccountId,
   isAgentId,
   isAudience,
@@ -50,8 +51,8 @@ import {
   readAgentName,
 } from './agents';
 
-/** How many agents an organization keeps (the till's `MAX_AGENTS`). */
-export const MAX_AGENTS = 20;
+/** How many agents an organization keeps (the till's `MAX_AGENTS`, kept in lib/agents.ts). */
+export { MAX_AGENTS };
 /** How long a pass request's nonce is kept, in seconds (the till's `NONCE_KEPT_SECONDS`). */
 const NONCE_KEPT_SECONDS = 120;
 const ROLES_PER_AGENT_MAX = 10;
