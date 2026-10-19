@@ -12,7 +12,7 @@ The OAuth protocol is Cloudflare's `@cloudflare/workers-oauth-provider`
 (MIT, pinned at 1.2.3): it stores tokens and codes only as hashes and
 encrypts each grant's props with a key only the token holder can unwrap.
 
-## What it answers (stories W5–W9)
+## What it answers (stories W5–W10)
 
 | path                                            | answer                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@ encrypts each grant's props with a key only the token holder can unwrap.
 | `POST /mcp` with a token                        | JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601`. `initialize` carries `instructions`: how to get a body, then the bridge's own `INSTRUCCIONES` (without `oir`)                                                                                                                                              |
 | `GET /.well-known/oauth-protected-resource/mcp` | RFC 9728: `resource` = `https://mcp.numinia.com/mcp` exactly, `authorization_servers` = `["https://mcp.numinia.com"]`, `scopes_supported` = `["mundos"]`                                                                                                                                                                                                                                                                           |
 | `GET /.well-known/oauth-authorization-server`   | RFC 8414: PKCE `S256` only, `none` among the token endpoint auth methods, `client_id_metadata_document_supported: true`, `registration_endpoint`, scopes `mundos` and `offline_access`                                                                                                                                                                                                                                             |
-| `POST /register`                                | dynamic client registration (RFC 7591), the fallback for clients without CIMD; a client is kept 90 days                                                                                                                                                                                                                                                                                                                            |
+| `POST /register`                                | dynamic client registration (RFC 7591), the fallback for clients without CIMD; a client is kept 90 days; at most 10 a minute per address (`429` `too_many_requests`, `Retry-After: 60`)                                                                                                                                                                                                                                            |
 | `POST /token`                                   | authorization code (PKCE) and refresh grants, and revocation (RFC 7009)                                                                                                                                                                                                                                                                                                                                                            |
 | `GET /authorize`                                | the library validates the request (client, exact redirect URI, S256, `resource`); `302` to `<STORE_ORIGIN>[/<locale>]/conectar-ia/?app=&host=&req=` (`app`: the client's name; an id or name that is a URL, by its host) with the request's own cookie `__Host-vuelta-<req>` (HttpOnly, Secure, Lax, 10 min). An error the library may send back goes `302` to the client; any other, a plain page `400`; no `STORE_ORIGIN`, `503` |
 | `GET /vuelta?req=`                              | once per request: cookie, sealed hand-off, `GET /api/agents/me` on numinia.com with the token as Bearer, then `302` to the client with the code. Any «no» is a plain page and no code (`400`; numinia.com down `502`; not configured `503`)                                                                                                                                                                                        |
@@ -31,6 +31,30 @@ token 30 days from its last use (the code exchange, then each refresh:
 `refreshTokenIdleTTL`), never past 90 days from the consent (`capRefresh`,
 `invalid_grant` after that), rotated on every use (the previous one stays
 valid until the new one is first used).
+
+## Limits and the way to numinia.com (story W10)
+
+`/register` and `/authorize` are the two doors anyone can knock without a
+token, and each writes to KV; `src/limites.ts` counts them per address
+(`cf-connecting-ip`) before the OAuth library sees them: `/register` 10 a
+minute (a client registers once per install), `/authorize` 30 a minute (a
+person retries, an office shares an address). Over the limit, `429` with
+`Retry-After: 60`: the OAuth error JSON for `/register`, the plain page
+«wait a minute» in the person's language for `/authorize`. The count is
+Cloudflare's rate limiting binding (`ratelimits` in `wrangler.jsonc`,
+`LIMIT_REGISTER`, `LIMIT_AUTHORIZE`): per Cloudflare location and eventually
+consistent, so it stops a loop, not a swarm. Without the binding, or if it
+fails, a counter in the isolate's memory keeps the same limits.
+
+The relay asks numinia.com (`/api/agents/me`, and the bridge's
+`/api/agents/pass`) through the service binding `STORE` to the site's Worker
+`numinia-web` (`storeFetch` in `src/env.ts`), not over the internet. Those
+requests carry no `cf-connecting-ip` — which every internet request does,
+set by Cloudflare's edge, and no client can remove — and that is how
+numinia.com tells them apart: it counts each AI on its own meter (60 a
+minute) instead of all of them in one address (store:
+`lib/rate-limit.ts` `fromRelay`). Unbound (tests, local runs), the relay
+uses the public fetch to `STORE_ORIGIN`.
 
 ## The tools (story W7)
 
@@ -154,6 +178,13 @@ Nothing deploys this Worker on push. Before the first `npm run deploy`:
    and put its id in `wrangler.jsonc` in place of the placeholder.
 2. Deploy this Worker BEFORE numinia.com's next deploy: numinia.com's
    `MCP_HANDOFF` service binding points at its `HandOffDesk` entrypoint.
-   `STORE_ORIGIN` is a var in `wrangler.jsonc` (no secret to set).
-3. The deploy itself creates the custom domain `mcp.numinia.com` (route
+   `STORE_ORIGIN` is a var in `wrangler.jsonc` (no secret to set). This
+   Worker's own `STORE` binding points at `numinia-web`, which already
+   exists, so this order works.
+3. The rate limiting bindings need nothing created: their `namespace_id`s
+   (`4101`, `4102`) are numbers the account picks; check no other Worker of
+   the account uses them for another limit. Never turn on the zone's
+   «Remove visitor IP headers» managed transform: numinia.com's limits read
+   `cf-connecting-ip`.
+4. The deploy itself creates the custom domain `mcp.numinia.com` (route
    with `custom_domain: true`); `numinia.com` must be a zone of the account.

@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getOAuthApi } from '@cloudflare/workers-oauth-provider';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { LIMIT_WINDOW_SECONDS, LIMITS, resetLimitsForTests } from '../src/limites';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   CLIENT_REGISTRATION_TTL_SECONDS,
@@ -35,6 +36,8 @@ let kv: MemoryKv;
 let env: Env;
 
 beforeEach(() => {
+  // The per-address limits of /register and /authorize (story W10) count every test as one address.
+  resetLimitsForTests();
   kv = new MemoryKv();
   env = { OAUTH_KV: kv.asNamespace() };
 });
@@ -323,6 +326,29 @@ describe('wrangler.jsonc', () => {
   it('binds the OAuth store as OAUTH_KV', () => {
     const namespaces = config.kv_namespaces as { binding: string }[];
     expect(namespaces.map((namespace) => namespace.binding)).toEqual(['OAUTH_KV']);
+  });
+
+  it('reaches numinia.com through a service binding to its Worker (story W10)', () => {
+    expect(config.services).toEqual([{ binding: 'STORE', service: 'numinia-web' }]);
+    const site = readJsonc('../../../wrangler.jsonc');
+    expect(site.name).toBe('numinia-web');
+  });
+
+  it('limits /register and /authorize per address with the rate limiting binding (story W10)', () => {
+    const limits = config.ratelimits as {
+      name: string;
+      namespace_id: string;
+      simple: { limit: number; period: number };
+    }[];
+    const byBinding = Object.fromEntries(
+      Object.values(LIMITS).map((door) => [door.binding, door.limit]),
+    );
+    expect(limits.map((limit) => limit.name).sort()).toEqual(Object.keys(byBinding).sort());
+    for (const limit of limits) {
+      expect(limit.simple).toEqual({ limit: byBinding[limit.name], period: LIMIT_WINDOW_SECONDS });
+      expect(limit.namespace_id).toMatch(/^[1-9][0-9]*$/);
+    }
+    expect(new Set(limits.map((limit) => limit.namespace_id)).size).toBe(limits.length);
   });
 
   it('answers only on its own domain, the origin of the resource', () => {

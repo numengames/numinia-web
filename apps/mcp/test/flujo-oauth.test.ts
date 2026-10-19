@@ -11,6 +11,7 @@
  */
 import { getOAuthApi, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetLimitsForTests } from '../src/limites';
 import { clientDisplayName, handleDefault } from '../src/authorize';
 import {
   CONNECTION_MAX_SECONDS,
@@ -86,6 +87,8 @@ function meOf(org: string, id: string): Record<string, unknown> {
 }
 
 beforeEach(() => {
+  // The per-address limits of /register and /authorize (story W10) count every test as one address.
+  resetLimitsForTests();
   kv = new MemoryKv();
   env = { OAUTH_KV: kv.asNamespace(), STORE_ORIGIN: STORE };
   till = new Map([[TOKEN, { org: ORG, id: AGENT }]]);

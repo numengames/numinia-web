@@ -43,10 +43,35 @@
     // relay starts no authorization. Not a secret.
     "STORE_ORIGIN": "https://numinia.com",
   },
-  // No binding back to numinia.com: the store calls this Worker's
-  // HandOffDesk (its own service binding, MCP_HANDOFF), and the relay asks
-  // /api/agents/me over the public internet, so neither Worker needs the
-  // other deployed first except for that one binding (deploy this one first).
+  // The way back to numinia.com (story W10): the relay asks
+  // /api/agents/me and /api/agents/pass through a service binding to the
+  // site's Worker (`numinia-web`, root wrangler.jsonc), not over the public
+  // internet. Such a request carries no `cf-connecting-ip`, which every
+  // internet request does and no client can remove: that is how numinia.com
+  // tells the relay's calls apart and counts each AI on its own meter
+  // instead of all of them in one address (store: lib/rate-limit.ts
+  // `fromRelay`). numinia-web already exists, so deploying this Worker first
+  // (numinia.com's MCP_HANDOFF binding points here) still works; the two
+  // bindings go opposite ways and neither needs a third deploy.
+  "services": [{ "binding": "STORE", "service": "numinia-web" }],
+  // Per-address limits on the two doors anyone can knock without a token
+  // (story W10, src/limites.ts): /register (dynamic client registration) 10
+  // a minute, /authorize 30 a minute. Cloudflare's rate limiting binding:
+  // nothing to create, the namespace ids are numbers the account picks and
+  // must not reuse for another limit (none other exists today). Counted
+  // per Cloudflare location, eventually consistent: it stops a loop.
+  "ratelimits": [
+    {
+      "name": "LIMIT_REGISTER",
+      "namespace_id": "4101",
+      "simple": { "limit": 10, "period": 60 },
+    },
+    {
+      "name": "LIMIT_AUTHORIZE",
+      "namespace_id": "4102",
+      "simple": { "limit": 30, "period": 60 },
+    },
+  ],
   "kv_namespaces": [
     {
       // The OAuth library's storage: registered clients, grants and tokens,

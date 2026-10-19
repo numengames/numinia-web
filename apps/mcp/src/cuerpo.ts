@@ -54,7 +54,7 @@ import {
   type RespuestaPase,
 } from '../vendor/puente-mundo.mjs';
 import { HOUSE_LIBRARY } from './biblioteca';
-import { storeOrigin, type Env } from './env';
+import { storeFetch, storeOrigin, type Env } from './env';
 import { standingOf } from './herramientas';
 import { askMe, type MeAnswer, type MeAsk } from './me';
 import type { Plazas } from './plazas';
@@ -475,8 +475,8 @@ export class Cuerpo extends DurableObject<Env> {
       org: body.org,
       agente: body.agent,
       token: body.token,
-      // The global fetch, called as a function: workerd refuses it detached from globalThis.
-      fetcher: (request, init) => fetch(request, init),
+      // numinia.com's service binding when bound (story W10), else the global fetch.
+      fetcher: storeFetch(this.env),
     })(aud);
     settleFirst(body, answer);
     if (!answer.ok && (answer.motivo === 'token' || answer.motivo === 'apagada')) {
@@ -527,7 +527,7 @@ export class Cuerpo extends DurableObject<Env> {
     if (kept !== null && kept.token === ask.token && now - kept.at < ME_EVERY_MS) {
       return kept.answer;
     }
-    const answer = await askMe(store, ask);
+    const answer = await askMe(store, ask, storeFetch(this.env));
     this.me = { at: now, token: ask.token, answer };
     return answer;
   }

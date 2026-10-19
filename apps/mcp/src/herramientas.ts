@@ -22,7 +22,7 @@
  */
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { z } from 'zod';
-import { storeOrigin, type Env } from './env';
+import { storeFetch, storeOrigin, type Env } from './env';
 import { askMe, type Me } from './me';
 
 /** The tools' names: stable ids a client keeps; never renamed. */
@@ -297,7 +297,7 @@ export async function callTool(name: string, args: unknown, call: ToolCall): Pro
   const store = storeOrigin(call.env);
   if (store === null) return failure(ERRORS.unconfigured);
 
-  const answer = await askMe(store, props.data);
+  const answer = await askMe(store, props.data, storeFetch(call.env));
   switch (answer.kind) {
     case 'ok':
       return name === WHO_AM_I ? whoAmI(answer.me) : worlds(answer.me);

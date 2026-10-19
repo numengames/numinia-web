@@ -21,9 +21,12 @@
  * {@link HandOffDesk}, this Worker's named RPC entrypoint. The options
  * themselves live in provider.ts; the AI's body in a world is the Durable
  * Object `Cuerpo` (cuerpo.ts), its organization's seats `Plazas` (plazas.ts).
+ * Before any of it, `/register` and `/authorize` are counted per address
+ * (limites.ts, story W10).
  */
 import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
 import type { Env } from './env';
+import { overLimit } from './limites';
 import { PROVIDER_OPTIONS } from './provider';
 
 export type { Env } from './env';
@@ -36,8 +39,9 @@ export { Plazas } from './plazas';
 const provider = new OAuthProvider<Env>(PROVIDER_OPTIONS);
 
 const worker = {
-  fetch: (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> =>
-    provider.fetch(request, env, ctx),
+  // `/register` and `/authorize` are counted per address first (story W10, limites.ts).
+  fetch: async (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> =>
+    (await overLimit(request, env)) ?? provider.fetch(request, env, ctx),
 } satisfies ExportedHandler<Env>;
 
 // eslint-disable-next-line no-restricted-syntax -- the Workers runtime calls the module's default export

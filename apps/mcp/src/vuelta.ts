@@ -20,7 +20,7 @@
  * log line; it leaves the relay only as the Bearer of the `me` check.
  */
 import { SCOPE_OFFLINE, SCOPE_WORLDS } from './config';
-import { storeOrigin, type Env } from './env';
+import { storeFetch, storeOrigin, type Env, type StoreFetch } from './env';
 import {
   REQUEST_ID,
   cookieName,
@@ -74,8 +74,8 @@ function readHandOff(text: string): HandOff | null {
 /** What numinia.com says of the token: its agent's, not, or it did not answer. */
 type TillSays = 'yes' | 'no' | 'down';
 
-async function tillKnows(store: string, handOff: HandOff): Promise<TillSays> {
-  const answer = await askMe(store, handOff);
+async function tillKnows(store: string, handOff: HandOff, send: StoreFetch): Promise<TillSays> {
+  const answer = await askMe(store, handOff, send);
   if (answer.kind === 'down' || answer.kind === 'busy') return 'down';
   if (answer.kind !== 'ok') return 'no';
   return answer.me.org === handOff.accountId && answer.me.id === handOff.agentId ? 'yes' : 'no';
@@ -102,7 +102,7 @@ export async function handleVuelta(request: Request, env: Env): Promise<Response
   if (store === null || helpers === undefined) {
     return stopPage(request, 'unavailable', 503, clear);
   }
-  const says = await tillKnows(store, handOff);
+  const says = await tillKnows(store, handOff, storeFetch(env));
   if (says === 'down') return stopPage(request, 'unavailable', 502, clear);
   if (says === 'no') return bad();
 

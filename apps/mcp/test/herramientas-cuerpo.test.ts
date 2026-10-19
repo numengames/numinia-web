@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { getOAuthApi, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetLimitsForTests } from '../src/limites';
 import { HOUSE_LIBRARY } from '../src/biblioteca';
 import { RESOURCE } from '../src/config';
 import { Cuerpo, HEAR_TOOL, REFUSALS, URL_AIS_HEAR } from '../src/cuerpo';
@@ -128,6 +129,8 @@ async function fakeFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
 }
 
 beforeEach(() => {
+  // The per-address limits of /register and /authorize (story W10) count every test as one address.
+  resetLimitsForTests();
   vi.useFakeTimers({
     toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'],
     now: new Date('2026-10-19T10:00:00Z'),

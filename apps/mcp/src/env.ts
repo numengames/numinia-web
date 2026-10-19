@@ -23,6 +23,39 @@ export interface Env {
   CUERPO?: DurableObjectNamespace<Cuerpo>;
   /** Each organization's seats and body time, one Durable Object per organization (plazas.ts). */
   PLAZAS?: DurableObjectNamespace<Plazas>;
+  /**
+   * numinia.com's Worker (`numinia-web`) through a service binding (story
+   * W10): how the relay asks `/api/agents/me` and `/api/agents/pass`. Worker
+   * to Worker, with no address of the caller, so numinia.com counts each AI
+   * on its own meter instead of all of them in one address. Unbound (tests,
+   * local runs), the relay uses the public fetch to {@link Env.STORE_ORIGIN}.
+   */
+  STORE?: Fetcher;
+  /** Cloudflare's rate limiting binding for `/register`, per address (story W10, limites.ts). */
+  LIMIT_REGISTER?: RateLimit;
+  /** Cloudflare's rate limiting binding for `/authorize`, per address (story W10, limites.ts). */
+  LIMIT_AUTHORIZE?: RateLimit;
+}
+
+/** How the relay sends a request to numinia.com. */
+export type StoreFetch = typeof fetch;
+
+/**
+ * The way to numinia.com: the service binding `STORE` when there is one,
+ * else the public fetch (called as a function: workerd refuses it detached
+ * from globalThis). Through the binding the request is the relay's own,
+ * built here; the address header is dropped in case one ever rode along,
+ * since its absence is what tells numinia.com the call is the relay's
+ * (store: lib/rate-limit.ts `fromRelay`).
+ */
+export function storeFetch(env: Env): StoreFetch {
+  const bound = env.STORE;
+  if (bound === undefined) return (input, init) => fetch(input, init);
+  return (input, init) => {
+    const request = new Request(input, init);
+    request.headers.delete('cf-connecting-ip');
+    return bound.fetch(request);
+  };
 }
 
 /** An https origin and nothing else: no path, query, fragment or credentials. */

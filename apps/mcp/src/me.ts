@@ -20,6 +20,7 @@
  * request: never in the URL, an error or a log line.
  */
 import { z } from 'zod';
+import type { StoreFetch } from './env';
 
 /** What the relay needs to ask: the agent, its organization and its token. */
 export interface MeAsk {
@@ -59,12 +60,20 @@ export type MeAnswer =
   | { readonly kind: 'malformed' }
   | { readonly kind: 'refused' };
 
-/** GET `<store>/api/agents/me` for one agent; never throws. */
-export async function askMe(store: string, ask: MeAsk): Promise<MeAnswer> {
+/**
+ * GET `<store>/api/agents/me` for one agent; never throws. `send` is the way
+ * to numinia.com (`storeFetch(env)`: its service binding when bound, story
+ * W10), the public fetch by default.
+ */
+export async function askMe(
+  store: string,
+  ask: MeAsk,
+  send: StoreFetch = (input, init) => fetch(input, init),
+): Promise<MeAnswer> {
   const query = new URLSearchParams({ org: ask.accountId, agent: ask.agentId });
   let response: Response;
   try {
-    response = await fetch(`${store}/api/agents/me?${query.toString()}`, {
+    response = await send(`${store}/api/agents/me?${query.toString()}`, {
       headers: { Authorization: `Bearer ${ask.token}`, Accept: 'application/json' },
       redirect: 'manual',
     });
