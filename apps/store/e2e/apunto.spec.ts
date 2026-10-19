@@ -147,6 +147,11 @@ test('an administrator publishes an encounter; its page offers «Me apunto» and
   await page.reload();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator(`[data-rsvp-count="${published}"]`)).toHaveText('1 persona va');
+  // The pressed style fades the primary background out: scan once it is gone,
+  // or axe can read the dark text over the teal still fading (a race, not a fault).
+  await expect
+    .poll(() => button.evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe('rgba(0, 0, 0, 0)');
 
   const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
   expect(scan.violations).toEqual([]);

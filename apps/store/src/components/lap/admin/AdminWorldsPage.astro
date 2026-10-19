@@ -663,7 +663,16 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
   [data-worlds-panel] .maquina-cerrada p {
     margin: 0;
   }
-  /* The recipe a machine was installed from; its line again when it is not the room's */
+  /* The recipe a machine was installed from, and what its updater says; the last line for one that does not update itself */
+  [data-worlds-panel] .receta-estado[data-tono='bien'],
+  [data-worlds-panel] .receta-canario {
+    color: var(--texto-2);
+  }
+  [data-worlds-panel] .receta-canario {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.8rem;
+  }
   [data-worlds-panel] .receta {
     font-size: 0.8rem;
     color: var(--texto-3);

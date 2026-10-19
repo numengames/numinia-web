@@ -24,6 +24,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { PlacementMessages } from '../../../i18n/mundos';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import {
+  LAST_INSTALL_LINE,
   bootstrapLine,
   formatAgo,
   formatSize,
@@ -31,16 +32,17 @@ import {
   readImportRule,
   readRequest,
   readTickets,
+  recipeState,
   settled,
   shortSha,
   shortWallet,
-  staleRecipe,
   uploadZip,
   waitFor,
   withTickets,
   type DoorLogEntry,
   type ImportTicket,
   type MachineHealth,
+  type RecipeState,
 } from '../../../lib/fleet';
 import { openAllCommunities } from '../../../lib/org-choices';
 import { counted, homesByWorld, loadHomes, namesByWorld, worldHref } from '../../../lib/mundos';
@@ -410,6 +412,57 @@ function FleetEngineBanner({
   );
 }
 
+/**
+ * What a machine's recipe is doing, as the machine says: it follows `main`
+ * by itself, so there is nothing to copy, except once on a machine older
+ * than that.
+ */
+function RecipeLine({
+  machine,
+  recipe,
+  room,
+}: {
+  readonly machine: string;
+  readonly recipe: RecipeState;
+  readonly room: WorldsRoomMessages;
+}) {
+  const words = room.machines.selfUpdate;
+  if (recipe.kind === 'manual') {
+    return (
+      <div className="receta-vieja">
+        <p className="aviso-maquina" role="note">
+          {fill(words.manual, { m: machine })}
+        </p>
+        <CopyLine line={LAST_INSTALL_LINE} room={room} />
+      </div>
+    );
+  }
+  const said =
+    recipe.kind === 'halted'
+      ? fill(words.halted, { why: recipe.reason ?? words.haltedSome })
+      : recipe.kind === 'refused'
+        ? fill(words.refused, { why: recipe.reason })
+        : recipe.kind === 'held'
+          ? fill(words.held, { r: shortSha(recipe.commit) })
+          : words[recipe.kind];
+  const tone =
+    recipe.kind === 'halted' || recipe.kind === 'refused'
+      ? 'mal'
+      : recipe.kind === 'frozen' || recipe.kind === 'held'
+        ? 'aviso'
+        : 'bien';
+  return (
+    <p
+      className="salud-maquina receta-estado"
+      data-tono={tone}
+      role="status"
+      title={recipe.kind === 'resting' && recipe.until !== null ? recipe.until : undefined}
+    >
+      {said}
+    </p>
+  );
+}
+
 function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: WorldsRoomMessages }) {
   return (
     <section className="maquinas" aria-label={room.machines.title}>
@@ -418,8 +471,9 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
         {fleet.machines.map((machine) => {
           const health = machineHealth(machine.heartbeat);
           const line = machine.open ? healthLine(machine.alias, health, room) : null;
-          // Installed from another recipe than the room hands out, or one that says none.
-          const stale = staleRecipe(machine);
+          // What its recipe updater says: the room hands out no recipe and compares with none.
+          const recipe = recipeState(machine);
+          const canary = machine.recipeUpdate?.canary === true;
           // Deleted worlds whose folder and keys this machine has not removed yet.
           const freeing = fleet.rows.filter(
             (row) => row.phase === 'deleting' && rowPlace(row)?.server === machine.alias,
@@ -430,7 +484,8 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
               data-machine={machine.alias}
               data-open={machine.open}
               data-health={machine.open ? health.kind : undefined}
-              data-recipe={machine.open ? (stale ? 'stale' : 'pinned') : undefined}
+              data-recipe={recipe?.kind}
+              data-canary={canary ? 'yes' : undefined}
               data-imports={machine.imports === null ? undefined : machine.imports.zipMaxBytes}
               data-engines={machine.open ? machineEngines(machine).join(' ') : undefined}
               data-updates={machine.open && machine.updates === true ? 'yes' : undefined}
@@ -467,15 +522,13 @@ function Machines({ fleet, room }: { readonly fleet: Fleet; readonly room: World
                       )}
                     </p>
                   )}
-                  {stale && (
-                    <div className="receta-vieja">
-                      <p className="aviso-maquina" role="note">
-                        {fill(room.machines.oldRecipe, { m: machine.alias })}
-                      </p>
-                      {fleet.wallet !== null && (
-                        <CopyLine line={bootstrapLine(machine.alias, fleet.wallet)} room={room} />
-                      )}
-                    </div>
+                  {recipe !== null && (
+                    <RecipeLine machine={machine.alias} recipe={recipe} room={room} />
+                  )}
+                  {canary && (
+                    <p className="nota receta-canario" role="note">
+                      {room.machines.selfUpdate.canary}
+                    </p>
                   )}
                   {freeing.map((row) => (
                     <p key={row.id} className="estado liberando" data-freeing={row.id}>

@@ -22,6 +22,7 @@ import type {
   DoorPhase,
   Heartbeat,
   Imports,
+  RecipeUpdate,
   ReleaseState,
   UploadProgress,
   WorldPin,
@@ -315,8 +316,7 @@ export interface MachineSummary {
   readonly listens: readonly DoorFeature[];
   /**
    * The numinia-assets commit it was installed from, as its door says (40
-   * hex); null when its door says none, or does not answer. Against the room's
-   * own (lib/fleet.ts `staleRecipe`), it says whether its line must run again.
+   * hex); null when its door says none, or does not answer.
    */
   readonly recipe: string | null;
   /**
@@ -335,6 +335,12 @@ export interface MachineSummary {
   readonly updates?: boolean;
   /** What its self-updating pass is doing, as its door says (`release`); absent when it says nothing. */
   readonly release?: ReleaseState;
+  /**
+   * What its recipe updater is doing, as its door says (`recipeUpdate`);
+   * absent when it says nothing — a machine that does not follow `main` by
+   * itself yet (lib/fleet.ts `recipeState`).
+   */
+  readonly recipeUpdate?: RecipeUpdate;
 }
 
 /** The engines a machine runs: those its door names, or Hyperfy alone when it names none. */

@@ -1,5 +1,5 @@
 {
-  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on three imaginary machines whose doors answer and a fourth whose door does not, covering every phase the room shows. open-1 was installed from the room's own recipe (lib/fleet.ts FLEET_REF: they move together, a test holds them) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none and takes no zips. Neither names its engines, so they run Hyperfy alone; bronte-xs-ca-003's door names both (`engines`) and takes updates (`updates`): `atrium` runs an older Numinia Engine build than the newest release (`engine`, imaginary like every build here), so the room offers to update it (its last move failed: `updateError`, and the machine halted: `release`), and `lantern-hall` is being moved to that build (`updating`) and is held on it (`pin`); this machine's door also says it takes a pin (`listens`). Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
+  "$comment": "Hermetic fleet for DATA_SOURCE=fixture builds (CI, local screenshots): the house's own district worlds on three imaginary machines whose doors answer and a fourth whose door does not, covering every phase the room shows. open-1 names its recipe and follows main by itself (`recipeUpdate`: up to date, and it is the canary that takes each recipe first) and brings worlds back from their zip (`imports`): one world's zip is on its way (`uploading`, bytes of `of`), another is being opened (`importing`), and `bosque` came back from one, stopped. open-2 was installed before recipes were pinned, so its door names none, takes no zips and does not update itself: the room shows it its last install line. Neither names its engines, so they run Hyperfy alone; bronte-xs-ca-003's door names both (`engines`) and takes updates (`updates`): `atrium` runs an older Numinia Engine build than the newest release (`engine`, imaginary like every build here), so the room offers to update it (its last move failed: `updateError`, and the machine halted: `release`), and `lantern-hall` is being moved to that build (`updating`) and is held on it (`pin`); this machine's door also says it takes a pin (`listens`), and that its recipe updater has seen a newer recipe on main and waits for its rest (`recipeUpdate`). Never read in production, where the room reads each machine's door (https://<alias>.numinia.com/fleet/v1/) and the Summa's world cards.",
   "machines": [
     {
       "alias": "open-1",
@@ -173,7 +173,23 @@
         "waiting": { "requests": 1, "since": "2026-10-12T09:44:50Z" }
       },
       "listens": ["events"],
-      "recipe": "880ff114c8cf2b4f4705300e8bc0224c7dbf0a41",
+      "recipe": "4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1",
+      "recipeUpdate": {
+        "installed": "4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1",
+        "upToDate": true,
+        "target": null,
+        "targetWhy": null,
+        "restUntil": null,
+        "canary": true,
+        "pin": null,
+        "halted": false,
+        "haltedReason": null,
+        "refused": null,
+        "lastPass": {
+          "at": "2026-10-19T09:50:00Z",
+          "action": "same"
+        }
+      },
       "imports": { "zipMaxBytes": 2147483648 }
     },
     {
@@ -311,7 +327,23 @@
         "waiting": { "requests": 0, "since": null }
       },
       "listens": ["events", "pin"],
-      "recipe": "880ff114c8cf2b4f4705300e8bc0224c7dbf0a41",
+      "recipe": "4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1",
+      "recipeUpdate": {
+        "installed": "4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1",
+        "upToDate": false,
+        "target": "9e71b3c4d05a2f86e1c7b9a0d3f4e5268c1b7a02",
+        "targetWhy": "resting",
+        "restUntil": "2026-10-19T11:40:00Z",
+        "canary": false,
+        "pin": null,
+        "halted": false,
+        "haltedReason": null,
+        "refused": null,
+        "lastPass": {
+          "at": "2026-10-19T09:52:00Z",
+          "action": "resting"
+        }
+      },
       "imports": { "zipMaxBytes": 2147483648 },
       "engines": ["numinia-hyperfy2", "numinia-engine"],
       "updates": true,

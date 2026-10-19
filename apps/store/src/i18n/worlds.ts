@@ -118,8 +118,28 @@ export interface WorldsRoomMessages {
     readonly copied: string;
     /** The commit it was installed from: `{r}`, seven hex digits. */
     readonly recipe: string;
-    /** It runs another recipe than the room's, or says none: `{m}`; its line follows. */
-    readonly oldRecipe: string;
+    /**
+     * What its recipe updater says (lib/fleet.ts `recipeState`): each machine
+     * follows `main` of numinia-assets by itself; the room only reports it.
+     */
+    readonly selfUpdate: {
+      /** It does not update itself yet: `{m}`; the last line to run on it follows. */
+      readonly manual: string;
+      readonly current: string;
+      readonly updating: string;
+      readonly resting: string;
+      /** It stopped on a recipe that failed: `{why}`, the machine's reason (or `haltedSome`). */
+      readonly halted: string;
+      readonly haltedSome: string;
+      /** It would not install the newest recipe: `{why}`, the machine's reason. */
+      readonly refused: string;
+      readonly frozen: string;
+      /** Held on one recipe: `{r}`, seven hex digits. */
+      readonly held: string;
+      readonly checking: string;
+      /** The machine that takes each recipe first. */
+      readonly canary: string;
+    };
     /** Whether its reconciler keeps up: `{m}` machine, then `{t}` ago, `{n}` requests. */
     readonly slow: string;
     readonly failing: string;
@@ -556,7 +576,23 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copiar',
       copied: 'Copiado',
       recipe: 'receta {r}',
-      oldRecipe: '{m} usa una receta anterior: relanza su línea.',
+      selfUpdate: {
+        manual:
+          '{m} aún no se actualiza sola: necesita una última instalación. Entra una vez en ella y ejecuta esta línea; después sigue sola cada receta nueva.',
+        current: 'Se actualiza sola · al día.',
+        updating: 'Se actualiza sola · actualizándose a la receta nueva.',
+        resting:
+          'Se actualiza sola · esperando reposo: toma la receta nueva cuando lleve un rato publicada.',
+        halted:
+          'Parada: {why}. No vuelve a probar esa receta; la siguiente que se publique la desbloquea.',
+        haltedSome: 'la receta nueva falló al instalarse',
+        refused: 'Parada: no instala la receta nueva ({why}).',
+        frozen:
+          'Congelada: se queda en su receta y no se actualiza hasta que alguien la descongele en la máquina.',
+        held: 'Sujeta a la receta {r}: no sigue las nuevas hasta que alguien la suelte en la máquina.',
+        checking: 'Se actualiza sola · aún no ha mirado si hay receta nueva.',
+        canary: 'Máquina de prueba (canario): estrena cada receta antes que las demás.',
+      },
       slow: '{m} va con retraso.',
       failing: '{m} no obedece: no pudo aplicar los cambios. Lo reintenta cada minuto.',
       silent: '{m} no obedece: no da señales. Si sigue así, avisa a Ursa.',
@@ -988,7 +1024,23 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copy',
       copied: 'Copied',
       recipe: 'recipe {r}',
-      oldRecipe: '{m} runs an older recipe: run its line again.',
+      selfUpdate: {
+        manual:
+          '{m} does not update itself yet: it needs one last install. Log in to it once and run this line; from then on it takes every new recipe by itself.',
+        current: 'Updates itself · up to date.',
+        updating: 'Updates itself · taking the new recipe.',
+        resting:
+          'Updates itself · waiting for the rest: it takes the new recipe once it has been out a while.',
+        halted:
+          'Stopped: {why}. It will not try that recipe again; the next one published lifts the stop.',
+        haltedSome: 'the new recipe failed to install',
+        refused: 'Stopped: it will not install the new recipe ({why}).',
+        frozen:
+          'Frozen: it stays on its recipe and does not update until someone unfreezes it on the machine.',
+        held: 'Held on recipe {r}: it does not take new ones until someone lets it go on the machine.',
+        checking: 'Updates itself · it has not looked for a new recipe yet.',
+        canary: 'Test machine (canary): it takes each recipe before the others.',
+      },
       slow: '{m} is running late.',
       failing: '{m} is not obeying: it could not apply the changes. It tries again every minute.',
       silent: '{m} is not obeying: no sign of life. If this goes on, tell Ursa.',
@@ -1426,7 +1478,21 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'コピー',
       copied: 'コピーしました',
       recipe: 'レシピ {r}',
-      oldRecipe: '{m} は以前のレシピを使っています。その行をもう一度実行してください。',
+      selfUpdate: {
+        manual:
+          '{m} はまだ自動で更新されません。最後に一度だけインストールが必要です。マシンに一度ログインしてこの行を実行してください。以後は新しいレシピを自動で取り込みます。',
+        current: '自動更新 · 最新です。',
+        updating: '自動更新 · 新しいレシピに更新中です。',
+        resting: '自動更新 · 待機中:新しいレシピは公開からしばらく経ってから取り込みます。',
+        halted:
+          '停止中:{why}。そのレシピは再試行しません。次に公開されるレシピで停止が解除されます。',
+        haltedSome: '新しいレシピのインストールに失敗しました',
+        refused: '停止中:新しいレシピをインストールしません({why})。',
+        frozen: '凍結中:今のレシピのままで、マシン上で誰かが解除するまで更新しません。',
+        held: 'レシピ {r} に固定中:マシン上で誰かが解除するまで新しいレシピを取り込みません。',
+        checking: '自動更新 · まだ新しいレシピを確認していません。',
+        canary: 'テスト用マシン(カナリア):各レシピをほかより先に取り込みます。',
+      },
       slow: '{m} は遅れています。',
       failing:
         '{m} は指示どおりに動いていません：変更を適用できませんでした。1 分ごとに再試行します。',
@@ -1863,7 +1929,21 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: '복사',
       copied: '복사됨',
       recipe: '레시피 {r}',
-      oldRecipe: '{m}은(는) 이전 레시피를 쓰고 있습니다. 그 줄을 다시 실행하세요.',
+      selfUpdate: {
+        manual:
+          '{m}은(는) 아직 스스로 업데이트하지 않습니다. 마지막으로 한 번 설치가 필요합니다. 머신에 한 번 로그인해 이 줄을 실행하세요. 그 뒤로는 새 레시피를 스스로 받습니다.',
+        current: '스스로 업데이트 · 최신입니다.',
+        updating: '스스로 업데이트 · 새 레시피로 업데이트 중입니다.',
+        resting: '스스로 업데이트 · 대기 중: 새 레시피가 공개되고 잠시 지난 뒤에 받습니다.',
+        halted:
+          '멈춤: {why}. 그 레시피는 다시 시도하지 않습니다. 다음에 공개되는 레시피가 멈춤을 풉니다.',
+        haltedSome: '새 레시피 설치에 실패했습니다',
+        refused: '멈춤: 새 레시피를 설치하지 않습니다({why}).',
+        frozen: '동결됨: 지금 레시피에 머물며, 누군가 머신에서 풀기 전까지 업데이트하지 않습니다.',
+        held: '레시피 {r}에 고정됨: 누군가 머신에서 풀기 전까지 새 레시피를 받지 않습니다.',
+        checking: '스스로 업데이트 · 아직 새 레시피를 확인하지 않았습니다.',
+        canary: '테스트 머신(카나리아): 각 레시피를 다른 머신보다 먼저 받습니다.',
+      },
       slow: '{m}이(가) 늦어지고 있습니다.',
       failing:
         '{m}이(가) 명령을 따르지 않습니다: 변경을 적용하지 못했습니다. 1분마다 다시 시도합니다.',
@@ -2299,7 +2379,23 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       copy: 'Copiar',
       copied: 'Copiado',
       recipe: 'receita {r}',
-      oldRecipe: '{m} usa uma receita anterior: rode a linha dela de novo.',
+      selfUpdate: {
+        manual:
+          '{m} ainda não se atualiza sozinha: precisa de uma última instalação. Entre nela uma vez e rode esta linha; depois disso ela pega cada receita nova sozinha.',
+        current: 'Atualiza-se sozinha · em dia.',
+        updating: 'Atualiza-se sozinha · atualizando para a receita nova.',
+        resting:
+          'Atualiza-se sozinha · esperando o repouso: pega a receita nova quando ela estiver publicada há um tempo.',
+        halted:
+          'Parada: {why}. Ela não tenta essa receita de novo; a próxima publicada desbloqueia.',
+        haltedSome: 'a receita nova falhou ao instalar',
+        refused: 'Parada: não instala a receita nova ({why}).',
+        frozen:
+          'Congelada: fica na receita que tem e não se atualiza até alguém descongelá-la na máquina.',
+        held: 'Presa à receita {r}: não pega as novas até alguém soltá-la na máquina.',
+        checking: 'Atualiza-se sozinha · ainda não olhou se há receita nova.',
+        canary: 'Máquina de teste (canário): estreia cada receita antes das outras.',
+      },
       slow: '{m} está atrasada.',
       failing: '{m} não obedece: não conseguiu aplicar as mudanças. Tenta de novo a cada minuto.',
       silent: '{m} não obedece: não dá sinais. Se continuar assim, avise a Ursa.',
