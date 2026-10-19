@@ -5,6 +5,8 @@
  */
 import type { OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { z } from 'zod';
+import type { Cuerpo } from './cuerpo';
+import type { Plazas } from './plazas';
 
 /** The relay's bindings. `OAUTH_PROVIDER` is set by the library for the default handler. */
 export interface Env {
@@ -17,6 +19,10 @@ export interface Env {
    * A var of wrangler.jsonc, not a secret.
    */
   STORE_ORIGIN?: string;
+  /** The AIs' bodies in worlds, one Durable Object per AI (story W8, cuerpo.ts). */
+  CUERPO?: DurableObjectNamespace<Cuerpo>;
+  /** Each organization's seats and body time, one Durable Object per organization (plazas.ts). */
+  PLAZAS?: DurableObjectNamespace<Plazas>;
 }
 
 /** An https origin and nothing else: no path, query, fragment or credentials. */

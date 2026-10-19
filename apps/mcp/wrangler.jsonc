@@ -59,4 +59,24 @@
       "id": "00000000000000000000000000000000",
     },
   ],
+  // The AIs' bodies in worlds (story W8). CUERPO: one object per AI
+  // (`<organization>.<agent>`) holding its outbound WebSocket to one world
+  // and running the engine's bridge (vendor/puente-mundo.mjs); its 20 Hz
+  // clock keeps it awake while inside (no hibernation, priced in §2 (e)).
+  // PLAZAS: one object per organization, its seats (3 bodies at once) and
+  // its body time per day, kept to bill later.
+  "durable_objects": {
+    "bindings": [
+      { "name": "CUERPO", "class_name": "Cuerpo" },
+      { "name": "PLAZAS", "class_name": "Plazas" },
+    ],
+  },
+  // SQLite-backed (what Cloudflare recommends for new classes, and the only
+  // kind on the free plan); both use only the key-value storage API.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Cuerpo", "Plazas"],
+    },
+  ],
 }

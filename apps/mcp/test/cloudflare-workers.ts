@@ -14,3 +14,18 @@ export class WorkerEntrypoint<Env = unknown> {
     this.env = env;
   }
 }
+
+/**
+ * workerd's Durable Object base class keeps `ctx` (the object's state and
+ * storage) and `env` the same way; the bodies' tests hand it an in-memory
+ * state (test/memory-durable.ts).
+ */
+export class DurableObject<Env = unknown> {
+  protected readonly ctx: DurableObjectState;
+  protected readonly env: Env;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    this.ctx = ctx;
+    this.env = env;
+  }
+}

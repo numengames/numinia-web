@@ -53,6 +53,40 @@ the library's `unwrapToken` + `revokeGrant` — only this one; a newer grant of
 the same AI keeps working — and the tool says to connect again: the
 client's next call is a `401` and its refresh is `invalid_grant`.
 
+## The AI's body in a world (story W8)
+
+Two Durable Objects, not yet reachable from MCP (the world tools are W9):
+
+- **`Cuerpo`** (`src/cuerpo.ts`), one per AI, named `<organization>.<agent>`
+  (`bodyOf(env, org, agent)`). `entrar({props, mundo, grant?})` asks `/me`,
+  takes a seat, asks numinia.com for a 10-minute H3b pass with the AI's token
+  (`POST /api/agents/pass`, Bearer) and opens the outbound WebSocket to the
+  world's `ws` by running the engine's bridge, vendored as
+  `vendor/puente-mundo.mjs` (`vendor/VENDOR.md`: commit, hash, refresh). The
+  bridge renews the pass every 8 minutes on the same connection. `salir()`
+  leaves; `usar({props, grant?})` is what each W9 call will make (it keeps
+  the body from idling out and hands it the newest token); `estado()` says
+  where it is and why it last left. One body per AI, in one world at a time:
+  `entrar` another world leaves the first.
+- **`Plazas`** (`src/plazas.ts`), one per organization: at most **3** bodies
+  inside at once (a seat is a 3-minute lease the body renews every minute,
+  so a vanished body frees it by itself), and the **body time**, counted per
+  UTC day and per agent in its own storage (`days()`), to bill later; the
+  house pays it for now.
+
+While inside, the body's alarm rings every minute: it adds the minute to
+the organization's body time, renews its seat, asks `/me` (never more than
+once a minute) and leaves after 10 minutes without calls, when switched off,
+without anyone answering for it or the permission, when its world is gone
+from `/me`, when the world puts it out (4003) or its seat lapsed. A `401`
+from numinia.com (on `/me` or a pass) leaves and revokes the grant the body
+came with. Asleep (`dormida`) it stays, and the bridge keeps to what its pass
+allows. Leaving stops every timer (the bridge's 20 Hz clock, which keeps the
+object awake while inside, its pass renewal and the alarm), so the object
+can be evicted. The token is only in memory: never in storage, a note or an
+answer. `oir` stays off (`URL_AIS_HEAR = false`): `worldTools()` leaves it
+out and what the bridge hears is dropped every minute.
+
 ## The hand-off with numinia.com (story W6)
 
 numinia.com mints the AI's `ntk_` token when the person presses «Conectar»
@@ -76,7 +110,7 @@ log lines.
 ## Local runs and tests
 
 ```bash
-npm test --workspace @numinia/mcp      # vitest in Node, KV in memory
+npm test --workspace @numinia/mcp      # vitest in Node: KV, Durable Objects and a world in memory
 npm run build --workspace @numinia/mcp # wrangler dry run into dist/
 ```
 
