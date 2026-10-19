@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@numinia/domain": "*",
-    "viem": "^2.57.5"
+    "viem": "^2.57.7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261013.1",
