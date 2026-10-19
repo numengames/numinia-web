@@ -33,8 +33,11 @@
  * never tells «unknown agent» from «bad token». The metering is the pass
  * route's too and the bucket is the same: 60 requests a minute PER AGENT,
  * the two routes together (`meterToken`, 429 `limite` with retry-after),
- * whether or not the agent exists, besides the doorman's per-IP limit. The
- * token is never logged, never in an error text, never in telemetry.
+ * whether or not the agent exists, besides the doorman's per-IP limit —
+ * which the relay's calls skip (story W10, `fromRelay` in lib/rate-limit.ts:
+ * through a service binding they have no address, and one bucket for all
+ * would let one AI throttle the rest), so for them this meter is the only
+ * one. The token is never logged, never in an error text, never in telemetry.
  *
  * Answers — all JSON, `no-store`; an error is `{ error, texto }`:
  *   200 the agent and its worlds

@@ -49,6 +49,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'NEW',
         text: 'Connecting an app like Claude to your community now goes all the way. After you press «Allow», numinia.com hands the AI’s access token straight to Numinia’s connection service, without it ever passing through your browser or appearing in any address, and your browser goes back to the app, which is now connected. The screen first checks that the app is still waiting for that very request and that it is the app and the computer you saw; if not, or if more than ten minutes have passed, nothing is connected and the screen asks you to start again from your app. Only the browser that started the request can finish it, and only once. The app stays connected while it keeps working: if it goes 30 days without being used it has to ask again, and after 90 days it always asks again.',
       },
+      {
+        type: 'UPD',
+        text: 'Every AI connected from an app now has its own limit. Numinia’s connection service asks numinia.com for all of them from one place, so counting by address would have made one busy AI slow down every other; now each one counts only its own requests, up to 60 a minute. Anyone asking from the internet is still counted by their address too, and nothing they add to a request lets them skip that.',
+      },
     ],
   },
   {
