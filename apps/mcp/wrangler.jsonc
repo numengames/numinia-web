@@ -86,9 +86,8 @@
       // and the relay's pending requests (`vuelta:`, 10 minutes) with their
       // sealed hand-offs.
       "binding": "OAUTH_KV",
-      // PLACEHOLDER: the house creates the namespace (`wrangler kv namespace
-      // create numinia-mcp-oauth`) and replaces this with its id.
-      "id": "00000000000000000000000000000000",
+      // `numinia-mcp-oauth`, created by the house (EU jurisdiction).
+      "id": "e805e94343654063bca4e60d3509851b",
     },
   ],
   // The AIs' bodies in worlds (story W8). CUERPO: one object per AI

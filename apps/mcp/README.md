@@ -204,8 +204,8 @@ npm run build --workspace @numinia/mcp # wrangler dry run into dist/
 
 Nothing deploys this Worker on push. Before the first `npm run deploy`:
 
-1. Create the KV namespace (`wrangler kv namespace create numinia-mcp-oauth`)
-   and put its id in `wrangler.jsonc` in place of the placeholder.
+1. The KV namespace `numinia-mcp-oauth` exists (EU jurisdiction, created
+   2026-10-19) and its id is in `wrangler.jsonc`.
 2. Deploy this Worker BEFORE numinia.com's next deploy: numinia.com's
    `MCP_HANDOFF` service binding points at its `HandOffDesk` entrypoint.
    `STORE_ORIGIN` is a var in `wrangler.jsonc` (no secret to set). This
