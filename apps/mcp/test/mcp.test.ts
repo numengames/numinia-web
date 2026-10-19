@@ -1,8 +1,13 @@
 /**
- * The MCP stub behind the token check: JSON-RPC over one POST, no tools yet.
+ * The MCP endpoint behind the token check: JSON-RPC over one POST. The
+ * tools themselves are herramientas-mundos.test.ts (story W7).
  */
 import { describe, expect, it } from 'vitest';
+import { TOOLS } from '../src/herramientas';
 import { PROTOCOL_VERSIONS, SERVER_INFO, handleMcp } from '../src/mcp';
+import { MemoryKv } from './memory-kv';
+
+const env = { OAUTH_KV: new MemoryKv().asNamespace() };
 
 function post(body: string): Promise<Response> {
   return handleMcp(
@@ -11,6 +16,8 @@ function post(body: string): Promise<Response> {
       headers: { 'Content-Type': 'application/json' },
       body,
     }),
+    env,
+    {},
   );
 }
 
@@ -20,7 +27,7 @@ function rpc(message: Record<string, unknown>): Promise<Response> {
 
 describe('handleMcp', () => {
   it('answers only POST', async () => {
-    const response = await handleMcp(new Request('https://mcp.numinia.com/mcp'));
+    const response = await handleMcp(new Request('https://mcp.numinia.com/mcp'), env, {});
     expect(response.status).toBe(405);
     expect(response.headers.get('Allow')).toBe('POST');
   });
@@ -85,16 +92,16 @@ describe('handleMcp', () => {
     expect(await (await rpc({ id: 3, method: 'tools/list' })).json()).toEqual({
       jsonrpc: '2.0',
       id: 3,
-      result: { tools: [] },
+      result: { tools: TOOLS },
     });
   });
 
   it('answers an unknown method with Method not found', async () => {
-    const body = (await (await rpc({ id: 4, method: 'tools/call' })).json()) as {
+    const body = (await (await rpc({ id: 4, method: 'resources/list' })).json()) as {
       id: number;
       error: { code: number; message: string };
     };
     expect(body.id).toBe(4);
-    expect(body.error).toEqual({ code: -32601, message: 'Method not found: tools/call' });
+    expect(body.error).toEqual({ code: -32601, message: 'Method not found: resources/list' });
   });
 });

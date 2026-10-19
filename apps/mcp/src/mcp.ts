@@ -1,11 +1,17 @@
 /**
- * The MCP endpoint behind the token check, as a stub: it speaks enough
- * JSON-RPC over Streamable HTTP for a client to connect and list tools, and
- * lists none. Story W7 adds `quien_soy` and `mundos`; W8 and W9 the body in
- * the world. One POST is one message and the relay keeps no session, as the
- * 2026-07-28 transport asks; the `initialize` of earlier revisions is
- * answered so clients of either era connect.
+ * The MCP endpoint behind the token check: JSON-RPC over Streamable HTTP,
+ * written by hand (no SDK). It lists and calls the relay's own tools,
+ * `quien_soy` and `mundos` (herramientas.ts, story W7); W8 and W9 add the
+ * body in the world. One POST is one message and the relay keeps no
+ * session, as the 2026-07-28 transport asks; the `initialize` of earlier
+ * revisions is answered so clients of either era connect.
+ *
+ * A tool that fails answers a result with `isError: true` (the AI reads why
+ * and can act); only a call the protocol cannot carry out — no tool by that
+ * name, no `name` — is a JSON-RPC error (`-32602`).
  */
+import type { Env } from './env';
+import { TOOLS, callTool, isTool, type ToolCall } from './herramientas';
 
 /** Revisions whose `initialize` the relay answers, newest first. */
 export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
@@ -13,17 +19,18 @@ export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as c
 /** How the relay names itself to a client. */
 export const SERVER_INFO = { name: 'numinia', title: 'Numinia', version: '0.1.0' } as const;
 
-/** JSON-RPC 2.0 error codes the stub uses. */
+/** JSON-RPC 2.0 error codes the endpoint uses. */
 const PARSE_ERROR = -32700;
 const INVALID_REQUEST = -32600;
 const METHOD_NOT_FOUND = -32601;
+const INVALID_PARAMS = -32602;
+
+type RpcError = { readonly code: number; readonly message: string };
+type RpcAnswer = { result: unknown } | { error: RpcError };
 
 type JsonRpcId = string | number | null;
 
-function reply(
-  id: JsonRpcId,
-  body: { result: unknown } | { error: { code: number; message: string } },
-): Response {
+function reply(id: JsonRpcId, body: RpcAnswer): Response {
   return Response.json(
     { jsonrpc: '2.0', id, ...body },
     { headers: { 'Cache-Control': 'no-store' } },
@@ -40,6 +47,24 @@ function protocolFor(params: unknown): string {
   return typeof asked === 'string' && known.includes(asked) ? asked : PROTOCOL_VERSIONS[0];
 }
 
+async function toolsCall(params: unknown, call: ToolCall): Promise<RpcAnswer> {
+  if (!isRecord(params) || typeof params.name !== 'string') {
+    return { error: { code: INVALID_PARAMS, message: 'Invalid params: a tool name is required' } };
+  }
+  const { name } = params;
+  if (!isTool(name)) return { error: { code: INVALID_PARAMS, message: `Unknown tool: ${name}` } };
+  return { result: await callTool(name, params.arguments, call) };
+}
+
+async function answerOf(method: string, params: unknown, call: ToolCall): Promise<RpcAnswer> {
+  if (method === 'tools/call') return toolsCall(params, call);
+  const result = resultOf(method, params);
+  if (result === undefined) {
+    return { error: { code: METHOD_NOT_FOUND, message: `Method not found: ${method}` } };
+  }
+  return { result };
+}
+
 function resultOf(method: string, params: unknown): unknown {
   switch (method) {
     case 'initialize':
@@ -51,14 +76,20 @@ function resultOf(method: string, params: unknown): unknown {
     case 'ping':
       return {};
     case 'tools/list':
-      return { tools: [] };
+      return { tools: TOOLS };
     default:
       return undefined;
   }
 }
 
+/** The context the OAuth library hands its `apiHandler`: the grant's props and the token it checked. */
+export interface McpContext {
+  readonly props?: unknown;
+  readonly auth?: { readonly token?: unknown };
+}
+
 /** One MCP message, already past the OAuth check (the library's `apiHandler`). */
-export async function handleMcp(request: Request): Promise<Response> {
+export async function handleMcp(request: Request, env: Env, ctx: McpContext): Promise<Response> {
   if (request.method !== 'POST') {
     return new Response(null, { status: 405, headers: { Allow: 'POST' } });
   }
@@ -77,11 +108,11 @@ export async function handleMcp(request: Request): Promise<Response> {
   if (typeof id !== 'string' && typeof id !== 'number') {
     return reply(null, { error: { code: INVALID_REQUEST, message: 'Invalid Request' } });
   }
-  const result = resultOf(message.method, message.params);
-  if (result === undefined) {
-    return reply(id, {
-      error: { code: METHOD_NOT_FOUND, message: `Method not found: ${message.method}` },
-    });
-  }
-  return reply(id, { result });
+  const token = ctx.auth?.token;
+  const call: ToolCall = {
+    env,
+    props: ctx.props,
+    accessToken: typeof token === 'string' ? token : null,
+  };
+  return reply(id, await answerOf(message.method, message.params, call));
 }

@@ -11,7 +11,7 @@
  */
 import { getOAuthApi, type OAuthHelpers } from '@cloudflare/workers-oauth-provider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleDefault } from '../src/authorize';
+import { clientDisplayName, handleDefault } from '../src/authorize';
 import {
   CONNECTION_MAX_SECONDS,
   REFRESH_TOKEN_IDLE_TTL_SECONDS,
@@ -68,7 +68,21 @@ async function fakeStore(input: RequestInfo | URL, init?: RequestInit): Promise<
   ) {
     return Response.json({ error: 'token', texto: 'no' }, { status: 401 });
   }
-  return Response.json({ org: agent.org, id: agent.id, name: 'Claude de Ana', worlds: [] });
+  return Response.json(meOf(agent.org, agent.id));
+}
+
+/** numinia.com's whole `GET /api/agents/me` answer (W1's contract) for an agent. */
+function meOf(org: string, id: string): Record<string, unknown> {
+  return {
+    org,
+    id,
+    name: 'Claude de Ana',
+    enabled: true,
+    state: 'activa',
+    eligible: true,
+    permissions: ['enter-worlds'],
+    worlds: [],
+  };
 }
 
 beforeEach(() => {
@@ -270,10 +284,18 @@ describe('the whole flow, with PKCE', () => {
         Authorization: `Bearer ${String(tokens.access_token)}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'quien_soy' },
+      }),
     });
     expect(listed.status).toBe(200);
-    expect(await json(listed)).toEqual({ jsonrpc: '2.0', id: 1, result: { tools: [] } });
+    // The tool reads the grant's props and asks numinia.com with the AI's token.
+    const who = (await json(listed)) as { result: { structuredContent: Record<string, unknown> } };
+    expect(who.result.structuredContent).toMatchObject({ id: `${ORG}.${AGENT}`, enabled: true });
+    expect(storeCalls.at(-1)?.authorization).toBe(`Bearer ${TOKEN}`);
 
     // The grant: the agent in its organization, the token inside the props (encrypted).
     const helpers = getOAuthApi(PROVIDER_OPTIONS, env);
@@ -370,7 +392,7 @@ describe('/vuelta issues no code', () => {
   it('when the till answers for another agent, or not in JSON', async () => {
     const first = await start();
     await desk().keep(handOff(first.req));
-    storeAnswer = async () => Response.json({ org: ORG, id: 'otra-ia' });
+    storeAnswer = async () => Response.json(meOf(ORG, 'otra-ia'));
     await expectNoCode(await vuelta(first.req, first.cookie));
     const second = await start();
     await desk().keep(handOff(second.req));
@@ -520,6 +542,72 @@ describe('/authorize', () => {
   it('names a client that gave no name by its id, as the library describes it', async () => {
     const started = await start({ name: null });
     expect(started.consent.searchParams.get('app')).toBe(started.clientId.slice(0, 40));
+  });
+
+  it('names a client whose name is a URL by its host, and numinia.com is told the same', async () => {
+    const started = await start({ name: 'https://tool.example/oauth/client-metadata.json' });
+    expect(started.consent.searchParams.get('app')).toBe('tool.example');
+    expect(await desk().ask(started.req)).toEqual({
+      ok: true,
+      app: 'tool.example',
+      host: 'claude.ai',
+    });
+  });
+
+  it('names a metadata-document client without a name by its id’s host, not the URL', async () => {
+    // The library's fallback when a client has no name: its id, here a CIMD URL.
+    const clientId = await register();
+    const { challenge } = await pkce();
+    const real = getOAuthApi(PROVIDER_OPTIONS, env);
+    const cimdId = 'https://agent.example.org/.well-known/oauth-client.json';
+    env.OAUTH_PROVIDER = {
+      ...real,
+      parseAuthRequest: (request: Request) => real.parseAuthRequest(request),
+      describeConsent: async (request) => ({
+        ...(await real.describeConsent(request)),
+        clientId: cimdId,
+        clientName: cimdId,
+        clientDomain: 'agent.example.org',
+      }),
+    } as OAuthHelpers;
+    const response = await call(`/authorize?${authorizeQuery(clientId, challenge)}`);
+    expect(response.status).toBe(302);
+    const consent = new URL(response.headers.get('Location') ?? '');
+    expect(consent.searchParams.get('app')).toBe('agent.example.org');
+  });
+
+  it('shows a real metadata document’s name; a document without one is refused by the library', async () => {
+    const cimdId = 'https://agent.example.org/oauth/client.json';
+    let document: Record<string, unknown> = {};
+    storeAnswer = async (url) =>
+      url.href === cimdId
+        ? Response.json(document, { headers: { 'Cache-Control': 'no-store' } })
+        : Response.json(meOf(ORG, AGENT));
+    const { challenge } = await pkce();
+    const base = {
+      client_id: cimdId,
+      redirect_uris: [CALLBACK],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+    };
+    document = { ...base, client_name: 'Agent Example' };
+    const named = await call(`/authorize?${authorizeQuery(cimdId, challenge)}`);
+    expect(named.status).toBe(302);
+    expect(new URL(named.headers.get('Location') ?? '').searchParams.get('app')).toBe(
+      'Agent Example',
+    );
+    document = base;
+    await expectNoCode(await call(`/authorize?${authorizeQuery(cimdId, challenge)}`));
+  });
+
+  it('cuts a display name to 40 characters and keeps names that are not web URLs', () => {
+    expect(clientDisplayName({ clientName: '  Claude  ' })).toBe('Claude');
+    expect(clientDisplayName({ clientName: 'x'.repeat(50) })).toBe('x'.repeat(40));
+    expect(clientDisplayName({ clientName: 'http://127.0.0.1:8765/client' })).toBe('127.0.0.1');
+    expect(clientDisplayName({ clientName: 'mailto:ana@example.org' })).toBe(
+      'mailto:ana@example.org',
+    );
   });
 
   it('sends a validated client’s error back to it, and shows the page for the rest', async () => {

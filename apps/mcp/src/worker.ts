@@ -80,7 +80,9 @@ export function capRefresh(
 /** The provider's whole configuration; exported so the tests read what is deployed. */
 export const PROVIDER_OPTIONS = {
   apiRoute: MCP_PATH,
-  apiHandler: { fetch: (request: Request) => handleMcp(request) },
+  apiHandler: {
+    fetch: (request: Request, env: Env, ctx: ExecutionContext) => handleMcp(request, env, ctx),
+  },
   defaultHandler: { fetch: (request: Request, env: Env) => handleDefault(request, env) },
   authorizeEndpoint: AUTHORIZE_PATH,
   tokenEndpoint: TOKEN_PATH,

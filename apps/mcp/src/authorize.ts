@@ -9,7 +9,9 @@
  *    URI, PKCE S256, `resource`); an error it may send back to the client
  *    goes back to the client, any other is the plain page;
  * 2. the library's `describeConsent` names the client as its metadata does
- *    (CIMD document or DCR registration) and the host the code goes to;
+ *    (CIMD document or DCR registration) and the host the code goes to; a
+ *    client without a name is shown by its id, and an id that is a URL (a
+ *    metadata document's) by its host (`clientDisplayName`);
  * 3. it keeps the parsed request 10 minutes in KV under a fresh one-time
  *    id (`req`), with the public half of a fresh key pair; the private half
  *    goes in the request's own cookie (`__Host-vuelta-<req>`, HttpOnly,
@@ -34,6 +36,27 @@ import { handleVuelta } from './vuelta';
 const APP_NAME_MAX = 40;
 
 const NO_STORE = { 'Cache-Control': 'no-store' } as const;
+
+/**
+ * The client's name as the consent page shows it: its own name, or — when
+ * it gave none and the library falls back to its id — that id; and an id
+ * (or a name) that is an http(s) URL, as a CIMD client's id is, by its host
+ * («claude.ai», not «https://claude.ai/oauth/…» cut at 40 characters).
+ * Cut to 40 characters, as numinia.com reads it (store: `readClient`).
+ */
+export function clientDisplayName(consent: Pick<ConsentDescription, 'clientName'>): string {
+  const name = consent.clientName.trim();
+  let shown = name;
+  try {
+    const url = new URL(name);
+    if (url.protocol === 'https:' || url.protocol === 'http:') {
+      shown = url.hostname;
+    }
+  } catch {
+    // Not a URL: a name.
+  }
+  return [...shown].slice(0, APP_NAME_MAX).join('');
+}
 
 /** GET /authorize: validate, keep the request, and send the browser to the consent. */
 export async function handleAuthorize(request: Request, env: Env): Promise<Response> {
@@ -61,7 +84,7 @@ export async function handleAuthorize(request: Request, env: Env): Promise<Respo
     return stopPage(request, 'bad', 400);
   }
   const host = consent.redirectHost.toLowerCase();
-  const app = [...consent.clientName.trim()].slice(0, APP_NAME_MAX).join('');
+  const app = clientDisplayName(consent);
   const req = newRequestId();
   const keys = await newSealKeys();
   await savePending(env, req, {

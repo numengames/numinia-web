@@ -10,7 +10,7 @@
  *    is kept with the request);
  * 2. the cookie's private key opens the sealed hand-off (seal.ts), made for
  *    this very request;
- * 3. numinia.com's `GET /api/agents/me` (W1) says the token is that
+ * 3. numinia.com's `GET /api/agents/me` (W1, asked by me.ts) says the token is that
  *    agent's, in that organization — a hash the till does not know is a no;
  * 4. the library completes the authorization: a grant for the agent with
  *    scope `mundos` (+ `offline_access` if asked), whose props carry the
@@ -31,6 +31,7 @@ import {
   requestCookie,
   type HandOff,
 } from './handoff';
+import { askMe } from './me';
 import { redirect, stopPage } from './pages';
 import { open, sha256 } from './seal';
 
@@ -74,20 +75,10 @@ function readHandOff(text: string): HandOff | null {
 type TillSays = 'yes' | 'no' | 'down';
 
 async function tillKnows(store: string, handOff: HandOff): Promise<TillSays> {
-  const query = new URLSearchParams({ org: handOff.accountId, agent: handOff.agentId });
-  let response: Response;
-  try {
-    response = await fetch(`${store}/api/agents/me?${query.toString()}`, {
-      headers: { Authorization: `Bearer ${handOff.token}`, Accept: 'application/json' },
-      redirect: 'manual',
-    });
-  } catch {
-    return 'down';
-  }
-  if (response.status === 429 || response.status >= 500) return 'down';
-  if (response.status !== 200) return 'no';
-  const me = (await response.json().catch(() => null)) as { org?: unknown; id?: unknown } | null;
-  return me?.org === handOff.accountId && me.id === handOff.agentId ? 'yes' : 'no';
+  const answer = await askMe(store, handOff);
+  if (answer.kind === 'down' || answer.kind === 'busy') return 'down';
+  if (answer.kind !== 'ok') return 'no';
+  return answer.me.org === handOff.accountId && answer.me.id === handOff.agentId ? 'yes' : 'no';
 }
 
 /** GET /vuelta?req=…: check everything, then issue the code. */

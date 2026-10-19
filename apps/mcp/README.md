@@ -12,17 +12,17 @@ The OAuth protocol is Cloudflare's `@cloudflare/workers-oauth-provider`
 (MIT, pinned at 1.2.3): it stores tokens and codes only as hashes and
 encrypts each grant's props with a key only the token holder can unwrap.
 
-## What it answers (stories W5, W6)
+## What it answers (stories W5–W7)
 
 | path | answer |
 |---|---|
 | `POST /mcp` without a valid token | `401`, `WWW-Authenticate: Bearer realm="OAuth", resource_metadata="https://mcp.numinia.com/.well-known/oauth-protected-resource/mcp", scope="mundos"` |
-| `POST /mcp` with a token | JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list` → no tools yet; anything else `-32601` |
+| `POST /mcp` with a token | JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601` |
 | `GET /.well-known/oauth-protected-resource/mcp` | RFC 9728: `resource` = `https://mcp.numinia.com/mcp` exactly, `authorization_servers` = `["https://mcp.numinia.com"]`, `scopes_supported` = `["mundos"]` |
 | `GET /.well-known/oauth-authorization-server` | RFC 8414: PKCE `S256` only, `none` among the token endpoint auth methods, `client_id_metadata_document_supported: true`, `registration_endpoint`, scopes `mundos` and `offline_access` |
 | `POST /register` | dynamic client registration (RFC 7591), the fallback for clients without CIMD; a client is kept 90 days |
 | `POST /token` | authorization code (PKCE) and refresh grants, and revocation (RFC 7009) |
-| `GET /authorize` | the library validates the request (client, exact redirect URI, S256, `resource`); `302` to `<STORE_ORIGIN>[/<locale>]/conectar-ia/?app=&host=&req=` with the request's own cookie `__Host-vuelta-<req>` (HttpOnly, Secure, Lax, 10 min). An error the library may send back goes `302` to the client; any other, a plain page `400`; no `STORE_ORIGIN`, `503` |
+| `GET /authorize` | the library validates the request (client, exact redirect URI, S256, `resource`); `302` to `<STORE_ORIGIN>[/<locale>]/conectar-ia/?app=&host=&req=` (`app`: the client's name; an id or name that is a URL, by its host) with the request's own cookie `__Host-vuelta-<req>` (HttpOnly, Secure, Lax, 10 min). An error the library may send back goes `302` to the client; any other, a plain page `400`; no `STORE_ORIGIN`, `503` |
 | `GET /vuelta?req=` | once per request: cookie, sealed hand-off, `GET /api/agents/me` on numinia.com with the token as Bearer, then `302` to the client with the code. Any «no» is a plain page and no code (`400`; numinia.com down `502`; not configured `503`) |
 | anything else | `404` |
 
@@ -31,6 +31,27 @@ token 30 days from its last use (the code exchange, then each refresh:
 `refreshTokenIdleTTL`), never past 90 days from the consent (`capRefresh`,
 `invalid_grant` after that), rotated on every use (the previous one stays
 valid until the new one is first used).
+
+## The tools (story W7)
+
+Both without state and without input (`{}`): each call reads the grant's
+props (organization, agent, the AI's `ntk_` token) and asks numinia.com's
+`GET /api/agents/me` (`src/me.ts`, the same call `/vuelta` makes), so a
+switch flipped in Panel › Agents shows on the next call. Each answers
+`structuredContent` (with its `outputSchema`) and the same JSON as text.
+
+| tool | answers |
+|---|---|
+| `quien_soy` | `id` (stable: `<organization>.<agent>`, the same across calls and reconnections), `agent`, `organization`, `name`, `enabled`, `state` (`activa`/`dormida`), `standing` (the panel's `apagada`, `sin-responsable`, `sin-permiso`, `activa`, `dormida`), `canEnter`, `permissions`, `hear: false` (no `oir` for URL-connected AIs yet), `note` |
+| `mundos` | `organization`, `worlds: [{ id, name?, on, enter: { tool: "entrar", arguments: { mundo } } }]` (the worlds `/me` lists, which are the ones the fleet serves), `note`; `worlds: []` with `reason` (`apagada`, `sin-responsable`, `sin-permiso`, `sin-mundos`) when there is none to enter |
+
+What goes wrong is a tool result with `isError: true` and a sentence the AI
+can act on, never a protocol error: numinia.com unreachable or `5xx`, busy
+(`429`), an answer off the contract, the relay without `STORE_ORIGIN`. A
+`401` from numinia.com (the token revoked or renewed) revokes this grant with
+the library's `unwrapToken` + `revokeGrant` — only this one; a newer grant of
+the same AI keeps working — and the tool says to connect again: the
+client's next call is a `401` and its refresh is `invalid_grant`.
 
 ## The hand-off with numinia.com (story W6)
 

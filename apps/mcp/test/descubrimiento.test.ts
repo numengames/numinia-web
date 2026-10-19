@@ -18,6 +18,7 @@ import {
   RESOURCE,
 } from '../src/config';
 import worker, { PROVIDER_OPTIONS, type Env } from '../src/worker';
+import { TOOLS } from '../src/herramientas';
 import { MemoryKv } from './memory-kv';
 
 const ORIGIN = 'https://mcp.numinia.com';
@@ -269,7 +270,7 @@ describe('PKCE and token lifetimes', () => {
       body: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list' }),
     });
     expect(listed.status).toBe(200);
-    expect(await json(listed)).toEqual({ jsonrpc: '2.0', id: 7, result: { tools: [] } });
+    expect(await json(listed)).toEqual({ jsonrpc: '2.0', id: 7, result: { tools: TOOLS } });
 
     // Refreshing rotates the refresh token and restarts its 30 days.
     const refreshed = await tokenRequest({
