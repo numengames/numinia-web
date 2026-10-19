@@ -4,7 +4,11 @@
  * numinia.com signs for it every few minutes. This is the desk's database work:
  * listing the agents, creating one, switching it on or off, putting it to
  * sleep, giving or taking its roles, removing it — and what the store asks
- * when an agent requests its pass (`agentPass`, `claimAgentPass`).
+ * when an agent requests its pass (`agentPass`, `claimAgentPass`), lists its
+ * worlds (`agentWorlds`) or comes with nothing but its token (`agentByToken`).
+ * How an agent was connected — the panel, or an MCP client through the
+ * house's relay — is kept on its row and in its log lines as `via`
+ * (migration 0022).
  *
  * The rules are STD-051, worked out by @numinia/domain from the tables as they
  * are now (ORG-011: an agent never goes beyond the person who answers for it,
@@ -34,12 +38,14 @@ import {
   readAgentChange,
   readAgentDraft,
   readAgentId,
+  readConnectedVia,
   readMoment,
   readTokenHash,
   readTokenPrefix,
   readWorldAudience,
   type AgentDraft,
   type AgentState,
+  type ConnectedVia,
 } from '../lib/agents';
 import { ORG_PROBLEMS, refusalOf, topDown } from '../lib/organizations';
 import { ROLE_PROBLEMS, readRoleId } from '../lib/roles';
@@ -75,6 +81,8 @@ interface TeamAgent {
   /** The first 8 characters after `ntk_`; null with the hash. */
   readonly tokenPrefix: string | null;
   readonly tokenCreatedAt: string | null;
+  /** How it was connected (migration 0022); null for an agent made before, through the panel. */
+  readonly via: ConnectedVia | null;
   /** The wallet of the person who answers for it (ORG-011). */
   readonly responsible: string;
   readonly enabled: boolean;
@@ -97,6 +105,8 @@ export interface AgentDetail {
   /** The first 8 characters of its token and when it was made (a token agent with a live token only); never the token or its hash. */
   readonly tokenPrefix?: string;
   readonly tokenCreatedAt?: string;
+  /** How it was connected: the panel, or `mcp:` and its client's host (absent for an agent made before migration 0022). */
+  readonly via?: ConnectedVia;
   readonly enabled: boolean;
   readonly state: AgentState;
   /** What the next pass will be: off, orphaned, without permission to enter, or its state. */
@@ -159,6 +169,16 @@ export interface AgentPass {
 }
 
 export type AgentPassAnswer = AgentPass | Refusal;
+
+/** The worlds placed in an agent's organization, by id; read in one query. */
+export type AgentWorldsAnswer =
+  | {
+      readonly ok: true;
+      readonly accountId: string;
+      readonly agentId: string;
+      readonly worldIds: readonly string[];
+    }
+  | Refusal;
 export type ClaimAnswer = { readonly ok: true } | Refusal;
 
 /** The revision the organization ?1 holds now: what a guarded statement compares. */
@@ -166,7 +186,7 @@ const REVISION = '(SELECT revision FROM team_profiles WHERE account_id = ?1)';
 
 const SELECT_AGENTS = `
   SELECT agent_id, name, auth_kind, public_key, token_hash, token_prefix, token_created_at,
-         responsible_wallet, enabled, state, created_at, updated_at
+         connected_via, responsible_wallet, enabled, state, created_at, updated_at
     FROM team_agents WHERE account_id = ?1 ORDER BY created_at, agent_id`;
 
 const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE account_id = ?1';
@@ -174,8 +194,10 @@ const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE
 const INSERT_AGENT = `
   INSERT INTO team_agents
     (account_id, agent_id, name, auth_kind, public_key, token_hash, token_prefix,
-     token_created_at, responsible_wallet, enabled, state, created_by, created_at, updated_at)
-  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, 'activa', ?9, ?10, ?10 WHERE ${REVISION} = ?11`;
+     token_created_at, connected_via, responsible_wallet, enabled, state, created_by, created_at,
+     updated_at)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, 1, 'activa', ?9, ?10, ?10
+   WHERE ${REVISION} = ?11`;
 
 const GIVE_AGENT_ROLE = `
   INSERT INTO team_agent_roles (account_id, agent_id, role_id)
@@ -193,6 +215,30 @@ const UPDATE_AGENT_TOKEN = `
   UPDATE team_agents
      SET token_hash = ?3, token_prefix = ?4, token_created_at = ?5, enabled = ?6, updated_at = ?8
    WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?7`;
+
+/** A renewal: a new token, and the way it came by (a revocation leaves the way as it was). */
+const RENEW_AGENT_TOKEN = `
+  UPDATE team_agents
+     SET token_hash = ?3, token_prefix = ?4, token_created_at = ?5, connected_via = ?6,
+         updated_at = ?5
+   WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?7`;
+
+/**
+ * The worlds of an agent's organization in one query: the agent's own row,
+ * joined to the placements of its organization. No row: no such agent there;
+ * one row with a NULL world: an agent whose organization has no world.
+ */
+const SELECT_AGENT_WORLDS = `
+  SELECT p.world_id
+    FROM team_agents AS a
+    LEFT JOIN world_placements AS p ON p.account_id = a.account_id
+   WHERE a.account_id = ?1 AND a.agent_id = ?2
+   ORDER BY p.world_id`;
+
+/** The agent holding a live token, by its hash (the unique index team_agents_by_token, migration 0021). */
+const SELECT_AGENT_BY_TOKEN = `
+  SELECT account_id, agent_id FROM team_agents
+   WHERE token_hash = ?1 AND auth_kind = 'token'`;
 
 const DELETE_AGENT = `
   DELETE FROM team_agents WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?3`;
@@ -231,6 +277,7 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
       tokenHash: optional(row, 'token_hash'),
       tokenPrefix: optional(row, 'token_prefix'),
       tokenCreatedAt: optional(row, 'token_created_at'),
+      via: optional(row, 'connected_via') as ConnectedVia | null,
       responsible: text(row, 'responsible_wallet'),
       enabled: whole(row, 'enabled') === 1,
       state: text(row, 'state') as AgentState,
@@ -325,6 +372,7 @@ async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
               tokenPrefix: agent.tokenPrefix,
               tokenCreatedAt: agent.tokenCreatedAt as string,
             }),
+        ...(agent.via === null ? {} : { via: agent.via }),
         enabled: agent.enabled,
         state: agent.state,
         status: statusOf(org, agent),
@@ -386,7 +434,8 @@ async function agentFor(
 /**
  * Creates an agent: whoever holds manage-roles, as a member — the house does
  * not answer for an agent. They become its responsible person (ORG-011), and
- * may give it, at once, only roles below their own highest.
+ * may give it, at once, only roles below their own highest. The draft's `via`
+ * (the panel when absent) is kept on the row and in the log lines.
  */
 export async function createAgent(
   db: TillDatabase,
@@ -407,7 +456,7 @@ export async function createAgent(
   if ('problems' in entered) return entered;
   const { org, acting } = entered;
   const made = draft as AgentDraft;
-  const { id, name, roleIds } = made;
+  const { id, name, roleIds, via } = made;
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
   if (acting.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
@@ -447,6 +496,7 @@ export async function createAgent(
         acting.wallet,
         now.toISOString(),
         org.revision,
+        via,
       ),
     ...roleIds.map((roleId) =>
       db.prepare(GIVE_AGENT_ROLE).bind(org.accountId, id, roleId, org.revision),
@@ -458,7 +508,7 @@ export async function createAgent(
       acting,
       'agent-created',
       id,
-      { name, ...(roleIds.length > 0 ? { roles: roleIds.join(',') } : {}) },
+      { name, ...(roleIds.length > 0 ? { roles: roleIds.join(',') } : {}), via },
       org.revision,
     ),
     // Only the prefix is ever written: never the token, never its hash.
@@ -471,7 +521,7 @@ export async function createAgent(
             acting,
             'agent-token-created',
             id,
-            { name, prefix: made.tokenPrefix },
+            { name, prefix: made.tokenPrefix, via },
             org.revision,
           ),
         ]
@@ -549,6 +599,9 @@ export async function changeAgent(
  * Gives a token agent a new token (the old one stops working at once): whoever
  * may handle it. numinia.com draws the token and sends only its SHA-256 and
  * first 8 characters; the log keeps the prefix. A key agent has no token.
+ * `sentVia` is the way the new token came by — the panel when absent, or
+ * `mcp:<host>` when an MCP client reconnects the same AI — and replaces the
+ * row's; the log line carries it as `detail.via`.
  */
 export async function renewAgentToken(
   db: TillDatabase,
@@ -558,13 +611,16 @@ export async function renewAgentToken(
   sentHash: unknown,
   sentPrefix: unknown,
   sentHouse: unknown,
+  sentVia: unknown,
   now: Date,
 ): Promise<AgentsAnswer> {
   const tokenHash = readTokenHash(sentHash);
   const tokenPrefix = readTokenPrefix(sentPrefix);
+  const via = readConnectedVia(sentVia);
   const wrong = [
     ...(tokenHash === undefined ? [AGENT_PROBLEMS.tokenHash] : []),
     ...(tokenPrefix === undefined ? [AGENT_PROBLEMS.tokenPrefix] : []),
+    ...(via === undefined ? [AGENT_PROBLEMS.via] : []),
   ];
   const entered = await entering(db, sentWallet, sentAccount, sentHouse, wrong);
   if ('problems' in entered) return entered;
@@ -579,16 +635,15 @@ export async function renewAgentToken(
   const at = now.toISOString();
   return written(db, entered, [
     db
-      .prepare(UPDATE_AGENT_TOKEN)
+      .prepare(RENEW_AGENT_TOKEN)
       .bind(
         org.accountId,
         agent.id,
         tokenHash as string,
         tokenPrefix as string,
         at,
-        agent.enabled ? 1 : 0,
+        via as ConnectedVia,
         org.revision,
-        at,
       ),
     logLine(
       db,
@@ -597,7 +652,7 @@ export async function renewAgentToken(
       acting,
       'agent-token-renewed',
       agent.id,
-      { name: agent.name, prefix: tokenPrefix as string },
+      { name: agent.name, prefix: tokenPrefix as string, via: via as ConnectedVia },
       org.revision,
     ),
   ]);
@@ -756,6 +811,53 @@ export async function agentPass(
       .filter((role) => agent.roleIds.includes(role.id))
       .map(({ name, color }) => ({ name, color })),
   };
+}
+
+/**
+ * The worlds placed in an agent's organization, in ONE query (the agent's
+ * row joined to its organization's placements), for GET /api/agents/me:
+ * public as `homeOf` is — where a world stands is no secret — and asked by
+ * numinia.com only once it has judged the agent's token. Whether the agent
+ * may enter them is not decided here: `agentPass` says that.
+ */
+export async function agentWorlds(
+  db: TillDatabase,
+  sentAccount: unknown,
+  sentAgent: unknown,
+): Promise<AgentWorldsAnswer> {
+  const accountId = readAccountId(sentAccount);
+  const agentId = readAgentId(sentAgent);
+  if (accountId === undefined || agentId === undefined) {
+    return refuse(
+      ...(accountId === undefined ? [PROBLEMS.accountId] : []),
+      ...(agentId === undefined ? [AGENT_PROBLEMS.agentId] : []),
+    );
+  }
+  const { results } = await db.prepare(SELECT_AGENT_WORLDS).bind(accountId, agentId).all<Row>();
+  if (results.length === 0) return refuse(AGENT_PROBLEMS.noSuchAgent);
+  return {
+    ok: true,
+    accountId,
+    agentId,
+    worldIds: results.flatMap((row) => (row['world_id'] === null ? [] : [text(row, 'world_id')])),
+  };
+}
+
+/**
+ * The agent a live token belongs to, found by its SHA-256 alone — for a
+ * client that holds nothing but an `ntk_` token (the MCP relay's static
+ * bearer). The lookup is by hash through the unique index, so no token is
+ * ever compared here, raw or hashed; a revoked token has no hash and a key
+ * agent never had one, so neither is found. The answer is `agentPass`'s, so
+ * numinia.com judges it as it judges a pass: an unknown hash is the same
+ * refusal as an unknown agent.
+ */
+export async function agentByToken(db: TillDatabase, sentHash: unknown): Promise<AgentPassAnswer> {
+  const tokenHash = readTokenHash(sentHash);
+  if (tokenHash === undefined) return refuse(AGENT_PROBLEMS.tokenHash);
+  const row = await db.prepare(SELECT_AGENT_BY_TOKEN).bind(tokenHash).first<Row>();
+  if (row === null) return refuse(AGENT_PROBLEMS.noSuchAgent);
+  return agentPass(db, text(row, 'account_id'), text(row, 'agent_id'));
 }
 
 /**

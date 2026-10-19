@@ -343,6 +343,8 @@ export interface DeskAgent {
   /** A token agent's token, as its first 8 characters after `ntk_` and when it was made; never the token or its hash. */
   tokenPrefix?: string | undefined;
   tokenCreatedAt?: string | undefined;
+  /** How it was connected: `panel`, or `mcp:` and its client's host (absent for an AI made before migration 0022). */
+  via?: string | undefined;
   enabled: boolean;
   state: AgentState;
   status: AgentStatus;
@@ -371,6 +373,8 @@ export interface DeskKeyDraft {
   name: string;
   publicKey: string;
   roleIds?: string[] | undefined;
+  /** How it is connected: `panel` (the till's default when absent) or `mcp:<client host>`. */
+  via?: string | undefined;
 }
 
 /** A new AI by token: numinia.com draws the token and sends the till only its SHA-256 and prefix. */
@@ -381,6 +385,8 @@ export interface DeskTokenDraft {
   tokenHash: string;
   tokenPrefix: string;
   roleIds?: string[] | undefined;
+  /** How it is connected: `panel` (the till's default when absent) or `mcp:<client host>` from the MCP relay. */
+  via?: string | undefined;
 }
 
 export type DeskAgentDraft = DeskKeyDraft | DeskTokenDraft;
@@ -410,6 +416,9 @@ export interface DeskAgentPass {
   roles: { name: string; color: string | null }[];
 }
 export type DeskAgentPassAnswer = DeskAgentPass | DeskRefusal;
+/** The worlds placed in an agent's organization, by id (one query in the till). */
+export type DeskAgentWorldsAnswer =
+  { ok: true; accountId: string; agentId: string; worldIds: string[] } | DeskRefusal;
 export type DeskClaimAnswer = { ok: true } | DeskRefusal;
 
 export type DeskConfirmAnswer =
@@ -614,7 +623,10 @@ export interface AccountDesk {
     change: DeskAgentChange,
     house?: boolean,
   ): Promise<DeskAgentsAnswer>;
-  /** A new token for a token agent (the old one stops working); only its hash and prefix are sent; logged (optional). */
+  /**
+   * A new token for a token agent (the old one stops working); only its hash and prefix are sent;
+   * `via` is how it came (`panel` when absent, `mcp:<client host>` from the relay); logged (optional).
+   */
   renewAgentToken(
     wallet: string,
     accountId: string,
@@ -622,6 +634,7 @@ export interface AccountDesk {
     tokenHash: string,
     tokenPrefix: string,
     house?: boolean,
+    via?: string,
   ): Promise<DeskAgentsAnswer>;
   /** Revokes a token agent's token and switches it off; logged (optional). */
   revokeAgentToken(
@@ -659,6 +672,10 @@ export interface AccountDesk {
     aud: string,
     t: number,
   ): Promise<DeskClaimAnswer>;
+  /** The worlds placed in an agent's organization, in one query; public as `homeOf` is (optional). */
+  agentWorlds(accountId: string, agentId: string): Promise<DeskAgentWorldsAnswer>;
+  /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` (optional). */
+  agentByToken(tokenHash: string): Promise<DeskAgentPassAnswer>;
   /**
    * «Hazla tuya» for real: the signed-in wallet claims a community (`claim`)
    * or asks to join it (`join`), with an optional note; one open request per
@@ -864,6 +881,8 @@ export const DESK_METHODS = [
   'communityFields',
   'renewAgentToken',
   'revokeAgentToken',
+  'agentWorlds',
+  'agentByToken',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -879,8 +898,8 @@ export const DESK_METHODS = [
  * And one without `settings`, `changeSettings` and `happenings` (cut «Ajustes de la
  * comunidad»): the panel keeps its defaults and the settings and the list answer 503.
  * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
- * And one without the ten agent methods (cut «IAs de organización»): the agents
- * routes and /api/agents/pass answer 503. And one without the four of «Crear → Un
+ * And one without the twelve agent methods (cut «IAs de organización»): the agents
+ * routes, /api/agents/pass and /api/agents/me answer 503. And one without the four of «Crear → Un
  * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
@@ -920,6 +939,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'communityFields',
   'renewAgentToken',
   'revokeAgentToken',
+  'agentWorlds',
+  'agentByToken',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

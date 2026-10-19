@@ -110,6 +110,7 @@ function stage(people: Record<string, ActorAccess | null> = {}): Stage {
       if (entry.as === 'house') reads.push(what);
     },
     published: (who) => names.get(who),
+    placedIn: (accountId) => (accountId === ORG ? ['torre', 'agora-plaza'] : []),
     refusalOf: (refusal, act) => ({ ok: false, problems: [refusalSentence(refusal, act)] }),
   };
   const desk = createAgentsFixture(host, () => new Date(clock));
@@ -165,16 +166,21 @@ describe('creating', () => {
         roleIds: [MEMBER],
         assignable: expect.arrayContaining([MEMBER]),
         mayEdit: true,
+        via: 'panel',
       },
     ]);
     expect(s.log).toEqual([
-      { act: 'agent-created', subject: 'hermes-1', detail: { name: 'Hermes', roles: MEMBER } },
+      {
+        act: 'agent-created',
+        subject: 'hermes-1',
+        detail: { name: 'Hermes', roles: MEMBER, via: 'panel' },
+      },
     ]);
     // Without roles the line names none, and the responsible person has published no name.
     const plain = stage();
     const second = view(await plain.desk.createAgent(OWNER, ORG, BOT));
     expect(second.agents[0]).not.toHaveProperty('responsibleName');
-    expect(plain.log[0]?.detail).toEqual({ name: 'Hermes' });
+    expect(plain.log[0]?.detail).toEqual({ name: 'Hermes', via: 'panel' });
   });
 
   it('reads the draft as the till does, in its words', async () => {
@@ -576,6 +582,83 @@ describe('by token: who may renew and revoke', () => {
     ]);
     expect(JSON.stringify(s.log)).not.toContain(A.tokenHash);
     expect(JSON.stringify(s.log)).not.toContain(B.tokenHash);
-    expect(s.log[2]?.detail).toEqual({ name: 'Tok', prefix: 'BBBBBBBB' });
+    expect(s.log[2]?.detail).toEqual({ name: 'Tok', prefix: 'BBBBBBBB', via: 'panel' });
+  });
+});
+
+describe('«MCP remoto» (W2): the way, the worlds, the token', () => {
+  const TOKEN = { id: 'tok', name: 'Tok', auth: 'token' as const };
+  const A = { tokenHash: 'a'.repeat(64), tokenPrefix: 'AAAAAAAA' };
+  const B = { tokenHash: 'b'.repeat(64), tokenPrefix: 'BBBBBBBB' };
+
+  it('keeps how an AI was connected, on create and on renewal, as detail.via', async () => {
+    const s = stage();
+    const made = view(
+      await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A, via: 'mcp:claude.ai' }),
+    );
+    expect(made.agents[0]).toMatchObject({ via: 'mcp:claude.ai' });
+    expect(s.log.map((line) => line.detail?.['via'])).toEqual(['mcp:claude.ai', 'mcp:claude.ai']);
+    const renewed = view(
+      await s.desk.renewAgentToken(
+        OWNER,
+        ORG,
+        'tok',
+        B.tokenHash,
+        B.tokenPrefix,
+        false,
+        'mcp:chatgpt.com',
+      ),
+    );
+    expect(renewed.agents[0]).toMatchObject({ via: 'mcp:chatgpt.com' });
+    expect(s.log.at(-1)).toEqual({
+      act: 'agent-token-renewed',
+      subject: 'tok',
+      detail: { name: 'Tok', prefix: 'BBBBBBBB', via: 'mcp:chatgpt.com' },
+    });
+    expect(JSON.stringify(s.log)).not.toContain(A.tokenHash);
+    expect(JSON.stringify(s.log)).not.toContain(B.tokenHash);
+  });
+
+  it('refuses a way out of shape, in the till’s words', async () => {
+    const s = stage();
+    expect(
+      problems(await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A, via: 'claude.ai' })),
+    ).toEqual([AGENT_PROBLEMS.via]);
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A });
+    expect(
+      problems(
+        await s.desk.renewAgentToken(OWNER, ORG, 'tok', B.tokenHash, B.tokenPrefix, false, 'x'),
+      ),
+    ).toEqual([AGENT_PROBLEMS.via]);
+  });
+
+  it('lists the worlds of an agent’s organization, and refuses an unknown agent', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A });
+    expect(await s.desk.agentWorlds(ORG, 'tok')).toEqual({
+      ok: true,
+      accountId: ORG,
+      agentId: 'tok',
+      worldIds: ['agora-plaza', 'torre'],
+    });
+    expect(problems(await s.desk.agentWorlds(ORG, 'ghost'))).toEqual([AGENT_PROBLEMS.noSuchAgent]);
+    expect(problems(await s.desk.agentWorlds('acc_other', 'tok'))).toEqual([
+      AGENT_PROBLEMS.noSuchAgent,
+    ]);
+    expect(problems(await s.desk.agentWorlds('no such!', 'Bad!'))).toHaveLength(2);
+    expect(problems(await s.desk.agentWorlds(ORG, 'Bad!'))).toEqual([AGENT_PROBLEMS.agentId]);
+  });
+
+  it('finds the agent a live token belongs to, and nobody for a revoked, unknown or malformed one', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...A });
+    await s.desk.createAgent(OWNER, ORG, { ...TOKEN, ...B, id: 'gone' });
+    await s.desk.revokeAgentToken(OWNER, ORG, 'gone');
+    expect(await s.desk.agentByToken(A.tokenHash)).toEqual(await s.desk.agentPass(ORG, 'tok'));
+    expect(problems(await s.desk.agentByToken(B.tokenHash))).toEqual([AGENT_PROBLEMS.noSuchAgent]);
+    expect(problems(await s.desk.agentByToken('c'.repeat(64)))).toEqual([
+      AGENT_PROBLEMS.noSuchAgent,
+    ]);
+    expect(problems(await s.desk.agentByToken('ntk_x'))).toEqual([AGENT_PROBLEMS.tokenHash]);
   });
 });

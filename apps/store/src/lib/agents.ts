@@ -30,9 +30,10 @@ export const AGENT_PROBLEMS = {
   agentId:
     'agentId must be 1 to 32 characters: lower case letters, digits and hyphens, none at either end',
   draft:
-    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds',
+    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds and via',
   tokenHash: 'tokenHash must be the SHA-256 of a token: 64 lower case hexadecimal characters',
   tokenPrefix: 'tokenPrefix must be 8 base64url characters',
+  via: 'via must be «panel», or «mcp:» and the host the AI’s client returns to (lower case letters, digits, dots and hyphens)',
   notToken: 'that agent connects with a key, not a token',
   name: 'name must be 1 to 40 characters, none of them a control character',
   publicKey: 'publicKey must be ed25519: and 43 base64url characters (a 32-byte key)',
@@ -143,6 +144,22 @@ export const isTokenHash = (value: unknown): value is string =>
 /** The 8 base64url characters kept to tell tokens apart, as the till reads them. */
 export const isTokenPrefix = (value: unknown): value is string =>
   typeof value === 'string' && TOKEN_PREFIX_TEXT.test(value);
+
+/** A DNS name: labels of letters, digits and inner hyphens, joined by dots (the till's rule). */
+const VIA_HOST =
+  /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/;
+
+/**
+ * How an AI was connected, as the till reads it (migration 0022): `panel`,
+ * or `mcp:` and the host its MCP client returns to (`mcp:claude.ai`).
+ * Absent is not a way: whoever leaves it out gets the panel.
+ */
+export const isConnectedVia = (value: unknown): value is string =>
+  value === 'panel' ||
+  (typeof value === 'string' &&
+    value.startsWith('mcp:') &&
+    value.length <= 4 + 253 &&
+    VIA_HOST.test(value.slice(4)));
 
 export interface FreshToken {
   /** The secret. Shown once; never stored, logged or put in an error. */

@@ -126,12 +126,15 @@ import {
   agentsOf,
   assignAgentRole,
   changeAgent,
+  agentByToken,
+  agentWorlds,
   claimAgentPass,
   createAgent,
   removeAgent,
   renewAgentToken,
   revokeAgentToken,
   type AgentPassAnswer,
+  type AgentWorldsAnswer,
   type AgentsAnswer,
   type ClaimAnswer,
 } from './db/agents';
@@ -771,7 +774,10 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     return changeAgent(this.env.TILL_DB, wallet, accountId, agentId, change, house, new Date());
   }
 
-  /** A new token for a token agent (the old one stops working); numinia.com sends only its SHA-256 and prefix; logged. */
+  /**
+   * A new token for a token agent (the old one stops working); numinia.com sends only its SHA-256 and prefix;
+   * `via` is how it came (the panel when absent, `mcp:<host>` from the relay); logged.
+   */
   async renewAgentToken(
     wallet: unknown,
     accountId: unknown,
@@ -779,6 +785,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     tokenHash: unknown,
     tokenPrefix: unknown,
     house?: unknown,
+    via?: unknown,
   ): Promise<AgentsAnswer> {
     return renewAgentToken(
       this.env.TILL_DB,
@@ -788,6 +795,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
       tokenHash,
       tokenPrefix,
       house,
+      via,
       new Date(),
     );
   }
@@ -869,6 +877,16 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     t: unknown,
   ): Promise<ClaimAnswer> {
     return claimAgentPass(this.env.TILL_DB, accountId, agentId, aud, t, new Date());
+  }
+
+  /** The worlds placed in an agent's organization, in one query (GET /api/agents/me, «MCP remoto» W2). */
+  async agentWorlds(accountId: unknown, agentId: unknown): Promise<AgentWorldsAnswer> {
+    return agentWorlds(this.env.TILL_DB, accountId, agentId);
+  }
+
+  /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` («MCP remoto» W2). */
+  async agentByToken(tokenHash: unknown): Promise<AgentPassAnswer> {
+    return agentByToken(this.env.TILL_DB, tokenHash);
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----

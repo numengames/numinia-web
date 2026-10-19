@@ -19,9 +19,11 @@
  * connects to (`wss://<host>/ws`, the engine's door behind Caddy). An AI
  * that is switched off, whose person no longer answers for it (ORG-011), or
  * whose roles do not let it enter, is still told who it is, with no worlds:
- * it would get no pass for any of them. A world is the organization's when
- * the till's public `homeOf` says so — the same test the pass makes — so a
- * world placed in another organization is never listed.
+ * it would get no pass for any of them. The organization's worlds come from
+ * the till in ONE call (`agentWorlds`: the agent's row joined to its
+ * organization's placements, W2), kept only where the fleet serves them — so
+ * a world placed in another organization is never listed, and the pass makes
+ * the same test (`homeOf`) world by world.
  *
  * The token is judged as the pass route judges it, by the same function
  * (`tokenHolder`): SHA-256 of the bearer against the hash the till keeps, in
@@ -96,13 +98,14 @@ type AgentPassValue = z.infer<typeof agentPassShape>;
 /** An agent the till holds, as `agentPass` answers it. */
 export type HeldAgent = Exclude<AgentPassValue, { readonly ok: false }>;
 
-const homeShape = z.union([
-  z
-    .object({
-      ok: z.literal(true),
-      home: z.object({ accountId: z.string() }).passthrough().nullable(),
-    })
-    .passthrough(),
+/** What the till answers `agentWorlds`: the worlds placed in the agent's organization, by id. */
+const agentWorldsShape = z.union([
+  z.object({
+    ok: z.literal(true),
+    accountId: z.string(),
+    agentId: z.string(),
+    worldIds: z.array(z.string()),
+  }),
   refusal,
 ]);
 
@@ -208,19 +211,19 @@ export async function answerAgentMe(
   const enters = held.agent.enabled && held.eligible && held.permissions.includes('enter-worlds');
   const worlds: AgentWorld[] = [];
   if (enters) {
-    const hosts = [...(await context.hosts())].sort(([a], [b]) => a.localeCompare(b));
-    const asked = await Promise.all(
-      hosts.map(async ([id, host]) => ({
-        id,
-        host,
-        home: await ask(log, 'agent-me-home', () => desk.homeOf(id, null, false), homeShape),
-      })),
+    const placed = await ask(
+      log,
+      'agent-me-worlds',
+      () => desk.agentWorlds(org, held.agent.id),
+      agentWorldsShape,
     );
-    for (const { id, host, home } of asked) {
-      if (!home.ok) return tillFailed(home.response);
-      if (!('problems' in home.value) && home.value.home?.accountId === org) {
-        worlds.push({ id, ws: worldSocket(host) });
-      }
+    if (!placed.ok) return tillFailed(placed.response);
+    // An agent removed between the two calls has no worlds: nothing to list.
+    const ids = 'problems' in placed.value ? [] : placed.value.worldIds;
+    const hosts = await context.hosts();
+    for (const id of [...ids].sort((a, b) => a.localeCompare(b))) {
+      const host = hosts.get(id);
+      if (host !== undefined) worlds.push({ id, ws: worldSocket(host) });
     }
   }
 

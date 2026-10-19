@@ -17,7 +17,8 @@ import {
   type AgentMeContext,
 } from '../agent-me';
 import { answerAgentPass } from '../agent-pass';
-import { newToken } from '../agents';
+import { hashToken, isConnectedVia, newToken } from '../agents';
+import { boundAccounts } from '../accounts-source';
 import { answerAgentWrite } from '../agents-source';
 import { resetRateLimitsForTests } from '../rate-limit';
 import { b64urlEncode } from '../world-pass';
@@ -277,7 +278,7 @@ describe('the rest of the road', () => {
     expect((await answerAgentMe(older, me(bearer(token)), contextOf(), quiet)).status).toBe(503);
   });
 
-  it('answers 502 when the till fails, out of shape or while reading a world', async () => {
+  it('answers 502 when the till fails, out of shape or while reading the worlds', async () => {
     const desk = fresh();
     const token = await made(desk);
     const broken: AccountDesk[] = [
@@ -290,10 +291,14 @@ describe('the rest of the road', () => {
       { ...desk, agentPass: async () => ({ ok: true }) } as unknown as AccountDesk,
       {
         ...desk,
-        homeOf: async () => {
+        agentWorlds: async () => {
           throw new Error('boom');
         },
       },
+      {
+        ...desk,
+        agentWorlds: async () => ({ ok: true, worldIds: 'torre' }),
+      } as unknown as AccountDesk,
     ];
     for (const one of broken) {
       const response = await answerAgentMe(one, me(bearer(token)), contextOf(), quiet);
@@ -302,21 +307,100 @@ describe('the rest of the road', () => {
     }
   });
 
-  it('skips a world the till refuses to place', async () => {
+  it('asks the till for the worlds once, never world by world', async () => {
     const desk = fresh();
     const token = await made(desk);
-    const refusing: AccountDesk = {
+    const agentWorlds = vi.fn(desk.agentWorlds);
+    const homeOf = vi.fn(desk.homeOf);
+    const counted: AccountDesk = { ...desk, agentWorlds, homeOf };
+    const body = await json(await answerAgentMe(counted, me(bearer(token)), contextOf(), quiet));
+    expect(body['worlds']).toHaveLength(2);
+    expect(agentWorlds).toHaveBeenCalledTimes(1);
+    expect(agentWorlds).toHaveBeenCalledWith(NUMEN, 'hermes-1');
+    expect(homeOf).not.toHaveBeenCalled();
+  });
+
+  it('lists no worlds when the till no longer finds the agent between the two calls', async () => {
+    const desk = fresh();
+    const token = await made(desk);
+    const gone: AccountDesk = {
       ...desk,
-      homeOf: async (world, wallet, house) =>
-        world === 'torre'
-          ? { ok: false, problems: ['nope'] }
-          : desk.homeOf(world, wallet ?? null, house ?? false),
+      agentWorlds: async () => ({ ok: false, problems: ['the organization has no such agent'] }),
     };
-    const body = await json(await answerAgentMe(refusing, me(bearer(token)), contextOf(), quiet));
-    expect(body['worlds']).toEqual([{ id: 'agora-plaza', ws: 'wss://agora.example/ws' }]);
+    const body = await json(await answerAgentMe(gone, me(bearer(token)), contextOf(), quiet));
+    expect(body).toMatchObject({ id: 'hermes-1', worlds: [] });
+  });
+
+  it('answers 503 when the till is older than agentWorlds', async () => {
+    const desk = fresh();
+    const token = await made(desk);
+    const older = {
+      ...desk,
+      agentWorlds: async () => {
+        throw new Error(NOT_IMPLEMENTED);
+      },
+    } as AccountDesk;
+    const response = await answerAgentMe(older, me(bearer(token)), contextOf(), quiet);
+    expect(response.status).toBe(503);
+    expect(await json(response)).toMatchObject({ error: 'no-vinculado' });
   });
 
   it('writes a world’s socket address from its host', () => {
     expect(worldSocket('torre.numinia.com')).toBe('wss://torre.numinia.com/ws');
+  });
+});
+
+describe('«MCP remoto» W2 at the store', () => {
+  it('reads how an AI was connected as the till does', () => {
+    for (const via of ['panel', 'mcp:claude.ai', 'mcp:localhost', 'mcp:127.0.0.1']) {
+      expect(isConnectedVia(via)).toBe(true);
+    }
+    for (const via of [
+      undefined,
+      7,
+      'Panel',
+      'mcp:',
+      'mcp:Claude.ai',
+      'mcp:claude.ai:443',
+      'mcp:[::1]',
+      `mcp:${Array.from({ length: 64 }, () => 'abc').join('.')}`,
+    ]) {
+      expect(isConnectedVia(via)).toBe(false);
+    }
+  });
+
+  it('passes agentWorlds, agentByToken and a renewal’s way through a bound till, and says when it is older', async () => {
+    const desk = fresh();
+    const token = await made(desk);
+    const bound = boundAccounts(desk) as AccountDesk;
+    expect(await bound.agentWorlds(NUMEN, 'hermes-1')).toMatchObject({
+      ok: true,
+      worldIds: ['agora-plaza', 'sotano', 'torre'],
+    });
+    expect(await bound.agentByToken(await hashToken(token))).toMatchObject({
+      ok: true,
+      accountId: NUMEN,
+      agent: { id: 'hermes-1' },
+    });
+    const renewed = await newToken();
+    const answer = await bound.renewAgentToken(
+      ME,
+      NUMEN,
+      'hermes-1',
+      renewed.hash,
+      renewed.prefix,
+      false,
+      'mcp:claude.ai',
+    );
+    expect(answer.ok && answer.agents.find((agent) => agent.id === 'hermes-1')).toMatchObject({
+      via: 'mcp:claude.ai',
+    });
+    const old = boundAccounts({
+      ...desk,
+      agentWorlds: undefined,
+      agentByToken: undefined,
+    } as never) as AccountDesk;
+    await expect(old.agentWorlds(NUMEN, 'hermes-1')).rejects.toThrow(NOT_IMPLEMENTED);
+    await expect(old.agentByToken(renewed.hash)).rejects.toThrow(NOT_IMPLEMENTED);
   });
 });

@@ -203,9 +203,9 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.changeAgent === 'function'
         ? stub.changeAgent(wallet, accountId, agentId, change, house)
         : absent('changeAgent'),
-    renewAgentToken: (wallet, accountId, agentId, tokenHash, tokenPrefix, house) =>
+    renewAgentToken: (wallet, accountId, agentId, tokenHash, tokenPrefix, house, via) =>
       typeof desk.renewAgentToken === 'function'
-        ? stub.renewAgentToken(wallet, accountId, agentId, tokenHash, tokenPrefix, house)
+        ? stub.renewAgentToken(wallet, accountId, agentId, tokenHash, tokenPrefix, house, via)
         : absent('renewAgentToken'),
     revokeAgentToken: (wallet, accountId, agentId, house) =>
       typeof desk.revokeAgentToken === 'function'
@@ -231,6 +231,15 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.claimAgentPass === 'function'
         ? stub.claimAgentPass(accountId, agentId, aud, t)
         : absent('claimAgentPass'),
+    // «MCP remoto» (W2): an agent's worlds in one query, and the agent a token belongs to.
+    agentWorlds: (accountId, agentId) =>
+      typeof desk.agentWorlds === 'function'
+        ? stub.agentWorlds(accountId, agentId)
+        : absent('agentWorlds'),
+    agentByToken: (tokenHash) =>
+      typeof desk.agentByToken === 'function'
+        ? stub.agentByToken(tokenHash)
+        : absent('agentByToken'),
     // «Hazla tuya» for real (cut G): optional too. Without them the request routes say 503.
     requestCommunity: (wallet, communityId, kind, note) =>
       typeof desk.requestCommunity === 'function'
