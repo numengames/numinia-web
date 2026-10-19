@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.148.0',
+    date: '2026-10-19 22:30',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The Worlds room no longer says a machine «runs an older recipe» when it does not. It compared each machine with a recipe fixed inside the site long ago, so a machine on a newer one was told to run its line again — and copying that line would have put the old recipe back. Now each machine updates its own programs from the newest reviewed recipe, and the room only shows what the machine itself says: up to date, updating, waiting for the new recipe to rest, stopped (and why), frozen or held on one recipe, and which machine tries each recipe first. A machine that does not update itself yet shows one notice and the line to run on it a last time; the line for a new machine installs the newest recipe too. In all five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.147.0',
     date: '2026-10-19 20:10',
     entries: [

@@ -406,6 +406,43 @@ test.describe('the «IA» section of a world’s page', () => {
   });
 });
 
+test.describe('each machine’s recipe, as the machine says', () => {
+  test('the room reports it and hands out no fixed recipe: one last line only where it is needed', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, HOUSE, 'oracle');
+    await page.goto(room());
+    const machine = (alias: string) => page.locator(`[data-machine="${alias}"]`);
+    // open-1 follows main by itself, up to date, and tries each recipe first.
+    await expect(machine('open-1')).toHaveAttribute('data-recipe', 'current');
+    await expect(machine('open-1')).toHaveAttribute('data-canary', 'yes');
+    await expect(machine('open-1')).toContainText('Se actualiza sola · al día.');
+    await expect(machine('open-1')).toContainText('Máquina de prueba (canario)');
+    await expect(machine('open-1').locator('.linea-copiar')).toHaveCount(0);
+    // bronte-xs-ca-003 saw a newer recipe on main and waits for its rest: nothing to copy.
+    await expect(machine('bronte-xs-ca-003')).toHaveAttribute('data-recipe', 'resting');
+    await expect(machine('bronte-xs-ca-003')).toContainText('esperando reposo');
+    await expect(machine('bronte-xs-ca-003').locator('.linea-copiar')).toHaveCount(0);
+    // open-2 does not update itself yet: one notice, and the last line, from main.
+    await expect(machine('open-2')).toHaveAttribute('data-recipe', 'manual');
+    await expect(machine('open-2')).toContainText('necesita una última instalación');
+    await expect(machine('open-2').locator('.linea-copiar pre')).toHaveText(
+      'curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh | sudo bash -s -- "$(cat /etc/fleet/alias)"',
+    );
+    // A machine whose door does not answer gets the line that installs main, with the wallet.
+    await expect(machine('open-3').locator('.linea-copiar pre')).toHaveText(
+      `curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh | sudo bash -s -- open-3 ${HOUSE}`,
+    );
+    // No machine is told it runs «an older recipe», and no line names a fixed commit.
+    await expect(page.locator('[data-worlds-panel]')).not.toContainText('receta anterior');
+    for (const line of await page.locator('.linea-copiar pre').allTextContents()) {
+      expect(line).not.toContain('FLEET_REF');
+      expect(line).toContain('/numinia-assets/main/');
+    }
+  });
+});
+
 test.describe('only the house places', () => {
   test('a person who is not the house cannot read or write placements', async ({
     page,

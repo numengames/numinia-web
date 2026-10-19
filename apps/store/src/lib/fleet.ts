@@ -38,16 +38,15 @@ export const FLEET_DOMAIN = { name: 'Numinia Fleet', version: '1' } as const;
  */
 export const REQUEST_SECONDS = 600;
 /**
- * The one reviewed commit of numinia-assets every machine is installed from:
- * the merge of the machine's pull request this room was built against
- * (numengames/numinia-assets#21, each world's own admin code). A machine run
- * with this line installs exactly this commit, never whatever is on `main` at
- * the time. Moving it is a release of the room: the machine's pull request
- * merges first, then this constant and the fixture's open-1 move together.
+ * Where every machine's bootstrap is fetched: `main` of numinia-assets, never
+ * a commit fixed here. Since numengames/numinia-assets#36 each machine keeps
+ * its own recipe on `main` by itself (its `recipe.py`: a canary first, the
+ * others after a rest, only what GitHub signed, back and halted if it
+ * fails), so the room hands out no recipe of its own and compares with none:
+ * it shows what each machine says (`recipeUpdate`, readRecipeUpdate).
  */
-export const FLEET_REF: string = '880ff114c8cf2b4f4705300e8bc0224c7dbf0a41';
-/** The recipe each machine is made from, and updated with: pinned to FLEET_REF. */
-export const BOOTSTRAP_URL = `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`;
+export const BOOTSTRAP_URL =
+  'https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh';
 
 export interface TypeField {
   readonly name: string;
@@ -256,13 +255,21 @@ export function copyFileUrl(alias: string, copy: string): string {
 }
 
 /**
- * The one line that makes a server a machine of the fleet, or updates one,
- * with this Oracle's wallet. It fetches the bootstrap of FLEET_REF and tells
- * it to install that same commit.
+ * The one line that makes a server a machine of the fleet, or teaches one
+ * this Oracle's wallet. It installs `main`'s newest recipe; from then on the
+ * machine follows `main` by itself.
  */
 export function bootstrapLine(alias: string, wallet: string): string {
-  return `curl -fsSL ${BOOTSTRAP_URL} | sudo FLEET_REF=${FLEET_REF} bash -s -- ${alias} ${wallet}`;
+  return `curl -fsSL ${BOOTSTRAP_URL} | sudo bash -s -- ${alias} ${wallet}`;
 }
+
+/**
+ * The last line a machine older than the recipe that follows `main` needs,
+ * run once on it: the bootstrap of `main` with the machine's own alias (it
+ * reads `/etc/fleet/alias`), which keeps its Oracles' wallets, its worlds and
+ * their codes, and leaves it updating itself.
+ */
+export const LAST_INSTALL_LINE = `curl -fsSL ${BOOTSTRAP_URL} | sudo bash -s -- "$(cat /etc/fleet/alias)"`;
 
 /** A commit, short: its first seven hex digits, as git shows it. */
 export function shortSha(sha: string): string {
@@ -642,12 +649,113 @@ export function readRecipe(body: unknown): string | null {
 }
 
 /**
- * Whether a machine whose door answers runs another recipe than the one this
- * room hands out (FLEET_REF), or says none: its line must be run again. A
- * machine whose door does not answer already shows its line.
+ * What a machine's recipe updater (numinia-assets `recipe.py`) says it is
+ * doing (`/machine` → `recipeUpdate`): the recipe installed, whether it is
+ * `main`'s, the one it aims at and why, and its switches. Commits and short
+ * words only; every field falls back to null/false when it says something else.
  */
-export function staleRecipe(machine: Pick<MachineSummary, 'open' | 'recipe'>): boolean {
-  return machine.open && machine.recipe !== FLEET_REF;
+export interface RecipeUpdate {
+  readonly installed: string | null;
+  /** True when it runs `main`'s recipe; null before its first look at `main`. */
+  readonly upToDate: boolean | null;
+  readonly target: string | null;
+  /** Why it aims at `target`: `canary` and `rested` install now, `resting` waits, `pinned` is held. */
+  readonly targetWhy: 'canary' | 'rested' | 'pinned' | 'resting' | null;
+  /** Until when a new recipe rests before this machine takes it. */
+  readonly restUntil: string | null;
+  /** The machine that takes each recipe first (`/etc/fleet/recipe-canary`). */
+  readonly canary: boolean;
+  /** `off`: frozen on what it runs; a commit: held on that one; null: it follows `main`. */
+  readonly pin: string | null;
+  /** It stopped on a recipe that failed its health check here. */
+  readonly halted: boolean;
+  readonly haltedReason: string | null;
+  /** The newest recipe it would not install (not signed by GitHub), and why. */
+  readonly refused: { readonly commit: string | null; readonly why: string } | null;
+  readonly lastPass: { readonly at: string; readonly action: string } | null;
+}
+
+const TARGET_WHY = ['canary', 'rested', 'pinned', 'resting'] as const;
+
+const recipeSha = (value: unknown): string | null =>
+  typeof value === 'string' && SHA1.test(value) ? value : null;
+const recipeLine = (value: unknown): string | null =>
+  typeof value === 'string' && ONE_LINE.test(value) ? value : null;
+const recipeStamp = (value: unknown): string | null =>
+  typeof value === 'string' && STAMP.test(value) ? value : null;
+
+/**
+ * A door's `recipeUpdate`; null when it says nothing — a machine installed
+ * before its recipe followed `main`, which needs one last install by hand.
+ */
+export function readRecipeUpdate(body: unknown): RecipeUpdate | null {
+  if (!isObj(body) || !isObj(body['recipeUpdate'])) return null;
+  const raw = body['recipeUpdate'];
+  const why = TARGET_WHY.find((word) => word === raw['targetWhy']) ?? null;
+  const pin = raw['pin'] === 'off' ? 'off' : recipeSha(raw['pin']);
+  const refused = raw['refused'];
+  const refusedWhy = isObj(refused) ? recipeLine(refused['why']) : null;
+  const last = raw['lastPass'];
+  const lastAt = isObj(last) ? recipeStamp(last['at']) : null;
+  const lastAction = isObj(last) ? recipeLine(last['action']) : null;
+  return {
+    installed: recipeSha(raw['installed']),
+    upToDate: typeof raw['upToDate'] === 'boolean' ? raw['upToDate'] : null,
+    target: recipeSha(raw['target']),
+    targetWhy: why,
+    restUntil: recipeStamp(raw['restUntil']),
+    canary: raw['canary'] === true,
+    pin,
+    halted: raw['halted'] === true,
+    haltedReason: recipeLine(raw['haltedReason']),
+    refused:
+      isObj(refused) && refusedWhy !== null
+        ? { commit: recipeSha(refused['commit']), why: refusedWhy }
+        : null,
+    lastPass: lastAt !== null && lastAction !== null ? { at: lastAt, action: lastAction } : null,
+  };
+}
+
+/** What the room says about a machine's recipe, from what the machine says. */
+export type RecipeState =
+  /** It does not update itself yet (no `recipeUpdate`, or no recipe named): one last install. */
+  | { readonly kind: 'manual' }
+  /** It runs `main`'s recipe. */
+  | { readonly kind: 'current' }
+  /** A new recipe is on `main` and it is taking it now. */
+  | { readonly kind: 'updating' }
+  /** A new recipe is on `main`; it waits for the recipe's rest first. */
+  | { readonly kind: 'resting'; readonly until: string | null }
+  /** It stopped on a recipe that failed here. */
+  | { readonly kind: 'halted'; readonly reason: string | null }
+  /** It would not install the newest recipe (not signed by GitHub). */
+  | { readonly kind: 'refused'; readonly reason: string }
+  /** Frozen by hand on what it runs. */
+  | { readonly kind: 'frozen' }
+  /** Held by hand on one recipe. */
+  | { readonly kind: 'held'; readonly commit: string }
+  /** It follows `main` but has not looked at it yet. */
+  | { readonly kind: 'checking' };
+
+/**
+ * A machine whose door answers → what its recipe is doing, as it says; null
+ * for one whose door does not answer (its line shows instead). Stops and
+ * switches come before «up to date»: a frozen machine is not following `main`.
+ */
+export function recipeState(
+  machine: Pick<MachineSummary, 'open' | 'recipe' | 'recipeUpdate'>,
+): RecipeState | null {
+  if (!machine.open) return null;
+  const update = machine.recipeUpdate;
+  if (update === undefined || machine.recipe === null) return { kind: 'manual' };
+  if (update.pin === 'off') return { kind: 'frozen' };
+  if (update.halted) return { kind: 'halted', reason: update.haltedReason };
+  if (update.refused !== null) return { kind: 'refused', reason: update.refused.why };
+  if (update.pin !== null) return { kind: 'held', commit: update.pin };
+  if (update.upToDate === true) return { kind: 'current' };
+  if (update.targetWhy === 'resting') return { kind: 'resting', until: update.restUntil };
+  if (update.upToDate === false) return { kind: 'updating' };
+  return { kind: 'checking' };
 }
 
 // ---------------------------------------------------------------------------
@@ -1061,6 +1169,8 @@ export type MachineView =
       readonly updates?: boolean;
       /** What its self-updating pass is doing (readRelease); null when its door says nothing. */
       readonly release?: ReleaseState | null;
+      /** What its recipe updater is doing (readRecipeUpdate); null when its door says nothing. */
+      readonly recipeUpdate?: RecipeUpdate | null;
     }
   | {
       readonly alias: string;
@@ -1088,6 +1198,7 @@ export async function readMachine(
   const read = readDoorWorlds(worlds.body, alias);
   if (read === null) return { alias, open: false, reason: 'shape' };
   const release = machine.ok ? readRelease(machine.body) : null;
+  const recipeUpdate = machine.ok ? readRecipeUpdate(machine.body) : null;
   return {
     alias,
     open: true,
@@ -1100,6 +1211,7 @@ export async function readMachine(
     engines: machine.ok ? readEngines(machine.body) : null,
     updates: machine.ok && readUpdates(machine.body),
     ...(machine.ok && release !== null ? { release } : {}),
+    ...(recipeUpdate !== null ? { recipeUpdate } : {}),
   };
 }
 
@@ -1172,6 +1284,7 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       engines: view.open ? (view.engines ?? null) : null,
       updates: view.open && view.updates === true,
       ...(view.open && view.release ? { release: view.release } : {}),
+      ...(view.open && view.recipeUpdate ? { recipeUpdate: view.recipeUpdate } : {}),
     })),
     orders,
     phases,

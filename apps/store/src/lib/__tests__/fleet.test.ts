@@ -13,8 +13,8 @@ import {
   BOOTSTRAP_URL,
   CODE_KINDS,
   DOOR_ERRORS,
-  FLEET_REF,
   IMPORT_RULES,
+  LAST_INSTALL_LINE,
   REQUEST_SECONDS,
   REQUEST_TYPES,
   SILENT_AFTER_S,
@@ -46,16 +46,17 @@ import {
   readListens,
   readMachine,
   readRecipe,
+  readRecipeUpdate,
   readRequest,
   readRequestResult,
   readTickets,
   readUpdates,
+  recipeState,
   sendBeacon,
   sendRequest,
   settled,
   shortSha,
   shortWallet,
-  staleRecipe,
   typedData,
   uploadZip,
   waitFor,
@@ -70,6 +71,8 @@ import {
 import type { WorldOrder } from '../worlds';
 
 const IMAGE = 'ghcr.io/numengames/numinia-hyperfy2:sha-0e2045370989d051e73f81c7c9d53121d5c374b3';
+/** A recipe a machine says it runs (any whole commit: the room compares it with none). */
+const RECIPE = '4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1';
 const EXPIRES = 1893456000;
 /**
  * Copied verbatim from the fleet's shared vectors (numinia-assets
@@ -451,15 +454,19 @@ describe('addresses and small words', () => {
     );
   });
 
-  it('pins the bootstrap line to one commit of the recipe, and carries the Oracle’s wallet', () => {
-    expect(FLEET_REF).toMatch(/^[0-9a-f]{40}$/);
+  it('fetches the bootstrap from main, never a fixed commit, and carries the Oracle’s wallet', () => {
     expect(BOOTSTRAP_URL).toBe(
-      `https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh`,
+      'https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh',
     );
     expect(bootstrapLine('open-2', '0xabc')).toBe(
-      `curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/${FLEET_REF}/open-worlds/machine/bootstrap.sh | sudo FLEET_REF=${FLEET_REF} bash -s -- open-2 0xabc`,
+      'curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh | sudo bash -s -- open-2 0xabc',
     );
-    expect(bootstrapLine('open-2', '0xabc')).not.toContain('/main/');
+    // No pinned recipe: the machine installs main and then follows it by itself.
+    expect(bootstrapLine('open-2', '0xabc')).not.toContain('FLEET_REF');
+    // The last install of a machine older than that reads its own alias and keeps its wallets.
+    expect(LAST_INSTALL_LINE).toBe(
+      'curl -fsSL https://raw.githubusercontent.com/numengames/numinia-assets/main/open-worlds/machine/bootstrap.sh | sudo bash -s -- "$(cat /etc/fleet/alias)"',
+    );
     expect(shortSha('f3de8ddc621bc23fa3aac5b460f0b0d2a62cb388')).toBe('f3de8dd');
   });
 
@@ -951,6 +958,27 @@ describe('reading a machine', () => {
     expect(view.open && view.worlds.map((world) => world.phase)).toEqual(['updating']);
   });
 
+  it('says what its recipe updater is doing, and nothing when its door does not say', async () => {
+    const door = fakeFetch((url) => {
+      if (url === WORLDS) return json({ worlds: [] });
+      if (url === MACHINE) {
+        return json({ ...BEAT, recipeUpdate: { installed: BEAT.recipe, upToDate: true } });
+      }
+      return json({ entries: [] });
+    });
+    const view = await readMachine(door.fetch, 'open-1');
+    expect(view.open && view.recipeUpdate).toMatchObject({
+      installed: BEAT.recipe,
+      upToDate: true,
+      canary: false,
+    });
+    const older = await readMachine(
+      fakeFetch((url) => json(url === WORLDS ? { worlds: [] } : url === MACHINE ? BEAT : {})).fetch,
+      'open-1',
+    );
+    expect(older.open && 'recipeUpdate' in older).toBe(false);
+  });
+
   it('says why a door could not be read', async () => {
     const cases: [Route, unknown][] = [
       [() => new Response('{}', { status: 502 }), { reason: 'http', status: 502 }],
@@ -1008,7 +1036,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         ],
         heartbeat: HEARTBEAT,
         listens: ['events'],
-        recipe: FLEET_REF,
+        recipe: RECIPE,
         imports: { zipMaxBytes: 2147483648 },
         engines: ['numinia-hyperfy2', 'numinia-engine'],
         updates: true,
@@ -1050,7 +1078,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         reason: null,
         heartbeat: HEARTBEAT,
         listens: ['events'],
-        recipe: FLEET_REF,
+        recipe: RECIPE,
         imports: { zipMaxBytes: 2147483648 },
         engines: ['numinia-hyperfy2', 'numinia-engine'],
         updates: true,
@@ -1373,26 +1401,158 @@ describe('which recipe a machine was installed from', () => {
     expect(readRecipe(null)).toBeNull();
   });
 
-  it('asks for a machine’s line again unless it runs the room’s own recipe', () => {
-    expect(staleRecipe({ open: true, recipe: FLEET_REF })).toBe(false);
-    expect(staleRecipe({ open: true, recipe: OLDER })).toBe(true);
-    expect(staleRecipe({ open: true, recipe: null })).toBe(true);
-    // A machine whose door does not answer already shows its line.
-    expect(staleRecipe({ open: false, recipe: null })).toBe(false);
+  it('reads what a machine’s recipe updater says, field by field, and nothing it does not know', () => {
+    const MAIN = '9e71b3c4d05a2f86e1c7b9a0d3f4e5268c1b7a02';
+    const said = {
+      installed: OLDER,
+      upToDate: false,
+      mainCommit: MAIN,
+      checkedAt: '2026-10-19T09:52:00Z',
+      target: MAIN,
+      targetWhy: 'resting',
+      restUntil: '2026-10-19T11:40:00Z',
+      canary: false,
+      pin: null,
+      halted: false,
+      haltedCommit: null,
+      haltedReason: null,
+      refused: null,
+      lastPass: { at: '2026-10-19T09:52:00Z', action: 'resting' },
+    };
+    expect(readRecipeUpdate({ recipe: OLDER, recipeUpdate: said })).toEqual({
+      installed: OLDER,
+      upToDate: false,
+      target: MAIN,
+      targetWhy: 'resting',
+      restUntil: '2026-10-19T11:40:00Z',
+      canary: false,
+      pin: null,
+      halted: false,
+      haltedReason: null,
+      refused: null,
+      lastPass: { at: '2026-10-19T09:52:00Z', action: 'resting' },
+    });
+    // Stops and switches, as recipe.py writes them.
+    expect(
+      readRecipeUpdate({
+        recipeUpdate: {
+          canary: true,
+          pin: 'off',
+          halted: true,
+          haltedReason: 'the door did not answer with the new recipe',
+          refused: { commit: MAIN, why: 'signed by a key that is not GitHub’s web-flow key' },
+        },
+      }),
+    ).toMatchObject({
+      canary: true,
+      pin: 'off',
+      halted: true,
+      haltedReason: 'the door did not answer with the new recipe',
+      refused: { commit: MAIN, why: 'signed by a key that is not GitHub’s web-flow key' },
+    });
+    expect(readRecipeUpdate({ recipeUpdate: { pin: MAIN, refused: { why: 'x' } } })).toMatchObject({
+      pin: MAIN,
+      refused: { commit: null, why: 'x' },
+    });
+    // Anything else falls back to null or false: a field is never guessed.
+    expect(
+      readRecipeUpdate({
+        recipeUpdate: {
+          installed: 'main',
+          upToDate: 'yes',
+          target: OLDER.toUpperCase(),
+          targetWhy: 'soon',
+          restUntil: 'tomorrow',
+          canary: 'true',
+          pin: 'later',
+          halted: 1,
+          haltedReason: 'two\nlines',
+          refused: { commit: MAIN },
+          lastPass: { at: '2026-10-19T09:52:00Z' },
+        },
+      }),
+    ).toEqual({
+      installed: null,
+      upToDate: null,
+      target: null,
+      targetWhy: null,
+      restUntil: null,
+      canary: false,
+      pin: null,
+      halted: false,
+      haltedReason: null,
+      refused: null,
+      lastPass: null,
+    });
+    expect(readRecipeUpdate({ recipeUpdate: { refused: 'no', lastPass: 'now' } })).toMatchObject({
+      refused: null,
+      lastPass: null,
+    });
+    // A door older than the recipe that follows main says nothing at all.
+    expect(readRecipeUpdate({ recipe: OLDER })).toBeNull();
+    expect(readRecipeUpdate({ recipeUpdate: 'on' })).toBeNull();
+    expect(readRecipeUpdate(null)).toBeNull();
   });
 
-  it('keeps the hermetic fleet in step: open-1 runs the room’s own recipe, open-2 one from before the pin', () => {
-    // FLEET_REF and the fixture's open-1 recipe move together.
+  it('says what each machine’s recipe is doing, as it says, and compares with no recipe of its own', () => {
+    const update = readRecipeUpdate({ recipeUpdate: {} });
+    if (update === null) throw new Error('an empty recipeUpdate is still one');
+    const state = (said: Partial<typeof update>, recipe: string | null = OLDER) =>
+      recipeState({ open: true, recipe, recipeUpdate: { ...update, ...said } });
+    // A machine whose door does not answer shows its line instead.
+    expect(recipeState({ open: false, recipe: null })).toBeNull();
+    // Older than the recipe that follows main, or naming no recipe: one last install.
+    expect(recipeState({ open: true, recipe: OLDER })).toEqual({ kind: 'manual' });
+    expect(state({ upToDate: true }, null)).toEqual({ kind: 'manual' });
+    // What it says, any recipe: none is «older» here.
+    expect(state({ upToDate: true })).toEqual({ kind: 'current' });
+    expect(state({ upToDate: true, canary: true })).toEqual({ kind: 'current' });
+    expect(state({ upToDate: false, targetWhy: 'canary' })).toEqual({ kind: 'updating' });
+    expect(state({ upToDate: false, targetWhy: 'rested' })).toEqual({ kind: 'updating' });
+    expect(
+      state({ upToDate: false, targetWhy: 'resting', restUntil: '2026-10-19T11:40:00Z' }),
+    ).toEqual({ kind: 'resting', until: '2026-10-19T11:40:00Z' });
+    expect(state({ upToDate: false, targetWhy: 'resting' })).toEqual({
+      kind: 'resting',
+      until: null,
+    });
+    expect(state({})).toEqual({ kind: 'checking' });
+    // Stops and switches come before «up to date».
+    expect(state({ upToDate: true, halted: true, haltedReason: 'health' })).toEqual({
+      kind: 'halted',
+      reason: 'health',
+    });
+    expect(state({ halted: true })).toEqual({ kind: 'halted', reason: null });
+    expect(state({ upToDate: false, refused: { commit: null, why: 'unsigned' } })).toEqual({
+      kind: 'refused',
+      reason: 'unsigned',
+    });
+    expect(state({ upToDate: true, pin: OLDER })).toEqual({ kind: 'held', commit: OLDER });
+    expect(state({ upToDate: true, pin: 'off', halted: true })).toEqual({ kind: 'frozen' });
+  });
+
+  it('keeps the hermetic fleet in step: open-1 follows main, bronte-xs-ca-003 waits for a rest, open-2 needs its last install', () => {
     const views = (fixtureFleet as unknown as { readonly machines: readonly MachineView[] })
       .machines;
     const machines = gatherFleet(views).machines;
     expect(machines.map((machine) => [machine.alias, machine.recipe])).toEqual([
-      ['open-1', FLEET_REF],
+      ['open-1', RECIPE],
       ['open-2', null],
-      ['bronte-xs-ca-003', FLEET_REF],
+      ['bronte-xs-ca-003', RECIPE],
       ['open-3', null],
     ]);
-    expect(machines.map((machine) => staleRecipe(machine))).toEqual([false, true, false, false]);
+    expect(machines.map((machine) => recipeState(machine)?.kind ?? null)).toEqual([
+      'current',
+      'manual',
+      'resting',
+      null,
+    ]);
+    expect(machines.map((machine) => machine.recipeUpdate?.canary ?? null)).toEqual([
+      true,
+      null,
+      false,
+      null,
+    ]);
     // A door that names its engines and one that does not (Hyperfy alone).
     expect(machines.map((machine) => [machine.engines ?? null, machine.updates])).toEqual([
       [null, false],
@@ -1520,7 +1680,7 @@ describe('a world from its zip — sizes, the doors that take zips, the upload, 
     }
     expect(readImports({ imports: 'yes' })).toBeNull();
     expect(readImports({ imports: [] })).toBeNull();
-    expect(readImports({ recipe: FLEET_REF })).toBeNull();
+    expect(readImports({ recipe: RECIPE })).toBeNull();
     expect(readImports(null)).toBeNull();
   });
 
