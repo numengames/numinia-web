@@ -39,6 +39,7 @@ import {
   ORGANIZATION_PERMISSIONS,
   ORGANIZATION_PERMISSION_LABELS,
   SUPPORTED_LOCALES,
+  TERMS_POINT_TYPES,
   type OrganizationPermission,
   type SupportedLocale,
 } from '@numinia/domain';
@@ -83,6 +84,7 @@ import {
   type FreshProof,
 } from './fresh-signature';
 import { peopleOf } from './people';
+import { termsPageOf } from './panel-terms';
 import { SWITCHABLE_PIECES, VOCABULARIES } from './panel-settings';
 import { isProfileAvatar } from './profile-avatars';
 import { PROFILE_AVATAR_PROBLEM } from './profile-name';
@@ -187,6 +189,19 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.happenings === 'function'
         ? stub.happenings(wallet, accountId, before, house)
         : absent('happenings'),
+    // «Normas de vuestros espacios»: optional too. Without them the terms route says 503.
+    communityTerms: (wallet, accountId, house) =>
+      typeof desk.communityTerms === 'function'
+        ? stub.communityTerms(wallet, accountId, house)
+        : absent('communityTerms'),
+    publishTerms: (wallet, accountId, draft, house) =>
+      typeof desk.publishTerms === 'function'
+        ? stub.publishTerms(wallet, accountId, draft, house)
+        : absent('publishTerms'),
+    publicTerms: (communityId) =>
+      typeof desk.publicTerms === 'function'
+        ? stub.publicTerms(communityId)
+        : absent('publicTerms'),
     // Cut 7: the house opens every community at once. Optional too: 503 without it.
     openAllCommunities: (wallet, house, communities) =>
       typeof desk.openAllCommunities === 'function'
@@ -324,6 +339,8 @@ export function accountsFrom(env: AccountsEnv): AccountDesk | null {
  * account's signature (ERC-6492) runs to a few kilobytes.
  */
 export const MAX_BODY_BYTES = 8_192;
+/** The terms a community writes are text: up to 20 points of 8 000 characters, so a draft is read up to 128 KB. */
+const TERMS_BODY_BYTES = 131_072;
 const ID_MAX = 100;
 /** A name as typed, before the till trims and counts it (60 characters): bounded, never judged here. */
 const PROFILE_TEXT_MAX = 1_000;
@@ -623,6 +640,38 @@ function buildSchemas() {
     }),
     refusal,
   ]);
+  // «Normas de vuestros espacios»: the till's answer, as @numinia/domain wrote it.
+  const termsPoint = z.object({
+    id: z.string(),
+    titulo: z.string(),
+    texto: z.string(),
+    obligatorio: z.boolean(),
+    tipo: z.enum(TERMS_POINT_TYPES),
+  });
+  const termsVersion = z.object({
+    terms: z.object({
+      capa: z.literal('comunidad'),
+      version: z.string(),
+      puntos: z.array(termsPoint),
+    }),
+    publishedAt: z.string(),
+    publishedBy: z.string(),
+  });
+  const terms = z.union([
+    z.object({
+      ok: z.literal(true),
+      accountId: z.string(),
+      current: termsVersion.nullable(),
+      history: z.array(termsVersion),
+      mayEdit: z.boolean(),
+    }),
+    refusal,
+  ]);
+  // What a browser sends to publish: the draft's two keys travel to the till as they are, whatever
+  // they hold: the domain's validator answers each problem with its path, in Spanish.
+  const termsRequest = z
+    .object({ accountId: id, version: z.unknown(), puntos: z.unknown() })
+    .strict();
   const happenings = z.union([
     z.object({
       ok: z.literal(true),
@@ -666,6 +715,8 @@ function buildSchemas() {
     settings,
     happenings,
     settingsRequest,
+    terms,
+    termsRequest,
   };
 }
 
@@ -1061,6 +1112,64 @@ export async function answerChangeSettings(
   return answer({ settings: asked.value });
 }
 
+/** GET /api/saldo/terms?cuenta=: the terms a community wrote for its worlds, to a member or the house. */
+export async function answerTerms(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  url: URL,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return signedOut();
+  const named = accountOf(url);
+  if (!named.ok) return named.response;
+  if (desk === null) return notBound();
+  const { you, house } = whoIs(asker);
+  const asked = await ask(
+    log,
+    'terms',
+    () => desk.communityTerms(you, named.account, house),
+    shapes().terms,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ terms: termsPageOf(asked.value) });
+}
+
+/**
+ * POST /api/saldo/terms: `{ accountId, version, puntos }` publishes a new version of the terms.
+ * Only whoever holds `administrator` may — the till decides and says so, so a member's own request
+ * is refused here too, not only hidden on the screen. A refused draft is 403 with every problem as
+ * `path: message`; nothing is written.
+ */
+export async function answerPublishTerms(
+  desk: AccountDesk | null,
+  asker: Asker | null,
+  request: Request,
+  log: Log = logEvent,
+): Promise<Response> {
+  if (asker === null) return signedOut();
+  const body = await bodyOf(request, TERMS_BODY_BYTES);
+  if (!body.ok) return body.response;
+  const read = shapes().termsRequest.safeParse(body.json);
+  if (!read.success) {
+    const issue = read.error.issues[0];
+    const where = issue === undefined || issue.path.length === 0 ? '' : `${issue.path.join('.')}: `;
+    return answer({ error: `${where}${issue?.message ?? 'invalid'}` }, 400);
+  }
+  if (desk === null) return notBound();
+  const { you, house } = whoIs(asker);
+  const { accountId, version, puntos } = read.data;
+  const asked = await ask(
+    log,
+    'publish-terms',
+    () => desk.publishTerms(you, accountId, { version, puntos }, house),
+    shapes().terms,
+  );
+  if (!asked.ok) return asked.response;
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  return answer({ terms: termsPageOf(asked.value) });
+}
+
 /** GET /api/saldo/happened?cuenta=&antes=: a page of «Qué ha pasado» — 30 lines, newest first — to a member or the house. */
 export async function answerHappened(
   desk: AccountDesk | null,
@@ -1090,16 +1199,16 @@ export async function answerHappened(
 /** Read a POST's JSON body within limits, or the answer that refuses it. */
 export async function bodyOf(
   request: Request,
+  maxBytes: number = MAX_BODY_BYTES,
 ): Promise<{ ok: true; json: unknown } | { ok: false; response: Response }> {
   const type = (request.headers.get('content-type') ?? '').trim().toLowerCase();
   if (!/^application\/json\s*(;|$)/.test(type)) {
     return { ok: false, response: answer({ error: 'content-type must be application/json' }, 415) };
   }
   const declared = Number(request.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY_BYTES)
-    return { ok: false, response: answer({ error: 'body too large' }, 413) };
+  if (declared > maxBytes) return { ok: false, response: answer({ error: 'body too large' }, 413) };
   const text = await request.text();
-  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
+  if (new TextEncoder().encode(text).length > maxBytes) {
     return { ok: false, response: answer({ error: 'body too large' }, 413) };
   }
   try {

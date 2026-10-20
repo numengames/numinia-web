@@ -45,7 +45,9 @@ async function exists(candidate) {
  * (/agenda/: what the session's wallet said, read from the till), «Tus
  * mundos» (/mis-mundos/: the worlds of the session's communities, the same
  * way), the live calendar feed (/calendar-live.ics: the files and the
- * encounters published from the city, read from the till) and the API.
+ * encounters published from the city, read from the till), a community's
+ * published rules (/communities/<id>/normas/: the till knows them, not the
+ * build) and the API.
  */
 function isOnDemand(clean) {
   const withoutLocale = clean.replace(/^\/(es|ja|ko|pt-br)\//, '/');
@@ -60,6 +62,7 @@ function isOnDemand(clean) {
     /^\/rituals\/rit_[0-9a-f]{16}\/?$/.test(withoutLocale) ||
     /^\/rituals\/[^/]+\.ics$/.test(withoutLocale) ||
     /^\/calendar-live\.ics$/.test(withoutLocale) ||
+    /^\/communities\/[^/]+\/normas\/?$/.test(withoutLocale) ||
     withoutLocale.startsWith('/api/')
   );
 }

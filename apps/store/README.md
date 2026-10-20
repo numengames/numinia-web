@@ -22,6 +22,22 @@ npm run build && node dist/server/entry.mjs
 - Every page auto-emits `page_view`; interactive elements must carry
   `data-metric` (taxonomy in `packages/analytics/src/events.ts`).
 
+## A community's public rules (condiciones/w3)
+
+Anybody, with no session, reads the rules a community published for its worlds:
+
+- Page: `/es/communities/<id>/normas/` (also `/communities/…`, `/ja/…`, `/ko/…`, `/pt-br/…`),
+  linked from the community's page. Numinia's Terms of Use come first, then each point
+  (title, text, mandatory or optional, rule or data), then the versions published with
+  their dates. A community that published nothing says Numinia's rules are the only ones.
+- JSON: `GET /api/community-terms?comunidad=<id>` (`lib/public-terms.ts`, schema
+  `community-terms-public@1`): `current` is a `condiciones@1` layer (`capa`, `version`,
+  `puntos`) plus `publishedAt`, and `history` lists `{ version, publishedAt }`. It is the
+  reading for the AIs and for copying a community's rules into a world. Never who
+  published, never the till account; cached 1 min in the browser, 5 at the edge.
+- Only the register's published communities are public: any other id is a 404.
+  The till answers `AccountDesk.publicTerms(communityId)`, derived from the id.
+
 ## The price room and the till's desk (MIS-184)
 
 `/lap/admin/prices/` (Oracles only) reads the till's tariff, checks a draft

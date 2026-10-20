@@ -14,6 +14,9 @@
  * for the page that asked, never for another site); no signing key is 503
  * (the page then falls back to the plain guest link). The pass is private to
  * the browser that asked and never stored.
+ *
+ * condiciones/w5: when the session accepted the current legal corpus at sign-in (it is in the signed cookie) the pass
+ * also says so, `acepto: { casa: "terms@…+privacy@…" }`; see lib/world-pass.ts for what a world does with it.
  */
 
 import { z } from 'zod';
@@ -40,7 +43,19 @@ export interface PassContext {
   readonly secret: string | undefined;
   /** Seconds since the epoch. */
   readonly now: number;
+  /**
+   * condiciones/w5: the legal corpus the signed-in session accepted at sign-in, if it is the current one AND the Worker has
+   * `WORLD_PASS_ACEPTO=si` (engines older than w5 refuse a pass with the field). The route works it out; none = no field.
+   */
+  readonly acceptedTerms?: string | null;
 }
+
+/**
+ * condiciones/w5: does this Worker put `acepto` in a person's pass? Only with `WORLD_PASS_ACEPTO=si`, set once the fleet's
+ * engines read the field (an older engine refuses a pass with a field it does not know and the person would enter as a guest).
+ */
+export const passSaysAccepted = (env: Readonly<Record<string, string | undefined>>): boolean =>
+  env['WORLD_PASS_ACEPTO']?.trim().toLowerCase() === 'si';
 
 /** The world's address for a guest: no pass. */
 export const guestUrl = (host: string): string => `https://${host}/`;
@@ -132,6 +147,7 @@ export async function answerPass(
       wallet,
       access: access.value,
       roles: roles.value,
+      acceptedTerms: context.acceptedTerms ?? null,
       now: context.now,
     });
     const token = await signPass(context.privateKey, payload);

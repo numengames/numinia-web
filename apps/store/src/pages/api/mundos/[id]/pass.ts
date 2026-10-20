@@ -7,9 +7,9 @@
 
 import type { APIRoute } from 'astro';
 import { SESSION_COOKIE } from '../../../../lib/auth/server';
-import { sessionAsker } from '../../../../lib/auth/session-wallet';
+import { sessionAcceptedTerms, sessionAsker } from '../../../../lib/auth/session-wallet';
 import { runtimeEnv } from '../../../../lib/runtime-env';
-import { answerPass } from '../../../../lib/world-pass-answer';
+import { answerPass, passSaysAccepted } from '../../../../lib/world-pass-answer';
 import { desk, fleetWorlds } from '../_fleet';
 
 export const prerender = false;
@@ -17,7 +17,10 @@ export const prerender = false;
 export const POST: APIRoute = async ({ cookies, params, request, url }) => {
   const env = runtimeEnv();
   const { hosts } = await fleetWorlds();
-  return answerPass(desk(), await sessionAsker(cookies.get(SESSION_COOKIE)?.value), {
+  const session = cookies.get(SESSION_COOKIE)?.value;
+  // condiciones/w5: off until the fleet's engines read the field (an older one refuses a pass that carries it)
+  const acceptedTerms = passSaysAccepted(env) ? await sessionAcceptedTerms(session) : null;
+  return answerPass(desk(), await sessionAsker(session), {
     worldId: params.id ?? '',
     hosts,
     origin: url.origin,
@@ -25,5 +28,6 @@ export const POST: APIRoute = async ({ cookies, params, request, url }) => {
     privateKey: env['WORLD_PASS_PRIVATE_KEY'],
     secret: env['AUTH_SESSION_SECRET'],
     now: Math.floor(Date.now() / 1000),
+    acceptedTerms,
   });
 };

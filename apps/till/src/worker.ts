@@ -115,6 +115,13 @@ import {
 } from './db/world-names';
 import { headcount, type HeadcountAnswer } from './db/headcount';
 import {
+  communityTerms,
+  publicTerms,
+  publishTerms,
+  type PublicTermsAnswer,
+  type TermsAnswer,
+} from './db/community-terms';
+import {
   changeSettings,
   happenings,
   settings,
@@ -887,6 +894,31 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` («MCP remoto» W2). */
   async agentByToken(tokenHash: unknown): Promise<AgentPassAnswer> {
     return agentByToken(this.env.TILL_DB, tokenHash);
+  }
+
+  // ---- «Normas de vuestros espacios» (condiciones/w2, 2026-10-20): the terms a community writes for its worlds ----
+
+  /** The version in force and the history of a community's terms: to a member or the house. */
+  async communityTerms(wallet: unknown, accountId: unknown, house?: unknown): Promise<TermsAnswer> {
+    return communityTerms(this.env.TILL_DB, wallet, accountId, house, new Date());
+  }
+
+  /** Publishes a new version of the terms (`{version, puntos}`): only whoever holds `administrator`. */
+  async publishTerms(
+    wallet: unknown,
+    accountId: unknown,
+    draft: unknown,
+    house?: unknown,
+  ): Promise<TermsAnswer> {
+    return publishTerms(this.env.TILL_DB, wallet, accountId, draft, house, new Date());
+  }
+
+  /**
+   * The terms of a community for anybody, no session (condiciones/w3): the version in force and the
+   * number and date of each version. Asked by the register's community id; never who published.
+   */
+  async publicTerms(communityId: unknown): Promise<PublicTermsAnswer> {
+    return publicTerms(this.env.TILL_DB, communityId);
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----

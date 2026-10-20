@@ -26,6 +26,36 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.155.0',
+    date: '2026-10-20 14:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The pass that takes you into a world now says which rules you already accepted here. When you press «Enter» and the world is set up for it, you are not asked to accept Numinia’s terms a second time; the world still asks for its own community rules, and it always asks, with empty boxes, before any permission about your data. A world only trusts the pass if it is genuine and current.',
+      },
+    ],
+  },
+  {
+    version: 'v0.154.0',
+    date: '2026-10-20 15:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Anyone can now read the rules of a community, no sign-in needed. Each community page has a «Rules» card that opens «/communities/<name>/normas/»: first the line that Numinia’s rules come before the community’s (with a link to the Terms of Use), then each point with its title, text, whether it is mandatory or optional and whether it is a rule or a data permission, and below it the versions published with their dates. A community that has published nothing says Numinia’s rules are the only ones. The same reading is available as JSON at «/api/community-terms?comunidad=<name>» for AIs and for copying the rules into a world.',
+      },
+    ],
+  },
+  {
+    version: 'v0.153.0',
+    date: '2026-10-20 15:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Your community can now write the rules of its worlds. In «Settings» there is a new section, «Rules of your spaces»: Numinia’s own rules always come first and cannot be removed, and below them whoever holds the administrator role adds, edits and removes the community’s own points (a title, a text, mandatory or optional, rule or data), writes the new version number and publishes it. Data points can never be mandatory. Every published version is kept in a read-only history, and anyone else in the community can read the version in force.',
+      },
+    ],
+  },
+  {
     version: 'v0.152.0',
     date: '2026-10-20 16:00',
     entries: [

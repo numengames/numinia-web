@@ -1,0 +1,20 @@
+---
+/**
+ * «Normas de la comunidad» (condiciones/w3), ko: the terms a public community published, no
+ * session. Read at request time (the till, not the build, knows them); a community that is not
+ * public is a 404, like a world that is not in the fleet.
+ */
+import CommunityTermsPage from '../../../../components/communities/CommunityTermsPage.astro';
+import { loadTermsPage } from '../../../../components/communities/terms-load';
+
+export const prerender = false;
+
+const loaded = await loadTermsPage(Astro.params.id);
+if (loaded.status === 404) {
+  return new Response(null, { status: 404 });
+}
+Astro.response.status = loaded.status;
+Astro.response.headers.set('cache-control', loaded.cache);
+---
+
+<CommunityTermsPage locale="ko" community={loaded.community} doc={loaded.doc} />
