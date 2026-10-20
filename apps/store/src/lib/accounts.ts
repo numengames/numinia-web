@@ -18,6 +18,7 @@ import {
   needsFreshSignature,
   type OrganizationAccess,
   type OrganizationPermission,
+  type CommunityTerms,
   type PublishedCommunityTerms,
   type SupportedLocale,
 } from '@numinia/domain';
@@ -331,6 +332,19 @@ export interface DeskTerms {
 }
 export type DeskTermsAnswer = DeskTerms | DeskRefusal;
 
+/**
+ * The terms of a community as ANYBODY may read them (condiciones/w3, no session): the version in
+ * force with its points whole, and of every version ever published its number and date — never who
+ * published it, never the till account. Null / empty while the community has published nothing.
+ */
+export interface DeskPublicTerms {
+  ok: true;
+  communityId: string;
+  current: { terms: CommunityTerms; publishedAt: string } | null;
+  history: readonly { version: string; publishedAt: string }[];
+}
+export type DeskPublicTermsAnswer = DeskPublicTerms | DeskRefusal;
+
 /** A line of the log for «Qué ha pasado»: the log's line plus the author's published name. */
 export interface DeskHappening extends DeskLogLine {
   actorName: string | null;
@@ -621,6 +635,8 @@ export interface AccountDesk {
     draft: unknown,
     house?: boolean,
   ): Promise<DeskTermsAnswer>;
+  /** «Normas»: a community's published terms for ANYBODY — no session, no author (optional). */
+  publicTerms(communityId: string): Promise<DeskPublicTermsAnswer>;
   /** «Qué ha pasado»: the log, 30 a page, newest first; `before` is the last `seq` seen (optional). */
   happenings(
     wallet: string,
@@ -918,6 +934,7 @@ export const DESK_METHODS = [
   'agentByToken',
   'communityTerms',
   'publishTerms',
+  'publicTerms',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -936,7 +953,7 @@ export const DESK_METHODS = [
  * And one without the twelve agent methods (cut «IAs de organización»): the agents
  * routes, /api/agents/pass and /api/agents/me answer 503. And one without the four of «Crear → Un
  * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone. And one
- * without `communityTerms` and `publishTerms` («Normas de vuestros espacios»): the terms route answers 503.
+ * without `communityTerms`, `publishTerms` and `publicTerms` («Normas de vuestros espacios»): the terms routes answer 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -979,6 +996,7 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'agentByToken',
   'communityTerms',
   'publishTerms',
+  'publicTerms',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

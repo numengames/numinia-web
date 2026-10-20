@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.153.0',
+    date: '2026-10-20 15:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Anyone can now read the rules of a community, no sign-in needed. Each community page has a «Rules» card that opens «/communities/<name>/normas/»: first the line that Numinia’s rules come before the community’s (with a link to the Terms of Use), then each point with its title, text, whether it is mandatory or optional and whether it is a rule or a data permission, and below it the versions published with their dates. A community that has published nothing says Numinia’s rules are the only ones. The same reading is available as JSON at «/api/community-terms?comunidad=<name>» for AIs and for copying the rules into a world.',
+      },
+    ],
+  },
+  {
     version: 'v0.152.0',
     date: '2026-10-20 15:00',
     entries: [

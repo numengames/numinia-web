@@ -10,6 +10,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import { AGORA_PLAZA } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { COMMUNITY_TERMS_PAGE_UI } from '../../i18n/community-terms-page';
 import { signInHref } from '../../lib/app-nav';
 import {
   editHref,
@@ -46,6 +47,7 @@ interface Props {
 
 const { locale, community } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
+const tui = COMMUNITY_TERMS_PAGE_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const own = ritualsOf(community.id, RITUALS);
 const coming = upcoming(own);
@@ -283,6 +285,14 @@ const followWords = JSON.stringify({
           }
           {community.team !== undefined && <PeopleList ui={ui} community={community.id} />}
           <p class="small texto-2" style="margin: var(--s3) 0 0">{ui.membersNote}</p>
+        </section>
+
+        <section class="tarjeta" data-terms-card>
+          <h2 class="card-h2"><Icon name="scroll" size={20} />{tui.card.title}</h2>
+          <p class="texto-2" style="margin: 0 0 var(--s3)">{tui.card.text}</p>
+          <a class="ir" href={`${prefix}/communities/${community.id}/normas/`} data-metric="community-terms">
+            {tui.card.link} <span aria-hidden="true">→</span>
+          </a>
         </section>
 
         <section class="tarjeta">

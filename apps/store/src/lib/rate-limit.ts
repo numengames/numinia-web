@@ -85,6 +85,8 @@ export const RATE_RULES: readonly DoormanRule[] = [
   // (debounced) and schedules versions: generous, but metered like any write.
   { methods: ['POST'], path: '/api/admin/prices', key: 'prices-desk', limit: 120 },
   { methods: ['GET'], path: '/api/admin/', prefix: true, key: 'admin-read', limit: 60 },
+  // The public reading of a community's rules (condiciones/w3): cached at the edge, this only stops a loop.
+  { methods: ['GET'], path: '/api/community-terms', key: 'terms-public', limit: 120 },
   // «Saldo»: top-ups, organizations and members are writes on the till; the
   // screen re-reads the balance on every return to the tab, so reads get more.
   { methods: ['POST'], path: '/api/saldo', key: 'saldo-write', limit: 30 },
