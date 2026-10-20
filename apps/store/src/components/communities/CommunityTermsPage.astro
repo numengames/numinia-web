@@ -137,7 +137,7 @@ const title = fill(ui.title, { x: community.name });
           }
 
           <p class="small texto-2" data-terms-json>
-            {ui.machine.text}
+            {ui.machine.text}{' '}
             <a href={`${PUBLIC_TERMS_API}?comunidad=${community.id}`} rel="alternate" type="application/json">{ui.machine.link}</a>
           </p>
         </>
