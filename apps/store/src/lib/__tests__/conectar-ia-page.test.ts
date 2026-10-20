@@ -134,7 +134,7 @@ const ACCOUNTS = {
 };
 
 function choicesDesk(
-  agents: (wallet: string, accountId: string) => Promise<unknown>,
+  agents: (wallet: string, accountId: string, house?: boolean) => Promise<unknown>,
   overview: () => Promise<unknown> = async () => ACCOUNTS,
 ) {
   const methods = { overview: vi.fn(overview), agents: vi.fn(agents) };
@@ -233,6 +233,24 @@ describe('the communities and roles on offer', () => {
     const numen = choices.orgs.find((org) => org.accountId === ORG);
     expect(numen).toMatchObject({ name: 'Numen Games', mayCreate: true, again: [] });
     expect(numen?.roles.map((role) => role.id)).toContain(MEMBER_ROLE);
+  });
+
+  it('acts as the person for the house’s Oracle: a member with manage-roles sees the org, one without sees nothing', async () => {
+    // As the till answers: with the house flag a non-owner acts as the house, which may not create.
+    const { desk, methods } = choicesDesk(async (_wallet, accountId, house) => {
+      const asHouse = house === true;
+      if (accountId === OTHER) return agentsView({ accountId, mayCreate: false, agents: [] });
+      return agentsView({
+        accountId,
+        as: asHouse ? 'house' : 'member',
+        mayCreate: !asHouse,
+        agents: [],
+      });
+    });
+    const choices = await consentChoices(desk, asker(true), quiet);
+    expect(methods.agents.mock.calls.map(([, , house]) => house)).toEqual([false, false]);
+    expect(choices).toMatchObject({ ok: true, orgs: [{ accountId: ORG, mayCreate: true }] });
+    if (choices.ok) expect(choices.orgs.map((org) => org.accountId)).toEqual([ORG]);
   });
 
   it('never lists the house’s entries: the house does not answer for an AI', async () => {
@@ -456,6 +474,7 @@ describe('the POST: connecting', () => {
       const response = await answerConsent(desk, asker(), post(sent), same, relay, quiet, draw);
       expect([response.status, (await response.json()).refusal]).toEqual([status, refusal]);
     }
+    // The house’s Oracle acts as a person: an org they are not in is refused by the till.
     const house = await answerConsent(
       desk,
       asker(true),
@@ -465,7 +484,7 @@ describe('the POST: connecting', () => {
       quiet,
       draw,
     );
-    expect([house.status, (await house.json()).refusal]).toEqual([403, 'house']);
+    expect([house.status, (await house.json()).refusal]).toEqual([403, 'till']);
   });
 
   it('a till that is not bound is unavailable (503); one that throws failed (502)', async () => {

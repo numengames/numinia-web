@@ -404,8 +404,16 @@ describe('connecting through the fixture desk', () => {
     expect(now.ok && now.agent.enabled).toBe(true);
   });
 
-  it('refuses the house, which does not answer for an AI', async () => {
+  it('does not let the house’s Oracle into an organization they are not a member of', async () => {
     const done = await connectAi(fixture(), asker(true), request({ accountId: OTHER }), quiet);
+    expect(done).toMatchObject({ ok: false, refusal: 'till' });
+  });
+
+  it('still names the house if the till ever answers as the house', async () => {
+    const { desk } = stub({
+      agents: vi.fn(async () => ({ ...TILL_VIEW, as: 'house', mayCreate: false })),
+    });
+    const done = await connectAi(desk, asker(true), request(), quiet, draw);
     expect(done).toEqual({ ok: false, refusal: 'house' });
   });
 
@@ -428,6 +436,21 @@ describe('connecting: who asks and what the till answers', () => {
       refusal: 'unavailable',
     });
     expect(methods.agents).not.toHaveBeenCalled();
+  });
+
+  it('acts as the person even for the house’s Oracle: every call to the till says house false', async () => {
+    const { desk, methods } = stub();
+    const done = await connectAi(
+      desk,
+      asker(true),
+      request({ ai: { kind: 'new', name: 'Otra' } }),
+      quiet,
+      draw,
+    );
+    expect(done.ok).toBe(true);
+    expect(methods.agents).toHaveBeenCalledWith(ME, ORG, false);
+    expect(methods.access).toHaveBeenCalledWith(ME, ORG, false);
+    expect(methods.createAgent.mock.calls[0]?.[3]).toBe(false);
   });
 
   it('asks the till as the session’s wallet in lower case, with the session’s house flag', async () => {
