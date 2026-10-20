@@ -117,7 +117,7 @@ describe('migration 0023', () => {
     const shim = sqliteD1();
     const names = migrationFiles();
     const at = names.indexOf('0023_agent_hears.sql');
-    expect(at).toBe(names.length - 1);
+    expect(at).toBeGreaterThan(0);
     for (const name of names.slice(0, at)) {
       shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
     }
@@ -139,5 +139,9 @@ describe('migration 0023', () => {
       shim.sqlite.prepare("SELECT sql FROM sqlite_master WHERE name = 'team_log'").get(),
     ).toEqual(logBefore);
     expect(() => shim.sqlite.prepare('UPDATE team_agents SET hears = 2').run()).toThrow();
+    // The later migrations (0024 adds the community terms) run over it, as in production.
+    for (const name of names.slice(at + 1)) {
+      shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
+    }
   });
 });
