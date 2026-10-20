@@ -2071,3 +2071,140 @@
     border-radius: 16px 16px 0 0;
   }
 }
+
+/* «Normas de vuestros espacios» (condiciones/w2): Numinia's fixed line, the community's own points, the editor. */
+.normas-fijas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s4);
+  border: 1px dashed var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.normas-fijas p {
+  margin: 0;
+}
+.normas-etiqueta {
+  margin: 0;
+  color: var(--texto-2);
+}
+.normas-enlace {
+  align-self: flex-start;
+  color: var(--enlace);
+}
+.normas-lista,
+.normas-editores,
+.normas-versiones {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.normas-editores {
+  gap: var(--s4);
+}
+.normas-punto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s4);
+  align-items: center;
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--linea-f);
+}
+.normas-punto-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.normas-punto-cuerpo > span {
+  color: var(--texto-2);
+}
+.normas-fichas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  justify-content: flex-end;
+}
+.normas-ficha {
+  padding: 2px var(--s2);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  color: var(--texto-2);
+  font-size: 0.8rem;
+}
+.normas-ficha[data-mandatory='true'] {
+  border-color: var(--turquesa);
+  color: var(--texto);
+}
+.normas-borrador,
+.normas-historial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+}
+.normas-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.normas-editor p {
+  margin: 0;
+}
+.normas-borrador input,
+.normas-borrador textarea {
+  width: 100%;
+  max-width: 40rem;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px var(--s3);
+  font: inherit;
+  color: inherit;
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: 8px;
+}
+.normas-borrador textarea {
+  resize: vertical;
+}
+.normas-borrador [aria-invalid='true'] {
+  border-color: #d33440;
+}
+.normas-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+}
+.normas-problemas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #ff8a92;
+  font-size: 0.875rem;
+}
+.normas-aviso p {
+  margin: 0;
+}
+.normas-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+  align-items: center;
+}
+.normas-h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.normas-versiones li {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) auto;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--linea-f);
+}

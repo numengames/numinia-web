@@ -18,6 +18,7 @@ import {
   needsFreshSignature,
   type OrganizationAccess,
   type OrganizationPermission,
+  type PublishedCommunityTerms,
   type SupportedLocale,
 } from '@numinia/domain';
 import { localeHref } from './app-nav';
@@ -315,6 +316,21 @@ export interface DeskSettingsChange {
   aiAgentEnabled?: boolean | undefined;
 }
 
+/**
+ * «Normas de vuestros espacios» (condiciones/w2): the terms a community writes
+ * for its worlds, as the till answers them — the version in force (null while
+ * none is published), the whole history oldest first, and whether the asker
+ * may publish (the `administrator` permission). The format is the domain's.
+ */
+export interface DeskTerms {
+  ok: true;
+  accountId: string;
+  current: PublishedCommunityTerms | null;
+  history: readonly PublishedCommunityTerms[];
+  mayEdit: boolean;
+}
+export type DeskTermsAnswer = DeskTerms | DeskRefusal;
+
 /** A line of the log for «Qué ha pasado»: the log's line plus the author's published name. */
 export interface DeskHappening extends DeskLogLine {
   actorName: string | null;
@@ -596,6 +612,15 @@ export interface AccountDesk {
     change: DeskSettingsChange,
     house?: boolean,
   ): Promise<DeskSettingsAnswer>;
+  /** «Normas de vuestros espacios»: the version in force and the history of a community's terms, to a member or the house (optional). */
+  communityTerms(wallet: string, accountId: string, house?: boolean): Promise<DeskTermsAnswer>;
+  /** Publishes a new version of the terms (`{version, puntos}`): only `administrator`; every problem of the draft comes back as `path: message` (optional). */
+  publishTerms(
+    wallet: string,
+    accountId: string,
+    draft: unknown,
+    house?: boolean,
+  ): Promise<DeskTermsAnswer>;
   /** «Qué ha pasado»: the log, 30 a page, newest first; `before` is the last `seq` seen (optional). */
   happenings(
     wallet: string,
@@ -891,6 +916,8 @@ export const DESK_METHODS = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'communityTerms',
+  'publishTerms',
 ] as const satisfies readonly (keyof AccountDesk)[];
 
 /**
@@ -908,7 +935,8 @@ export const DESK_METHODS = [
  * And one without `openAllCommunities` (cut 7): `{ all: true }` answers 503.
  * And one without the twelve agent methods (cut «IAs de organización»): the agents
  * routes, /api/agents/pass and /api/agents/me answer 503. And one without the four of «Crear → Un
- * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone.
+ * encuentro» (cut M): the ritual routes answer 503 and the lists show the files alone. And one
+ * without `communityTerms` and `publishTerms` («Normas de vuestros espacios»): the terms route answers 503.
  */
 export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'directory',
@@ -949,6 +977,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'communityTerms',
+  'publishTerms',
 ];
 
 export const SPEND_RANGES: readonly SpendRange[] = ['7d', '30d', '12m'];

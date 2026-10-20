@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { SupportedLocale } from '@numinia/domain';
 import type { PanelMessages } from '../../i18n/panel';
 import type { PanelSettingsMessages } from '../../i18n/panel-settings';
+import type { PanelTermsMessages } from '../../i18n/panel-terms';
 import { fill, type DeskSettings, type DeskSettingsChange } from '../../lib/accounts';
 import { PIECES, type BuiltPiece } from '../../lib/panel';
 import {
@@ -26,6 +27,7 @@ import { loadSettings, saveSettings } from '../../lib/panel-settings-client';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame, type PanelContext } from './PanelFrame';
 import { PanelGlyph } from './PanelGlyph';
+import { PanelNormas } from './PanelNormas';
 
 type Read = { readonly at: 'loading' } | { readonly at: 'failed' } | { readonly at: 'ready' };
 type Saving = 'idle' | 'saving' | 'saved' | 'failed';
@@ -37,6 +39,7 @@ function Settings({
   base,
   panel,
   ui,
+  terms,
   locale,
 }: {
   readonly org: string;
@@ -44,6 +47,7 @@ function Settings({
   readonly base: PanelMessages;
   readonly panel: PanelContext;
   readonly ui: PanelSettingsMessages;
+  readonly terms: PanelTermsMessages;
   readonly locale: SupportedLocale;
 }) {
   const { update } = panel;
@@ -250,6 +254,8 @@ function Settings({
         </div>
       </section>
 
+      <PanelNormas org={org} ui={terms} locale={locale} />
+
       <p className="saldo-nota" role="status" data-settings-status={saving}>
         {saving === 'saving' && ui.saving}
         {saving === 'saved' && ui.saved}
@@ -263,19 +269,29 @@ export function PanelAjustes({
   locale,
   words,
   ui,
+  terms,
   signIn,
   saldoHref,
 }: {
   readonly locale: SupportedLocale;
   readonly words: PanelMessages;
   readonly ui: PanelSettingsMessages;
+  readonly terms: PanelTermsMessages;
   readonly signIn: string;
   readonly saldoHref: string;
 }) {
   return (
     <PanelFrame locale={locale} face="settings" words={words} signIn={signIn} saldoHref={saldoHref}>
       {(team, panel) => (
-        <Settings key={team.id} org={team.id} base={words} panel={panel} ui={ui} locale={locale} />
+        <Settings
+          key={team.id}
+          org={team.id}
+          base={words}
+          panel={panel}
+          ui={ui}
+          terms={terms}
+          locale={locale}
+        />
       )}
     </PanelFrame>
   );

@@ -128,11 +128,12 @@ test.describe('Ajustes', () => {
     await openSettings(page);
     await expect(page.locator('h1')).toHaveText('Ajustes');
     const cards = page.locator('.ajustes-tarjeta');
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(5);
     await expect(cards.nth(0)).toContainText('Piezas');
     await expect(cards.nth(1)).toContainText('Cómo se llama cada cosa');
     await expect(cards.nth(2)).toContainText('Acceso de la casa');
     await expect(cards.nth(3)).toContainText('Agente IA');
+    await expect(cards.nth(4)).toContainText('Normas de vuestros espacios');
     // The nine screens that exist; summary, gatherings and settings are always on, the other six have a switch.
     // Encuentros (v3 carril 5) stays on until the till knows how to turn it off (its own list).
     await expect(page.locator('[data-settings-piece]')).toHaveCount(9);
@@ -361,7 +362,7 @@ test.describe('Ajustes', () => {
       await signIn(context, OWNER, 'nomad');
       await openSettings(page, NUMEN, `${locale}/panel/ajustes/`);
       await expect(page.locator('h1')).toHaveText(title);
-      await expect(page.locator('.ajustes-tarjeta')).toHaveCount(4);
+      await expect(page.locator('.ajustes-tarjeta')).toHaveCount(5);
       await expect(rail(page).locator('a[data-metric="panel-nav-settings"]')).toHaveAttribute(
         'href',
         new RegExp(`^${locale}/panel/ajustes/`),
