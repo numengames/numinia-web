@@ -19,6 +19,7 @@ import {
   disconnectable,
   failureOf,
   hermesInstallLink,
+  hermesOauthCommand,
   hermesTokenCommand,
   invitable,
   listUrl,
@@ -432,6 +433,13 @@ describe('the URL way (paso 2)', () => {
       'hermes mcp add numinia --url https://mcp.numinia.com/mcp --auth header',
     );
     expect(hermesTokenCommand('https://a.example/mcp')).toContain('--url https://a.example/mcp');
+  });
+
+  it('writes the two terminal lines that add the relay to Hermes with its login', () => {
+    expect(hermesOauthCommand()).toBe(
+      'hermes mcp add numinia --url https://mcp.numinia.com/mcp --auth oauth\nhermes mcp login numinia',
+    );
+    expect(hermesOauthCommand('https://a.example/mcp')).toContain('--url https://a.example/mcp ');
   });
 
   it('reads how a row was connected, and refuses a `via` that is not text', () => {

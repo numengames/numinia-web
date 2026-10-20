@@ -133,6 +133,12 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   relay's address), `panel-agentes-url-hermes` (Hermes desktop's «Add to Hermes» link) and
 //   `panel-agentes-url-copy-command` (the token line); a row connected from an app's
 //   `panel-agentes-disconnect` (+ `-yes`, `-no`), the token's revoke.
+// - «Conectar una IA», the guide (C4, 2026-10-20): `panel-agentes-guide-way-<address|code|key>`
+//   (a way's card), `panel-agentes-guide-faq-<1..9>` (a question), `panel-agentes-guide-pick-<claude|
+//   chatgpt|hermes|other>` (a tile), `panel-agentes-guide-back`, `panel-agentes-guide-place-<computer|
+//   cloud>` (Hermes' tabs), `panel-agentes-guide-other-<code|key>` (another AI's tabs),
+//   `panel-agentes-guide-terminal` (Hermes' terminal lines), `panel-agentes-guide-copy-lines` and
+//   `panel-agentes-guide-create-<code|key>` (open the invitation on the token or on the key).
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----

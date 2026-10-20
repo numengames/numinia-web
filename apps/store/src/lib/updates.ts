@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.152.0',
+    date: '2026-10-20 16:00',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The «Connect an AI» window now explains itself to someone who has never done it. It starts with the three ways (paste an address and sign in with your account, a code from the panel, or a key of its own), each saying who it is for, what you will do and what will happen, and nine folded questions people ask: what the AI can do, whether it sees your wallet, what it costs, how to switch it off, whether it hears the chat. Then you pick your AI — Claude, ChatGPT, Hermes or another — and get three numbered steps with the address and one «Copy» button. Hermes has a tab for your computer and one for the cloud, and says plainly to add it in its panel, not by asking its chat.',
+      },
+    ],
+  },
+  {
     version: 'v0.151.0',
     date: '2026-10-20 13:00',
     entries: [

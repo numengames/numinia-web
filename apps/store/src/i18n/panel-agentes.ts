@@ -35,8 +35,8 @@ export interface AgentesMessages {
     readonly hint: Readonly<Record<'disconnect' | 'renew' | 'remove', string>>;
     readonly foot: string;
   };
-  /** The one button that starts connecting an AI, the small way into the older ones, and closing the dialog. */
-  readonly connect: { readonly button: string; readonly other: string; readonly close: string };
+  /** The one button that starts connecting an AI, and closing the dialog (the guide inside is i18n/agentes-guia.ts). */
+  readonly connect: { readonly button: string; readonly close: string };
   /** Under the title: «¿Buscas el asistente propio de la comunidad? Es otra cosa: está en [link].» */
   readonly assistant: { readonly before: string; readonly link: string; readonly after: string };
   /** Always visible: how long a change takes to reach the worlds. */
@@ -113,23 +113,6 @@ export interface AgentesMessages {
     readonly renewNo: string;
     readonly renewing: string;
   };
-  /** «Conecta tu IA» (paso 2): the relay's address and how each kind of app uses it. */
-  readonly url: {
-    readonly title: string;
-    readonly intro: string;
-    /** The address's label, for screen readers. */
-    readonly label: string;
-    readonly claude: string;
-    readonly chatgpt: string;
-    readonly hermes: string;
-    /** The «Add to Hermes» link (hermes://mcp/install). */
-    readonly hermesAdd: string;
-    /** Clients that cannot sign in: the address with the panel's token; the Hermes line follows. */
-    readonly noLogin: string;
-    readonly copyCommand: string;
-    /** Where an AI's hearing is switched: on its card, off until someone who may edit it turns it on. */
-    readonly hear: string;
-  };
   /** «Desconectar» for an AI connected from an app (how it was connected is the card's chip). */
   readonly connection: {
     /** `{host}`: an AI connected by URL whose token was revoked. */
@@ -184,7 +167,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     },
     connect: {
       button: 'Conectar una IA',
-      other: 'Con un token o una clave (avanzado)',
       close: 'Cerrar',
     },
     assistant: {
@@ -276,23 +258,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: 'No, dejarlo',
       renewing: 'Renovando…',
     },
-    url: {
-      title: 'Conectar una IA',
-      intro:
-        'Pega esta dirección en tu IA y entra con numinia.com: eliges la comunidad, el nombre de la IA y su rol.',
-      label: 'Dirección para tu IA',
-      claude:
-        'En Claude: añade un conector personalizado y pega la dirección. Se abre numinia.com para que entres.',
-      chatgpt:
-        'En ChatGPT: activa el modo desarrollador, crea una app nueva y pega la dirección. Se abre numinia.com para que entres.',
-      hermes:
-        'En Hermes de escritorio: «Añadir a Hermes» lo deja preparado; confírmalo y entra con numinia.com.',
-      hermesAdd: 'Añadir a Hermes',
-      noLogin:
-        'Sin inicio de sesión (scripts, Hermes en un servidor): la misma dirección con un token, que pides en «Con un token o una clave (avanzado)». En Hermes, esta línea te pide el token:',
-      copyCommand: 'Copiar la línea',
-      hear: 'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
-    },
     connection: {
       urlNone: 'Desconectada. Para volver, conéctala otra vez desde {host}.',
       disconnect: 'Desconectar',
@@ -341,7 +306,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     },
     connect: {
       button: 'Connect an AI',
-      other: 'With a token or a key (advanced)',
       close: 'Close',
     },
     assistant: {
@@ -433,23 +397,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: 'No, keep it',
       renewing: 'Renewing…',
     },
-    url: {
-      title: 'Connect an AI',
-      intro:
-        'Paste this address into your AI and sign in with numinia.com: you pick the community, the AI’s name and its role.',
-      label: 'Address for your AI',
-      claude:
-        'In Claude: add a custom connector and paste the address. numinia.com opens for you to sign in.',
-      chatgpt:
-        'In ChatGPT: turn on developer mode, create a new app and paste the address. numinia.com opens for you to sign in.',
-      hermes:
-        'In Hermes desktop: «Add to Hermes» sets it up; confirm it and sign in with numinia.com.',
-      hermesAdd: 'Add to Hermes',
-      noLogin:
-        'Without signing in (scripts, Hermes on a server): the same address with a token, which you ask for in «With a token or a key (advanced)». In Hermes, this line asks you for the token:',
-      copyCommand: 'Copy the line',
-      hear: 'For an AI to hear what is said nearby, turn on «Hear what is said nearby» on its card: it starts off.',
-    },
     connection: {
       urlNone: 'Disconnected. To come back, connect it again from {host}.',
       disconnect: 'Disconnect',
@@ -498,7 +445,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     },
     connect: {
       button: 'AIをつなぐ',
-      other: 'トークンまたは鍵で（上級者向け）',
       close: '閉じる',
     },
     assistant: {
@@ -589,23 +535,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: 'いいえ',
       renewing: '更新中…',
     },
-    url: {
-      title: 'AIをつなぐ',
-      intro:
-        'このアドレスをAIに貼り付けて、numinia.comでログインします。コミュニティ、AIの名前、ロールを選びます。',
-      label: 'AI用のアドレス',
-      claude:
-        'Claudeでは：カスタムコネクタを追加してアドレスを貼り付けます。numinia.comが開くのでログインします。',
-      chatgpt:
-        'ChatGPTでは：開発者モードをオンにし、新しいアプリを作成してアドレスを貼り付けます。numinia.comが開くのでログインします。',
-      hermes:
-        'Hermesデスクトップでは：「Hermesに追加」で準備できます。確認してnuminia.comでログインします。',
-      hermesAdd: 'Hermesに追加',
-      noLogin:
-        'ログインなし（スクリプト、サーバー上のHermes）：同じアドレスにトークンを使います。トークンは「トークンまたは鍵で（上級者向け）」で作ります。Hermesでは、この1行がトークンを尋ねます：',
-      copyCommand: 'この行をコピー',
-      hear: 'AIに近くの会話を聞かせるには、そのカードで「近くの会話を聞く」をオンにします。最初はオフです。',
-    },
     connection: {
       urlNone: '接続が切れています。戻すには {host} からもう一度接続してください。',
       disconnect: '接続を切る',
@@ -653,7 +582,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     },
     connect: {
       button: 'AI 연결하기',
-      other: '토큰 또는 키로 (고급)',
       close: '닫기',
     },
     assistant: {
@@ -744,23 +672,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewNo: '아니요',
       renewing: '갱신 중…',
     },
-    url: {
-      title: 'AI 연결하기',
-      intro:
-        '이 주소를 AI에 붙여 넣고 numinia.com으로 로그인하세요. 커뮤니티, AI 이름, 역할을 고릅니다.',
-      label: 'AI용 주소',
-      claude:
-        'Claude에서: 사용자 지정 커넥터를 추가하고 주소를 붙여 넣으세요. numinia.com이 열리면 로그인합니다.',
-      chatgpt:
-        'ChatGPT에서: 개발자 모드를 켜고 새 앱을 만든 뒤 주소를 붙여 넣으세요. numinia.com이 열리면 로그인합니다.',
-      hermes:
-        'Hermes 데스크톱에서: «Hermes에 추가»로 준비됩니다. 확인하고 numinia.com으로 로그인하세요.',
-      hermesAdd: 'Hermes에 추가',
-      noLogin:
-        '로그인 없이 (스크립트, 서버의 Hermes): 같은 주소에 토큰을 씁니다. 토큰은 «토큰 또는 키로 (고급)»에서 만듭니다. Hermes에서는 이 한 줄이 토큰을 묻습니다:',
-      copyCommand: '이 줄 복사',
-      hear: 'AI가 근처 대화를 듣게 하려면 AI 카드에서 「근처 대화 듣기」를 켜세요. 처음에는 꺼져 있습니다.',
-    },
     connection: {
       urlNone: '연결이 끊겼습니다. 다시 쓰려면 {host}에서 다시 연결하세요.',
       disconnect: '연결 끊기',
@@ -808,7 +719,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     },
     connect: {
       button: 'Conectar uma IA',
-      other: 'Com um token ou uma chave (avançado)',
       close: 'Fechar',
     },
     assistant: {
@@ -899,23 +809,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       renewYes: 'Sim, renovar',
       renewNo: 'Não, manter',
       renewing: 'Renovando…',
-    },
-    url: {
-      title: 'Conectar uma IA',
-      intro:
-        'Cole este endereço na sua IA e entre com numinia.com: você escolhe a comunidade, o nome da IA e o papel dela.',
-      label: 'Endereço para a sua IA',
-      claude:
-        'No Claude: adicione um conector personalizado e cole o endereço. O numinia.com abre para você entrar.',
-      chatgpt:
-        'No ChatGPT: ative o modo desenvolvedor, crie um app novo e cole o endereço. O numinia.com abre para você entrar.',
-      hermes:
-        'No Hermes para desktop: «Adicionar ao Hermes» deixa tudo pronto; confirme e entre com numinia.com.',
-      hermesAdd: 'Adicionar ao Hermes',
-      noLogin:
-        'Sem login (scripts, Hermes num servidor): o mesmo endereço com um token, que você pede em «Com um token ou uma chave (avançado)». No Hermes, esta linha pede o token:',
-      copyCommand: 'Copiar a linha',
-      hear: 'Para uma IA ouvir o que se fala por perto, ligue «Ouvir o que se fala por perto» no cartão dela: ela começa desligada.',
     },
     connection: {
       urlNone: 'Desconectada. Para voltar, conecte de novo a partir de {host}.',
