@@ -31,6 +31,7 @@ interface Props {
 const { locale, face } = Astro.props;
 const ui = SALDO_UI[locale];
 const saldoHref = localeHref(locale, '/saldo/');
+const panelSaldoHref = localeHref(locale, '/panel/saldo/');
 const membersHref = localeHref(locale, '/panel/miembros/');
 const referralsHref = localeHref(locale, '/saldo/referidos/');
 const title =
@@ -75,6 +76,7 @@ const title =
         ui={ui}
         lang={locale}
         saldoHref={saldoHref}
+        panelSaldoHref={panelSaldoHref}
         signIn={signInHref(locale, '/saldo/')}
       />
     )
