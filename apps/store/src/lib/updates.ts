@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.150.0',
+    date: '2026-10-20 07:50',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The fingerprint of an uploaded zip is made by the newest version of the hashing library (@noble/hashes 2.4), which asks for the file name with its «.js» ending. Nothing changes for you: the same file gives the same SHA-256 as before, read in the same 8 MiB slices off the page’s thread.',
+      },
+    ],
+  },
+  {
     version: 'v0.149.0',
     date: '2026-10-19 22:40',
     entries: [

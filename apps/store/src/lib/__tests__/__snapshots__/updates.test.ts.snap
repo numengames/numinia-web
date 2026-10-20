@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-20 07:50",
+    "entries": [
+      {
+        "text": "The fingerprint of an uploaded zip is made by the newest version of the hashing library (@noble/hashes 2.4), which asks for the file name with its «.js» ending. Nothing changes for you: the same file gives the same SHA-256 as before, read in the same 8 MiB slices off the page’s thread.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.150.0",
+  },
+  {
     "date": "2026-10-19 22:40",
     "entries": [
       {
