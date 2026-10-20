@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.159.0',
+    date: '2026-10-20 23:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The house can now connect an AI in any community that lets the house in: from «Connect your AI», an Oracle picks the community «as the house», and the house answers for that AI. The community sees it in Panel › Agents (“Answered for by: the house”) and its owners can switch it off or remove it, like any other. The house gives it any role except those with Administrator or Manage roles, and its pass lasts only while the community keeps letting the house in.',
+      },
+    ],
+  },
+  {
     version: 'v0.158.0',
     date: '2026-10-20 21:00',
     entries: [
