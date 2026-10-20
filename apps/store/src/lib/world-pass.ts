@@ -39,6 +39,16 @@
  *     perm    already trimmed: what the agent's roles give, no more than the person who answers
  *             for it holds (ORG-011), within {enter-worlds, build-in-worlds}
  *     height  accessOf's: a role position, never an owner's nor the house's
+ *
+ * What the person already accepted on numinia.com (condiciones/w5, 2026-10-20): a PERSON's pass may carry one field more,
+ *     acepto  `{ casa: "<LEGAL_CORPUS_VERSION>" }`, e.g. `{ "casa": "terms@1.0.1+privacy@2.1.0" }` — the version of the Terms and
+ *             the Privacy Policy the session behind the pass accepted at sign-in (the signed session cookie carries it; a
+ *             session that accepted an older corpus gets no field). Only when the person accepted: a pass without it says nothing.
+ *             A world whose own house layer declares `versionWeb` with that very string counts the layer's norms as accepted and
+ *             does not ask again; it never counts data permissions (the world always asks those). Never on an AI's pass. The
+ *             field is covered by the signature and cannot lengthen the pass (`exp` stays iat + 600) or change `perm`/`height`.
+ *             An engine that does not know the field refuses the pass («contenido»): the Worker only adds it while
+ *             `WORLD_PASS_ACEPTO=si` (see world-pass-answer.ts), which is set after the fleet runs an engine that reads it.
  * The verifier below accepts these fields and still refuses any other extra.
  *
  * Key: the Worker secret `WORLD_PASS_PRIVATE_KEY` (Ed25519, PKCS8, base64). Its public half is published
@@ -105,6 +115,8 @@ export interface PassPayload {
   readonly kind?: 'agent';
   /** Only an AI's pass. */
   readonly state?: 'activa' | 'dormida';
+  /** Only a person's pass, only when they accepted the current corpus on numinia.com (condiciones/w5). */
+  readonly acepto?: { readonly casa: string };
   readonly iat: number;
   readonly exp: number;
 }
@@ -229,6 +241,8 @@ export interface PassInput {
     }[];
     readonly [more: string]: unknown;
   };
+  /** The legal corpus version the person's session accepted at sign-in, when it is the current one (condiciones/w5); none = no field. */
+  readonly acceptedTerms?: string | null | undefined;
   /** Seconds since the epoch. */
   readonly now: number;
 }
@@ -267,6 +281,7 @@ export async function buildPassPayload(input: PassInput): Promise<PassPayload> {
       .slice(0, MAX_ROLES)
       .map((role) => ({ name: role.name.slice(0, NAME_MAX), color: role.color })),
     ...(name === undefined ? {} : { name }),
+    ...(input.acceptedTerms ? { acepto: { casa: input.acceptedTerms } } : {}),
     iat: input.now,
     exp: input.now + PASS_TTL_SECONDS,
   };
@@ -329,7 +344,7 @@ export type PassVerdict =
     };
 
 const REQUIRED = ['v', 'iss', 'aud', 'sub', 'org', 'perm', 'height', 'roles', 'iat', 'exp'];
-const OPTIONAL = ['name', 'kind', 'state'];
+const OPTIONAL = ['name', 'kind', 'state', 'acepto'];
 const AGENT_SUB = /^a_[0-9a-f]{32}$/;
 
 /**
@@ -347,6 +362,19 @@ function agentFieldsOk(record: Record<string, unknown>): boolean {
 }
 
 const isText = (value: unknown): value is string => typeof value === 'string';
+
+/** `acepto` is a person's field: `{ casa: <text> }`, never on an AI's pass. */
+function aceptoOk(record: Record<string, unknown>): boolean {
+  const acepto = record['acepto'];
+  if (acepto === undefined) return true;
+  if (record['kind'] !== undefined) return false;
+  return (
+    typeof acepto === 'object' &&
+    acepto !== null &&
+    !Array.isArray(acepto) &&
+    isText((acepto as Record<string, unknown>)['casa'])
+  );
+}
 
 /** The JSON in some UTF-8 bytes, or null when it is not JSON. */
 function parseJson(bytes: Uint8Array): unknown {
@@ -386,6 +414,7 @@ function readPayload(json: unknown): PassPayload | null {
     Array.isArray(record['roles']) &&
     record['roles'].every(roleOk) &&
     (record['name'] === undefined || isText(record['name'])) &&
+    aceptoOk(record) &&
     typeof record['iat'] === 'number' &&
     typeof record['exp'] === 'number' &&
     agentFieldsOk(record);

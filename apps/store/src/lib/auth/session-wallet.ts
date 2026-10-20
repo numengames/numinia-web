@@ -14,6 +14,7 @@
 
 import type { Rank } from '@numinia/domain';
 import type { Asker } from '../accounts';
+import { isCurrentLegalAcceptance } from '../legal';
 import { authConfigured, verifySession } from './server';
 
 /** The rank that is the house's staff while the alpha lasts. */
@@ -36,4 +37,17 @@ export async function sessionAsker(token: string | undefined): Promise<Asker | n
  */
 export async function sessionWallet(token: string | undefined): Promise<string | null> {
   return (await sessionAsker(token))?.wallet ?? null;
+}
+
+/**
+ * The legal corpus this session accepted at sign-in (`terms@…+privacy@…`), but only when it is the CURRENT one and the session is
+ * valid — otherwise null (condiciones/w5: a world pass says what the person accepted, never more). The login endpoint refuses a
+ * session without a current acceptance, so a session older than a text change is the only way to a stale value: it gets nothing.
+ */
+export async function sessionAcceptedTerms(token: string | undefined): Promise<string | null> {
+  if (!authConfigured() || !token) return null;
+  const result = await verifySession(token);
+  if (!result.valid) return null;
+  const terms = result.payload.terms;
+  return isCurrentLegalAcceptance(terms) ? (terms as string) : null;
 }
