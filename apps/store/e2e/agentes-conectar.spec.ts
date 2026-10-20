@@ -225,7 +225,7 @@ test.describe('Agentes — Conectar una IA', () => {
     ],
   ];
   for (const [path, button, settings, fromClaude, withKey, easiest] of cases) {
-    test(`${path} has the one button and the dialog with the three ways and nine questions in its own words`, async ({
+    test(`${path} has the one button and the dialog with the three ways and ten questions in its own words`, async ({
       page,
     }) => {
       await stage(page);
@@ -241,11 +241,11 @@ test.describe('Agentes — Conectar una IA', () => {
       await expect(dialog(page).getByRole('heading', { level: 2 })).toHaveText(button);
       await expect(dialog(page).locator('[data-agentes-way]')).toHaveCount(3);
       await expect(dialog(page).locator('.agentes-guia-chip')).toHaveText(easiest);
-      await expect(dialog(page).locator('[data-agentes-faq-item]')).toHaveCount(9);
+      await expect(dialog(page).locator('[data-agentes-faq-item]')).toHaveCount(10);
       // Every question and every way is a button or a summary with its metric.
       await expect(
         dialog(page).locator('summary[data-metric^="panel-agentes-guide-faq-"]'),
-      ).toHaveCount(9);
+      ).toHaveCount(10);
       await expect(dialog(page).locator('[data-agentes-way-go]')).toHaveCount(3);
       // Each language's long words stay inside the dialog.
       expect(
@@ -256,6 +256,8 @@ test.describe('Agentes — Conectar una IA', () => {
       await pick(page, 'hermes').click();
       await dialog(page).locator('[data-agentes-tab="cloud"]').click();
       await expect(steps(page).locator('[data-agentes-step]')).toHaveCount(3);
+      // The time notice sits above the steps, in every language.
+      await expect(steps(page).locator('[data-agentes-time-warning]')).toBeVisible();
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
       ).toBe(true);
@@ -298,14 +300,14 @@ test.describe('Agentes — Conectar una IA', () => {
     await shot(page, '30-explain-desktop');
   });
 
-  test('the nine questions fold: one opens at a time of its own, with the real numbers', async ({
+  test('the ten questions fold: one opens at a time of its own, with the real numbers', async ({
     page,
   }) => {
     await stage(page);
     await open(page);
     await openConnect(page);
     const items = dialog(page).locator('[data-agentes-faq-item]');
-    await expect(items).toHaveCount(9);
+    await expect(items).toHaveCount(10);
     await expect(items.locator('summary').nth(0)).toHaveText('¿Qué podrá hacer la IA?');
     // Folded at first: nobody reads a wall of text before they ask.
     expect(
@@ -313,20 +315,26 @@ test.describe('Agentes — Conectar una IA', () => {
         (nodes) => nodes.filter((n) => (n as HTMLDetailsElement).open).length,
       ),
     ).toBe(0);
-    const money = items.nth(2);
+    // «How long does it take?» is the second one: it warns about Hermes' chat with a free model.
+    const time = items.nth(1);
+    await expect(time.locator('summary')).toHaveText('¿Cuánto tarda?');
+    await time.locator('summary').click();
+    await expect(time).toContainText('un par de minutos');
+    await expect(time).toContainText('con un modelo gratuito, puede tardar 10–15 minutos');
+    const money = items.nth(3);
     await money.locator('summary').click();
     await expect(money).toHaveAttribute('open', '');
     await expect(money).toContainText('Numinia paga el tiempo');
     await expect(money).toContainText('hasta 3 IAs de una comunidad a la vez');
     await expect(money).toContainText('tras 10 minutos sin usarse');
-    const privacy = items.nth(1);
+    const privacy = items.nth(2);
     await privacy.locator('summary').click();
     await expect(privacy).toContainText('Nunca ve saldos ni carteras');
-    await items.nth(5).locator('summary').click();
-    await expect(items.nth(5)).toContainText('Oír lo que se habla cerca');
-    await expect(items.nth(5)).toContainText('apagado de serie');
     await items.nth(6).locator('summary').click();
-    await expect(items.nth(6)).toContainText('la dirección sola no da acceso a nada');
+    await expect(items.nth(6)).toContainText('Oír lo que se habla cerca');
+    await expect(items.nth(6)).toContainText('apagado de serie');
+    await items.nth(7).locator('summary').click();
+    await expect(items.nth(7)).toContainText('la dirección sola no da acceso a nada');
     await money.locator('summary').click();
     await expect(money).not.toHaveAttribute('open', '');
     for (const text of await items.allInnerTexts())
@@ -416,6 +424,8 @@ test.describe('Agentes — Conectar una IA', () => {
     const cloud = dialog(page).locator('[data-agentes-tab="cloud"]');
     await expect(computer).toHaveAttribute('aria-pressed', 'true');
     await expect(cloud).toHaveAttribute('aria-pressed', 'false');
+    // Only the Hermes screens carry the time notice.
+    await expect(dialog(page).locator('[data-agentes-time-warning]')).toHaveCount(1);
     await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'hermes-computer');
     const link = steps(page).locator('[data-agentes-hermes-link]');
     await expect(link).toHaveText('Añadir a Hermes');
@@ -429,6 +439,11 @@ test.describe('Agentes — Conectar una IA', () => {
     await expect(steps(page).locator('[data-agentes-step="1"]')).toContainText(
       'No se lo pidas al chat de Hermes',
     );
+    // The time notice sits on top of the steps, on this tab and on the next.
+    const warning = steps(page).locator('[data-agentes-time-warning]');
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText('Hazlo tú con estos pasos: son unos 2 minutos.');
+    await expect(warning).toContainText('modelo gratuito, puede tardar 10–15 minutos');
     await shot(page, '35-steps-hermes-computer-desktop');
 
     await cloud.click();
@@ -444,6 +459,10 @@ test.describe('Agentes — Conectar una IA', () => {
     await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('Authenticate');
     await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('http://127.0.0.1');
     await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
+    await expect(steps(page).locator('[data-agentes-time-warning]')).toBeVisible();
+    await expect(steps(page).locator('[data-agentes-time-warning]')).toContainText(
+      'puede tardar 10–15 minutos o quedarse a medias',
+    );
     // The terminal way is folded; its two lines are the real ones.
     const terminal = steps(page).locator('[data-agentes-terminal]');
     await expect(terminal).not.toHaveAttribute('open', '');
@@ -741,7 +760,8 @@ for (const [name, size] of [
       };
       await audit('explain');
       await dialog(page).locator('[data-agentes-faq-item] summary').first().click();
-      await dialog(page).locator('[data-agentes-faq-item] summary').nth(2).click();
+      await dialog(page).locator('[data-agentes-faq-item] summary').nth(1).click();
+      await dialog(page).locator('[data-agentes-faq-item] summary').nth(3).click();
       await audit('explain-faq');
       await dialog(page).locator('[data-agentes-way-go="address"]').click();
       await audit('choose');
@@ -752,8 +772,23 @@ for (const [name, size] of [
       await audit('chatgpt');
       await dialog(page).locator('[data-agentes-back]').click();
       await pick(page, 'hermes').click();
+      // The time notice is whole inside the dialog on both Hermes tabs (390: no overflow).
+      const timeNotice = async (tab: string): Promise<void> => {
+        const notice = steps(page).locator('[data-agentes-time-warning]');
+        await expect(notice).toBeVisible();
+        const noticeBox = await notice.boundingBox();
+        const dialogBox = await dialog(page).boundingBox();
+        expect(noticeBox).not.toBeNull();
+        expect(noticeBox!.x).toBeGreaterThanOrEqual(dialogBox!.x);
+        expect(noticeBox!.x + noticeBox!.width).toBeLessThanOrEqual(
+          dialogBox!.x + dialogBox!.width + 1,
+        );
+        await shot(page, `41-hermes-time-${tab}-${tag}`);
+      };
+      await timeNotice('computer');
       await audit('hermes-computer');
       await dialog(page).locator('[data-agentes-tab="cloud"]').click();
+      await timeNotice('cloud');
       await steps(page).locator('[data-agentes-terminal] summary').click();
       await audit('hermes-cloud');
       await dialog(page).locator('[data-agentes-back]').click();

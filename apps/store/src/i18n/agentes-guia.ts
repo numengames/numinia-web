@@ -1,7 +1,7 @@
 /**
  * «Conectar una IA», the guide the panel's dialog tells a person who knows
  * nothing about it (lib/agentes-guia.ts says what is drawn where; these are
- * the words): the three ways, the nine questions, the tiles and the numbered
+ * the words): the three ways, the ten questions, the tiles and the numbered
  * steps of each AI. Five locales, typed so a missing one does not compile.
  *
  * Plain words for someone who is not technical at all: no «OAuth», «MCP» or
@@ -22,8 +22,8 @@ export interface GuideStep {
   readonly note?: string;
 }
 
-/** The nine questions of the FAQ, in the order of lib's `FAQ_GLYPHS`. */
-type Nine<T> = readonly [T, T, T, T, T, T, T, T, T];
+/** The ten questions of the FAQ, in the order of lib's `FAQ_GLYPHS`. */
+type Ten<T> = readonly [T, T, T, T, T, T, T, T, T, T];
 
 export interface GuideList {
   readonly title: string;
@@ -62,7 +62,7 @@ export interface GuideMessages {
   };
   readonly faq: {
     readonly title: string;
-    readonly items: Nine<{ readonly q: string; readonly a: string }>;
+    readonly items: Ten<{ readonly q: string; readonly a: string }>;
     readonly foot: string;
   };
   readonly choose: {
@@ -95,6 +95,8 @@ export interface GuideMessages {
       readonly terminal: string;
       readonly terminalHelp: string;
       readonly copyLines: string;
+      /** The warning on both Hermes tabs: asking its chat can take 10–15 minutes. `**bold**` allowed. */
+      readonly timeWarn: string;
     };
     readonly other: {
       readonly tabs: string;
@@ -137,7 +139,7 @@ const ES: GuideMessages = {
         who: 'Claude, ChatGPT y Hermes. La más fácil: te la recomendamos.',
         does: 'Copias una dirección y la pegas en tu IA.',
         happens:
-          'Se abrirá numinia.com. Eliges la comunidad y pulsas «Permitir». Vuelves a tu IA y ya puede entrar en tus mundos.',
+          'Se abrirá numinia.com. Eliges la comunidad y pulsas «Permitir». Vuelves a tu IA y ya puede entrar en tus mundos. Unos 2 minutos.',
         cta: 'Elegir mi IA',
       },
       code: {
@@ -163,6 +165,10 @@ const ES: GuideMessages = {
       {
         q: '¿Qué podrá hacer la IA?',
         a: 'Entrar en los mundos de la comunidad que elijas, moverse, hablar y construir. **Solo hace lo que permite su rol:** construir solo si el rol que le des lo permite. Con el rol «ninguno» solo mira y habla.',
+      },
+      {
+        q: '¿Cuánto tarda?',
+        a: 'Con Claude o ChatGPT, un par de minutos. Con Hermes, lo mismo si sigues los pasos tú; si se lo pides a su chat con un modelo gratuito, puede tardar 10–15 minutos.',
       },
       {
         q: '¿Puede ver mis datos o mi cartera?',
@@ -235,6 +241,8 @@ const ES: GuideMessages = {
       terminalHelp:
         'Escribe estas dos líneas (la segunda abre numinia.com para que entres). Si Hermes está en un servidor y el navegador acaba en una página de error, haz lo del paso 3.',
       copyLines: 'Copiar las líneas',
+      timeWarn:
+        '**Hazlo tú con estos pasos: son unos 2 minutos.** Si se lo pides al chat de Hermes, sobre todo con un modelo gratuito, puede tardar 10–15 minutos o quedarse a medias.',
     },
     other: {
       tabs: 'Cómo entra tu IA',
@@ -424,7 +432,7 @@ const EN: GuideMessages = {
         who: 'Claude, ChatGPT and Hermes. The easiest: we recommend it.',
         does: 'You copy an address and paste it into your AI.',
         happens:
-          'numinia.com will open. You pick the community and press “Allow”. You go back to your AI and it can enter your worlds.',
+          'numinia.com will open. You pick the community and press “Allow”. You go back to your AI and it can enter your worlds. About 2 minutes.',
         cta: 'Choose my AI',
       },
       code: {
@@ -450,6 +458,10 @@ const EN: GuideMessages = {
       {
         q: 'What will the AI be able to do?',
         a: 'Enter the worlds of the community you choose, move, talk and build. **It only does what its role allows:** it builds only if the role you give it allows it. With the role “none” it only looks and talks.',
+      },
+      {
+        q: 'How long does it take?',
+        a: 'With Claude or ChatGPT, a couple of minutes. With Hermes, the same if you follow the steps yourself; if you ask its chat with a free model, it can take 10–15 minutes.',
       },
       {
         q: 'Can it see my data or my wallet?',
@@ -522,6 +534,8 @@ const EN: GuideMessages = {
       terminalHelp:
         'Type these two lines (the second opens numinia.com for you to sign in). If Hermes is on a server and the browser ends on an error page, do what step 3 says.',
       copyLines: 'Copy the lines',
+      timeWarn:
+        '**Do it yourself with these steps: it takes about 2 minutes.** If you ask Hermes’ chat instead, especially with a free model, it can take 10–15 minutes or stop halfway.',
     },
     other: {
       tabs: 'How your AI gets in',
@@ -711,7 +725,7 @@ const JA: GuideMessages = {
         who: 'Claude、ChatGPT、Hermes。一番かんたんなので、おすすめです。',
         does: 'アドレスをコピーして、AIに貼り付けます。',
         happens:
-          'numinia.com が開きます。コミュニティを選んで「許可する」を押し、AIに戻れば、あなたの世界に入れるようになります。',
+          'numinia.com が開きます。コミュニティを選んで「許可する」を押し、AIに戻れば、あなたの世界に入れるようになります。所要時間は約2分です。',
         cta: 'AIを選ぶ',
       },
       code: {
@@ -737,6 +751,10 @@ const JA: GuideMessages = {
       {
         q: 'AIは何ができますか？',
         a: 'あなたが選んだコミュニティの世界に入り、動き、話し、建てることができます。**できるのはロールで許されたことだけです。** 建てられるのは、与えたロールが許す場合だけ。ロールが「なし」なら、見て話すだけです。',
+      },
+      {
+        q: 'どのくらい時間がかかりますか？',
+        a: 'ClaudeやChatGPTなら2分ほどです。Hermesも、手順どおり自分で進めれば同じです。無料モデルでHermesのチャットに頼むと、10〜15分かかることがあります。',
       },
       {
         q: '私のデータやウォレットを見られますか？',
@@ -809,6 +827,8 @@ const JA: GuideMessages = {
       terminalHelp:
         '次の2行を入力します（2行目で numinia.com が開きログインします）。Hermesがサーバーにあり、ブラウザがエラーページで止まったときは、ステップ3のとおりにします。',
       copyLines: '2行をコピー',
+      timeWarn:
+        '**この手順どおりに自分でやれば、約2分です。** HermesのチャットにAIの接続を頼むと、特に無料モデルでは10〜15分かかったり、途中で止まったりすることがあります。',
     },
     other: {
       tabs: 'AIの入り方',
@@ -998,7 +1018,7 @@ const KO: GuideMessages = {
         who: 'Claude, ChatGPT, Hermes. 가장 쉬워서 추천합니다.',
         does: '주소를 복사해서 AI에 붙여 넣습니다.',
         happens:
-          'numinia.com이 열립니다. 커뮤니티를 고르고 “허용”을 누른 뒤 AI로 돌아가면 내 월드에 들어갈 수 있습니다.',
+          'numinia.com이 열립니다. 커뮤니티를 고르고 “허용”을 누른 뒤 AI로 돌아가면 내 월드에 들어갈 수 있습니다. 약 2분 걸립니다.',
         cta: 'AI 고르기',
       },
       code: {
@@ -1024,6 +1044,10 @@ const KO: GuideMessages = {
       {
         q: 'AI는 무엇을 할 수 있나요?',
         a: '고른 커뮤니티의 월드에 들어가 움직이고, 말하고, 건설할 수 있습니다. **역할이 허용하는 것만 합니다.** 건설은 내가 준 역할이 허용할 때만 가능합니다. 역할이 “없음”이면 보고 말하기만 합니다.',
+      },
+      {
+        q: '시간이 얼마나 걸리나요?',
+        a: 'Claude나 ChatGPT는 2분 정도입니다. Hermes도 단계를 직접 따라 하면 같습니다. 무료 모델로 Hermes 채팅에 부탁하면 10~15분이 걸릴 수 있습니다.',
       },
       {
         q: '내 데이터나 지갑을 볼 수 있나요?',
@@ -1096,6 +1120,8 @@ const KO: GuideMessages = {
       terminalHelp:
         '다음 두 줄을 입력하세요(두 번째 줄에서 numinia.com이 열려 로그인합니다). Hermes가 서버에 있고 브라우저가 오류 페이지에서 멈추면 3단계대로 하세요.',
       copyLines: '두 줄 복사',
+      timeWarn:
+        '**이 단계를 직접 따라 하면 약 2분이면 됩니다.** Hermes 채팅에 부탁하면, 특히 무료 모델에서는 10~15분이 걸리거나 중간에 멈출 수 있습니다.',
     },
     other: {
       tabs: 'AI가 들어오는 방법',
@@ -1285,7 +1311,7 @@ const PT: GuideMessages = {
         who: 'Claude, ChatGPT e Hermes. A mais fácil: nós recomendamos.',
         does: 'Você copia um endereço e cola na sua IA.',
         happens:
-          'O numinia.com vai abrir. Você escolhe a comunidade e aperta «Permitir». Volta para a sua IA e ela já pode entrar nos seus mundos.',
+          'O numinia.com vai abrir. Você escolhe a comunidade e aperta «Permitir». Volta para a sua IA e ela já pode entrar nos seus mundos. Cerca de 2 minutos.',
         cta: 'Escolher a minha IA',
       },
       code: {
@@ -1311,6 +1337,10 @@ const PT: GuideMessages = {
       {
         q: 'O que a IA poderá fazer?',
         a: 'Entrar nos mundos da comunidade que você escolher, andar, falar e construir. **Ela só faz o que o papel dela permite:** só constrói se o papel que você der permitir. Com o papel «nenhum», só olha e fala.',
+      },
+      {
+        q: 'Quanto tempo leva?',
+        a: 'Com Claude ou ChatGPT, uns dois minutos. Com Hermes, o mesmo se você seguir os passos por conta própria; se pedir ao chat dele com um modelo gratuito, pode levar de 10 a 15 minutos.',
       },
       {
         q: 'Ela pode ver meus dados ou minha carteira?',
@@ -1383,6 +1413,8 @@ const PT: GuideMessages = {
       terminalHelp:
         'Digite estas duas linhas (a segunda abre o numinia.com para você entrar). Se o Hermes estiver num servidor e o navegador parar numa página de erro, faça o que diz o passo 3.',
       copyLines: 'Copiar as linhas',
+      timeWarn:
+        '**Faça você mesmo com estes passos: levam cerca de 2 minutos.** Se pedir ao chat do Hermes, principalmente com um modelo gratuito, pode levar de 10 a 15 minutos ou ficar pela metade.',
     },
     other: {
       tabs: 'Como a sua IA entra',
