@@ -1,36 +1,46 @@
 ---
 /**
- * «MCP remoto», story W4: the «Conecta tu IA» consent, /conectar-ia/ in five
- * locales (DISENO-MCP-REMOTO.md §1 step 4 and §2 (d)). An MCP client (Claude,
- * ChatGPT, Hermes…) asks to act in Numinia worlds; the relay (W6) sends the
- * browser here with `?app=&host=&req=` (contract in lib/conectar-ia-page.ts).
+ * «MCP remoto», story W4, rebuilt as C5: the «Conecta tu IA» consent,
+ * /conectar-ia/ in five locales (DISENO-MCP-REMOTO.md §1 step 4 and §2 (d)).
+ * An MCP client (Claude, ChatGPT, Hermes…) asks to act in Numinia worlds; the
+ * relay (W6) sends the browser here with `?app=&host=&req=` (contract in
+ * lib/conectar-ia-page.ts).
  *
- * One screen: which app asks and, in large type, the machine it goes back
- * to, with a warning apart when that is this computer (localhost); then the
- * community (only those where the person may add or reconnect an AI), which
- * AI it is (a new one with its name, or one already connected this way,
- * whose old connection stops), its role (only roles the person can give),
- * what it may and may not do — and an unchecked box: whether it may hear
- * what is said nearby (Pablo, 2026-10-20: a switch per AI, off by default).
- * «Permitir» posts to /api/conectar-ia; «Cancelar» connects nothing.
+ * Written for someone who has never done this. Three steps on top (1 your AI
+ * asks · 2 pick the community and the permission · 3 back to your AI), then
+ * one card: which app asks and, in large type, the machine it goes back to
+ * (cut only after a dot, never inside a name, with a warning apart when that
+ * is this computer); what it will and will not be able to do, in two short
+ * lists; the community (only those where the person may add or reconnect an
+ * AI), which AI it is (a new one with its name, or one already connected this
+ * way, whose old connection stops), its role (only roles the person can give)
+ * — and an unchecked box: whether it may hear what is said nearby (Pablo,
+ * 2026-10-20: a switch per AI, off by default). «Permitir» posts to
+ * /api/conectar-ia; «No permitir» connects nothing; after «Permitir» the card
+ * becomes «Listo» (step 3), and when the relay says where the AI waits the
+ * browser goes there after a moment.
  *
- * Rendered on demand (it reads the session cookie and asks the till), never
- * cached. A link that is missing something shows no form at all (fail
- * closed). Signed out it still says who asks and where it goes back to, and
- * offers the door, which comes back here (lib/island-session.ts).
+ * Signed out it says what this is and offers the door, which comes back
+ * here (lib/island-session.ts). With no community to add an AI to it says why
+ * and what to do. Rendered on demand (it reads the session cookie and asks
+ * the till), never cached. A link that is missing something shows no form at
+ * all (fail closed).
  */
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { CONECTAR_IA_UI } from '../../i18n/conectar-ia';
 import { fill } from '../../i18n/communities';
 import { accountsFrom } from '../../lib/accounts-source';
-import { signInHref } from '../../lib/app-nav';
+import { localeHref, signInHref } from '../../lib/app-nav';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionAsker } from '../../lib/auth/session-wallet';
 import {
+  AGENTS_PANEL_PATH,
+  COMMUNITIES_PATH,
   CONSENT_API,
   consentChoices,
   consentHref,
+  hostLabels,
   readConsentAsk,
   type ConsentOrg,
 } from '../../lib/conectar-ia-page';
@@ -65,247 +75,434 @@ if (ask !== null) {
   }
 }
 const [asksBefore = '', asksAfter = ''] = t.asks.split('{app}');
+const [doneBefore = '', doneAfter = ''] = t.doneLead.split('{name}');
 const signIn = ask === null ? '' : signInHref(locale, consentHref(ask));
 const one = orgs.length === 1 ? orgs[0] : undefined;
+const labels = ask === null ? [] : hostLabels(ask.host);
 const words = JSON.stringify({
   allow: t.allow,
   allowing: t.allowing,
-  done: t.done,
+  yes: t.yes,
+  no: t.no,
   refusals: t.refusals,
 });
 ---
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead}>
   <meta slot="head" name="robots" content="noindex" />
-  <header class="titulo-vista">
-    <h1 class="display-m">{t.title}</h1>
-  </header>
+  <div class="conectar-pagina">
+    <header class="titulo-vista">
+      <h1 class="display-m">{t.title}</h1>
+    </header>
 
-  {
-    ask === null ? (
-      <section class="tarjeta conectar" data-consent="bad">
-        <Icon name="lock-key" size={28} />
-        <p class="titulo-s">{t.badTitle}</p>
-        <p class="texto-2">{t.badLead}</p>
-      </section>
-    ) : (
-      <section
-        class="tarjeta conectar"
-        data-consent={state}
-        data-words={words}
-        data-api={CONSENT_API}
-      >
-        <p class="pide">
-          {asksBefore}
-          <strong data-consent-app>{ask.app}</strong>
-          {asksAfter}
-        </p>
-        <p class="vuelve">{t.returnsTo}</p>
-        <p class="maquina mono" data-consent-host>
-          {ask.host}
-        </p>
-        {ask.loopback && (
-          <p class="alerta-maquina" role="note" data-consent-loopback>
-            {t.loopback}
-          </p>
-        )}
+    {
+      ask === null ? (
+        <section class="tarjeta conectar" data-consent="bad">
+          <Icon name="lock-key" size={28} />
+          <p class="titulo-s">{t.badTitle}</p>
+          <p class="texto-2">{t.badLead}</p>
+        </section>
+      ) : (
+        <>
+          <ol class="pasos" aria-label={t.stepsLabel} data-consent-steps>
+            {t.steps.map((step, i) => (
+              <li class={i === 0 ? 'hecho' : i === 1 ? 'ahora' : ''} aria-current={i === 1 ? 'step' : undefined}>
+                <span class="num-paso" aria-hidden="true">
+                  <span class="cifra">{i + 1}</span>
+                  <span class="marca">
+                    <Icon name="check" size={16} />
+                  </span>
+                </span>
+                <span class="rotulo">{step}</span>
+              </li>
+            ))}
+          </ol>
 
-        <div data-consent-body>
-          {state === 'out' && (
-            <div class="puerta">
-              <p class="texto-2">{t.signedOutLead}</p>
-              <a class="btn btn-primario" href={signIn} data-metric="connect-ai-sign-in">
-                <Icon name="sign-in" size={18} />
-                {t.signIn}
-              </a>
-            </div>
-          )}
-          {state === 'unavailable' && <p class="texto-2">{t.unavailable}</p>}
-          {state === 'none' && (
-            <div class="puerta">
-              <p class="titulo-s">{t.noneTitle}</p>
-              <p class="texto-2">{t.noneLead}</p>
-            </div>
-          )}
-          {state === 'ok' && (
-            <form id="ci-form" class="formulario" data-consent-form novalidate>
-              <input type="hidden" name="req" value={ask.req} />
-              <input type="hidden" name="app" value={ask.app} />
-              <input type="hidden" name="host" value={ask.host} />
-
-              <div class="campo">
-                <label for="ci-org">{t.community}</label>
-                {one ? (
-                  <>
-                    <input type="hidden" name="accountId" value={one.accountId} />
-                    <p class="valor" id="ci-org">
-                      {one.name}
-                    </p>
-                  </>
-                ) : (
-                  <select id="ci-org" name="accountId" data-metric="connect-ai-community">
-                    {orgs.map((org) => (
-                      <option value={org.accountId}>{org.name}</option>
+          <section
+            class="tarjeta conectar"
+            data-consent={state}
+            data-words={words}
+            data-api={CONSENT_API}
+          >
+            <div class="quien" data-consent-ask>
+              <p class="pide">
+                {asksBefore}
+                <strong data-consent-app>{ask.app}</strong>
+                {asksAfter}
+              </p>
+              <div class="vuelve">
+                <span>{t.returnsTo}</span>
+                <span class="maquina">
+                  <Icon name="arrow-square-out" size={20} />
+                  <span class="host mono" data-consent-host>
+                    {labels.map((label, i) => (
+                      <>
+                        {i > 0 && <wbr />}
+                        <span class="et">{label}</span>
+                      </>
                     ))}
-                  </select>
-                )}
+                  </span>
+                </span>
               </div>
+              {ask.loopback && (
+                <p class="alerta-maquina" role="note" data-consent-loopback>
+                  {t.loopback}
+                </p>
+              )}
+            </div>
 
-              {orgs.map((org, i) => (
-                <div class="por-comunidad" data-consent-org={org.accountId} hidden={i !== 0}>
-                  <fieldset class="campo">
-                    <legend>{t.which}</legend>
-                    {org.mayCreate && (
-                      <label class="opcion">
-                        <input
-                          type="radio"
-                          name={`ai-${i}`}
-                          value="new"
-                          checked
-                          data-metric="connect-ai-new"
-                        />
-                        <span>{t.newAi}</span>
-                      </label>
-                    )}
-                    {org.mayCreate && (
-                      <div class="campo nombre" data-consent-name>
-                        <label for={`ci-name-${i}`}>{t.nameLabel}</label>
-                        <input
-                          id={`ci-name-${i}`}
-                          name={`name-${i}`}
-                          type="text"
-                          value={ask.app}
-                          maxlength={40}
-                          autocomplete="off"
-                          data-metric="connect-ai-name"
-                        />
-                      </div>
-                    )}
-                    {org.again.map((agent, j) => (
-                      <label class="opcion">
-                        <input
-                          type="radio"
-                          name={`ai-${i}`}
-                          value={agent.id}
-                          checked={!org.mayCreate && j === 0}
-                          data-metric="connect-ai-again"
-                        />
-                        <span>
-                          {fill(t.again, { name: agent.name })}
-                          <span class="ayuda"> {t.againNote}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </fieldset>
-
-                  <div class="campo">
-                    <p class="etiqueta-campo" id={`ci-role-label-${i}`}>
-                      {t.role}
+            <div data-consent-body>
+              {state === 'out' && (
+                <div class="centrado">
+                  <span class="medalla">
+                    <Icon name="lock-key" size={40} />
+                  </span>
+                  <h2>{t.signedOutTitle}</h2>
+                  <p class="texto-2">{t.signedOutLead}</p>
+                  <a class="btn btn-primario" href={signIn} data-metric="connect-ai-sign-in">
+                    <Icon name="sign-in" size={18} />
+                    {t.signIn}
+                  </a>
+                </div>
+              )}
+              {state === 'unavailable' && <p class="texto-2">{t.unavailable}</p>}
+              {state === 'none' && (
+                <div class="centrado">
+                  <span class="medalla aviso">
+                    <Icon name="users-three" size={40} />
+                  </span>
+                  <h2>{t.noneTitle}</h2>
+                  <div class="por-que">
+                    <Icon name="question" size={20} />
+                    <p>
+                      <b>{t.noneWhyLabel}</b> {t.noneWhy}
                     </p>
-                    {org.mayCreate && (
-                      <select
-                        name={`role-${i}-new`}
-                        aria-labelledby={`ci-role-label-${i}`}
-                        aria-describedby="ci-role-help"
-                        data-consent-role="new"
-                        data-metric="connect-ai-role"
-                      >
-                        <option value="">{t.roleNone}</option>
-                        {org.roles.map((role) => (
-                          <option value={role.id}>{role.name}</option>
-                        ))}
-                      </select>
-                    )}
-                    {org.again.map((agent, j) => (
-                      <select
-                        name={`role-${i}-${agent.id}`}
-                        aria-labelledby={`ci-role-label-${i}`}
-                        aria-describedby="ci-role-help"
-                        data-consent-role={agent.id}
-                        data-metric="connect-ai-role"
-                        hidden={org.mayCreate || j !== 0}
-                      >
-                        <option value="">{t.roleKeep}</option>
-                        {agent.roles.map((role) => (
-                          <option value={role.id}>{role.name}</option>
-                        ))}
-                      </select>
-                    ))}
-                    <p class="ayuda" id="ci-role-help">
-                      {t.roleHelp}
+                    <span class="sep" />
+                    <Icon name="arrow-right" size={20} />
+                    <p>
+                      <b>{t.noneDoLabel}</b> {t.noneDo}
                     </p>
                   </div>
+                  <div class="acciones al-centro">
+                    <a
+                      class="btn btn-fantasma"
+                      href={localeHref(locale, COMMUNITIES_PATH)}
+                      data-metric="connect-ai-communities"
+                    >
+                      {t.noneCommunities}
+                    </a>
+                    <button
+                      type="button"
+                      class="btn btn-fantasma"
+                      data-consent-cancel
+                      data-metric="connect-ai-cancel"
+                    >
+                      {t.noneClose}
+                    </button>
+                  </div>
                 </div>
-              ))}
+              )}
+              {state === 'ok' && (
+                <form id="ci-form" class="formulario" data-consent-form novalidate>
+                  <input type="hidden" name="req" value={ask.req} />
+                  <input type="hidden" name="app" value={ask.app} />
+                  <input type="hidden" name="host" value={ask.host} />
 
-              <ul class="lineas">
-                <li>{t.can}</li>
-                <li>{t.cannot}</li>
-                <li>{t.answer}</li>
-              </ul>
-              <label class="opcion" data-consent-hear>
-                <input type="checkbox" name="hear" data-metric="connect-ai-hear" />
-                <span>
-                  {t.hearLabel}
-                  <span class="ayuda" style="display: block">{t.hearHint}</span>
-                </span>
-              </label>
-              <p class="fallo" data-consent-problem role="alert" hidden />
-            </form>
-          )}
+                  <div class="campo">
+                    <label for="ci-org">{t.community}</label>
+                    {one ? (
+                      <>
+                        <input type="hidden" name="accountId" value={one.accountId} />
+                        <p class="valor" id="ci-org" data-consent-community>
+                          {one.name}
+                        </p>
+                      </>
+                    ) : (
+                      <select
+                        id="ci-org"
+                        name="accountId"
+                        data-consent-community
+                        data-metric="connect-ai-community"
+                      >
+                        {orgs.map((org) => (
+                          <option value={org.accountId}>{org.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
 
-          <div class="acciones">
-            <button
-              type="button"
-              class="btn btn-fantasma"
-              data-consent-cancel
-              data-metric="connect-ai-cancel"
-            >
-              {t.cancel}
-            </button>
-            {state === 'ok' && (
-              <button
-                type="submit"
-                form="ci-form"
-                class="btn btn-primario"
-                data-consent-allow
-                data-metric="connect-ai-allow"
-              >
-                {t.allow}
-              </button>
-            )}
-          </div>
-        </div>
+                  {orgs.map((org, i) => (
+                    <div class="por-comunidad" data-consent-org={org.accountId} hidden={i !== 0}>
+                      <fieldset class="campo">
+                        <legend>{t.which}</legend>
+                        {org.mayCreate && (
+                          <div class="eleccion">
+                            <label class="opcion">
+                              <input
+                                type="radio"
+                                name={`ai-${i}`}
+                                value="new"
+                                checked
+                                data-metric="connect-ai-new"
+                              />
+                              <span class="en-negrita">{t.newAi}</span>
+                            </label>
+                            <div class="campo nombre" data-consent-name>
+                              <label for={`ci-name-${i}`}>{t.nameLabel}</label>
+                              <input
+                                id={`ci-name-${i}`}
+                                name={`name-${i}`}
+                                type="text"
+                                value={ask.app}
+                                maxlength={40}
+                                autocomplete="off"
+                                aria-describedby={`ci-name-help-${i}`}
+                                data-metric="connect-ai-name"
+                              />
+                              <span class="ayuda" id={`ci-name-help-${i}`}>
+                                {t.nameHint}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        {org.again.map((agent, j) => (
+                          <div class="eleccion">
+                            <label class="opcion">
+                              <input
+                                type="radio"
+                                name={`ai-${i}`}
+                                value={agent.id}
+                                checked={!org.mayCreate && j === 0}
+                                data-metric="connect-ai-again"
+                              />
+                              <span>
+                                <span class="en-negrita">{fill(t.again, { name: agent.name })}</span>
+                                <span class="ayuda" style="display: block">
+                                  {t.againNote}
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </fieldset>
 
-        <p class="final" data-consent-done role="status" hidden />
-        <p class="final" data-consent-cancelled role="status" hidden>
-          {t.cancelled}
-        </p>
-      </section>
-    )
-  }
+                      <div class="campo">
+                        <p class="etiqueta-campo" id={`ci-role-label-${i}`}>
+                          {t.role}
+                        </p>
+                        {org.mayCreate && (
+                          <select
+                            name={`role-${i}-new`}
+                            aria-labelledby={`ci-role-label-${i}`}
+                            aria-describedby="ci-role-help"
+                            data-consent-role="new"
+                            data-metric="connect-ai-role"
+                          >
+                            <option value="">{t.roleNone}</option>
+                            {org.roles.map((role) => (
+                              <option value={role.id}>{role.name}</option>
+                            ))}
+                          </select>
+                        )}
+                        {org.again.map((agent, j) => (
+                          <select
+                            name={`role-${i}-${agent.id}`}
+                            aria-labelledby={`ci-role-label-${i}`}
+                            aria-describedby="ci-role-help"
+                            data-consent-role={agent.id}
+                            data-metric="connect-ai-role"
+                            hidden={org.mayCreate || j !== 0}
+                          >
+                            <option value="">{t.roleKeep}</option>
+                            {agent.roles.map((role) => (
+                              <option value={role.id}>{role.name}</option>
+                            ))}
+                          </select>
+                        ))}
+                        <p class="ayuda" id="ci-role-help">
+                          {t.roleHelp}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div class="puede">
+                    <div class="si" data-consent-can>
+                      <h3>
+                        <Icon name="check" size={18} />
+                        {t.canTitle}
+                      </h3>
+                      <ul>
+                        {t.canItems.map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div class="no" data-consent-cannot>
+                      <h3>
+                        <Icon name="prohibit" size={18} />
+                        {t.cannotTitle}
+                      </h3>
+                      <ul>
+                        {t.cannotItems.map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <label class="opcion casilla" data-consent-hear>
+                    <input type="checkbox" name="hear" data-metric="connect-ai-hear" />
+                    <span>
+                      <span class="en-negrita">{t.hearLabel}</span>
+                      <span class="ayuda" style="display: block">
+                        {t.hearHint}
+                      </span>
+                    </span>
+                  </label>
+                  <p class="oye">
+                    <Icon name="user" size={18} />
+                    {t.answer}
+                  </p>
+                  <p class="fallo" data-consent-problem role="alert" hidden />
+                </form>
+              )}
+
+              {state === 'ok' && (
+                <div class="acciones">
+                  <button
+                    type="button"
+                    class="btn btn-fantasma"
+                    data-consent-cancel
+                    data-metric="connect-ai-cancel"
+                  >
+                    {t.deny}
+                  </button>
+                  <button
+                    type="submit"
+                    form="ci-form"
+                    class="btn btn-primario"
+                    data-consent-allow
+                    data-metric="connect-ai-allow"
+                  >
+                    {t.allow}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div class="centrado" data-consent-done role="status" hidden>
+              <span class="medalla ok">
+                <Icon name="check" size={40} />
+              </span>
+              <h2 tabindex="-1" data-consent-done-title>
+                {t.doneTitle}
+              </h2>
+              <p class="texto-2" data-consent-done-lead>
+                {doneBefore}
+                <strong data-consent-done-name />
+                {doneAfter}
+              </p>
+              <p class="texto-2" data-consent-returning hidden>
+                {t.doneReturning}
+              </p>
+              <dl class="resumen">
+                <div>
+                  <dt>{t.sumCommunity}</dt>
+                  <dd data-consent-sum="community" />
+                </div>
+                <div>
+                  <dt>{t.sumRole}</dt>
+                  <dd data-consent-sum="role" />
+                </div>
+                <div>
+                  <dt>{t.sumHear}</dt>
+                  <dd data-consent-sum="hear" />
+                </div>
+                <div>
+                  <dt>{t.sumReturn}</dt>
+                  <dd class="host mono" data-consent-sum="host">
+                    {labels.map((label, i) => (
+                      <>
+                        {i > 0 && <wbr />}
+                        <span class="et">{label}</span>
+                      </>
+                    ))}
+                  </dd>
+                </div>
+              </dl>
+              <p class="ayuda">{t.doneNote}</p>
+              <div class="acciones al-centro">
+                <a
+                  class="btn btn-primario"
+                  href="/"
+                  data-consent-return
+                  data-metric="connect-ai-return"
+                  hidden
+                >
+                  {t.doneBack}
+                </a>
+                <a
+                  class="btn btn-fantasma"
+                  href={localeHref(locale, AGENTS_PANEL_PATH)}
+                  data-metric="connect-ai-panel"
+                >
+                  {t.donePanel}
+                </a>
+              </div>
+            </div>
+
+            <p class="final" data-consent-cancelled role="status" hidden>
+              {t.cancelled}
+            </p>
+          </section>
+        </>
+      )
+    }
+  </div>
 </BaseLayout>
 
 <script>
   import type { ConectarIaMessages } from '../../i18n/conectar-ia';
 
-  type Words = Pick<ConectarIaMessages, 'allow' | 'allowing' | 'done' | 'refusals'>;
+  type Words = Pick<ConectarIaMessages, 'allow' | 'allowing' | 'yes' | 'no' | 'refusals'>;
+
+  /** How long «Listo» stays before the browser goes back to the AI by itself. */
+  const BACK_AFTER_MS = 1800;
 
   const root = document.querySelector<HTMLElement>('[data-consent]');
   if (root && root.dataset['consent'] !== 'bad') wire(root);
 
   function wire(card: HTMLElement): void {
     const words = JSON.parse(card.dataset['words'] ?? '{}') as Words;
+    const ask = card.querySelector<HTMLElement>('[data-consent-ask]');
     const body = card.querySelector<HTMLElement>('[data-consent-body]');
     const done = card.querySelector<HTMLElement>('[data-consent-done]');
     const cancelled = card.querySelector<HTMLElement>('[data-consent-cancelled]');
+    const steps = document.querySelector<HTMLElement>('[data-consent-steps]');
+
+    // The progress on top: «Listo» ticks all three, «No permitir» takes it away (nothing is under way).
+    const showSteps = (all: boolean): void => {
+      if (!steps) return;
+      if (!all) {
+        steps.hidden = true;
+        return;
+      }
+      for (const step of steps.querySelectorAll('li')) {
+        step.className = 'hecho';
+        step.removeAttribute('aria-current');
+      }
+    };
     const end = (shown: HTMLElement | null): void => {
       if (body) body.hidden = true;
       if (shown) shown.hidden = false;
     };
 
-    // «Cancelar» connects nothing. The relay (W6) will be told the person said no.
-    card.querySelector('[data-consent-cancel]')?.addEventListener('click', () => end(cancelled));
+    // «No permitir» connects nothing. The relay (W6) will be told the person said no.
+    card.querySelector('[data-consent-cancel]')?.addEventListener('click', () => {
+      showSteps(false);
+      end(cancelled);
+    });
 
     const form = card.querySelector<HTMLFormElement>('[data-consent-form]');
     if (!form) return;
@@ -344,6 +541,26 @@ const words = JSON.stringify({
     const refusal = (key: string | undefined): string =>
       words.refusals[(key ?? 'failed') as keyof Words['refusals']] ?? words.refusals.failed;
 
+    // «Listo»: what was chosen, read from the form as the person left it.
+    const summarize = (name: string, hear: boolean): void => {
+      const put = (key: string, text: string): void => {
+        const cell = card.querySelector<HTMLElement>(`[data-consent-sum="${key}"]`);
+        if (cell) cell.textContent = text;
+      };
+      const community = form.querySelector<HTMLElement>('[data-consent-community]');
+      put(
+        'community',
+        community instanceof HTMLSelectElement
+          ? (community.selectedOptions[0]?.text ?? '')
+          : (community?.textContent?.trim() ?? ''),
+      );
+      const role = current()?.querySelector<HTMLSelectElement>('[data-consent-role]:not([hidden])');
+      put('role', role?.selectedOptions[0]?.text ?? '');
+      put('hear', hear ? words.yes : words.no);
+      const who = card.querySelector<HTMLElement>('[data-consent-done-name]');
+      if (who) who.textContent = name;
+    };
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const shown = current();
@@ -351,6 +568,7 @@ const words = JSON.stringify({
       const i = index(shown);
       const choice = value(`ai-${i}`);
       const role = value(`role-${i}-${choice}`);
+      const hear = (form.elements.namedItem('hear') as HTMLInputElement | null)?.checked === true;
       const sent = {
         req: value('req'),
         app: value('app'),
@@ -361,7 +579,7 @@ const words = JSON.stringify({
             ? { kind: 'new', name: value(`name-${i}`) }
             : { kind: 'again', agentId: choice },
         roleId: role === '' ? null : role,
-        hear: (form.elements.namedItem('hear') as HTMLInputElement | null)?.checked === true,
+        hear,
       };
       say(null);
       if (allow) {
@@ -382,16 +600,23 @@ const words = JSON.stringify({
             next?: string | null;
           } | null;
           if (response.ok && answer?.ok === true && answer.connection) {
-            if (typeof answer.next === 'string') {
-              location.assign(answer.next);
-              return;
-            }
-            if (done) {
-              done.textContent = words.done
-                .replace('{name}', answer.connection.name)
-                .replace('{app}', sent.app);
-            }
+            summarize(answer.connection.name, hear);
+            if (ask) ask.hidden = true;
+            showSteps(true);
             end(done);
+            done?.querySelector<HTMLElement>('[data-consent-done-title]')?.focus();
+            // The relay says where the AI waits: show «Listo» for a moment, then go there.
+            if (typeof answer.next === 'string') {
+              const next = answer.next;
+              const back = card.querySelector<HTMLAnchorElement>('[data-consent-return]');
+              if (back) {
+                back.href = next;
+                back.hidden = false;
+              }
+              const returning = card.querySelector<HTMLElement>('[data-consent-returning]');
+              if (returning) returning.hidden = false;
+              setTimeout(() => location.assign(next), BACK_AFTER_MS);
+            }
             return;
           }
           say(refusal(answer?.refusal ?? answer?.error));
@@ -408,26 +633,153 @@ const words = JSON.stringify({
 </script>
 
 <style>
+  .conectar-pagina {
+    max-width: 44rem;
+    margin-inline: auto;
+  }
+  /* One shrinkable column everywhere: a long unbreakable name must scroll in its own box,
+     not push the card wider than the screen. */
+  .conectar,
+  .quien,
+  [data-consent-body],
+  .formulario,
+  .por-comunidad {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .conectar {
     display: grid;
-    gap: var(--s3);
-    max-width: 44rem;
+    gap: var(--s4);
   }
   .conectar p {
     margin: 0;
   }
+
+  /* The three steps: done = ticked, now = ringed, to come = grey; the line joins them. */
+  .pasos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: var(--s4) 0 var(--s5);
+    padding: 0;
+    list-style: none;
+  }
+  .pasos[hidden] {
+    display: none;
+  }
+  .pasos li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s2);
+    padding: 0 6px;
+    text-align: center;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    color: var(--texto-3);
+  }
+  .pasos li::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--linea-f);
+  }
+  .pasos li:first-child::before {
+    display: none;
+  }
+  .pasos li.hecho::before,
+  .pasos li.ahora::before {
+    background: var(--turquesa);
+  }
+  .pasos li.hecho,
+  .pasos li.ahora {
+    color: var(--texto);
+    font-weight: 500;
+  }
+  .num-paso {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--linea-f);
+    border-radius: 50%;
+    background: var(--fondo);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--texto-3);
+  }
+  .marca {
+    display: none;
+  }
+  .hecho .num-paso {
+    border-color: var(--turquesa);
+    background: var(--turquesa);
+    color: #fff;
+  }
+  .hecho .cifra {
+    display: none;
+  }
+  .hecho .marca {
+    display: grid;
+  }
+  .ahora .num-paso {
+    border-color: var(--turquesa);
+    color: var(--turquesa);
+    background: var(--superficie);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--turquesa) 18%, transparent);
+  }
+
+  /* Who asks. */
+  .quien {
+    display: grid;
+    gap: var(--s3);
+  }
+  .quien[hidden] {
+    display: none;
+  }
   .pide {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
+    line-height: 1.3;
   }
   .vuelve {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
     color: var(--texto-2);
+    font-size: 0.9375rem;
   }
-  /* The machine it goes back to, large: the person must see it (MCP authorization). */
+  /* The machine it goes back to, large: the person must read it right (MCP authorization). It
+     breaks only after a dot, never inside a name; a single name wider than the screen scrolls. */
   .maquina {
-    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    max-width: 100%;
+    min-width: 0;
+    padding: 6px var(--s3);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
+    color: var(--texto);
+  }
+  .maquina :global(.icono) {
+    flex: none;
+  }
+  .host {
+    min-width: 0;
+    overflow-x: auto;
+    font-size: clamp(1.125rem, 5vw, 1.75rem);
     font-weight: 600;
-    line-height: 1.15;
-    overflow-wrap: anywhere;
+    line-height: 1.2;
+    color: var(--texto);
+  }
+  .host .et {
+    white-space: nowrap;
   }
   .alerta-maquina {
     padding: var(--s3) var(--s4);
@@ -436,19 +788,142 @@ const words = JSON.stringify({
     border-radius: 8px;
     font-weight: 500;
   }
-  .puerta {
-    display: grid;
-    justify-items: start;
-    gap: var(--s3);
-  }
+
   [data-consent-body] {
     display: grid;
     gap: var(--s4);
-    margin-top: var(--s2);
   }
-  [data-consent-body][hidden] {
+  [data-consent-body][hidden],
+  [data-consent-done][hidden],
+  [data-consent-returning][hidden],
+  [data-consent-return][hidden] {
     display: none;
   }
+
+  /* The state cards: signed out, no community, done. */
+  .centrado {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s3) 0 var(--s1);
+    text-align: center;
+  }
+  .centrado h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+  .centrado p {
+    max-width: 32rem;
+  }
+  .medalla {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--tinte-interactivo);
+    color: var(--turquesa);
+  }
+  .medalla::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 2px solid color-mix(in srgb, var(--turquesa) 35%, transparent);
+    border-radius: 50%;
+    animation: onda-medalla 2.8s ease-out infinite;
+  }
+  .medalla.ok {
+    background: color-mix(in srgb, #2e9e6b 16%, var(--superficie));
+    color: #2e9e6b;
+  }
+  .medalla.ok::after {
+    border-color: color-mix(in srgb, #2e9e6b 40%, transparent);
+  }
+  .medalla.aviso {
+    background: color-mix(in srgb, var(--ambar) 16%, var(--superficie));
+    color: var(--ambar);
+  }
+  .medalla.aviso::after {
+    border-color: color-mix(in srgb, var(--ambar) 35%, transparent);
+  }
+  @keyframes onda-medalla {
+    0% {
+      transform: scale(0.92);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.15);
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .medalla::after {
+      animation: none;
+    }
+  }
+  .por-que {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: var(--s2) var(--s3);
+    width: 100%;
+    max-width: 35rem;
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--fondo);
+    text-align: left;
+    font-size: 0.9375rem;
+  }
+  .por-que :global(.icono) {
+    margin-top: 2px;
+    color: var(--texto-3);
+  }
+  .por-que .sep {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: var(--linea-f);
+  }
+  .por-que p {
+    max-width: none;
+  }
+  .resumen {
+    width: 100%;
+    max-width: 32rem;
+    margin: 0;
+    padding: var(--s1) var(--s4);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--fondo);
+    text-align: left;
+  }
+  .resumen > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s4);
+    padding: 10px 0;
+    font-size: 0.9375rem;
+  }
+  .resumen > div + div {
+    border-top: 1px solid var(--linea-f);
+  }
+  .resumen dt {
+    flex: none;
+    color: var(--texto-2);
+  }
+  .resumen dd {
+    margin: 0;
+    min-width: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+  .resumen dd.host {
+    font-size: 0.9375rem;
+  }
+
+  /* The form. */
   .formulario {
     display: grid;
     gap: var(--s4);
@@ -477,44 +952,116 @@ const words = JSON.stringify({
     font-weight: 600;
   }
   .campo legend {
-    margin-bottom: var(--s1);
+    margin-bottom: var(--s2);
   }
   .campo input[type='text'],
   .campo select {
     width: 100%;
     min-width: 0;
-    min-height: 40px;
+    min-height: 44px;
     padding: 8px var(--s3);
     font: inherit;
     color: inherit;
     background: var(--fondo);
     border: 1px solid var(--linea-f);
-    border-radius: 8px;
+    border-radius: var(--radio-control);
   }
   .campo select[hidden] {
     display: none;
   }
+  .valor {
+    padding: 10px var(--s3);
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-control);
+    background: var(--fondo);
+  }
+  .eleccion {
+    display: grid;
+    gap: var(--s2);
+    margin-bottom: var(--s2);
+    padding: var(--s3) 14px;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--fondo);
+  }
+  .eleccion:has(input[type='radio']:checked) {
+    border-color: var(--turquesa);
+    box-shadow: 0 0 0 1px var(--turquesa);
+  }
   .nombre {
-    margin-left: calc(18px + var(--s2));
+    margin-left: calc(18px + var(--s3));
   }
   .opcion {
     display: flex;
     align-items: flex-start;
-    gap: var(--s2);
-    min-height: 40px;
-    padding-top: 8px;
+    gap: var(--s3);
     cursor: pointer;
   }
   .opcion input {
+    flex: none;
     margin: 3px 0 0;
     accent-color: var(--turquesa);
   }
-  .lineas {
+  .en-negrita {
+    font-weight: 600;
+  }
+  .casilla {
+    padding: var(--s3) 14px;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--fondo);
+  }
+  .casilla input {
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+  }
+  .puede {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s3);
+  }
+  .puede > div {
+    display: grid;
+    align-content: start;
+    gap: var(--s2);
+    padding: 14px;
+    border: 1px solid var(--linea-f);
+    border-radius: var(--radio-marco);
+    background: var(--fondo);
+    font-size: 0.9375rem;
+  }
+  .puede h3 {
+    display: flex;
+    align-items: center;
     gap: var(--s2);
     margin: 0;
-    padding-left: 1.25rem;
+    font-size: 0.9375rem;
+  }
+  .puede .si :global(.icono) {
+    color: #2e9e6b;
+  }
+  .puede .no :global(.icono) {
+    color: var(--grana);
+  }
+  .puede ul {
+    display: grid;
+    gap: var(--s1);
+    margin: 0;
+    padding-left: 1.125rem;
     color: var(--texto-2);
+  }
+  .oye {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--texto-2);
+  }
+  .oye :global(.icono) {
+    flex: none;
+    margin-top: 2px;
+    color: var(--texto-3);
   }
   .ayuda {
     font-size: 0.875rem;
@@ -528,8 +1075,31 @@ const words = JSON.stringify({
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: var(--s3);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--linea-f);
+  }
+  .acciones.al-centro {
+    justify-content: center;
+    padding-top: 0;
+    border-top: 0;
   }
   .final {
     font-weight: 500;
+  }
+
+  @media (max-width: 560px) {
+    .puede {
+      grid-template-columns: 1fr;
+    }
+    .acciones {
+      flex-direction: column-reverse;
+    }
+    .acciones :global(.btn) {
+      width: 100%;
+      justify-content: center;
+    }
+    .nombre {
+      margin-left: 0;
+    }
   }
 </style>

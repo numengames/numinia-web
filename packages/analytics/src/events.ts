@@ -305,4 +305,8 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   `connect-ai-community` (the community picker), `connect-ai-new` («Una
 //   nueva»), `connect-ai-name` (its name), `connect-ai-again` («Volver a
 //   conectar …»), `connect-ai-role` (the role picker), `connect-ai-allow`
-//   («Permitir») and `connect-ai-cancel` («Cancelar»).
+//   («Permitir») and `connect-ai-cancel` («No permitir», or «Cerrar» when no
+//   community is left to add an AI to). C5 adds `connect-ai-communities` (the
+//   link to the person's communities, when there is none to add an AI to),
+//   `connect-ai-return` (the way back to the AI after «Listo») and
+//   `connect-ai-panel` («Ver mis IAs en el panel»).
