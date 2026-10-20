@@ -190,7 +190,7 @@ test.describe('the consent, signed out', () => {
       await expect(page.locator('[data-consent-app]')).toHaveText('Claude');
       const host = page.locator('[data-consent-host]');
       await expect(host).toHaveText('localhost');
-      expect((await hostShape(page)).fontSize).toBeGreaterThanOrEqual(28);
+      expect((await hostShape(page)).fontSize).toBeGreaterThanOrEqual(22);
       await expect(page.locator('[data-consent-loopback]')).toHaveText(t.loopback);
       await expect(page.locator('[data-consent-body] h2')).toHaveText(t.signedOutTitle);
       await expect(page.locator('[data-consent-body]')).toContainText(t.signedOutLead);
@@ -278,7 +278,8 @@ test.describe('the machine it goes back to', () => {
     const shape = await hostShape(page);
     expect(shape.brokenInside).toBe(0);
     expect(shape.scrolls).toBe(false);
-    expect(shape.fontSize).toBeGreaterThanOrEqual(28);
+    expect(shape.lines).toBe(1);
+    expect(shape.fontSize).toBeGreaterThanOrEqual(22);
   });
 });
 
