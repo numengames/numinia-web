@@ -57,6 +57,11 @@ export interface PanelContext {
   readonly off: readonly string[];
   readonly settings: DeskSettings | null;
   readonly update: (settings: DeskSettings) => void;
+  /**
+   * Where a screen puts its one action beside the title (a portal target, only
+   * on the faces that ask for it; null before the page has drawn it).
+   */
+  readonly titleSlot: HTMLElement | null;
 }
 
 export interface PanelFrameProps {
@@ -135,6 +140,7 @@ export function PanelFrame({
   // Read from the address after hydration, never in the initial state: the page is prerendered.
   const [wanted, setWanted] = useState<string | null>(null);
   const [settings, setSettings] = useState<DeskSettings | null>(null);
+  const [titleSlot, setTitleSlot] = useState<HTMLElement | null>(null);
   const list = useRef<HTMLUListElement>(null);
 
   const loadOverview = useCallback(async (): Promise<void> => {
@@ -210,7 +216,14 @@ export function PanelFrame({
   );
   const visible = PIECES.filter((piece) => isOn(piece.id, off));
   const faceIsOff = !isOn(face, off);
-  const panel: PanelContext = { words: shown, off, settings, update: setSettings };
+  const withAction = face === 'agents';
+  const panel: PanelContext = {
+    words: shown,
+    off,
+    settings,
+    update: setSettings,
+    titleSlot: withAction ? titleSlot : null,
+  };
 
   /** Turns the piece this page is back on, from the notice: true when the till took it. */
   const turnFaceOn = async (): Promise<boolean> => {
@@ -329,7 +342,7 @@ export function PanelFrame({
       </nav>
 
       <div className="panel-contenido" data-org-content>
-        <header className="panel-titulo">
+        <header className="panel-titulo" data-con-accion={withAction ? '' : undefined}>
           {team !== null && (
             <p className="etiqueta" data-org-name>
               {name}
@@ -337,6 +350,7 @@ export function PanelFrame({
           )}
           <h1 className="display-m">{shown.names[face]}</h1>
           <p className="panel-lead">{words.leads[face]}</p>
+          {withAction && <div className="panel-titulo-accion" ref={setTitleSlot} />}
         </header>
 
         {state === 'loading' && (

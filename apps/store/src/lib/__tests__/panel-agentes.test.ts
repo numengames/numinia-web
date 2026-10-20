@@ -10,6 +10,7 @@ import type { DeskAgent, DeskAgents } from '../accounts';
 import { AGENT_PROBLEMS, isAgentId } from '../agents';
 import {
   actionsOf,
+  appNameOf,
   changeBody,
   clientOf,
   chipsOf,
@@ -524,5 +525,14 @@ describe('the URL way (paso 2)', () => {
     // Who may not edit it has no menu at all.
     expect(actionsOf(byUrl({ mayEdit: false }))).toEqual([]);
     expect(actionsOf(agent({ mayEdit: false }))).toEqual([]);
+  });
+
+  it('names the app as a sentence says it, and nothing for the panel or a key', () => {
+    expect(appNameOf({ kind: 'claude' })).toBe('Claude');
+    expect(appNameOf({ kind: 'chatgpt' })).toBe('ChatGPT');
+    expect(appNameOf({ kind: 'hermes' })).toBe('Hermes');
+    expect(appNameOf({ kind: 'other', host: 'mistral.example' })).toBe('mistral.example');
+    expect(appNameOf({ kind: 'panel' })).toBeNull();
+    expect(appNameOf({ kind: 'key' })).toBeNull();
   });
 });

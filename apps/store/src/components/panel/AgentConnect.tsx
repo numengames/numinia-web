@@ -1,4 +1,9 @@
 /**
+ * «Conectar una IA», the one button of the panel's «Agentes», opens this dialog
+ * (ConnectDialog): for now, «Conecta tu IA» below and, as the small way into
+ * the older ones, «Con un token o una clave (avanzado)», which closes it and
+ * opens the invitation (./AgentInvite.tsx).
+ *
  * «Conecta tu IA» in the panel's «Agentes» (paso 2, the URL way): the relay's
  * one address (`https://mcp.numinia.com/mcp`) with «Copiar», a plain line per
  * kind of app — Claude (a custom connector), ChatGPT (an app in developer
@@ -12,7 +17,7 @@
  * token way) stays the panel's default for adding an AI by hand.
  */
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { AgentesMessages } from '../../i18n/panel-agentes';
 import { hermesInstallLink, hermesTokenCommand, RELAY_URL } from '../../lib/panel-agentes';
 
@@ -95,5 +100,64 @@ export function ConnectBlock({ words }: { readonly words: AgentesMessages }) {
         </p>
       )}
     </section>
+  );
+}
+
+/** The dialog the page's one button opens: the relay's way, and the way into the token and the key. */
+export function ConnectDialog({
+  words,
+  canInvite,
+  onClose,
+  onAdvanced,
+}: {
+  readonly words: AgentesMessages;
+  /** Whether the person may make an AI by hand (the token and the key need the right to). */
+  readonly canInvite: boolean;
+  readonly onClose: () => void;
+  readonly onAdvanced: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (element && !element.open) element.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="mundo-ia-dialogo agentes-conectar-dialogo"
+      aria-label={words.connect.button}
+      onClose={onClose}
+      data-agentes-connect-dialog
+    >
+      <div className="mundo-ia-cabeza">
+        <h2>{words.connect.button}</h2>
+      </div>
+      <div className="mundo-ia-cuerpo">
+        <ConnectBlock words={words} />
+      </div>
+      <div className="mundo-ia-pie">
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          onClick={() => ref.current?.close()}
+          data-metric="panel-agentes-connect-close"
+        >
+          {words.connect.close}
+        </button>
+        <button
+          type="button"
+          className="btn btn-fantasma"
+          disabled={!canInvite}
+          onClick={() => {
+            ref.current?.close();
+            onAdvanced();
+          }}
+          data-metric="panel-agentes-connect-advanced"
+          data-agentes-advanced
+        >
+          {words.connect.other}
+        </button>
+      </div>
+    </dialog>
   );
 }

@@ -430,6 +430,22 @@ export function clientOf(agent: Pick<DeskAgent, 'via' | 'auth'>): AgentClient {
   return { kind: agent.auth === 'token' ? 'panel' : 'key' };
 }
 
+/** The app's name as a sentence says it — Claude, ChatGPT, Hermes, or the host of one it does not know; null for the panel and a key. */
+export function appNameOf(client: AgentClient): string | null {
+  switch (client.kind) {
+    case 'claude':
+      return 'Claude';
+    case 'chatgpt':
+      return 'ChatGPT';
+    case 'hermes':
+      return 'Hermes';
+    case 'other':
+      return client.host;
+    default:
+      return null;
+  }
+}
+
 /** What the card's ⋯ menu offers. */
 export type AgentAction = 'disconnect' | 'renew' | 'remove';
 
