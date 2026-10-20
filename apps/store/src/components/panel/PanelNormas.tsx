@@ -18,7 +18,6 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { PanelTermsMessages } from '../../i18n/panel-terms';
 import { fill } from '../../lib/accounts';
 import { localeHref } from '../../lib/app-nav';
-import { LEGAL_DOC_VERSION } from '../../lib/legal';
 import {
   blankPoint,
   draftBody,
@@ -76,9 +75,11 @@ function Problems({
 function NuminiaFixed({
   ui,
   locale,
+  termsVersion,
 }: {
   readonly ui: PanelTermsMessages;
   readonly locale: SupportedLocale;
+  readonly termsVersion: string;
 }) {
   return (
     <div className="normas-fijas" data-terms-fixed>
@@ -89,7 +90,7 @@ function NuminiaFixed({
         className="normas-enlace"
         data-metric="panel-terms-numinia"
       >
-        {fill(ui.fixed.link, { version: LEGAL_DOC_VERSION.terms })}
+        {fill(ui.fixed.link, { version: termsVersion })}
       </a>
     </div>
   );
@@ -441,10 +442,13 @@ export function PanelNormas({
   org,
   ui,
   locale,
+  termsVersion,
 }: {
   readonly org: string;
   readonly ui: PanelTermsMessages;
   readonly locale: SupportedLocale;
+  /** The version of Numinia's Terms in force: given by the page, not imported here (see PanelPage). */
+  readonly termsVersion: string;
 }) {
   const [read, setRead] = useState<Read>({ at: 'loading' });
   const [page, setPage] = useState<TermsPage | null>(null);
@@ -473,7 +477,7 @@ export function PanelNormas({
       </h2>
       <p className="saldo-nota">{ui.lead}</p>
 
-      <NuminiaFixed ui={ui} locale={locale} />
+      <NuminiaFixed ui={ui} locale={locale} termsVersion={termsVersion} />
 
       {read.at === 'loading' && (
         <p className="saldo-estado" role="status">

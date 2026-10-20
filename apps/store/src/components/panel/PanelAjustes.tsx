@@ -40,6 +40,7 @@ function Settings({
   panel,
   ui,
   terms,
+  termsVersion,
   locale,
 }: {
   readonly org: string;
@@ -48,6 +49,7 @@ function Settings({
   readonly panel: PanelContext;
   readonly ui: PanelSettingsMessages;
   readonly terms: PanelTermsMessages;
+  readonly termsVersion: string;
   readonly locale: SupportedLocale;
 }) {
   const { update } = panel;
@@ -254,7 +256,7 @@ function Settings({
         </div>
       </section>
 
-      <PanelNormas org={org} ui={terms} locale={locale} />
+      <PanelNormas org={org} ui={terms} locale={locale} termsVersion={termsVersion} />
 
       <p className="saldo-nota" role="status" data-settings-status={saving}>
         {saving === 'saving' && ui.saving}
@@ -270,6 +272,7 @@ export function PanelAjustes({
   words,
   ui,
   terms,
+  termsVersion,
   signIn,
   saldoHref,
 }: {
@@ -277,6 +280,7 @@ export function PanelAjustes({
   readonly words: PanelMessages;
   readonly ui: PanelSettingsMessages;
   readonly terms: PanelTermsMessages;
+  readonly termsVersion: string;
   readonly signIn: string;
   readonly saldoHref: string;
 }) {
@@ -290,6 +294,7 @@ export function PanelAjustes({
           panel={panel}
           ui={ui}
           terms={terms}
+          termsVersion={termsVersion}
           locale={locale}
         />
       )}

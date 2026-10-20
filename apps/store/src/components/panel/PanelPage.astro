@@ -20,6 +20,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PANEL_UI } from '../../i18n/panel';
 import { PANEL_SETTINGS_UI } from '../../i18n/panel-settings';
 import { PANEL_TERMS_UI } from '../../i18n/panel-terms';
+import { LEGAL_DOC_VERSION } from '../../lib/legal';
 import { MUNDOS_UI } from '../../i18n/mundos';
 import { PEOPLE_UI } from '../../i18n/panel-people';
 import { GENTE_UI } from '../../i18n/panel-gente';
@@ -170,6 +171,7 @@ const communities = face === 'members' ? await communityOfAccount(REGISTER) : {}
         words={words}
         ui={PANEL_SETTINGS_UI[locale]}
         terms={PANEL_TERMS_UI[locale]}
+        termsVersion={LEGAL_DOC_VERSION.terms}
         signIn={signIn}
         saldoHref={saldoHref}
       />
