@@ -25,8 +25,10 @@
 
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
+import type { SupportedLocale } from '@numinia/domain';
 import type { SaldoMessages } from '../../i18n/saldo';
 import { fill, formatEuros, readResult, vueltaParams } from '../../lib/accounts';
+import { paidBalanceHref, worldsWizardHref } from '../../lib/topup-return';
 import { LunaEspera } from '../chrome/LunaEspera';
 import coins from '../../../../../packages/ui/src/icons/coins.svg?raw';
 
@@ -57,7 +59,7 @@ const GRACIA_STARS = Array.from({ length: 24 }, (_, i) => ({
 type State =
   | { readonly at: 'checking' }
   | { readonly at: 'signed-out' }
-  | { readonly at: 'paid'; readonly balanceCents: number }
+  | { readonly at: 'paid'; readonly balanceCents: number; readonly accountId: string | null }
   | { readonly at: 'processing' }
   | { readonly at: 'cancelled' }
   | { readonly at: 'unknown' };
@@ -104,7 +106,12 @@ async function confirm(sessionId: string): Promise<State> {
     const result = response.ok ? readResult(json) : null;
     if (result === null || !result.ok) return { at: 'unknown' };
     if (result['state'] === 'paid') {
-      return { at: 'paid', balanceCents: Number(result['balanceCents']) };
+      const account = result['accountId'];
+      return {
+        at: 'paid',
+        balanceCents: Number(result['balanceCents']),
+        accountId: typeof account === 'string' ? account : null,
+      };
     }
     return result['state'] === 'expired' ? { at: 'cancelled' } : { at: 'processing' };
   } catch {
@@ -125,6 +132,10 @@ export function SaldoVuelta({
   readonly signIn: string;
 }) {
   const [state, setState] = useState<State>({ at: 'checking' });
+  // QA 2026-10-20: a team top-up goes back to that organization, not to the personal balance.
+  const account = state.at === 'paid' ? state.accountId : null;
+  const backHref = paidBalanceHref(lang as SupportedLocale, account, saldoHref);
+  const forTeam = backHref !== saldoHref;
 
   useEffect(() => {
     let stopped = false;
@@ -165,10 +176,10 @@ export function SaldoVuelta({
   useEffect(() => {
     if (state.at !== 'paid') return;
     const timer = setTimeout(() => {
-      window.location.assign(saldoHref);
+      window.location.assign(backHref);
     }, GRACIA_REDIRECT_MS);
     return () => clearTimeout(timer);
-  }, [state.at, saldoHref]);
+  }, [state.at, backHref]);
 
   if (state.at === 'signed-out') {
     return (
@@ -241,9 +252,19 @@ export function SaldoVuelta({
         </>
       )}
       {state.at === 'unknown' && <p className="saldo-nota">{ui.vuelta.unknown}</p>}
-      <div>
-        <a className="btn btn-fantasma" href={saldoHref} data-metric="saldo-vuelta-back">
-          {ui.vuelta.back}
+      <div className="saldo-vuelta-pasos">
+        {forTeam && (
+          <a
+            className="btn btn-primario"
+            href={worldsWizardHref(lang as SupportedLocale)}
+            data-metric="saldo-vuelta-world"
+            data-saldo-vuelta-world
+          >
+            {ui.vuelta.backWorld}
+          </a>
+        )}
+        <a className="btn btn-fantasma" href={backHref} data-metric="saldo-vuelta-back">
+          {forTeam ? ui.vuelta.backOrg : ui.vuelta.back}
         </a>
       </div>
     </div>

@@ -38,6 +38,7 @@ import {
   type TopupKey,
 } from '../../lib/accounts';
 import { PIECES, pieceHref } from '../../lib/panel';
+import { fromSearch, worldsWizardHref } from '../../lib/topup-return';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { Kpis, MembersLink, Movements, Rules, Usage, type TopupState } from './SaldoSections';
 
@@ -97,6 +98,9 @@ export function SaldoPanel({
   readonly organization?: string | undefined;
 }) {
   const [phase, setPhase] = useState<Phase>({ at: 'loading' });
+  // Sent here from the new-world wizard (?desde=mundos): read after the first paint.
+  const [fromWorlds, setFromWorlds] = useState(false);
+  useEffect(() => setFromWorlds(fromSearch(window.location.search) === 'worlds'), []);
   const [current, setCurrent] = useState<string | null>(organization ?? null);
   const [range, setRange] = useState<SpendRange>('30d');
   const [sheet, setSheet] = useState<Sheet>({ at: 'loading' });
@@ -310,6 +314,19 @@ export function SaldoPanel({
 
   return (
     <div className="saldo-panel" data-saldo-panel>
+      {organization !== undefined && fromWorlds && (
+        // QA 2026-10-20: sent here from creating a world, the way back is one press away.
+        <p className="saldo-volver">
+          <a
+            className="btn btn-primario"
+            href={worldsWizardHref(locale)}
+            data-metric="saldo-back-to-world"
+            data-saldo-back-to-world
+          >
+            {ui.vuelta.backWorld}
+          </a>
+        </p>
+      )}
       {organization === undefined && (
         <div className="saldo-cuentas">
           <div className="saldo-elige">

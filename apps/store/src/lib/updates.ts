@@ -26,6 +26,24 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.157.0',
+    date: '2026-10-20 21:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'After topping up the balance of an organization you come back to that organization’s balance, not to your personal one, and next to it there is a «Back to creating the world» button that opens the new-world window again. Before, you landed in your personal wallet with no way back to where you were.',
+      },
+      {
+        type: 'FIX',
+        text: 'A world that is still starting no longer says «not answering»: its card says «creating» (or «starting») for up to five minutes while it wakes up, and only then admits it is not answering. When the world answers, its card now has a plain «Enter» button instead of just an icon.',
+      },
+      {
+        type: 'NEW',
+        text: 'The cards (and the new-world window) now say which engine version each world runs, in words — «Numinia Engine · 7e7876f 2026-10-20» for the newest build — instead of a bare code.',
+      },
+    ],
+  },
+  {
     version: 'v0.156.0',
     date: '2026-10-20 18:45',
     entries: [

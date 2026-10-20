@@ -19,7 +19,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { ORG_CHOICE_WORDS } from '../../../i18n/org-choices';
 import { readStatement } from '../../../lib/accounts';
-import { localeHref } from '../../../lib/app-nav';
+import { wizardTopupHref } from '../../../lib/topup-return';
 import { copyFileUrl, formatBytes, validReason } from '../../../lib/fleet';
 import { accountOf, type OrgChoice } from '../../../lib/org-choices';
 import { hasBalanceToPowerOn } from '../../../lib/world-power';
@@ -32,7 +32,7 @@ import {
   draftToOrder,
   emptyDraft,
   engineOf,
-  engineTag,
+  engineVersion,
   fill,
   inHouseZone,
   joinDomain,
@@ -741,7 +741,9 @@ export function NewWorldDialog({
                       >
                         <span>{ENGINE_NAMES[engine]}</span>
                         <span className="pista mono">
-                          {image === null ? room.wizard.engineNoRelease : buildTag(image)}
+                          {image === null
+                            ? room.wizard.engineNoRelease
+                            : engineVersion(image, release)}
                         </span>
                       </button>
                     );
@@ -805,7 +807,7 @@ export function NewWorldDialog({
                       <div>
                         <dt className="etiqueta">{room.fields.build}</dt>
                         <dd className="mono" title={order.image}>
-                          {engineTag(order.image)}
+                          {engineVersion(order.image, release)}
                         </dd>
                       </div>
                       <div>
@@ -894,9 +896,7 @@ export function NewWorldDialog({
                       <p className="fallo" role="alert" data-balance-blocked>
                         {fill(room.wizard.balanceBlocked, { org: orgChoice.label })}{' '}
                         <a
-                          href={`${localeHref(locale, '/panel/saldo/')}?org=${encodeURIComponent(
-                            balance.accountId,
-                          )}`}
+                          href={wizardTopupHref(locale, balance.accountId)}
                           data-metric="worlds-wizard-topup"
                         >
                           {room.wizard.topUpLink}

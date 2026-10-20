@@ -994,6 +994,52 @@ export function listedRows(rows: readonly WorldRow[]): WorldRow[] {
   return rows.filter((row) => row.phase !== 'deleting');
 }
 
+/** The phases after which a world still needs a moment to answer: it is booting, not broken. */
+const SETTLING_PHASES: readonly DoorPhase[] = ['creating', 'starting', 'updating'];
+
+/** What the room remembers, per world, of a boot it saw begin: the phase it saw, and when (ms). */
+export type Settling = Readonly<
+  Record<string, { readonly phase: DoorPhase; readonly since: number }>
+>;
+
+/** How long a world that does not answer yet is shown as booting before it is called «not answering». */
+export const SETTLE_MS = 5 * 60_000;
+
+/**
+ * QA 2026-10-20 (a new world «P2»): the machine calls a world `running` as
+ * soon as its container is up, but the world answers its `/status` a while
+ * later, so its card said «Not answering» with no word of progress. The room
+ * remembers each world it saw creating, starting or updating, and keeps it
+ * «booting» until it answers or `SETTLE_MS` has passed. A world seen settled
+ * (answering, or stopped) is forgotten.
+ */
+export function settleMemory(rows: readonly WorldRow[], memory: Settling, now: number): Settling {
+  const next: Record<string, { phase: DoorPhase; since: number }> = {};
+  for (const row of rows) {
+    const before = memory[row.id];
+    if (row.phase !== null && row.status === 'changing' && SETTLING_PHASES.includes(row.phase)) {
+      next[row.id] = { phase: row.phase, since: before?.since ?? now };
+    } else if (
+      before !== undefined &&
+      row.status === 'unreachable' &&
+      now - before.since < SETTLE_MS
+    ) {
+      next[row.id] = before;
+    }
+  }
+  return next;
+}
+
+/** The rows as the room shows them: a world still booting is `changing`, with the phase it was seen in. */
+export function applySettling(rows: readonly WorldRow[], memory: Settling): WorldRow[] {
+  return rows.map((row) => {
+    const seenBooting = memory[row.id];
+    return seenBooting !== undefined && row.status === 'unreachable'
+      ? { ...row, status: 'changing', phase: seenBooting.phase }
+      : row;
+  });
+}
+
 /**
  * Card t_a856c570 (2026-10-18): the house's own name for a world overrides
  * its card's or its own page's title, wherever the room shows it — the
@@ -1143,6 +1189,18 @@ export function buildTag(image: string): string {
  */
 export function engineTag(image: string): string {
   return `${ENGINE_NAMES[engineOf(image) ?? 'numinia-hyperfy2']} · ${buildTag(image)}`;
+}
+
+/**
+ * What a person reads as the engine's version: for the newest published
+ * build, the engine's own build string with its date (`Numinia Engine ·
+ * 7e7876f 2026-10-20`); for any other build, the short tag.
+ */
+export function engineVersion(image: string, release: EngineRelease | null): string {
+  if (release !== null && image === release.image) {
+    return `${ENGINE_NAMES['numinia-engine']} · ${release.build}`;
+  }
+  return engineTag(image);
 }
 
 /** Seconds awake → a short span: `45 min`, `3 h`, `2 d 4 h`. */
