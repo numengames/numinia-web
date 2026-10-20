@@ -36,12 +36,36 @@ import plugsConnected from '../../../../../packages/ui/src/icons/plugs-connected
 import plus from '../../../../../packages/ui/src/icons/plus.svg?raw';
 import sparkle from '../../../../../packages/ui/src/icons/sparkle.svg?raw';
 import trash from '../../../../../packages/ui/src/icons/trash.svg?raw';
+import arrowRight from '../../../../../packages/ui/src/icons/arrow-right.svg?raw';
+import caretLeft from '../../../../../packages/ui/src/icons/caret-left.svg?raw';
+import check from '../../../../../packages/ui/src/icons/check.svg?raw';
+import cloud from '../../../../../packages/ui/src/icons/cloud.svg?raw';
+import copy from '../../../../../packages/ui/src/icons/copy.svg?raw';
+import desktop from '../../../../../packages/ui/src/icons/desktop.svg?raw';
+import ear from '../../../../../packages/ui/src/icons/ear.svg?raw';
+import lockKey from '../../../../../packages/ui/src/icons/lock-key.svg?raw';
+import prohibit from '../../../../../packages/ui/src/icons/prohibit.svg?raw';
+import question from '../../../../../packages/ui/src/icons/question.svg?raw';
+import terminalWindow from '../../../../../packages/ui/src/icons/terminal-window.svg?raw';
+import warning from '../../../../../packages/ui/src/icons/warning.svg?raw';
 import type { PieceIcon } from '../../lib/panel';
 
 const GLYPHS: Readonly<
   Record<
     | PieceIcon
     | 'caret-down'
+    | 'arrow-right'
+    | 'caret-left'
+    | 'check'
+    | 'cloud'
+    | 'copy'
+    | 'desktop'
+    | 'ear'
+    | 'lock-key'
+    | 'prohibit'
+    | 'question'
+    | 'terminal-window'
+    | 'warning'
     | 'crane-tower'
     | 'moon'
     | 'squares-four'
@@ -90,6 +114,18 @@ const GLYPHS: Readonly<
   plus: plus,
   sparkle: sparkle,
   trash: trash,
+  'arrow-right': arrowRight,
+  'caret-left': caretLeft,
+  check: check,
+  cloud: cloud,
+  copy: copy,
+  desktop: desktop,
+  ear: ear,
+  'lock-key': lockKey,
+  prohibit: prohibit,
+  question: question,
+  'terminal-window': terminalWindow,
+  warning: warning,
 };
 
 export function PanelGlyph({

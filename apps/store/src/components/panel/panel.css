@@ -1507,6 +1507,603 @@
 .agentes-renovar {
   margin-top: var(--s2);
 }
+/* «Conectar una IA», the guide: the three ways and the questions, the tiles,
+   then three numbered steps. A wide dialog whose body scrolls under a fixed
+   head and foot; on a phone every grid is one column. */
+.agentes-conectar-dialogo {
+  width: min(62rem, calc(100% - 2rem));
+}
+.agentes-conectar-dialogo[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.agentes-conectar-dialogo .mundo-ia-cabeza {
+  display: grid;
+  gap: var(--s1);
+  flex: none;
+}
+.agentes-conectar-dialogo .mundo-ia-cabeza h2:focus {
+  outline: none;
+}
+.agentes-conectar-dialogo .mundo-ia-cabeza p {
+  margin: 0;
+  color: var(--texto-2);
+}
+.agentes-conectar-dialogo .mundo-ia-cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+  gap: var(--s5);
+}
+.agentes-conectar-dialogo .mundo-ia-pie {
+  flex: none;
+}
+.agentes-conectar-dialogo .mundo-ia-cuerpo h3,
+.agentes-conectar-dialogo .mundo-ia-cuerpo h3 {
+  font-weight: 600;
+}
+.agentes-guia-volver {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  color: var(--texto-2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.agentes-guia-volver:hover {
+  color: var(--verdemar);
+}
+
+/* The three ways */
+.agentes-guia-maneras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s3);
+}
+.agentes-guia-manera {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+}
+.agentes-guia-manera[data-recommended='true'] {
+  border-color: var(--turquesa);
+  box-shadow: 0 0 0 1px var(--turquesa);
+}
+.agentes-guia-banda {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 84px;
+  background: color-mix(in srgb, var(--ambar) 22%, var(--superficie));
+}
+.agentes-guia-manera[data-recommended='true'] .agentes-guia-banda {
+  background: color-mix(in srgb, var(--verdemar) 32%, var(--superficie));
+}
+.agentes-guia-manera[data-way='key'] .agentes-guia-banda {
+  background: color-mix(in srgb, var(--texto-3) 24%, var(--superficie));
+}
+.agentes-guia-num {
+  position: absolute;
+  top: var(--s2);
+  left: var(--s3);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--texto-2);
+}
+.agentes-guia-burbuja {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  color: #14110f;
+  background: #fdf6ee;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgb(255 255 255 / 0.25);
+}
+.agentes-guia-cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s4);
+}
+.agentes-guia-cuerpo h3 {
+  font-size: 1.125rem;
+  line-height: 1.25;
+}
+.agentes-guia-cuerpo dl {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+}
+.agentes-guia-cuerpo dl > div {
+  display: grid;
+  gap: var(--s1);
+}
+.agentes-guia-cuerpo dt {
+  margin: 0;
+}
+.agentes-guia-cuerpo dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--texto);
+}
+.agentes-guia-cuerpo .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: auto;
+  width: 100%;
+  justify-content: center;
+}
+.agentes-guia-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 var(--s3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--interactivo-fondo);
+  border-radius: 999px;
+}
+
+/* The questions */
+.agentes-guia-faq {
+  display: grid;
+  gap: var(--s2);
+}
+.agentes-guia-faq-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s1);
+}
+.agentes-guia-faq-titulo h3 {
+  font-size: 1.125rem;
+}
+.agentes-guia-faq details {
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+}
+.agentes-guia-faq summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 48px;
+  padding: var(--s2) var(--s4);
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.agentes-guia-faq summary::-webkit-details-marker {
+  display: none;
+}
+.agentes-guia-faq summary > span:first-of-type {
+  color: var(--turquesa);
+}
+.agentes-guia-faq summary > span:nth-of-type(2) {
+  flex: 1;
+  min-width: 0;
+}
+.agentes-guia-car {
+  display: inline-flex;
+  transition: transform 0.15s var(--ciclo);
+}
+.agentes-guia-faq details[open] .agentes-guia-car {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .agentes-guia-car {
+    transition: none;
+  }
+}
+.agentes-guia-faq details > p {
+  margin: 0;
+  padding: 0 var(--s4) var(--s4) calc(var(--s4) + 18px + var(--s3));
+  line-height: 1.5;
+  color: var(--texto-2);
+}
+.agentes-guia-faq details > p strong {
+  color: var(--texto);
+}
+.agentes-guia-pie {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+/* The tiles */
+.agentes-guia-fichas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agentes-guia-ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding: var(--s4);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+  cursor: pointer;
+}
+.agentes-guia-ficha:hover {
+  border-color: var(--verdemar);
+}
+.agentes-guia-ficha-nombre {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.agentes-guia-ficha-texto {
+  color: var(--texto-2);
+}
+.agentes-guia-ficha .agentes-guia-chip {
+  color: var(--texto);
+  background: color-mix(in srgb, var(--ambar) 28%, var(--superficie));
+}
+
+/* The steps */
+.agentes-guia-pasos-marco {
+  display: grid;
+  gap: var(--s4);
+  min-width: 0;
+}
+.agentes-guia-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+.agentes-guia-pestana {
+  min-height: 44px;
+  padding: 0 var(--s4);
+  font: inherit;
+  color: var(--texto);
+  background: transparent;
+  border: 1px solid var(--linea-f);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.agentes-guia-pestana[aria-pressed='true'] {
+  color: #fff;
+  background: var(--interactivo-fondo);
+  border-color: var(--interactivo-fondo);
+}
+.agentes-guia-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin: 0;
+  padding: var(--s3) var(--s4);
+  background: color-mix(in srgb, var(--ambar) 16%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--ambar) 45%, var(--linea-f));
+  border-radius: var(--radio-marco);
+}
+.agentes-guia-pasos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: var(--s5);
+  align-items: start;
+}
+.agentes-guia-pasos ol {
+  display: grid;
+  gap: var(--s5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.agentes-guia-pasos li {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--s4);
+  position: relative;
+}
+.agentes-guia-pasos li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 44px;
+  bottom: calc(-1 * var(--s5) - 4px);
+  left: 19px;
+  width: 2px;
+  background: var(--linea-f);
+}
+.agentes-guia-paso-num {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--interactivo-fondo);
+  border-radius: 50%;
+}
+.agentes-guia-paso-cuerpo {
+  display: grid;
+  gap: var(--s3);
+  justify-items: start;
+  min-width: 0;
+}
+.agentes-guia-paso-cuerpo h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.3;
+}
+.agentes-guia-paso-cuerpo p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--texto-2);
+}
+.agentes-guia-paso-cuerpo p strong {
+  color: var(--texto);
+}
+.agentes-guia-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.agentes-guia-direccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+}
+.agentes-guia-direccion > code {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.agentes-guia-direccion .btn,
+.agentes-guia-linea .btn,
+.agentes-guia-terminal .btn,
+.agentes-guia-paso-cuerpo > .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.agentes-guia-linea,
+.agentes-guia-terminal {
+  display: grid;
+  gap: var(--s2);
+  justify-items: start;
+  width: 100%;
+  min-width: 0;
+}
+.agentes-guia-linea pre,
+.agentes-guia-terminal pre {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* Break between words, never inside an option: «--auth oauth» stays whole. */
+  overflow-wrap: normal;
+  white-space: pre-wrap;
+}
+.agentes-guia-terminal[open] > * + * {
+  margin-top: var(--s2);
+}
+.agentes-guia-terminal > summary {
+  margin-top: 0;
+}
+.agentes-guia-terminal summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  color: var(--turquesa);
+  cursor: pointer;
+}
+.agentes-guia-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--s3);
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+}
+.agentes-guia-nota > span:first-child {
+  flex: none;
+  margin-top: 2px;
+}
+.agentes-guia-lado {
+  display: grid;
+  gap: var(--s3);
+  min-width: 0;
+}
+.agentes-guia-despues,
+.agentes-guia-lado-nota {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s4);
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+}
+.agentes-guia-despues h3,
+.agentes-guia-despues p,
+.agentes-guia-lado-nota p {
+  margin: 0;
+  line-height: 1.5;
+}
+.agentes-guia-lado-nota {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+.agentes-guia-lado-nota .btn {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.agentes-guia-muestra {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+}
+.agentes-guia-muestra figcaption {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+.agentes-guia-muestra-dibujo {
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s3);
+  background: var(--superficie);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-marco);
+  font-size: 0.75rem;
+}
+.agentes-guia-muestra-barras {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: var(--s1);
+}
+.agentes-guia-muestra-barras span {
+  height: 4px;
+  background: var(--turquesa);
+  border-radius: 2px;
+}
+.agentes-guia-muestra-barras span:last-child {
+  background: var(--linea-f);
+}
+.agentes-guia-muestra-campo {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  color: var(--texto-2);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.agentes-guia-muestra-boton {
+  justify-self: end;
+  padding: var(--s1) var(--s3);
+  font-weight: 600;
+  color: #fff;
+  background: var(--interactivo-fondo);
+  border-radius: var(--radio-control);
+}
+
+@media (max-width: 860px) {
+  .agentes-guia-maneras {
+    grid-template-columns: 1fr;
+  }
+  .agentes-guia-fichas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .agentes-guia-pasos {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .agentes-conectar-dialogo {
+    width: calc(100% - 1rem);
+  }
+  .agentes-conectar-dialogo .mundo-ia-cabeza,
+  .agentes-conectar-dialogo .mundo-ia-cuerpo {
+    padding-inline: var(--s3);
+  }
+  .agentes-guia-fichas {
+    grid-template-columns: 1fr;
+  }
+  .agentes-guia-pasos li {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: var(--s3);
+  }
+  .agentes-guia-paso-num {
+    width: 32px;
+    height: 32px;
+  }
+  .agentes-guia-pasos li:not(:last-child)::before {
+    top: 36px;
+    left: 15px;
+  }
+  .agentes-guia-cuerpo .btn,
+  .agentes-guia-pestana {
+    width: 100%;
+  }
+}
+.agentes-opcion {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  padding: var(--s3);
+  border: 1px solid var(--borde, currentColor);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.agentes-opcion[data-selected='true'] {
+  outline: 2px solid var(--acento, currentColor);
+}
+.agentes-opcion-cuerpo {
+  display: grid;
+  gap: 0.25rem;
+}
+.agentes-opcion-nombre {
+  font-weight: 600;
+}
+.agentes-token-linea {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.agentes-token-dialogo .mundo-ia-linea {
+  display: grid;
+  gap: var(--s2);
+}
+.agentes-token,
+.agentes-conexion {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: 0.375rem;
+  background: var(--fondo-suave, rgb(127 127 127 / 0.12));
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  user-select: all;
+}
+.agentes-conexion code {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  border-radius: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.agentes-renovar {
+  margin-top: var(--s2);
+}
 /* «Conecta tu IA» (paso 2): the relay's address, a line per app, the token way. */
 .agentes-conectar {
   display: flex;
@@ -2008,15 +2605,6 @@
   font-size: 1.44rem;
   font-weight: 400;
 }
-.agentes-conectar-dialogo .agentes-conectar {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.agentes-conectar-dialogo .agentes-conectar-titulo {
-  display: none;
-}
-
 @media (max-width: 640px) {
   .panel-titulo[data-con-accion] {
     display: flex;

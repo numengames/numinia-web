@@ -50,6 +50,7 @@ export function InviteDialog({
   view,
   existing,
   failureText,
+  startVia = 'token',
   onClose,
   onAdd,
 }: {
@@ -59,11 +60,13 @@ export function InviteDialog({
   readonly view: Pick<DeskAgents, 'assignableRoles'>;
   readonly existing: readonly DeskAgent[];
   readonly failureText: (failure: Failure) => string;
+  /** The way the dialog opens on (the connect guide's button says which). */
+  readonly startVia?: 'token' | 'key';
   readonly onClose: () => void;
   readonly onAdd: (draft: Draft) => Promise<Failure | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const [via, setVia] = useState<'token' | 'key'>('token');
+  const [via, setVia] = useState<'token' | 'key'>(startVia);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [name, setName] = useState('');
   const [ability, setAbility] = useState<Ability>('talk');

@@ -64,6 +64,7 @@ import {
   type Failure,
 } from '../../lib/panel-agentes';
 import { LunaEspera } from '../chrome/LunaEspera';
+import { GUIDE } from '../../i18n/agentes-guia';
 import { ConnectDialog } from './AgentConnect';
 import { AgentMenu } from './AgentMenu';
 import { InviteDialog, type Draft } from './AgentInvite';
@@ -521,7 +522,7 @@ function Agentes({
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [inviting, setInviting] = useState(false);
+  const [inviting, setInviting] = useState<'token' | 'key' | null>(null);
   /** The secret just made, held only in this page's memory until «Ya lo he copiado». */
   const [issued, setIssued] = useState<{
     readonly agent: { readonly id: string; readonly name: string };
@@ -617,7 +618,7 @@ function Agentes({
     if (!result.ok) return result.failure;
     setSheet({ at: 'ready', view: result.view });
     setNotice({ tone: 'status', text: agentes.saved });
-    setInviting(false);
+    setInviting(null);
     if (result.token !== null) {
       setIssued({ agent: { id: draft.id, name: draft.name }, token: result.token });
     }
@@ -791,19 +792,21 @@ function Agentes({
       {connecting && view !== null && (
         <ConnectDialog
           words={agentes}
+          guide={GUIDE[locale]}
           canInvite={view.mayCreate}
           onClose={() => setConnecting(false)}
-          onAdvanced={() => setInviting(true)}
+          onInvite={setInviting}
         />
       )}
-      {inviting && view !== null && (
+      {inviting !== null && view !== null && (
         <InviteDialog
           world={world}
           words={agentes}
           view={view}
           existing={view.agents}
           failureText={textOf}
-          onClose={() => setInviting(false)}
+          startVia={inviting}
+          onClose={() => setInviting(null)}
           onAdd={add}
         />
       )}
