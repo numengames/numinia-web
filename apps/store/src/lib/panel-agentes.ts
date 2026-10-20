@@ -383,6 +383,71 @@ export const disconnectable = (agent: DeskAgent): boolean =>
   agent.tokenPrefix !== undefined &&
   connectionOf(agent)?.kind === 'url';
 
+/**
+ * Which app an AI came from, as its card's chip says it: Claude, ChatGPT or
+ * Hermes (by the host it connected from), the panel's code, a key, or — for an
+ * app Numinia does not know — the host itself.
+ */
+export type AgentClient =
+  | { readonly kind: 'claude' | 'chatgpt' | 'hermes' | 'panel' | 'key' }
+  | { readonly kind: 'other'; readonly host: string };
+
+/** `host` is the host itself or a subdomain of `domain`. */
+const underDomain = (host: string, domain: string): boolean =>
+  host === domain || host.endsWith(`.${domain}`);
+
+/** The app behind an `mcp:<host>` connection: the well-known hosts by name, any other by itself. */
+function clientOfHost(host: string): AgentClient {
+  if (
+    underDomain(host, 'claude.ai') ||
+    underDomain(host, 'claude.com') ||
+    host.includes('anthropic')
+  ) {
+    return { kind: 'claude' };
+  }
+  if (underDomain(host, 'chatgpt.com') || host.includes('openai')) return { kind: 'chatgpt' };
+  if (
+    host.includes('nousresearch') ||
+    host.includes('hermes') ||
+    host === '127.0.0.1' ||
+    underDomain(host, 'localhost')
+  ) {
+    return { kind: 'hermes' };
+  }
+  return { kind: 'other', host };
+}
+
+/**
+ * Where an AI came from, from its `via` (what the till wrote when it was
+ * made): `mcp:<host>` is an app, `panel` is a code made in the panel, and no
+ * `via` is an AI that existed before it — a code if it holds a token, else a
+ * key (the ways older than `via`).
+ */
+export function clientOf(agent: Pick<DeskAgent, 'via' | 'auth'>): AgentClient {
+  if (agent.via === 'panel') return { kind: 'panel' };
+  const host = VIA_URL.exec(agent.via ?? '')?.[1];
+  if (host !== undefined) return clientOfHost(host);
+  return { kind: agent.auth === 'token' ? 'panel' : 'key' };
+}
+
+/** What the card's ⋯ menu offers. */
+export type AgentAction = 'disconnect' | 'renew' | 'remove';
+
+/**
+ * The actions this AI's menu has, only those that apply to it: «Desconectar»
+ * for one connected from an app, «Renovar código» for one made with a code
+ * from the panel, «Quitar» for any — all of them only to someone who may edit
+ * it, so the others get no menu.
+ */
+export function actionsOf(agent: DeskAgent): readonly AgentAction[] {
+  if (!agent.mayEdit) return [];
+  const actions: AgentAction[] = [];
+  if (disconnectable(agent)) actions.push('disconnect');
+  if (agent.auth === 'token' && connectionOf(agent)?.kind !== 'url') actions.push('renew');
+  actions.push('remove');
+  return actions;
+}
+
 /** The row's token line parts: the prefix as shown (`ntk_ab12cd34…`) and the day it was made. */
 export function tokenLine(
   agent: DeskAgent,

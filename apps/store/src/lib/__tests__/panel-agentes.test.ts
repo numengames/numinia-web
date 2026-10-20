@@ -9,7 +9,9 @@ import { describe, expect, it } from 'vitest';
 import type { DeskAgent, DeskAgents } from '../accounts';
 import { AGENT_PROBLEMS, isAgentId } from '../agents';
 import {
+  actionsOf,
   changeBody,
+  clientOf,
   chipsOf,
   connectCommand,
   connectionOf,
@@ -473,5 +475,54 @@ describe('the URL way (paso 2)', () => {
       id: 'claude',
       revokeToken: true,
     });
+  });
+
+  it('names the app an AI came from, by the host it connected from', () => {
+    const kind = (via: string | undefined, auth: 'key' | 'token' = 'token') =>
+      clientOf({ via, auth });
+    for (const host of ['claude.ai', 'www.claude.ai', 'claude.com', 'api.anthropic.com']) {
+      expect(kind(`mcp:${host}`)).toEqual({ kind: 'claude' });
+    }
+    for (const host of ['chatgpt.com', 'chat.chatgpt.com', 'platform.openai.com']) {
+      expect(kind(`mcp:${host}`)).toEqual({ kind: 'chatgpt' });
+    }
+    for (const host of [
+      'hermes-agent.nousresearch.com',
+      'nousresearch.com',
+      'my-hermes.example.org',
+      '127.0.0.1',
+      'localhost',
+      'app.localhost',
+    ]) {
+      expect(kind(`mcp:${host}`)).toEqual({ kind: 'hermes' });
+    }
+    // A look-alike is not the app; an app Numinia does not know is its host.
+    expect(kind('mcp:notclaude.ai')).toEqual({ kind: 'other', host: 'notclaude.ai' });
+    expect(kind('mcp:mistral.example')).toEqual({ kind: 'other', host: 'mistral.example' });
+    expect(kind('mcp:10.0.0.7')).toEqual({ kind: 'other', host: '10.0.0.7' });
+  });
+
+  it('says «panel» for a code made in the panel, and «key» for what has no `via`', () => {
+    expect(clientOf({ via: 'panel', auth: 'token' })).toEqual({ kind: 'panel' });
+    // Before `via` existed: a token AI is a code from the panel, a key AI is a key.
+    expect(clientOf({ via: undefined, auth: 'key' })).toEqual({ kind: 'key' });
+    expect(clientOf({ via: undefined, auth: 'token' })).toEqual({ kind: 'panel' });
+    // A `via` it cannot read says what the AI holds, never a made-up host.
+    expect(clientOf({ via: 'url:claude.ai', auth: 'key' })).toEqual({ kind: 'key' });
+    expect(clientOf({ via: 'mcp:a b', auth: 'token' })).toEqual({ kind: 'panel' });
+  });
+
+  it('offers in the menu only what applies: «Desconectar» from an app, «Renovar» a panel code, «Quitar» always', () => {
+    expect(actionsOf(byUrl())).toEqual(['disconnect', 'remove']);
+    expect(actionsOf(byUrl({ via: 'panel' }))).toEqual(['renew', 'remove']);
+    expect(actionsOf(byUrl({ via: undefined }))).toEqual(['renew', 'remove']);
+    expect(actionsOf(agent())).toEqual(['remove']);
+    // Disconnected already (its token is gone): nothing to disconnect or renew from an app.
+    expect(actionsOf(byUrl({ tokenPrefix: undefined, tokenCreatedAt: undefined }))).toEqual([
+      'remove',
+    ]);
+    // Who may not edit it has no menu at all.
+    expect(actionsOf(byUrl({ mayEdit: false }))).toEqual([]);
+    expect(actionsOf(agent({ mayEdit: false }))).toEqual([]);
   });
 });
