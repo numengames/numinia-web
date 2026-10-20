@@ -645,7 +645,7 @@ function Agentes({
 
   return (
     <div className="agentes" data-agentes={sheet.at === 'failed' ? sheet.failure.kind : sheet.at}>
-      {titleSlot !== null && createPortal(connectButton, titleSlot)}
+      {titleSlot !== null && view !== null && createPortal(connectButton, titleSlot)}
       {view !== null && !view.mayCreate && (
         <p className="saldo-nota" data-agentes-no-right>
           {agentes.noRight}

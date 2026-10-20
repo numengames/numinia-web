@@ -1782,7 +1782,7 @@
   font: 500 0.72rem var(--mono);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--texto-3);
+  color: var(--texto-2);
 }
 .agentes-fila-estado > legend {
   float: left;
@@ -1978,7 +1978,7 @@
   margin: 0;
   padding: 8px 10px 4px;
   font-size: 0.75rem;
-  color: var(--texto-3);
+  color: var(--texto-2);
   border-top: 1px solid var(--linea);
 }
 

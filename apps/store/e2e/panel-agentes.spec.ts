@@ -15,7 +15,7 @@
  */
 
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const ME = '0x42e6000000000000000000000000000000ca26';
 const LUCIA = `0x${'a1'.repeat(20)}`;
@@ -275,6 +275,19 @@ async function shot(page: Page, name: string): Promise<void> {
 }
 
 const row = (page: Page, id: string) => page.locator(`[data-agent="${id}"]`);
+
+/** «Conectar una IA» → «Con un token o una clave (avanzado)»: the invitation dialog. */
+async function openInvite(page: Page): Promise<void> {
+  await page.locator('[data-metric="panel-agentes-connect"]').click();
+  await page.locator('[data-agentes-advanced]').click();
+  await expect(page.locator('dialog[open][data-agentes-dialog]')).toBeVisible();
+}
+
+/** An action of the card's ⋯ menu: open the menu, choose it. */
+async function menuAction(card: Locator, action: 'disconnect' | 'renew' | 'remove'): Promise<void> {
+  await card.locator('[data-metric="panel-agentes-menu"]').click();
+  await card.locator(`[data-agent-action="${action}"]`).click();
+}
 const list = (page: Page) => page.locator('[data-agentes-list]');
 const NOTICE = 'Los cambios llegan a los mundos en unos 10 minutos como máximo.';
 
@@ -297,9 +310,11 @@ test.describe('Agentes — the list', () => {
   test('says there is none yet, and the notice is still there', async ({ page }) => {
     await stage(page, { agents: [] });
     await open(page);
-    await expect(page.locator('[data-agentes-none]')).toContainText('Aún no hay ninguna IA');
+    await expect(page.locator('[data-agentes-none]')).toContainText(
+      'Todavía no hay ninguna IA en tu comunidad',
+    );
     await expect(page.locator('[data-agentes-notice]')).toHaveText(NOTICE);
-    await expect(page.locator('[data-metric="panel-agentes-invite"]')).toBeEnabled();
+    await expect(page.locator('[data-metric="panel-agentes-connect"]')).toBeEnabled();
     await shot(page, '01-empty-desktop');
   });
 
@@ -320,13 +335,14 @@ test.describe('Agentes — the list', () => {
     await expect(hermes.locator('[data-agent-status-line]')).toContainText('Puede entrar');
     await expect(hermes.locator('[data-agent-responsible]')).toHaveText('Responde por ella: Pablo');
     await expect(hermes.getByRole('radio', { name: /Activa/ })).toBeChecked();
-    await expect(hermes.locator('[data-agent-state-option="activa"]')).toContainText(
-      'Atenta y dispuesta a interactuar',
+    await expect(hermes.locator('[data-agent-state-hint]')).toHaveText(
+      'Atenta y dispuesta a interactuar.',
     );
     await expect(hermes.locator('[data-agent-dot]')).toBeVisible();
     await expect(hermes.locator('[data-agent-moon]')).toBeVisible();
-    await expect(hermes.locator('[data-agent-state-option="dormida"]')).toContainText(
-      'Baja atención: mira y escucha, solo habla si la llaman, no construye',
+    await expect(hermes.locator('[data-agent-state-option="dormida"]')).toContainText('Dormida');
+    await expect(row(page, 'luna').locator('[data-agent-state-hint]')).toHaveText(
+      'Mira y escucha; solo habla si la llaman y no construye.',
     );
 
     const luna = row(page, 'luna');
@@ -344,7 +360,7 @@ test.describe('Agentes — the list', () => {
     await expect(orphan.locator('[data-agent-read-only]')).toBeVisible();
     await expect(orphan.locator('[data-metric="panel-agentes-switch"]')).toBeDisabled();
     await expect(orphan.getByRole('radio').first()).toBeDisabled();
-    await expect(orphan.locator('[data-metric="panel-agentes-remove"]')).toHaveCount(0);
+    await expect(orphan.locator('[data-metric="panel-agentes-menu"]')).toHaveCount(0);
     await expect(orphan.locator('[data-metric="panel-agentes-role-take"]')).toHaveCount(0);
     await shot(page, '02-list-desktop');
   });
@@ -439,7 +455,7 @@ test.describe('Agentes — changing one', () => {
     const stand = await stage(page);
     await open(page);
     const luna = row(page, 'luna');
-    await luna.getByRole('button', { name: 'Quitar a Luna' }).click();
+    await menuAction(luna, 'remove');
     await expect(luna.getByRole('group', { name: 'Quitar a Luna' })).toContainText(
       '¿Quitar a Luna? Ya no podrá entrar en ningún mundo de la comunidad.',
     );
@@ -447,7 +463,7 @@ test.describe('Agentes — changing one', () => {
     await luna.getByRole('button', { name: 'No, dejarla' }).click();
     await expect(row(page, 'luna')).toHaveCount(1);
     expect(stand.calls.filter((call) => call.method === 'DELETE')).toHaveLength(0);
-    await luna.getByRole('button', { name: 'Quitar a Luna' }).click();
+    await menuAction(luna, 'remove');
     await luna.getByRole('button', { name: 'Sí, quitar' }).click();
     await expect(row(page, 'luna')).toHaveCount(0);
     expect(stand.calls.filter((call) => call.method === 'DELETE')).toHaveLength(1);
@@ -460,7 +476,7 @@ test.describe('Agentes — the invitation', () => {
   }) => {
     const stand = await stage(page);
     await open(page);
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await expect(dialog).toBeVisible();
     // The token is the default; the key way is the advanced one.
@@ -515,7 +531,7 @@ test.describe('Agentes — the invitation', () => {
   test('«También construir» asks for roles among the ones that can be given', async ({ page }) => {
     const stand = await stage(page);
     await open(page);
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
     await dialog.getByLabel('¿Cómo se llama?').fill('Obrera');
@@ -544,7 +560,7 @@ test.describe('Agentes — the invitation', () => {
   }) => {
     const stand = await stage(page);
     await open(page);
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
     await dialog.getByLabel('¿Cómo se llama?').fill('Repetida');
@@ -572,7 +588,7 @@ test.describe('Agentes — the invitation', () => {
   test('is disabled, with the reason, for whoever may not manage roles', async ({ page }) => {
     await stage(page, { mayCreate: false });
     await open(page);
-    await expect(page.locator('[data-metric="panel-agentes-invite"]')).toBeDisabled();
+    await expect(page.locator('[data-metric="panel-agentes-connect"]')).toBeDisabled();
     await expect(page.locator('[data-agentes-no-right]')).toContainText(
       'hace falta poder gestionar los roles',
     );
@@ -722,13 +738,13 @@ for (const [name, size] of [
     }) => {
       await stage(page);
       await open(page);
-      await row(page, 'luna').getByRole('button', { name: 'Quitar a Luna' }).click();
+      await menuAction(row(page, 'luna'), 'remove');
       await shot(page, `32-confirm-${tag}`);
       let results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
       await row(page, 'luna').getByRole('button', { name: 'No, dejarla' }).click();
 
-      await page.locator('[data-metric="panel-agentes-invite"]').click();
+      await openInvite(page);
       const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
       await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
       await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
@@ -761,11 +777,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, `40-list-${scheme}`);
       let results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
-      await row(page, 'luna').getByRole('button', { name: 'Quitar a Luna' }).click();
+      await menuAction(row(page, 'luna'), 'remove');
       results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
       await row(page, 'luna').getByRole('button', { name: 'No, dejarla' }).click();
-      await page.locator('[data-metric="panel-agentes-invite"]').click();
+      await openInvite(page);
       const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
       await dialog.getByRole('radio', { name: /Con mi propia llave/ }).check();
       await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
@@ -795,7 +811,7 @@ test.describe('Agentes — the token way', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const stand = await stage(page);
     await open(page);
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await expect(dialog.getByRole('radio', { name: /Con un token/ })).toBeChecked();
     await expect(
@@ -841,7 +857,7 @@ test.describe('Agentes — the token way', () => {
     await expect(page.locator('body')).not.toContainText(TOKEN);
     const line = row(page, 'ariadna').locator('[data-agent-token-line]');
     await expect(line).toHaveText(
-      `Token ntk_${TOKEN.slice(4, 12)}… · creado el 17 de octubre de 2026`,
+      `Código ntk_${TOKEN.slice(4, 12)}… · creado el 17 de octubre de 2026`,
     );
     await shot(page, '03-row-with-prefix-desktop');
   });
@@ -854,7 +870,7 @@ test.describe('Agentes — the token way', () => {
     });
     await page.reload();
     await expect(page.locator('[data-org-panel]')).toHaveAttribute('data-state', 'ready');
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await dialog.getByLabel('¿Cómo se llama?').fill('Ariadna');
     await dialog.getByRole('button', { name: 'Añadir' }).click();
@@ -871,14 +887,14 @@ test.describe('Agentes — the token way', () => {
     const stand = await stage(page, { agents: [...roster(), tokenRow()] });
     await open(page);
     const renewal = row(page, 'ariadna');
-    await expect(row(page, 'hermes').locator('[data-agent-renew]')).toHaveCount(0);
-    await renewal.getByRole('button', { name: 'Renovar el token de Ariadna' }).click();
-    await expect(renewal).toContainText('¿Renovar el token de Ariadna?');
+    await expect(row(page, 'hermes').locator('[data-agent-action="renew"]')).toHaveCount(0);
+    await menuAction(renewal, 'renew');
+    await expect(renewal).toContainText('¿Renovar el código de Ariadna?');
     await shot(page, '04-renew-confirm-desktop');
     await renewal.getByRole('button', { name: 'No, dejarlo' }).click();
     expect(stand.calls.filter((call) => call.method === 'PATCH')).toHaveLength(0);
 
-    await renewal.getByRole('button', { name: 'Renovar el token de Ariadna' }).click();
+    await menuAction(renewal, 'renew');
     await renewal.getByRole('button', { name: 'Sí, renovar' }).click();
     const once = page.getByRole('dialog', { name: 'Copia tu token ahora, no lo volverás a ver' });
     await expect(once.locator('[data-agentes-token]')).toHaveText(TOKEN_NEW);
@@ -902,7 +918,7 @@ test.describe('Agentes — the token way', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stage(page);
     await open(page);
-    await page.locator('[data-metric="panel-agentes-invite"]').click();
+    await openInvite(page);
     const dialog = page.getByRole('dialog', { name: 'Invitar a una IA' });
     await shot(page, '05-choice-step-phone');
     let results = await new AxeBuilder({ page }).analyze();
@@ -931,9 +947,7 @@ test.describe('Agentes — the token way', () => {
       await page.emulateMedia({ colorScheme: scheme });
       await stage(page, { agents: [tokenRow()] });
       await open(page);
-      await row(page, 'ariadna')
-        .getByRole('button', { name: 'Renovar el token de Ariadna' })
-        .click();
+      await menuAction(row(page, 'ariadna'), 'renew');
       let results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
       await row(page, 'ariadna').getByRole('button', { name: 'Sí, renovar' }).click();
@@ -966,7 +980,7 @@ test.describe('Agentes — the token way', () => {
       void invite;
       await stage(page);
       await open(page, path);
-      await page.locator('[data-metric="panel-agentes-invite"]').click();
+      await openInvite(page);
       await page.locator('dialog[open] input[type="text"]').first().fill('Ariadna');
       await page.locator('dialog[open] [data-metric="panel-agentes-invite-add-token"]').click();
       const once = page.getByRole('dialog', { name });

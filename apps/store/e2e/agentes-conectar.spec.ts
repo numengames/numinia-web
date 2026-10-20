@@ -1,10 +1,12 @@
 /**
- * «Agentes» learns the URL way (paso 2 of the remote MCP, W12), in a real
- * browser against the built site: the block «Conecta tu IA» with the relay's
- * one address in the five locales, the line under the title that tells these
- * AIs from Ajustes › «Agente IA», each row saying how its AI was connected
- * (`via`: from the panel, or from an app's host), and «Desconectar» on a row
- * connected from an app, which is the token's existing revoke. As in
+ * «Agentes» and its one button «Conectar una IA», in a real browser against
+ * the built site: the button opens the dialog with «Conecta tu IA» (the relay's
+ * one address) in the five locales, the line under the title that tells these
+ * AIs from Ajustes › «Agente IA», each card's chip saying where its AI came
+ * from (`via`: Claude, ChatGPT, Hermes, the panel's code, a key, or the host),
+ * and the ⋯ menu: «Desconectar» on an AI connected from an app (the token's
+ * existing revoke), «Renovar código» on one made in the panel, «Quitar» on
+ * any, each with its one-line explanation. As in
  * panel-agentes.spec.ts the session and the till's answers are played by the
  * browser (`page.route`), shaped as /api/saldo/agents sends them.
  *
@@ -12,7 +14,7 @@
  */
 
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const ME = '0x42e6000000000000000000000000000000ca26';
 const RELAY = 'https://mcp.numinia.com/mcp';
@@ -43,6 +45,7 @@ interface Agent {
   roleIds: string[];
   assignable: string[];
   mayEdit: boolean;
+  hears?: boolean;
 }
 
 const agent = (extra: Partial<Agent> & Pick<Agent, 'id' | 'name'>): Agent => ({
@@ -64,6 +67,8 @@ const agent = (extra: Partial<Agent> & Pick<Agent, 'id' | 'name'>): Agent => ({
 
 const roster = (): Agent[] => [
   agent({ id: 'claude', name: 'Claude de Pablo', via: 'mcp:claude.ai' }),
+  agent({ id: 'gpt', name: 'GPT de Lucía', via: 'mcp:chatgpt.com' }),
+  agent({ id: 'otra', name: 'Otra IA', via: 'mcp:mistral.example' }),
   agent({ id: 'hermes', name: 'Hermes', via: 'panel' }),
   agent({
     id: 'vieja',
@@ -80,7 +85,11 @@ interface Stand {
   calls: Array<{ method: string; body: unknown }>;
 }
 
-async function stage(page: Page, agents: Agent[] = roster()): Promise<Stand> {
+async function stage(
+  page: Page,
+  agents: Agent[] = roster(),
+  rights: { mayCreate?: boolean } = {},
+): Promise<Stand> {
   const stand: Stand = { agents, calls: [] };
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({ status: 200, json: { address: ME, rank: 'oracle' } }),
@@ -117,8 +126,9 @@ async function stage(page: Page, agents: Agent[] = roster()): Promise<Stand> {
     const body: unknown = method === 'GET' ? null : request.postDataJSON();
     stand.calls.push({ method, body });
     if (method === 'PATCH') {
-      const change = body as { id: string; revokeToken?: true };
+      const change = body as { id: string; revokeToken?: true; hears?: boolean };
       const entry = stand.agents.find((candidate) => candidate.id === change.id);
+      if (entry !== undefined && change.hears !== undefined) entry.hears = change.hears;
       if (entry !== undefined && change.revokeToken === true) {
         // The till's revoke: the token goes, the AI is switched off, `via` stays.
         delete entry.tokenPrefix;
@@ -133,7 +143,7 @@ async function stage(page: Page, agents: Agent[] = roster()): Promise<Stand> {
           ok: true,
           accountId: GAMES.id,
           as: 'owner',
-          mayCreate: true,
+          mayCreate: rights.mayCreate ?? true,
           assignableRoles: [],
           agents: stand.agents,
         },
@@ -156,43 +166,64 @@ async function shot(page: Page, name: string): Promise<void> {
 
 const row = (page: Page, id: string) => page.locator(`[data-agent="${id}"]`);
 const block = (page: Page) => page.locator('[data-agentes-connect-url]');
+const connect = (page: Page) => page.locator('[data-metric="panel-agentes-connect"]');
+const dialog = (page: Page) => page.locator('dialog[data-agentes-connect-dialog]');
+const menuOf = (card: Locator) => card.locator('[data-metric="panel-agentes-menu"]');
 
-test.describe('Agentes — Conecta tu IA', () => {
-  const cases: ReadonlyArray<readonly [string, string, string, string]> = [
-    [
-      '/es/panel/agentes/',
-      'Conecta tu IA',
-      'IAs que traen los miembros',
-      'Conectada desde claude.ai',
-    ],
-    ['/panel/agentes/', 'Connect your AI', 'AIs that members bring', 'Connected from claude.ai'],
-    ['/ja/panel/agentes/', 'AIをつなぐ', 'メンバーが連れてくるAI', 'claude.ai から接続'],
-    ['/ko/panel/agentes/', 'AI 연결하기', '멤버가 데려오는 AI', 'claude.ai에서 연결됨'],
+/** The dialog of the one button. */
+async function openConnect(page: Page): Promise<void> {
+  await connect(page).click();
+  await expect(dialog(page)).toBeVisible();
+}
+
+test.describe('Agentes — Conectar una IA', () => {
+  const cases: ReadonlyArray<readonly [string, string, string, string, string]> = [
+    ['/es/panel/agentes/', 'Conectar una IA', 'Ajustes › Agente IA', 'Desde Claude', 'Con clave'],
+    ['/panel/agentes/', 'Connect an AI', 'Settings › AI agent', 'From Claude', 'With a key'],
+    ['/ja/panel/agentes/', 'AIをつなぐ', '設定 › AIエージェント', 'Claudeから', '鍵で接続'],
+    ['/ko/panel/agentes/', 'AI 연결하기', '설정 › AI 에이전트', 'Claude에서', '키로 연결'],
     [
       '/pt-br/panel/agentes/',
-      'Conecte sua IA',
-      'IAs que os membros trazem',
-      'Conectada de claude.ai',
+      'Conectar uma IA',
+      'Configurações › Agente de IA',
+      'Do Claude',
+      'Com chave',
     ],
   ];
-  for (const [path, title, subtitle, via] of cases) {
-    test(`${path} shows the block, the address and the app's host in its own words`, async ({
+  for (const [path, button, settings, fromClaude, withKey] of cases) {
+    test(`${path} has the one button, the dialog with the address and the chips in its own words`, async ({
       page,
     }) => {
       await stage(page);
       await open(page, path);
-      await expect(block(page).getByRole('heading', { level: 2 })).toHaveText(title);
+      await expect(connect(page)).toHaveText(button);
+      await expect(page.locator('[data-agentes-connect]')).toHaveCount(1);
+      await expect(page.locator('[data-agentes-subtitle]')).toContainText(settings);
+      await expect(row(page, 'claude').locator('[data-agent-via]')).toHaveText(fromClaude);
+      await expect(row(page, 'vieja').locator('[data-agent-via]')).toHaveText(withKey);
+      // The address is not on the list page any more: only in the dialog the button opens.
+      await expect(block(page)).toHaveCount(0);
+      await openConnect(page);
       await expect(block(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
-      await expect(page.locator('[data-agentes-subtitle]')).toContainText(subtitle);
-      await expect(row(page, 'claude').locator('[data-agent-via="url"]')).toHaveText(via);
+      await expect(dialog(page).getByRole('heading', { level: 2 })).toHaveText(button);
     });
   }
+
+  test('the settings line leads to Ajustes, keeping the community', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    await expect(page.locator('[data-agentes-settings-link]')).toHaveAttribute(
+      'href',
+      `/es/panel/ajustes/?org=${GAMES.id}`,
+    );
+  });
 
   test('says the steps for Claude, ChatGPT, Hermes and a client without login, and that it does not hear', async ({
     page,
   }) => {
     await stage(page);
     await open(page);
+    await openConnect(page);
     const steps = block(page);
     await expect(steps.locator('[data-agentes-step="claude"]')).toContainText(
       'añade un conector personalizado',
@@ -215,58 +246,138 @@ test.describe('Agentes — Conecta tu IA', () => {
     await expect(steps.locator('[data-agentes-hear]')).toHaveText(
       'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
     );
-    // The token way stays the panel's default for adding an AI by hand.
-    await expect(page.locator('[data-metric="panel-agentes-invite"]')).toBeEnabled();
   });
 
-  test('copies the address', async ({ page, context }) => {
+  test('copies the address, and «Cerrar» closes the dialog', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await stage(page);
     await open(page);
+    await openConnect(page);
     const copy = block(page).locator('[data-metric="panel-agentes-url-copy"]');
     await copy.click();
     await expect(copy).toHaveText('Copiado');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(RELAY);
+    await dialog(page).locator('[data-metric="panel-agentes-connect-close"]').click();
+    await expect(dialog(page)).toHaveCount(0);
+  });
+
+  test('the token and the key stay reachable from the dialog', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await expect(dialog(page).locator('[data-agentes-advanced]')).toHaveText(
+      'Con un token o una clave (avanzado)',
+    );
+    await dialog(page).locator('[data-agentes-advanced]').click();
+    await expect(dialog(page)).toHaveCount(0);
+    const invite = page.locator('dialog[open][data-agentes-dialog]');
+    await expect(invite).toBeVisible();
+    await expect(invite.getByRole('radio', { name: /Con un token/ })).toBeChecked();
+    await expect(invite.getByRole('radio', { name: /Con mi propia llave/ })).toBeVisible();
+  });
+
+  test('the button is off for whoever may not manage roles, and says why', async ({ page }) => {
+    await stage(page, undefined, { mayCreate: false });
+    await open(page);
+    await expect(connect(page)).toBeDisabled();
+    await expect(page.locator('[data-agentes-no-right]')).toContainText(
+      'hace falta poder gestionar los roles',
+    );
+  });
+
+  test('with no AI, the empty state has one line and the same single button', async ({ page }) => {
+    await stage(page, []);
+    await open(page);
+    const empty = page.locator('[data-agentes-none]');
+    await expect(empty).toContainText('Todavía no hay ninguna IA en tu comunidad');
+    await expect(empty.getByRole('img')).toHaveAccessibleName(
+      'Una IA unida por un cable a un mundo',
+    );
+    await expect(page.locator('[data-agentes-list]')).toHaveCount(0);
+    await expect(connect(page)).toHaveCount(1);
+    await expect(page.locator('[data-agentes-notice]')).toHaveText(
+      'Los cambios llegan a los mundos en unos 10 minutos como máximo.',
+    );
+    await shot(page, '10-empty-desktop');
+    await openConnect(page);
   });
 });
 
-test.describe('Agentes — how each AI is connected', () => {
-  test('a row says the panel or the app’s host; an AI from an app has «Desconectar», not «Renovar»', async ({
+test.describe('Agentes — the chip and the ⋯ menu of each AI', () => {
+  test('each card says where its AI came from', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const chip = (id: string) => row(page, id).locator('[data-agent-via]');
+    await expect(chip('claude')).toHaveText('Desde Claude');
+    await expect(chip('gpt')).toHaveText('Desde ChatGPT');
+    await expect(chip('otra')).toHaveText('Desde mistral.example');
+    await expect(chip('hermes')).toHaveText('Desde el panel (con código)');
+    await expect(chip('vieja')).toHaveText('Con clave');
+    await expect(row(page, 'claude')).toHaveAttribute('data-agent-client', 'claude');
+    await shot(page, '01-cards-desktop');
+  });
+
+  test('the menu offers only what applies, each with its one-line explanation', async ({
     page,
   }) => {
     await stage(page);
     await open(page);
+    const actions = async (id: string) => {
+      const card = row(page, id);
+      await menuOf(card).click();
+      const found = await card
+        .locator('[data-agent-action]')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-agent-action')));
+      await page.keyboard.press('Escape');
+      return found;
+    };
+    expect(await actions('claude')).toEqual(['disconnect', 'remove']);
+    expect(await actions('hermes')).toEqual(['renew', 'remove']);
+    expect(await actions('vieja')).toEqual(['remove']);
+
     const claude = row(page, 'claude');
-    await expect(claude.locator('[data-agent-via]')).toHaveText('Conectada desde claude.ai');
-    await expect(claude.locator('[data-agent-disconnect]')).toBeVisible();
-    await expect(claude.locator('[data-agent-renew]')).toHaveCount(0);
-    await expect(claude.locator('[data-agent-token-line]')).toHaveCount(0);
-
-    const hermes = row(page, 'hermes');
-    await expect(hermes.locator('[data-agent-via]')).toHaveText('Conectada desde el panel');
-    await expect(hermes.locator('[data-agent-disconnect]')).toHaveCount(0);
-    await expect(hermes.locator('[data-agent-renew]')).toBeVisible();
-
-    // An AI made before `via` existed says nothing about it.
-    await expect(row(page, 'vieja').locator('[data-agent-via]')).toHaveCount(0);
-    await shot(page, '01-conecta-tu-ia-desktop');
+    await menuOf(claude).click();
+    await expect(menuOf(claude)).toHaveAttribute('aria-expanded', 'true');
+    await expect(claude.locator('[data-agent-action="disconnect"]')).toContainText(
+      'La apaga y corta su conexión con Claude. Para volver, conéctala otra vez desde Claude.',
+    );
+    await expect(claude.locator('[data-agent-action="remove"]')).toContainText(
+      'La borra de la comunidad. Ya no podrá entrar en ningún mundo.',
+    );
+    await expect(claude.locator('.agentes-menu-pie')).toContainText('pide confirmar');
+    await shot(page, '02-menu-desktop');
+    // The keyboard: the first item has the focus, the arrows move, Escape closes and gives it back.
+    await expect(claude.locator('[data-agent-action="disconnect"]')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(claude.locator('[data-agent-action="remove"]')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(claude.locator('[data-agent-action="disconnect"]')).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(claude.locator('[data-agent-action="remove"]')).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(claude.locator('[data-agent-action="disconnect"]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(claude.locator('[data-agent-menu]')).toHaveCount(0);
+    await expect(menuOf(claude)).toBeFocused();
   });
 
   test('«Desconectar» asks, «No» leaves it, «Sí» calls the token’s revoke', async ({ page }) => {
     const stand = await stage(page);
     await open(page);
     const claude = row(page, 'claude');
-    const button = claude.locator('[data-metric="panel-agentes-disconnect"]');
-    await expect(button).toHaveAccessibleName('Desconectar a Claude de Pablo');
-    await button.click();
-    await expect(claude.locator('[data-agent-disconnect]')).toContainText(
+    await menuOf(claude).click();
+    await claude.locator('[data-agent-action="disconnect"]').click();
+    await expect(claude.locator('[data-agent-menu]')).toHaveCount(0);
+    const ask = claude.locator('[data-agent-confirm="disconnect"]');
+    await expect(ask).toContainText(
       '¿Desconectar a Claude de Pablo? Se apaga y su conexión desde claude.ai deja de valer.',
     );
-    await shot(page, '02-desconectar-pregunta');
-    await claude.locator('[data-metric="panel-agentes-disconnect-no"]').click();
+    await shot(page, '03-desconectar-pregunta');
+    await ask.locator('[data-metric="panel-agentes-disconnect-no"]').click();
     expect(stand.calls.filter((call) => call.method === 'PATCH')).toEqual([]);
 
-    await button.click();
+    await menuOf(claude).click();
+    await claude.locator('[data-agent-action="disconnect"]').click();
     await claude.locator('[data-metric="panel-agentes-disconnect-yes"]').click();
     await expect(claude.locator('[data-agent-url-none]')).toHaveText(
       'Desconectada. Para volver, conéctala otra vez desde claude.ai.',
@@ -277,45 +388,104 @@ test.describe('Agentes — how each AI is connected', () => {
         body: { accountId: GAMES.id, id: 'claude', revokeToken: true },
       },
     ]);
-    await expect(claude.locator('[data-agent-disconnect]')).toHaveCount(0);
+    // Disconnected: nothing left to disconnect; only «Quitar».
+    await menuOf(claude).click();
+    await expect(claude.locator('[data-agent-action]')).toHaveText([/Quitar/]);
     await expect(claude.locator('[data-metric="panel-agentes-switch"]')).toHaveAttribute(
       'aria-checked',
       'false',
     );
   });
 
-  test('who may not edit the AI gets no «Desconectar»', async ({ page }) => {
+  test('who may not edit the AI gets no menu and no controls', async ({ page }) => {
     await stage(page, [
       agent({ id: 'claude', name: 'Claude de Lucía', via: 'mcp:claude.ai', mayEdit: false }),
     ]);
     await open(page);
-    await expect(row(page, 'claude').locator('[data-agent-via]')).toHaveText(
-      'Conectada desde claude.ai',
+    const claude = row(page, 'claude');
+    await expect(claude.locator('[data-agent-via]')).toHaveText('Desde Claude');
+    await expect(menuOf(claude)).toHaveCount(0);
+    await expect(claude.locator('[data-metric="panel-agentes-switch"]')).toBeDisabled();
+    await expect(claude.locator('[data-metric="panel-agentes-hear"]')).toBeDisabled();
+    await expect(claude.getByRole('radio').first()).toBeDisabled();
+    await expect(claude.locator('[data-agent-read-only]')).toBeVisible();
+  });
+
+  test('ESTADO says its hint and OÍR follows its switch', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const claude = row(page, 'claude');
+    await expect(claude.locator('[data-agent-state-hint]')).toHaveText(
+      'Atenta y dispuesta a interactuar.',
     );
-    await expect(row(page, 'claude').locator('[data-agent-disconnect]')).toHaveCount(0);
+    await expect(claude.locator('[data-agent-hear] .saldo-nota')).toHaveText(
+      'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
+    );
+    await claude.locator('[data-metric="panel-agentes-hear"]').click();
+    await expect(claude.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'on');
+    await expect(claude.locator('[data-agent-hear] .saldo-nota')).toHaveText(
+      'Encendido: la IA lee el chat cercano en los mundos donde esté.',
+    );
   });
 });
 
 for (const [name, size] of [
   ['phone 390', { width: 390, height: 844 }],
-  ['desktop', { width: 1280, height: 800 }],
+  ['desktop', { width: 1440, height: 900 }],
 ] as const) {
-  test.describe(`Agentes — Conecta tu IA, ${name}`, () => {
+  const tag = name.startsWith('phone') ? 'phone' : 'desktop';
+  test.describe(`Agentes — Conectar una IA, ${name}`, () => {
     test.use({ viewport: size });
 
-    test('the block, the rows and the confirmation fit and are axe clean', async ({ page }) => {
+    const fits = (page: Page) =>
+      page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+    test('the cards, the menu and the dialog fit and are axe clean', async ({ page }) => {
       await stage(page);
       await open(page);
-      await expect(block(page)).toBeVisible();
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
-      ).toBe(true);
+      await expect(connect(page)).toBeVisible();
+      expect(await fits(page)).toBe(true);
       let results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
-      await row(page, 'claude').locator('[data-metric="panel-agentes-disconnect"]').click();
+      await shot(page, `20-cards-${tag}`);
+
+      const claude = row(page, 'claude');
+      await menuOf(claude).click();
+      await expect(claude.locator('[data-agent-menu]')).toBeVisible();
+      expect(await fits(page)).toBe(true);
+      // The menu is whole on the screen and its last line is reachable.
+      const box = await claude.locator('[data-agent-menu]').boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
+      if (tag === 'phone') expect(box!.y + box!.height).toBeLessThanOrEqual(size.height + 1);
       results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
       expect(results.violations).toEqual([]);
-      if (name.startsWith('phone')) await shot(page, '03-conecta-tu-ia-phone');
+      await shot(page, `21-menu-${tag}`);
+      if (tag === 'phone') {
+        // The veil closes it with a tap outside.
+        await page.mouse.click(10, 10);
+        await expect(claude.locator('[data-agent-menu]')).toHaveCount(0);
+      } else {
+        await page.keyboard.press('Escape');
+      }
+      await row(page, 'claude').scrollIntoViewIfNeeded();
+
+      await openConnect(page);
+      expect(await fits(page)).toBe(true);
+      results = await new AxeBuilder({ page }).analyze();
+      expect(results.violations).toEqual([]);
+      await shot(page, `22-dialog-${tag}`);
+    });
+
+    test('the empty state fits and is axe clean', async ({ page }) => {
+      await stage(page, []);
+      await open(page);
+      await expect(page.locator('[data-agentes-none]')).toBeVisible();
+      expect(await fits(page)).toBe(true);
+      const results = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(results.violations).toEqual([]);
+      await shot(page, `23-empty-${tag}`);
     });
   });
 }
