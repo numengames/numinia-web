@@ -12,7 +12,6 @@ import { NOT_IMPLEMENTED, type AccountDesk, type Asker, type DeskAgents } from '
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
 import { MAX_AGENTS, hashToken } from '../agents';
 import {
-  URL_AIS_HEAR,
   connectAi,
   decideConnection,
   isLoopback,
@@ -36,6 +35,7 @@ const agent = (over: Partial<ViewAgent> = {}): ViewAgent => ({
   name: 'Claude de Ana',
   auth: 'token',
   enabled: true,
+  hears: false,
   roleIds: [],
   assignable: [BUILD],
   mayEdit: true,
@@ -69,13 +69,30 @@ const again = (agentId = 'claude-de-ana', accountId = ORG): ConnectRequest['ai']
 const refusalOf = (plan: ReturnType<typeof decideConnection>): string | null =>
   plan.ok ? null : plan.refusal;
 
-describe('the house switch for hearing', () => {
-  it('keeps `oir` off for AIs connected by URL until the lawyers validate it', () => {
-    expect(URL_AIS_HEAR).toBe(false);
+describe('hearing nearby chat, a switch per AI', () => {
+  it('is off unless the person ticked it, on a new AI and on a reconnection', () => {
     const created = decideConnection(view(), request());
     const renewed = decideConnection(view({ agents: [agent()] }), request({ ai: again() }));
     expect(created.ok && created.hear).toBe(false);
     expect(renewed.ok && renewed.hear).toBe(false);
+    expect(renewed.ok && renewed.action === 'renew' && renewed.setHear).toBeNull();
+    const ticked = decideConnection(view(), request({ hear: true }));
+    expect(ticked.ok && ticked.hear).toBe(true);
+  });
+
+  it('changes a reconnected AI’s hearing only when the consent differs from its row', () => {
+    const on = decideConnection(view({ agents: [agent()] }), request({ ai: again(), hear: true }));
+    expect(on.ok && on.action === 'renew' && on.setHear).toBe(true);
+    const off = decideConnection(
+      view({ agents: [agent({ hears: true })] }),
+      request({ ai: again() }),
+    );
+    expect(off.ok && off.action === 'renew' && off.setHear).toBe(false);
+    const same = decideConnection(
+      view({ agents: [agent({ hears: true })] }),
+      request({ ai: again(), hear: true }),
+    );
+    expect(same.ok && same.action === 'renew' && same.setHear).toBeNull();
   });
 });
 
@@ -199,6 +216,7 @@ describe('the same AI again', () => {
       name: 'Claude de Ana',
       switchOn: false,
       giveRole: null,
+      setHear: null,
       via: 'mcp:claude.ai',
       app: 'Claude',
       loopback: false,
@@ -316,6 +334,7 @@ const TILL_VIEW: DeskAgents = {
       via: 'mcp:claude.ai',
       enabled: true,
       state: 'activa',
+      hears: false,
       status: 'activa',
       responsible: ME,
       createdAt: '2026-10-19T18:00:00.000Z',
@@ -476,6 +495,7 @@ describe('connecting: who asks and what the till answers', () => {
         tokenPrefix: FRESH.prefix,
         roleIds: [],
         via: 'mcp:claude.ai',
+        hears: false,
       },
       false,
     );
@@ -606,6 +626,57 @@ describe('connecting: who asks and what the till answers', () => {
       false,
     );
     expect(methods.giveAgentRole).toHaveBeenCalledWith(ME, ORG, 'claude-de-ana', BUILD, false);
+  });
+
+  it('sets the hearing of a reconnected AI when the consent differs, between the switch and the role', async () => {
+    const { desk, methods } = stub();
+    await connectAi(desk, asker(), request({ ai: again(), hear: true }), quiet, draw);
+    expect(methods.changeAgent).toHaveBeenCalledWith(
+      ME,
+      ORG,
+      'claude-de-ana',
+      { hears: true },
+      false,
+    );
+    const done = await connectAi(desk, asker(), request({ ai: again() }), quiet, draw);
+    expect(done.ok && done.hear).toBe(false);
+    // Unticked on an AI that does not hear: nothing to change.
+    expect(methods.changeAgent).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates a new AI hearing when the person ticked it', async () => {
+    const { desk, methods } = stub();
+    const done = await connectAi(
+      desk,
+      asker(),
+      request({ ai: { kind: 'new', name: 'Otra' }, hear: true }),
+      quiet,
+      draw,
+    );
+    expect(done.ok && done.hear).toBe(true);
+    expect(methods.createAgent).toHaveBeenCalledWith(
+      ME,
+      ORG,
+      expect.objectContaining({ hears: true }),
+      false,
+    );
+  });
+
+  it('stops when the till refuses the hearing of a reconnected AI', async () => {
+    const { desk } = stub({ changeAgent: vi.fn(async () => NO) });
+    expect(
+      await connectAi(desk, asker(), request({ ai: again(), hear: true }), quiet, draw),
+    ).toEqual({ ok: false, refusal: 'till', problems: NO.problems });
+  });
+
+  it('through the fixture desk: ticked on creation it hears, reconnecting unticked turns it off', async () => {
+    const desk = fixture();
+    const first = await connectAi(desk, asker(), request({ hear: true }), quiet);
+    if (!first.ok) throw new Error('not connected');
+    expect(first.agents.agents.find((held) => held.id === 'claude-de-ana')?.hears).toBe(true);
+    const again1 = await connectAi(desk, asker(), request({ ai: again() }), quiet);
+    if (!again1.ok) throw new Error('not reconnected');
+    expect(again1.agents.agents.find((held) => held.id === 'claude-de-ana')?.hears).toBe(false);
   });
 
   it('stops at the first write of a renewal the till refuses', async () => {

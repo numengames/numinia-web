@@ -13,7 +13,7 @@
  * the body of the pass request and in the lines that connect Hermes
  * (`AGENTE_ORG`, `AGENTE_ID`, lib/panel-agentes.ts `connectCommand`).
  *
- * The answer is `{ org, id, name, enabled, state, eligible, permissions,
+ * The answer is `{ org, id, name, enabled, state, hear, eligible, permissions,
  * worlds }`: what the till says of the agent and the worlds of ITS
  * organization the fleet serves, each with the WebSocket address its bridge
  * connects to (`wss://<host>/ws`, the engine's door behind Caddy). An AI
@@ -104,6 +104,8 @@ export const agentPassShape = z.union([
       tokenHash: z.string().optional(),
       enabled: z.boolean(),
       state: z.enum(['activa', 'dormida']),
+      // A till that has not run migration 0023 yet says nothing: it hears nothing.
+      hears: z.boolean().default(false),
     }),
     eligible: z.boolean(),
     permissions: z.array(z.string()),
@@ -189,6 +191,8 @@ export interface AgentMe {
   readonly name: string;
   readonly enabled: boolean;
   readonly state: 'activa' | 'dormida';
+  /** Whether its community lets it hear nearby chat (`oir`); off unless someone who may edit it turned it on. */
+  readonly hear: boolean;
   /** The person who answers for it is still in the organization and may manage roles (ORG-011). */
   readonly eligible: boolean;
   readonly permissions: readonly string[];
@@ -306,6 +310,7 @@ async function answerFor(
     name: held.agent.name,
     enabled: held.agent.enabled,
     state: held.agent.state,
+    hear: held.agent.hears,
     eligible: held.eligible,
     permissions: held.permissions,
     worlds,

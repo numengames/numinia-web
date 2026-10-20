@@ -347,6 +347,8 @@ export interface DeskAgent {
   via?: string | undefined;
   enabled: boolean;
   state: AgentState;
+  /** Whether it may hear what is said nearby in the worlds: off by default, set by whoever may edit it (migration 0023). */
+  hears: boolean;
   status: AgentStatus;
   responsible: string;
   responsibleName?: string | undefined;
@@ -375,6 +377,8 @@ export interface DeskKeyDraft {
   roleIds?: string[] | undefined;
   /** How it is connected: `panel` (the till's default when absent) or `mcp:<client host>`. */
   via?: string | undefined;
+  /** Whether it may hear nearby chat (off when absent). */
+  hears?: boolean | undefined;
 }
 
 /** A new AI by token: numinia.com draws the token and sends the till only its SHA-256 and prefix. */
@@ -387,6 +391,8 @@ export interface DeskTokenDraft {
   roleIds?: string[] | undefined;
   /** How it is connected: `panel` (the till's default when absent) or `mcp:<client host>` from the MCP relay. */
   via?: string | undefined;
+  /** Whether it may hear nearby chat (off when absent). */
+  hears?: boolean | undefined;
 }
 
 export type DeskAgentDraft = DeskKeyDraft | DeskTokenDraft;
@@ -394,6 +400,7 @@ export type DeskAgentDraft = DeskKeyDraft | DeskTokenDraft;
 export interface DeskAgentChange {
   enabled?: boolean | undefined;
   state?: AgentState | undefined;
+  hears?: boolean | undefined;
 }
 
 /** What an agent's pass is made of (asked with no wallet, by the pass route, before it signs). */
@@ -409,6 +416,7 @@ export interface DeskAgentPass {
     tokenHash?: string | undefined;
     enabled: boolean;
     state: AgentState;
+    hears: boolean;
   };
   eligible: boolean;
   permissions: string[];

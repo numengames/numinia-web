@@ -1475,6 +1475,16 @@
   gap: var(--s2);
   font-size: 0.875rem;
 }
+.agentes-oir {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+.agentes-oir-texto {
+  display: grid;
+  gap: 2px;
+  font-size: 0.875rem;
+}
 .agentes-linea {
   margin: 0;
 }

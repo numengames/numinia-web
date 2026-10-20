@@ -29,6 +29,9 @@ export interface AgentesMessages {
   readonly on: string;
   readonly off: string;
   readonly stateLabel: string;
+  /** The switch on each AI's card: whether it may read the nearby chat of the worlds it is in. */
+  readonly hearLabel: string;
+  readonly hearHint: string;
   readonly states: Readonly<Record<AgentState, { readonly name: string; readonly hint: string }>>;
   /** What the till says the next pass will be, in plain words. */
   readonly status: Readonly<Record<AgentStatus, string>>;
@@ -105,7 +108,7 @@ export interface AgentesMessages {
     /** Clients that cannot sign in: the address with the panel's token; the Hermes line follows. */
     readonly noLogin: string;
     readonly copyCommand: string;
-    /** An AI connected by URL does not hear nearby chat for now. */
+    /** Where an AI's hearing is switched: on its card, off until someone who may edit it turns it on. */
     readonly hear: string;
   };
   /** How a row's AI is connected (`via`), and «Desconectar» for one connected from an app. */
@@ -145,6 +148,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Encendida',
     off: 'Apagada',
     stateLabel: 'Estado',
+    hearLabel: 'Oír lo que se habla cerca',
+    hearHint: 'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
     states: {
       activa: { name: 'Activa', hint: 'Atenta y dispuesta a interactuar' },
       dormida: {
@@ -237,7 +242,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noLogin:
         'Sin inicio de sesión (scripts, Hermes en un servidor): la misma dirección con el token de «Invitar a una IA» › «Con un token». En Hermes, esta línea te pide el token:',
       copyCommand: 'Copiar la línea',
-      hear: 'Por ahora la IA no oye lo que se habla cerca de ella en los mundos.',
+      hear: 'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
     },
     connection: {
       panel: 'Conectada desde el panel',
@@ -269,6 +274,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'On',
     off: 'Off',
     stateLabel: 'State',
+    hearLabel: 'Hear what is said nearby',
+    hearHint: 'If you turn it on, the AI reads the nearby chat in the worlds it is in.',
     states: {
       activa: { name: 'Active', hint: 'Attentive and ready to interact' },
       dormida: {
@@ -361,7 +368,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noLogin:
         'Without signing in (scripts, Hermes on a server): the same address with the token from «Invite an AI» › «With a token». In Hermes, this line asks you for the token:',
       copyCommand: 'Copy the line',
-      hear: 'For now the AI does not hear what is said near it in the worlds.',
+      hear: 'For an AI to hear what is said nearby, turn on «Hear what is said nearby» on its card: it starts off.',
     },
     connection: {
       panel: 'Connected from the panel',
@@ -393,6 +400,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'オン',
     off: 'オフ',
     stateLabel: '状態',
+    hearLabel: '近くの会話を聞く',
+    hearHint: 'オンにすると、AIは自分がいる世界で近くのチャットを読みます。',
     states: {
       activa: { name: 'アクティブ', hint: '注意深く、やり取りに応じられる状態' },
       dormida: {
@@ -484,7 +493,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noLogin:
         'ログインなし（スクリプト、サーバー上のHermes）：同じアドレスに「AIを招待」›「トークンで接続」のトークンを使います。Hermesでは、この1行がトークンを尋ねます：',
       copyCommand: 'この行をコピー',
-      hear: '今のところ、AIは世界の中で近くの会話を聞きません。',
+      hear: 'AIに近くの会話を聞かせるには、そのカードで「近くの会話を聞く」をオンにします。最初はオフです。',
     },
     connection: {
       panel: 'パネルから接続',
@@ -516,6 +525,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: '켜짐',
     off: '꺼짐',
     stateLabel: '상태',
+    hearLabel: '근처 대화 듣기',
+    hearHint: '켜면 AI가 있는 세계에서 근처 채팅을 읽습니다.',
     states: {
       activa: { name: '활동', hint: '주의를 기울이며 상호작용할 준비가 된 상태' },
       dormida: {
@@ -607,7 +618,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noLogin:
         '로그인 없이 (스크립트, 서버의 Hermes): 같은 주소에 «AI 초대» › «토큰으로»의 토큰을 씁니다. Hermes에서는 이 한 줄이 토큰을 묻습니다:',
       copyCommand: '이 줄 복사',
-      hear: '지금은 AI가 세계에서 근처의 대화를 듣지 않습니다.',
+      hear: 'AI가 근처 대화를 듣게 하려면 AI 카드에서 「근처 대화 듣기」를 켜세요. 처음에는 꺼져 있습니다.',
     },
     connection: {
       panel: '패널에서 연결됨',
@@ -639,6 +650,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Ligada',
     off: 'Desligada',
     stateLabel: 'Estado',
+    hearLabel: 'Ouvir o que se fala por perto',
+    hearHint: 'Se você ligar, a IA lê o chat próximo nos mundos em que estiver.',
     states: {
       activa: { name: 'Ativa', hint: 'Atenta e disposta a interagir' },
       dormida: {
@@ -731,7 +744,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noLogin:
         'Sem login (scripts, Hermes num servidor): o mesmo endereço com o token de «Convidar uma IA» › «Com um token». No Hermes, esta linha pede o token:',
       copyCommand: 'Copiar a linha',
-      hear: 'Por enquanto a IA não ouve o que se fala perto dela nos mundos.',
+      hear: 'Para uma IA ouvir o que se fala por perto, ligue «Ouvir o que se fala por perto» no cartão dela: ela começa desligada.',
     },
     connection: {
       panel: 'Conectada pelo painel',

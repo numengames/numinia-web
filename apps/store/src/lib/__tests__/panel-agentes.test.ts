@@ -41,6 +41,7 @@ const agent = (extra: Partial<DeskAgent> = {}): DeskAgent => ({
   publicKey: `ed25519:${'A'.repeat(43)}`,
   enabled: true,
   state: 'activa',
+  hears: false,
   status: 'activa',
   responsible: WALLET,
   createdAt: '2026-10-17T09:00:00.000Z',
@@ -332,6 +333,18 @@ describe('the token way', () => {
     ]) {
       expect(readAgents({ agents: view([agent(bad as never)]) })).toBeNull();
     }
+  });
+
+  it('reads whether an AI hears nearby chat; a desk that says nothing means it does not', () => {
+    const { hears: _hears, ...old } = agent();
+    expect(readAgents({ agents: view([old as never]) })?.agents[0]?.hears).toBe(false);
+    expect(readAgents({ agents: view([agent({ hears: true })]) })?.agents[0]?.hears).toBe(true);
+    expect(readAgents({ agents: view([agent({ hears: 'yes' } as never)]) })).toBeNull();
+    expect(changeBody('acc_t_1', 'hermes', { hears: true })).toEqual({
+      accountId: 'acc_t_1',
+      id: 'hermes',
+      hears: true,
+    });
   });
 
   it('reads the secret of an answer only when it is shaped like a token', () => {

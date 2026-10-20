@@ -44,16 +44,20 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         text: 'Your community’s AI can ask who it is. With its access token it learns its name, whether it is on or off, whether it is awake or asleep, and the worlds of its own community with the address to connect to each one. An AI that is off is told so and gets no worlds; a wrong, missing or revoked token gets the same refusal whatever the reason, and the requests count against the same limit per AI as its passes. It is the first step to connecting an AI to Numinia by pasting one address.',
       },
       {
+        type: 'NEW',
+        text: 'Each AI of your community now has its own switch, «Hear what is said nearby», on its card in the «Agents» panel. It is off by default, and whoever may edit that AI can turn it on or off; the AI reads the nearby chat only in the worlds where it is. An AI that asks for its details at numinia.com now also learns whether it may hear. When you connect an app like Claude, the same choice is an unticked box on the screen.',
+      },
+      {
         type: 'UPD',
         text: 'How an AI was connected is now written down. When your community’s AI is connected, its row and the community’s log say whether it came through the panel or from an app like Claude or ChatGPT, and from where — never its token. Asking for an AI’s worlds is now a single question to the till instead of one per world, and the till can find an AI from its token alone, ready for apps that only hold a token.',
       },
       {
         type: 'UPD',
-        text: 'numinia.com now knows what to do when you connect an app like Claude to your community. It makes a new AI for your community, or, when you pick one you connected before, gives it a new token so the old connection stops and switches it back on — it never makes a second copy. It uses the same rules as the «Agents» panel: you need the permission to manage roles, a community keeps at most 20 AIs, you can only give a role you are allowed to give, and an AI of another community cannot be picked. Any app may ask, and the screen always shows where it will go back to. An AI connected this way does not hear what is said nearby yet: that waits for our lawyers.',
+        text: 'numinia.com now knows what to do when you connect an app like Claude to your community. It makes a new AI for your community, or, when you pick one you connected before, gives it a new token so the old connection stops and switches it back on — it never makes a second copy. It uses the same rules as the «Agents» panel: you need the permission to manage roles, a community keeps at most 20 AIs, you can only give a role you are allowed to give, and an AI of another community cannot be picked. Any app may ask, and the screen always shows where it will go back to. Whether an AI hears what is said nearby is now a switch of its own, off until someone who may edit it turns it on.',
       },
       {
         type: 'NEW',
-        text: 'The screen where you allow an app to connect an AI to your community, in all five languages. It says which app asks and, in large letters, the computer it will go back to, with a warning when that is your own computer. You pick the community, whether it is a new AI with its name or one you connected before, and its role — only the roles you can give. It says plainly what the AI can and cannot do, and that for now it will not hear what is said near it. «Allow» connects it; «Cancel» connects nothing. If you are not signed in, you sign in and come back to the same screen. A link that is missing something shows no form at all.',
+        text: 'The screen where you allow an app to connect an AI to your community, in all five languages. It says which app asks and, in large letters, the computer it will go back to, with a warning when that is your own computer. You pick the community, whether it is a new AI with its name or one you connected before, and its role — only the roles you can give. It says plainly what the AI can and cannot do, and an unticked box, «Let it hear what is said nearby», for you to tick if you want. «Allow» connects it; «Cancel» connects nothing. If you are not signed in, you sign in and come back to the same screen. A link that is missing something shows no form at all.',
       },
       {
         type: 'NEW',

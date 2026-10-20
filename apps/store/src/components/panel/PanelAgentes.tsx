@@ -275,6 +275,7 @@ function Row({
   const editable = agent.mayEdit && !busy;
   const nameId = `${uid}-n`;
   const onoffId = `${uid}-o`;
+  const hearId = `${uid}-h`;
 
   return (
     <li className="agentes-fila" data-agent={agent.id} data-agent-status={agent.status}>
@@ -329,6 +330,26 @@ function Row({
       <p className="saldo-nota agentes-linea" data-agent-responsible>
         {fill(words.responsible, { name: responsibleOf(agent) })}
       </p>
+
+      <div className="agentes-oir" data-agent-hear={agent.hears ? 'on' : 'off'}>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={agent.hears}
+          aria-labelledby={`${nameId} ${hearId}`}
+          aria-describedby={`${hearId}-hint`}
+          className="gente-interruptor"
+          disabled={!editable}
+          onClick={() => onChange({ hears: !agent.hears })}
+          data-metric="panel-agentes-hear"
+        />
+        <span className="agentes-oir-texto">
+          <span id={hearId}>{words.hearLabel}</span>
+          <span className="saldo-nota" id={`${hearId}-hint`}>
+            {words.hearHint}
+          </span>
+        </span>
+      </div>
 
       <fieldset className="agentes-estado" disabled={!editable} data-agent-state={agent.state}>
         <legend>{words.stateLabel}</legend>

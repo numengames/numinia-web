@@ -114,6 +114,7 @@ describe('GET /api/agents/me with its token', () => {
       name: 'Hermes',
       enabled: true,
       state: 'activa',
+      hear: false,
       eligible: true,
       permissions: expect.arrayContaining(['enter-worlds']),
       worlds: [
@@ -128,6 +129,16 @@ describe('GET /api/agents/me with its token', () => {
     }
     expect(context.reads()).toBe(1);
     expect(JSON.stringify(quiet.mock.calls)).not.toContain(token);
+  });
+
+  it('says whether the AI may hear nearby chat: off until someone who may edit it turns it on', async () => {
+    const desk = fresh();
+    const token = await made(desk);
+    const off = await json(await answerAgentMe(desk, me(bearer(token)), contextOf(), quiet));
+    expect(off['hear']).toBe(false);
+    await desk.changeAgent(ME, NUMEN, 'hermes-1', { hears: true });
+    const on = await json(await answerAgentMe(desk, me(bearer(token)), contextOf(), quiet));
+    expect(on['hear']).toBe(true);
   });
 
   it('tells an AI that sleeps its state and still lists its worlds', async () => {

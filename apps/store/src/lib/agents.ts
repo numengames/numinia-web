@@ -30,7 +30,7 @@ export const AGENT_PROBLEMS = {
   agentId:
     'agentId must be 1 to 32 characters: lower case letters, digits and hyphens, none at either end',
   draft:
-    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds and via',
+    'agent must be an object with id, name, either publicKey or auth «token» with tokenHash and tokenPrefix, and, if any, roleIds, via and hears',
   tokenHash: 'tokenHash must be the SHA-256 of a token: 64 lower case hexadecimal characters',
   tokenPrefix: 'tokenPrefix must be 8 base64url characters',
   via: 'via must be «panel», or «mcp:» and the host the AI’s client returns to (lower case letters, digits, dots and hyphens)',
@@ -38,8 +38,10 @@ export const AGENT_PROBLEMS = {
   name: 'name must be 1 to 40 characters, none of them a control character',
   publicKey: 'publicKey must be ed25519: and 43 base64url characters (a 32-byte key)',
   roleIds: 'roleIds must be a list of at most 10 role ids',
-  change: 'change must be an object with enabled (true or false) and/or state (activa or dormida)',
+  change:
+    'change must be an object with enabled (true or false), state (activa or dormida) and/or hears (true or false)',
   enabled: 'enabled must be true or false',
+  hears: 'hears must be true or false',
   state: 'state must be activa or dormida',
   audience: 'aud must be a world id',
   moment: 't must be a whole number of seconds',

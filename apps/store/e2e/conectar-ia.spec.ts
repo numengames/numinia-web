@@ -224,7 +224,8 @@ test.describe('the consent, signed in', () => {
     await page.goto(consent('/es'));
     await expect(page.locator('[data-consent="ok"]')).toBeVisible();
     await expect(page.locator('[data-consent-form]')).toContainText('Numen Games');
-    await expect(page.locator('[data-consent-hear="off"]')).toHaveText(t.hearOff);
+    await expect(page.locator('[data-consent-hear]')).toContainText(t.hearHint);
+    await expect(page.locator('[data-metric="connect-ai-hear"]')).not.toBeChecked();
     await expect(page.locator('[data-metric="connect-ai-new"]').first()).toBeChecked();
     const name = page.locator('[data-metric="connect-ai-name"]:visible');
     await expect(name).toHaveValue('Claude');

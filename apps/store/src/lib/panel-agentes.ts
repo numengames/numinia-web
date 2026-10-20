@@ -54,7 +54,7 @@ function readAgent(value: unknown): DeskAgent | null {
   if (!isRecord(value)) return null;
   const { id, name, auth, publicKey, enabled, state, status, responsible, responsibleName } = value;
   const { tokenPrefix, tokenCreatedAt, via } = value;
-  const { createdAt, updatedAt, roleIds, assignable, mayEdit } = value;
+  const { createdAt, updatedAt, roleIds, assignable, mayEdit, hears } = value;
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
@@ -64,6 +64,7 @@ function readAgent(value: unknown): DeskAgent | null {
     (tokenCreatedAt !== undefined && typeof tokenCreatedAt !== 'string') ||
     (via !== undefined && typeof via !== 'string') ||
     typeof enabled !== 'boolean' ||
+    (hears !== undefined && typeof hears !== 'boolean') ||
     typeof state !== 'string' ||
     !STATES.includes(state) ||
     typeof status !== 'string' ||
@@ -89,6 +90,8 @@ function readAgent(value: unknown): DeskAgent | null {
     enabled,
     // The closed lists were checked above.
     state: state as AgentState,
+    // A desk that does not say (before migration 0023) hears nothing.
+    hears: hears === true,
     status: status as AgentStatus,
     responsible,
     ...(typeof responsibleName === 'string' ? { responsibleName } : {}),
@@ -192,7 +195,7 @@ export type AgentProblem =
 
 /** Prefixes of the till's field refusals: a name, a key, an id the form should have caught. */
 const FIELD_PROBLEM =
-  /^(agentId|name|publicKey|tokenHash|tokenPrefix|roleIds|roleId|change|enabled|state|agent) /;
+  /^(agentId|name|publicKey|tokenHash|tokenPrefix|roleIds|roleId|change|enabled|state|hears|agent) /;
 
 /**
  * A refusal told apart: one of the agents' own, or the organization's
@@ -276,6 +279,7 @@ export function roleIdsFor(ability: 'talk' | 'build', picked: readonly string[])
 export type Change =
   | { readonly enabled: boolean }
   | { readonly state: AgentState }
+  | { readonly hears: boolean }
   | { readonly giveRole: string }
   | { readonly takeRole: string }
   | { readonly renewToken: true }
