@@ -26,7 +26,7 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.154.0',
+    version: 'v0.155.0',
     date: '2026-10-20 14:30',
     entries: [
       {
@@ -36,7 +36,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     ],
   },
   {
-    version: 'v0.153.0',
+    version: 'v0.154.0',
     date: '2026-10-20 15:30',
     entries: [
       {
@@ -46,12 +46,22 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     ],
   },
   {
-    version: 'v0.152.0',
+    version: 'v0.153.0',
     date: '2026-10-20 15:00',
     entries: [
       {
         type: 'NEW',
         text: 'Your community can now write the rules of its worlds. In «Settings» there is a new section, «Rules of your spaces»: Numinia’s own rules always come first and cannot be removed, and below them whoever holds the administrator role adds, edits and removes the community’s own points (a title, a text, mandatory or optional, rule or data), writes the new version number and publishes it. Data points can never be mandatory. Every published version is kept in a read-only history, and anyone else in the community can read the version in force.',
+      },
+    ],
+  },
+  {
+    version: 'v0.152.0',
+    date: '2026-10-20 16:00',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The «Connect an AI» window now explains itself to someone who has never done it. It starts with the three ways (paste an address and sign in with your account, a code from the panel, or a key of its own), each saying who it is for, what you will do and what will happen, and nine folded questions people ask: what the AI can do, whether it sees your wallet, what it costs, how to switch it off, whether it hears the chat. Then you pick your AI — Claude, ChatGPT, Hermes or another — and get three numbered steps with the address and one «Copy» button. Hermes has a tab for your computer and one for the cloud, and says plainly to add it in its panel, not by asking its chat. The page your AI sends you to when it asks to connect is rebuilt the same way: three steps on top (your AI asks, pick the community and the permission, back to your AI); who asks and the address it goes back to in large type, which no longer breaks in the middle of a name on a phone; two short lists — what it will and will not be able to do; a «Don’t allow» button next to «Allow»; a plain «Sign in» page when you are not signed in; a line saying why, and what to do, when you cannot add an AI to any community; and, after «Allow», «Done: go back to your AI» with what you chose.',
       },
     ],
   },

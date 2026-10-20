@@ -12,11 +12,14 @@ import { NOT_IMPLEMENTED, type AccountDesk, type Asker, type DeskAgents } from '
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
 import { hashToken } from '../agents';
 import {
+  AGENTS_PANEL_PATH,
+  COMMUNITIES_PATH,
   CONSENT_API,
   CONSENT_PATH,
   answerConsent,
   consentChoices,
   consentHref,
+  hostLabels,
   readConsentAsk,
 } from '../conectar-ia-page';
 import { fixtureRelay, vueltaHref, type Relay } from '../relay-handoff';
@@ -88,6 +91,25 @@ describe('the page’s query, fail closed', () => {
     expect(consentHref(ask)).toBe(`${CONSENT_PATH}?app=Claude&host=localhost&req=${REQ}`);
     expect(readConsentAsk(consentHref(ask).slice(CONSENT_PATH.length))).toEqual(ask);
     expect(CONSENT_API).toBe('/api/conectar-ia');
+  });
+});
+
+describe('the machine it goes back to, in pieces that never break inside', () => {
+  it('cuts after each dot and keeps every piece whole', () => {
+    expect(hostLabels('machine-1031.agents.nousresearch.com')).toEqual([
+      'machine-1031.',
+      'agents.',
+      'nousresearch.',
+      'com',
+    ]);
+    expect(hostLabels('localhost')).toEqual(['localhost']);
+    expect(hostLabels('127.0.0.1')).toEqual(['127.', '0.', '0.', '1']);
+    expect(hostLabels('claude.ai').join('')).toBe('claude.ai');
+  });
+
+  it('names where the no-community and Listo pages send people', () => {
+    expect(COMMUNITIES_PATH).toBe('/belong/');
+    expect(AGENTS_PANEL_PATH).toBe('/panel/agentes/');
   });
 });
 

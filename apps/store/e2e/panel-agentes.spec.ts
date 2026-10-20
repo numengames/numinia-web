@@ -276,9 +276,10 @@ async function shot(page: Page, name: string): Promise<void> {
 
 const row = (page: Page, id: string) => page.locator(`[data-agent="${id}"]`);
 
-/** «Conectar una IA» → «Con un token o una clave (avanzado)»: the invitation dialog. */
+/** «Conectar una IA» → «Pedir un código» → «Crear código»: the invitation dialog. */
 async function openInvite(page: Page): Promise<void> {
   await page.locator('[data-metric="panel-agentes-connect"]').click();
+  await page.locator('[data-agentes-way-go="code"]').click();
   await page.locator('[data-agentes-advanced]').click();
   await expect(page.locator('dialog[open][data-agentes-dialog]')).toBeVisible();
 }

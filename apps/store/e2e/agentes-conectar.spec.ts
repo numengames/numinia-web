@@ -1,7 +1,8 @@
 /**
  * «Agentes» and its one button «Conectar una IA», in a real browser against
- * the built site: the button opens the dialog with «Conecta tu IA» (the relay's
- * one address) in the five locales, the line under the title that tells these
+ * the built site: the button opens the dialog — the guide (C4): the three ways,
+ * the questions, the tiles, the numbered steps of each AI with the relay's one
+ * address — in the five locales, the line under the title that tells these
  * AIs from Ajustes › «Agente IA», each card's chip saying where its AI came
  * from (`via`: Claude, ChatGPT, Hermes, the panel's code, a key, or the host),
  * and the ⋯ menu: «Desconectar» on an AI connected from an app (the token's
@@ -161,11 +162,15 @@ async function open(page: Page, path = '/es/panel/agentes/'): Promise<void> {
 async function shot(page: Page, name: string): Promise<void> {
   const dir = process.env['SHOTS_DIR'];
   if (dir === undefined || dir === '') return;
-  await page.screenshot({ path: `${dir}/${name}.png`, fullPage: true });
+  // A modal dialog is drawn over the viewport: take the viewport, not the whole page.
+  const modal = (await page.locator('dialog[open]').count()) > 0;
+  await page.screenshot({ path: `${dir}/${name}.png`, fullPage: !modal });
 }
 
 const row = (page: Page, id: string) => page.locator(`[data-agent="${id}"]`);
-const block = (page: Page) => page.locator('[data-agentes-connect-url]');
+const steps = (page: Page) => page.locator('[data-agentes-steps]');
+const pick = (page: Page, client: string) => page.locator(`[data-agentes-pick="${client}"]`);
+const view = (page: Page) => dialog(page).getAttribute('data-agentes-view');
 const connect = (page: Page) => page.locator('[data-metric="panel-agentes-connect"]');
 const dialog = (page: Page) => page.locator('dialog[data-agentes-connect-dialog]');
 const menuOf = (card: Locator) => card.locator('[data-metric="panel-agentes-menu"]');
@@ -177,21 +182,50 @@ async function openConnect(page: Page): Promise<void> {
 }
 
 test.describe('Agentes — Conectar una IA', () => {
-  const cases: ReadonlyArray<readonly [string, string, string, string, string]> = [
-    ['/es/panel/agentes/', 'Conectar una IA', 'Ajustes › Agente IA', 'Desde Claude', 'Con clave'],
-    ['/panel/agentes/', 'Connect an AI', 'Settings › AI agent', 'From Claude', 'With a key'],
-    ['/ja/panel/agentes/', 'AIをつなぐ', '設定 › AIエージェント', 'Claudeから', '鍵で接続'],
-    ['/ko/panel/agentes/', 'AI 연결하기', '설정 › AI 에이전트', 'Claude에서', '키로 연결'],
+  const cases: ReadonlyArray<readonly [string, string, string, string, string, string]> = [
+    [
+      '/es/panel/agentes/',
+      'Conectar una IA',
+      'Ajustes › Agente IA',
+      'Desde Claude',
+      'Con clave',
+      'La más fácil',
+    ],
+    [
+      '/panel/agentes/',
+      'Connect an AI',
+      'Settings › AI agent',
+      'From Claude',
+      'With a key',
+      'The easiest',
+    ],
+    [
+      '/ja/panel/agentes/',
+      'AIをつなぐ',
+      '設定 › AIエージェント',
+      'Claudeから',
+      '鍵で接続',
+      '一番かんたん',
+    ],
+    [
+      '/ko/panel/agentes/',
+      'AI 연결하기',
+      '설정 › AI 에이전트',
+      'Claude에서',
+      '키로 연결',
+      '가장 쉬움',
+    ],
     [
       '/pt-br/panel/agentes/',
       'Conectar uma IA',
       'Configurações › Agente de IA',
       'Do Claude',
       'Com chave',
+      'A mais fácil',
     ],
   ];
-  for (const [path, button, settings, fromClaude, withKey] of cases) {
-    test(`${path} has the one button, the dialog with the address and the chips in its own words`, async ({
+  for (const [path, button, settings, fromClaude, withKey, easiest] of cases) {
+    test(`${path} has the one button and the dialog with the three ways and nine questions in its own words`, async ({
       page,
     }) => {
       await stage(page);
@@ -201,11 +235,31 @@ test.describe('Agentes — Conectar una IA', () => {
       await expect(page.locator('[data-agentes-subtitle]')).toContainText(settings);
       await expect(row(page, 'claude').locator('[data-agent-via]')).toHaveText(fromClaude);
       await expect(row(page, 'vieja').locator('[data-agent-via]')).toHaveText(withKey);
-      // The address is not on the list page any more: only in the dialog the button opens.
-      await expect(block(page)).toHaveCount(0);
+      // The address is not on the list page: only in the steps the dialog leads to.
+      await expect(page.locator('[data-agentes-relay-url]')).toHaveCount(0);
       await openConnect(page);
-      await expect(block(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
       await expect(dialog(page).getByRole('heading', { level: 2 })).toHaveText(button);
+      await expect(dialog(page).locator('[data-agentes-way]')).toHaveCount(3);
+      await expect(dialog(page).locator('.agentes-guia-chip')).toHaveText(easiest);
+      await expect(dialog(page).locator('[data-agentes-faq-item]')).toHaveCount(9);
+      // Every question and every way is a button or a summary with its metric.
+      await expect(
+        dialog(page).locator('summary[data-metric^="panel-agentes-guide-faq-"]'),
+      ).toHaveCount(9);
+      await expect(dialog(page).locator('[data-agentes-way-go]')).toHaveCount(3);
+      // Each language's long words stay inside the dialog.
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+      await shot(page, `41-explain-${path.replace(/\W/g, '')}`);
+      await dialog(page).locator('[data-agentes-way-go="address"]').click();
+      await pick(page, 'hermes').click();
+      await dialog(page).locator('[data-agentes-tab="cloud"]').click();
+      await expect(steps(page).locator('[data-agentes-step]')).toHaveCount(3);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+      await shot(page, `42-hermes-cloud-${path.replace(/\W/g, '')}`);
     });
   }
 
@@ -218,20 +272,152 @@ test.describe('Agentes — Conectar una IA', () => {
     );
   });
 
-  test('says the steps for Claude, ChatGPT, Hermes and a client without login, and that it does not hear', async ({
+  test('explains the three ways: for whom, what you do and what happens, the easiest first', async ({
     page,
   }) => {
     await stage(page);
     await open(page);
     await openConnect(page);
-    const steps = block(page);
-    await expect(steps.locator('[data-agentes-step="claude"]')).toContainText(
-      'añade un conector personalizado',
+    expect(await view(page)).toBe('explain');
+    await expect(dialog(page).locator('h2')).toHaveText('Conectar una IA');
+    const ways = dialog(page).locator('[data-agentes-way]');
+    await expect(ways.nth(0).locator('h3')).toHaveText(
+      'Pegar una dirección y entrar con tu cuenta',
     );
-    await expect(steps.locator('[data-agentes-step="chatgpt"]')).toContainText(
-      'activa el modo desarrollador',
+    await expect(ways.nth(0)).toHaveAttribute('data-recommended', 'true');
+    await expect(ways.nth(0)).toContainText('Claude, ChatGPT y Hermes');
+    await expect(ways.nth(0)).toContainText('Copias una dirección y la pegas en tu IA.');
+    await expect(ways.nth(0)).toContainText('pulsas «Permitir»');
+    await expect(ways.nth(1).locator('h3')).toHaveText('Con un código del panel');
+    await expect(ways.nth(1)).toContainText('IAs y programas que no tienen inicio de sesión.');
+    await expect(ways.nth(2).locator('h3')).toHaveText('Con clave propia (avanzado)');
+    await expect(ways.nth(2)).toContainText('Para programadores');
+    for (const label of ['Para quién', 'Qué vas a hacer', 'Qué va a pasar']) {
+      await expect(ways.nth(0).getByText(label, { exact: true })).toBeVisible();
+    }
+    await shot(page, '30-explain-desktop');
+  });
+
+  test('the nine questions fold: one opens at a time of its own, with the real numbers', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    const items = dialog(page).locator('[data-agentes-faq-item]');
+    await expect(items).toHaveCount(9);
+    await expect(items.locator('summary').nth(0)).toHaveText('¿Qué podrá hacer la IA?');
+    // Folded at first: nobody reads a wall of text before they ask.
+    expect(
+      await items.evaluateAll(
+        (nodes) => nodes.filter((n) => (n as HTMLDetailsElement).open).length,
+      ),
+    ).toBe(0);
+    const money = items.nth(2);
+    await money.locator('summary').click();
+    await expect(money).toHaveAttribute('open', '');
+    await expect(money).toContainText('Numinia paga el tiempo');
+    await expect(money).toContainText('hasta 3 IAs de una comunidad a la vez');
+    await expect(money).toContainText('tras 10 minutos sin usarse');
+    const privacy = items.nth(1);
+    await privacy.locator('summary').click();
+    await expect(privacy).toContainText('Nunca ve saldos ni carteras');
+    await items.nth(5).locator('summary').click();
+    await expect(items.nth(5)).toContainText('Oír lo que se habla cerca');
+    await expect(items.nth(5)).toContainText('apagado de serie');
+    await items.nth(6).locator('summary').click();
+    await expect(items.nth(6)).toContainText('la dirección sola no da acceso a nada');
+    await money.locator('summary').click();
+    await expect(money).not.toHaveAttribute('open', '');
+    for (const text of await items.allInnerTexts())
+      expect(text.toLowerCase()).not.toContain('abogad');
+    await shot(page, '31-faq-desktop');
+  });
+
+  test('«Elegir mi IA» leads to the four tiles, and back goes where it came from', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="address"]').click();
+    expect(await view(page)).toBe('choose');
+    await expect(dialog(page).locator('h2')).toHaveText('¿Qué IA quieres conectar?');
+    await expect(page.locator('[data-agentes-pick]')).toHaveCount(4);
+    await expect(pick(page, 'claude')).toContainText('Claude');
+    await expect(pick(page, 'hermes')).toContainText('En tu ordenador o en la nube.');
+    await expect(pick(page, 'other')).toContainText('Avanzado · con código');
+    await shot(page, '32-choose-desktop');
+    await dialog(page).locator('[data-agentes-back]').click();
+    expect(await view(page)).toBe('explain');
+    await expect(dialog(page).locator('[data-agentes-back]')).toHaveCount(0);
+    await dialog(page).locator('[data-agentes-way-go="address"]').click();
+    await pick(page, 'chatgpt').click();
+    expect(await view(page)).toBe('steps');
+    await dialog(page).locator('[data-agentes-back]').click();
+    expect(await view(page)).toBe('choose');
+  });
+
+  test('Claude and ChatGPT: three numbered steps, the one address with one «Copiar», and what comes next', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="address"]').click();
+
+    await pick(page, 'claude').click();
+    await expect(dialog(page).locator('h2')).toHaveText('Conectar Claude');
+    await expect(steps(page).locator('[data-agentes-step]')).toHaveCount(3);
+    await expect(steps(page).locator('[data-agentes-step="2"]')).toContainText(
+      'Añadir conector personalizado',
     );
-    const link = steps.locator('[data-agentes-hermes-link]');
+    await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('Permitir');
+    await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveCount(1);
+    await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
+    await expect(steps(page).locator('[data-metric="panel-agentes-url-copy"]')).toHaveCount(1);
+    await expect(dialog(page).locator('[data-agentes-after]')).toContainText(
+      'Se abrirá numinia.com. Eliges la comunidad y pulsas Permitir.',
+    );
+    await expect(dialog(page).locator('[data-agentes-sample]')).toBeVisible();
+    await shot(page, '33-steps-claude-desktop');
+
+    const copy = steps(page).locator('[data-metric="panel-agentes-url-copy"]');
+    await copy.click();
+    await expect(copy).toContainText('Copiado');
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(RELAY);
+
+    await dialog(page).locator('[data-agentes-back]').click();
+    await pick(page, 'chatgpt').click();
+    await expect(dialog(page).locator('h2')).toHaveText('Conectar ChatGPT');
+    await expect(steps(page).locator('[data-agentes-step="2"]')).toContainText(
+      'modo desarrollador',
+    );
+    await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('OAuth');
+    await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
+    await shot(page, '34-steps-chatgpt-desktop');
+  });
+
+  test('Hermes: on the computer the «Añadir a Hermes» link, in the cloud the panel and never the chat', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="address"]').click();
+    await pick(page, 'hermes').click();
+    await expect(dialog(page).locator('h2')).toHaveText('Conectar Hermes');
+
+    const computer = dialog(page).locator('[data-agentes-tab="computer"]');
+    const cloud = dialog(page).locator('[data-agentes-tab="cloud"]');
+    await expect(computer).toHaveAttribute('aria-pressed', 'true');
+    await expect(cloud).toHaveAttribute('aria-pressed', 'false');
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'hermes-computer');
+    const link = steps(page).locator('[data-agentes-hermes-link]');
     await expect(link).toHaveText('Añadir a Hermes');
     const href = (await link.getAttribute('href')) ?? '';
     expect(href.startsWith('hermes://mcp/install?name=numinia&config=')).toBe(true);
@@ -240,40 +426,87 @@ test.describe('Agentes — Conectar una IA', () => {
       url: RELAY,
       auth: 'oauth',
     });
-    await expect(steps.locator('[data-agentes-token-command]')).toHaveText(
+    await expect(steps(page).locator('[data-agentes-step="1"]')).toContainText(
+      'No se lo pidas al chat de Hermes',
+    );
+    await shot(page, '35-steps-hermes-computer-desktop');
+
+    await cloud.click();
+    await expect(cloud).toHaveAttribute('aria-pressed', 'true');
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'hermes-cloud');
+    await expect(steps(page).locator('[data-agentes-step="2"] h3')).toContainText(
+      'No se lo pidas al chat: añádelo en el panel',
+    );
+    await expect(steps(page).locator('[data-agentes-step="2"]')).toContainText(
+      'MCP › Añadir servidor',
+    );
+    await expect(steps(page).locator('[data-agentes-step="2"]')).toContainText('numinia');
+    await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('Authenticate');
+    await expect(steps(page).locator('[data-agentes-step="3"]')).toContainText('http://127.0.0.1');
+    await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
+    // The terminal way is folded; its two lines are the real ones.
+    const terminal = steps(page).locator('[data-agentes-terminal]');
+    await expect(terminal).not.toHaveAttribute('open', '');
+    await terminal.locator('summary').click();
+    await expect(terminal.locator('[data-agentes-terminal-command]')).toHaveText(
+      `hermes mcp add numinia --url ${RELAY} --auth oauth\nhermes mcp login numinia`,
+    );
+    await terminal.locator('[data-metric="panel-agentes-guide-copy-lines"]').click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      `hermes mcp add numinia --url ${RELAY} --auth oauth\nhermes mcp login numinia`,
+    );
+    await shot(page, '36-steps-hermes-cloud-desktop');
+
+    await computer.click();
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'hermes-computer');
+  });
+
+  test('«Otra IA»: the code way and the key way are marked advanced, and open the invitation', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="code"]').click();
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'other-code');
+    await expect(dialog(page).locator('[data-agentes-advanced-warning]')).toContainText(
+      'Opción avanzada',
+    );
+    await expect(steps(page).locator('[data-agentes-token-command]')).toHaveText(
       `hermes mcp add numinia --url ${RELAY} --auth header`,
     );
-    await expect(steps.locator('[data-agentes-hear]')).toHaveText(
-      'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
-    );
-  });
+    await expect(steps(page).locator('[data-agentes-relay-url]')).toHaveText(RELAY);
+    await shot(page, '37-steps-other-code-desktop');
+    await dialog(page).locator('[data-agentes-tab="key"]').click();
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'other-key');
+    await dialog(page).locator('[data-agentes-tab="code"]').click();
+    await dialog(page).locator('[data-agentes-note-action]').click();
+    await expect(steps(page)).toHaveAttribute('data-agentes-steps', 'other-key');
+    await shot(page, '38-steps-other-key-desktop');
 
-  test('copies the address, and «Cerrar» closes the dialog', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    await stage(page);
-    await open(page);
-    await openConnect(page);
-    const copy = block(page).locator('[data-metric="panel-agentes-url-copy"]');
-    await copy.click();
-    await expect(copy).toHaveText('Copiado');
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(RELAY);
-    await dialog(page).locator('[data-metric="panel-agentes-connect-close"]').click();
-    await expect(dialog(page)).toHaveCount(0);
-  });
-
-  test('the token and the key stay reachable from the dialog', async ({ page }) => {
-    await stage(page);
-    await open(page);
-    await openConnect(page);
-    await expect(dialog(page).locator('[data-agentes-advanced]')).toHaveText(
-      'Con un token o una clave (avanzado)',
-    );
+    // The key's button opens the invitation on the key; the code's, on the token.
     await dialog(page).locator('[data-agentes-advanced]').click();
     await expect(dialog(page)).toHaveCount(0);
     const invite = page.locator('dialog[open][data-agentes-dialog]');
     await expect(invite).toBeVisible();
-    await expect(invite.getByRole('radio', { name: /Con un token/ })).toBeChecked();
-    await expect(invite.getByRole('radio', { name: /Con mi propia llave/ })).toBeVisible();
+    await expect(invite.getByRole('radio', { name: /Con mi propia llave/ })).toBeChecked();
+    await invite.locator('[data-metric="panel-agentes-invite-cancel"]').click();
+
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="code"]').click();
+    await dialog(page).locator('[data-agentes-advanced]').click();
+    const again = page.locator('dialog[open][data-agentes-dialog]');
+    await expect(again.getByRole('radio', { name: /Con un token/ })).toBeChecked();
+  });
+
+  test('«Cerrar» closes the dialog, from any screen', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    await openConnect(page);
+    await dialog(page).locator('[data-agentes-way-go="address"]').click();
+    await pick(page, 'claude').click();
+    await dialog(page).locator('[data-metric="panel-agentes-connect-close"]').click();
+    await expect(dialog(page)).toHaveCount(0);
   });
 
   test('the button is off for whoever may not manage roles, and says why', async ({ page }) => {
@@ -476,6 +709,58 @@ for (const [name, size] of [
       results = await new AxeBuilder({ page }).analyze();
       expect(results.violations).toEqual([]);
       await shot(page, `22-dialog-${tag}`);
+    });
+
+    test('every screen of the guide fits, scrolls inside the dialog and is axe clean', async ({
+      page,
+    }) => {
+      await stage(page);
+      await open(page);
+      await openConnect(page);
+      const audit = async (name: string): Promise<void> => {
+        expect(await fits(page)).toBe(true);
+        // The dialog stays whole inside the screen; its body is what scrolls.
+        const box = await dialog(page).boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(size.height + 1);
+        const wide = await dialog(page).evaluate(
+          (node) =>
+            [...node.querySelectorAll('*')].filter(
+              (el) =>
+                el.scrollWidth > el.clientWidth + 1 &&
+                getComputedStyle(el).overflowX === 'visible' &&
+                el.getBoundingClientRect().right > node.getBoundingClientRect().right + 1,
+            ).length,
+        );
+        expect(wide).toBe(0);
+        const results = await new AxeBuilder({ page }).analyze();
+        expect(results.violations).toEqual([]);
+        await shot(page, `40-${name}-${tag}`);
+      };
+      await audit('explain');
+      await dialog(page).locator('[data-agentes-faq-item] summary').first().click();
+      await dialog(page).locator('[data-agentes-faq-item] summary').nth(2).click();
+      await audit('explain-faq');
+      await dialog(page).locator('[data-agentes-way-go="address"]').click();
+      await audit('choose');
+      await pick(page, 'claude').click();
+      await audit('claude');
+      await dialog(page).locator('[data-agentes-back]').click();
+      await pick(page, 'chatgpt').click();
+      await audit('chatgpt');
+      await dialog(page).locator('[data-agentes-back]').click();
+      await pick(page, 'hermes').click();
+      await audit('hermes-computer');
+      await dialog(page).locator('[data-agentes-tab="cloud"]').click();
+      await steps(page).locator('[data-agentes-terminal] summary').click();
+      await audit('hermes-cloud');
+      await dialog(page).locator('[data-agentes-back]').click();
+      await pick(page, 'other').click();
+      await audit('other-code');
+      await dialog(page).locator('[data-agentes-tab="key"]').click();
+      await audit('other-key');
     });
 
     test('the empty state fits and is axe clean', async ({ page }) => {

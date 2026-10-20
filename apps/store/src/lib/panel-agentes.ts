@@ -359,6 +359,16 @@ export function hermesInstallLink(url: string = RELAY_URL): string {
 export const hermesTokenCommand = (url: string = RELAY_URL): string =>
   `hermes mcp add ${HERMES_NAME} --url ${url} --auth header`;
 
+/**
+ * The two terminal lines that add the relay to Hermes with its login
+ * (`hermes mcp add --help`: `--url`, `--auth {oauth,header}`; `hermes mcp
+ * login <name>` signs in through the browser — hermes-agent docs, «OAuth over
+ * SSH / Remote Hosts»). The chat of Hermes cannot do this: its connections
+ * tool only installs servers from its own catalog.
+ */
+export const hermesOauthCommand = (url: string = RELAY_URL): string =>
+  `hermes mcp add ${HERMES_NAME} --url ${url} --auth oauth\nhermes mcp login ${HERMES_NAME}`;
+
 /** How an AI was connected, as its row says it: from the panel, from an app by URL (and its host), or not known. */
 export type Connection =
   { readonly kind: 'panel' } | { readonly kind: 'url'; readonly host: string } | null;

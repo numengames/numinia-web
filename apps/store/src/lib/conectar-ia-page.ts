@@ -72,6 +72,22 @@ export const CONSENT_PATH = '/conectar-ia/';
 /** Where the page posts. */
 export const CONSENT_API = '/api/conectar-ia';
 
+/** Where the page sends a person with no community to add an AI in («Tus comunidades»). */
+export const COMMUNITIES_PATH = '/belong/';
+
+/** Where the connected AIs are listed and switched off (Panel › Agentes). */
+export const AGENTS_PANEL_PATH = '/panel/agentes/';
+
+/**
+ * The host cut after each dot, so the page can let the line break between the
+ * pieces and never inside one (`machine-1031.` `agents.` `nousresearch.` `com`):
+ * a host broken mid-word («nousresearch.co / m») reads as another machine, and
+ * this is the one thing the person must read right. The pieces joined are the host.
+ */
+export function hostLabels(host: string): string[] {
+  return host.split(/(?<=\.)/);
+}
+
 const REQUEST_ID = /^[A-Za-z0-9_-]{16,128}$/;
 
 let built: ReturnType<typeof buildShapes> | null = null;
