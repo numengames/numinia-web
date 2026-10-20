@@ -17,6 +17,8 @@ import {
   buildTag,
   describeStatus,
   engineTag,
+  engineVersion,
+  type EngineRelease,
   fill,
   groupByServer,
   rowPlace,
@@ -90,6 +92,8 @@ interface ViewProps {
   readonly transfers?: ReadonlyMap<string, TransferView> | undefined;
   readonly onTransfer?: ((row: WorldRow, action: TransferAction) => void) | undefined;
   readonly placement?: PlacementView | undefined;
+  /** The newest published engine build: a card names its version with the build's date. */
+  readonly release?: EngineRelease | null | undefined;
 }
 
 const PER_GROUP = 6;
@@ -367,18 +371,28 @@ function Actions({
       {open !== null && (
         <button
           type="button"
-          className="btn btn-fantasma btn-icono abrir"
+          // QA 2026-10-20: a world that answers offers a labelled «Enter», not only an icon.
+          className={
+            row.status === 'running' ? 'btn btn-primario abrir' : 'btn btn-fantasma btn-icono abrir'
+          }
           onClick={() =>
             // The one door (lib/mundos.ts): a new tab with the person's pass, the guest address only when none.
             void enterWorldInNewTab(fetch, row.id, worldUrl(open), (url, target) =>
               window.open(url, target),
             )
           }
-          aria-label={room.actions.open}
-          data-tip={room.actions.open}
+          aria-label={row.status === 'running' ? room.actions.enter : room.actions.open}
+          data-tip={row.status === 'running' ? undefined : room.actions.open}
           data-metric="worlds-open"
+          data-enter={row.status === 'running' ? 'true' : undefined}
         >
-          <WorldGlyph name="arrow-square-out" />
+          {row.status === 'running' ? (
+            <>
+              <WorldGlyph name="arrow-square-out" /> {room.actions.enter}
+            </>
+          ) : (
+            <WorldGlyph name="arrow-square-out" />
+          )}
         </button>
       )}
       {order && order.state === 'running' && (
@@ -654,6 +668,7 @@ function WorldCard({
   transfer,
   onTransfer,
   placement,
+  release,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
@@ -663,6 +678,7 @@ function WorldCard({
   transfer: TransferView | undefined;
   onTransfer: ViewProps['onTransfer'];
   placement: ViewProps['placement'];
+  release: ViewProps['release'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
@@ -697,7 +713,7 @@ function WorldCard({
               <div>
                 <dt className="etiqueta">{room.fields.build}</dt>
                 <dd className="mono" title={order.image}>
-                  {engineTag(order.image)}
+                  {engineVersion(order.image, release ?? null)}
                 </dd>
               </div>
             )}
@@ -732,6 +748,7 @@ export function CardsView({
   transfers,
   onTransfer,
   placement,
+  release,
 }: ViewProps) {
   return (
     <div className="rejilla">
@@ -746,6 +763,7 @@ export function CardsView({
           transfer={transfers?.get(row.id)}
           onTransfer={onTransfer}
           placement={placement}
+          release={release}
         />
       ))}
     </div>

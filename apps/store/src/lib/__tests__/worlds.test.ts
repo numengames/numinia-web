@@ -5,6 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import type { DoorPhase } from '../fleet';
 import type { SummaCard } from '../summa';
 import {
   DEFAULT_IMAGE,
@@ -15,6 +16,10 @@ import {
   WORLD_ZONES,
   addressOwner,
   applyNames,
+  applySettling,
+  SETTLE_MS,
+  engineVersion,
+  settleMemory,
   buildRows,
   buildTag,
   compareDns,
@@ -59,6 +64,7 @@ import {
   worldCards,
   worldUrl,
   type EngineRelease,
+  type Probe,
   type ReasonWords,
   type WorldOrder,
   type WorldRow,
@@ -1217,5 +1223,71 @@ describe('fleetEngine: the newest build and who is behind it', () => {
 
   it('ignores a world being deleted (no order)', () => {
     expect(fleetEngine([{ id: 'gone', order: null }], [], RELEASE).total).toBe(0);
+  });
+});
+
+describe('the engine version a person reads', () => {
+  it('says the newest build with its date, and any other build by its short tag', () => {
+    expect(engineVersion(RELEASE.image, RELEASE)).toBe('Numinia Engine · ddddddd 2026-10-16');
+    expect(engineVersion(ENGINE_OLD, RELEASE)).toBe('Numinia Engine · sha-c57dbb7');
+    expect(engineVersion(RELEASE.image, null)).toBe(`Numinia Engine · sha-ddddddd`);
+    expect(engineVersion(DEFAULT_IMAGE, RELEASE)).toBe('Hyperfy · sha-0e20453');
+  });
+});
+
+describe('a world that is booting is not «not answering»', () => {
+  const rowsAt = (phase: DoorPhase, probe: Probe | undefined): WorldRow[] =>
+    buildRows({
+      orders: [order('p2')],
+      phases: { p2: phase },
+      cards: [],
+      probes: probe === undefined ? {} : { p2: probe },
+    });
+  const DOWN: Probe = { ok: false, reason: 'timeout' };
+  const UP: Probe = { ok: true, users: 0, uptime: 5, commit: null };
+
+  it('remembers a world it saw being created and keeps it booting while it does not answer', () => {
+    const creating = rowsAt('creating', undefined);
+    const memory = settleMemory(creating, {}, 1_000);
+    expect(memory).toEqual({ p2: { phase: 'creating', since: 1_000 } });
+    // The machine now says «running», the world does not answer yet.
+    const silent = rowsAt('running', DOWN);
+    expect(silent[0]?.status).toBe('unreachable');
+    const shown = applySettling(silent, settleMemory(silent, memory, 61_000));
+    expect(shown[0]?.status).toBe('changing');
+    expect(shown[0]?.phase).toBe('creating');
+    expect(describeStatus(shown[0] as WorldRow, WORDS)).toBe('creating');
+  });
+
+  it('keeps the moment it first saw the boot, and forgets it once the world answers or is stopped', () => {
+    const memory = settleMemory(rowsAt('starting', undefined), {}, 1_000);
+    expect(settleMemory(rowsAt('starting', undefined), memory, 9_000)).toEqual(memory);
+    expect(settleMemory(rowsAt('running', UP), memory, 9_000)).toEqual({});
+    expect(settleMemory(rowsAt('stopped', undefined), memory, 9_000)).toEqual({});
+    expect(settleMemory([], memory, 9_000)).toEqual({});
+  });
+
+  it('gives up after five minutes: then it is honestly not answering', () => {
+    const memory = settleMemory(rowsAt('creating', undefined), {}, 0);
+    const silent = rowsAt('running', DOWN);
+    expect(settleMemory(silent, memory, SETTLE_MS - 1)).toEqual(memory);
+    const late = settleMemory(silent, memory, SETTLE_MS);
+    expect(late).toEqual({});
+    expect(applySettling(silent, late)[0]?.status).toBe('unreachable');
+  });
+
+  it('never hides a world nobody saw booting, nor one that answers', () => {
+    const silent = rowsAt('running', DOWN);
+    expect(applySettling(silent, {})[0]?.status).toBe('unreachable');
+    const memory = { p2: { phase: 'starting' as const, since: 0 } };
+    expect(applySettling(rowsAt('running', UP), memory)[0]?.status).toBe('running');
+    // A legacy world has no phase to remember.
+    const legacy = buildRows({
+      orders: [],
+      legacy: [{ id: 'old', domain: 'old.numen.games', server: 'vps' }],
+      cards: [],
+      probes: { old: DOWN },
+    });
+    expect(settleMemory(legacy, {}, 0)).toEqual({});
   });
 });

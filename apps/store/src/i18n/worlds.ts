@@ -89,6 +89,8 @@ export interface WorldsRoomMessages {
   };
   readonly actions: {
     readonly open: string;
+    /** A running world's labelled door: the card says «Enter», not only an icon. */
+    readonly enter: string;
     readonly stop: string;
     readonly start: string;
     readonly delete: string;
@@ -553,6 +555,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     },
     actions: {
       open: 'Abrir',
+      enter: 'Entrar',
       stop: 'Parar',
       start: 'Arrancar',
       delete: 'Borrar',
@@ -1001,6 +1004,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     },
     actions: {
       open: 'Open',
+      enter: 'Enter',
       stop: 'Stop',
       start: 'Start',
       delete: 'Delete',
@@ -1455,6 +1459,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     },
     actions: {
       open: '開く',
+      enter: '入る',
       stop: '停止',
       start: '起動',
       delete: '削除',
@@ -1906,6 +1911,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     },
     actions: {
       open: '열기',
+      enter: '입장',
       stop: '정지',
       start: '시작',
       delete: '삭제',
@@ -2356,6 +2362,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
     },
     actions: {
       open: 'Abrir',
+      enter: 'Entrar',
       stop: 'Parar',
       start: 'Iniciar',
       delete: 'Apagar',
