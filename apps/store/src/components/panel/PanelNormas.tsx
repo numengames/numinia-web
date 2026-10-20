@@ -183,7 +183,7 @@ function PointEditor({
       <div className="normas-opciones">
         <fieldset className="gente-campo saldo-fieldset">
           <legend>{ui.edit.kindLabel}</legend>
-          <div className="gente-seg" role="group" aria-label={ui.edit.kindLabel}>
+          <div className="normas-seg" role="group" aria-label={ui.edit.kindLabel}>
             {(['norma', 'datos'] as const).map((tipo) => (
               <button
                 key={tipo}
@@ -202,7 +202,7 @@ function PointEditor({
 
         <fieldset className="gente-campo saldo-fieldset">
           <legend>{ui.edit.mandatoryLabel}</legend>
-          <div className="gente-seg" role="group" aria-label={ui.edit.mandatoryLabel}>
+          <div className="normas-seg" role="group" aria-label={ui.edit.mandatoryLabel}>
             <button
               type="button"
               aria-pressed={point.obligatorio}
@@ -231,7 +231,6 @@ function PointEditor({
           <Problems id={`${key}-obligatorio-p`} lines={problems.obligatorio} />
         </fieldset>
       </div>
-      <p className="saldo-nota">{ui.edit.kindHint}</p>
       <Problems id={`${key}-id-p`} lines={problems.id} />
 
       <div>
@@ -315,6 +314,7 @@ function Editor({
   return (
     <div className="normas-borrador" data-terms-editor>
       {page.current === null && points.length === 0 && <p className="saldo-nota">{ui.own.none}</p>}
+      {points.length > 0 && <p className="saldo-nota">{ui.edit.kindHint}</p>}
       <ol className="normas-editores">
         {points.map((point, index) => (
           <PointEditor

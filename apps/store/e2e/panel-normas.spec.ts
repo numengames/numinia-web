@@ -23,7 +23,9 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 
 const ORACLE = `0x${'ab'.repeat(20)}`;
-const OWNER = `0x${'cd'.repeat(20)}`;
+/** The fixture desk keeps each wallet's own copy for the life of the server: a wallet per test. */
+let counter = 0;
+const owner = (): string => `0x${'c'.repeat(30)}${String(++counter).padStart(10, '0')}`;
 const MEMBER = '0x00000000000000000000000000000000000000d4';
 const NUMEN = 'acc_team_numen_games';
 const INSTITUTE = 'acc_team_active_inference';
@@ -116,7 +118,7 @@ test.describe('Normas de vuestros espacios', () => {
     page,
     context,
   }) => {
-    await signIn(context, OWNER, 'nomad');
+    await signIn(context, owner(), 'nomad');
     await openSettings(page);
     await expect(section(page).locator('h2')).toHaveText('Normas de vuestros espacios');
     const fixed = section(page).locator('[data-terms-fixed]');
@@ -142,6 +144,7 @@ test.describe('Normas de vuestros espacios', () => {
     if (shot !== undefined && shot !== '') {
       await section(page).scrollIntoViewIfNeeded();
       await section(page).screenshot({ path: shot });
+      await page.screenshot({ path: shot.replace(/\.png$/, '-pagina.png'), fullPage: true });
     }
   });
 
@@ -149,7 +152,7 @@ test.describe('Normas de vuestros espacios', () => {
     page,
     context,
   }) => {
-    await signIn(context, OWNER, 'nomad');
+    await signIn(context, owner(), 'nomad');
     await openSettings(page);
     await section(page).getByRole('button', { name: '+ Añadir una norma' }).click();
     const added = section(page).locator('[data-terms-draft-point="3"]');
@@ -177,7 +180,7 @@ test.describe('Normas de vuestros espacios', () => {
     page,
     context,
   }) => {
-    await signIn(context, OWNER, 'nomad');
+    await signIn(context, owner(), 'nomad');
     await openSettings(page);
     const data = section(page).locator('[data-terms-draft-point="2"]');
     await expect(data.locator('[data-terms-data-note]')).toHaveText(
@@ -196,7 +199,7 @@ test.describe('Normas de vuestros espacios', () => {
     page,
     context,
   }) => {
-    await signIn(context, OWNER, 'nomad');
+    await signIn(context, owner(), 'nomad');
     await openSettings(page);
     const first = section(page).locator('[data-terms-draft-point="0"]');
     await first.getByLabel('Título').fill('');
@@ -237,16 +240,23 @@ test.describe('Normas de vuestros espacios', () => {
     });
     expect(refused.status()).toBe(403);
     const read = await page.request.get(`${origin}/api/saldo/terms?cuenta=${INSTITUTE}`);
-    const page2 = (await read.json()) as { terms: { history: unknown[]; mayEdit: boolean } };
-    expect(page2.terms.history).toEqual([]);
-    expect(page2.terms.mayEdit).toBe(false);
+    const after = (await read.json()) as { terms: { history: unknown[]; mayEdit: boolean } };
+    expect(after.terms.history).toHaveLength(1);
+    expect(after.terms.mayEdit).toBe(false);
   });
 
-  test('a member sees the published points of the version in force', async ({ page, context }) => {
-    await signIn(context, `0x${'00'.repeat(19)}b2`, 'nomad');
-    await openSettings(page, NUMEN);
+  test('a plain member sees the published points of the version in force', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, MEMBER, 'nomad');
+    await openSettings(page, INSTITUTE);
     await expect(section(page).locator('[data-terms-editor]')).toHaveCount(0);
-    await expect(section(page).locator('[data-terms-point]')).toHaveCount(3);
+    await expect(section(page).locator('[data-terms-point]')).toHaveCount(2);
+    await expect(section(page).locator('[data-terms-point="fuentes"]')).toContainText(
+      'Obligatoria',
+    );
+    await expect(section(page).locator('[data-terms-point="informe"]')).toContainText('Datos');
     await expect(section(page).locator('[data-terms-version]')).toHaveCount(1);
   });
 
@@ -266,7 +276,7 @@ test.describe('Normas de vuestros espacios', () => {
   });
 
   test('fits a 390-pixel phone and passes axe', async ({ page, context }) => {
-    await signIn(context, OWNER, 'nomad');
+    await signIn(context, owner(), 'nomad');
     await page.setViewportSize({ width: 390, height: 800 });
     await openSettings(page);
     const overflow = await page.evaluate(

@@ -883,7 +883,8 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.gente-seg {
+.gente-seg,
+.normas-seg {
   display: inline-flex;
   max-width: 100%;
   overflow: hidden;
@@ -891,12 +892,14 @@
   border-radius: var(--radio-control);
 }
 @container (max-width: 34rem) {
-  .gente-seg {
+  .gente-seg,
+  .normas-seg {
     display: flex;
     width: 100%;
   }
 }
-.gente-seg button {
+.gente-seg button,
+.normas-seg button {
   display: inline-flex;
   flex: 1 1 auto;
   align-items: center;
@@ -909,14 +912,17 @@
   font: 500 0.8rem/1.2 var(--sans);
   cursor: pointer;
 }
-.gente-seg button + button {
+.gente-seg button + button,
+.normas-seg button + button {
   border-left: 1px solid var(--linea-f);
 }
-.gente-seg button[aria-selected='true'] {
+.gente-seg button[aria-selected='true'],
+.normas-seg button[aria-selected='true'] {
   background: color-mix(in srgb, var(--verdemar) 14%, transparent);
   color: var(--texto);
 }
-.gente-seg button:focus-visible {
+.gente-seg button:focus-visible,
+.normas-seg button:focus-visible {
   outline: 2px solid var(--enlace);
   outline-offset: -2px;
 }
@@ -1337,11 +1343,13 @@
   font-size: 0.875rem;
   line-height: 1.4;
 }
-.gente-seg button[aria-pressed='true'] {
+.gente-seg button[aria-pressed='true'],
+.normas-seg button[aria-pressed='true'] {
   background: color-mix(in srgb, var(--verdemar) 14%, transparent);
   color: var(--texto);
 }
-.gente-seg button:disabled {
+.gente-seg button:disabled,
+.normas-seg button:disabled {
   cursor: default;
   opacity: 0.6;
 }

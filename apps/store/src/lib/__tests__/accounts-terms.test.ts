@@ -20,6 +20,9 @@ const seed = deskSeed as unknown as AccountsSeed;
 const NUMEN = 'acc_team_numen_games';
 const INSTITUTE = 'acc_team_active_inference';
 const INSTITUTE_ADMIN = `0x${'0'.repeat(38)}c3`;
+const TARUGO = 'acc_team_la_tarugo';
+const TARUGO_ADMIN = `0x${'0'.repeat(38)}e5`;
+const TARUGO_PLAIN = `0x${'0'.repeat(38)}f6`;
 const INSTITUTE_PLAIN = '0x00000000000000000000000000000000000000d4';
 const quiet = () => undefined;
 
@@ -58,8 +61,14 @@ describe('the fixture desk: community terms', () => {
     expect(answer.history.map((past) => past.terms.version)).toEqual(['1.0']);
   });
 
+  it('shows a plain member the version in force, read-only', async () => {
+    const answer = terms(await fresh().communityTerms(INSTITUTE_PLAIN, INSTITUTE));
+    expect(answer.mayEdit).toBe(false);
+    expect(answer.current?.terms.puntos.map((point) => point.id)).toEqual(['fuentes', 'informe']);
+  });
+
   it('starts with nothing published in a community that wrote none', async () => {
-    const answer = terms(await fresh().communityTerms(INSTITUTE_ADMIN, INSTITUTE));
+    const answer = terms(await fresh().communityTerms(TARUGO_ADMIN, TARUGO));
     expect(answer.current).toBeNull();
     expect(answer.history).toEqual([]);
   });
@@ -77,14 +86,14 @@ describe('the fixture desk: community terms', () => {
 
   it('refuses a plain member, in words, and writes nothing', async () => {
     const desk = fresh();
-    const member = terms(await desk.communityTerms(INSTITUTE_PLAIN, INSTITUTE));
+    const member = terms(await desk.communityTerms(TARUGO_PLAIN, TARUGO));
     expect(member.mayEdit).toBe(false);
-    const refused = await desk.publishTerms(INSTITUTE_PLAIN, INSTITUTE, {
+    const refused = await desk.publishTerms(TARUGO_PLAIN, TARUGO, {
       version: '1.0',
       puntos: POINTS,
     });
     expect(refused.ok).toBe(false);
-    expect(terms(await desk.communityTerms(INSTITUTE_ADMIN, INSTITUTE)).history).toEqual([]);
+    expect(terms(await desk.communityTerms(TARUGO_ADMIN, TARUGO)).history).toEqual([]);
   });
 
   it('refuses a stranger, and a draft the validator does not accept, with every problem as path: message', async () => {
@@ -161,11 +170,19 @@ describe('the door: /api/saldo/terms', () => {
     const refused = await answerPublishTerms(
       desk,
       asker(INSTITUTE_PLAIN),
-      post({ accountId: INSTITUTE, version: '1.0', puntos: POINTS }),
+      post({ accountId: INSTITUTE, version: '1.1', puntos: POINTS }),
       quiet,
     );
     expect(refused.status).toBe(403);
-    expect(terms(await desk.communityTerms(INSTITUTE_ADMIN, INSTITUTE)).history).toEqual([]);
+    expect(terms(await desk.communityTerms(INSTITUTE_ADMIN, INSTITUTE)).history).toHaveLength(1);
+    const refusedTwice = await answerPublishTerms(
+      desk,
+      asker(TARUGO_PLAIN),
+      post({ accountId: TARUGO, version: '1.0', puntos: POINTS }),
+      quiet,
+    );
+    expect(refusedTwice.status).toBe(403);
+    expect(terms(await desk.communityTerms(TARUGO_ADMIN, TARUGO)).history).toEqual([]);
   });
 
   it('answers 403 with the validator’s problems for a bad draft, 400 for a body out of shape, 401, 503', async () => {

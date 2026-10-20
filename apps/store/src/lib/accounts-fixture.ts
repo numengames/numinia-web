@@ -322,10 +322,10 @@ function birthRoles(community?: string): OrganizationRole[] {
 }
 
 /**
- * The terms Numen Games has published in the fixture («Normas de vuestros
+ * The terms Numen Games and the Institute have published in the fixture («Normas de vuestros
  * espacios»): a first version, so the screen has a history to show. Made-up
- * example text, Castilian like the rest of the fixture; any other community
- * starts with none.
+ * example text, Castilian like the rest of the fixture; any other
+ * community starts with none.
  */
 const SEEDED_TERMS: Readonly<Record<string, readonly PublishedCommunityTerms[]>> = {
   acc_team_numen_games: [
@@ -359,6 +359,32 @@ const SEEDED_TERMS: Readonly<Record<string, readonly PublishedCommunityTerms[]>>
       },
       publishedAt: '2026-10-20T09:00:00.000Z',
       publishedBy: `0x${'ab'.repeat(20)}`,
+    },
+  ],
+  acc_team_active_inference: [
+    {
+      terms: {
+        capa: 'comunidad',
+        version: '1.0',
+        puntos: [
+          {
+            id: 'fuentes',
+            titulo: 'Citar las fuentes',
+            texto: 'Cuando compartas un resultado, di de dónde sale.',
+            obligatorio: true,
+            tipo: 'norma',
+          },
+          {
+            id: 'informe',
+            titulo: 'Informe de la sesión',
+            texto: 'Enviar un informe anónimo de rendimiento.',
+            obligatorio: false,
+            tipo: 'datos',
+          },
+        ],
+      },
+      publishedAt: '2026-10-19T16:30:00.000Z',
+      publishedBy: `0x${'0'.repeat(38)}c3`,
     },
   ],
 };
