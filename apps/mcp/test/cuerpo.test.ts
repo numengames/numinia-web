@@ -23,7 +23,6 @@ import {
   IDLE_MS,
   NOTES_MAX,
   REFUSALS,
-  URL_AIS_HEAR,
   bodyOf,
   isWorldAddress,
   worldTools,
@@ -56,6 +55,8 @@ interface MeRecord {
   name: string;
   enabled: boolean;
   state: 'activa' | 'dormida';
+  /** Absent: a store that has not shipped the setting yet. */
+  hear?: boolean;
   eligible: boolean;
   permissions: string[];
   worlds: { id: string; ws: string }[];
@@ -583,6 +584,91 @@ describe('Cuerpo, the AI’s body in one world', () => {
     }
   });
 
+  describe('hearing, per AI', () => {
+    type Heard = { oir: (name: string, text: string, channel: string) => void; oidas: unknown[] };
+    const bridgeOf = (body: Cuerpo): Heard =>
+      (body as unknown as { inside: { bridge: Heard } }).inside.bridge;
+    const useTool = async (body: Cuerpo, record: Agent, name: string) => {
+      const answer = await body.usar({
+        props: propsOf(record),
+        tool: { name, arguments: {} },
+      });
+      return answer.ok ? answer.result : undefined;
+    };
+
+    it('does not hear, nor keep what the bridge heard, when /me says hear=false or says nothing', async () => {
+      for (const over of [{ hear: false }, {}]) {
+        const ana = agent('claude-de-ana', over);
+        const body = makeBody();
+        await enter(body, ana);
+        bridgeOf(body).oir('Marta', 'hola', 'cerca');
+        expect(await useTool(body, ana, 'oir')).toMatchObject({
+          isError: true,
+          text: 'This body has no tool «oir».',
+        });
+        await settle(MINUTE);
+        expect(bridgeOf(body).oidas).toEqual([]);
+        await body.salir();
+      }
+    });
+
+    it('lists «oir» and returns what was heard when /me says hear=true, and keeps it between beats', async () => {
+      const ana = agent('claude-de-ana', { hear: true });
+      const body = makeBody();
+      await enter(body, ana);
+      bridgeOf(body).oir('Marta', 'hola torre', 'cerca');
+      const heard = await useTool(body, ana, 'oir');
+      expect(heard?.isError).toBe(false);
+      expect(heard?.text).toContain('hola torre');
+      await settle(MINUTE);
+      expect(bridgeOf(body).oidas).toHaveLength(1);
+      expect((await body.estado()).inside).not.toBeNull();
+    });
+
+    it('stops hearing at the next /me when the setting goes true → false, and drops the buffer', async () => {
+      const ana = agent('claude-de-ana', { hear: true });
+      const body = makeBody();
+      await enter(body, ana);
+      bridgeOf(body).oir('Marta', 'secreto', 'cerca');
+      ana.me.hear = false;
+      // The /me cache lasts a minute: after it, the call sees the new setting.
+      await settle(MINUTE);
+      expect(bridgeOf(body).oidas).toEqual([]);
+      expect(await useTool(body, ana, 'oir')).toMatchObject({ isError: true });
+      // And turning it back on is picked up by the next call after a minute.
+      ana.me.hear = true;
+      await settle(MINUTE);
+      expect(await useTool(body, ana, 'oir')).toMatchObject({ isError: false });
+    });
+
+    it('re-reads the setting on a call, within the once-a-minute /me', async () => {
+      const ana = agent('claude-de-ana', { hear: true });
+      const body = makeBody();
+      await enter(body, ana);
+      ana.me.hear = false;
+      expect(await useTool(body, ana, 'oir')).toMatchObject({ isError: false });
+      expect(meCalls).toHaveLength(1);
+      bridgeOf(body).oir('Marta', 'hola', 'cerca');
+      vi.advanceTimersByTime(MINUTE);
+      expect(await useTool(body, ana, 'oir')).toMatchObject({ isError: true });
+      expect(bridgeOf(body).oidas).toEqual([]);
+    });
+
+    it('hears nothing when /me cannot be read (down, busy or odd), without leaving', async () => {
+      for (const mode of ['down', 'busy', 'odd'] as const) {
+        const ana = agent('claude-de-ana', { hear: true });
+        const body = makeBody();
+        await enter(body, ana);
+        bridgeOf(body).oir('Marta', 'hola', 'cerca');
+        ana.meMode = mode;
+        await settle(MINUTE);
+        expect(bridgeOf(body).oidas).toEqual([]);
+        expect((await body.estado()).inside).not.toBeNull();
+        await body.salir();
+      }
+    });
+  });
+
   it('asks /me at most once a minute, even when entrar comes sooner', async () => {
     const ana = agent('claude-de-ana');
     const body = makeBody();
@@ -836,14 +922,13 @@ describe('Cuerpo, the AI’s body in one world', () => {
     expect(last).not.toContain('ntk_');
   });
 
-  it('serves the world tools without «oir» while the house’s switch is off', () => {
-    expect(URL_AIS_HEAR).toBe(false);
+  it('serves the world tools with «oir» only when the AI’s own setting is on', () => {
     const bridge = new PuenteMundo({
       url: TORRE.ws,
       id: 'claude-de-ana',
       pedirPase: () => Promise.resolve({ ok: false, motivo: 'red', texto: '' }),
     });
-    const names = worldTools(bridge).map((tool) => tool.name);
+    const names = worldTools(bridge, false).map((tool) => tool.name);
     expect(names).toEqual(['mirar', 'decir', 'ir_a', 'colocar', 'mover', 'borrar', 'deshacer']);
     expect(names).not.toContain(HEAR_TOOL);
     expect(worldTools(bridge, true).map((tool) => tool.name)).toContain(HEAR_TOOL);

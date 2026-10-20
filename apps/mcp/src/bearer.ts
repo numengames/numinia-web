@@ -9,7 +9,7 @@
  * holds only the token, so it asks numinia.com whose it is with the token
  * alone (`GET /api/agents/me`, no query: the store finds the agent by the
  * token's hash, me.ts `askMeByToken`), and the request carries the same
- * props a grant would: `{ accountId, agentId, token, via, hear: false }` —
+ * props a grant would: `{ accountId, agentId, token, via, hear }` —
  * `via` is {@link STATIC_VIA}, the till's word for a token made in the
  * panel, and how the tools tell a pasted token from a grant. Everything
  * after that is the same: the same tools, the same body `Cuerpo` named
@@ -103,7 +103,7 @@ export async function resolveStaticBearer({
           agentId: answer.me.id,
           token,
           via: STATIC_VIA,
-          hear: false,
+          hear: answer.me.hear,
         },
         audience: RESOURCE,
       };

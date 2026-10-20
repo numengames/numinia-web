@@ -248,6 +248,7 @@ describe("the way to numinia.com: its service binding, without the caller's addr
     name: 'Claude de Ana',
     enabled: true,
     state: 'activa',
+    hear: false,
     eligible: true,
     permissions: ['enter-worlds'],
     worlds: [],

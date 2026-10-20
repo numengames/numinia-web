@@ -48,6 +48,8 @@ export const meShape = z.object({
   name: z.string(),
   enabled: z.boolean(),
   state: z.enum(['activa', 'dormida']),
+  // Per AI, set from the panel; a store that has not shipped the switch yet says nothing: it hears nothing.
+  hear: z.boolean().default(false),
   eligible: z.boolean(),
   permissions: z.array(z.string()),
   worlds: z.array(worldShape),

@@ -19,13 +19,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetLimitsForTests } from '../src/limites';
 import { HOUSE_LIBRARY } from '../src/biblioteca';
 import { RESOURCE } from '../src/config';
-import { Cuerpo, HEAR_TOOL, REFUSALS, URL_AIS_HEAR } from '../src/cuerpo';
+import { Cuerpo, HEAR_TOOL, REFUSALS } from '../src/cuerpo';
 import { ERRORS, TOOLS, type ToolCall } from '../src/herramientas';
 import {
   BODY_ERRORS,
   LEAVE_TOOL,
   NO_PASS,
   bodyTools,
+  hearOf,
   callBodyTool,
   isBodyTool,
   serverInstructions,
@@ -60,6 +61,7 @@ interface MeRecord {
   name: string;
   enabled: boolean;
   state: 'activa' | 'dormida';
+  hear?: boolean;
   eligible: boolean;
   permissions: string[];
   worlds: { id: string; ws: string }[];
@@ -181,7 +183,7 @@ afterEach(async () => {
 const helpers = (): OAuthHelpers => getOAuthApi(PROVIDER_OPTIONS, env);
 
 /** A grant as `/vuelta` makes it, and its access token (a secret too). */
-async function connect(record: Agent): Promise<string> {
+async function connect(record: Agent, grantHear = false): Promise<string> {
   const api = helpers();
   const client = await api.createClient({
     redirectUris: [CALLBACK],
@@ -211,7 +213,7 @@ async function connect(record: Agent): Promise<string> {
       agentId: record.me.id,
       token: record.token,
       via: 'mcp:claude.ai',
-      hear: false,
+      hear: grantHear,
       connectedAt: Math.floor(Date.now() / 1000),
     },
   });
@@ -370,9 +372,9 @@ describe('tools/list', () => {
       ...WORLD_TOOLS,
     ]);
     expect(result.tools.slice(0, 2)).toEqual(TOOLS);
-    expect(result.tools.slice(2)).toEqual(bodyTools());
-    // Listing asks numinia.com nothing and makes no body.
-    expect(vi.mocked(fetch).mock.calls.length).toBe(calls);
+    expect(result.tools.slice(2)).toEqual(bodyTools(false));
+    // Listing asks numinia.com once (the AI's `hear`) and makes no body.
+    expect(vi.mocked(fetch).mock.calls.length).toBe(calls + 1);
     expect(made).toEqual([]);
   });
 
@@ -384,29 +386,27 @@ describe('tools/list', () => {
       pedirPase: NO_PASS,
     });
     const own = new Map(bridge.herramientas().map((h) => [h.name, h]));
-    for (const listed of bodyTools().slice(2)) {
+    for (const listed of bodyTools(false).slice(2)) {
       expect(listed.description).toBe(own.get(listed.name)?.description);
       expect(listed.inputSchema).toEqual(own.get(listed.name)?.inputSchema);
     }
     // The listing bridge never asks for a pass: it would get none.
     await expect(NO_PASS('torre')).resolves.toMatchObject({ ok: false, motivo: 'red' });
-    const place = bodyTools().find((listed) => listed.name === 'colocar');
+    const place = bodyTools(false).find((listed) => listed.name === 'colocar');
     expect(place?.inputSchema).toMatchObject({
       properties: { modelo: { enum: ['bloque', 'farolillo', 'robot', 'loma'] } },
     });
   });
 
-  it('would show oir only with the house’s switch on', async () => {
-    expect(URL_AIS_HEAR).toBe(false);
-    expect(bodyTools().map((listed) => listed.name)).not.toContain(HEAR_TOOL);
-    expect(isBodyTool(HEAR_TOOL)).toBe(false);
+  it('shows oir only to an AI whose own setting is on', async () => {
+    expect(bodyTools(false).map((listed) => listed.name)).not.toContain(HEAR_TOOL);
     expect(bodyTools(true).map((listed) => listed.name)).toEqual([
       'entrar',
       'salir',
       ...WORLD_TOOLS,
       HEAR_TOOL,
     ]);
-    expect(isBodyTool(HEAR_TOOL, true)).toBe(true);
+    expect(isBodyTool(HEAR_TOOL)).toBe(true);
     // Off, a call to oir is a call to a tool that does not exist.
     const access = await connect(agent('claude-de-ana'));
     const body = (await (
@@ -415,12 +415,72 @@ describe('tools/list', () => {
     expect(body.error).toEqual({ code: -32602, message: 'Unknown tool: oir' });
   });
 
+  it('lists oir, tells how to use it and lets it be called when /me says hear=true', async () => {
+    const ana = agent('claude-de-ana', { hear: true });
+    const access = await connect(ana);
+    const listed = (await (await post(access, { method: 'tools/list' })).json()) as {
+      result: { tools: { name: string }[] };
+    };
+    expect(listed.result.tools.map((one) => one.name)).toEqual([
+      ...TOOLS.map((one) => one.name),
+      ...bodyTools(true).map((one) => one.name),
+    ]);
+    const { result } = (await (await post(access, { method: 'initialize' })).json()) as {
+      result: { instructions: string };
+    };
+    expect(result.instructions).toBe(serverInstructions(true));
+    expect(structured(await tool(access, 'quien_soy')).hear).toBe(true);
+    // Not inside a world: the call is the body's, not an unknown tool.
+    const heard = await tool(access, HEAR_TOOL);
+    expect(heard.isError).toBe(true);
+    expect(heard.content[0]?.text).toContain('You are not in any world yet');
+    // The panel switches it off: the next listing and call follow.
+    ana.me.hear = false;
+    const after = (await (await post(access, { method: 'tools/list' })).json()) as {
+      result: { tools: { name: string }[] };
+    };
+    expect(after.result.tools.map((one) => one.name)).not.toContain(HEAR_TOOL);
+    expect(structured(await tool(access, 'quien_soy')).hear).toBe(false);
+  });
+
+  it('reads hear from /me first and the grant’s only as a fallback', async () => {
+    const ana = agent('claude-de-ana', { hear: false });
+    const call = (props: unknown, bindings: Env = env): ToolCall => ({
+      env: bindings,
+      props,
+      accessToken: null,
+    });
+    const props = (hear?: boolean): Record<string, unknown> => ({
+      accountId: ORG,
+      agentId: 'claude-de-ana',
+      token: ana.token,
+      ...(hear === undefined ? {} : { hear }),
+    });
+    // /me answers: the grant’s value does not matter.
+    expect(await hearOf(call(props(true)))).toBe(false);
+    ana.me.hear = true;
+    expect(await hearOf(call(props(false)))).toBe(true);
+    expect(await hearOf(call(props()))).toBe(true);
+    // /me unreachable: the grant’s value, or false.
+    ana.down = true;
+    expect(await hearOf(call(props(true)))).toBe(true);
+    expect(await hearOf(call(props(false)))).toBe(false);
+    expect(await hearOf(call(props()))).toBe(false);
+    // No store configured: the same fallback.
+    const bare = { ...env, STORE_ORIGIN: undefined } as unknown as Env;
+    expect(await hearOf(call(props(true), bare))).toBe(true);
+    expect(await hearOf(call(props(), bare))).toBe(false);
+    // Not an AI’s props: no hearing.
+    expect(await hearOf(call({ hear: true }))).toBe(false);
+    expect(await hearOf(call(undefined))).toBe(false);
+  });
+
   it('tells the AI how to use them in initialize, without oir while the switch is off', async () => {
     const access = await connect(agent('claude-de-ana'));
     const { result } = (await (
       await post(access, { method: 'initialize', params: { protocolVersion: '2025-11-25' } })
     ).json()) as { result: { instructions: string } };
-    expect(result.instructions).toBe(serverInstructions());
+    expect(result.instructions).toBe(serverInstructions(false));
     expect(result.instructions).toContain('«entrar»');
     expect(result.instructions).toContain('<material fiable="no">');
     expect(result.instructions).not.toMatch(/\boir\b/);

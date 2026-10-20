@@ -17,7 +17,7 @@ encrypts each grant's props with a key only the token holder can unwrap.
 | path                                            | answer                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POST /mcp` without a valid token               | `401`, `WWW-Authenticate: Bearer realm="OAuth", resource_metadata="https://mcp.numinia.com/.well-known/oauth-protected-resource/mcp", scope="mundos"`                                                                                                                                                                                                                                                                              |
-| `POST /mcp` with a token                        | an OAuth access token, or the AI's `ntk_` token from Panel › Agents (static bearer, below). JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601`. `initialize` carries `instructions`: how to get a body, then the bridge's own `INSTRUCCIONES` (without `oir`)                                                  |
+| `POST /mcp` with a token                        | an OAuth access token, or the AI's `ntk_` token from Panel › Agents (static bearer, below). JSON-RPC: `initialize` (earlier protocol revisions), `ping`, `tools/list`, `tools/call` (the tools below; an unknown tool or no name `-32602`); anything else `-32601`. `initialize` carries `instructions`: how to get a body, then the bridge's own `INSTRUCCIONES` (with `oir` only when the AI's `hear` is on)                                                  |
 | `GET /.well-known/oauth-protected-resource/mcp` | RFC 9728: `resource` = `https://mcp.numinia.com/mcp` exactly, `authorization_servers` = `["https://mcp.numinia.com"]`, `scopes_supported` = `["mundos"]`                                                                                                                                                                                                                                                                           |
 | `GET /.well-known/oauth-authorization-server`   | RFC 8414: PKCE `S256` only, `none` among the token endpoint auth methods, `client_id_metadata_document_supported: true`, `registration_endpoint`, scopes `mundos` and `offline_access`                                                                                                                                                                                                                                             |
 | `POST /register`                                | dynamic client registration (RFC 7591), the fallback for clients without CIMD; a client is kept 90 days; at most 10 a minute per address (`429` `too_many_requests`, `Retry-After: 60`)                                                                                                                                                                                                                                            |
@@ -41,8 +41,7 @@ token from Panel › Agents, and sends `Authorization: Bearer ntk_…` on every
 library's `resolveExternalToken` hook (`src/bearer.ts`), which asks
 numinia.com `GET /api/agents/me` with the token alone (no query: numinia.com
 finds the agent by the token's hash). The request then carries the same
-props a grant would — `{ accountId, agentId, token, via: 'panel', hear:
-false }` — so the tools, the body `Cuerpo` (named `<org>.<agent>`) and
+props a grant would — `{ accountId, agentId, token, via: 'panel', hear }` — so the tools, the body `Cuerpo` (named `<org>.<agent>`) and
 numinia.com's meter (60 a minute per AI) are the same as with OAuth.
 
 - Nothing is cached: every call checks the token again, so a token revoked
@@ -96,7 +95,7 @@ switch flipped in Panel › Agents shows on the next call. Each answers
 
 | tool        | answers                                                                                                                                                                                                                                                                                                                                      |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `quien_soy` | `id` (stable: `<organization>.<agent>`, the same across calls and reconnections), `agent`, `organization`, `name`, `enabled`, `state` (`activa`/`dormida`), `standing` (the panel's `apagada`, `sin-responsable`, `sin-permiso`, `activa`, `dormida`), `canEnter`, `permissions`, `hear: false` (no `oir` for URL-connected AIs yet), `note` |
+| `quien_soy` | `id` (stable: `<organization>.<agent>`, the same across calls and reconnections), `agent`, `organization`, `name`, `enabled`, `state` (`activa`/`dormida`), `standing` (the panel's `apagada`, `sin-responsable`, `sin-permiso`, `activa`, `dormida`), `canEnter`, `permissions`, `hear` (the AI's own setting from `/me`: `oir` is offered only when true), `note` |
 | `mundos`    | `organization`, `worlds: [{ id, name?, on, enter: { tool: "entrar", arguments: { mundo } } }]` (the worlds `/me` lists, which are the ones the fleet serves), `note`; `worlds: []` with `reason` (`apagada`, `sin-responsable`, `sin-permiso`, `sin-mundos`) when there is none to enter                                                     |
 
 What goes wrong is a tool result with `isError: true` and a sentence the AI
@@ -124,8 +123,8 @@ client's next call is a `401` and its refresh is `invalid_grant`.
 | `deshacer`         | undoes the AI's last change                                                                                     |
 
 The last seven are the bridge's own: listed with its names, descriptions
-and schemas (`PuenteMundo.herramientas()`, without `oir` while
-`URL_AIS_HEAR` is off), run by the bridge's own `ServidorMcp` inside the
+and schemas (`PuenteMundo.herramientas()`, with `oir` only when the
+AI's `hear` is on), run by the bridge's own `ServidorMcp` inside the
 AI's `Cuerpo` through `usar()`, and answered with its own text, so what
 people in the world wrote stays inside its `<material fiable="no">` block.
 The Worker keeps nothing (`src/herramientas-cuerpo.ts`): it checks the
@@ -170,8 +169,15 @@ came with. Asleep (`dormida`) it stays, and the bridge keeps to what its pass
 allows. Leaving stops every timer (the bridge's 20 Hz clock, which keeps the
 object awake while inside, its pass renewal and the alarm), so the object
 can be evicted. The token is only in memory: never in storage, a note or an
-answer. `oir` stays off (`URL_AIS_HEAR = false`): `worldTools()` leaves it
-out and what the bridge hears is dropped every minute.
+answer. `oir` follows the AI's own `hear` setting
+(Panel › Agents, read from `/me`; a store that does not send it means
+`false`): `worldTools()` lists it only when `hear` is true, and what the
+bridge hears is kept only then. The tool listing asks `/me` each time (and
+falls back to the `hear` the grant was made with if numinia.com does not
+answer); a body re-reads it with the `/me` it already asks (at most once a
+minute, also on a world tool call), so a switch turned off in the panel hides
+`oir` and drops what was heard within a minute. If `/me` cannot be read, the
+body hears nothing until it can.
 
 ## The hand-off with numinia.com (story W6)
 

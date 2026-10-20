@@ -7,9 +7,8 @@
  *
  * - `quien_soy`: who the AI is — its stable id, organization, name, whether
  *   it is switched on, its state (activa/dormida), what its roles let it do
- *   and that it cannot hear nearby chat (`hear: false`: `oir` stays off for
- *   AIs connected by URL until the lawyers validate it, and the relay has
- *   no `oir` yet).
+ *   and whether it hears nearby chat (`hear`: its own setting in the
+ *   panel; `oir` is offered only when it is on).
  * - `mundos`: the worlds of its organization that are on, and how to enter
  *   one (`entrar`, story W8); none, with the reason, when it may not enter.
  *
@@ -72,7 +71,7 @@ export const TOOLS = [
     name: WHO_AM_I,
     title: 'Who am I',
     description:
-      'Who you are in Numinia: your stable id, your organization, your name, whether you are switched on, your state (activa or dormida), what your roles let you do, and whether you can hear chat near you (not yet). Call it first, and again if something you try is refused.',
+      'Who you are in Numinia: your stable id, your organization, your name, whether you are switched on, your state (activa or dormida), what your roles let you do, and whether you can hear chat near you (`oir`). Call it first, and again if something you try is refused.',
     inputSchema: NO_INPUT,
     outputSchema: {
       type: 'object',
@@ -92,7 +91,8 @@ export const TOOLS = [
         permissions: { type: 'array', items: { type: 'string' } },
         hear: {
           type: 'boolean',
-          description: 'Whether you can hear chat near you: false for now.',
+          description:
+            'Whether you can hear chat near you: your setting in Panel › Agents. When true, `oir` is yours to use.',
         },
         note: { type: 'string' },
       },
@@ -227,9 +227,7 @@ function whoAmI(me: Me): ToolResult {
     standing,
     canEnter: standing === 'activa' || standing === 'dormida',
     permissions: me.permissions,
-    // No `oir` on the relay yet, and the house's switch keeps it off for
-    // AIs connected by URL until the lawyers validate it.
-    hear: false,
+    hear: me.hear,
     note: STANDING_TEXT[standing],
   });
 }

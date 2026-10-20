@@ -37,10 +37,13 @@
  * in storage, a log or an answer; a body whose object was evicted is gone,
  * and the next alarm of the new instance only frees its seat.
  *
- * `oir` stays off for AIs connected by URL ({@link URL_AIS_HEAR}): the
- * world tools a body runs come through {@link worldTools}, without it, and
- * what the bridge hears is dropped every minute. What it may place is the
- * house's library (biblioteca.ts).
+ * `oir` follows the AI's own `hear` setting (the panel's switch, read from
+ * `/me`): the world tools a body runs come through {@link worldTools}, with
+ * `oir` only while `hear` is true, and what the bridge hears is kept only
+ * then (dropped every minute otherwise). The setting can change at any
+ * time, so it is re-read with every `/me` the body already asks (at most
+ * once a minute); if `/me` cannot be read, the body hears nothing. What it
+ * may place is the house's library (biblioteca.ts).
  */
 import { getOAuthApi } from '@cloudflare/workers-oauth-provider';
 import { DurableObject } from 'cloudflare:workers';
@@ -72,11 +75,6 @@ export const FIRST_PASS_MS = 10_000;
 /** Bridge log lines kept for `estado` (scrubbed of the token). */
 export const NOTES_MAX = 20;
 
-/**
- * The house's switch (W3's `URL_AIS_HEAR`): AIs connected by URL do not
- * hear nearby chat until the lawyers validate it (Pablo, P3).
- */
-export const URL_AIS_HEAR = false;
 /** The bridge's hearing tool. */
 export const HEAR_TOOL = 'oir';
 
@@ -240,8 +238,8 @@ interface InUse {
 const refuse = (reason: Refusal): BodyAnswer => ({ ok: false, reason, text: REFUSALS[reason] });
 const ignore = (): undefined => undefined;
 
-/** The world tools a URL-connected AI may use: the bridge's, without hearing while the switch is off. */
-export function worldTools(bridge: PuenteMundo, hear: boolean = URL_AIS_HEAR): HerramientaMcp[] {
+/** The world tools a URL-connected AI may use: the bridge's, with `oir` only for an AI whose `hear` is on. */
+export function worldTools(bridge: PuenteMundo, hear: boolean): HerramientaMcp[] {
   return bridge.herramientas().filter((tool) => hear || tool.name !== HEAR_TOOL);
 }
 
@@ -270,12 +268,15 @@ class Body {
   readonly bridge: PuenteMundo;
   token: string;
   grant: BodyGrant | null;
+  /** Whether this AI may hear nearby chat: its panel setting, as the last `/me` said. */
+  hear: boolean;
   counted: number;
   lastCall: number;
   firstPass: ((answer: RespuestaPase | null) => void) | null = null;
 
   constructor(o: {
     me: MeAsk;
+    hear: boolean;
     world: string;
     ws: string;
     store: string;
@@ -287,6 +288,7 @@ class Body {
     this.org = o.me.accountId;
     this.agent = o.me.agentId;
     this.token = o.me.token;
+    this.hear = o.hear;
     this.world = o.world;
     this.store = o.store;
     this.desk = o.desk;
@@ -433,6 +435,7 @@ export class Cuerpo extends DurableObject<Env> {
     if (!seat.ok) return refuse('full');
     const body = new Body({
       me: props,
+      hear: answer.me.hear,
       world: mundo,
       ws: world.ws,
       store,
@@ -488,10 +491,19 @@ export class Cuerpo extends DurableObject<Env> {
 
   /** A world tool through the bridge's own MCP server, over the tools a URL-connected AI may use. */
   private async run(body: Body, name: string, args: unknown): Promise<ToolOutcome> {
+    // The panel's switch may have moved: ask `/me` again (the same once-a-minute cache the alarm uses).
+    this.listen(
+      body,
+      await this.who(
+        body.store,
+        { accountId: body.org, agentId: body.agent, token: body.token },
+        Date.now(),
+      ),
+    );
     const server = new ServidorMcp({
       nombre: 'numinia',
       version: '1',
-      herramientas: () => worldTools(body.bridge),
+      herramientas: () => worldTools(body.bridge, body.hear),
       log: (line) => this.note(body, line),
     });
     const reply = toolReply.safeParse(
@@ -530,6 +542,17 @@ export class Cuerpo extends DurableObject<Env> {
     const answer = await askMe(store, ask, storeFetch(this.env));
     this.me = { at: now, token: ask.token, answer };
     return answer;
+  }
+
+  /**
+   * Take the `hear` setting from a `/me` answer. Anything but a clear
+   * answer (numinia.com down, busy, odd) leaves the body deaf: it does not
+   * keep hearing on a setting it can no longer confirm. Turned off, what
+   * the bridge already heard is dropped at once.
+   */
+  private listen(body: Body, answer: MeAnswer): void {
+    body.hear = answer.kind === 'ok' && answer.me.hear;
+    if (!body.hear) body.bridge.oidas.length = 0;
   }
 
   /** Revoke the OAuth grant the body came with; best effort (the token is dead anyway). */
@@ -591,8 +614,6 @@ export class Cuerpo extends DurableObject<Env> {
       await this.end(body, why);
       return;
     }
-    // No hearing for URL-connected AIs: what the bridge heard is not kept.
-    body.bridge.oidas.length = 0;
     await this.ctx.storage.put(BODY_KEY, body.saved());
     await this.ctx.storage.setAlarm(now + BEAT_MS);
   }
@@ -608,6 +629,7 @@ export class Cuerpo extends DurableObject<Env> {
       await this.revoke(body.grant);
       return 'revoked';
     }
+    this.listen(body, answer);
     if (answer.kind !== 'ok') return null;
     const standing = standingOf(answer.me);
     if (standing !== 'activa' && standing !== 'dormida') return standing;

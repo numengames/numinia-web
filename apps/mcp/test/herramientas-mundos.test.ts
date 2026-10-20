@@ -263,8 +263,8 @@ describe('tools/list', () => {
       });
       expect(listed.description.length).toBeLessThan(320);
     }
-    // Listing asks numinia.com nothing.
-    expect(storeCalls).toEqual([]);
+    // Listing asks numinia.com once, for the AI's `hear` setting (whether `oir` is listed).
+    expect(storeCalls).toHaveLength(1);
   });
 });
 

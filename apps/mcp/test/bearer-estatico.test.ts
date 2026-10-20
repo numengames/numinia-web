@@ -266,7 +266,7 @@ describe('a good panel token', () => {
     };
     expect(listed.result.tools.map((one) => one.name)).toEqual([
       ...TOOLS.map((one) => one.name),
-      ...bodyTools().map((one) => one.name),
+      ...bodyTools(false).map((one) => one.name),
     ]);
 
     const who = structured(await tool(token, 'quien_soy'));

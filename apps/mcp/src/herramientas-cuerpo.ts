@@ -2,9 +2,8 @@
  * The body's tools on the MCP endpoint (story W9): `entrar` takes the AI's
  * body into one of its organization's worlds (an id from `mundos`), `salir`
  * takes it out, and the bridge's world tools — mirar, decir, ir_a, colocar,
- * mover, borrar, deshacer — act through it. `oir` is not among them while
- * the house's switch keeps hearing off for AIs connected by URL
- * ({@link URL_AIS_HEAR}: it waits for the lawyers).
+ * mover, borrar, deshacer — act through it. `oir` is among them only for
+ * an AI whose own `hear` setting (the panel's switch, from `/me`) is on.
  *
  * The Worker keeps nothing: every call goes to the AI's own Durable Object
  * `Cuerpo` (named `<org>.<agent>` from the grant's props), and a world tool
@@ -31,15 +30,10 @@ import {
 } from '../vendor/puente-mundo.mjs';
 import { STATIC_REVOKED, isStaticBearer } from './bearer';
 import { HOUSE_LIBRARY } from './biblioteca';
-import {
-  HEAR_TOOL,
-  URL_AIS_HEAR,
-  bodyOf,
-  worldTools,
-  type BodyAnswer,
-  type BodyGrant,
-} from './cuerpo';
+import { HEAR_TOOL, bodyOf, worldTools, type BodyAnswer, type BodyGrant } from './cuerpo';
+import { storeFetch, storeOrigin } from './env';
 import { ENTER_TOOL, ERRORS, type ToolCall, type ToolResult } from './herramientas';
+import { askMe } from './me';
 
 /** The tool that takes the body out of its world. */
 export const LEAVE_TOOL = 'salir';
@@ -111,8 +105,24 @@ function bridgeTools(hear: boolean): HerramientaMcp[] {
   return worldTools(catalog, hear);
 }
 
+/**
+ * Whether this AI hears nearby chat now: the `hear` of numinia.com's `/me`,
+ * asked for the listing (the panel's switch can change at any time). When
+ * `/me` cannot be read, the `hear` the grant was made with is the fallback
+ * (none: false).
+ */
+export async function hearOf(call: ToolCall): Promise<boolean> {
+  const props = hearShape.safeParse(call.props);
+  if (!props.success) return false;
+  const fallback = props.data.hear === true;
+  const store = storeOrigin(call.env);
+  if (store === null) return fallback;
+  const answer = await askMe(store, props.data, storeFetch(call.env));
+  return answer.kind === 'ok' ? answer.me.hear : fallback;
+}
+
 /** `entrar`, `salir` and the world tools, without `oir` unless hearing is on. */
-export function bodyTools(hear: boolean = URL_AIS_HEAR): ListedTool[] {
+export function bodyTools(hear: boolean): ListedTool[] {
   const world = bridgeTools(hear).map(({ name, description, inputSchema }) => ({
     name,
     description,
@@ -122,14 +132,14 @@ export function bodyTools(hear: boolean = URL_AIS_HEAR): ListedTool[] {
 }
 
 /** Whether the relay has a body tool by this name. */
-export const isBodyTool = (name: string, hear: boolean = URL_AIS_HEAR): boolean =>
-  bodyTools(hear).some((listed) => listed.name === name);
+export const isBodyTool = (name: string): boolean =>
+  bodyTools(true).some((listed) => listed.name === name);
 
 /**
  * What `initialize` tells the AI: how to get a body, then the bridge's own
- * instructions (without `oir` while hearing is off).
+ * instructions (without `oir` unless the AI's `hear` is on).
  */
-export function serverInstructions(hear: boolean = URL_AIS_HEAR): string {
+export function serverInstructions(hear: boolean): string {
   const bridge = hear ? INSTRUCCIONES : INSTRUCCIONES.replace(`, ${HEAR_TOOL}.`, '.');
   return [
     'Numinia. «quien_soy» says who you are and whether you may enter worlds; «mundos» lists your organization’s worlds.',
@@ -143,6 +153,7 @@ const propsShape = z.object({
   agentId: z.string().min(1),
   token: z.string().min(1),
 });
+const hearShape = propsShape.extend({ hear: z.boolean().optional() });
 const enterShape = z.object({ mundo: z.string().min(1).max(200) }).strict();
 
 const failure = (text: string): ToolResult => ({
