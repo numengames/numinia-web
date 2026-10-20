@@ -95,17 +95,18 @@ describe('migration 0024: every published version is kept', () => {
           'INSERT INTO community_terms (account_id, seq, version, points, published_by, published_at) VALUES (?, 1, ?, ?, ?, ?)',
         )
         .run(account, version, points, by, at);
-    const good = [id, '1.0', JSON.stringify([norma]), PABLO, T0.toISOString()] as const;
-    expect(() => insert('acc-nobody', ...good.slice(1))).toThrow(/FOREIGN KEY/);
-    expect(() => insert(id, '', ...good.slice(2))).toThrow(/CHECK/);
-    expect(() => insert(id, 'v'.repeat(41), ...good.slice(2))).toThrow(/CHECK/);
-    expect(() => insert(id, '1.0', '{"a":1}', PABLO, T0.toISOString())).toThrow(/CHECK/);
-    expect(() => insert(id, '1.0', '[]', PABLO, T0.toISOString())).toThrow(/CHECK/);
-    expect(() => insert(id, '1.0', 'no json', PABLO, T0.toISOString())).toThrow(/CHECK/);
-    expect(() => insert(id, '1.0', good[2], 'someone', T0.toISOString())).toThrow(/CHECK/);
-    expect(() => insert(id, '1.0', good[2], PABLO, 'yesterday')).toThrow(/CHECK/);
+    const points = JSON.stringify([norma]);
+    const at = T0.toISOString();
+    expect(() => insert('acc-nobody', '1.0', points, PABLO, at)).toThrow(/FOREIGN KEY/);
+    expect(() => insert(id, '', points, PABLO, at)).toThrow(/CHECK/);
+    expect(() => insert(id, 'v'.repeat(41), points, PABLO, at)).toThrow(/CHECK/);
+    expect(() => insert(id, '1.0', '{"a":1}', PABLO, at)).toThrow(/CHECK/);
+    expect(() => insert(id, '1.0', '[]', PABLO, at)).toThrow(/CHECK/);
+    expect(() => insert(id, '1.0', 'no json', PABLO, at)).toThrow(/CHECK/);
+    expect(() => insert(id, '1.0', points, 'someone', at)).toThrow(/CHECK/);
+    expect(() => insert(id, '1.0', points, PABLO, 'yesterday')).toThrow(/CHECK/);
     expect(stored(sqlite)).toBe(0);
-    insert(...good);
+    insert(id, '1.0', points, PABLO, at);
     expect(stored(sqlite)).toBe(1);
   });
 
