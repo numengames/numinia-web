@@ -1956,7 +1956,7 @@
 .agentes-op:hover {
   background: var(--fondo);
 }
-.agentes-op svg {
+.agentes-op .icono {
   grid-row: 1 / 3;
   margin-top: 2px;
   color: var(--texto-2);
@@ -1965,13 +1965,14 @@
   font-size: 0.9375rem;
   font-weight: 600;
 }
-.agentes-op span {
+.agentes-op > span:not(.icono) {
+  grid-column: 2;
   font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--texto-2);
 }
 .agentes-op[data-danger] b,
-.agentes-op[data-danger] svg {
+.agentes-op[data-danger] .icono {
   color: var(--grana);
 }
 .agentes-menu-pie {
@@ -2057,14 +2058,14 @@
   .agentes-velo {
     position: fixed;
     inset: 0;
-    z-index: 30;
+    z-index: 90;
     display: block;
     background: rgba(20, 17, 15, 0.55);
   }
   .agentes-menu {
     position: fixed;
     inset: auto 0 0;
-    z-index: 31;
+    z-index: 91;
     width: auto;
     padding: 10px 10px max(18px, env(safe-area-inset-bottom));
     border-radius: 16px 16px 0 0;
