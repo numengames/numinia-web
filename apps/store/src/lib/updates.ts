@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.152.0',
+    date: '2026-10-20 15:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Your community can now write the rules of its worlds. In «Settings» there is a new section, «Rules of your spaces»: Numinia’s own rules always come first and cannot be removed, and below them whoever holds the administrator role adds, edits and removes the community’s own points (a title, a text, mandatory or optional, rule or data), writes the new version number and publishes it. Data points can never be mandatory. Every published version is kept in a read-only history, and anyone else in the community can read the version in force.',
+      },
+    ],
+  },
+  {
     version: 'v0.151.0',
     date: '2026-10-20 13:00',
     entries: [

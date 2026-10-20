@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-20 15:00",
+    "entries": [
+      {
+        "text": "Your community can now write the rules of its worlds. In «Settings» there is a new section, «Rules of your spaces»: Numinia’s own rules always come first and cannot be removed, and below them whoever holds the administrator role adds, edits and removes the community’s own points (a title, a text, mandatory or optional, rule or data), writes the new version number and publishes it. Data points can never be mandatory. Every published version is kept in a read-only history, and anyone else in the community can read the version in force.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.152.0",
+  },
+  {
     "date": "2026-10-20 13:00",
     "entries": [
       {
