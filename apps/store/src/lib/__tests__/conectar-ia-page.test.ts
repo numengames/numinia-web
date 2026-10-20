@@ -326,6 +326,7 @@ describe('the POST: who may send it', () => {
       body({ ai: { kind: 'other' } }),
       body({ accountId: '' }),
       body({ roleId: 7 }),
+      body({ hear: 'yes' }),
       { req: REQ },
     ]) {
       const response = await answerConsent(fixture(), asker(), post(wrong), same, relay, quiet);
@@ -392,6 +393,24 @@ describe('the POST: connecting', () => {
     expect(logged).toContain('agent-consent');
     expect(logged).not.toContain(token ?? 'ntk_');
     expect(logged).not.toContain(REQ);
+  });
+
+  it('makes the AI hear nearby chat only when the box was ticked', async () => {
+    const desk = fixture();
+    const ticked = await answerConsent(
+      desk,
+      asker(),
+      post(body({ hear: true })),
+      same,
+      relay,
+      quiet,
+      draw,
+    );
+    expect(await ticked.json()).toMatchObject({ ok: true, connection: { hear: true } });
+    const listed = await desk.agents(ME, ORG);
+    expect(listed.ok && listed.agents.find((held) => held.id === 'claude-de-ana')?.hears).toBe(
+      true,
+    );
   });
 
   it('reconnects one already made, and sends the browser where the hand-off says', async () => {

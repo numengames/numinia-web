@@ -25,10 +25,12 @@
  * till checks every write again; this decides what to ask it and what the
  * screen says when the answer would be no.
  *
- * Two of Pablo's decisions travel with every plan (DISENO-MCP-REMOTO.md §6):
- *   - `hear`: whether the AI may use `oir` (nearby chat). OFF for AIs
- *     connected by URL until the lawyers validate it — the house's switch
- *     `URL_AIS_HEAR` below; the relay (W8–W9) honours the plan's flag;
+ * Two of Pablo's decisions travel with every plan (DISENO-MCP-REMOTO.md §6,
+ * the first as he changed it on 2026-10-20):
+ *   - `hear`: whether the AI may use `oir` (nearby chat). It is a switch PER
+ *     AI, off by default, that the person ticks (unticked) on the consent and
+ *     that whoever may edit the AI flips later in the panel; it is stored on
+ *     the AI's row (the till's `hears`) and the relay honours it;
  *   - the house pays the AI's body in the world for now: no balance is checked.
  *
  * The secret is drawn here (`newToken`) and handed back ONCE to the caller
@@ -42,13 +44,6 @@ import { ask, whoIs, type Log } from './accounts-source';
 import { MAX_AGENTS, isConnectedVia, newToken, readAgentName, type FreshToken } from './agents';
 import { logEvent } from './telemetry';
 import { agentIdFrom } from './world-door';
-
-/**
- * The house's switch for `oir` on AIs connected by URL (Pablo, 2026-10-19:
- * «sí, pero antes hay que validarlo con abogados»). Off until they do; while
- * off the consent does not offer it and the relay does not give the tool.
- */
-export const URL_AIS_HEAR: boolean = false;
 
 /** The MCP client asking: its own name for itself and the host it returns to. */
 export interface ConnectClient {
@@ -73,6 +68,8 @@ export interface ConnectRequest {
    * «Mirar y hablar»). On a reconnection null keeps the roles it holds.
    */
   readonly roleId: string | null;
+  /** Whether the person lets the AI hear nearby chat (the consent's checkbox); off when absent. */
+  readonly hear?: boolean;
 }
 
 /** An AI of the organization as the decision reads it (the till's row to this person). */
@@ -81,6 +78,8 @@ export interface ViewAgent {
   readonly name: string;
   readonly auth: AgentAuth;
   readonly enabled: boolean;
+  /** Whether it hears nearby chat now. */
+  readonly hears: boolean;
   readonly roleIds: readonly string[];
   readonly assignable: readonly string[];
   readonly mayEdit: boolean;
@@ -133,7 +132,7 @@ interface PlanCommon {
   readonly app: string;
   /** It returns to this computer (localhost): the consent warns apart (MCP authorization). */
   readonly loopback: boolean;
-  /** Whether it may hear nearby chat (`oir`): the house's switch, off for now. */
+  /** Whether it may hear nearby chat (`oir`): what the person ticked, off by default. */
   readonly hear: boolean;
 }
 
@@ -145,6 +144,8 @@ export type ConnectPlan =
       readonly switchOn: boolean;
       /** The role to give it after the renewal, or null when nothing changes. */
       readonly giveRole: string | null;
+      /** The new hearing setting when the consent differs from the row's, or null when it stays. */
+      readonly setHear: boolean | null;
     })
   | { readonly ok: false; readonly refusal: ConnectRefusal };
 
@@ -197,7 +198,7 @@ export function decideConnection(view: ConnectView, request: ConnectRequest): Co
     via: client.via,
     app: client.app,
     loopback: isLoopback(client.host),
-    hear: URL_AIS_HEAR,
+    hear: request.hear === true,
   };
   const { ai, roleId } = request;
 
@@ -234,6 +235,7 @@ export function decideConnection(view: ConnectView, request: ConnectRequest): Co
     name: agent.name,
     switchOn: !agent.enabled,
     giveRole: give,
+    setHear: agent.hears === common.hear ? null : common.hear,
   };
 }
 
@@ -256,6 +258,8 @@ function buildShapes() {
           name: z.string(),
           auth: z.enum(['key', 'token']),
           enabled: z.boolean(),
+          // A till that has not run migration 0023 yet says nothing: it hears nothing.
+          hears: z.boolean().default(false),
           roleIds: z.array(z.string()),
           assignable: z.array(z.string()),
           mayEdit: z.boolean(),
@@ -372,6 +376,7 @@ export async function connectAi(
           tokenPrefix: fresh.prefix,
           roleIds: [...plan.roleIds],
           via: plan.via,
+          hears: plan.hear,
         },
         house,
       ),
@@ -390,6 +395,14 @@ export async function connectAi(
       );
       if (!on.ok) return on;
       last = on.value;
+    }
+    if (plan.setHear !== null) {
+      const hears = plan.setHear;
+      const heard = await write(log, 'connect-hear', () =>
+        desk.changeAgent(you, accountId, plan.agentId, { hears }, house),
+      );
+      if (!heard.ok) return heard;
+      last = heard.value;
     }
     if (plan.giveRole !== null) {
       const role = plan.giveRole;

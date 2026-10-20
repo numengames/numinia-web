@@ -18,17 +18,41 @@ import type { AgentProblem, Failure } from '../lib/panel-agentes';
 export interface AgentesMessages {
   /** The label of the list's region. */
   readonly region: string;
-  /** The community has no AI yet. */
-  readonly none: string;
+  /** The community has no AI yet: what the empty state says, and what its picture shows. */
+  readonly empty: {
+    readonly title: string;
+    readonly text: string;
+    readonly foot: string;
+    readonly art: string;
+  };
+  /** The chip on an AI's card: where it came from (`{host}`: an app Numinia does not know). */
+  readonly client: Readonly<
+    Record<'claude' | 'chatgpt' | 'hermes' | 'panel' | 'key' | 'other', string>
+  >;
+  /** The ⋯ menu: its button (`{name}`), one line per action (`{app}`: Claude, ChatGPT, Hermes or the host) and a closing line. */
+  readonly menu: {
+    readonly label: string;
+    readonly hint: Readonly<Record<'disconnect' | 'renew' | 'remove', string>>;
+    readonly foot: string;
+  };
+  /** The one button that starts connecting an AI, the small way into the older ones, and closing the dialog. */
+  readonly connect: { readonly button: string; readonly other: string; readonly close: string };
+  /** Under the title: «¿Buscas el asistente propio de la comunidad? Es otra cosa: está en [link].» */
+  readonly assistant: { readonly before: string; readonly link: string; readonly after: string };
   /** Always visible: how long a change takes to reach the worlds. */
   readonly notice: string;
-  readonly invite: string;
-  /** Beside a disabled «Invitar»: why. */
+  /** Beside a disabled «Conectar una IA»: why. */
   readonly noRight: string;
   /** The switch's two words, also its label. */
   readonly on: string;
   readonly off: string;
   readonly stateLabel: string;
+  /** The switch on each AI's card: whether it may read the nearby chat of the worlds it is in. */
+  readonly hearLabel: string;
+  readonly hearHint: string;
+  /** The row's label, and the hint once it is on. */
+  readonly hearRow: string;
+  readonly hearOn: string;
   readonly states: Readonly<Record<AgentState, { readonly name: string; readonly hint: string }>>;
   /** What the till says the next pass will be, in plain words. */
   readonly status: Readonly<Record<AgentStatus, string>>;
@@ -89,8 +113,6 @@ export interface AgentesMessages {
     readonly renewNo: string;
     readonly renewing: string;
   };
-  /** Under the title: whose AIs these are — not Ajustes › «Agente IA», the community's own assistant. */
-  readonly subtitle: string;
   /** «Conecta tu IA» (paso 2): the relay's address and how each kind of app uses it. */
   readonly url: {
     readonly title: string;
@@ -105,14 +127,11 @@ export interface AgentesMessages {
     /** Clients that cannot sign in: the address with the panel's token; the Hermes line follows. */
     readonly noLogin: string;
     readonly copyCommand: string;
-    /** An AI connected by URL does not hear nearby chat for now. */
+    /** Where an AI's hearing is switched: on its card, off until someone who may edit it turns it on. */
     readonly hear: string;
   };
-  /** How a row's AI is connected (`via`), and «Desconectar» for one connected from an app. */
+  /** «Desconectar» for an AI connected from an app (how it was connected is the card's chip). */
   readonly connection: {
-    readonly panel: string;
-    /** `{host}`: the app's host. */
-    readonly url: string;
     /** `{host}`: an AI connected by URL whose token was revoked. */
     readonly urlNone: string;
     readonly disconnect: string;
@@ -138,18 +157,55 @@ export interface AgentesMessages {
 export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
   es: {
     region: 'IAs de la comunidad',
-    none: 'Aún no hay ninguna IA. Una IA entra en los mundos de la comunidad como una persona más: mira, habla y, si tú quieres, construye.',
+    empty: {
+      title: 'Todavía no hay ninguna IA en tu comunidad',
+      text: 'Una IA entra en los mundos como una persona más: mira, habla y, si tú quieres, construye. Tú decides qué puede hacer.',
+      foot: 'Se hace en tres pasos y puedes quitarla cuando quieras.',
+      art: 'Una IA unida por un cable a un mundo',
+    },
+    client: {
+      claude: 'Desde Claude',
+      chatgpt: 'Desde ChatGPT',
+      hermes: 'Desde Hermes',
+      panel: 'Desde el panel (con código)',
+      key: 'Con clave',
+      other: 'Desde {host}',
+    },
+    menu: {
+      label: 'Más acciones para {name}',
+      hint: {
+        disconnect:
+          'La apaga y corta su conexión con {app}. Para volver, conéctala otra vez desde {app}.',
+        renew:
+          'Crea un código nuevo. El de ahora deja de valer y la IA no entra hasta usar el nuevo.',
+        remove: 'La borra de la comunidad. Ya no podrá entrar en ningún mundo.',
+      },
+      foot: 'Cada opción te pide confirmar antes de hacerse. Si la IA está dentro de un mundo, sale en un minuto como mucho.',
+    },
+    connect: {
+      button: 'Conectar una IA',
+      other: 'Con un token o una clave (avanzado)',
+      close: 'Cerrar',
+    },
+    assistant: {
+      before: '¿Buscas el asistente propio de la comunidad? Es otra cosa: está en ',
+      link: 'Ajustes › Agente IA',
+      after: '.',
+    },
     notice: 'Los cambios llegan a los mundos en unos 10 minutos como máximo.',
-    invite: 'Invitar a una IA',
-    noRight: 'Para invitar a una IA hace falta poder gestionar los roles de la comunidad.',
+    noRight: 'Para conectar una IA hace falta poder gestionar los roles de la comunidad.',
     on: 'Encendida',
     off: 'Apagada',
     stateLabel: 'Estado',
+    hearLabel: 'Oír lo que se habla cerca',
+    hearHint: 'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
+    hearRow: 'Oír',
+    hearOn: 'Encendido: la IA lee el chat cercano en los mundos donde esté.',
     states: {
-      activa: { name: 'Activa', hint: 'Atenta y dispuesta a interactuar' },
+      activa: { name: 'Activa', hint: 'Atenta y dispuesta a interactuar.' },
       dormida: {
         name: 'Dormida',
-        hint: 'Baja atención: mira y escucha, solo habla si la llaman, no construye',
+        hint: 'Mira y escucha; solo habla si la llaman y no construye.',
       },
     },
     status: {
@@ -210,20 +266,18 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'Pega estas tres líneas en una terminal. «{folder}» es la carpeta donde tienes el motor de Numinia. Cambia {world} por la dirección del mundo (acaba en /ws).',
       copyConnect: 'Copiar las tres líneas',
       done: 'Ya lo he copiado',
-      rowLine: 'Token {prefix} · creado el {day}',
-      rowNone: 'Sin token: renuévalo para que pueda volver a entrar.',
-      renew: 'Renovar token',
-      renewLabel: 'Renovar el token de {name}',
+      rowLine: 'Código {prefix} · creado el {day}',
+      rowNone: 'Sin código: renuévalo para que pueda volver a entrar.',
+      renew: 'Renovar código',
+      renewLabel: 'Renovar el código de {name}',
       renewAsk:
-        '¿Renovar el token de {name}? El actual dejará de valer y la IA no entrará hasta que use el nuevo.',
+        '¿Renovar el código de {name}? El de ahora dejará de valer y la IA no entrará hasta que use el nuevo.',
       renewYes: 'Sí, renovar',
       renewNo: 'No, dejarlo',
       renewing: 'Renovando…',
     },
-    subtitle:
-      'IAs que traen los miembros. El asistente propio de la comunidad es otra cosa: está en Ajustes › Agente IA.',
     url: {
-      title: 'Conecta tu IA',
+      title: 'Conectar una IA',
       intro:
         'Pega esta dirección en tu IA y entra con numinia.com: eliges la comunidad, el nombre de la IA y su rol.',
       label: 'Dirección para tu IA',
@@ -235,13 +289,11 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'En Hermes de escritorio: «Añadir a Hermes» lo deja preparado; confírmalo y entra con numinia.com.',
       hermesAdd: 'Añadir a Hermes',
       noLogin:
-        'Sin inicio de sesión (scripts, Hermes en un servidor): la misma dirección con el token de «Invitar a una IA» › «Con un token». En Hermes, esta línea te pide el token:',
+        'Sin inicio de sesión (scripts, Hermes en un servidor): la misma dirección con un token, que pides en «Con un token o una clave (avanzado)». En Hermes, esta línea te pide el token:',
       copyCommand: 'Copiar la línea',
-      hear: 'Por ahora la IA no oye lo que se habla cerca de ella en los mundos.',
+      hear: 'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
     },
     connection: {
-      panel: 'Conectada desde el panel',
-      url: 'Conectada desde {host}',
       urlNone: 'Desconectada. Para volver, conéctala otra vez desde {host}.',
       disconnect: 'Desconectar',
       disconnectLabel: 'Desconectar a {name}',
@@ -262,18 +314,55 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
   },
   en: {
     region: "The community's AIs",
-    none: 'No AI yet. An AI enters the community’s worlds like anyone else: it looks, talks and, if you want, builds.',
+    empty: {
+      title: 'There is no AI in your community yet',
+      text: 'An AI enters the worlds like anyone else: it looks, talks and, if you want, builds. You decide what it may do.',
+      foot: 'It takes three steps and you can remove it whenever you like.',
+      art: 'An AI linked by a cable to a world',
+    },
+    client: {
+      claude: 'From Claude',
+      chatgpt: 'From ChatGPT',
+      hermes: 'From Hermes',
+      panel: 'From the panel (with a code)',
+      key: 'With a key',
+      other: 'From {host}',
+    },
+    menu: {
+      label: 'More actions for {name}',
+      hint: {
+        disconnect:
+          'Switches it off and cuts its connection with {app}. To come back, connect it again from {app}.',
+        renew:
+          'Makes a new code. The current one stops working and the AI does not get in until it uses the new one.',
+        remove: 'Deletes it from the community. It will no longer enter any world.',
+      },
+      foot: 'Each option asks you to confirm before it happens. If the AI is inside a world, it leaves within a minute at most.',
+    },
+    connect: {
+      button: 'Connect an AI',
+      other: 'With a token or a key (advanced)',
+      close: 'Close',
+    },
+    assistant: {
+      before: 'Looking for the community’s own assistant? That is something else: it is in ',
+      link: 'Settings › AI agent',
+      after: '.',
+    },
     notice: 'Changes reach the worlds within about 10 minutes at most.',
-    invite: 'Invite an AI',
-    noRight: 'To invite an AI you need to be able to manage the community’s roles.',
+    noRight: 'To connect an AI you need to be able to manage the community’s roles.',
     on: 'On',
     off: 'Off',
     stateLabel: 'State',
+    hearLabel: 'Hear what is said nearby',
+    hearHint: 'If you turn it on, the AI reads the nearby chat in the worlds it is in.',
+    hearRow: 'Hear',
+    hearOn: 'On: the AI reads the nearby chat in the worlds it is in.',
     states: {
-      activa: { name: 'Active', hint: 'Attentive and ready to interact' },
+      activa: { name: 'Active', hint: 'Attentive and ready to interact.' },
       dormida: {
         name: 'Asleep',
-        hint: 'Low attention: it watches and listens, only speaks if called, does not build',
+        hint: 'It watches and listens; it only speaks if called and does not build.',
       },
     },
     status: {
@@ -334,20 +423,18 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'Paste these three lines in a terminal. “{folder}” is the folder where you have the Numinia engine. Change {world} to the world’s address (it ends in /ws).',
       copyConnect: 'Copy the three lines',
       done: 'I have copied it',
-      rowLine: 'Token {prefix} · created on {day}',
-      rowNone: 'No token: renew it so it can come back in.',
-      renew: 'Renew token',
-      renewLabel: 'Renew the token of {name}',
+      rowLine: 'Code {prefix} · created on {day}',
+      rowNone: 'No code: renew it so it can come back in.',
+      renew: 'Renew code',
+      renewLabel: 'Renew the code of {name}',
       renewAsk:
-        'Renew the token of {name}? The current one will stop working and the AI will not get in until it uses the new one.',
+        'Renew the code of {name}? The current one will stop working and the AI will not get in until it uses the new one.',
       renewYes: 'Yes, renew',
       renewNo: 'No, keep it',
       renewing: 'Renewing…',
     },
-    subtitle:
-      'AIs that members bring. The community’s own assistant is something else: it is in Settings › AI agent.',
     url: {
-      title: 'Connect your AI',
+      title: 'Connect an AI',
       intro:
         'Paste this address into your AI and sign in with numinia.com: you pick the community, the AI’s name and its role.',
       label: 'Address for your AI',
@@ -359,13 +446,11 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'In Hermes desktop: «Add to Hermes» sets it up; confirm it and sign in with numinia.com.',
       hermesAdd: 'Add to Hermes',
       noLogin:
-        'Without signing in (scripts, Hermes on a server): the same address with the token from «Invite an AI» › «With a token». In Hermes, this line asks you for the token:',
+        'Without signing in (scripts, Hermes on a server): the same address with a token, which you ask for in «With a token or a key (advanced)». In Hermes, this line asks you for the token:',
       copyCommand: 'Copy the line',
-      hear: 'For now the AI does not hear what is said near it in the worlds.',
+      hear: 'For an AI to hear what is said nearby, turn on «Hear what is said nearby» on its card: it starts off.',
     },
     connection: {
-      panel: 'Connected from the panel',
-      url: 'Connected from {host}',
       urlNone: 'Disconnected. To come back, connect it again from {host}.',
       disconnect: 'Disconnect',
       disconnectLabel: 'Disconnect {name}',
@@ -386,18 +471,55 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
   },
   ja: {
     region: 'コミュニティのAI',
-    none: 'まだAIはいません。AIは他の人と同じようにコミュニティの世界に入り、見て、話し、あなたが望めば建てます。',
+    empty: {
+      title: 'コミュニティにはまだAIがいません',
+      text: 'AIは他の人と同じように世界に入り、見て、話し、あなたが望めば建てます。何ができるかはあなたが決めます。',
+      foot: '3つのステップでつなげられ、いつでも削除できます。',
+      art: 'ケーブルで世界につながれたAI',
+    },
+    client: {
+      claude: 'Claudeから',
+      chatgpt: 'ChatGPTから',
+      hermes: 'Hermesから',
+      panel: 'パネルから（コード）',
+      key: '鍵で接続',
+      other: '{host} から',
+    },
+    menu: {
+      label: '{name} のその他の操作',
+      hint: {
+        disconnect:
+          'AIをオフにして、{app} との接続を切ります。戻すには {app} からもう一度接続してください。',
+        renew:
+          '新しいコードを作ります。今のコードは使えなくなり、新しいコードを使うまでAIは入れません。',
+        remove: 'AIをコミュニティから削除します。どの世界にも入れなくなります。',
+      },
+      foot: 'どの操作も、実行前に確認があります。AIが世界にいる場合は、長くても1分で退出します。',
+    },
+    connect: {
+      button: 'AIをつなぐ',
+      other: 'トークンまたは鍵で（上級者向け）',
+      close: '閉じる',
+    },
+    assistant: {
+      before: 'コミュニティ自身のアシスタントをお探しですか？それは別のもので、',
+      link: '設定 › AIエージェント',
+      after: 'にあります。',
+    },
     notice: '変更が世界に届くまで、長くても10分ほどかかります。',
-    invite: 'AIを招待',
-    noRight: 'AIを招待するには、コミュニティのロールを管理できる必要があります。',
+    noRight: 'AIをつなぐには、コミュニティのロールを管理できる必要があります。',
     on: 'オン',
     off: 'オフ',
     stateLabel: '状態',
+    hearLabel: '近くの会話を聞く',
+    hearHint: 'オンにすると、AIは自分がいる世界で近くのチャットを読みます。',
+    hearRow: '聞く',
+    hearOn: 'オン：AIは自分がいる世界で近くのチャットを読みます。',
     states: {
-      activa: { name: 'アクティブ', hint: '注意深く、やり取りに応じられる状態' },
+      activa: { name: 'アクティブ', hint: '注意深く、やり取りに応じられる状態です。' },
       dormida: {
         name: 'スリープ',
-        hint: '注意は低め：見て聞くだけで、呼ばれたときだけ話し、建てません',
+        hint: '見て聞くだけで、呼ばれたときだけ話し、建てません。',
       },
     },
     status: {
@@ -457,18 +579,16 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'この3行をターミナルに貼り付けてください。「{folder}」はNuminiaエンジンを置いたフォルダです。{world}はワールドのアドレス（末尾が /ws）に置き換えてください。',
       copyConnect: '3行をコピー',
       done: 'コピーしました',
-      rowLine: 'トークン {prefix} · {day} に作成',
-      rowNone: 'トークンなし：更新すると再び入れるようになります。',
-      renew: 'トークンを更新',
-      renewLabel: '{name}のトークンを更新',
+      rowLine: 'コード {prefix} · {day} に作成',
+      rowNone: 'コードなし：更新すると再び入れるようになります。',
+      renew: 'コードを更新',
+      renewLabel: '{name}のコードを更新',
       renewAsk:
-        '{name}のトークンを更新しますか？現在のトークンは使えなくなり、新しいトークンを使うまでAIは入れません。',
+        '{name}のコードを更新しますか？現在のコードは使えなくなり、新しいコードを使うまでAIは入れません。',
       renewYes: 'はい、更新',
       renewNo: 'いいえ',
       renewing: '更新中…',
     },
-    subtitle:
-      'メンバーが連れてくるAIです。コミュニティ自身のアシスタントは別のもので、設定 › AIエージェント にあります。',
     url: {
       title: 'AIをつなぐ',
       intro:
@@ -482,13 +602,11 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'Hermesデスクトップでは：「Hermesに追加」で準備できます。確認してnuminia.comでログインします。',
       hermesAdd: 'Hermesに追加',
       noLogin:
-        'ログインなし（スクリプト、サーバー上のHermes）：同じアドレスに「AIを招待」›「トークンで接続」のトークンを使います。Hermesでは、この1行がトークンを尋ねます：',
+        'ログインなし（スクリプト、サーバー上のHermes）：同じアドレスにトークンを使います。トークンは「トークンまたは鍵で（上級者向け）」で作ります。Hermesでは、この1行がトークンを尋ねます：',
       copyCommand: 'この行をコピー',
-      hear: '今のところ、AIは世界の中で近くの会話を聞きません。',
+      hear: 'AIに近くの会話を聞かせるには、そのカードで「近くの会話を聞く」をオンにします。最初はオフです。',
     },
     connection: {
-      panel: 'パネルから接続',
-      url: '{host} から接続',
       urlNone: '接続が切れています。戻すには {host} からもう一度接続してください。',
       disconnect: '接続を切る',
       disconnectLabel: '{name} の接続を切る',
@@ -509,18 +627,54 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
   },
   ko: {
     region: '커뮤니티의 AI',
-    none: '아직 AI가 없습니다. AI는 다른 사람처럼 커뮤니티의 세계에 들어와 보고, 말하고, 원하면 만듭니다.',
+    empty: {
+      title: '커뮤니티에 아직 AI가 없습니다',
+      text: 'AI는 다른 사람처럼 세계에 들어와 보고, 말하고, 원하면 만듭니다. 무엇을 할 수 있는지는 당신이 정합니다.',
+      foot: '세 단계로 연결하고, 언제든 삭제할 수 있습니다.',
+      art: '케이블로 세계에 연결된 AI',
+    },
+    client: {
+      claude: 'Claude에서',
+      chatgpt: 'ChatGPT에서',
+      hermes: 'Hermes에서',
+      panel: '패널에서 (코드)',
+      key: '키로 연결',
+      other: '{host}에서',
+    },
+    menu: {
+      label: '{name}의 더 많은 작업',
+      hint: {
+        disconnect: 'AI를 끄고 {app}와의 연결을 끊습니다. 다시 쓰려면 {app}에서 다시 연결하세요.',
+        renew:
+          '새 코드를 만듭니다. 지금 코드는 쓸 수 없게 되고, 새 코드를 쓸 때까지 AI는 들어올 수 없습니다.',
+        remove: 'AI를 커뮤니티에서 삭제합니다. 더 이상 어떤 세계에도 들어갈 수 없습니다.',
+      },
+      foot: '모든 작업은 실행 전에 확인을 거칩니다. AI가 세계 안에 있으면 길어도 1분 안에 나갑니다.',
+    },
+    connect: {
+      button: 'AI 연결하기',
+      other: '토큰 또는 키로 (고급)',
+      close: '닫기',
+    },
+    assistant: {
+      before: '커뮤니티 자체의 도우미를 찾고 계신가요? 그것은 다른 것으로, ',
+      link: '설정 › AI 에이전트',
+      after: '에 있습니다.',
+    },
     notice: '변경 사항은 세계에 길어도 약 10분 안에 반영됩니다.',
-    invite: 'AI 초대',
-    noRight: 'AI를 초대하려면 커뮤니티의 역할을 관리할 수 있어야 합니다.',
+    noRight: 'AI를 연결하려면 커뮤니티의 역할을 관리할 수 있어야 합니다.',
     on: '켜짐',
     off: '꺼짐',
     stateLabel: '상태',
+    hearLabel: '근처 대화 듣기',
+    hearHint: '켜면 AI가 있는 세계에서 근처 채팅을 읽습니다.',
+    hearRow: '듣기',
+    hearOn: '켜짐: AI가 있는 세계에서 근처 채팅을 읽습니다.',
     states: {
-      activa: { name: '활동', hint: '주의를 기울이며 상호작용할 준비가 된 상태' },
+      activa: { name: '활동', hint: '주의를 기울이며 상호작용할 준비가 된 상태입니다.' },
       dormida: {
         name: '휴면',
-        hint: '낮은 주의: 보고 듣기만 하고, 부를 때만 말하며, 만들지 않습니다',
+        hint: '보고 듣기만 하고, 부를 때만 말하며, 만들지 않습니다.',
       },
     },
     status: {
@@ -580,18 +734,16 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         '이 세 줄을 터미널에 붙여 넣으세요. “{folder}”는 Numinia 엔진이 있는 폴더입니다. {world}를 월드 주소(/ws로 끝남)로 바꾸세요.',
       copyConnect: '세 줄 복사',
       done: '복사했습니다',
-      rowLine: '토큰 {prefix} · {day} 생성',
-      rowNone: '토큰 없음: 갱신하면 다시 들어올 수 있습니다.',
-      renew: '토큰 갱신',
-      renewLabel: '{name}의 토큰 갱신',
+      rowLine: '코드 {prefix} · {day} 생성',
+      rowNone: '코드 없음: 갱신하면 다시 들어올 수 있습니다.',
+      renew: '코드 갱신',
+      renewLabel: '{name}의 코드 갱신',
       renewAsk:
-        '{name}의 토큰을 갱신할까요? 현재 토큰은 쓸 수 없게 되고, 새 토큰을 쓸 때까지 AI는 들어올 수 없습니다.',
+        '{name}의 코드를 갱신할까요? 현재 코드는 쓸 수 없게 되고, 새 코드를 쓸 때까지 AI는 들어올 수 없습니다.',
       renewYes: '예, 갱신',
       renewNo: '아니요',
       renewing: '갱신 중…',
     },
-    subtitle:
-      '멤버가 데려오는 AI입니다. 커뮤니티 자체의 도우미는 다른 것으로, 설정 › AI 에이전트에 있습니다.',
     url: {
       title: 'AI 연결하기',
       intro:
@@ -605,13 +757,11 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'Hermes 데스크톱에서: «Hermes에 추가»로 준비됩니다. 확인하고 numinia.com으로 로그인하세요.',
       hermesAdd: 'Hermes에 추가',
       noLogin:
-        '로그인 없이 (스크립트, 서버의 Hermes): 같은 주소에 «AI 초대» › «토큰으로»의 토큰을 씁니다. Hermes에서는 이 한 줄이 토큰을 묻습니다:',
+        '로그인 없이 (스크립트, 서버의 Hermes): 같은 주소에 토큰을 씁니다. 토큰은 «토큰 또는 키로 (고급)»에서 만듭니다. Hermes에서는 이 한 줄이 토큰을 묻습니다:',
       copyCommand: '이 줄 복사',
-      hear: '지금은 AI가 세계에서 근처의 대화를 듣지 않습니다.',
+      hear: 'AI가 근처 대화를 듣게 하려면 AI 카드에서 「근처 대화 듣기」를 켜세요. 처음에는 꺼져 있습니다.',
     },
     connection: {
-      panel: '패널에서 연결됨',
-      url: '{host}에서 연결됨',
       urlNone: '연결이 끊겼습니다. 다시 쓰려면 {host}에서 다시 연결하세요.',
       disconnect: '연결 끊기',
       disconnectLabel: '{name} 연결 끊기',
@@ -632,18 +782,54 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
   },
   'pt-br': {
     region: 'IAs da comunidade',
-    none: 'Ainda não há nenhuma IA. Uma IA entra nos mundos da comunidade como qualquer pessoa: olha, fala e, se você quiser, constrói.',
+    empty: {
+      title: 'Ainda não há nenhuma IA na sua comunidade',
+      text: 'Uma IA entra nos mundos como uma pessoa qualquer: olha, fala e, se você quiser, constrói. Você decide o que ela pode fazer.',
+      foot: 'São três passos e você pode removê-la quando quiser.',
+      art: 'Uma IA ligada por um cabo a um mundo',
+    },
+    client: {
+      claude: 'Do Claude',
+      chatgpt: 'Do ChatGPT',
+      hermes: 'Do Hermes',
+      panel: 'Do painel (com código)',
+      key: 'Com chave',
+      other: 'De {host}',
+    },
+    menu: {
+      label: 'Mais ações para {name}',
+      hint: {
+        disconnect:
+          'Desliga a IA e corta a conexão dela com {app}. Para voltar, conecte-a de novo a partir de {app}.',
+        renew: 'Cria um código novo. O atual deixa de valer e a IA não entra até usar o novo.',
+        remove: 'Apaga a IA da comunidade. Ela não poderá mais entrar em nenhum mundo.',
+      },
+      foot: 'Cada opção pede confirmação antes de acontecer. Se a IA estiver dentro de um mundo, ela sai em um minuto, no máximo.',
+    },
+    connect: {
+      button: 'Conectar uma IA',
+      other: 'Com um token ou uma chave (avançado)',
+      close: 'Fechar',
+    },
+    assistant: {
+      before: 'Procurando o assistente próprio da comunidade? É outra coisa: fica em ',
+      link: 'Configurações › Agente de IA',
+      after: '.',
+    },
     notice: 'As mudanças chegam aos mundos em cerca de 10 minutos, no máximo.',
-    invite: 'Convidar uma IA',
-    noRight: 'Para convidar uma IA é preciso poder gerenciar os papéis da comunidade.',
+    noRight: 'Para conectar uma IA é preciso poder gerenciar os papéis da comunidade.',
     on: 'Ligada',
     off: 'Desligada',
     stateLabel: 'Estado',
+    hearLabel: 'Ouvir o que se fala por perto',
+    hearHint: 'Se você ligar, a IA lê o chat próximo nos mundos em que estiver.',
+    hearRow: 'Ouvir',
+    hearOn: 'Ligado: a IA lê o chat próximo nos mundos em que estiver.',
     states: {
-      activa: { name: 'Ativa', hint: 'Atenta e disposta a interagir' },
+      activa: { name: 'Ativa', hint: 'Atenta e disposta a interagir.' },
       dormida: {
         name: 'Dormindo',
-        hint: 'Atenção baixa: olha e escuta, só fala se a chamarem, não constrói',
+        hint: 'Olha e escuta; só fala se a chamarem e não constrói.',
       },
     },
     status: {
@@ -704,20 +890,18 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'Cole estas três linhas em um terminal. “{folder}” é a pasta onde você tem o motor do Numinia. Troque {world} pelo endereço do mundo (termina em /ws).',
       copyConnect: 'Copiar as três linhas',
       done: 'Já copiei',
-      rowLine: 'Token {prefix} · criado em {day}',
-      rowNone: 'Sem token: renove para ela poder voltar a entrar.',
-      renew: 'Renovar token',
-      renewLabel: 'Renovar o token de {name}',
+      rowLine: 'Código {prefix} · criado em {day}',
+      rowNone: 'Sem código: renove-o para que ela possa voltar a entrar.',
+      renew: 'Renovar código',
+      renewLabel: 'Renovar o código de {name}',
       renewAsk:
-        'Renovar o token de {name}? O atual deixará de valer e a IA não entrará até usar o novo.',
+        'Renovar o código de {name}? O atual deixará de valer e a IA não entrará até usar o novo.',
       renewYes: 'Sim, renovar',
       renewNo: 'Não, manter',
       renewing: 'Renovando…',
     },
-    subtitle:
-      'IAs que os membros trazem. O assistente próprio da comunidade é outra coisa: fica em Configurações › Agente de IA.',
     url: {
-      title: 'Conecte sua IA',
+      title: 'Conectar uma IA',
       intro:
         'Cole este endereço na sua IA e entre com numinia.com: você escolhe a comunidade, o nome da IA e o papel dela.',
       label: 'Endereço para a sua IA',
@@ -729,13 +913,11 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'No Hermes para desktop: «Adicionar ao Hermes» deixa tudo pronto; confirme e entre com numinia.com.',
       hermesAdd: 'Adicionar ao Hermes',
       noLogin:
-        'Sem login (scripts, Hermes num servidor): o mesmo endereço com o token de «Convidar uma IA» › «Com um token». No Hermes, esta linha pede o token:',
+        'Sem login (scripts, Hermes num servidor): o mesmo endereço com um token, que você pede em «Com um token ou uma chave (avançado)». No Hermes, esta linha pede o token:',
       copyCommand: 'Copiar a linha',
-      hear: 'Por enquanto a IA não ouve o que se fala perto dela nos mundos.',
+      hear: 'Para uma IA ouvir o que se fala por perto, ligue «Ouvir o que se fala por perto» no cartão dela: ela começa desligada.',
     },
     connection: {
-      panel: 'Conectada pelo painel',
-      url: 'Conectada de {host}',
       urlNone: 'Desconectada. Para voltar, conecte de novo a partir de {host}.',
       disconnect: 'Desconectar',
       disconnectLabel: 'Desconectar {name}',

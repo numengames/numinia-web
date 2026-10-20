@@ -117,7 +117,7 @@ describe('migration 0022', () => {
     const shim = sqliteD1();
     const names = migrationFiles();
     const at = names.indexOf('0022_agent_connected_via.sql');
-    expect(at).toBe(names.length - 1);
+    expect(at).toBeGreaterThan(0);
     for (const name of names.slice(0, at)) {
       shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
     }
@@ -137,9 +137,16 @@ describe('migration 0022', () => {
       .get();
 
     shim.sqlite.exec(readFileSync(join(MIGRATIONS, names[at] as string), 'utf8'));
-
     expect(shim.sqlite.prepare('SELECT * FROM team_agents').all()).toEqual(
       before.map((row) => ({ ...(row as object), connected_via: null })),
+    );
+    // The later migrations (0023 adds hears) run over it, as in production.
+    for (const name of names.slice(at + 1)) {
+      shim.sqlite.exec(readFileSync(join(MIGRATIONS, name), 'utf8'));
+    }
+
+    expect(shim.sqlite.prepare('SELECT * FROM team_agents').all()).toEqual(
+      before.map((row) => ({ ...(row as object), connected_via: null, hears: 0 })),
     );
     // team_log is untouched: same act list, the founding trigger still there.
     expect(

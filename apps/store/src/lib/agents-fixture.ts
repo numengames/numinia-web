@@ -110,6 +110,7 @@ interface FixtureAgent {
   readonly responsible: string;
   enabled: boolean;
   state: AgentState;
+  hears: boolean;
   readonly createdAt: string;
   updatedAt: string;
   roleIds: string[];
@@ -230,6 +231,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           via: agent.via,
           enabled: agent.enabled,
           state: agent.state,
+          hears: agent.hears,
           status: statusOf(entry, agent),
           responsible: agent.responsible,
           ...(responsibleName === undefined ? {} : { responsibleName }),
@@ -294,6 +296,9 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           ? []
           : [AGENT_PROBLEMS.roleIds]),
         ...(isConnectedVia(via) ? [] : [AGENT_PROBLEMS.via]),
+        ...(draft?.hears === undefined || typeof draft.hears === 'boolean'
+          ? []
+          : [AGENT_PROBLEMS.hears]),
       ];
       if (problems.length > 0) return refuse(...problems);
       const { id, publicKey, tokenHash, tokenPrefix } = draft as DeskKeyDraft & DeskTokenDraft;
@@ -334,6 +339,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           responsible: entry.who,
           enabled: true,
           state: 'activa',
+          hears: draft?.hears === true,
           createdAt: at,
           updatedAt: at,
           roleIds: unique,
@@ -356,8 +362,10 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       const keys = typeof change === 'object' && change !== null ? Object.keys(change) : [];
       const enabledSent = change?.enabled;
       const stateSent = change?.state;
+      const hearsSent = change?.hears;
       const problems = [
-        ...(keys.length === 0 || keys.some((key) => key !== 'enabled' && key !== 'state')
+        ...(keys.length === 0 ||
+        keys.some((key) => key !== 'enabled' && key !== 'state' && key !== 'hears')
           ? [AGENT_PROBLEMS.change]
           : []),
         ...(enabledSent !== undefined && typeof enabledSent !== 'boolean'
@@ -365,6 +373,9 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           : []),
         ...(stateSent !== undefined && !AGENT_STATES.includes(stateSent)
           ? [AGENT_PROBLEMS.state]
+          : []),
+        ...(hearsSent !== undefined && typeof hearsSent !== 'boolean'
+          ? [AGENT_PROBLEMS.hears]
           : []),
       ];
       const found = withAgent(wallet, accountId, agentId, house);
@@ -377,6 +388,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       const state = stateSent ?? agent.state;
       const switched = enabled !== agent.enabled;
       const moved = state !== agent.state;
+      const hears = hearsSent ?? agent.hears;
+      const listened = hears !== agent.hears;
       if (switched) {
         host.record(entry, enabled ? 'agent-enabled' : 'agent-disabled', agent.id, {
           name: agent.name,
@@ -389,9 +402,16 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           to: state,
         });
       }
-      if (switched || moved) {
+      if (listened) {
+        host.record(entry, 'agent-state', agent.id, {
+          name: agent.name,
+          hears: hears ? 'on' : 'off',
+        });
+      }
+      if (switched || moved || listened) {
         agent.enabled = enabled;
         agent.state = state;
+        agent.hears = hears;
         agent.updatedAt = stamp();
       }
       return view(entry);
@@ -482,6 +502,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           ...(agent.tokenHash === undefined ? {} : { tokenHash: agent.tokenHash }),
           enabled: agent.enabled,
           state: agent.state,
+          hears: agent.hears,
         },
         eligible: answered(org.access),
         permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),

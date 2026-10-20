@@ -43,7 +43,7 @@ export interface GrantProps {
   readonly token: string;
   /** How it was connected (`mcp:<host>`), as the till's `connected_via`. */
   readonly via: string;
-  /** Whether it may hear nearby chat: the house's switch, off for URL-connected AIs. */
+  /** Whether it could hear nearby chat when allowed: only a fallback, `/me` says it now. */
   readonly hear: boolean;
   /** When the person allowed it, Unix seconds: the 90-day ceiling counts from here. */
   readonly connectedAt: number;

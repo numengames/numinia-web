@@ -54,7 +54,7 @@ function readAgent(value: unknown): DeskAgent | null {
   if (!isRecord(value)) return null;
   const { id, name, auth, publicKey, enabled, state, status, responsible, responsibleName } = value;
   const { tokenPrefix, tokenCreatedAt, via } = value;
-  const { createdAt, updatedAt, roleIds, assignable, mayEdit } = value;
+  const { createdAt, updatedAt, roleIds, assignable, mayEdit, hears } = value;
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
@@ -64,6 +64,7 @@ function readAgent(value: unknown): DeskAgent | null {
     (tokenCreatedAt !== undefined && typeof tokenCreatedAt !== 'string') ||
     (via !== undefined && typeof via !== 'string') ||
     typeof enabled !== 'boolean' ||
+    (hears !== undefined && typeof hears !== 'boolean') ||
     typeof state !== 'string' ||
     !STATES.includes(state) ||
     typeof status !== 'string' ||
@@ -89,6 +90,8 @@ function readAgent(value: unknown): DeskAgent | null {
     enabled,
     // The closed lists were checked above.
     state: state as AgentState,
+    // A desk that does not say (before migration 0023) hears nothing.
+    hears: hears === true,
     status: status as AgentStatus,
     responsible,
     ...(typeof responsibleName === 'string' ? { responsibleName } : {}),
@@ -192,7 +195,7 @@ export type AgentProblem =
 
 /** Prefixes of the till's field refusals: a name, a key, an id the form should have caught. */
 const FIELD_PROBLEM =
-  /^(agentId|name|publicKey|tokenHash|tokenPrefix|roleIds|roleId|change|enabled|state|agent) /;
+  /^(agentId|name|publicKey|tokenHash|tokenPrefix|roleIds|roleId|change|enabled|state|hears|agent) /;
 
 /**
  * A refusal told apart: one of the agents' own, or the organization's
@@ -276,6 +279,7 @@ export function roleIdsFor(ability: 'talk' | 'build', picked: readonly string[])
 export type Change =
   | { readonly enabled: boolean }
   | { readonly state: AgentState }
+  | { readonly hears: boolean }
   | { readonly giveRole: string }
   | { readonly takeRole: string }
   | { readonly renewToken: true }
@@ -378,6 +382,87 @@ export const disconnectable = (agent: DeskAgent): boolean =>
   agent.auth === 'token' &&
   agent.tokenPrefix !== undefined &&
   connectionOf(agent)?.kind === 'url';
+
+/**
+ * Which app an AI came from, as its card's chip says it: Claude, ChatGPT or
+ * Hermes (by the host it connected from), the panel's code, a key, or — for an
+ * app Numinia does not know — the host itself.
+ */
+export type AgentClient =
+  | { readonly kind: 'claude' | 'chatgpt' | 'hermes' | 'panel' | 'key' }
+  | { readonly kind: 'other'; readonly host: string };
+
+/** `host` is the host itself or a subdomain of `domain`. */
+const underDomain = (host: string, domain: string): boolean =>
+  host === domain || host.endsWith(`.${domain}`);
+
+/** The app behind an `mcp:<host>` connection: the well-known hosts by name, any other by itself. */
+function clientOfHost(host: string): AgentClient {
+  if (
+    underDomain(host, 'claude.ai') ||
+    underDomain(host, 'claude.com') ||
+    host.includes('anthropic')
+  ) {
+    return { kind: 'claude' };
+  }
+  if (underDomain(host, 'chatgpt.com') || host.includes('openai')) return { kind: 'chatgpt' };
+  if (
+    host.includes('nousresearch') ||
+    host.includes('hermes') ||
+    host === '127.0.0.1' ||
+    underDomain(host, 'localhost')
+  ) {
+    return { kind: 'hermes' };
+  }
+  return { kind: 'other', host };
+}
+
+/**
+ * Where an AI came from, from its `via` (what the till wrote when it was
+ * made): `mcp:<host>` is an app, `panel` is a code made in the panel, and no
+ * `via` is an AI that existed before it — a code if it holds a token, else a
+ * key (the ways older than `via`).
+ */
+export function clientOf(agent: Pick<DeskAgent, 'via' | 'auth'>): AgentClient {
+  if (agent.via === 'panel') return { kind: 'panel' };
+  const host = VIA_URL.exec(agent.via ?? '')?.[1];
+  if (host !== undefined) return clientOfHost(host);
+  return { kind: agent.auth === 'token' ? 'panel' : 'key' };
+}
+
+/** The app's name as a sentence says it — Claude, ChatGPT, Hermes, or the host of one it does not know; null for the panel and a key. */
+export function appNameOf(client: AgentClient): string | null {
+  switch (client.kind) {
+    case 'claude':
+      return 'Claude';
+    case 'chatgpt':
+      return 'ChatGPT';
+    case 'hermes':
+      return 'Hermes';
+    case 'other':
+      return client.host;
+    default:
+      return null;
+  }
+}
+
+/** What the card's ⋯ menu offers. */
+export type AgentAction = 'disconnect' | 'renew' | 'remove';
+
+/**
+ * The actions this AI's menu has, only those that apply to it: «Desconectar»
+ * for one connected from an app, «Renovar código» for one made with a code
+ * from the panel, «Quitar» for any — all of them only to someone who may edit
+ * it, so the others get no menu.
+ */
+export function actionsOf(agent: DeskAgent): readonly AgentAction[] {
+  if (!agent.mayEdit) return [];
+  const actions: AgentAction[] = [];
+  if (disconnectable(agent)) actions.push('disconnect');
+  if (agent.auth === 'token' && connectionOf(agent)?.kind !== 'url') actions.push('renew');
+  actions.push('remove');
+  return actions;
+}
 
 /** The row's token line parts: the prefix as shown (`ntk_ab12cd34…`) and the day it was made. */
 export function tokenLine(

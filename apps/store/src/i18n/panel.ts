@@ -130,7 +130,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     leads: {
       gatherings:
         'Los encuentros de la comunidad: los próximos y los ya celebrados, cada uno con su página.',
-      agents: 'Las IAs de la comunidad: cuáles hay, si están encendidas y en qué estado.',
+      agents:
+        'Las IAs que han traído las personas de tu comunidad: cuáles hay y si están encendidas.',
       summary: 'Lo que hay en el panel de esta organización, de un vistazo.',
       venues: 'Las sedes de la organización: los mundos que la casa le ha asignado.',
       members:
@@ -205,7 +206,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
       gatherings:
         'The community’s gatherings: the coming ones and those already held, each with its page.',
       agents:
-        "The community's AIs: which there are, whether they are on, and what state they are in.",
+        'The AIs the people of your community have brought: which there are and whether they are on.',
       summary: "What is in this organization's panel, at a glance.",
       venues: 'The organization’s homes: the worlds the house has assigned to it.',
       members:
@@ -279,7 +280,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       gatherings: 'コミュニティの集まり：これからのものと開催済みのもの、それぞれのページへ。',
-      agents: 'コミュニティのAI：どのAIがいて、オンかオフか、どんな状態か。',
+      agents: 'コミュニティの人たちが連れてきたAI：どのAIがいて、オンになっているか。',
       summary: 'この組織のパネルにあるものを、ひと目で。',
       venues: '組織の拠点：ハウスが組織に割り当てたワールド。',
       members:
@@ -351,7 +352,7 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     },
     leads: {
       gatherings: '커뮤니티의 모임: 다가오는 모임과 이미 열린 모임, 각각의 페이지로.',
-      agents: '커뮤니티의 AI: 어떤 AI가 있고, 켜져 있는지, 어떤 상태인지.',
+      agents: '커뮤니티 사람들이 데려온 AI: 어떤 AI가 있고 켜져 있는지.',
       summary: '이 조직의 패널에 있는 것을 한눈에.',
       venues: '조직의 거점: 하우스가 조직에 배정한 월드.',
       members:
@@ -424,7 +425,8 @@ export const PANEL_UI: Readonly<Record<SupportedLocale, PanelMessages>> = {
     leads: {
       gatherings:
         'Os encontros da comunidade: os próximos e os já realizados, cada um com a sua página.',
-      agents: 'As IAs da comunidade: quais existem, se estão ligadas e em que estado.',
+      agents:
+        'As IAs que as pessoas da sua comunidade trouxeram: quais existem e se estão ligadas.',
       summary: 'O que há no painel desta organização, num relance.',
       venues: 'As sedes da organização: os mundos que a casa atribuiu a ela.',
       members:

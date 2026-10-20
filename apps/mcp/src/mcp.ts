@@ -12,9 +12,16 @@
  * name, no `name` — is a JSON-RPC error (`-32602`).
  */
 import { isStaticBearer } from './bearer';
+import { HEAR_TOOL } from './cuerpo';
 import type { Env } from './env';
 import { TOOLS, callTool, isTool, type ToolCall } from './herramientas';
-import { bodyTools, callBodyTool, isBodyTool, serverInstructions } from './herramientas-cuerpo';
+import {
+  bodyTools,
+  callBodyTool,
+  hearOf,
+  isBodyTool,
+  serverInstructions,
+} from './herramientas-cuerpo';
 
 /** Revisions whose `initialize` the relay answers, newest first. */
 export const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
@@ -56,32 +63,34 @@ async function toolsCall(params: unknown, call: ToolCall): Promise<RpcAnswer> {
   }
   const { name } = params;
   if (isTool(name)) return { result: await callTool(name, params.arguments, call) };
-  if (isBodyTool(name)) return { result: await callBodyTool(name, params.arguments, call) };
+  // `oir` is a tool only for an AI whose `hear` is on: for any other it does not exist.
+  if (isBodyTool(name) && (name !== HEAR_TOOL || (await hearOf(call))))
+    return { result: await callBodyTool(name, params.arguments, call) };
   return { error: { code: INVALID_PARAMS, message: `Unknown tool: ${name}` } };
 }
 
 async function answerOf(method: string, params: unknown, call: ToolCall): Promise<RpcAnswer> {
   if (method === 'tools/call') return toolsCall(params, call);
-  const result = resultOf(method, params);
+  const result = await resultOf(method, params, call);
   if (result === undefined) {
     return { error: { code: METHOD_NOT_FOUND, message: `Method not found: ${method}` } };
   }
   return { result };
 }
 
-function resultOf(method: string, params: unknown): unknown {
+async function resultOf(method: string, params: unknown, call: ToolCall): Promise<unknown> {
   switch (method) {
     case 'initialize':
       return {
         protocolVersion: protocolFor(params),
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
-        instructions: serverInstructions(),
+        instructions: serverInstructions(await hearOf(call)),
       };
     case 'ping':
       return {};
     case 'tools/list':
-      return { tools: [...TOOLS, ...bodyTools()] };
+      return { tools: [...TOOLS, ...bodyTools(await hearOf(call))] };
     default:
       return undefined;
   }

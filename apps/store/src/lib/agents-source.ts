@@ -8,7 +8,7 @@
  *   GET    ?cuenta=<account id>              → { agents: DeskAgents }
  *   POST   { accountId, id, name, publicKey, roleIds? }      create by key (the asker answers for it)
  *          { accountId, id, name, auth: 'token', roleIds? }   create by token → { agents, token }
- *   PATCH  { accountId, id, enabled?, state? }               the switch and/or the state
+ *   PATCH  { accountId, id, enabled?, state?, hears? }       the switch, the state and/or whether it hears nearby chat
  *          { accountId, id, renewToken: true }               a new token (the old one stops) → { agents, token }
  *          { accountId, id, revokeToken: true }              revoke the token and switch it off
  *          { accountId, id, giveRole: <role id> }            give a role
@@ -81,11 +81,14 @@ function buildSchemas() {
         id: agentId,
         enabled: z.boolean().optional(),
         state: z.enum(AGENT_STATES).optional(),
+        hears: z.boolean().optional(),
       })
       .strict()
-      .refine((change) => change.enabled !== undefined || change.state !== undefined, {
-        message: 'enabled or state is required',
-      }),
+      .refine(
+        (change) =>
+          change.enabled !== undefined || change.state !== undefined || change.hears !== undefined,
+        { message: 'enabled, state or hears is required' },
+      ),
     z.object({ accountId, id: agentId, giveRole: roleId }).strict(),
     z.object({ accountId, id: agentId, takeRole: roleId }).strict(),
     z.object({ accountId, id: agentId, renewToken: z.literal(true) }).strict(),
@@ -116,6 +119,8 @@ function buildSchemas() {
           tokenCreatedAt: z.string().optional(),
           enabled: z.boolean(),
           state: z.enum(AGENT_STATES),
+          // A till that has not run migration 0023 yet says nothing: it hears nothing.
+          hears: z.boolean().default(false),
           status: z.enum(['apagada', 'sin-responsable', 'sin-permiso', ...AGENT_STATES]),
           responsible: z.string(),
           responsibleName: z.string().optional(),

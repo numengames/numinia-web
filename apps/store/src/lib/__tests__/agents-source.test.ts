@@ -68,6 +68,7 @@ describe('GET /api/saldo/agents', () => {
         publicKey: BOT.publicKey,
         enabled: true,
         state: 'activa',
+        hears: false,
         status: 'activa',
         responsible: ME,
         createdAt: NOW.toISOString(),
@@ -179,6 +180,46 @@ describe('POST, PATCH and DELETE /api/saldo/agents', () => {
     ]);
   });
 
+  it('flips whether an AI hears nearby chat, alone or with the others, and answers the list', async () => {
+    const desk = fresh();
+    await answerAgentWrite(desk, asker(), send('POST', BOT), quiet);
+    const on = await json(
+      await answerAgentWrite(
+        desk,
+        asker(),
+        send('PATCH', { accountId: NUMEN, id: 'hermes-1', hears: true }),
+        quiet,
+      ),
+    );
+    expect(on['agents'].agents[0]).toMatchObject({ hears: true, enabled: true });
+    const both = await json(
+      await answerAgentWrite(
+        desk,
+        asker(),
+        send('PATCH', { accountId: NUMEN, id: 'hermes-1', hears: false, state: 'dormida' }),
+        quiet,
+      ),
+    );
+    expect(both['agents'].agents[0]).toMatchObject({ hears: false, state: 'dormida' });
+  });
+
+  it('reads a till that has not learned hearing yet as an AI that hears nothing', async () => {
+    const desk = fresh();
+    await answerAgentWrite(desk, asker(), send('POST', BOT), quiet);
+    const listed = await desk.agents(ME, NUMEN, false);
+    if (!listed.ok) throw new Error('no list');
+    const old = { ...listed, agents: listed.agents.map(({ hears: _hears, ...rest }) => rest) };
+    const answered = await json(
+      await answerAgents(
+        { ...desk, agents: async () => old } as unknown as typeof desk,
+        asker(),
+        url(`cuenta=${NUMEN}`),
+        quiet,
+      ),
+    );
+    expect(answered['agents'].agents[0]).toMatchObject({ hears: false });
+  });
+
   it('refuses without a session, and a body that is not the contract’s', async () => {
     const desk = fresh();
     expect((await answerAgentWrite(desk, null, send('POST', BOT), quiet)).status).toBe(401);
@@ -191,6 +232,7 @@ describe('POST, PATCH and DELETE /api/saldo/agents', () => {
     await bad(send('POST', { ...BOT, roleIds: ['nope'] }), 400);
     await bad(send('PATCH', { accountId: NUMEN, id: 'hermes-1' }), 400);
     await bad(send('PATCH', { accountId: NUMEN, id: 'hermes-1', state: 'ocupada' }), 400);
+    await bad(send('PATCH', { accountId: NUMEN, id: 'hermes-1', hears: 'yes' }), 400);
     await bad(send('PATCH', { accountId: NUMEN, id: 'hermes-1', giveRole: 'x' }), 400);
     await bad(
       send('PATCH', {

@@ -27,9 +27,10 @@
  * OUT — the page posts JSON (same origin) to /api/conectar-ia:
  *
  *     { req, app, host, accountId, ai: { kind: 'new', name } |
- *       { kind: 'again', agentId }, roleId: string | null }
+ *       { kind: 'again', agentId }, roleId: string | null, hear?: boolean }
  *
- *   and gets `200 { ok: true, connection: { req, action, accountId,
+ *   (`hear`, the consent's unchecked checkbox: whether the AI may hear nearby
+ *   chat, off when absent) and gets `200 { ok: true, connection: { req, action, accountId,
  *   agentId, name, via, hear }, next }`. The AI's token is NEVER in the
  *   answer: it goes to the relay through its service binding (`handOff`,
  *   lib/relay-handoff.ts), which seals it for the browser that started the
@@ -92,6 +93,7 @@ function buildShapes() {
       z.object({ kind: z.literal('again'), agentId: z.string().min(1).max(64) }),
     ]),
     roleId: z.string().min(1).max(64).nullable(),
+    hear: z.boolean().default(false),
   });
   const overview = z.union([
     z.object({
@@ -112,6 +114,7 @@ function buildShapes() {
           name: z.string(),
           auth: z.enum(['key', 'token']),
           enabled: z.boolean(),
+          hears: z.boolean().default(false),
           roleIds: z.array(z.string()),
           assignable: z.array(z.string()),
           mayEdit: z.boolean(),
@@ -333,6 +336,7 @@ export async function answerConsent(
           ? sent.ai
           : { kind: 'again', accountId: sent.accountId, agentId: sent.ai.agentId },
       roleId: sent.roleId,
+      hear: sent.hear,
     },
     log,
     draw,

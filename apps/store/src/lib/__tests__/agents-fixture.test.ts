@@ -158,6 +158,7 @@ describe('creating', () => {
         publicKey: BOT.publicKey,
         enabled: true,
         state: 'activa',
+        hears: false,
         status: 'activa',
         responsible: OWNER,
         responsibleName: 'Pablo',
@@ -316,6 +317,32 @@ describe('switching, sleeping, removing', () => {
       'agent-state',
     ]);
     expect(s.log[2]?.detail).toEqual({ name: 'Hermes', from: 'activa', to: 'dormida' });
+  });
+
+  it('flips whether an AI hears nearby chat: off by default, a log line for each change, none when nothing changes', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, BOT);
+    s.log.length = 0;
+    expect(view(await s.desk.agents(OWNER, ORG)).agents[0]?.hears).toBe(false);
+    await s.desk.changeAgent(OWNER, ORG, 'hermes-1', { hears: false });
+    expect(s.log).toEqual([]);
+    const on = view(await s.desk.changeAgent(OWNER, ORG, 'hermes-1', { hears: true }));
+    expect(on.agents[0]?.hears).toBe(true);
+    await s.desk.changeAgent(OWNER, ORG, 'hermes-1', { hears: false });
+    expect(s.log.map((line) => [line.act, line.detail])).toEqual([
+      ['agent-state', { name: 'Hermes', hears: 'on' }],
+      ['agent-state', { name: 'Hermes', hears: 'off' }],
+    ]);
+    expect(
+      problems(await s.desk.changeAgent(OWNER, ORG, 'hermes-1', { hears: 'yes' } as never)),
+    ).toEqual([AGENT_PROBLEMS.hears]);
+    const made = view(await stage().desk.createAgent(OWNER, ORG, { ...BOT, hears: true }));
+    expect(made.agents[0]?.hears).toBe(true);
+    expect(
+      problems(
+        await s.desk.createAgent(OWNER, ORG, { ...BOT, id: 'other', hears: 'yes' } as never),
+      ),
+    ).toEqual([AGENT_PROBLEMS.hears]);
   });
 
   it('reads the change as the till does', async () => {

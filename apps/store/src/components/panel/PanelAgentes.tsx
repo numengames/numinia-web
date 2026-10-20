@@ -1,16 +1,22 @@
 /**
- * «Agentes» inside the panel: the community's AIs, one row each — name, the
- * roles as chips, an Encendida/Apagada switch, the state (Activa / Dormida),
- * what the till says its next pass is, who answers for it and «Quitar» with
- * a confirmation — and the invitation (./AgentInvite.tsx). An AI made with a
- * token also shows its token's start and day, and «Renovar token» (with a
- * confirmation); the new secret, like the first, is shown once (./AgentToken.tsx). Each row
- * says how its AI was connected (`via`: from the panel, or from an app's host);
- * one connected from an app by URL has «Desconectar» instead of «Renovar
- * token», which is the token's revoke. Above the list, «Conecta tu IA»
- * (./AgentConnect.tsx) gives the relay's address. It talks to
- * /api/saldo/agents (lib/agents-source.ts), which answers the whole list
- * after every write, so the screen never guesses what changed.
+ * «Agentes» inside the panel: the AIs the community's people have brought, one
+ * compact card each — a round with the app's glyph, the name, a chip that says
+ * where it came from («Desde Claude», «Desde el panel (con código)», «Con
+ * clave»: lib/panel-agentes.ts `clientOf`, from `via`), the Encendida switch and
+ * a ⋯ menu (./AgentMenu.tsx) with only what applies to it — «Desconectar»,
+ * «Renovar código», «Quitar» — each asking before it acts. Under the card's
+ * line: ESTADO (Activa / Dormida), OÍR (the nearby chat), the roles as chips
+ * with the give-role select, and who answers for it. An AI made with a code
+ * also shows the code's start and day; the new secret, like the first, is shown
+ * once (./AgentToken.tsx).
+ *
+ * The page has ONE button, «Conectar una IA», beside the title (a portal into
+ * PanelFrame's header): it opens the connect dialog (./AgentConnect.tsx), whose
+ * small «Con un token o una clave (avanzado)» opens the invitation
+ * (./AgentInvite.tsx). With no AIs, the empty state says one line and has that
+ * same button. It talks to /api/saldo/agents (lib/agents-source.ts), which
+ * answers the whole list after every write, so the screen never guesses what
+ * changed.
  *
  * The till decides on every write: the controls the person cannot use are
  * disabled or left out (`mayEdit`, `assignable`), and when the till refuses
@@ -20,9 +26,11 @@
  */
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ORGANIZATION_PERMISSION_LABELS, type SupportedLocale } from '@numinia/domain';
 import type { WorldAiMessages } from '../../i18n/mundos';
 import type { PanelMessages } from '../../i18n/panel';
+import { PIECES, pieceHref } from '../../lib/panel';
 import type { AgentesMessages } from '../../i18n/panel-agentes';
 import type { PeopleMessages } from '../../i18n/panel-people';
 import type { SaldoMessages } from '../../i18n/saldo';
@@ -35,10 +43,12 @@ import {
   type DeskAgents,
 } from '../../lib/accounts';
 import {
+  actionsOf,
+  appNameOf,
   changeBody,
   chipsOf,
+  clientOf,
   connectionOf,
-  disconnectable,
   failureOf,
   listUrl,
   readAgents,
@@ -48,11 +58,14 @@ import {
   responsibleOf,
   rolesToGive,
   tokenLine,
+  type AgentAction,
+  type AgentClient,
   type Change,
   type Failure,
 } from '../../lib/panel-agentes';
 import { LunaEspera } from '../chrome/LunaEspera';
-import { ConnectBlock } from './AgentConnect';
+import { ConnectDialog } from './AgentConnect';
+import { AgentMenu } from './AgentMenu';
 import { InviteDialog, type Draft } from './AgentInvite';
 import { TokenOnceDialog } from './AgentToken';
 import { PanelFrame } from './PanelFrame';
@@ -176,69 +189,18 @@ function RoleGiver({
   );
 }
 
-/** «Desconectar» on a row connected from an app: a confirmation, then the token's revoke. */
-function Disconnect({
-  agent,
-  host,
-  busy,
-  words,
-  onDisconnect,
-}: {
-  readonly agent: DeskAgent;
-  readonly host: string;
-  readonly busy: boolean;
-  readonly words: AgentesMessages;
-  readonly onDisconnect: () => Promise<boolean>;
-}) {
-  const [step, setStep] = useState<'idle' | 'asking' | 'busy'>('idle');
-  const say = words.connection;
-  const label = fill(say.disconnectLabel, { name: agent.name });
-  if (step === 'idle') {
-    return (
-      <div className="agentes-renovar" data-agent-disconnect>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          disabled={busy}
-          onClick={() => setStep('asking')}
-          aria-label={label}
-          data-metric="panel-agentes-disconnect"
-        >
-          {say.disconnect}
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div className="agentes-renovar" data-agent-disconnect>
-      <div className="mundo-ia-confirmar agentes-confirmar" role="group" aria-label={label}>
-        <span className="saldo-nota">{fill(say.disconnectAsk, { name: agent.name, host })}</span>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          disabled={step === 'busy'}
-          aria-busy={step === 'busy'}
-          onClick={() => {
-            setStep('busy');
-            void onDisconnect().then(() => setStep('idle'));
-          }}
-          data-metric="panel-agentes-disconnect-yes"
-        >
-          {step === 'busy' ? say.disconnecting : say.disconnectYes}
-        </button>
-        <button
-          type="button"
-          className="btn btn-fantasma"
-          disabled={step === 'busy'}
-          onClick={() => setStep('idle')}
-          data-metric="panel-agentes-disconnect-no"
-        >
-          {say.disconnectNo}
-        </button>
-      </div>
-    </div>
-  );
-}
+/** The glyph in the round of a card, by the app the AI came from. */
+const CLIENT_GLYPH = {
+  claude: 'sparkle',
+  chatgpt: 'chat-circle-dots',
+  hermes: 'lightning',
+  panel: 'key',
+  key: 'key',
+  other: 'robot',
+} as const satisfies Record<AgentClient['kind'], string>;
+
+/** What a pending confirmation of the ⋯ menu says, and the call that carries it out. */
+type Asking = AgentAction | null;
 
 function Row({
   agent,
@@ -264,25 +226,81 @@ function Row({
   readonly onDisconnect: () => Promise<boolean>;
 }) {
   const uid = useId();
+  const client = clientOf(agent);
+  const app = appNameOf(client);
   const connection = connectionOf(agent);
   const host = connection?.kind === 'url' ? connection.host : null;
-  const [asking, setAsking] = useState(false);
-  const [renewing, setRenewing] = useState<'idle' | 'asking' | 'busy'>('idle');
   const line = tokenLine(agent);
-  const [removing, setRemoving] = useState(false);
+  const actions = actionsOf(agent);
+  const [asking, setAsking] = useState<Asking>(null);
+  const [working, setWorking] = useState(false);
   const chips = chipsOf(agent, named);
   const options = rolesToGive(agent, view);
   const editable = agent.mayEdit && !busy;
   const nameId = `${uid}-n`;
   const onoffId = `${uid}-o`;
+  const hearId = `${uid}-h`;
+  const chipText = fill(words.client[client.kind], { host: app ?? '' });
+  const labels: Record<AgentAction, string> = {
+    disconnect: words.connection.disconnect,
+    renew: words.access.renew,
+    remove: words.remove,
+  };
+  const say = {
+    disconnect: {
+      label: words.connection.disconnectLabel,
+      ask: words.connection.disconnectAsk,
+      yes: words.connection.disconnectYes,
+      doing: words.connection.disconnecting,
+      no: words.connection.disconnectNo,
+      run: onDisconnect,
+    },
+    renew: {
+      label: words.access.renewLabel,
+      ask: words.access.renewAsk,
+      yes: words.access.renewYes,
+      doing: words.access.renewing,
+      no: words.access.renewNo,
+      run: onRenew,
+    },
+    remove: {
+      label: words.removeLabel,
+      ask: words.removeAsk,
+      yes: words.removeYes,
+      doing: words.removing,
+      no: words.removeNo,
+      run: onRemove,
+    },
+  } as const;
 
   return (
-    <li className="agentes-fila" data-agent={agent.id} data-agent-status={agent.status}>
-      <div className="agentes-cabeza">
-        <PanelGlyph name="robot" size={18} />
+    <li
+      className="agentes-fila"
+      data-agent={agent.id}
+      data-agent-status={agent.status}
+      data-agent-client={client.kind}
+      data-agent-on={agent.enabled ? 'on' : 'off'}
+    >
+      <div className="agentes-foto" data-client={client.kind} aria-hidden="true">
+        <PanelGlyph name={CLIENT_GLYPH[client.kind]} size={24} />
+      </div>
+      <div className="agentes-id">
         <span className="agentes-nombre" id={nameId}>
           {agent.name}
         </span>
+        <p className="agentes-origen">
+          <span
+            className="agentes-de"
+            data-agent-via={client.kind}
+            data-agent-via-kind={connection?.kind}
+          >
+            <PanelGlyph name={CLIENT_GLYPH[client.kind]} size={14} />
+            {chipText}
+          </span>
+          <span data-agent-status-line>{words.status[agent.status]}</span>
+        </p>
+      </div>
+      <div className="agentes-ctrl">
         <span className="agentes-onoff">
           <button
             type="button"
@@ -298,57 +316,80 @@ function Row({
             {agent.enabled ? words.on : words.off}
           </span>
         </span>
+        {actions.length > 0 && (
+          <AgentMenu
+            name={agent.name}
+            actions={actions}
+            labels={labels}
+            app={app ?? ''}
+            busy={busy}
+            words={words}
+            onPick={setAsking}
+          />
+        )}
       </div>
 
-      <p className="agentes-linea" data-agent-status-line>
-        {words.status[agent.status]}
-      </p>
-      {connection !== null && (
-        <p className="saldo-nota agentes-linea" data-agent-via={connection.kind}>
-          {host === null ? words.connection.panel : fill(words.connection.url, { host })}
-        </p>
-      )}
-      {host !== null && agent.auth === 'token' && line === null && (
-        <p className="agentes-linea" data-agent-url-none>
-          {fill(words.connection.urlNone, { host })}
-        </p>
-      )}
-      {agent.auth === 'token' && host === null && (
-        <p className="agentes-linea agentes-token-linea" data-agent-token-line>
-          {line === null
-            ? words.access.rowNone
-            : fill(words.access.rowLine, {
-                prefix: line.shown,
-                day: new Date(`${line.day}T00:00:00Z`).toLocaleDateString(locale, {
-                  dateStyle: 'long',
-                  timeZone: 'UTC',
-                }),
-              })}
-        </p>
-      )}
-      <p className="saldo-nota agentes-linea" data-agent-responsible>
-        {fill(words.responsible, { name: responsibleOf(agent) })}
-      </p>
-
-      <fieldset className="agentes-estado" disabled={!editable} data-agent-state={agent.state}>
-        <legend>{words.stateLabel}</legend>
-        {(['activa', 'dormida'] as const satisfies readonly AgentState[]).map((state) => (
-          <label
-            key={state}
-            className="agentes-opcion"
-            data-agent-state-option={state}
-            data-selected={agent.state === state}
+      {asking !== null && (
+        <div
+          className="mundo-ia-confirmar agentes-confirmar"
+          role="group"
+          aria-label={fill(say[asking].label, { name: agent.name })}
+          data-agent-confirm={asking}
+        >
+          <span className="saldo-nota">
+            {fill(say[asking].ask, { name: agent.name, host: host ?? '' })}
+          </span>
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            disabled={working}
+            aria-busy={working}
+            onClick={() => {
+              setWorking(true);
+              void say[asking].run().then(() => {
+                setWorking(false);
+                setAsking(null);
+              });
+            }}
+            data-metric={`panel-agentes-${asking}-yes`}
           >
-            <input
-              type="radio"
-              name={`${uid}-estado`}
-              value={state}
-              checked={agent.state === state}
-              onChange={() => onChange({ state })}
-              data-metric={`panel-agentes-state-${state}`}
-            />
-            <span className="agentes-opcion-cuerpo">
-              <span className="agentes-opcion-nombre">
+            {working ? say[asking].doing : say[asking].yes}
+          </button>
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            disabled={working}
+            onClick={() => setAsking(null)}
+            data-metric={`panel-agentes-${asking}-no`}
+          >
+            {say[asking].no}
+          </button>
+        </div>
+      )}
+
+      <div className="agentes-detalle">
+        <fieldset
+          className="agentes-fila-estado"
+          disabled={!editable}
+          data-agent-state={agent.state}
+        >
+          <legend className="agentes-k">{words.stateLabel}</legend>
+          <div className="agentes-seg">
+            {(['activa', 'dormida'] as const satisfies readonly AgentState[]).map((state) => (
+              <label
+                key={state}
+                className="agentes-opcion agentes-seg-op"
+                data-agent-state-option={state}
+                data-selected={agent.state === state}
+              >
+                <input
+                  type="radio"
+                  name={`${uid}-estado`}
+                  value={state}
+                  checked={agent.state === state}
+                  onChange={() => onChange({ state })}
+                  data-metric={`panel-agentes-state-${state}`}
+                />
                 {state === 'activa' ? (
                   <span className="agentes-punto" aria-hidden="true" data-agent-dot />
                 ) : (
@@ -357,156 +398,100 @@ function Row({
                   </span>
                 )}
                 {words.states[state].name}
-              </span>
-              <span className="saldo-nota">{words.states[state].hint}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      <div className="agentes-roles">
-        <p className="etiqueta">{words.roles}</p>
-        {chips.length === 0 ? (
-          <p className="saldo-nota" data-agent-no-roles>
-            {words.noRoles}
-          </p>
-        ) : (
-          <ul className="agentes-chips" aria-label={words.roles}>
-            {chips.map((chip) => (
-              <Chip
-                key={chip.id}
-                agent={agent}
-                role={chip}
-                removable={chip.removable}
-                busy={busy}
-                words={words}
-                onTake={() => onChange({ takeRole: chip.id })}
-              />
+              </label>
             ))}
-          </ul>
-        )}
-        {options.length > 0 && (
-          <RoleGiver
-            agent={agent}
-            options={options}
-            busy={busy}
-            words={words}
-            onGive={(roleId) => onChange({ giveRole: roleId })}
-          />
-        )}
-      </div>
+          </div>
+          <span className="saldo-nota agentes-pista" data-agent-state-hint>
+            {words.states[agent.state].hint}
+          </span>
+        </fieldset>
 
-      {host !== null && disconnectable(agent) && (
-        <Disconnect
-          agent={agent}
-          host={host}
-          busy={busy}
-          words={words}
-          onDisconnect={onDisconnect}
-        />
-      )}
-      {agent.mayEdit && agent.auth === 'token' && host === null && (
-        <div className="agentes-renovar" data-agent-renew>
-          {renewing === 'idle' ? (
+        <div className="agentes-fila-oir" data-agent-hear={agent.hears ? 'on' : 'off'}>
+          <span className="agentes-k" id={`${hearId}-k`}>
+            {words.hearRow}
+          </span>
+          <span className="agentes-oir">
             <button
               type="button"
-              className="btn btn-fantasma"
-              disabled={busy}
-              onClick={() => setRenewing('asking')}
-              aria-label={fill(words.access.renewLabel, { name: agent.name })}
-              data-metric="panel-agentes-token-renew"
-            >
-              {words.access.renew}
-            </button>
-          ) : (
-            <div
-              className="mundo-ia-confirmar agentes-confirmar"
-              role="group"
-              aria-label={fill(words.access.renewLabel, { name: agent.name })}
-            >
-              <span className="saldo-nota">
-                {fill(words.access.renewAsk, { name: agent.name })}
+              role="switch"
+              aria-checked={agent.hears}
+              aria-labelledby={`${nameId} ${hearId}`}
+              aria-describedby={`${hearId}-hint`}
+              className="gente-interruptor"
+              disabled={!editable}
+              onClick={() => onChange({ hears: !agent.hears })}
+              data-metric="panel-agentes-hear"
+            />
+            <span className="agentes-oir-texto">
+              <span id={hearId}>{words.hearLabel}</span>
+              <span className="saldo-nota" id={`${hearId}-hint`}>
+                {agent.hears ? words.hearOn : words.hearHint}
               </span>
-              <button
-                type="button"
-                className="btn btn-fantasma"
-                disabled={renewing === 'busy'}
-                aria-busy={renewing === 'busy'}
-                onClick={() => {
-                  setRenewing('busy');
-                  void onRenew().then(() => setRenewing('idle'));
-                }}
-                data-metric="panel-agentes-token-renew-yes"
-              >
-                {renewing === 'busy' ? words.access.renewing : words.access.renewYes}
-              </button>
-              <button
-                type="button"
-                className="btn btn-fantasma"
-                disabled={renewing === 'busy'}
-                onClick={() => setRenewing('idle')}
-                data-metric="panel-agentes-token-renew-no"
-              >
-                {words.access.renewNo}
-              </button>
-            </div>
-          )}
+            </span>
+          </span>
         </div>
-      )}
 
-      {!agent.mayEdit ? (
-        <p className="saldo-nota agentes-linea" data-agent-read-only>
-          {words.readOnly}
+        <div className="agentes-roles">
+          <p className="agentes-k">{words.roles}</p>
+          <div className="agentes-roles-cuerpo">
+            {chips.length === 0 ? (
+              <p className="saldo-nota" data-agent-no-roles>
+                {words.noRoles}
+              </p>
+            ) : (
+              <ul className="agentes-chips" aria-label={words.roles}>
+                {chips.map((chip) => (
+                  <Chip
+                    key={chip.id}
+                    agent={agent}
+                    role={chip}
+                    removable={chip.removable}
+                    busy={busy}
+                    words={words}
+                    onTake={() => onChange({ takeRole: chip.id })}
+                  />
+                ))}
+              </ul>
+            )}
+            {options.length > 0 && (
+              <RoleGiver
+                agent={agent}
+                options={options}
+                busy={busy}
+                words={words}
+                onGive={(roleId) => onChange({ giveRole: roleId })}
+              />
+            )}
+          </div>
+        </div>
+
+        <p className="saldo-nota agentes-linea" data-agent-responsible>
+          {fill(words.responsible, { name: responsibleOf(agent) })}
         </p>
-      ) : asking ? (
-        <div
-          className="mundo-ia-confirmar agentes-confirmar"
-          role="group"
-          aria-label={fill(words.removeLabel, { name: agent.name })}
-        >
-          <span className="saldo-nota">{fill(words.removeAsk, { name: agent.name })}</span>
-          <button
-            type="button"
-            className="btn btn-fantasma"
-            disabled={removing}
-            aria-busy={removing}
-            onClick={() => {
-              setRemoving(true);
-              void onRemove().then((done) => {
-                if (!done) {
-                  setRemoving(false);
-                  setAsking(false);
-                }
-              });
-            }}
-            data-metric="panel-agentes-remove-yes"
-          >
-            {removing ? words.removing : words.removeYes}
-          </button>
-          <button
-            type="button"
-            className="btn btn-fantasma"
-            disabled={removing}
-            onClick={() => setAsking(false)}
-            data-metric="panel-agentes-remove-no"
-          >
-            {words.removeNo}
-          </button>
-        </div>
-      ) : (
-        <div>
-          <button
-            type="button"
-            className="btn btn-fantasma"
-            disabled={busy}
-            onClick={() => setAsking(true)}
-            aria-label={fill(words.removeLabel, { name: agent.name })}
-            data-metric="panel-agentes-remove"
-          >
-            {words.remove}
-          </button>
-        </div>
-      )}
+        {host !== null && agent.auth === 'token' && line === null && (
+          <p className="saldo-nota agentes-linea" data-agent-url-none>
+            {fill(words.connection.urlNone, { host })}
+          </p>
+        )}
+        {agent.auth === 'token' && host === null && (
+          <p className="saldo-nota agentes-linea agentes-token-linea" data-agent-token-line>
+            {line === null
+              ? words.access.rowNone
+              : fill(words.access.rowLine, {
+                  prefix: line.shown,
+                  day: new Date(`${line.day}T00:00:00Z`).toLocaleDateString(locale, {
+                    dateStyle: 'long',
+                    timeZone: 'UTC',
+                  }),
+                })}
+          </p>
+        )}
+        {!agent.mayEdit && (
+          <p className="saldo-nota agentes-linea" data-agent-read-only>
+            {words.readOnly}
+          </p>
+        )}
+      </div>
     </li>
   );
 }
@@ -519,9 +504,11 @@ function Agentes({
   people,
   agentes,
   world,
+  titleSlot,
 }: {
   readonly org: string;
   readonly locale: SupportedLocale;
+  readonly titleSlot: HTMLElement | null;
   readonly words: PanelMessages;
   readonly ui: SaldoMessages;
   readonly people: PeopleMessages;
@@ -533,6 +520,7 @@ function Agentes({
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [connecting, setConnecting] = useState(false);
   const [inviting, setInviting] = useState(false);
   /** The secret just made, held only in this page's memory until «Ya lo he copiado». */
   const [issued, setIssued] = useState<{
@@ -639,13 +627,43 @@ function Agentes({
   const view = sheet.at === 'ready' ? sheet.view : null;
   const named: Named = roles ?? view?.assignableRoles ?? [];
 
+  const settings = PIECES.find((piece) => piece.id === 'settings');
+  const settingsHref = settings === undefined ? null : pieceHref(locale, settings, org);
+  const connectButton = (
+    <button
+      type="button"
+      className="btn btn-primario agentes-conectar-boton"
+      onClick={() => setConnecting(true)}
+      disabled={view === null || !view.mayCreate}
+      data-metric="panel-agentes-connect"
+      data-agentes-connect
+    >
+      <PanelGlyph name="plus" size={18} />
+      {agentes.connect.button}
+    </button>
+  );
+
   return (
     <div className="agentes" data-agentes={sheet.at === 'failed' ? sheet.failure.kind : sheet.at}>
-      <p className="saldo-nota" data-agentes-subtitle>
-        {agentes.subtitle}
-      </p>
-      <p className="agentes-aviso saldo-nota" data-agentes-notice>
-        {agentes.notice}
+      {titleSlot !== null && view !== null && createPortal(connectButton, titleSlot)}
+      {view !== null && !view.mayCreate && (
+        <p className="saldo-nota" data-agentes-no-right>
+          {agentes.noRight}
+        </p>
+      )}
+      <p className="agentes-pista-info saldo-nota" data-agentes-subtitle>
+        <PanelGlyph name="info" size={16} />
+        <span>
+          {agentes.assistant.before}
+          {settingsHref === null ? (
+            agentes.assistant.link
+          ) : (
+            <a href={settingsHref} data-agentes-settings-link>
+              {agentes.assistant.link}
+            </a>
+          )}
+          {agentes.assistant.after}
+        </span>
       </p>
 
       {sheet.at === 'loading' && (
@@ -675,65 +693,85 @@ function Agentes({
         </div>
       )}
 
-      {view !== null && (
-        <section className="saldo-marco agentes-marco" aria-label={agentes.region}>
-          {view.agents.length === 0 ? (
-            <p className="saldo-nota" data-agentes-none>
-              {agentes.none}
-            </p>
-          ) : (
-            <ul className="agentes-lista" data-agentes-list>
-              {view.agents.map((agent) => (
-                <Row
-                  key={agent.id}
-                  agent={agent}
-                  view={view}
-                  named={named}
-                  busy={busy !== null}
-                  words={agentes}
-                  locale={locale}
-                  onChange={(what) => change(agent, what)}
-                  onRemove={() => run('delete', removeUrl(org, agent.id), { method: 'DELETE' })}
-                  onRenew={() =>
-                    run(
-                      'patch',
-                      '/api/saldo/agents',
-                      {
-                        method: 'PATCH',
-                        headers: JSON_HEADERS,
-                        body: JSON.stringify(changeBody(org, agent.id, { renewToken: true })),
-                      },
-                      agent,
-                    )
-                  }
-                  onDisconnect={() =>
-                    run('patch', '/api/saldo/agents', {
-                      method: 'PATCH',
-                      headers: JSON_HEADERS,
-                      body: JSON.stringify(changeBody(org, agent.id, { revokeToken: true })),
-                    })
-                  }
-                />
-              ))}
-            </ul>
-          )}
-          <div className="agentes-pie">
-            <button
-              type="button"
-              className="btn btn-primario"
-              onClick={() => setInviting(true)}
-              disabled={!view.mayCreate}
-              data-metric="panel-agentes-invite"
-            >
-              {agentes.invite}
-            </button>
-            {!view.mayCreate && (
-              <span className="saldo-nota" data-agentes-no-right>
-                {agentes.noRight}
-              </span>
-            )}
-          </div>
+      {view !== null && view.agents.length === 0 && (
+        <section className="agentes-vacio" aria-label={agentes.region} data-agentes-none>
+          <svg
+            className="agentes-vacio-ilu"
+            viewBox="0 0 240 120"
+            role="img"
+            aria-label={agentes.empty.art}
+          >
+            <path
+              d="M20 92 H78 M162 92 H220"
+              stroke="var(--linea-f)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <rect
+              x="78"
+              y="70"
+              width="84"
+              height="44"
+              rx="8"
+              fill="var(--superficie)"
+              stroke="var(--linea-f)"
+              strokeWidth="2"
+            />
+            <circle cx="120" cy="58" r="22" fill="var(--turquesa)" opacity="0.2" />
+            <circle cx="120" cy="58" r="12" fill="var(--turquesa)" />
+            <circle cx="115" cy="56" r="2" fill="#fff" />
+            <circle cx="125" cy="56" r="2" fill="#fff" />
+            <path
+              d="M86 92 H154"
+              stroke="var(--turquesa)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="2 8"
+              fill="none"
+            />
+          </svg>
+          <h2 className="agentes-vacio-titulo">{agentes.empty.title}</h2>
+          <p>{agentes.empty.text}</p>
+          {titleSlot === null && connectButton}
+          <p className="saldo-nota">{agentes.empty.foot}</p>
         </section>
+      )}
+      {view !== null && view.agents.length > 0 && (
+        <ul className="agentes-lista" data-agentes-list aria-label={agentes.region}>
+          {view.agents.map((agent) => (
+            <Row
+              key={agent.id}
+              agent={agent}
+              view={view}
+              named={named}
+              busy={busy !== null}
+              words={agentes}
+              locale={locale}
+              onChange={(what) => change(agent, what)}
+              onRemove={() => run('delete', removeUrl(org, agent.id), { method: 'DELETE' })}
+              onRenew={() =>
+                run(
+                  'patch',
+                  '/api/saldo/agents',
+                  {
+                    method: 'PATCH',
+                    headers: JSON_HEADERS,
+                    body: JSON.stringify(changeBody(org, agent.id, { renewToken: true })),
+                  },
+                  agent,
+                )
+              }
+              onDisconnect={() =>
+                run('patch', '/api/saldo/agents', {
+                  method: 'PATCH',
+                  headers: JSON_HEADERS,
+                  body: JSON.stringify(changeBody(org, agent.id, { revokeToken: true })),
+                })
+              }
+            />
+          ))}
+        </ul>
       )}
 
       {notice !== null && (
@@ -746,8 +784,18 @@ function Agentes({
         </p>
       )}
 
-      <ConnectBlock words={agentes} />
+      <p className="agentes-aviso saldo-nota" data-agentes-notice>
+        {agentes.notice}
+      </p>
 
+      {connecting && view !== null && (
+        <ConnectDialog
+          words={agentes}
+          canInvite={view.mayCreate}
+          onClose={() => setConnecting(false)}
+          onAdvanced={() => setInviting(true)}
+        />
+      )}
       {inviting && view !== null && (
         <InviteDialog
           world={world}
@@ -803,6 +851,7 @@ export function PanelAgentes({
           people={people}
           agentes={agentes}
           world={world}
+          titleSlot={panel.titleSlot}
         />
       )}
     </PanelFrame>

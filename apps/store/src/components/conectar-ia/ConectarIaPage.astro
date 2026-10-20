@@ -10,9 +10,9 @@
  * community (only those where the person may add or reconnect an AI), which
  * AI it is (a new one with its name, or one already connected this way,
  * whose old connection stops), its role (only roles the person can give),
- * what it may and may not do — and that, for now, it does not hear what is
- * said nearby (Pablo, 2026-10-19: hearing waits for the lawyers). «Permitir»
- * posts to /api/conectar-ia; «Cancelar» connects nothing.
+ * what it may and may not do — and an unchecked box: whether it may hear
+ * what is said nearby (Pablo, 2026-10-20: a switch per AI, off by default).
+ * «Permitir» posts to /api/conectar-ia; «Cancelar» connects nothing.
  *
  * Rendered on demand (it reads the session cookie and asks the till), never
  * cached. A link that is missing something shows no form at all (fail
@@ -27,7 +27,6 @@ import { accountsFrom } from '../../lib/accounts-source';
 import { signInHref } from '../../lib/app-nav';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionAsker } from '../../lib/auth/session-wallet';
-import { URL_AIS_HEAR } from '../../lib/conectar-ia';
 import {
   CONSENT_API,
   consentChoices,
@@ -241,12 +240,16 @@ const words = JSON.stringify({
 
               <ul class="lineas">
                 <li>{t.can}</li>
-                <li data-consent-hear={URL_AIS_HEAR ? 'on' : 'off'}>
-                  {URL_AIS_HEAR ? fill(t.hearOn, { app: ask.app }) : t.hearOff}
-                </li>
                 <li>{t.cannot}</li>
                 <li>{t.answer}</li>
               </ul>
+              <label class="opcion" data-consent-hear>
+                <input type="checkbox" name="hear" data-metric="connect-ai-hear" />
+                <span>
+                  {t.hearLabel}
+                  <span class="ayuda" style="display: block">{t.hearHint}</span>
+                </span>
+              </label>
               <p class="fallo" data-consent-problem role="alert" hidden />
             </form>
           )}
@@ -358,6 +361,7 @@ const words = JSON.stringify({
             ? { kind: 'new', name: value(`name-${i}`) }
             : { kind: 'again', agentId: choice },
         roleId: role === '' ? null : role,
+        hear: (form.elements.namedItem('hear') as HTMLInputElement | null)?.checked === true,
       };
       say(null);
       if (allow) {

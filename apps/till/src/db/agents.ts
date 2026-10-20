@@ -87,6 +87,8 @@ interface TeamAgent {
   readonly responsible: string;
   readonly enabled: boolean;
   readonly state: AgentState;
+  /** Whether it may hear what is said nearby in the worlds (migration 0023). */
+  readonly hears: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly roleIds: readonly string[];
@@ -109,6 +111,8 @@ export interface AgentDetail {
   readonly via?: ConnectedVia;
   readonly enabled: boolean;
   readonly state: AgentState;
+  /** Whether it may hear what is said nearby in the worlds; off by default (migration 0023). */
+  readonly hears: boolean;
   /** What the next pass will be: off, orphaned, without permission to enter, or its state. */
   readonly status: AgentStatus;
   readonly responsible: string;
@@ -157,6 +161,7 @@ export interface AgentPass {
     readonly tokenHash?: string;
     readonly enabled: boolean;
     readonly state: AgentState;
+    readonly hears: boolean;
   };
   /** The person who answers for it is still in the organization and still holds manage-roles. */
   readonly eligible: boolean;
@@ -186,7 +191,7 @@ const REVISION = '(SELECT revision FROM team_profiles WHERE account_id = ?1)';
 
 const SELECT_AGENTS = `
   SELECT agent_id, name, auth_kind, public_key, token_hash, token_prefix, token_created_at,
-         connected_via, responsible_wallet, enabled, state, created_at, updated_at
+         connected_via, responsible_wallet, enabled, state, hears, created_at, updated_at
     FROM team_agents WHERE account_id = ?1 ORDER BY created_at, agent_id`;
 
 const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE account_id = ?1';
@@ -194,9 +199,9 @@ const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE
 const INSERT_AGENT = `
   INSERT INTO team_agents
     (account_id, agent_id, name, auth_kind, public_key, token_hash, token_prefix,
-     token_created_at, connected_via, responsible_wallet, enabled, state, created_by, created_at,
-     updated_at)
-  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, 1, 'activa', ?9, ?10, ?10
+     token_created_at, connected_via, responsible_wallet, enabled, state, hears, created_by,
+     created_at, updated_at)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, 1, 'activa', ?13, ?9, ?10, ?10
    WHERE ${REVISION} = ?11`;
 
 const GIVE_AGENT_ROLE = `
@@ -208,7 +213,7 @@ const TAKE_AGENT_ROLE = `
    WHERE account_id = ?1 AND agent_id = ?2 AND role_id = ?3 AND ${REVISION} = ?4`;
 
 const UPDATE_AGENT = `
-  UPDATE team_agents SET enabled = ?3, state = ?4, updated_at = ?5
+  UPDATE team_agents SET enabled = ?3, state = ?4, hears = ?7, updated_at = ?5
    WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?6`;
 
 const UPDATE_AGENT_TOKEN = `
@@ -281,6 +286,7 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
       responsible: text(row, 'responsible_wallet'),
       enabled: whole(row, 'enabled') === 1,
       state: text(row, 'state') as AgentState,
+      hears: whole(row, 'hears') === 1,
       createdAt: instant(row, 'created_at'),
       updatedAt: instant(row, 'updated_at'),
       roleIds: heldBy.get(id) ?? [],
@@ -375,6 +381,7 @@ async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
         ...(agent.via === null ? {} : { via: agent.via }),
         enabled: agent.enabled,
         state: agent.state,
+        hears: agent.hears,
         status: statusOf(org, agent),
         responsible: agent.responsible,
         ...(published.get(agent.responsible) === undefined
@@ -456,7 +463,7 @@ export async function createAgent(
   if ('problems' in entered) return entered;
   const { org, acting } = entered;
   const made = draft as AgentDraft;
-  const { id, name, roleIds, via } = made;
+  const { id, name, roleIds, via, hears } = made;
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
   if (acting.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
@@ -497,6 +504,7 @@ export async function createAgent(
         now.toISOString(),
         org.revision,
         via,
+        hears ? 1 : 0,
       ),
     ...roleIds.map((roleId) =>
       db.prepare(GIVE_AGENT_ROLE).bind(org.accountId, id, roleId, org.revision),
@@ -529,7 +537,7 @@ export async function createAgent(
   ]);
 }
 
-/** Switches an agent on or off and/or sets its state: whoever may handle it. Every change is a line of the log. */
+/** Switches an agent on or off, sets its state and/or whether it hears nearby chat: whoever may handle it. Every change is a line of the log. */
 export async function changeAgent(
   db: TillDatabase,
   sentWallet: unknown,
@@ -557,13 +565,23 @@ export async function changeAgent(
   const next = Array.isArray(change) ? {} : change;
   const enabled = next.enabled ?? agent.enabled;
   const state = next.state ?? agent.state;
+  const hears = next.hears ?? agent.hears;
   const switched = enabled !== agent.enabled;
   const moved = state !== agent.state;
-  if (!switched && !moved) return viewOf(db, entered);
+  const listened = hears !== agent.hears;
+  if (!switched && !moved && !listened) return viewOf(db, entered);
   return written(db, entered, [
     db
       .prepare(UPDATE_AGENT)
-      .bind(org.accountId, agent.id, enabled ? 1 : 0, state, now.toISOString(), org.revision),
+      .bind(
+        org.accountId,
+        agent.id,
+        enabled ? 1 : 0,
+        state,
+        now.toISOString(),
+        org.revision,
+        hears ? 1 : 0,
+      ),
     ...(switched
       ? [
           logLine(
@@ -588,6 +606,21 @@ export async function changeAgent(
             'agent-state',
             agent.id,
             { name: agent.name, from: agent.state, to: state },
+            org.revision,
+          ),
+        ]
+      : []),
+    // No act of its own (the list is a CHECK, 0021): an AI's hearing rides on its state's act.
+    ...(listened
+      ? [
+          logLine(
+            db,
+            org.accountId,
+            now,
+            acting,
+            'agent-state',
+            agent.id,
+            { name: agent.name, hears: hears ? 'on' : 'off' },
             org.revision,
           ),
         ]
@@ -803,6 +836,7 @@ export async function agentPass(
       ...(agent.tokenHash === null ? {} : { tokenHash: agent.tokenHash }),
       enabled: agent.enabled,
       state: agent.state,
+      hears: agent.hears,
     },
     eligible: answered(org, agent),
     permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),

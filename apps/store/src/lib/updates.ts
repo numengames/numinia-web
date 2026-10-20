@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.151.0',
+    date: '2026-10-20 13:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Each AI of your community now has its own switch, «Hear what is said nearby», on its card in the «Agents» panel. It is off by default, and whoever may edit that AI can turn it on or off; the AI reads the nearby chat only in the worlds where it is. An AI that asks for its details at numinia.com now also learns whether it may hear. When you connect an app like Claude, the same choice is an unticked box on the screen. This replaces the earlier rule that no AI connected this way could hear.',
+      },
+      {
+        type: 'UPD',
+        text: 'The «Agents» panel is tidier: one «Connect an AI» button at the top instead of two ways to invite, and each AI is a compact card that says which app it came from (Claude, ChatGPT, Hermes, the panel or a key), with its on switch and a ⋯ menu to disconnect it, renew its code or remove it, each explained in a line. The token and key ways are still there, inside the button.',
+      },
+    ],
+  },
+  {
     version: 'v0.150.0',
     date: '2026-10-20 12:00',
     entries: [

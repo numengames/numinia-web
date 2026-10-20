@@ -5,9 +5,8 @@
  *
  * Plain words. A community is «comunidad» on screen (the back keeps
  * «organization»). `{app}`, `{name}` and `{host}` are filled by the page.
- * Hearing nearby chat is off for AIs connected this way until the lawyers
- * validate it (Pablo, 2026-10-19): `hearOff` says so; `hearOn` waits for
- * the house's switch (lib/conectar-ia.ts `URL_AIS_HEAR`).
+ * Hearing nearby chat is a switch per AI, off by default (Pablo, 2026-10-20):
+ * `hearLabel` and `hearHint` word the unchecked box on the consent.
  */
 
 import type { SupportedLocale } from '@numinia/domain';
@@ -69,8 +68,9 @@ export interface ConectarIaMessages {
   readonly roleKeep: string;
   /** What it may and may not do. */
   readonly can: string;
-  readonly hearOff: string;
-  readonly hearOn: string;
+  /** The unchecked box: whether the AI may hear what is said nearby. */
+  readonly hearLabel: string;
+  readonly hearHint: string;
   readonly cannot: string;
   readonly answer: string;
   /** The buttons and what follows them. */
@@ -108,8 +108,8 @@ const ES: ConectarIaMessages = {
   roleNone: 'Ninguno: solo mira y habla',
   roleKeep: 'Los que ya tiene',
   can: 'Podrá entrar en los mundos de la comunidad, moverse, hablar y construir si su rol lo deja.',
-  hearOff: 'Por ahora no oirá lo que se dice cerca de ella.',
-  hearOn: 'También oirá lo que se dice cerca de ella, y eso llegará a la empresa de {app}.',
+  hearLabel: 'Que pueda oír lo que se habla cerca',
+  hearHint: 'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
   cannot:
     'No podrá gastar saldo, encender ni apagar mundos, ver datos de personas ni cambiar roles.',
   answer:
@@ -166,8 +166,8 @@ const EN: ConectarIaMessages = {
   roleNone: 'None: it only looks and talks',
   roleKeep: 'The ones it already has',
   can: 'It can enter the community’s worlds, move, talk and build if its role allows.',
-  hearOff: 'For now it will not hear what is said near it.',
-  hearOn: 'It will also hear what is said near it, and that will reach the company behind {app}.',
+  hearLabel: 'Let it hear what is said nearby',
+  hearHint: 'If you turn it on, the AI reads the nearby chat in the worlds it is in.',
   cannot: 'It cannot spend balance, start or stop worlds, see people’s data or change roles.',
   answer:
     'You answer for it. You can switch it off or disconnect it in Panel › Agents at any time.',
@@ -224,8 +224,8 @@ const JA: ConectarIaMessages = {
   roleNone: 'なし：見て話すだけ',
   roleKeep: '今の役割のまま',
   can: 'コミュニティのワールドに入り、動き、話し、役割が許せば建てることができます。',
-  hearOff: '今のところ、近くの会話は聞こえません。',
-  hearOn: '近くの会話も聞こえ、その内容は {app} の会社に届きます。',
+  hearLabel: '近くの会話を聞けるようにする',
+  hearHint: 'オンにすると、AIは自分がいる世界で近くのチャットを読みます。',
   cannot: '残高の使用、ワールドの起動・停止、個人データの閲覧、役割の変更はできません。',
   answer:
     'このAIの責任はあなたにあります。パネル › エージェントでいつでもオフや接続解除ができます。',
@@ -279,8 +279,8 @@ const KO: ConectarIaMessages = {
   roleNone: '없음: 보고 말하기만',
   roleKeep: '지금 가진 역할 그대로',
   can: '커뮤니티의 월드에 들어가고, 움직이고, 말하고, 역할이 허용하면 건설할 수 있습니다.',
-  hearOff: '지금은 근처에서 하는 말을 듣지 못합니다.',
-  hearOn: '근처에서 하는 말도 듣게 되며, 그 내용은 {app} 의 회사로 전달됩니다.',
+  hearLabel: '근처 대화를 들을 수 있게 하기',
+  hearHint: '켜면 AI가 있는 세계에서 근처 채팅을 읽습니다.',
   cannot: '잔액 사용, 월드 켜기·끄기, 개인 데이터 열람, 역할 변경은 할 수 없습니다.',
   answer: '이 AI는 당신이 책임집니다. 패널 › 에이전트에서 언제든 끄거나 연결을 해제할 수 있습니다.',
   allow: '허용',
@@ -336,8 +336,8 @@ const PT_BR: ConectarIaMessages = {
   roleNone: 'Nenhum: só olha e fala',
   roleKeep: 'Os que ela já tem',
   can: 'Poderá entrar nos mundos da comunidade, se mover, falar e construir se o papel permitir.',
-  hearOff: 'Por enquanto, ela não vai ouvir o que se diz por perto.',
-  hearOn: 'Ela também vai ouvir o que se diz por perto, e isso chegará à empresa de {app}.',
+  hearLabel: 'Que possa ouvir o que se fala por perto',
+  hearHint: 'Se você ligar, a IA lê o chat próximo nos mundos em que estiver.',
   cannot:
     'Não poderá gastar saldo, ligar ou desligar mundos, ver dados de pessoas nem mudar papéis.',
   answer:

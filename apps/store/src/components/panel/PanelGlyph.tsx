@@ -23,10 +23,43 @@ import shieldCheck from '../../../../../packages/ui/src/icons/shield-check.svg?r
 import squaresFour from '../../../../../packages/ui/src/icons/squares-four.svg?raw';
 import users from '../../../../../packages/ui/src/icons/users.svg?raw';
 import usersThree from '../../../../../packages/ui/src/icons/users-three.svg?raw';
+import arrowsClockwise from '../../../../../packages/ui/src/icons/arrows-clockwise.svg?raw';
+import chatCircleDots from '../../../../../packages/ui/src/icons/chat-circle-dots.svg?raw';
+import dotsThree from '../../../../../packages/ui/src/icons/dots-three.svg?raw';
+import hourglass from '../../../../../packages/ui/src/icons/hourglass.svg?raw';
+import info from '../../../../../packages/ui/src/icons/info.svg?raw';
+import key from '../../../../../packages/ui/src/icons/key.svg?raw';
+import lightning from '../../../../../packages/ui/src/icons/lightning.svg?raw';
+import link from '../../../../../packages/ui/src/icons/link.svg?raw';
+import plug from '../../../../../packages/ui/src/icons/plug.svg?raw';
+import plugsConnected from '../../../../../packages/ui/src/icons/plugs-connected.svg?raw';
+import plus from '../../../../../packages/ui/src/icons/plus.svg?raw';
+import sparkle from '../../../../../packages/ui/src/icons/sparkle.svg?raw';
+import trash from '../../../../../packages/ui/src/icons/trash.svg?raw';
 import type { PieceIcon } from '../../lib/panel';
 
 const GLYPHS: Readonly<
-  Record<PieceIcon | 'caret-down' | 'crane-tower' | 'moon' | 'squares-four', string>
+  Record<
+    | PieceIcon
+    | 'caret-down'
+    | 'crane-tower'
+    | 'moon'
+    | 'squares-four'
+    | 'arrows-clockwise'
+    | 'chat-circle-dots'
+    | 'dots-three'
+    | 'hourglass'
+    | 'info'
+    | 'key'
+    | 'lightning'
+    | 'link'
+    | 'plug'
+    | 'plugs-connected'
+    | 'plus'
+    | 'sparkle'
+    | 'trash',
+    string
+  >
 > = {
   house,
   buildings,
@@ -44,6 +77,19 @@ const GLYPHS: Readonly<
   'caret-down': caretDown,
   'crane-tower': craneTower,
   moon,
+  'arrows-clockwise': arrowsClockwise,
+  'chat-circle-dots': chatCircleDots,
+  'dots-three': dotsThree,
+  hourglass: hourglass,
+  info: info,
+  key: key,
+  lightning: lightning,
+  link: link,
+  plug: plug,
+  'plugs-connected': plugsConnected,
+  plus: plus,
+  sparkle: sparkle,
+  trash: trash,
 };
 
 export function PanelGlyph({
