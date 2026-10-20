@@ -317,6 +317,14 @@ function StepsView({
           metric="panel-agentes-guide-other"
         />
       )}
+      {view.client === 'hermes' && (
+        <p className="agentes-guia-aviso" data-agentes-time-warning>
+          <PanelGlyph name="hourglass" size={18} />
+          <span>
+            <Rich text={words.hermes.timeWarn} />
+          </span>
+        </p>
+      )}
       {view.client === 'other' && (
         <p className="agentes-guia-aviso" data-agentes-advanced-warning>
           <PanelGlyph name="warning" size={18} />

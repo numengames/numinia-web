@@ -117,9 +117,10 @@ describe('the steps of each AI', () => {
 });
 
 describe('the questions and the two numbers', () => {
-  it('has nine questions, each with its own glyph', () => {
-    expect(FAQ_GLYPHS).toHaveLength(9);
-    expect(new Set(FAQ_GLYPHS).size).toBe(9);
+  it('has ten questions, each with its own glyph, «how long does it take?» second', () => {
+    expect(FAQ_GLYPHS).toHaveLength(10);
+    expect(new Set(FAQ_GLYPHS).size).toBe(10);
+    expect(FAQ_GLYPHS[1]).toBe('hourglass');
   });
 
   it('gives the numbers the relay really uses: three bodies at once, ten idle minutes', () => {

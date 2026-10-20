@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.156.0',
+    date: '2026-10-20 18:45',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The «Connect an AI» window now says how long it takes, so nobody despairs. Both Hermes tabs (on your computer and in the cloud) open with a clear notice: doing it yourself with the steps takes about 2 minutes, while asking Hermes’ own chat, especially with a free model, can take 10–15 minutes or stop halfway. There is a new second question, «How long does it take?», and the first of the three ways ends with «About 2 minutes.».',
+      },
+    ],
+  },
+  {
     version: 'v0.155.0',
     date: '2026-10-20 14:30',
     entries: [

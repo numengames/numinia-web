@@ -119,9 +119,10 @@ export function extraOf(key: StepsKey, index: number): StepExtra | null {
   return EXTRAS[key][index] ?? null;
 }
 
-/** The questions of the FAQ, in order, each with the house glyph beside it. */
+/** The ten questions of the FAQ, in order (the second one is «how long does it take?»), each with the house glyph beside it. */
 export const FAQ_GLYPHS = [
   'robot',
+  'hourglass',
   'lock-key',
   'coins',
   'prohibit',
