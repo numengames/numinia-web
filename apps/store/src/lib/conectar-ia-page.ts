@@ -207,7 +207,10 @@ export async function consentChoices(
 ): Promise<ConsentChoices> {
   if (asker === null) return { ok: false, reason: 'signed-out' };
   if (desk === null) return { ok: false, reason: 'unavailable' };
-  const { you, house } = whoIs(asker);
+  const { you } = whoIs(asker);
+  // Always as the person, never as the house (even for the house's Oracle): the
+  // till would otherwise make a non-owner Oracle act `as: 'house'`, which may not create.
+  const house = false;
   const overview = await ask(log, 'consent-overview', () => desk.overview(you), shapes().overview);
   if (!overview.ok || !('accounts' in overview.value)) return { ok: false, reason: 'unavailable' };
   const teams = overview.value.accounts.filter((account) => account.kind === 'team');

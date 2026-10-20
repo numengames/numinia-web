@@ -333,7 +333,10 @@ export async function connectAi(
 ): Promise<ConnectOutcome> {
   if (asker === null) return { ok: false, refusal: 'signed-out' };
   if (desk === null) return { ok: false, refusal: 'unavailable' };
-  const { you, house } = whoIs(asker);
+  const { you } = whoIs(asker);
+  // The consent always acts as the person (owner or member), never as the house,
+  // even for the house's Oracle: the house does not answer for an AI.
+  const house = false;
   const { accountId } = request;
   const [agents, access] = await Promise.all([
     ask(log, 'connect-agents', () => desk.agents(you, accountId, house), shapes().agents),

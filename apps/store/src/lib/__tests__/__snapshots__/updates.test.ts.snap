@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-20 12:00",
+    "entries": [
+      {
+        "text": "Connecting an AI to your community from an app like Claude or ChatGPT now always acts as you, even when you are the house’s Oracle. Before, the page could say there was no community where you could add an AI although you belong to several; now it lists the ones where you may manage roles.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.150.0",
+  },
+  {
     "date": "2026-10-19 22:40",
     "entries": [
       {

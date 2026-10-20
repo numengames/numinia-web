@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.150.0',
+    date: '2026-10-20 12:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'Connecting an AI to your community from an app like Claude or ChatGPT now always acts as you, even when you are the house’s Oracle. Before, the page could say there was no community where you could add an AI although you belong to several; now it lists the ones where you may manage roles.',
+      },
+    ],
+  },
+  {
     version: 'v0.149.0',
     date: '2026-10-19 22:40',
     entries: [
