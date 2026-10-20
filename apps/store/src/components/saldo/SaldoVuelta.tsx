@@ -25,10 +25,15 @@
 
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
-import type { SupportedLocale } from '@numinia/domain';
 import type { SaldoMessages } from '../../i18n/saldo';
 import { fill, formatEuros, readResult, vueltaParams } from '../../lib/accounts';
-import { paidBalanceHref, worldsWizardHref } from '../../lib/topup-return';
+import {
+  backTarget,
+  readNote,
+  VOLVER_ASK,
+  VOLVER_CHANNEL,
+  type VolverNote,
+} from '../../lib/saldo-return';
 import { LunaEspera } from '../chrome/LunaEspera';
 import coins from '../../../../../packages/ui/src/icons/coins.svg?raw';
 
@@ -106,11 +111,11 @@ async function confirm(sessionId: string): Promise<State> {
     const result = response.ok ? readResult(json) : null;
     if (result === null || !result.ok) return { at: 'unknown' };
     if (result['state'] === 'paid') {
-      const account = result['accountId'];
+      const paidAccount = result['accountId'];
       return {
         at: 'paid',
         balanceCents: Number(result['balanceCents']),
-        accountId: typeof account === 'string' ? account : null,
+        accountId: typeof paidAccount === 'string' ? paidAccount : null,
       };
     }
     return result['state'] === 'expired' ? { at: 'cancelled' } : { at: 'processing' };
@@ -123,19 +128,38 @@ export function SaldoVuelta({
   ui,
   lang,
   saldoHref,
+  panelSaldoHref,
   signIn,
 }: {
   readonly ui: SaldoMessages;
   readonly lang: string;
   readonly saldoHref: string;
+  /** The organization panel's balance (`?org=` is added): where an organization's top-up returns. */
+  readonly panelSaldoHref: string;
   /** The door, landing on «Saldo»: the balance is what the person came for. */
   readonly signIn: string;
 }) {
   const [state, setState] = useState<State>({ at: 'checking' });
-  // QA 2026-10-20: a team top-up goes back to that organization, not to the personal balance.
-  const account = state.at === 'paid' ? state.accountId : null;
-  const backHref = paidBalanceHref(lang as SupportedLocale, account, saldoHref);
-  const forTeam = backHref !== saldoHref;
+  // Where the top-up was started from, told by the tab the buyer left open.
+  const [note, setNote] = useState<VolverNote | null>(null);
+
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel(VOLVER_CHANNEL);
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      const heard = readNote(event.data);
+      if (heard !== null) setNote((kept) => kept ?? heard);
+    };
+    channel.postMessage(VOLVER_ASK);
+    return () => channel.close();
+  }, []);
+
+  const target = backTarget(
+    note,
+    state.at === 'paid' ? state.accountId : null,
+    panelSaldoHref,
+    saldoHref,
+  );
 
   useEffect(() => {
     let stopped = false;
@@ -176,10 +200,10 @@ export function SaldoVuelta({
   useEffect(() => {
     if (state.at !== 'paid') return;
     const timer = setTimeout(() => {
-      window.location.assign(backHref);
+      window.location.assign(target.saldo);
     }, GRACIA_REDIRECT_MS);
     return () => clearTimeout(timer);
-  }, [state.at, backHref]);
+  }, [state.at, target.saldo]);
 
   if (state.at === 'signed-out') {
     return (
@@ -252,20 +276,20 @@ export function SaldoVuelta({
         </>
       )}
       {state.at === 'unknown' && <p className="saldo-nota">{ui.vuelta.unknown}</p>}
-      <div className="saldo-vuelta-pasos">
-        {forTeam && (
+      <div>
+        <a className="btn btn-fantasma" href={target.saldo} data-metric="saldo-vuelta-back">
+          {ui.vuelta.back}
+        </a>
+        {target.resume !== null && (
           <a
             className="btn btn-primario"
-            href={worldsWizardHref(lang as SupportedLocale)}
-            data-metric="saldo-vuelta-world"
-            data-saldo-vuelta-world
+            href={target.resume}
+            data-saldo-resume
+            data-metric="saldo-vuelta-resume"
           >
-            {ui.vuelta.backWorld}
+            {ui.vuelta.resume}
           </a>
         )}
-        <a className="btn btn-fantasma" href={backHref} data-metric="saldo-vuelta-back">
-          {forTeam ? ui.vuelta.backOrg : ui.vuelta.back}
-        </a>
       </div>
     </div>
   );

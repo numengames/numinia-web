@@ -44,7 +44,6 @@ import {
   type MachineHealth,
   type RecipeState,
 } from '../../../lib/fleet';
-import { wantsWizard } from '../../../lib/topup-return';
 import { openAllCommunities } from '../../../lib/org-choices';
 import { counted, homesByWorld, loadHomes, namesByWorld, worldHref } from '../../../lib/mundos';
 import {
@@ -58,9 +57,6 @@ import {
   fleetStats,
   importMachines,
   applyNames,
-  applySettling,
-  settleMemory,
-  type Settling,
   listedRows,
   machineChoices,
   machineEngines,
@@ -585,10 +581,6 @@ export function WorldsPanel({
   const [server, setServer] = useState('');
   const [home, setHome] = useState('');
   const [wizard, setWizard] = useState(false);
-  // «Back to creating the world» after paying (lib/topup-return.ts) lands here with ?nuevo=1.
-  useEffect(() => {
-    if (wantsWizard(window.location.search)) setWizard(true);
-  }, []);
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
   const [source, setSource] = useState<ImportSource | null>(null);
@@ -677,18 +669,7 @@ export function WorldsPanel({
 
   // Every world the room knows, those being deleted included (a name or an
   // address is not free until they are gone); the list shows the others.
-  const asked = panel.at === 'ready' ? panel.fleet.rows : [];
-  // QA 2026-10-20: a world its machine calls running that does not answer yet is booting,
-  // not «not answering»: the room remembers it saw it start and says so for a few minutes.
-  const [settling, setSettling] = useState<Settling>({});
-  useEffect(() => {
-    setSettling((before) => {
-      const next = settleMemory(asked, before, Date.now());
-      return JSON.stringify(next) === JSON.stringify(before) ? before : next;
-    });
-    // `asked` changes with every read of the fleet; its content is what matters.
-  }, [panel]);
-  const known = useMemo(() => applySettling(asked, settling), [panel, settling]);
+  const known = panel.at === 'ready' ? panel.fleet.rows : [];
   // Card t_a856c570 (2026-10-18): the house's own names override each row's title.
   const rows = useMemo(() => applyNames(listedRows(known), names), [known, names]);
   const stats = useMemo(() => fleetStats(rows), [rows]);
@@ -1426,7 +1407,6 @@ export function WorldsPanel({
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
-          release={fleet.engine}
         />
       )}
       {shown.length > 0 && view === 'list' && (
