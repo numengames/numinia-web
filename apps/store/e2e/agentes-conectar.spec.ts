@@ -213,7 +213,7 @@ test.describe('Agentes — Conecta tu IA', () => {
       `hermes mcp add numinia --url ${RELAY} --auth header`,
     );
     await expect(steps.locator('[data-agentes-hear]')).toHaveText(
-      'Por ahora la IA no oye lo que se habla cerca de ella en los mundos.',
+      'Para que una IA oiga lo que se habla cerca, enciende «Oír lo que se habla cerca» en su tarjeta: viene apagado.',
     );
     // The token way stays the panel's default for adding an AI by hand.
     await expect(page.locator('[data-metric="panel-agentes-invite"]')).toBeEnabled();
@@ -278,7 +278,10 @@ test.describe('Agentes — how each AI is connected', () => {
       },
     ]);
     await expect(claude.locator('[data-agent-disconnect]')).toHaveCount(0);
-    await expect(claude.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    await expect(claude.locator('[data-metric="panel-agentes-switch"]')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
   });
 
   test('who may not edit the AI gets no «Desconectar»', async ({ page }) => {

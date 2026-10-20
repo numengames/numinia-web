@@ -313,7 +313,7 @@ test.describe('Agentes — the list', () => {
     const hermes = row(page, 'hermes');
     await expect(hermes.locator('.agentes-nombre')).toHaveText('Hermes');
     await expect(hermes.locator('[data-agent-role]')).toHaveText(['Equipo×', 'Finanzas×']);
-    const toggle = hermes.getByRole('switch');
+    const toggle = hermes.locator('[data-metric="panel-agentes-switch"]');
     await expect(toggle).toHaveAttribute('aria-checked', 'true');
     await expect(toggle).toHaveAccessibleName('Hermes Encendida');
     await expect(toggle).toHaveAttribute('data-metric', 'panel-agentes-switch');
@@ -342,7 +342,7 @@ test.describe('Agentes — the list', () => {
       'Responde por ella: 0xa1a1…a1a1',
     );
     await expect(orphan.locator('[data-agent-read-only]')).toBeVisible();
-    await expect(orphan.getByRole('switch')).toBeDisabled();
+    await expect(orphan.locator('[data-metric="panel-agentes-switch"]')).toBeDisabled();
     await expect(orphan.getByRole('radio').first()).toBeDisabled();
     await expect(orphan.locator('[data-metric="panel-agentes-remove"]')).toHaveCount(0);
     await expect(orphan.locator('[data-metric="panel-agentes-role-take"]')).toHaveCount(0);
@@ -367,10 +367,15 @@ test.describe('Agentes — changing one', () => {
     const stand = await stage(page);
     await open(page);
     const hermes = row(page, 'hermes');
-    await hermes.getByRole('switch').click();
-    await expect(hermes.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
+    await hermes.locator('[data-metric="panel-agentes-switch"]').click();
+    await expect(hermes.locator('[data-metric="panel-agentes-switch"]')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
     await expect(hermes.locator('[data-agent-onoff]')).toHaveText('Apagada');
-    await expect(hermes.getByRole('switch')).toHaveAccessibleName('Hermes Apagada');
+    await expect(hermes.locator('[data-metric="panel-agentes-switch"]')).toHaveAccessibleName(
+      'Hermes Apagada',
+    );
     await expect(hermes.locator('[data-agent-status-line]')).toContainText('Apagada: no entra');
     expect(stand.calls.at(-1)).toEqual({
       method: 'PATCH',
@@ -378,8 +383,11 @@ test.describe('Agentes — changing one', () => {
     });
     await expect(page.locator('[data-agentes-notice]')).toBeVisible();
     await shot(page, '03-toggle-off-desktop');
-    await hermes.getByRole('switch').click();
-    await expect(hermes.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await hermes.locator('[data-metric="panel-agentes-switch"]').click();
+    await expect(hermes.locator('[data-metric="panel-agentes-switch"]')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await expect(hermes.locator('[data-agent-onoff]')).toHaveText('Encendida');
   });
 
@@ -582,12 +590,14 @@ test.describe('Agentes — when something fails', () => {
         problems: ['you may act only on roles and members below your own highest role'],
       },
     };
-    await row(page, 'hermes').getByRole('switch').click();
+    await row(page, 'hermes').locator('[data-metric="panel-agentes-switch"]').click();
     const line = page.locator('[data-agentes-notice-line="alert"]');
     await expect(line).toContainText('Solo puedes actuar sobre roles y personas');
     await expect(line).not.toContainText('below your own');
     // The switch went back to what the till still has.
-    await expect(row(page, 'hermes').getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await expect(
+      row(page, 'hermes').locator('[data-metric="panel-agentes-switch"]'),
+    ).toHaveAttribute('aria-checked', 'true');
     await shot(page, '11-write-refused-desktop');
   });
 
