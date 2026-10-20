@@ -30,7 +30,10 @@ const BUDGETS: readonly Budget[] = [
   // Finder's island rethought: React and the island (~211KB, the 3D viewer
   // only on «See it in 3D»), the first rows of baked thumbnails lazily
   // (~301KB), ~750KB in all (measured on the fixture, 1280×720).
-  { path: '/bazaar/', totalKB: 940, jsKB: 230, imgKB: 380 },
+  // JS raised 230→250 on 2026-10-20 (React 19.2→19.3, v0.150.0): react-dom's
+  // client chunk grew 56→65KB gzipped (ViewTransition, Fragment refs, Trusted
+  // Types ride in it); measured 242KB. Library weight, not feature creep.
+  { path: '/bazaar/', totalKB: 940, jsKB: 250, imgKB: 380 },
   // «Cómo funciona» took the old /city/ line (v0.83.0): text, six templates
   // and one lazy illustration of the city's story. Zero external JS.
   { path: '/how-it-works/', totalKB: 420, jsKB: 0, imgKB: 160 },
@@ -67,7 +70,10 @@ const BUDGETS: readonly Budget[] = [
   // two rails, the phone's bar and «Tú» sheet and their menus are in every
   // page's HTML (~11KB more markup than the sidebar and top bar); measured
   // 1051KB, the wallet vendor unchanged.
-  { path: '/lap/session/', totalKB: 1062, jsKB: 900, imgKB: 10 },
+  // Raised 1062→1100 on 2026-10-20 (React 19.2→19.3, v0.150.0): the same
+  // react-dom growth (+8KB gzipped) lands in the wallet page's bundle; the
+  // wallet vendor is unchanged. Measured 1090KB.
+  { path: '/lap/session/', totalKB: 1100, jsKB: 900, imgKB: 10 },
 ];
 
 interface Weight {
@@ -114,7 +120,7 @@ test.describe('on a density-2 screen', () => {
   test.use({ deviceScaleFactor: 2 });
   test('weight budget: /bazaar/ with the 480px cards', async ({ page }) => {
     const weight = await weigh(page, '/bazaar/');
-    expect(weight.js, `/bazaar/ ships ${weight.js}KB of JS`).toBeLessThanOrEqual(230);
+    expect(weight.js, `/bazaar/ ships ${weight.js}KB of JS`).toBeLessThanOrEqual(250);
     expect(weight.img, `/bazaar/ ships ${weight.img}KB of images`).toBeLessThanOrEqual(640);
     expect(weight.total, `/bazaar/ weighs ${weight.total}KB`).toBeLessThanOrEqual(1180);
   });
