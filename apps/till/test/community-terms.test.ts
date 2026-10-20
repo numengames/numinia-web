@@ -351,3 +351,34 @@ describe('a stored row that no longer passes the domain', () => {
     );
   });
 });
+
+describe('the desk the store calls: communityTerms and publishTerms (condiciones/w2)', () => {
+  it('lets an administrator publish v1.1 through the desk and shows it in the history', async () => {
+    const s = await scene();
+    ok(await s.desk.publishTerms(PABLO, s.id, draft('1.0')));
+    const done = ok(await s.desk.publishTerms(LEO, s.id, draft('1.1', [norma])));
+    expect(done.current?.terms.version).toBe('1.1');
+    const read = ok(await s.desk.communityTerms(MARIA, s.id));
+    expect(read.history.map((past) => past.terms.version)).toEqual(['1.0', '1.1']);
+    expect(read.mayEdit).toBe(false);
+  });
+
+  it('refuses a member and a stranger at the desk, and writes nothing', async () => {
+    const s = await scene();
+    expect(problems(await s.desk.publishTerms(MARIA, s.id, draft('1.0'))).length).toBeGreaterThan(
+      0,
+    );
+    expect(
+      problems(await s.desk.publishTerms(STRANGER, s.id, draft('1.0'))).length,
+    ).toBeGreaterThan(0);
+    expect(stored(s.sqlite)).toBe(0);
+  });
+
+  it('answers the validator’s problems as path: message, in Spanish', async () => {
+    const s = await scene();
+    const refused = problems(
+      await s.desk.publishTerms(PABLO, s.id, draft('1.0', [{ ...datos, obligatorio: true }])),
+    );
+    expect(refused.some((line) => line.startsWith('puntos[0].obligatorio: '))).toBe(true);
+  });
+});

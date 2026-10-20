@@ -40,13 +40,16 @@ import {
   canDeleteRole,
   canEditRole,
   canMoveRole,
+  currentCommunityTerms,
   placeForNewRole,
+  publishCommunityTerms,
   rolesFromTemplate,
   type OrganizationAccess,
   type OrganizationMember,
   type OrganizationRefusal,
   type OrganizationRole,
   type OrganizationState,
+  type PublishedCommunityTerms,
 } from '@numinia/domain';
 import {
   ALPHA,
@@ -119,6 +122,8 @@ import {
   type DeskStatement,
   type DeskTariff,
   type DeskTeamAnswer,
+  type DeskTerms,
+  type DeskTermsAnswer,
   type DeskTopupAnswer,
   type DeskWorld,
   type LineKind,
@@ -315,6 +320,74 @@ function birthRoles(community?: string): OrganizationRole[] {
     name: index === 0 && adminName !== undefined ? adminName : role.name,
   }));
 }
+
+/**
+ * The terms Numen Games and the Institute have published in the fixture («Normas de vuestros
+ * espacios»): a first version, so the screen has a history to show. Made-up
+ * example text, Castilian like the rest of the fixture; any other
+ * community starts with none.
+ */
+const SEEDED_TERMS: Readonly<Record<string, readonly PublishedCommunityTerms[]>> = {
+  acc_team_numen_games: [
+    {
+      terms: {
+        capa: 'comunidad',
+        version: '1.0',
+        puntos: [
+          {
+            id: 'turno',
+            titulo: 'Turno de palabra',
+            texto: 'En los encuentros, respeta el turno de palabra.',
+            obligatorio: true,
+            tipo: 'norma',
+          },
+          {
+            id: 'grabar',
+            titulo: 'Sin grabar',
+            texto: 'No grabes ni retransmitas a otros sin pedírselo.',
+            obligatorio: true,
+            tipo: 'norma',
+          },
+          {
+            id: 'avisos',
+            titulo: 'Avisos',
+            texto: 'Recibir avisos de nuestros encuentros.',
+            obligatorio: false,
+            tipo: 'datos',
+          },
+        ],
+      },
+      publishedAt: '2026-10-20T09:00:00.000Z',
+      publishedBy: `0x${'ab'.repeat(20)}`,
+    },
+  ],
+  acc_team_active_inference: [
+    {
+      terms: {
+        capa: 'comunidad',
+        version: '1.0',
+        puntos: [
+          {
+            id: 'fuentes',
+            titulo: 'Citar las fuentes',
+            texto: 'Cuando compartas un resultado, di de dónde sale.',
+            obligatorio: true,
+            tipo: 'norma',
+          },
+          {
+            id: 'informe',
+            titulo: 'Informe de la sesión',
+            texto: 'Enviar un informe anónimo de rendimiento.',
+            obligatorio: false,
+            tipo: 'datos',
+          },
+        ],
+      },
+      publishedAt: '2026-10-19T16:30:00.000Z',
+      publishedBy: `0x${'0'.repeat(38)}c3`,
+    },
+  ],
+};
 
 interface Checkout {
   readonly wallet: string;
@@ -1078,6 +1151,23 @@ export function createAccountsFixtureDesk(
     };
   };
 
+  // ---- «Normas de vuestros espacios»: shared by every wallet's copy, as the till's community_terms ----
+  const termsKept = new WeakMap<Book, readonly PublishedCommunityTerms[]>();
+  const termsOf = (book: Book): readonly PublishedCommunityTerms[] =>
+    termsKept.get(book) ?? SEEDED_TERMS[book.id] ?? [];
+  const mayPublish = ({ book, who, as }: Entry): boolean =>
+    accessIn(book, who, as).permissions.has('administrator');
+  const termsView = (entry: Entry): DeskTerms => {
+    const history = termsOf(entry.book);
+    return {
+      ok: true,
+      accountId: entry.book.id,
+      current: copy(currentCommunityTerms(history) ?? null),
+      history: copy(history),
+      mayEdit: mayPublish(entry),
+    };
+  };
+
   // ---- «IAs de organización»: kept apart (agents-fixture.ts), told what this desk knows ----
   const hostEntries = new WeakMap<HostEntry, Entry>();
   const agents = createAgentsFixture(
@@ -1776,6 +1866,25 @@ export function createAccountsFixtureDesk(
         });
       }
       return settingsView(found);
+    },
+
+    communityTerms: async (wallet, accountId, house): Promise<DeskTermsAnswer> => {
+      const found = entering(wallet, accountId, house);
+      if ('ok' in found) return found;
+      houseRead(found, 'community-terms');
+      return termsView(found);
+    },
+
+    publishTerms: async (wallet, accountId, draft, house): Promise<DeskTermsAnswer> => {
+      const found = entering(wallet, accountId, house);
+      if ('ok' in found) return found;
+      if (!mayPublish(found)) return refuse(needs('administrator'));
+      const published = publishCommunityTerms(termsOf(found.book), draft, found.who, now());
+      if (!published.ok) {
+        return refuse(...published.issues.map((issue) => `${issue.path}: ${issue.message}`));
+      }
+      termsKept.set(found.book, published.history);
+      return termsView(found);
     },
 
     happenings: async (wallet, accountId, before, house): Promise<DeskHappeningsAnswer> => {
