@@ -282,6 +282,8 @@ export interface SaldoMessages {
     readonly cancelledNote: string;
     readonly unknown: string;
     readonly back: string;
+    /** After a top-up started from an organization's balance: back to what the buyer was doing. */
+    readonly resume: string;
   };
 }
 
@@ -560,6 +562,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       cancelledNote: 'No se ha cobrado nada. Puedes cerrar esta pestaña.',
       unknown: 'No encontramos esta recarga en tu cuenta.',
       back: 'Ir a Saldo',
+      resume: 'Volver a lo que estabas haciendo',
     },
   },
   en: {
@@ -830,6 +833,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       cancelledNote: 'Nothing was charged. You can close this tab.',
       unknown: 'We cannot find this top-up on your account.',
       back: 'Go to Balance',
+      resume: 'Back to what you were doing',
     },
   },
   ja: {
@@ -1099,6 +1103,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       cancelledNote: '請求は発生していません。このタブは閉じて大丈夫です。',
       unknown: 'このチャージはあなたのアカウントに見つかりません。',
       back: '残高へ',
+      resume: 'さっきの作業に戻る',
     },
   },
   ko: {
@@ -1365,6 +1370,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       cancelledNote: '청구된 금액은 없습니다. 이 탭은 닫아도 됩니다.',
       unknown: '이 충전을 내 계정에서 찾을 수 없습니다.',
       back: '잔액으로',
+      resume: '하던 작업으로 돌아가기',
     },
   },
   'pt-br': {
@@ -1639,6 +1645,7 @@ export const SALDO_UI: Readonly<Record<SupportedLocale, SaldoMessages>> = {
       cancelledNote: 'Nada foi cobrado. Você pode fechar esta aba.',
       unknown: 'Não encontramos esta recarga na sua conta.',
       back: 'Ir para o Saldo',
+      resume: 'Voltar ao que você estava fazendo',
     },
   },
 };

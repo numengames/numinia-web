@@ -425,6 +425,29 @@ test('a cancelled checkout says nothing was charged, and Referrals says it is co
   await expect(page.locator('[data-saldo-referrals]')).toBeVisible();
 });
 
+test('a top-up started from an organization comes back to that organization and to what the buyer was doing', async ({
+  page,
+}) => {
+  // The tab the buyer left open (the organization's balance) answers the
+  // way back over a same-origin channel; here a bare page plays that part.
+  const origin = await page.context().newPage();
+  await origin.goto('/es/saldo/referidos/');
+  await origin.evaluate(() => {
+    const channel = new BroadcastChannel('numinia-saldo-volver');
+    channel.onmessage = () =>
+      channel.postMessage({ type: 'note', org: 'acc_t_demo', back: '/es/lap/admin/worlds/' });
+  });
+  await page.goto('/es/saldo/vuelta/?cancelled=1');
+  await expect(page.locator('[data-saldo-vuelta="cancelled"]')).toBeVisible();
+  await expect(page.locator('[data-metric="saldo-vuelta-back"]')).toHaveAttribute(
+    'href',
+    '/es/panel/saldo/?org=acc_t_demo',
+  );
+  const resume = page.locator('[data-saldo-resume]');
+  await expect(resume).toHaveText('Volver a lo que estabas haciendo');
+  await expect(resume).toHaveAttribute('href', '/es/lap/admin/worlds/');
+});
+
 test('the way back from a top-up greets a stranger with the door, not an error', async ({
   page,
 }) => {

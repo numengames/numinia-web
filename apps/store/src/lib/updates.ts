@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.157.0',
+    date: '2026-10-20 17:46',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'After topping up an organization’s balance, you come back to that organization, not to your personal Saldo. When you press «Top up balance» from an organization (for example from the new-world window), the Stripe tab now returns to that organization’s balance, and a «Back to what you were doing» button takes you to the page you were on. If you started from your own Saldo, nothing changes.',
+      },
+    ],
+  },
+  {
     version: 'v0.156.0',
     date: '2026-10-20 18:45',
     entries: [

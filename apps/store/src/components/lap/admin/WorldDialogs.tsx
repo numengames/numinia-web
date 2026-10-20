@@ -896,6 +896,8 @@ export function NewWorldDialog({
                         <a
                           href={`${localeHref(locale, '/panel/saldo/')}?org=${encodeURIComponent(
                             balance.accountId,
+                          )}&volver=${encodeURIComponent(
+                            `${window.location.pathname}${window.location.search}`,
                           )}`}
                           data-metric="worlds-wizard-topup"
                         >

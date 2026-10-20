@@ -38,6 +38,7 @@ import {
   type TopupKey,
 } from '../../lib/accounts';
 import { PIECES, pieceHref } from '../../lib/panel';
+import { isAsk, noteMessage, VOLVER_CHANNEL, volverParam } from '../../lib/saldo-return';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { Kpis, MembersLink, Movements, Rules, Usage, type TopupState } from './SaldoSections';
 
@@ -194,6 +195,19 @@ export function SaldoPanel({
     window.addEventListener('focus', again);
     return () => window.removeEventListener('focus', again);
   }, [current, range, loadOverview, loadStatement]);
+
+  // The tab Stripe opens comes back to «Recarga» knowing nothing: it asks the
+  // tab it came from which organization this was and which page to resume.
+  useEffect(() => {
+    if (organization === undefined || typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel(VOLVER_CHANNEL);
+    channel.onmessage = (event: MessageEvent<unknown>) => {
+      if (isAsk(event.data)) {
+        channel.postMessage(noteMessage(organization, volverParam(window.location.search)));
+      }
+    };
+    return () => channel.close();
+  }, [organization]);
 
   const pay = (): void => {
     if (current === null) return;
