@@ -157,7 +157,7 @@ describe('the refusals of the till', () => {
       [AGENT_PROBLEMS.noSuchAgent, 'noSuchAgent'],
       [AGENT_PROBLEMS.taken, 'taken'],
       [AGENT_PROBLEMS.limit, 'limit'],
-      [AGENT_PROBLEMS.houseCannot, 'houseCannot'],
+      [AGENT_PROBLEMS.houseCeiling, 'houseCeiling'],
       ['the organization has no such role', 'noSuchRole'],
     ];
     for (const [problem, key] of own) {

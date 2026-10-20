@@ -40,6 +40,7 @@ import type {
 import {
   AGENT_PROBLEMS,
   AGENT_STATES,
+  HOUSE_NEVER_GIVES,
   MAX_AGENTS,
   isAccountId,
   isAgentId,
@@ -108,6 +109,8 @@ interface FixtureAgent {
   /** How it was connected: `panel` or `mcp:<client host>` (the till's `connected_via`). */
   via: string;
   readonly responsible: string;
+  /** The house answers for it (D-078): `responsible` is an Oracle's wallet, no member. */
+  readonly responsibleHouse: boolean;
   enabled: boolean;
   state: AgentState;
   hears: boolean;
@@ -165,8 +168,20 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
   const answered = (access: ActorAccess | null): boolean =>
     access !== null && access.permissions.has('manage-roles');
 
+  /** The access of whoever answers for the agent: a member's, or the house's (D-078). */
+  const responsibleAccess = (accountId: string, agent: FixtureAgent): ActorAccess | null => {
+    const org = host.responsible(accountId, agent.responsible);
+    if (org === null || !agent.responsibleHouse) return org?.access ?? null;
+    return accessOf(org.state, { kind: 'house', personId: agent.responsible });
+  };
+
   const accessOfResponsible = (entry: HostEntry, agent: FixtureAgent) =>
-    host.responsible(entry.accountId, agent.responsible)?.access ?? null;
+    responsibleAccess(entry.accountId, agent);
+
+  /** Whether `entry` may give `role` to `target`: ORG-003 and, for the house, its ceiling. */
+  const mayGive = (entry: HostEntry, target: ActorAccess, role: OrganizationRole): boolean =>
+    canAssignRole(entry.access, target, role).ok &&
+    (entry.as !== 'house' || !role.permissions.some((key) => HOUSE_NEVER_GIVES.includes(key)));
 
   const statusOf = (entry: HostEntry, agent: FixtureAgent): AgentStatus => {
     if (!agent.enabled) return 'apagada';
@@ -183,7 +198,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
     if (!entry.access.permissions.has('manage-roles')) {
       return host.refusalOf('missing-permission', 'manage-roles', entry.state);
     }
-    if (entry.who === agent.responsible) return null;
+    if (!agent.responsibleHouse && entry.who === agent.responsible) return null;
     const target = accessOfAgent(entry.state, agent, accessOfResponsible(entry, agent));
     return target.height >= entry.access.height
       ? host.refusalOf('not-below', 'manage-roles', entry.state)
@@ -207,12 +222,9 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       ok: true,
       accountId: entry.accountId,
       as: entry.as,
-      mayCreate:
-        entry.as !== 'house' &&
-        entry.access.permissions.has('manage-roles') &&
-        held.length < MAX_AGENTS,
+      mayCreate: entry.access.permissions.has('manage-roles') && held.length < MAX_AGENTS,
       assignableRoles: topDown(entry.state.roles)
-        .filter((role) => canAssignRole(entry.access, fresh, role).ok)
+        .filter((role) => mayGive(entry, fresh, role))
         .map(({ id, name, color, position }) => ({ id, name, color, position })),
       agents: held.map((agent): DeskAgent => {
         const target = accessOfAgent(entry.state, agent, accessOfResponsible(entry, agent));
@@ -234,12 +246,17 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           hears: agent.hears,
           status: statusOf(entry, agent),
           responsible: agent.responsible,
+          ...(agent.responsibleHouse ? { responsibleHouse: true as const } : {}),
           ...(responsibleName === undefined ? {} : { responsibleName }),
           createdAt: agent.createdAt,
           updatedAt: agent.updatedAt,
           roleIds: [...agent.roleIds],
           assignable: entry.state.roles
-            .filter((role) => canAssignRole(entry.access, target, role).ok)
+            .filter(
+              (role) =>
+                canAssignRole(entry.access, target, role).ok &&
+                (mayGive(entry, target, role) || agent.roleIds.includes(role.id)),
+            )
             .map((role) => role.id),
           mayEdit: handling(entry, agent) === null,
         };
@@ -306,7 +323,6 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       if (!entry.access.permissions.has('manage-roles')) {
         return host.refusalOf('missing-permission', 'manage-roles', entry.state);
       }
-      if (entry.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
       const held = agentsOf(entry.accountId);
       if (held.length >= MAX_AGENTS) return refuse(AGENT_PROBLEMS.limit);
       if (
@@ -326,6 +342,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         if (role === undefined) return refuse(NO_SUCH_ROLE);
         const allowed = canAssignRole(entry.access, fresh, role);
         if (!allowed.ok) return host.refusalOf(allowed.refusal, 'manage-roles', entry.state);
+        if (!mayGive(entry, fresh, role)) return refuse(AGENT_PROBLEMS.houseCeiling);
       }
       const at = stamp();
       byOrg.set(entry.accountId, [
@@ -337,6 +354,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           ...(viaToken ? { tokenHash, tokenPrefix, tokenCreatedAt: at } : { publicKey }),
           via,
           responsible: entry.who,
+          responsibleHouse: entry.as === 'house',
           enabled: true,
           state: 'activa',
           hears: draft?.hears === true,
@@ -490,7 +508,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
       const agent = agentsOf(accountId).find((held) => held.id === agentId);
       const org = agent === undefined ? null : host.responsible(accountId, agent.responsible);
       if (agent === undefined || org === null) return refuse(AGENT_PROBLEMS.noSuchAgent);
-      const access = accessOfAgent(org.state, agent, org.access);
+      const answering = responsibleAccess(accountId, agent);
+      const access = accessOfAgent(org.state, agent, answering);
       return {
         ok: true,
         accountId,
@@ -504,7 +523,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           state: agent.state,
           hears: agent.hears,
         },
-        eligible: answered(org.access),
+        eligible: answered(answering),
         permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),
         height: Math.max(0, access.height),
         roles: topDown(org.state.roles)
@@ -572,6 +591,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
     const target = accessOfAgent(entry.state, agent, accessOfResponsible(entry, agent));
     const allowed = canAssignRole(entry.access, target, role);
     if (!allowed.ok) return host.refusalOf(allowed.refusal, 'manage-roles', entry.state);
+    if (give && !mayGive(entry, target, role)) return refuse(AGENT_PROBLEMS.houseCeiling);
     if (agent.roleIds.includes(role.id) === give) return view(entry);
     agent.roleIds = give
       ? [...agent.roleIds, role.id]

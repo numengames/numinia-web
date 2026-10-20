@@ -53,6 +53,7 @@ const isStrings = (value: unknown): value is string[] =>
 function readAgent(value: unknown): DeskAgent | null {
   if (!isRecord(value)) return null;
   const { id, name, auth, publicKey, enabled, state, status, responsible, responsibleName } = value;
+  const { responsibleHouse } = value;
   const { tokenPrefix, tokenCreatedAt, via } = value;
   const { createdAt, updatedAt, roleIds, assignable, mayEdit, hears } = value;
   if (
@@ -94,6 +95,7 @@ function readAgent(value: unknown): DeskAgent | null {
     hears: hears === true,
     status: status as AgentStatus,
     responsible,
+    ...(responsibleHouse === true ? { responsibleHouse } : {}),
     ...(typeof responsibleName === 'string' ? { responsibleName } : {}),
     createdAt,
     updatedAt,
@@ -185,13 +187,16 @@ const AGENT_SENTENCES: ReadonlyMap<string, AgentProblem> = new Map<string, Agent
   ['the organization has no such agent', 'noSuchAgent'],
   ['the organization already has an agent with that id or that key', 'taken'],
   ['an organization keeps at most 20 agents', 'limit'],
-  ['the house does not answer for an agent: a member creates it', 'houseCannot'],
+  [
+    'the house does not give an agent a role that holds Administrator or Manage roles: that is for the owners',
+    'houseCeiling',
+  ],
   ['the organization has no such role', 'noSuchRole'],
   ['that agent connects with a key, not a token', 'notToken'],
 ]);
 
 export type AgentProblem =
-  'noSuchAgent' | 'taken' | 'limit' | 'houseCannot' | 'noSuchRole' | 'notToken' | 'invalid';
+  'noSuchAgent' | 'taken' | 'limit' | 'houseCeiling' | 'noSuchRole' | 'notToken' | 'invalid';
 
 /** Prefixes of the till's field refusals: a name, a key, an id the form should have caught. */
 const FIELD_PROBLEM =

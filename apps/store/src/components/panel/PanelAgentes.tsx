@@ -467,7 +467,9 @@ function Row({
         </div>
 
         <p className="saldo-nota agentes-linea" data-agent-responsible>
-          {fill(words.responsible, { name: responsibleOf(agent) })}
+          {fill(agent.responsibleHouse === true ? words.responsibleHouse : words.responsible, {
+            name: responsibleOf(agent),
+          })}
         </p>
         {host !== null && agent.auth === 'token' && line === null && (
           <p className="saldo-nota agentes-linea" data-agent-url-none>

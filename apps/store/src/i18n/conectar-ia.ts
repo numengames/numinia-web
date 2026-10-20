@@ -18,7 +18,6 @@ export type ConsentRefusalKey =
   | 'name'
   | 'not-token'
   | 'no-permission'
-  | 'house'
   | 'limit'
   | 'role'
   | 'other-organization'
@@ -85,6 +84,10 @@ export interface ConectarIaMessages {
   readonly hearLabel: string;
   readonly hearHint: string;
   readonly answer: string;
+  /** The community entry of someone who connects as the house: `{name}` is the community. */
+  readonly asHouse: string;
+  /** What replaces `answer` when the house is the one connecting. */
+  readonly answerHouse: string;
   /** The buttons and what follows them. */
   readonly allow: string;
   readonly allowing: string;
@@ -135,6 +138,9 @@ const ES: ConectarIaMessages = {
     'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté. Lo que lea llegará a la empresa de tu IA. Viene sin marcar y lo cambias cuando quieras en Panel › Agentes.',
   answer:
     'Tú respondes de ella. En Panel › Agentes puedes apagarla o desconectarla cuando quieras.',
+  asHouse: '{name} — como la casa',
+  answerHouse:
+    'La casa responde de ella, mientras la comunidad deje entrar a la casa. Quienes dirigen la comunidad la ven en Panel › Agentes y pueden apagarla o quitarla cuando quieran.',
   allow: 'Permitir',
   allowing: 'Conectando…',
   cancelled: 'No se ha conectado nada. Puedes cerrar esta pestaña.',
@@ -183,7 +189,6 @@ const ES: ConectarIaMessages = {
     name: 'Ponle un nombre de 1 a 40 letras.',
     'not-token': 'Esa IA se conecta con su propia clave: no se puede volver a conectar así.',
     'no-permission': 'Para conectar una IA hace falta poder gestionar los roles de la comunidad.',
-    house: 'La casa no responde por una IA: la conecta una persona de la comunidad.',
     limit: 'La comunidad ya tiene todas las IAs que caben (20).',
     role: 'Ese rol no lo puedes dar tú.',
     'other-organization': 'Esa IA es de otra comunidad.',
@@ -227,6 +232,9 @@ const EN: ConectarIaMessages = {
     'If you turn it on, the AI reads the nearby chat in the worlds it is in. What it reads reaches the company behind your AI. It starts off, and you can change it any time in Panel › Agents.',
   answer:
     'You answer for it. You can switch it off or disconnect it in Panel › Agents at any time.',
+  asHouse: '{name} — as the house',
+  answerHouse:
+    'The house answers for it, for as long as the community lets the house in. The community’s managers see it in Panel › Agents and can switch it off or remove it at any time.',
   allow: 'Allow',
   allowing: 'Connecting…',
   cancelled: 'Nothing was connected. You can close this tab.',
@@ -271,7 +279,6 @@ const EN: ConectarIaMessages = {
     name: 'Give it a name of 1 to 40 letters.',
     'not-token': 'That AI connects with its own key: it cannot be reconnected this way.',
     'no-permission': 'To connect an AI you need to be able to manage the community’s roles.',
-    house: 'The house does not answer for an AI: a person of the community connects it.',
     limit: 'The community already has all the AIs it can hold (20).',
     role: 'That role is not one you can give.',
     'other-organization': 'That AI belongs to another community.',
@@ -316,6 +323,9 @@ const JA: ConectarIaMessages = {
     'オンにすると、AIは自分がいるワールドで近くのチャットを読みます。読んだ内容はあなたのAIの会社に届きます。初期設定はオフで、パネル › エージェントでいつでも変えられます。',
   answer:
     'このAIの責任はあなたにあります。パネル › エージェントでいつでもオフや接続解除ができます。',
+  asHouse: '{name} — ハウスとして',
+  answerHouse:
+    'コミュニティがハウスの立ち入りを認めている間、このAIの責任はハウスにあります。コミュニティの管理者はパネル › エージェントで見ることができ、いつでもオフにしたり外したりできます。',
   allow: '許可する',
   allowing: '接続中…',
   cancelled: '何も接続されていません。このタブは閉じてかまいません。',
@@ -359,7 +369,6 @@ const JA: ConectarIaMessages = {
     name: '1〜40文字の名前を付けてください。',
     'not-token': 'このAIは自分のキーで接続します。この方法では再接続できません。',
     'no-permission': 'AIを接続するには、コミュニティのロールを管理できる必要があります。',
-    house: 'ハウスはAIの責任者になれません。コミュニティの人が接続します。',
     limit: 'コミュニティはすでに上限（20）までAIを抱えています。',
     role: 'その役割はあなたには付けられません。',
     'other-organization': 'このAIは別のコミュニティのものです。',
@@ -401,6 +410,9 @@ const KO: ConectarIaMessages = {
   hearHint:
     '켜면 AI가 있는 월드에서 근처 채팅을 읽습니다. 읽은 내용은 내 AI를 만든 회사에 전달됩니다. 기본은 꺼짐이며, 패널 › 에이전트에서 언제든 바꿀 수 있습니다.',
   answer: '이 AI는 당신이 책임집니다. 패널 › 에이전트에서 언제든 끄거나 연결을 해제할 수 있습니다.',
+  asHouse: '{name} — 하우스로서',
+  answerHouse:
+    '커뮤니티가 하우스의 출입을 허용하는 동안 이 AI는 하우스가 책임집니다. 커뮤니티 관리자는 패널 › 에이전트에서 이를 보고 언제든 끄거나 제거할 수 있습니다.',
   allow: '허용',
   allowing: '연결 중…',
   cancelled: '아무것도 연결되지 않았습니다. 이 탭을 닫아도 됩니다.',
@@ -444,7 +456,6 @@ const KO: ConectarIaMessages = {
     name: '1~40자의 이름을 지어 주세요.',
     'not-token': '이 AI는 자체 키로 연결됩니다. 이 방법으로는 다시 연결할 수 없습니다.',
     'no-permission': 'AI를 연결하려면 커뮤니티의 역할을 관리할 수 있어야 합니다.',
-    house: '하우스는 AI의 책임자가 될 수 없습니다. 커뮤니티의 사람이 연결합니다.',
     limit: '커뮤니티가 담을 수 있는 AI(20)를 모두 채웠습니다.',
     role: '그 역할은 내가 줄 수 없습니다.',
     'other-organization': '이 AI는 다른 커뮤니티의 것입니다.',
@@ -489,6 +500,9 @@ const PT_BR: ConectarIaMessages = {
     'Se você ligar, a IA lê o chat próximo nos mundos em que estiver. O que ela ler chega à empresa da sua IA. Vem desligado e você muda quando quiser em Painel › Agentes.',
   answer:
     'Você responde por ela. Pode desligá-la ou desconectá-la em Painel › Agentes quando quiser.',
+  asHouse: '{name} — como a casa',
+  answerHouse:
+    'A casa responde por ela, enquanto a comunidade deixar a casa entrar. Quem dirige a comunidade a vê em Painel › Agentes e pode desligá-la ou removê-la quando quiser.',
   allow: 'Permitir',
   allowing: 'Conectando…',
   cancelled: 'Nada foi conectado. Você pode fechar esta aba.',
@@ -537,7 +551,6 @@ const PT_BR: ConectarIaMessages = {
     name: 'Dê a ela um nome de 1 a 40 letras.',
     'not-token': 'Essa IA se conecta com a própria chave: não dá para reconectá-la assim.',
     'no-permission': 'Para conectar uma IA é preciso poder gerenciar os papéis da comunidade.',
-    house: 'A casa não responde por uma IA: quem conecta é uma pessoa da comunidade.',
     limit: 'A comunidade já tem todas as IAs que cabem (20).',
     role: 'Esse papel não é um que você possa dar.',
     'other-organization': 'Essa IA é de outra comunidade.',

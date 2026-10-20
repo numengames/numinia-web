@@ -175,9 +175,13 @@ describe('a new AI', () => {
     expect(refusalOf(plan)).toBe('no-permission');
   });
 
-  it('refuses the house: it does not answer for an AI', () => {
-    const plan = decideConnection(view({ mayCreate: false, as: 'house' }), request());
-    expect(refusalOf(plan)).toBe('house');
+  it('lets the house create where the till says it may (D-078)', () => {
+    const plan = decideConnection(view({ as: 'house' }), request({ house: true }));
+    expect(plan).toMatchObject({ ok: true, action: 'create' });
+    // And names the limit, not the house, when it cannot.
+    expect(refusalOf(decideConnection(view({ mayCreate: false, as: 'house' }), request()))).toBe(
+      'limit',
+    );
   });
 
   it('refuses an organization that already keeps MAX_AGENTS', () => {
@@ -428,12 +432,27 @@ describe('connecting through the fixture desk', () => {
     expect(done).toMatchObject({ ok: false, refusal: 'till' });
   });
 
-  it('still names the house if the till ever answers as the house', async () => {
-    const { desk } = stub({
-      agents: vi.fn(async () => ({ ...TILL_VIEW, as: 'house', mayCreate: false })),
-    });
-    const done = await connectAi(desk, asker(true), request(), quiet, draw);
-    expect(done).toEqual({ ok: false, refusal: 'house' });
+  it('connects as the house in a community that lets it in, and the house answers for the AI (D-078)', async () => {
+    const desk = fixture();
+    const done = await connectAi(
+      desk,
+      asker(true),
+      request({ accountId: OTHER, house: true }),
+      quiet,
+    );
+    expect(done).toMatchObject({ ok: true, action: 'create', accountId: OTHER });
+    if (!done.ok) throw new Error('not connected');
+    const listed = await desk.agents(ME, OTHER, true);
+    expect(
+      listed.ok && listed.agents.find((held) => held.id === 'claude-de-ana')?.responsibleHouse,
+    ).toBe(true);
+  });
+
+  it('asks nothing of the till for the house when the session is not the house’s', async () => {
+    const { desk, methods } = stub();
+    const done = await connectAi(desk, asker(false), request({ house: true }), quiet, draw);
+    expect(done).toEqual({ ok: false, refusal: 'no-permission' });
+    expect(methods.agents).not.toHaveBeenCalled();
   });
 
   it('passes on the till’s refusal of an organization the person is not in', async () => {
@@ -457,7 +476,7 @@ describe('connecting: who asks and what the till answers', () => {
     expect(methods.agents).not.toHaveBeenCalled();
   });
 
-  it('acts as the person even for the house’s Oracle: every call to the till says house false', async () => {
+  it('acts as the person even for the house’s Oracle unless the consent chose the house: every call says house false', async () => {
     const { desk, methods } = stub();
     const done = await connectAi(
       desk,
@@ -470,6 +489,21 @@ describe('connecting: who asks and what the till answers', () => {
     expect(methods.agents).toHaveBeenCalledWith(ME, ORG, false);
     expect(methods.access).toHaveBeenCalledWith(ME, ORG, false);
     expect(methods.createAgent.mock.calls[0]?.[3]).toBe(false);
+  });
+
+  it('sends house true on every call only for a house choice', async () => {
+    const { desk, methods } = stub();
+    const done = await connectAi(
+      desk,
+      asker(true),
+      request({ ai: { kind: 'new', name: 'Otra' }, house: true }),
+      quiet,
+      draw,
+    );
+    expect(done.ok).toBe(true);
+    expect(methods.agents).toHaveBeenCalledWith(ME, ORG, true);
+    expect(methods.access).toHaveBeenCalledWith(ME, ORG, true);
+    expect(methods.createAgent.mock.calls[0]?.[3]).toBe(true);
   });
 
   it('asks the till as the session’s wallet in lower case, with the session’s house flag', async () => {

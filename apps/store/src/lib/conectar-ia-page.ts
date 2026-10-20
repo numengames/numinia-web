@@ -27,10 +27,13 @@
  * OUT — the page posts JSON (same origin) to /api/conectar-ia:
  *
  *     { req, app, host, accountId, ai: { kind: 'new', name } |
- *       { kind: 'again', agentId }, roleId: string | null, hear?: boolean }
+ *       { kind: 'again', agentId }, roleId: string | null, hear?: boolean,
+ *       house?: boolean }
  *
  *   (`hear`, the consent's unchecked checkbox: whether the AI may hear nearby
- *   chat, off when absent) and gets `200 { ok: true, connection: { req, action, accountId,
+ *   chat, off when absent; `house`, true only for a community the page listed
+ *   «como la casa» — an Oracle's session that is no owner or manager there —
+ *   and refused unless the session is the house's, D-078) and gets `200 { ok: true, connection: { req, action, accountId,
  *   agentId, name, via, hear }, next }`. The AI's token is NEVER in the
  *   answer: it goes to the relay through its service binding (`handOff`,
  *   lib/relay-handoff.ts), which seals it for the browser that started the
@@ -110,7 +113,15 @@ function buildShapes() {
     ]),
     roleId: z.string().min(1).max(64).nullable(),
     hear: z.boolean().default(false),
+    house: z.boolean().default(false),
   });
+  const directory = z.union([
+    z.object({
+      ok: z.literal(true),
+      accounts: z.array(z.object({ id: z.string(), name: z.string() })),
+    }),
+    refusal,
+  ]);
   const overview = z.union([
     z.object({
       accounts: z.array(
@@ -139,7 +150,7 @@ function buildShapes() {
     }),
     refusal,
   ]);
-  return { query, body, overview, agents };
+  return { query, body, overview, directory, agents };
 }
 
 const shapes = (): ReturnType<typeof buildShapes> => (built ??= buildShapes());
@@ -206,6 +217,19 @@ export interface ConsentOrg {
   /** The roles a new AI may be given (the till's `assignableRoles`). */
   readonly roles: readonly ConsentRole[];
   readonly again: readonly ConsentAgain[];
+  /**
+   * The house connects here (D-078): the person is no owner or manager of this
+   * community but the session is the house's, and the community lets it in.
+   * The page labels it «como la casa» and posts `house: true` for it.
+   */
+  readonly house: boolean;
+  /**
+   * Whether the till was asked about this community. The house's are loaded
+   * one at a time (`consentChoices`' `loadHouse`): every read of the house
+   * is a line in that community's log (ORG-009), so listing them all must not
+   * read them all. An unloaded one is only a name until it is picked.
+   */
+  readonly loaded: boolean;
 }
 
 export type ConsentChoices =
@@ -213,55 +237,99 @@ export type ConsentChoices =
   | { readonly ok: false; readonly reason: 'signed-out' | 'unavailable' };
 
 /**
- * The organizations of the person's own accounts where they may add an AI
- * (or reconnect one of `reconnectable`), with the roles they may give,
- * from the till's `agents` answer to them. The house's entries are not
- * listed: the house does not answer for an AI. An organization the till
- * refuses or fails on is left out; an overview that fails is `unavailable`.
+ * The organizations where an AI may be added, or one reconnected (`reconnectable`),
+ * with the roles that may be given, from the till's `agents` answer:
+ *
+ *   1. the person's own — those where they are an owner or hold manage-roles
+ *      — read as themselves; and
+ *   2. when the session is the house's (an Oracle), every other community the
+ *      house may enter (the till's directory), read as the house (D-078) and
+ *      marked `house`, which the page labels «como la casa».
+ *
+ * A community in both lists is in the first: the person acting as themselves
+ * wins over the house. An organization the till refuses or fails on is left
+ * out; an overview that fails is `unavailable`; a directory that fails only
+ * leaves the house's out.
+ *
+ * Every read of the house is logged in the community it reads (ORG-009), so
+ * the house's communities are only named — `loaded: false`, nothing read —
+ * until one is picked: `loadHouse` is that one (the page asks again with
+ * `?casa=<id>`). With no community of the person's own, the first one is
+ * loaded, since the form has to show something.
  */
 export async function consentChoices(
   desk: AccountDesk | null,
   asker: Asker | null,
   log: Log = logEvent,
+  loadHouse?: string,
 ): Promise<ConsentChoices> {
   if (asker === null) return { ok: false, reason: 'signed-out' };
   if (desk === null) return { ok: false, reason: 'unavailable' };
   const { you } = whoIs(asker);
-  // Always as the person, never as the house (even for the house's Oracle): the
-  // till would otherwise make a non-owner Oracle act `as: 'house'`, which may not create.
-  const house = false;
   const overview = await ask(log, 'consent-overview', () => desk.overview(you), shapes().overview);
   if (!overview.ok || !('accounts' in overview.value)) return { ok: false, reason: 'unavailable' };
   const teams = overview.value.accounts.filter((account) => account.kind === 'team');
-  const read = await Promise.all(
-    teams.map(async (team): Promise<ConsentOrg | null> => {
-      const asked = await ask(
-        log,
-        'consent-agents',
-        () => desk.agents(you, team.id, house),
-        shapes().agents,
-      );
-      if (!asked.ok || !asked.value.ok) return null;
-      const view = asked.value;
-      const roles = view.assignableRoles.map(({ id, name }) => ({ id, name }));
-      const again = reconnectable(view).map((agent) => ({
-        id: agent.id,
-        name: agent.name,
-        roles: roles.filter(
-          (role) => agent.assignable.includes(role.id) && !agent.roleIds.includes(role.id),
-        ),
-      }));
-      if (!view.mayCreate && again.length === 0) return null;
-      return {
-        accountId: team.id,
-        name: team.name ?? team.id,
-        mayCreate: view.mayCreate,
-        roles,
-        again,
-      };
+  const read = async (id: string, name: string, house: boolean): Promise<ConsentOrg | null> => {
+    const asked = await ask(
+      log,
+      'consent-agents',
+      () => desk.agents(you, id, house),
+      shapes().agents,
+    );
+    if (!asked.ok || !asked.value.ok) return null;
+    const view = asked.value;
+    const roles = view.assignableRoles.map(({ id: roleId, name: roleName }) => ({
+      id: roleId,
+      name: roleName,
+    }));
+    const again = reconnectable(view).map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      roles: roles.filter(
+        (role) => agent.assignable.includes(role.id) && !agent.roleIds.includes(role.id),
+      ),
+    }));
+    if (!view.mayCreate && again.length === 0) return null;
+    return { accountId: id, name, mayCreate: view.mayCreate, roles, again, house, loaded: true };
+  };
+  const own = (
+    await Promise.all(teams.map((team) => read(team.id, team.name ?? team.id, false)))
+  ).filter((org): org is ConsentOrg => org !== null);
+
+  // The house's own doors: the communities that let it in and the person is not already acting in.
+  const doors: { readonly id: string; readonly name: string }[] = [];
+  if (asker.house) {
+    const listed = await ask(
+      log,
+      'consent-directory',
+      () => desk.directory(you, true),
+      shapes().directory,
+    );
+    if (listed.ok && listed.value.ok) {
+      const taken = new Set(own.map((org) => org.accountId));
+      doors.push(...listed.value.accounts.filter((account) => !taken.has(account.id)));
+    }
+  }
+  const chosen =
+    doors.find((door) => door.id === loadHouse)?.id ??
+    (own.length === 0 ? doors[0]?.id : undefined);
+  const house = await Promise.all(
+    doors.map(async (door): Promise<ConsentOrg | null> => {
+      if (door.id !== chosen) {
+        return {
+          accountId: door.id,
+          name: door.name,
+          mayCreate: false,
+          roles: [],
+          again: [],
+          house: true,
+          loaded: false,
+        };
+      }
+      return read(door.id, door.name, true);
     }),
   );
-  return { ok: true, orgs: read.filter((org): org is ConsentOrg => org !== null) };
+  return { ok: true, orgs: [...own, ...house.filter((org): org is ConsentOrg => org !== null)] };
 }
 
 // ---- The POST -------------------------------------------------------------
@@ -292,7 +360,6 @@ const STATUS: Readonly<Record<Failure['refusal'], number>> = {
   'not-token': 400,
   'signed-out': 401,
   'no-permission': 403,
-  house: 403,
   limit: 403,
   role: 403,
   'other-organization': 403,
@@ -353,6 +420,7 @@ export async function answerConsent(
           : { kind: 'again', accountId: sent.accountId, agentId: sent.ai.agentId },
       roleId: sent.roleId,
       hear: sent.hear,
+      house: sent.house,
     },
     log,
     draw,

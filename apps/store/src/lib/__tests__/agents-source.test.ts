@@ -100,7 +100,7 @@ describe('GET /api/saldo/agents', () => {
     const house = await json(
       await answerAgents(desk, asker(HOUSE, true), url(`cuenta=${INSTITUTE}`), quiet),
     );
-    expect(house['agents']).toMatchObject({ as: 'house', mayCreate: false });
+    expect(house['agents']).toMatchObject({ as: 'house', mayCreate: true });
   });
 
   it('answers 502 when the till answers out of shape', async () => {
@@ -293,7 +293,7 @@ describe('POST, PATCH and DELETE /api/saldo/agents', () => {
     }
   });
 
-  it('lets the house act, marked, and not create', async () => {
+  it('lets the house act, marked, and create where it may enter (D-078)', async () => {
     const desk = fresh();
     const owner = asker(INSTITUTE_OWNER);
     await answerAgentWrite(desk, owner, send('POST', { ...BOT, accountId: INSTITUTE }), quiet);
@@ -304,8 +304,14 @@ describe('POST, PATCH and DELETE /api/saldo/agents', () => {
       send('POST', { ...BOT, accountId: INSTITUTE, id: 'other', publicKey: KEY(8) }),
       quiet,
     );
-    expect(created.status).toBe(403);
-    expect(await json(created)).toMatchObject({ problems: [expect.stringContaining('house')] });
+    expect(created.status).toBe(200);
+    expect(await json(created)).toMatchObject({
+      agents: {
+        agents: expect.arrayContaining([
+          expect.objectContaining({ id: 'other', responsibleHouse: true }),
+        ]),
+      },
+    });
     const off = await answerAgentWrite(
       desk,
       house,

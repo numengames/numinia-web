@@ -58,6 +58,8 @@ export interface AgentesMessages {
   readonly status: Readonly<Record<AgentStatus, string>>;
   /** `{name}`: who answers for the AI. */
   readonly responsible: string;
+  /** `{name}`: who answers for the AI when it is the house (an Oracle's name, or a short wallet). */
+  readonly responsibleHouse: string;
   /** The asker sees this AI but may not change it. */
   readonly readOnly: string;
   readonly roles: string;
@@ -200,6 +202,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       dormida: 'Puede entrar en los mundos, en reposo.',
     },
     responsible: 'Responde por ella: {name}',
+    responsibleHouse: 'Responde por ella: la casa ({name})',
     readOnly: 'Solo puedes verla: no puedes cambiarla.',
     roles: 'Roles',
     noRoles: 'Sin roles: solo mira y habla.',
@@ -222,7 +225,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noSuchAgent: 'Esa IA ya no está en la comunidad. Recarga la lista.',
       taken: 'Ya hay una IA con ese nombre o con esa clave. Prueba con otro nombre.',
       limit: 'La comunidad ya tiene todas las IAs que caben (20).',
-      houseCannot: 'La casa no responde por una IA: la invita una persona de la comunidad.',
+      houseCeiling:
+        'La casa no da a una IA un rol con «Administrador» o «Gestionar roles»: eso es de quienes son dueños de la comunidad.',
       noSuchRole: 'Ese rol ya no existe. Recarga la página.',
       notToken: 'Esa IA se conecta con llave, no con token.',
     },
@@ -339,6 +343,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       dormida: 'It can enter the worlds, at rest.',
     },
     responsible: 'Answered for by: {name}',
+    responsibleHouse: 'Answered for by: the house ({name})',
     readOnly: 'You can only see it: you cannot change it.',
     roles: 'Roles',
     noRoles: 'No roles: it only looks and talks.',
@@ -361,7 +366,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noSuchAgent: 'That AI is no longer in the community. Reload the list.',
       taken: 'There is already an AI with that name or that key. Try another name.',
       limit: 'The community already has all the AIs it can hold (20).',
-      houseCannot: 'The house does not answer for an AI: a person of the community invites it.',
+      houseCeiling:
+        'The house does not give an AI a role with “Administrator” or “Manage roles”: that is for the community’s owners.',
       noSuchRole: 'That role no longer exists. Reload the page.',
       notToken: 'That AI connects with a key, not a token.',
     },
@@ -477,6 +483,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       dormida: '世界に入れますが、休んでいます。',
     },
     responsible: '責任者：{name}',
+    responsibleHouse: '責任者：ハウス（{name}）',
     readOnly: '見ることはできますが、変更はできません。',
     roles: 'ロール',
     noRoles: 'ロールなし：見て話すだけです。',
@@ -499,7 +506,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noSuchAgent: 'このAIはもうコミュニティにいません。一覧を読み込み直してください。',
       taken: '同じ名前またはキーのAIがすでにいます。別の名前を試してください。',
       limit: 'コミュニティはすでに上限（20）までAIを抱えています。',
-      houseCannot: 'ハウスはAIの責任者になれません。コミュニティの人が招待します。',
+      houseCeiling:
+        'ハウスは、「管理者」または「ロールの管理」を含むロールをAIに付与できません。それはコミュニティのオーナーの役目です。',
       noSuchRole: 'そのロールはもうありません。ページを読み込み直してください。',
       notToken: 'このAIはトークンではなく鍵で接続します。',
     },
@@ -614,6 +622,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       dormida: '세계에 들어갈 수 있지만 쉬고 있습니다.',
     },
     responsible: '책임자: {name}',
+    responsibleHouse: '책임자: 하우스({name})',
     readOnly: '볼 수만 있고 바꿀 수는 없습니다.',
     roles: '역할',
     noRoles: '역할 없음: 보고 말하기만 합니다.',
@@ -636,7 +645,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noSuchAgent: '이 AI는 이제 커뮤니티에 없습니다. 목록을 다시 불러오세요.',
       taken: '같은 이름이나 같은 키의 AI가 이미 있습니다. 다른 이름을 써 보세요.',
       limit: '커뮤니티가 담을 수 있는 AI(20)를 모두 채웠습니다.',
-      houseCannot: '하우스는 AI의 책임자가 될 수 없습니다. 커뮤니티의 사람이 초대합니다.',
+      houseCeiling:
+        '하우스는 ‘관리자’ 또는 ‘역할 관리’가 있는 역할을 AI에게 줄 수 없습니다. 그것은 커뮤니티 소유자의 몫입니다.',
       noSuchRole: '그 역할은 더 이상 없습니다. 페이지를 다시 불러오세요.',
       notToken: '이 AI는 토큰이 아니라 키로 연결합니다.',
     },
@@ -752,6 +762,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       dormida: 'Pode entrar nos mundos, em repouso.',
     },
     responsible: 'Quem responde por ela: {name}',
+    responsibleHouse: 'Quem responde por ela: a casa ({name})',
     readOnly: 'Você só pode vê-la: não pode alterá-la.',
     roles: 'Papéis',
     noRoles: 'Sem papéis: só olha e fala.',
@@ -774,7 +785,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       noSuchAgent: 'Essa IA não está mais na comunidade. Recarregue a lista.',
       taken: 'Já existe uma IA com esse nome ou essa chave. Tente outro nome.',
       limit: 'A comunidade já tem todas as IAs que cabem (20).',
-      houseCannot: 'A casa não responde por uma IA: quem convida é uma pessoa da comunidade.',
+      houseCeiling:
+        'A casa não dá a uma IA um cargo com «Administrador» ou «Gerenciar cargos»: isso é de quem é dono da comunidade.',
       noSuchRole: 'Esse papel não existe mais. Recarregue a página.',
       notToken: 'Essa IA se conecta com chave, não com token.',
     },
