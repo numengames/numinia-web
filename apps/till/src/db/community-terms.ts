@@ -12,20 +12,26 @@
  * - `publishTerms`: only whoever holds `administrator` (the notes for an
  *   organization's AIs follow the same rule, D-073). The new version needs a
  *   `version` no earlier one had; the earlier ones stay.
+ * - `publicTerms` (condiciones/w3): the same terms for anybody, no session —
+ *   only what may be published: the version in force and, of each version
+ *   ever published, its number and date. Never who published it. It is
+ *   asked by the community's id (the register's), never by account: the
+ *   till derives the account the community's terms live in, so nobody can
+ *   read another organization's account through it.
  *
- * This cut is the domain and its storage only: no screen (w2) and no
- * `AccountDesk` method yet — the Ajustes cut wires these two functions to
- * the desk with its screen. Every argument is read as untrusted; a refusal
- * is an answer with problems in words, never a throw.
+ * Every argument is read as untrusted; a refusal is an answer with
+ * problems in words, never a throw.
  */
 
 import {
   currentCommunityTerms,
+  type CommunityTerms,
   publishCommunityTerms,
   validateCommunityTerms,
   type PublishedCommunityTerms,
 } from '@numinia/domain';
 import { readAccountId, readWallet } from '../lib/accounts';
+import { COMMUNITY_PROBLEMS, communityAccountId, readCommunityId } from '../lib/community-teams';
 import { ORG_PROBLEMS, readHouse } from '../lib/organizations';
 import { PROBLEMS, enter, houseRead, lacking, refuse, type Refusal } from './accounts';
 import { cents, instant, text, type Row, type TillDatabase } from './repository';
@@ -43,6 +49,18 @@ interface TermsView {
 }
 
 export type TermsAnswer = TermsView | Refusal;
+
+/** What anybody may read of a community's terms: no author, no account. */
+interface PublicTermsView {
+  readonly ok: true;
+  readonly communityId: string;
+  /** The version in force (its points whole), or null while the community has published none. */
+  readonly current: { readonly terms: CommunityTerms; readonly publishedAt: string } | null;
+  /** Every version ever published, oldest first: its number and when. */
+  readonly history: readonly { readonly version: string; readonly publishedAt: string }[];
+}
+
+export type PublicTermsAnswer = PublicTermsView | Refusal;
 
 const SELECT_TERMS = `
   SELECT seq, version, points, published_by, published_at
@@ -156,5 +174,29 @@ export async function publishTerms(
     current: publication.published,
     history: publication.history,
     mayEdit: true,
+  };
+}
+
+/**
+ * The terms a community published, for anybody: the version in force and the
+ * number and date of every version, oldest first. A community that has
+ * published nothing (or whose organization the house has not opened yet)
+ * answers `current: null` and an empty history — that is not a refusal.
+ * Nothing about a person leaves: not who published, not the account.
+ */
+export async function publicTerms(
+  db: TillDatabase,
+  sentCommunityId: unknown,
+): Promise<PublicTermsAnswer> {
+  const communityId = readCommunityId(sentCommunityId);
+  if (communityId === undefined) return refuse(COMMUNITY_PROBLEMS.community);
+  const history = await historyOf(db, await communityAccountId(communityId));
+  const current = currentCommunityTerms(history);
+  return {
+    ok: true,
+    communityId,
+    current:
+      current === undefined ? null : { terms: current.terms, publishedAt: current.publishedAt },
+    history: history.map(({ terms, publishedAt }) => ({ version: terms.version, publishedAt })),
   };
 }

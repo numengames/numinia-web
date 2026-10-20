@@ -1,0 +1,215 @@
+---
+/**
+ * «Normas de la comunidad» (condiciones/w3): the public page, no session.
+ * First the fixed line — Numinia's terms come first, with their link —; then
+ * each point of the community with its title, its text, whether it is
+ * mandatory or optional and whether it is a rule or a permission over data;
+ * below, the versions published (number and date). Nothing says who
+ * published. A community with nothing published says Numinia's terms are the
+ * only ones.
+ */
+import type { SupportedLocale } from '@numinia/domain';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { COMMUNITIES_UI, fill } from '../../i18n/communities';
+import { COMMUNITY_TERMS_PAGE_UI } from '../../i18n/community-terms-page';
+import { LEGAL_DOC_VERSION } from '../../lib/legal';
+import {
+  PUBLIC_TERMS_API,
+  numiniaTermsPath,
+  type PublicTermsDoc,
+} from '../../lib/public-terms';
+import type { Community } from '../../lib/communities';
+import Icon from '../chrome/Icon.astro';
+import '../../styles/communities.css';
+
+interface Props {
+  locale: SupportedLocale;
+  community: Community;
+  /** Null when the till could not be read. */
+  doc: PublicTermsDoc | null;
+}
+
+const { locale, community, doc } = Astro.props;
+const ui = COMMUNITY_TERMS_PAGE_UI[locale];
+const crumbs = COMMUNITIES_UI[locale];
+const prefix = locale === 'en' ? '' : `/${locale}`;
+const home = `${prefix}/communities/${community.id}/`;
+const tag = locale === 'pt-br' ? 'pt-BR' : locale;
+const day = new Intl.DateTimeFormat(tag, { dateStyle: 'long', timeZone: 'UTC' });
+const dayOf = (iso: string): string => day.format(new Date(iso));
+const current = doc?.current ?? null;
+const history = doc?.history ?? [];
+const title = fill(ui.title, { x: community.name });
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${title} — Numinia`}
+  description={fill(ui.description, { x: community.name })}
+>
+  <div class="columna terms-public">
+    <p class="migas">
+      <a href={`${prefix}/`}>Numinia</a> / <a href={`${prefix}/communities/`}>{crumbs.crumbCommunities}</a> / <a href={home}>{community.name}</a> / {ui.eyebrow}
+    </p>
+    <div class="cabeza">
+      <span class="etiqueta">{ui.eyebrow}</span>
+      <h1 class="display-m">{title}</h1>
+      <p class="desc"><a href={home}>{fill(ui.back, { x: community.name })}</a></p>
+    </div>
+
+    {
+      doc === null ? (
+        <p class="vacio" role="status" data-terms-unavailable>
+          <Icon name="info" size={24} />
+          <span>{ui.unavailable}</span>
+        </p>
+      ) : (
+        <>
+          <section class="tarjeta terms-fixed" data-terms-fixed>
+            <span class="chip ambar">{ui.fixed.label}</span>
+            <p style="margin: var(--s3) 0 0">{ui.fixed.text}</p>
+            <p style="margin: var(--s3) 0 0">
+              <a href={numiniaTermsPath(locale)}>{fill(ui.fixed.link, { version: LEGAL_DOC_VERSION.terms })}</a>
+            </p>
+          </section>
+
+          <section class="tarjeta" aria-labelledby="terms-own" data-terms-own>
+            <h2 class="card-h2" id="terms-own"><Icon name="scroll" size={20} />{ui.own.label}</h2>
+            {
+              current === null ? (
+                <p class="vacio" data-terms-none>
+                  <Icon name="info" size={24} />
+                  <span>{ui.own.none}</span>
+                </p>
+              ) : (
+                <>
+                  <p class="small texto-2" style="margin: 0 0 var(--s4)" data-terms-in-force>
+                    {fill(ui.own.inForce, { version: current.version, date: dayOf(current.publishedAt) })}
+                  </p>
+                  <ol class="terms-points">
+                    {current.puntos.map((point, index) => (
+                      <li class="terms-point" data-terms-point={point.id} data-tipo={point.tipo}>
+                        <div class="fila terms-chips">
+                          <span class="etiqueta">{fill(ui.own.point, { n: index + 1 })}</span>
+                          <span class={point.obligatorio ? 'chip ambar' : 'chip'}>
+                            {point.obligatorio ? ui.own.mandatory : ui.own.optional}
+                          </span>
+                          <span class={point.tipo === 'datos' ? 'chip turquesa' : 'chip'}>
+                            {point.tipo === 'datos' ? ui.own.data : ui.own.norm}
+                          </span>
+                        </div>
+                        <h3>{point.titulo}</h3>
+                        <p class="terms-text">{point.texto}</p>
+                        {point.tipo === 'datos' && <p class="small texto-2 terms-note">{ui.own.dataNote}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )
+            }
+          </section>
+
+          {
+            history.length > 0 && (
+              <section class="tarjeta" aria-labelledby="terms-history" data-terms-history>
+                <h2 class="card-h2" id="terms-history"><Icon name="archive" size={20} />{ui.history.title}</h2>
+                <table class="terms-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{ui.history.version}</th>
+                      <th scope="col">{ui.history.date}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...history].reverse().map((entry) => (
+                      <tr data-terms-version={entry.version}>
+                        <th scope="row">
+                          v{entry.version}
+                          {entry.version === current?.version && <span class="chip vivo">{ui.history.inForce}</span>}
+                        </th>
+                        <td><time datetime={entry.publishedAt}>{dayOf(entry.publishedAt)}</time></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            )
+          }
+
+          <p class="small texto-2" data-terms-json>
+            {ui.machine.text}{' '}
+            <a href={`${PUBLIC_TERMS_API}?comunidad=${community.id}`} rel="alternate" type="application/json">{ui.machine.link}</a>
+          </p>
+        </>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .terms-public {
+    display: grid;
+    gap: var(--s5);
+    padding-bottom: var(--s8);
+  }
+  .terms-public .migas {
+    margin-bottom: 0;
+  }
+  .terms-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s4);
+  }
+  .terms-point {
+    border-top: 1px solid var(--linea-f);
+    padding-top: var(--s4);
+    min-width: 0;
+  }
+  .terms-point:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .terms-point h3 {
+    margin: var(--s3) 0 0;
+    overflow-wrap: anywhere;
+  }
+  .terms-chips {
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  .terms-text {
+    margin: var(--s2) 0 0;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .terms-note {
+    margin: var(--s2) 0 0;
+  }
+  .terms-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .terms-table th,
+  .terms-table td {
+    text-align: left;
+    padding: var(--s2) 0;
+    border-top: 1px solid var(--linea-f);
+    font-weight: 400;
+  }
+  .terms-table thead th {
+    border-top: 0;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--texto-2);
+  }
+  .terms-table tbody th {
+    font-family: var(--mono);
+  }
+  .terms-table tbody th .chip {
+    margin-left: var(--s2);
+  }
+</style>

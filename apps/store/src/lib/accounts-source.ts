@@ -198,6 +198,10 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.publishTerms === 'function'
         ? stub.publishTerms(wallet, accountId, draft, house)
         : absent('publishTerms'),
+    publicTerms: (communityId) =>
+      typeof desk.publicTerms === 'function'
+        ? stub.publicTerms(communityId)
+        : absent('publicTerms'),
     // Cut 7: the house opens every community at once. Optional too: 503 without it.
     openAllCommunities: (wallet, house, communities) =>
       typeof desk.openAllCommunities === 'function'

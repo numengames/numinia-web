@@ -123,6 +123,7 @@ describe('the desk', () => {
       'placeWorld',
       'placements',
       'profile',
+      'publicTerms',
       'publishTerms',
       'removeAgent',
       'removeMember',

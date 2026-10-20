@@ -123,6 +123,7 @@ import {
   type DeskTariff,
   type DeskTeamAnswer,
   type DeskTerms,
+  type DeskPublicTermsAnswer,
   type DeskTermsAnswer,
   type DeskTopupAnswer,
   type DeskWorld,
@@ -1885,6 +1886,27 @@ export function createAccountsFixtureDesk(
       }
       termsKept.set(found.book, published.history);
       return termsView(found);
+    },
+
+    // condiciones/w3: anybody, no session — the version in force and each version's number and date.
+    publicTerms: async (communityId): Promise<DeskPublicTermsAnswer> => {
+      const community = readCommunityId(communityId);
+      if (community === undefined) return refuse('communityId must be a community id');
+      const seeded = `acc_team_${community.replace(/-/g, '_')}`;
+      // The organization the house opened for the community, else the seed's own (the seed's
+      // per-wallet copies keep their drafts apart: nobody's draft is public).
+      const book = communityBooks.get(await communityAccountId(community));
+      const history = book === undefined ? (SEEDED_TERMS[seeded] ?? []) : termsOf(book);
+      const current = currentCommunityTerms(history);
+      return {
+        ok: true,
+        communityId: community,
+        current:
+          current === undefined
+            ? null
+            : copy({ terms: current.terms, publishedAt: current.publishedAt }),
+        history: history.map(({ terms, publishedAt }) => ({ version: terms.version, publishedAt })),
+      };
     },
 
     happenings: async (wallet, accountId, before, house): Promise<DeskHappeningsAnswer> => {

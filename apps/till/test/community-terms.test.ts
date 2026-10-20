@@ -9,7 +9,14 @@
 
 import { describe, expect, it } from 'vitest';
 import { PROBLEMS } from '../src/db/accounts';
-import { communityTerms, publishTerms, type TermsAnswer } from '../src/db/community-terms';
+import {
+  communityTerms,
+  publicTerms,
+  publishTerms,
+  type PublicTermsAnswer,
+  type TermsAnswer,
+} from '../src/db/community-terms';
+import { COMMUNITY_PROBLEMS } from '../src/lib/community-teams';
 import { ORG_PROBLEMS } from '../src/lib/organizations';
 import { AccountDesk } from '../src/worker';
 import { migratedTill } from './sqlite-d1';
@@ -60,7 +67,7 @@ const ok = (answer: TermsAnswer) => {
   if (!answer.ok) throw new Error(answer.problems.join());
   return answer;
 };
-const problems = (answer: TermsAnswer): readonly string[] => {
+const problems = (answer: TermsAnswer | PublicTermsAnswer): readonly string[] => {
   if (answer.ok) throw new Error('expected a refusal');
   return answer.problems;
 };
@@ -380,5 +387,89 @@ describe('the desk the store calls: communityTerms and publishTerms (condiciones
       await s.desk.publishTerms(PABLO, s.id, draft('1.0', [{ ...datos, obligatorio: true }])),
     );
     expect(refused.some((line) => line.startsWith('puntos[0].obligatorio: '))).toBe(true);
+  });
+});
+
+describe('the public read: publicTerms (condiciones/w3)', () => {
+  /** The organization the house opens for a register community: its id is derived from the community's. */
+  async function opened(community = 'numen-games') {
+    const s = await scene();
+    const made = await s.desk.ensureCommunityTeam(HOUSE, true, community, 'Numen Games');
+    if (!made.ok) throw new Error(made.problems.join());
+    return { ...s, communityId: community, teamId: made.account.id };
+  }
+  const answered = (answer: PublicTermsAnswer) => {
+    if (!answer.ok) throw new Error(answer.problems.join());
+    return answer;
+  };
+
+  it('answers nothing published, not a refusal, for a community that has none — or no account yet', async () => {
+    const s = await opened();
+    expect(answered(await s.desk.publicTerms('numen-games'))).toEqual({
+      ok: true,
+      communityId: 'numen-games',
+      current: null,
+      history: [],
+    });
+    expect(answered(await publicTerms(s.db, 'never-opened'))).toEqual({
+      ok: true,
+      communityId: 'never-opened',
+      current: null,
+      history: [],
+    });
+  });
+
+  it('shows the version in force and the number and date of each version, without who published', async () => {
+    const s = await opened();
+    ok(await publishTerms(s.db, HOUSE, s.teamId, draft('1.0', [norma]), true, T0));
+    ok(await publishTerms(s.db, HOUSE, s.teamId, draft('1.1'), true, T1));
+    const read = answered(await s.desk.publicTerms('numen-games'));
+    expect(read).toEqual({
+      ok: true,
+      communityId: 'numen-games',
+      current: {
+        terms: { capa: 'comunidad', version: '1.1', puntos: [norma, datos] },
+        publishedAt: T1.toISOString(),
+      },
+      history: [
+        { version: '1.0', publishedAt: T0.toISOString() },
+        { version: '1.1', publishedAt: T1.toISOString() },
+      ],
+    });
+    // Nothing about a person or an account leaves.
+    expect(JSON.stringify(read)).not.toContain(HOUSE);
+    expect(JSON.stringify(read)).not.toContain(s.teamId);
+    expect(JSON.stringify(read)).not.toContain('publishedBy');
+  });
+
+  it('reads the terms of the community asked and no other', async () => {
+    const s = await opened();
+    ok(await publishTerms(s.db, HOUSE, s.teamId, draft('1.0'), true, T0));
+    expect(answered(await s.desk.publicTerms('reset')).current).toBeNull();
+  });
+
+  it('is asked by community id, never by account: an account id is not a community', async () => {
+    const s = await opened();
+    ok(await publishTerms(s.db, HOUSE, s.teamId, draft('1.0'), true, T0));
+    // A team that is not a community (the scene's own) has terms nobody may read through here.
+    ok(await publishTerms(s.db, PABLO, s.id, draft('9.9'), false, T0));
+    expect(problems(await s.desk.publicTerms(s.id))).toEqual([COMMUNITY_PROBLEMS.community]);
+    expect(problems(await s.desk.publicTerms(s.teamId))).toEqual([COMMUNITY_PROBLEMS.community]);
+  });
+
+  it('refuses what is not a community id, in words, and reads nothing', async () => {
+    const s = await opened();
+    for (const bad of [undefined, null, 7, '', 'Numen Games', '-x', 'a'.repeat(64), { id: 'x' }]) {
+      expect(problems(await s.desk.publicTerms(bad))).toEqual([COMMUNITY_PROBLEMS.community]);
+    }
+  });
+
+  it('writes nothing in the log: a public read is not an act of the house', async () => {
+    const s = await opened();
+    const before = Number(s.sqlite.prepare('SELECT COUNT(*) AS n FROM team_log').get()?.['n']);
+    await s.desk.publicTerms('numen-games');
+    expect(Number(s.sqlite.prepare('SELECT COUNT(*) AS n FROM team_log').get()?.['n'])).toBe(
+      before,
+    );
   });
 });

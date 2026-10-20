@@ -114,7 +114,13 @@ import {
   type WorldNamesAnswer,
 } from './db/world-names';
 import { headcount, type HeadcountAnswer } from './db/headcount';
-import { communityTerms, publishTerms, type TermsAnswer } from './db/community-terms';
+import {
+  communityTerms,
+  publicTerms,
+  publishTerms,
+  type PublicTermsAnswer,
+  type TermsAnswer,
+} from './db/community-terms';
 import {
   changeSettings,
   happenings,
@@ -905,6 +911,14 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     house?: unknown,
   ): Promise<TermsAnswer> {
     return publishTerms(this.env.TILL_DB, wallet, accountId, draft, house, new Date());
+  }
+
+  /**
+   * The terms of a community for anybody, no session (condiciones/w3): the version in force and the
+   * number and date of each version. Asked by the register's community id; never who published.
+   */
+  async publicTerms(communityId: unknown): Promise<PublicTermsAnswer> {
+    return publicTerms(this.env.TILL_DB, communityId);
   }
 
   // ---- «Mundos ↔ organizaciones» (2026-10-16): which organization each world belongs to ----
