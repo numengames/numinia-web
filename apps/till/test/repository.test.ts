@@ -132,6 +132,7 @@ describe('the migration', () => {
       '0021_agent_access_tokens.sql',
       '0022_agent_connected_via.sql',
       '0023_agent_hears.sql',
+      '0024_community_terms.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -147,6 +148,7 @@ describe('the migration', () => {
         'close_reports',
         'community_follows',
         'community_requests',
+        'community_terms',
         'fleet_releases',
         'keep_marks',
         'ledger_lines',
