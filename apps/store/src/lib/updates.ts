@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.154.0',
+    date: '2026-10-20 14:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The pass that takes you into a world now says which rules you already accepted here. When you press «Enter» and the world is set up for it, you are not asked to accept Numinia’s terms a second time; the world still asks for its own community rules, and it always asks, with empty boxes, before any permission about your data. A world only trusts the pass if it is genuine and current.',
+      },
+    ],
+  },
+  {
     version: 'v0.153.0',
     date: '2026-10-20 15:30',
     entries: [
