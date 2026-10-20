@@ -146,7 +146,12 @@ describe('migration 0022', () => {
     }
 
     expect(shim.sqlite.prepare('SELECT * FROM team_agents').all()).toEqual(
-      before.map((row) => ({ ...(row as object), connected_via: null, hears: 0 })),
+      before.map((row) => ({
+        ...(row as object),
+        connected_via: null,
+        hears: 0,
+        responsible_house: 0,
+      })),
     );
     // team_log is untouched: same act list, the founding trigger still there.
     expect(

@@ -12,14 +12,17 @@
  *
  * The rules are STD-051, worked out by @numinia/domain from the tables as they
  * are now (ORG-011: an agent never goes beyond the person who answers for it,
- * and is never an owner). Whoever creates an agent answers for it. Every
- * change is one guarded batch (src/db/organizations.ts `commit`) that writes
- * its line in the organization's log (ORG-009) — switching it off and putting
- * it to sleep included; the house's acts carry its mark.
+ * and is never an owner). Whoever creates an agent answers for it — a member
+ * with `manage-roles`, or the house (D-078, migration 0025) in any community
+ * that lets it in, which then answers as the house. Every change is one
+ * guarded batch (src/db/organizations.ts `commit`) that writes its line in the
+ * organization's log (ORG-009) — switching it off and putting it to sleep
+ * included; the house's acts carry its mark.
  *
  * If the person who answers for an agent leaves the organization or loses
- * `manage-roles`, the agent is no longer given a pass: that is worked out here
- * at every request, never by a trigger. Every argument comes from numinia.com
+ * `manage-roles` — or, when it is the house, the community stops letting the
+ * house in — the agent is no longer given a pass: that is worked out here at
+ * every request, never by a trigger. Every argument comes from numinia.com
  * and is read as untrusted (src/lib/agents.ts); a refusal is an answer with
  * problems in words, never a throw.
  */
@@ -28,8 +31,10 @@ import {
   ORGANIZATION_PERMISSIONS,
   accessOf,
   canAssignRole,
+  houseMayEnter,
   type ActorAccess,
   type OrganizationPermission,
+  type OrganizationRole,
 } from '@numinia/domain';
 import { readAccountId } from '../lib/accounts';
 import {
@@ -62,7 +67,7 @@ import {
   type ActingAs,
   type Organization,
 } from './organizations';
-import { publishedIn } from './profiles';
+import { publishedBy, publishedIn } from './profiles';
 import { entering } from './roles';
 import { instant, text, type Row, type TillDatabase } from './repository';
 
@@ -85,6 +90,8 @@ interface TeamAgent {
   readonly via: ConnectedVia | null;
   /** The wallet of the person who answers for it (ORG-011). */
   readonly responsible: string;
+  /** Whether that person answers as the house (an Oracle acting as the house, D-078), not as a member. */
+  readonly responsibleHouse: boolean;
   readonly enabled: boolean;
   readonly state: AgentState;
   /** Whether it may hear what is said nearby in the worlds (migration 0023). */
@@ -116,6 +123,8 @@ export interface AgentDetail {
   /** What the next pass will be: off, orphaned, without permission to enter, or its state. */
   readonly status: AgentStatus;
   readonly responsible: string;
+  /** Present, `true`, when the house answers for it (D-078): the panel shows «la casa» and the wallet's name. */
+  readonly responsibleHouse?: true;
   /** The name the responsible person published, if any. */
   readonly responsibleName?: string;
   readonly createdAt: string;
@@ -132,7 +141,7 @@ export interface AgentsView {
   readonly ok: true;
   readonly accountId: string;
   readonly as: ActingAs;
-  /** The asker may create an agent (manage-roles, as a member, below the limit). */
+  /** The asker may create an agent (manage-roles — the house holds it where it may enter — below the limit). */
   readonly mayCreate: boolean;
   /** The roles the asker may give to a new agent, from the top down. */
   readonly assignableRoles: readonly {
@@ -191,7 +200,8 @@ const REVISION = '(SELECT revision FROM team_profiles WHERE account_id = ?1)';
 
 const SELECT_AGENTS = `
   SELECT agent_id, name, auth_kind, public_key, token_hash, token_prefix, token_created_at,
-         connected_via, responsible_wallet, enabled, state, hears, created_at, updated_at
+         connected_via, responsible_wallet, responsible_house, enabled, state, hears,
+         created_at, updated_at
     FROM team_agents WHERE account_id = ?1 ORDER BY created_at, agent_id`;
 
 const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE account_id = ?1';
@@ -199,9 +209,9 @@ const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE
 const INSERT_AGENT = `
   INSERT INTO team_agents
     (account_id, agent_id, name, auth_kind, public_key, token_hash, token_prefix,
-     token_created_at, connected_via, responsible_wallet, enabled, state, hears, created_by,
-     created_at, updated_at)
-  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, 1, 'activa', ?13, ?9, ?10, ?10
+     token_created_at, connected_via, responsible_wallet, responsible_house, enabled, state,
+     hears, created_by, created_at, updated_at)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, ?14, 1, 'activa', ?13, ?9, ?10, ?10
    WHERE ${REVISION} = ?11`;
 
 const GIVE_AGENT_ROLE = `
@@ -284,6 +294,7 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
       tokenCreatedAt: optional(row, 'token_created_at'),
       via: optional(row, 'connected_via') as ConnectedVia | null,
       responsible: text(row, 'responsible_wallet'),
+      responsibleHouse: whole(row, 'responsible_house') === 1,
       enabled: whole(row, 'enabled') === 1,
       state: text(row, 'state') as AgentState,
       hears: whole(row, 'hears') === 1,
@@ -294,9 +305,28 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
   });
 }
 
+type Answerable = Pick<TeamAgent, 'responsible' | 'responsibleHouse'>;
+
+/**
+ * The access of the person who answers for an agent, or undefined when nobody
+ * does: a member who left, or the house where the community no longer lets it in.
+ * The house answers with its own access (every permission, above every role —
+ * `accessOf` 'house'), so what an agent it made may do is bounded by its roles,
+ * and by the ceiling in {@link houseMayGive}.
+ */
+function responsibleAccess(org: Organization, agent: Answerable): ActorAccess | undefined {
+  if (agent.responsibleHouse) {
+    return houseMayEnter(org.state.houseAccess, org.state.houseLeaveOpen)
+      ? accessOf(org.state, { kind: 'house', personId: agent.responsible })
+      : undefined;
+  }
+  return memberIn(org, agent.responsible) === undefined
+    ? undefined
+    : accessIn(org, agent.responsible);
+}
+
 /** What an agent holds: its roles, trimmed by the person who answers for it (ORG-011); nothing without them. */
-function agentAccess(org: Organization, agent: Pick<TeamAgent, 'id' | 'responsible' | 'roleIds'>) {
-  const responsible = memberIn(org, agent.responsible);
+function agentAccess(org: Organization, agent: Pick<TeamAgent, 'id' | 'roleIds'> & Answerable) {
   return accessOf(
     org.state,
     {
@@ -308,14 +338,26 @@ function agentAccess(org: Organization, agent: Pick<TeamAgent, 'id' | 'responsib
         roleIds: agent.roleIds,
       },
     },
-    responsible === undefined ? undefined : accessIn(org, agent.responsible),
+    responsibleAccess(org, agent),
   );
 }
 
-/** Whether the agent's responsible person still answers for it: a member who holds manage-roles. */
-const answered = (org: Organization, agent: Pick<TeamAgent, 'responsible'>): boolean =>
-  memberIn(org, agent.responsible) !== undefined &&
-  accessIn(org, agent.responsible).permissions.has('manage-roles');
+/** Whether the agent's responsible person still answers for it: a member who holds manage-roles, or the house where it may enter. */
+const answered = (org: Organization, agent: Answerable): boolean =>
+  responsibleAccess(org, agent)?.permissions.has('manage-roles') === true;
+
+/**
+ * The house's ceiling (D-078): it gives an agent any role of the community
+ * except one that holds Administrator or Manage roles — the two permissions
+ * that ask for a fresh wallet signature (ORG-008), which the house, acting
+ * alone, would not have behind it. Owners are not roles, so no role is above.
+ */
+const HOUSE_NEVER_GIVES: readonly OrganizationPermission[] = ['administrator', 'manage-roles'];
+
+/** Whether `acting` may give `role` to an agent whose access is `target`: ORG-003 and, for the house, its ceiling. */
+const mayGive = (acting: Acting, target: ActorAccess, role: OrganizationRole): boolean =>
+  canAssignRole(acting.access, target, role).ok &&
+  (acting.as !== 'house' || !role.permissions.some((key) => HOUSE_NEVER_GIVES.includes(key)));
 
 function statusOf(org: Organization, agent: TeamAgent): AgentStatus {
   if (!agent.enabled) return 'apagada';
@@ -332,7 +374,8 @@ function handling(entered: Entered, agent: TeamAgent): Refusal | null {
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
   const { org, acting } = entered;
-  if (acting.wallet === agent.responsible) return null;
+  // Who answers as a member is told by the wallet; the house's agents are told by height alone.
+  if (!agent.responsibleHouse && acting.wallet === agent.responsible) return null;
   return agentAccess(org, agent).height >= acting.access.height
     ? refuse(ORG_PROBLEMS.notBelow)
     : null;
@@ -349,21 +392,28 @@ const newAgentAccess = (org: Organization, acting: Acting, roleIds: readonly str
     acting.access,
   );
 
-const mayCreate = (org: Organization, acting: Acting, count: number): boolean =>
-  acting.as !== 'house' && acting.access.permissions.has('manage-roles') && count < MAX_AGENTS;
+const mayCreate = (acting: Acting, count: number): boolean =>
+  acting.access.permissions.has('manage-roles') && count < MAX_AGENTS;
 
 async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
   const { org, acting } = entered;
   const agents = await loadAgents(db, org.accountId);
-  const published = await publishedIn(db, org.accountId);
+  const members = await publishedIn(db, org.accountId);
+  // The house's Oracles are no members: their published name is read apart, for the AIs they answer for.
+  const houses = await publishedBy(
+    db,
+    agents.filter((agent) => agent.responsibleHouse).map((agent) => agent.responsible),
+  );
+  const published = (agent: TeamAgent) =>
+    (agent.responsibleHouse ? houses : members).get(agent.responsible);
   const fresh = newAgentAccess(org, acting, []);
   return {
     ok: true,
     accountId: org.accountId,
     as: acting.as,
-    mayCreate: mayCreate(org, acting, agents.length),
+    mayCreate: mayCreate(acting, agents.length),
     assignableRoles: topDown(org.state.roles)
-      .filter((role) => canAssignRole(acting.access, fresh, role).ok)
+      .filter((role) => mayGive(acting, fresh, role))
       .map(({ id, name, color, position }) => ({ id, name, color, position })),
     agents: agents.map((agent) => {
       const target = agentAccess(org, agent);
@@ -379,19 +429,25 @@ async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
               tokenCreatedAt: agent.tokenCreatedAt as string,
             }),
         ...(agent.via === null ? {} : { via: agent.via }),
+        ...(agent.responsibleHouse ? { responsibleHouse: true as const } : {}),
         enabled: agent.enabled,
         state: agent.state,
         hears: agent.hears,
         status: statusOf(org, agent),
         responsible: agent.responsible,
-        ...(published.get(agent.responsible) === undefined
+        ...(published(agent) === undefined
           ? {}
-          : { responsibleName: published.get(agent.responsible)?.name as string }),
+          : { responsibleName: published(agent)?.name as string }),
         createdAt: agent.createdAt,
         updatedAt: agent.updatedAt,
         roleIds: agent.roleIds,
+        // A role the agent already holds can always be taken, whoever gave it.
         assignable: org.state.roles
-          .filter((role) => canAssignRole(acting.access, target, role).ok)
+          .filter(
+            (role) =>
+              canAssignRole(acting.access, target, role).ok &&
+              (mayGive(acting, target, role) || agent.roleIds.includes(role.id)),
+          )
           .map((role) => role.id),
         mayEdit: handling(entered, agent) === null,
       };
@@ -439,10 +495,12 @@ async function agentFor(
 }
 
 /**
- * Creates an agent: whoever holds manage-roles, as a member — the house does
- * not answer for an agent. They become its responsible person (ORG-011), and
- * may give it, at once, only roles below their own highest. The draft's `via`
- * (the panel when absent) is kept on the row and in the log lines.
+ * Creates an agent: whoever holds manage-roles — as a member, or as the house
+ * where the community lets it in (D-078). They become its responsible person
+ * (ORG-011; marked as the house when it is the house), and may give it, at
+ * once, only roles below their own highest — the house, any role but those
+ * that hold Administrator or Manage roles. The draft's `via` (the panel when
+ * absent) is kept on the row and in the log lines.
  */
 export async function createAgent(
   db: TillDatabase,
@@ -466,7 +524,6 @@ export async function createAgent(
   const { id, name, roleIds, via, hears } = made;
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
-  if (acting.as === 'house') return refuse(AGENT_PROBLEMS.houseCannot);
   const held = await loadAgents(db, org.accountId);
   if (held.length >= MAX_AGENTS) return refuse(AGENT_PROBLEMS.limit);
   const publicKey = made.auth === 'key' ? made.publicKey : null;
@@ -487,6 +544,7 @@ export async function createAgent(
     if (role === undefined) return refuse(ROLE_PROBLEMS.noSuchRole);
     const allowed = canAssignRole(acting.access, fresh, role);
     if (!allowed.ok) return refuse(refusalOf(allowed.refusal, 'manage-roles', org.state.roles));
+    if (!mayGive(acting, fresh, role)) return refuse(AGENT_PROBLEMS.houseCeiling);
   }
   return written(db, entered, [
     db
@@ -505,6 +563,7 @@ export async function createAgent(
         org.revision,
         via,
         hears ? 1 : 0,
+        acting.as === 'house' ? 1 : 0,
       ),
     ...roleIds.map((roleId) =>
       db.prepare(GIVE_AGENT_ROLE).bind(org.accountId, id, roleId, org.revision),
@@ -782,6 +841,9 @@ export async function assignAgentRole(
   if (role === undefined) return refuse(ROLE_PROBLEMS.noSuchRole);
   const allowed = canAssignRole(acting.access, agentAccess(org, agent), role);
   if (!allowed.ok) return refuse(refusalOf(allowed.refusal, 'manage-roles', org.state.roles));
+  if (give && !mayGive(acting, agentAccess(org, agent), role)) {
+    return refuse(AGENT_PROBLEMS.houseCeiling);
+  }
   if (agent.roleIds.includes(role.id) === give) return viewOf(db, entered);
   return written(db, entered, [
     db

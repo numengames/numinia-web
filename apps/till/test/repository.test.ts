@@ -133,6 +133,7 @@ describe('the migration', () => {
       '0022_agent_connected_via.sql',
       '0023_agent_hears.sql',
       '0024_community_terms.sql',
+      '0025_agent_responsible_house.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(

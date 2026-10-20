@@ -219,8 +219,11 @@ request, so a request is used once). Methods of `AccountDesk`:
   `status` (`apagada`, `sin-responsable`, `sin-permiso`, `activa`, `dormida`), what the asker
   may do (`mayEdit`, `assignable`) and the roles a new one may be given (`assignableRoles`).
 - `createAgent`, `changeAgent` (`{ enabled?, state? }`), `removeAgent`, `giveAgentRole` and
-  `takeAgentRole`: whoever holds `manage-roles`. The creator, as a member (the house does not
-  answer for an AI), is its responsible person; later acts need the asker to answer for the
+  `takeAgentRole`: whoever holds `manage-roles`. The creator, as a member or as the house where
+  the community lets it in (D-078; the row says `responsible_house`, migration 0025, and the
+  panel shows «la casa»), is its responsible person. The house gives any role except one that
+  holds Administrator or Manage roles; a house-answered AI gets a pass only while the community
+  lets the house in. Later acts need the asker to answer for the
   agent or to stand above it (its height, as `accessOf` works it out, below theirs).
   Every act is a line of the organization's log: `agent-created`, `agent-enabled`,
   `agent-disabled`, `agent-state`, `agent-removed`, `agent-role-given`, `agent-role-taken`.

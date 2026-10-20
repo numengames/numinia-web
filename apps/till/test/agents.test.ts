@@ -251,7 +251,7 @@ describe('creating an agent', () => {
     });
   });
 
-  it('refuses a draft out of shape, a repeat, a stranger, a member without manage-roles and the house', async () => {
+  it('refuses a draft out of shape, a repeat, a stranger and a member without manage-roles', async () => {
     const s = scene();
     const { id } = await team(s);
     expect(problems(await s.desk.createAgent(PABLO, id, { nope: 1 }))).toEqual([
@@ -260,9 +260,6 @@ describe('creating an agent', () => {
     expect(problems(await s.desk.createAgent('x', id, BOT))).toContain(PROBLEMS.wallet);
     expect(problems(await s.desk.createAgent(STRANGER, id, BOT))).toEqual([PROBLEMS.notMember]);
     expect(problems(await s.desk.createAgent(MARIA, id, BOT))[0]).toMatch(/manage-roles/);
-    expect(problems(await s.desk.createAgent(HOUSE, id, BOT, true))).toEqual([
-      AGENT_PROBLEMS.houseCannot,
-    ]);
     await s.desk.createAgent(PABLO, id, BOT);
     expect(problems(await s.desk.createAgent(PABLO, id, BOT))).toEqual([AGENT_PROBLEMS.taken]);
     expect(problems(await s.desk.createAgent(PABLO, id, { ...BOT, id: 'other' }))).toEqual([
@@ -338,7 +335,8 @@ describe('listing', () => {
     const before = acts(s, id).length;
     const house = viewOf(await s.desk.agents(HOUSE, id, true));
     expect(house.as).toBe('house');
-    expect(house.mayCreate).toBe(false);
+    // The house holds every permission where it may enter (D-078): it may connect an AI.
+    expect(house.mayCreate).toBe(true);
     expect(acts(s, id).slice(before)).toEqual(['house-read']);
   });
 

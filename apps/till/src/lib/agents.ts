@@ -30,7 +30,8 @@ export const AGENT_PROBLEMS = {
   noSuchAgent: 'the organization has no such agent',
   taken: 'the organization already has an agent with that id or that key',
   limit: 'an organization keeps at most 20 agents',
-  houseCannot: 'the house does not answer for an agent: a member creates it',
+  houseCeiling:
+    'the house does not give an agent a role that holds Administrator or Manage roles: that is for the owners',
   replayed: 'that request was already used',
 } as const;
 
