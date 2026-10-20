@@ -74,7 +74,7 @@ describe('reading a token', () => {
   });
 
   it('reads a token draft: auth token, a hash and a prefix, and never a key beside them', () => {
-    expect(readAgentDraft(TOKEN)).toEqual({ ...TOKEN, roleIds: [], via: 'panel' });
+    expect(readAgentDraft(TOKEN)).toEqual({ ...TOKEN, roleIds: [], via: 'panel', hears: false });
     expect(readAgentDraft({ ...TOKEN, roleIds: ['role_0123456789abcdef'] })).toMatchObject({
       auth: 'token',
       roleIds: ['role_0123456789abcdef'],
@@ -266,6 +266,7 @@ describe('creating a token agent', () => {
       tokenHash: HASH_A,
       enabled: true,
       state: 'activa',
+      hears: false,
     });
     expect(key.agent).toMatchObject({ auth: 'key', publicKey: KEY });
     expect(key.agent).not.toHaveProperty('tokenHash');

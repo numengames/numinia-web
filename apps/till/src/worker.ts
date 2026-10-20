@@ -763,7 +763,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     return createAgent(this.env.TILL_DB, wallet, accountId, agent, house, new Date());
   }
 
-  /** Switches an agent on or off and/or sets its state (activa, dormida); logged. */
+  /** Switches an agent on or off, sets its state (activa, dormida) and/or whether it hears nearby chat; logged. */
   async changeAgent(
     wallet: unknown,
     accountId: unknown,

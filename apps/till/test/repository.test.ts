@@ -131,6 +131,7 @@ describe('the migration', () => {
       '0020_organization_ai_brain_spend.sql',
       '0021_agent_access_tokens.sql',
       '0022_agent_connected_via.sql',
+      '0023_agent_hears.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
