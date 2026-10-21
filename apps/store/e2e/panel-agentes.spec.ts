@@ -84,7 +84,59 @@ interface Agent {
   roleIds: string[];
   assignable: string[];
   mayEdit: boolean;
+  /** Where it lives (the till's, S20): all the community's worlds or the chosen ones. */
+  worlds?: { todos: true } | { mundos: string[] };
+  /** How it is present (S21–S22): body, bubble, how it is called, what it hears, how long it stays. */
+  presence?: Presence;
+  hears?: boolean;
 }
+
+interface Presence {
+  cuerpo: { tipo: 'casa'; modelo: number };
+  burbuja: { forma: string; radio: number; visible: string };
+  llamada: {
+    nombre: boolean;
+    barra: boolean;
+    boton: boolean;
+    solo_dentro: boolean;
+    frase?: string;
+  };
+  oye: 'llamada' | 'burbuja' | 'todo';
+  quedarse_h: number;
+}
+
+type PresenceChange = {
+  cuerpo?: Partial<Presence['cuerpo']>;
+  burbuja?: Partial<Presence['burbuja']>;
+  llamada?: Partial<Omit<Presence['llamada'], 'frase'>> & { frase?: string | null };
+  oye?: Presence['oye'];
+  quedarse_h?: number;
+};
+
+const DEFAULT_PRESENCE: Presence = {
+  cuerpo: { tipo: 'casa', modelo: 0 },
+  burbuja: { forma: 'esfera', radio: 4, visible: 'al-acercarte' },
+  llamada: { nombre: true, barra: true, boton: true, solo_dentro: true },
+  oye: 'llamada',
+  quedarse_h: 0,
+};
+
+/** What the till does with a presence change: the parts that came replace the parts that were. */
+function applyPresence(was: Presence, change: PresenceChange): Presence {
+  const { frase, ...calling } = change.llamada ?? {};
+  const { frase: keptPhrase, ...keptCalling } = was.llamada;
+  const phrase = frase === undefined ? keptPhrase : (frase ?? undefined);
+  return {
+    cuerpo: { ...was.cuerpo, ...change.cuerpo },
+    burbuja: { ...was.burbuja, ...change.burbuja },
+    llamada: { ...keptCalling, ...calling, ...(phrase === undefined ? {} : { frase: phrase }) },
+    oye: change.oye ?? was.oye,
+    quedarse_h: change.quedarse_h ?? was.quedarse_h,
+  };
+}
+
+/** The community's worlds, as /api/mundos?org= lists them. */
+const WORLDS = ['agora-plaza', 'mi-rincon', 'taller-de-pruebas'];
 
 const agent = (
   extra: Partial<Agent> & Pick<Agent, 'id' | 'name'> & { publicKey?: string },
@@ -100,6 +152,9 @@ const agent = (
   roleIds: [],
   assignable: ROLES.map((role) => role.id),
   mayEdit: true,
+  worlds: { todos: true },
+  presence: DEFAULT_PRESENCE,
+  hears: false,
   ...extra,
 });
 
@@ -134,6 +189,8 @@ interface Stand {
   /** The next write is refused with this answer. */
   refuseWrite: { status: number; body: unknown } | null;
   calls: Array<{ method: string; body: unknown }>;
+  /** What /api/mundos?org= answers: the community's worlds, or a status for a failure. */
+  worlds: string[] | number;
 }
 
 function viewOf(stand: Stand) {
@@ -164,7 +221,15 @@ async function stage(
     down: null,
     refuseWrite: null,
     calls: [],
+    worlds: WORLDS,
   };
+  await page.route('**/api/mundos?org=*', (route) =>
+    typeof stand.worlds === 'number'
+      ? route.fulfill({ status: stand.worlds, json: {} })
+      : route.fulfill({
+          json: { worlds: stand.worlds.map((worldId) => ({ worldId, accountId: GAMES.id })) },
+        }),
+  );
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({ status: 200, json: { address: ME, rank: 'oracle' } }),
   );
@@ -236,11 +301,21 @@ async function stage(
         giveRole?: string;
         takeRole?: string;
         renewToken?: true;
+        worlds?: Agent['worlds'];
+        presence?: PresenceChange;
+        hears?: boolean;
       };
       const entry = stand.agents.find((candidate) => candidate.id === change.id);
       if (entry !== undefined) {
         if (change.enabled !== undefined) entry.enabled = change.enabled;
         if (change.state !== undefined) entry.state = change.state;
+        if (change.worlds !== undefined) entry.worlds = change.worlds;
+        if (change.hears !== undefined) entry.hears = change.hears;
+        if (change.presence !== undefined) {
+          entry.presence = applyPresence(entry.presence ?? DEFAULT_PRESENCE, change.presence);
+          // The last rung of what it hears is the `hears` switch's, and they move together.
+          entry.hears = entry.presence.oye === 'todo';
+        }
         if (change.giveRole !== undefined) entry.roleIds.push(change.giveRole);
         if (change.takeRole !== undefined) {
           entry.roleIds = entry.roleIds.filter((id) => id !== change.takeRole);
@@ -377,6 +452,615 @@ test.describe('Agentes — the list', () => {
       'Sin permiso',
     );
   });
+});
+
+test.describe('Agentes — «En el mundo»: where it lives (S20)', () => {
+  const where = (card: Locator) => card.locator('[data-agent-where]');
+
+  test('says, always, that the settings reach the worlds once their engine is updated', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.locator('[data-agent-world-section] h2')).toHaveText('En el mundo');
+    await expect(hermes.locator('[data-agent-world-note]')).toContainText(
+      'llegan a los mundos cuando se actualiza su motor',
+    );
+  });
+
+  test('lives in all the community’s worlds by default, and says so', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'all');
+    await expect(hermes.getByRole('radio', { name: 'Todos los de la comunidad' })).toBeChecked();
+    await expect(hermes.locator('[data-agent-where-hint]')).toContainText(
+      'también en los que lleguen',
+    );
+    await shot(page, '20-donde-vive-todos-desktop');
+  });
+
+  test('picks one world, then several, then all again; each pick is one PATCH', async ({
+    page,
+  }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await hermes.getByRole('radio', { name: 'Un mundo' }).click();
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'one');
+    expect(stand.calls.at(-1)?.body).toEqual({
+      accountId: GAMES.id,
+      id: 'hermes',
+      worlds: { mundos: ['agora-plaza'] },
+    });
+    const pick = hermes.getByLabel('Mundo donde vive Hermes');
+    await expect(pick).toHaveValue('agora-plaza');
+    await pick.selectOption('mi-rincon');
+    expect(stand.calls.at(-1)?.body).toMatchObject({ worlds: { mundos: ['mi-rincon'] } });
+    await shot(page, '21-donde-vive-uno-desktop');
+
+    await hermes.getByRole('radio', { name: 'Varios' }).click();
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'several');
+    const list = hermes.getByRole('list', { name: 'Mundos donde vive Hermes' });
+    await expect(list.getByRole('checkbox')).toHaveCount(3);
+    await expect(list.getByRole('checkbox', { name: 'mi-rincon' })).toBeChecked();
+    await list.getByRole('checkbox', { name: 'taller-de-pruebas' }).click();
+    await expect(list.getByRole('checkbox', { name: 'taller-de-pruebas' })).toBeChecked();
+    expect(stand.calls.at(-1)?.body).toMatchObject({
+      worlds: { mundos: ['mi-rincon', 'taller-de-pruebas'] },
+    });
+    await shot(page, '22-donde-vive-varios-desktop');
+    await list.getByRole('checkbox', { name: 'mi-rincon' }).click();
+    await expect(list.getByRole('checkbox', { name: 'mi-rincon' })).not.toBeChecked();
+    expect(stand.calls.at(-1)?.body).toMatchObject({
+      worlds: { mundos: ['taller-de-pruebas'] },
+    });
+    // It has to live somewhere: the last one cannot be unticked.
+    await expect(list.getByRole('checkbox', { name: 'taller-de-pruebas' })).toBeDisabled();
+
+    await hermes.getByRole('radio', { name: 'Todos los de la comunidad' }).click();
+    expect(stand.calls.at(-1)?.body).toMatchObject({ worlds: { todos: true } });
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'all');
+  });
+
+  test('draws what the till says: chosen worlds come back ticked after a reload', async ({
+    page,
+  }) => {
+    await stage(page, {
+      agents: [
+        agent({
+          id: 'hermes',
+          name: 'Hermes',
+          publicKey: KEY_A,
+          worlds: { mundos: ['mi-rincon'] },
+        }),
+        agent({
+          id: 'luna',
+          name: 'Luna',
+          publicKey: KEY_B,
+          worlds: { mundos: ['mi-rincon', 'agora-plaza'] },
+        }),
+      ],
+    });
+    await open(page);
+    await expect(where(row(page, 'hermes'))).toHaveAttribute('data-agent-where', 'one');
+    await expect(row(page, 'hermes').getByLabel('Mundo donde vive Hermes')).toHaveValue(
+      'mi-rincon',
+    );
+    await expect(where(row(page, 'luna'))).toHaveAttribute('data-agent-where', 'several');
+  });
+
+  test('is read-only for whoever may not edit the AI', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const huerfana = row(page, 'huerfana');
+    await expect(where(huerfana)).toHaveAttribute('disabled', '');
+    await expect(huerfana.getByRole('radio', { name: 'Un mundo' })).toBeDisabled();
+    await expect(huerfana.getByRole('radio', { name: 'Todos los de la comunidad' })).toBeChecked();
+  });
+
+  test('a community with no worlds says so; one whose worlds cannot be read says that', async ({
+    page,
+  }) => {
+    const stand = await stage(page);
+    stand.worlds = [];
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.locator('[data-agent-where-hint]')).toContainText('aún no tiene mundos');
+    await expect(hermes.getByRole('radio', { name: 'Un mundo' })).toBeDisabled();
+    await expect(hermes.getByRole('radio', { name: 'Varios' })).toBeDisabled();
+    stand.worlds = 500;
+    await open(page);
+    await expect(row(page, 'hermes').locator('[data-agent-where-hint]')).toContainText(
+      'No se han podido leer los mundos',
+    );
+  });
+
+  test('tells it when the till says that world is no longer the community’s', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    stand.refuseWrite = {
+      status: 403,
+      body: { problems: ['every world must be placed in the AI’s organization'] },
+    };
+    await row(page, 'hermes').getByRole('radio', { name: 'Un mundo' }).click();
+    await expect(page.locator('[role="alert"]')).toContainText('ya no es de la comunidad');
+  });
+
+  for (const [label, size] of [
+    ['1440', { width: 1440, height: 900 }],
+    ['390', { width: 390, height: 844 }],
+  ] as const) {
+    test(`fits at ${label} with the worlds listed, no sideways scroll`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await stage(page, {
+        agents: [
+          agent({
+            id: 'hermes',
+            name: 'Hermes',
+            publicKey: KEY_A,
+            worlds: { mundos: ['agora-plaza', 'taller-de-pruebas'] },
+          }),
+        ],
+      });
+      await open(page);
+      const hermes = row(page, 'hermes');
+      await hermes.getByRole('radio', { name: 'Varios' }).click();
+      await expect(hermes.locator('[data-agent-where-list]')).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      const axe = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(axe.violations).toEqual([]);
+      await shot(page, `20-donde-vive-${label}`);
+    });
+  }
+
+  test('the section is the same in the five locales, with its own words', async ({ page }) => {
+    await stage(page);
+    const titles: Record<string, string> = {
+      es: 'En el mundo',
+      en: 'In the world',
+      ja: 'ワールドでの設定',
+      ko: '월드에서',
+      'pt-br': 'No mundo',
+    };
+    for (const [locale, title] of Object.entries(titles)) {
+      await open(page, locale === 'en' ? '/panel/agentes/' : `/${locale}/panel/agentes/`);
+      await expect(row(page, 'hermes').locator('[data-agent-world-section] h2')).toHaveText(title);
+      await expect(row(page, 'hermes').locator('[data-agent-where-option]')).toHaveCount(3);
+    }
+  });
+});
+
+test.describe('Agentes — «En el mundo»: body and bubble (S21)', () => {
+  test('draws the house’s robot, a sphere of 4 m seen when you get close, and no stay', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.getByRole('radio', { name: 'Robot de la casa' })).toBeChecked();
+    // only the robot is on offer until the house publishes more
+    await expect(hermes.locator('[data-agent-body] input')).toHaveCount(1);
+    await expect(hermes.locator('[data-agent-bubble-shape]')).toHaveAttribute(
+      'data-agent-bubble-shape',
+      'esfera',
+    );
+    await expect(hermes.getByRole('radio', { name: 'Esfera' })).toBeChecked();
+    await expect(hermes.getByRole('slider', { name: 'Radio' })).toHaveValue('4');
+    await expect(hermes.locator('.agentes-radio-valor')).toHaveText('4 m');
+    await expect(hermes.getByRole('radio', { name: 'Al acercarte' })).toBeChecked();
+    await expect(hermes.getByRole('radio', { name: 'No', exact: true })).toBeChecked();
+    await expect(hermes.locator('[data-agent-stay]')).toContainText(
+      'Si nadie la usa, se va a los 10 minutos',
+    );
+    await expect(hermes.locator('.agentes-forma-dibujo')).toHaveCount(4);
+    await shot(page, '30-cuerpo-burbuja-desktop');
+  });
+
+  test('picks the shape, one PATCH each, and says what each shape is for', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    for (const [name, shape] of [
+      ['Cúpula', 'cupula'],
+      ['Cilindro', 'cilindro'],
+      ['Caja', 'caja'],
+      ['Esfera', 'esfera'],
+    ] as const) {
+      await hermes.getByRole('radio', { name }).click();
+      await expect(hermes.locator('[data-agent-bubble-shape]')).toHaveAttribute(
+        'data-agent-bubble-shape',
+        shape,
+      );
+      expect(stand.calls.at(-1)?.body).toEqual({
+        accountId: GAMES.id,
+        id: 'hermes',
+        presence: { burbuja: { forma: shape } },
+      });
+    }
+    await hermes.getByRole('radio', { name: 'Cúpula' }).click();
+    await expect(hermes.locator('[data-agent-bubble-shape] .agentes-pista')).toContainText(
+      'Media esfera sobre el suelo',
+    );
+  });
+
+  test('moves the radius from 2 to 12 m and sends it once, when it is let go', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    const slider = hermes.getByRole('slider', { name: 'Radio' });
+    await expect(slider).toHaveAttribute('min', '2');
+    await expect(slider).toHaveAttribute('max', '12');
+    const before = stand.calls.length;
+    await slider.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(hermes.locator('.agentes-radio-valor')).toHaveText('5 m');
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toMatchObject({
+        presence: { burbuja: { radio: 5 } },
+      });
+    // the card disables its controls while a change is on its way: the keyboard keeps its place
+    await expect(slider).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(hermes.locator('.agentes-radio-valor')).toHaveText('6 m');
+    await slider.fill('9');
+    await expect(hermes.locator('.agentes-radio-valor')).toHaveText('9 m');
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toMatchObject({
+        presence: { burbuja: { radio: 9 } },
+      });
+    expect(stand.calls.length - before).toBeLessThanOrEqual(3);
+    await slider.fill('12');
+    await expect(slider).toHaveValue('12');
+    await expect(slider).toHaveAttribute('aria-valuetext', '12 m');
+    await shot(page, '31-radio-desktop');
+  });
+
+  test('says when the bubble is drawn: always, when you get close, never', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    for (const [name, visible, hint] of [
+      ['Siempre', 'siempre', 'también de lejos'],
+      ['Nunca', 'nunca', 'sigue valiendo para llamarla'],
+      ['Al acercarte', 'al-acercarte', 'tenue cuando estás cerca'],
+    ] as const) {
+      await hermes.getByRole('radio', { name, exact: true }).click();
+      await expect(hermes.locator('[data-agent-bubble-visible]')).toHaveAttribute(
+        'data-agent-bubble-visible',
+        visible,
+      );
+      await expect(hermes.locator('[data-agent-bubble-visible] .agentes-pista')).toContainText(
+        hint,
+      );
+      expect(stand.calls.at(-1)?.body).toMatchObject({ presence: { burbuja: { visible } } });
+    }
+  });
+
+  test('lets it stay in the world 1, 4 or 24 hours, or not at all', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    for (const [name, hours] of [
+      ['1 hora', 1],
+      ['4 horas', 4],
+      ['24 horas', 24],
+      ['No', 0],
+    ] as const) {
+      await hermes.getByRole('radio', { name, exact: true }).click();
+      await expect(hermes.locator('[data-agent-stay]')).toHaveAttribute(
+        'data-agent-stay',
+        String(hours),
+      );
+      expect(stand.calls.at(-1)?.body).toMatchObject({ presence: { quedarse_h: hours } });
+    }
+  });
+
+  test('draws what the till says, and is read-only for whoever may not edit it', async ({
+    page,
+  }) => {
+    await stage(page, {
+      agents: [
+        agent({
+          id: 'hermes',
+          name: 'Hermes',
+          publicKey: KEY_A,
+          presence: {
+            ...DEFAULT_PRESENCE,
+            burbuja: { forma: 'cilindro', radio: 11, visible: 'siempre' },
+            quedarse_h: 24,
+          },
+        }),
+        agent({ id: 'huerfana', name: 'Huérfana', publicKey: KEY_B, mayEdit: false }),
+      ],
+    });
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.getByRole('radio', { name: 'Cilindro' })).toBeChecked();
+    await expect(hermes.getByRole('slider', { name: 'Radio' })).toHaveValue('11');
+    await expect(hermes.getByRole('radio', { name: 'Siempre', exact: true })).toBeChecked();
+    await expect(hermes.getByRole('radio', { name: '24 horas' })).toBeChecked();
+    const other = row(page, 'huerfana');
+    await expect(other.getByRole('slider', { name: 'Radio' })).toBeDisabled();
+    await expect(other.getByRole('radio', { name: 'Caja' })).toBeDisabled();
+    await expect(other.getByRole('radio', { name: '4 horas', exact: true })).toBeDisabled();
+    await expect(other.getByRole('radio', { name: 'Robot de la casa' })).toBeDisabled();
+  });
+
+  test('the section reads in the five locales', async ({ page }) => {
+    await stage(page);
+    const names: Record<string, [string, string]> = {
+      es: ['Esfera', 'Quedarse en el mundo'],
+      en: ['Sphere', 'Stay in the world'],
+      ja: ['球', 'ワールドに残る'],
+      ko: ['구', '월드에 머물기'],
+      'pt-br': ['Esfera', 'Ficar no mundo'],
+    };
+    for (const [locale, [shape, stay]] of Object.entries(names)) {
+      await open(page, locale === 'en' ? '/panel/agentes/' : `/${locale}/panel/agentes/`);
+      const hermes = row(page, 'hermes');
+      await expect(hermes.locator('[data-agent-bubble-form="esfera"]')).toContainText(shape);
+      await expect(hermes.locator('[data-agent-stay] legend')).toHaveText(stay);
+    }
+  });
+
+  for (const [label, size] of [
+    ['1440', { width: 1440, height: 900 }],
+    ['390', { width: 390, height: 844 }],
+  ] as const) {
+    test(`fits at ${label}: nothing sideways, no accessibility violation`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await stage(page);
+      await open(page);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      const axe = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(axe.violations).toEqual([]);
+      await shot(page, `30-cuerpo-burbuja-${label}`);
+    });
+  }
+});
+
+test.describe('Agentes — «En el mundo»: how it is called and what it hears (S22)', () => {
+  const ways = (card: Locator) => card.locator('[data-agent-call]');
+
+  test('is called by name, with /name and with the button, only from inside its bubble', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.getByRole('checkbox', { name: /Por su nombre/ })).toBeChecked();
+    await expect(hermes.getByRole('checkbox', { name: /Con \/hermes/ })).toBeChecked();
+    await expect(hermes.getByRole('checkbox', { name: /Botón «Hablar con ella»/ })).toBeChecked();
+    await expect(
+      hermes.getByRole('checkbox', { name: /Solo desde dentro de su burbuja/ }),
+    ).toBeChecked();
+    await expect(hermes.getByRole('checkbox', { name: /Frase clave/ })).not.toBeChecked();
+    await expect(ways(hermes)).toContainText('Solo lo ven ella y quien lo escribe');
+    await shot(page, '40-llamar-desktop');
+  });
+
+  test('ticks off each way, one PATCH each', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    for (const [name, key] of [
+      [/Por su nombre/, 'nombre'],
+      [/Con \/hermes/, 'barra'],
+      [/Botón «Hablar con ella»/, 'boton'],
+      [/Solo desde dentro de su burbuja/, 'solo_dentro'],
+    ] as const) {
+      const box = hermes.getByRole('checkbox', { name });
+      await box.click();
+      await expect(box).not.toBeChecked();
+      expect(stand.calls.at(-1)?.body).toEqual({
+        accountId: GAMES.id,
+        id: 'hermes',
+        presence: { llamada: { [key]: false } },
+      });
+      await box.click();
+      await expect(box).toBeChecked();
+      expect(stand.calls.at(-1)?.body).toMatchObject({ presence: { llamada: { [key]: true } } });
+    }
+  });
+
+  test('sets a key phrase of 1 to 40 characters, and takes it away again', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    const box = hermes.getByRole('checkbox', { name: /Frase clave/ });
+    const calls = stand.calls.length;
+    await box.click();
+    const text = hermes.getByRole('textbox', { name: 'Frase clave de Hermes' });
+    await expect(text).toBeVisible();
+    await expect(text).toHaveAttribute('maxlength', '40');
+    // nothing to send until there is a phrase
+    expect(stand.calls.length).toBe(calls);
+    await text.press('Enter');
+    await expect(hermes.locator('.agentes-frase-falta')).toContainText(
+      'Escribe la frase (de 1 a 40 letras)',
+    );
+    expect(stand.calls.length).toBe(calls);
+    await text.fill('  agente, responde ');
+    await text.press('Enter');
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toEqual({
+        accountId: GAMES.id,
+        id: 'hermes',
+        presence: { llamada: { frase: 'agente, responde' } },
+      });
+    await expect(text).toHaveValue('agente, responde');
+    await expect(hermes.locator('.agentes-frase-falta')).toHaveCount(0);
+    await shot(page, '41-frase-desktop');
+    // a long phrase is held at 40
+    await text.fill('x'.repeat(60));
+    await expect(text).toHaveValue('x'.repeat(40));
+    await text.fill('agente, responde');
+    await text.blur();
+    await box.click();
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toMatchObject({
+        presence: { llamada: { frase: null } },
+      });
+    await expect(text).toHaveCount(0);
+  });
+
+  test('draws the phrase the till says, and sends it when the box is left', async ({ page }) => {
+    const stand = await stage(page, {
+      agents: [
+        agent({
+          id: 'hermes',
+          name: 'Hermes',
+          publicKey: KEY_A,
+          presence: {
+            ...DEFAULT_PRESENCE,
+            llamada: { ...DEFAULT_PRESENCE.llamada, frase: 'ven, hermes' },
+          },
+        }),
+      ],
+    });
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.getByRole('checkbox', { name: /Frase clave/ })).toBeChecked();
+    const text = hermes.getByRole('textbox', { name: 'Frase clave de Hermes' });
+    await expect(text).toHaveValue('ven, hermes');
+    const calls = stand.calls.length;
+    await text.blur();
+    expect(stand.calls.length).toBe(calls);
+    await text.fill('otra frase');
+    await text.blur();
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toMatchObject({
+        presence: { llamada: { frase: 'otra frase' } },
+      });
+  });
+
+  test('«Oír» is a ladder of three: first by default, and says what each rung hears', async ({
+    page,
+  }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    const rungs = hermes.locator('[data-agent-hear-step]');
+    await expect(rungs).toHaveCount(3);
+    await expect(hermes.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'llamada');
+    await expect(hermes.getByRole('radio', { name: /Solo a quien la llama/ })).toBeChecked();
+    // D-083: what is said to it reaches it even on the first rung
+    await expect(rungs.nth(0)).toContainText('Oye lo que le dicen a ella');
+    await expect(rungs.nth(1)).toContainText('También lo que se dice dentro de su burbuja');
+    await expect(rungs.nth(2)).toContainText('Todo lo cercano (20 m)');
+    await expect(hermes.locator('[data-agent-hear]')).toContainText(
+      'lo lee la empresa que pone su cerebro, fuera del mundo',
+    );
+    // the old switch is gone
+    await expect(hermes.locator('[role="switch"][data-metric="panel-agentes-hear"]')).toHaveCount(
+      0,
+    );
+
+    await hermes
+      .getByRole('radio', { name: /También lo que se dice dentro de su burbuja/ })
+      .click();
+    await expect(hermes.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'burbuja');
+    expect(stand.calls.at(-1)?.body).toEqual({
+      accountId: GAMES.id,
+      id: 'hermes',
+      presence: { oye: 'burbuja' },
+    });
+    await hermes.getByRole('radio', { name: /Todo lo cercano/ }).click();
+    await expect(hermes.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'todo');
+    expect(stand.calls.at(-1)?.body).toMatchObject({ presence: { oye: 'todo' } });
+    // the last rung is the old switch’s: the desk says it hears
+    expect(stand.agents.find((one) => one.id === 'hermes')?.hears).toBe(true);
+    await shot(page, '42-oir-desktop');
+    await hermes.getByRole('radio', { name: /Solo a quien la llama/ }).click();
+    await expect(hermes.getByRole('radio', { name: /Solo a quien la llama/ })).toBeChecked();
+    expect(stand.agents.find((one) => one.id === 'hermes')?.hears).toBe(false);
+  });
+
+  test('an AI that was set to hear everything (the old switch) shows the last rung', async ({
+    page,
+  }) => {
+    await stage(page, {
+      agents: [agent({ id: 'hermes', name: 'Hermes', publicKey: KEY_A, hears: true })],
+    });
+    await open(page);
+    await expect(row(page, 'hermes').getByRole('radio', { name: /Todo lo cercano/ })).toBeChecked();
+  });
+
+  test('is read-only for whoever may not edit the AI', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const other = row(page, 'huerfana');
+    for (const box of await other.locator('[data-agent-call] input').all()) {
+      await expect(box).toBeDisabled();
+    }
+    for (const box of await other.locator('[data-agent-hear] input').all()) {
+      await expect(box).toBeDisabled();
+    }
+  });
+
+  test('reads in the five locales', async ({ page }) => {
+    await stage(page);
+    const labels: Record<string, [string, string]> = {
+      es: ['Cómo se la llama', 'Solo a quien la llama'],
+      en: ['How it is called', 'Only whoever calls it'],
+      ja: ['呼びかけ方', '呼びかけた人だけ'],
+      ko: ['부르는 방법', '부른 사람만'],
+      'pt-br': ['Como chamá-la', 'Só quem a chama'],
+    };
+    for (const [locale, [call, step]] of Object.entries(labels)) {
+      await open(page, locale === 'en' ? '/panel/agentes/' : `/${locale}/panel/agentes/`);
+      const hermes = row(page, 'hermes');
+      await expect(hermes.locator('[data-agent-call] legend')).toHaveText(call);
+      await expect(hermes.locator('[data-agent-hear-step="llamada"]')).toContainText(step);
+    }
+  });
+
+  for (const [label, size] of [
+    ['1440', { width: 1440, height: 900 }],
+    ['390', { width: 390, height: 844 }],
+  ] as const) {
+    test(`fits at ${label} with a phrase and the last rung: nothing sideways, axe clean`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await stage(page, {
+        agents: [
+          agent({
+            id: 'hermes',
+            name: 'Hermes',
+            publicKey: KEY_A,
+            hears: true,
+            presence: {
+              ...DEFAULT_PRESENCE,
+              llamada: { ...DEFAULT_PRESENCE.llamada, frase: 'agente, responde por favor ahora' },
+              oye: 'todo',
+            },
+          }),
+        ],
+      });
+      await open(page);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      const axe = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(axe.violations).toEqual([]);
+      await shot(page, `40-llamar-oir-${label}`);
+    });
+  }
 });
 
 test.describe('Agentes — changing one', () => {

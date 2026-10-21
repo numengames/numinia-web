@@ -64,6 +64,9 @@ const UPSERT_PLACEMENT = `
          placed_at = excluded.placed_at
    WHERE world_placements.account_id <> excluded.account_id`;
 
+/** A world that leaves an organization leaves the AIs that were chosen to live in it there (migration 0026). */
+const SWEEP_AGENT_WORLDS = 'DELETE FROM team_agent_worlds WHERE world_id = ?1 AND account_id <> ?2';
+
 const SELECT_HOMES = `
   SELECT p.world_id, p.account_id, t.name, p.placed_at
     FROM world_placements AS p
@@ -120,6 +123,7 @@ export async function placeWorld(
   await db.batch(
     worlds.flatMap((worldId) => [
       db.prepare(LOG_PLACEMENT).bind(worldId, accountId, wallet, at),
+      db.prepare(SWEEP_AGENT_WORLDS).bind(worldId, accountId),
       db.prepare(UPSERT_PLACEMENT).bind(worldId, accountId, wallet, at),
     ]),
   );

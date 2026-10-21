@@ -24,7 +24,42 @@
  * base64url (43 characters), the engine's rule (tools/agente.ts).
  */
 
+import type { AgentPresence } from '@numinia/domain';
 import { b64urlDecode, b64urlEncode } from './world-pass';
+
+/** The till's sentences about where an AI lives and how it is present (apps/till/src/lib/agents.ts, pinned by a test). */
+export const PRESENCE_PROBLEMS = {
+  presenceNone: 'must be an object with cuerpo, burbuja, llamada, oye and/or quedarse_h',
+  hearsConflict:
+    'hears is false but presence.oye is «todo»: an AI that hears everything nearby hears',
+  worldsNotHere: 'every world must be placed in the AI’s organization',
+} as const;
+
+/**
+ * What changed between two presences, as `path=value` lines (`burbuja.radio=6`, `llamada.frase=ven`,
+ * `llamada.frase=` when the phrase went): for the log. The till's own (apps/till/src/lib/agents.ts, pinned by a test).
+ */
+export function presenceDiff(before: AgentPresence, after: AgentPresence): string[] {
+  const leaves = (presence: AgentPresence): Map<string, string> =>
+    new Map([
+      ['cuerpo.tipo', presence.cuerpo.tipo],
+      ['cuerpo.modelo', String(presence.cuerpo.modelo)],
+      ['burbuja.forma', presence.burbuja.forma],
+      ['burbuja.radio', String(presence.burbuja.radio)],
+      ['burbuja.visible', presence.burbuja.visible],
+      ['llamada.nombre', String(presence.llamada.nombre)],
+      ['llamada.barra', String(presence.llamada.barra)],
+      ['llamada.boton', String(presence.llamada.boton)],
+      ['llamada.solo_dentro', String(presence.llamada.solo_dentro)],
+      ['llamada.frase', presence.llamada.frase ?? ''],
+      ['oye', presence.oye],
+      ['quedarse_h', String(presence.quedarse_h)],
+    ]);
+  const was = leaves(before);
+  return [...leaves(after)].flatMap(([path, value]) =>
+    was.get(path) === value ? [] : [`${path}=${value}`],
+  );
+}
 
 export const AGENT_PROBLEMS = {
   agentId:

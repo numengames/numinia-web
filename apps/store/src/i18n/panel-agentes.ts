@@ -47,12 +47,6 @@ export interface AgentesMessages {
   readonly on: string;
   readonly off: string;
   readonly stateLabel: string;
-  /** The switch on each AI's card: whether it may read the nearby chat of the worlds it is in. */
-  readonly hearLabel: string;
-  readonly hearHint: string;
-  /** The row's label, and the hint once it is on. */
-  readonly hearRow: string;
-  readonly hearOn: string;
   readonly states: Readonly<Record<AgentState, { readonly name: string; readonly hint: string }>>;
   /** What the till says the next pass will be, in plain words. */
   readonly status: Readonly<Record<AgentStatus, string>>;
@@ -129,6 +123,86 @@ export interface AgentesMessages {
     readonly disconnecting: string;
   };
   /** What the invitation adds to the world's (the roles of «También construir»). */
+  /**
+   * «En el mundo» (S20–S22): the section of an AI's card where its settings for the worlds are
+   * set — where it lives, its body and bubble, how it is called and what it hears. Plain words.
+   */
+  readonly world: {
+    readonly title: string;
+    /** Honest, always visible: these settings reach a world once its engine is updated. */
+    readonly note: string;
+    /** «Dónde vive»: one world, several, or all of the community's. */
+    readonly where: {
+      readonly label: string;
+      readonly modes: Readonly<Record<'one' | 'several' | 'all', string>>;
+      readonly hints: Readonly<Record<'one' | 'several' | 'all', string>>;
+      /** `{name}`: the select that picks the one world, and the list of the several, for screen readers. */
+      readonly pick: string;
+      readonly list: string;
+      readonly none: string;
+      readonly unread: string;
+      readonly last: string;
+      readonly empty: string;
+    };
+    /** «Cuerpo»: which of the house's bodies it wears (only the robot until the house publishes more). */
+    readonly body: {
+      readonly label: string;
+      readonly robot: string;
+      readonly hint: string;
+    };
+    /** «Burbuja»: its shape (four drawings), radius and when it is drawn. */
+    readonly bubble: {
+      readonly label: string;
+      readonly shapesLabel: string;
+      readonly shapes: Readonly<
+        Record<
+          'esfera' | 'cupula' | 'cilindro' | 'caja',
+          { readonly name: string; readonly hint: string }
+        >
+      >;
+      readonly radiusLabel: string;
+      /** `{n}` metres. */
+      readonly radiusValue: string;
+      readonly radiusHint: string;
+      readonly visibleLabel: string;
+      readonly visible: Readonly<
+        Record<
+          'siempre' | 'al-acercarte' | 'nunca',
+          { readonly name: string; readonly hint: string }
+        >
+      >;
+    };
+    /** «Quedarse en el mundo»: how long it stays when nobody uses it (D-082). */
+    readonly stay: {
+      readonly label: string;
+      readonly options: Readonly<Record<'0' | '1' | '4' | '24', string>>;
+      readonly hint: string;
+    };
+    /** «Cómo se la llama» (S22): the ways to call it. `{name}`: its name; `{id}`: what follows the slash. */
+    readonly call: {
+      readonly label: string;
+      readonly name: { readonly label: string; readonly hint: string };
+      readonly bar: { readonly label: string; readonly hint: string };
+      readonly button: { readonly label: string; readonly hint: string };
+      readonly phrase: {
+        readonly label: string;
+        readonly hint: string;
+        /** `{name}`: the text box, for screen readers. */
+        readonly input: string;
+        readonly need: string;
+      };
+      readonly inside: { readonly label: string; readonly hint: string };
+    };
+    /** «Oír», the ladder that replaces the old switch (S22, D-083). */
+    readonly hear: {
+      readonly label: string;
+      readonly steps: Readonly<
+        Record<'llamada' | 'burbuja' | 'todo', { readonly name: string; readonly hint: string }>
+      >;
+      /** Said always: where what it hears goes. */
+      readonly notice: string;
+    };
+  };
   readonly dialog: {
     readonly rolesLabel: string;
     readonly rolesHint: string;
@@ -181,10 +255,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Encendida',
     off: 'Apagada',
     stateLabel: 'Estado',
-    hearLabel: 'Oír lo que se habla cerca',
-    hearHint: 'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
-    hearRow: 'Oír',
-    hearOn: 'Encendido: la IA lee el chat cercano en los mundos donde esté.',
     states: {
       activa: { name: 'Activa', hint: 'Atenta y dispuesta a interactuar.' },
       dormida: {
@@ -229,6 +299,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'La casa no da a una IA un rol con «Administrador» o «Gestionar roles»: eso es de quienes son dueños de la comunidad.',
       noSuchRole: 'Ese rol ya no existe. Recarga la página.',
       notToken: 'Esa IA se conecta con llave, no con token.',
+      worldGone: 'Ese mundo ya no es de la comunidad. Recarga la página.',
     },
     access: {
       legend: '¿Cómo se conecta?',
@@ -271,6 +342,106 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Sí, desconectar',
       disconnectNo: 'No, dejarla',
       disconnecting: 'Desconectando…',
+    },
+    world: {
+      title: 'En el mundo',
+      note: 'Estos ajustes llegan a los mundos cuando se actualiza su motor. Hasta entonces, la IA entra como hasta ahora.',
+      where: {
+        label: 'Dónde vive',
+        modes: { one: 'Un mundo', several: 'Varios', all: 'Todos los de la comunidad' },
+        hints: {
+          one: 'Solo aparece en el mundo que elijas.',
+          several: 'Solo aparece en los mundos que marques.',
+          all: 'Aparece en todos los mundos de la comunidad, también en los que lleguen.',
+        },
+        pick: 'Mundo donde vive {name}',
+        list: 'Mundos donde vive {name}',
+        none: 'La comunidad aún no tiene mundos. La IA vivirá en los que lleguen.',
+        unread: 'No se han podido leer los mundos de la comunidad.',
+        last: 'Tiene que vivir al menos en un mundo.',
+        empty: 'Ahora no vive en ningún mundo: marca al menos uno.',
+      },
+      body: {
+        label: 'Cuerpo',
+        robot: 'Robot de la casa',
+        hint: 'Es el cuerpo con el que entra en el mundo. Por ahora la casa solo ofrece este.',
+      },
+      bubble: {
+        label: 'Burbuja',
+        shapesLabel: 'Forma de la burbuja de {name}',
+        shapes: {
+          esfera: { name: 'Esfera', hint: 'La rodea por todos lados. Vale de pie o flotando.' },
+          cupula: {
+            name: 'Cúpula',
+            hint: 'Media esfera sobre el suelo. Para un puesto, una recepción o un escenario.',
+          },
+          cilindro: {
+            name: 'Cilindro',
+            hint: 'Cuenta toda la altura. Para una torre, un balcón o un piso.',
+          },
+          caja: {
+            name: 'Caja',
+            hint: 'Un cuadrado. Para tras un mostrador o en una plaza cuadrada.',
+          },
+        },
+        radiusLabel: 'Radio',
+        radiusValue: '{n} m',
+        radiusHint: 'Hasta dónde llega: de 2 a 12 metros.',
+        visibleLabel: 'Se ve',
+        visible: {
+          siempre: { name: 'Siempre', hint: 'Se dibuja siempre, también de lejos.' },
+          'al-acercarte': { name: 'Al acercarte', hint: 'Se dibuja tenue cuando estás cerca.' },
+          nunca: { name: 'Nunca', hint: 'No se dibuja, pero sigue valiendo para llamarla.' },
+        },
+      },
+      stay: {
+        label: 'Quedarse en el mundo',
+        options: { '0': 'No', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
+        hint: 'Si nadie la usa, se va a los 10 minutos; si eliges horas, se queda. Lo paga la casa.',
+      },
+      call: {
+        label: 'Cómo se la llama',
+        name: {
+          label: 'Por su nombre',
+          hint: 'Alguien escribe «{name}, ¿me ayudas?» en el chat cercano.',
+        },
+        bar: {
+          label: 'Con /{id}',
+          hint: 'Alguien escribe «/{id} mensaje». Solo lo ven ella y quien lo escribe.',
+        },
+        button: {
+          label: 'Botón «Hablar con ella»',
+          hint: 'Desde su ficha, o con la tecla E al entrar en su burbuja.',
+        },
+        phrase: {
+          label: 'Frase clave',
+          hint: 'Una frase que pones tú, de 1 a 40 letras. Quien la diga en el chat cercano la llama.',
+          input: 'Frase clave de {name}',
+          need: 'Escribe la frase (de 1 a 40 letras) o quita la casilla.',
+        },
+        inside: {
+          label: 'Solo desde dentro de su burbuja',
+          hint: 'Si lo sueltas, se la puede llamar desde hasta 20 metros.',
+        },
+      },
+      hear: {
+        label: 'Oír',
+        steps: {
+          llamada: {
+            name: 'Solo a quien la llama',
+            hint: 'Oye lo que le dicen a ella: su nombre, /nombre o el botón «Hablar con ella». Nada más.',
+          },
+          burbuja: {
+            name: 'También lo que se dice dentro de su burbuja',
+            hint: 'Además, lo que habla la gente dentro de su burbuja, aunque no la llamen.',
+          },
+          todo: {
+            name: 'Todo lo cercano (20 m)',
+            hint: 'Oye todo lo cercano: lee el chat de quien esté a menos de 20 metros.',
+          },
+        },
+        notice: 'Lo que le llega lo lee la empresa que pone su cerebro, fuera del mundo.',
+      },
     },
     dialog: {
       rolesLabel: '¿Con qué roles?',
@@ -322,10 +493,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'On',
     off: 'Off',
     stateLabel: 'State',
-    hearLabel: 'Hear what is said nearby',
-    hearHint: 'If you turn it on, the AI reads the nearby chat in the worlds it is in.',
-    hearRow: 'Hear',
-    hearOn: 'On: the AI reads the nearby chat in the worlds it is in.',
     states: {
       activa: { name: 'Active', hint: 'Attentive and ready to interact.' },
       dormida: {
@@ -370,6 +537,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'The house does not give an AI a role with “Administrator” or “Manage roles”: that is for the community’s owners.',
       noSuchRole: 'That role no longer exists. Reload the page.',
       notToken: 'That AI connects with a key, not a token.',
+      worldGone: 'That world no longer belongs to the community. Reload the page.',
     },
     access: {
       legend: 'How does it connect?',
@@ -412,6 +580,103 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Yes, disconnect',
       disconnectNo: 'No, keep it',
       disconnecting: 'Disconnecting…',
+    },
+    world: {
+      title: 'In the world',
+      note: 'These settings reach the worlds once their engine is updated. Until then, the AI enters as it always has.',
+      where: {
+        label: 'Where it lives',
+        modes: { one: 'One world', several: 'Several', all: 'All of the community’s' },
+        hints: {
+          one: 'It only appears in the world you pick.',
+          several: 'It only appears in the worlds you tick.',
+          all: 'It appears in every world of the community, including those that arrive later.',
+        },
+        pick: 'World where {name} lives',
+        list: 'Worlds where {name} lives',
+        none: 'The community has no worlds yet. The AI will live in the ones that arrive.',
+        unread: 'The community’s worlds could not be read.',
+        last: 'It has to live in at least one world.',
+        empty: 'It lives in no world right now: tick at least one.',
+      },
+      body: {
+        label: 'Body',
+        robot: 'House robot',
+        hint: 'The body it enters the world with. For now the house only offers this one.',
+      },
+      bubble: {
+        label: 'Bubble',
+        shapesLabel: 'Shape of {name}’s bubble',
+        shapes: {
+          esfera: { name: 'Sphere', hint: 'All around it. Works standing or floating.' },
+          cupula: {
+            name: 'Dome',
+            hint: 'Half a sphere above the ground. For a stall, a reception or a stage.',
+          },
+          cilindro: {
+            name: 'Cylinder',
+            hint: 'Counts the whole height. For a tower, a balcony or a floor.',
+          },
+          caja: { name: 'Box', hint: 'A square. For behind a counter or in a square plaza.' },
+        },
+        radiusLabel: 'Radius',
+        radiusValue: '{n} m',
+        radiusHint: 'How far it reaches: 2 to 12 metres.',
+        visibleLabel: 'Shown',
+        visible: {
+          siempre: { name: 'Always', hint: 'Always drawn, even from afar.' },
+          'al-acercarte': { name: 'When you get close', hint: 'Drawn faintly when you are near.' },
+          nunca: { name: 'Never', hint: 'Not drawn, but it still counts for calling it.' },
+        },
+      },
+      stay: {
+        label: 'Stay in the world',
+        options: { '0': 'No', '1': '1 hour', '4': '4 hours', '24': '24 hours' },
+        hint: 'If nobody uses it, it leaves after 10 minutes; if you choose hours, it stays. The house pays for it.',
+      },
+      call: {
+        label: 'How it is called',
+        name: {
+          label: 'By its name',
+          hint: 'Someone writes “{name}, can you help?” in the nearby chat.',
+        },
+        bar: {
+          label: 'With /{id}',
+          hint: 'Someone writes “/{id} message”. Only it and the writer see it.',
+        },
+        button: {
+          label: '“Talk to it” button',
+          hint: 'From its card, or with the E key when entering its bubble.',
+        },
+        phrase: {
+          label: 'Key phrase',
+          hint: 'A phrase you set, 1 to 40 characters. Whoever says it in the nearby chat calls it.',
+          input: 'Key phrase of {name}',
+          need: 'Write the phrase (1 to 40 characters) or untick the box.',
+        },
+        inside: {
+          label: 'Only from inside its bubble',
+          hint: 'If you untick it, it can be called from up to 20 metres.',
+        },
+      },
+      hear: {
+        label: 'Hear',
+        steps: {
+          llamada: {
+            name: 'Only whoever calls it',
+            hint: 'Hears what is said to it: its name, /name or the “Talk to it” button. Nothing else.',
+          },
+          burbuja: {
+            name: 'Also what is said inside its bubble',
+            hint: 'Also what people say inside its bubble, even if they do not call it.',
+          },
+          todo: {
+            name: 'Everything nearby (20 m)',
+            hint: 'Hears everything nearby: reads the chat of anyone within 20 metres.',
+          },
+        },
+        notice: 'What reaches it is read by the company behind its brain, outside the world.',
+      },
     },
     dialog: {
       rolesLabel: 'With which roles?',
@@ -463,10 +728,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'オン',
     off: 'オフ',
     stateLabel: '状態',
-    hearLabel: '近くの会話を聞く',
-    hearHint: 'オンにすると、AIは自分がいる世界で近くのチャットを読みます。',
-    hearRow: '聞く',
-    hearOn: 'オン：AIは自分がいる世界で近くのチャットを読みます。',
     states: {
       activa: { name: 'アクティブ', hint: '注意深く、やり取りに応じられる状態です。' },
       dormida: {
@@ -510,6 +771,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'ハウスは、「管理者」または「ロールの管理」を含むロールをAIに付与できません。それはコミュニティのオーナーの役目です。',
       noSuchRole: 'そのロールはもうありません。ページを読み込み直してください。',
       notToken: 'このAIはトークンではなく鍵で接続します。',
+      worldGone:
+        'そのワールドはもうコミュニティのものではありません。ページを再読み込みしてください。',
     },
     access: {
       legend: '接続方法',
@@ -552,6 +815,94 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'はい、切る',
       disconnectNo: 'いいえ、残す',
       disconnecting: '切断中…',
+    },
+    world: {
+      title: 'ワールドでの設定',
+      note: 'この設定は、ワールドのエンジンが更新されると反映されます。それまでAIはこれまで通りに入ります。',
+      where: {
+        label: '住む場所',
+        modes: { one: '1つのワールド', several: '複数', all: 'コミュニティのすべて' },
+        hints: {
+          one: '選んだワールドにだけ現れます。',
+          several: 'チェックしたワールドにだけ現れます。',
+          all: 'コミュニティのすべてのワールドに現れます。あとから増えるワールドにも。',
+        },
+        pick: '{name}が住むワールド',
+        list: '{name}が住むワールド一覧',
+        none: 'コミュニティにはまだワールドがありません。AIは、これから届くワールドに住みます。',
+        unread: 'コミュニティのワールドを読み込めませんでした。',
+        last: '少なくとも1つのワールドに住む必要があります。',
+        empty: '今はどのワールドにも住んでいません。少なくとも1つチェックしてください。',
+      },
+      body: {
+        label: '体',
+        robot: 'ハウスのロボット',
+        hint: 'ワールドに入るときの体です。今のところ、ハウスが用意しているのはこれだけです。',
+      },
+      bubble: {
+        label: 'バブル',
+        shapesLabel: '{name}のバブルの形',
+        shapes: {
+          esfera: { name: '球', hint: '全方向を囲みます。立っていても浮いていても使えます。' },
+          cupula: { name: 'ドーム', hint: '地面の上の半球です。屋台、受付、ステージ向け。' },
+          cilindro: { name: '円柱', hint: '高さ全体を含みます。塔、バルコニー、フロア向け。' },
+          caja: { name: '箱', hint: '四角形です。カウンターの奥や四角い広場向け。' },
+        },
+        radiusLabel: '半径',
+        radiusValue: '{n} m',
+        radiusHint: '届く範囲です。2〜12メートル。',
+        visibleLabel: '表示',
+        visible: {
+          siempre: { name: '常に', hint: '遠くからでも常に描かれます。' },
+          'al-acercarte': { name: '近づいたとき', hint: '近くにいるとき、うっすら描かれます。' },
+          nunca: { name: '表示しない', hint: '描かれませんが、呼びかけには使えます。' },
+        },
+      },
+      stay: {
+        label: 'ワールドに残る',
+        options: { '0': 'しない', '1': '1時間', '4': '4時間', '24': '24時間' },
+        hint: '誰も使わなければ10分で去ります。時間を選ぶと、その間は残ります。費用はハウスが負担します。',
+      },
+      call: {
+        label: '呼びかけ方',
+        name: { label: '名前で', hint: '近くのチャットに「{name}、手伝って」と書きます。' },
+        bar: {
+          label: '/{id} で',
+          hint: '「/{id} メッセージ」と書きます。見えるのはAIと書いた人だけです。',
+        },
+        button: {
+          label: '「話しかける」ボタン',
+          hint: 'AIのカードから、またはバブルに入ったときにEキーで。',
+        },
+        phrase: {
+          label: '合言葉',
+          hint: 'あなたが決める1〜40文字の言葉です。近くのチャットで言うと呼びかけになります。',
+          input: '{name}の合言葉',
+          need: '合言葉（1〜40文字）を入力するか、チェックを外してください。',
+        },
+        inside: {
+          label: 'バブルの中からだけ',
+          hint: 'チェックを外すと、最大20メートル先からでも呼べます。',
+        },
+      },
+      hear: {
+        label: '聞く',
+        steps: {
+          llamada: {
+            name: '呼びかけた人だけ',
+            hint: '自分あての言葉だけを聞きます：名前、/名前、「話しかける」ボタン。それ以外は聞きません。',
+          },
+          burbuja: {
+            name: 'バブルの中の会話も',
+            hint: '呼びかけがなくても、バブルの中で話されていることも聞きます。',
+          },
+          todo: {
+            name: '近くのすべて（20 m）',
+            hint: '近くのすべてを聞きます：20メートル以内のチャットを読みます。',
+          },
+        },
+        notice: '届いた内容は、AIの頭脳を提供する会社がワールドの外で読みます。',
+      },
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -602,10 +953,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: '켜짐',
     off: '꺼짐',
     stateLabel: '상태',
-    hearLabel: '근처 대화 듣기',
-    hearHint: '켜면 AI가 있는 세계에서 근처 채팅을 읽습니다.',
-    hearRow: '듣기',
-    hearOn: '켜짐: AI가 있는 세계에서 근처 채팅을 읽습니다.',
     states: {
       activa: { name: '활동', hint: '주의를 기울이며 상호작용할 준비가 된 상태입니다.' },
       dormida: {
@@ -649,6 +996,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         '하우스는 ‘관리자’ 또는 ‘역할 관리’가 있는 역할을 AI에게 줄 수 없습니다. 그것은 커뮤니티 소유자의 몫입니다.',
       noSuchRole: '그 역할은 더 이상 없습니다. 페이지를 다시 불러오세요.',
       notToken: '이 AI는 토큰이 아니라 키로 연결합니다.',
+      worldGone: '그 월드는 더 이상 커뮤니티의 것이 아닙니다. 페이지를 새로고침하세요.',
     },
     access: {
       legend: '어떻게 연결할까요?',
@@ -691,6 +1039,97 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: '네, 끊기',
       disconnectNo: '아니요, 그대로 둠',
       disconnecting: '끊는 중…',
+    },
+    world: {
+      title: '월드에서',
+      note: '이 설정은 월드의 엔진이 업데이트되면 적용됩니다. 그때까지 AI는 지금처럼 들어갑니다.',
+      where: {
+        label: '사는 곳',
+        modes: { one: '월드 하나', several: '여러 개', all: '커뮤니티의 모든 월드' },
+        hints: {
+          one: '고른 월드에만 나타납니다.',
+          several: '체크한 월드에만 나타납니다.',
+          all: '커뮤니티의 모든 월드에 나타나며, 나중에 생기는 월드에도 나타납니다.',
+        },
+        pick: '{name}이(가) 사는 월드',
+        list: '{name}이(가) 사는 월드 목록',
+        none: '커뮤니티에 아직 월드가 없습니다. AI는 앞으로 생길 월드에 살게 됩니다.',
+        unread: '커뮤니티의 월드를 불러오지 못했습니다.',
+        last: '적어도 한 월드에는 살아야 합니다.',
+        empty: '지금은 어떤 월드에도 살지 않습니다. 하나 이상 체크하세요.',
+      },
+      body: {
+        label: '몸',
+        robot: '하우스 로봇',
+        hint: '월드에 들어갈 때 입는 몸입니다. 지금은 하우스가 이것만 제공합니다.',
+      },
+      bubble: {
+        label: '버블',
+        shapesLabel: '{name}의 버블 모양',
+        shapes: {
+          esfera: { name: '구', hint: '사방을 감쌉니다. 서 있어도 떠 있어도 됩니다.' },
+          cupula: { name: '돔', hint: '땅 위의 반구입니다. 가판대, 접수처, 무대에 알맞습니다.' },
+          cilindro: {
+            name: '원기둥',
+            hint: '높이 전체를 포함합니다. 탑, 발코니, 층에 알맞습니다.',
+          },
+          caja: { name: '상자', hint: '사각형입니다. 카운터 뒤나 네모난 광장에 알맞습니다.' },
+        },
+        radiusLabel: '반경',
+        radiusValue: '{n} m',
+        radiusHint: '닿는 거리입니다. 2~12미터.',
+        visibleLabel: '표시',
+        visible: {
+          siempre: { name: '항상', hint: '멀리서도 항상 그려집니다.' },
+          'al-acercarte': { name: '다가갈 때', hint: '가까이 있을 때 희미하게 그려집니다.' },
+          nunca: { name: '표시 안 함', hint: '그려지지 않지만 부르는 데는 쓰입니다.' },
+        },
+      },
+      stay: {
+        label: '월드에 머물기',
+        options: { '0': '아니요', '1': '1시간', '4': '4시간', '24': '24시간' },
+        hint: '아무도 쓰지 않으면 10분 뒤에 떠납니다. 시간을 고르면 그동안 머뭅니다. 비용은 하우스가 냅니다.',
+      },
+      call: {
+        label: '부르는 방법',
+        name: { label: '이름으로', hint: '근처 채팅에 「{name}, 도와줄래?」라고 씁니다.' },
+        bar: {
+          label: '/{id} 로',
+          hint: '「/{id} 메시지」라고 씁니다. AI와 쓴 사람만 볼 수 있습니다.',
+        },
+        button: {
+          label: '「말 걸기」 버튼',
+          hint: 'AI 카드에서, 또는 버블에 들어갈 때 E 키로.',
+        },
+        phrase: {
+          label: '암호 문구',
+          hint: '직접 정하는 1~40자 문구입니다. 근처 채팅에서 말하면 부르는 것이 됩니다.',
+          input: '{name}의 암호 문구',
+          need: '문구(1~40자)를 쓰거나 체크를 해제하세요.',
+        },
+        inside: {
+          label: '버블 안에서만',
+          hint: '해제하면 최대 20미터 거리에서도 부를 수 있습니다.',
+        },
+      },
+      hear: {
+        label: '듣기',
+        steps: {
+          llamada: {
+            name: '부른 사람만',
+            hint: 'AI에게 한 말만 듣습니다: 이름, /이름, 「말 걸기」 버튼. 그 밖에는 듣지 않습니다.',
+          },
+          burbuja: {
+            name: '버블 안에서 하는 말도',
+            hint: '부르지 않아도 버블 안에서 사람들이 하는 말도 듣습니다.',
+          },
+          todo: {
+            name: '근처 모두 (20 m)',
+            hint: '근처의 모든 것을 듣습니다: 20미터 안에 있는 사람들의 채팅을 읽습니다.',
+          },
+        },
+        notice: '전달된 내용은 AI의 두뇌를 제공하는 회사가 월드 밖에서 읽습니다.',
+      },
     },
     dialog: {
       rolesLabel: '어떤 역할로 할까요?',
@@ -741,10 +1180,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Ligada',
     off: 'Desligada',
     stateLabel: 'Estado',
-    hearLabel: 'Ouvir o que se fala por perto',
-    hearHint: 'Se você ligar, a IA lê o chat próximo nos mundos em que estiver.',
-    hearRow: 'Ouvir',
-    hearOn: 'Ligado: a IA lê o chat próximo nos mundos em que estiver.',
     states: {
       activa: { name: 'Ativa', hint: 'Atenta e disposta a interagir.' },
       dormida: {
@@ -789,6 +1224,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'A casa não dá a uma IA um cargo com «Administrador» ou «Gerenciar cargos»: isso é de quem é dono da comunidade.',
       noSuchRole: 'Esse papel não existe mais. Recarregue a página.',
       notToken: 'Essa IA se conecta com chave, não com token.',
+      worldGone: 'Esse mundo não é mais da comunidade. Recarregue a página.',
     },
     access: {
       legend: 'Como ela se conecta?',
@@ -831,6 +1267,112 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Sim, desconectar',
       disconnectNo: 'Não, manter',
       disconnecting: 'Desconectando…',
+    },
+    world: {
+      title: 'No mundo',
+      note: 'Estes ajustes chegam aos mundos quando o motor deles é atualizado. Até lá, a IA entra como sempre.',
+      where: {
+        label: 'Onde mora',
+        modes: { one: 'Um mundo', several: 'Vários', all: 'Todos os da comunidade' },
+        hints: {
+          one: 'Só aparece no mundo que você escolher.',
+          several: 'Só aparece nos mundos que você marcar.',
+          all: 'Aparece em todos os mundos da comunidade, inclusive nos que chegarem.',
+        },
+        pick: 'Mundo onde {name} mora',
+        list: 'Mundos onde {name} mora',
+        none: 'A comunidade ainda não tem mundos. A IA morará nos que chegarem.',
+        unread: 'Não foi possível ler os mundos da comunidade.',
+        last: 'Ela precisa morar em pelo menos um mundo.',
+        empty: 'Agora ela não mora em nenhum mundo: marque pelo menos um.',
+      },
+      body: {
+        label: 'Corpo',
+        robot: 'Robô da casa',
+        hint: 'O corpo com que ela entra no mundo. Por enquanto a casa só oferece este.',
+      },
+      bubble: {
+        label: 'Bolha',
+        shapesLabel: 'Forma da bolha de {name}',
+        shapes: {
+          esfera: {
+            name: 'Esfera',
+            hint: 'Envolve a IA por todos os lados. Serve de pé ou flutuando.',
+          },
+          cupula: {
+            name: 'Cúpula',
+            hint: 'Meia esfera sobre o chão. Para uma barraca, uma recepção ou um palco.',
+          },
+          cilindro: {
+            name: 'Cilindro',
+            hint: 'Conta a altura toda. Para uma torre, uma varanda ou um andar.',
+          },
+          caja: {
+            name: 'Caixa',
+            hint: 'Um quadrado. Para atrás de um balcão ou numa praça quadrada.',
+          },
+        },
+        radiusLabel: 'Raio',
+        radiusValue: '{n} m',
+        radiusHint: 'Até onde alcança: de 2 a 12 metros.',
+        visibleLabel: 'Aparece',
+        visible: {
+          siempre: { name: 'Sempre', hint: 'É desenhada sempre, até de longe.' },
+          'al-acercarte': {
+            name: 'Ao se aproximar',
+            hint: 'É desenhada de leve quando você está perto.',
+          },
+          nunca: { name: 'Nunca', hint: 'Não é desenhada, mas continua valendo para chamá-la.' },
+        },
+      },
+      stay: {
+        label: 'Ficar no mundo',
+        options: { '0': 'Não', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
+        hint: 'Se ninguém a usa, ela sai em 10 minutos; se você escolher horas, ela fica. A casa paga.',
+      },
+      call: {
+        label: 'Como chamá-la',
+        name: {
+          label: 'Pelo nome',
+          hint: 'Alguém escreve «{name}, pode me ajudar?» no chat próximo.',
+        },
+        bar: {
+          label: 'Com /{id}',
+          hint: 'Alguém escreve «/{id} mensagem». Só ela e quem escreve veem.',
+        },
+        button: {
+          label: 'Botão «Falar com ela»',
+          hint: 'Pela ficha dela, ou com a tecla E ao entrar na bolha.',
+        },
+        phrase: {
+          label: 'Frase-chave',
+          hint: 'Uma frase que você define, de 1 a 40 caracteres. Quem a disser no chat próximo a chama.',
+          input: 'Frase-chave de {name}',
+          need: 'Escreva a frase (de 1 a 40 caracteres) ou desmarque a caixa.',
+        },
+        inside: {
+          label: 'Só de dentro da bolha',
+          hint: 'Se você desmarcar, ela pode ser chamada de até 20 metros.',
+        },
+      },
+      hear: {
+        label: 'Ouvir',
+        steps: {
+          llamada: {
+            name: 'Só quem a chama',
+            hint: 'Ouve o que dizem a ela: o nome, /nome ou o botão «Falar com ela». Nada mais.',
+          },
+          burbuja: {
+            name: 'Também o que se diz dentro da bolha',
+            hint: 'Também o que as pessoas dizem dentro da bolha, mesmo sem chamá-la.',
+          },
+          todo: {
+            name: 'Tudo o que está perto (20 m)',
+            hint: 'Ouve tudo o que está perto: lê o chat de quem estiver a menos de 20 metros.',
+          },
+        },
+        notice: 'O que chega a ela é lido pela empresa do cérebro dela, fora do mundo.',
+      },
     },
     dialog: {
       rolesLabel: 'Com quais papéis?',

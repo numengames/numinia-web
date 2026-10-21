@@ -15,7 +15,13 @@ import {
   ORGANIZATION_PERMISSIONS,
   accessOf,
   canAssignRole,
+  DEFAULT_AGENT_PRESENCE,
   type ActorAccess,
+  type AgentPresence,
+  type AgentWorlds,
+  applyAgentPresenceChange,
+  parseAgentPresenceChange,
+  parseAgentWorlds,
   type OrganizationAccess,
   type OrganizationRefusal,
   type OrganizationRole,
@@ -42,12 +48,14 @@ import {
   AGENT_STATES,
   HOUSE_NEVER_GIVES,
   MAX_AGENTS,
+  PRESENCE_PROBLEMS,
   isAccountId,
   isAgentId,
   isAudience,
   isConnectedVia,
   isTokenHash,
   isTokenPrefix,
+  presenceDiff,
   publicKeyBytes,
   readAgentName,
 } from './agents';
@@ -114,6 +122,10 @@ interface FixtureAgent {
   enabled: boolean;
   state: AgentState;
   hears: boolean;
+  /** How it is present in a world (the till's `presence_json`), `oye` agreeing with `hears`. */
+  presence: AgentPresence;
+  /** Where it lives (the till's `worlds_mode` and `team_agent_worlds`). */
+  worlds: AgentWorlds;
   readonly createdAt: string;
   updatedAt: string;
   roleIds: string[];
@@ -124,6 +136,8 @@ type AgentMethods = Pick<
   | 'agents'
   | 'createAgent'
   | 'changeAgent'
+  | 'changeAgentPresence'
+  | 'setAgentWorlds'
   | 'removeAgent'
   | 'renewAgentToken'
   | 'revokeAgentToken'
@@ -136,6 +150,17 @@ type AgentMethods = Pick<
 >;
 
 const refuse = (...problems: string[]): DeskRefusal => ({ ok: false, problems });
+
+/** The presence of a fixture AI: the default one, hearing everything nearby only if its switch is on. */
+const presenceOf = (agent: FixtureAgent): AgentPresence => agent.presence;
+
+/** The last rung of what it hears is the `hears` switch's (the till's `hearingOf`): set, `todo`; not set, never `todo`. */
+const hearingOf = (hears: boolean, stored: AgentPresence['oye']): AgentPresence['oye'] =>
+  hears ? 'todo' : stored === 'todo' ? 'llamada' : stored;
+
+/** The worlds of an organization an AI lives in: all of them, or the chosen ones still placed there. */
+const livesIn = (worlds: AgentWorlds, placed: readonly string[]): string[] =>
+  ('todos' in worlds ? [...placed] : placed.filter((id) => worlds.mundos.includes(id))).sort();
 
 export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMethods {
   const byOrg = new Map<string, FixtureAgent[]>();
@@ -244,6 +269,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           enabled: agent.enabled,
           state: agent.state,
           hears: agent.hears,
+          presence: agent.presence,
+          worlds: agent.worlds,
           status: statusOf(entry, agent),
           responsible: agent.responsible,
           ...(agent.responsibleHouse ? { responsibleHouse: true as const } : {}),
@@ -358,6 +385,11 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           enabled: true,
           state: 'activa',
           hears: draft?.hears === true,
+          presence: {
+            ...DEFAULT_AGENT_PRESENCE,
+            oye: hearingOf(draft?.hears === true, DEFAULT_AGENT_PRESENCE.oye),
+          },
+          worlds: { todos: true },
           createdAt: at,
           updatedAt: at,
           roleIds: unique,
@@ -430,6 +462,63 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         agent.enabled = enabled;
         agent.state = state;
         agent.hears = hears;
+        agent.presence = { ...agent.presence, oye: hearingOf(hears, agent.presence.oye) };
+        agent.updatedAt = stamp();
+      }
+      return view(entry);
+    },
+
+    changeAgentPresence: async (
+      wallet,
+      accountId,
+      agentId,
+      sent,
+      house,
+    ): Promise<DeskAgentsAnswer> => {
+      const read = parseAgentPresenceChange(sent);
+      const found = withAgent(wallet, accountId, agentId, house);
+      if ('ok' in found) return found;
+      if (!read.ok) return refuse(...read.problems.map((line) => `presence: ${line}`));
+      const { entry, agent } = found;
+      const refused = handling(entry, agent);
+      if (refused !== null) return refused;
+      const next = applyAgentPresenceChange(agent.presence, read.value);
+      const diff = presenceDiff(agent.presence, next);
+      if (diff.length === 0) return view(entry);
+      host.record(entry, 'agent-state', agent.id, { name: agent.name, presence: diff.join(';') });
+      // The last rung of what it hears is the `hears` switch's, and the two move together.
+      const hears = next.oye === 'todo';
+      if (hears !== agent.hears) {
+        host.record(entry, 'agent-state', agent.id, {
+          name: agent.name,
+          hears: hears ? 'on' : 'off',
+        });
+      }
+      agent.presence = next;
+      agent.hears = hears;
+      agent.updatedAt = stamp();
+      return view(entry);
+    },
+
+    setAgentWorlds: async (wallet, accountId, agentId, sent, house): Promise<DeskAgentsAnswer> => {
+      const read = parseAgentWorlds(sent);
+      const found = withAgent(wallet, accountId, agentId, house);
+      if ('ok' in found) return found;
+      if (!read.ok) return refuse(...read.problems.map((line) => `worlds: ${line}`));
+      const { entry, agent } = found;
+      const refused = handling(entry, agent);
+      if (refused !== null) return refused;
+      const placed = host.placedIn(entry.accountId);
+      const next: AgentWorlds =
+        'todos' in read.value ? read.value : { mundos: [...read.value.mundos].sort() };
+      if ('mundos' in next && next.mundos.some((worldId) => !placed.includes(worldId))) {
+        return refuse(PRESENCE_PROBLEMS.worldsNotHere);
+      }
+      const text = (worlds: AgentWorlds): string =>
+        'todos' in worlds ? 'todos' : worlds.mundos.join(',');
+      if (text(next) !== text(agent.worlds)) {
+        host.record(entry, 'agent-state', agent.id, { name: agent.name, worlds: text(next) });
+        agent.worlds = next;
         agent.updatedAt = stamp();
       }
       return view(entry);
@@ -522,6 +611,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           enabled: agent.enabled,
           state: agent.state,
           hears: agent.hears,
+          presence: presenceOf(agent),
+          worlds: agent.worlds,
         },
         eligible: answered(answering),
         permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),
@@ -557,10 +648,16 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           ...(isAgentId(agentId) ? [] : [AGENT_PROBLEMS.agentId]),
         );
       }
-      if (!agentsOf(accountId).some((held) => held.id === agentId)) {
-        return refuse(AGENT_PROBLEMS.noSuchAgent);
-      }
-      return { ok: true, accountId, agentId, worldIds: [...host.placedIn(accountId)].sort() };
+      const agent = agentsOf(accountId).find((held) => held.id === agentId);
+      if (agent === undefined) return refuse(AGENT_PROBLEMS.noSuchAgent);
+      return {
+        ok: true,
+        accountId,
+        agentId,
+        worldIds: livesIn(agent.worlds, host.placedIn(accountId)),
+        worlds: agent.worlds,
+        presence: presenceOf(agent),
+      };
     },
 
     agentByToken: async (tokenHash): Promise<DeskAgentPassAnswer> => {

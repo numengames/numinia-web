@@ -127,9 +127,17 @@ async function stage(
     const body: unknown = method === 'GET' ? null : request.postDataJSON();
     stand.calls.push({ method, body });
     if (method === 'PATCH') {
-      const change = body as { id: string; revokeToken?: true; hears?: boolean };
+      const change = body as {
+        id: string;
+        revokeToken?: true;
+        hears?: boolean;
+        presence?: { oye?: string };
+      };
       const entry = stand.agents.find((candidate) => candidate.id === change.id);
       if (entry !== undefined && change.hears !== undefined) entry.hears = change.hears;
+      if (entry !== undefined && change.presence?.oye !== undefined) {
+        entry.hears = change.presence.oye === 'todo';
+      }
       if (entry !== undefined && change.revokeToken === true) {
         // The till's revoke: the token goes, the AI is switched off, `via` stays.
         delete entry.tokenPrefix;
@@ -658,26 +666,27 @@ test.describe('Agentes — the chip and the ⋯ menu of each AI', () => {
     await expect(claude.locator('[data-agent-via]')).toHaveText('Desde Claude');
     await expect(menuOf(claude)).toHaveCount(0);
     await expect(claude.locator('[data-metric="panel-agentes-switch"]')).toBeDisabled();
-    await expect(claude.locator('[data-metric="panel-agentes-hear"]')).toBeDisabled();
+    await expect(claude.locator('[data-agent-hear] input').first()).toBeDisabled();
+    await expect(claude.locator('[data-agent-call] input').first()).toBeDisabled();
     await expect(claude.getByRole('radio').first()).toBeDisabled();
     await expect(claude.locator('[data-agent-read-only]')).toBeVisible();
   });
 
-  test('ESTADO says its hint and OÍR follows its switch', async ({ page }) => {
+  test('ESTADO says its hint and OÍR is a ladder of three, the first by default', async ({
+    page,
+  }) => {
     await stage(page);
     await open(page);
     const claude = row(page, 'claude');
     await expect(claude.locator('[data-agent-state-hint]')).toHaveText(
       'Atenta y dispuesta a interactuar.',
     );
-    await expect(claude.locator('[data-agent-hear] .saldo-nota')).toHaveText(
-      'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
+    await expect(claude.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'llamada');
+    await expect(claude.locator('[data-agent-hear-step="llamada"]')).toContainText(
+      'Oye lo que le dicen a ella',
     );
-    await claude.locator('[data-metric="panel-agentes-hear"]').click();
-    await expect(claude.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'on');
-    await expect(claude.locator('[data-agent-hear] .saldo-nota')).toHaveText(
-      'Encendido: la IA lee el chat cercano en los mundos donde esté.',
-    );
+    await claude.getByRole('radio', { name: /Todo lo cercano/ }).click();
+    await expect(claude.locator('[data-agent-hear]')).toHaveAttribute('data-agent-hear', 'todo');
   });
 });
 

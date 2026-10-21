@@ -6,7 +6,26 @@
  * refuses with them and writes nothing.
  */
 
+import {
+  DEFAULT_AGENT_PRESENCE,
+  agentPresenceOf,
+  applyAgentPresenceChange,
+  parseAgentPresenceChange,
+  parseAgentWorlds,
+  type AgentHearingStep,
+  type AgentPresence,
+  type AgentPresenceChange,
+  type AgentWorlds,
+} from '@numinia/domain';
 import { readRoleId } from './roles';
+
+/** The refusals of an AI's presence and worlds (S17); apart from `AGENT_PROBLEMS`, which numinia.com repeats word for word. */
+export const PRESENCE_PROBLEMS = {
+  presenceNone: 'must be an object with cuerpo, burbuja, llamada, oye and/or quedarse_h',
+  hearsConflict:
+    'hears is false but presence.oye is «todo»: an AI that hears everything nearby hears',
+  worldsNotHere: 'every world must be placed in the AI’s organization',
+} as const;
 
 export const AGENT_PROBLEMS = {
   agentId:
@@ -133,6 +152,73 @@ export function readConnectedVia(value: unknown): ConnectedVia | undefined {
   return host.length <= HOST_MAX && HOST.test(host) ? (value as ConnectedVia) : undefined;
 }
 
+/** A presence change inside another object, read: nothing when absent; its problems, prefixed, when wrong. */
+function readPresenceIn(value: unknown): AgentPresenceChange | undefined | string[] {
+  if (value === undefined) return undefined;
+  const read = parseAgentPresenceChange(value);
+  return read.ok ? read.value : read.problems.map((line) => `presence: ${line}`);
+}
+
+/**
+ * Where an AI lives, read: `{ todos: true }` or `{ mundos: [1 to 50 world
+ * ids] }` — the domain's shape. Whether those worlds are the organization's
+ * is for the desk to say.
+ */
+export function readAgentWorlds(value: unknown): AgentWorlds | string[] {
+  const read = parseAgentWorlds(value);
+  return read.ok ? read.value : read.problems.map((line) => `worlds: ${line}`);
+}
+
+/**
+ * The presence an AI has: what is stored (null: the defaults), its hearing
+ * agreeing with the `hears` column, which is the truth about the last rung
+ * («everything nearby») — set, it is `todo`; not set, never `todo`.
+ */
+export function presenceOfAgent(stored: string | null, hears: boolean): AgentPresence {
+  const presence = agentPresenceOf(stored);
+  return { ...presence, oye: hearingOf(hears, presence.oye) };
+}
+
+/** The rung of the ladder an AI is on, given the `hears` column and the rung stored. */
+export function hearingOf(hears: boolean, stored: AgentHearingStep): AgentHearingStep {
+  if (hears) return 'todo';
+  return stored === 'todo' ? 'llamada' : stored;
+}
+
+/**
+ * What changed between two presences, as `path=value` lines (`burbuja.radio=6`,
+ * `llamada.frase=ven`, `llamada.frase=` when the phrase went): for the log.
+ */
+export function presenceDiff(before: AgentPresence, after: AgentPresence): string[] {
+  const leaves = (presence: AgentPresence): Map<string, string> =>
+    new Map([
+      ['cuerpo.tipo', presence.cuerpo.tipo],
+      ['cuerpo.modelo', String(presence.cuerpo.modelo)],
+      ['burbuja.forma', presence.burbuja.forma],
+      ['burbuja.radio', String(presence.burbuja.radio)],
+      ['burbuja.visible', presence.burbuja.visible],
+      ['llamada.nombre', String(presence.llamada.nombre)],
+      ['llamada.barra', String(presence.llamada.barra)],
+      ['llamada.boton', String(presence.llamada.boton)],
+      ['llamada.solo_dentro', String(presence.llamada.solo_dentro)],
+      ['llamada.frase', presence.llamada.frase ?? ''],
+      ['oye', presence.oye],
+      ['quedarse_h', String(presence.quedarse_h)],
+    ]);
+  const was = leaves(before);
+  return [...leaves(after)].flatMap(([path, value]) =>
+    was.get(path) === value ? [] : [`${path}=${value}`],
+  );
+}
+
+/** The ways of saying where an AI lives, as a log line says it: `todos`, or the worlds comma-joined. */
+export const worldsText = (worlds: AgentWorlds): string =>
+  'todos' in worlds ? 'todos' : worlds.mundos.join(',');
+
+/** The same worlds with the chosen ones in order, so two ways of saying one set are one. */
+export const sortedWorlds = (worlds: AgentWorlds): AgentWorlds =>
+  'todos' in worlds ? worlds : { mundos: [...worlds.mundos].sort() };
+
 export interface KeyDraft {
   readonly auth: 'key';
   readonly id: string;
@@ -141,6 +227,10 @@ export interface KeyDraft {
   readonly roleIds: readonly string[];
   readonly via: ConnectedVia;
   readonly hears: boolean;
+  /** Its presence settings: the defaults with what the draft changed; hearing agrees with `hears`. */
+  readonly presence: AgentPresence;
+  /** Where it lives, when the draft said; absent leaves it to the desk (`createAgent`). */
+  readonly worlds?: AgentWorlds;
 }
 
 export interface TokenDraft {
@@ -152,6 +242,8 @@ export interface TokenDraft {
   readonly roleIds: readonly string[];
   readonly via: ConnectedVia;
   readonly hears: boolean;
+  readonly presence: AgentPresence;
+  readonly worlds?: AgentWorlds;
 }
 
 export type AgentDraft = KeyDraft | TokenDraft;
@@ -165,8 +257,19 @@ export type AgentDraft = KeyDraft | TokenDraft;
 export function readAgentDraft(value: unknown): AgentDraft | string[] {
   const viaToken = isRecord(value) && value['auth'] === 'token';
   const fields = viaToken
-    ? ['id', 'name', 'roleIds', 'auth', 'tokenHash', 'tokenPrefix', 'via', 'hears']
-    : ['id', 'name', 'publicKey', 'roleIds', 'via', 'hears'];
+    ? [
+        'id',
+        'name',
+        'roleIds',
+        'auth',
+        'tokenHash',
+        'tokenPrefix',
+        'via',
+        'hears',
+        'presence',
+        'worlds',
+      ]
+    : ['id', 'name', 'publicKey', 'roleIds', 'via', 'hears', 'presence', 'worlds'];
   if (!isRecord(value) || Object.keys(value).some((key) => !fields.includes(key))) {
     return [AGENT_PROBLEMS.draft];
   }
@@ -180,6 +283,10 @@ export function readAgentDraft(value: unknown): AgentDraft | string[] {
   const tokenPrefix = viaToken ? readTokenPrefix(value['tokenPrefix']) : undefined;
   const via = readConnectedVia(value['via']);
   const hears = value['hears'] === undefined || typeof value['hears'] === 'boolean';
+  const presence = readPresenceIn(value['presence']);
+  const worlds = value['worlds'] === undefined ? undefined : readAgentWorlds(value['worlds']);
+  const asked = Array.isArray(presence) ? undefined : presence;
+  const conflict = value['hears'] === false && asked?.oye === 'todo';
   const problems = [
     ...(id === undefined ? [AGENT_PROBLEMS.agentId] : []),
     ...(name === undefined ? [AGENT_PROBLEMS.name] : []),
@@ -189,14 +296,23 @@ export function readAgentDraft(value: unknown): AgentDraft | string[] {
     ...(roleIds === undefined || roleIds.includes(undefined) ? [AGENT_PROBLEMS.roleIds] : []),
     ...(via === undefined ? [AGENT_PROBLEMS.via] : []),
     ...(hears ? [] : [AGENT_PROBLEMS.hears]),
+    ...(Array.isArray(presence) ? presence : []),
+    ...(conflict ? [PRESENCE_PROBLEMS.hearsConflict] : []),
+    ...(Array.isArray(worlds) ? worlds : []),
   ];
   if (problems.length > 0) return problems;
+  const listening = value['hears'] === true || asked?.oye === 'todo';
   const common = {
     id: id as string,
     name: name as string,
     roleIds: [...new Set(roleIds as string[])],
     via: via as ConnectedVia,
-    hears: value['hears'] === true,
+    hears: listening,
+    presence: {
+      ...applyAgentPresenceChange(DEFAULT_AGENT_PRESENCE, asked ?? {}),
+      oye: hearingOf(listening, asked?.oye ?? 'llamada'),
+    },
+    ...(worlds === undefined ? {} : { worlds: worlds as AgentWorlds }),
   };
   return viaToken
     ? {
@@ -236,4 +352,13 @@ export function readAgentChange(value: unknown): AgentChange | string[] {
     ...(state === undefined ? {} : { state: state as AgentState }),
     ...(hears === undefined ? {} : { hears: hears as boolean }),
   };
+}
+
+/**
+ * A change to an agent's presence (cuerpo, burbuja, llamada, oye, quedarse_h;
+ * any part of any group): the domain's reading, its problems prefixed
+ * `presence: `.
+ */
+export function readAgentPresenceChange(value: unknown): AgentPresenceChange | string[] {
+  return readPresenceIn(value) ?? [`presence: ${PRESENCE_PROBLEMS.presenceNone}`];
 }

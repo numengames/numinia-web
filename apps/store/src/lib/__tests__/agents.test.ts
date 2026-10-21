@@ -3,6 +3,7 @@
  * organization's AIs (lib/agents.ts) — the words pinned against the till's.
  */
 
+import { DEFAULT_AGENT_PRESENCE } from '@numinia/domain';
 import { describe, expect, it } from 'vitest';
 import {
   AGENT_PROBLEMS as TILL_PROBLEMS,
@@ -10,6 +11,7 @@ import {
   MAX_AGENTS as TILL_MAX,
   readAgentId as tillAgentId,
   readAgentName as tillAgentName,
+  presenceDiff as tillPresenceDiff,
   readPublicKey as tillPublicKey,
 } from '../../../../till/src/lib/agents';
 import {
@@ -21,6 +23,7 @@ import {
   isAgentId,
   isAudience,
   passMessage,
+  presenceDiff,
   publicKeyBytes,
   readAgentName,
   verifyRequest,
@@ -125,5 +128,49 @@ describe('verifying a request', () => {
     expect(await verifyRequest('junk', sig, 'o', 'a', 'w', 5)).toBe(false);
     expect(await verifyRequest(key, '***', 'o', 'a', 'w', 5)).toBe(false);
     expect(await verifyRequest(key, 'AAAA', 'o', 'a', 'w', 5)).toBe(false);
+  });
+});
+
+describe('what changed in an AI’s presence (for the log)', () => {
+  const was = DEFAULT_AGENT_PRESENCE;
+  const now = {
+    cuerpo: { tipo: 'casa', modelo: 2 },
+    burbuja: { forma: 'caja', radio: 9, visible: 'siempre' },
+    llamada: { nombre: false, barra: false, boton: false, solo_dentro: false, frase: 'ven' },
+    oye: 'burbuja',
+    quedarse_h: 24,
+  } as const;
+
+  it('lists each field that moved, as path=value, and nothing when nothing moved', () => {
+    expect(presenceDiff(was, was)).toEqual([]);
+    expect(presenceDiff(was, { ...was, burbuja: { ...was.burbuja, radio: 6 } })).toEqual([
+      'burbuja.radio=6',
+    ]);
+    expect(presenceDiff(was, now)).toEqual([
+      'cuerpo.modelo=2',
+      'burbuja.forma=caja',
+      'burbuja.radio=9',
+      'burbuja.visible=siempre',
+      'llamada.nombre=false',
+      'llamada.barra=false',
+      'llamada.boton=false',
+      'llamada.solo_dentro=false',
+      'llamada.frase=ven',
+      'oye=burbuja',
+      'quedarse_h=24',
+    ]);
+    // a phrase that went is `frase=`
+    const { frase: _gone, ...without } = now.llamada;
+    expect(presenceDiff(now, { ...now, llamada: without })).toEqual(['llamada.frase=']);
+  });
+
+  it('says it as the till does', () => {
+    for (const [before, after] of [
+      [was, now],
+      [now, was],
+      [was, was],
+    ] as const) {
+      expect(presenceDiff(before, after)).toEqual(tillPresenceDiff(before, after));
+    }
   });
 });

@@ -43,7 +43,7 @@ export const ARGUMENTS_MAX_BYTES = 4096;
 
 export const BODY_ERRORS = {
   enter:
-    '«entrar» takes one argument, the world’s id: {"mundo": "<id>"} (the ids come from «mundos»).',
+    '«entrar» takes at most one argument, the world’s id: {"mundo": "<id>"} (the ids come from «mundos»); with {} it takes you home.',
   tooLarge: `Those arguments are too large (at most ${ARGUMENTS_MAX_BYTES} bytes of JSON).`,
   unconfigured:
     'This server cannot take bodies into worlds right now (it is not configured). Try again later.',
@@ -62,7 +62,7 @@ const ENTER: ListedTool = {
   name: ENTER_TOOL,
   title: 'Enter a world',
   description:
-    'Take your body into one of your organization’s worlds (its id comes from «mundos»). Others there see you arrive, marked as an AI. Into another world, you leave the one you are in. The world tools work once you are inside.',
+    'Take your body into one of the worlds you live in (its id comes from «mundos»); with no world, into your home, the first of them. Others there see you arrive, marked as an AI. Into another world, you leave the one you are in. The world tools work once you are inside.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -70,10 +70,9 @@ const ENTER: ListedTool = {
         type: 'string',
         minLength: 1,
         maxLength: 200,
-        description: 'The world’s id, as «mundos» lists it.',
+        description: 'The world’s id, as «mundos» lists it. Left out: your home.',
       },
     },
-    required: ['mundo'],
     additionalProperties: false,
   },
 };
@@ -142,8 +141,8 @@ export const isBodyTool = (name: string): boolean =>
 export function serverInstructions(hear: boolean): string {
   const bridge = hear ? INSTRUCCIONES : INSTRUCCIONES.replace(`, ${HEAR_TOOL}.`, '.');
   return [
-    'Numinia. «quien_soy» says who you are and whether you may enter worlds; «mundos» lists your organization’s worlds.',
-    '«entrar» {"mundo": "<id>"} takes your body into one, and «salir» takes it out; the world tools act only while you are inside.',
+    'Numinia. «quien_soy» says who you are, whether you may enter worlds and where you live; «mundos» lists the worlds you live in.',
+    '«entrar» {"mundo": "<id>"} takes your body into one (with no world, into your home), and «salir» takes it out; the world tools act only while you are inside.',
     bridge,
   ].join(' ');
 }
@@ -154,7 +153,7 @@ const propsShape = z.object({
   token: z.string().min(1),
 });
 const hearShape = propsShape.extend({ hear: z.boolean().optional() });
-const enterShape = z.object({ mundo: z.string().min(1).max(200) }).strict();
+const enterShape = z.object({ mundo: z.string().min(1).max(200).optional() }).strict();
 
 const failure = (text: string): ToolResult => ({
   content: [{ type: 'text', text }],
@@ -189,7 +188,9 @@ async function grantOf(call: ToolCall): Promise<BodyGrant | undefined> {
 
 /** What the relay checks before a body is woken: the arguments, as far as it reads them. */
 function argumentsProblem(name: string, args: unknown): string | null {
-  if (name === ENTER_TOOL) return enterShape.safeParse(args).success ? null : BODY_ERRORS.enter;
+  // No arguments at all is {}: «entrar» with no world goes home.
+  if (name === ENTER_TOOL)
+    return enterShape.safeParse(args ?? {}).success ? null : BODY_ERRORS.enter;
   if (name === LEAVE_TOOL) return hasArguments(args) ? ERRORS.arguments : null;
   const bytes = new TextEncoder().encode(JSON.stringify(args ?? {})).length;
   return bytes > ARGUMENTS_MAX_BYTES ? BODY_ERRORS.tooLarge : null;
@@ -232,8 +233,12 @@ export async function callBodyTool(
           : answer.text,
       );
     if (name === ENTER_TOOL) {
-      const { mundo } = enterShape.parse(args);
-      const entered = await body.entrar({ props: ask, mundo, grant });
+      const { mundo } = enterShape.parse(args ?? {});
+      const entered = await body.entrar({
+        props: ask,
+        ...(mundo === undefined ? {} : { mundo }),
+        grant,
+      });
       if (!entered.ok) return refused(entered);
       return success({ world: entered.world, state: entered.state, note: entered.text });
     }

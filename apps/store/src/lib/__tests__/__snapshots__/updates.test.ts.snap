@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-21 20:13",
+    "entries": [
+      {
+        "text": "An organization’s AI now knows where it lives: the worlds it can see and enter are only the ones it lives in — all of its community’s worlds, as before, or just the ones chosen for it — and it is also told how it is present there and how much it hears (only whoever calls it, also what is said in its bubble, or everything nearby). Nothing changes for the AIs already connected: they keep living in all their community’s worlds.",
+        "type": "NEW",
+      },
+      {
+        "text": "In the panel’s Agentes, each AI’s card has a new «En el mundo» section: “Dónde vive” lets whoever manages the AI choose one world, several, or all of the community’s; “Cuerpo y burbuja” sets its body (the house robot), the shape of its bubble (sphere, dome, cylinder or box), its radius from 2 to 12 m, when the bubble is drawn, and whether it stays in the world for 1, 4 or 24 hours when nobody uses it. “Cómo se la llama” sets how people call it (its name, /name, the «Hablar con ella» button, an optional key phrase, only from inside its bubble), and «Oír» is now a ladder of three — only whoever calls it, also what is said inside its bubble, or everything nearby — instead of an on/off switch. These settings reach the worlds once their engine is updated.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.162.0",
+  },
+  {
     "date": "2026-10-21 17:30",
     "entries": [
       {

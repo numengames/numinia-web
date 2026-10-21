@@ -251,6 +251,14 @@ export function boundAccounts(binding: unknown): AccountDesk | null {
       typeof desk.agentWorlds === 'function'
         ? stub.agentWorlds(accountId, agentId)
         : absent('agentWorlds'),
+    changeAgentPresence: (wallet, accountId, agentId, change, house) =>
+      typeof desk.changeAgentPresence === 'function'
+        ? stub.changeAgentPresence(wallet, accountId, agentId, change, house)
+        : absent('changeAgentPresence'),
+    setAgentWorlds: (wallet, accountId, agentId, worlds, house) =>
+      typeof desk.setAgentWorlds === 'function'
+        ? stub.setAgentWorlds(wallet, accountId, agentId, worlds, house)
+        : absent('setAgentWorlds'),
     agentByToken: (tokenHash) =>
       typeof desk.agentByToken === 'function'
         ? stub.agentByToken(tokenHash)

@@ -139,6 +139,15 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   cloud>` (Hermes' tabs), `panel-agentes-guide-other-<code|key>` (another AI's tabs),
 //   `panel-agentes-guide-terminal` (Hermes' terminal lines), `panel-agentes-guide-copy-lines` and
 //   `panel-agentes-guide-create-<code|key>` (open the invitation on the token or on the key).
+// - «En el mundo» on an AI's card (S20, 2026-10-21): `panel-agentes-where-<one|several|all>` (where it
+//   lives), `panel-agentes-where-pick` (the one world's select) and `panel-agentes-where-world` (a
+//   world's box in the several-worlds list).
+// - «Cuerpo y burbuja» (S21): `panel-agentes-body`, `panel-agentes-bubble-<esfera|cupula|cilindro|caja>`,
+//   `panel-agentes-bubble-radius`, `panel-agentes-bubble-visible-<siempre|al-acercarte|nunca>`,
+//   `panel-agentes-stay-<0|1|4|24>`.
+// - «Cómo se la llama» and «Oír» (S22): `panel-agentes-call-<nombre|barra|boton|solo_dentro>`,
+//   `panel-agentes-call-phrase` (the box) and `panel-agentes-call-phrase-text` (the text),
+//   `panel-agentes-hear-<llamada|burbuja|todo>` (the ladder; it replaces the old `panel-agentes-hear` switch).
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----

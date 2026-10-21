@@ -7,6 +7,7 @@
  * the log asserts the hash is not in it.
  */
 
+import { DEFAULT_AGENT_PRESENCE } from '@numinia/domain';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -151,6 +152,8 @@ describe('migration 0022', () => {
         connected_via: null,
         hears: 0,
         responsible_house: 0,
+        presence_json: null,
+        worlds_mode: 'todos',
       })),
     );
     // team_log is untouched: same act list, the founding trigger still there.
@@ -301,6 +304,8 @@ describe('the worlds of an agent’s organization', () => {
       accountId: numen,
       agentId: 'claude-ana',
       worldIds: ['agora-plaza', 'torre'],
+      worlds: { todos: true },
+      presence: DEFAULT_AGENT_PRESENCE,
     });
     expect(statements).toBe(1);
     expect(await s.desk.agentWorlds(reset, 'claude-ana')).toMatchObject({ worldIds: ['bosque'] });

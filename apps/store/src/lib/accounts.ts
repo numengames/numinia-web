@@ -16,6 +16,9 @@
 import {
   ORGANIZATION_PERMISSIONS,
   needsFreshSignature,
+  type AgentPresence,
+  type AgentPresenceChange,
+  type AgentWorlds,
   type OrganizationAccess,
   type OrganizationPermission,
   type CommunityTerms,
@@ -379,6 +382,10 @@ export interface DeskAgent {
   state: AgentState;
   /** Whether it may hear what is said nearby in the worlds: off by default, set by whoever may edit it (migration 0023). */
   hears: boolean;
+  /** How it is present in a world (migration 0026); absent from a till older than that: the defaults. */
+  presence?: AgentPresence | undefined;
+  /** Which worlds it lives in (migration 0026); absent from a till older than that: all of its organization's. */
+  worlds?: AgentWorlds | undefined;
   status: AgentStatus;
   responsible: string;
   /** `true` when the house answers for it (D-078): the screen says «la casa», and the wallet is an Oracle's. */
@@ -449,6 +456,10 @@ export interface DeskAgentPass {
     enabled: boolean;
     state: AgentState;
     hears: boolean;
+    /** How the AI is present in a world (migration 0026); absent from a till older than that. */
+    presence?: AgentPresence | undefined;
+    /** Which worlds it lives in (migration 0026); absent: all of its organization's. */
+    worlds?: AgentWorlds | undefined;
   };
   eligible: boolean;
   permissions: string[];
@@ -456,9 +467,21 @@ export interface DeskAgentPass {
   roles: { name: string; color: string | null }[];
 }
 export type DeskAgentPassAnswer = DeskAgentPass | DeskRefusal;
-/** The worlds placed in an agent's organization, by id (one query in the till). */
+/**
+ * The worlds an agent lives in, by id — those placed in its organization, or
+ * only the chosen ones among them — and its presence (one query in the till).
+ * A till older than migration 0026 says neither `worlds` nor `presence`.
+ */
 export type DeskAgentWorldsAnswer =
-  { ok: true; accountId: string; agentId: string; worldIds: string[] } | DeskRefusal;
+  | {
+      ok: true;
+      accountId: string;
+      agentId: string;
+      worldIds: string[];
+      worlds?: AgentWorlds | undefined;
+      presence?: AgentPresence | undefined;
+    }
+  | DeskRefusal;
 export type DeskClaimAnswer = { ok: true } | DeskRefusal;
 
 export type DeskConfirmAnswer =
@@ -723,6 +746,25 @@ export interface AccountDesk {
     aud: string,
     t: number,
   ): Promise<DeskClaimAnswer>;
+  /** Where an agent lives: `{ todos: true }` or `{ mundos: [ids] }`, each placed in its organization; logged (optional). */
+  setAgentWorlds(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    worlds: AgentWorlds,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
+  /**
+   * How an agent is present in a world — body, bubble, how it is called, what it hears, how long it stays:
+   * any part of any group (the domain's `AgentPresenceChange`); logged (optional).
+   */
+  changeAgentPresence(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    change: AgentPresenceChange,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
   /** The worlds placed in an agent's organization, in one query; public as `homeOf` is (optional). */
   agentWorlds(accountId: string, agentId: string): Promise<DeskAgentWorldsAnswer>;
   /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` (optional). */
@@ -934,6 +976,8 @@ export const DESK_METHODS = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'changeAgentPresence',
+  'setAgentWorlds',
   'communityTerms',
   'publishTerms',
   'publicTerms',
@@ -996,6 +1040,8 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'changeAgentPresence',
+  'setAgentWorlds',
   'communityTerms',
   'publishTerms',
   'publicTerms',

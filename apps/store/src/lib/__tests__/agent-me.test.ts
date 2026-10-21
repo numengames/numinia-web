@@ -6,6 +6,7 @@
  * metering is one bucket per agent shared with POST /api/agents/pass.
  */
 
+import { DEFAULT_AGENT_PRESENCE, type AgentPresence } from '@numinia/domain';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import deskSeed from '../../../fixtures/accounts/desk.json';
 import { NOT_IMPLEMENTED, type AccountDesk, type Asker } from '../accounts';
@@ -115,6 +116,9 @@ describe('GET /api/agents/me with its token', () => {
       enabled: true,
       state: 'activa',
       hear: false,
+      oye: 'llamada',
+      vive: 'todos',
+      presence: DEFAULT_AGENT_PRESENCE,
       eligible: true,
       permissions: expect.arrayContaining(['enter-worlds']),
       worlds: [
@@ -139,6 +143,139 @@ describe('GET /api/agents/me with its token', () => {
     await desk.changeAgent(ME, NUMEN, 'hermes-1', { hears: true });
     const on = await json(await answerAgentMe(desk, me(bearer(token)), contextOf(), quiet));
     expect(on['hear']).toBe(true);
+    expect(on['oye']).toBe('todo');
+    expect(on['presence']).toMatchObject({ oye: 'todo' });
+  });
+
+  describe('where the AI lives and how it is present (S19)', () => {
+    const BUBBLE: AgentPresence = {
+      ...DEFAULT_AGENT_PRESENCE,
+      burbuja: { forma: 'cilindro', radio: 6, visible: 'siempre' },
+      llamada: { ...DEFAULT_AGENT_PRESENCE.llamada, frase: 'agente, responde' },
+      oye: 'burbuja',
+      quedarse_h: 4,
+    };
+
+    /** A desk whose till says the AI lives in `worlds` with this presence (as migration 0026 does). */
+    function livingIn(
+      desk: AccountDesk,
+      worlds: unknown,
+      worldIds: string[],
+      presence: unknown,
+    ): AccountDesk {
+      return {
+        ...desk,
+        agentPass: async (org, agent) => {
+          const pass = await desk.agentPass(org, agent);
+          return pass.ok ? { ...pass, agent: { ...pass.agent, worlds, presence } } : pass;
+        },
+        agentWorlds: async (org, agent) => {
+          const placed = await desk.agentWorlds(org, agent);
+          return placed.ok ? { ...placed, worldIds, worlds, presence } : placed;
+        },
+      } as AccountDesk;
+    }
+
+    it('lists only the worlds it lives in and says so, with its presence and what it hears', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      const chosen = livingIn(desk, { mundos: ['torre'] }, ['torre'], BUBBLE);
+      const body = await json(await answerAgentMe(chosen, me(bearer(token)), contextOf(), quiet));
+      expect(body).toMatchObject({
+        worlds: [{ id: 'torre', ws: 'wss://torre.example/ws' }],
+        vive: 'elegidos',
+        oye: 'burbuja',
+        hear: false,
+        presence: BUBBLE,
+      });
+      expect(JSON.stringify(body)).not.toContain('agora-plaza');
+      expect(JSON.stringify(body)).not.toContain('tokenHash');
+      expect(JSON.stringify(body)).not.toContain(token);
+    });
+
+    it('lists none of the worlds it does not live in even when its organization has them served', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      // Chosen into a world the fleet does not serve: nothing to list, but still told where it lives.
+      const sotano = livingIn(desk, { mundos: ['sotano'] }, ['sotano'], BUBBLE);
+      expect(
+        await json(await answerAgentMe(sotano, me(bearer(token)), contextOf(), quiet)),
+      ).toMatchObject({ worlds: [], vive: 'elegidos' });
+    });
+
+    it('keeps `hear` true only on the last rung, whatever rung the till stored beside its switch', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      const asked = async (hears: boolean, oye: AgentPresence['oye']) => {
+        const held = livingIn(desk, { todos: true }, ['torre'], { ...BUBBLE, oye });
+        if (hears) await desk.changeAgent(ME, NUMEN, 'hermes-1', { hears: true });
+        const body = await json(await answerAgentMe(held, me(bearer(token)), contextOf(), quiet));
+        return [body['hear'], body['oye']];
+      };
+      expect(await asked(false, 'todo')).toEqual([false, 'llamada']);
+      expect(await asked(false, 'burbuja')).toEqual([false, 'burbuja']);
+      expect(await asked(true, 'burbuja')).toEqual([true, 'todo']);
+    });
+
+    it('answers for a till older than migration 0026: lives everywhere, default presence', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      const bare = (hears: boolean): AccountDesk =>
+        ({
+          ...desk,
+          agentPass: async (org, agent) => {
+            const pass = await desk.agentPass(org, agent);
+            if (!pass.ok) return pass;
+            const { presence: _presence, worlds: _worlds, ...rest } = pass.agent;
+            return { ...pass, agent: { ...rest, hears } };
+          },
+          agentWorlds: async (org, agent) => {
+            const placed = await desk.agentWorlds(org, agent);
+            if (!placed.ok) return placed;
+            const { presence: _presence, worlds: _worlds, ...rest } = placed;
+            return rest;
+          },
+        }) as AccountDesk;
+      const quietOne = await json(
+        await answerAgentMe(bare(false), me(bearer(token)), contextOf(), quiet),
+      );
+      expect(quietOne).toMatchObject({
+        vive: 'todos',
+        oye: 'llamada',
+        hear: false,
+        presence: DEFAULT_AGENT_PRESENCE,
+      });
+      expect(quietOne['worlds']).toHaveLength(2);
+      const hearing = await json(
+        await answerAgentMe(bare(true), me(bearer(token)), contextOf(), quiet),
+      );
+      expect(hearing).toMatchObject({ oye: 'todo', hear: true });
+    });
+
+    it('does not fail on a presence or a choice of worlds it cannot read: default and everywhere', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      for (const odd of [{ cuerpo: 'robot' }, 'x', null, 7]) {
+        const held = livingIn(desk, odd, ['torre'], odd);
+        const body = await json(await answerAgentMe(held, me(bearer(token)), contextOf(), quiet));
+        expect(body).toMatchObject({
+          vive: 'todos',
+          oye: 'llamada',
+          presence: DEFAULT_AGENT_PRESENCE,
+        });
+        expect(body['worlds']).toHaveLength(1);
+      }
+    });
+
+    it('says where an AI that may not enter lives, with no worlds', async () => {
+      const desk = fresh();
+      const token = await made(desk);
+      await desk.changeAgent(ME, NUMEN, 'hermes-1', { enabled: false });
+      const off = livingIn(desk, { mundos: ['torre'] }, ['torre'], BUBBLE);
+      expect(
+        await json(await answerAgentMe(off, me(bearer(token)), contextOf(), quiet)),
+      ).toMatchObject({ enabled: false, worlds: [], vive: 'elegidos', oye: 'burbuja' });
+    });
   });
 
   it('tells an AI that sleeps its state and still lists its worlds', async () => {

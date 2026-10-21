@@ -58,7 +58,7 @@ import {
 } from '../vendor/puente-mundo.mjs';
 import { HOUSE_LIBRARY } from './biblioteca';
 import { storeFetch, storeOrigin, type Env } from './env';
-import { standingOf } from './herramientas';
+import { homeOf, standingOf } from './herramientas';
 import { askMe, type MeAnswer, type MeAsk } from './me';
 import type { Plazas } from './plazas';
 import { PROVIDER_OPTIONS } from './provider';
@@ -88,7 +88,8 @@ const propsShape = z.object({
 const grantShape = z.object({ grantId: z.string().min(1), userId: z.string().min(1) });
 const enterShape = z.object({
   props: propsShape,
-  mundo: z.string().min(1).max(200),
+  // Absent: the AI's home, the first of the worlds it lives in (S15).
+  mundo: z.string().min(1).max(200).optional(),
   grant: grantShape.optional(),
 });
 const toolShape = z.object({ name: z.string().min(1).max(64), arguments: z.unknown() });
@@ -107,7 +108,7 @@ const toolReply = z.object({
 
 /** The grant a body came with: what to revoke when numinia.com says `401`. */
 export type BodyGrant = z.infer<typeof grantShape>;
-/** What `entrar` takes: the grant's props, the world's id (from `mundos`) and the grant. */
+/** What `entrar` takes: the grant's props, the world's id (from `mundos`; none: home) and the grant. */
 export type EnterAsk = z.input<typeof enterShape>;
 /** What `usar` takes: the grant's props, the grant and, for a world tool, its name and arguments. */
 export type UseAsk = z.input<typeof useShape>;
@@ -127,6 +128,7 @@ export type Refusal =
   | 'sin-responsable'
   | 'sin-permiso'
   | 'no-world'
+  | 'no-home'
   | 'full';
 
 /** Why a body left. */
@@ -163,7 +165,10 @@ export const REFUSALS: Record<Refusal, string> = {
   'sin-responsable':
     'No one answers for you in your organization: you enter no world until someone does.',
   'sin-permiso': 'Your roles do not let you into the worlds.',
-  'no-world': 'Your organization has no world with that id on now. Call «mundos» for the list.',
+  'no-world':
+    'That is not one of the worlds you live in (or it is not on now). Call «mundos» for the list.',
+  'no-home':
+    'You have no home to enter: none of the worlds you live in is on now. Call «mundos» to see them.',
   full: 'Your organization already has 3 AIs inside worlds, the most at once. Try again when one leaves.',
 };
 
@@ -395,7 +400,7 @@ export class Cuerpo extends DurableObject<Env> {
   private async enter(input: unknown): Promise<BodyAnswer> {
     const parsed = enterShape.safeParse(input);
     if (!parsed.success) return refuse('input');
-    const { props, mundo } = parsed.data;
+    const { props } = parsed.data;
     const given = parsed.data.grant ?? null;
     if (given !== null && given.userId !== grantUserId(props.accountId, props.agentId)) {
       return refuse('input');
@@ -422,6 +427,10 @@ export class Cuerpo extends DurableObject<Env> {
       if (current !== null) await this.end(current, standing);
       return refuse(standing);
     }
+    // Only a world the AI lives in is in `/me`'s list: any other, of its organization or not, is «no-world».
+    // With none named it goes home, the first of them.
+    const mundo = parsed.data.mundo ?? homeOf(answer.me);
+    if (mundo === undefined) return refuse('no-home');
     const world = answer.me.worlds.find((w) => w.id === mundo);
     if (world === undefined) return refuse('no-world');
     if (!isWorldAddress(world.ws)) return refuse('odd');

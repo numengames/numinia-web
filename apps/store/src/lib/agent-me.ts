@@ -13,10 +13,18 @@
  * the body of the pass request and in the lines that connect Hermes
  * (`AGENTE_ORG`, `AGENTE_ID`, lib/panel-agentes.ts `connectCommand`).
  *
- * The answer is `{ org, id, name, enabled, state, hear, eligible, permissions,
- * worlds }`: what the till says of the agent and the worlds of ITS
- * organization the fleet serves, each with the WebSocket address its bridge
- * connects to (`wss://<host>/ws`, the engine's door behind Caddy). An AI
+ * The answer is `{ org, id, name, enabled, state, hear, oye, vive, presence,
+ * eligible, permissions, worlds }`: what the till says of the agent and the
+ * worlds it LIVES IN (S19: all those of its organization, or only the ones
+ * its managers chose) that the fleet serves, each with the WebSocket address
+ * its bridge connects to (`wss://<host>/ws`, the engine's door behind Caddy).
+ * `presence` is its body, bubble, calling and stay — no secret: the token and
+ * its hash never travel —, `oye` the rung of what it hears (`llamada`,
+ * `burbuja`, `todo`: D-083) and `hear` the same for relays that predate the
+ * ladder: true only when `oye` is `todo`. `vive` says whether it lives in
+ * `todos` the worlds of its organization or only in `elegidos`; a till older
+ * than migration 0026 says nothing of either, and the answer is `todos`, the
+ * default presence and `oye` `todo` only if it hears. An AI
  * that is switched off, whose person no longer answers for it (ORG-011), or
  * whose roles do not let it enter, is still told who it is, with no worlds:
  * it would get no pass for any of them. The organization's worlds come from
@@ -63,6 +71,13 @@
  *   502 `caja` (the till failed) · 503 `no-vinculado` (no till)
  */
 
+import {
+  DEFAULT_AGENT_PRESENCE,
+  parseAgentPresence,
+  parseAgentWorlds,
+  type AgentHearingStep,
+  type AgentPresence,
+} from '@numinia/domain';
 import { z } from 'zod';
 import type { AccountDesk } from './accounts';
 import { answer as answerOf, ask } from './accounts-source';
@@ -106,6 +121,10 @@ export const agentPassShape = z.union([
       state: z.enum(['activa', 'dormida']),
       // A till that has not run migration 0023 yet says nothing: it hears nothing.
       hears: z.boolean().default(false),
+      // Nor has one that has not run 0026: no presence (the default one) and all the worlds.
+      // Read loosely here and judged by `presenceOf` / `livesOf`, so a till of another shape never fails the route.
+      presence: z.unknown().optional(),
+      worlds: z.unknown().optional(),
     }),
     eligible: z.boolean(),
     permissions: z.array(z.string()),
@@ -191,11 +210,18 @@ export interface AgentMe {
   readonly name: string;
   readonly enabled: boolean;
   readonly state: 'activa' | 'dormida';
-  /** Whether its community lets it hear nearby chat (`oir`); off unless someone who may edit it turned it on. */
+  /** Whether its community lets it hear nearby chat (`oir`): true only when `oye` is `todo` (kept for relays older than the ladder). */
   readonly hear: boolean;
+  /** What it hears (D-083): only who calls it, also what is said in its bubble, or everything nearby. */
+  readonly oye: AgentHearingStep;
+  /** Where it lives: all the worlds of its organization, or only the ones chosen. */
+  readonly vive: 'todos' | 'elegidos';
+  /** How it is present in a world: body, bubble, calling, stay. */
+  readonly presence: AgentPresence;
   /** The person who answers for it is still in the organization and may manage roles (ORG-011). */
   readonly eligible: boolean;
   readonly permissions: readonly string[];
+  /** The worlds it lives in that the fleet serves now. */
   readonly worlds: readonly AgentWorld[];
 }
 
@@ -205,6 +231,21 @@ export interface AgentMeContext {
   readonly hosts: () => Promise<ReadonlyMap<string, string>>;
   /** Seconds since the epoch. */
   readonly now: number;
+}
+
+/** The presence the till kept, or the default when it kept none or something that no longer reads. */
+function presenceOf(held: HeldAgent['agent']): AgentPresence {
+  const read = parseAgentPresence(held.presence);
+  const presence = read.ok ? read.value : DEFAULT_AGENT_PRESENCE;
+  // `hears` is the truth about the last rung (the till says so too): an older till has only that.
+  if (held.hears) return { ...presence, oye: 'todo' };
+  return presence.oye === 'todo' ? { ...presence, oye: 'llamada' } : presence;
+}
+
+/** Where the agent lives, as the till said it: only a clear choice of worlds is `elegidos`. */
+function livesOf(held: HeldAgent['agent']): AgentMe['vive'] {
+  const read = parseAgentWorlds(held.worlds);
+  return read.ok && 'mundos' in read.value ? 'elegidos' : 'todos';
 }
 
 /** The WebSocket address of a world served at `host`. */
@@ -304,13 +345,17 @@ async function answerFor(
     }
   }
 
+  const presence = presenceOf(held.agent);
   const me: AgentMe = {
     org,
     id: held.agent.id,
     name: held.agent.name,
     enabled: held.agent.enabled,
     state: held.agent.state,
-    hear: held.agent.hears,
+    hear: presence.oye === 'todo',
+    oye: presence.oye,
+    vive: livesOf(held.agent),
+    presence,
     eligible: held.eligible,
     permissions: held.permissions,
     worlds,

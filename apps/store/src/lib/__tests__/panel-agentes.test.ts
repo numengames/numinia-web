@@ -5,13 +5,35 @@
  * lib/agents.ts's own.
  */
 
+import {
+  AGENT_BODY_KINDS,
+  AGENT_BODY_MODEL_MAX,
+  AGENT_HEARING_STEPS,
+  AGENT_STAY_HOURS,
+  BUBBLE_RADIUS_MAX as DOMAIN_RADIUS_MAX,
+  BUBBLE_RADIUS_MIN as DOMAIN_RADIUS_MIN,
+  BUBBLE_SHAPES,
+  BUBBLE_VISIBLE,
+  CALL_PHRASE_MAX as DOMAIN_PHRASE_MAX,
+  DEFAULT_AGENT_PRESENCE,
+} from '@numinia/domain';
 import { describe, expect, it } from 'vitest';
 import type { DeskAgent, DeskAgents } from '../accounts';
-import { AGENT_PROBLEMS, isAgentId } from '../agents';
+import { AGENT_PROBLEMS, PRESENCE_PROBLEMS, isAgentId } from '../agents';
 import {
+  BUBBLE_FORMS,
+  BUBBLE_RADIUS_MAX,
+  BUBBLE_RADIUS_MIN,
+  BUBBLE_VISIBILITY,
+  CALL_PHRASE_MAX,
+  DEFAULT_PRESENCE,
+  HEARING_STEPS,
+  HOUSE_BODIES,
+  STAY_HOURS,
   actionsOf,
   appNameOf,
   changeBody,
+  clampRadius,
   clientOf,
   chipsOf,
   connectCommand,
@@ -23,6 +45,8 @@ import {
   hermesTokenCommand,
   invitable,
   listUrl,
+  livesIn,
+  presenceOf,
   readAgents,
   readToken,
   RELAY_URL,
@@ -31,7 +55,11 @@ import {
   responsibleOf,
   roleIdsFor,
   rolesToGive,
+  toggleWorld,
   tokenLine,
+  worldsForMode,
+  worldsModeOf,
+  worldsOf,
 } from '../panel-agentes';
 import { RELAY_ORIGIN } from '../relay-handoff';
 import { agentIdFrom, nameProblem } from '../world-door';
@@ -542,5 +570,172 @@ describe('the URL way (paso 2)', () => {
     expect(appNameOf({ kind: 'other', host: 'mistral.example' })).toBe('mistral.example');
     expect(appNameOf({ kind: 'panel' })).toBeNull();
     expect(appNameOf({ kind: 'key' })).toBeNull();
+  });
+});
+
+describe('where an AI lives (S20)', () => {
+  const community = ['agora-plaza', 'torre', 'zeta'];
+
+  it('reads where a desk says an AI lives; a desk that says nothing, or nonsense, means all', () => {
+    const read = (worlds: unknown) =>
+      readAgents({ agents: view([agent({ worlds } as never)]) })?.agents[0];
+    expect(read({ todos: true })?.worlds).toEqual({ todos: true });
+    expect(read({ mundos: ['torre'] })?.worlds).toEqual({ mundos: ['torre'] });
+    expect(read({ mundos: [] })?.worlds).toEqual({ mundos: [] });
+    for (const odd of [
+      undefined,
+      null,
+      'todos',
+      { todos: false },
+      { mundos: 'torre' },
+      { mundos: [1] },
+    ]) {
+      expect(read(odd)).not.toHaveProperty('worlds');
+    }
+    expect(worldsOf(agent())).toEqual({ todos: true });
+    expect(worldsOf(agent({ worlds: { mundos: ['torre'] } }))).toEqual({ mundos: ['torre'] });
+  });
+
+  it('puts it as all, one or several', () => {
+    expect(worldsModeOf({ todos: true })).toBe('all');
+    expect(worldsModeOf({ mundos: ['torre'] })).toBe('one');
+    expect(worldsModeOf({ mundos: ['torre', 'zeta'] })).toBe('several');
+    expect(worldsModeOf({ mundos: [] })).toBe('several');
+  });
+
+  it('knows the community’s worlds it lives in now', () => {
+    expect(livesIn({ todos: true }, community)).toEqual(community);
+    expect(livesIn({ mundos: ['zeta', 'gone'] }, community)).toEqual(['zeta']);
+    expect(livesIn({ mundos: [] }, community)).toEqual([]);
+  });
+
+  it('says what to send when the person picks another way', () => {
+    expect(worldsForMode('all', { mundos: ['torre'] }, community)).toEqual({ todos: true });
+    expect(worldsForMode('all', { todos: true }, [])).toEqual({ todos: true });
+    // one: the first it lives in; else the community’s first; else nothing to send
+    expect(worldsForMode('one', { todos: true }, community)).toEqual({ mundos: ['agora-plaza'] });
+    expect(worldsForMode('one', { mundos: ['zeta', 'torre'] }, community)).toEqual({
+      mundos: ['torre'],
+    });
+    expect(worldsForMode('one', { mundos: ['gone'] }, community)).toEqual({
+      mundos: ['agora-plaza'],
+    });
+    expect(worldsForMode('one', { todos: true }, [])).toBeNull();
+    // several: from all, the same worlds as chosen ones; from chosen ones, nothing changes
+    expect(worldsForMode('several', { todos: true }, community)).toEqual({ mundos: community });
+    expect(worldsForMode('several', { mundos: ['torre'] }, community)).toBeNull();
+    expect(worldsForMode('several', { todos: true }, [])).toBeNull();
+  });
+
+  it('adds or takes a world, and never leaves it without one', () => {
+    expect(toggleWorld(['torre'], 'zeta', true)).toEqual({ mundos: ['torre', 'zeta'] });
+    expect(toggleWorld(['zeta'], 'torre', true)).toEqual({ mundos: ['torre', 'zeta'] });
+    expect(toggleWorld(['torre'], 'torre', true)).toEqual({ mundos: ['torre'] });
+    expect(toggleWorld(['torre', 'zeta'], 'zeta', false)).toEqual({ mundos: ['torre'] });
+    expect(toggleWorld(['torre'], 'torre', false)).toBeNull();
+  });
+
+  it('writes the change and tells the till’s «not in the community» apart', () => {
+    expect(changeBody('acc_t_1', 'hermes', { worlds: { mundos: ['torre'] } })).toEqual({
+      accountId: 'acc_t_1',
+      id: 'hermes',
+      worlds: { mundos: ['torre'] },
+    });
+    expect(refusalOf([PRESENCE_PROBLEMS.worldsNotHere])).toEqual({
+      kind: 'agent',
+      problem: 'worldGone',
+    });
+    expect(refusalOf(['worlds: mundos must be a list'])).toEqual({
+      kind: 'agent',
+      problem: 'invalid',
+    });
+  });
+});
+
+describe('how an AI is present (S21)', () => {
+  const read = (presence: unknown) =>
+    readAgents({ agents: view([agent({ presence } as never)]) })?.agents[0];
+  const whole = {
+    cuerpo: { tipo: 'casa', modelo: 0 },
+    burbuja: { forma: 'cupula', radio: 7, visible: 'nunca' },
+    llamada: { nombre: true, barra: false, boton: true, solo_dentro: false, frase: 'ven' },
+    oye: 'burbuja',
+    quedarse_h: 4,
+  };
+
+  it('keeps the lists it draws the same as the domain’s', () => {
+    expect(BUBBLE_FORMS).toEqual(BUBBLE_SHAPES);
+    expect(BUBBLE_VISIBILITY).toEqual(BUBBLE_VISIBLE);
+    expect(STAY_HOURS).toEqual(AGENT_STAY_HOURS);
+    expect(HEARING_STEPS).toEqual(AGENT_HEARING_STEPS);
+    expect([BUBBLE_RADIUS_MIN, BUBBLE_RADIUS_MAX]).toEqual([DOMAIN_RADIUS_MIN, DOMAIN_RADIUS_MAX]);
+    expect(CALL_PHRASE_MAX).toBe(DOMAIN_PHRASE_MAX);
+    expect(AGENT_BODY_KINDS).toEqual(['casa']);
+    expect(AGENT_BODY_MODEL_MAX).toBe(999);
+    expect(DEFAULT_PRESENCE).toEqual(DEFAULT_AGENT_PRESENCE);
+    expect(HOUSE_BODIES.map((one) => one.modelo)).toEqual([DEFAULT_AGENT_PRESENCE.cuerpo.modelo]);
+  });
+
+  it('reads the whole presence a desk says, with or without the phrase', () => {
+    expect(read(whole)?.presence).toEqual(whole);
+    const { frase: _frase, ...without } = whole.llamada;
+    expect(read({ ...whole, llamada: without })?.presence?.llamada).toEqual(without);
+  });
+
+  it('reads nothing of a presence that is not whole and valid: the defaults then', () => {
+    expect(read(undefined)).not.toHaveProperty('presence');
+    const odd: unknown[] = [
+      null,
+      'esfera',
+      { ...whole, cuerpo: 'casa' },
+      { ...whole, burbuja: null },
+      { ...whole, llamada: [] },
+      { ...whole, cuerpo: { tipo: 'robot', modelo: 0 } },
+      { ...whole, cuerpo: { tipo: 3, modelo: 0 } },
+      { ...whole, cuerpo: { tipo: 'casa', modelo: 1000 } },
+      { ...whole, cuerpo: { tipo: 'casa', modelo: 1.5 } },
+      { ...whole, burbuja: { ...whole.burbuja, forma: 'cubo' } },
+      { ...whole, burbuja: { ...whole.burbuja, radio: 1 } },
+      { ...whole, burbuja: { ...whole.burbuja, radio: 13 } },
+      { ...whole, burbuja: { ...whole.burbuja, radio: '7' } },
+      { ...whole, burbuja: { ...whole.burbuja, visible: 'a-veces' } },
+      { ...whole, llamada: { ...whole.llamada, nombre: 'si' } },
+      { ...whole, llamada: { ...whole.llamada, barra: 1 } },
+      { ...whole, llamada: { ...whole.llamada, boton: null } },
+      { ...whole, llamada: { ...whole.llamada, solo_dentro: undefined } },
+      { ...whole, llamada: { ...whole.llamada, frase: '' } },
+      { ...whole, llamada: { ...whole.llamada, frase: 4 } },
+      { ...whole, oye: 'nada' },
+      { ...whole, quedarse_h: 2 },
+    ];
+    for (const one of odd) expect(read(one)).not.toHaveProperty('presence');
+  });
+
+  it('says how it is present: the desk’s, or the defaults; what it hears follows its switch', () => {
+    expect(presenceOf(agent())).toBe(DEFAULT_PRESENCE);
+    expect(presenceOf(agent({ presence: whole as never }))).toEqual(whole);
+    // the switch says it hears everything nearby: the last rung, whatever was stored
+    expect(presenceOf(agent({ hears: true, presence: whole as never })).oye).toBe('todo');
+    expect(presenceOf(agent({ hears: true })).oye).toBe('todo');
+    // the switch is off but «todo» was stored: it falls back to the first rung
+    const stale = { ...whole, oye: 'todo' } as never;
+    expect(presenceOf(agent({ presence: stale })).oye).toBe('llamada');
+    // off, and a rung that is not the last: unchanged
+    expect(presenceOf(agent({ presence: whole as never })).oye).toBe('burbuja');
+  });
+
+  it('holds a radius to whole metres between the least and the most', () => {
+    expect(clampRadius(1)).toBe(BUBBLE_RADIUS_MIN);
+    expect(clampRadius(99)).toBe(BUBBLE_RADIUS_MAX);
+    expect(clampRadius(6.4)).toBe(6);
+    expect(clampRadius(6.6)).toBe(7);
+  });
+
+  it('sends a presence change as is', () => {
+    expect(changeBody('acc_t_games', 'hermes', { presence: { burbuja: { radio: 9 } } })).toEqual({
+      accountId: 'acc_t_games',
+      id: 'hermes',
+      presence: { burbuja: { radio: 9 } },
+    });
   });
 });

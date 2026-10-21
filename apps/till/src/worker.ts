@@ -133,6 +133,7 @@ import {
   agentsOf,
   assignAgentRole,
   changeAgent,
+  changeAgentPresence,
   agentByToken,
   agentWorlds,
   claimAgentPass,
@@ -140,6 +141,7 @@ import {
   removeAgent,
   renewAgentToken,
   revokeAgentToken,
+  setAgentWorlds,
   type AgentPassAnswer,
   type AgentWorldsAnswer,
   type AgentsAnswer,
@@ -782,6 +784,39 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
   }
 
   /**
+   * How an agent is present in a world — body, bubble, how it is called, what it hears, how long it stays
+   * (`cuerpo`, `burbuja`, `llamada`, `oye`, `quedarse_h`; any part of any group; «La IA dentro del mundo» S17); logged.
+   */
+  async changeAgentPresence(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    change: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return changeAgentPresence(
+      this.env.TILL_DB,
+      wallet,
+      accountId,
+      agentId,
+      change,
+      house,
+      new Date(),
+    );
+  }
+
+  /** Where an agent lives: `{ todos: true }` or `{ mundos: [ids placed in its organization] }`; logged. */
+  async setAgentWorlds(
+    wallet: unknown,
+    accountId: unknown,
+    agentId: unknown,
+    worlds: unknown,
+    house?: unknown,
+  ): Promise<AgentsAnswer> {
+    return setAgentWorlds(this.env.TILL_DB, wallet, accountId, agentId, worlds, house, new Date());
+  }
+
+  /**
    * A new token for a token agent (the old one stops working); numinia.com sends only its SHA-256 and prefix;
    * `via` is how it came (the panel when absent, `mcp:<host>` from the relay); logged.
    */
@@ -886,7 +921,7 @@ export class AccountDesk extends WorkerEntrypoint<Env> {
     return claimAgentPass(this.env.TILL_DB, accountId, agentId, aud, t, new Date());
   }
 
-  /** The worlds placed in an agent's organization, in one query (GET /api/agents/me, «MCP remoto» W2). */
+  /** The worlds an agent lives in and its presence, in one query (GET /api/agents/me, «MCP remoto» W2, S17). */
   async agentWorlds(accountId: unknown, agentId: unknown): Promise<AgentWorldsAnswer> {
     return agentWorlds(this.env.TILL_DB, accountId, agentId);
   }
