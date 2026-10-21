@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  communityCover,
   filtersOf,
   readableWorldName,
   readOwner,
@@ -93,6 +94,22 @@ describe('readOwner', () => {
   });
 });
 
+describe('communityCover', () => {
+  const covers = { acc_t_trgcon: '/images/communities/trgcon.webp' };
+
+  it('gives a world its community’s picture by the account that holds it', () => {
+    expect(communityCover('acc_t_trgcon', covers)).toBe('/images/communities/trgcon.webp');
+  });
+
+  it('gives none to a world of no account, of an account without picture, or with no list', () => {
+    expect(communityCover(null, covers)).toBeNull();
+    expect(communityCover(undefined, covers)).toBeNull();
+    expect(communityCover('acc_t_other', covers)).toBeNull();
+    expect(communityCover('toString', covers)).toBeNull();
+    expect(communityCover('acc_t_trgcon', undefined)).toBeNull();
+  });
+});
+
 describe('worldCards', () => {
   const fleet: readonly FleetEntry[] = [
     { id: 'agora-plaza', phase: 'running', domain: 'agora.numen.games' },
@@ -110,6 +127,15 @@ describe('worldCards', () => {
     ['tower', owner('acc_t_house', 'Numen Games')],
     ['demo', null],
   ]);
+
+  it('dresses a world with no picture of its own in its community’s', () => {
+    const dressed = { ...RESET, image: '/images/communities/reset.webp' };
+    const cards = worldCards({ fleet, owners, communities: [HOUSE, dressed] });
+    expect(cards.find((card) => card.id === 'bosque')?.cover).toBe(
+      '/images/communities/reset.webp',
+    );
+    expect(cards.find((card) => card.id === 'agora-plaza')?.cover).toBeNull();
+  });
 
   it('lists placed worlds only, once each, never one being deleted', () => {
     const cards = worldCards({ fleet, owners, communities: [HOUSE, RESET] });

@@ -41,6 +41,7 @@ async function communityAccounts(): Promise<readonly CommunityAccounts[]> {
       id: community.id,
       name: community.name,
       founder: community.state === 'founder',
+      image: community.image?.src ?? null,
       accounts: [
         ...(community.team === undefined ? [] : [community.team]),
         await communityAccountId(community.id),
