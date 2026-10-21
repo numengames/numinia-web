@@ -18,6 +18,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { AgentWorlds } from '@numinia/domain';
 import type { AgentesMessages } from '../../i18n/panel-agentes';
 import { AgentBubble } from './AgentBubble';
+import { AgentCall } from './AgentCall';
 import { fill, type DeskAgent } from '../../lib/accounts';
 import {
   livesIn,
@@ -206,6 +207,7 @@ export function AgentWorld({
         onChange={onChange}
       />
       <AgentBubble agent={agent} editable={editable} words={words.world} onChange={onChange} />
+      <AgentCall agent={agent} editable={editable} words={words.world} onChange={onChange} />
     </div>
   );
 }

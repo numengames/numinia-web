@@ -244,7 +244,6 @@ function Row({
   const editable = agent.mayEdit && !busy;
   const nameId = `${uid}-n`;
   const onoffId = `${uid}-o`;
-  const hearId = `${uid}-h`;
   const chipText = fill(words.client[client.kind], { host: app ?? '' });
   const labels: Record<AgentAction, string> = {
     disconnect: words.connection.disconnect,
@@ -418,31 +417,6 @@ function Row({
           community={community}
           onChange={onChange}
         />
-
-        <div className="agentes-fila-oir" data-agent-hear={agent.hears ? 'on' : 'off'}>
-          <span className="agentes-k" id={`${hearId}-k`}>
-            {words.hearRow}
-          </span>
-          <span className="agentes-oir">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={agent.hears}
-              aria-labelledby={`${nameId} ${hearId}`}
-              aria-describedby={`${hearId}-hint`}
-              className="gente-interruptor"
-              disabled={!editable}
-              onClick={() => onChange({ hears: !agent.hears })}
-              data-metric="panel-agentes-hear"
-            />
-            <span className="agentes-oir-texto">
-              <span id={hearId}>{words.hearLabel}</span>
-              <span className="saldo-nota" id={`${hearId}-hint`}>
-                {agent.hears ? words.hearOn : words.hearHint}
-              </span>
-            </span>
-          </span>
-        </div>
 
         <div className="agentes-roles">
           <p className="agentes-k">{words.roles}</p>

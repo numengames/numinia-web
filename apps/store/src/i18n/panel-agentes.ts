@@ -47,12 +47,6 @@ export interface AgentesMessages {
   readonly on: string;
   readonly off: string;
   readonly stateLabel: string;
-  /** The switch on each AI's card: whether it may read the nearby chat of the worlds it is in. */
-  readonly hearLabel: string;
-  readonly hearHint: string;
-  /** The row's label, and the hint once it is on. */
-  readonly hearRow: string;
-  readonly hearOn: string;
   readonly states: Readonly<Record<AgentState, { readonly name: string; readonly hint: string }>>;
   /** What the till says the next pass will be, in plain words. */
   readonly status: Readonly<Record<AgentStatus, string>>;
@@ -184,6 +178,30 @@ export interface AgentesMessages {
       readonly options: Readonly<Record<'0' | '1' | '4' | '24', string>>;
       readonly hint: string;
     };
+    /** «Cómo se la llama» (S22): the ways to call it. `{name}`: its name; `{id}`: what follows the slash. */
+    readonly call: {
+      readonly label: string;
+      readonly name: { readonly label: string; readonly hint: string };
+      readonly bar: { readonly label: string; readonly hint: string };
+      readonly button: { readonly label: string; readonly hint: string };
+      readonly phrase: {
+        readonly label: string;
+        readonly hint: string;
+        /** `{name}`: the text box, for screen readers. */
+        readonly input: string;
+        readonly need: string;
+      };
+      readonly inside: { readonly label: string; readonly hint: string };
+    };
+    /** «Oír», the ladder that replaces the old switch (S22, D-083). */
+    readonly hear: {
+      readonly label: string;
+      readonly steps: Readonly<
+        Record<'llamada' | 'burbuja' | 'todo', { readonly name: string; readonly hint: string }>
+      >;
+      /** Said always: where what it hears goes. */
+      readonly notice: string;
+    };
   };
   readonly dialog: {
     readonly rolesLabel: string;
@@ -237,10 +255,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Encendida',
     off: 'Apagada',
     stateLabel: 'Estado',
-    hearLabel: 'Oír lo que se habla cerca',
-    hearHint: 'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté.',
-    hearRow: 'Oír',
-    hearOn: 'Encendido: la IA lee el chat cercano en los mundos donde esté.',
     states: {
       activa: { name: 'Activa', hint: 'Atenta y dispuesta a interactuar.' },
       dormida: {
@@ -385,6 +399,49 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         options: { '0': 'No', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
         hint: 'Si nadie la usa, se va a los 10 minutos; si eliges horas, se queda. Lo paga la casa.',
       },
+      call: {
+        label: 'Cómo se la llama',
+        name: {
+          label: 'Por su nombre',
+          hint: 'Alguien escribe «{name}, ¿me ayudas?» en el chat cercano.',
+        },
+        bar: {
+          label: 'Con /{id}',
+          hint: 'Alguien escribe «/{id} mensaje». Solo lo ven ella y quien lo escribe.',
+        },
+        button: {
+          label: 'Botón «Hablar con ella»',
+          hint: 'Desde su ficha, o con la tecla E al entrar en su burbuja.',
+        },
+        phrase: {
+          label: 'Frase clave',
+          hint: 'Una frase que pones tú, de 1 a 40 letras. Quien la diga en el chat cercano la llama.',
+          input: 'Frase clave de {name}',
+          need: 'Escribe la frase (de 1 a 40 letras) o quita la casilla.',
+        },
+        inside: {
+          label: 'Solo desde dentro de su burbuja',
+          hint: 'Si lo sueltas, se la puede llamar desde hasta 20 metros.',
+        },
+      },
+      hear: {
+        label: 'Oír',
+        steps: {
+          llamada: {
+            name: 'Solo a quien la llama',
+            hint: 'Oye lo que le dicen a ella: su nombre, /nombre o el botón «Hablar con ella». Nada más.',
+          },
+          burbuja: {
+            name: 'También lo que se dice dentro de su burbuja',
+            hint: 'Además, lo que habla la gente dentro de su burbuja, aunque no la llamen.',
+          },
+          todo: {
+            name: 'Todo lo cercano (20 m)',
+            hint: 'Oye todo lo cercano: lee el chat de quien esté a menos de 20 metros.',
+          },
+        },
+        notice: 'Lo que le llega lo lee la empresa que pone su cerebro, fuera del mundo.',
+      },
     },
     dialog: {
       rolesLabel: '¿Con qué roles?',
@@ -436,10 +493,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'On',
     off: 'Off',
     stateLabel: 'State',
-    hearLabel: 'Hear what is said nearby',
-    hearHint: 'If you turn it on, the AI reads the nearby chat in the worlds it is in.',
-    hearRow: 'Hear',
-    hearOn: 'On: the AI reads the nearby chat in the worlds it is in.',
     states: {
       activa: { name: 'Active', hint: 'Attentive and ready to interact.' },
       dormida: {
@@ -581,6 +634,49 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         options: { '0': 'No', '1': '1 hour', '4': '4 hours', '24': '24 hours' },
         hint: 'If nobody uses it, it leaves after 10 minutes; if you choose hours, it stays. The house pays for it.',
       },
+      call: {
+        label: 'How it is called',
+        name: {
+          label: 'By its name',
+          hint: 'Someone writes “{name}, can you help?” in the nearby chat.',
+        },
+        bar: {
+          label: 'With /{id}',
+          hint: 'Someone writes “/{id} message”. Only it and the writer see it.',
+        },
+        button: {
+          label: '“Talk to it” button',
+          hint: 'From its card, or with the E key when entering its bubble.',
+        },
+        phrase: {
+          label: 'Key phrase',
+          hint: 'A phrase you set, 1 to 40 characters. Whoever says it in the nearby chat calls it.',
+          input: 'Key phrase of {name}',
+          need: 'Write the phrase (1 to 40 characters) or untick the box.',
+        },
+        inside: {
+          label: 'Only from inside its bubble',
+          hint: 'If you untick it, it can be called from up to 20 metres.',
+        },
+      },
+      hear: {
+        label: 'Hear',
+        steps: {
+          llamada: {
+            name: 'Only whoever calls it',
+            hint: 'Hears what is said to it: its name, /name or the “Talk to it” button. Nothing else.',
+          },
+          burbuja: {
+            name: 'Also what is said inside its bubble',
+            hint: 'Also what people say inside its bubble, even if they do not call it.',
+          },
+          todo: {
+            name: 'Everything nearby (20 m)',
+            hint: 'Hears everything nearby: reads the chat of anyone within 20 metres.',
+          },
+        },
+        notice: 'What reaches it is read by the company behind its brain, outside the world.',
+      },
     },
     dialog: {
       rolesLabel: 'With which roles?',
@@ -632,10 +728,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'オン',
     off: 'オフ',
     stateLabel: '状態',
-    hearLabel: '近くの会話を聞く',
-    hearHint: 'オンにすると、AIは自分がいる世界で近くのチャットを読みます。',
-    hearRow: '聞く',
-    hearOn: 'オン：AIは自分がいる世界で近くのチャットを読みます。',
     states: {
       activa: { name: 'アクティブ', hint: '注意深く、やり取りに応じられる状態です。' },
       dormida: {
@@ -771,6 +863,46 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         options: { '0': 'しない', '1': '1時間', '4': '4時間', '24': '24時間' },
         hint: '誰も使わなければ10分で去ります。時間を選ぶと、その間は残ります。費用はハウスが負担します。',
       },
+      call: {
+        label: '呼びかけ方',
+        name: { label: '名前で', hint: '近くのチャットに「{name}、手伝って」と書きます。' },
+        bar: {
+          label: '/{id} で',
+          hint: '「/{id} メッセージ」と書きます。見えるのはAIと書いた人だけです。',
+        },
+        button: {
+          label: '「話しかける」ボタン',
+          hint: 'AIのカードから、またはバブルに入ったときにEキーで。',
+        },
+        phrase: {
+          label: '合言葉',
+          hint: 'あなたが決める1〜40文字の言葉です。近くのチャットで言うと呼びかけになります。',
+          input: '{name}の合言葉',
+          need: '合言葉（1〜40文字）を入力するか、チェックを外してください。',
+        },
+        inside: {
+          label: 'バブルの中からだけ',
+          hint: 'チェックを外すと、最大20メートル先からでも呼べます。',
+        },
+      },
+      hear: {
+        label: '聞く',
+        steps: {
+          llamada: {
+            name: '呼びかけた人だけ',
+            hint: '自分あての言葉だけを聞きます：名前、/名前、「話しかける」ボタン。それ以外は聞きません。',
+          },
+          burbuja: {
+            name: 'バブルの中の会話も',
+            hint: '呼びかけがなくても、バブルの中で話されていることも聞きます。',
+          },
+          todo: {
+            name: '近くのすべて（20 m）',
+            hint: '近くのすべてを聞きます：20メートル以内のチャットを読みます。',
+          },
+        },
+        notice: '届いた内容は、AIの頭脳を提供する会社がワールドの外で読みます。',
+      },
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -821,10 +953,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: '켜짐',
     off: '꺼짐',
     stateLabel: '상태',
-    hearLabel: '근처 대화 듣기',
-    hearHint: '켜면 AI가 있는 세계에서 근처 채팅을 읽습니다.',
-    hearRow: '듣기',
-    hearOn: '켜짐: AI가 있는 세계에서 근처 채팅을 읽습니다.',
     states: {
       activa: { name: '활동', hint: '주의를 기울이며 상호작용할 준비가 된 상태입니다.' },
       dormida: {
@@ -962,6 +1090,46 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         options: { '0': '아니요', '1': '1시간', '4': '4시간', '24': '24시간' },
         hint: '아무도 쓰지 않으면 10분 뒤에 떠납니다. 시간을 고르면 그동안 머뭅니다. 비용은 하우스가 냅니다.',
       },
+      call: {
+        label: '부르는 방법',
+        name: { label: '이름으로', hint: '근처 채팅에 「{name}, 도와줄래?」라고 씁니다.' },
+        bar: {
+          label: '/{id} 로',
+          hint: '「/{id} 메시지」라고 씁니다. AI와 쓴 사람만 볼 수 있습니다.',
+        },
+        button: {
+          label: '「말 걸기」 버튼',
+          hint: 'AI 카드에서, 또는 버블에 들어갈 때 E 키로.',
+        },
+        phrase: {
+          label: '암호 문구',
+          hint: '직접 정하는 1~40자 문구입니다. 근처 채팅에서 말하면 부르는 것이 됩니다.',
+          input: '{name}의 암호 문구',
+          need: '문구(1~40자)를 쓰거나 체크를 해제하세요.',
+        },
+        inside: {
+          label: '버블 안에서만',
+          hint: '해제하면 최대 20미터 거리에서도 부를 수 있습니다.',
+        },
+      },
+      hear: {
+        label: '듣기',
+        steps: {
+          llamada: {
+            name: '부른 사람만',
+            hint: 'AI에게 한 말만 듣습니다: 이름, /이름, 「말 걸기」 버튼. 그 밖에는 듣지 않습니다.',
+          },
+          burbuja: {
+            name: '버블 안에서 하는 말도',
+            hint: '부르지 않아도 버블 안에서 사람들이 하는 말도 듣습니다.',
+          },
+          todo: {
+            name: '근처 모두 (20 m)',
+            hint: '근처의 모든 것을 듣습니다: 20미터 안에 있는 사람들의 채팅을 읽습니다.',
+          },
+        },
+        notice: '전달된 내용은 AI의 두뇌를 제공하는 회사가 월드 밖에서 읽습니다.',
+      },
     },
     dialog: {
       rolesLabel: '어떤 역할로 할까요?',
@@ -1012,10 +1180,6 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
     on: 'Ligada',
     off: 'Desligada',
     stateLabel: 'Estado',
-    hearLabel: 'Ouvir o que se fala por perto',
-    hearHint: 'Se você ligar, a IA lê o chat próximo nos mundos em que estiver.',
-    hearRow: 'Ouvir',
-    hearOn: 'Ligado: a IA lê o chat próximo nos mundos em que estiver.',
     states: {
       activa: { name: 'Ativa', hint: 'Atenta e disposta a interagir.' },
       dormida: {
@@ -1165,6 +1329,49 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         label: 'Ficar no mundo',
         options: { '0': 'Não', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
         hint: 'Se ninguém a usa, ela sai em 10 minutos; se você escolher horas, ela fica. A casa paga.',
+      },
+      call: {
+        label: 'Como chamá-la',
+        name: {
+          label: 'Pelo nome',
+          hint: 'Alguém escreve «{name}, pode me ajudar?» no chat próximo.',
+        },
+        bar: {
+          label: 'Com /{id}',
+          hint: 'Alguém escreve «/{id} mensagem». Só ela e quem escreve veem.',
+        },
+        button: {
+          label: 'Botão «Falar com ela»',
+          hint: 'Pela ficha dela, ou com a tecla E ao entrar na bolha.',
+        },
+        phrase: {
+          label: 'Frase-chave',
+          hint: 'Uma frase que você define, de 1 a 40 caracteres. Quem a disser no chat próximo a chama.',
+          input: 'Frase-chave de {name}',
+          need: 'Escreva a frase (de 1 a 40 caracteres) ou desmarque a caixa.',
+        },
+        inside: {
+          label: 'Só de dentro da bolha',
+          hint: 'Se você desmarcar, ela pode ser chamada de até 20 metros.',
+        },
+      },
+      hear: {
+        label: 'Ouvir',
+        steps: {
+          llamada: {
+            name: 'Só quem a chama',
+            hint: 'Ouve o que dizem a ela: o nome, /nome ou o botão «Falar com ela». Nada mais.',
+          },
+          burbuja: {
+            name: 'Também o que se diz dentro da bolha',
+            hint: 'Também o que as pessoas dizem dentro da bolha, mesmo sem chamá-la.',
+          },
+          todo: {
+            name: 'Tudo o que está perto (20 m)',
+            hint: 'Ouve tudo o que está perto: lê o chat de quem estiver a menos de 20 metros.',
+          },
+        },
+        notice: 'O que chega a ela é lido pela empresa do cérebro dela, fora do mundo.',
       },
     },
     dialog: {

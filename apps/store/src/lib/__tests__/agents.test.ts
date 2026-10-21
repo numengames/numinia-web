@@ -160,9 +160,8 @@ describe('what changed in an AI’s presence (for the log)', () => {
       'quedarse_h=24',
     ]);
     // a phrase that went is `frase=`
-    expect(presenceDiff(now, { ...now, llamada: { ...now.llamada, frase: undefined } })).toEqual([
-      'llamada.frase=',
-    ]);
+    const { frase: _gone, ...without } = now.llamada;
+    expect(presenceDiff(now, { ...now, llamada: without })).toEqual(['llamada.frase=']);
   });
 
   it('says it as the till does', () => {

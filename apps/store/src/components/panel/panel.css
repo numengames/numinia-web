@@ -2370,7 +2370,6 @@
   min-width: 0;
 }
 .agentes-fila-estado,
-.agentes-fila-oir,
 .agentes-roles {
   display: grid;
   grid-template-columns: 5.5rem minmax(0, 1fr);
@@ -2450,22 +2449,6 @@
 }
 .agentes-fila-estado:disabled .agentes-opcion {
   cursor: not-allowed;
-}
-.agentes-oir {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s3);
-  min-width: 0;
-}
-.agentes-oir-texto {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-.agentes-oir-texto .saldo-nota {
-  font-weight: 400;
 }
 .agentes-roles-cuerpo {
   display: flex;
@@ -2726,7 +2709,6 @@
     border-top: 0;
   }
   .agentes-fila-estado,
-  .agentes-fila-oir,
   .agentes-roles {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2900,7 +2882,7 @@
 /* «En el mundo» — body and bubble (S21): four drawings, the radius, how long it stays. */
 .agentes-formas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s2);
   width: 100%;
 }
@@ -2932,4 +2914,57 @@
   width: 100%;
   min-height: 32px;
   accent-color: var(--turquesa);
+}
+
+/* «En el mundo» — how it is called and what it hears (S22). */
+.agentes-llamar {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.agentes-casilla-doble {
+  align-items: flex-start;
+  min-height: 32px;
+}
+.agentes-casilla-doble input {
+  margin-top: 4px;
+}
+.agentes-llamar-uno {
+  display: grid;
+  gap: var(--s2);
+  min-width: 0;
+}
+.agentes-frase {
+  display: grid;
+  gap: var(--s1);
+  padding-left: 1.5rem;
+}
+.agentes-frase input {
+  width: 100%;
+  max-width: 28rem;
+  min-height: 40px;
+}
+.agentes-escalera {
+  display: grid;
+  gap: var(--s2);
+  width: 100%;
+}
+
+.agentes-campo {
+  padding: 8px var(--s3);
+  font: inherit;
+  color: var(--texto);
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+}
+.agentes-campo:focus-visible {
+  outline: 2px solid var(--turquesa);
+  outline-offset: 2px;
+}
+.agentes-campo[aria-invalid='true'] {
+  border-color: var(--rojo, #b3261e);
 }
