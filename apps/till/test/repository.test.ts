@@ -134,6 +134,7 @@ describe('the migration', () => {
       '0023_agent_hears.sql',
       '0024_community_terms.sql',
       '0025_agent_responsible_house.sql',
+      '0026_agent_presence.sql',
     ]);
     const { db, sqlite } = migratedTill();
     const tables = rows(
@@ -161,6 +162,7 @@ describe('the migration', () => {
         'tariff_versions',
         'team_agent_passes',
         'team_agent_roles',
+        'team_agent_worlds',
         'team_agents',
         'team_log',
         'team_member_roles',

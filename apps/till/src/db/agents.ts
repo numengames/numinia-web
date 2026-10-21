@@ -30,9 +30,14 @@
 import {
   ORGANIZATION_PERMISSIONS,
   accessOf,
+  applyAgentPresenceChange,
   canAssignRole,
   houseMayEnter,
+  storedAgentPresence,
+  DEFAULT_AGENT_PRESENCE,
   type ActorAccess,
+  type AgentPresence,
+  type AgentWorlds,
   type OrganizationPermission,
   type OrganizationRole,
 } from '@numinia/domain';
@@ -43,11 +48,19 @@ import {
   readAgentChange,
   readAgentDraft,
   readAgentId,
+  readAgentPresenceChange,
+  readAgentWorlds,
   readConnectedVia,
   readMoment,
   readTokenHash,
   readTokenPrefix,
+  hearingOf,
+  PRESENCE_PROBLEMS,
+  presenceDiff,
+  presenceOfAgent,
   readWorldAudience,
+  sortedWorlds,
+  worldsText,
   type AgentDraft,
   type AgentState,
   type ConnectedVia,
@@ -96,6 +109,10 @@ interface TeamAgent {
   readonly state: AgentState;
   /** Whether it may hear what is said nearby in the worlds (migration 0023). */
   readonly hears: boolean;
+  /** How it is present in a world (migration 0026), hearing agreeing with `hears`; the defaults when nothing is stored. */
+  readonly presence: AgentPresence;
+  /** Where it lives (migration 0026): every world of its organization, or the chosen ones still placed there. */
+  readonly worlds: AgentWorlds;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly roleIds: readonly string[];
@@ -120,6 +137,10 @@ export interface AgentDetail {
   readonly state: AgentState;
   /** Whether it may hear what is said nearby in the worlds; off by default (migration 0023). */
   readonly hears: boolean;
+  /** How it is present in a world: body, bubble, how it is called, what it hears, how long it stays (migration 0026). */
+  readonly presence: AgentPresence;
+  /** Where it lives: `{ todos: true }` — every world of the organization, now and later — or `{ mundos }`, the chosen ones still placed there. */
+  readonly worlds: AgentWorlds;
   /** What the next pass will be: off, orphaned, without permission to enter, or its state. */
   readonly status: AgentStatus;
   readonly responsible: string;
@@ -171,6 +192,10 @@ export interface AgentPass {
     readonly enabled: boolean;
     readonly state: AgentState;
     readonly hears: boolean;
+    /** Its presence settings, for the pass's `ia` block (migration 0026). */
+    readonly presence: AgentPresence;
+    /** Where it lives, for refusing a pass outside it: the chosen worlds, or all. */
+    readonly worlds: AgentWorlds;
   };
   /** The person who answers for it is still in the organization and still holds manage-roles. */
   readonly eligible: boolean;
@@ -184,13 +209,17 @@ export interface AgentPass {
 
 export type AgentPassAnswer = AgentPass | Refusal;
 
-/** The worlds placed in an agent's organization, by id; read in one query. */
+/** The worlds an agent lives in, by id, and how; read in one query. */
 export type AgentWorldsAnswer =
   | {
       readonly ok: true;
       readonly accountId: string;
       readonly agentId: string;
+      /** The worlds it lives in: those placed in its organization, or only the chosen ones among them. */
       readonly worldIds: readonly string[];
+      /** `{ todos: true }` or `{ mundos }` (the same ids as `worldIds`). */
+      readonly worlds: AgentWorlds;
+      readonly presence: AgentPresence;
     }
   | Refusal;
 export type ClaimAnswer = { readonly ok: true } | Refusal;
@@ -201,18 +230,47 @@ const REVISION = '(SELECT revision FROM team_profiles WHERE account_id = ?1)';
 const SELECT_AGENTS = `
   SELECT agent_id, name, auth_kind, public_key, token_hash, token_prefix, token_created_at,
          connected_via, responsible_wallet, responsible_house, enabled, state, hears,
-         created_at, updated_at
+         presence_json, worlds_mode, created_at, updated_at
     FROM team_agents WHERE account_id = ?1 ORDER BY created_at, agent_id`;
 
 const SELECT_AGENT_ROLES = 'SELECT agent_id, role_id FROM team_agent_roles WHERE account_id = ?1';
+
+/** The worlds chosen for the organization's agents, only those still placed in it. */
+const SELECT_AGENT_WORLD_ROWS = `
+  SELECT w.agent_id, w.world_id
+    FROM team_agent_worlds AS w
+    JOIN world_placements AS p ON p.world_id = w.world_id AND p.account_id = w.account_id
+   WHERE w.account_id = ?1 ORDER BY w.world_id`;
+
+/** The worlds placed in the organization, by id. */
+const SELECT_PLACED =
+  'SELECT world_id FROM world_placements WHERE account_id = ?1 ORDER BY world_id';
 
 const INSERT_AGENT = `
   INSERT INTO team_agents
     (account_id, agent_id, name, auth_kind, public_key, token_hash, token_prefix,
      token_created_at, connected_via, responsible_wallet, responsible_house, enabled, state,
-     hears, created_by, created_at, updated_at)
-  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, ?14, 1, 'activa', ?13, ?9, ?10, ?10
+     hears, presence_json, worlds_mode, created_by, created_at, updated_at)
+  SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?12, ?9, ?14, 1, 'activa', ?13, ?15, ?16, ?9, ?10, ?10
    WHERE ${REVISION} = ?11`;
+
+/** A chosen world, only if it is still placed in the organization when the batch runs. */
+const INSERT_AGENT_WORLD = `
+  INSERT INTO team_agent_worlds (account_id, agent_id, world_id)
+  SELECT ?1, ?2, ?3 FROM world_placements WHERE world_id = ?3 AND account_id = ?1
+   AND ${REVISION} = ?4`;
+
+const DELETE_AGENT_WORLDS = `
+  DELETE FROM team_agent_worlds WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?3`;
+
+const UPDATE_AGENT_WORLDS_MODE = `
+  UPDATE team_agents SET worlds_mode = ?3, updated_at = ?4
+   WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?5`;
+
+/** Presence and hearing are written together: they say the same of the ladder's last rung. */
+const UPDATE_AGENT_PRESENCE = `
+  UPDATE team_agents SET presence_json = ?3, hears = ?4, updated_at = ?5
+   WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?6`;
 
 const GIVE_AGENT_ROLE = `
   INSERT INTO team_agent_roles (account_id, agent_id, role_id)
@@ -239,14 +297,19 @@ const RENEW_AGENT_TOKEN = `
    WHERE account_id = ?1 AND agent_id = ?2 AND ${REVISION} = ?7`;
 
 /**
- * The worlds of an agent's organization in one query: the agent's own row,
- * joined to the placements of its organization. No row: no such agent there;
- * one row with a NULL world: an agent whose organization has no world.
+ * The worlds an agent lives in, and its presence, in one query: the agent's
+ * own row, joined to the placements of its organization — all of them for an
+ * agent that lives in 'todos', only the chosen ones for 'elegidos'. No row:
+ * no such agent there; one row with a NULL world: an agent that lives in no
+ * world (its organization has none, or none of the chosen is placed there).
  */
 const SELECT_AGENT_WORLDS = `
-  SELECT p.world_id
+  SELECT a.presence_json, a.worlds_mode, a.hears, p.world_id
     FROM team_agents AS a
     LEFT JOIN world_placements AS p ON p.account_id = a.account_id
+     AND (a.worlds_mode = 'todos' OR EXISTS (
+       SELECT 1 FROM team_agent_worlds AS w
+        WHERE w.account_id = a.account_id AND w.agent_id = a.agent_id AND w.world_id = p.world_id))
    WHERE a.account_id = ?1 AND a.agent_id = ?2
    ORDER BY p.world_id`;
 
@@ -271,19 +334,26 @@ const optional = (row: Row, column: string): string | null =>
 
 /** The organization's agents, read after the organization itself: a change between the two raises the revision and the guarded write refuses. */
 async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgent[]> {
-  const [agents, held] = (
+  const [agents, held, chosen] = (
     await db.batch<Row>([
       db.prepare(SELECT_AGENTS).bind(accountId),
       db.prepare(SELECT_AGENT_ROLES).bind(accountId),
+      db.prepare(SELECT_AGENT_WORLD_ROWS).bind(accountId),
     ])
-  ).map((result) => result.results) as [Row[], Row[]];
+  ).map((result) => result.results) as [Row[], Row[], Row[]];
   const heldBy = new Map<string, string[]>();
   for (const row of held) {
     const holder = text(row, 'agent_id');
     heldBy.set(holder, [...(heldBy.get(holder) ?? []), text(row, 'role_id')]);
   }
+  const chosenBy = new Map<string, string[]>();
+  for (const row of chosen) {
+    const holder = text(row, 'agent_id');
+    chosenBy.set(holder, [...(chosenBy.get(holder) ?? []), text(row, 'world_id')]);
+  }
   return agents.map((row) => {
     const id = text(row, 'agent_id');
+    const hears = whole(row, 'hears') === 1;
     return {
       id,
       name: text(row, 'name'),
@@ -297,7 +367,10 @@ async function loadAgents(db: TillDatabase, accountId: string): Promise<TeamAgen
       responsibleHouse: whole(row, 'responsible_house') === 1,
       enabled: whole(row, 'enabled') === 1,
       state: text(row, 'state') as AgentState,
-      hears: whole(row, 'hears') === 1,
+      hears,
+      presence: presenceOfAgent(optional(row, 'presence_json'), hears),
+      worlds:
+        text(row, 'worlds_mode') === 'todos' ? { todos: true } : { mundos: chosenBy.get(id) ?? [] },
       createdAt: instant(row, 'created_at'),
       updatedAt: instant(row, 'updated_at'),
       roleIds: heldBy.get(id) ?? [],
@@ -433,6 +506,8 @@ async function viewOf(db: TillDatabase, entered: Entered): Promise<AgentsView> {
         enabled: agent.enabled,
         state: agent.state,
         hears: agent.hears,
+        presence: agent.presence,
+        worlds: agent.worlds,
         status: statusOf(org, agent),
         responsible: agent.responsible,
         ...(published(agent) === undefined
@@ -521,7 +596,7 @@ export async function createAgent(
   if ('problems' in entered) return entered;
   const { org, acting } = entered;
   const made = draft as AgentDraft;
-  const { id, name, roleIds, via, hears } = made;
+  const { id, name, roleIds, via, hears, presence } = made;
   const refused = lacking(entered, 'manage-roles');
   if (refused !== null) return refused;
   const held = await loadAgents(db, org.accountId);
@@ -546,6 +621,16 @@ export async function createAgent(
     if (!allowed.ok) return refuse(refusalOf(allowed.refusal, 'manage-roles', org.state.roles));
     if (!mayGive(acting, fresh, role)) return refuse(AGENT_PROBLEMS.houseCeiling);
   }
+  // Where it lives: what the draft says; else the one world of a community that has just one
+  // (design §5: an AI lives in one world, chosen when it is connected); else every world, as before.
+  const placed = await placedWorlds(db, org.accountId);
+  const worlds = sortedWorlds(
+    made.worlds ?? (placed.length === 1 ? { mundos: placed } : { todos: true }),
+  );
+  if ('mundos' in worlds && worlds.mundos.some((worldId) => !placed.includes(worldId))) {
+    return refuse(PRESENCE_PROBLEMS.worldsNotHere);
+  }
+  const customised = presenceDiff(DEFAULT_AGENT_PRESENCE, presence);
   return written(db, entered, [
     db
       .prepare(INSERT_AGENT)
@@ -564,9 +649,14 @@ export async function createAgent(
         via,
         hears ? 1 : 0,
         acting.as === 'house' ? 1 : 0,
+        storedAgentPresence(presence),
+        'todos' in worlds ? 'todos' : 'elegidos',
       ),
     ...roleIds.map((roleId) =>
       db.prepare(GIVE_AGENT_ROLE).bind(org.accountId, id, roleId, org.revision),
+    ),
+    ...('mundos' in worlds ? worlds.mundos : []).map((worldId) =>
+      db.prepare(INSERT_AGENT_WORLD).bind(org.accountId, id, worldId, org.revision),
     ),
     logLine(
       db,
@@ -575,7 +665,13 @@ export async function createAgent(
       acting,
       'agent-created',
       id,
-      { name, ...(roleIds.length > 0 ? { roles: roleIds.join(',') } : {}), via },
+      {
+        name,
+        ...(roleIds.length > 0 ? { roles: roleIds.join(',') } : {}),
+        via,
+        ...(customised.length > 0 ? { presence: customised.join(';') } : {}),
+        ...('mundos' in worlds ? { worlds: worldsText(worlds) } : {}),
+      },
       org.revision,
     ),
     // Only the prefix is ever written: never the token, never its hash.
@@ -667,6 +763,21 @@ export async function changeAgent(
             { name: agent.name, from: agent.state, to: state },
             org.revision,
           ),
+        ]
+      : []),
+    // The ladder's last rung lives in two places (migration 0026): keep the presence in step.
+    ...(listened
+      ? [
+          db
+            .prepare(UPDATE_AGENT_PRESENCE)
+            .bind(
+              org.accountId,
+              agent.id,
+              storedAgentPresence({ ...agent.presence, oye: hearingOf(hears, agent.presence.oye) }),
+              hears ? 1 : 0,
+              now.toISOString(),
+              org.revision,
+            ),
         ]
       : []),
     // No act of its own (the list is a CHECK, 0021): an AI's hearing rides on its state's act.
@@ -786,6 +897,154 @@ export async function revokeAgentToken(
   ]);
 }
 
+/** The worlds placed in the organization, by id. */
+async function placedWorlds(db: TillDatabase, accountId: string): Promise<string[]> {
+  const { results } = await db.prepare(SELECT_PLACED).bind(accountId).all<Row>();
+  return results.map((row) => text(row, 'world_id'));
+}
+
+/**
+ * Changes how an agent is present in a world — body, bubble, how it is
+ * called, what it hears, how long it stays (migration 0026; the domain's
+ * `AgentPresenceChange`: any part of any group): whoever may handle it. The
+ * last rung of what it hears is the `hears` column's too, so the two move
+ * together. One line of the log under `agent-state` (`detail.presence`: what
+ * changed as `path=value;…`; and `hears` when that flipped); nothing when
+ * nothing changes. numinia.com puts it in the next pass (≤ 10 minutes).
+ */
+export async function changeAgentPresence(
+  db: TillDatabase,
+  sentWallet: unknown,
+  sentAccount: unknown,
+  sentAgent: unknown,
+  sentChange: unknown,
+  sentHouse: unknown,
+  now: Date,
+): Promise<AgentsAnswer> {
+  const change = readAgentPresenceChange(sentChange);
+  const entered = await entering(
+    db,
+    sentWallet,
+    sentAccount,
+    sentHouse,
+    Array.isArray(change) ? change : [],
+  );
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  const found = await agentFor(db, entered, sentAgent);
+  if ('problems' in found) return found;
+  const { agent } = found;
+  const refused = handling(entered, agent);
+  if (refused !== null) return refused;
+  const next = applyAgentPresenceChange(agent.presence, Array.isArray(change) ? {} : change);
+  const diff = presenceDiff(agent.presence, next);
+  if (diff.length === 0) return viewOf(db, entered);
+  const hears = next.oye === 'todo';
+  return written(db, entered, [
+    db
+      .prepare(UPDATE_AGENT_PRESENCE)
+      .bind(
+        org.accountId,
+        agent.id,
+        storedAgentPresence(next),
+        hears ? 1 : 0,
+        now.toISOString(),
+        org.revision,
+      ),
+    logLine(
+      db,
+      org.accountId,
+      now,
+      acting,
+      'agent-state',
+      agent.id,
+      { name: agent.name, presence: diff.join(';') },
+      org.revision,
+    ),
+    ...(hears !== agent.hears
+      ? [
+          logLine(
+            db,
+            org.accountId,
+            now,
+            acting,
+            'agent-state',
+            agent.id,
+            { name: agent.name, hears: hears ? 'on' : 'off' },
+            org.revision,
+          ),
+        ]
+      : []),
+  ]);
+}
+
+/**
+ * Sets where an agent lives (migration 0026): `{ todos: true }`, every world
+ * of its organization now and later, or `{ mundos: [ids] }`, exactly those —
+ * each one placed in the agent's own organization, or the answer is a
+ * refusal and nothing is written. Whoever may handle the agent. One line of
+ * the log under `agent-state` (`detail.worlds`: `todos`, or the ids); nothing
+ * when it already lives there. numinia.com refuses the pass outside them.
+ */
+export async function setAgentWorlds(
+  db: TillDatabase,
+  sentWallet: unknown,
+  sentAccount: unknown,
+  sentAgent: unknown,
+  sentWorlds: unknown,
+  sentHouse: unknown,
+  now: Date,
+): Promise<AgentsAnswer> {
+  const worlds = readAgentWorlds(sentWorlds);
+  const entered = await entering(
+    db,
+    sentWallet,
+    sentAccount,
+    sentHouse,
+    Array.isArray(worlds) ? worlds : [],
+  );
+  if ('problems' in entered) return entered;
+  const { org, acting } = entered;
+  const found = await agentFor(db, entered, sentAgent);
+  if ('problems' in found) return found;
+  const { agent } = found;
+  const refused = handling(entered, agent);
+  if (refused !== null) return refused;
+  const next = sortedWorlds(worlds as AgentWorlds);
+  if ('mundos' in next) {
+    const placed = await placedWorlds(db, org.accountId);
+    if (next.mundos.some((worldId) => !placed.includes(worldId))) {
+      return refuse(PRESENCE_PROBLEMS.worldsNotHere);
+    }
+  }
+  if (worldsText(next) === worldsText(sortedWorlds(agent.worlds))) return viewOf(db, entered);
+  return written(db, entered, [
+    db.prepare(DELETE_AGENT_WORLDS).bind(org.accountId, agent.id, org.revision),
+    ...('mundos' in next ? next.mundos : []).map((worldId) =>
+      db.prepare(INSERT_AGENT_WORLD).bind(org.accountId, agent.id, worldId, org.revision),
+    ),
+    db
+      .prepare(UPDATE_AGENT_WORLDS_MODE)
+      .bind(
+        org.accountId,
+        agent.id,
+        'todos' in next ? 'todos' : 'elegidos',
+        now.toISOString(),
+        org.revision,
+      ),
+    logLine(
+      db,
+      org.accountId,
+      now,
+      acting,
+      'agent-state',
+      agent.id,
+      { name: agent.name, worlds: worldsText(next) },
+      org.revision,
+    ),
+  ]);
+}
+
 /** Removes an agent: whoever may handle it. It gets no more passes; its connection falls when its pass runs out. */
 export async function removeAgent(
   db: TillDatabase,
@@ -899,6 +1158,8 @@ export async function agentPass(
       enabled: agent.enabled,
       state: agent.state,
       hears: agent.hears,
+      presence: agent.presence,
+      worlds: agent.worlds,
     },
     eligible: answered(org, agent),
     permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),
@@ -910,11 +1171,12 @@ export async function agentPass(
 }
 
 /**
- * The worlds placed in an agent's organization, in ONE query (the agent's
- * row joined to its organization's placements), for GET /api/agents/me:
- * public as `homeOf` is — where a world stands is no secret — and asked by
- * numinia.com only once it has judged the agent's token. Whether the agent
- * may enter them is not decided here: `agentPass` says that.
+ * The worlds an agent lives in, in ONE query (the agent's row joined to its
+ * organization's placements, narrowed to the chosen ones for an agent that
+ * lives in 'elegidos'), and its presence, for GET /api/agents/me: public as
+ * `homeOf` is — where a world stands is no secret — and asked by numinia.com
+ * only once it has judged the agent's token. Whether the agent may enter
+ * them is not decided here: `agentPass` says that.
  */
 export async function agentWorlds(
   db: TillDatabase,
@@ -930,12 +1192,18 @@ export async function agentWorlds(
     );
   }
   const { results } = await db.prepare(SELECT_AGENT_WORLDS).bind(accountId, agentId).all<Row>();
-  if (results.length === 0) return refuse(AGENT_PROBLEMS.noSuchAgent);
+  const [first] = results;
+  if (first === undefined) return refuse(AGENT_PROBLEMS.noSuchAgent);
+  const worldIds = results.flatMap((row) =>
+    row['world_id'] === null ? [] : [text(row, 'world_id')],
+  );
   return {
     ok: true,
     accountId,
     agentId,
-    worldIds: results.flatMap((row) => (row['world_id'] === null ? [] : [text(row, 'world_id')])),
+    worldIds,
+    worlds: text(first, 'worlds_mode') === 'todos' ? { todos: true } : { mundos: worldIds },
+    presence: presenceOfAgent(optional(first, 'presence_json'), whole(first, 'hears') === 1),
   };
 }
 

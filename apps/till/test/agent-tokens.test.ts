@@ -6,6 +6,7 @@
  * token, and one asserts the log carries neither.
  */
 
+import { DEFAULT_AGENT_PRESENCE } from '@numinia/domain';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +75,13 @@ describe('reading a token', () => {
   });
 
   it('reads a token draft: auth token, a hash and a prefix, and never a key beside them', () => {
-    expect(readAgentDraft(TOKEN)).toEqual({ ...TOKEN, roleIds: [], via: 'panel', hears: false });
+    expect(readAgentDraft(TOKEN)).toEqual({
+      ...TOKEN,
+      roleIds: [],
+      via: 'panel',
+      hears: false,
+      presence: DEFAULT_AGENT_PRESENCE,
+    });
     expect(readAgentDraft({ ...TOKEN, roleIds: ['role_0123456789abcdef'] })).toMatchObject({
       auth: 'token',
       roleIds: ['role_0123456789abcdef'],
@@ -267,6 +274,8 @@ describe('creating a token agent', () => {
       enabled: true,
       state: 'activa',
       hears: false,
+      presence: DEFAULT_AGENT_PRESENCE,
+      worlds: { todos: true },
     });
     expect(key.agent).toMatchObject({ auth: 'key', publicKey: KEY });
     expect(key.agent).not.toHaveProperty('tokenHash');

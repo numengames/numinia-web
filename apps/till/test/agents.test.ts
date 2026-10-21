@@ -4,6 +4,7 @@
  * them. One describe per rule or per door.
  */
 
+import { DEFAULT_AGENT_PRESENCE } from '@numinia/domain';
 import { describe, expect, it } from 'vitest';
 import { PROBLEMS } from '../src/db/accounts';
 import { ORG_PROBLEMS } from '../src/lib/organizations';
@@ -135,6 +136,7 @@ describe('the rules of the agents', () => {
       roleIds: [],
       via: 'panel',
       hears: false,
+      presence: DEFAULT_AGENT_PRESENCE,
     });
     expect(
       readAgentDraft({
@@ -148,6 +150,7 @@ describe('the rules of the agents', () => {
       roleIds: ['role_0123456789abcdef'],
       via: 'panel',
       hears: false,
+      presence: DEFAULT_AGENT_PRESENCE,
     });
     for (const value of [null, 'x', [], { ...BOT, extra: 1 }]) {
       expect(readAgentDraft(value)).toEqual([AGENT_PROBLEMS.draft]);
@@ -520,6 +523,8 @@ describe('what a pass is made of', () => {
       enabled: true,
       state: 'activa',
       hears: false,
+      presence: DEFAULT_AGENT_PRESENCE,
+      worlds: { todos: true },
     });
     expect(pass.eligible).toBe(true);
     expect(pass.permissions).toEqual(
