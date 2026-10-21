@@ -213,7 +213,8 @@ test.describe('phone', () => {
     await page.goto('/es/communities/');
     await expect(page.locator('aside.rail-ciudad')).toBeHidden();
     await expect(page.locator('aside.rail-tu')).toBeHidden();
-    await expect(page.locator('header.borde-movil [data-metric="phone-bazaar"]')).toBeVisible();
+    // The Bazar is hidden (BAZAAR_VISIBLE): the header keeps only the search.
+    await expect(page.locator('header.borde-movil [data-metric="phone-bazaar"]')).toHaveCount(0);
     const tabs = page.locator('nav.barra-movil a, nav.barra-movil button');
     await expect(tabs).toHaveCount(5);
     for (const tab of await tabs.all()) {

@@ -41,6 +41,7 @@ import RitualCard from './communities/RitualCard.astro';
 import GoodCardView from './communities/GoodCard.astro';
 import Countdown from './communities/Countdown.astro';
 import InsideCount from './communities/InsideCount.astro';
+import { BAZAAR_VISIBLE } from '../lib/app-nav';
 import '../styles/communities.css';
 
 interface Props {
@@ -182,7 +183,7 @@ const live = COMMUNITIES.flatMap((community) => {
   </section>
 
   {
-    goods.length > 0 && (
+    BAZAAR_VISIBLE && goods.length > 0 && (
       <section class="bloque" id="bazaar">
         <div class="cabecera-bloque">
           <div>

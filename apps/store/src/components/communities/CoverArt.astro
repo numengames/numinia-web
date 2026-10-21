@@ -1,0 +1,91 @@
+---
+/**
+ * The house's own picture for a community, a gathering or a world that has
+ * none of its own: a small scene (sky, sun or planet, stars, a landscape)
+ * drawn from the id by lib/cover-art.ts, in the design system's colours, so
+ * it follows day and night. Decorative (the name beside it says what it is),
+ * inline (no file to fetch), and the same on every page the id appears on.
+ */
+import { COVER_HEIGHT, COVER_WIDTH, coverScene, type CoverFamily } from '../../lib/cover-art';
+
+interface Props {
+  id: string;
+  /** A world draws a planet or a landscape; a community or gathering, a landscape. */
+  family?: CoverFamily;
+}
+
+const { id, family = 'place' } = Astro.props;
+const scene = coverScene(id, family);
+/** How far the layer is mixed toward the ground colour: far = pale, near = dark. */
+const mix = (depth: number): number => Math.round(34 - depth * 24);
+---
+
+<div class="arte" data-cover-art={scene.kind} style={`--h: var(--${scene.hue})`} aria-hidden="true">
+  <svg viewBox={`0 0 ${COVER_WIDTH} ${COVER_HEIGHT}`} preserveAspectRatio="xMidYMid slice" focusable="false">
+    {scene.stars.map((star) => <circle class="estrella" cx={star.x} cy={star.y} r={star.r} />)}
+    <circle class="halo" cx={scene.sun.cx} cy={scene.sun.cy} r={scene.sun.r * 1.9} />
+    {
+      scene.rings.map((ring) => (
+        <ellipse
+          class="anillo"
+          cx={scene.sun.cx}
+          cy={scene.sun.cy}
+          rx={ring.rx}
+          ry={ring.ry}
+          transform={`rotate(${ring.tilt} ${scene.sun.cx} ${scene.sun.cy})`}
+        />
+      ))
+    }
+    <circle class="sol" cx={scene.sun.cx} cy={scene.sun.cy} r={scene.sun.r} />
+    {
+      scene.layers.map((layer) => (
+        <path d={layer.d} style={`fill: color-mix(in srgb, var(--h) ${mix(layer.depth)}%, var(--fondo))`} />
+      ))
+    }
+    {scene.windows.map((spot) => <rect class="ventana" x={spot.x} y={spot.y} width="1.2" height="1.6" />)}
+  </svg>
+</div>
+
+<style>
+  .arte {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--h) 22%, var(--fondo)) 0%,
+      color-mix(in srgb, var(--h) 8%, var(--fondo)) 72%
+    );
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .estrella {
+    fill: var(--arena);
+    opacity: 0.55;
+  }
+  :global([data-modo='diurno']) .estrella {
+    fill: var(--h);
+    opacity: 0.35;
+  }
+  .halo {
+    fill: var(--h);
+    opacity: 0.18;
+  }
+  .sol {
+    fill: var(--h);
+    opacity: 0.9;
+  }
+  .anillo {
+    fill: none;
+    stroke: var(--h);
+    stroke-width: 0.7;
+    opacity: 0.6;
+  }
+  .ventana {
+    fill: var(--ambar);
+    opacity: 0.85;
+  }
+</style>

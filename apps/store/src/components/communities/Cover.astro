@@ -1,13 +1,15 @@
 ---
 /**
- * The picture at the head of a community or a ritual: a house illustration
- * when the file names one; otherwise a monogram over a dimmed illustration
- * chosen by the id (or, for a ritual, by its mode — in person / online /
- * mixed — so an encounter without a picture still reads as its own kind of
- * gathering, not a blank card). Never a third party's photo (rights, and
- * the budget): the fill images are the house's own, not final per-type art.
+ * The picture at the head of a community, a ritual or a world: its own
+ * picture when the data names one; otherwise the house's generated scene
+ * (CoverArt, drawn from the id, so nothing ever shows a blank or plain-gradient
+ * card) with the monogram over it. A gathering's scene is also told apart by
+ * its mode (in person / online / mixed). Never a third party's photo (rights,
+ * and the budget): the scene is inline and weighs nothing.
  */
 import { monogram, type RitualMode } from '../../lib/communities';
+import type { CoverFamily } from '../../lib/cover-art';
+import CoverArt from './CoverArt.astro';
 
 interface Props {
   id: string;
@@ -17,27 +19,15 @@ interface Props {
   variant?: 'card' | 'cover';
   /** The first picture above the fold loads eagerly; the rest wait. */
   eager?: boolean;
-  /** Without a picture: the dimmed illustration behind the monogram (page
-   *  covers and the featured card), or the plain gradient (the cards, so
-   *  the front door stays within its image budget). */
-  art?: boolean;
-  /** An encounter without a picture: pick the dimmed illustration by its
-   *  mode instead of the id's hash, so the fill matches the gathering. */
+  /** A gathering without a picture: its mode is part of the scene's seed. */
   ritualMode?: RitualMode | undefined;
+  /** A world draws a planet or a landscape; a community or gathering, a landscape. */
+  family?: CoverFamily;
 }
 
-const { id, name, image, variant = 'card', eager = false, art = false, ritualMode } = Astro.props;
+const { id, name, image, variant = 'card', eager = false, ritualMode, family = 'place' } = Astro.props;
 
-/** The house illustrations a community without a picture borrows, dimmed. */
-const ART = ['/images/art/genesis.webp', '/images/art/builder.webp', '/images/art/play.webp', '/images/art/city.webp', '/images/art/interpret.webp', '/images/art/citizens.webp'];
-/** Fill by event mode (mechanism only — the real per-mode art is Pablo's call). */
-const RITUAL_ART: Record<RitualMode, string> = {
-  'in-person': '/images/art/city.webp',
-  online: '/images/art/interpret.webp',
-  mixed: '/images/art/builder.webp',
-};
-const hash = [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-const fillSrc = ritualMode ? RITUAL_ART[ritualMode] : ART[hash % ART.length];
+const seed = ritualMode ? `${id}:${ritualMode}` : id;
 const loading = eager ? 'eager' : 'lazy';
 ---
 
@@ -47,7 +37,7 @@ const loading = eager ? 'eager' : 'lazy';
       <img src={image.src} alt={image.alt} loading={loading} decoding="async" />
     ) : (
       <div class="monogram" aria-hidden="true">
-        {art && <img src={fillSrc} alt="" loading={loading} decoding="async" />}
+        <CoverArt id={seed} family={family} />
         <b>{monogram(name)}</b>
       </div>
     )
@@ -89,18 +79,17 @@ const loading = eager ? 'eager' : 'lazy';
     background: radial-gradient(120% 100% at 30% 0%, var(--elevada), var(--fondo));
     overflow: hidden;
   }
-  .monogram img {
-    position: absolute;
-    inset: 0;
-    opacity: 0.18;
-    filter: saturate(0.5);
-  }
   .monogram b {
     position: relative;
     font-weight: 300;
     font-size: 2.4rem;
     letter-spacing: -0.04em;
-    color: color-mix(in srgb, var(--enlace) 70%, transparent);
+    color: var(--arena);
+    text-shadow: 0 1px 14px color-mix(in srgb, var(--fondo) 70%, transparent);
+  }
+  :global([data-modo='diurno']) .monogram b {
+    color: var(--texto);
+    text-shadow: none;
   }
   .cover.band .monogram b {
     font-size: 4rem;

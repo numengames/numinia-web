@@ -25,7 +25,7 @@ import { MUNDOS_UI } from '../../i18n/mundos';
 import { localeHref, signInHref } from '../../lib/app-nav';
 import { dayAndMonth, pick } from '../../lib/communities';
 import { runtimeEnv } from '../../lib/runtime-env';
-import { readableWorldName } from '../../lib/world-index';
+import { readableWorldName, withAis } from '../../lib/world-index';
 import { hostOf, machineSheet, worldEncounters, worldLead } from '../../lib/world-page';
 import { fleetMachines } from '../../pages/api/mundos/_fleet';
 import { COMMUNITIES, RITUALS } from '../communities/register';
@@ -78,7 +78,7 @@ try {
 const sheet = machineSheet(machines.get(worldId) ?? null);
 const signIn = signInHref(locale, `/mundos/${worldId}/`);
 const state = card?.state ? a.states[card.state] : null;
-const insideText =
+const peopleText =
   card === undefined || card.inside === null
     ? null
     : card.inside === 0
@@ -86,6 +86,10 @@ const insideText =
       : card.inside === 1
         ? a.insideOne
         : fill(a.insideMany, { n: card.inside });
+const insideText =
+  card === undefined || peopleText === null
+    ? null
+    : withAis(peopleText, card.ais, { one: a.aiOne, many: a.aiMany });
 const whose = card ? (card.city ? own.leadKept : own.leadHome).split('{x}') : null;
 const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ?? Astro.url).href;
 ---
@@ -103,7 +107,7 @@ const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ??
         <img class="mh-fondo" src={card.cover} alt="" loading="eager" decoding="async" />
       ) : (
         <div class="mh-fondo mh-casa">
-          <Cover id={worldId} name={name} variant="cover" eager art />
+          <Cover id={worldId} name={name} variant="cover" eager family="world" />
         </div>
       )
     }
@@ -126,7 +130,7 @@ const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ??
     {
       card?.state === 'on' && insideText !== null && (
         <span class="mh-abajo">
-          <span class="pastilla" data-world-inside={card.inside}>
+          <span class="pastilla" data-world-inside={card.inside} data-world-ais={card.ais}>
             {(card.inside ?? 0) > 0 && <span class="punto" />}
             {insideText}
           </span>

@@ -35,6 +35,7 @@ import HouseSphere from './HouseSphere.astro';
 import PeopleList from './PeopleList.astro';
 import RitualCard from './RitualCard.astro';
 import { COMMUNITY_TERMS_PAGE_UI } from '../../i18n/community-terms-page';
+import { BAZAAR_VISIBLE } from '../../lib/app-nav';
 import '../../styles/communities.css';
 
 interface Props {
@@ -325,13 +326,17 @@ const seals = [
           {tui.card.link} <span aria-hidden="true">→</span>
         </a>
       </div>
-      <div class="tarjeta">
-        <h2 class="card-h2"><Icon name="package" size={20} />{hui.bazaarTitle}</h2>
-        <p class="texto-2" style="margin: 0 0 var(--s3)">{hui.bazaarText}</p>
-        <a class="ir" href={`${prefix}/bazaar/`} data-metric="house-bazaar">
-          {hui.bazaarLink} <span aria-hidden="true">→</span>
-        </a>
-      </div>
+      {
+        BAZAAR_VISIBLE && (
+          <div class="tarjeta">
+            <h2 class="card-h2"><Icon name="package" size={20} />{hui.bazaarTitle}</h2>
+            <p class="texto-2" style="margin: 0 0 var(--s3)">{hui.bazaarText}</p>
+            <a class="ir" href={`${prefix}/bazaar/`} data-metric="house-bazaar">
+              {hui.bazaarLink} <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        )
+      }
     </div>
   </section>
 

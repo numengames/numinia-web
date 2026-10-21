@@ -26,7 +26,7 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.161.0',
+    version: 'v0.162.0',
     date: '2026-10-21 20:13',
     entries: [
       {
@@ -36,6 +36,30 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       {
         type: 'NEW',
         text: 'In the panel’s Agentes, each AI’s card has a new «En el mundo» section: “Dónde vive” lets whoever manages the AI choose one world, several, or all of the community’s; “Cuerpo y burbuja” sets its body (the house robot), the shape of its bubble (sphere, dome, cylinder or box), its radius from 2 to 12 m, when the bubble is drawn, and whether it stays in the world for 1, 4 or 24 hours when nobody uses it. “Cómo se la llama” sets how people call it (its name, /name, the «Hablar con ella» button, an optional key phrase, only from inside its bubble), and «Oír» is now a ladder of three — only whoever calls it, also what is said inside its bubble, or everything nearby — instead of an on/off switch. These settings reach the worlds once their engine is updated.',
+      },
+    ],
+  },
+  {
+    version: 'v0.161.0',
+    date: '2026-10-21 17:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'No community, gathering or world is left without a picture: when its data brings none, the house draws one from its name — a sky with a sun or a planet, stars and a landscape of peaks, towers, dunes or waves, in the house colours and in day or night. The same name always gets the same picture. It replaces the plain gradient on the cards and the grey grid on a world still to open.',
+      },
+      {
+        type: 'UPD',
+        text: 'The Bazar is hidden for now: no button in the side bar or on the phone, no «New in the Bazar» block on the front page, no card on the house’s page and no fourth step in «How it works». Its pages and the old links still open; one switch brings it all back.',
+      },
+    ],
+  },
+  {
+    version: 'v0.160.0',
+    date: '2026-10-21 17:50',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'The Worlds room now counts the AIs inside a world next to the people: “3 inside now · 1 AI”, on the world’s card and on its own page, in all five languages. The people’s count is unchanged (an AI is not counted as a person), nothing is added while no AI is inside, and a world on an older engine that does not count its AIs shows nothing extra. The same numbers are in /api/live as “ais”.',
       },
     ],
   },

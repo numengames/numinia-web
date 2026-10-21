@@ -554,7 +554,8 @@ Then('every page bar carries the scarab, the search, the mode and the door', asy
 });
 
 Then('every page city rail, your rail and phone bar carry their places', async function () {
-  const city = ['now', 'communities', 'encounters', 'worlds', 'bazaar'];
+  // The Bazar is hidden (BAZAAR_VISIBLE in lib/app-nav.ts): four places, and no door to it.
+  const city = ['now', 'communities', 'encounters', 'worlds'];
   const yours = ['notices', 'your-communities', 'balance', 'loot'];
   for (const page of SHELL_PAGES) {
     const html = await readFile(path.join(this.distDir, page), 'utf8');
@@ -570,6 +571,14 @@ Then('every page city rail, your rail and phone bar carry their places', async f
         `${page}: city rail lacks ${place}`,
       );
     }
+    assert.ok(
+      !left[0].includes('data-metric="nav-bazaar"'),
+      `${page}: the hidden Bazar is in the rail`,
+    );
+    assert.ok(
+      !html.includes('data-metric="phone-bazaar"'),
+      `${page}: the hidden Bazar is in the phone header`,
+    );
     for (const place of yours) {
       assert.ok(
         right[0].includes(`data-metric="you-${place}"`),
@@ -730,7 +739,11 @@ Then('the home carries no explanation heading and opens on the featured card', a
     assert.ok(slides >= 1 && slides <= 3, `${where}: ${slides} featured slides`);
     const featured = html.indexOf('data-featured-slide');
     assert.ok(featured < html.indexOf('id="rituals"'), `${where}: the featured card is not first`);
-    assert.ok(html.indexOf('id="rituals"') < html.indexOf('id="bazaar"'), `${where}: block order`);
+    assert.ok(!html.includes('id="bazaar"'), `${where}: the hidden Bazar's block is on the home`);
+    assert.ok(
+      html.indexOf('id="rituals"') < html.indexOf('class="final"'),
+      `${where}: block order`,
+    );
     assert.ok(
       html.includes(`href="${prefix ? `/${prefix}` : ''}/how-it-works/"`),
       `${where}: no door`,
@@ -739,7 +752,7 @@ Then('the home carries no explanation heading and opens on the featured card', a
 });
 
 Then(
-  'the home is «Ahora» in every locale: one face, the featured frame first, then encounters, communities and the newest goods',
+  'the home is «Ahora» in every locale: one face, the featured frame first, then encounters and communities, with the Bazar hidden',
   async function () {
     for (const prefix of LOCALE_PREFIXES) {
       const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
@@ -750,13 +763,9 @@ Then(
       const main = html.slice(html.indexOf('<main'));
       assert.equal((main.match(/<h1\b/g) ?? []).length, 1, `${where}: one h1`);
       // Top to bottom: the frame, the encounters, the communities, the newest goods, the doors.
-      const order = [
-        'id="destacado"',
-        'id="rituals"',
-        'id="alive"',
-        'id="bazaar"',
-        'class="final"',
-      ].map((marker) => [marker, html.indexOf(marker)]);
+      const order = ['id="destacado"', 'id="rituals"', 'id="alive"', 'class="final"'].map(
+        (marker) => [marker, html.indexOf(marker)],
+      );
       for (const [marker, at] of order) assert.ok(at !== -1, `${where}: no ${marker}`);
       for (let i = 1; i < order.length; i += 1) {
         assert.ok(
@@ -811,29 +820,13 @@ Then('the questions of the old visitor face are on how it works', async function
   }
 });
 
-Then('the home shows the Bazar block with real goods and their licence', async function () {
-  for (const [prefix, licence] of [
-    ['', 'CC0 · free, no permission needed'],
-    ['es', 'CC0 · libre, sin pedir permiso'],
-  ]) {
+Then('the home does not show the Bazar', async function () {
+  // Hidden for now (BAZAAR_VISIBLE in lib/app-nav.ts): no block, no goods, no door on the home.
+  for (const prefix of ['', 'es']) {
     const html = await readFile(path.join(this.distDir, prefix, 'index.html'), 'utf8');
-    const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('class="final"'));
-    const goods = [...block.matchAll(/href="([^"]+)"[^>]*data-metric="home-good"/g)].map(
-      (match) => match[1],
-    );
-    assert.equal(goods.length, 4, `${prefix || 'en'}: ${goods.length} goods on the home`);
-    for (const href of goods) {
-      const page = await readFile(path.join(this.distDir, href, 'index.html'), 'utf8').catch(
-        () => null,
-      );
-      assert.ok(page, `${prefix || 'en'}: ${href} is not an object page`);
+    for (const marker of ['id="bazaar"', 'data-metric="home-bazaar"', 'data-metric="home-good"']) {
+      assert.ok(!html.includes(marker), `${prefix || 'en'}: the home still has ${marker}`);
     }
-    const licences = block.split(licence).length - 1;
-    assert.equal(licences, 4, `${prefix || 'en'}: ${licences} licence lines for 4 goods`);
-    assert.ok(
-      block.includes('data-metric="home-bazaar"'),
-      `${prefix || 'en'}: no way to the Bazar`,
-    );
   }
 });
 
@@ -842,7 +835,7 @@ Then(
   async function (first, second, third) {
     const slugs = [first, second, third];
     const markers = {
-      'how-it-works': ['id="open"', 'mailto:hola@numengames.com', 'data-metric="how-step-bazaar"'],
+      'how-it-works': ['id="open"', 'mailto:hola@numengames.com'],
       live: ['id="now"', 'id="next"', 'data-countdown='],
       belong: ['data-belong-facts', '/lap/session/', 'data-metric="belong-explore"'],
     };
@@ -1076,7 +1069,7 @@ Then('the Oracle alone sees how to edit a community and its rituals', async func
 // --- the Oracle's video, 2026-10-14: the home's shelf, what a space uses, the word ---
 
 Then(
-  "the home's newest goods are four in one row, and the encounters ride a strip with arrows",
+  "the home's encounters ride a strip with arrows and the Bazar is not on the home",
   async function () {
     for (const prefix of LOCALE_PREFIXES) {
       const where = prefix || 'en';
@@ -1095,14 +1088,9 @@ Then(
           `${where}: rituales-pista lacks its ${step === '1' ? 'next' : 'previous'} arrow`,
         );
       }
-      // «Recién llegado al Bazar»: four goods, one row of a grid that fits four.
-      const block = html.slice(html.indexOf('id="bazaar"'), html.indexOf('class="final"'));
-      assert.ok(block.includes('rejilla-obj'), `${where}: the newest goods are not a row`);
-      assert.equal(
-        (block.match(/data-metric="home-good"/g) ?? []).length,
-        4,
-        `${where}: the row does not carry the four newest goods`,
-      );
+      // The Bazar is hidden: no block of new goods on the home.
+      assert.ok(!html.includes('id="bazaar"'), `${where}: the hidden Bazar's block is on the home`);
+      assert.ok(!html.includes('data-metric="home-good"'), `${where}: a good is on the home`);
     }
   },
 );

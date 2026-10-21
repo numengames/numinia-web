@@ -12,16 +12,16 @@ const HOMES = ['/', '/es/', '/ja/', '/ko/', '/pt-br/'];
 
 test.describe('Ahora, the front page', () => {
   for (const path of HOMES) {
-    test(`${path}: the frame, the encounters, the communities, the newest goods, the doors`, async ({
+    test(`${path}: the frame, the encounters, the communities, the doors (the Bazar is hidden)`, async ({
       page,
     }) => {
       await page.goto(path);
       await expect(page.locator('#destacado')).toBeVisible();
       await expect(page.locator('#destacado [data-featured-slide]:visible')).toHaveCount(1);
-      for (const id of ['#rituals', '#alive', '#bazaar']) {
+      for (const id of ['#rituals', '#alive']) {
         await expect(page.locator(id)).toBeVisible();
       }
-      await expect(page.locator('#bazaar [data-metric="home-good"]')).toHaveCount(4);
+      await expect(page.locator('#bazaar')).toHaveCount(0);
       await expect(page.locator('#alive .tarjeta')).toHaveCount(3);
       await expect(page.locator('section.final')).toBeVisible();
       await expect(page.locator('h1')).toHaveCount(1);

@@ -12,6 +12,7 @@ import {
   worldFilters,
   worldName,
   worldState,
+  withAis,
   type CommunityAccounts,
   type FleetEntry,
   type WorldOwner,
@@ -122,6 +123,7 @@ describe('worldCards', () => {
       name: 'Agora Plaza',
       state: 'on',
       inside: null,
+      ais: null,
       cover: null,
       url: 'https://agora.numen.games/',
       community: { id: 'numen-games', name: 'Numen Games' },
@@ -168,6 +170,40 @@ describe('worldCards', () => {
     expect(byId['tower']).toMatchObject({ name: 'Tower', cover: null, inside: 0 });
     // The ones that are on, with people first.
     expect(cards[0]?.id).toBe('agora-plaza');
+  });
+
+  it('takes the AIs a world counted, only beside a count of people', () => {
+    const cards = worldCards({
+      fleet: [
+        { id: 'a', phase: 'running', domain: 'a.numinia.com' },
+        { id: 'b', phase: 'running', domain: 'b.numinia.com' },
+        { id: 'c', phase: 'running', domain: 'c.numinia.com' },
+        { id: 'd', phase: 'running', domain: 'd.numinia.com' },
+      ],
+      owners: new Map([
+        ['a', owner('acc_t_reset')],
+        ['b', owner('acc_t_reset')],
+        ['c', owner('acc_t_reset')],
+        ['d', owner('acc_t_reset')],
+      ]),
+      communities: [HOUSE, RESET],
+      inside: { a: 3, b: 0, c: null },
+      // «c» did not answer for people: whatever it said of AIs is not shown; «d» was not asked.
+      ais: { a: 1, b: 2, c: 5, d: 4 },
+    });
+    const byId = Object.fromEntries(cards.map((card) => [card.id, card]));
+    expect(byId['a']).toMatchObject({ inside: 3, ais: 1 });
+    expect(byId['b']).toMatchObject({ inside: 0, ais: 2 });
+    expect(byId['c']).toMatchObject({ inside: null, ais: null });
+    expect(byId['d']).toMatchObject({ inside: null, ais: null });
+    // No AI map at all (an older engine, fixture): none.
+    const old = worldCards({
+      fleet: [{ id: 'a', phase: 'running', domain: 'a.numinia.com' }],
+      owners: new Map([['a', owner('acc_t_reset')]]),
+      communities: [HOUSE, RESET],
+      inside: { a: 3 },
+    });
+    expect(old[0]).toMatchObject({ inside: 3, ais: null });
   });
 
   it('puts every world that is on before the ones off, even with fewer people', () => {
@@ -238,5 +274,20 @@ describe('filters', () => {
       { id: 'communities', count: 1 },
     ]);
     expect(worldFilters([])).toEqual([{ id: 'all', count: 0 }]);
+  });
+});
+
+describe('withAis — «3 dentro · 1 IA»', () => {
+  const words = { one: '1 IA', many: '{n} IAs' };
+
+  it('adds the AIs after the people', () => {
+    expect(withAis('3 dentro ahora', 1, words)).toBe('3 dentro ahora · 1 IA');
+    expect(withAis('3 dentro ahora', 2, words)).toBe('3 dentro ahora · 2 IAs');
+    expect(withAis('Nadie dentro ahora', 1, words)).toBe('Nadie dentro ahora · 1 IA');
+  });
+
+  it('leaves the line as it was with none, or when the world did not say', () => {
+    expect(withAis('3 dentro ahora', 0, words)).toBe('3 dentro ahora');
+    expect(withAis('3 dentro ahora', null, words)).toBe('3 dentro ahora');
   });
 });
