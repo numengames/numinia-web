@@ -50,6 +50,11 @@ interface MeRecord {
   state: 'activa' | 'dormida';
   eligible: boolean;
   permissions: string[];
+  /** S19, absent from a store older than that: what it hears and where it lives. */
+  hear?: boolean;
+  oye?: string;
+  vive?: string;
+  presence?: unknown;
   worlds: { id: string; ws: string; name?: string; on?: boolean }[];
 }
 
@@ -283,8 +288,13 @@ describe('quien_soy', () => {
       canEnter: true,
       permissions: ['enter-worlds', 'build'],
       hear: false,
+      hearing: 'llamada',
+      lives: { in: 'todos', worlds: ['plaza', 'torre'], home: 'plaza' },
       note: expect.stringContaining('active') as unknown as string,
     });
+    expect(String(who.note)).toContain(
+      'You live in all your organization’s worlds that are on: «plaza», «torre». Your home is «plaza».',
+    );
     expect(storeCalls).toEqual([
       {
         url: `${STORE}/api/agents/me?org=${ORG}&agent=${AGENT}`,
@@ -326,6 +336,65 @@ describe('quien_soy', () => {
   });
 });
 
+describe('quien_soy: what it hears and where it lives (S19)', () => {
+  const lives = async (over: Partial<MeRecord>): Promise<Record<string, unknown>> => {
+    current.me = meRecord(over);
+    const { access } = await connect();
+    return structured(await tool(access, WHO_AM_I));
+  };
+
+  it('says it lives in the worlds chosen for it, its home, and what it hears', async () => {
+    const who = await lives({
+      vive: 'elegidos',
+      oye: 'burbuja',
+      hear: false,
+      presence: { cuerpo: { tipo: 'casa', modelo: 0 } },
+      worlds: [torre],
+    });
+    expect(who).toMatchObject({
+      hear: false,
+      hearing: 'burbuja',
+      lives: { in: 'elegidos', worlds: ['torre'], home: 'torre' },
+    });
+    expect(String(who.note)).toContain(
+      'the worlds chosen for you that are on: «torre». Your home is «torre».',
+    );
+    // The presence is the store's to tell, not this tool's: it is not echoed.
+    expect(JSON.stringify(who)).not.toContain('cuerpo');
+  });
+
+  it('keeps `hear` for the last rung only, as the store says it', async () => {
+    expect(await lives({ oye: 'todo', hear: true })).toMatchObject({ hear: true, hearing: 'todo' });
+  });
+
+  it('reads a store older than the ladder: hears all only if hear is true, lives in all that it lists', async () => {
+    expect(await lives({ hear: true })).toMatchObject({
+      hear: true,
+      hearing: 'todo',
+      lives: { in: 'todos', worlds: ['plaza', 'torre'] },
+    });
+    expect(await lives({})).toMatchObject({ hear: false, hearing: 'llamada' });
+  });
+
+  it('reads a rung or a place it does not know as the default, and still answers', async () => {
+    expect(await lives({ oye: 'susurro', vive: 'algunos', hear: true })).toMatchObject({
+      hearing: 'todo',
+      lives: { in: 'todos' },
+    });
+  });
+
+  it('has no home when none of its worlds is on, and says so; an AI that may not enter says only why', async () => {
+    const who = await lives({ vive: 'elegidos', worlds: [{ ...torre, on: false }] });
+    expect(who.lives).toEqual({ in: 'elegidos', worlds: [] });
+    expect(String(who.note)).toContain(
+      'You live in the worlds chosen for you, but none is on right now.',
+    );
+    const off = await lives({ enabled: false, worlds: [] });
+    expect(off.lives).toEqual({ in: 'todos', worlds: [] });
+    expect(String(off.note)).not.toContain('You live');
+  });
+});
+
 describe('mundos', () => {
   it('returns the worlds /me gives, on, with how to enter each, and never their address', async () => {
     current.me = meRecord({
@@ -335,6 +404,7 @@ describe('mundos', () => {
     const answer = await tool(access, WORLDS);
     expect(structured(answer)).toEqual({
       organization: ORG,
+      home: 'plaza',
       worlds: [
         {
           id: 'plaza',
@@ -345,9 +415,39 @@ describe('mundos', () => {
         { id: 'torre', on: true, enter: { tool: ENTER_TOOL, arguments: { mundo: 'torre' } } },
         { id: 'cripta', on: false, enter: { tool: ENTER_TOOL, arguments: { mundo: 'cripta' } } },
       ],
-      note: expect.stringContaining('«entrar»') as unknown as string,
+      note: expect.stringContaining(
+        'with no world it takes you home, «plaza»',
+      ) as unknown as string,
     });
     expect(answer.content[0]?.text).not.toContain('wss://');
+  });
+
+  it('lists only the worlds it lives in (what /me lists) and says where «entrar» takes it', async () => {
+    current.me = meRecord({ vive: 'elegidos', worlds: [torre] });
+    const { access } = await connect();
+    const listed = structured(await tool(access, WORLDS));
+    expect(listed).toMatchObject({ home: 'torre', worlds: [{ id: 'torre' }] });
+    expect(JSON.stringify(listed)).not.toContain('plaza');
+  });
+
+  it('has no home when every world it lists is off, and no home sentence', async () => {
+    current.me = meRecord({ worlds: [{ ...torre, on: false }] });
+    const { access } = await connect();
+    const listed = structured(await tool(access, WORLDS));
+    expect(listed).not.toHaveProperty('home');
+    expect(listed.note).toBe('To enter one, call «entrar» with {"mundo": "<id>"}.');
+  });
+
+  it('says it lives in worlds none of which is on, in the words of where it lives', async () => {
+    const { access } = await connect();
+    current.me = meRecord({ vive: 'elegidos', worlds: [] });
+    expect(structured(await tool(access, WORLDS)).note).toBe(
+      'None of the worlds you live in is on right now.',
+    );
+    current.me = meRecord({ worlds: [] });
+    expect(structured(await tool(access, WORLDS)).note).toBe(
+      'Your organization has no world on right now.',
+    );
   });
 
   it('returns none, with the reason, when the AI may not enter or nothing is on', async () => {

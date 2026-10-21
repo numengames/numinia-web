@@ -6,11 +6,17 @@
  * switch flipped in Panel › Agents shows on the next call.
  *
  * - `quien_soy`: who the AI is — its stable id, organization, name, whether
- *   it is switched on, its state (activa/dormida), what its roles let it do
- *   and whether it hears nearby chat (`hear`: its own setting in the
- *   panel; `oir` is offered only when it is on).
- * - `mundos`: the worlds of its organization that are on, and how to enter
- *   one (`entrar`, story W8); none, with the reason, when it may not enter.
+ *   it is switched on, its state (activa/dormida), what its roles let it do,
+ *   what it hears (`hearing`: only whoever calls it, also its bubble, or
+ *   everything nearby; `hear`: whether it is the last, its own setting in the
+ *   panel — `oir` is offered only when it is) and where it lives (`lives`:
+ *   all its organization's worlds or the ones chosen for it, and its home,
+ *   the first of them).
+ * - `mundos`: the worlds it lives in that are on, and how to enter one
+ *   (`entrar`, story W8); none, with the reason, when it may not enter. A
+ *   world of its organization where it does not live is not listed, and
+ *   `entrar` refuses it (S15): numinia.com's `/me` already lists only its
+ *   own, and a store older than that lists all, which is then where it lives.
  *
  * What can go wrong is a tool result with `isError: true` and a sentence an
  * AI can act on, never a protocol error: numinia.com down or busy, a relay
@@ -71,7 +77,7 @@ export const TOOLS = [
     name: WHO_AM_I,
     title: 'Who am I',
     description:
-      'Who you are in Numinia: your stable id, your organization, your name, whether you are switched on, your state (activa or dormida), what your roles let you do, and whether you can hear chat near you (`oir`). Call it first, and again if something you try is refused.',
+      'Who you are in Numinia: your stable id, your organization, your name, whether you are switched on, your state (activa or dormida), what your roles let you do, what you hear, and the worlds you live in. Call it first, and again if something you try is refused.',
     inputSchema: NO_INPUT,
     outputSchema: {
       type: 'object',
@@ -94,6 +100,36 @@ export const TOOLS = [
           description:
             'Whether you can hear chat near you: your setting in Panel › Agents. When true, `oir` is yours to use.',
         },
+        hearing: {
+          type: 'string',
+          enum: ['llamada', 'burbuja', 'todo'],
+          description:
+            'What reaches you: «llamada» only what people say to you (your name, /your-name, the talk button), «burbuja» also what is said inside your bubble, «todo» everything near you (`hear` is true).',
+        },
+        lives: {
+          type: 'object',
+          description:
+            'Where you live: the worlds you can see and enter. Others of your organization are not yours.',
+          properties: {
+            in: {
+              type: 'string',
+              enum: ['todos', 'elegidos'],
+              description:
+                '«todos»: all your organization’s worlds; «elegidos»: only the ones chosen for you.',
+            },
+            worlds: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'The ids of those that are on now.',
+            },
+            home: {
+              type: 'string',
+              description: 'Where «entrar» takes you with no world: the first of them.',
+            },
+          },
+          required: ['in', 'worlds'],
+          additionalProperties: false,
+        },
         note: { type: 'string' },
       },
       required: [
@@ -107,6 +143,8 @@ export const TOOLS = [
         'canEnter',
         'permissions',
         'hear',
+        'hearing',
+        'lives',
         'note',
       ],
       additionalProperties: false,
@@ -117,12 +155,16 @@ export const TOOLS = [
     name: WORLDS,
     title: 'Worlds',
     description:
-      'The worlds of your organization that are on now, with their ids, and how to enter one later with the tool «entrar». Empty, with the reason, when you may not enter any (switched off, no one answers for you, no permission).',
+      'The worlds you live in that are on now, with their ids, and how to enter one with the tool «entrar» (with none, it takes you home). Empty, with the reason, when you may not enter any (switched off, no one answers for you, no permission, none on).',
     inputSchema: NO_INPUT,
     outputSchema: {
       type: 'object',
       properties: {
         organization: { type: 'string' },
+        home: {
+          type: 'string',
+          description: 'Where «entrar» with no world takes you: the first of your worlds.',
+        },
         worlds: {
           type: 'array',
           items: {
@@ -215,8 +257,34 @@ export function standingOf(me: Me): Standing {
   return me.state;
 }
 
+/** The ids of the worlds the AI lives in that are on. */
+const worldsOn = (me: Me): string[] =>
+  me.worlds.filter((world) => world.on !== false).map((world) => world.id);
+
+/**
+ * Where «entrar» with no world takes the AI: the first of the worlds it
+ * lives in that are on (`/me` lists them by id), or none when there is not
+ * one. The relay's body (cuerpo.ts) and the tools say the same home.
+ */
+export const homeOf = (me: Me): string | undefined => worldsOn(me)[0];
+
+/** The sentence that says where the AI lives, for the notes. */
+function livesText(me: Me): string {
+  const home = homeOf(me);
+  const list = worldsOn(me)
+    .map((id) => `«${id}»`)
+    .join(', ');
+  const where =
+    me.vive === 'elegidos' ? 'the worlds chosen for you' : 'all your organization’s worlds';
+  return home === undefined
+    ? `You live in ${where}, but none is on right now.`
+    : `You live in ${where} that are on: ${list}. Your home is «${home}».`;
+}
+
 function whoAmI(me: Me): ToolResult {
   const standing = standingOf(me);
+  const canEnter = standing === 'activa' || standing === 'dormida';
+  const home = homeOf(me);
   return success({
     id: `${me.org}.${me.id}`,
     agent: me.id,
@@ -225,10 +293,12 @@ function whoAmI(me: Me): ToolResult {
     enabled: me.enabled,
     state: me.state,
     standing,
-    canEnter: standing === 'activa' || standing === 'dormida',
+    canEnter,
     permissions: me.permissions,
     hear: me.hear,
-    note: STANDING_TEXT[standing],
+    hearing: me.oye,
+    lives: { in: me.vive, worlds: worldsOn(me), ...(home === undefined ? {} : { home }) },
+    note: canEnter ? `${STANDING_TEXT[standing]} ${livesText(me)}` : STANDING_TEXT[standing],
   });
 }
 
@@ -242,7 +312,7 @@ function worlds(me: Me): ToolResult {
       note: STANDING_TEXT[standing],
     });
   }
-  // `/me` lists only the worlds the fleet serves: those are on.
+  // `/me` lists only the worlds the AI lives in that the fleet serves: those are on.
   const list = me.worlds.map((world) => ({
     id: world.id,
     ...(world.name === undefined ? {} : { name: world.name }),
@@ -254,13 +324,20 @@ function worlds(me: Me): ToolResult {
       organization: me.org,
       worlds: [],
       reason: 'sin-mundos',
-      note: 'Your organization has no world on right now.',
+      note:
+        me.vive === 'elegidos'
+          ? 'None of the worlds you live in is on right now.'
+          : 'Your organization has no world on right now.',
     });
   }
+  const home = homeOf(me);
   return success({
     organization: me.org,
+    ...(home === undefined ? {} : { home }),
     worlds: list,
-    note: `To enter one, call «${ENTER_TOOL}» with {"mundo": "<id>"}.`,
+    note: `To enter one, call «${ENTER_TOOL}» with {"mundo": "<id>"}${
+      home === undefined ? '' : `; with no world it takes you home, «${home}»`
+    }.`,
   });
 }
 

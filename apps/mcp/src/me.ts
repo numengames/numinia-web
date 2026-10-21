@@ -10,8 +10,9 @@
  *
  * The answer is read against W1's contract and sorted into what a caller
  * can act on:
- * - `ok`: the agent, as numinia.com describes it, and the worlds of its
- *   organization that the fleet serves;
+ * - `ok`: the agent, as numinia.com describes it, and the worlds it lives in
+ *   (those of its organization, or only the ones chosen for it) that the
+ *   fleet serves;
  * - `revoked`: `401` — the token is no longer this agent's (revoked,
  *   renewed, the agent deleted): the grant that carries it is dead;
  * - `busy`: `429` — this agent asked too often (60 a minute, with its
@@ -41,19 +42,33 @@ const worldShape = z.object({
   on: z.boolean().optional(),
 });
 
-/** W1's answer: `AgentMe` in apps/store/src/lib/agent-me.ts. */
-export const meShape = z.object({
-  org: z.string(),
-  id: z.string(),
-  name: z.string(),
-  enabled: z.boolean(),
-  state: z.enum(['activa', 'dormida']),
-  // Per AI, set from the panel; a store that has not shipped the switch yet says nothing: it hears nothing.
-  hear: z.boolean().default(false),
-  eligible: z.boolean(),
-  permissions: z.array(z.string()),
-  worlds: z.array(worldShape),
-});
+/** What an AI hears (D-083): only who calls it, also its bubble, or everything nearby. */
+const HEARING = ['llamada', 'burbuja', 'todo'] as const;
+
+/**
+ * W1's answer: `AgentMe` in apps/store/src/lib/agent-me.ts. `oye` and `vive`
+ * (S19) are read defensively: a store older than them says neither, and then
+ * the AI hears everything nearby only if `hear` is true and lives in all the
+ * worlds `worlds` lists; one that says something this relay does not know
+ * yet (a new rung) is read as that default, never refused. The presence the
+ * store also sends is not read here: the relay does not act on it.
+ */
+export const meShape = z
+  .object({
+    org: z.string(),
+    id: z.string(),
+    name: z.string(),
+    enabled: z.boolean(),
+    state: z.enum(['activa', 'dormida']),
+    // Per AI, set from the panel; a store that has not shipped the switch yet says nothing: it hears nothing.
+    hear: z.boolean().default(false),
+    oye: z.enum(HEARING).optional().catch(undefined),
+    vive: z.enum(['todos', 'elegidos']).default('todos').catch('todos'),
+    eligible: z.boolean(),
+    permissions: z.array(z.string()),
+    worlds: z.array(worldShape),
+  })
+  .transform((me) => ({ ...me, oye: me.oye ?? (me.hear ? 'todo' : 'llamada') }));
 export type Me = z.infer<typeof meShape>;
 
 /** What numinia.com said, sorted. */

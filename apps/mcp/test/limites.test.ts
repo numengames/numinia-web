@@ -272,7 +272,8 @@ describe("the way to numinia.com: its service binding, without the caller's addr
       { accountId: me.org, agentId: me.id, token: TOKEN },
       storeFetch(env),
     );
-    expect(answer).toEqual({ kind: 'ok', me });
+    // A store older than the ladder (S19) says neither `oye` nor `vive`: it hears nothing, lives everywhere.
+    expect(answer).toEqual({ kind: 'ok', me: { ...me, oye: 'llamada', vive: 'todos' } });
     expect(publicFetch).not.toHaveBeenCalled();
     expect(seen).toHaveLength(1);
     const [request] = seen;
