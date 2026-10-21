@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.161.0',
+    date: '2026-10-21 17:30',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'No community, gathering or world is left without a picture: when its data brings none, the house draws one from its name — a sky with a sun or a planet, stars and a landscape of peaks, towers, dunes or waves, in the house colours and in day or night. The same name always gets the same picture. It replaces the plain gradient on the cards and the grey grid on a world still to open.',
+      },
+      {
+        type: 'UPD',
+        text: 'The Bazar is hidden for now: no button in the side bar or on the phone, no «New in the Bazar» block on the front page, no card on the house’s page and no fourth step in «How it works». Its pages and the old links still open; one switch brings it all back.',
+      },
+    ],
+  },
+  {
     version: 'v0.160.0',
     date: '2026-10-21 17:50',
     entries: [

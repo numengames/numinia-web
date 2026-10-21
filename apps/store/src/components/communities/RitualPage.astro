@@ -31,6 +31,7 @@ import {
 } from '../../lib/communities';
 import Icon from '../chrome/Icon.astro';
 import Cover from './Cover.astro';
+import CoverArt from './CoverArt.astro';
 import Countdown from './Countdown.astro';
 import InsideCount from './InsideCount.astro';
 import RsvpAction from './RsvpAction.astro';
@@ -107,8 +108,7 @@ const sourceDate = ritual.source
         />
       ) : (
         <>
-          <div class="suelo" />
-          <div class="faro" />
+          <CoverArt id={`${community.id}:${ritual.id}`} family="world" />
         </>
       )
     }

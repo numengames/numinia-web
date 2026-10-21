@@ -107,7 +107,7 @@ const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ??
         <img class="mh-fondo" src={card.cover} alt="" loading="eager" decoding="async" />
       ) : (
         <div class="mh-fondo mh-casa">
-          <Cover id={worldId} name={name} variant="cover" eager art />
+          <Cover id={worldId} name={name} variant="cover" eager family="world" />
         </div>
       )
     }

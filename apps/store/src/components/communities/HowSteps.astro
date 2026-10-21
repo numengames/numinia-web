@@ -9,6 +9,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import { HOW_IT_WORKS } from '../../i18n/how-it-works';
 import { fill } from '../../i18n/communities';
 import { COMMUNITIES } from './register';
+import { BAZAAR_VISIBLE } from '../../lib/app-nav';
 import Icon from '../chrome/Icon.astro';
 
 interface Props {
@@ -34,7 +35,7 @@ const STEPS = [
   {
     t.steps.map((step, index) => {
       const door = STEPS[index] ?? STEPS[0];
-      return (
+      return !BAZAAR_VISIBLE && door.id === 'bazaar' ? null : (
         <li>
           <span class="n">
             <Icon name={door.icon} size={18} />

@@ -20,14 +20,14 @@ Feature: Communities (phase 0 of the communities platform)
     Given the store application has been built
     Then the home lists the upcoming rituals and the city feed is a calendar
 
-  Scenario: The home acts instead of explaining, and shows the Bazar
+  Scenario: The home acts instead of explaining, and does not show the Bazar
     Given the store application has been built
     Then the home carries no explanation heading and opens on the featured card
-    And the home shows the Bazar block with real goods and their licence
+    And the home does not show the Bazar
 
   Scenario: The home is «Ahora», the same for everyone, and its questions live in how it works
     Given the store application has been built
-    Then the home is «Ahora» in every locale: one face, the featured frame first, then encounters, communities and the newest goods
+    Then the home is «Ahora» in every locale: one face, the featured frame first, then encounters and communities, with the Bazar hidden
     And the questions of the old visitor face are on how it works
 
   Scenario: The app shell pages exist in every locale
@@ -57,9 +57,9 @@ Feature: Communities (phase 0 of the communities platform)
     Given the store application has been built
     Then the Oracle alone sees how to edit a community and its rituals
 
-  Scenario: The home's newest goods are four in one row, under the encounters' strip
+  Scenario: The home's encounters ride a strip, and the Bazar is not on the home
     Given the store application has been built
-    Then the home's newest goods are four in one row, and the encounters ride a strip with arrows
+    Then the home's encounters ride a strip with arrows and the Bazar is not on the home
 
   Scenario: A community's page shows what its space uses, each piece with its honest state
     Given the store application has been built
