@@ -47,6 +47,7 @@ import {
   CONSENT_API,
   consentChoices,
   consentHref,
+  defaultWhere,
   hostLabels,
   readConsentAsk,
   type ConsentOrg,
@@ -104,6 +105,8 @@ const words = JSON.stringify({
   allowing: t.allowing,
   yes: t.yes,
   no: t.no,
+  whereAll: t.whereAll,
+  whereKept: t.whereKept,
   refusals: t.refusals,
 });
 ---
@@ -323,6 +326,43 @@ const words = JSON.stringify({
                         ))}
                       </fieldset>
 
+                      {org.mayCreate && (
+                        <fieldset class="campo" data-consent-where>
+                          <legend>{t.where}</legend>
+                          {org.worlds.length === 0 ? (
+                            <p class="ayuda" data-consent-where-none>
+                              {t.whereNone}
+                            </p>
+                          ) : (
+                            <div class="eleccion mundos">
+                              {org.worlds.map((world) => (
+                                <label class="opcion">
+                                  <input
+                                    type="radio"
+                                    name={`where-${i}`}
+                                    value={world}
+                                    checked={defaultWhere(org.worlds) === world}
+                                    data-metric="connect-ai-where-one"
+                                  />
+                                  <span class="mono">{world}</span>
+                                </label>
+                              ))}
+                              <label class="opcion">
+                                <input
+                                  type="radio"
+                                  name={`where-${i}`}
+                                  value="todos"
+                                  checked={defaultWhere(org.worlds) === 'todos'}
+                                  data-metric="connect-ai-where-all"
+                                />
+                                <span>{t.whereAll}</span>
+                              </label>
+                              <span class="ayuda">{t.whereHint}</span>
+                            </div>
+                          )}
+                        </fieldset>
+                      )}
+
                       <div class="campo">
                         <p class="etiqueta-campo" id={`ci-role-label-${i}`}>
                           {t.role}
@@ -450,6 +490,10 @@ const words = JSON.stringify({
                   <dd data-consent-sum="community" />
                 </div>
                 <div>
+                  <dt>{t.sumWhere}</dt>
+                  <dd data-consent-sum="where" />
+                </div>
+                <div>
                   <dt>{t.sumRole}</dt>
                   <dd data-consent-sum="role" />
                 </div>
@@ -503,7 +547,10 @@ const words = JSON.stringify({
 <script>
   import type { ConectarIaMessages } from '../../i18n/conectar-ia';
 
-  type Words = Pick<ConectarIaMessages, 'allow' | 'allowing' | 'yes' | 'no' | 'refusals'>;
+  type Words = Pick<
+    ConectarIaMessages,
+    'allow' | 'allowing' | 'yes' | 'no' | 'whereAll' | 'whereKept' | 'refusals'
+  >;
 
   /** How long «Listo» stays before the browser goes back to the AI by itself. */
   const BACK_AFTER_MS = 1800;
@@ -562,6 +609,9 @@ const words = JSON.stringify({
       const choice = value(`ai-${index(shown)}`);
       const name = shown.querySelector<HTMLElement>('[data-consent-name]');
       if (name) name.hidden = choice !== 'new';
+      // Where it lives is asked of a new AI only: a reconnection keeps where it already lived.
+      const where = shown.querySelector<HTMLElement>('[data-consent-where]');
+      if (where) where.hidden = choice !== 'new';
       for (const select of shown.querySelectorAll<HTMLSelectElement>('[data-consent-role]')) {
         select.hidden = select.dataset['consentRole'] !== choice;
       }
@@ -594,7 +644,7 @@ const words = JSON.stringify({
       words.refusals[(key ?? 'failed') as keyof Words['refusals']] ?? words.refusals.failed;
 
     // «Listo»: what was chosen, read from the form as the person left it.
-    const summarize = (name: string, hear: boolean): void => {
+    const summarize = (name: string, hear: boolean, where: string): void => {
       const put = (key: string, text: string): void => {
         const cell = card.querySelector<HTMLElement>(`[data-consent-sum="${key}"]`);
         if (cell) cell.textContent = text;
@@ -607,6 +657,7 @@ const words = JSON.stringify({
           : (community?.textContent?.trim() ?? ''),
       );
       const role = current()?.querySelector<HTMLSelectElement>('[data-consent-role]:not([hidden])');
+      put('where', where);
       put('role', role?.selectedOptions[0]?.text ?? '');
       put('hear', hear ? words.yes : words.no);
       const who = card.querySelector<HTMLElement>('[data-consent-done-name]');
@@ -621,6 +672,11 @@ const words = JSON.stringify({
       const choice = value(`ai-${i}`);
       const role = value(`role-${i}-${choice}`);
       const hear = (form.elements.namedItem('hear') as HTMLInputElement | null)?.checked === true;
+      // Where a new AI lives, when the page offered the choice; otherwise the till decides.
+      const picked =
+        choice === 'new'
+          ? shown.querySelector<HTMLInputElement>(`input[name="where-${i}"]:checked`)
+          : null;
       const sent = {
         req: value('req'),
         app: value('app'),
@@ -634,6 +690,9 @@ const words = JSON.stringify({
         hear,
         // Only a community the page labelled «como la casa» is connected as the house.
         house: shown.dataset['consentHouse'] === 'true',
+        ...(picked
+          ? { worlds: picked.value === 'todos' ? { todos: true } : { mundos: [picked.value] } }
+          : {}),
       };
       say(null);
       if (allow) {
@@ -654,7 +713,13 @@ const words = JSON.stringify({
             next?: string | null;
           } | null;
           if (response.ok && answer?.ok === true && answer.connection) {
-            summarize(answer.connection.name, hear);
+            const where =
+              choice !== 'new'
+                ? words.whereKept
+                : picked && picked.value !== 'todos'
+                  ? picked.value
+                  : words.whereAll;
+            summarize(answer.connection.name, hear, where);
             if (ask) ask.hidden = true;
             showSteps(true);
             end(done);
@@ -1044,6 +1109,9 @@ const words = JSON.stringify({
   }
   .nombre {
     margin-left: calc(18px + var(--s3));
+  }
+  .mundos {
+    gap: var(--s3);
   }
   .opcion {
     display: flex;

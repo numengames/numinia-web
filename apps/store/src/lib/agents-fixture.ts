@@ -317,6 +317,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
 
     createAgent: async (wallet, accountId, sent, house): Promise<DeskAgentsAnswer> => {
       const draft = sent as Partial<DeskKeyDraft & DeskTokenDraft> | null;
+      const readWorlds = draft?.worlds === undefined ? undefined : parseAgentWorlds(draft.worlds);
       const viaToken = draft?.auth === 'token';
       const entry = host.enter(wallet, accountId, house);
       if ('ok' in entry) return entry;
@@ -343,6 +344,9 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         ...(draft?.hears === undefined || typeof draft.hears === 'boolean'
           ? []
           : [AGENT_PROBLEMS.hears]),
+        ...(readWorlds === undefined || readWorlds.ok
+          ? []
+          : readWorlds.problems.map((line) => `worlds: ${line}`)),
       ];
       if (problems.length > 0) return refuse(...problems);
       const { id, publicKey, tokenHash, tokenPrefix } = draft as DeskKeyDraft & DeskTokenDraft;
@@ -371,6 +375,20 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         if (!allowed.ok) return host.refusalOf(allowed.refusal, 'manage-roles', entry.state);
         if (!mayGive(entry, fresh, role)) return refuse(AGENT_PROBLEMS.houseCeiling);
       }
+      // Where it lives: what the draft says; else the one world of a community that has just one
+      // (design §5); else every world. Each chosen world must be placed in the community.
+      const placed = host.placedIn(entry.accountId);
+      const lives: AgentWorlds =
+        readWorlds?.ok === true
+          ? 'todos' in readWorlds.value
+            ? readWorlds.value
+            : { mundos: [...readWorlds.value.mundos].sort() }
+          : placed.length === 1
+            ? { mundos: [...placed] }
+            : { todos: true };
+      if ('mundos' in lives && lives.mundos.some((worldId) => !placed.includes(worldId))) {
+        return refuse(PRESENCE_PROBLEMS.worldsNotHere);
+      }
       const at = stamp();
       byOrg.set(entry.accountId, [
         ...held,
@@ -389,7 +407,7 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
             ...DEFAULT_AGENT_PRESENCE,
             oye: hearingOf(draft?.hears === true, DEFAULT_AGENT_PRESENCE.oye),
           },
-          worlds: { todos: true },
+          worlds: lives,
           createdAt: at,
           updatedAt: at,
           roleIds: unique,

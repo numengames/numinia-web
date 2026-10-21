@@ -11,6 +11,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
+import type { AgentStatus } from '../lib/accounts';
 import { ORG_CHOICE_WORDS, type OrgChoiceMessages } from './org-choices';
 
 /** A count in its two forms (languages without plurals repeat one). */
@@ -179,6 +180,18 @@ export interface WorldPageMessages {
     readonly more: string;
     readonly none: string;
   };
+  /** «IAs que viven aquí» (S24): the community's AIs that live in this world, for its people. */
+  readonly here: {
+    readonly title: string;
+    readonly note: string;
+    readonly loading: string;
+    readonly failed: string;
+    readonly none: string;
+    readonly listLabel: string;
+    readonly add: string;
+    /** What each AI's status reads as on the list. */
+    readonly status: Readonly<Record<AgentStatus, string>>;
+  };
   readonly back: string;
   /** «Entrar», the page's primary button, and what it says while it works. */
   readonly enter: string;
@@ -314,6 +327,22 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         people: 'Gente que puede entrar',
         more: '… y {n} más',
         none: 'Nadie, de momento.',
+      },
+      here: {
+        title: 'IAs que viven aquí',
+        note: 'Las IAs de la comunidad que tienen este mundo como casa. Las ves porque eres de la comunidad.',
+        loading: 'Leyendo las IAs…',
+        failed: 'No he podido leer las IAs de la comunidad.',
+        none: 'Ninguna IA vive aquí todavía.',
+        listLabel: 'IAs que viven en este mundo',
+        add: 'Añadir una IA',
+        status: {
+          activa: 'Activa',
+          dormida: 'Dormida',
+          apagada: 'Apagada',
+          'sin-responsable': 'Sin responsable',
+          'sin-permiso': 'Sin permiso',
+        },
       },
       back: 'Volver al inicio',
       enter: 'Entrar',
@@ -483,6 +512,22 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         people: 'People who may enter',
         more: '… and {n} more',
         none: 'Nobody yet.',
+      },
+      here: {
+        title: 'AIs that live here',
+        note: 'The community’s AIs that call this world home. You see them because you belong to the community.',
+        loading: 'Reading the AIs…',
+        failed: 'I could not read the community’s AIs.',
+        none: 'No AI lives here yet.',
+        listLabel: 'AIs that live in this world',
+        add: 'Add an AI',
+        status: {
+          activa: 'Active',
+          dormida: 'Asleep',
+          apagada: 'Off',
+          'sin-responsable': 'No one answers',
+          'sin-permiso': 'No permission',
+        },
       },
       back: 'Back to the start',
       enter: 'Enter',
@@ -657,6 +702,22 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         more: '…ほか{n}人',
         none: 'まだ誰もいません。',
       },
+      here: {
+        title: 'ここに住むAI',
+        note: 'このワールドを家にしているコミュニティのAIです。コミュニティの一員なので見えています。',
+        loading: 'AIを読み込み中…',
+        failed: 'コミュニティのAIを読み込めませんでした。',
+        none: 'ここに住むAIはまだいません。',
+        listLabel: 'このワールドに住むAI',
+        add: 'AIを追加',
+        status: {
+          activa: 'アクティブ',
+          dormida: 'おやすみ',
+          apagada: 'オフ',
+          'sin-responsable': '責任者なし',
+          'sin-permiso': '権限なし',
+        },
+      },
       back: 'トップへ戻る',
       enter: '入る',
       entering: '入っています…',
@@ -824,6 +885,22 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         more: '… 외 {n}명',
         none: '아직 아무도 없습니다.',
       },
+      here: {
+        title: '여기 사는 AI',
+        note: '이 월드를 집으로 삼은 커뮤니티의 AI입니다. 커뮤니티 구성원이라서 보입니다.',
+        loading: 'AI를 읽는 중…',
+        failed: '커뮤니티의 AI를 읽지 못했습니다.',
+        none: '아직 여기 사는 AI가 없습니다.',
+        listLabel: '이 월드에 사는 AI',
+        add: 'AI 추가',
+        status: {
+          activa: '활성',
+          dormida: '잠듦',
+          apagada: '꺼짐',
+          'sin-responsable': '책임자 없음',
+          'sin-permiso': '권한 없음',
+        },
+      },
       back: '처음으로',
       enter: '입장',
       entering: '입장하는 중…',
@@ -989,6 +1066,22 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         people: 'Gente que pode entrar',
         more: '… e mais {n}',
         none: 'Ninguém, por enquanto.',
+      },
+      here: {
+        title: 'IAs que vivem aqui',
+        note: 'As IAs da comunidade que têm este mundo como casa. Você as vê porque faz parte da comunidade.',
+        loading: 'Lendo as IAs…',
+        failed: 'Não consegui ler as IAs da comunidade.',
+        none: 'Nenhuma IA vive aqui ainda.',
+        listLabel: 'IAs que vivem neste mundo',
+        add: 'Adicionar uma IA',
+        status: {
+          activa: 'Ativa',
+          dormida: 'Dormindo',
+          apagada: 'Desligada',
+          'sin-responsable': 'Sem responsável',
+          'sin-permiso': 'Sem permissão',
+        },
       },
       back: 'Voltar ao início',
       enter: 'Entrar',

@@ -75,6 +75,14 @@ export interface ConectarIaMessages {
   readonly roleNone: string;
   /** Reconnecting: keep the roles it has. */
   readonly roleKeep: string;
+  /** «¿En qué mundo vive?» (a new AI): the question, the all-worlds choice, a hint, and the hint when the community has no world yet. */
+  readonly where: string;
+  readonly whereAll: string;
+  readonly whereHint: string;
+  readonly whereNone: string;
+  /** On «Listo»: the row's name, and what a reconnection says (it keeps where it lived). */
+  readonly sumWhere: string;
+  readonly whereKept: string;
   /** What it may and may not do: two short lists. */
   readonly canTitle: string;
   readonly canItems: readonly string[];
@@ -133,6 +141,12 @@ const ES: ConectarIaMessages = {
   roleHelp: 'El rol es lo que la IA puede hacer en la comunidad. Solo ves los que tú puedes dar.',
   roleNone: 'Ninguno: solo mira y habla',
   roleKeep: 'Los que ya tiene',
+  where: '¿En qué mundo vive?',
+  whereAll: 'En todos los de la comunidad',
+  whereHint: 'Su cuerpo aparecerá en ese mundo. Lo puedes cambiar después en Agentes.',
+  whereNone: 'Tu comunidad aún no tiene mundos: vivirá en los que lleguen.',
+  sumWhere: 'Dónde vive',
+  whereKept: 'Donde ya vivía',
   hearLabel: 'Que pueda oír lo que se habla cerca',
   hearHint:
     'Si lo enciendes, la IA lee el chat cercano en los mundos donde esté. Lo que lea llegará a la empresa de tu IA. Viene sin marcar y lo cambias cuando quieras en Panel › Agentes.',
@@ -227,6 +241,12 @@ const EN: ConectarIaMessages = {
   roleHelp: 'The role is what the AI can do in the community. You only see the ones you can give.',
   roleNone: 'None: it only looks and talks',
   roleKeep: 'The ones it already has',
+  where: 'Which world does it live in?',
+  whereAll: 'In all of the community’s worlds',
+  whereHint: 'Its body will appear in that world. You can change it later in Agents.',
+  whereNone: 'Your community has no worlds yet: it will live in the ones that arrive.',
+  sumWhere: 'Where it lives',
+  whereKept: 'Where it already lived',
   hearLabel: 'Let it hear what is said nearby',
   hearHint:
     'If you turn it on, the AI reads the nearby chat in the worlds it is in. What it reads reaches the company behind your AI. It starts off, and you can change it any time in Panel › Agents.',
@@ -318,6 +338,12 @@ const JA: ConectarIaMessages = {
   roleHelp: '役割は、AIがコミュニティでできることです。あなたが付けられる役割だけが表示されます。',
   roleNone: 'なし：見て話すだけ',
   roleKeep: '今の役割のまま',
+  where: 'どのワールドに住みますか？',
+  whereAll: 'コミュニティのすべてのワールド',
+  whereHint: 'そのワールドにボディが現れます。あとでエージェントの画面で変えられます。',
+  whereNone: 'コミュニティにはまだワールドがありません。できたワールドに住みます。',
+  sumWhere: '住む場所',
+  whereKept: 'これまでの場所のまま',
   hearLabel: '近くの会話を聞けるようにする',
   hearHint:
     'オンにすると、AIは自分がいるワールドで近くのチャットを読みます。読んだ内容はあなたのAIの会社に届きます。初期設定はオフで、パネル › エージェントでいつでも変えられます。',
@@ -406,6 +432,12 @@ const KO: ConectarIaMessages = {
   roleHelp: '역할은 AI가 커뮤니티에서 할 수 있는 일입니다. 내가 줄 수 있는 역할만 보입니다.',
   roleNone: '없음: 보고 말하기만',
   roleKeep: '지금 가진 역할 그대로',
+  where: '어느 월드에 사나요?',
+  whereAll: '커뮤니티의 모든 월드',
+  whereHint: '그 월드에 몸이 나타납니다. 나중에 에이전트 화면에서 바꿀 수 있습니다.',
+  whereNone: '커뮤니티에 아직 월드가 없습니다. 생기는 월드에서 살게 됩니다.',
+  sumWhere: '사는 곳',
+  whereKept: '원래 살던 곳 그대로',
   hearLabel: '근처 대화를 들을 수 있게 하기',
   hearHint:
     '켜면 AI가 있는 월드에서 근처 채팅을 읽습니다. 읽은 내용은 내 AI를 만든 회사에 전달됩니다. 기본은 꺼짐이며, 패널 › 에이전트에서 언제든 바꿀 수 있습니다.',
@@ -495,6 +527,12 @@ const PT_BR: ConectarIaMessages = {
   roleHelp: 'O papel é o que a IA pode fazer na comunidade. Você só vê os que pode dar.',
   roleNone: 'Nenhum: só olha e fala',
   roleKeep: 'Os que ela já tem',
+  where: 'Em qual mundo ela vive?',
+  whereAll: 'Em todos os da comunidade',
+  whereHint: 'O corpo dela vai aparecer nesse mundo. Você pode mudar depois em Agentes.',
+  whereNone: 'Sua comunidade ainda não tem mundos: ela viverá nos que chegarem.',
+  sumWhere: 'Onde vive',
+  whereKept: 'Onde já vivia',
   hearLabel: 'Que possa ouvir o que se fala por perto',
   hearHint:
     'Se você ligar, a IA lê o chat próximo nos mundos em que estiver. O que ela ler chega à empresa da sua IA. Vem desligado e você muda quando quiser em Painel › Agentes.',

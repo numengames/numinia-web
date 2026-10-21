@@ -76,7 +76,10 @@ const access = (roleIds: readonly string[], isOwner = false): ActorAccess =>
   });
 const houseAccess = (): ActorAccess => accessOf(state, { kind: 'house', personId: HOUSE });
 
-function stage(people: Record<string, ActorAccess | null> = {}): Stage {
+function stage(
+  people: Record<string, ActorAccess | null> = {},
+  placed: readonly string[] = ['torre', 'agora-plaza'],
+): Stage {
   const held: Record<string, ActorAccess | null> = {
     [OWNER]: access([], true),
     [MANAGER]: access([ADMIN]),
@@ -112,7 +115,7 @@ function stage(people: Record<string, ActorAccess | null> = {}): Stage {
       if (entry.as === 'house') reads.push(what);
     },
     published: (who) => names.get(who),
-    placedIn: (accountId) => (accountId === ORG ? ['torre', 'agora-plaza'] : []),
+    placedIn: (accountId) => (accountId === ORG ? placed : []),
     refusalOf: (refusal, act) => ({ ok: false, problems: [refusalSentence(refusal, act)] }),
   };
   const desk = createAgentsFixture(host, () => new Date(clock));
@@ -187,6 +190,40 @@ describe('creating', () => {
     const second = view(await plain.desk.createAgent(OWNER, ORG, BOT));
     expect(second.agents[0]).not.toHaveProperty('responsibleName');
     expect(plain.log[0]?.detail).toEqual({ name: 'Hermes', via: 'panel' });
+  });
+
+  it('lives where the draft says; unsaid, in the one world of a community that has just one, else in all', async () => {
+    const lives = async (s: Stage, extra: Record<string, unknown>, id = 'hermes-1') =>
+      view(await s.desk.createAgent(OWNER, ORG, { ...BOT, ...extra } as never)).agents.find(
+        (held) => held.id === id,
+      )?.worlds;
+    expect(await lives(stage(), {})).toEqual({ todos: true });
+    expect(await lives(stage({}, ['torre']), {})).toEqual({ mundos: ['torre'] });
+    expect(await lives(stage({}, []), {})).toEqual({ todos: true });
+    expect(await lives(stage(), { worlds: { todos: true } })).toEqual({ todos: true });
+    expect(await lives(stage(), { worlds: { mundos: ['torre', 'agora-plaza'] } })).toEqual({
+      mundos: ['agora-plaza', 'torre'],
+    });
+    expect(await lives(stage({}, ['torre']), { worlds: { todos: true } })).toEqual({
+      todos: true,
+    });
+  });
+
+  it('refuses a place to live that is out of shape or not in the community, making nothing', async () => {
+    const s = stage();
+    expect(
+      problems(await s.desk.createAgent(OWNER, ORG, { ...BOT, worlds: { mundos: [] } } as never))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      problems(await s.desk.createAgent(OWNER, ORG, { ...BOT, worlds: 'todos' } as never))[0],
+    ).toMatch(/^worlds: /);
+    expect(
+      problems(
+        await s.desk.createAgent(OWNER, ORG, { ...BOT, worlds: { mundos: ['ghost'] } } as never),
+      ),
+    ).toEqual([PRESENCE_PROBLEMS.worldsNotHere]);
+    expect(view(await s.desk.agents(OWNER, ORG)).agents).toEqual([]);
   });
 
   it('reads the draft as the till does, in its words', async () => {

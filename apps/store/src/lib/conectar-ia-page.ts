@@ -28,12 +28,14 @@
  *
  *     { req, app, host, accountId, ai: { kind: 'new', name } |
  *       { kind: 'again', agentId }, roleId: string | null, hear?: boolean,
- *       house?: boolean }
+ *       house?: boolean, worlds?: { todos: true } | { mundos: [world ids] } }
  *
  *   (`hear`, the consent's unchecked checkbox: whether the AI may hear nearby
  *   chat, off when absent; `house`, true only for a community the page listed
  *   «como la casa» — an Oracle's session that is no owner or manager there —
- *   and refused unless the session is the house's, D-078) and gets `200 { ok: true, connection: { req, action, accountId,
+ *   and refused unless the session is the house's, D-078; `worlds`, where a NEW AI
+ *   lives — every world of the community or the chosen ones, absent to leave it
+ *   to the till (S23) — and gets `200 { ok: true, connection: { req, action, accountId,
  *   agentId, name, via, hear }, next }`. The AI's token is NEVER in the
  *   answer: it goes to the relay through its service binding (`handOff`,
  *   lib/relay-handoff.ts), which seals it for the browser that started the
@@ -56,6 +58,7 @@
  */
 
 import { z } from 'zod';
+import { AGENT_WORLDS_MAX } from '@numinia/domain';
 import type { AccountDesk, Asker } from './accounts';
 import { answer, ask, bodyOf, whoIs, type Log } from './accounts-source';
 import { newToken, type FreshToken } from './agents';
@@ -114,6 +117,15 @@ function buildShapes() {
     roleId: z.string().min(1).max(64).nullable(),
     hear: z.boolean().default(false),
     house: z.boolean().default(false),
+    // Where a new AI lives: the till judges that each world is placed in the community.
+    worlds: z
+      .union([
+        z.object({ todos: z.literal(true) }).strict(),
+        z
+          .object({ mundos: z.array(z.string().min(1).max(64)).min(1).max(AGENT_WORLDS_MAX) })
+          .strict(),
+      ])
+      .optional(),
   });
   const directory = z.union([
     z.object({
@@ -128,6 +140,10 @@ function buildShapes() {
         z.object({ id: z.string(), kind: z.string(), name: z.string().nullable() }),
       ),
     }),
+    refusal,
+  ]);
+  const worlds = z.union([
+    z.object({ ok: z.literal(true), worlds: z.array(z.object({ worldId: z.string() })) }),
     refusal,
   ]);
   const agents = z.union([
@@ -150,7 +166,7 @@ function buildShapes() {
     }),
     refusal,
   ]);
-  return { query, body, overview, directory, agents };
+  return { query, body, overview, directory, agents, worlds };
 }
 
 const shapes = (): ReturnType<typeof buildShapes> => (built ??= buildShapes());
@@ -188,6 +204,13 @@ export function readConsentAsk(search: string): ConsentAsk | null {
   };
 }
 
+/**
+ * Which world a new AI is offered to live in at first: the community's only world when it
+ * has just one (it cannot appear anywhere else), else all of them — the till's own default.
+ */
+export const defaultWhere = (worlds: readonly string[]): string =>
+  worlds.length === 1 ? worlds.join('') : 'todos';
+
 /** The page's own address with its ask, for the sign-in door to come back to. */
 export const consentHref = (ask: ConsentAsk): string =>
   `${CONSENT_PATH}?${new URLSearchParams({ app: ask.app, host: ask.host, req: ask.req }).toString()}`;
@@ -217,6 +240,8 @@ export interface ConsentOrg {
   /** The roles a new AI may be given (the till's `assignableRoles`). */
   readonly roles: readonly ConsentRole[];
   readonly again: readonly ConsentAgain[];
+  /** The worlds placed in this community, by id (sorted): where a new AI may live. Empty when unknown. */
+  readonly worlds: readonly string[];
   /**
    * The house connects here (D-078): the person is no owner or manager of this
    * community but the session is the house's, and the community lets it in.
@@ -290,7 +315,24 @@ export async function consentChoices(
       ),
     }));
     if (!view.mayCreate && again.length === 0) return null;
-    return { accountId: id, name, mayCreate: view.mayCreate, roles, again, house, loaded: true };
+    // Where a new AI may live: a community whose worlds cannot be read offers no pick (the till decides).
+    const placed = view.mayCreate
+      ? await ask(log, 'consent-worlds', () => desk.worldsOf(you, house, id), shapes().worlds)
+      : null;
+    const worlds =
+      placed !== null && placed.ok && placed.value.ok
+        ? [...new Set(placed.value.worlds.map((world) => world.worldId))].sort()
+        : [];
+    return {
+      accountId: id,
+      name,
+      mayCreate: view.mayCreate,
+      roles,
+      again,
+      worlds,
+      house,
+      loaded: true,
+    };
   };
   const own = (
     await Promise.all(teams.map((team) => read(team.id, team.name ?? team.id, false)))
@@ -322,6 +364,7 @@ export async function consentChoices(
           mayCreate: false,
           roles: [],
           again: [],
+          worlds: [],
           house: true,
           loaded: false,
         };
@@ -421,6 +464,7 @@ export async function answerConsent(
       roleId: sent.roleId,
       hear: sent.hear,
       house: sent.house,
+      ...(sent.worlds === undefined ? {} : { worlds: sent.worlds }),
     },
     log,
     draw,

@@ -406,6 +406,70 @@ test.describe('the «IA» section of a world’s page', () => {
   });
 });
 
+test.describe('«IAs que viven aquí» on a world’s page', () => {
+  test('a member sees the AIs that live in this world, and the way to add one', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    // An AI of the community that lives only in the Agora, made as the connect page makes it.
+    const made = await page.request.post(`${origin}/api/conectar-ia`, {
+      data: {
+        req: 'req_e2e_0123456789',
+        app: 'Claude',
+        host: 'claude.ai',
+        accountId: NUMEN,
+        ai: { kind: 'new', name: 'Viajera' },
+        roleId: null,
+        worlds: { mundos: ['agora-plaza'] },
+      },
+      // Astro builds the request's URL on `localhost`, and the POST compares the Origin with it.
+      headers: { origin: origin.replace('127.0.0.1', 'localhost') },
+    });
+    expect(made.status()).toBe(200);
+
+    await page.goto(worldPage('agora-plaza'));
+    const here = page.locator('[data-world-ais-here]');
+    await expect(here).toHaveAttribute('data-state', 'ready');
+    await expect(here.getByRole('heading')).toHaveText('IAs que viven aquí');
+    const row = here.locator('li');
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText('Viajera');
+    // Its state, in the panel's own words (the fixture's AI has no role: «Sin permiso»).
+    await expect(row.locator('.saldo-chip')).toHaveText('Sin permiso');
+    const add = here.locator('a[data-metric="world-ais-add"]');
+    await expect(add).toHaveText('Añadir una IA');
+    await expect(add).toHaveAttribute('href', /\/panel\/agentes\//);
+    if (process.env.IA_SHOTS_DIR) {
+      for (const [name, width] of [
+        ['pc', 1440],
+        ['movil', 390],
+      ] as const) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.screenshot({
+          path: `${process.env.IA_SHOTS_DIR}/mundo-ias-${name}.png`,
+          fullPage: true,
+        });
+      }
+    }
+
+    // Another world of the same community: the AI does not live there.
+    await page.goto(worldPage('alchemists-tower'));
+    await expect(page.locator('[data-world-ais-here]')).toHaveAttribute('data-state', 'ready');
+    await expect(page.locator('[data-world-ais-none]')).toBeVisible();
+    await expect(page.locator('[data-world-here-ai]')).toHaveCount(0);
+  });
+
+  test('anyone else does not see the block at all', async ({ browser }) => {
+    const stranger = await browser.newContext();
+    const page = await stranger.newPage();
+    await page.goto(worldPage('agora-plaza'));
+    await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
+    await expect(page.locator('[data-world-ais-here]')).toHaveCount(0);
+    await stranger.close();
+  });
+});
+
 test.describe('each machine’s recipe, as the machine says', () => {
   test('the room reports it and hands out no fixed recipe: one last line only where it is needed', async ({
     page,

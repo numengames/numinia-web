@@ -19,6 +19,7 @@ import {
   answerConsent,
   consentChoices,
   consentHref,
+  defaultWhere,
   hostLabels,
   readConsentAsk,
 } from '../conectar-ia-page';
@@ -158,8 +159,16 @@ const ACCOUNTS = {
 function choicesDesk(
   agents: (wallet: string, accountId: string, house?: boolean) => Promise<unknown>,
   overview: () => Promise<unknown> = async () => ACCOUNTS,
+  worldsOf: () => Promise<unknown> = async () => ({
+    ok: true,
+    worlds: [
+      { worldId: 'torre', accountId: ORG },
+      { worldId: 'bosque', accountId: ORG },
+      { worldId: 'torre', accountId: ORG },
+    ],
+  }),
 ) {
-  const methods = { overview: vi.fn(overview), agents: vi.fn(agents) };
+  const methods = { overview: vi.fn(overview), agents: vi.fn(agents), worldsOf: vi.fn(worldsOf) };
   return { desk: methods as unknown as AccountDesk, methods };
 }
 
@@ -202,6 +211,7 @@ describe('the communities and roles on offer', () => {
               roles: [{ id: 'role_guide', name: 'Guide' }],
             },
           ],
+          worlds: ['bosque', 'torre'],
           house: false,
           loaded: true,
         },
@@ -212,11 +222,39 @@ describe('the communities and roles on offer', () => {
           mayCreate: true,
           roles: expect.any(Array),
           again: [],
+          worlds: ['bosque', 'torre'],
           house: false,
           loaded: true,
         },
       ],
     });
+    expect(methods.worldsOf).toHaveBeenCalledWith(ME, false, ORG);
+  });
+
+  it('offers the worlds placed in a community, and none when they cannot be read or nothing can be added', async () => {
+    const agents = async () => agentsView();
+    for (const worldsOf of [
+      async () => ({ ok: false, problems: ['not a member'] }),
+      async () => ({ worlds: 'nope' }),
+      async () => {
+        throw new Error('down');
+      },
+      async () => ({ ok: true, worlds: [] }),
+    ]) {
+      const { desk } = choicesDesk(agents, undefined, worldsOf);
+      const read = await consentChoices(desk, asker(), quiet);
+      expect(read.ok && read.orgs.map((org) => org.worlds)).toEqual([[], []]);
+    }
+    // Where nothing can be added (only reconnecting) the worlds are not even asked.
+    const onlyAgain = choicesDesk(async () => agentsView({ mayCreate: false }));
+    await consentChoices(onlyAgain.desk, asker(), quiet);
+    expect(onlyAgain.methods.worldsOf).not.toHaveBeenCalled();
+  });
+
+  it('proposes the community’s only world, else all of them', () => {
+    expect(defaultWhere(['torre'])).toBe('torre');
+    expect(defaultWhere(['bosque', 'torre'])).toBe('todos');
+    expect(defaultWhere([])).toBe('todos');
   });
 
   it('leaves out a team where nothing can be done, refused or failed', async () => {
@@ -529,6 +567,85 @@ describe('the POST: connecting', () => {
     expect(listed.ok && listed.agents.find((held) => held.id === 'claude-de-ana')?.hears).toBe(
       true,
     );
+  });
+
+  it('lets the person say where a new AI lives, and leaves it to the till when not said', async () => {
+    const desk = fixture();
+    const worldId = 'torre';
+    const placed = await desk.placeWorld(ME, true, [worldId], ORG);
+    if (!placed.ok) throw new Error('not placed');
+    let n = 0;
+    const next = async () => {
+      n += 1;
+      const letter = String.fromCharCode(96 + n);
+      return {
+        token: `ntk_${letter.repeat(43)}`,
+        hash: letter.repeat(64),
+        prefix: letter.repeat(8),
+      };
+    };
+    const livesOf = async (id: string) => {
+      const listed = await desk.agents(ME, ORG);
+      return listed.ok ? listed.agents.find((held) => held.id === id)?.worlds : undefined;
+    };
+    const all = await answerConsent(
+      desk,
+      asker(),
+      post(body({ worlds: { todos: true } })),
+      same,
+      relay,
+      quiet,
+      next,
+    );
+    expect(all.status).toBe(200);
+    expect(await livesOf('claude-de-ana')).toEqual({ todos: true });
+
+    const one = await answerConsent(
+      desk,
+      asker(),
+      post(body({ ai: { kind: 'new', name: 'Llave de Ana' }, worlds: { mundos: [worldId] } })),
+      same,
+      relay,
+      quiet,
+      next,
+    );
+    expect(await one.clone().json()).toMatchObject({ ok: true });
+    expect(one.status).toBe(200);
+    expect(await livesOf('llave-de-ana')).toEqual({ mundos: [worldId] });
+
+    // A world the community does not have is the till's refusal, shown as it is.
+    const elsewhere = await answerConsent(
+      desk,
+      asker(),
+      post(body({ ai: { kind: 'new', name: 'Otra IA' }, worlds: { mundos: ['no-such-world'] } })),
+      same,
+      relay,
+      quiet,
+      next,
+    );
+    expect(elsewhere.status).toBeGreaterThanOrEqual(400);
+    expect(await livesOf('otra-ia')).toBeUndefined();
+  });
+
+  it('refuses a worlds choice out of shape', async () => {
+    for (const worlds of [
+      {},
+      { mundos: [] },
+      { todos: false },
+      { todos: true, mundos: ['a'] },
+      'todos',
+    ]) {
+      const response = await answerConsent(
+        fixture(),
+        asker(),
+        post(body({ worlds })),
+        same,
+        relay,
+        quiet,
+        draw,
+      );
+      expect(response.status).toBe(400);
+    }
   });
 
   it('connects as the house only when the choice says house and the session is the house’s (D-078)', async () => {

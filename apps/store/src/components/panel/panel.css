@@ -2968,3 +2968,14 @@
 .agentes-campo[aria-invalid='true'] {
   border-color: var(--rojo, #b3261e);
 }
+
+/* «Cuando ya esté conectada»: the sentence that teaches an AI to listen for calls. */
+.agentes-guia-escucha {
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--linea);
+}
+.agentes-guia-escucha h3,
+.agentes-guia-escucha p {
+  margin: 0;
+}

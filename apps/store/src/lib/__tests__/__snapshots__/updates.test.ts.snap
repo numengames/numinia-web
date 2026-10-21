@@ -3,6 +3,24 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-22 08:30",
+    "entries": [
+      {
+        "text": "When someone connects an AI to a community (the «Conecta tu IA» page), it now asks «¿En qué mundo vive?»: in all of the community’s worlds or in just one of the worlds placed there — the only one when the community has just one. Reconnecting an AI keeps where it already lived.",
+        "type": "NEW",
+      },
+      {
+        "text": "On a world’s page, whoever belongs to the community now sees «IAs que viven aquí» — the community’s AIs that live in that world, with their name and state — and an «Añadir una IA» button that leads to the panel’s Agentes. Nobody else sees it.",
+        "type": "NEW",
+      },
+      {
+        "text": "A connected AI can now read a short guide on calls («guia», page «llamadas»): how people reach it, how to stay listening, how to answer and how not to spam. The relay mentions it in its introduction and when the AI enters a world, and the panel’s connect dialog has a sentence to copy, «Escucha las llamadas en Numinia», to tell the AI.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.164.0",
+  },
+  {
     "date": "2026-10-21 21:51",
     "entries": [
       {

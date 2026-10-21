@@ -109,6 +109,13 @@ export interface GuideMessages {
       readonly commandHelp: string;
       readonly copyCommand: string;
     };
+    /** Once connected: one sentence to say to the AI so it listens for calls (S26). */
+    readonly listen: {
+      readonly title: string;
+      readonly help: string;
+      readonly sentence: string;
+      readonly copy: string;
+    };
     readonly lists: Readonly<Record<StepsKey, GuideList>>;
   };
 }
@@ -243,6 +250,12 @@ const ES: GuideMessages = {
       copyLines: 'Copiar las líneas',
       timeWarn:
         '**Hazlo tú con estos pasos: son unos 2 minutos.** Si se lo pides al chat de Hermes, sobre todo con un modelo gratuito, puede tardar 10–15 minutos o quedarse a medias.',
+    },
+    listen: {
+      title: 'Cuando ya esté conectada',
+      help: 'Díselo a tu IA para que escuche cuando la llamen en un mundo: con esta frase aprende a quedarse atenta y a contestar.',
+      sentence: 'Escucha las llamadas en Numinia',
+      copy: 'Copiar la frase',
     },
     other: {
       tabs: 'Cómo entra tu IA',
@@ -537,6 +550,12 @@ const EN: GuideMessages = {
       timeWarn:
         '**Do it yourself with these steps: it takes about 2 minutes.** If you ask Hermes’ chat instead, especially with a free model, it can take 10–15 minutes or stop halfway.',
     },
+    listen: {
+      title: 'Once it is connected',
+      help: 'Tell your AI so it listens when someone calls it in a world: this sentence teaches it to stay alert and to answer.',
+      sentence: 'Listen for calls in Numinia',
+      copy: 'Copy the sentence',
+    },
     other: {
       tabs: 'How your AI gets in',
       code: 'With a code',
@@ -829,6 +848,12 @@ const JA: GuideMessages = {
       copyLines: '2行をコピー',
       timeWarn:
         '**この手順どおりに自分でやれば、約2分です。** HermesのチャットにAIの接続を頼むと、特に無料モデルでは10〜15分かかったり、途中で止まったりすることがあります。',
+    },
+    listen: {
+      title: 'つながったら',
+      help: 'AIに伝えると、ワールドで呼ばれたときに聞き取れるようになります。この一文で、待ち受けて返事をするやり方を覚えます。',
+      sentence: 'Numiniaで呼ばれるのを聞いていて',
+      copy: '文をコピー',
     },
     other: {
       tabs: 'AIの入り方',
@@ -1123,6 +1148,12 @@ const KO: GuideMessages = {
       timeWarn:
         '**이 단계를 직접 따라 하면 약 2분이면 됩니다.** Hermes 채팅에 부탁하면, 특히 무료 모델에서는 10~15분이 걸리거나 중간에 멈출 수 있습니다.',
     },
+    listen: {
+      title: '연결되면',
+      help: 'AI에게 알려 주면 월드에서 부를 때 귀를 기울입니다. 이 문장으로 대기하고 답하는 방법을 배웁니다.',
+      sentence: 'Numinia에서 오는 호출을 들어 줘',
+      copy: '문장 복사',
+    },
     other: {
       tabs: 'AI가 들어오는 방법',
       code: '코드로',
@@ -1415,6 +1446,12 @@ const PT: GuideMessages = {
       copyLines: 'Copiar as linhas',
       timeWarn:
         '**Faça você mesmo com estes passos: levam cerca de 2 minutos.** Se pedir ao chat do Hermes, principalmente com um modelo gratuito, pode levar de 10 a 15 minutos ou ficar pela metade.',
+    },
+    listen: {
+      title: 'Quando já estiver conectada',
+      help: 'Diga à sua IA para que ela escute quando a chamarem em um mundo: com esta frase ela aprende a ficar atenta e a responder.',
+      sentence: 'Escute as chamadas no Numinia',
+      copy: 'Copiar a frase',
     },
     other: {
       tabs: 'Como a sua IA entra',

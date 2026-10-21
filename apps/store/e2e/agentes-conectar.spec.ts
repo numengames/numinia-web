@@ -482,6 +482,16 @@ test.describe('Agentes — Conectar una IA', () => {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       `hermes mcp add numinia --url ${RELAY} --auth oauth\nhermes mcp login numinia`,
     );
+    // Once connected: one sentence to say to the AI so it listens for calls, and its copy.
+    const listen = dialog(page).locator('[data-agentes-listen]');
+    await expect(listen.getByRole('heading')).toHaveText('Cuando ya esté conectada');
+    await expect(listen.locator('[data-agentes-listen-sentence]')).toHaveText(
+      'Escucha las llamadas en Numinia',
+    );
+    await listen.locator('[data-metric="panel-agentes-guide-copy-listen"]').click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'Escucha las llamadas en Numinia',
+    );
     await shot(page, '36-steps-hermes-cloud-desktop');
 
     await computer.click();

@@ -503,3 +503,35 @@
   padding: var(--s3) var(--s5) var(--s4);
   border-top: 1px solid var(--linea);
 }
+
+/* «IAs que viven aquí»: one line per AI, name and how it stands. */
+.mundo-ias {
+  display: grid;
+  gap: var(--s3);
+  min-width: 0;
+}
+.mundo-ias h2,
+.mundo-ias p {
+  margin: 0;
+}
+.mundo-ias-lista {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mundo-ias-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+}
+.mundo-ia-nombre {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.mundo-ia-quieta {
+  color: var(--texto-2);
+}

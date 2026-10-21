@@ -19,6 +19,7 @@ import { enterWorldInTab, loadWorldPage, type PageSheet } from '../../lib/mundos
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { AiSection } from './AiSection';
+import { WorldAis } from './WorldAis';
 
 type Read = { readonly at: 'loading' } | PageSheet;
 
@@ -271,6 +272,9 @@ export function WorldView({
         </section>
       )}
       {manages && <Enters org={home.accountId} words={words} />}
+      {manages && (
+        <WorldAis worldId={worldId} accountId={home.accountId} locale={locale} words={words.here} />
+      )}
       {manages && (
         <AiSection
           worldId={worldId}

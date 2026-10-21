@@ -8,7 +8,11 @@
  *   - a NEW AI: an organization AI made the token way (lib/agents-source.ts's
  *     «create by token»), connected `mcp:<the host the client returns to>`;
  *   - the SAME AI again: its token renewed (the old connection stops at once:
- *     reconnecting never duplicates) and the AI switched back on.
+ *     reconnecting never duplicates) and the AI switched back on; where it
+ *     lives stays as it was.
+ *
+ * A new AI also says which world it lives in (`worlds`, design §5, S23): every
+ * world of the community or the chosen ones; unsaid, the till decides.
  *
  * The rules are not new ones. They are the panel's, read from the till's own
  * answer to the person (`agents`, apps/till/src/db/agents.ts):
@@ -42,6 +46,7 @@
  */
 
 import { z } from 'zod';
+import type { AgentWorlds } from '@numinia/domain';
 import type { AccountDesk, AgentAuth, Asker, DeskAgents } from './accounts';
 import { ask, whoIs, type Log } from './accounts-source';
 import { MAX_AGENTS, isConnectedVia, newToken, readAgentName, type FreshToken } from './agents';
@@ -79,6 +84,13 @@ export interface ConnectRequest {
    * says). Off when absent: the person acts as themselves.
    */
   readonly house?: boolean;
+  /**
+   * Where a NEW AI lives (design §5): all the community's worlds, or the chosen ones
+   * (each placed there, which the till judges). Absent: the till's own default — the
+   * one placed world when the community has just one, else all. A reconnection keeps
+   * the worlds the AI already has: this is not read for it.
+   */
+  readonly worlds?: AgentWorlds;
 }
 
 /** An AI of the organization as the decision reads it (the till's row to this person). */
@@ -144,7 +156,11 @@ interface PlanCommon {
 }
 
 export type ConnectPlan =
-  | (PlanCommon & { readonly action: 'create'; readonly roleIds: readonly string[] })
+  | (PlanCommon & {
+      readonly action: 'create';
+      readonly roleIds: readonly string[];
+      readonly worlds: AgentWorlds | undefined;
+    })
   | (PlanCommon & {
       readonly action: 'renew';
       /** It was off (revoked, or switched off): switch it on after the renewal. */
@@ -223,6 +239,7 @@ export function decideConnection(view: ConnectView, request: ConnectRequest): Co
       agentId,
       name,
       roleIds: roleId === null ? [] : [roleId],
+      worlds: request.worlds,
     };
   }
 
@@ -383,6 +400,7 @@ export async function connectAi(
           roleIds: [...plan.roleIds],
           via: plan.via,
           hears: plan.hear,
+          ...(plan.worlds === undefined ? {} : { worlds: plan.worlds }),
         },
         house,
       ),

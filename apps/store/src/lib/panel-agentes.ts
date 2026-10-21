@@ -614,6 +614,12 @@ export function livesIn(worlds: AgentWorlds, community: readonly string[]): stri
   return 'todos' in worlds ? [...community] : community.filter((id) => worlds.mundos.includes(id));
 }
 
+/** Whether an AI lives in this world (S24): it lives in all of its community's worlds, or in the chosen ones. */
+export function livesInWorld(agent: Pick<DeskAgent, 'worlds'>, worldId: string): boolean {
+  const worlds = worldsOf(agent);
+  return 'todos' in worlds || worlds.mundos.includes(worldId);
+}
+
 /**
  * What to tell the desk when the person picks another way of living: «todos»
  * for all; for one, the first world it lives in (else the community's first);

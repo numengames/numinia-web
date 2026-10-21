@@ -59,6 +59,7 @@ import {
   tokenLine,
   worldsForMode,
   worldsModeOf,
+  livesInWorld,
   worldsOf,
 } from '../panel-agentes';
 import { RELAY_ORIGIN } from '../relay-handoff';
@@ -594,6 +595,12 @@ describe('where an AI lives (S20)', () => {
     }
     expect(worldsOf(agent())).toEqual({ todos: true });
     expect(worldsOf(agent({ worlds: { mundos: ['torre'] } }))).toEqual({ mundos: ['torre'] });
+  });
+
+  it('tells whether an AI lives in a world: all of them, or the chosen ones', () => {
+    expect(livesInWorld(agent(), 'torre')).toBe(true);
+    expect(livesInWorld(agent({ worlds: { mundos: ['torre'] } }), 'torre')).toBe(true);
+    expect(livesInWorld(agent({ worlds: { mundos: ['torre'] } }), 'bosque')).toBe(false);
   });
 
   it('puts it as all, one or several', () => {

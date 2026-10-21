@@ -418,6 +418,8 @@ export interface DeskKeyDraft {
   via?: string | undefined;
   /** Whether it may hear nearby chat (off when absent). */
   hears?: boolean | undefined;
+  /** Where it lives, each world placed in the organization; absent: the one placed world if the community has just one, else all. */
+  worlds?: AgentWorlds | undefined;
 }
 
 /** A new AI by token: numinia.com draws the token and sends the till only its SHA-256 and prefix. */
@@ -432,6 +434,8 @@ export interface DeskTokenDraft {
   via?: string | undefined;
   /** Whether it may hear nearby chat (off when absent). */
   hears?: boolean | undefined;
+  /** Where it lives, each world placed in the organization; absent: the one placed world if the community has just one, else all. */
+  worlds?: AgentWorlds | undefined;
 }
 
 export type DeskAgentDraft = DeskKeyDraft | DeskTokenDraft;

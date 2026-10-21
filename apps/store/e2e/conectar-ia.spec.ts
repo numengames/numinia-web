@@ -400,6 +400,52 @@ test.describe('the consent, signed in', () => {
     await expect(page.locator('[data-consent-problem]')).toHaveText(t.refusals.taken);
   });
 
+  test('es: «¿En qué mundo vive?» offers all the worlds or one, and the choice is what is sent', async ({
+    context,
+    page,
+  }) => {
+    const t = CONECTAR_IA_UI.es;
+    await signIn(context, ANA);
+    await page.goto(consent('/es', 'claude.ai', 'Viajera'));
+    const where = page.locator('[data-consent-where]:visible');
+    await expect(where.locator('legend')).toHaveText(t.where);
+    await expect(where).toContainText(t.whereHint);
+    const all = where.locator('[data-metric="connect-ai-where-all"]');
+    const ones = where.locator('[data-metric="connect-ai-where-one"]');
+    // The community has several worlds placed: the default is all of them, and each one is on offer.
+    expect(await ones.count()).toBeGreaterThan(1);
+    await expect(all).toBeChecked();
+    await axeClean(page);
+
+    // Picking one world sends exactly that one, and «Listo» names it.
+    const world = await ones.first().getAttribute('value');
+    await ones.first().check();
+    const request = page.waitForRequest('**/api/conectar-ia');
+    await page.locator('[data-metric="connect-ai-allow"]').click();
+    expect((await request).postDataJSON()).toMatchObject({ worlds: { mundos: [world] } });
+    await expect(page.locator('[data-consent-sum="where"]')).toHaveText(world ?? '');
+
+    // Reconnecting it asks nothing about where: it keeps where it lives.
+    await page.goto(consent('/es', 'chatgpt.com', 'Viajera'));
+    await page.locator('[data-metric="connect-ai-again"]').first().check();
+    await expect(page.locator('[data-consent-where]')).toBeHidden();
+    const again = page.waitForRequest('**/api/conectar-ia');
+    await page.locator('[data-metric="connect-ai-allow"]').click();
+    expect((await again).postDataJSON()).not.toHaveProperty('worlds');
+    await expect(page.locator('[data-consent-sum="where"]')).toHaveText(t.whereKept);
+  });
+
+  test('en: the question is in English and «all» sends todos', async ({ context, page }) => {
+    const t = CONECTAR_IA_UI.en;
+    await signIn(context, ANA);
+    await page.goto(consent('', 'claude.ai', 'Traveller'));
+    await expect(page.locator('[data-consent-where]:visible legend')).toHaveText(t.where);
+    const request = page.waitForRequest('**/api/conectar-ia');
+    await page.locator('[data-metric="connect-ai-allow"]').click();
+    expect((await request).postDataJSON()).toMatchObject({ worlds: { todos: true } });
+    await expect(page.locator('[data-consent-sum="where"]')).toHaveText(t.whereAll);
+  });
+
   test('with the box checked the request says so and «Listo» says «Sí»', async ({
     context,
     page,
@@ -528,6 +574,8 @@ test.describe('the screenshots', () => {
     await page.goto(consent('/es', LONG_HOST, 'Hermes'));
     await page.locator('[data-metric="connect-ai-name"]:visible').fill('Hermes de Christian');
     await shoot(page, 'permiso');
+    await page.locator('[data-metric="connect-ai-where-one"]').first().check();
+    await shoot(page, 'permiso-un-mundo');
     await page.locator('[data-metric="connect-ai-allow"]').click();
     await expect(page.locator('[data-consent-done]')).toBeVisible();
     await shoot(page, 'listo');

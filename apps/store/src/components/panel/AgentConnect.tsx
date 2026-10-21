@@ -72,7 +72,7 @@ const CLIENT_GLYPH = {
 
 const WAY_GLYPH = { address: 'link', code: 'key', key: 'shield-check' } as const;
 
-type Copied = 'url' | 'command' | 'lines' | 'failed' | null;
+type Copied = 'url' | 'command' | 'lines' | 'listen' | 'failed' | null;
 
 /** The three ways, then the questions. */
 function ExplainView({
@@ -562,9 +562,15 @@ export function ConnectDialog({
     titleRef.current?.focus();
   }, [view]);
 
-  const copy = async (what: 'url' | 'command' | 'lines'): Promise<void> => {
+  const copy = async (what: 'url' | 'command' | 'lines' | 'listen'): Promise<void> => {
     const text =
-      what === 'url' ? RELAY_URL : what === 'command' ? hermesTokenCommand() : hermesOauthCommand();
+      what === 'url'
+        ? RELAY_URL
+        : what === 'command'
+          ? hermesTokenCommand()
+          : what === 'listen'
+            ? guide.steps.listen.sentence
+            : hermesOauthCommand();
     try {
       await navigator.clipboard.writeText(text);
       setCopied(what);
@@ -636,6 +642,24 @@ export function ConnectDialog({
               onInvite(way === 'code' ? 'token' : 'key');
             }}
           />
+        )}
+        {view.at === 'steps' && (
+          <div className="agentes-guia-linea agentes-guia-escucha" data-agentes-listen>
+            <h3>{guide.steps.listen.title}</h3>
+            <p className="saldo-nota">{guide.steps.listen.help}</p>
+            <pre className="agentes-conexion">
+              <code data-agentes-listen-sentence>{guide.steps.listen.sentence}</code>
+            </pre>
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={() => void copy('listen')}
+              data-metric="panel-agentes-guide-copy-listen"
+            >
+              <PanelGlyph name={copied === 'listen' ? 'check' : 'copy'} size={16} />
+              {guide.steps.listen.copy}
+            </button>
+          </div>
         )}
         {copied === 'failed' && (
           <p className="fallo" role="alert" data-agentes-url-copy-failed>
