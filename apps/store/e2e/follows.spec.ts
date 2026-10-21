@@ -176,7 +176,9 @@ test.describe('signed in', () => {
     const card = page.locator('[data-belong-follow] .tuya');
     await expect(card).toHaveCount(1);
     await expect(card.locator('h3 a')).toHaveAttribute('href', `/es/communities/${TRGCON}/`);
-    await expect(card.locator('[data-see-ritual]')).toHaveAttribute('href', '/es/rituals/trg26/');
+    // TRGCON has a home now: its card enters it instead of sending to the next encounter.
+    await expect(card.locator('[data-enter-link]')).toBeVisible();
+    await expect(card.locator('[data-see-ritual]')).toHaveCount(0);
     await expect(page.locator('[data-belong-follow-empty]')).toBeHidden();
     await expect(page.locator(railCount)).toHaveText('2');
     const belongScan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();

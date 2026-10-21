@@ -25,7 +25,7 @@ const PABLO = `0x${'ab'.repeat(20)}`;
 const EVA = `0x${'34'.repeat(20)}`;
 /** …and this one is also a plain member of Active Inference Institute. */
 const DORA = '0x00000000000000000000000000000000000000d4';
-const TRGCON = 'trgcon';
+const MERGE = 'merge';
 const NUMEN = 'numen-games';
 
 let server: ChildProcess | undefined;
@@ -135,7 +135,7 @@ test.describe('signed in', () => {
 
   test('the three sections, each with its real cards', async ({ page, context }) => {
     await signIn(context, DORA);
-    await page.request.post(`${origin}/api/follow`, { data: { communityId: TRGCON, on: true } });
+    await page.request.post(`${origin}/api/follow`, { data: { communityId: MERGE, on: true } });
     // A follow of a community you administer is not drawn twice.
     await page.request.post(`${origin}/api/follow`, { data: { communityId: NUMEN, on: true } });
     await page.goto(belongPage());
@@ -167,14 +167,16 @@ test.describe('signed in', () => {
     await expect(belonging.locator('[data-metric="belong-panel"]')).toHaveCount(0);
     await expect(page.locator('[data-belong-member-empty]')).toBeHidden();
 
-    // «Las que sigues»: only La Tarugo, with its next encounter and «Ver el encuentro».
+    // «Las que sigues»: only MERGE (no home), with its next encounter and «Ver el encuentro».
     const followed = page.locator(follow);
     await expect(followed).toHaveCount(1);
-    await expect(followed.locator('h3 a')).toHaveAttribute('href', `/es/communities/${TRGCON}/`);
-    await expect(followed.locator('[data-line]')).toHaveText(/^La sigues · próximo: TRG26, /);
+    await expect(followed.locator('h3 a')).toHaveAttribute('href', `/es/communities/${MERGE}/`);
+    await expect(followed.locator('[data-line]')).toHaveText(
+      /^La sigues · próximo: MERGE Madrid 2026, /,
+    );
     await expect(followed.locator('[data-see-ritual]')).toHaveAttribute(
       'href',
-      '/es/rituals/trg26/',
+      '/es/rituals/merge-madrid-2026/',
     );
     await expect(followed.locator('[data-see-ritual]')).toHaveText('Ver el encuentro');
     await expect(followed.locator('[data-metric="belong-unfollow"]')).toBeVisible();
@@ -218,7 +220,7 @@ test.describe('signed in', () => {
   test('on a phone, the cards read the same', async ({ page, context }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(context, EVA);
-    await page.request.post(`${origin}/api/follow`, { data: { communityId: TRGCON, on: true } });
+    await page.request.post(`${origin}/api/follow`, { data: { communityId: MERGE, on: true } });
     await page.goto(belongPage());
     await expect(page.locator(lead)).toHaveCount(1);
     await expect(page.locator(follow)).toHaveCount(1);
