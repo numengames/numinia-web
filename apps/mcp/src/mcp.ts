@@ -19,6 +19,7 @@ import {
   bodyTools,
   callBodyTool,
   hearOf,
+  hearingOf,
   isBodyTool,
   serverInstructions,
 } from './herramientas-cuerpo';
@@ -85,12 +86,12 @@ async function resultOf(method: string, params: unknown, call: ToolCall): Promis
         protocolVersion: protocolFor(params),
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
-        instructions: serverInstructions(await hearOf(call)),
+        instructions: serverInstructions(await hearingOf(call)),
       };
     case 'ping':
       return {};
     case 'tools/list':
-      return { tools: [...TOOLS, ...bodyTools(await hearOf(call))] };
+      return { tools: [...TOOLS, ...bodyTools(await hearingOf(call))] };
     default:
       return undefined;
   }

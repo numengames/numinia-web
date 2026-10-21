@@ -277,7 +277,7 @@ describe('PKCE and token lifetimes', () => {
     expect(await json(listed)).toEqual({
       jsonrpc: '2.0',
       id: 7,
-      result: { tools: [...TOOLS, ...bodyTools(false)] },
+      result: { tools: [...TOOLS, ...bodyTools('llamada')] },
     });
 
     // Refreshing rotates the refresh token and restarts its 30 days.

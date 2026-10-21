@@ -43,6 +43,21 @@ export interface CuerpoMundo {
   readonly nombre: string | null;
 }
 
+/**
+ * The bridge's mailbox of calls and bubble entries (buzon-llamadas.ts), as far
+ * as the relay touches it: it drops the bubble entries of an AI that hears
+ * only who calls it (D-083), so they neither wake `esperar_llamada` nor show
+ * in `mirar`.
+ */
+export interface BuzonLlamadas {
+  /** The event `burbuja.entraEnBurbuja`, as the world sent it to this AI. */
+  entra(m: Record<string, unknown>): void;
+  /** Bubble entries still in the box. */
+  readonly entradas: unknown[];
+  /** Who is inside the bubble now (entity → what the world told). */
+  readonly dentro: Map<number, unknown>;
+}
+
 export declare class PuenteMundo {
   readonly url: string;
   readonly id: string;
@@ -54,6 +69,8 @@ export declare class PuenteMundo {
   estado: 'activa' | 'dormida' | null;
   conectado: boolean;
   readonly oidas: Oida[];
+  /** Calls and bubble entries the world told this AI of (`llamadas`, `esperar_llamada`). */
+  readonly buzon: BuzonLlamadas;
   constructor(o: {
     url: string;
     id: string;

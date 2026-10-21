@@ -273,7 +273,7 @@ describe("the way to numinia.com: its service binding, without the caller's addr
       storeFetch(env),
     );
     // A store older than the ladder (S19) says neither `oye` nor `vive`: it hears nothing, lives everywhere.
-    expect(answer).toEqual({ kind: 'ok', me: { ...me, oye: 'llamada', vive: 'todos' } });
+    expect(answer).toEqual({ kind: 'ok', me: { ...me, oye: 'llamada', vive: 'todos', stay: 0 } });
     expect(publicFetch).not.toHaveBeenCalled();
     expect(seen).toHaveLength(1);
     const [request] = seen;
