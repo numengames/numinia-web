@@ -123,6 +123,8 @@ function buildSchemas() {
           hears: z.boolean().default(false),
           status: z.enum(['apagada', 'sin-responsable', 'sin-permiso', ...AGENT_STATES]),
           responsible: z.string(),
+          // A till that has not run migration 0025 yet says nothing: a member answers for it.
+          responsibleHouse: z.literal(true).optional(),
           responsibleName: z.string().optional(),
           createdAt: z.string(),
           updatedAt: z.string(),

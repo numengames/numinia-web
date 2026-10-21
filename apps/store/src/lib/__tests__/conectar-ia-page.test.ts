@@ -202,9 +202,19 @@ describe('the communities and roles on offer', () => {
               roles: [{ id: 'role_guide', name: 'Guide' }],
             },
           ],
+          house: false,
+          loaded: true,
         },
         // A team without a name shows its id; one with nothing to reconnect still offers «new».
-        { accountId: OTHER, name: OTHER, mayCreate: true, roles: expect.any(Array), again: [] },
+        {
+          accountId: OTHER,
+          name: OTHER,
+          mayCreate: true,
+          roles: expect.any(Array),
+          again: [],
+          house: false,
+          loaded: true,
+        },
       ],
     });
   });
@@ -275,9 +285,95 @@ describe('the communities and roles on offer', () => {
     if (choices.ok) expect(choices.orgs.map((org) => org.accountId)).toEqual([ORG]);
   });
 
-  it('never lists the house’s entries: the house does not answer for an AI', async () => {
+  it('adds, for the house’s session, the other communities that let it in, as the house (D-078)', async () => {
     const choices = await consentChoices(fixture(), asker(true), quiet);
-    expect(choices.ok && choices.orgs.every((org) => org.accountId !== OTHER)).toBe(true);
+    if (!choices.ok) throw new Error('no choices');
+    const own = choices.orgs.filter((org) => !org.house);
+    const doors = choices.orgs.filter((org) => org.house);
+    expect(own.length).toBeGreaterThan(0);
+    expect(doors.length).toBeGreaterThan(0);
+    // The person acting as a member wins: no community is in both lists.
+    const ids = choices.orgs.map((org) => org.accountId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(doors.map((org) => org.accountId)).toContain(OTHER);
+    // With communities of their own, the house's are only names until one is picked.
+    expect(doors.every((org) => !org.loaded && !org.mayCreate && org.roles.length === 0)).toBe(
+      true,
+    );
+  });
+
+  it('reads one house community when it is asked for, as the house, and leaves the rest unread', async () => {
+    const { desk, methods } = choicesDesk(
+      async (_wallet, accountId, house) =>
+        house === true
+          ? agentsView({ accountId, agents: [], as: 'house' })
+          : accountId === ORG
+            ? agentsView()
+            : { ok: false, problems: ['not a member'] },
+      async () => ({ accounts: [ACCOUNTS.accounts[1]] }),
+    );
+    (desk as unknown as { directory: unknown }).directory = vi.fn(async () => ({
+      ok: true,
+      accounts: [
+        { id: ORG, name: 'Numen Games' },
+        { id: OTHER, name: 'Reset' },
+        { id: 'acc_team_la_tarugo', name: 'La Tarugo' },
+      ],
+    }));
+    const choices = await consentChoices(desk, asker(true), quiet, OTHER);
+    if (!choices.ok) throw new Error('no choices');
+    expect(choices.orgs.map((org) => [org.accountId, org.house, org.loaded])).toEqual([
+      [ORG, false, true],
+      [OTHER, true, true],
+      ['acc_team_la_tarugo', true, false],
+    ]);
+    expect(choices.orgs[1]).toMatchObject({ name: 'Reset', mayCreate: true });
+    // ORG is the person’s own: not read again as the house. La Tarugo was only named.
+    expect(methods.agents).toHaveBeenCalledWith(ME, ORG, false);
+    expect(methods.agents).toHaveBeenCalledWith(ME, OTHER, true);
+    expect(methods.agents).not.toHaveBeenCalledWith(ME, 'acc_team_la_tarugo', expect.anything());
+    // The house is read as itself, never for a community the person acts in.
+    expect(methods.agents).not.toHaveBeenCalledWith(ME, ORG, true);
+  });
+
+  it('loads the first house community when the person has none of their own', async () => {
+    const { desk, methods } = choicesDesk(
+      async (_wallet, accountId, house) =>
+        house === true
+          ? agentsView({ accountId, agents: [], as: 'house' })
+          : { ok: false, problems: ['not a member'] },
+      async () => ({ accounts: [] }),
+    );
+    (desk as unknown as { directory: unknown }).directory = vi.fn(async () => ({
+      ok: true,
+      accounts: [
+        { id: ORG, name: 'Numen Games' },
+        { id: OTHER, name: 'Reset' },
+      ],
+    }));
+    const choices = await consentChoices(desk, asker(true), quiet);
+    expect(choices.ok && choices.orgs.map((org) => [org.accountId, org.loaded])).toEqual([
+      [ORG, true],
+      [OTHER, false],
+    ]);
+    expect(methods.agents).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists no house community for a session that is not the house’s, or when the directory fails', async () => {
+    const person = await consentChoices(fixture(), asker(false), quiet);
+    expect(person.ok && person.orgs.every((org) => !org.house)).toBe(true);
+    const { desk } = choicesDesk(async () => agentsView());
+    (desk as unknown as { directory: unknown }).directory = vi.fn(async () => {
+      throw new Error('boom');
+    });
+    const failed = await consentChoices(desk, asker(true), quiet);
+    expect(failed.ok && failed.orgs.every((org) => !org.house)).toBe(true);
+    (desk as unknown as { directory: unknown }).directory = vi.fn(async () => ({
+      ok: false,
+      problems: ['not the house'],
+    }));
+    const refused = await consentChoices(desk, asker(true), quiet);
+    expect(refused.ok && refused.orgs.every((org) => !org.house)).toBe(true);
   });
 });
 
@@ -433,6 +529,46 @@ describe('the POST: connecting', () => {
     expect(listed.ok && listed.agents.find((held) => held.id === 'claude-de-ana')?.hears).toBe(
       true,
     );
+  });
+
+  it('connects as the house only when the choice says house and the session is the house’s (D-078)', async () => {
+    const desk = fixture();
+    const house = await answerConsent(
+      desk,
+      asker(true),
+      post(body({ accountId: OTHER, house: true })),
+      same,
+      relay,
+      quiet,
+      draw,
+    );
+    expect(house.status).toBe(200);
+    const listed = await desk.agents(ME, OTHER, true);
+    expect(
+      listed.ok && listed.agents.find((held) => held.id === 'claude-de-ana')?.responsibleHouse,
+    ).toBe(true);
+    // A person's session cannot claim the house.
+    const person = await answerConsent(
+      desk,
+      asker(false),
+      post(body({ accountId: OTHER, house: true })),
+      same,
+      relay,
+      quiet,
+      draw,
+    );
+    expect(person.status).toBe(403);
+    // Without the flag, even an Oracle acts as themselves (and is no member of OTHER).
+    const plain = await answerConsent(
+      fixture(),
+      asker(true),
+      post(body({ accountId: OTHER })),
+      same,
+      relay,
+      quiet,
+      draw,
+    );
+    expect(plain.status).not.toBe(200);
   });
 
   it('reconnects one already made, and sends the browser where the hand-off says', async () => {

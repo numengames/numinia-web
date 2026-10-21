@@ -202,14 +202,11 @@ describe('creating', () => {
     expect(problems(await s.desk.createAgent('bad', ORG, BOT))).toEqual(['bad wallet']);
   });
 
-  it('refuses a stranger, a member without manage-roles, the house, a repeat, and a role that is not there', async () => {
+  it('refuses a stranger, a member without manage-roles, a repeat, and a role that is not there', async () => {
     const s = stage();
     expect(problems(await s.desk.createAgent(wallet('ee'), ORG, BOT))).toEqual(['not a member']);
     expect(problems(await s.desk.createAgent(PLAIN, ORG, BOT))).toEqual([
       refusalSentence('missing-permission', 'manage-roles'),
-    ]);
-    expect(problems(await s.desk.createAgent(HOUSE, ORG, BOT, true))).toEqual([
-      AGENT_PROBLEMS.houseCannot,
     ]);
     await s.desk.createAgent(OWNER, ORG, BOT);
     expect(problems(await s.desk.createAgent(OWNER, ORG, BOT))).toEqual([AGENT_PROBLEMS.taken]);
@@ -274,7 +271,8 @@ describe('listing and the status of an agent', () => {
     expect(seen.assignableRoles).toEqual([]);
     expect(seen.agents[0]).toMatchObject({ mayEdit: false, assignable: [] });
     const house = view(await s.desk.agents(HOUSE, ORG, true));
-    expect(house).toMatchObject({ as: 'house', mayCreate: false });
+    // The house holds every permission where it may enter (D-078): it may connect an AI.
+    expect(house).toMatchObject({ as: 'house', mayCreate: true });
     expect(s.reads).toEqual(['agents']);
     expect(problems(await s.desk.agents(wallet('ee'), ORG))).toEqual(['not a member']);
   });
@@ -687,5 +685,81 @@ describe('«MCP remoto» (W2): the way, the worlds, the token', () => {
       AGENT_PROBLEMS.noSuchAgent,
     ]);
     expect(problems(await s.desk.agentByToken('ntk_x'))).toEqual([AGENT_PROBLEMS.tokenHash]);
+  });
+});
+
+describe('the house connects an AI (D-078)', () => {
+  const FLAT = {
+    id: 'claude-casa',
+    name: 'Claude casa',
+    auth: 'token' as const,
+    tokenHash: 'a'.repeat(64),
+    tokenPrefix: 'ab12cd34',
+    via: 'mcp:claude.ai',
+  };
+
+  it('answers for it as the house, marked on the row and the log, with the name it published', async () => {
+    const s = stage();
+    s.names.set(HOUSE, 'Ursa');
+    const made = view(
+      await s.desk.createAgent(HOUSE, ORG, { ...FLAT, roleIds: [MEMBER] } as never, true),
+    );
+    expect(made.as).toBe('house');
+    expect(made.agents[0]).toMatchObject({
+      responsible: HOUSE,
+      responsibleHouse: true,
+      responsibleName: 'Ursa',
+      status: 'activa',
+      mayEdit: true,
+    });
+    expect(s.log.map((line) => line.act)).toEqual(['agent-created', 'agent-token-created']);
+    // A member-made AI carries no such mark.
+    const mine = view(await s.desk.createAgent(OWNER, ORG, BOT));
+    expect(mine.agents.find((agent) => agent.id === 'hermes-1')).not.toHaveProperty(
+      'responsibleHouse',
+    );
+  });
+
+  it('keeps the ceiling: no role that holds Administrator or Manage roles', async () => {
+    const s = stage();
+    const offered = view(await s.desk.agents(HOUSE, ORG, true)).assignableRoles.map(
+      (role) => role.id,
+    );
+    expect(offered).toContain(MEMBER);
+    expect(offered).not.toContain(ADMIN);
+    expect(
+      problems(await s.desk.createAgent(HOUSE, ORG, { ...FLAT, roleIds: [ADMIN] } as never, true)),
+    ).toEqual([AGENT_PROBLEMS.houseCeiling]);
+    await s.desk.createAgent(HOUSE, ORG, FLAT as never, true);
+    expect(problems(await s.desk.giveAgentRole(HOUSE, ORG, 'claude-casa', ADMIN, true))).toEqual([
+      AGENT_PROBLEMS.houseCeiling,
+    ]);
+    // A role the AI holds above the ceiling (the owner gave it) can still be taken by the house.
+    await s.desk.giveAgentRole(OWNER, ORG, 'claude-casa', ADMIN);
+    const seen = view(await s.desk.agents(HOUSE, ORG, true)).agents[0];
+    expect(seen?.assignable).toContain(ADMIN);
+    expect(
+      view(await s.desk.takeAgentRole(HOUSE, ORG, 'claude-casa', ADMIN, true)).agents[0]?.roleIds,
+    ).toEqual([]);
+  });
+
+  it('is eligible for a pass while the house answers, and handled by the owner like any other', async () => {
+    const s = stage();
+    await s.desk.createAgent(HOUSE, ORG, { ...FLAT, roleIds: [MEMBER] } as never, true);
+    const pass = await s.desk.agentPass(ORG, 'claude-casa');
+    expect(pass).toMatchObject({ ok: true, eligible: true });
+    // The owner sees it, switches it off, and removes it.
+    expect(view(await s.desk.agents(OWNER, ORG)).agents[0]).toMatchObject({ mayEdit: true });
+    await s.desk.changeAgent(OWNER, ORG, 'claude-casa', { enabled: false });
+    expect(view(await s.desk.removeAgent(OWNER, ORG, 'claude-casa')).agents).toEqual([]);
+  });
+
+  it('is not handled by wallet when an Oracle acts as a member of the community', async () => {
+    const s = stage({ [HOUSE]: access([MEMBER]) });
+    await s.desk.createAgent(HOUSE, ORG, FLAT as never, true);
+    // As a plain member (no house flag) the Oracle holds no manage-roles: no shortcut by wallet.
+    expect(
+      problems(await s.desk.changeAgent(HOUSE, ORG, 'claude-casa', { enabled: false }))[0],
+    ).toMatch(/missing-permission/);
   });
 });

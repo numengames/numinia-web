@@ -127,3 +127,23 @@ export async function publishedIn(
     results.map((row) => [text(row, 'wallet'), { name: text(row, 'name'), avatar: avatarOf(row) }]),
   );
 }
+
+/**
+ * The names published by the house's own wallets — the Oracles that answer for
+ * an AI as the house (D-078) and are no member of the organization, so
+ * `publishedIn` does not reach them. Only the wallets asked for; a wallet that
+ * published nothing is not in the map.
+ */
+export async function publishedBy(
+  db: TillDatabase,
+  wallets: readonly string[],
+): Promise<ReadonlyMap<string, MemberProfile>> {
+  const rows = await Promise.all(
+    [...new Set(wallets)].map(async (wallet) => [wallet, await readOne(db, wallet)] as const),
+  );
+  return new Map(
+    rows.flatMap(([wallet, profile]) =>
+      profile === null ? [] : [[wallet, { name: profile.name, avatar: profile.avatar }] as const],
+    ),
+  );
+}

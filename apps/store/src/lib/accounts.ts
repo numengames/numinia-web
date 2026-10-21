@@ -381,6 +381,8 @@ export interface DeskAgent {
   hears: boolean;
   status: AgentStatus;
   responsible: string;
+  /** `true` when the house answers for it (D-078): the screen says «la casa», and the wallet is an Oracle's. */
+  responsibleHouse?: true | undefined;
   responsibleName?: string | undefined;
   createdAt: string;
   updatedAt: string;

@@ -12,16 +12,19 @@
  *
  * The rules are not new ones. They are the panel's, read from the till's own
  * answer to the person (`agents`, apps/till/src/db/agents.ts):
- *   - creating needs `mayCreate`: manage-roles, as a member (the house does
- *     not answer for an AI), below MAX_AGENTS (db/agents.ts `mayCreate`);
+ *   - creating needs `mayCreate`: manage-roles — as the person (owner or
+ *     member) or, where the community lets the house in, as the house (D-078,
+ *     which then answers for the AI) — below MAX_AGENTS (db/agents.ts
+ *     `mayCreate`);
  *   - the role given at once must be one of `assignableRoles` — the till's
- *     `canAssignRole` clamp of a fresh AI below the person (ORG-011, accessOf),
- *     what the panel's invitation offers (lib/panel-agentes.ts `invitable`);
+ *     `canAssignRole` clamp of a fresh AI below the person (ORG-011, accessOf;
+ *     for the house, also its ceiling), what the panel's invitation offers
+ *     (lib/panel-agentes.ts `invitable`);
  *   - reconnecting needs the row's `mayEdit` (manage-roles, and answering for
  *     it or standing above it: db/agents.ts `handling`) and a token AI; a role
  *     given then must be in the row's `assignable`.
  * The person's `access` is read only to NAME a refusal (lacking manage-roles,
- * versus the house, versus the limit, versus not standing above the AI). The
+ * versus the limit, versus not standing above the AI). The
  * till checks every write again; this decides what to ask it and what the
  * screen says when the answer would be no.
  *
@@ -70,6 +73,12 @@ export interface ConnectRequest {
   readonly roleId: string | null;
   /** Whether the person lets the AI hear nearby chat (the consent's checkbox); off when absent. */
   readonly hear?: boolean;
+  /**
+   * Connect as the house (D-078) rather than as the person: only an Oracle's
+   * session may, and only where the community lets the house in (the till
+   * says). Off when absent: the person acts as themselves.
+   */
+  readonly house?: boolean;
 }
 
 /** An AI of the organization as the decision reads it (the till's row to this person). */
@@ -104,8 +113,6 @@ export type ConnectRefusal =
   | 'name'
   /** The person lacks manage-roles there. */
   | 'no-permission'
-  /** The house does not answer for an AI: a member makes it. */
-  | 'house'
   /** The organization already keeps MAX_AGENTS AIs. */
   | 'limit'
   /** A role the person cannot give. */
@@ -174,11 +181,9 @@ export function readClient(
 
 const holds = (view: ConnectView, act: string): boolean => view.permissions.includes(act);
 
-/** Why the till's `mayCreate` is false, in its own order: manage-roles, the house, the limit. */
+/** Why the till's `mayCreate` is false, in its own order: manage-roles, the limit. */
 function whyNotCreate(view: ConnectView): ConnectRefusal {
-  if (!holds(view, 'manage-roles')) return 'no-permission';
-  if (view.as === 'house') return 'house';
-  return 'limit';
+  return holds(view, 'manage-roles') ? 'limit' : 'no-permission';
 }
 
 /** The AIs this person may reconnect: token AIs they may handle, as the panel's renew button. */
@@ -338,9 +343,10 @@ export async function connectAi(
   if (asker === null) return { ok: false, refusal: 'signed-out' };
   if (desk === null) return { ok: false, refusal: 'unavailable' };
   const { you } = whoIs(asker);
-  // The consent always acts as the person (owner or member), never as the house,
-  // even for the house's Oracle: the house does not answer for an AI.
-  const house = false;
+  // As the person (owner or member) unless the consent chose the house (D-078): then
+  // the session must be the house's — an Oracle's — or nothing is asked of the till.
+  const house = request.house === true;
+  if (house && !asker.house) return { ok: false, refusal: 'no-permission' };
   const { accountId } = request;
   const [agents, access] = await Promise.all([
     ask(log, 'connect-agents', () => desk.agents(you, accountId, house), shapes().agents),

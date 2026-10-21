@@ -20,6 +20,13 @@
  * becomes «Listo» (step 3), and when the relay says where the AI waits the
  * browser goes there after a moment.
  *
+ * An Oracle's session (the house) also sees, after the communities where it
+ * is an owner or manager, the other communities that let the house in, each
+ * marked «como la casa» (D-078): picking one asks the page again with
+ * `?casa=<id>` so that only that community is read (every read of the house
+ * is a line in its log), and the POST carries `house: true`. The house then
+ * answers for the AI, not the person.
+ *
  * Signed out it says what this is and offers the door, which comes back
  * here (lib/island-session.ts). With no community to add an AI to it says why
  * and what to do. Rendered on demand (it reads the session cookie and asks
@@ -66,7 +73,12 @@ if (ask !== null) {
     binding: runtimeBinding('TILL_ACCOUNTS'),
     dataSource: process.env.DATA_SOURCE,
   });
-  const choices = await consentChoices(desk, asker);
+  const choices = await consentChoices(
+    desk,
+    asker,
+    undefined,
+    Astro.url.searchParams.get('casa') ?? undefined,
+  );
   if (choices.ok) {
     orgs = choices.orgs;
     state = orgs.length === 0 ? 'none' : 'ok';
@@ -78,6 +90,14 @@ const [asksBefore = '', asksAfter = ''] = t.asks.split('{app}');
 const [doneBefore = '', doneAfter = ''] = t.doneLead.split('{name}');
 const signIn = ask === null ? '' : signInHref(locale, consentHref(ask));
 const one = orgs.length === 1 ? orgs[0] : undefined;
+// The community shown: the one the house asked for, else the first one read.
+const wanted = Astro.url.searchParams.get('casa');
+const shownAt = Math.max(
+  0,
+  orgs.findIndex((org) => org.loaded && (org.accountId === wanted || wanted === null)),
+);
+const orgName = (org: ConsentOrg): string =>
+  org.house ? fill(t.asHouse, { name: org.name }) : org.name;
 const labels = ask === null ? [] : hostLabels(ask.host);
 const words = JSON.stringify({
   allow: t.allow,
@@ -214,7 +234,7 @@ const words = JSON.stringify({
                       <>
                         <input type="hidden" name="accountId" value={one.accountId} />
                         <p class="valor" id="ci-org" data-consent-community>
-                          {one.name}
+                          {orgName(one)}
                         </p>
                       </>
                     ) : (
@@ -224,15 +244,32 @@ const words = JSON.stringify({
                         data-consent-community
                         data-metric="connect-ai-community"
                       >
-                        {orgs.map((org) => (
-                          <option value={org.accountId}>{org.name}</option>
+                        {orgs.map((org, i) => (
+                          <option
+                            value={org.accountId}
+                            selected={i === shownAt}
+                            data-unloaded={org.loaded ? undefined : ''}
+                          >
+                            {orgName(org)}
+                          </option>
                         ))}
                       </select>
                     )}
                   </div>
 
                   {orgs.map((org, i) => (
-                    <div class="por-comunidad" data-consent-org={org.accountId} hidden={i !== 0}>
+                    <div
+                      class="por-comunidad"
+                      data-consent-org={org.accountId}
+                      data-consent-house={org.house ? 'true' : 'false'}
+                      hidden={i !== shownAt}
+                    >
+                      {org.loaded && (<>
+                      {org.house && (
+                        <p class="ayuda" data-consent-house-note>
+                          {t.answerHouse}
+                        </p>
+                      )}
                       <fieldset class="campo">
                         <legend>{t.which}</legend>
                         {org.mayCreate && (
@@ -323,6 +360,7 @@ const words = JSON.stringify({
                           {t.roleHelp}
                         </p>
                       </div>
+                      </>)}
                     </div>
                   ))}
 
@@ -360,7 +398,7 @@ const words = JSON.stringify({
                       </span>
                     </span>
                   </label>
-                  <p class="oye">
+                  <p class="oye" data-consent-answer hidden={orgs[shownAt]?.house === true}>
                     <Icon name="user" size={18} />
                     {t.answer}
                   </p>
@@ -528,8 +566,22 @@ const words = JSON.stringify({
         select.hidden = select.dataset['consentRole'] !== choice;
       }
     };
+    // The house's other communities are only names until one is picked: ask the page again for it.
+    const community = form.querySelector<HTMLSelectElement>('select[data-consent-community]');
+    community?.addEventListener('change', () => {
+      if (community.selectedOptions[0]?.dataset['unloaded'] === undefined) return;
+      const next = new URL(location.href);
+      next.searchParams.set('casa', community.value);
+      location.assign(next);
+    });
+    const answer = form.querySelector<HTMLElement>('[data-consent-answer]');
+    const refreshAnswer = (): void => {
+      if (answer) answer.hidden = current()?.dataset['consentHouse'] === 'true';
+    };
     form.addEventListener('change', refresh);
+    form.addEventListener('change', refreshAnswer);
     refresh();
+    refreshAnswer();
 
     const problem = form.querySelector<HTMLElement>('[data-consent-problem]');
     const say = (text: string | null): void => {
@@ -580,6 +632,8 @@ const words = JSON.stringify({
             : { kind: 'again', agentId: choice },
         roleId: role === '' ? null : role,
         hear,
+        // Only a community the page labelled «como la casa» is connected as the house.
+        house: shown.dataset['consentHouse'] === 'true',
       };
       say(null);
       if (allow) {

@@ -70,7 +70,9 @@ describe('depotDownloadUrl', () => {
               format: 'glb',
               license: 'CC0-1.0',
               rights_holder: 'Nobody',
-              copies: [{ url: 'https://elsewhere.example/x.glb', sha256: 'a'.repeat(64), bytes: 1 }],
+              copies: [
+                { url: 'https://elsewhere.example/x.glb', sha256: 'a'.repeat(64), bytes: 1 },
+              ],
             },
           ],
         },

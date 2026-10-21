@@ -48,9 +48,18 @@ export const AGENT_PROBLEMS = {
   noSuchAgent: 'the organization has no such agent',
   taken: 'the organization already has an agent with that id or that key',
   limit: 'an organization keeps at most 20 agents',
-  houseCannot: 'the house does not answer for an agent: a member creates it',
+  houseCeiling:
+    'the house does not give an agent a role that holds Administrator or Manage roles: that is for the owners',
   replayed: 'that request was already used',
 } as const;
+
+/**
+ * The house's ceiling (D-078; the till's `HOUSE_NEVER_GIVES`): the house gives
+ * an AI any role of the community except one that holds Administrator or
+ * Manage roles, the two permissions that ask for a fresh wallet signature
+ * (ORG-008). The fixture desk applies it as the till does.
+ */
+export const HOUSE_NEVER_GIVES: readonly string[] = ['administrator', 'manage-roles'];
 
 /** How many agents an organization keeps (the till's `MAX_AGENTS`, pinned by a test). */
 export const MAX_AGENTS = 20;
