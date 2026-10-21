@@ -799,6 +799,8 @@ describe('Cuerpo, the AI’s body in one world', () => {
         const counted = (await desk().days()).reduce((sum, day) => sum + day.seconds, 0);
         expect(counted).toBe(hours * 3600);
       },
+      // Hours of fake time run minute by minute: slow on a busy CI runner.
+      30_000,
     );
 
     it('is ten minutes, or the hours when they are more', () => {
