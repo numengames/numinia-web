@@ -3,6 +3,7 @@
  * tools themselves are herramientas-mundos.test.ts (story W7).
  */
 import { describe, expect, it } from 'vitest';
+import { GUIDE } from '../src/guia';
 import { TOOLS } from '../src/herramientas';
 import { bodyTools, serverInstructions } from '../src/herramientas-cuerpo';
 import { PROTOCOL_VERSIONS, SERVER_INFO, handleMcp } from '../src/mcp';
@@ -94,8 +95,19 @@ describe('handleMcp', () => {
     expect(await (await rpc({ id: 3, method: 'tools/list' })).json()).toEqual({
       jsonrpc: '2.0',
       id: 3,
-      result: { tools: [...TOOLS, ...bodyTools('llamada')] },
+      result: { tools: [...TOOLS, ...bodyTools('llamada'), GUIDE] },
     });
+  });
+
+  it('serves the guide through tools/call, with no body and no call to numinia.com', async () => {
+    const body = (await (
+      await rpc({
+        id: 5,
+        method: 'tools/call',
+        params: { name: 'guia', arguments: { tema: 'llamadas' } },
+      })
+    ).json()) as { result: { structuredContent: { tema: string } } };
+    expect(body.result.structuredContent.tema).toBe('llamadas');
   });
 
   it('answers an unknown method with Method not found', async () => {

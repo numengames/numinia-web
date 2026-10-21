@@ -19,6 +19,7 @@ import {
   RESOURCE,
 } from '../src/config';
 import worker, { PROVIDER_OPTIONS, type Env } from '../src/worker';
+import { GUIDE } from '../src/guia';
 import { TOOLS } from '../src/herramientas';
 import { bodyTools } from '../src/herramientas-cuerpo';
 import { MemoryKv } from './memory-kv';
@@ -277,7 +278,7 @@ describe('PKCE and token lifetimes', () => {
     expect(await json(listed)).toEqual({
       jsonrpc: '2.0',
       id: 7,
-      result: { tools: [...TOOLS, ...bodyTools('llamada')] },
+      result: { tools: [...TOOLS, ...bodyTools('llamada'), GUIDE] },
     });
 
     // Refreshing rotates the refresh token and restarts its 30 days.

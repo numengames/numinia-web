@@ -20,6 +20,7 @@ import { resetLimitsForTests } from '../src/limites';
 import { HOUSE_LIBRARY } from '../src/biblioteca';
 import { RESOURCE } from '../src/config';
 import { Cuerpo, HEAR_TOOL, REFUSALS } from '../src/cuerpo';
+import { GUIDE, GUIDE_HINTS } from '../src/guia';
 import { ERRORS, TOOLS, type ToolCall } from '../src/herramientas';
 import {
   BODY_ERRORS,
@@ -377,9 +378,11 @@ describe('tools/list', () => {
       'salir',
       ...WORLD_TOOLS,
       ...CALL_TOOLS,
+      'guia',
     ]);
     expect(result.tools.slice(0, 2)).toEqual(TOOLS);
-    expect(result.tools.slice(2)).toEqual(bodyTools('llamada'));
+    expect(result.tools.slice(2, -1)).toEqual(bodyTools('llamada'));
+    expect(result.tools.at(-1)).toEqual(GUIDE);
     // Listing asks numinia.com once (the AI's `hear`) and makes no body.
     expect(vi.mocked(fetch).mock.calls.length).toBe(calls + 1);
     expect(made).toEqual([]);
@@ -439,6 +442,7 @@ describe('tools/list', () => {
     expect(listed.result.tools.map((one) => one.name)).toEqual([
       ...TOOLS.map((one) => one.name),
       ...bodyTools('todo').map((one) => one.name),
+      GUIDE.name,
     ]);
     const { result } = (await (await post(access, { method: 'initialize' })).json()) as {
       result: { instructions: string };
@@ -522,7 +526,7 @@ describe('entrar and the world tools', () => {
     expect(structured(await tool(access, 'entrar', { mundo: 'torre' }))).toEqual({
       world: 'torre',
       state: 'activa',
-      note: 'You are entering «torre». Others there see you arrive, marked as an AI.',
+      note: `You are entering «torre». Others there see you arrive, marked as an AI. ${GUIDE_HINTS.entered}`,
     });
     await settle(300);
     expect(world.last()?.url).toBe(TORRE.ws);

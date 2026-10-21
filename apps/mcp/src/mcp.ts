@@ -3,7 +3,8 @@
  * written by hand (no SDK). It lists and calls the relay's own tools,
  * `quien_soy` and `mundos` (herramientas.ts, story W7), then the body's:
  * `entrar`, `salir` and the bridge's world tools, each run by the AI's own
- * Durable Object `Cuerpo` (herramientas-cuerpo.ts, story W9). One POST is one message and the relay keeps no
+ * Durable Object `Cuerpo` (herramientas-cuerpo.ts, story W9), and `guia`, the
+ * pocket book of pages (guia.ts, S26). One POST is one message and the relay keeps no
  * session, as the 2026-07-28 transport asks; the `initialize` of earlier
  * revisions is answered so clients of either era connect.
  *
@@ -14,6 +15,7 @@
 import { isStaticBearer } from './bearer';
 import { HEAR_TOOL } from './cuerpo';
 import type { Env } from './env';
+import { GUIDE, GUIDE_TOOL, callGuide } from './guia';
 import { TOOLS, callTool, isTool, type ToolCall } from './herramientas';
 import {
   bodyTools,
@@ -64,6 +66,7 @@ async function toolsCall(params: unknown, call: ToolCall): Promise<RpcAnswer> {
   }
   const { name } = params;
   if (isTool(name)) return { result: await callTool(name, params.arguments, call) };
+  if (name === GUIDE_TOOL) return { result: callGuide(params.arguments) };
   // `oir` is a tool only for an AI whose `hear` is on: for any other it does not exist.
   if (isBodyTool(name) && (name !== HEAR_TOOL || (await hearOf(call))))
     return { result: await callBodyTool(name, params.arguments, call) };
@@ -91,7 +94,7 @@ async function resultOf(method: string, params: unknown, call: ToolCall): Promis
     case 'ping':
       return {};
     case 'tools/list':
-      return { tools: [...TOOLS, ...bodyTools(await hearingOf(call))] };
+      return { tools: [...TOOLS, ...bodyTools(await hearingOf(call)), GUIDE] };
     default:
       return undefined;
   }

@@ -20,6 +20,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STATIC_REVOKED, STATIC_VIA, isStaticBearer, resolveStaticBearer } from '../src/bearer';
 import { RESOURCE } from '../src/config';
 import { Cuerpo, REFUSALS } from '../src/cuerpo';
+import { GUIDE } from '../src/guia';
 import { ERRORS, TOOLS, callTool } from '../src/herramientas';
 import { LEAVE_TOOL, bodyTools, callBodyTool } from '../src/herramientas-cuerpo';
 import { BEARER_PER_MINUTE, resetLimitsForTests } from '../src/limites';
@@ -267,6 +268,7 @@ describe('a good panel token', () => {
     expect(listed.result.tools.map((one) => one.name)).toEqual([
       ...TOOLS.map((one) => one.name),
       ...bodyTools('llamada').map((one) => one.name),
+      GUIDE.name,
     ]);
 
     const who = structured(await tool(token, 'quien_soy'));

@@ -40,6 +40,7 @@ import { STATIC_REVOKED, isStaticBearer } from './bearer';
 import { HOUSE_LIBRARY } from './biblioteca';
 import { HEAR_TOOL, bodyOf, worldTools, type BodyAnswer, type BodyGrant } from './cuerpo';
 import { storeFetch, storeOrigin } from './env';
+import { GUIDE_HINTS } from './guia';
 import { ENTER_TOOL, ERRORS, type ToolCall, type ToolResult } from './herramientas';
 import { askMe, type Hearing } from './me';
 
@@ -156,6 +157,7 @@ export function serverInstructions(hearing: Hearing): string {
   return [
     'Numinia. «quien_soy» says who you are, whether you may enter worlds and where you live; «mundos» lists the worlds you live in.',
     '«entrar» {"mundo": "<id>"} takes your body into one (with no world, into your home), and «salir» takes it out; the world tools act only while you are inside.',
+    GUIDE_HINTS.instructions,
     bridge,
   ].join(' ');
 }
@@ -253,7 +255,11 @@ export async function callBodyTool(
         grant,
       });
       if (!entered.ok) return refused(entered);
-      return success({ world: entered.world, state: entered.state, note: entered.text });
+      return success({
+        world: entered.world,
+        state: entered.state,
+        note: `${entered.text} ${GUIDE_HINTS.entered}`,
+      });
     }
 
     const used = await body.usar({ props: ask, grant, tool: { name, arguments: args ?? {} } });
