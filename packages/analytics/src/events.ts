@@ -142,6 +142,9 @@ export function buildEvent<Name extends AnalyticsEventName>(
 // - «En el mundo» on an AI's card (S20, 2026-10-21): `panel-agentes-where-<one|several|all>` (where it
 //   lives), `panel-agentes-where-pick` (the one world's select) and `panel-agentes-where-world` (a
 //   world's box in the several-worlds list).
+// - «Cuerpo y burbuja» (S21): `panel-agentes-body`, `panel-agentes-bubble-<esfera|cupula|cilindro|caja>`,
+//   `panel-agentes-bubble-radius`, `panel-agentes-bubble-visible-<siempre|al-acercarte|nunca>`,
+//   `panel-agentes-stay-<0|1|4|24>`.
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----

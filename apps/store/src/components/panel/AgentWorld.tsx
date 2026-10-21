@@ -14,9 +14,10 @@
  * redraws from the list it answers.
  */
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { AgentWorlds } from '@numinia/domain';
 import type { AgentesMessages } from '../../i18n/panel-agentes';
+import { AgentBubble } from './AgentBubble';
 import { fill, type DeskAgent } from '../../lib/accounts';
 import {
   livesIn,
@@ -176,8 +177,23 @@ export function AgentWorld({
   readonly community: Community;
   readonly onChange: (change: Change) => void;
 }) {
+  // While a change is on its way the card disables its controls, and a browser drops the focus of a disabled
+  // one: give it back to the control the person was on, so a keyboard keeps its place.
+  const last = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (editable && last.current !== null && document.activeElement === document.body) {
+      last.current.focus();
+    }
+  }, [editable]);
+
   return (
-    <div className="agentes-mundo" data-agent-world-section>
+    <div
+      className="agentes-mundo"
+      data-agent-world-section
+      onFocus={(event) => {
+        last.current = event.target;
+      }}
+    >
       <h2 className="agentes-mundo-titulo">{words.world.title}</h2>
       <p className="saldo-nota agentes-mundo-nota" data-agent-world-note>
         {words.world.note}
@@ -189,6 +205,7 @@ export function AgentWorld({
         community={community}
         onChange={onChange}
       />
+      <AgentBubble agent={agent} editable={editable} words={words.world} onChange={onChange} />
     </div>
   );
 }

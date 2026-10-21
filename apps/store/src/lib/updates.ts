@@ -35,7 +35,7 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
       },
       {
         type: 'NEW',
-        text: 'In the panel’s Agentes, each AI’s card has a new «En el mundo» section, and its first group, «Dónde vive», lets whoever manages the AI choose one world, several, or all of the community’s. These settings reach the worlds once their engine is updated.',
+        text: 'In the panel’s Agentes, each AI’s card has a new «En el mundo» section: “Dónde vive” lets whoever manages the AI choose one world, several, or all of the community’s; “Cuerpo y burbuja” sets its body (the house robot), the shape of its bubble (sphere, dome, cylinder or box), its radius from 2 to 12 m, when the bubble is drawn, and whether it stays in the world for 1, 4 or 24 hours when nobody uses it. These settings reach the worlds once their engine is updated.',
       },
     ],
   },

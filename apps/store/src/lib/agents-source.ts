@@ -12,6 +12,7 @@
  *          { accountId, id, renewToken: true }               a new token (the old one stops) → { agents, token }
  *          { accountId, id, revokeToken: true }              revoke the token and switch it off
  *          { accountId, id, worlds: { todos: true } | { mundos: [world ids] } }   where it lives
+ *          { accountId, id, presence: { cuerpo?, burbuja?, llamada?, oye?, quedarse_h? } }   how it is present
  *          { accountId, id, giveRole: <role id> }            give a role
  *          { accountId, id, takeRole: <role id> }            take a role
  *   DELETE ?cuenta=<account id>&agente=<agent id>            remove
@@ -33,7 +34,12 @@
  */
 
 import { z } from 'zod';
-import { AGENT_WORLDS_MAX, parseAgentPresence } from '@numinia/domain';
+import {
+  AGENT_WORLDS_MAX,
+  parseAgentPresence,
+  parseAgentPresenceChange,
+  type AgentPresenceChange,
+} from '@numinia/domain';
 import type { AccountDesk, Asker, DeskAgent, DeskAgentDraft } from './accounts';
 import {
   accountOf,
@@ -83,6 +89,10 @@ function buildSchemas() {
       .object({ mundos: z.array(z.string().min(1).max(ID_MAX)).min(1).max(AGENT_WORLDS_MAX) })
       .strict(),
   ]);
+  // The presence is the domain's: any part of any group, each valid, none unknown (the till reads it again).
+  const presence = z.custom<AgentPresenceChange>((value) => parseAgentPresenceChange(value).ok, {
+    message: 'invalid presence',
+  });
   const patch = z.union([
     z
       .object({
@@ -99,6 +109,7 @@ function buildSchemas() {
         { message: 'enabled, state or hears is required' },
       ),
     z.object({ accountId, id: agentId, worlds }).strict(),
+    z.object({ accountId, id: agentId, presence }).strict(),
     z.object({ accountId, id: agentId, giveRole: roleId }).strict(),
     z.object({ accountId, id: agentId, takeRole: roleId }).strict(),
     z.object({ accountId, id: agentId, renewToken: z.literal(true) }).strict(),
@@ -274,6 +285,9 @@ export async function answerAgentWrite(
       }
       if ('takeRole' in change) {
         return desk.takeAgentRole(you, change.accountId, change.id, change.takeRole, house);
+      }
+      if ('presence' in change) {
+        return desk.changeAgentPresence(you, change.accountId, change.id, change.presence, house);
       }
       if ('worlds' in change) {
         return desk.setAgentWorlds(you, change.accountId, change.id, change.worlds, house);

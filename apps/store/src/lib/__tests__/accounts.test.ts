@@ -72,16 +72,16 @@ describe('the desk contract', () => {
   });
 
   it('has one’s own name and avatar, which a till older than the store may still lack', () => {
-    expect(DESK_METHODS.slice(-41, -39)).toEqual(['profile', 'setProfile']);
+    expect(DESK_METHODS.slice(-42, -40)).toEqual(['profile', 'setProfile']);
     for (const method of OPTIONAL_DESK_METHODS) expect(DESK_METHODS).toContain(method);
   });
 
   it('has the census (cut «El censo»), optional too: a till without it changes nothing', () => {
-    expect(DESK_METHODS.slice(-39, -37)).toEqual(['signedIn', 'citizens']);
+    expect(DESK_METHODS.slice(-40, -38)).toEqual(['signedIn', 'citizens']);
   });
 
   it('has where worlds belong (cut «Mundos ↔ organizaciones»), optional as well', () => {
-    expect(DESK_METHODS.slice(-37, -33)).toEqual([
+    expect(DESK_METHODS.slice(-38, -34)).toEqual([
       'placeWorld',
       'placements',
       'worldsOf',
@@ -94,6 +94,7 @@ describe('the desk contract', () => {
       'agents',
       'cancelRitual',
       'changeAgent',
+      'changeAgentPresence',
       'changeSettings',
       'citizens',
       'claimAgentPass',
@@ -134,20 +135,20 @@ describe('the desk contract', () => {
   });
 
   it('has opening a community’s account (cut «Una comunidad ES una organización»), optional too', () => {
-    expect(DESK_METHODS.at(-31)).toBe('ensureCommunityTeam');
+    expect(DESK_METHODS.at(-32)).toBe('ensureCommunityTeam');
   });
 
   it('has the settings and «Qué ha pasado» (cut «Ajustes de la comunidad»), optional too', () => {
-    expect(DESK_METHODS.slice(-30, -27)).toEqual(['settings', 'changeSettings', 'happenings']);
+    expect(DESK_METHODS.slice(-31, -28)).toEqual(['settings', 'changeSettings', 'happenings']);
   });
 
   it('has opening every community at once (cut 7), optional too', () => {
-    expect(DESK_METHODS.at(-27)).toBe('openAllCommunities');
+    expect(DESK_METHODS.at(-28)).toBe('openAllCommunities');
     expect(OPTIONAL_DESK_METHODS).toContain('openAllCommunities');
   });
 
   it('has the AIs of an organization (cut «IAs de organización»), then «Hazla tuya» (cut G) and ends with «Un encuentro» (cut M), then the Oracle’s card edit (card t_371c917d), then the AIs’ access token (cut «token de acceso») and «MCP remoto»’s worlds and token lookup (W2), optional too', () => {
-    expect(DESK_METHODS.slice(-26, -8)).toEqual([
+    expect(DESK_METHODS.slice(-27, -9)).toEqual([
       'agents',
       'createAgent',
       'changeAgent',
@@ -168,12 +169,13 @@ describe('the desk contract', () => {
       'communityFields',
     ]);
     // …and their access token (cut «token de acceso»), then «MCP remoto» (W2), last of all.
-    expect(DESK_METHODS.slice(-8, -6)).toEqual(['renewAgentToken', 'revokeAgentToken']);
-    expect(DESK_METHODS.slice(-6, -4)).toEqual(['agentWorlds', 'agentByToken']);
-    for (const method of DESK_METHODS.slice(-26)) expect(OPTIONAL_DESK_METHODS).toContain(method);
+    expect(DESK_METHODS.slice(-9, -7)).toEqual(['renewAgentToken', 'revokeAgentToken']);
+    expect(DESK_METHODS.slice(-7, -5)).toEqual(['agentWorlds', 'agentByToken']);
+    for (const method of DESK_METHODS.slice(-27)) expect(OPTIONAL_DESK_METHODS).toContain(method);
   });
 
   it('has where an AI lives (S20), right before the terms, optional too', () => {
+    expect(DESK_METHODS.slice(-5, -4)).toEqual(['changeAgentPresence']);
     expect(DESK_METHODS.slice(-4, -3)).toEqual(['setAgentWorlds']);
   });
 

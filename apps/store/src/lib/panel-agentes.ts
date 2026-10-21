@@ -16,7 +16,16 @@
  * till's rule (`isAgentId`, lib/agents.ts).
  */
 
-import type { AgentWorlds } from '@numinia/domain';
+import type {
+  AgentBodyKind,
+  AgentHearingStep,
+  AgentPresence,
+  AgentPresenceChange,
+  AgentStayHours,
+  AgentWorlds,
+  BubbleShape,
+  BubbleVisible,
+} from '@numinia/domain';
 import {
   readProblem,
   shortWallet,
@@ -51,6 +60,76 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isStrings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
+// The domain's own lists, written out here because this file ships to the browser without the domain's
+// validators (zod); a test pins every one of them to packages/domain/src/types/agent-presence.ts.
+export const BUBBLE_FORMS: readonly BubbleShape[] = ['esfera', 'cupula', 'cilindro', 'caja'];
+export const BUBBLE_VISIBILITY: readonly BubbleVisible[] = ['siempre', 'al-acercarte', 'nunca'];
+export const BUBBLE_RADIUS_MIN = 2;
+export const BUBBLE_RADIUS_MAX = 12;
+export const STAY_HOURS: readonly AgentStayHours[] = [0, 1, 4, 24];
+export const HEARING_STEPS: readonly AgentHearingStep[] = ['llamada', 'burbuja', 'todo'];
+export const CALL_PHRASE_MAX = 40;
+const BODY_KINDS: readonly string[] = ['casa'] satisfies readonly AgentBodyKind[];
+const BODY_MODEL_MAX = 999;
+
+/** The house's own models an AI may wear. Only its robot is on offer until the house publishes more. */
+export const HOUSE_BODIES: readonly { readonly modelo: number; readonly key: 'robot' }[] = [
+  { modelo: 0, key: 'robot' },
+];
+
+/** What a new AI is present as, until its manager changes it: the till's own (the domain's `DEFAULT_AGENT_PRESENCE`). */
+export const DEFAULT_PRESENCE: AgentPresence = {
+  cuerpo: { tipo: 'casa', modelo: 0 },
+  burbuja: { forma: 'esfera', radio: 4, visible: 'al-acercarte' },
+  llamada: { nombre: true, barra: true, boton: true, solo_dentro: true },
+  oye: 'llamada',
+  quedarse_h: 0,
+};
+
+const isWhole = (value: unknown, min: number, max: number): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
+
+const isOneOf = <T extends string | number>(list: readonly T[], value: unknown): value is T =>
+  (list as readonly unknown[]).includes(value);
+
+/** How an AI is present, as the desk says it: all four groups, each valid; undefined for anything else. */
+function readPresence(value: unknown): AgentPresence | undefined {
+  if (!isRecord(value)) return undefined;
+  const { cuerpo, burbuja, llamada, oye, quedarse_h: stay } = value;
+  if (!isRecord(cuerpo) || !isRecord(burbuja) || !isRecord(llamada)) return undefined;
+  const { frase } = llamada;
+  if (
+    typeof cuerpo['tipo'] !== 'string' ||
+    !BODY_KINDS.includes(cuerpo['tipo']) ||
+    !isWhole(cuerpo['modelo'], 0, BODY_MODEL_MAX) ||
+    !isOneOf(BUBBLE_FORMS, burbuja['forma']) ||
+    !isWhole(burbuja['radio'], BUBBLE_RADIUS_MIN, BUBBLE_RADIUS_MAX) ||
+    !isOneOf(BUBBLE_VISIBILITY, burbuja['visible']) ||
+    typeof llamada['nombre'] !== 'boolean' ||
+    typeof llamada['barra'] !== 'boolean' ||
+    typeof llamada['boton'] !== 'boolean' ||
+    typeof llamada['solo_dentro'] !== 'boolean' ||
+    (frase !== undefined && (typeof frase !== 'string' || frase.length === 0)) ||
+    !isOneOf(HEARING_STEPS, oye) ||
+    !isOneOf(STAY_HOURS, stay)
+  ) {
+    return undefined;
+  }
+  return {
+    cuerpo: { tipo: 'casa', modelo: cuerpo['modelo'] },
+    burbuja: { forma: burbuja['forma'], radio: burbuja['radio'], visible: burbuja['visible'] },
+    llamada: {
+      nombre: llamada['nombre'],
+      barra: llamada['barra'],
+      boton: llamada['boton'],
+      solo_dentro: llamada['solo_dentro'],
+      ...(typeof frase === 'string' ? { frase } : {}),
+    },
+    oye,
+    quedarse_h: stay,
+  };
+}
+
 /** Where an AI lives, as the desk says it: every world (`todos`) or the chosen ones (`mundos`); undefined for anything else. */
 function readWorlds(value: unknown): AgentWorlds | undefined {
   if (!isRecord(value)) return undefined;
@@ -66,6 +145,7 @@ function readAgent(value: unknown): DeskAgent | null {
   const { tokenPrefix, tokenCreatedAt, via } = value;
   const { createdAt, updatedAt, roleIds, assignable, mayEdit, hears } = value;
   const worlds = readWorlds(value['worlds']);
+  const presence = readPresence(value['presence']);
   if (
     typeof id !== 'string' ||
     typeof name !== 'string' ||
@@ -105,6 +185,8 @@ function readAgent(value: unknown): DeskAgent | null {
     hears: hears === true,
     // A desk that does not say (before migration 0026) lives in all of its community's worlds.
     ...(worlds === undefined ? {} : { worlds }),
+    // …and is present as the defaults say.
+    ...(presence === undefined ? {} : { presence }),
     status: status as AgentStatus,
     responsible,
     ...(responsibleHouse === true ? { responsibleHouse } : {}),
@@ -306,6 +388,7 @@ export type Change =
   | { readonly state: AgentState }
   | { readonly hears: boolean }
   | { readonly worlds: AgentWorlds }
+  | { readonly presence: AgentPresenceChange }
   | { readonly giveRole: string }
   | { readonly takeRole: string }
   | { readonly renewToken: true }
@@ -561,3 +644,19 @@ export function toggleWorld(
   const next = on ? [...new Set([...chosen, id])] : chosen.filter((one) => one !== id);
   return next.length === 0 ? null : { mundos: next.sort() };
 }
+
+// ---- «En el mundo» (S21): body and bubble --------------------------------------
+
+/**
+ * How an AI is present: what the desk said, or — from a till older than migration 0026 — the defaults. What it
+ * hears follows its `hears` switch, the truth about the last rung: set, «everything nearby»; not set, never.
+ */
+export function presenceOf(agent: Pick<DeskAgent, 'presence' | 'hears'>): AgentPresence {
+  const stored = agent.presence ?? DEFAULT_PRESENCE;
+  const oye = agent.hears ? 'todo' : stored.oye === 'todo' ? 'llamada' : stored.oye;
+  return oye === stored.oye ? stored : { ...stored, oye };
+}
+
+/** A radius the slider may hold: whole metres, between the least and the most. */
+export const clampRadius = (metres: number): number =>
+  Math.min(BUBBLE_RADIUS_MAX, Math.max(BUBBLE_RADIUS_MIN, Math.round(metres)));

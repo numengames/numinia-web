@@ -150,6 +150,40 @@ export interface AgentesMessages {
       readonly last: string;
       readonly empty: string;
     };
+    /** «Cuerpo»: which of the house's bodies it wears (only the robot until the house publishes more). */
+    readonly body: {
+      readonly label: string;
+      readonly robot: string;
+      readonly hint: string;
+    };
+    /** «Burbuja»: its shape (four drawings), radius and when it is drawn. */
+    readonly bubble: {
+      readonly label: string;
+      readonly shapesLabel: string;
+      readonly shapes: Readonly<
+        Record<
+          'esfera' | 'cupula' | 'cilindro' | 'caja',
+          { readonly name: string; readonly hint: string }
+        >
+      >;
+      readonly radiusLabel: string;
+      /** `{n}` metres. */
+      readonly radiusValue: string;
+      readonly radiusHint: string;
+      readonly visibleLabel: string;
+      readonly visible: Readonly<
+        Record<
+          'siempre' | 'al-acercarte' | 'nunca',
+          { readonly name: string; readonly hint: string }
+        >
+      >;
+    };
+    /** «Quedarse en el mundo»: how long it stays when nobody uses it (D-082). */
+    readonly stay: {
+      readonly label: string;
+      readonly options: Readonly<Record<'0' | '1' | '4' | '24', string>>;
+      readonly hint: string;
+    };
   };
   readonly dialog: {
     readonly rolesLabel: string;
@@ -313,6 +347,44 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         last: 'Tiene que vivir al menos en un mundo.',
         empty: 'Ahora no vive en ningún mundo: marca al menos uno.',
       },
+      body: {
+        label: 'Cuerpo',
+        robot: 'Robot de la casa',
+        hint: 'Es el cuerpo con el que entra en el mundo. Por ahora la casa solo ofrece este.',
+      },
+      bubble: {
+        label: 'Burbuja',
+        shapesLabel: 'Forma de la burbuja de {name}',
+        shapes: {
+          esfera: { name: 'Esfera', hint: 'La rodea por todos lados. Vale de pie o flotando.' },
+          cupula: {
+            name: 'Cúpula',
+            hint: 'Media esfera sobre el suelo. Para un puesto, una recepción o un escenario.',
+          },
+          cilindro: {
+            name: 'Cilindro',
+            hint: 'Cuenta toda la altura. Para una torre, un balcón o un piso.',
+          },
+          caja: {
+            name: 'Caja',
+            hint: 'Un cuadrado. Para tras un mostrador o en una plaza cuadrada.',
+          },
+        },
+        radiusLabel: 'Radio',
+        radiusValue: '{n} m',
+        radiusHint: 'Hasta dónde llega: de 2 a 12 metros.',
+        visibleLabel: 'Se ve',
+        visible: {
+          siempre: { name: 'Siempre', hint: 'Se dibuja siempre, también de lejos.' },
+          'al-acercarte': { name: 'Al acercarte', hint: 'Se dibuja tenue cuando estás cerca.' },
+          nunca: { name: 'Nunca', hint: 'No se dibuja, pero sigue valiendo para llamarla.' },
+        },
+      },
+      stay: {
+        label: 'Quedarse en el mundo',
+        options: { '0': 'No', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
+        hint: 'Si nadie la usa, se va a los 10 minutos; si eliges horas, se queda. Lo paga la casa.',
+      },
     },
     dialog: {
       rolesLabel: '¿Con qué roles?',
@@ -473,6 +545,41 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         unread: 'The community’s worlds could not be read.',
         last: 'It has to live in at least one world.',
         empty: 'It lives in no world right now: tick at least one.',
+      },
+      body: {
+        label: 'Body',
+        robot: 'House robot',
+        hint: 'The body it enters the world with. For now the house only offers this one.',
+      },
+      bubble: {
+        label: 'Bubble',
+        shapesLabel: 'Shape of {name}’s bubble',
+        shapes: {
+          esfera: { name: 'Sphere', hint: 'All around it. Works standing or floating.' },
+          cupula: {
+            name: 'Dome',
+            hint: 'Half a sphere above the ground. For a stall, a reception or a stage.',
+          },
+          cilindro: {
+            name: 'Cylinder',
+            hint: 'Counts the whole height. For a tower, a balcony or a floor.',
+          },
+          caja: { name: 'Box', hint: 'A square. For behind a counter or in a square plaza.' },
+        },
+        radiusLabel: 'Radius',
+        radiusValue: '{n} m',
+        radiusHint: 'How far it reaches: 2 to 12 metres.',
+        visibleLabel: 'Shown',
+        visible: {
+          siempre: { name: 'Always', hint: 'Always drawn, even from afar.' },
+          'al-acercarte': { name: 'When you get close', hint: 'Drawn faintly when you are near.' },
+          nunca: { name: 'Never', hint: 'Not drawn, but it still counts for calling it.' },
+        },
+      },
+      stay: {
+        label: 'Stay in the world',
+        options: { '0': 'No', '1': '1 hour', '4': '4 hours', '24': '24 hours' },
+        hint: 'If nobody uses it, it leaves after 10 minutes; if you choose hours, it stays. The house pays for it.',
       },
     },
     dialog: {
@@ -635,6 +742,35 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         last: '少なくとも1つのワールドに住む必要があります。',
         empty: '今はどのワールドにも住んでいません。少なくとも1つチェックしてください。',
       },
+      body: {
+        label: '体',
+        robot: 'ハウスのロボット',
+        hint: 'ワールドに入るときの体です。今のところ、ハウスが用意しているのはこれだけです。',
+      },
+      bubble: {
+        label: 'バブル',
+        shapesLabel: '{name}のバブルの形',
+        shapes: {
+          esfera: { name: '球', hint: '全方向を囲みます。立っていても浮いていても使えます。' },
+          cupula: { name: 'ドーム', hint: '地面の上の半球です。屋台、受付、ステージ向け。' },
+          cilindro: { name: '円柱', hint: '高さ全体を含みます。塔、バルコニー、フロア向け。' },
+          caja: { name: '箱', hint: '四角形です。カウンターの奥や四角い広場向け。' },
+        },
+        radiusLabel: '半径',
+        radiusValue: '{n} m',
+        radiusHint: '届く範囲です。2〜12メートル。',
+        visibleLabel: '表示',
+        visible: {
+          siempre: { name: '常に', hint: '遠くからでも常に描かれます。' },
+          'al-acercarte': { name: '近づいたとき', hint: '近くにいるとき、うっすら描かれます。' },
+          nunca: { name: '表示しない', hint: '描かれませんが、呼びかけには使えます。' },
+        },
+      },
+      stay: {
+        label: 'ワールドに残る',
+        options: { '0': 'しない', '1': '1時間', '4': '4時間', '24': '24時間' },
+        hint: '誰も使わなければ10分で去ります。時間を選ぶと、その間は残ります。費用はハウスが負担します。',
+      },
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -793,6 +929,38 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         unread: '커뮤니티의 월드를 불러오지 못했습니다.',
         last: '적어도 한 월드에는 살아야 합니다.',
         empty: '지금은 어떤 월드에도 살지 않습니다. 하나 이상 체크하세요.',
+      },
+      body: {
+        label: '몸',
+        robot: '하우스 로봇',
+        hint: '월드에 들어갈 때 입는 몸입니다. 지금은 하우스가 이것만 제공합니다.',
+      },
+      bubble: {
+        label: '버블',
+        shapesLabel: '{name}의 버블 모양',
+        shapes: {
+          esfera: { name: '구', hint: '사방을 감쌉니다. 서 있어도 떠 있어도 됩니다.' },
+          cupula: { name: '돔', hint: '땅 위의 반구입니다. 가판대, 접수처, 무대에 알맞습니다.' },
+          cilindro: {
+            name: '원기둥',
+            hint: '높이 전체를 포함합니다. 탑, 발코니, 층에 알맞습니다.',
+          },
+          caja: { name: '상자', hint: '사각형입니다. 카운터 뒤나 네모난 광장에 알맞습니다.' },
+        },
+        radiusLabel: '반경',
+        radiusValue: '{n} m',
+        radiusHint: '닿는 거리입니다. 2~12미터.',
+        visibleLabel: '표시',
+        visible: {
+          siempre: { name: '항상', hint: '멀리서도 항상 그려집니다.' },
+          'al-acercarte': { name: '다가갈 때', hint: '가까이 있을 때 희미하게 그려집니다.' },
+          nunca: { name: '표시 안 함', hint: '그려지지 않지만 부르는 데는 쓰입니다.' },
+        },
+      },
+      stay: {
+        label: '월드에 머물기',
+        options: { '0': '아니요', '1': '1시간', '4': '4시간', '24': '24시간' },
+        hint: '아무도 쓰지 않으면 10분 뒤에 떠납니다. 시간을 고르면 그동안 머뭅니다. 비용은 하우스가 냅니다.',
       },
     },
     dialog: {
@@ -953,6 +1121,50 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         unread: 'Não foi possível ler os mundos da comunidade.',
         last: 'Ela precisa morar em pelo menos um mundo.',
         empty: 'Agora ela não mora em nenhum mundo: marque pelo menos um.',
+      },
+      body: {
+        label: 'Corpo',
+        robot: 'Robô da casa',
+        hint: 'O corpo com que ela entra no mundo. Por enquanto a casa só oferece este.',
+      },
+      bubble: {
+        label: 'Bolha',
+        shapesLabel: 'Forma da bolha de {name}',
+        shapes: {
+          esfera: {
+            name: 'Esfera',
+            hint: 'Envolve a IA por todos os lados. Serve de pé ou flutuando.',
+          },
+          cupula: {
+            name: 'Cúpula',
+            hint: 'Meia esfera sobre o chão. Para uma barraca, uma recepção ou um palco.',
+          },
+          cilindro: {
+            name: 'Cilindro',
+            hint: 'Conta a altura toda. Para uma torre, uma varanda ou um andar.',
+          },
+          caja: {
+            name: 'Caixa',
+            hint: 'Um quadrado. Para atrás de um balcão ou numa praça quadrada.',
+          },
+        },
+        radiusLabel: 'Raio',
+        radiusValue: '{n} m',
+        radiusHint: 'Até onde alcança: de 2 a 12 metros.',
+        visibleLabel: 'Aparece',
+        visible: {
+          siempre: { name: 'Sempre', hint: 'É desenhada sempre, até de longe.' },
+          'al-acercarte': {
+            name: 'Ao se aproximar',
+            hint: 'É desenhada de leve quando você está perto.',
+          },
+          nunca: { name: 'Nunca', hint: 'Não é desenhada, mas continua valendo para chamá-la.' },
+        },
+      },
+      stay: {
+        label: 'Ficar no mundo',
+        options: { '0': 'Não', '1': '1 hora', '4': '4 horas', '24': '24 horas' },
+        hint: 'Se ninguém a usa, ela sai em 10 minutos; se você escolher horas, ela fica. A casa paga.',
       },
     },
     dialog: {

@@ -17,6 +17,7 @@ import {
   ORGANIZATION_PERMISSIONS,
   needsFreshSignature,
   type AgentPresence,
+  type AgentPresenceChange,
   type AgentWorlds,
   type OrganizationAccess,
   type OrganizationPermission,
@@ -753,6 +754,17 @@ export interface AccountDesk {
     worlds: AgentWorlds,
     house?: boolean,
   ): Promise<DeskAgentsAnswer>;
+  /**
+   * How an agent is present in a world — body, bubble, how it is called, what it hears, how long it stays:
+   * any part of any group (the domain's `AgentPresenceChange`); logged (optional).
+   */
+  changeAgentPresence(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    change: AgentPresenceChange,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
   /** The worlds placed in an agent's organization, in one query; public as `homeOf` is (optional). */
   agentWorlds(accountId: string, agentId: string): Promise<DeskAgentWorldsAnswer>;
   /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` (optional). */
@@ -964,6 +976,7 @@ export const DESK_METHODS = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'changeAgentPresence',
   'setAgentWorlds',
   'communityTerms',
   'publishTerms',
@@ -1027,6 +1040,7 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'changeAgentPresence',
   'setAgentWorlds',
   'communityTerms',
   'publishTerms',

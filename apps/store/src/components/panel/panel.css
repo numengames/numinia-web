@@ -2896,3 +2896,40 @@
   padding: var(--s2) 0;
   border-top: 1px solid var(--linea-f);
 }
+
+/* «En el mundo» — body and bubble (S21): four drawings, the radius, how long it stays. */
+.agentes-formas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: var(--s2);
+  width: 100%;
+}
+.agentes-forma {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  text-align: center;
+}
+.agentes-forma input {
+  margin: 0;
+}
+.agentes-forma-dibujo {
+  color: var(--turquesa);
+  max-width: 100%;
+}
+.agentes-radio {
+  display: grid;
+  gap: var(--s1);
+  min-width: 0;
+}
+.agentes-radio-etiqueta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.agentes-radio input[type='range'] {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--turquesa);
+}

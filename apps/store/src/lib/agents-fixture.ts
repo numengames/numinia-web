@@ -19,6 +19,8 @@ import {
   type ActorAccess,
   type AgentPresence,
   type AgentWorlds,
+  applyAgentPresenceChange,
+  parseAgentPresenceChange,
   parseAgentWorlds,
   type OrganizationAccess,
   type OrganizationRefusal,
@@ -53,6 +55,7 @@ import {
   isConnectedVia,
   isTokenHash,
   isTokenPrefix,
+  presenceDiff,
   publicKeyBytes,
   readAgentName,
 } from './agents';
@@ -133,6 +136,7 @@ type AgentMethods = Pick<
   | 'agents'
   | 'createAgent'
   | 'changeAgent'
+  | 'changeAgentPresence'
   | 'setAgentWorlds'
   | 'removeAgent'
   | 'renewAgentToken'
@@ -461,6 +465,38 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
         agent.presence = { ...agent.presence, oye: hearingOf(hears, agent.presence.oye) };
         agent.updatedAt = stamp();
       }
+      return view(entry);
+    },
+
+    changeAgentPresence: async (
+      wallet,
+      accountId,
+      agentId,
+      sent,
+      house,
+    ): Promise<DeskAgentsAnswer> => {
+      const read = parseAgentPresenceChange(sent);
+      const found = withAgent(wallet, accountId, agentId, house);
+      if ('ok' in found) return found;
+      if (!read.ok) return refuse(...read.problems.map((line) => `presence: ${line}`));
+      const { entry, agent } = found;
+      const refused = handling(entry, agent);
+      if (refused !== null) return refused;
+      const next = applyAgentPresenceChange(agent.presence, read.value);
+      const diff = presenceDiff(agent.presence, next);
+      if (diff.length === 0) return view(entry);
+      host.record(entry, 'agent-state', agent.id, { name: agent.name, presence: diff.join(';') });
+      // The last rung of what it hears is the `hears` switch's, and the two move together.
+      const hears = next.oye === 'todo';
+      if (hears !== agent.hears) {
+        host.record(entry, 'agent-state', agent.id, {
+          name: agent.name,
+          hears: hears ? 'on' : 'off',
+        });
+      }
+      agent.presence = next;
+      agent.hears = hears;
+      agent.updatedAt = stamp();
       return view(entry);
     },
 

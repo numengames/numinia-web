@@ -409,6 +409,80 @@ describe('switching, sleeping, removing', () => {
     );
   });
 
+  it('says how an AI is present: any part of any group, one log line, and the last rung is the hears switch', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, BOT);
+    s.log.length = 0;
+    const set = async (change: unknown, who = OWNER) =>
+      s.desk.changeAgentPresence(who, ORG, 'hermes-1', change as never);
+    const now = async () => view(await s.desk.agents(OWNER, ORG)).agents[0];
+    expect((await now())?.presence).toEqual(DEFAULT_AGENT_PRESENCE);
+
+    // a part of a group moves; the rest stays; one line for what moved
+    const moved = view(await set({ burbuja: { forma: 'cilindro', radio: 9 }, quedarse_h: 4 }));
+    expect(moved.agents[0]?.presence).toEqual({
+      ...DEFAULT_AGENT_PRESENCE,
+      burbuja: { ...DEFAULT_AGENT_PRESENCE.burbuja, forma: 'cilindro', radio: 9 },
+      quedarse_h: 4,
+    });
+    expect(s.log.map((line) => [line.act, line.detail])).toEqual([
+      [
+        'agent-state',
+        { name: 'Hermes', presence: 'burbuja.forma=cilindro;burbuja.radio=9;quedarse_h=4' },
+      ],
+    ]);
+
+    // the phrase: set, then cleared with null
+    await set({ llamada: { frase: 'ven' } });
+    expect((await now())?.presence?.llamada.frase).toBe('ven');
+    await set({ llamada: { frase: null } });
+    expect((await now())?.presence?.llamada).not.toHaveProperty('frase');
+
+    // nothing moved: no line, no change
+    s.log.length = 0;
+    await set({ burbuja: { radio: 9 } });
+    expect(s.log).toEqual([]);
+
+    // «todo» is the hears switch's: both move together, and both are logged
+    await set({ oye: 'todo' });
+    expect(view(await s.desk.agents(OWNER, ORG)).agents[0]).toMatchObject({
+      hears: true,
+      presence: { oye: 'todo' },
+    });
+    expect(s.log.map((line) => line.detail)).toEqual([
+      { name: 'Hermes', presence: 'oye=todo' },
+      { name: 'Hermes', hears: 'on' },
+    ]);
+    await set({ oye: 'burbuja' });
+    expect(view(await s.desk.agents(OWNER, ORG)).agents[0]).toMatchObject({
+      hears: false,
+      presence: { oye: 'burbuja' },
+    });
+    // a rung that is not the last, moved while it hears nothing, leaves the switch alone
+    s.log.length = 0;
+    await set({ oye: 'llamada' });
+    expect(s.log.map((line) => line.detail)).toEqual([{ name: 'Hermes', presence: 'oye=llamada' }]);
+
+    // what is not valid is refused in the domain’s words, nothing written
+    s.log.length = 0;
+    expect(problems(await set({})).length).toBe(1);
+    expect(problems(await set({ burbuja: { radio: 99 } })).length).toBe(1);
+    expect(problems(await set('todo')).length).toBe(1);
+    expect(s.log).toEqual([]);
+    expect(
+      problems(await s.desk.changeAgentPresence(OWNER, ORG, 'ghost', { oye: 'llamada' })),
+    ).toEqual([AGENT_PROBLEMS.noSuchAgent]);
+    expect(
+      problems(await s.desk.changeAgentPresence(OWNER, ORG, 7 as never, { oye: 'llamada' })),
+    ).toEqual([AGENT_PROBLEMS.agentId]);
+    expect(problems(await set({ oye: 'llamada' }, PLAIN))).toEqual([
+      refusalSentence('missing-permission', 'manage-roles'),
+    ]);
+    expect(
+      (await s.desk.changeAgentPresence(HOUSE, ORG, 'hermes-1', { quedarse_h: 1 }, true)).ok,
+    ).toBe(true);
+  });
+
   it('lets only a manager above the agent, or its responsible person, handle it; the house too', async () => {
     const s = stage();
     expect(problems(await s.desk.changeAgent(PLAIN, ORG, 'x', { enabled: false }))).toEqual([
