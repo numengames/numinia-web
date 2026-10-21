@@ -69,7 +69,7 @@ describe('handleMcp', () => {
         protocolVersion: '2025-06-18',
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
-        instructions: serverInstructions(false),
+        instructions: serverInstructions('llamada'),
       },
     });
   });
@@ -94,7 +94,7 @@ describe('handleMcp', () => {
     expect(await (await rpc({ id: 3, method: 'tools/list' })).json()).toEqual({
       jsonrpc: '2.0',
       id: 3,
-      result: { tools: [...TOOLS, ...bodyTools(false)] },
+      result: { tools: [...TOOLS, ...bodyTools('llamada')] },
     });
   });
 

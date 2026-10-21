@@ -6,7 +6,8 @@
  * and the world names it as an organization's AI (`ia-a_…`, « · IA»).
  * Every PASE the world receives is kept, so a test reads which passes
  * entered and when; other frames (the body's 20 Hz input) are only counted.
- * With its name the world sends its feature catalog (`chat`, `objetos`)
+ * With its name the world sends its feature catalog (`chat`, `objetos`, and
+ * the ones a test asks for in `features`: `llamar`, `burbuja`, `gestos`, `ia`)
  * and whether the body may build (`objetos.permiso`); each intent the body
  * sends (say, place, undo…) is decoded and kept, and a build is answered
  * `hecho` (or `rechazado`, when the test says so), as the engine's server
@@ -22,11 +23,18 @@ const MSG_PASE = 12;
 type Field =
   | { readonly kind: 'bool' }
   | { readonly kind: 'text'; readonly maxBytes: number }
+  | { readonly kind: 'int'; readonly min: number; readonly max: number }
+  | { readonly kind: 'enum'; readonly values: readonly string[] }
   | { readonly kind: 'fixed'; readonly min: number; readonly max: number; readonly step: number };
 
 const text = (maxBytes: number): Field => ({ kind: 'text', maxBytes });
 const metres: Field = { kind: 'fixed', min: -2048, max: 2048, step: 0.01 };
 const BOOL: Field = { kind: 'bool' };
+const who: Field = { kind: 'int', min: 0, max: 65535 };
+/** The ways to call an AI (features/llamar). */
+export const CALL_MODES = ['nombre', 'barra', 'boton', 'frase'] as const;
+/** The moves of the `gestos` feature the bridge's four gestures play. */
+const MOVES = ['saludar', 'hablar', 'agacharse', 'usar', 'parar'] as const;
 
 interface Entry {
   readonly feature: string;
@@ -60,11 +68,39 @@ const ENTRIES: readonly Entry[] = (
     ['objetos', 'event', 'permiso', { construir: BOOL }],
     ['objetos', 'event', 'hecho', { id: text(16) }],
     ['objetos', 'event', 'rechazado', { motivo: text(120) }],
+    [
+      'llamar',
+      'event',
+      'llamada',
+      {
+        ia: who,
+        quien: who,
+        nombre: text(60),
+        texto: text(190),
+        modo: { kind: 'enum', values: CALL_MODES },
+        t: { kind: 'int', min: 0, max: 2147483647 },
+      },
+    ],
+    [
+      'burbuja',
+      'event',
+      'entraEnBurbuja',
+      {
+        ia: who,
+        quien: who,
+        nombre: text(60),
+        distanciaDm: { kind: 'int', min: 0, max: 65535 },
+        esIA: BOOL,
+      },
+    ],
+    ['burbuja', 'event', 'saleDeBurbuja', { ia: who, quien: who, nombre: text(60), esIA: BOOL }],
+    ['gestos', 'intent', 'hacer', { gesto: { kind: 'enum', values: MOVES } }],
+    ['ia', 'intent', 'atenta', {}],
   ] as const
 ).map(([feature, kind, name, fields], index) => ({ feature, kind, name, index, fields }));
 
-function catalog(): Uint8Array {
-  const features = ['chat', 'objetos'].map((id) => ({
+function catalog(ids: readonly string[]): Uint8Array {
+  const features = ids.map((id) => ({
     id,
     version: 1,
     intents: ENTRIES.filter((e) => e.feature === id && e.kind === 'intent'),
@@ -80,11 +116,15 @@ function catalog(): Uint8Array {
 }
 
 const lengthBits = (maxBytes: number): number => Math.max(1, Math.ceil(Math.log2(maxBytes + 1)));
+const intBits = (f: { min: number; max: number }): number =>
+  Math.max(1, Math.ceil(Math.log2(f.max - f.min + 1)));
+const enumBits = (f: { values: readonly string[] }): number =>
+  Math.max(1, Math.ceil(Math.log2(f.values.length)));
 const fixedBits = (f: { min: number; max: number; step: number }): number =>
   Math.max(1, Math.ceil(Math.log2(Math.floor((f.max - f.min) / f.step) + 1)));
 
-/** FEATURE from the world: type, index (16 bits), then the fields, bit by bit (bool and text only). */
-function event(name: string, value: Record<string, boolean | string>): Uint8Array {
+/** FEATURE from the world: type, index (16 bits), then the fields, bit by bit. */
+function event(name: string, value: Record<string, boolean | number | string>): Uint8Array {
   const entry = ENTRIES.find((e) => e.kind === 'event' && e.name === name);
   if (entry === undefined) throw new Error(`no event ${name}`);
   const bits: number[] = [];
@@ -96,6 +136,8 @@ function event(name: string, value: Record<string, boolean | string>): Uint8Arra
   for (const [key, field] of Object.entries(entry.fields)) {
     const v = value[key];
     if (field.kind === 'bool') put(v === true ? 1 : 0, 1);
+    else if (field.kind === 'int') put(Number(v) - field.min, intBits(field));
+    else if (field.kind === 'enum') put(field.values.indexOf(String(v)), enumBits(field));
     else if (field.kind === 'text') {
       const b = new TextEncoder().encode(String(v ?? ''));
       put(b.length, lengthBits(field.maxBytes));
@@ -132,6 +174,8 @@ function readIntent(bytes: Uint8Array): IntentSeen | null {
   const fields: Record<string, number | string | boolean> = {};
   for (const [key, field] of Object.entries(entry.fields)) {
     if (field.kind === 'bool') fields[key] = take(1) === 1;
+    else if (field.kind === 'int') fields[key] = field.min + take(intBits(field));
+    else if (field.kind === 'enum') fields[key] = field.values[take(enumBits(field))] ?? '';
     else if (field.kind === 'fixed') fields[key] = field.min + take(fixedBits(field)) * field.step;
     else {
       const n = take(lengthBits(field.maxBytes));
@@ -217,7 +261,7 @@ export class FakeSocket extends EventTarget {
       this.passes.push({ pass: String.fromCharCode(...bytes.subarray(1)), at: Date.now() });
     } else if (bytes[0] === MSG_IDENTITY) {
       this.deliver(identity(this.world.name));
-      this.deliver(catalog());
+      this.deliver(catalog(this.world.features));
       this.deliver(event('permiso', { construir: this.world.build }));
     } else if (bytes[0] === MSG_FEATURE) {
       this.intent(bytes);
@@ -238,6 +282,11 @@ export class FakeSocket extends EventTarget {
         refusal === null ? event('hecho', { id }) : event('rechazado', { motivo: refusal }),
       ),
     );
+  }
+
+  /** The world tells the body something (a call, someone entering its bubble…). */
+  emit(name: string, value: Record<string, boolean | number | string>): void {
+    this.deliver(event(name, value));
   }
 
   /** The client closes (the bridge's `parar`, or it gave up on the world). */
@@ -272,6 +321,8 @@ export class FakeWorld {
   name = 'Claude de Ana · IA';
   /** Whether the world lets the body build (`objetos.permiso`, sent with its name). */
   build = true;
+  /** The features its catalog lists. */
+  features: string[] = ['chat', 'objetos'];
   /** Set: the world refuses every build with this reason (`objetos.rechazado`). */
   refuse: string | null = null;
 

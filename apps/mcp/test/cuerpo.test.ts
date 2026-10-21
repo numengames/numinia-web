@@ -21,8 +21,10 @@ import {
   FIRST_PASS_MS,
   HEAR_TOOL,
   IDLE_MS,
+  idleOf,
   NOTES_MAX,
   REFUSALS,
+  WAIT_TOOL,
   bodyOf,
   isWorldAddress,
   worldTools,
@@ -38,7 +40,7 @@ import { MemoryKv } from './memory-kv';
 import { MemoryNamespace, MemoryStorage, durableState } from './memory-durable';
 
 /** The upstream bundle's hash (vendor/VENDOR.md). */
-const VENDORED_SHA256 = '40afd68130375595d0cdb63cf453f3ce6bd68efe475ab3c5351aa7c333419e42';
+const VENDORED_SHA256 = '3a207576f4ba99262d35fa8b95197b6a2e9c7a4a57aabdd64bcdebaf056c41cc';
 const VENDOR_END = '// ---- end of vendor header ----\n';
 
 const STORE = 'https://numinia.com';
@@ -57,6 +59,10 @@ interface MeRecord {
   state: 'activa' | 'dormida';
   /** Absent: a store that has not shipped the setting yet. */
   hear?: boolean;
+  /** Absent: a store that has not shipped the ladder yet (S19). */
+  oye?: 'llamada' | 'burbuja' | 'todo';
+  /** What the store sends of the AI's presence; the relay reads `quedarse_h`. */
+  presence?: { quedarse_h?: unknown } | undefined;
   eligible: boolean;
   permissions: string[];
   worlds: { id: string; ws: string }[];
@@ -669,6 +675,164 @@ describe('Cuerpo, the AI’s body in one world', () => {
     });
   });
 
+  describe('calls and the bubble, per rung of hearing (D-083)', () => {
+    type Mailbox = { entradas: unknown[]; dentro: Map<number, unknown> };
+    const mailbox = (body: Cuerpo): Mailbox =>
+      (body as unknown as { inside: { bridge: { buzon: Mailbox } } }).inside.bridge.buzon;
+    const call = {
+      ia: 1,
+      quien: 7,
+      nombre: 'Marta',
+      texto: 'ven a la torre',
+      modo: 'nombre',
+      t: 100,
+    };
+    const enters = { ia: 1, quien: 8, nombre: 'Leo', distanciaDm: 30, esIA: false };
+    const useTool = async (body: Cuerpo, record: Agent, name: string, args = {}) => {
+      const answer = await body.usar({ props: propsOf(record), tool: { name, arguments: args } });
+      return answer.ok ? answer.result : undefined;
+    };
+    /** An AI inside a world that has calls, bubbles, gestures and attention. */
+    const inside = async (record: Agent): Promise<Cuerpo> => {
+      world.features = ['chat', 'objetos', 'llamar', 'burbuja', 'gestos', 'ia'];
+      const body = makeBody();
+      await enter(body, record);
+      await settle(100);
+      return body;
+    };
+    const socketOf = () => {
+      const socket = world.sockets[0];
+      if (socket === undefined) throw new Error('no socket');
+      return socket;
+    };
+
+    it.each(['llamada', 'burbuja', 'todo'] as const)(
+      'brings a call addressed to it at «%s», and waits for it',
+      async (oye) => {
+        const ana = agent('claude-de-ana', { oye });
+        const body = await inside(ana);
+        const waiting = useTool(body, ana, 'esperar_llamada', { segundos: 20 });
+        await settle(5_000);
+        socketOf().emit('llamada', call);
+        const heard = await waiting;
+        expect(heard?.isError).toBe(false);
+        expect(heard?.text).toContain('ven a la torre');
+        expect(heard?.text).toContain('Marta');
+        // It was read: «llamadas» has nothing more.
+        const more = await useTool(body, ana, 'llamadas');
+        expect(more?.text).toContain('No tienes llamadas sin leer');
+      },
+    );
+
+    it('gives back empty after the 25 s of the bridge, and the world sees it greet', async () => {
+      const ana = agent('claude-de-ana', { oye: 'llamada' });
+      const body = await inside(ana);
+      const waiting = useTool(body, ana, 'esperar_llamada');
+      await settle(100);
+      await settle(25_000);
+      const nothing = await waiting;
+      expect(nothing?.isError).toBe(false);
+      expect(nothing?.text).toContain('Nadie te ha llamado');
+      const greeted = await useTool(body, ana, 'gesto', { tipo: 'saludar' });
+      expect(greeted?.isError).toBe(false);
+      expect(socketOf().intents.map((sent) => sent.name)).toContain('hacer');
+    });
+
+    it('wakes for someone entering its bubble only from «burbuja» up', async () => {
+      const woken = async (oye: 'llamada' | 'burbuja' | 'todo'): Promise<string | undefined> => {
+        const ana = agent('claude-de-ana', { oye });
+        const body = await inside(ana);
+        const waiting = useTool(body, ana, 'esperar_llamada', { segundos: 3 });
+        await settle(1_000);
+        socketOf().emit('entraEnBurbuja', enters);
+        await settle(3_000);
+        const answer = await waiting;
+        const inBubble = mailbox(body).dentro.size;
+        await body.salir();
+        world.sockets.length = 0;
+        return `${inBubble}|${answer?.text.includes('Leo') === true}`;
+      };
+      expect(await woken('llamada')).toBe('0|false');
+      expect(await woken('burbuja')).toBe('1|true');
+      expect(await woken('todo')).toBe('1|true');
+    });
+
+    it('drops the bubble entries it already had when the ladder goes down to «llamada»', async () => {
+      const ana = agent('claude-de-ana', { oye: 'burbuja' });
+      const body = await inside(ana);
+      socketOf().emit('entraEnBurbuja', enters);
+      await settle();
+      expect(mailbox(body).entradas).toHaveLength(1);
+      ana.me.oye = 'llamada';
+      await settle(MINUTE);
+      expect(mailbox(body).entradas).toEqual([]);
+      expect(mailbox(body).dentro.size).toBe(0);
+    });
+
+    it('falls to «llamada» when /me cannot be read, and keeps its calls', async () => {
+      const ana = agent('claude-de-ana', { oye: 'todo' });
+      const body = await inside(ana);
+      socketOf().emit('llamada', call);
+      ana.meMode = 'down';
+      await settle(MINUTE);
+      const heard = await useTool(body, ana, 'llamadas');
+      expect(heard?.text).toContain('ven a la torre');
+      expect(await useTool(body, ana, 'oir')).toMatchObject({ isError: true });
+    });
+  });
+
+  describe('«quedarse», the hours an AI stays without use (D-082)', () => {
+    const HOUR = 60 * MINUTE;
+
+    it.each([1, 4])(
+      'stays %i h without calls, holding its seat and counting body time',
+      async (hours) => {
+        const ana = agent('claude-de-ana', { presence: { quedarse_h: hours } });
+        const body = makeBody();
+        await enter(body, ana);
+        await settle(hours * HOUR - MINUTE);
+        expect((await body.estado()).inside).not.toBeNull();
+        expect(await desk().holders()).toEqual(['claude-de-ana']);
+        await settle(MINUTE);
+        expect((await body.estado()).left).toEqual({ reason: 'idle', at: Date.now() });
+        // A day may be split at midnight: the seconds add up to the whole stay.
+        const counted = (await desk().days()).reduce((sum, day) => sum + day.seconds, 0);
+        expect(counted).toBe(hours * 3600);
+      },
+      // Hours of fake time run minute by minute: slow on a busy CI runner.
+      30_000,
+    );
+
+    it('is ten minutes, or the hours when they are more', () => {
+      expect([0, 1, 4, 24].map((hours) => idleOf(hours) / HOUR)).toEqual([1 / 6, 1, 4, 24]);
+    });
+
+    it('leaves after 10 minutes when it is not set, or the number is not 1, 4 or 24', async () => {
+      for (const presence of [
+        undefined,
+        { quedarse_h: 0 },
+        { quedarse_h: 2 },
+        { quedarse_h: 'x' },
+      ]) {
+        const ana = agent('claude-de-ana', { presence });
+        const body = makeBody();
+        await enter(body, ana);
+        await settle(IDLE_MS);
+        expect((await body.estado()).left).toMatchObject({ reason: 'idle' });
+        await body.salir();
+      }
+    });
+
+    it('goes back to 10 minutes when /me can no longer confirm the stay', async () => {
+      const ana = agent('claude-de-ana', { presence: { quedarse_h: 4 } });
+      const body = makeBody();
+      await enter(body, ana);
+      ana.meMode = 'down';
+      await settle(IDLE_MS + MINUTE);
+      expect((await body.estado()).left).toMatchObject({ reason: 'idle' });
+    });
+  });
+
   it('asks /me at most once a minute, even when entrar comes sooner', async () => {
     const ana = agent('claude-de-ana');
     const body = makeBody();
@@ -928,10 +1092,27 @@ describe('Cuerpo, the AI’s body in one world', () => {
       id: 'claude-de-ana',
       pedirPase: () => Promise.resolve({ ok: false, motivo: 'red', texto: '' }),
     });
-    const names = worldTools(bridge, false).map((tool) => tool.name);
-    expect(names).toEqual(['mirar', 'decir', 'ir_a', 'colocar', 'mover', 'borrar', 'deshacer']);
+    const names = worldTools(bridge, 'llamada').map((tool) => tool.name);
+    expect(names).toEqual([
+      'mirar',
+      'decir',
+      'ir_a',
+      'colocar',
+      'mover',
+      'borrar',
+      'deshacer',
+      'llamadas',
+      'esperar_llamada',
+      'gesto',
+    ]);
+    // A call reaches it at every rung; the bubble is part of the wait only from «burbuja» up.
+    const waits = (hearing: 'llamada' | 'burbuja' | 'todo'): string | undefined =>
+      worldTools(bridge, hearing).find((tool) => tool.name === WAIT_TOOL)?.description;
+    expect(waits('llamada')).not.toContain('burbuja');
+    expect(waits('burbuja')).toContain('entre en tu burbuja');
+    expect(waits('todo')).toBe(waits('burbuja'));
     expect(names).not.toContain(HEAR_TOOL);
-    expect(worldTools(bridge, true).map((tool) => tool.name)).toContain(HEAR_TOOL);
+    expect(worldTools(bridge, 'todo').map((tool) => tool.name)).toContain(HEAR_TOOL);
   });
 
   it('is one object per AI, named <organization>.<agent>', () => {

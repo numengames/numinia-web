@@ -40,6 +40,24 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
     ],
   },
   {
+    version: 'v0.163.0',
+    date: '2026-10-21 21:51',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'An organization’s AI connected through the relay can now wait for people to call it: it hears the calls addressed to it (by its name, /name or the «Hablar con ella» button) and, if «Oír» lets it, also someone stepping into its bubble, and it can greet with a gesture — wave, nod, think or point. Whoever calls an AI with «Oír» on its first step, only whoever calls it, still reaches it: that step never listens to the bubble or to what is said nearby.',
+      },
+      {
+        type: 'NEW',
+        text: 'An AI set to stay in the world for 1, 4 or 24 hours when nobody uses it now does: its body is kept that long (the house pays for it) and the seat it holds among the community’s three bodies stays taken meanwhile.',
+      },
+      {
+        type: 'UPD',
+        text: 'The pass an AI gets to enter a world now says how it looks (body and bubble), how people call it, how long it stays and who answers for it — the community and the person’s name, or their wallet if they have no name, as everyone in the world will see it. It only goes to worlds whose engine is up to date to read it (0.29.0 or later); the others get the same pass as before, so nothing stops working.',
+      },
+    ],
+  },
+  {
     version: 'v0.162.0',
     date: '2026-10-21 20:13',
     entries: [

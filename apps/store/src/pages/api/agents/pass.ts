@@ -8,6 +8,7 @@
 import type { APIRoute } from 'astro';
 import { answerAgentPass } from '../../../lib/agent-pass';
 import { runtimeEnv } from '../../../lib/runtime-env';
+import { worldTakesIa } from '../../../lib/world-ia';
 import { desk, fleetWorlds } from '../mundos/_fleet';
 
 export const prerender = false;
@@ -20,5 +21,12 @@ export const POST: APIRoute = async ({ request }) => {
     privateKey: env['WORLD_PASS_PRIVATE_KEY'],
     secret: env['AUTH_SESSION_SECRET'],
     now: Math.floor(Date.now() / 1000),
+    // The world's own `/status` says its engine; the fixture's worlds are no real hosts, so none is asked.
+    takesIa: async (aud) => {
+      const host = hosts.get(aud);
+      return (
+        host !== undefined && process.env.DATA_SOURCE !== 'fixture' && worldTakesIa(fetch, host)
+      );
+    },
   });
 };
