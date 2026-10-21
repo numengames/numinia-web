@@ -49,6 +49,8 @@ export interface WorldCard {
   readonly state: WorldState | null;
   /** People inside now, as the world itself counts them; null when it did not say. */
   readonly inside: number | null;
+  /** AIs inside now, as the world itself counts them; null when it did not say (an older engine). */
+  readonly ais: number | null;
   /** The world's own picture (served by the world), or null: the card draws the placeholder scene. */
   readonly cover: string | null;
   /** Where the world is served, the guest link «Entrar» falls back to; null when unknown. */
@@ -138,6 +140,7 @@ export function worldCards(input: {
   readonly owners: ReadonlyMap<string, WorldOwner | null>;
   readonly communities: readonly CommunityAccounts[];
   readonly inside?: Readonly<Record<string, number | null>>;
+  readonly ais?: Readonly<Record<string, number | null>>;
   readonly faces?: Readonly<Record<string, WorldFace>>;
 }): readonly WorldCard[] {
   const seen = new Set<string>();
@@ -153,12 +156,14 @@ export function worldCards(input: {
     if (community === undefined) continue;
     const counted = input.inside?.[entry.id];
     const inside = typeof counted === 'number' ? counted : null;
+    const aisCounted = input.ais?.[entry.id];
     const face = faceOf(input.faces?.[entry.id], entry.domain);
     cards.push({
       id: entry.id,
       name: worldName(face.title, entry.id),
       state: worldState(entry.phase, inside),
       inside,
+      ais: inside !== null && typeof aisCounted === 'number' ? aisCounted : null,
       cover: face.image,
       url: entry.domain === null ? null : `https://${entry.domain}/`,
       community: { id: community.id, name: community.name },
@@ -172,6 +177,20 @@ export function worldCards(input: {
       Number(b.city) - Number(a.city) ||
       a.name.localeCompare(b.name, 'es'),
   );
+}
+
+/**
+ * «3 dentro ahora» → «3 dentro ahora · 1 IA»: the AIs inside, after the
+ * people. Nothing is added while there are none or the world did not say
+ * (an older engine): the line stays as it was.
+ */
+export function withAis(
+  text: string,
+  ais: number | null,
+  words: { readonly one: string; readonly many: string },
+): string {
+  if (ais === null || ais <= 0) return text;
+  return `${text} · ${ais === 1 ? words.one : words.many.replace('{n}', String(ais))}`;
 }
 
 /** The filters a card answers to (always «all»). */

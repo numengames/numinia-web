@@ -12,7 +12,7 @@ import type { SupportedLocale } from '@numinia/domain';
 import { AHORA_UI } from '../../i18n/ahora';
 import { fill } from '../../i18n/communities';
 import { worldHref } from '../../lib/mundos';
-import { filtersOf, type WorldCard } from '../../lib/world-index';
+import { filtersOf, withAis, type WorldCard } from '../../lib/world-index';
 import Icon from '../chrome/Icon.astro';
 
 interface Props {
@@ -29,7 +29,7 @@ const prefix = locale === 'en' ? '' : `/${locale}`;
 const page = worldHref(locale, card.id);
 const state = card.state === null ? null : a.states[card.state];
 const tip = `estado-${card.id}`;
-const insideText =
+const peopleText =
   card.inside === null
     ? null
     : card.inside === 0
@@ -37,6 +37,8 @@ const insideText =
       : card.inside === 1
         ? a.insideOne
         : fill(a.insideMany, { n: card.inside });
+const insideText =
+  peopleText === null ? null : withAis(peopleText, card.ais, { one: a.aiOne, many: a.aiMany });
 const owner = (card.city ? a.keptBy : a.homeOf).split('{x}');
 const Heading = heading;
 ---
@@ -61,7 +63,7 @@ const Heading = heading;
     {
       card.state === 'on' && insideText !== null && (
         <span class="mt-sobre">
-          <span class="pastilla" data-count={card.inside}>
+          <span class="pastilla" data-count={card.inside} data-ais={card.ais}>
             {(card.inside ?? 0) > 0 && <span class="punto" />}
             {insideText}
           </span>

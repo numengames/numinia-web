@@ -77,6 +77,7 @@ async function read(): Promise<Index> {
     owners.get(entry.id) && entry.domain !== null ? [{ id: entry.id, domain: entry.domain }] : [],
   );
   let inside: Record<string, number | null> = {};
+  let ais: Record<string, number | null> = {};
   let faces: Record<string, WorldFace> = {};
   if (process.env.DATA_SOURCE !== 'fixture' && placed.length > 0) {
     const [probes, seen] = await Promise.all([
@@ -87,6 +88,12 @@ async function read(): Promise<Index> {
       placed.map((world) => {
         const probe = probes[world.id];
         return [world.id, probe?.ok === true ? probe.users : null];
+      }),
+    );
+    ais = Object.fromEntries(
+      placed.map((world) => {
+        const probe = probes[world.id];
+        return [world.id, probe?.ok === true ? probe.ais : null];
       }),
     );
     faces = seen;
@@ -100,6 +107,7 @@ async function read(): Promise<Index> {
       owners: known,
       communities: await communityAccounts(),
       inside,
+      ais,
       faces,
     }),
   };

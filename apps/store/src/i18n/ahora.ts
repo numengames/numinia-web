@@ -65,6 +65,9 @@ export interface AhoraMessages {
   /** "{n}" people inside now. */
   readonly insideMany: string;
   readonly insideLabel: string;
+  /** «· 1 IA» after the people inside; `{n}` AIs after it. */
+  readonly aiOne: string;
+  readonly aiMany: string;
   readonly enter: string;
   readonly entering: string;
   readonly itsPage: string;
@@ -125,6 +128,8 @@ const ES: AhoraMessages = {
   insideOne: '1 dentro ahora',
   insideMany: '{n} dentro ahora',
   insideLabel: 'Gente dentro ahora',
+  aiOne: '1 IA',
+  aiMany: '{n} IAs',
   enter: 'Entrar',
   entering: 'Entrando…',
   itsPage: 'Su página',
@@ -181,6 +186,8 @@ const EN: AhoraMessages = {
   insideOne: '1 inside now',
   insideMany: '{n} inside now',
   insideLabel: 'People inside now',
+  aiOne: '1 AI',
+  aiMany: '{n} AIs',
   enter: 'Enter',
   entering: 'Entering…',
   itsPage: 'Its page',
@@ -237,6 +244,8 @@ const JA: AhoraMessages = {
   insideOne: 'いま1人',
   insideMany: 'いま{n}人',
   insideLabel: 'いま中にいる人',
+  aiOne: 'AI 1体',
+  aiMany: 'AI {n}体',
   enter: '入る',
   entering: '入っています…',
   itsPage: 'ページ',
@@ -293,6 +302,8 @@ const KO: AhoraMessages = {
   insideOne: '지금 1명',
   insideMany: '지금 {n}명',
   insideLabel: '지금 안에 있는 사람',
+  aiOne: 'AI 1개',
+  aiMany: 'AI {n}개',
   enter: '들어가기',
   entering: '들어가는 중…',
   itsPage: '페이지',
@@ -352,6 +363,8 @@ const PT_BR: AhoraMessages = {
   insideOne: '1 dentro agora',
   insideMany: '{n} dentro agora',
   insideLabel: 'Gente dentro agora',
+  aiOne: '1 IA',
+  aiMany: '{n} IAs',
   enter: 'Entrar',
   entering: 'Entrando…',
   itsPage: 'Sua página',

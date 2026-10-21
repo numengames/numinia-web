@@ -283,13 +283,14 @@ describe('readProbe — counts only, never names', () => {
         connectedUsers: [{ id: 'a', name: 'Ana', position: [0, 0, 0] }],
         commitHash: '0e2045370989d051',
       }),
-    ).toEqual({ ok: true, users: 1, uptime: 120, commit: '0e20453' });
+    ).toEqual({ ok: true, users: 1, ais: null, uptime: 120, commit: '0e20453' });
   });
 
   it('copes with no commit', () => {
     expect(readProbe({ uptime: 1, connectedUsers: [], commitHash: '' })).toEqual({
       ok: true,
       users: 0,
+      ais: null,
       uptime: 1,
       commit: null,
     });
@@ -337,9 +338,9 @@ function sampleRows(): WorldRow[] {
       { slug: 'gone', title: 'Gone', cover: '/g.webp' },
     ],
     probes: {
-      agora: { ok: true, users: 3, uptime: 7200, commit: 'abc1234' },
+      agora: { ok: true, users: 3, ais: null, uptime: 7200, commit: 'abc1234' },
       forge: { ok: false, reason: 'http', status: 502 },
-      orphan: { ok: true, users: 0, uptime: 60, commit: null },
+      orphan: { ok: true, users: 0, ais: null, uptime: 60, commit: null },
     },
   });
 }
@@ -496,7 +497,7 @@ describe('legacy worlds and faces — watched, never changed', () => {
       orders: [order('agora'), order('bare')],
       cards: [{ slug: 'agora', title: 'Agora', cover: '/a.webp' }],
       probes: {
-        hive: { ok: true, users: 2, uptime: 60, commit: '0e20453' },
+        hive: { ok: true, users: 2, ais: null, uptime: 60, commit: '0e20453' },
         quiet: { ok: false, reason: 'timeout' },
       },
       legacy: [hive, quiet, moved, { ...moved, id: 'agora', domain: 'elsewhere.numinia.com' }],
@@ -1048,13 +1049,23 @@ describe('the Numinia Engine beside Hyperfy', () => {
   it('reads the engine’s own /status: how many are in, never who', () => {
     expect(
       readProbe({ uptime: 5400, conectados: 3, commitHash: 'c'.repeat(40), version: 'x' }),
-    ).toEqual({ ok: true, users: 3, uptime: 5400, commit: 'ccccccc' });
+    ).toEqual({ ok: true, users: 3, ais: null, uptime: 5400, commit: 'ccccccc' });
     expect(readProbe({ uptime: 1, conectados: 0 })).toEqual({
       ok: true,
       users: 0,
+      ais: null,
       uptime: 1,
       commit: null,
     });
+    // The engine counts its AIs apart (`agentes`); `conectados` is people only.
+    expect(readProbe({ uptime: 1, conectados: 3, agentes: 1 })).toMatchObject({ users: 3, ais: 1 });
+    expect(readProbe({ uptime: 1, conectados: 0, agentes: 0 })).toMatchObject({ users: 0, ais: 0 });
+    // An older engine does not say; a malformed count is not a count; Hyperfy has none.
+    expect(readProbe({ uptime: 1, conectados: 3 })).toMatchObject({ users: 3, ais: null });
+    for (const agentes of [-1, 1.5, '1', null]) {
+      expect(readProbe({ uptime: 1, conectados: 3, agentes })).toMatchObject({ ais: null });
+    }
+    expect(readProbe({ uptime: 1, connectedUsers: [], agentes: 2 })).toMatchObject({ ais: null });
     for (const conectados of [-1, 1.5, '3', null]) {
       expect(readProbe({ uptime: 1, conectados })).toEqual({ ok: false, reason: 'shape' });
     }
@@ -1244,7 +1255,7 @@ describe('a world that is booting is not «not answering»', () => {
       probes: probe === undefined ? {} : { p2: probe },
     });
   const DOWN: Probe = { ok: false, reason: 'timeout' };
-  const UP: Probe = { ok: true, users: 0, uptime: 5, commit: null };
+  const UP: Probe = { ok: true, users: 0, ais: null, uptime: 5, commit: null };
 
   it('remembers a world it saw being created and keeps it booting while it does not answer', () => {
     const creating = rowsAt('creating', undefined);

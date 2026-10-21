@@ -73,6 +73,7 @@ describe('probeWorld — like a visitor', () => {
     expect(await probeWorld(fetch, 'agora.numen.games')).toEqual({
       ok: true,
       users: 1,
+      ais: null,
       uptime: 30,
       commit: 'abcdef1',
     });

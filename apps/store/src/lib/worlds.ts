@@ -563,20 +563,29 @@ export type ProbeFailure = 'timeout' | 'network' | 'http' | 'shape';
 export type Probe =
   | {
       readonly ok: true;
+      /** People inside (an AI is not one: the engine's `conectados` leaves them out). */
       readonly users: number;
+      /** AIs inside, as the engine's `agentes` says; null when the world did not say (older engines, Hyperfy). */
+      readonly ais: number | null;
       readonly uptime: number;
       readonly commit: string | null;
     }
   | { readonly ok: false; readonly reason: ProbeFailure; readonly status?: number };
 
+/** A whole number of at least zero, or null. */
+function countOf(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 /**
  * A world's `/status` body → counts only. Hyperfy lists every visitor's name
  * and position there (`connectedUsers`); the Numinia Engine says only how
- * many are in (`conectados`). The room keeps the number and drops the rest.
+ * many people are in (`conectados`, which leaves AIs out) and, newer ones,
+ * how many AIs (`agentes`). The room keeps the numbers and drops the rest.
  */
 export function readProbe(body: unknown): Probe {
   if (!isRecord(body)) return { ok: false, reason: 'shape' };
-  const { uptime, connectedUsers, conectados, commitHash } = body;
+  const { uptime, connectedUsers, conectados, agentes, commitHash } = body;
   const users = Array.isArray(connectedUsers)
     ? connectedUsers.length
     : typeof conectados === 'number' && Number.isInteger(conectados) && conectados >= 0
@@ -588,6 +597,7 @@ export function readProbe(body: unknown): Probe {
   return {
     ok: true,
     users,
+    ais: Array.isArray(connectedUsers) ? null : countOf(agentes),
     uptime,
     commit: typeof commitHash === 'string' && commitHash !== '' ? commitHash.slice(0, 7) : null,
   };
