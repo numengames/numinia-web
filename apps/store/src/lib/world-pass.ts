@@ -63,7 +63,7 @@
  * Web Crypto only, no dependencies. Server side: islands never import this file.
  */
 
-import type { OrganizationAccess } from '@numinia/domain';
+import { parseAgentPassIa, type AgentPassIa, type OrganizationAccess } from '@numinia/domain';
 import type { DeskAccess, DeskRole } from './accounts';
 
 /** The world permission ids a pass may carry, in the order they are written. */
@@ -115,6 +115,11 @@ export interface PassPayload {
   readonly kind?: 'agent';
   /** Only an AI's pass. */
   readonly state?: 'activa' | 'dormida';
+  /**
+   * Only an AI's pass, and only for a world whose engine takes it (0.29.0 or later; lib/world-ia.ts): how the AI
+   * looks, how it is called, how long it stays and who answers for it (D-084).
+   */
+  readonly ia?: AgentPassIa;
   /** Only a person's pass, only when they accepted the current corpus on numinia.com (condiciones/w5). */
   readonly acepto?: { readonly casa: string };
   readonly iat: number;
@@ -299,6 +304,8 @@ export interface AgentPassInput {
   readonly access: { readonly permissions: readonly string[]; readonly height: number };
   /** The roles the agent holds besides the base role, highest first. */
   readonly roles: readonly PassRole[];
+  /** The `ia` block, for a world that takes it; none: the pass goes without. */
+  readonly ia?: AgentPassIa;
   /** Seconds since the epoch. */
   readonly now: number;
 }
@@ -329,6 +336,7 @@ export async function buildAgentPassPayload(input: AgentPassInput): Promise<Pass
     name: input.name.slice(0, NAME_MAX),
     kind: 'agent',
     state: input.state,
+    ...(input.ia === undefined ? {} : { ia: input.ia }),
     iat: input.now,
     exp: input.now + PASS_TTL_SECONDS,
   };
@@ -344,16 +352,19 @@ export type PassVerdict =
     };
 
 const REQUIRED = ['v', 'iss', 'aud', 'sub', 'org', 'perm', 'height', 'roles', 'iat', 'exp'];
-const OPTIONAL = ['name', 'kind', 'state', 'acepto'];
+const OPTIONAL = ['name', 'kind', 'state', 'ia', 'acepto'];
 const AGENT_SUB = /^a_[0-9a-f]{32}$/;
 
 /**
  * `kind` and `state` belong to an AI's pass together: an AI's pass says `agent`, a
- * state, its name and an `a_…` sub; a person's carries neither field.
+ * state, its name and an `a_…` sub; a person's carries neither field, nor `ia` (which,
+ * on an AI's pass, must be the block the engine accepts).
  */
 function agentFieldsOk(record: Record<string, unknown>): boolean {
-  if (record['kind'] === undefined) return record['state'] === undefined;
+  if (record['kind'] === undefined)
+    return record['state'] === undefined && record['ia'] === undefined;
   return (
+    (record['ia'] === undefined || parseAgentPassIa(record['ia']).ok) &&
     record['kind'] === 'agent' &&
     (record['state'] === 'activa' || record['state'] === 'dormida') &&
     isText(record['name']) &&

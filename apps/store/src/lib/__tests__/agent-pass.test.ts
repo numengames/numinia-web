@@ -368,3 +368,108 @@ describe('POST /api/agents/pass: fails closed', () => {
     expect(quiet).toHaveBeenCalledWith(expect.objectContaining({ rule: 'threw' }));
   });
 });
+
+describe('POST /api/agents/pass: the ia block (S18, D-084)', () => {
+  const RESPONDE = { comunidad: 'Numen Games', nombre: 'Pablo' };
+
+  /** The fixture desk, speaking as a till that says who answers for the AI. */
+  const talking = (desk: AccountDesk, responde: unknown): AccountDesk => ({
+    ...desk,
+    agentPass: async (accountId, agentId) => {
+      const answer = await desk.agentPass(accountId, agentId);
+      return answer.ok ? ({ ...answer, responde } as typeof answer) : answer;
+    },
+  });
+
+  const passOf = async (desk: AccountDesk, context: AgentPassContext, keys: Keys) => {
+    const response = await answerAgentPass(desk, post(await bodyFor(keys)), context, quiet);
+    expect(response.status).toBe(200);
+    const { pass } = (await read(response)) as { pass: string };
+    const verdict = await verifyPass(
+      pass,
+      (await publicKeyDocument(context.privateKey)).publicKey,
+      {
+        aud: 'agora-plaza',
+        now: NOW,
+      },
+    );
+    if (!verdict.ok) throw new Error(verdict.why);
+    return verdict.payload;
+  };
+
+  it('puts it on the pass of a world that takes it, with who answers for the AI', async () => {
+    const { desk, keys, context } = await setUp();
+    const asked: string[] = [];
+    const payload = await passOf(
+      talking(desk, RESPONDE),
+      {
+        ...context,
+        takesIa: async (aud) => {
+          asked.push(aud);
+          return true;
+        },
+      },
+      keys,
+    );
+    expect(asked).toEqual(['agora-plaza']);
+    expect(payload.ia?.responde).toEqual(RESPONDE);
+  });
+
+  it('names the person by wallet when they published no name', async () => {
+    const { desk, keys, context } = await setUp();
+    const responde = { comunidad: 'Numen Games', cartera: ME };
+    const payload = await passOf(
+      talking(desk, responde),
+      { ...context, takesIa: async () => true },
+      keys,
+    );
+    expect(payload.ia?.responde).toEqual(responde);
+  });
+
+  it('leaves it out for a world whose engine does not take it, or that cannot be asked', async () => {
+    const refusing: AgentPassContext['takesIa'][] = [
+      async () => false,
+      async () => {
+        throw new Error('the world did not answer');
+      },
+      undefined,
+    ];
+    for (const takesIa of refusing) {
+      // A request is used once: each case is its own AI.
+      const { desk, keys, context } = await setUp();
+      const talker = talking(desk, RESPONDE);
+      const payload = await passOf(talker, { ...context, ...(takesIa ? { takesIa } : {}) }, keys);
+      expect('ia' in payload).toBe(false);
+      expect(payload).toMatchObject({ kind: 'agent', name: 'Hermes' });
+    }
+  });
+
+  it('leaves it out when the till names no one, or names them in a form the pass does not take', async () => {
+    const nothing = [undefined, null, {}, { nombre: 'Pablo' }, { comunidad: 'x', cartera: '0xAB' }];
+    for (const responde of nothing) {
+      const { desk, keys, context } = await setUp();
+      const asked = vi.fn(async () => true);
+      const payload = await passOf(talking(desk, responde), { ...context, takesIa: asked }, keys);
+      expect('ia' in payload, JSON.stringify(responde)).toBe(false);
+      expect(asked).not.toHaveBeenCalled();
+    }
+  });
+
+  it('carries the AI’s own presence: how it looks and is called, and how long it stays', async () => {
+    const { desk, keys, context } = await setUp();
+    const changed = await desk.changeAgentPresence?.(ME, NUMEN, 'hermes-1', {
+      quedarse_h: 4,
+      oye: 'burbuja',
+    });
+    expect(changed?.ok).toBe(true);
+    const payload = await passOf(
+      talking(desk, RESPONDE),
+      { ...context, takesIa: async () => true },
+      keys,
+    );
+    expect(payload.ia).toMatchObject({
+      responde: RESPONDE,
+      quedarse_h: 4,
+    });
+  });
+});

@@ -44,14 +44,19 @@ const worldShape = z.object({
 
 /** What an AI hears (D-083): only who calls it, also its bubble, or everything nearby. */
 const HEARING = ['llamada', 'burbuja', 'todo'] as const;
+export type Hearing = (typeof HEARING)[number];
+
+/** The hours «Quedarse» may be set to (D-082); 0 is not staying. */
+export const STAY_HOURS = [1, 4, 24] as const;
 
 /**
  * W1's answer: `AgentMe` in apps/store/src/lib/agent-me.ts. `oye` and `vive`
  * (S19) are read defensively: a store older than them says neither, and then
  * the AI hears everything nearby only if `hear` is true and lives in all the
  * worlds `worlds` lists; one that says something this relay does not know
- * yet (a new rung) is read as that default, never refused. The presence the
- * store also sends is not read here: the relay does not act on it.
+ * yet (a new rung) is read as that default, never refused. Of the presence the
+ * store also sends the relay reads one thing, `quedarse_h` (D-082): as `stay`,
+ * the hours the body stays without use, 0 unless it is one of 1, 4 or 24.
  */
 export const meShape = z
   .object({
@@ -64,11 +69,19 @@ export const meShape = z
     hear: z.boolean().default(false),
     oye: z.enum(HEARING).optional().catch(undefined),
     vive: z.enum(['todos', 'elegidos']).default('todos').catch('todos'),
+    presence: z
+      .object({ quedarse_h: z.number().optional().catch(undefined) })
+      .optional()
+      .catch(undefined),
     eligible: z.boolean(),
     permissions: z.array(z.string()),
     worlds: z.array(worldShape),
   })
-  .transform((me) => ({ ...me, oye: me.oye ?? (me.hear ? 'todo' : 'llamada') }));
+  .transform(({ presence, ...me }) => ({
+    ...me,
+    oye: me.oye ?? (me.hear ? 'todo' : 'llamada'),
+    stay: STAY_HOURS.find((hours) => hours === presence?.quedarse_h) ?? 0,
+  }));
 export type Me = z.infer<typeof meShape>;
 
 /** What numinia.com said, sorted. */

@@ -127,6 +127,9 @@ export const agentPassShape = z.union([
       worlds: z.unknown().optional(),
     }),
     eligible: z.boolean(),
+    // Who answers for the AI, as its world shows it (D-084). Read loosely and judged by the pass: a till that has not
+    // shipped it (or says something else) just leaves the `ia` block out.
+    responde: z.unknown().optional(),
     permissions: z.array(z.string()),
     height: z.number(),
     roles: z.array(z.object({ name: z.string(), color: z.string().nullable() })),
@@ -234,7 +237,7 @@ export interface AgentMeContext {
 }
 
 /** The presence the till kept, or the default when it kept none or something that no longer reads. */
-function presenceOf(held: HeldAgent['agent']): AgentPresence {
+export function presenceOf(held: HeldAgent['agent']): AgentPresence {
   const read = parseAgentPresence(held.presence);
   const presence = read.ok ? read.value : DEFAULT_AGENT_PRESENCE;
   // `hears` is the truth about the last rung (the till says so too): an older till has only that.

@@ -1529,7 +1529,7 @@ test.describe('Agentes — the token way', () => {
     await page.keyboard.press('Escape');
     await expect(once).toBeVisible();
     await once.getByRole('button', { name: 'Copiar', exact: true }).click();
-    await expect(once.getByRole('button', { name: 'Copiado' })).toBeVisible();
+    await expect(once.getByRole('button', { name: 'Copiado', exact: true })).toBeVisible();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(TOKEN);
     await once.getByRole('button', { name: 'Copiar las tres líneas' }).click();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(

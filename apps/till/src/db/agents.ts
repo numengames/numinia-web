@@ -28,6 +28,7 @@
  */
 
 import {
+  AGENT_RESPONDS_TEXT_MAX,
   ORGANIZATION_PERMISSIONS,
   accessOf,
   applyAgentPresenceChange,
@@ -37,6 +38,7 @@ import {
   DEFAULT_AGENT_PRESENCE,
   type ActorAccess,
   type AgentPresence,
+  type AgentResponds,
   type AgentWorlds,
   type OrganizationPermission,
   type OrganizationRole,
@@ -199,6 +201,12 @@ export interface AgentPass {
   };
   /** The person who answers for it is still in the organization and still holds manage-roles. */
   readonly eligible: boolean;
+  /**
+   * Who answers for it, as its world shows it to everyone (D-084), for the pass's `ia` block: the
+   * community's name and the person's published name, or their wallet when they published none —
+   * the house's Oracle, when the house answers. Absent when it cannot be said in a form the pass accepts.
+   */
+  readonly responde?: AgentResponds;
   /** accessOf's permissions for the agent (ORG-011), in the register's order. */
   readonly permissions: readonly OrganizationPermission[];
   /** accessOf's height: a role position, never an owner's. */
@@ -1121,6 +1129,30 @@ export async function assignAgentRole(
   ]);
 }
 
+// eslint-disable-next-line no-control-regex -- control codes are exactly what goes
+const CONTROL = /[\u0000-\u001f\u007f]/g;
+
+/** At most `max` characters of a name for the pass, trimmed and without control characters; undefined when nothing is left. */
+function shown(name: string, max: number): string | undefined {
+  const cut = Array.from(name.replace(CONTROL, ' ').trim()).slice(0, max).join('').trim();
+  return cut === '' ? undefined : cut;
+}
+
+/** The `responde` of an agent's pass: the community, and the person by name or, with no name, by wallet (D-084). */
+async function respondsOf(
+  db: TillDatabase,
+  org: Organization,
+  agent: Pick<TeamAgent, 'responsible'>,
+): Promise<AgentResponds | undefined> {
+  const comunidad = shown(org.name, AGENT_RESPONDS_TEXT_MAX);
+  if (comunidad === undefined) return undefined;
+  const name = (await publishedBy(db, [agent.responsible])).get(agent.responsible)?.name;
+  if (name !== undefined)
+    return { comunidad, nombre: shown(name, AGENT_RESPONDS_TEXT_MAX) as string };
+  // A wallet is stored as `0x` and 40 lower case hexadecimal digits (the table's CHECK): what the pass asks for.
+  return { comunidad, cartera: agent.responsible };
+}
+
 /**
  * What an agent's pass is made of: its switch, its state, who answers for it
  * and what it holds (ORG-011). Asked by numinia.com when an agent requests a
@@ -1146,6 +1178,7 @@ export async function agentPass(
   const agent = (await loadAgents(db, accountId)).find((held) => held.id === id);
   if (agent === undefined) return refuse(AGENT_PROBLEMS.noSuchAgent);
   const access: ActorAccess = agentAccess(org, agent);
+  const responde = await respondsOf(db, org, agent);
   return {
     ok: true,
     accountId,
@@ -1162,6 +1195,7 @@ export async function agentPass(
       worlds: agent.worlds,
     },
     eligible: answered(org, agent),
+    ...(responde === undefined ? {} : { responde }),
     permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),
     height: Math.max(0, access.height),
     roles: topDown(org.state.roles)

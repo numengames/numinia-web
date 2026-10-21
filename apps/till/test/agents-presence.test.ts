@@ -474,6 +474,57 @@ describe('changing the presence', () => {
   });
 });
 
+describe('who answers for it, in the pass (D-084)', () => {
+  const respondeOf = async (s: Scene, id: string) => {
+    const pass = await s.desk.agentPass(id, 'claude-ana');
+    if (!pass.ok) throw new Error(pass.problems.join());
+    return pass.responde;
+  };
+
+  it('is the community and the person’s published name', async () => {
+    const { s, id } = await withWorlds();
+    await s.desk.setProfile(PABLO, { name: 'Pablo', avatar: null });
+    expect(await respondeOf(s, id)).toEqual({ comunidad: 'Numen', nombre: 'Pablo' });
+  });
+
+  it('is the person’s wallet when they published no name', async () => {
+    const { s, id } = await withWorlds();
+    const responde = await respondeOf(s, id);
+    expect(responde).toEqual({ comunidad: 'Numen', cartera: PABLO });
+    expect(parseAgentPassIa({ responde })).toEqual({ ok: true, value: { responde } });
+  });
+
+  it('is the house’s Oracle by its published name when the house answers', async () => {
+    const s = scene();
+    const id = await team(s);
+    await s.desk.setProfile(HOUSE, { name: 'Ursa', avatar: null });
+    await s.desk.placeWorld(HOUSE, true, ['torre'], id);
+    const made = await s.desk.createAgent(HOUSE, id, TOKEN, true);
+    if (!made.ok) throw new Error(made.problems.join());
+    expect(await respondeOf(s, id)).toEqual({ comunidad: 'Numen', nombre: 'Ursa' });
+  });
+
+  it('is cut to the 40 characters the pass takes', async () => {
+    const { s, id } = await withWorlds();
+    s.sqlite
+      .prepare('UPDATE team_profiles SET name = ?')
+      .run(`${'N'.repeat(29)} ${'u'.repeat(29)}`);
+    await s.desk.setProfile(PABLO, { name: 'P'.repeat(60), avatar: null });
+    const responde = await respondeOf(s, id);
+    expect(responde).toEqual({
+      comunidad: `${'N'.repeat(29)} ${'u'.repeat(10)}`,
+      nombre: 'P'.repeat(40),
+    });
+    expect(parseAgentPassIa({ responde }).ok).toBe(true);
+  });
+
+  it('is left out when the community’s name leaves nothing to show', async () => {
+    const { s, id } = await withWorlds();
+    s.sqlite.prepare('UPDATE team_profiles SET name = ?').run('\u0001');
+    expect(await respondeOf(s, id)).toBeUndefined();
+  });
+});
+
 describe('choosing the worlds', () => {
   it('sets one world, several, or all; logged; rows and mode agree', async () => {
     const { s, id } = await withWorlds();

@@ -21,7 +21,10 @@
  *   MCP server (`ServidorMcp`: the tool's schema checked, the world's
  *   refusals kept as the answer, untrusted world text inside `<material>`).
  *
- * Rules: a body leaves by itself after 10 minutes without MCP calls; it
+ * Rules: a body leaves by itself after 10 minutes without MCP calls — or,
+ * when its `quedarse_h` is set (D-082: 1, 4 or 24 hours, the house pays),
+ * after that many hours, still holding its seat of the organization's 3
+ * and counted as body time; it
  * asks `/me` at most once a minute (each beat, and on `entrar`); a
  * `401` from numinia.com (on `/me` or on a pass) means the token was
  * revoked or renewed: the body leaves and revokes the OAuth grant it came
@@ -37,13 +40,17 @@
  * in storage, a log or an answer; a body whose object was evicted is gone,
  * and the next alarm of the new instance only frees its seat.
  *
- * `oir` follows the AI's own `hear` setting (the panel's switch, read from
- * `/me`): the world tools a body runs come through {@link worldTools}, with
- * `oir` only while `hear` is true, and what the bridge hears is kept only
- * then (dropped every minute otherwise). The setting can change at any
- * time, so it is re-read with every `/me` the body already asks (at most
- * once a minute); if `/me` cannot be read, the body hears nothing. What it
- * may place is the house's library (biblioteca.ts).
+ * What the AI hears follows its `oye` setting (D-083, the panel's ladder,
+ * read from `/me`): the world tools a body runs come through
+ * {@link worldTools}. `llamadas`, `esperar_llamada` and `gesto` are there at
+ * every rung — what is said to the AI reaches it —; `oir` only at `todo`,
+ * and what the bridge hears of the chat is kept only then. The bubble
+ * entries the world reports reach the AI from `burbuja` up: below it the
+ * mailbox drops them, so they neither wake `esperar_llamada` nor show in
+ * `mirar`. The setting can change at any time, so it is re-read with every
+ * `/me` the body already asks (at most once a minute); if `/me` cannot be
+ * read, the body hears only who calls it. What it may place is the house's
+ * library (biblioteca.ts).
  */
 import { getOAuthApi } from '@cloudflare/workers-oauth-provider';
 import { DurableObject } from 'cloudflare:workers';
@@ -59,14 +66,14 @@ import {
 import { HOUSE_LIBRARY } from './biblioteca';
 import { storeFetch, storeOrigin, type Env } from './env';
 import { homeOf, standingOf } from './herramientas';
-import { askMe, type MeAnswer, type MeAsk } from './me';
+import { askMe, type Hearing, type MeAnswer, type MeAsk } from './me';
 import type { Plazas } from './plazas';
 import { PROVIDER_OPTIONS } from './provider';
 import { grantUserId } from './vuelta';
 
 /** While a body is inside, its alarm rings this often. */
 export const BEAT_MS = 60_000;
-/** A body leaves by itself after this long without MCP calls. */
+/** A body leaves by itself after this long without MCP calls (more when it is set to stay, {@link idleOf}). */
 export const IDLE_MS = 10 * 60_000;
 /** A body asks numinia.com's `/me` at most this often. */
 export const ME_EVERY_MS = 60_000;
@@ -77,6 +84,10 @@ export const NOTES_MAX = 20;
 
 /** The bridge's hearing tool. */
 export const HEAR_TOOL = 'oir';
+/** The bridge's tool that waits for a call (or, for an AI that hears its bubble, for someone entering it). */
+export const WAIT_TOOL = 'esperar_llamada';
+/** The bubble part of {@link WAIT_TOOL}'s description: an AI that hears only who calls it is never woken by it. */
+const WAIT_BUBBLE = ' (o entre en tu burbuja)';
 
 const BODY_KEY = 'body';
 
@@ -243,9 +254,28 @@ interface InUse {
 const refuse = (reason: Refusal): BodyAnswer => ({ ok: false, reason, text: REFUSALS[reason] });
 const ignore = (): undefined => undefined;
 
-/** The world tools a URL-connected AI may use: the bridge's, with `oir` only for an AI whose `hear` is on. */
-export function worldTools(bridge: PuenteMundo, hear: boolean): HerramientaMcp[] {
-  return bridge.herramientas().filter((tool) => hear || tool.name !== HEAR_TOOL);
+/**
+ * How long a body may go without MCP calls: ten minutes, or the hours it is
+ * set to stay (D-082: the house pays for them) when those are more.
+ */
+export const idleOf = (stay: number): number => Math.max(IDLE_MS, stay * 3_600_000);
+
+/**
+ * The world tools a URL-connected AI may use (D-083): the bridge's, with
+ * `oir` only for an AI that hears everything nearby, and `esperar_llamada`
+ * described without the bubble for one that hears only who calls it.
+ * `llamadas`, `esperar_llamada` and `gesto` are for every rung: what is said
+ * to the AI reaches it, whatever it hears of the rest.
+ */
+export function worldTools(bridge: PuenteMundo, hearing: Hearing): HerramientaMcp[] {
+  return bridge
+    .herramientas()
+    .filter((tool) => hearing === 'todo' || tool.name !== HEAR_TOOL)
+    .map((tool) =>
+      hearing === 'llamada' && tool.name === WAIT_TOOL
+        ? { ...tool, description: tool.description.replace(WAIT_BUBBLE, '') }
+        : tool,
+    );
 }
 
 /** The body of one AI (story W9 calls it per MCP request); null when the relay has no binding. */
@@ -273,15 +303,18 @@ class Body {
   readonly bridge: PuenteMundo;
   token: string;
   grant: BodyGrant | null;
-  /** Whether this AI may hear nearby chat: its panel setting, as the last `/me` said. */
-  hear: boolean;
+  /** What this AI hears: its panel setting, as the last `/me` said. */
+  oye: Hearing;
+  /** Hours it is set to stay without use (0: it leaves after ten minutes), as the last `/me` said. */
+  stay: number;
   counted: number;
   lastCall: number;
   firstPass: ((answer: RespuestaPase | null) => void) | null = null;
 
   constructor(o: {
     me: MeAsk;
-    hear: boolean;
+    oye: Hearing;
+    stay: number;
     world: string;
     ws: string;
     store: string;
@@ -293,7 +326,8 @@ class Body {
     this.org = o.me.accountId;
     this.agent = o.me.agentId;
     this.token = o.me.token;
-    this.hear = o.hear;
+    this.oye = o.oye;
+    this.stay = o.stay;
     this.world = o.world;
     this.store = o.store;
     this.desk = o.desk;
@@ -309,6 +343,11 @@ class Body {
       pedirPase: (aud) => o.hooks.pass(this, aud),
       log: (line) => o.hooks.note(this, line),
     });
+    // The world tells the AI who enters its bubble whatever it hears; one that hears only who calls it is told nothing of the rest.
+    const enters = this.bridge.buzon.entra.bind(this.bridge.buzon);
+    this.bridge.buzon.entra = (m) => {
+      if (this.oye !== 'llamada') enters(m);
+    };
   }
 
   saved(): Saved {
@@ -444,7 +483,8 @@ export class Cuerpo extends DurableObject<Env> {
     if (!seat.ok) return refuse('full');
     const body = new Body({
       me: props,
-      hear: answer.me.hear,
+      oye: answer.me.oye,
+      stay: answer.me.stay,
       world: mundo,
       ws: world.ws,
       store,
@@ -512,7 +552,7 @@ export class Cuerpo extends DurableObject<Env> {
     const server = new ServidorMcp({
       nombre: 'numinia',
       version: '1',
-      herramientas: () => worldTools(body.bridge, body.hear),
+      herramientas: () => worldTools(body.bridge, body.oye),
       log: (line) => this.note(body, line),
     });
     const reply = toolReply.safeParse(
@@ -554,14 +594,21 @@ export class Cuerpo extends DurableObject<Env> {
   }
 
   /**
-   * Take the `hear` setting from a `/me` answer. Anything but a clear
-   * answer (numinia.com down, busy, odd) leaves the body deaf: it does not
-   * keep hearing on a setting it can no longer confirm. Turned off, what
-   * the bridge already heard is dropped at once.
+   * Take the `oye` and `quedarse_h` settings from a `/me` answer. Anything
+   * but a clear answer (numinia.com down, busy, odd) leaves the body at the
+   * least: it hears only who calls it and does not stay past ten minutes —
+   * it does not keep hearing, or costing the house, on a setting it can no
+   * longer confirm. Turned down, what the bridge already heard is dropped at
+   * once: the chat below `todo`, the bubble entries below `burbuja`.
    */
   private listen(body: Body, answer: MeAnswer): void {
-    body.hear = answer.kind === 'ok' && answer.me.hear;
-    if (!body.hear) body.bridge.oidas.length = 0;
+    body.oye = answer.kind === 'ok' ? answer.me.oye : 'llamada';
+    body.stay = answer.kind === 'ok' ? answer.me.stay : 0;
+    if (body.oye !== 'todo') body.bridge.oidas.length = 0;
+    if (body.oye === 'llamada') {
+      body.bridge.buzon.entradas.length = 0;
+      body.bridge.buzon.dentro.clear();
+    }
   }
 
   /** Revoke the OAuth grant the body came with; best effort (the token is dead anyway). */
@@ -603,7 +650,7 @@ export class Cuerpo extends DurableObject<Env> {
       await this.end(body, 'world-closed');
       return;
     }
-    if (now - body.lastCall >= IDLE_MS) {
+    if (now - body.lastCall >= idleOf(body.stay)) {
       await this.end(body, 'idle');
       return;
     }
