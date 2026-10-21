@@ -33,6 +33,10 @@ export const REBUILD_UPDATES: readonly UpdateVersion[] = [
         type: 'NEW',
         text: 'An organization’s AI now knows where it lives: the worlds it can see and enter are only the ones it lives in — all of its community’s worlds, as before, or just the ones chosen for it — and it is also told how it is present there and how much it hears (only whoever calls it, also what is said in its bubble, or everything nearby). Nothing changes for the AIs already connected: they keep living in all their community’s worlds.',
       },
+      {
+        type: 'NEW',
+        text: 'In the panel’s Agentes, each AI’s card has a new «En el mundo» section, and its first group, «Dónde vive», lets whoever manages the AI choose one world, several, or all of the community’s. These settings reach the worlds once their engine is updated.',
+      },
     ],
   },
   {

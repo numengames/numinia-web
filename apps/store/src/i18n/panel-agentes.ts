@@ -129,6 +129,28 @@ export interface AgentesMessages {
     readonly disconnecting: string;
   };
   /** What the invitation adds to the world's (the roles of «También construir»). */
+  /**
+   * «En el mundo» (S20–S22): the section of an AI's card where its settings for the worlds are
+   * set — where it lives, its body and bubble, how it is called and what it hears. Plain words.
+   */
+  readonly world: {
+    readonly title: string;
+    /** Honest, always visible: these settings reach a world once its engine is updated. */
+    readonly note: string;
+    /** «Dónde vive»: one world, several, or all of the community's. */
+    readonly where: {
+      readonly label: string;
+      readonly modes: Readonly<Record<'one' | 'several' | 'all', string>>;
+      readonly hints: Readonly<Record<'one' | 'several' | 'all', string>>;
+      /** `{name}`: the select that picks the one world, and the list of the several, for screen readers. */
+      readonly pick: string;
+      readonly list: string;
+      readonly none: string;
+      readonly unread: string;
+      readonly last: string;
+      readonly empty: string;
+    };
+  };
   readonly dialog: {
     readonly rolesLabel: string;
     readonly rolesHint: string;
@@ -229,6 +251,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'La casa no da a una IA un rol con «Administrador» o «Gestionar roles»: eso es de quienes son dueños de la comunidad.',
       noSuchRole: 'Ese rol ya no existe. Recarga la página.',
       notToken: 'Esa IA se conecta con llave, no con token.',
+      worldGone: 'Ese mundo ya no es de la comunidad. Recarga la página.',
     },
     access: {
       legend: '¿Cómo se conecta?',
@@ -271,6 +294,25 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Sí, desconectar',
       disconnectNo: 'No, dejarla',
       disconnecting: 'Desconectando…',
+    },
+    world: {
+      title: 'En el mundo',
+      note: 'Estos ajustes llegan a los mundos cuando se actualiza su motor. Hasta entonces, la IA entra como hasta ahora.',
+      where: {
+        label: 'Dónde vive',
+        modes: { one: 'Un mundo', several: 'Varios', all: 'Todos los de la comunidad' },
+        hints: {
+          one: 'Solo aparece en el mundo que elijas.',
+          several: 'Solo aparece en los mundos que marques.',
+          all: 'Aparece en todos los mundos de la comunidad, también en los que lleguen.',
+        },
+        pick: 'Mundo donde vive {name}',
+        list: 'Mundos donde vive {name}',
+        none: 'La comunidad aún no tiene mundos. La IA vivirá en los que lleguen.',
+        unread: 'No se han podido leer los mundos de la comunidad.',
+        last: 'Tiene que vivir al menos en un mundo.',
+        empty: 'Ahora no vive en ningún mundo: marca al menos uno.',
+      },
     },
     dialog: {
       rolesLabel: '¿Con qué roles?',
@@ -370,6 +412,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'The house does not give an AI a role with “Administrator” or “Manage roles”: that is for the community’s owners.',
       noSuchRole: 'That role no longer exists. Reload the page.',
       notToken: 'That AI connects with a key, not a token.',
+      worldGone: 'That world no longer belongs to the community. Reload the page.',
     },
     access: {
       legend: 'How does it connect?',
@@ -412,6 +455,25 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Yes, disconnect',
       disconnectNo: 'No, keep it',
       disconnecting: 'Disconnecting…',
+    },
+    world: {
+      title: 'In the world',
+      note: 'These settings reach the worlds once their engine is updated. Until then, the AI enters as it always has.',
+      where: {
+        label: 'Where it lives',
+        modes: { one: 'One world', several: 'Several', all: 'All of the community’s' },
+        hints: {
+          one: 'It only appears in the world you pick.',
+          several: 'It only appears in the worlds you tick.',
+          all: 'It appears in every world of the community, including those that arrive later.',
+        },
+        pick: 'World where {name} lives',
+        list: 'Worlds where {name} lives',
+        none: 'The community has no worlds yet. The AI will live in the ones that arrive.',
+        unread: 'The community’s worlds could not be read.',
+        last: 'It has to live in at least one world.',
+        empty: 'It lives in no world right now: tick at least one.',
+      },
     },
     dialog: {
       rolesLabel: 'With which roles?',
@@ -510,6 +572,8 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'ハウスは、「管理者」または「ロールの管理」を含むロールをAIに付与できません。それはコミュニティのオーナーの役目です。',
       noSuchRole: 'そのロールはもうありません。ページを読み込み直してください。',
       notToken: 'このAIはトークンではなく鍵で接続します。',
+      worldGone:
+        'そのワールドはもうコミュニティのものではありません。ページを再読み込みしてください。',
     },
     access: {
       legend: '接続方法',
@@ -552,6 +616,25 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'はい、切る',
       disconnectNo: 'いいえ、残す',
       disconnecting: '切断中…',
+    },
+    world: {
+      title: 'ワールドでの設定',
+      note: 'この設定は、ワールドのエンジンが更新されると反映されます。それまでAIはこれまで通りに入ります。',
+      where: {
+        label: '住む場所',
+        modes: { one: '1つのワールド', several: '複数', all: 'コミュニティのすべて' },
+        hints: {
+          one: '選んだワールドにだけ現れます。',
+          several: 'チェックしたワールドにだけ現れます。',
+          all: 'コミュニティのすべてのワールドに現れます。あとから増えるワールドにも。',
+        },
+        pick: '{name}が住むワールド',
+        list: '{name}が住むワールド一覧',
+        none: 'コミュニティにはまだワールドがありません。AIは、これから届くワールドに住みます。',
+        unread: 'コミュニティのワールドを読み込めませんでした。',
+        last: '少なくとも1つのワールドに住む必要があります。',
+        empty: '今はどのワールドにも住んでいません。少なくとも1つチェックしてください。',
+      },
     },
     dialog: {
       rolesLabel: 'どのロールにしますか？',
@@ -649,6 +732,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         '하우스는 ‘관리자’ 또는 ‘역할 관리’가 있는 역할을 AI에게 줄 수 없습니다. 그것은 커뮤니티 소유자의 몫입니다.',
       noSuchRole: '그 역할은 더 이상 없습니다. 페이지를 다시 불러오세요.',
       notToken: '이 AI는 토큰이 아니라 키로 연결합니다.',
+      worldGone: '그 월드는 더 이상 커뮤니티의 것이 아닙니다. 페이지를 새로고침하세요.',
     },
     access: {
       legend: '어떻게 연결할까요?',
@@ -691,6 +775,25 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: '네, 끊기',
       disconnectNo: '아니요, 그대로 둠',
       disconnecting: '끊는 중…',
+    },
+    world: {
+      title: '월드에서',
+      note: '이 설정은 월드의 엔진이 업데이트되면 적용됩니다. 그때까지 AI는 지금처럼 들어갑니다.',
+      where: {
+        label: '사는 곳',
+        modes: { one: '월드 하나', several: '여러 개', all: '커뮤니티의 모든 월드' },
+        hints: {
+          one: '고른 월드에만 나타납니다.',
+          several: '체크한 월드에만 나타납니다.',
+          all: '커뮤니티의 모든 월드에 나타나며, 나중에 생기는 월드에도 나타납니다.',
+        },
+        pick: '{name}이(가) 사는 월드',
+        list: '{name}이(가) 사는 월드 목록',
+        none: '커뮤니티에 아직 월드가 없습니다. AI는 앞으로 생길 월드에 살게 됩니다.',
+        unread: '커뮤니티의 월드를 불러오지 못했습니다.',
+        last: '적어도 한 월드에는 살아야 합니다.',
+        empty: '지금은 어떤 월드에도 살지 않습니다. 하나 이상 체크하세요.',
+      },
     },
     dialog: {
       rolesLabel: '어떤 역할로 할까요?',
@@ -789,6 +892,7 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
         'A casa não dá a uma IA um cargo com «Administrador» ou «Gerenciar cargos»: isso é de quem é dono da comunidade.',
       noSuchRole: 'Esse papel não existe mais. Recarregue a página.',
       notToken: 'Essa IA se conecta com chave, não com token.',
+      worldGone: 'Esse mundo não é mais da comunidade. Recarregue a página.',
     },
     access: {
       legend: 'Como ela se conecta?',
@@ -831,6 +935,25 @@ export const AGENTES_UI: Readonly<Record<SupportedLocale, AgentesMessages>> = {
       disconnectYes: 'Sim, desconectar',
       disconnectNo: 'Não, manter',
       disconnecting: 'Desconectando…',
+    },
+    world: {
+      title: 'No mundo',
+      note: 'Estes ajustes chegam aos mundos quando o motor deles é atualizado. Até lá, a IA entra como sempre.',
+      where: {
+        label: 'Onde mora',
+        modes: { one: 'Um mundo', several: 'Vários', all: 'Todos os da comunidade' },
+        hints: {
+          one: 'Só aparece no mundo que você escolher.',
+          several: 'Só aparece nos mundos que você marcar.',
+          all: 'Aparece em todos os mundos da comunidade, inclusive nos que chegarem.',
+        },
+        pick: 'Mundo onde {name} mora',
+        list: 'Mundos onde {name} mora',
+        none: 'A comunidade ainda não tem mundos. A IA morará nos que chegarem.',
+        unread: 'Não foi possível ler os mundos da comunidade.',
+        last: 'Ela precisa morar em pelo menos um mundo.',
+        empty: 'Agora ela não mora em nenhum mundo: marque pelo menos um.',
+      },
     },
     dialog: {
       rolesLabel: 'Com quais papéis?',

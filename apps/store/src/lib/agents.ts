@@ -26,6 +26,14 @@
 
 import { b64urlDecode, b64urlEncode } from './world-pass';
 
+/** The till's sentences about where an AI lives and how it is present (apps/till/src/lib/agents.ts, pinned by a test). */
+export const PRESENCE_PROBLEMS = {
+  presenceNone: 'must be an object with cuerpo, burbuja, llamada, oye and/or quedarse_h',
+  hearsConflict:
+    'hears is false but presence.oye is «todo»: an AI that hears everything nearby hears',
+  worldsNotHere: 'every world must be placed in the AI’s organization',
+} as const;
+
 export const AGENT_PROBLEMS = {
   agentId:
     'agentId must be 1 to 32 characters: lower case letters, digits and hyphens, none at either end',

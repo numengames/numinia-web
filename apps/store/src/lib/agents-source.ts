@@ -11,6 +11,7 @@
  *   PATCH  { accountId, id, enabled?, state?, hears? }       the switch, the state and/or whether it hears nearby chat
  *          { accountId, id, renewToken: true }               a new token (the old one stops) → { agents, token }
  *          { accountId, id, revokeToken: true }              revoke the token and switch it off
+ *          { accountId, id, worlds: { todos: true } | { mundos: [world ids] } }   where it lives
  *          { accountId, id, giveRole: <role id> }            give a role
  *          { accountId, id, takeRole: <role id> }            take a role
  *   DELETE ?cuenta=<account id>&agente=<agent id>            remove
@@ -32,7 +33,8 @@
  */
 
 import { z } from 'zod';
-import type { AccountDesk, Asker, DeskAgentDraft } from './accounts';
+import { AGENT_WORLDS_MAX, parseAgentPresence } from '@numinia/domain';
+import type { AccountDesk, Asker, DeskAgent, DeskAgentDraft } from './accounts';
 import {
   accountOf,
   answer,
@@ -74,6 +76,13 @@ function buildSchemas() {
       roleIds: z.array(roleId).max(10).optional(),
     })
     .strict();
+  // The worlds are judged by the till (each one placed in the organization); the route only checks the shape.
+  const worlds = z.union([
+    z.object({ todos: z.literal(true) }).strict(),
+    z
+      .object({ mundos: z.array(z.string().min(1).max(ID_MAX)).min(1).max(AGENT_WORLDS_MAX) })
+      .strict(),
+  ]);
   const patch = z.union([
     z
       .object({
@@ -89,6 +98,7 @@ function buildSchemas() {
           change.enabled !== undefined || change.state !== undefined || change.hears !== undefined,
         { message: 'enabled, state or hears is required' },
       ),
+    z.object({ accountId, id: agentId, worlds }).strict(),
     z.object({ accountId, id: agentId, giveRole: roleId }).strict(),
     z.object({ accountId, id: agentId, takeRole: roleId }).strict(),
     z.object({ accountId, id: agentId, renewToken: z.literal(true) }).strict(),
@@ -121,6 +131,16 @@ function buildSchemas() {
           state: z.enum(AGENT_STATES),
           // A till that has not run migration 0023 yet says nothing: it hears nothing.
           hears: z.boolean().default(false),
+          // A till that has not run migration 0026 yet says neither: the defaults, and all the worlds.
+          presence: z
+            .custom<NonNullable<DeskAgent['presence']>>((value) => parseAgentPresence(value).ok)
+            .optional(),
+          worlds: z
+            .union([
+              z.object({ todos: z.literal(true) }),
+              z.object({ mundos: z.array(z.string()) }),
+            ])
+            .optional(),
           status: z.enum(['apagada', 'sin-responsable', 'sin-permiso', ...AGENT_STATES]),
           responsible: z.string(),
           // A till that has not run migration 0025 yet says nothing: a member answers for it.
@@ -254,6 +274,9 @@ export async function answerAgentWrite(
       }
       if ('takeRole' in change) {
         return desk.takeAgentRole(you, change.accountId, change.id, change.takeRole, house);
+      }
+      if ('worlds' in change) {
+        return desk.setAgentWorlds(you, change.accountId, change.id, change.worlds, house);
       }
       if ('renewToken' in change) {
         const { hash, prefix } = fresh as NonNullable<typeof fresh>;

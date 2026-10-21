@@ -15,9 +15,10 @@ import { describe, expect, it } from 'vitest';
 import {
   AGENT_PROBLEMS as TILL_PROBLEMS,
   MAX_AGENTS as TILL_MAX,
+  PRESENCE_PROBLEMS as TILL_PRESENCE_PROBLEMS,
 } from '../../../../till/src/lib/agents';
 import type { DeskAgentsAnswer, DeskLogAct, DeskRefusal } from '../accounts';
-import { AGENT_PROBLEMS } from '../agents';
+import { AGENT_PROBLEMS, PRESENCE_PROBLEMS } from '../agents';
 import {
   MAX_AGENTS,
   createAgentsFixture,
@@ -140,6 +141,7 @@ const problems = (answer: {
 describe("the fixture's words are the till's", () => {
   it('uses the very sentences and the limit of apps/till', () => {
     expect(AGENT_PROBLEMS).toEqual(TILL_PROBLEMS);
+    expect(PRESENCE_PROBLEMS).toEqual(TILL_PRESENCE_PROBLEMS);
     expect(MAX_AGENTS).toBe(TILL_MAX);
   });
 });
@@ -160,6 +162,8 @@ describe('creating', () => {
         enabled: true,
         state: 'activa',
         hears: false,
+        presence: DEFAULT_AGENT_PRESENCE,
+        worlds: { todos: true },
         status: 'activa',
         responsible: OWNER,
         responsibleName: 'Pablo',
@@ -366,6 +370,43 @@ describe('switching, sleeping, removing', () => {
     expect(problems(await s.desk.changeAgent('bad', ORG, 'hermes-1', { enabled: false }))).toEqual([
       'bad wallet',
     ]);
+  });
+
+  it('says where an AI lives: all, or chosen worlds placed in the community; a log line for each change', async () => {
+    const s = stage();
+    await s.desk.createAgent(OWNER, ORG, BOT);
+    s.log.length = 0;
+    const live = async (worlds: unknown, who = OWNER) =>
+      s.desk.setAgentWorlds(who, ORG, 'hermes-1', worlds as never);
+    const first = view(await s.desk.agents(OWNER, ORG)).agents[0];
+    expect(first?.worlds).toEqual({ todos: true });
+    await live({ todos: true });
+    expect(s.log).toEqual([]);
+    const chosen = view(await live({ mundos: ['torre', 'agora-plaza'] })).agents[0];
+    expect(chosen?.worlds).toEqual({ mundos: ['agora-plaza', 'torre'] });
+    expect(problems(await live({ mundos: ['torre', 'torre'] })).length).toBe(1);
+    await live({ mundos: ['agora-plaza', 'torre'] });
+    expect(s.log.map((line) => [line.act, line.detail])).toEqual([
+      ['agent-state', { name: 'Hermes', worlds: 'agora-plaza,torre' }],
+    ]);
+    expect(view(await live({ todos: true })).agents[0]?.worlds).toEqual({ todos: true });
+    expect(problems(await live({ mundos: ['nowhere'] }))).toEqual([
+      PRESENCE_PROBLEMS.worldsNotHere,
+    ]);
+    expect(problems(await live({ mundos: [] })).length).toBe(1);
+    expect(problems(await live('all')).length).toBe(1);
+    expect(problems(await s.desk.setAgentWorlds(OWNER, ORG, 'ghost', { todos: true }))).toEqual([
+      AGENT_PROBLEMS.noSuchAgent,
+    ]);
+    expect(problems(await s.desk.setAgentWorlds(OWNER, ORG, 7 as never, { todos: true }))).toEqual([
+      AGENT_PROBLEMS.agentId,
+    ]);
+    expect(problems(await live({ todos: true }, PLAIN))).toEqual([
+      refusalSentence('missing-permission', 'manage-roles'),
+    ]);
+    expect((await s.desk.setAgentWorlds(HOUSE, ORG, 'hermes-1', { todos: true }, true)).ok).toBe(
+      true,
+    );
   });
 
   it('lets only a manager above the agent, or its responsible person, handle it; the house too', async () => {
@@ -674,6 +715,15 @@ describe('«MCP remoto» (W2): the way, the worlds, the token', () => {
     expect(await s.desk.agentWorlds(ORG, 'tok')).toMatchObject({ presence: { oye: 'todo' } });
     expect(await s.desk.agentPass(ORG, 'tok')).toMatchObject({
       agent: { worlds: { todos: true }, presence: { oye: 'todo' } },
+    });
+    // Where it lives narrows the worlds it sees and its pass says so.
+    await s.desk.setAgentWorlds(OWNER, ORG, 'tok', { mundos: ['torre'] });
+    expect(await s.desk.agentWorlds(ORG, 'tok')).toMatchObject({
+      worldIds: ['torre'],
+      worlds: { mundos: ['torre'] },
+    });
+    expect(await s.desk.agentPass(ORG, 'tok')).toMatchObject({
+      agent: { worlds: { mundos: ['torre'] } },
     });
     expect(problems(await s.desk.agentWorlds(ORG, 'ghost'))).toEqual([AGENT_PROBLEMS.noSuchAgent]);
     expect(problems(await s.desk.agentWorlds('acc_other', 'tok'))).toEqual([

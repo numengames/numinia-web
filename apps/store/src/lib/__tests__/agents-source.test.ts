@@ -5,11 +5,13 @@
  * contract for GET, POST, PATCH and DELETE on /api/saldo/agents.
  */
 
+import { AGENT_WORLDS_MAX, DEFAULT_AGENT_PRESENCE } from '@numinia/domain';
 import { describe, expect, it, vi } from 'vitest';
 import deskSeed from '../../../fixtures/accounts/desk.json';
 import type { AccountDesk, Asker } from '../accounts';
 import { accountsFrom, boundAccounts } from '../accounts-source';
 import { createAccountsFixtureDesk, type AccountsSeed } from '../accounts-fixture';
+import { PRESENCE_PROBLEMS } from '../agents';
 import { answerAgentWrite, answerAgents } from '../agents-source';
 import { b64urlEncode } from '../world-pass';
 
@@ -69,6 +71,8 @@ describe('GET /api/saldo/agents', () => {
         enabled: true,
         state: 'activa',
         hears: false,
+        presence: DEFAULT_AGENT_PRESENCE,
+        worlds: { todos: true },
         status: 'activa',
         responsible: ME,
         createdAt: NOW.toISOString(),
@@ -218,6 +222,52 @@ describe('POST, PATCH and DELETE /api/saldo/agents', () => {
       ),
     );
     expect(answered['agents'].agents[0]).toMatchObject({ hears: false });
+  });
+
+  it('says where an AI lives, and reads a till that has not learned it yet as «all»', async () => {
+    const desk = fresh();
+    await desk.placeWorld(HOUSE, true, ['mi-rincon', 'taller-de-pruebas'], NUMEN);
+    await answerAgentWrite(desk, asker(), send('POST', BOT), quiet);
+    const patch = (worlds: unknown) =>
+      answerAgentWrite(
+        desk,
+        asker(),
+        send('PATCH', { accountId: NUMEN, id: 'hermes-1', worlds }),
+        quiet,
+      );
+    const chosen = await json(await patch({ mundos: ['mi-rincon'] }));
+    expect(chosen['agents'].agents[0].worlds).toEqual({ mundos: ['mi-rincon'] });
+    const all = await json(await patch({ todos: true }));
+    expect(all['agents'].agents[0].worlds).toEqual({ todos: true });
+    // The till judges the worlds: one that is not the community's is a refusal in its words.
+    const gone = await patch({ mundos: ['nowhere'] });
+    expect(gone.status).toBe(403);
+    expect((await json(gone))['problems']).toEqual([PRESENCE_PROBLEMS.worldsNotHere]);
+    // The shape is the route's: nothing, none, too many, a world out of shape, anything else.
+    const bad = async (worlds: unknown) => expect((await patch(worlds)).status).toBe(400);
+    await bad({});
+    await bad({ todos: false });
+    await bad({ mundos: [] });
+    await bad({ mundos: [''] });
+    await bad({ mundos: Array.from({ length: AGENT_WORLDS_MAX + 1 }, (_, n) => `w${n}`) });
+    await bad({ mundos: ['mi-rincon'], todos: true });
+    const listed = await desk.agents(ME, NUMEN, false);
+    if (!listed.ok) throw new Error('no list');
+    const old = {
+      ...listed,
+      agents: listed.agents.map(({ presence: _p, worlds: _w, ...rest }) => rest),
+    };
+    const answered = await json(
+      await answerAgents(
+        { ...desk, agents: async () => old } as unknown as typeof desk,
+        asker(),
+        url(`cuenta=${NUMEN}`),
+        quiet,
+      ),
+    );
+    expect(answered['agents'].agents[0]).not.toHaveProperty('worlds');
+    expect(answered['agents'].agents[0]).not.toHaveProperty('presence');
+    expect(DEFAULT_AGENT_PRESENCE.oye).toBe('llamada');
   });
 
   it('refuses without a session, and a body that is not the contract’s', async () => {
@@ -408,6 +458,7 @@ describe('the bound till', () => {
       agents: answer({ ok: true }),
       createAgent: answer({ ok: true }),
       changeAgent: answer({ ok: true }),
+      setAgentWorlds: answer({ ok: true }),
       removeAgent: answer({ ok: true }),
       giveAgentRole: answer({ ok: true }),
       takeAgentRole: answer({ ok: true }),
@@ -416,13 +467,14 @@ describe('the bound till', () => {
     };
   };
 
-  it('calls the eight methods as methods of the stub', async () => {
+  it('calls the nine methods as methods of the stub', async () => {
     const till = stub();
     const bound = boundAccounts(till) as AccountDesk;
     const draft = { id: 'a', name: 'A', publicKey: KEY(1) };
     await bound.agents(ME, NUMEN, true);
     await bound.createAgent(ME, NUMEN, draft, true);
     await bound.changeAgent(ME, NUMEN, 'a', { enabled: false }, true);
+    await bound.setAgentWorlds(ME, NUMEN, 'a', { todos: true }, true);
     await bound.removeAgent(ME, NUMEN, 'a', true);
     await bound.giveAgentRole(ME, NUMEN, 'a', MEMBER_ROLE, true);
     await bound.takeAgentRole(ME, NUMEN, 'a', MEMBER_ROLE, true);
@@ -431,6 +483,7 @@ describe('the bound till', () => {
     expect(till.agents).toHaveBeenCalledWith(ME, NUMEN, true);
     expect(till.createAgent).toHaveBeenCalledWith(ME, NUMEN, draft, true);
     expect(till.changeAgent).toHaveBeenCalledWith(ME, NUMEN, 'a', { enabled: false }, true);
+    expect(till.setAgentWorlds).toHaveBeenCalledWith(ME, NUMEN, 'a', { todos: true }, true);
     expect(till.removeAgent).toHaveBeenCalledWith(ME, NUMEN, 'a', true);
     expect(till.giveAgentRole).toHaveBeenCalledWith(ME, NUMEN, 'a', MEMBER_ROLE, true);
     expect(till.takeAgentRole).toHaveBeenCalledWith(ME, NUMEN, 'a', MEMBER_ROLE, true);
@@ -443,6 +496,7 @@ describe('the bound till', () => {
       agents: _a,
       createAgent: _c,
       changeAgent: _ch,
+      setAgentWorlds: _sw,
       removeAgent: _r,
       giveAgentRole: _g,
       takeAgentRole: _t,
@@ -456,6 +510,7 @@ describe('the bound till', () => {
       () => bound.agents(ME, NUMEN),
       () => bound.createAgent(ME, NUMEN, { id: 'a', name: 'A', publicKey: KEY(1) }),
       () => bound.changeAgent(ME, NUMEN, 'a', { enabled: false }),
+      () => bound.setAgentWorlds(ME, NUMEN, 'a', { todos: true }),
       () => bound.removeAgent(ME, NUMEN, 'a'),
       () => bound.giveAgentRole(ME, NUMEN, 'a', MEMBER_ROLE),
       () => bound.takeAgentRole(ME, NUMEN, 'a', MEMBER_ROLE),

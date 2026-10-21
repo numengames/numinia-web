@@ -2613,6 +2613,92 @@
   font-size: 1.44rem;
   font-weight: 400;
 }
+/* «En el mundo» (S20–S22): the section of an AI's card for its settings in the worlds. */
+.agentes-mundo {
+  display: grid;
+  gap: var(--s3);
+  padding: var(--s3);
+  background: color-mix(in srgb, var(--turquesa) 5%, transparent);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  min-width: 0;
+}
+.agentes-mundo-titulo {
+  margin: 0;
+  font: 500 0.72rem var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+.agentes-mundo-nota {
+  margin: 0;
+}
+.agentes-grupo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s2) var(--s4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.agentes-grupo > legend {
+  float: left;
+  width: 8rem;
+  padding: 7px 0 0;
+  font: 500 0.72rem var(--mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+.agentes-grupo-cuerpo {
+  flex: 1 1 14rem;
+  display: grid;
+  gap: var(--s2);
+  min-width: 0;
+}
+.agentes-grupo-cuerpo > * {
+  min-width: 0;
+}
+.agentes-grupo-cuerpo > .agentes-pista {
+  margin: 0;
+}
+.agentes-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+.agentes-opcion-corta {
+  min-height: 40px;
+  align-items: center;
+}
+.agentes-opcion-corta input {
+  margin-top: 0;
+}
+.agentes-grupo:disabled .agentes-opcion {
+  cursor: default;
+  opacity: 0.75;
+}
+.agentes-mundos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agentes-casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 32px;
+  cursor: pointer;
+}
+.agentes-mundo-uno {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
 @media (max-width: 640px) {
   .panel-titulo[data-con-accion] {
     display: flex;
@@ -2644,9 +2730,15 @@
   .agentes-roles {
     grid-template-columns: minmax(0, 1fr);
   }
-  .agentes-fila-estado > legend {
+  .agentes-grupo {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .agentes-fila-estado > legend,
+  .agentes-grupo > legend {
     float: none;
     width: auto;
+    padding-top: 0;
   }
   .agentes-k {
     padding-top: 0;

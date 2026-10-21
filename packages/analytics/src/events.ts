@@ -139,6 +139,9 @@ export function buildEvent<Name extends AnalyticsEventName>(
 //   cloud>` (Hermes' tabs), `panel-agentes-guide-other-<code|key>` (another AI's tabs),
 //   `panel-agentes-guide-terminal` (Hermes' terminal lines), `panel-agentes-guide-copy-lines` and
 //   `panel-agentes-guide-create-<code|key>` (open the invitation on the token or on the key).
+// - «En el mundo» on an AI's card (S20, 2026-10-21): `panel-agentes-where-<one|several|all>` (where it
+//   lives), `panel-agentes-where-pick` (the one world's select) and `panel-agentes-where-world` (a
+//   world's box in the several-worlds list).
 // - The community's Ajustes: `panel-settings-piece-agents`.
 
 // ---- W13 «El menú de la cara y Gente» (cut 9, 2026-10-16) ----

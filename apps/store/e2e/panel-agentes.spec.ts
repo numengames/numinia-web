@@ -84,7 +84,12 @@ interface Agent {
   roleIds: string[];
   assignable: string[];
   mayEdit: boolean;
+  /** Where it lives (the till's, S20): all the community's worlds or the chosen ones. */
+  worlds?: { todos: true } | { mundos: string[] };
 }
+
+/** The community's worlds, as /api/mundos?org= lists them. */
+const WORLDS = ['agora-plaza', 'mi-rincon', 'taller-de-pruebas'];
 
 const agent = (
   extra: Partial<Agent> & Pick<Agent, 'id' | 'name'> & { publicKey?: string },
@@ -100,6 +105,7 @@ const agent = (
   roleIds: [],
   assignable: ROLES.map((role) => role.id),
   mayEdit: true,
+  worlds: { todos: true },
   ...extra,
 });
 
@@ -134,6 +140,8 @@ interface Stand {
   /** The next write is refused with this answer. */
   refuseWrite: { status: number; body: unknown } | null;
   calls: Array<{ method: string; body: unknown }>;
+  /** What /api/mundos?org= answers: the community's worlds, or a status for a failure. */
+  worlds: string[] | number;
 }
 
 function viewOf(stand: Stand) {
@@ -164,7 +172,15 @@ async function stage(
     down: null,
     refuseWrite: null,
     calls: [],
+    worlds: WORLDS,
   };
+  await page.route('**/api/mundos?org=*', (route) =>
+    typeof stand.worlds === 'number'
+      ? route.fulfill({ status: stand.worlds, json: {} })
+      : route.fulfill({
+          json: { worlds: stand.worlds.map((worldId) => ({ worldId, accountId: GAMES.id })) },
+        }),
+  );
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({ status: 200, json: { address: ME, rank: 'oracle' } }),
   );
@@ -236,11 +252,13 @@ async function stage(
         giveRole?: string;
         takeRole?: string;
         renewToken?: true;
+        worlds?: Agent['worlds'];
       };
       const entry = stand.agents.find((candidate) => candidate.id === change.id);
       if (entry !== undefined) {
         if (change.enabled !== undefined) entry.enabled = change.enabled;
         if (change.state !== undefined) entry.state = change.state;
+        if (change.worlds !== undefined) entry.worlds = change.worlds;
         if (change.giveRole !== undefined) entry.roleIds.push(change.giveRole);
         if (change.takeRole !== undefined) {
           entry.roleIds = entry.roleIds.filter((id) => id !== change.takeRole);
@@ -376,6 +394,187 @@ test.describe('Agentes — the list', () => {
     await expect(row(page, 'sola').locator('[data-agent-status-line]')).toContainText(
       'Sin permiso',
     );
+  });
+});
+
+test.describe('Agentes — «En el mundo»: where it lives (S20)', () => {
+  const where = (card: Locator) => card.locator('[data-agent-where]');
+
+  test('says, always, that the settings reach the worlds once their engine is updated', async ({
+    page,
+  }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.locator('[data-agent-world-section] h2')).toHaveText('En el mundo');
+    await expect(hermes.locator('[data-agent-world-note]')).toContainText(
+      'llegan a los mundos cuando se actualiza su motor',
+    );
+  });
+
+  test('lives in all the community’s worlds by default, and says so', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'all');
+    await expect(hermes.getByRole('radio', { name: 'Todos los de la comunidad' })).toBeChecked();
+    await expect(hermes.locator('[data-agent-where-hint]')).toContainText(
+      'también en los que lleguen',
+    );
+    await shot(page, '20-donde-vive-todos-desktop');
+  });
+
+  test('picks one world, then several, then all again; each pick is one PATCH', async ({
+    page,
+  }) => {
+    const stand = await stage(page);
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await hermes.getByRole('radio', { name: 'Un mundo' }).click();
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'one');
+    expect(stand.calls.at(-1)?.body).toEqual({
+      accountId: GAMES.id,
+      id: 'hermes',
+      worlds: { mundos: ['agora-plaza'] },
+    });
+    const pick = hermes.getByLabel('Mundo donde vive Hermes');
+    await expect(pick).toHaveValue('agora-plaza');
+    await pick.selectOption('mi-rincon');
+    expect(stand.calls.at(-1)?.body).toMatchObject({ worlds: { mundos: ['mi-rincon'] } });
+    await shot(page, '21-donde-vive-uno-desktop');
+
+    await hermes.getByRole('radio', { name: 'Varios' }).click();
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'several');
+    const list = hermes.getByRole('list', { name: 'Mundos donde vive Hermes' });
+    await expect(list.getByRole('checkbox')).toHaveCount(3);
+    await expect(list.getByRole('checkbox', { name: 'mi-rincon' })).toBeChecked();
+    await list.getByRole('checkbox', { name: 'taller-de-pruebas' }).click();
+    await expect(list.getByRole('checkbox', { name: 'taller-de-pruebas' })).toBeChecked();
+    expect(stand.calls.at(-1)?.body).toMatchObject({
+      worlds: { mundos: ['mi-rincon', 'taller-de-pruebas'] },
+    });
+    await shot(page, '22-donde-vive-varios-desktop');
+    await list.getByRole('checkbox', { name: 'mi-rincon' }).click();
+    await expect(list.getByRole('checkbox', { name: 'mi-rincon' })).not.toBeChecked();
+    expect(stand.calls.at(-1)?.body).toMatchObject({
+      worlds: { mundos: ['taller-de-pruebas'] },
+    });
+    // It has to live somewhere: the last one cannot be unticked.
+    await expect(list.getByRole('checkbox', { name: 'taller-de-pruebas' })).toBeDisabled();
+
+    await hermes.getByRole('radio', { name: 'Todos los de la comunidad' }).click();
+    expect(stand.calls.at(-1)?.body).toMatchObject({ worlds: { todos: true } });
+    await expect(where(hermes)).toHaveAttribute('data-agent-where', 'all');
+  });
+
+  test('draws what the till says: chosen worlds come back ticked after a reload', async ({
+    page,
+  }) => {
+    await stage(page, {
+      agents: [
+        agent({
+          id: 'hermes',
+          name: 'Hermes',
+          publicKey: KEY_A,
+          worlds: { mundos: ['mi-rincon'] },
+        }),
+        agent({
+          id: 'luna',
+          name: 'Luna',
+          publicKey: KEY_B,
+          worlds: { mundos: ['mi-rincon', 'agora-plaza'] },
+        }),
+      ],
+    });
+    await open(page);
+    await expect(where(row(page, 'hermes'))).toHaveAttribute('data-agent-where', 'one');
+    await expect(row(page, 'hermes').getByLabel('Mundo donde vive Hermes')).toHaveValue(
+      'mi-rincon',
+    );
+    await expect(where(row(page, 'luna'))).toHaveAttribute('data-agent-where', 'several');
+  });
+
+  test('is read-only for whoever may not edit the AI', async ({ page }) => {
+    await stage(page);
+    await open(page);
+    const huerfana = row(page, 'huerfana');
+    await expect(where(huerfana)).toHaveAttribute('disabled', '');
+    await expect(huerfana.getByRole('radio', { name: 'Un mundo' })).toBeDisabled();
+    await expect(huerfana.getByRole('radio', { name: 'Todos los de la comunidad' })).toBeChecked();
+  });
+
+  test('a community with no worlds says so; one whose worlds cannot be read says that', async ({
+    page,
+  }) => {
+    const stand = await stage(page);
+    stand.worlds = [];
+    await open(page);
+    const hermes = row(page, 'hermes');
+    await expect(hermes.locator('[data-agent-where-hint]')).toContainText('aún no tiene mundos');
+    await expect(hermes.getByRole('radio', { name: 'Un mundo' })).toBeDisabled();
+    await expect(hermes.getByRole('radio', { name: 'Varios' })).toBeDisabled();
+    stand.worlds = 500;
+    await open(page);
+    await expect(row(page, 'hermes').locator('[data-agent-where-hint]')).toContainText(
+      'No se han podido leer los mundos',
+    );
+  });
+
+  test('tells it when the till says that world is no longer the community’s', async ({ page }) => {
+    const stand = await stage(page);
+    await open(page);
+    stand.refuseWrite = {
+      status: 403,
+      body: { problems: ['every world must be placed in the AI’s organization'] },
+    };
+    await row(page, 'hermes').getByRole('radio', { name: 'Un mundo' }).click();
+    await expect(page.locator('[role="alert"]')).toContainText('ya no es de la comunidad');
+  });
+
+  for (const [label, size] of [
+    ['1440', { width: 1440, height: 900 }],
+    ['390', { width: 390, height: 844 }],
+  ] as const) {
+    test(`fits at ${label} with the worlds listed, no sideways scroll`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await stage(page, {
+        agents: [
+          agent({
+            id: 'hermes',
+            name: 'Hermes',
+            publicKey: KEY_A,
+            worlds: { mundos: ['agora-plaza', 'taller-de-pruebas'] },
+          }),
+        ],
+      });
+      await open(page);
+      const hermes = row(page, 'hermes');
+      await hermes.getByRole('radio', { name: 'Varios' }).click();
+      await expect(hermes.locator('[data-agent-where-list]')).toBeVisible();
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+      const axe = await new AxeBuilder({ page }).include('[data-org-panel]').analyze();
+      expect(axe.violations).toEqual([]);
+      await shot(page, `20-donde-vive-${label}`);
+    });
+  }
+
+  test('the section is the same in the five locales, with its own words', async ({ page }) => {
+    await stage(page);
+    const titles: Record<string, string> = {
+      es: 'En el mundo',
+      en: 'In the world',
+      ja: 'ワールドでの設定',
+      ko: '월드에서',
+      'pt-br': 'No mundo',
+    };
+    for (const [locale, title] of Object.entries(titles)) {
+      await open(page, locale === 'en' ? '/panel/agentes/' : `/${locale}/panel/agentes/`);
+      await expect(row(page, 'hermes').locator('[data-agent-world-section] h2')).toHaveText(title);
+      await expect(row(page, 'hermes').locator('[data-agent-where-option]')).toHaveCount(3);
+    }
   });
 });
 

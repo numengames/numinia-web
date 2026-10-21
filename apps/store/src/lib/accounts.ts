@@ -381,6 +381,10 @@ export interface DeskAgent {
   state: AgentState;
   /** Whether it may hear what is said nearby in the worlds: off by default, set by whoever may edit it (migration 0023). */
   hears: boolean;
+  /** How it is present in a world (migration 0026); absent from a till older than that: the defaults. */
+  presence?: AgentPresence | undefined;
+  /** Which worlds it lives in (migration 0026); absent from a till older than that: all of its organization's. */
+  worlds?: AgentWorlds | undefined;
   status: AgentStatus;
   responsible: string;
   /** `true` when the house answers for it (D-078): the screen says «la casa», and the wallet is an Oracle's. */
@@ -741,6 +745,14 @@ export interface AccountDesk {
     aud: string,
     t: number,
   ): Promise<DeskClaimAnswer>;
+  /** Where an agent lives: `{ todos: true }` or `{ mundos: [ids] }`, each placed in its organization; logged (optional). */
+  setAgentWorlds(
+    wallet: string,
+    accountId: string,
+    agentId: string,
+    worlds: AgentWorlds,
+    house?: boolean,
+  ): Promise<DeskAgentsAnswer>;
   /** The worlds placed in an agent's organization, in one query; public as `homeOf` is (optional). */
   agentWorlds(accountId: string, agentId: string): Promise<DeskAgentWorldsAnswer>;
   /** The agent a live token belongs to, by SHA-256(token) alone, answered as `agentPass` (optional). */
@@ -952,6 +964,7 @@ export const DESK_METHODS = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'setAgentWorlds',
   'communityTerms',
   'publishTerms',
   'publicTerms',
@@ -1014,6 +1027,7 @@ export const OPTIONAL_DESK_METHODS: readonly (typeof DESK_METHODS)[number][] = [
   'revokeAgentToken',
   'agentWorlds',
   'agentByToken',
+  'setAgentWorlds',
   'communityTerms',
   'publishTerms',
   'publicTerms',

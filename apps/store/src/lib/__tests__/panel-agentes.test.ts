@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { DeskAgent, DeskAgents } from '../accounts';
-import { AGENT_PROBLEMS, isAgentId } from '../agents';
+import { AGENT_PROBLEMS, PRESENCE_PROBLEMS, isAgentId } from '../agents';
 import {
   actionsOf,
   appNameOf,
@@ -23,6 +23,7 @@ import {
   hermesTokenCommand,
   invitable,
   listUrl,
+  livesIn,
   readAgents,
   readToken,
   RELAY_URL,
@@ -31,7 +32,11 @@ import {
   responsibleOf,
   roleIdsFor,
   rolesToGive,
+  toggleWorld,
   tokenLine,
+  worldsForMode,
+  worldsModeOf,
+  worldsOf,
 } from '../panel-agentes';
 import { RELAY_ORIGIN } from '../relay-handoff';
 import { agentIdFrom, nameProblem } from '../world-door';
@@ -542,5 +547,84 @@ describe('the URL way (paso 2)', () => {
     expect(appNameOf({ kind: 'other', host: 'mistral.example' })).toBe('mistral.example');
     expect(appNameOf({ kind: 'panel' })).toBeNull();
     expect(appNameOf({ kind: 'key' })).toBeNull();
+  });
+});
+
+describe('where an AI lives (S20)', () => {
+  const community = ['agora-plaza', 'torre', 'zeta'];
+
+  it('reads where a desk says an AI lives; a desk that says nothing, or nonsense, means all', () => {
+    const read = (worlds: unknown) =>
+      readAgents({ agents: view([agent({ worlds } as never)]) })?.agents[0];
+    expect(read({ todos: true })?.worlds).toEqual({ todos: true });
+    expect(read({ mundos: ['torre'] })?.worlds).toEqual({ mundos: ['torre'] });
+    expect(read({ mundos: [] })?.worlds).toEqual({ mundos: [] });
+    for (const odd of [
+      undefined,
+      null,
+      'todos',
+      { todos: false },
+      { mundos: 'torre' },
+      { mundos: [1] },
+    ]) {
+      expect(read(odd)).not.toHaveProperty('worlds');
+    }
+    expect(worldsOf(agent())).toEqual({ todos: true });
+    expect(worldsOf(agent({ worlds: { mundos: ['torre'] } }))).toEqual({ mundos: ['torre'] });
+  });
+
+  it('puts it as all, one or several', () => {
+    expect(worldsModeOf({ todos: true })).toBe('all');
+    expect(worldsModeOf({ mundos: ['torre'] })).toBe('one');
+    expect(worldsModeOf({ mundos: ['torre', 'zeta'] })).toBe('several');
+    expect(worldsModeOf({ mundos: [] })).toBe('several');
+  });
+
+  it('knows the community’s worlds it lives in now', () => {
+    expect(livesIn({ todos: true }, community)).toEqual(community);
+    expect(livesIn({ mundos: ['zeta', 'gone'] }, community)).toEqual(['zeta']);
+    expect(livesIn({ mundos: [] }, community)).toEqual([]);
+  });
+
+  it('says what to send when the person picks another way', () => {
+    expect(worldsForMode('all', { mundos: ['torre'] }, community)).toEqual({ todos: true });
+    expect(worldsForMode('all', { todos: true }, [])).toEqual({ todos: true });
+    // one: the first it lives in; else the community’s first; else nothing to send
+    expect(worldsForMode('one', { todos: true }, community)).toEqual({ mundos: ['agora-plaza'] });
+    expect(worldsForMode('one', { mundos: ['zeta', 'torre'] }, community)).toEqual({
+      mundos: ['torre'],
+    });
+    expect(worldsForMode('one', { mundos: ['gone'] }, community)).toEqual({
+      mundos: ['agora-plaza'],
+    });
+    expect(worldsForMode('one', { todos: true }, [])).toBeNull();
+    // several: from all, the same worlds as chosen ones; from chosen ones, nothing changes
+    expect(worldsForMode('several', { todos: true }, community)).toEqual({ mundos: community });
+    expect(worldsForMode('several', { mundos: ['torre'] }, community)).toBeNull();
+    expect(worldsForMode('several', { todos: true }, [])).toBeNull();
+  });
+
+  it('adds or takes a world, and never leaves it without one', () => {
+    expect(toggleWorld(['torre'], 'zeta', true)).toEqual({ mundos: ['torre', 'zeta'] });
+    expect(toggleWorld(['zeta'], 'torre', true)).toEqual({ mundos: ['torre', 'zeta'] });
+    expect(toggleWorld(['torre'], 'torre', true)).toEqual({ mundos: ['torre'] });
+    expect(toggleWorld(['torre', 'zeta'], 'zeta', false)).toEqual({ mundos: ['torre'] });
+    expect(toggleWorld(['torre'], 'torre', false)).toBeNull();
+  });
+
+  it('writes the change and tells the till’s «not in the community» apart', () => {
+    expect(changeBody('acc_t_1', 'hermes', { worlds: { mundos: ['torre'] } })).toEqual({
+      accountId: 'acc_t_1',
+      id: 'hermes',
+      worlds: { mundos: ['torre'] },
+    });
+    expect(refusalOf([PRESENCE_PROBLEMS.worldsNotHere])).toEqual({
+      kind: 'agent',
+      problem: 'worldGone',
+    });
+    expect(refusalOf(['worlds: mundos must be a list'])).toEqual({
+      kind: 'agent',
+      problem: 'invalid',
+    });
   });
 });

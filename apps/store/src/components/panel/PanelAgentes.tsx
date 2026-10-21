@@ -63,10 +63,12 @@ import {
   type Change,
   type Failure,
 } from '../../lib/panel-agentes';
+import { loadOrgWorlds } from '../../lib/mundos';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { GUIDE } from '../../i18n/agentes-guia';
 import { ConnectDialog } from './AgentConnect';
 import { AgentMenu } from './AgentMenu';
+import { AgentWorld, type Community } from './AgentWorld';
 import { InviteDialog, type Draft } from './AgentInvite';
 import { TokenOnceDialog } from './AgentToken';
 import { PanelFrame } from './PanelFrame';
@@ -207,6 +209,7 @@ function Row({
   agent,
   view,
   named,
+  community,
   busy,
   words,
   locale,
@@ -219,6 +222,7 @@ function Row({
   readonly agent: DeskAgent;
   readonly view: DeskAgents;
   readonly named: Named;
+  readonly community: Community;
   readonly busy: boolean;
   readonly words: AgentesMessages;
   readonly onChange: (change: Change) => void;
@@ -407,6 +411,14 @@ function Row({
           </span>
         </fieldset>
 
+        <AgentWorld
+          agent={agent}
+          editable={editable}
+          words={words}
+          community={community}
+          onChange={onChange}
+        />
+
         <div className="agentes-fila-oir" data-agent-hear={agent.hears ? 'on' : 'off'}>
           <span className="agentes-k" id={`${hearId}-k`}>
             {words.hearRow}
@@ -520,6 +532,8 @@ function Agentes({
 }) {
   const [sheet, setSheet] = useState<Sheet>({ at: 'loading' });
   const [roles, setRoles] = useState<Named | null>(null);
+  /** The community's worlds, for «Dónde vive»: failing only means the card cannot offer a pick. */
+  const [community, setCommunity] = useState<Community>({ at: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -559,6 +573,15 @@ function Agentes({
       .catch(() => {
         if (wanted) setRoles(null);
       });
+    setCommunity({ at: 'loading' });
+    void loadOrgWorlds(fetch, org).then((worlds) => {
+      if (!wanted) return;
+      setCommunity(
+        worlds.at === 'ready'
+          ? { at: 'ready', ids: worlds.items.map((world) => world.worldId).sort() }
+          : { at: 'failed' },
+      );
+    });
     return () => {
       wanted = false;
     };
@@ -748,6 +771,7 @@ function Agentes({
               agent={agent}
               view={view}
               named={named}
+              community={community}
               busy={busy !== null}
               words={agentes}
               locale={locale}
