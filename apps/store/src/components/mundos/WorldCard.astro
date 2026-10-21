@@ -14,6 +14,7 @@ import { fill } from '../../i18n/communities';
 import { worldHref } from '../../lib/mundos';
 import { filtersOf, withAis, type WorldCard } from '../../lib/world-index';
 import Icon from '../chrome/Icon.astro';
+import CoverArt from '../communities/CoverArt.astro';
 
 interface Props {
   card: WorldCard;
@@ -54,10 +55,7 @@ const Heading = heading;
       card.cover ? (
         <img src={card.cover} alt="" loading="lazy" decoding="async" />
       ) : (
-        <span class="escena">
-          <span class="suelo" />
-          <span class="faro" />
-        </span>
+        <CoverArt id={card.id} family="world" />
       )
     }
     {
@@ -150,8 +148,7 @@ const Heading = heading;
     border-radius: var(--radio-marco) var(--radio-marco) 0 0;
     overflow: hidden;
   }
-  .mt-portada img,
-  .mt-portada .escena {
+  .mt-portada img {
     position: absolute;
     inset: 0;
     width: 100%;

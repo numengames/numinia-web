@@ -84,7 +84,7 @@ const laterParts = a.laterInCity.split('{x}');
             hidden
           >
             <div class="lienzo">
-              <Cover id={community.id} name={world.name} image={imageOf(community)} art />
+              <Cover id={community.id} name={world.name} image={imageOf(community)} />
             </div>
             <div class="velo" aria-hidden="true" />
             <div class="info">
@@ -137,7 +137,6 @@ const laterParts = a.laterInCity.split('{x}');
                 name={community.name}
                 image={imageOf(community, ritual)}
                 eager={index === 0}
-                art
                 ritualMode={ritual?.mode}
               />
             </div>

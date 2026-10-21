@@ -165,7 +165,6 @@ test('keyboard: skip link, the city, the page, then you — and the focus ring i
     'nav-communities',
     'nav-encounters',
     'nav-worlds',
-    'nav-bazaar',
     'nav-more-how',
     'footer-epitaph',
     'main',

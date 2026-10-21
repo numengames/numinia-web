@@ -51,7 +51,16 @@ export const AGENDA_PATH = '/agenda/';
 /** «Tus mundos»: the worlds of the communities you belong to. */
 export const MY_WORLDS_PATH = '/mis-mundos/';
 
-export const CITY_ITEMS: readonly Place<CityId>[] = [
+/**
+ * Whether the Bazar is shown anywhere (the rail, the phone header, the
+ * front page, the house's page, the «how it works» steps). Hidden for now
+ * (2026-10-21, Pablo): the pages stay built so their old addresses and the
+ * object pages under /archive/ keep working; flipping this brings every
+ * door back at once.
+ */
+export const BAZAAR_VISIBLE = false;
+
+const CITY_BASE: readonly Place<CityId>[] = [
   // «Ahora» is the front page; /live/ (the homes with people in) belongs to it.
   { id: 'now', path: '/', icon: 'broadcast', sections: ['/live/'] },
   { id: 'communities', path: '/communities/', icon: 'users-three', sections: ['/communities/'] },
@@ -62,9 +71,22 @@ export const CITY_ITEMS: readonly Place<CityId>[] = [
     sections: ['/calendar/', '/rituals/'],
   },
   { id: 'worlds', path: '/mundos/', icon: 'planet', sections: ['/mundos/'] },
-  // The object pages of the Bazar still live under /archive/<id>/.
-  { id: 'bazaar', path: '/bazaar/', icon: 'storefront', sections: ['/bazaar/', '/archive/'] },
 ];
+
+/** The Bazar's place; in the lists only while BAZAAR_VISIBLE. The object pages still live under /archive/<id>/. */
+export const BAZAAR_ITEM: Place<CityId> = {
+  id: 'bazaar',
+  path: '/bazaar/',
+  icon: 'storefront',
+  sections: ['/bazaar/', '/archive/'],
+};
+
+/** The city's places, with or without the Bazar. */
+export function cityItems(withBazaar: boolean): readonly Place<CityId>[] {
+  return withBazaar ? [...CITY_BASE, BAZAAR_ITEM] : CITY_BASE;
+}
+
+export const CITY_ITEMS: readonly Place<CityId>[] = cityItems(BAZAAR_VISIBLE);
 
 export const YOU_ITEMS: readonly Place<YouId>[] = [
   { id: 'notices', path: NOTIFICATIONS_PATH, icon: 'bell', sections: [NOTIFICATIONS_PATH] },

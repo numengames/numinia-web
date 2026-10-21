@@ -7,7 +7,7 @@
  */
 import type { SupportedLocale } from '@numinia/domain';
 import { APP_SHELL_UI } from '../../i18n/app-shell';
-import { CITY_ITEMS, SEARCH_PATH, ariaCurrent, localeHref, navState } from '../../lib/app-nav';
+import { BAZAAR_ITEM, BAZAAR_VISIBLE, SEARCH_PATH, ariaCurrent, localeHref, navState } from '../../lib/app-nav';
 import { symbolId } from '../../lib/svg-sprite';
 import Icon from './Icon.astro';
 
@@ -19,7 +19,7 @@ interface Props {
 
 const { locale, basePath } = Astro.props;
 const ui = APP_SHELL_UI[locale];
-const bazaar = CITY_ITEMS.find((item) => item.id === 'bazaar')!;
+const bazaar = BAZAAR_ITEM;
 ---
 
 <header class="borde-movil">
@@ -32,15 +32,19 @@ const bazaar = CITY_ITEMS.find((item) => item.id === 'bazaar')!;
     </svg>
   </a>
   <span class="borde-acc">
-    <a
-      href={localeHref(locale, bazaar.path)}
-      class="icono-btn"
-      aria-label={ui.bazaar}
-      aria-current={ariaCurrent(navState(bazaar, basePath))}
-      data-metric="phone-bazaar"
-    >
-      <Icon name="storefront" size={22} use />
-    </a>
+    {
+      BAZAAR_VISIBLE && (
+        <a
+          href={localeHref(locale, bazaar.path)}
+          class="icono-btn"
+          aria-label={ui.bazaar}
+          aria-current={ariaCurrent(navState(bazaar, basePath))}
+          data-metric="phone-bazaar"
+        >
+          <Icon name="storefront" size={22} use />
+        </a>
+      )
+    }
     <a
       href={localeHref(locale, SEARCH_PATH)}
       class="icono-btn"

@@ -7,7 +7,10 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  BAZAAR_ITEM,
+  BAZAAR_VISIBLE,
   CITY_ITEMS,
+  cityItems,
   CREATE_ITEMS,
   HOW_PATH,
   NOTIFICATIONS_PATH,
@@ -39,14 +42,26 @@ const litYou = (path: string): YouId | null =>
   YOU_ITEMS.find((item) => navState(item, path) !== null)?.id ?? null;
 
 describe('the places', () => {
-  it('the city: Ahora, Comunidades, Encuentros, Mundos, Bazar, with their routes', () => {
+  it('the city: Ahora, Comunidades, Encuentros, Mundos (the Bazar is hidden), with their routes', () => {
     expect(CITY_ITEMS.map((item) => [item.id, item.path])).toEqual([
       ['now', '/'],
       ['communities', '/communities/'],
       ['encounters', '/calendar/'],
       ['worlds', '/mundos/'],
-      ['bazaar', '/bazaar/'],
     ]);
+    expect(BAZAAR_VISIBLE).toBe(false);
+    expect(CITY_ITEMS).not.toContain(BAZAAR_ITEM);
+  });
+
+  it('switching the Bazar on puts it last, after Mundos', () => {
+    expect(cityItems(true).map((item) => item.id)).toEqual([
+      'now',
+      'communities',
+      'encounters',
+      'worlds',
+      'bazaar',
+    ]);
+    expect(cityItems(false)).toEqual(CITY_ITEMS);
   });
 
   it('yours: Avisos, Tus comunidades, Tu agenda, Tus mundos, Tu saldo (signed in only), Tu botín', () => {
@@ -109,8 +124,10 @@ describe('which place a page lights', () => {
     expect(litCity('/calendar/')).toBe('encounters');
     expect(litCity('/rituals/trg26/')).toBe('encounters');
     expect(litCity('/mundos/agora/')).toBe('worlds');
-    expect(navState(city('bazaar'), '/bazaar/')).toBe('page');
-    expect(litCity('/archive/avatar-arla/')).toBe('bazaar');
+    // The Bazar is hidden: no place lights, but its own place still reads its pages.
+    expect(litCity('/bazaar/')).toBeNull();
+    expect(navState(BAZAAR_ITEM, '/bazaar/')).toBe('page');
+    expect(navState(BAZAAR_ITEM, '/archive/avatar-arla/')).toBe('section');
   });
 
   it('yours: the panel belongs to Tus comunidades; the loot to Tu botín', () => {
