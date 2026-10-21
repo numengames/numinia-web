@@ -15,7 +15,9 @@ import {
   ORGANIZATION_PERMISSIONS,
   accessOf,
   canAssignRole,
+  DEFAULT_AGENT_PRESENCE,
   type ActorAccess,
+  type AgentPresence,
   type OrganizationAccess,
   type OrganizationRefusal,
   type OrganizationRole,
@@ -136,6 +138,12 @@ type AgentMethods = Pick<
 >;
 
 const refuse = (...problems: string[]): DeskRefusal => ({ ok: false, problems });
+
+/** The presence of a fixture AI: the default one, hearing everything nearby only if its switch is on. */
+const presenceOf = (agent: FixtureAgent): AgentPresence => ({
+  ...DEFAULT_AGENT_PRESENCE,
+  oye: agent.hears ? 'todo' : DEFAULT_AGENT_PRESENCE.oye,
+});
 
 export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMethods {
   const byOrg = new Map<string, FixtureAgent[]>();
@@ -522,6 +530,8 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           enabled: agent.enabled,
           state: agent.state,
           hears: agent.hears,
+          presence: presenceOf(agent),
+          worlds: { todos: true },
         },
         eligible: answered(answering),
         permissions: ORGANIZATION_PERMISSIONS.filter((key) => access.permissions.has(key)),
@@ -557,10 +567,16 @@ export function createAgentsFixture(host: AgentsHost, now: () => Date): AgentMet
           ...(isAgentId(agentId) ? [] : [AGENT_PROBLEMS.agentId]),
         );
       }
-      if (!agentsOf(accountId).some((held) => held.id === agentId)) {
-        return refuse(AGENT_PROBLEMS.noSuchAgent);
-      }
-      return { ok: true, accountId, agentId, worldIds: [...host.placedIn(accountId)].sort() };
+      const agent = agentsOf(accountId).find((held) => held.id === agentId);
+      if (agent === undefined) return refuse(AGENT_PROBLEMS.noSuchAgent);
+      return {
+        ok: true,
+        accountId,
+        agentId,
+        worldIds: [...host.placedIn(accountId)].sort(),
+        worlds: { todos: true },
+        presence: presenceOf(agent),
+      };
     },
 
     agentByToken: async (tokenHash): Promise<DeskAgentPassAnswer> => {

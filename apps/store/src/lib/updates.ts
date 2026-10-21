@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.161.0',
+    date: '2026-10-21 20:13',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'An organization’s AI now knows where it lives: the worlds it can see and enter are only the ones it lives in — all of its community’s worlds, as before, or just the ones chosen for it — and it is also told how it is present there and how much it hears (only whoever calls it, also what is said in its bubble, or everything nearby). Nothing changes for the AIs already connected: they keep living in all their community’s worlds.',
+      },
+    ],
+  },
+  {
     version: 'v0.159.0',
     date: '2026-10-20 23:00',
     entries: [

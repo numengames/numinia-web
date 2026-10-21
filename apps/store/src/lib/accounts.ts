@@ -16,6 +16,8 @@
 import {
   ORGANIZATION_PERMISSIONS,
   needsFreshSignature,
+  type AgentPresence,
+  type AgentWorlds,
   type OrganizationAccess,
   type OrganizationPermission,
   type CommunityTerms,
@@ -449,6 +451,10 @@ export interface DeskAgentPass {
     enabled: boolean;
     state: AgentState;
     hears: boolean;
+    /** How the AI is present in a world (migration 0026); absent from a till older than that. */
+    presence?: AgentPresence | undefined;
+    /** Which worlds it lives in (migration 0026); absent: all of its organization's. */
+    worlds?: AgentWorlds | undefined;
   };
   eligible: boolean;
   permissions: string[];
@@ -456,9 +462,21 @@ export interface DeskAgentPass {
   roles: { name: string; color: string | null }[];
 }
 export type DeskAgentPassAnswer = DeskAgentPass | DeskRefusal;
-/** The worlds placed in an agent's organization, by id (one query in the till). */
+/**
+ * The worlds an agent lives in, by id — those placed in its organization, or
+ * only the chosen ones among them — and its presence (one query in the till).
+ * A till older than migration 0026 says neither `worlds` nor `presence`.
+ */
 export type DeskAgentWorldsAnswer =
-  { ok: true; accountId: string; agentId: string; worldIds: string[] } | DeskRefusal;
+  | {
+      ok: true;
+      accountId: string;
+      agentId: string;
+      worldIds: string[];
+      worlds?: AgentWorlds | undefined;
+      presence?: AgentPresence | undefined;
+    }
+  | DeskRefusal;
 export type DeskClaimAnswer = { ok: true } | DeskRefusal;
 
 export type DeskConfirmAnswer =

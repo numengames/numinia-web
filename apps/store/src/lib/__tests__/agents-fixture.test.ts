@@ -5,6 +5,7 @@
  */
 
 import {
+  DEFAULT_AGENT_PRESENCE,
   accessOf,
   rolesFromTemplate,
   type ActorAccess,
@@ -665,6 +666,14 @@ describe('«MCP remoto» (W2): the way, the worlds, the token', () => {
       accountId: ORG,
       agentId: 'tok',
       worldIds: ['agora-plaza', 'torre'],
+      worlds: { todos: true },
+      presence: DEFAULT_AGENT_PRESENCE,
+    });
+    // The same presence rides on the pass, with its switch: hearing everything nearby is the last rung.
+    await s.desk.changeAgent(OWNER, ORG, 'tok', { hears: true });
+    expect(await s.desk.agentWorlds(ORG, 'tok')).toMatchObject({ presence: { oye: 'todo' } });
+    expect(await s.desk.agentPass(ORG, 'tok')).toMatchObject({
+      agent: { worlds: { todos: true }, presence: { oye: 'todo' } },
     });
     expect(problems(await s.desk.agentWorlds(ORG, 'ghost'))).toEqual([AGENT_PROBLEMS.noSuchAgent]);
     expect(problems(await s.desk.agentWorlds('acc_other', 'tok'))).toEqual([
