@@ -52,11 +52,26 @@
  *   404 `no-existe` (no such agent) · `mundo` (no such world)
  *   409 `repetida` (the request was already used)
  *   502 `caja` (the till failed) · 503 `no-vinculado` (no till) · `sin-clave` (no signing key)
+ *
+ * The `ia` block (S18, D-084): the pass says how the AI looks, how it is called, how long it
+ * stays and who answers for it, but ONLY for a world whose engine takes it (0.29.0 or later:
+ * an older one refuses a pass with a field it does not know). The context's `takesIa` says so
+ * for a world; not given, or not a clear yes, or no one to name as responsible: the pass goes
+ * without the block, exactly as before.
  */
 
+import { agentPassIa, parseAgentResponds, type AgentPassIa } from '@numinia/domain';
 import { z } from 'zod';
 import type { AccountDesk } from './accounts';
-import { agentPassShape, meterToken, refusedToken, tillFailed, tokenHolder } from './agent-me';
+import {
+  agentPassShape,
+  meterToken,
+  presenceOf,
+  refusedToken,
+  tillFailed,
+  tokenHolder,
+  type HeldAgent,
+} from './agent-me';
 import { inWindow, isAccountId, isAgentId, isAudience, verifyRequest } from './agents';
 import { logEvent } from './telemetry';
 import { WorldPassError, buildAgentPassPayload, signPass } from './world-pass';
@@ -74,6 +89,8 @@ export interface AgentPassContext {
   readonly secret: string | undefined;
   /** Seconds since the epoch. */
   readonly now: number;
+  /** Whether the world `aud` runs an engine that takes the `ia` block (lib/world-ia.ts); not given: it does not. */
+  readonly takesIa?: (aud: string) => Promise<boolean>;
 }
 
 /** A request is a few hundred bytes. */
@@ -152,6 +169,25 @@ async function bodyOf(
   }
 }
 
+/**
+ * The `ia` block for this AI in the world `aud`, or none: it needs someone to name as responsible, and a
+ * world that clearly takes it. A world that cannot be asked, or fails when asked, is a world that does not.
+ */
+async function iaFor(
+  held: HeldAgent,
+  aud: string,
+  context: AgentPassContext,
+): Promise<AgentPassIa | undefined> {
+  const responde = parseAgentResponds(held.responde);
+  if (!responde.ok || context.takesIa === undefined) return undefined;
+  try {
+    if (!(await context.takesIa(aud))) return undefined;
+  } catch {
+    return undefined;
+  }
+  return agentPassIa(presenceOf(held.agent), responde.value);
+}
+
 type Parsed =
   | { readonly mode: 'signed'; org: string; agent: string; aud: string; t: number; sig: string }
   | { readonly mode: 'bearer'; org: string; agent: string; aud: string };
@@ -219,6 +255,7 @@ export async function answerAgentPass(
   }
 
   // Signed first and claimed after: a door without a key spends no nonce.
+  const ia = await iaFor(held, aud, context);
   let token: { readonly pass: string; readonly exp: number };
   try {
     if (context.secret === undefined || context.secret === '') {
@@ -233,6 +270,7 @@ export async function answerAgentPass(
       state: held.agent.state,
       access: { permissions: held.permissions, height: held.height },
       roles: held.roles,
+      ...(ia === undefined ? {} : { ia }),
       now: context.now,
     });
     token = { pass: await signPass(context.privateKey, payload), exp: payload.exp };
