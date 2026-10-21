@@ -26,6 +26,7 @@ export * from './types/character-sheet.js';
 export * from './types/creation.js';
 export * from './types/organization.js';
 export * from './types/community-terms.js';
+export * from './types/agent-presence.js';
 
 export * from './constants/guilds.js';
 export * from './constants/factions.js';
@@ -46,6 +47,7 @@ export * from './constants/organization-roles.js';
 export * from './validators/env.js';
 export * from './validators/asset.js';
 export * from './validators/community-terms.js';
+export * from './validators/agent-presence.js';
 
 export * from './resolvers/asset-url.js';
 export * from './resolvers/guild-resolver.js';
