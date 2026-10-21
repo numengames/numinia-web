@@ -1,6 +1,6 @@
 /**
- * How many people are inside each community's home right now — numbers
- * only. Live and each community's page ask here; this asks each home's
+ * How many people (and, beside them, AIs) are inside each community's
+ * home right now — numbers only. Live and each community's page ask here; this asks each home's
  * public `/status` like any visitor (the engine lists every visitor's name
  * and position there: the count is kept, the rest dropped, lib/worlds.ts
  * `readProbe`).
@@ -24,26 +24,37 @@ const useFixture = (): boolean => process.env.DATA_SOURCE === 'fixture';
 let cached: {
   readonly at: number;
   readonly inside: Readonly<Record<string, number | null>>;
+  readonly ais: Readonly<Record<string, number | null>>;
 } | null = null;
 
-async function readInside(): Promise<Readonly<Record<string, number | null>>> {
+type Counts = Readonly<Record<string, number | null>>;
+
+async function readInside(): Promise<{ inside: Counts; ais: Counts }> {
   const sedes = countedSedes(REGISTER);
-  if (useFixture()) return Object.fromEntries(sedes.map((sede) => [sede.id, 0]));
+  if (useFixture()) {
+    return {
+      inside: Object.fromEntries(sedes.map((sede) => [sede.id, 0])),
+      ais: Object.fromEntries(sedes.map((sede) => [sede.id, null])),
+    };
+  }
   const probes = await probeWorlds(fetch, sedes, 2500);
-  // A home that does not answer is not «empty»: it says nothing (null).
-  return Object.fromEntries(
-    sedes.map((sede) => {
-      const probe = probes[sede.id];
-      return [sede.id, probe?.ok === true ? probe.users : null];
-    }),
-  );
+  // A home that does not answer is not «empty»: it says nothing (null); one
+  // that does not count its AIs (an older engine) says nothing of them.
+  const of = (pick: (probe: { users: number; ais: number | null }) => number | null): Counts =>
+    Object.fromEntries(
+      sedes.map((sede) => {
+        const probe = probes[sede.id];
+        return [sede.id, probe?.ok === true ? pick(probe) : null];
+      }),
+    );
+  return { inside: of((probe) => probe.users), ais: of((probe) => probe.ais) };
 }
 
 export const GET: APIRoute = async () => {
   const now = Date.now();
-  if (cached === null || now - cached.at > TTL_MS) cached = { at: now, inside: await readInside() };
+  if (cached === null || now - cached.at > TTL_MS) cached = { at: now, ...(await readInside()) };
   return Response.json(
-    { inside: cached.inside },
+    { inside: cached.inside, ais: cached.ais },
     { headers: { 'cache-control': 'public, max-age=30' } },
   );
 };

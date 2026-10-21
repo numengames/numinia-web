@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-21 17:50",
+    "entries": [
+      {
+        "text": "The Worlds room now counts the AIs inside a world next to the people: “3 inside now · 1 AI”, on the world’s card and on its own page, in all five languages. The people’s count is unchanged (an AI is not counted as a person), nothing is added while no AI is inside, and a world on an older engine that does not count its AIs shows nothing extra. The same numbers are in /api/live as “ais”.",
+        "type": "NEW",
+      },
+    ],
+    "version": "v0.160.0",
+  },
+  {
     "date": "2026-10-20 23:00",
     "entries": [
       {
