@@ -985,13 +985,22 @@ Then('a ritual page opens on its world stage', async function () {
   );
   // A community without a home yet says so, and offers the calendar instead.
   const trg = await readFile(
-    path.join(this.distDir, 'es', 'rituals', 'trg26', 'index.html'),
+    path.join(this.distDir, 'es', 'rituals', 'merge-madrid-2026', 'index.html'),
     'utf8',
   );
-  assert.ok(trg.indexOf('class="mundo') < trg.indexOf('<h1'), 'trg26: the stage is not first');
-  assert.ok(!trg.includes('data-metric="ritual-enter-world"'), 'trg26: a world it does not have');
-  assert.ok(trg.includes('data-metric="ritual-stage-calendar"'), 'trg26: no calendar on the stage');
-  assert.ok(trg.includes('data-metric="ritual-share"'), 'trg26: no share');
+  assert.ok(
+    trg.indexOf('class="mundo') < trg.indexOf('<h1'),
+    'merge-madrid-2026: the stage is not first',
+  );
+  assert.ok(
+    !trg.includes('data-metric="ritual-enter-world"'),
+    'merge-madrid-2026: a world it does not have',
+  );
+  assert.ok(
+    trg.includes('data-metric="ritual-stage-calendar"'),
+    'merge-madrid-2026: no calendar on the stage',
+  );
+  assert.ok(trg.includes('data-metric="ritual-share"'), 'merge-madrid-2026: no share');
 });
 
 /** The address of the first link carrying a metric, parsed (never a substring of the page). */
@@ -1013,14 +1022,17 @@ Then('a community with a home opens it and counts who is inside', async function
   assert.ok(vic.includes('/api/live'), 'vic: nothing reads who is inside');
   // A community without a home has neither the door nor the count.
   const trg = await readFile(
+    path.join(this.distDir, 'es', 'communities', 'merge', 'index.html'),
+    'utf8',
+  );
+  assert.ok(!trg.includes('data-metric="community-enter-world"'), 'merge: a home it does not have');
+  assert.ok(!trg.includes('data-inside='), 'merge: counts a home it does not have');
+  // TRGCON's home is in the fleet too: its page opens it.
+  const trgcon = await readFile(
     path.join(this.distDir, 'es', 'communities', 'trgcon', 'index.html'),
     'utf8',
   );
-  assert.ok(
-    !trg.includes('data-metric="community-enter-world"'),
-    'trgcon: a home it does not have',
-  );
-  assert.ok(!trg.includes('data-inside='), 'trgcon: counts a home it does not have');
+  assert.equal(hrefOf(trgcon, 'community-enter-world')?.origin, 'https://trgcon.numinia.com');
 });
 
 Then('Live lists the open homes with their doors', async function () {
@@ -1141,26 +1153,26 @@ Then(
       vic.body.includes('data-inside="vic"'),
       'vic: the block does not count who is inside',
     );
-    // TRGCON has no home: it says so and counts nothing.
-    const trgHtml = await page('trgcon');
+    // MERGE has no home: it says so and counts nothing.
+    const trgHtml = await page('merge');
     const trg = spacePiece(trgHtml, 'home');
-    assert.equal(trg?.state, 'no-home', 'trgcon: a home it does not have');
-    assert.ok(trg.body.includes('Sin sede todavía'), 'trgcon: no «sin sede todavía»');
-    assert.ok(!trg.body.includes('data-inside='), 'trgcon: counts a home it does not have');
+    assert.equal(trg?.state, 'no-home', 'merge: a home it does not have');
+    assert.ok(trg.body.includes('Sin sede todavía'), 'merge: no «sin sede todavía»');
+    assert.ok(!trg.body.includes('data-inside='), 'merge: counts a home it does not have');
     // Its gatherings: as many as the page lists coming, linked to that list.
     const coming = (trgHtml.match(/data-metric="ritual-card"/g) ?? []).length;
     const gatherings = spacePiece(trgHtml, 'gatherings');
     assert.equal(gatherings?.state, 'coming');
-    assert.ok(coming >= 1, 'trgcon: no gathering coming in the register');
+    assert.ok(coming >= 1, 'merge: no gathering coming in the register');
     const said = coming === 1 ? '1 próximo' : `${coming} próximos`;
-    assert.ok(gatherings.body.includes(said), `trgcon: the block does not say «${said}»`);
-    assert.match(gatherings.body, /href="#encuentros"/, 'trgcon: the count leads nowhere');
+    assert.ok(gatherings.body.includes(said), `merge: the block does not say «${said}»`);
+    assert.match(gatherings.body, /href="#encuentros"/, 'merge: the count leads nowhere');
     // What is not built yet carries the crane and says so.
     for (const piece of ['archive', 'members', 'balance']) {
       const entry = spacePiece(trgHtml, piece);
-      assert.equal(entry?.state, 'building', `trgcon: ${piece} is not marked`);
-      assert.ok(entry.body.includes('En construcción'), `trgcon: ${piece} without its words`);
-      assert.match(entry.body, crane, `trgcon: ${piece} without the crane`);
+      assert.equal(entry?.state, 'building', `merge: ${piece} is not marked`);
+      assert.ok(entry.body.includes('En construcción'), `merge: ${piece} without its words`);
+      assert.match(entry.body, crane, `merge: ${piece} without the crane`);
     }
     // The founder keeps the commons (nothing counted there): its narrative page opens them in «Lo que cuida».
     const founderHtml = await page('numen-games');
