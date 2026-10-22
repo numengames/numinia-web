@@ -1167,13 +1167,19 @@ Then(
     const said = coming === 1 ? '1 próximo' : `${coming} próximos`;
     assert.ok(gatherings.body.includes(said), `merge: the block does not say «${said}»`);
     assert.match(gatherings.body, /href="#encuentros"/, 'merge: the count leads nowhere');
-    // What is not built yet carries the crane and says so.
-    for (const piece of ['archive', 'members', 'balance']) {
+    // What the community has said of itself is stated; what is not built yet carries the crane and says so.
+    for (const piece of ['archive', 'members']) {
       const entry = spacePiece(trgHtml, piece);
-      assert.equal(entry?.state, 'building', `merge: ${piece} is not marked`);
-      assert.ok(entry.body.includes('En construcción'), `merge: ${piece} without its words`);
-      assert.match(entry.body, crane, `merge: ${piece} without the crane`);
+      assert.equal(entry?.state, 'stated', `merge: ${piece} is not stated`);
+      assert.ok(
+        !entry.body.includes('En construcción'),
+        `merge: ${piece} still says it is under construction`,
+      );
     }
+    const balance = spacePiece(trgHtml, 'balance');
+    assert.equal(balance?.state, 'building', 'merge: balance is not marked');
+    assert.ok(balance.body.includes('En construcción'), 'merge: balance without its words');
+    assert.match(balance.body, crane, 'merge: balance without the crane');
     // The founder keeps the commons (nothing counted there): its narrative page opens them in «Lo que cuida».
     const founderHtml = await page('numen-games');
     const door = hrefOf(founderHtml, 'house-world-enter');
