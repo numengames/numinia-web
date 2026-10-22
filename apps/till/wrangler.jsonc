@@ -10,6 +10,11 @@
   // STRIPE_KEY`, never here: a Stripe restricted key (TEST mode in this cut)
   // with Checkout Sessions write and Events read. Without it the desk answers
   // `payments are not configured` and the minute's run does nothing.
+  //
+  // One more secret, `wrangler secret put FLEET_HOUSE_KEY`, never here: the
+  // house wallet's private key (0x and 64 hex) that signs the fleet's list of
+  // Oracles and Archons (/fleet/signers.json). Only the till holds it
+  // (ADR-069). Without it the desk answers `not-configured` and the route 503s.
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "numinia-till",
   "main": "src/worker.ts",
