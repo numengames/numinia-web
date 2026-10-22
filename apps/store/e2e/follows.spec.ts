@@ -177,7 +177,7 @@ test.describe('signed in', () => {
     await expect(card).toHaveCount(1);
     await expect(card.locator('h3 a')).toHaveAttribute('href', `/es/communities/${TRGCON}/`);
     // TRGCON has a home now: its card enters it instead of sending to the next encounter.
-    await expect(card.locator('[data-enter-link]')).toBeVisible();
+    await expect(card.locator('[data-world-enter]')).toBeVisible();
     await expect(card.locator('[data-see-ritual]')).toHaveCount(0);
     await expect(page.locator('[data-belong-follow-empty]')).toBeHidden();
     await expect(page.locator(railCount)).toHaveText('2');
