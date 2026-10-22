@@ -452,7 +452,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         doneOff: '{name}: apagada.',
         failures: {
           unsupported:
-            'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.4x o más)',
+            'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.49 o más)',
           fixed: '{name}: la fija el servidor, el interruptor no la cambia.',
           forbidden:
             'Tu permiso no deja cambiar las funciones de este mundo: hace falta poder administrar la organización.',
@@ -646,7 +646,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         doneOn: '{name}: on.',
         doneOff: '{name}: off.',
         failures: {
-          unsupported: 'This world cannot be changed from here yet (it needs engine 0.4x or later)',
+          unsupported: 'This world cannot be changed from here yet (it needs engine 0.49 or later)',
           fixed: '{name}: set by the server, the switch does not change it.',
           forbidden:
             'Your permission does not let you change this world’s features: you need to be able to manage the organization.',
@@ -839,7 +839,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         doneOn: '{name}：オン。',
         doneOff: '{name}：オフ。',
         failures: {
-          unsupported: 'このワールドは、まだここから変更できません（エンジン0.4x以降が必要です）',
+          unsupported: 'このワールドは、まだここから変更できません（エンジン0.49以降が必要です）',
           fixed: '{name}：サーバーが固定しているため、スイッチでは変更できません。',
           forbidden:
             'このワールドの機能を変更する権限がありません。組織を管理できる必要があります。',
@@ -1028,7 +1028,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         doneOn: '{name}: 켜짐.',
         doneOff: '{name}: 꺼짐.',
         failures: {
-          unsupported: '이 월드는 아직 여기에서 바꿀 수 없습니다(엔진 0.4x 이상이 필요합니다)',
+          unsupported: '이 월드는 아직 여기에서 바꿀 수 없습니다(엔진 0.49 이상이 필요합니다)',
           fixed: '{name}: 서버가 고정해 두어 스위치로 바꿀 수 없습니다.',
           forbidden: '이 월드의 기능을 바꿀 권한이 없습니다. 조직을 관리할 수 있어야 합니다.',
         },
@@ -1222,7 +1222,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         doneOff: '{name}: desligada.',
         failures: {
           unsupported:
-            'Este mundo ainda não permite mudar isso por aqui (precisa do motor 0.4x ou mais novo)',
+            'Este mundo ainda não permite mudar isso por aqui (precisa do motor 0.49 ou mais novo)',
           fixed: '{name}: fixada pelo servidor, o interruptor não a muda.',
           forbidden:
             'Sua permissão não deixa mudar as funções deste mundo: é preciso poder administrar a organização.',

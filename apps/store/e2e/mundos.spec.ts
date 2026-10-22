@@ -471,7 +471,7 @@ test.describe('the «Funciones de este mundo» block of a world’s page', () =>
     const section = page.locator('[data-world-functions]');
     await expect(section).toHaveAttribute('data-world-functions', 'unsupported');
     await expect(section).toContainText(
-      'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.4x o más)',
+      'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.49 o más)',
     );
     await expect(section.getByRole('switch')).toHaveCount(0);
     await shot(page, '04-old-engine');
