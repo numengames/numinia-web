@@ -101,7 +101,7 @@ describe('the fixture door', () => {
       fija: boolean;
     }[];
     expect(before.map((f) => [f.id, f.activa, f.fija])).toEqual([
-      ['puerta', true, false],
+      ['normas', true, false],
       ['dardos', true, false],
       ['pesca', false, true],
     ]);
@@ -119,7 +119,7 @@ describe('the fixture door', () => {
     expect(again.find((f) => f.id === 'dardos')?.activa).toBe(false);
     expect((await post({ funcion: 'pesca', activa: true })).status).toBe(409);
     expect((await post({ funcion: 'vuelo', activa: true })).status).toBe(400);
-    expect((await post({ funcion: 'puerta', activa: 'si' })).status).toBe(400);
+    expect((await post({ funcion: 'normas', activa: 'si' })).status).toBe(400);
     expect((await post(null)).status).toBe(400);
     expect((await post('{nope')).body.error).toBe('json');
     expect((await call(door, 'funciones', { method: 'POST', body: '' })).status).toBe(400);
@@ -147,7 +147,7 @@ describe('the fixture door', () => {
     expect(await through.setFunction('dardos', false)).toMatchObject({
       ok: true,
       value: [
-        { id: 'puerta', active: true },
+        { id: 'normas', active: true },
         { id: 'dardos', active: false },
         { id: 'pesca', fixed: true },
       ],

@@ -160,8 +160,8 @@ export interface WorldFunctionsMessages {
   readonly note: string;
   readonly loading: string;
   /** «Normas de entrada» is the engine's `puerta`: Numinia's terms and the community's rules, one door. */
-  readonly names: Readonly<Record<'puerta' | 'dardos' | 'pesca', string>>;
-  readonly helps: Readonly<Record<'puerta' | 'dardos' | 'pesca', string>>;
+  readonly names: Readonly<Record<'normas' | 'dardos' | 'pesca', string>>;
+  readonly helps: Readonly<Record<'normas' | 'dardos' | 'pesca', string>>;
   readonly on: string;
   readonly off: string;
   /** The server fixes the function: the switch is disabled and says this. */
@@ -437,9 +437,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         title: 'Funciones de este mundo',
         note: 'Lo que se puede hacer en este mundo. Solo ves esta sección porque puedes administrarlo; el cambio se guarda en el mundo y llega a quien está dentro.',
         loading: 'Leyendo las funciones…',
-        names: { puerta: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
+        names: { normas: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
         helps: {
-          puerta:
+          normas:
             'Términos de Numinia y normas de la comunidad: quien entra las acepta antes de moverse',
           dardos: 'Apagados, nadie tira y las dianas desaparecen.',
           pesca: 'Apagada, nadie pesca y no se ve el agua de pesca.',
@@ -632,9 +632,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         title: 'Features of this world',
         note: 'What can be done in this world. You only see this section because you can manage it; the change is saved in the world and reaches whoever is inside.',
         loading: 'Reading the features…',
-        names: { puerta: 'Conditions of entry', dardos: 'Darts', pesca: 'Fishing' },
+        names: { normas: 'Conditions of entry', dardos: 'Darts', pesca: 'Fishing' },
         helps: {
-          puerta:
+          normas:
             "Numinia's terms and the community's rules: whoever enters accepts them before moving",
           dardos: 'When off, nobody throws and the boards go.',
           pesca: 'When off, nobody fishes and the ponds go.',
@@ -826,9 +826,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         title: 'このワールドの機能',
         note: 'このワールドでできることです。管理できる人にだけ、このセクションが表示されます。変更はワールドに保存され、中にいる人にも届きます。',
         loading: '機能を読み込み中…',
-        names: { puerta: '入場ルール', dardos: 'ダーツ', pesca: '釣り' },
+        names: { normas: '入場ルール', dardos: 'ダーツ', pesca: '釣り' },
         helps: {
-          puerta: 'Numiniaの規約とコミュニティのルール：入る人は、動く前にそれらに同意します',
+          normas: 'Numiniaの規約とコミュニティのルール：入る人は、動く前にそれらに同意します',
           dardos: 'オフにすると、誰も投げられず、的も消えます。',
           pesca: 'オフにすると、誰も釣りができず、釣り用の水辺も見えなくなります。',
         },
@@ -1015,9 +1015,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         title: '이 월드의 기능',
         note: '이 월드에서 할 수 있는 것들입니다. 이 월드를 관리할 수 있는 사람에게만 이 섹션이 보입니다. 변경 사항은 월드에 저장되고 안에 있는 사람에게도 전달됩니다.',
         loading: '기능을 읽는 중…',
-        names: { puerta: '입장 규칙', dardos: '다트', pesca: '낚시' },
+        names: { normas: '입장 규칙', dardos: '다트', pesca: '낚시' },
         helps: {
-          puerta: 'Numinia의 약관과 커뮤니티 규칙: 들어오는 사람은 움직이기 전에 이를 수락합니다',
+          normas: 'Numinia의 약관과 커뮤니티 규칙: 들어오는 사람은 움직이기 전에 이를 수락합니다',
           dardos: '끄면 아무도 던질 수 없고 과녁도 사라집니다.',
           pesca: '끄면 아무도 낚시할 수 없고 낚시용 물도 보이지 않습니다.',
         },
@@ -1207,9 +1207,9 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         title: 'Funções deste mundo',
         note: 'O que se pode fazer neste mundo. Você vê esta seção porque pode administrá-lo; a mudança fica salva no mundo e chega a quem está dentro.',
         loading: 'Lendo as funções…',
-        names: { puerta: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
+        names: { normas: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
         helps: {
-          puerta:
+          normas:
             'Termos da Numinia e normas da comunidade: quem entra as aceita antes de se mover',
           dardos: 'Desligados, ninguém joga e os alvos somem.',
           pesca: 'Desligada, ninguém pesca e a água de pesca some.',

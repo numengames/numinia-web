@@ -298,16 +298,16 @@ describe('createDoor', () => {
 
 describe('readFunctions', () => {
   it('reads the world functions the panel knows', () => {
-    expect(FUNCTION_IDS).toEqual(['puerta', 'dardos', 'pesca']);
+    expect(FUNCTION_IDS).toEqual(['normas', 'dardos', 'pesca']);
     expect(
       readFunctions({
         funciones: [
-          { id: 'puerta', activa: true, fija: false },
+          { id: 'normas', activa: true, fija: false },
           { id: 'dardos', activa: false, fija: true },
         ],
       }),
     ).toEqual([
-      { id: 'puerta', active: true, fixed: false },
+      { id: 'normas', active: true, fixed: false },
       { id: 'dardos', active: false, fixed: true },
     ]);
   });
@@ -339,7 +339,7 @@ describe('createDoor functions', () => {
   const world = 'https://w.example/#pass=zzz.zzz.zzz';
   const keeper = { get: async () => 'p', renew: async () => 'p' };
   const list = [
-    { id: 'puerta', activa: true, fija: false },
+    { id: 'normas', activa: true, fija: false },
     { id: 'dardos', activa: true, fija: false },
     { id: 'pesca', activa: false, fija: true },
   ];
@@ -350,7 +350,7 @@ describe('createDoor functions', () => {
     expect(await door.functions()).toEqual({
       ok: true,
       value: [
-        { id: 'puerta', active: true, fixed: false },
+        { id: 'normas', active: true, fixed: false },
         { id: 'dardos', active: true, fixed: false },
         { id: 'pesca', active: false, fixed: true },
       ],
@@ -388,7 +388,7 @@ describe('createDoor functions', () => {
         : json(200, { funciones: list }),
     );
     const door = createDoor({ fetch: fetcher, worldUrl: world, keeper });
-    expect(await door.setFunction('puerta', true)).toMatchObject({ ok: true });
+    expect(await door.setFunction('normas', true)).toMatchObject({ ok: true });
     expect(
       fetcher.mock.calls.map((c) => (c as unknown as [string, RequestInit])[1].method),
     ).toEqual(['POST', 'GET']);

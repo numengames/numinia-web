@@ -51,7 +51,7 @@ export function createFixtureDoor(options: { readonly functions?: boolean } = {}
   const hasFunctions = options.functions !== false;
   const held: Held[] = [];
   const functions = [
-    { id: 'puerta', activa: true, fija: false },
+    { id: 'normas', activa: true, fija: false },
     { id: 'dardos', activa: true, fija: false },
     { id: 'pesca', activa: false, fija: true },
   ];

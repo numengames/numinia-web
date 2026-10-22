@@ -423,7 +423,7 @@ test.describe('the «Funciones de este mundo» block of a world’s page', () =>
     await expect(section.getByRole('heading', { name: 'Funciones de este mundo' })).toBeVisible();
     const rows = section.locator('[data-world-function]');
     await expect(rows).toHaveCount(3);
-    await expect(rows.nth(0)).toHaveAttribute('data-world-function', 'puerta');
+    await expect(rows.nth(0)).toHaveAttribute('data-world-function', 'normas');
     await expect(rows.nth(0)).toContainText('Normas de entrada');
     await expect(rows.nth(0)).toContainText(
       'Términos de Numinia y normas de la comunidad: quien entra las acepta antes de moverse',

@@ -8,7 +8,7 @@
  *   GET    <world>/agentes       -> { agentes: [{ id, nombre, rol, permisos, presente }] }
  *   POST   <world>/agentes       -> body { id, nombre, clave, rol? }
  *   DELETE <world>/agentes/<id>
- *   GET    <world>/funciones     -> { funciones: [{ id: "puerta"|"dardos"|"pesca", activa, fija }] }
+ *   GET    <world>/funciones     -> { funciones: [{ id: "normas"|"dardos"|"pesca", activa, fija }] }
  *   POST   <world>/funciones     -> body { funcion, activa } (w7: the «Funciones de este mundo» block)
  *
  * with `Authorization: Bearer <world pass>`. The pass is the one numinia.com
@@ -79,7 +79,7 @@ export type DoorResult<T, F extends string = DoorFailure> =
 type CallFailure = 'unreachable' | 'expired' | 'no-pass';
 
 /** The world's switchable functions, in the engine's own ids (features/funciones). */
-export const FUNCTION_IDS = ['puerta', 'dardos', 'pesca'] as const;
+export const FUNCTION_IDS = ['normas', 'dardos', 'pesca'] as const;
 export type FunctionId = (typeof FUNCTION_IDS)[number];
 
 /** One function of the world: on or off, and whether the server fixes it (the switch cannot change it). */
