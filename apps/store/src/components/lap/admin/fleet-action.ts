@@ -14,6 +14,8 @@ import {
   IMPORT_RULES,
   buildRequest,
   copyDone,
+  isVersionKind,
+  isVersionProblem,
   newNonce,
   readCopy,
   sendBeacon,
@@ -28,6 +30,7 @@ import {
   type CopyStatus,
   type DoorError,
   type ImportRule,
+  type RequestKind,
 } from '../../../lib/fleet';
 import { fill } from '../../../lib/worlds';
 import { signWithWallet, type SignProblem } from './fleet-wallet';
@@ -125,7 +128,10 @@ export function useFleetAction(sessionWallet: string | null, listens: (alias: st
           }
           return;
         }
-        if (ask.kind === 'DownloadWorld' && accepted.copy !== null) {
+        if (
+          (ask.kind === 'DownloadWorld' || ask.kind === 'DownloadVersion') &&
+          accepted.copy !== null
+        ) {
           const id = accepted.copy;
           set({ at: 'preparing' });
           const status = await waitFor(() => readCopy(fetch, ask.machine, id), copyDone, {
@@ -196,14 +202,20 @@ export const isImportRule = (problem: string): problem is ImportRule =>
  * says its code. `values` fills a zip rule's own blanks (`{f}` the zip's
  * name, `{s}` its size, `{max}` its machine's cap). From a door, `unexpected`
  * is an answer the room could not read: the machine's own rule of that name
- * only ever comes back in a request's result, never in a refusal.
+ * only ever comes back in a request's result, never in a refusal. `kind` is
+ * the request that failed: a version request is refused in version words.
  */
 export function problemText(
   step: Extract<Step, { at: 'failed' }>,
   machine: string,
   room: WorldsRoomMessages,
   values: Readonly<Record<string, string | number>> = {},
+  kind?: RequestKind,
 ): string {
+  // A request about a world's versions has words of its own for what the door and the machine refuse.
+  if (kind !== undefined && isVersionKind(kind) && isVersionProblem(step.problem)) {
+    return fill(room.versions.problems[step.problem], { m: machine, ...values });
+  }
   if (step.problem !== 'unexpected' && isImportRule(step.problem)) {
     return fill(room.import.rules[step.problem], {
       f: '?',

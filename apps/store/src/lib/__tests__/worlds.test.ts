@@ -18,7 +18,14 @@ import {
   applyNames,
   applySettling,
   canDeleteVersion,
+  canDownloadVersion,
   canDuplicate,
+  comingShare,
+  describeComing,
+  formatVersionDate,
+  versionBlock,
+  versionNo,
+  type ComingWords,
   canImportVersion,
   canPublish,
   importReplace,
@@ -1564,5 +1571,134 @@ describe('a world’s versions — what a card may offer', () => {
     expect(originLabel('zip')).toEqual({ key: 'zip', from: null });
     expect(originLabel('copy:v1')).toEqual({ key: 'copy', from: 'v1' });
     expect(originLabel('copy:v12')).toEqual({ key: 'copy', from: 'v12' });
+  });
+
+  it('calls a version by its number', () => {
+    expect(versionNo('v1')).toBe(1);
+    expect(versionNo('v12')).toBe(12);
+  });
+
+  it('lets any listed version be downloaded while the world sits still and nothing is on its way', () => {
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v1')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v2')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }, 'stopped'), 'v2')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v9')).toBe(false);
+    expect(canDownloadVersion(rowWith({}), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO, versionComing: COMING }), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO }, 'switching'), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO, order: null }), 'v1')).toBe(false);
+  });
+
+  it('builds the block of a card: a line per version, what each may do, and the one note', () => {
+    const one = versionBlock(rowWith({ versions: ONE }), 2, false);
+    expect(one?.note).toBe('one');
+    expect(one?.coming).toBeNull();
+    expect(one?.lines).toEqual([
+      {
+        id: 'v1',
+        published: true,
+        origin: { key: 'created', from: null },
+        createdAt: '2026-10-22T08:00:00Z',
+        bytes: 1024,
+        canDownload: true,
+        canDuplicate: true,
+        canPublish: false,
+        canDelete: false,
+      },
+    ]);
+    const two = versionBlock(rowWith({ versions: TWO }), 2, false);
+    expect(two?.note).toBe('two');
+    expect(two?.lines.map((line) => [line.id, line.canDownload, line.canDuplicate])).toEqual([
+      ['v1', true, false],
+      ['v2', true, false],
+    ]);
+    expect(two?.lines[1]).toMatchObject({
+      origin: { key: 'copy', from: 'v1' },
+      canPublish: true,
+      canDelete: true,
+    });
+    expect(two?.lines[0]).toMatchObject({ canPublish: false, canDelete: false });
+    // The published one is whichever the door says.
+    const flipped = versionBlock(rowWith({ versions: FLIPPED }, 'stopped'), 2, false);
+    expect(flipped?.lines.map((line) => [line.id, line.canPublish, line.canDelete])).toEqual([
+      ['v1', true, true],
+      ['v3', false, false],
+    ]);
+  });
+
+  it('shows no block without versions, on an older door, or for a world that is not the fleet’s', () => {
+    expect(versionBlock(rowWith({ versions: TWO }), null, false)).toBeNull();
+    expect(versionBlock(rowWith({}), 2, false)).toBeNull();
+    expect(versionBlock(rowWith({ versions: [] }), 2, false)).toBeNull();
+    expect(versionBlock(rowWith({ versions: TWO, order: null }), 2, false)).toBeNull();
+    expect(
+      versionBlock(
+        rowWith({ versions: TWO, legacy: { id: 'old', domain: 'old.numen.games', server: 'vps' } }),
+        2,
+        false,
+      ),
+    ).toBeNull();
+  });
+
+  it('offers nothing while a request of this tab is on its way, a version coming, or the world switching', () => {
+    const quiet = (block: ReturnType<typeof versionBlock>): boolean =>
+      block !== null &&
+      block.lines.every(
+        (line) => !line.canDownload && !line.canDuplicate && !line.canPublish && !line.canDelete,
+      );
+    expect(quiet(versionBlock(rowWith({ versions: TWO }), 2, true))).toBe(true);
+    expect(quiet(versionBlock(rowWith({ versions: ONE }), 2, true))).toBe(true);
+    const coming = versionBlock(rowWith({ versions: ONE, versionComing: COMING }), 2, false);
+    expect(quiet(coming)).toBe(true);
+    expect(coming?.coming).toEqual(COMING);
+    expect(quiet(versionBlock(rowWith({ versions: TWO }, 'switching'), 2, false))).toBe(true);
+  });
+
+  it('writes the note only where it helps: one version on a door that keeps two, or two', () => {
+    expect(versionBlock(rowWith({ versions: ONE }), 1, false)?.note).toBeNull();
+    expect(
+      versionBlock(rowWith({ versions: [...TWO, v('v3', false)] }), 3, false)?.note,
+    ).toBeNull();
+  });
+
+  it('says how far a zip arriving as a version is, and what is happening, in the room’s words', () => {
+    const words: ComingWords = {
+      importing: 'Llegando… {state}',
+      duplicating: 'Duplicando…',
+      uploading: 'subiendo {p} %',
+      waiting: 'esperando turno',
+      working: 'preparándola',
+    };
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 50, of: 200 })).toBe(25);
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 900, of: 100 })).toBe(100);
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 5 })).toBeNull();
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 5, of: 0 })).toBeNull();
+    expect(comingShare({ kind: 'import', state: 'waiting' })).toBeNull();
+    expect(describeComing({ kind: 'import', state: 'uploading', bytes: 50, of: 200 }, words)).toBe(
+      'Llegando… subiendo 25 %',
+    );
+    expect(describeComing({ kind: 'import', state: 'uploading' }, words)).toBe(
+      'Llegando… subiendo 0 %',
+    );
+    expect(describeComing({ kind: 'import', state: 'waiting' }, words)).toBe(
+      'Llegando… esperando turno',
+    );
+    expect(describeComing({ kind: 'import', state: 'working' }, words)).toBe(
+      'Llegando… preparándola',
+    );
+    for (const state of ['uploading', 'waiting', 'working'] as const) {
+      expect(describeComing({ kind: 'duplicate', state }, words)).toBe('Duplicando…');
+    }
+  });
+
+  it('writes a version’s date in the reader’s clock, or leaves what it cannot read', () => {
+    const iso = '2026-10-22T08:00:00Z';
+    expect(formatVersionDate(iso, 'es')).toBe(
+      new Date(iso).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }),
+    );
+    expect(formatVersionDate(iso)).toBe(
+      new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }),
+    );
+    expect(formatVersionDate('not a date')).toBe('not a date');
   });
 });

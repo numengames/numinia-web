@@ -19,6 +19,7 @@
 
 import {
   ENGINES,
+  fill,
   orderProblems,
   type ArrivingWorld,
   type Engine,
@@ -510,6 +511,99 @@ export const VERSION_RULES = [
 ] as const satisfies readonly DoorError[];
 
 export type VersionRule = (typeof VERSION_RULES)[number];
+
+/** The five requests about a world's versions. */
+export const VERSION_KINDS = [
+  'DuplicateVersion',
+  'PublishVersion',
+  'DeleteVersion',
+  'DownloadVersion',
+  'ImportVersion',
+] as const satisfies readonly RequestKind[];
+
+export type VersionKind = (typeof VERSION_KINDS)[number];
+
+/** Whether a request is about a world's versions (its refusals have words of their own). */
+export const isVersionKind = (kind: string): kind is VersionKind =>
+  (VERSION_KINDS as readonly string[]).includes(kind);
+
+/**
+ * Everything a version request can be refused for, at the door or once its
+ * machine tries it: the version rules, and the general ones that mean
+ * something particular for a version (`no-room`: no space for another copy).
+ */
+export const VERSION_PROBLEMS = [
+  ...VERSION_RULES,
+  'busy',
+  'missing',
+  'still-deleting',
+  'no-room',
+  'engine-refused',
+] as const satisfies readonly DoorError[];
+
+export type VersionProblem = (typeof VERSION_PROBLEMS)[number];
+
+/** Whether a refusal is one a version request has its own words for. */
+export const isVersionProblem = (problem: string): problem is VersionProblem =>
+  (VERSION_PROBLEMS as readonly string[]).includes(problem);
+
+/**
+ * A machine's rule for a version request, as its request result gives it
+ * (`no-room`, or `engine-refused: why`) → the refusal; null when it is not
+ * one of them.
+ */
+export function readVersionProblem(rule: string | null): VersionProblem | null {
+  if (rule === null) return null;
+  const name = /^([a-z-]+)/.exec(rule.trim())?.[1];
+  return name !== undefined && isVersionProblem(name) ? name : null;
+}
+
+/** The words a finished version request is told in. */
+export interface VersionOutcomeWords {
+  /** `{w}` the world, `{n}` the version's number. */
+  readonly done: Readonly<Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>>;
+  /** A rule the room has no words for: `{m}` the machine, `{rule}`. */
+  readonly failed: string;
+  /** `{m}` the machine, `{n}` the version's number. */
+  readonly problems: Readonly<Record<VersionProblem, string>>;
+}
+
+/** What to tell once a machine has finished with a version request: ok or not, and in words. */
+export interface VersionOutcome {
+  readonly ok: boolean;
+  readonly text: string;
+  /** The version a duplicate made (`v2`); null otherwise. */
+  readonly made: string | null;
+}
+
+/**
+ * A version request the machine took, now settled: its outcome in the room's
+ * words; null while it is still on its way (or its answer could not be read).
+ * A duplicate speaks of the version it made, the others of the one asked about.
+ */
+export function versionOutcome(
+  job: {
+    readonly kind: 'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion';
+    readonly world: string;
+    readonly version: string;
+    readonly machine: string;
+  },
+  result: RequestResult | null,
+  words: VersionOutcomeWords,
+): VersionOutcome | null {
+  if (result === null || !settled(result)) return null;
+  if (result.state === 'failed') {
+    const problem = readVersionProblem(result.rule);
+    const text =
+      problem === null
+        ? fill(words.failed, { m: job.machine, rule: result.rule ?? '?' })
+        : fill(words.problems[problem], { m: job.machine, n: versionNumber(job.version) });
+    return { ok: false, text, made: null };
+  }
+  const made = job.kind === 'DuplicateVersion' ? result.made : null;
+  const n = versionNumber(made ?? job.version);
+  return { ok: true, text: fill(words.done[job.kind], { w: job.world, n }), made };
+}
 
 /**
  * A machine's rule, as it logs it (`zip-slip`, or `unexpected: world/notes.txt`)
@@ -1156,7 +1250,8 @@ export interface VersionComing {
 }
 
 const VERSION_ORIGIN = /^(?:created|zip|copy:v[1-9][0-9]{0,3})$/;
-const versionNumber = (id: string): number => Number(id.slice(1));
+/** A version's number: `v3` → 3 (the room says «Versión 3»). */
+export const versionNumber = (id: string): number => Number(id.slice(1));
 
 /**
  * A door's `versions` → the list: each entry checked, any other dropped (a

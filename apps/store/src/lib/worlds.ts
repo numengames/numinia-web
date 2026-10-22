@@ -555,6 +555,102 @@ export function originLabel(origin: VersionInfo['origin']): OriginLabel {
   return { key: 'copy', from: origin.slice('copy:'.length) };
 }
 
+/** `v3` → 3: the number a version is called by («Versión 3»). */
+export const versionNo = (id: string): number => Number(id.slice(1));
+
+/** «Descargar»: any listed version of a world that sits still enough for its machine to copy it. */
+export function canDownloadVersion(row: WorldRow, vid: string): boolean {
+  return versionsOpen(row) && row.versions?.some((candidate) => candidate.id === vid) === true;
+}
+
+/** One line of a card's «Versiones» block: what to say of a version and what may be done with it. */
+export interface VersionLine {
+  readonly id: string;
+  /** The published one is the one people visit. */
+  readonly published: boolean;
+  readonly origin: OriginLabel;
+  readonly createdAt: string | null;
+  readonly bytes: number | null;
+  readonly canDownload: boolean;
+  /** Only the published line, and only while the world has no second version. */
+  readonly canDuplicate: boolean;
+  readonly canPublish: boolean;
+  readonly canDelete: boolean;
+}
+
+/**
+ * What a card's «Versiones» block shows: a line per version and the one note
+ * under them (`one`: a second version can be made; `two`: only the published
+ * one is visited), plus the version on its way, if any.
+ */
+export interface VersionBlock {
+  readonly lines: readonly VersionLine[];
+  readonly note: 'one' | 'two' | null;
+  readonly coming: VersionComing | null;
+}
+
+/**
+ * The block for a card, or null when there is none to show: the door keeps no
+ * versions (`max` null: an older machine), lists none, or the world is not
+ * one of the fleet's. `locked`: a request of this tab about the world is
+ * still on its way, so nothing is offered until it ends.
+ */
+export function versionBlock(
+  row: WorldRow,
+  max: number | null,
+  locked: boolean,
+): VersionBlock | null {
+  const versions = row.versions;
+  if (max === null || versions === undefined || versions.length === 0) return null;
+  if (row.order === null || row.legacy !== null) return null;
+  const publish = !locked && canPublish(row);
+  const lines = versions.map((version): VersionLine => ({
+    id: version.id,
+    published: version.published,
+    origin: originLabel(version.origin),
+    createdAt: version.createdAt,
+    bytes: version.bytes,
+    canDownload: !locked && canDownloadVersion(row, version.id),
+    canDuplicate: !locked && version.published && canDuplicate(row, max),
+    canPublish: publish && !version.published,
+    canDelete: !locked && canDeleteVersion(row, version.id),
+  }));
+  const note = lines.length === 1 && max > 1 ? 'one' : lines.length === 2 ? 'two' : null;
+  return { lines, note, coming: row.versionComing ?? null };
+}
+
+/** How much of a zip arriving as a version its machine has, in whole per cent; null when it does not say. */
+export function comingShare(coming: VersionComing): number | null {
+  if (coming.bytes === undefined || coming.of === undefined || coming.of <= 0) return null;
+  return Math.min(100, Math.floor((coming.bytes / coming.of) * 100));
+}
+
+/** The words for a version on its way: `{state}` in `importing`, `{p}` in `uploading`. */
+export interface ComingWords {
+  readonly importing: string;
+  readonly duplicating: string;
+  readonly uploading: string;
+  readonly waiting: string;
+  readonly working: string;
+}
+
+/** «Llegando una versión nueva… subiendo 40 %»; a copy under way is «Duplicando…». */
+export function describeComing(coming: VersionComing, words: ComingWords): string {
+  if (coming.kind === 'duplicate') return words.duplicating;
+  const state =
+    coming.state === 'uploading'
+      ? fill(words.uploading, { p: comingShare(coming) ?? 0 })
+      : words[coming.state];
+  return fill(words.importing, { state });
+}
+
+/** A version's date, in the reader's own clock and language (as the history's): short date and time. */
+export function formatVersionDate(iso: string, lang?: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' });
+}
+
 /**
  * A name made from any text (a zip's `world.json`, its file name):
  * lowercase letters, digits and single hyphens, as an order's id must be, at

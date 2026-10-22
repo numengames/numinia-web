@@ -22,6 +22,14 @@ import {
   SLOW_AFTER_S,
   VERSION_ID,
   VERSION_RULES,
+  VERSION_KINDS,
+  VERSION_PROBLEMS,
+  isVersionKind,
+  isVersionProblem,
+  readVersionProblem,
+  versionOutcome,
+  type VersionOutcomeWords,
+  versionNumber,
   beaconBody,
   bootstrapLine,
   buildRequest,
@@ -2221,6 +2229,104 @@ describe('a world’s versions — the five requests and the vectors they share'
     expect(readVersionId('v9999')).toBe('v9999');
     expect(readVersionId(undefined)).toBeNull();
     expect(VERSION_ID.test('v12')).toBe(true);
+  });
+
+  it('knows the five version requests, and the refusals they have words for', () => {
+    expect(VERSION_KINDS).toHaveLength(5);
+    for (const kind of VERSION_KINDS) {
+      expect(isVersionKind(kind)).toBe(true);
+      expect(Object.keys(REQUEST_TYPES)).toContain(kind);
+    }
+    expect(isVersionKind('DownloadWorld')).toBe(false);
+    for (const rule of VERSION_RULES) expect(isVersionProblem(rule)).toBe(true);
+    for (const error of ['busy', 'missing', 'still-deleting', 'no-room', 'engine-refused']) {
+      expect(isVersionProblem(error)).toBe(true);
+      expect(DOOR_ERRORS).toContain(error);
+    }
+    expect(VERSION_PROBLEMS).toHaveLength(VERSION_RULES.length + 5);
+    expect(isVersionProblem('exists')).toBe(false);
+    expect(isVersionProblem('unreachable')).toBe(false);
+  });
+
+  it('reads the rule a machine names in a version request’s result', () => {
+    expect(readVersionProblem('no-room')).toBe('no-room');
+    expect(readVersionProblem(' switch-stuck ')).toBe('switch-stuck');
+    expect(readVersionProblem('engine-refused: the copy would not close')).toBe('engine-refused');
+    expect(readVersionProblem('zip-slip')).toBeNull();
+    expect(readVersionProblem('')).toBeNull();
+    expect(readVersionProblem('???')).toBeNull();
+    expect(readVersionProblem(null)).toBeNull();
+  });
+
+  it('calls a version by its number', () => {
+    expect(versionNumber('v1')).toBe(1);
+    expect(versionNumber('v42')).toBe(42);
+  });
+
+  it('tells how a version request ended, in the room’s words', () => {
+    const words: VersionOutcomeWords = {
+      done: {
+        PublishVersion: 'published {n} of {w}',
+        DuplicateVersion: 'copy of {w} is {n}',
+        DeleteVersion: 'deleted {n} of {w}',
+      },
+      failed: '{m} failed ({rule})',
+      problems: Object.fromEntries(VERSION_PROBLEMS.map((p) => [p, `${p} on {m} v{n}`])) as Record<
+        (typeof VERSION_PROBLEMS)[number],
+        string
+      >,
+    };
+    const job = { world: 'plaza', machine: 'open-1' } as const;
+    const result = (
+      state: 'done' | 'failed' | 'working' | 'pending',
+      rule: string | null,
+      made: string | null = null,
+    ) => ({
+      state,
+      rule,
+      entry: null,
+      version: null,
+      made,
+    });
+    const publish = { ...job, kind: 'PublishVersion', version: 'v2' } as const;
+    const duplicate = { ...job, kind: 'DuplicateVersion', version: 'v1' } as const;
+    const remove = { ...job, kind: 'DeleteVersion', version: 'v2' } as const;
+    expect(versionOutcome(publish, result('done', null), words)).toEqual({
+      ok: true,
+      text: 'published 2 of plaza',
+      made: null,
+    });
+    expect(versionOutcome(remove, result('done', null), words)).toEqual({
+      ok: true,
+      text: 'deleted 2 of plaza',
+      made: null,
+    });
+    // A duplicate speaks of the version it made.
+    expect(versionOutcome(duplicate, result('done', null, 'v3'), words)).toEqual({
+      ok: true,
+      text: 'copy of plaza is 3',
+      made: 'v3',
+    });
+    expect(versionOutcome(duplicate, result('done', null), words)?.text).toBe('copy of plaza is 1');
+    // A refusal the machine names, with or without its detail, and one it does not.
+    expect(versionOutcome(publish, result('failed', 'switch-stuck'), words)).toEqual({
+      ok: false,
+      text: 'switch-stuck on open-1 v2',
+      made: null,
+    });
+    expect(versionOutcome(duplicate, result('failed', 'no-room: 3 MB free'), words)?.text).toBe(
+      'no-room on open-1 v1',
+    );
+    expect(versionOutcome(duplicate, result('failed', 'weird'), words)?.text).toBe(
+      'open-1 failed (weird)',
+    );
+    expect(versionOutcome(duplicate, result('failed', null), words)?.text).toBe(
+      'open-1 failed (?)',
+    );
+    // Not finished, or not read: nothing to tell yet.
+    expect(versionOutcome(publish, result('working', null), words)).toBeNull();
+    expect(versionOutcome(publish, result('pending', null), words)).toBeNull();
+    expect(versionOutcome(publish, null, words)).toBeNull();
   });
 });
 

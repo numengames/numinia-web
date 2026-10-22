@@ -64,6 +64,7 @@ import {
   readEngineRelease,
   rowPlace,
   slot,
+  versionsMax,
   type EngineRelease,
   type HomeOption,
   type MachineSummary,
@@ -77,8 +78,11 @@ import { LunaEspera } from '../../chrome/LunaEspera';
 import { problemText } from './fleet-action';
 import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
 import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
+import { VersionDialog, type VersionAsk } from './WorldVersionDialog';
 import { PlaceDialog, type PlaceAsk } from './WorldPlace';
 import { WorldRenameDialog, type RenameAsk } from './WorldRenameDialog';
+import type { VersionAction, VersionsView } from './WorldVersions';
+import { useVersionJobs } from './version-follow';
 import {
   CardsView,
   ListView,
@@ -586,7 +590,13 @@ export function WorldsPanel({
   const [server, setServer] = useState('');
   const [home, setHome] = useState('');
   const [wizard, setWizard] = useState(false);
-  const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
+  const [change, setChange] = useState<{
+    row: WorldRow;
+    action: WorldAction;
+    version?: string;
+  } | null>(null);
+  // A version to publish, delete or duplicate: its dialog (a download is `change`'s).
+  const [versionAsk, setVersionAsk] = useState<VersionAsk | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
   const [source, setSource] = useState<ImportSource | null>(null);
   // The world whose card asked for the zip in `source`: the one it takes the place of.
@@ -675,6 +685,9 @@ export function WorldsPanel({
 
   useEffect(() => load(), [load]);
 
+  // Version requests this tab handed to a machine: followed until it has finished with them.
+  const versionJobs = useVersionJobs(load, room);
+
   // Every world the room knows, those being deleted included (a name or an
   // address is not free until they are gone); the list shows the others.
   const known = panel.at === 'ready' ? panel.fleet.rows : [];
@@ -697,8 +710,10 @@ export function WorldsPanel({
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));
   const homeOptions: readonly HomeOption[] = useMemo(() => fleetHomes(rows, homes), [rows, homes]);
 
-  // While a machine creates, stops, starts or deletes a world, keep the room current.
-  const changing = known.some((row) => row.status === 'changing');
+  // While a machine creates, stops, starts or deletes a world, or makes a version, keep the room current.
+  const changing =
+    known.some((row) => row.status === 'changing' || row.versionComing !== undefined) ||
+    versionJobs.jobs.length > 0;
   useEffect(() => {
     if (!changing) return;
     const timer = setInterval(() => load(), CHANGING_REFRESH_MS);
@@ -1074,6 +1089,16 @@ export function WorldsPanel({
     } else setChange({ row, action });
   };
   const onCode = (row: WorldRow, mode: CodeMode): void => setCodeAsk({ row, mode });
+  const onVersion = (row: WorldRow, action: VersionAction, version: string): void => {
+    if (action === 'download') setChange({ row, action: 'download', version });
+    else setVersionAsk({ row, action, version });
+  };
+  const versions: VersionsView = {
+    max: (row) => versionsMax(fleet.machines, rowPlace(row)?.server ?? ''),
+    onAsk: onVersion,
+    following: versionJobs.following,
+    made: versionJobs.made,
+  };
   const onRename = (row: WorldRow): void => setRenaming({ id: row.id, title: row.title });
   const viewName: Readonly<Record<View, string>> = {
     cards: room.views.cards,
@@ -1089,6 +1114,7 @@ export function WorldsPanel({
       : null;
   };
   const changeMachine = change === null ? null : (rowPlace(change.row)?.server ?? null);
+  const versionMachine = versionAsk === null ? null : (rowPlace(versionAsk.row)?.server ?? null);
   // Before signing for a world's code: a machine whose door says no recipe is
   // older than per-world codes and refuses them; a change waits for a machine that obeys.
   const codeWarning = (ask: { readonly row: WorldRow; readonly mode: CodeMode }): string | null => {
@@ -1427,6 +1453,7 @@ export function WorldsPanel({
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
+          versions={versions}
         />
       )}
       {shown.length > 0 && view === 'list' && (
@@ -1449,6 +1476,7 @@ export function WorldsPanel({
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
+          versions={versions}
         />
       )}
 
@@ -1498,6 +1526,27 @@ export function WorldsPanel({
             <p className="titulo-capa">{drag > 1 ? room.import.dropOne : room.import.dropTitle}</p>
             {drag <= 1 && <p>{room.import.dropNote}</p>}
             <p className="mono">{fill(room.import.dropCap, { max: formatSize(zipMax, lang) })}</p>
+          </div>
+        </div>
+      )}
+
+      {versionJobs.note !== null && (
+        <div
+          className="aviso"
+          data-tono={versionJobs.note.ok ? 'exito' : 'aviso'}
+          role={versionJobs.note.ok ? 'status' : 'alert'}
+          data-version-note
+        >
+          <p>{versionJobs.note.text}</p>
+          <div className="acciones">
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={versionJobs.dismiss}
+              data-metric="worlds-version-notice-close"
+            >
+              {room.versions.close}
+            </button>
           </div>
         </div>
       )}
@@ -1571,6 +1620,21 @@ export function WorldsPanel({
         wallet={fleet.wallet}
         sessionHref={sessionHref}
         warning={changeMachine === null ? null : notObeying(changeMachine)}
+        listens={listens}
+      />
+      <VersionDialog
+        ask={versionAsk}
+        onClose={() => setVersionAsk(null)}
+        onChanged={refresh}
+        onAccepted={versionJobs.follow}
+        onDownloadFirst={(row, version) => {
+          setVersionAsk(null);
+          setChange({ row, action: 'download', version });
+        }}
+        room={room}
+        wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        warning={versionMachine === null ? null : notObeying(versionMachine)}
         listens={listens}
       />
       <PlaceDialog

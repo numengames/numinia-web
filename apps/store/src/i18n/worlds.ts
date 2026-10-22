@@ -7,7 +7,8 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-import type { ImportRule, RequestKind } from '../lib/fleet';
+import type { ImportRule, RequestKind, VersionProblem } from '../lib/fleet';
+import type { ComingWords } from '../lib/worlds';
 
 export interface WorldsRoomMessages {
   readonly loading: string;
@@ -494,6 +495,61 @@ export interface WorldsRoomMessages {
     /** The machine took too long to delete: `{m}`, `{w}`. */
     readonly replaceLate: string;
   };
+  /**
+   * A world's versions on its card (ADR: one is published, one may wait beside it).
+   * `{n}` a version's number, `{p}` the published one's, `{s}` a size, `{w}` the
+   * world, `{m}` its machine, `{state}` and `{rule}` what a machine says.
+   */
+  readonly versions: {
+    readonly title: string;
+    readonly label: string;
+    /** The mark on the version people visit. */
+    readonly published: string;
+    /** How a version came to be; a copy names the one it was copied from (`{n}`). */
+    readonly origin: { readonly created: string; readonly zip: string; readonly copy: string };
+    /** `{s}` the size, approximate. */
+    readonly size: string;
+    readonly sizeNote: string;
+    readonly download: string;
+    readonly duplicate: string;
+    readonly publish: string;
+    readonly delete: string;
+    /** Under the block: with one version, and with two. */
+    readonly noteOne: string;
+    readonly noteTwo: string;
+    /** A version on its way (describeComing): `{state}` is one of the three below, `{p}` per cent. */
+    readonly coming: ComingWords;
+    /** A request of this tab the machine took and has not finished. */
+    readonly following: Readonly<
+      Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>
+    >;
+    /** The notice when it finished. */
+    readonly done: Readonly<
+      Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>
+    >;
+    /** A machine failed after taking the request, with a rule the room has no words for. */
+    readonly failed: string;
+    readonly close: string;
+    readonly dialog: {
+      readonly publishTitle: string;
+      readonly publishIntro: string;
+      readonly publishKeep: string;
+      readonly publishStopped: string;
+      readonly publishConfirm: string;
+      readonly deleteTitle: string;
+      readonly deleteIntro: string;
+      readonly deleteCopyFirst: string;
+      readonly downloadFirst: string;
+      readonly deleteConfirm: string;
+      readonly duplicateTitle: string;
+      readonly duplicateIntro: string;
+      readonly duplicateConfirm: string;
+      readonly downloadTitle: string;
+      readonly downloadIntro: string;
+    };
+    /** Every refusal of a version request, in plain words: `{m}` the machine. */
+    readonly problems: Readonly<Record<VersionProblem, string>>;
+  };
   readonly history: {
     readonly title: string;
     readonly empty: string;
@@ -546,7 +602,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Subiendo…',
       importing: 'Revisando…',
       updating: 'Actualizando…',
-      switching: 'Publicando…',
+      switching: 'Cambiando de versión…',
     },
     busyNote: 'Suele tardar un minuto.',
     reasons: {
@@ -950,6 +1006,83 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'El motor de {m} no lee este zip.',
       },
     },
+    versions: {
+      title: 'Versiones',
+      label: 'Versión {n}',
+      published: 'Publicada',
+      origin: { created: 'creada aquí', zip: 'desde un zip', copy: 'copia de la versión {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Tamaño medido al hacerla o al publicar. La publicada sigue creciendo mientras se usa, por eso es aproximado.',
+      download: 'Descargar',
+      duplicate: 'Duplicar',
+      publish: 'Publicar esta',
+      delete: 'Borrar',
+      noteOne:
+        'Puedes tener dos versiones: duplica esta para probar cambios sin tocar la publicada.',
+      noteTwo: 'La gente solo entra en la publicada. La otra espera aquí.',
+      coming: {
+        importing: 'Llegando una versión nueva… {state}',
+        duplicating: 'Duplicando…',
+        uploading: 'subiendo {p} %',
+        waiting: 'esperando turno',
+        working: 'preparándola',
+      },
+      following: {
+        PublishVersion: 'Publicando… el mundo se apaga unos segundos y vuelve solo.',
+        DuplicateVersion: 'Duplicando…',
+        DeleteVersion: 'Borrando…',
+      },
+      done: {
+        PublishVersion: 'Ya está publicada la versión {n} de {w}.',
+        DuplicateVersion:
+          'Hecha la copia de {w}: es la versión {n}. Para que la gente la visite, publícala.',
+        DeleteVersion: 'Borrada la versión {n} de {w}.',
+      },
+      failed: 'La máquina {m} no pudo terminar el cambio de versión ({rule}).',
+      close: 'Cerrar',
+      dialog: {
+        publishTitle: 'Publicar la versión {n}',
+        publishIntro:
+          'La gente que esté dentro sale unos segundos; el mundo se apaga, cambia de versión y vuelve solo. La dirección, las claves y el código de administración no cambian. Los rangos y usuarios son los de esa versión.',
+        publishKeep: 'La versión publicada ahora (la {p}) se queda guardada como la otra.',
+        publishStopped: 'El mundo está apagado y seguirá apagado.',
+        publishConfirm: 'Firmar y publicar',
+        deleteTitle: 'Borrar la versión {n}',
+        deleteIntro: 'Se borra para siempre. La publicada no se toca.',
+        deleteCopyFirst: '¿Quieres conservarla? Descárgala antes.',
+        downloadFirst: 'Descargar la versión {n}',
+        deleteConfirm: 'Firmar y borrar',
+        duplicateTitle: 'Duplicar la versión publicada',
+        duplicateIntro:
+          'Se hace una copia exacta; la gente sigue dentro mientras tanto. La copia no se puede visitar hasta que la publiques.',
+        duplicateConfirm: 'Firmar y duplicar',
+        downloadTitle: 'Descargar la versión {n}',
+        downloadIntro:
+          'La máquina prepara un zip con esa versión, tal como está ahora, y te lo ofrece cuando esté listo. El enlace dura un día. No se toca nada del mundo.',
+      },
+      problems: {
+        'no-version':
+          'Esa versión ya no existe (quizá otra persona la borró). Se vuelve a leer la lista.',
+        published: 'La versión publicada no se puede borrar: publica la otra antes.',
+        'already-published': 'Esa versión ya es la publicada.',
+        'only-version': 'Es la única versión del mundo: no se puede borrar.',
+        full: 'El mundo ya tiene dos versiones, que es el máximo. Borra una antes de añadir otra.',
+        'switch-stuck':
+          'El cambio de versión se quedó a medias; el mundo sigue apagado para no arrancar con datos equivocados. Avisa a la casa.',
+        'not-a-folder': 'La carpeta de esa versión no está como debería estar. Avisa a la casa.',
+        'versions-unreadable':
+          'La máquina {m} no puede leer las versiones de este mundo. Avisa a la casa.',
+        'versions-unwritable':
+          'La máquina {m} no puede guardar el cambio de versiones. Avisa a la casa.',
+        'not-removed': 'La máquina {m} no pudo borrar la versión del todo. Avisa a la casa.',
+        busy: 'Este mundo está ocupado con otro cambio; prueba en un momento.',
+        missing: 'Ese mundo ya no está en {m}; recarga la sala.',
+        'still-deleting': 'Ese mundo se está borrando.',
+        'no-room': 'La máquina {m} no tiene sitio para otra versión.',
+        'engine-refused': 'El motor del mundo no pudo hacer la copia. Avisa a la casa.',
+      },
+    },
     history: {
       title: 'Lo que han hecho las máquinas',
       empty: 'Las máquinas todavía no han hecho nada.',
@@ -969,10 +1102,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         FleetRelease: 'publicó una versión del motor',
         PinWorld: 'fijó {w}',
         DuplicateVersion: 'duplicó una versión de {w}',
-        PublishVersion: 'publicó una versión de {w}',
-        DeleteVersion: 'borró una versión de {w}',
-        DownloadVersion: 'copió una versión de {w}',
-        ImportVersion: 'subió una versión de {w}',
+        PublishVersion: 'cambió la versión publicada de {w}',
+        DeleteVersion: 'borró una versión guardada de {w}',
+        DownloadVersion: 'descargó una versión de {w}',
+        ImportVersion: 'subió un zip como versión de {w}',
       },
     },
     fieldNames: {
@@ -1017,7 +1150,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Uploading…',
       importing: 'Checking…',
       updating: 'Updating…',
-      switching: 'Publishing…',
+      switching: 'Switching version…',
     },
     busyNote: 'This usually takes about a minute.',
     reasons: {
@@ -1425,6 +1558,82 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'The engine on {m} does not read this zip.',
       },
     },
+    versions: {
+      title: 'Versions',
+      label: 'Version {n}',
+      published: 'Published',
+      origin: { created: 'made here', zip: 'from a zip', copy: 'copy of version {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Size measured when it was made or published. The published one keeps growing while it is used, so this is approximate.',
+      download: 'Download',
+      duplicate: 'Duplicate',
+      publish: 'Publish this one',
+      delete: 'Delete',
+      noteOne:
+        'You can keep two versions: duplicate this one to try changes without touching the published one.',
+      noteTwo: 'People only enter the published one. The other waits here.',
+      coming: {
+        importing: 'A new version is arriving… {state}',
+        duplicating: 'Duplicating…',
+        uploading: 'uploading {p} %',
+        waiting: 'waiting its turn',
+        working: 'getting it ready',
+      },
+      following: {
+        PublishVersion:
+          'Publishing… the world goes off for a few seconds and comes back by itself.',
+        DuplicateVersion: 'Duplicating…',
+        DeleteVersion: 'Deleting…',
+      },
+      done: {
+        PublishVersion: 'Version {n} of {w} is now published.',
+        DuplicateVersion:
+          'The copy of {w} is made: it is version {n}. Publish it for people to visit it.',
+        DeleteVersion: 'Version {n} of {w} is deleted.',
+      },
+      failed: 'Machine {m} could not finish the version change ({rule}).',
+      close: 'Close',
+      dialog: {
+        publishTitle: 'Publish version {n}',
+        publishIntro:
+          'People inside are put out for a few seconds; the world goes off, switches version and comes back by itself. The address, the keys and the admin code do not change. Ranks and users are those of that version.',
+        publishKeep: 'The version published now (version {p}) is kept as the other one.',
+        publishStopped: 'The world is off and will stay off.',
+        publishConfirm: 'Sign and publish',
+        deleteTitle: 'Delete version {n}',
+        deleteIntro: 'It is deleted for good. The published one is not touched.',
+        deleteCopyFirst: 'Want to keep it? Download it first.',
+        downloadFirst: 'Download version {n}',
+        deleteConfirm: 'Sign and delete',
+        duplicateTitle: 'Duplicate the published version',
+        duplicateIntro:
+          'An exact copy is made; people stay inside meanwhile. The copy cannot be visited until you publish it.',
+        duplicateConfirm: 'Sign and duplicate',
+        downloadTitle: 'Download version {n}',
+        downloadIntro:
+          'The machine prepares a zip of that version as it is now and offers it when it is ready. The link lasts a day. Nothing in the world is touched.',
+      },
+      problems: {
+        'no-version':
+          'That version no longer exists (maybe someone else deleted it). The list is read again.',
+        published: 'The published version cannot be deleted: publish the other one first.',
+        'already-published': 'That version is already the published one.',
+        'only-version': 'It is the world’s only version: it cannot be deleted.',
+        full: 'The world already has two versions, the most it can keep. Delete one before adding another.',
+        'switch-stuck':
+          'The version change was left half-way; the world stays off so it does not start on the wrong data. Tell the house.',
+        'not-a-folder': 'That version’s folder is not as it should be. Tell the house.',
+        'versions-unreadable': 'Machine {m} cannot read this world’s versions. Tell the house.',
+        'versions-unwritable': 'Machine {m} cannot save the version change. Tell the house.',
+        'not-removed': 'Machine {m} could not delete the version completely. Tell the house.',
+        busy: 'This world is busy with another change; try again in a moment.',
+        missing: 'That world is no longer on {m}; reload the room.',
+        'still-deleting': 'That world is being deleted.',
+        'no-room': 'Machine {m} has no room for another version.',
+        'engine-refused': 'The world’s engine could not make the copy. Tell the house.',
+      },
+    },
     history: {
       title: 'What the machines did',
       empty: 'The machines have done nothing yet.',
@@ -1444,10 +1653,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         FleetRelease: 'published an engine release',
         PinWorld: 'pinned {w}',
         DuplicateVersion: 'duplicated a version of {w}',
-        PublishVersion: 'published a version of {w}',
-        DeleteVersion: 'deleted a version of {w}',
-        DownloadVersion: 'copied a version of {w}',
-        ImportVersion: 'uploaded a version of {w}',
+        PublishVersion: 'changed the published version of {w}',
+        DeleteVersion: 'deleted a stored version of {w}',
+        DownloadVersion: 'downloaded a version of {w}',
+        ImportVersion: 'uploaded a zip as a version of {w}',
       },
     },
     fieldNames: {
@@ -1493,7 +1702,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'アップロード中…',
       importing: '確認中…',
       updating: '更新中…',
-      switching: '公開中…',
+      switching: 'バージョン切り替え中…',
     },
     busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
@@ -1900,6 +2109,85 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': '{m} のエンジンはこの zip を読めません。',
       },
     },
+    versions: {
+      title: 'バージョン',
+      label: 'バージョン {n}',
+      published: '公開中',
+      origin: { created: 'ここで作成', zip: 'zip から', copy: 'バージョン {n} のコピー' },
+      size: '約 {s}',
+      sizeNote:
+        '作成時または公開時に測ったサイズです。公開中のものは使われるうちに大きくなるため、おおよその値です。',
+      download: 'ダウンロード',
+      duplicate: '複製',
+      publish: 'これを公開',
+      delete: '削除',
+      noteOne:
+        'バージョンは 2 つまで持てます。公開中のものに触れずに変更を試すには、これを複製してください。',
+      noteTwo: '人が入れるのは公開中のバージョンだけです。もう一方はここで待機します。',
+      coming: {
+        importing: '新しいバージョンが届いています… {state}',
+        duplicating: '複製中…',
+        uploading: 'アップロード中 {p} %',
+        waiting: '順番待ち',
+        working: '準備中',
+      },
+      following: {
+        PublishVersion: '公開中… ワールドは数秒間停止し、自動で戻ります。',
+        DuplicateVersion: '複製中…',
+        DeleteVersion: '削除中…',
+      },
+      done: {
+        PublishVersion: '{w} のバージョン {n} を公開しました。',
+        DuplicateVersion:
+          '{w} のコピーができました（バージョン {n}）。人が訪れるには公開してください。',
+        DeleteVersion: '{w} のバージョン {n} を削除しました。',
+      },
+      failed: 'マシン {m} はバージョンの切り替えを完了できませんでした（{rule}）。',
+      close: '閉じる',
+      dialog: {
+        publishTitle: 'バージョン {n} を公開',
+        publishIntro:
+          '中にいる人は数秒間退出します。ワールドは停止し、バージョンを切り替えて、自動で戻ります。アドレス、キー、管理コードは変わりません。ランクとユーザーはそのバージョンのものになります。',
+        publishKeep: 'いま公開中のバージョン（バージョン {p}）は、もう一方として保存されます。',
+        publishStopped: 'ワールドは停止中で、停止したままです。',
+        publishConfirm: '署名して公開',
+        deleteTitle: 'バージョン {n} を削除',
+        deleteIntro: '完全に削除されます。公開中のバージョンには触れません。',
+        deleteCopyFirst: '残しておきたい場合は、先にダウンロードしてください。',
+        downloadFirst: 'バージョン {n} をダウンロード',
+        deleteConfirm: '署名して削除',
+        duplicateTitle: '公開中のバージョンを複製',
+        duplicateIntro:
+          'まったく同じコピーを作ります。その間も人は中にいられます。コピーは公開するまで訪れることができません。',
+        duplicateConfirm: '署名して複製',
+        downloadTitle: 'バージョン {n} をダウンロード',
+        downloadIntro:
+          'マシンがそのバージョンの現在の状態を zip にまとめ、準備できたらお渡しします。リンクは 1 日有効です。ワールドには何も手を加えません。',
+      },
+      problems: {
+        'no-version':
+          'そのバージョンはもうありません（他の人が削除したのかもしれません）。一覧を読み込み直します。',
+        published: '公開中のバージョンは削除できません。先にもう一方を公開してください。',
+        'already-published': 'そのバージョンはすでに公開中です。',
+        'only-version': 'このワールドの唯一のバージョンなので、削除できません。',
+        full: 'このワールドにはすでに最大の 2 つのバージョンがあります。追加する前に 1 つ削除してください。',
+        'switch-stuck':
+          'バージョンの切り替えが途中で止まりました。誤ったデータで起動しないよう、ワールドは停止したままです。運営にお知らせください。',
+        'not-a-folder':
+          'そのバージョンのフォルダーが正しい状態ではありません。運営にお知らせください。',
+        'versions-unreadable':
+          'マシン {m} はこのワールドのバージョンを読み取れません。運営にお知らせください。',
+        'versions-unwritable':
+          'マシン {m} はバージョンの変更を保存できません。運営にお知らせください。',
+        'not-removed':
+          'マシン {m} はバージョンを完全には削除できませんでした。運営にお知らせください。',
+        busy: 'このワールドは別の変更の処理中です。少し待ってからお試しください。',
+        missing: 'そのワールドはもう {m} にありません。ルームを読み込み直してください。',
+        'still-deleting': 'そのワールドは削除中です。',
+        'no-room': 'マシン {m} にはもう 1 つバージョンを置く空きがありません。',
+        'engine-refused': 'ワールドのエンジンがコピーを作れませんでした。運営にお知らせください。',
+      },
+    },
     history: {
       title: 'マシンの作業履歴',
       empty: 'マシンはまだ何もしていません。',
@@ -1919,10 +2207,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         FleetRelease: 'エンジンのリリースを公開した',
         PinWorld: '{w} を固定した',
         DuplicateVersion: '{w} のバージョンを複製した',
-        PublishVersion: '{w} のバージョンを公開した',
-        DeleteVersion: '{w} のバージョンを削除した',
-        DownloadVersion: '{w} のバージョンをコピーした',
-        ImportVersion: '{w} のバージョンをアップロードした',
+        PublishVersion: '{w} の公開バージョンを切り替えた',
+        DeleteVersion: '{w} の保管中のバージョンを削除した',
+        DownloadVersion: '{w} のバージョンをダウンロードした',
+        ImportVersion: '{w} のバージョンとして zip をアップロードした',
       },
     },
     fieldNames: {
@@ -1967,7 +2255,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: '업로드하는 중…',
       importing: '확인하는 중…',
       updating: '업데이트하는 중…',
-      switching: '게시하는 중…',
+      switching: '버전 전환하는 중…',
     },
     busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
@@ -2367,6 +2655,82 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': '{m}의 엔진이 이 zip을 읽지 못합니다.',
       },
     },
+    versions: {
+      title: '버전',
+      label: '버전 {n}',
+      published: '게시됨',
+      origin: { created: '여기서 만듦', zip: 'zip에서', copy: '버전 {n}의 사본' },
+      size: '약 {s}',
+      sizeNote:
+        '만들 때 또는 게시할 때 잰 크기입니다. 게시된 버전은 쓰는 동안 계속 커지므로 대략적인 값입니다.',
+      download: '다운로드',
+      duplicate: '복제',
+      publish: '이 버전 게시',
+      delete: '삭제',
+      noteOne:
+        '버전은 두 개까지 둘 수 있습니다. 게시된 버전을 건드리지 않고 변경을 시험하려면 이것을 복제하세요.',
+      noteTwo: '사람들은 게시된 버전에만 들어옵니다. 다른 버전은 여기서 기다립니다.',
+      coming: {
+        importing: '새 버전이 도착하는 중… {state}',
+        duplicating: '복제하는 중…',
+        uploading: '업로드 중 {p} %',
+        waiting: '차례를 기다리는 중',
+        working: '준비하는 중',
+      },
+      following: {
+        PublishVersion: '게시하는 중… 월드가 몇 초간 꺼졌다가 저절로 돌아옵니다.',
+        DuplicateVersion: '복제하는 중…',
+        DeleteVersion: '삭제하는 중…',
+      },
+      done: {
+        PublishVersion: '{w}의 버전 {n}을(를) 게시했습니다.',
+        DuplicateVersion: '{w}의 사본이 만들어졌습니다(버전 {n}). 사람들이 방문하려면 게시하세요.',
+        DeleteVersion: '{w}의 버전 {n}을(를) 삭제했습니다.',
+      },
+      failed: '머신 {m}이(가) 버전 전환을 끝내지 못했습니다({rule}).',
+      close: '닫기',
+      dialog: {
+        publishTitle: '버전 {n} 게시',
+        publishIntro:
+          '안에 있는 사람은 몇 초간 나갑니다. 월드가 꺼지고 버전을 바꾼 뒤 저절로 돌아옵니다. 주소, 키, 관리 코드는 바뀌지 않습니다. 등급과 사용자는 그 버전의 것입니다.',
+        publishKeep: '지금 게시된 버전(버전 {p})은 다른 버전으로 보관됩니다.',
+        publishStopped: '월드가 꺼져 있으며 계속 꺼진 채로 있습니다.',
+        publishConfirm: '서명하고 게시',
+        deleteTitle: '버전 {n} 삭제',
+        deleteIntro: '영구히 삭제됩니다. 게시된 버전은 건드리지 않습니다.',
+        deleteCopyFirst: '보관하고 싶나요? 먼저 다운로드하세요.',
+        downloadFirst: '버전 {n} 다운로드',
+        deleteConfirm: '서명하고 삭제',
+        duplicateTitle: '게시된 버전 복제',
+        duplicateIntro:
+          '똑같은 사본을 만듭니다. 그동안 사람들은 안에 그대로 있을 수 있습니다. 사본은 게시하기 전에는 방문할 수 없습니다.',
+        duplicateConfirm: '서명하고 복제',
+        downloadTitle: '버전 {n} 다운로드',
+        downloadIntro:
+          '머신이 그 버전의 현재 상태를 zip으로 준비해 두었다가 준비되면 제공합니다. 링크는 하루 동안 유효합니다. 월드는 전혀 건드리지 않습니다.',
+      },
+      problems: {
+        'no-version':
+          '그 버전은 더 이상 없습니다(다른 사람이 삭제했을 수 있습니다). 목록을 다시 읽습니다.',
+        published: '게시된 버전은 삭제할 수 없습니다. 먼저 다른 버전을 게시하세요.',
+        'already-published': '그 버전은 이미 게시되어 있습니다.',
+        'only-version': '월드의 유일한 버전이라 삭제할 수 없습니다.',
+        full: '월드에 이미 최대인 두 버전이 있습니다. 하나를 삭제한 뒤 추가하세요.',
+        'switch-stuck':
+          '버전 전환이 중간에 멈췄습니다. 잘못된 데이터로 시작하지 않도록 월드는 꺼진 채로 있습니다. 운영진에게 알려 주세요.',
+        'not-a-folder': '그 버전의 폴더가 올바른 상태가 아닙니다. 운영진에게 알려 주세요.',
+        'versions-unreadable':
+          '머신 {m}이(가) 이 월드의 버전을 읽을 수 없습니다. 운영진에게 알려 주세요.',
+        'versions-unwritable':
+          '머신 {m}이(가) 버전 변경을 저장할 수 없습니다. 운영진에게 알려 주세요.',
+        'not-removed': '머신 {m}이(가) 버전을 완전히 삭제하지 못했습니다. 운영진에게 알려 주세요.',
+        busy: '이 월드는 다른 변경을 처리하는 중입니다. 잠시 뒤에 다시 시도하세요.',
+        missing: '그 월드는 더 이상 {m}에 없습니다. 룸을 새로 고치세요.',
+        'still-deleting': '그 월드는 삭제되는 중입니다.',
+        'no-room': '머신 {m}에는 버전을 하나 더 둘 공간이 없습니다.',
+        'engine-refused': '월드의 엔진이 사본을 만들지 못했습니다. 운영진에게 알려 주세요.',
+      },
+    },
     history: {
       title: '머신이 한 일',
       empty: '머신이 아직 아무것도 하지 않았습니다.',
@@ -2386,10 +2750,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         FleetRelease: '엔진 릴리스를 게시함',
         PinWorld: '{w} 고정함',
         DuplicateVersion: '{w}의 버전을 복제함',
-        PublishVersion: '{w}의 버전을 게시함',
-        DeleteVersion: '{w}의 버전을 삭제함',
-        DownloadVersion: '{w}의 버전을 복사함',
-        ImportVersion: '{w}의 버전을 업로드함',
+        PublishVersion: '{w}의 게시 버전을 바꿈',
+        DeleteVersion: '{w}의 보관 중인 버전을 삭제함',
+        DownloadVersion: '{w}의 버전을 다운로드함',
+        ImportVersion: '{w}의 버전으로 zip을 업로드함',
       },
     },
     fieldNames: {
@@ -2439,7 +2803,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Enviando…',
       importing: 'Revisando…',
       updating: 'Atualizando…',
-      switching: 'Publicando…',
+      switching: 'Trocando de versão…',
     },
     busyNote: 'Costuma levar um minuto.',
     reasons: {
@@ -2842,6 +3206,83 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'O motor de {m} não lê este zip.',
       },
     },
+    versions: {
+      title: 'Versões',
+      label: 'Versão {n}',
+      published: 'Publicada',
+      origin: { created: 'criada aqui', zip: 'de um zip', copy: 'cópia da versão {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Tamanho medido quando foi feita ou publicada. A publicada continua crescendo enquanto é usada, por isso é aproximado.',
+      download: 'Baixar',
+      duplicate: 'Duplicar',
+      publish: 'Publicar esta',
+      delete: 'Apagar',
+      noteOne:
+        'Você pode ter duas versões: duplique esta para testar mudanças sem mexer na publicada.',
+      noteTwo: 'As pessoas só entram na publicada. A outra espera aqui.',
+      coming: {
+        importing: 'Chegando uma versão nova… {state}',
+        duplicating: 'Duplicando…',
+        uploading: 'enviando {p} %',
+        waiting: 'esperando a vez',
+        working: 'preparando',
+      },
+      following: {
+        PublishVersion: 'Publicando… o mundo desliga por alguns segundos e volta sozinho.',
+        DuplicateVersion: 'Duplicando…',
+        DeleteVersion: 'Apagando…',
+      },
+      done: {
+        PublishVersion: 'A versão {n} de {w} já está publicada.',
+        DuplicateVersion:
+          'A cópia de {w} está pronta: é a versão {n}. Para as pessoas a visitarem, publique-a.',
+        DeleteVersion: 'A versão {n} de {w} foi apagada.',
+      },
+      failed: 'A máquina {m} não conseguiu terminar a troca de versão ({rule}).',
+      close: 'Fechar',
+      dialog: {
+        publishTitle: 'Publicar a versão {n}',
+        publishIntro:
+          'Quem estiver dentro sai por alguns segundos; o mundo desliga, troca de versão e volta sozinho. O endereço, as chaves e o código de administração não mudam. Os cargos e usuários são os dessa versão.',
+        publishKeep: 'A versão publicada agora (a {p}) fica guardada como a outra.',
+        publishStopped: 'O mundo está desligado e continuará desligado.',
+        publishConfirm: 'Assinar e publicar',
+        deleteTitle: 'Apagar a versão {n}',
+        deleteIntro: 'Ela é apagada para sempre. A publicada não é tocada.',
+        deleteCopyFirst: 'Quer guardá-la? Baixe antes.',
+        downloadFirst: 'Baixar a versão {n}',
+        deleteConfirm: 'Assinar e apagar',
+        duplicateTitle: 'Duplicar a versão publicada',
+        duplicateIntro:
+          'Faz-se uma cópia exata; as pessoas continuam dentro enquanto isso. A cópia não pode ser visitada até você publicá-la.',
+        duplicateConfirm: 'Assinar e duplicar',
+        downloadTitle: 'Baixar a versão {n}',
+        downloadIntro:
+          'A máquina prepara um zip dessa versão como está agora e o oferece quando estiver pronto. O link dura um dia. Nada no mundo é tocado.',
+      },
+      problems: {
+        'no-version':
+          'Essa versão não existe mais (talvez outra pessoa a tenha apagado). A lista é lida de novo.',
+        published: 'A versão publicada não pode ser apagada: publique a outra antes.',
+        'already-published': 'Essa versão já é a publicada.',
+        'only-version': 'É a única versão do mundo: não pode ser apagada.',
+        full: 'O mundo já tem duas versões, o máximo. Apague uma antes de acrescentar outra.',
+        'switch-stuck':
+          'A troca de versão ficou pela metade; o mundo continua desligado para não iniciar com dados errados. Avise a casa.',
+        'not-a-folder': 'A pasta dessa versão não está como deveria. Avise a casa.',
+        'versions-unreadable':
+          'A máquina {m} não consegue ler as versões deste mundo. Avise a casa.',
+        'versions-unwritable':
+          'A máquina {m} não consegue salvar a mudança de versões. Avise a casa.',
+        'not-removed': 'A máquina {m} não conseguiu apagar a versão por completo. Avise a casa.',
+        busy: 'Este mundo está ocupado com outra mudança; tente de novo daqui a pouco.',
+        missing: 'Esse mundo não está mais em {m}; recarregue a sala.',
+        'still-deleting': 'Esse mundo está sendo apagado.',
+        'no-room': 'A máquina {m} não tem espaço para outra versão.',
+        'engine-refused': 'O motor do mundo não conseguiu fazer a cópia. Avise a casa.',
+      },
+    },
     history: {
       title: 'O que as máquinas fizeram',
       empty: 'As máquinas ainda não fizeram nada.',
@@ -2861,10 +3302,10 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         FleetRelease: 'publicou uma versão do motor',
         PinWorld: 'fixou {w}',
         DuplicateVersion: 'duplicou uma versão de {w}',
-        PublishVersion: 'publicou uma versão de {w}',
-        DeleteVersion: 'apagou uma versão de {w}',
-        DownloadVersion: 'copiou uma versão de {w}',
-        ImportVersion: 'enviou uma versão de {w}',
+        PublishVersion: 'trocou a versão publicada de {w}',
+        DeleteVersion: 'apagou uma versão guardada de {w}',
+        DownloadVersion: 'baixou uma versão de {w}',
+        ImportVersion: 'enviou um zip como versão de {w}',
       },
     },
     fieldNames: {

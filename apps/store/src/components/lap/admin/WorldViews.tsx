@@ -29,6 +29,7 @@ import { communityCover } from '../../../lib/world-index';
 import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { WorldGlyph } from './WorldGlyph';
+import { WorldVersions, type VersionsView } from './WorldVersions';
 
 /**
  * `update`: move a world of the Numinia Engine to its newest build
@@ -104,6 +105,8 @@ interface ViewProps {
   readonly placement?: PlacementView | undefined;
   /** The newest published engine build: a card names its version with the build's date. */
   readonly release?: EngineRelease | null | undefined;
+  /** What the cards need for their «Versiones» block; absent: they show none. */
+  readonly versions?: VersionsView | undefined;
 }
 
 const PER_GROUP = 6;
@@ -693,6 +696,7 @@ function WorldCard({
   onTransfer,
   placement,
   release,
+  versions,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
@@ -703,6 +707,7 @@ function WorldCard({
   onTransfer: ViewProps['onTransfer'];
   placement: ViewProps['placement'];
   release: ViewProps['release'];
+  versions: ViewProps['versions'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
@@ -748,6 +753,9 @@ function WorldCard({
             {fill(room.fleetEngine.cardPinned, { b: buildTag(row.pin.image), r: row.pin.reason })}
           </p>
         )}
+        {versions !== undefined && (
+          <WorldVersions row={row} room={room} view={versions} lang={pageLang()} />
+        )}
         {placement !== undefined && <HomeLine row={row} placement={placement} />}
         {code !== null && <NewCode row={row} code={code} room={room} />}
         <CodeLine row={row} room={room} onCode={onCode} onRename={onRename} />
@@ -773,6 +781,7 @@ export function CardsView({
   onTransfer,
   placement,
   release,
+  versions,
 }: ViewProps) {
   return (
     <div className="rejilla">
@@ -788,6 +797,7 @@ export function CardsView({
           onTransfer={onTransfer}
           placement={placement}
           release={release}
+          versions={versions}
         />
       ))}
     </div>
@@ -878,6 +888,7 @@ export function ServersView({
   transfers,
   onTransfer,
   placement,
+  versions,
 }: ViewProps) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const toggle = (key: string): void =>
@@ -909,6 +920,7 @@ export function ServersView({
               transfers={transfers}
               onTransfer={onTransfer}
               placement={placement}
+              versions={versions}
             />
             {group.rows.length > PER_GROUP && (
               <button
