@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.164.0',
+    date: '2026-10-21 23:40',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'TRGCON’s page now looks like TRGCON: its own neon cover (a synthwave sun over a cyan grid, Memphis shapes in the sky) on its card and its page, a «26» in neon for TRG26, the name TRGCON alone, and texts taken from what the conference says of itself — «the most Galician and awesomic tech conference in the world», three days at La Nave with talks, workshops, an octopus feast and a Community Day for the family. TRG26’s programme is the real one, hour by hour, and the page links the Community Day and the DesconferencIA.',
+      },
+      {
+        type: 'NEW',
+        text: 'TRGCON has a home in 3D: «La Nave, en 3D», its world at trgcon.numinia.com, opens from its page and from TRG26, and the page counts who is inside.',
+      },
+    ],
+  },
+  {
     version: 'v0.163.0',
     date: '2026-10-21 21:51',
     entries: [

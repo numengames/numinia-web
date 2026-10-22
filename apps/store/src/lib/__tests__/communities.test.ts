@@ -136,9 +136,10 @@ describe('the register on disk', () => {
     expect(published(REGISTER)).toHaveLength(11);
   });
 
-  it('gives VIC its home in the fleet, and no other community a home yet', () => {
+  it('gives TRGCON and VIC their homes in the fleet, and no other community a home yet', () => {
     const housed = REGISTER.filter((entry) => entry.sede !== undefined);
     expect(housed.map((entry) => [entry.id, entry.sede?.href, entry.sede?.world])).toEqual([
+      ['trgcon', 'https://trgcon.numinia.com/', 'trgcon'],
       ['vic', 'https://vic.numinia.com/', 'vic'],
     ]);
   });

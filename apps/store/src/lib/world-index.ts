@@ -40,6 +40,8 @@ export interface CommunityAccounts {
   readonly founder: boolean;
   /** Its `team:` and the account the till derives from its id. */
   readonly accounts: readonly string[];
+  /** Its own picture (the register's `image`), worn by its worlds that serve none. */
+  readonly image?: string | null;
 }
 
 /** What a world card draws. */
@@ -100,6 +102,19 @@ function faceOf(face: WorldFace | undefined, domain: string | null): WorldFace {
   if (face === undefined || domain === null) return { title: null, image: null };
   const image = face.image?.startsWith(`https://${domain}/`) === true ? face.image : null;
   return { title: face.title, image };
+}
+
+/**
+ * The picture a world of the room wears when it has none of its own: the
+ * one of the community whose account holds it (`covers`: account id →
+ * picture, from the register), else none.
+ */
+export function communityCover(
+  accountId: string | null | undefined,
+  covers: Readonly<Record<string, string>> | undefined,
+): string | null {
+  if (accountId === null || accountId === undefined || covers === undefined) return null;
+  return Object.hasOwn(covers, accountId) ? (covers[accountId] ?? null) : null;
 }
 
 /**
@@ -164,7 +179,7 @@ export function worldCards(input: {
       state: worldState(entry.phase, inside),
       inside,
       ais: inside !== null && typeof aisCounted === 'number' ? aisCounted : null,
-      cover: face.image,
+      cover: face.image ?? community.image ?? null,
       url: entry.domain === null ? null : `https://${entry.domain}/`,
       community: { id: community.id, name: community.name },
       city: community.founder,

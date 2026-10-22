@@ -163,7 +163,8 @@ test.describe('desktop', () => {
       route.fulfill({ status: 200, json: { inside: { vic: 3 } } }),
     );
     await page.goto('/es/');
-    const door = page.locator('[data-metric="you-live-world"]');
+    // One door row per world with a home (TRGCON's too); only the one with people shows.
+    const door = page.locator('[data-metric="you-live-world"][data-world-door="vic"]');
     await expect(door).toBeVisible();
     await expect(door).toHaveText('Entrar al mundo');
     await expect(door).toHaveAttribute('href', 'https://vic.numinia.com/');
@@ -176,7 +177,7 @@ test.describe('desktop', () => {
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto('/es/');
     await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-metric="you-live-world"]')).toBeHidden();
+    await expect(page.locator('[data-metric="you-live-world"]:visible')).toHaveCount(0);
   });
 
   test('the appearance is a segmented control that remembers', async ({ page }) => {

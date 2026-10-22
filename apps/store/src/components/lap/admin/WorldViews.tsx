@@ -25,6 +25,7 @@ import {
   worldUrl,
   type WorldRow,
 } from '../../../lib/worlds';
+import { communityCover } from '../../../lib/world-index';
 import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { WorldGlyph } from './WorldGlyph';
@@ -79,6 +80,13 @@ export interface PlacementView {
   readonly canPlace: (row: WorldRow) => boolean;
   /** A world's own public page, under the visitor's locale. */
   readonly pageHref: (worldId: string) => string;
+  /** Each community's picture by the account that holds its worlds: worn by a world with none of its own. */
+  readonly covers?: Readonly<Record<string, string>> | undefined;
+}
+
+/** A row's picture: its own, else its organization's community's. */
+function rowCover(row: WorldRow, placement: PlacementView | undefined): string | null {
+  return row.cover ?? communityCover(placement?.homes?.get(row.id)?.accountId, placement?.covers);
 }
 
 interface ViewProps {
@@ -692,7 +700,7 @@ function WorldCard({
       data-transfer={transfer?.state}
     >
       <div className="marco-caratula">
-        <Cover src={row.cover} title={row.title} room={room} />
+        <Cover src={rowCover(row, placement)} title={row.title} room={room} />
         <StatusPill row={row} room={room} transfer={transfer} />
       </div>
       <div className="cuerpo">
@@ -800,7 +808,7 @@ export function ListView({
               <tr key={row.id} data-world={row.id} data-transfer={transfer?.state}>
                 <td>
                   <div className="fila-mundo">
-                    <Cover src={row.cover} title={row.title} room={room} />
+                    <Cover src={rowCover(row, placement)} title={row.title} room={room} />
                     <span>
                       <span className="nombre">{row.title}</span>
                       <span className="id mono">{row.id}</span>

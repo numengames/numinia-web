@@ -565,6 +565,7 @@ export function WorldsPanel({
   mundos,
   locale,
   sessionHref,
+  covers,
 }: {
   labels: WorldsLabels;
   room: WorldsRoomMessages;
@@ -573,6 +574,8 @@ export function WorldsPanel({
   locale: SupportedLocale;
   /** The LAP's Session page in this locale: where the wallet is connected again. */
   sessionHref: string;
+  /** Each community's picture by its till account: a world of it with no picture of its own wears it. */
+  covers?: Readonly<Record<string, string>>;
 }) {
   const [panel, setPanel] = useState<Panel>({ at: 'loading' });
   const [view, setView] = useState<View>('cards');
@@ -1156,6 +1159,7 @@ export function WorldsPanel({
     },
     canPlace: (row) => knownIds.has(row.id),
     pageHref: (worldId) => worldHref(locale, worldId),
+    covers,
   };
   const lang = pageLang();
   const zipMax = Math.max(0, ...importers.map((importer) => importer.zipMaxBytes));

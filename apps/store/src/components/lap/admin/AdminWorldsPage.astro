@@ -9,6 +9,8 @@ import { LAP_UI } from '../../../i18n/lap';
 import { MUNDOS_UI } from '../../../i18n/mundos';
 import { WORLDS_UI } from '../../../i18n/worlds';
 import { signInHref } from '../../../lib/app-nav';
+import { communityAccountId } from '../../../lib/community-teams';
+import { COMMUNITIES } from '../../communities/register';
 import LapShell from '../LapShell.astro';
 import { WorldsPanel } from './WorldsPanel';
 
@@ -25,6 +27,14 @@ const labels = {
 };
 // Where a wallet that the room cannot find is connected again — and back here.
 const sessionHref = signInHref(locale, '/lap/admin/worlds/');
+// A world with no picture of its own wears its community's (by the till account the community opens).
+const covers = Object.fromEntries(
+  await Promise.all(
+    COMMUNITIES.filter((community) => community.image !== undefined).map(
+      async (community) => [await communityAccountId(community.id), community.image?.src ?? ''] as const,
+    ),
+  ),
+);
 ---
 
 <LapShell
@@ -44,6 +54,7 @@ const sessionHref = signInHref(locale, '/lap/admin/worlds/');
     mundos={MUNDOS_UI[locale].placement}
     locale={locale}
     sessionHref={sessionHref}
+    covers={covers}
   />
 </LapShell>
 
