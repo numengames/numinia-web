@@ -1,6 +1,8 @@
 /**
  * "Traer un mundo": a world brought back from its zip, in one dialog of two
- * steps. Lugar: what the zip is — read here first (lib/zip-read.ts), so that
+ * steps — or the same zip brought into a world that is here, as a new version
+ * of it (one signature, ImportVersion: the world keeps running and keeps its
+ * machine, its address and its limits). Lugar: what the zip is — read here first (lib/zip-read.ts), so that
  * what its machine would refuse is said before anything is signed — the
  * world's name, its machine (those whose door takes zips and runs the zip's
  * engine) and its address; the engine is the zip's own — a Hyperfy world
@@ -28,6 +30,9 @@ import {
   placeAllowed,
   problemFields,
   proposeName,
+  versionNo,
+  versionTargets,
+  importReplace,
   type Engine,
   type EngineRelease,
   type WorldRow,
@@ -76,6 +81,26 @@ export interface Handover {
 }
 
 const STEPS = ['stepPlace', 'stepSign'] as const;
+
+/** The world a zip is brought into as a version: its machine and address are the zip's. */
+interface Aim {
+  readonly id: string;
+  readonly title: string;
+  readonly server: string;
+  readonly domain: string;
+  /** What the signed request names to replace: empty with one version, the unpublished version with two. */
+  readonly replace: string;
+}
+
+/** What was signed, to hand the zip over to the room when the machine takes the request. */
+interface Signed {
+  readonly machine: string;
+  readonly world: string;
+  readonly domain: string;
+  readonly sha: string;
+  /** A zip for a world that is here (ImportVersion), not a world of its own (ImportWorld). */
+  readonly asVersion: boolean;
+}
 
 /** What the system's picker offers: zips, by name and by both types systems give them. */
 export const ZIP_ACCEPT = '.zip,application/zip,application/x-zip-compressed';
@@ -137,6 +162,8 @@ export function ImportDialog({
   sessionHref,
   listens,
   release,
+  versionOf,
+  versionMax,
   onClose,
   onFile,
   onHandover,
@@ -153,6 +180,10 @@ export function ImportDialog({
   readonly listens: (alias: string) => boolean;
   /** The Numinia Engine's newest published build: what one of its worlds comes back with. */
   readonly release: EngineRelease | null;
+  /** The world whose card asked for this zip: it starts chosen as the world to bring the zip into. */
+  readonly versionOf: string | null;
+  /** How many versions a world's machine keeps at most (its door's `versions.max`); null: none. */
+  readonly versionMax: (row: WorldRow) => number | null;
   readonly onClose: () => void;
   /** Another zip, picked from the dialog itself (a picker outside an open modal is inert). */
   readonly onFile: (file: File) => void;
@@ -172,6 +203,9 @@ export function ImportDialog({
   const [label, setLabel] = useState<string | null>(null);
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
+  const [pick, setPick] = useState<string | null>(versionOf);
+  // The world a signature began for stays the aim until the dialog goes back.
+  const [locked, setLocked] = useState<Aim | null>(null);
   const { step: flow, run, reset } = useFleetAction(wallet, listens);
   const { dnsStep, prepare, resetDns } = useDnsWrite();
   const lang = pageLang();
@@ -186,6 +220,7 @@ export function ImportDialog({
     setHashed(0);
     setUnreadable(false);
     setLabel(null);
+    setLocked(null);
     reset();
     if (file === null) return;
     let alive = true;
@@ -217,33 +252,62 @@ export function ImportDialog({
     };
   }, [file, reset]);
 
+  // The card that asked for the zip chooses the world it goes into; another zip keeps the choice.
+  useEffect(() => setPick(versionOf), [versionOf, source]);
+
   const read = reading?.ok ? reading.reading : null;
   // A zip goes to a machine that runs its engine, ordered with that engine's build.
   const engine: Engine = read?.engine ?? 'numinia-hyperfy2';
   const fits = importers.filter((candidate) => candidate.engines.includes(engine));
   const image = engine === 'numinia-engine' ? (release?.image ?? null) : DEFAULT_IMAGE;
-  const importer = fits.find((candidate) => candidate.alias === machine) ?? fits[0];
+  // A world that can take the zip as a version: it keeps its machine, its address and its limits.
+  const targets = read === null ? [] : versionTargets(rows, importers, engine, versionMax);
+  const chosen = targets.find((row) => row.id === pick) ?? null;
+  const chosenReplace = chosen === null ? null : importReplace(chosen, versionMax(chosen));
+  const aim: Aim | null =
+    locked ??
+    (chosen === null || chosen.order === null || chosenReplace === null
+      ? null
+      : {
+          id: chosen.id,
+          title: chosen.title,
+          server: chosen.order.server,
+          domain: chosen.order.domain,
+          replace: chosenReplace,
+        });
+  const importer =
+    aim === null
+      ? (fits.find((candidate) => candidate.alias === machine) ?? fits[0])
+      : importers.find((candidate) => candidate.alias === aim.server);
   const alias = importer?.alias ?? '';
-  const name = id.trim().toLowerCase();
-  const domain = joinDomain(label ?? name, zone);
-  const owner = addressOwner(domain, rows);
-  const taken = nameOwner(name, rows);
-  const result = draftToOrder({
-    ...emptyDraft(alias),
-    image: image ?? '',
-    id: name,
-    card: name,
-    domain,
-  });
-  const order = 'order' in result ? result.order : null;
+  const name = aim === null ? id.trim().toLowerCase() : aim.id;
+  const domain = aim === null ? joinDomain(label ?? name, zone) : aim.domain;
+  const owner = aim === null ? addressOwner(domain, rows) : null;
+  const taken = aim === null ? nameOwner(name, rows) : null;
+  // A world of its own is ordered here; a version has no order, the world's own stands.
+  const result =
+    aim === null
+      ? draftToOrder({
+          ...emptyDraft(alias),
+          image: image ?? '',
+          id: name,
+          card: name,
+          domain,
+        })
+      : null;
+  const order = result !== null && 'order' in result ? result.order : null;
   const badName =
-    name !== '' && 'problems' in result && problemFields(result.problems).includes('id');
+    result !== null &&
+    name !== '' &&
+    'problems' in result &&
+    problemFields(result.problems).includes('id');
   const tooBig = file !== null && importer !== undefined && file.size > importer.zipMaxBytes;
   const sending = busy(flow) || dnsStep.at === 'writing';
   const words = room.import;
   // A zip the room read but cannot order: no build of its engine yet, or no machine that runs it.
+  // (A zip for a world that is here is ordered by nobody: the world's own build runs it.)
   const unplaceable =
-    read === null
+    read === null || aim !== null
       ? null
       : image === null
         ? words.engineNoRelease
@@ -255,7 +319,8 @@ export function ImportDialog({
 
   // Where the address points, asked of public DNS a moment after the last keystroke.
   useEffect(() => {
-    if (step !== 0 || read === null || !inHouseZone(domain) || (owner && !owner.legacy)) return;
+    if (aim !== null || step !== 0 || read === null || !inHouseZone(domain)) return;
+    if (owner && !owner.legacy) return;
     let alive = true;
     setDns('checking');
     const timer = setTimeout(() => {
@@ -267,7 +332,7 @@ export function ImportDialog({
       alive = false;
       clearTimeout(timer);
     };
-  }, [step, domain, alias, owner?.id, owner?.legacy, read === null]);
+  }, [step, domain, alias, owner?.id, owner?.legacy, read === null, aim === null]);
 
   const close = (): void => {
     reset();
@@ -278,20 +343,20 @@ export function ImportDialog({
   // The machine took it: the dialog hands the zip to the room and closes.
   const handover = useRef(onHandover);
   handover.current = onHandover;
-  const signed = useRef<{ order: typeof order; sha: string | null }>({ order: null, sha: null });
+  const signed = useRef<Signed | null>(null);
   useEffect(() => {
-    if (flow.at !== 'accepted' || file === null) return;
-    const { order: taken, sha: digest } = signed.current;
-    if (taken === null || digest === null) return;
+    if (flow.at !== 'accepted' || file === null || signed.current === null) return;
+    const given = signed.current;
     handover.current({
       ticket: {
-        machine: taken.server,
-        world: taken.id,
-        domain: taken.domain,
+        machine: given.machine,
+        world: given.world,
+        domain: given.domain,
         nonce: flow.request,
         bytes: file.size,
-        sha256: digest,
+        sha256: given.sha,
         name: file.name,
+        ...(given.asVersion ? { asVersion: true as const } : {}),
       },
       file,
       code: flow.code,
@@ -299,8 +364,35 @@ export function ImportDialog({
   }, [flow, file]);
 
   const sign = async (): Promise<void> => {
-    if (order === null || sha === null || file === null) return;
-    signed.current = { order, sha };
+    if (file === null || sha === null) return;
+    // A zip for a world that is here: one signature, nothing deleted, no address to write.
+    if (aim !== null) {
+      setLocked(aim);
+      signed.current = {
+        machine: aim.server,
+        world: aim.id,
+        domain: aim.domain,
+        sha,
+        asVersion: true,
+      };
+      void run({
+        kind: 'ImportVersion',
+        machine: aim.server,
+        world: aim.id,
+        zipBytes: file.size,
+        zipSha256: sha,
+        replace: aim.replace,
+      });
+      return;
+    }
+    if (order === null) return;
+    signed.current = {
+      machine: order.server,
+      world: order.id,
+      domain: order.domain,
+      sha,
+      asVersion: false,
+    };
     // The address first: a world whose record the room writes gets it before the wallet signs.
     if (!(await prepare(dns, order.domain, order.server))) return;
     void run({
@@ -319,12 +411,13 @@ export function ImportDialog({
 
   const canNext =
     read !== null &&
-    unplaceable === null &&
-    order !== null &&
-    taken === null &&
     !tooBig &&
-    placeAllowed(domain, owner, dns) &&
-    alias !== '';
+    alias !== '' &&
+    (aim !== null ||
+      (unplaceable === null &&
+        order !== null &&
+        taken === null &&
+        placeAllowed(domain, owner, dns)));
 
   // What the zip is, in one line, once the room has read it.
   const zipLine =
@@ -361,9 +454,14 @@ export function ImportDialog({
   const pickAgain = refusal !== null || flow.at === 'failed';
 
   return (
-    <Modal open={source !== null} label={words.title} onClose={close} dismissable={!sending}>
+    <Modal
+      open={source !== null}
+      label={aim === null ? words.title : words.versionTitle}
+      onClose={close}
+      dismissable={!sending}
+    >
       <header className="cabeza-dialogo">
-        <h2>{words.title}</h2>
+        <h2>{aim === null ? words.title : words.versionTitle}</h2>
         <ol className="pasos">
           {STEPS.map((key, index) => (
             <li
@@ -410,26 +508,65 @@ export function ImportDialog({
                 {unplaceable}
               </p>
             )}
-            <p className="nota">
-              {fill(read.engine === 'numinia-engine' ? words.engineKeysNote : words.keysNote, {
-                m: alias,
-              })}
-            </p>
-            <Field
-              id="importar-nombre"
-              label={room.wizard.idLabel}
-              value={id}
-              invalid={badName || taken !== null}
-              onChange={setId}
-            />
-            {taken !== null && (
-              <p className="linea-dns" data-tono={taken.leaving ? 'aviso' : 'mal'} role="alert">
-                {fill(taken.leaving ? room.wizard.nameFreeing : room.wizard.nameTaken, {
-                  w: taken.id,
+            {targets.length > 0 && (
+              <label className="campo" htmlFor="importar-version">
+                <span className="etiqueta">{words.versionLabel}</span>
+                <select
+                  id="importar-version"
+                  value={aim?.id ?? ''}
+                  onChange={(event) =>
+                    setPick(event.target.value === '' ? null : event.target.value)
+                  }
+                  data-metric="worlds-field"
+                >
+                  <option value="">{words.versionNew}</option>
+                  {targets.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {fill(words.versionOption, {
+                        t: row.title,
+                        d: row.order?.domain ?? row.id,
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {aim !== null && (
+              <>
+                <p className="linea-dns" data-tono="aviso" data-version-replace={aim.replace}>
+                  {aim.replace === ''
+                    ? words.versionOne
+                    : fill(words.versionTwo, { n: versionNo(aim.replace) })}
+                </p>
+                <p className="nota">{words.versionOwn}</p>
+              </>
+            )}
+            {aim === null && (
+              <p className="nota">
+                {fill(read.engine === 'numinia-engine' ? words.engineKeysNote : words.keysNote, {
+                  m: alias,
                 })}
               </p>
             )}
-            {fits.length > 1 ? (
+            {aim === null && (
+              <>
+                <Field
+                  id="importar-nombre"
+                  label={room.wizard.idLabel}
+                  value={id}
+                  invalid={badName || taken !== null}
+                  onChange={setId}
+                />
+                {taken !== null && (
+                  <p className="linea-dns" data-tono={taken.leaving ? 'aviso' : 'mal'} role="alert">
+                    {fill(taken.leaving ? room.wizard.nameFreeing : room.wizard.nameTaken, {
+                      w: taken.id,
+                    })}
+                  </p>
+                )}
+              </>
+            )}
+            {fits.length > 1 && aim === null ? (
               <label className="campo" htmlFor="importar-maquina">
                 <span className="etiqueta">{words.machineLabel}</span>
                 <select
@@ -462,78 +599,108 @@ export function ImportDialog({
                 })}
               </p>
             )}
-            <div className="campo">
-              <label className="etiqueta" htmlFor="importar-dominio">
-                {room.wizard.domainLabel}
-              </label>
-              <div className="direccion-campo">
-                <input
-                  id="importar-dominio"
-                  className="mono"
-                  value={label ?? name}
-                  aria-invalid={domain !== '' && !inHouseZone(domain)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  onChange={(event) => setLabel(event.target.value)}
-                  data-metric="worlds-field"
-                />
-                <span className="mono zona-punto" aria-hidden="true">
-                  .
+            {aim !== null ? (
+              <div className="campo">
+                <span className="etiqueta">{room.wizard.domainLabel}</span>
+                <span className="mono" data-address-choice>
+                  {aim.domain}
                 </span>
-                <select
-                  aria-label={room.wizard.zoneLabel}
-                  className="mono"
-                  value={zone}
-                  onChange={(event) => setZone(event.target.value)}
-                  data-metric="worlds-field"
-                >
-                  {WORLD_ZONES.map((candidate) => (
-                    <option key={candidate} value={candidate}>
-                      {candidate}
-                    </option>
-                  ))}
-                </select>
               </div>
-              <AddressLine domain={domain} machine={alias} owner={owner} dns={dns} room={room} />
-            </div>
-            <div className="campo">
-              <span className="etiqueta">{room.fields.build}</span>
-              <span className="mono" title={image ?? undefined} data-engine={engine}>
-                {image === null
-                  ? words.engineNoRelease
-                  : fill(words.engineNote, { b: engineTag(image) })}
-              </span>
-            </div>
+            ) : (
+              <div className="campo">
+                <label className="etiqueta" htmlFor="importar-dominio">
+                  {room.wizard.domainLabel}
+                </label>
+                <div className="direccion-campo">
+                  <input
+                    id="importar-dominio"
+                    className="mono"
+                    value={label ?? name}
+                    aria-invalid={domain !== '' && !inHouseZone(domain)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    onChange={(event) => setLabel(event.target.value)}
+                    data-metric="worlds-field"
+                  />
+                  <span className="mono zona-punto" aria-hidden="true">
+                    .
+                  </span>
+                  <select
+                    aria-label={room.wizard.zoneLabel}
+                    className="mono"
+                    value={zone}
+                    onChange={(event) => setZone(event.target.value)}
+                    data-metric="worlds-field"
+                  >
+                    {WORLD_ZONES.map((candidate) => (
+                      <option key={candidate} value={candidate}>
+                        {candidate}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <AddressLine domain={domain} machine={alias} owner={owner} dns={dns} room={room} />
+              </div>
+            )}
+            {aim === null && (
+              <div className="campo">
+                <span className="etiqueta">{room.fields.build}</span>
+                <span className="mono" title={image ?? undefined} data-engine={engine}>
+                  {image === null
+                    ? words.engineNoRelease
+                    : fill(words.engineNote, { b: engineTag(image) })}
+                </span>
+              </div>
+            )}
           </>
         )}
-        {read !== null && file !== null && step === 1 && order !== null && (
+        {read !== null && file !== null && step === 1 && (aim !== null || order !== null) && (
           <>
-            <dl className="datos firma" data-request="ImportWorld">
-              <div>
-                <dt className="etiqueta">{room.fields.world}</dt>
-                <dd className="mono">{order.id}</dd>
-              </div>
-              <div>
-                <dt className="etiqueta">{room.fields.address}</dt>
-                <dd className="mono">{order.domain}</dd>
-              </div>
-              <div>
-                <dt className="etiqueta">{room.fields.server}</dt>
-                <dd className="mono">{order.server}</dd>
-              </div>
-              <div>
-                <dt className="etiqueta">{room.fields.build}</dt>
-                <dd className="mono" title={order.image}>
-                  {engineTag(order.image)}
-                </dd>
-              </div>
-              <div>
-                <dt className="etiqueta">{room.fields.limits}</dt>
-                <dd className="mono">
-                  {`${order.limits.memory} · ${order.limits.cpus} CPU · ${order.limits.maxUploadMb} MB`}
-                </dd>
-              </div>
-            </dl>
+            {aim !== null ? (
+              <dl className="datos firma" data-request="ImportVersion">
+                <div>
+                  <dt className="etiqueta">{room.fields.world}</dt>
+                  <dd className="mono">{aim.id}</dd>
+                </div>
+                <div>
+                  <dt className="etiqueta">{room.fields.address}</dt>
+                  <dd className="mono">{aim.domain}</dd>
+                </div>
+                <div>
+                  <dt className="etiqueta">{room.fields.server}</dt>
+                  <dd className="mono">{aim.server}</dd>
+                </div>
+              </dl>
+            ) : (
+              order !== null && (
+                <dl className="datos firma" data-request="ImportWorld">
+                  <div>
+                    <dt className="etiqueta">{room.fields.world}</dt>
+                    <dd className="mono">{order.id}</dd>
+                  </div>
+                  <div>
+                    <dt className="etiqueta">{room.fields.address}</dt>
+                    <dd className="mono">{order.domain}</dd>
+                  </div>
+                  <div>
+                    <dt className="etiqueta">{room.fields.server}</dt>
+                    <dd className="mono">{order.server}</dd>
+                  </div>
+                  <div>
+                    <dt className="etiqueta">{room.fields.build}</dt>
+                    <dd className="mono" title={order.image}>
+                      {engineTag(order.image)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="etiqueta">{room.fields.limits}</dt>
+                    <dd className="mono">
+                      {`${order.limits.memory} · ${order.limits.cpus} CPU · ${order.limits.maxUploadMb} MB`}
+                    </dd>
+                  </div>
+                </dl>
+              )
+            )}
             <p className="nota mono" data-zip-bytes={file.size}>
               {fill(words.zipLine, {
                 f: file.name,
@@ -552,13 +719,32 @@ export function ImportDialog({
                 </p>
               )
             )}
-            <p className="nota">{fill(words.signNote, { m: order.server })}</p>
-            <DnsWriteLine step={dnsStep} domain={order.domain} machine={order.server} room={room} />
+            {aim !== null && (
+              <p className="linea-dns" data-tono="aviso" data-version-replace={aim.replace}>
+                {aim.replace === ''
+                  ? words.versionOne
+                  : fill(words.versionTwo, { n: versionNo(aim.replace) })}
+              </p>
+            )}
+            <p className="nota">
+              {aim === null
+                ? fill(words.signNote, { m: alias })
+                : fill(words.versionSignNote, { m: alias, w: aim.id })}
+            </p>
+            {order !== null && (
+              <DnsWriteLine
+                step={dnsStep}
+                domain={order.domain}
+                machine={order.server}
+                room={room}
+              />
+            )}
             <StepLine
               step={flow}
-              machine={order.server}
+              machine={alias}
               room={room}
               sessionHref={sessionHref}
+              kind={aim === null ? 'ImportWorld' : 'ImportVersion'}
               values={{
                 f: file.name,
                 s: formatSize(file.size, lang),
@@ -592,6 +778,7 @@ export function ImportDialog({
               className="btn btn-fantasma"
               onClick={() => {
                 reset();
+                setLocked(null);
                 setStep(0);
               }}
               data-metric="worlds-import-back"
@@ -614,11 +801,11 @@ export function ImportDialog({
             <button
               type="button"
               className="btn btn-primario"
-              disabled={order === null || sha === null || sending}
+              disabled={(aim === null && order === null) || sending || sha === null}
               onClick={() => void sign()}
               data-metric="worlds-import-sign"
             >
-              {words.sign}
+              {aim === null ? words.sign : words.versionSign}
             </button>
           )}
         </div>

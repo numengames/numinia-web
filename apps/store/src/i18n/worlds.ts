@@ -7,7 +7,8 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-import type { ImportRule, RequestKind } from '../lib/fleet';
+import type { FollowedVersionKind, ImportRule, RequestKind, VersionProblem } from '../lib/fleet';
+import type { ComingWords } from '../lib/worlds';
 
 export interface WorldsRoomMessages {
   readonly loading: string;
@@ -53,6 +54,8 @@ export interface WorldsRoomMessages {
     readonly importing: string;
     /** A world moving to another build of its engine. */
     readonly updating: string;
+    /** A version being published: the world is down for a few seconds. */
+    readonly switching: string;
   };
   /** In place of a busy card's buttons. */
   readonly busyNote: string;
@@ -72,6 +75,7 @@ export interface WorldsRoomMessages {
     readonly uploading: string;
     readonly importing: string;
     readonly updating: string;
+    readonly switching: string;
     readonly unknown: string;
   };
   readonly badges: {
@@ -466,6 +470,77 @@ export interface WorldsRoomMessages {
     readonly rules: Readonly<Record<ImportRule, string>>;
     /** After a machine's rule, the zip entry it names: `{f}`. */
     readonly entry: string;
+    /** The dialog's title when the zip goes into a world that is here as a version. */
+    readonly versionTitle: string;
+    /** What to do with a zip when a world of the fleet could take it as a version. */
+    readonly versionLabel: string;
+    /** The choice that brings the zip as a world of its own. */
+    readonly versionNew: string;
+    /** The choice to bring it into an existing world: `{t}` its name, `{d}` its address. */
+    readonly versionOption: string;
+    /** What the zip does not choose: the machine, the address and the limits are the world's. */
+    readonly versionOwn: string;
+    /** The world has one version: the zip becomes the second. */
+    readonly versionOne: string;
+    /** The world has two: `{n}` the unpublished version's number, which the zip's replaces. */
+    readonly versionTwo: string;
+    /** The one signature: `{m}` the machine, `{w}` the world. */
+    readonly versionSignNote: string;
+    /** The button that signs it. */
+    readonly versionSign: string;
+  };
+  /**
+   * A world's versions on its card (ADR: one is published, one may wait beside it).
+   * `{n}` a version's number, `{p}` the published one's, `{s}` a size, `{w}` the
+   * world, `{m}` its machine, `{state}` and `{rule}` what a machine says.
+   */
+  readonly versions: {
+    readonly title: string;
+    readonly label: string;
+    /** The mark on the version people visit. */
+    readonly published: string;
+    /** How a version came to be; a copy names the one it was copied from (`{n}`). */
+    readonly origin: { readonly created: string; readonly zip: string; readonly copy: string };
+    /** `{s}` the size, approximate. */
+    readonly size: string;
+    readonly sizeNote: string;
+    readonly download: string;
+    readonly duplicate: string;
+    readonly publish: string;
+    readonly delete: string;
+    /** Opens the zip dialog with this world chosen: the zip becomes a version of it. */
+    readonly importZip: string;
+    /** Under the block: with one version, and with two. */
+    readonly noteOne: string;
+    readonly noteTwo: string;
+    /** A version on its way (describeComing): `{state}` is one of the three below, `{p}` per cent. */
+    readonly coming: ComingWords;
+    /** A request of this tab the machine took and has not finished. */
+    readonly following: Readonly<Record<FollowedVersionKind, string>>;
+    /** The notice when it finished. */
+    readonly done: Readonly<Record<FollowedVersionKind, string>>;
+    /** A machine failed after taking the request, with a rule the room has no words for. */
+    readonly failed: string;
+    readonly close: string;
+    readonly dialog: {
+      readonly publishTitle: string;
+      readonly publishIntro: string;
+      readonly publishKeep: string;
+      readonly publishStopped: string;
+      readonly publishConfirm: string;
+      readonly deleteTitle: string;
+      readonly deleteIntro: string;
+      readonly deleteCopyFirst: string;
+      readonly downloadFirst: string;
+      readonly deleteConfirm: string;
+      readonly duplicateTitle: string;
+      readonly duplicateIntro: string;
+      readonly duplicateConfirm: string;
+      readonly downloadTitle: string;
+      readonly downloadIntro: string;
+    };
+    /** Every refusal of a version request, in plain words: `{m}` the machine. */
+    readonly problems: Readonly<Record<VersionProblem, string>>;
   };
   readonly history: {
     readonly title: string;
@@ -519,6 +594,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Subiendo…',
       importing: 'Revisando…',
       updating: 'Actualizando…',
+      switching: 'Cambiando de versión…',
     },
     busyNote: 'Suele tardar un minuto.',
     reasons: {
@@ -537,6 +613,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'su zip está llegando a su máquina',
       importing: 'su máquina está revisando su zip',
       updating: 'su máquina lo está pasando a otra versión del motor',
+      switching:
+        'su máquina está cambiando de versión · la gente que esté dentro sale unos segundos',
       unknown: 'todavía sin comprobar',
     },
     badges: {
@@ -854,6 +932,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Elegir el zip',
       notSame: 'Ese no es el mismo zip: su huella no coincide.',
       entry: 'Archivo: {f}.',
+      versionTitle: 'Subir un zip como versión',
+      versionLabel: 'Qué hacer con este zip',
+      versionNew: 'Traerlo como un mundo nuevo',
+      versionOption: 'Subirlo como versión nueva de {t} ({d})',
+      versionOwn:
+        'La máquina, la dirección y los límites son los del mundo: el zip solo trae una versión.',
+      versionOne: 'El mundo sigue como está; el zip llega como segunda versión, sin publicar.',
+      versionTwo:
+        'La versión {n} (la no publicada) se sustituye por la del zip cuando el zip esté comprobado. La publicada no se toca.',
+      versionSignNote:
+        'Una sola firma: {m} guarda el zip como versión nueva de {w}. El mundo sigue encendido; para que la gente la visite, la publicas luego desde su tarjeta.',
+      versionSign: 'Firmar y subir el zip',
       elsewhere:
         'Lo está subiendo otra pestaña, o la subida quedó a medias: si nadie la termina, {m} la descarta en menos de una hora.',
       failedPill: 'No se pudo traer',
@@ -906,6 +996,87 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'El motor de {m} no lee este zip.',
       },
     },
+    versions: {
+      title: 'Versiones',
+      label: 'Versión {n}',
+      published: 'Publicada',
+      origin: { created: 'creada aquí', zip: 'desde un zip', copy: 'copia de la versión {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Tamaño medido al hacerla o al publicar. La publicada sigue creciendo mientras se usa, por eso es aproximado.',
+      download: 'Descargar',
+      duplicate: 'Duplicar',
+      publish: 'Publicar esta',
+      delete: 'Borrar',
+      importZip: 'Subir un zip como versión',
+      noteOne:
+        'Puedes tener dos versiones: duplica esta para probar cambios sin tocar la publicada.',
+      noteTwo: 'La gente solo entra en la publicada. La otra espera aquí.',
+      coming: {
+        importing: 'Llegando una versión nueva… {state}',
+        duplicating: 'Duplicando…',
+        uploading: 'subiendo {p} %',
+        waiting: 'esperando turno',
+        working: 'preparándola',
+      },
+      following: {
+        PublishVersion: 'Publicando… el mundo se apaga unos segundos y vuelve solo.',
+        DuplicateVersion: 'Duplicando…',
+        DeleteVersion: 'Borrando…',
+        ImportVersion: 'Llegando el zip como versión nueva… el mundo sigue encendido.',
+      },
+      done: {
+        PublishVersion: 'Ya está publicada la versión {n} de {w}.',
+        DuplicateVersion:
+          'Hecha la copia de {w}: es la versión {n}. Para que la gente la visite, publícala.',
+        DeleteVersion: 'Borrada la versión {n} de {w}.',
+        ImportVersion:
+          'La versión {n} ya está en el mundo, sin publicar. Públicala desde su tarjeta cuando quieras.',
+      },
+      failed: 'La máquina {m} no pudo terminar el cambio de versión ({rule}).',
+      close: 'Cerrar',
+      dialog: {
+        publishTitle: 'Publicar la versión {n}',
+        publishIntro:
+          'La gente que esté dentro sale unos segundos; el mundo se apaga, cambia de versión y vuelve solo. La dirección, las claves y el código de administración no cambian. Los rangos y usuarios son los de esa versión.',
+        publishKeep: 'La versión publicada ahora (la {p}) se queda guardada como la otra.',
+        publishStopped: 'El mundo está apagado y seguirá apagado.',
+        publishConfirm: 'Firmar y publicar',
+        deleteTitle: 'Borrar la versión {n}',
+        deleteIntro: 'Se borra para siempre. La publicada no se toca.',
+        deleteCopyFirst: '¿Quieres conservarla? Descárgala antes.',
+        downloadFirst: 'Descargar la versión {n}',
+        deleteConfirm: 'Firmar y borrar',
+        duplicateTitle: 'Duplicar la versión publicada',
+        duplicateIntro:
+          'Se hace una copia exacta; la gente sigue dentro mientras tanto. La copia no se puede visitar hasta que la publiques.',
+        duplicateConfirm: 'Firmar y duplicar',
+        downloadTitle: 'Descargar la versión {n}',
+        downloadIntro:
+          'La máquina prepara un zip con esa versión, tal como está ahora, y te lo ofrece cuando esté listo. El enlace dura un día. No se toca nada del mundo.',
+      },
+      problems: {
+        'no-version':
+          'Esa versión ya no existe (quizá otra persona la borró). Se vuelve a leer la lista.',
+        published: 'La versión publicada no se puede borrar: publica la otra antes.',
+        'already-published': 'Esa versión ya es la publicada.',
+        'only-version': 'Es la única versión del mundo: no se puede borrar.',
+        full: 'El mundo ya tiene dos versiones, que es el máximo. Borra una antes de añadir otra.',
+        'switch-stuck':
+          'El cambio de versión se quedó a medias; el mundo sigue apagado para no arrancar con datos equivocados. Avisa a la casa.',
+        'not-a-folder': 'La carpeta de esa versión no está como debería estar. Avisa a la casa.',
+        'versions-unreadable':
+          'La máquina {m} no puede leer las versiones de este mundo. Avisa a la casa.',
+        'versions-unwritable':
+          'La máquina {m} no puede guardar el cambio de versiones. Avisa a la casa.',
+        'not-removed': 'La máquina {m} no pudo borrar la versión del todo. Avisa a la casa.',
+        busy: 'Este mundo está ocupado con otro cambio; prueba en un momento.',
+        missing: 'Ese mundo ya no está en {m}; recarga la sala.',
+        'still-deleting': 'Ese mundo se está borrando.',
+        'no-room': 'La máquina {m} no tiene sitio para otra versión.',
+        'engine-refused': 'El motor del mundo no pudo hacer la copia. Avisa a la casa.',
+      },
+    },
     history: {
       title: 'Lo que han hecho las máquinas',
       empty: 'Las máquinas todavía no han hecho nada.',
@@ -924,6 +1095,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'actualizó {w}',
         FleetRelease: 'publicó una versión del motor',
         PinWorld: 'fijó {w}',
+        DuplicateVersion: 'duplicó una versión de {w}',
+        PublishVersion: 'cambió la versión publicada de {w}',
+        DeleteVersion: 'borró una versión guardada de {w}',
+        DownloadVersion: 'descargó una versión de {w}',
+        ImportVersion: 'subió un zip como versión de {w}',
       },
     },
     fieldNames: {
@@ -968,6 +1144,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Uploading…',
       importing: 'Checking…',
       updating: 'Updating…',
+      switching: 'Switching version…',
     },
     busyNote: 'This usually takes about a minute.',
     reasons: {
@@ -986,6 +1163,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'its zip is reaching its machine',
       importing: 'its machine is checking its zip',
       updating: 'its machine is moving it to another engine build',
+      switching: 'its machine is switching versions · people inside leave for a few seconds',
       unknown: 'not checked yet',
     },
     badges: {
@@ -1306,6 +1484,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Choose the zip',
       notSame: 'That is not the same zip: its fingerprint does not match.',
       entry: 'File: {f}.',
+      versionTitle: 'Upload a zip as a version',
+      versionLabel: 'What to do with this zip',
+      versionNew: 'Bring it as a new world',
+      versionOption: 'Upload it as a new version of {t} ({d})',
+      versionOwn:
+        'The machine, the address and the limits are the world’s: the zip only brings a version.',
+      versionOne: 'The world stays as it is; the zip arrives as a second version, unpublished.',
+      versionTwo:
+        'Version {n} (the unpublished one) is replaced by the zip’s once the zip has been checked. The published one is not touched.',
+      versionSignNote:
+        'One signature: {m} stores the zip as a new version of {w}. The world keeps running; to let people visit it, you publish it later from its card.',
+      versionSign: 'Sign and upload the zip',
       elsewhere:
         'Another tab is uploading it, or it was left half done: if nobody finishes it, {m} drops it within the hour.',
       failedPill: 'Could not bring it back',
@@ -1360,6 +1550,86 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'The engine on {m} does not read this zip.',
       },
     },
+    versions: {
+      title: 'Versions',
+      label: 'Version {n}',
+      published: 'Published',
+      origin: { created: 'made here', zip: 'from a zip', copy: 'copy of version {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Size measured when it was made or published. The published one keeps growing while it is used, so this is approximate.',
+      download: 'Download',
+      duplicate: 'Duplicate',
+      publish: 'Publish this one',
+      delete: 'Delete',
+      importZip: 'Upload a zip as a version',
+      noteOne:
+        'You can keep two versions: duplicate this one to try changes without touching the published one.',
+      noteTwo: 'People only enter the published one. The other waits here.',
+      coming: {
+        importing: 'A new version is arriving… {state}',
+        duplicating: 'Duplicating…',
+        uploading: 'uploading {p} %',
+        waiting: 'waiting its turn',
+        working: 'getting it ready',
+      },
+      following: {
+        PublishVersion:
+          'Publishing… the world goes off for a few seconds and comes back by itself.',
+        DuplicateVersion: 'Duplicating…',
+        DeleteVersion: 'Deleting…',
+        ImportVersion: 'The zip is arriving as a new version… the world keeps running.',
+      },
+      done: {
+        PublishVersion: 'Version {n} of {w} is now published.',
+        DuplicateVersion:
+          'The copy of {w} is made: it is version {n}. Publish it for people to visit it.',
+        DeleteVersion: 'Version {n} of {w} is deleted.',
+        ImportVersion:
+          'Version {n} is now in the world, unpublished. Publish it from its card whenever you like.',
+      },
+      failed: 'Machine {m} could not finish the version change ({rule}).',
+      close: 'Close',
+      dialog: {
+        publishTitle: 'Publish version {n}',
+        publishIntro:
+          'People inside are put out for a few seconds; the world goes off, switches version and comes back by itself. The address, the keys and the admin code do not change. Ranks and users are those of that version.',
+        publishKeep: 'The version published now (version {p}) is kept as the other one.',
+        publishStopped: 'The world is off and will stay off.',
+        publishConfirm: 'Sign and publish',
+        deleteTitle: 'Delete version {n}',
+        deleteIntro: 'It is deleted for good. The published one is not touched.',
+        deleteCopyFirst: 'Want to keep it? Download it first.',
+        downloadFirst: 'Download version {n}',
+        deleteConfirm: 'Sign and delete',
+        duplicateTitle: 'Duplicate the published version',
+        duplicateIntro:
+          'An exact copy is made; people stay inside meanwhile. The copy cannot be visited until you publish it.',
+        duplicateConfirm: 'Sign and duplicate',
+        downloadTitle: 'Download version {n}',
+        downloadIntro:
+          'The machine prepares a zip of that version as it is now and offers it when it is ready. The link lasts a day. Nothing in the world is touched.',
+      },
+      problems: {
+        'no-version':
+          'That version no longer exists (maybe someone else deleted it). The list is read again.',
+        published: 'The published version cannot be deleted: publish the other one first.',
+        'already-published': 'That version is already the published one.',
+        'only-version': 'It is the world’s only version: it cannot be deleted.',
+        full: 'The world already has two versions, the most it can keep. Delete one before adding another.',
+        'switch-stuck':
+          'The version change was left half-way; the world stays off so it does not start on the wrong data. Tell the house.',
+        'not-a-folder': 'That version’s folder is not as it should be. Tell the house.',
+        'versions-unreadable': 'Machine {m} cannot read this world’s versions. Tell the house.',
+        'versions-unwritable': 'Machine {m} cannot save the version change. Tell the house.',
+        'not-removed': 'Machine {m} could not delete the version completely. Tell the house.',
+        busy: 'This world is busy with another change; try again in a moment.',
+        missing: 'That world is no longer on {m}; reload the room.',
+        'still-deleting': 'That world is being deleted.',
+        'no-room': 'Machine {m} has no room for another version.',
+        'engine-refused': 'The world’s engine could not make the copy. Tell the house.',
+      },
+    },
     history: {
       title: 'What the machines did',
       empty: 'The machines have done nothing yet.',
@@ -1378,6 +1648,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'updated {w}',
         FleetRelease: 'published an engine release',
         PinWorld: 'pinned {w}',
+        DuplicateVersion: 'duplicated a version of {w}',
+        PublishVersion: 'changed the published version of {w}',
+        DeleteVersion: 'deleted a stored version of {w}',
+        DownloadVersion: 'downloaded a version of {w}',
+        ImportVersion: 'uploaded a zip as a version of {w}',
       },
     },
     fieldNames: {
@@ -1423,6 +1698,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'アップロード中…',
       importing: '確認中…',
       updating: '更新中…',
+      switching: 'バージョン切り替え中…',
     },
     busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
@@ -1441,6 +1717,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'zip がマシンに届いているところ',
       importing: 'マシンが zip を確認中',
       updating: 'マシンがエンジンの別のビルドへ移行中',
+      switching: 'マシンがバージョンを切り替え中 · 中にいる人は数秒間退出します',
       unknown: 'まだ確認していません',
     },
     badges: {
@@ -1758,6 +2035,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'zip を選ぶ',
       notSame: '同じ zip ではありません。フィンガープリントが一致しません。',
       entry: 'ファイル：{f}',
+      versionTitle: 'zip をバージョンとして追加',
+      versionLabel: 'この zip をどうしますか',
+      versionNew: '新しいワールドとして持ってくる',
+      versionOption: '{t}（{d}）の新しいバージョンとして追加する',
+      versionOwn:
+        'マシン、アドレス、上限はワールドのものです。zip が持ってくるのはバージョンだけです。',
+      versionOne: 'ワールドはそのままです。zip は 2 つ目のバージョンとして、未公開のまま届きます。',
+      versionTwo:
+        'zip の確認が済むと、バージョン {n}（未公開のほう）が zip の内容に置き換わります。公開中のバージョンには触れません。',
+      versionSignNote:
+        '署名は 1 回だけです。{m} が zip を {w} の新しいバージョンとして保管します。ワールドは動いたままです。みんなが訪れられるようにするには、あとでカードから公開してください。',
+      versionSign: '署名して zip を追加',
       elsewhere:
         '別のタブがアップロード中か、途中で止まっています。誰も終えなければ、{m} が 1 時間以内に破棄します。',
       failedPill: '戻せませんでした',
@@ -1813,6 +2102,89 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': '{m} のエンジンはこの zip を読めません。',
       },
     },
+    versions: {
+      title: 'バージョン',
+      label: 'バージョン {n}',
+      published: '公開中',
+      origin: { created: 'ここで作成', zip: 'zip から', copy: 'バージョン {n} のコピー' },
+      size: '約 {s}',
+      sizeNote:
+        '作成時または公開時に測ったサイズです。公開中のものは使われるうちに大きくなるため、おおよその値です。',
+      download: 'ダウンロード',
+      duplicate: '複製',
+      publish: 'これを公開',
+      delete: '削除',
+      importZip: 'zip をバージョンとして追加',
+      noteOne:
+        'バージョンは 2 つまで持てます。公開中のものに触れずに変更を試すには、これを複製してください。',
+      noteTwo: '人が入れるのは公開中のバージョンだけです。もう一方はここで待機します。',
+      coming: {
+        importing: '新しいバージョンが届いています… {state}',
+        duplicating: '複製中…',
+        uploading: 'アップロード中 {p} %',
+        waiting: '順番待ち',
+        working: '準備中',
+      },
+      following: {
+        PublishVersion: '公開中… ワールドは数秒間停止し、自動で戻ります。',
+        DuplicateVersion: '複製中…',
+        DeleteVersion: '削除中…',
+        ImportVersion: 'zip を新しいバージョンとして受け取っています…ワールドは動いたままです。',
+      },
+      done: {
+        PublishVersion: '{w} のバージョン {n} を公開しました。',
+        DuplicateVersion:
+          '{w} のコピーができました（バージョン {n}）。人が訪れるには公開してください。',
+        DeleteVersion: '{w} のバージョン {n} を削除しました。',
+        ImportVersion:
+          'バージョン {n} がワールドに入りました（未公開）。好きなときにカードから公開してください。',
+      },
+      failed: 'マシン {m} はバージョンの切り替えを完了できませんでした（{rule}）。',
+      close: '閉じる',
+      dialog: {
+        publishTitle: 'バージョン {n} を公開',
+        publishIntro:
+          '中にいる人は数秒間退出します。ワールドは停止し、バージョンを切り替えて、自動で戻ります。アドレス、キー、管理コードは変わりません。ランクとユーザーはそのバージョンのものになります。',
+        publishKeep: 'いま公開中のバージョン（バージョン {p}）は、もう一方として保存されます。',
+        publishStopped: 'ワールドは停止中で、停止したままです。',
+        publishConfirm: '署名して公開',
+        deleteTitle: 'バージョン {n} を削除',
+        deleteIntro: '完全に削除されます。公開中のバージョンには触れません。',
+        deleteCopyFirst: '残しておきたい場合は、先にダウンロードしてください。',
+        downloadFirst: 'バージョン {n} をダウンロード',
+        deleteConfirm: '署名して削除',
+        duplicateTitle: '公開中のバージョンを複製',
+        duplicateIntro:
+          'まったく同じコピーを作ります。その間も人は中にいられます。コピーは公開するまで訪れることができません。',
+        duplicateConfirm: '署名して複製',
+        downloadTitle: 'バージョン {n} をダウンロード',
+        downloadIntro:
+          'マシンがそのバージョンの現在の状態を zip にまとめ、準備できたらお渡しします。リンクは 1 日有効です。ワールドには何も手を加えません。',
+      },
+      problems: {
+        'no-version':
+          'そのバージョンはもうありません（他の人が削除したのかもしれません）。一覧を読み込み直します。',
+        published: '公開中のバージョンは削除できません。先にもう一方を公開してください。',
+        'already-published': 'そのバージョンはすでに公開中です。',
+        'only-version': 'このワールドの唯一のバージョンなので、削除できません。',
+        full: 'このワールドにはすでに最大の 2 つのバージョンがあります。追加する前に 1 つ削除してください。',
+        'switch-stuck':
+          'バージョンの切り替えが途中で止まりました。誤ったデータで起動しないよう、ワールドは停止したままです。運営にお知らせください。',
+        'not-a-folder':
+          'そのバージョンのフォルダーが正しい状態ではありません。運営にお知らせください。',
+        'versions-unreadable':
+          'マシン {m} はこのワールドのバージョンを読み取れません。運営にお知らせください。',
+        'versions-unwritable':
+          'マシン {m} はバージョンの変更を保存できません。運営にお知らせください。',
+        'not-removed':
+          'マシン {m} はバージョンを完全には削除できませんでした。運営にお知らせください。',
+        busy: 'このワールドは別の変更の処理中です。少し待ってからお試しください。',
+        missing: 'そのワールドはもう {m} にありません。ルームを読み込み直してください。',
+        'still-deleting': 'そのワールドは削除中です。',
+        'no-room': 'マシン {m} にはもう 1 つバージョンを置く空きがありません。',
+        'engine-refused': 'ワールドのエンジンがコピーを作れませんでした。運営にお知らせください。',
+      },
+    },
     history: {
       title: 'マシンの作業履歴',
       empty: 'マシンはまだ何もしていません。',
@@ -1831,6 +2203,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: '{w} を更新した',
         FleetRelease: 'エンジンのリリースを公開した',
         PinWorld: '{w} を固定した',
+        DuplicateVersion: '{w} のバージョンを複製した',
+        PublishVersion: '{w} の公開バージョンを切り替えた',
+        DeleteVersion: '{w} の保管中のバージョンを削除した',
+        DownloadVersion: '{w} のバージョンをダウンロードした',
+        ImportVersion: '{w} のバージョンとして zip をアップロードした',
       },
     },
     fieldNames: {
@@ -1875,6 +2252,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: '업로드하는 중…',
       importing: '확인하는 중…',
       updating: '업데이트하는 중…',
+      switching: '버전 전환하는 중…',
     },
     busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
@@ -1893,6 +2271,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'zip이 머신에 도착하는 중',
       importing: '머신이 zip을 확인하는 중',
       updating: '머신이 다른 엔진 빌드로 옮기는 중',
+      switching: '머신이 버전을 전환하는 중 · 안에 있는 사람은 몇 초간 나갑니다',
       unknown: '아직 확인하지 않음',
     },
     badges: {
@@ -2208,6 +2587,17 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'zip 선택',
       notSame: '같은 zip이 아닙니다. 지문이 일치하지 않습니다.',
       entry: '파일: {f}',
+      versionTitle: 'zip을 버전으로 올리기',
+      versionLabel: '이 zip을 어떻게 할까요',
+      versionNew: '새 월드로 가져오기',
+      versionOption: '{t}({d})의 새 버전으로 올리기',
+      versionOwn: '머신, 주소, 한도는 월드의 것입니다. zip은 버전만 가져옵니다.',
+      versionOne: '월드는 그대로 두고, zip은 공개하지 않은 두 번째 버전으로 들어옵니다.',
+      versionTwo:
+        'zip 확인이 끝나면 버전 {n}(공개되지 않은 버전)이 zip의 내용으로 바뀝니다. 공개된 버전은 건드리지 않습니다.',
+      versionSignNote:
+        '서명은 한 번뿐입니다. {m}이(가) zip을 {w}의 새 버전으로 보관합니다. 월드는 계속 켜져 있습니다. 사람들이 방문하게 하려면 나중에 카드에서 공개하세요.',
+      versionSign: '서명하고 zip 올리기',
       elsewhere:
         '다른 탭에서 업로드하는 중이거나 중간에 멈췄습니다. 아무도 끝내지 않으면 {m}이(가) 1시간 안에 버립니다.',
       failedPill: '가져오지 못함',
@@ -2259,6 +2649,85 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': '{m}의 엔진이 이 zip을 읽지 못합니다.',
       },
     },
+    versions: {
+      title: '버전',
+      label: '버전 {n}',
+      published: '게시됨',
+      origin: { created: '여기서 만듦', zip: 'zip에서', copy: '버전 {n}의 사본' },
+      size: '약 {s}',
+      sizeNote:
+        '만들 때 또는 게시할 때 잰 크기입니다. 게시된 버전은 쓰는 동안 계속 커지므로 대략적인 값입니다.',
+      download: '다운로드',
+      duplicate: '복제',
+      publish: '이 버전 게시',
+      delete: '삭제',
+      importZip: 'zip을 버전으로 올리기',
+      noteOne:
+        '버전은 두 개까지 둘 수 있습니다. 게시된 버전을 건드리지 않고 변경을 시험하려면 이것을 복제하세요.',
+      noteTwo: '사람들은 게시된 버전에만 들어옵니다. 다른 버전은 여기서 기다립니다.',
+      coming: {
+        importing: '새 버전이 도착하는 중… {state}',
+        duplicating: '복제하는 중…',
+        uploading: '업로드 중 {p} %',
+        waiting: '차례를 기다리는 중',
+        working: '준비하는 중',
+      },
+      following: {
+        PublishVersion: '게시하는 중… 월드가 몇 초간 꺼졌다가 저절로 돌아옵니다.',
+        DuplicateVersion: '복제하는 중…',
+        DeleteVersion: '삭제하는 중…',
+        ImportVersion: 'zip이 새 버전으로 도착하는 중… 월드는 계속 켜져 있습니다.',
+      },
+      done: {
+        PublishVersion: '{w}의 버전 {n}을(를) 게시했습니다.',
+        DuplicateVersion: '{w}의 사본이 만들어졌습니다(버전 {n}). 사람들이 방문하려면 게시하세요.',
+        DeleteVersion: '{w}의 버전 {n}을(를) 삭제했습니다.',
+        ImportVersion: '버전 {n}이(가) 월드에 들어왔습니다(공개 전). 원할 때 카드에서 공개하세요.',
+      },
+      failed: '머신 {m}이(가) 버전 전환을 끝내지 못했습니다({rule}).',
+      close: '닫기',
+      dialog: {
+        publishTitle: '버전 {n} 게시',
+        publishIntro:
+          '안에 있는 사람은 몇 초간 나갑니다. 월드가 꺼지고 버전을 바꾼 뒤 저절로 돌아옵니다. 주소, 키, 관리 코드는 바뀌지 않습니다. 등급과 사용자는 그 버전의 것입니다.',
+        publishKeep: '지금 게시된 버전(버전 {p})은 다른 버전으로 보관됩니다.',
+        publishStopped: '월드가 꺼져 있으며 계속 꺼진 채로 있습니다.',
+        publishConfirm: '서명하고 게시',
+        deleteTitle: '버전 {n} 삭제',
+        deleteIntro: '영구히 삭제됩니다. 게시된 버전은 건드리지 않습니다.',
+        deleteCopyFirst: '보관하고 싶나요? 먼저 다운로드하세요.',
+        downloadFirst: '버전 {n} 다운로드',
+        deleteConfirm: '서명하고 삭제',
+        duplicateTitle: '게시된 버전 복제',
+        duplicateIntro:
+          '똑같은 사본을 만듭니다. 그동안 사람들은 안에 그대로 있을 수 있습니다. 사본은 게시하기 전에는 방문할 수 없습니다.',
+        duplicateConfirm: '서명하고 복제',
+        downloadTitle: '버전 {n} 다운로드',
+        downloadIntro:
+          '머신이 그 버전의 현재 상태를 zip으로 준비해 두었다가 준비되면 제공합니다. 링크는 하루 동안 유효합니다. 월드는 전혀 건드리지 않습니다.',
+      },
+      problems: {
+        'no-version':
+          '그 버전은 더 이상 없습니다(다른 사람이 삭제했을 수 있습니다). 목록을 다시 읽습니다.',
+        published: '게시된 버전은 삭제할 수 없습니다. 먼저 다른 버전을 게시하세요.',
+        'already-published': '그 버전은 이미 게시되어 있습니다.',
+        'only-version': '월드의 유일한 버전이라 삭제할 수 없습니다.',
+        full: '월드에 이미 최대인 두 버전이 있습니다. 하나를 삭제한 뒤 추가하세요.',
+        'switch-stuck':
+          '버전 전환이 중간에 멈췄습니다. 잘못된 데이터로 시작하지 않도록 월드는 꺼진 채로 있습니다. 운영진에게 알려 주세요.',
+        'not-a-folder': '그 버전의 폴더가 올바른 상태가 아닙니다. 운영진에게 알려 주세요.',
+        'versions-unreadable':
+          '머신 {m}이(가) 이 월드의 버전을 읽을 수 없습니다. 운영진에게 알려 주세요.',
+        'versions-unwritable':
+          '머신 {m}이(가) 버전 변경을 저장할 수 없습니다. 운영진에게 알려 주세요.',
+        'not-removed': '머신 {m}이(가) 버전을 완전히 삭제하지 못했습니다. 운영진에게 알려 주세요.',
+        busy: '이 월드는 다른 변경을 처리하는 중입니다. 잠시 뒤에 다시 시도하세요.',
+        missing: '그 월드는 더 이상 {m}에 없습니다. 룸을 새로 고치세요.',
+        'still-deleting': '그 월드는 삭제되는 중입니다.',
+        'no-room': '머신 {m}에는 버전을 하나 더 둘 공간이 없습니다.',
+        'engine-refused': '월드의 엔진이 사본을 만들지 못했습니다. 운영진에게 알려 주세요.',
+      },
+    },
     history: {
       title: '머신이 한 일',
       empty: '머신이 아직 아무것도 하지 않았습니다.',
@@ -2277,6 +2746,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: '{w} 업데이트함',
         FleetRelease: '엔진 릴리스를 게시함',
         PinWorld: '{w} 고정함',
+        DuplicateVersion: '{w}의 버전을 복제함',
+        PublishVersion: '{w}의 게시 버전을 바꿈',
+        DeleteVersion: '{w}의 보관 중인 버전을 삭제함',
+        DownloadVersion: '{w}의 버전을 다운로드함',
+        ImportVersion: '{w}의 버전으로 zip을 업로드함',
       },
     },
     fieldNames: {
@@ -2326,6 +2800,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Enviando…',
       importing: 'Revisando…',
       updating: 'Atualizando…',
+      switching: 'Trocando de versão…',
     },
     busyNote: 'Costuma levar um minuto.',
     reasons: {
@@ -2344,6 +2819,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'o zip está chegando à máquina',
       importing: 'a máquina está revisando o zip',
       updating: 'a máquina está passando o mundo para outra versão do motor',
+      switching: 'a máquina está trocando de versão · quem está dentro sai por alguns segundos',
       unknown: 'ainda não verificado',
     },
     badges: {
@@ -2659,6 +3135,17 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Escolher o zip',
       notSame: 'Esse não é o mesmo zip: a impressão não confere.',
       entry: 'Arquivo: {f}.',
+      versionTitle: 'Subir um zip como versão',
+      versionLabel: 'O que fazer com este zip',
+      versionNew: 'Trazer como um mundo novo',
+      versionOption: 'Subir como versão nova de {t} ({d})',
+      versionOwn: 'A máquina, o endereço e os limites são os do mundo: o zip traz só uma versão.',
+      versionOne: 'O mundo continua como está; o zip chega como segunda versão, sem publicar.',
+      versionTwo:
+        'A versão {n} (a não publicada) é substituída pela do zip quando o zip for verificado. A publicada não é tocada.',
+      versionSignNote:
+        'Uma só assinatura: {m} guarda o zip como versão nova de {w}. O mundo continua ligado; para a galera visitar, você publica depois pelo cartão dele.',
+      versionSign: 'Assinar e subir o zip',
       elsewhere:
         'Outra aba está enviando, ou o envio ficou pela metade: se ninguém o terminar, {m} o descarta em menos de uma hora.',
       failedPill: 'Não foi possível trazer',
@@ -2713,6 +3200,87 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         'engine-refused': 'O motor de {m} não lê este zip.',
       },
     },
+    versions: {
+      title: 'Versões',
+      label: 'Versão {n}',
+      published: 'Publicada',
+      origin: { created: 'criada aqui', zip: 'de um zip', copy: 'cópia da versão {n}' },
+      size: '≈ {s}',
+      sizeNote:
+        'Tamanho medido quando foi feita ou publicada. A publicada continua crescendo enquanto é usada, por isso é aproximado.',
+      download: 'Baixar',
+      duplicate: 'Duplicar',
+      publish: 'Publicar esta',
+      delete: 'Apagar',
+      importZip: 'Subir um zip como versão',
+      noteOne:
+        'Você pode ter duas versões: duplique esta para testar mudanças sem mexer na publicada.',
+      noteTwo: 'As pessoas só entram na publicada. A outra espera aqui.',
+      coming: {
+        importing: 'Chegando uma versão nova… {state}',
+        duplicating: 'Duplicando…',
+        uploading: 'enviando {p} %',
+        waiting: 'esperando a vez',
+        working: 'preparando',
+      },
+      following: {
+        PublishVersion: 'Publicando… o mundo desliga por alguns segundos e volta sozinho.',
+        DuplicateVersion: 'Duplicando…',
+        DeleteVersion: 'Apagando…',
+        ImportVersion: 'O zip está chegando como versão nova… o mundo continua ligado.',
+      },
+      done: {
+        PublishVersion: 'A versão {n} de {w} já está publicada.',
+        DuplicateVersion:
+          'A cópia de {w} está pronta: é a versão {n}. Para as pessoas a visitarem, publique-a.',
+        DeleteVersion: 'A versão {n} de {w} foi apagada.',
+        ImportVersion:
+          'A versão {n} já está no mundo, sem publicar. Publique pelo cartão dela quando quiser.',
+      },
+      failed: 'A máquina {m} não conseguiu terminar a troca de versão ({rule}).',
+      close: 'Fechar',
+      dialog: {
+        publishTitle: 'Publicar a versão {n}',
+        publishIntro:
+          'Quem estiver dentro sai por alguns segundos; o mundo desliga, troca de versão e volta sozinho. O endereço, as chaves e o código de administração não mudam. Os cargos e usuários são os dessa versão.',
+        publishKeep: 'A versão publicada agora (a {p}) fica guardada como a outra.',
+        publishStopped: 'O mundo está desligado e continuará desligado.',
+        publishConfirm: 'Assinar e publicar',
+        deleteTitle: 'Apagar a versão {n}',
+        deleteIntro: 'Ela é apagada para sempre. A publicada não é tocada.',
+        deleteCopyFirst: 'Quer guardá-la? Baixe antes.',
+        downloadFirst: 'Baixar a versão {n}',
+        deleteConfirm: 'Assinar e apagar',
+        duplicateTitle: 'Duplicar a versão publicada',
+        duplicateIntro:
+          'Faz-se uma cópia exata; as pessoas continuam dentro enquanto isso. A cópia não pode ser visitada até você publicá-la.',
+        duplicateConfirm: 'Assinar e duplicar',
+        downloadTitle: 'Baixar a versão {n}',
+        downloadIntro:
+          'A máquina prepara um zip dessa versão como está agora e o oferece quando estiver pronto. O link dura um dia. Nada no mundo é tocado.',
+      },
+      problems: {
+        'no-version':
+          'Essa versão não existe mais (talvez outra pessoa a tenha apagado). A lista é lida de novo.',
+        published: 'A versão publicada não pode ser apagada: publique a outra antes.',
+        'already-published': 'Essa versão já é a publicada.',
+        'only-version': 'É a única versão do mundo: não pode ser apagada.',
+        full: 'O mundo já tem duas versões, o máximo. Apague uma antes de acrescentar outra.',
+        'switch-stuck':
+          'A troca de versão ficou pela metade; o mundo continua desligado para não iniciar com dados errados. Avise a casa.',
+        'not-a-folder': 'A pasta dessa versão não está como deveria. Avise a casa.',
+        'versions-unreadable':
+          'A máquina {m} não consegue ler as versões deste mundo. Avise a casa.',
+        'versions-unwritable':
+          'A máquina {m} não consegue salvar a mudança de versões. Avise a casa.',
+        'not-removed': 'A máquina {m} não conseguiu apagar a versão por completo. Avise a casa.',
+        busy: 'Este mundo está ocupado com outra mudança; tente de novo daqui a pouco.',
+        missing: 'Esse mundo não está mais em {m}; recarregue a sala.',
+        'still-deleting': 'Esse mundo está sendo apagado.',
+        'no-room': 'A máquina {m} não tem espaço para outra versão.',
+        'engine-refused': 'O motor do mundo não conseguiu fazer a cópia. Avise a casa.',
+      },
+    },
     history: {
       title: 'O que as máquinas fizeram',
       empty: 'As máquinas ainda não fizeram nada.',
@@ -2731,6 +3299,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'atualizou {w}',
         FleetRelease: 'publicou uma versão do motor',
         PinWorld: 'fixou {w}',
+        DuplicateVersion: 'duplicou uma versão de {w}',
+        PublishVersion: 'trocou a versão publicada de {w}',
+        DeleteVersion: 'apagou uma versão guardada de {w}',
+        DownloadVersion: 'baixou uma versão de {w}',
+        ImportVersion: 'enviou um zip como versão de {w}',
       },
     },
     fieldNames: {

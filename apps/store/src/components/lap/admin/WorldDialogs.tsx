@@ -20,7 +20,7 @@ import type { WorldsRoomMessages } from '../../../i18n/worlds';
 import { ORG_CHOICE_WORDS } from '../../../i18n/org-choices';
 import { readStatement } from '../../../lib/accounts';
 import { localeHref } from '../../../lib/app-nav';
-import { copyFileUrl, formatBytes, validReason } from '../../../lib/fleet';
+import { copyFileUrl, formatBytes, validReason, type RequestKind } from '../../../lib/fleet';
 import { accountOf, type OrgChoice } from '../../../lib/org-choices';
 import { hasBalanceToPowerOn } from '../../../lib/world-power';
 import {
@@ -48,6 +48,7 @@ import {
   type EngineRelease,
   type OrderDraft,
   type WorldCardInfo,
+  versionNo,
   type WorldRow,
 } from '../../../lib/worlds';
 import { askAddress, writeDns } from '../../../lib/worlds-source';
@@ -137,7 +138,7 @@ export function Modal({
 }
 
 /** Calls `effect` each time a signed request is taken or finished: the room reads the fleet again. */
-function useOnProgress(step: Step, effect: () => void): void {
+export function useOnProgress(step: Step, effect: () => void): void {
   const latest = useRef(effect);
   latest.current = effect;
   useEffect(() => {
@@ -152,6 +153,7 @@ export function StepLine({
   room,
   sessionHref,
   values,
+  kind,
 }: {
   readonly step: Step;
   readonly machine: string;
@@ -160,11 +162,13 @@ export function StepLine({
   readonly sessionHref: string;
   /** A zip rule's own blanks (`{f}`, `{s}`, `{max}`), for a world brought back from its zip. */
   readonly values?: Readonly<Record<string, string | number>> | undefined;
+  /** The request that was asked: a version request is refused in version words. */
+  readonly kind?: RequestKind | undefined;
 }) {
   if (step.at === 'failed') {
     return (
       <p className="fallo" role="alert" data-problem={step.problem}>
-        {problemText(step, machine, room, values)}
+        {problemText(step, machine, room, values, kind)}
         {step.problem === 'no-wallet' && (
           <>
             {' '}
@@ -985,7 +989,12 @@ export function ActionDialog({
   warning,
   listens,
 }: {
-  readonly change: { readonly row: WorldRow; readonly action: WorldAction } | null;
+  readonly change: {
+    readonly row: WorldRow;
+    readonly action: WorldAction;
+    /** A download of this version (`v2`) of the world instead of its published one. */
+    readonly version?: string;
+  } | null;
   readonly onClose: () => void;
   /** The fleet changed: read it again. */
   readonly onChanged: () => void;
@@ -1037,7 +1046,14 @@ export function ActionDialog({
     pin: words.pinConfirm,
     unpin: words.unpinConfirm,
   };
-  const title = row ? fill(titles[action], { t: row.title }) : '';
+  // A download of one version says which; a download of the world is its published one.
+  const version = action === 'download' ? (change?.version ?? null) : null;
+  const versionN = version === null ? 0 : versionNo(version);
+  const title = row
+    ? version === null
+      ? fill(titles[action], { t: row.title })
+      : fill(room.versions.dialog.downloadTitle, { t: row.title, n: versionN })
+    : '';
   // A pin names a build of the world's own engine; a hold is lifted only where there is one.
   const pinTo = row?.order ? pinImage(row.order, build) : null;
   const reasonText = reason.trim();
@@ -1086,7 +1102,8 @@ export function ActionDialog({
       void run({ kind: 'PinWorld', ...world, image: pinTo, reason: reasonText });
     } else if (action === 'unpin') {
       void run({ kind: 'PinWorld', ...world, image: '', reason: reasonText });
-    } else void run({ kind: 'DownloadWorld', ...world });
+    } else if (version !== null) void run({ kind: 'DownloadVersion', ...world, version });
+    else void run({ kind: 'DownloadWorld', ...world });
   };
 
   return (
@@ -1144,7 +1161,9 @@ export function ActionDialog({
         <div className="contenido">
           {action === 'stop' && <p>{words.stopIntro}</p>}
           {action === 'start' && <p>{words.startIntro}</p>}
-          {action === 'download' && <p>{words.downloadIntro}</p>}
+          {action === 'download' && (
+            <p>{version === null ? words.downloadIntro : room.versions.dialog.downloadIntro}</p>
+          )}
           {action === 'update' && row?.order && target !== null && (
             <>
               <p data-update-to={target}>
@@ -1266,7 +1285,13 @@ export function ActionDialog({
               {warning}
             </p>
           )}
-          <StepLine step={step} machine={machine} room={room} sessionHref={sessionHref} />
+          <StepLine
+            step={step}
+            machine={machine}
+            room={room}
+            sessionHref={sessionHref}
+            kind={version === null ? undefined : 'DownloadVersion'}
+          />
           <div className="pie">
             <button
               type="button"

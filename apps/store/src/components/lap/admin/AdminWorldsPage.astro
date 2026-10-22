@@ -1042,6 +1042,54 @@ const covers = Object.fromEntries(
   [data-worlds-panel] .codigo-nuevo p {
     margin: 0;
   }
+  /* A world's versions: one line each, the published one marked */
+  [data-worlds-panel] .versiones {
+    display: grid;
+    gap: var(--s2);
+    padding-top: var(--s3);
+    border-top: 1px solid var(--linea);
+  }
+  [data-worlds-panel] .versiones .etiqueta,
+  [data-worlds-panel] .versiones p {
+    margin: 0;
+  }
+  [data-worlds-panel] .versiones ul {
+    display: grid;
+    gap: var(--s3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  [data-worlds-panel] .versiones li {
+    display: grid;
+    gap: var(--s1);
+  }
+  [data-worlds-panel] .versiones li[data-new='yes'] {
+    outline: 2px solid var(--verdemar);
+    outline-offset: 4px;
+    border-radius: var(--radio-control);
+  }
+  /* «≈ 40 MB» never breaks in the middle of its figure. */
+  [data-worlds-panel] [data-version-size] {
+    white-space: nowrap;
+  }
+  [data-worlds-panel] .version-nombre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+  }
+  [data-worlds-panel] .marca.publicada {
+    color: var(--verdemar);
+    border-color: var(--verdemar);
+  }
+  [data-worlds-panel] .versiones .llegando {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    color: var(--texto-2);
+    font-size: 0.875rem;
+  }
   /* The landing notice: the house's toast (.aviso), above the cards */
   [data-worlds-panel] .aviso {
     z-index: 20;

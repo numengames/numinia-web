@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { DoorPhase } from '../fleet';
+import type { DoorPhase, VersionComing, VersionInfo } from '../fleet';
 import type { SummaCard } from '../summa';
 import {
   DEFAULT_IMAGE,
@@ -17,6 +17,24 @@ import {
   addressOwner,
   applyNames,
   applySettling,
+  canDeleteVersion,
+  canDownloadVersion,
+  canDuplicate,
+  comingShare,
+  describeComing,
+  formatVersionDate,
+  versionBlock,
+  versionTargets,
+  versionNo,
+  type ComingWords,
+  canImportVersion,
+  canPublish,
+  importReplace,
+  originLabel,
+  publishedVersion,
+  unpublishedVersion,
+  versionsMax,
+  versionsSupported,
   SETTLE_MS,
   engineVersion,
   settleMemory,
@@ -66,6 +84,7 @@ import {
   worldCards,
   worldUrl,
   type EngineRelease,
+  type MachineSummary,
   type Probe,
   type ReasonWords,
   type WorldOrder,
@@ -921,6 +940,7 @@ const WORDS: ReasonWords = {
   uploading: 'uploading',
   importing: 'importing',
   updating: 'updating',
+  switching: 'switching',
   unknown: 'unknown',
 };
 
@@ -944,6 +964,7 @@ describe('describeStatus — the reason, in one line', () => {
     expect(describeStatus({ ...base, phase: 'uploading' }, WORDS)).toBe('uploading');
     expect(describeStatus({ ...base, phase: 'importing' }, WORDS)).toBe('importing');
     expect(describeStatus({ ...base, phase: 'updating' }, WORDS)).toBe('updating');
+    expect(describeStatus({ ...base, phase: 'switching' }, WORDS)).toBe('switching');
   });
 
   it('names a failure that is not HTTP, and an HTTP failure without a status', () => {
@@ -1329,5 +1350,386 @@ describe('the room lists the worlds that are on first', () => {
     });
     expect(rows.map((row) => row.id)).toEqual(['alfa', 'beta', 'zeta']);
     expect(rowsOnFirst(rows).map((row) => row.id)).toEqual(['beta', 'zeta', 'alfa']);
+  });
+});
+
+describe('a world’s versions — what a card may offer', () => {
+  const v = (
+    id: string,
+    published: boolean,
+    origin: VersionInfo['origin'] = 'created',
+  ): VersionInfo => ({
+    id,
+    published,
+    bytes: 1024,
+    createdAt: '2026-10-22T08:00:00Z',
+    origin,
+  });
+  const ONE = [v('v1', true)];
+  const TWO = [v('v1', true), v('v2', false, 'copy:v1')];
+  const FLIPPED = [v('v1', false), v('v3', true, 'zip')];
+  const COMING: VersionComing = { kind: 'duplicate', state: 'waiting' };
+  const rowWith = (extra: Partial<WorldRow>, phase: DoorPhase = 'running'): WorldRow => {
+    const [row] = buildRows({
+      orders: [order('p2')],
+      phases: { p2: phase },
+      cards: [],
+      probes: {},
+    });
+    return { ...(row as WorldRow), ...extra };
+  };
+
+  it('carries the versions and the version coming from the door onto the row, and nothing for a world without', () => {
+    const rows = buildRows({
+      orders: [order('a'), order('b'), order('c')],
+      versions: { a: TWO, b: [] },
+      versionComing: { a: COMING },
+      leaving: [{ id: 'gone', server: 'open-1', domain: null }],
+      arriving: [
+        {
+          id: 'new',
+          server: 'open-1',
+          domain: 'new.numen.games',
+          phase: 'importing',
+          upload: null,
+        },
+      ],
+      legacy: [{ id: 'old', domain: 'old.numen.games', server: 'vps' }],
+      cards: [],
+      probes: {},
+    });
+    const by = (id: string): WorldRow => rows.find((row) => row.id === id) as WorldRow;
+    expect(by('a').versions).toEqual(TWO);
+    expect(by('a').versionComing).toEqual(COMING);
+    expect(by('b').versions).toEqual([]);
+    expect(by('b')).not.toHaveProperty('versionComing');
+    // An older door lists none: the row has none (not an empty list).
+    expect(by('c')).not.toHaveProperty('versions');
+    for (const id of ['gone', 'new', 'old']) expect(by(id)).not.toHaveProperty('versions');
+  });
+
+  it('knows a world being published as one that is changing, and its words', () => {
+    const rows = buildRows({
+      orders: [order('p2')],
+      phases: { p2: 'switching' },
+      cards: [],
+      probes: { p2: { ok: true, users: 1, ais: null, uptime: 3, commit: null } },
+    });
+    expect(rows[0]).toMatchObject({ phase: 'switching', status: 'changing' });
+    expect(describeStatus(rows[0] as WorldRow, WORDS)).toBe('switching');
+    // It comes back booting: the room waits for it before calling it «not answering».
+    const DOWN: Probe = { ok: false, reason: 'timeout' };
+    const switching = buildRows({
+      orders: [order('p2')],
+      phases: { p2: 'switching' },
+      cards: [],
+      probes: {},
+    });
+    const memory = settleMemory(switching, {}, 1_000);
+    expect(memory).toEqual({ p2: { phase: 'switching', since: 1_000 } });
+    const back = buildRows({
+      orders: [order('p2')],
+      phases: { p2: 'running' },
+      cards: [],
+      probes: { p2: DOWN },
+    });
+    expect(applySettling(back, memory)[0]?.status).toBe('changing');
+  });
+
+  it('says whether a machine keeps versions, and how many, from what its door said', () => {
+    const machine = (extra: Partial<MachineSummary>): MachineSummary => ({
+      alias: 'open-1',
+      open: true,
+      reason: null,
+      heartbeat: null,
+      listens: [],
+      recipe: null,
+      imports: null,
+      ...extra,
+    });
+    expect(versionsSupported({ versions: { max: 2 } })).toBe(true);
+    expect(versionsSupported({ versions: null })).toBe(false);
+    expect(versionsSupported({})).toBe(false);
+    expect(versionsSupported(undefined)).toBe(false);
+    const machines = [
+      machine({ versions: { max: 2 } }),
+      machine({ alias: 'open-2' }),
+      machine({ alias: 'open-3', versions: { max: 2 }, open: false }),
+    ];
+    expect(versionsMax(machines, 'open-1')).toBe(2);
+    expect(versionsMax(machines, 'open-2')).toBeNull();
+    expect(versionsMax(machines, 'open-3')).toBeNull();
+    expect(versionsMax(machines, 'elsewhere')).toBeNull();
+  });
+
+  it('finds the published version and the one beside it', () => {
+    expect(publishedVersion(rowWith({ versions: TWO }))?.id).toBe('v1');
+    expect(unpublishedVersion(rowWith({ versions: TWO }))?.id).toBe('v2');
+    // The published one is whichever the door says, not the first.
+    expect(publishedVersion(rowWith({ versions: FLIPPED }))?.id).toBe('v3');
+    expect(unpublishedVersion(rowWith({ versions: FLIPPED }))?.id).toBe('v1');
+    expect(unpublishedVersion(rowWith({ versions: ONE }))).toBeUndefined();
+    expect(publishedVersion(rowWith({ versions: [] }))).toBeUndefined();
+    expect(publishedVersion(rowWith({}))).toBeUndefined();
+    expect(unpublishedVersion(rowWith({}))).toBeUndefined();
+  });
+
+  it('offers a duplicate only to a world with one version, nothing under way, on a door that keeps two', () => {
+    expect(canDuplicate(rowWith({ versions: ONE }), 2)).toBe(true);
+    expect(canDuplicate(rowWith({ versions: ONE }, 'stopped'), 2)).toBe(true);
+    expect(canDuplicate(rowWith({ versions: TWO }), 2)).toBe(false);
+    expect(canDuplicate(rowWith({ versions: [] }), 2)).toBe(false);
+    expect(canDuplicate(rowWith({}), 2)).toBe(false);
+    // The door says no versions (older), or room for only one.
+    expect(canDuplicate(rowWith({ versions: ONE }), null)).toBe(false);
+    expect(canDuplicate(rowWith({ versions: ONE }), 1)).toBe(false);
+    expect(canDuplicate(rowWith({ versions: ONE, versionComing: COMING }), 2)).toBe(false);
+    for (const phase of ['switching', 'stopping', 'starting', 'updating', 'creating'] as const) {
+      expect(canDuplicate(rowWith({ versions: ONE }, phase), 2)).toBe(false);
+    }
+    // A watched legacy world and a world whose order is gone are never changed.
+    expect(canDuplicate(rowWith({ versions: ONE, order: null }), 2)).toBe(false);
+    expect(
+      canDuplicate(
+        rowWith({ versions: ONE, legacy: { id: 'old', domain: 'old.numen.games', server: 'vps' } }),
+        2,
+      ),
+    ).toBe(false);
+  });
+
+  it('says what `replace` must be for a zip as a version: empty with one, the unpublished with two', () => {
+    expect(importReplace(rowWith({ versions: ONE }), 2)).toBe('');
+    expect(importReplace(rowWith({ versions: TWO }), 2)).toBe('v2');
+    expect(importReplace(rowWith({ versions: FLIPPED }), 2)).toBe('v1');
+    expect(importReplace(rowWith({ versions: ONE }, 'stopped'), 2)).toBe('');
+    expect(canImportVersion(rowWith({ versions: ONE }), 2)).toBe(true);
+    expect(canImportVersion(rowWith({ versions: TWO }), 2)).toBe(true);
+    // No published version listed (the machine could not read them), nothing listed, an older door.
+    expect(importReplace(rowWith({ versions: [] }), 2)).toBeNull();
+    expect(importReplace(rowWith({ versions: [v('v1', false)] }), 2)).toBeNull();
+    expect(importReplace(rowWith({}), 2)).toBeNull();
+    expect(importReplace(rowWith({ versions: ONE }), null)).toBeNull();
+    // Full and nothing unpublished to replace.
+    expect(importReplace(rowWith({ versions: ONE }), 1)).toBeNull();
+    expect(importReplace(rowWith({ versions: [v('v1', true), v('v2', true)] }), 2)).toBeNull();
+    expect(importReplace(rowWith({ versions: TWO, versionComing: COMING }), 2)).toBeNull();
+    expect(importReplace(rowWith({ versions: TWO }, 'switching'), 2)).toBeNull();
+    expect(canImportVersion(rowWith({ versions: TWO }, 'updating'), 2)).toBe(false);
+  });
+
+  it('offers a zip only the worlds that can take it as a version, of its engine, on a machine that takes zips', () => {
+    const named = (id: string, extra: Partial<WorldRow>, orderExtra: Partial<WorldOrder> = {}) => {
+      const [row] = buildRows({
+        orders: [order(id, orderExtra)],
+        phases: { [id]: 'running' },
+        cards: [],
+        probes: {},
+      });
+      return { ...(row as WorldRow), ...extra };
+    };
+    const rows = [
+      named('plain', { versions: ONE }),
+      named('pair', { versions: TWO }),
+      named('engine', { versions: ONE }, { image: ENGINE_OLD, server: 'open-2' }),
+      named('older', {}),
+      named('full', { versions: [v('v1', true), v('v2', true)] }),
+      named('busy', { versions: ONE, versionComing: COMING }),
+      named('away', { versions: ONE }, { server: 'open-3' }),
+    ];
+    const importers = [{ alias: 'open-1' }, { alias: 'open-2' }];
+    const max = (row: WorldRow): number | null => (row.id === 'older' ? null : 2);
+    const ids = (engine: 'numinia-hyperfy2' | 'numinia-engine') =>
+      versionTargets(rows, importers, engine, max).map((row) => row.id);
+    // Hyperfy zips: the worlds with room for a version on a machine that takes zips (not `away`).
+    expect(ids('numinia-hyperfy2')).toEqual(['plain', 'pair']);
+    // A zip of the Numinia Engine goes to a world of that engine only.
+    expect(ids('numinia-engine')).toEqual(['engine']);
+    // No machine that takes zips: nothing to offer.
+    expect(versionTargets(rows, [], 'numinia-hyperfy2', max)).toEqual([]);
+    // A world whose order is gone, or that no machine places, has nothing to take it.
+    expect(
+      versionTargets(
+        [{ ...(rows[0] as WorldRow), place: null }],
+        importers,
+        'numinia-hyperfy2',
+        max,
+      ),
+    ).toEqual([]);
+  });
+
+  it('offers to publish only when a version waits beside the published one and nothing else is happening', () => {
+    expect(canPublish(rowWith({ versions: TWO }))).toBe(true);
+    expect(canPublish(rowWith({ versions: TWO }, 'stopped'))).toBe(true);
+    expect(canPublish(rowWith({ versions: FLIPPED }))).toBe(true);
+    expect(canPublish(rowWith({ versions: ONE }))).toBe(false);
+    expect(canPublish(rowWith({ versions: [v('v1', false), v('v2', false)] }))).toBe(false);
+    expect(canPublish(rowWith({ versions: [] }))).toBe(false);
+    expect(canPublish(rowWith({}))).toBe(false);
+    expect(canPublish(rowWith({ versions: TWO, versionComing: COMING }))).toBe(false);
+    expect(canPublish(rowWith({ versions: TWO }, 'switching'))).toBe(false);
+    expect(canPublish(rowWith({ versions: TWO }, 'updating'))).toBe(false);
+  });
+
+  it('lets only the unpublished version go, and never the last or the published one', () => {
+    expect(canDeleteVersion(rowWith({ versions: TWO }), 'v2')).toBe(true);
+    expect(canDeleteVersion(rowWith({ versions: TWO }, 'stopped'), 'v2')).toBe(true);
+    expect(canDeleteVersion(rowWith({ versions: FLIPPED }), 'v1')).toBe(true);
+    expect(canDeleteVersion(rowWith({ versions: TWO }), 'v1')).toBe(false);
+    expect(canDeleteVersion(rowWith({ versions: TWO }), 'v9')).toBe(false);
+    expect(canDeleteVersion(rowWith({ versions: ONE }), 'v1')).toBe(false);
+    expect(canDeleteVersion(rowWith({ versions: [v('v1', false), v('v2', false)] }), 'v2')).toBe(
+      false,
+    );
+    expect(canDeleteVersion(rowWith({}), 'v2')).toBe(false);
+    expect(canDeleteVersion(rowWith({ versions: TWO, versionComing: COMING }), 'v2')).toBe(false);
+    expect(canDeleteVersion(rowWith({ versions: TWO }, 'switching'), 'v2')).toBe(false);
+  });
+
+  it('says how a version came to be as a key and, for a copy, the version it comes from', () => {
+    expect(originLabel('created')).toEqual({ key: 'created', from: null });
+    expect(originLabel('zip')).toEqual({ key: 'zip', from: null });
+    expect(originLabel('copy:v1')).toEqual({ key: 'copy', from: 'v1' });
+    expect(originLabel('copy:v12')).toEqual({ key: 'copy', from: 'v12' });
+  });
+
+  it('calls a version by its number', () => {
+    expect(versionNo('v1')).toBe(1);
+    expect(versionNo('v12')).toBe(12);
+  });
+
+  it('lets any listed version be downloaded while the world sits still and nothing is on its way', () => {
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v1')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v2')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }, 'stopped'), 'v2')).toBe(true);
+    expect(canDownloadVersion(rowWith({ versions: TWO }), 'v9')).toBe(false);
+    expect(canDownloadVersion(rowWith({}), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO, versionComing: COMING }), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO }, 'switching'), 'v1')).toBe(false);
+    expect(canDownloadVersion(rowWith({ versions: TWO, order: null }), 'v1')).toBe(false);
+  });
+
+  it('builds the block of a card: a line per version, what each may do, and the one note', () => {
+    const one = versionBlock(rowWith({ versions: ONE }), 2, false);
+    expect(one?.note).toBe('one');
+    expect(one?.coming).toBeNull();
+    expect(one?.lines).toEqual([
+      {
+        id: 'v1',
+        published: true,
+        origin: { key: 'created', from: null },
+        createdAt: '2026-10-22T08:00:00Z',
+        bytes: 1024,
+        canDownload: true,
+        canDuplicate: true,
+        canPublish: false,
+        canDelete: false,
+      },
+    ]);
+    const two = versionBlock(rowWith({ versions: TWO }), 2, false);
+    expect(two?.note).toBe('two');
+    expect(two?.lines.map((line) => [line.id, line.canDownload, line.canDuplicate])).toEqual([
+      ['v1', true, false],
+      ['v2', true, false],
+    ]);
+    expect(two?.lines[1]).toMatchObject({
+      origin: { key: 'copy', from: 'v1' },
+      canPublish: true,
+      canDelete: true,
+    });
+    expect(two?.lines[0]).toMatchObject({ canPublish: false, canDelete: false });
+    // The published one is whichever the door says.
+    const flipped = versionBlock(rowWith({ versions: FLIPPED }, 'stopped'), 2, false);
+    expect(flipped?.lines.map((line) => [line.id, line.canPublish, line.canDelete])).toEqual([
+      ['v1', true, true],
+      ['v3', false, false],
+    ]);
+  });
+
+  it('shows no block without versions, on an older door, or for a world that is not the fleet’s', () => {
+    expect(versionBlock(rowWith({ versions: TWO }), null, false)).toBeNull();
+    expect(versionBlock(rowWith({}), 2, false)).toBeNull();
+    expect(versionBlock(rowWith({ versions: [] }), 2, false)).toBeNull();
+    expect(versionBlock(rowWith({ versions: TWO, order: null }), 2, false)).toBeNull();
+    expect(
+      versionBlock(
+        rowWith({ versions: TWO, legacy: { id: 'old', domain: 'old.numen.games', server: 'vps' } }),
+        2,
+        false,
+      ),
+    ).toBeNull();
+  });
+
+  it('offers nothing while a request of this tab is on its way, a version coming, or the world switching', () => {
+    const quiet = (block: ReturnType<typeof versionBlock>): boolean =>
+      block !== null &&
+      block.lines.every(
+        (line) => !line.canDownload && !line.canDuplicate && !line.canPublish && !line.canDelete,
+      );
+    expect(quiet(versionBlock(rowWith({ versions: TWO }), 2, true))).toBe(true);
+    expect(quiet(versionBlock(rowWith({ versions: ONE }), 2, true))).toBe(true);
+    const coming = versionBlock(rowWith({ versions: ONE, versionComing: COMING }), 2, false);
+    expect(quiet(coming)).toBe(true);
+    expect(coming?.coming).toEqual(COMING);
+    expect(quiet(versionBlock(rowWith({ versions: TWO }, 'switching'), 2, false))).toBe(true);
+  });
+
+  it('offers «subir un zip como versión» while the world can take one and nothing is on its way', () => {
+    expect(versionBlock(rowWith({ versions: ONE }), 2, false)?.canImport).toBe(true);
+    expect(versionBlock(rowWith({ versions: TWO }), 2, false)?.canImport).toBe(true);
+    // Full of published versions, a version coming, a request of this tab, the world switching.
+    expect(versionBlock(rowWith({ versions: ONE }), 1, false)?.canImport).toBe(false);
+    expect(
+      versionBlock(rowWith({ versions: ONE, versionComing: COMING }), 2, false)?.canImport,
+    ).toBe(false);
+    expect(versionBlock(rowWith({ versions: ONE }), 2, true)?.canImport).toBe(false);
+    expect(versionBlock(rowWith({ versions: TWO }, 'switching'), 2, false)?.canImport).toBe(false);
+  });
+
+  it('writes the note only where it helps: one version on a door that keeps two, or two', () => {
+    expect(versionBlock(rowWith({ versions: ONE }), 1, false)?.note).toBeNull();
+    expect(
+      versionBlock(rowWith({ versions: [...TWO, v('v3', false)] }), 3, false)?.note,
+    ).toBeNull();
+  });
+
+  it('says how far a zip arriving as a version is, and what is happening, in the room’s words', () => {
+    const words: ComingWords = {
+      importing: 'Llegando… {state}',
+      duplicating: 'Duplicando…',
+      uploading: 'subiendo {p} %',
+      waiting: 'esperando turno',
+      working: 'preparándola',
+    };
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 50, of: 200 })).toBe(25);
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 900, of: 100 })).toBe(100);
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 5 })).toBeNull();
+    expect(comingShare({ kind: 'import', state: 'uploading', bytes: 5, of: 0 })).toBeNull();
+    expect(comingShare({ kind: 'import', state: 'waiting' })).toBeNull();
+    expect(describeComing({ kind: 'import', state: 'uploading', bytes: 50, of: 200 }, words)).toBe(
+      'Llegando… subiendo 25 %',
+    );
+    expect(describeComing({ kind: 'import', state: 'uploading' }, words)).toBe(
+      'Llegando… subiendo 0 %',
+    );
+    expect(describeComing({ kind: 'import', state: 'waiting' }, words)).toBe(
+      'Llegando… esperando turno',
+    );
+    expect(describeComing({ kind: 'import', state: 'working' }, words)).toBe(
+      'Llegando… preparándola',
+    );
+    for (const state of ['uploading', 'waiting', 'working'] as const) {
+      expect(describeComing({ kind: 'duplicate', state }, words)).toBe('Duplicando…');
+    }
+  });
+
+  it('writes a version’s date in the reader’s clock, or leaves what it cannot read', () => {
+    const iso = '2026-10-22T08:00:00Z';
+    expect(formatVersionDate(iso, 'es')).toBe(
+      new Date(iso).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }),
+    );
+    expect(formatVersionDate(iso)).toBe(
+      new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }),
+    );
+    expect(formatVersionDate('not a date')).toBe('not a date');
   });
 });

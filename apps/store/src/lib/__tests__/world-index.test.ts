@@ -44,7 +44,7 @@ describe('worldState', () => {
   it('says on, off or under works from the phase', () => {
     expect(worldState('running', null)).toBe('on');
     expect(worldState('stopped', 3)).toBe('off');
-    for (const phase of ['creating', 'importing', 'uploading', 'updating'] as const) {
+    for (const phase of ['creating', 'importing', 'uploading', 'updating', 'switching'] as const) {
       expect(worldState(phase, null)).toBe('works');
     }
   });
@@ -335,11 +335,19 @@ describe('the ones that are on come first', () => {
   });
 
   it('ranks on, under works, unsaid and off in that order', () => {
-    expect(['off', null, 'works', 'on'].map((s) => stateRank(s as 'on' | 'off' | 'works' | null))).toEqual([3, 2, 1, 0]);
+    expect(
+      ['off', null, 'works', 'on'].map((s) => stateRank(s as 'on' | 'off' | 'works' | null)),
+    ).toEqual([3, 2, 1, 0]);
   });
 
   it('orders a list of cards without touching the original and keeps equals in place', () => {
-    const list = [card('a', 'off'), card('b', 'on'), card('c', null), card('d', 'works'), card('e', 'on')];
+    const list = [
+      card('a', 'off'),
+      card('b', 'on'),
+      card('c', null),
+      card('d', 'works'),
+      card('e', 'on'),
+    ];
     expect(onFirst(list).map((c) => c.id)).toEqual(['b', 'e', 'd', 'c', 'a']);
     expect(list.map((c) => c.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
   });

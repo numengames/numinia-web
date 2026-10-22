@@ -32,6 +32,7 @@ import {
   readImportRule,
   readRequest,
   readTickets,
+  readVersionProblem,
   recipeState,
   settled,
   shortSha,
@@ -64,6 +65,7 @@ import {
   readEngineRelease,
   rowPlace,
   slot,
+  versionsMax,
   type EngineRelease,
   type HomeOption,
   type MachineSummary,
@@ -77,8 +79,11 @@ import { LunaEspera } from '../../chrome/LunaEspera';
 import { problemText } from './fleet-action';
 import { ImportDialog, ZIP_ACCEPT, type Handover, type ImportSource } from './ImportDialog';
 import { ActionDialog, NewWorldDialog, WorldCodeDialog } from './WorldDialogs';
+import { VersionDialog, type VersionAsk } from './WorldVersionDialog';
 import { PlaceDialog, type PlaceAsk } from './WorldPlace';
 import { WorldRenameDialog, type RenameAsk } from './WorldRenameDialog';
+import type { VersionAction, VersionsView } from './WorldVersions';
+import { useVersionJobs } from './version-follow';
 import {
   CardsView,
   ListView,
@@ -174,11 +179,15 @@ function localTime(iso: string): string {
 function machineWords(
   rule: string | null,
   entry: string | null,
-  ticket: ImportTicket,
+  ticket: Pick<ImportTicket, 'machine' | 'name' | 'bytes' | 'asVersion'>,
   room: WorldsRoomMessages,
 ): string {
   const found = readImportRule(rule);
   if (found === null) {
+    // A zip as a version is also refused for what is the world's, not the zip's (it is full, busy…).
+    const problem = ticket.asVersion === true ? readVersionProblem(rule) : null;
+    if (problem !== null)
+      return fill(room.versions.problems[problem], { m: ticket.machine, n: '' });
     return problemText(
       { at: 'failed', problem: 'machine', detail: rule ?? '?' },
       ticket.machine,
@@ -585,9 +594,17 @@ export function WorldsPanel({
   const [server, setServer] = useState('');
   const [home, setHome] = useState('');
   const [wizard, setWizard] = useState(false);
-  const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
+  const [change, setChange] = useState<{
+    row: WorldRow;
+    action: WorldAction;
+    version?: string;
+  } | null>(null);
+  // A version to publish, delete or duplicate: its dialog (a download is `change`'s).
+  const [versionAsk, setVersionAsk] = useState<VersionAsk | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
   const [source, setSource] = useState<ImportSource | null>(null);
+  // The world whose card asked for the zip in `source`: the one it becomes a version of.
+  const [versionOf, setVersionOf] = useState<string | null>(null);
   const [transfers, setTransfers] = useState<readonly Transfer[]>([]);
   // How many files are dragged over the room (the overlay), or null.
   const [drag, setDrag] = useState<number | null>(null);
@@ -595,6 +612,7 @@ export function WorldsPanel({
   const picker = useRef<HTMLInputElement>(null);
   // Which upload a picked zip is for: null = a new one (the dialog).
   const pickFor = useRef<string | null>(null);
+  const pickVersion = useRef<string | null>(null);
   const controllers = useRef(new Map<string, AbortController>());
   const tracked = useRef<readonly Transfer[]>([]);
   tracked.current = transfers;
@@ -671,6 +689,19 @@ export function WorldsPanel({
 
   useEffect(() => load(), [load]);
 
+  // Version requests this tab handed to a machine: followed until it has finished with them.
+  const versionJobs = useVersionJobs(load, room, (job, result) =>
+    job.zip !== undefined && readImportRule(result.rule) !== null
+      ? machineWords(
+          result.rule,
+          result.entry,
+          { machine: job.machine, name: job.zip.name, bytes: job.zip.bytes, asVersion: true },
+          room,
+        )
+      : null,
+  );
+  const followVersion = versionJobs.follow;
+
   // Every world the room knows, those being deleted included (a name or an
   // address is not free until they are gone); the list shows the others.
   const known = panel.at === 'ready' ? panel.fleet.rows : [];
@@ -693,8 +724,10 @@ export function WorldsPanel({
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));
   const homeOptions: readonly HomeOption[] = useMemo(() => fleetHomes(rows, homes), [rows, homes]);
 
-  // While a machine creates, stops, starts or deletes a world, keep the room current.
-  const changing = known.some((row) => row.status === 'changing');
+  // While a machine creates, stops, starts or deletes a world, or makes a version, keep the room current.
+  const changing =
+    known.some((row) => row.status === 'changing' || row.versionComing !== undefined) ||
+    versionJobs.jobs.length > 0;
   useEffect(() => {
     if (!changing) return;
     const timer = setInterval(() => load(), CHANGING_REFRESH_MS);
@@ -737,6 +770,32 @@ export function WorldsPanel({
     [patch, load, room],
   );
 
+  // Its machine has the whole zip. A world from it is watched here until it lands; a zip that
+  // is a version of a world already here needs no card of its own — the room follows its
+  // request like any version request, and the world's block says the rest.
+  const arrived = useCallback(
+    (ticket: ImportTicket, file: File) => {
+      if (ticket.asVersion !== true) {
+        patch(ticket.world, { state: 'checking', sent: file.size });
+        load();
+        void watch(ticket);
+        return;
+      }
+      tracked.current = tracked.current.filter((t) => t.ticket.world !== ticket.world);
+      setTransfers((current) => current.filter((t) => t.ticket.world !== ticket.world));
+      followVersion({
+        machine: ticket.machine,
+        world: ticket.world,
+        kind: 'ImportVersion',
+        version: '',
+        request: ticket.nonce,
+        zip: { name: ticket.name, bytes: ticket.bytes },
+      });
+      load();
+    },
+    [patch, load, watch, followVersion],
+  );
+
   // The zip, whole, to the slot its machine opened for it; the card says how far it got.
   const send = useCallback(
     async (ticket: ImportTicket, file: File) => {
@@ -763,9 +822,7 @@ export function WorldsPanel({
       if (controllers.current.get(world) !== controller) return;
       controllers.current.delete(world);
       if (result.ok) {
-        patch(world, { state: 'checking', sent: file.size });
-        load();
-        void watch(ticket);
+        arrived(ticket, file);
         return;
       }
       if (result.error === 'cut' || result.error === 'unreachable') {
@@ -783,9 +840,7 @@ export function WorldsPanel({
           return;
         }
         if (after !== null && after.state !== 'uploading') {
-          patch(world, { state: 'checking', sent: file.size });
-          load();
-          void watch(ticket);
+          arrived(ticket, file);
           return;
         }
       }
@@ -811,7 +866,7 @@ export function WorldsPanel({
         ),
       });
     },
-    [patch, load, watch, room],
+    [patch, load, arrived, room],
   );
 
   // After a reload: the zip picked again must be the one signed (its size, then its fingerprint).
@@ -897,6 +952,18 @@ export function WorldsPanel({
             },
           ];
         }
+        // A zip as a version the machine already has: the room follows it, as it would have.
+        if (ticket.asVersion === true) {
+          followVersion({
+            machine: ticket.machine,
+            world: ticket.world,
+            kind: 'ImportVersion',
+            version: '',
+            request: ticket.nonce,
+            zip: { name: ticket.name, bytes: ticket.bytes },
+          });
+          return [];
+        }
         return [{ ...base, state: 'checking', told: false }];
       });
       if (back.length === 0) return;
@@ -904,7 +971,7 @@ export function WorldsPanel({
       tracked.current = [...tracked.current, ...back];
       for (const transfer of back) if (transfer.state === 'checking') void watch(transfer.ticket);
     });
-  }, [panel.at, room, watch]);
+  }, [panel.at, room, watch, followVersion]);
 
   // What a reload needs to finish them: the uploads still open (never a code).
   const open = transfers
@@ -1001,7 +1068,9 @@ export function WorldsPanel({
       setDrag(null);
       if (!canImport || dialogOpen()) return;
       const dropped = readDrop(event.dataTransfer);
-      if (dropped !== null) setSource(dropped);
+      if (dropped === null) return;
+      setVersionOf(null);
+      setSource(dropped);
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragover', over);
@@ -1063,6 +1132,24 @@ export function WorldsPanel({
   };
   const onAction = (row: WorldRow, action: WorldAction): void => setChange({ row, action });
   const onCode = (row: WorldRow, mode: CodeMode): void => setCodeAsk({ row, mode });
+  const onVersion = (row: WorldRow, action: VersionAction, version: string): void => {
+    if (action === 'download') setChange({ row, action: 'download', version });
+    else setVersionAsk({ row, action, version });
+  };
+  const versions: VersionsView = {
+    max: (row) => versionsMax(fleet.machines, rowPlace(row)?.server ?? ''),
+    onAsk: onVersion,
+    onImport: (row) => {
+      pickFor.current = null;
+      pickVersion.current = row.id;
+      picker.current?.click();
+    },
+    sending: new Set(
+      transfers.filter((t) => t.ticket.asVersion === true).map((t) => t.ticket.world),
+    ),
+    following: versionJobs.following,
+    made: versionJobs.made,
+  };
   const onRename = (row: WorldRow): void => setRenaming({ id: row.id, title: row.title });
   const viewName: Readonly<Record<View, string>> = {
     cards: room.views.cards,
@@ -1078,6 +1165,7 @@ export function WorldsPanel({
       : null;
   };
   const changeMachine = change === null ? null : (rowPlace(change.row)?.server ?? null);
+  const versionMachine = versionAsk === null ? null : (rowPlace(versionAsk.row)?.server ?? null);
   // Before signing for a world's code: a machine whose door says no recipe is
   // older than per-world codes and refuses them; a change waits for a machine that obeys.
   const codeWarning = (ask: { readonly row: WorldRow; readonly mode: CodeMode }): string | null => {
@@ -1111,6 +1199,7 @@ export function WorldsPanel({
         problem: transfer.problem,
         retry: transfer.retry && transfer.file !== null,
         code: transfer.code,
+        version: transfer.ticket.asVersion === true,
       },
     ]),
   );
@@ -1123,6 +1212,7 @@ export function WorldsPanel({
       if (transfer.file !== null) void send(transfer.ticket, transfer.file);
     } else if (action === 'pick') {
       pickFor.current = row.id;
+      pickVersion.current = null;
       picker.current?.click();
     } else {
       const running = controllers.current.get(row.id);
@@ -1137,6 +1227,8 @@ export function WorldsPanel({
     if (file === undefined) return;
     const world = pickFor.current;
     pickFor.current = null;
+    setVersionOf(pickVersion.current);
+    pickVersion.current = null;
     if (world === null) setSource({ kind: 'file', file });
     else void resume(world, file);
   };
@@ -1185,6 +1277,7 @@ export function WorldsPanel({
             disabled={importers.length === 0}
             onClick={() => {
               pickFor.current = null;
+              pickVersion.current = null;
               picker.current?.click();
             }}
             data-metric="worlds-import"
@@ -1412,6 +1505,7 @@ export function WorldsPanel({
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
+          versions={versions}
         />
       )}
       {shown.length > 0 && view === 'list' && (
@@ -1434,6 +1528,7 @@ export function WorldsPanel({
           transfers={transferViews}
           onTransfer={onTransfer}
           placement={placement}
+          versions={versions}
         />
       )}
 
@@ -1483,6 +1578,27 @@ export function WorldsPanel({
             <p className="titulo-capa">{drag > 1 ? room.import.dropOne : room.import.dropTitle}</p>
             {drag <= 1 && <p>{room.import.dropNote}</p>}
             <p className="mono">{fill(room.import.dropCap, { max: formatSize(zipMax, lang) })}</p>
+          </div>
+        </div>
+      )}
+
+      {versionJobs.note !== null && (
+        <div
+          className="aviso"
+          data-tono={versionJobs.note.ok ? 'exito' : 'aviso'}
+          role={versionJobs.note.ok ? 'status' : 'alert'}
+          data-version-note
+        >
+          <p>{versionJobs.note.text}</p>
+          <div className="acciones">
+            <button
+              type="button"
+              className="btn btn-fantasma"
+              onClick={versionJobs.dismiss}
+              data-metric="worlds-version-notice-close"
+            >
+              {room.versions.close}
+            </button>
           </div>
         </div>
       )}
@@ -1542,6 +1658,8 @@ export function WorldsPanel({
         sessionHref={sessionHref}
         listens={listens}
         release={fleet.engine}
+        versionOf={versionOf}
+        versionMax={versions.max}
         onClose={() => setSource(null)}
         onFile={(file) => setSource({ kind: 'file', file })}
         onHandover={handover}
@@ -1555,6 +1673,21 @@ export function WorldsPanel({
         wallet={fleet.wallet}
         sessionHref={sessionHref}
         warning={changeMachine === null ? null : notObeying(changeMachine)}
+        listens={listens}
+      />
+      <VersionDialog
+        ask={versionAsk}
+        onClose={() => setVersionAsk(null)}
+        onChanged={refresh}
+        onAccepted={versionJobs.follow}
+        onDownloadFirst={(row, version) => {
+          setVersionAsk(null);
+          setChange({ row, action: 'download', version });
+        }}
+        room={room}
+        wallet={fleet.wallet}
+        sessionHref={sessionHref}
+        warning={versionMachine === null ? null : notObeying(versionMachine)}
         listens={listens}
       />
       <PlaceDialog

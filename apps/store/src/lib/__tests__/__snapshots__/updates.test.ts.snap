@@ -3,6 +3,20 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-22 08:54",
+    "entries": [
+      {
+        "text": "Each world can now keep two versions. In the worlds room a world’s card lists them: which one is published, where it came from, how big it is. You can duplicate the version you have to try changes without touching the published one, publish the other (people inside leave for a few seconds, the address and the keys stay the same), download either one, and delete the one that is not published — the room offers to download it first.",
+        "type": "NEW",
+      },
+      {
+        "text": "A zip can now come into a world as a new version with a single signature, without publishing it: the world keeps running as it is until you decide. «Reemplazar con un zip», which needed two signatures and took the world down in between, is gone.",
+        "type": "UPD",
+      },
+    ],
+    "version": "v0.167.0",
+  },
+  {
     "date": "2026-10-22 06:40",
     "entries": [
       {

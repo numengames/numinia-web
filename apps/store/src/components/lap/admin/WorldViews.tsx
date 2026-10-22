@@ -29,6 +29,7 @@ import { communityCover } from '../../../lib/world-index';
 import type { WorldHome } from '../../../lib/worlds-homes';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { WorldGlyph } from './WorldGlyph';
+import { WorldVersions, type VersionsView } from './WorldVersions';
 
 /**
  * `update`: move a world of the Numinia Engine to its newest build
@@ -39,8 +40,13 @@ export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update' | 
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
-/** A zip this tab is bringing back as a world, as its card shows it. */
+/**
+ * A zip this tab is bringing back as a world — or into a world that is here as
+ * a version, which keeps running and keeps its own state — as its card shows it.
+ */
 export interface TransferView {
+  /** The zip goes into a world that is here as a new version: the world's own state stands. */
+  readonly version: boolean;
   /**
    * `sending` its bytes, the machine `checking` it, `cut` or `stopped` on the
    * way, `failed` (a refusal), `half` done before a reload, `matching` a zip
@@ -102,6 +108,8 @@ interface ViewProps {
   readonly placement?: PlacementView | undefined;
   /** The newest published engine build: a card names its version with the build's date. */
   readonly release?: EngineRelease | null | undefined;
+  /** What the cards need for their «Versiones» block; absent: they show none. */
+  readonly versions?: VersionsView | undefined;
 }
 
 const PER_GROUP = 6;
@@ -142,16 +150,22 @@ export function CodeBox({
   );
 }
 
+/** The upload that is about the world itself (a world from its zip); none for a zip that is a version of it. */
+const ofItself = (transfer: TransferView | undefined): TransferView | undefined =>
+  transfer?.version === true ? undefined : transfer;
+
 /** What a world is doing, in one verb: the settled states as they are, a change as what is happening now. */
 function StatusPill({
   row,
   room,
-  transfer,
+  transfer: sent,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
   transfer: TransferView | undefined;
 }) {
+  // A zip on its way as a version leaves the world as it is: running, or stopped.
+  const transfer = ofItself(sent);
   // An upload this tab runs says its own state: on its way, cut, or refused.
   const stuck =
     transfer?.state === 'failed'
@@ -186,7 +200,8 @@ function StatusPill({
       phase === 'deleting' ||
       phase === 'uploading' ||
       phase === 'importing' ||
-      phase === 'updating')
+      phase === 'updating' ||
+      phase === 'switching')
       ? room.phases[phase]
       : null;
   return (
@@ -611,9 +626,10 @@ function NewCode({ row, code, room }: { row: WorldRow; code: string; room: World
  */
 function reasonOf(
   row: WorldRow,
-  transfer: TransferView | undefined,
+  sent: TransferView | undefined,
   room: WorldsRoomMessages,
 ): string | null {
+  const transfer = ofItself(sent);
   if (transfer?.state === 'landed' && row.status === 'stopped') return room.import.fromZip;
   const stuck = transfer?.state;
   if (stuck === 'cut' || stuck === 'stopped' || stuck === 'half' || stuck === 'failed') return null;
@@ -622,7 +638,9 @@ function reasonOf(
 
 /** A code for a world its machine will never make (refused, or its slot gone) is not shown. */
 const codeOf = (transfer: TransferView | undefined): string | null =>
-  transfer === undefined || (transfer.state === 'failed' && !transfer.retry) ? null : transfer.code;
+  transfer === undefined || transfer.version || (transfer.state === 'failed' && !transfer.retry)
+    ? null
+    : transfer.code;
 
 /** A world's organization, its page, and what the house does with it: choose it, or assign it. */
 function HomeLine({ row, placement }: { row: WorldRow; placement: PlacementView }) {
@@ -677,6 +695,7 @@ function WorldCard({
   onTransfer,
   placement,
   release,
+  versions,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
@@ -687,6 +706,7 @@ function WorldCard({
   onTransfer: ViewProps['onTransfer'];
   placement: ViewProps['placement'];
   release: ViewProps['release'];
+  versions: ViewProps['versions'];
 }) {
   const order = row.order;
   const place = rowPlace(row);
@@ -732,6 +752,9 @@ function WorldCard({
             {fill(room.fleetEngine.cardPinned, { b: buildTag(row.pin.image), r: row.pin.reason })}
           </p>
         )}
+        {versions !== undefined && (
+          <WorldVersions row={row} room={room} view={versions} lang={pageLang()} />
+        )}
         {placement !== undefined && <HomeLine row={row} placement={placement} />}
         {code !== null && <NewCode row={row} code={code} room={room} />}
         <CodeLine row={row} room={room} onCode={onCode} onRename={onRename} />
@@ -757,6 +780,7 @@ export function CardsView({
   onTransfer,
   placement,
   release,
+  versions,
 }: ViewProps) {
   return (
     <div className="rejilla">
@@ -772,6 +796,7 @@ export function CardsView({
           onTransfer={onTransfer}
           placement={placement}
           release={release}
+          versions={versions}
         />
       ))}
     </div>
@@ -862,6 +887,7 @@ export function ServersView({
   transfers,
   onTransfer,
   placement,
+  versions,
 }: ViewProps) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const toggle = (key: string): void =>
@@ -893,6 +919,7 @@ export function ServersView({
               transfers={transfers}
               onTransfer={onTransfer}
               placement={placement}
+              versions={versions}
             />
             {group.rows.length > PER_GROUP && (
               <button

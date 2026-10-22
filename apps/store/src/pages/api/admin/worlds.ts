@@ -121,6 +121,8 @@ export const GET: APIRoute = async ({ cookies }) => {
         phases: fleet.phases,
         pins: fleet.pins,
         updateErrors: fleet.updateErrors,
+        versions: fleet.versions,
+        versionComing: fleet.versionComing,
         leaving: fleet.leaving,
         arriving: fleet.arriving,
         cards,
