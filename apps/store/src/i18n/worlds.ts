@@ -53,6 +53,8 @@ export interface WorldsRoomMessages {
     readonly importing: string;
     /** A world moving to another build of its engine. */
     readonly updating: string;
+    /** A version being published: the world is down for a few seconds. */
+    readonly switching: string;
   };
   /** In place of a busy card's buttons. */
   readonly busyNote: string;
@@ -72,6 +74,7 @@ export interface WorldsRoomMessages {
     readonly uploading: string;
     readonly importing: string;
     readonly updating: string;
+    readonly switching: string;
     readonly unknown: string;
   };
   readonly badges: {
@@ -543,6 +546,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Subiendo…',
       importing: 'Revisando…',
       updating: 'Actualizando…',
+      switching: 'Publicando…',
     },
     busyNote: 'Suele tardar un minuto.',
     reasons: {
@@ -561,6 +565,8 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'su zip está llegando a su máquina',
       importing: 'su máquina está revisando su zip',
       updating: 'su máquina lo está pasando a otra versión del motor',
+      switching:
+        'su máquina está cambiando de versión · la gente que esté dentro sale unos segundos',
       unknown: 'todavía sin comprobar',
     },
     badges: {
@@ -962,6 +968,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'actualizó {w}',
         FleetRelease: 'publicó una versión del motor',
         PinWorld: 'fijó {w}',
+        DuplicateVersion: 'duplicó una versión de {w}',
+        PublishVersion: 'publicó una versión de {w}',
+        DeleteVersion: 'borró una versión de {w}',
+        DownloadVersion: 'copió una versión de {w}',
+        ImportVersion: 'subió una versión de {w}',
       },
     },
     fieldNames: {
@@ -1006,6 +1017,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Uploading…',
       importing: 'Checking…',
       updating: 'Updating…',
+      switching: 'Publishing…',
     },
     busyNote: 'This usually takes about a minute.',
     reasons: {
@@ -1024,6 +1036,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'its zip is reaching its machine',
       importing: 'its machine is checking its zip',
       updating: 'its machine is moving it to another engine build',
+      switching: 'its machine is switching versions · people inside leave for a few seconds',
       unknown: 'not checked yet',
     },
     badges: {
@@ -1430,6 +1443,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'updated {w}',
         FleetRelease: 'published an engine release',
         PinWorld: 'pinned {w}',
+        DuplicateVersion: 'duplicated a version of {w}',
+        PublishVersion: 'published a version of {w}',
+        DeleteVersion: 'deleted a version of {w}',
+        DownloadVersion: 'copied a version of {w}',
+        ImportVersion: 'uploaded a version of {w}',
       },
     },
     fieldNames: {
@@ -1475,6 +1493,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'アップロード中…',
       importing: '確認中…',
       updating: '更新中…',
+      switching: '公開中…',
     },
     busyNote: 'ふつうは 1 分ほどかかります。',
     reasons: {
@@ -1493,6 +1512,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'zip がマシンに届いているところ',
       importing: 'マシンが zip を確認中',
       updating: 'マシンがエンジンの別のビルドへ移行中',
+      switching: 'マシンがバージョンを切り替え中 · 中にいる人は数秒間退出します',
       unknown: 'まだ確認していません',
     },
     badges: {
@@ -1898,6 +1918,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: '{w} を更新した',
         FleetRelease: 'エンジンのリリースを公開した',
         PinWorld: '{w} を固定した',
+        DuplicateVersion: '{w} のバージョンを複製した',
+        PublishVersion: '{w} のバージョンを公開した',
+        DeleteVersion: '{w} のバージョンを削除した',
+        DownloadVersion: '{w} のバージョンをコピーした',
+        ImportVersion: '{w} のバージョンをアップロードした',
       },
     },
     fieldNames: {
@@ -1942,6 +1967,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: '업로드하는 중…',
       importing: '확인하는 중…',
       updating: '업데이트하는 중…',
+      switching: '게시하는 중…',
     },
     busyNote: '보통 1분 정도 걸립니다.',
     reasons: {
@@ -1960,6 +1986,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'zip이 머신에 도착하는 중',
       importing: '머신이 zip을 확인하는 중',
       updating: '머신이 다른 엔진 빌드로 옮기는 중',
+      switching: '머신이 버전을 전환하는 중 · 안에 있는 사람은 몇 초간 나갑니다',
       unknown: '아직 확인하지 않음',
     },
     badges: {
@@ -2358,6 +2385,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: '{w} 업데이트함',
         FleetRelease: '엔진 릴리스를 게시함',
         PinWorld: '{w} 고정함',
+        DuplicateVersion: '{w}의 버전을 복제함',
+        PublishVersion: '{w}의 버전을 게시함',
+        DeleteVersion: '{w}의 버전을 삭제함',
+        DownloadVersion: '{w}의 버전을 복사함',
+        ImportVersion: '{w}의 버전을 업로드함',
       },
     },
     fieldNames: {
@@ -2407,6 +2439,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'Enviando…',
       importing: 'Revisando…',
       updating: 'Atualizando…',
+      switching: 'Publicando…',
     },
     busyNote: 'Costuma levar um minuto.',
     reasons: {
@@ -2425,6 +2458,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       uploading: 'o zip está chegando à máquina',
       importing: 'a máquina está revisando o zip',
       updating: 'a máquina está passando o mundo para outra versão do motor',
+      switching: 'a máquina está trocando de versão · quem está dentro sai por alguns segundos',
       unknown: 'ainda não verificado',
     },
     badges: {
@@ -2826,6 +2860,11 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         UpdateWorld: 'atualizou {w}',
         FleetRelease: 'publicou uma versão do motor',
         PinWorld: 'fixou {w}',
+        DuplicateVersion: 'duplicou uma versão de {w}',
+        PublishVersion: 'publicou uma versão de {w}',
+        DeleteVersion: 'apagou uma versão de {w}',
+        DownloadVersion: 'copiou uma versão de {w}',
+        ImportVersion: 'enviou uma versão de {w}',
       },
     },
     fieldNames: {

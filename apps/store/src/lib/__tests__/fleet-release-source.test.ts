@@ -21,7 +21,7 @@ const RECORD = {
     issuedAt: 1893456000,
   },
   signature:
-    '0xcfd95263c120fb1127c676243d30e13e6d8df25b724e518a687e690d04d536f969bebfcbfef9d896f7b96cae36498be4be0f9d6c3c5e55ca22347f33b190c46e1b',
+    '0x83bb4f31766f2243d4c9048a2ccf4546d311b683b18383321fa1affb7be64a0e795b93b93b3d15200e11cfb4a202bdada5ef04205c6a3747619f620cf024467e1c',
 } as const;
 
 const deskOf = (answer: unknown): FleetReleaseDeskApi => ({ latest: async () => answer });

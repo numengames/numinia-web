@@ -12,6 +12,7 @@ import {
   BEACON_MAX_EVENTS,
   BOOTSTRAP_URL,
   CODE_KINDS,
+  FLEET_DOMAIN,
   DOOR_ERRORS,
   IMPORT_RULES,
   LAST_INSTALL_LINE,
@@ -19,6 +20,8 @@ import {
   REQUEST_TYPES,
   SILENT_AFTER_S,
   SLOW_AFTER_S,
+  VERSION_ID,
+  VERSION_RULES,
   beaconBody,
   bootstrapLine,
   buildRequest,
@@ -51,6 +54,10 @@ import {
   readRequestResult,
   readTickets,
   readUpdates,
+  readVersionComing,
+  readVersionId,
+  readVersions,
+  readVersionsSupport,
   recipeState,
   sendBeacon,
   sendRequest,
@@ -67,6 +74,7 @@ import {
   type Heartbeat,
   type ImportTicket,
   type MachineView,
+  type VersionInfo,
 } from '../fleet';
 import type { WorldOrder } from '../worlds';
 
@@ -76,12 +84,12 @@ const RECIPE = '4d2a9c0e7b18f3a65c90d1e2b7a4f86c3e05d9b1';
 const EXPIRES = 1893456000;
 /**
  * Copied verbatim from the fleet's shared vectors (numinia-assets
- * tests/fleet_vectors.json, made with viem by two throwaway keys of which only
+ * tests/fleet_vectors.json, made with viem by throwaway keys of which only
  * the public half is kept): every request kind with its digest, its signature
- * and its signer, a stranger's signature, and the keccak checks. The machine
- * verifies the same file.
+ * and its signer, a stranger's signature, the keccak checks and the house's
+ * signed list of Oracles. The machine verifies the same file.
  */
-const ORACLE = '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489';
+const ORACLE = '0xfd36aa363e8f90303165b67ab03efb1bfb870e22';
 const VECTORS = [
   {
     type: 'CreateWorld',
@@ -98,8 +106,8 @@ const VECTORS = [
     },
     digest: '0x6390352cb3395b9e08c31daaec3288413a5800cef65a6569164809637382ca1d',
     signature:
-      '0x37a165953f6b87bc28ba743d7879144fcecefb92a9903b4fa43d9acaac0d0ae9711aee8521a99bb3fb190cce5a8fdee1cded04bbd1f6fbb726f402b61a91fa241c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x8e81f2a7364dee0d091e7abc35118d1354511c4eba13ba5c462a0513a8dab9f1132dc59469c7bd8512a2b637df76c7fe18a0652ee0156655b8d50abb973492721c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'DeleteWorld',
@@ -112,8 +120,8 @@ const VECTORS = [
     },
     digest: '0x4a05422e004fb6b333ed98bbc3d487bdbd231f0ebbf1e6d12516123f4f890a67',
     signature:
-      '0x6caafe34361cd9905842d3d0a4e6473eaf7a2d4a332780256067c2fdc2d0d41e05226ee88a38104f9cd2868beecb9c5857ecbf6c2f9a56e13755d3214e46379e1b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xb3d87a45c3d0a9daeebf6dd371bab188af2b6ba7973ef9a8c5388f043c27cbb77ec3ae6a8b17db359944274a6fa074763ffc4adfa839c8088414cf80d6ecd6151c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'StopWorld',
@@ -125,8 +133,8 @@ const VECTORS = [
     },
     digest: '0xcce8832bb8c525e8a94356bd6e02d9d3e39d4fa88b0d9cf49eff9e7eaf8965d1',
     signature:
-      '0x673f6a0420ea47557cd08c1724d633c64aa4011ec0e52d803770f9729372000f68daf3304277c131270d00bcd66ba3091fe7944b309441c08f2a503f410f61281b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x19d23b378fa15e385925cd9edb65aaa566f9ea80fc17d4d7259297112bb3ebb4044b9d72ec9a6fd4d4fba11225234874e4a39f6f2bfe891ca506b95dce1222c21b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'StartWorld',
@@ -138,8 +146,8 @@ const VECTORS = [
     },
     digest: '0xd84f2ea0aea5ef8176282fb8b08b92dfdc169109ed22205f2271d8c372d82a26',
     signature:
-      '0x4b33ba0ee3b151f58189f57a747f6f9be907d1f2fa4ac758c3de3af6ee700f447ab2e4abdc69280cdd909103c4847042e173583f85d44dce41c289559d99f4ab1b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xeaf29def4737dcdf71558942aa3833332c721c2c14187cf03f132d60048d859255e714ca4e4988a8ab9e9d5e13e8429fe46fae736951b6f1b0ffbcf01b21d7e31b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'DownloadWorld',
@@ -151,20 +159,16 @@ const VECTORS = [
     },
     digest: '0xe03580fe93dd2192b20cd5fe6cba48e25020390d9e46e608440cfd5ec2651a27',
     signature:
-      '0x90c9a1edb0b83038df2ec991be166a0cae37bc52ad556c869eef169a259adda571b32aeb68844b04bf1f2dc1a474b708b12651677253d1c4aafad4b5d58a59331b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x1458a90d559606d9e618e438f37211cb744afe47d587d0a5ab76dd5df47079884f55630ae1a8375b3dfbf468a3893aa23fae3e3d29f28786b95eb21cbb6384b81b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'ShowAdminCode',
-    message: {
-      machine: 'open-1',
-      nonce: '5123456789abcdef0123456789abcdef',
-      expires: 1893456000,
-    },
+    message: { machine: 'open-1', nonce: '5123456789abcdef0123456789abcdef', expires: 1893456000 },
     digest: '0x026533a50e419d03f37105c6f319572c0500f9b65237935ac8670b8dd46ecfe9',
     signature:
-      '0x0b1b5f1375168666ab023eb2cb2e04468ab2ebb0953797c83d2642c0fc06daaf0ccac54e5447f362829be5a08ba5b77073a24bd6f9db6e08f81ef3e8e9dce7e11c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x766a663b546915ad1bb0c312f64822f06d9e447a28044cd3f8c7eb874e2b4ff57e06a8a5626320d972b71de6084244483ecd741d8b9aab15df9f2edc3433d5701c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'ShowWorldCode',
@@ -176,8 +180,8 @@ const VECTORS = [
     },
     digest: '0xf69173093218a76e67036e4059ad590d73a16d98de0532caf0ab55464aae3dfd',
     signature:
-      '0x163474e6a8d1c784b2153f7ff12dc53246a6cd872b627c495bde22a4a842d2707e24e50ef2c32ab6b8a9c770ff4e3beab16cd175a520833f4d95805f5ecac4f21b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xe0917e1b9cf3c126348b326d8415fb10dd9b6448ceaff3c87d6e56ed87efa1bd282ac71b48aa2793582b7f5cbeded0a7dfeab7f46d1ccbbcfa271ae2fd73492f1b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'RotateWorldCode',
@@ -189,8 +193,8 @@ const VECTORS = [
     },
     digest: '0x167365fbf09a8fbe0cd684c20bce0ea5e0ceb682a44775f09ebd45137ba1ed82',
     signature:
-      '0xd0c78ff0b65a9f5d634bf86de4687ff1429f03b685939730ef7f2036464383ca693d26faf502d4d2e88977850ae4710aebd4e0a0a65da9e559c3bb2938c2d3691c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x08ec95bb5468967a14d9f5a9ff97a64a4a38e529b7e9a903fd6608be00ee7c321511c6b9b39a65ca8a9373ee37697bac01c82c72e09e390197d2c0c4c82b98311b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'ImportWorld',
@@ -209,8 +213,8 @@ const VECTORS = [
     },
     digest: '0x772dc4f6286f22eca4f7eb4bcfc2d0211b060fb1417a9a19415feed1a4999ebe',
     signature:
-      '0x7e07c9dcd7b8c344200ebc7abf30bd9f7da4f9f8426cd951d5129ec34c3354a87bf1044ad0c5951be01cd66064eb9c0481e27d2b9d1eb8da1d6abae89c0d89631b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x11dc74caf7aec391ff3a5144fe4ecd79e1cec6be5c21799d572dfc3fcb7ddb6a5a5d51c578b178bed1a3708074c74ff8c94c5bc8ba97cd2a57aae01ebf0a8e331b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'UpdateWorld',
@@ -223,8 +227,8 @@ const VECTORS = [
     },
     digest: '0x43cabdd5396fb9a42e85e9f001424dad6c43c5a282f9a1e075c700b9736ab598',
     signature:
-      '0x3b7c12feb755920eb8d43a17d073392ad82e1ecd37a1d806f1b69c2cb6a68ec74a0915321127fefd348218cdebc5e93e314504aa1978c9556cace9a8b92a0ce71c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xa4ed8d364b4a19309f32941aaa23b0a12621a43607aebce6c5477836fb02f7ed469e362d13de2945b1330e91ca82e112efc294aa420836caeeb41ad07b87c8881b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'FleetRelease',
@@ -238,8 +242,8 @@ const VECTORS = [
     },
     digest: '0xb577c6cc0d0fc62c3974dd3686d9e7c2e69f810d62a66625f851dd5a1c3f436b',
     signature:
-      '0xcfd95263c120fb1127c676243d30e13e6d8df25b724e518a687e690d04d536f969bebfcbfef9d896f7b96cae36498be4be0f9d6c3c5e55ca22347f33b190c46e1b',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0x83bb4f31766f2243d4c9048a2ccf4546d311b683b18383321fa1affb7be64a0e795b93b93b3d15200e11cfb4a202bdada5ef04205c6a3747619f620cf024467e1c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'PinWorld',
@@ -253,8 +257,8 @@ const VECTORS = [
     },
     digest: '0xf22c718fb4699360f01d365ae9a4c4dc67a4b54a33a6bea2194aed7a814806a8',
     signature:
-      '0x604a419977a8fbd9d4264f8ff84c3783fcd72e63c0438a1847e222e6a841436057422d54c48572b78163fa856ebbac4474d11c8efd193528f81235e58d0038be1c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xc36bef64bbd0b3e2e534f99029e1f5567d9a983eea5c1cf656a1a5fa3d532bdf3246320b22cb4349b6adc548c6dee2681d77582e51e6c8d6ce6be94186321bb31c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
   {
     type: 'PinWorld',
@@ -268,8 +272,96 @@ const VECTORS = [
     },
     digest: '0xd6390dd7bd98b75943878cf7f3cac790a5ca9da764d1333e7437efe1f82474bf',
     signature:
-      '0x164b1d58700f11dc155547aefe08d3e9de61de8e5b078a9ffe812c65dae599954f94d96600f11a048e25f191b5ef2f303a17070f4bf52ce8d3a0322b8274e4451c',
-    signer: '0xf688e4d5f07e5d0b80d83f201e13cf42d721b489',
+      '0xbe20d225bf7b4a0f9d637b63fd8eafa885ecf405b37a52cfc891e99dd71fa8d42f328d3151a4c484eaa7f6e3861f29b4feef5cc83cac336804fb2c6201a5dc751c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'DuplicateVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      version: 'v1',
+      nonce: 'b123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x6473616a81ee5856ef76101f8debc65cfec203cf805abd20c2ac8eb8ca9baf7c',
+    signature:
+      '0x0d9bbde47cc68369f0c127d05945142551cab3a2759f93230f7c61fc390a9c0e64c556a893c28f82f6a4bd1f21afb39b5704b51ed3f13c408388f1ccdb875ffc1c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'PublishVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      version: 'v2',
+      nonce: 'c123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xfd1c1f252b40286e286d753b9e0009a067faf09872f97a0838002e57b610e6ab',
+    signature:
+      '0x61ec633880b8db0303c4eeafc4f87cd0d4c5b1528f4bf5178e20ed45bbf575f70a80a59d7841c275d83e62f4a75cf00d702aa5332057c56be958da357effc9ea1c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'DeleteVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      version: 'v2',
+      nonce: 'd123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x55359456e26dd74c0cb22b05d6d09494c6a91c11aa27b8c1428fe3d580c4d6c2',
+    signature:
+      '0x3cb51bcae56bf608e4f142a36c5caf1bf125da13e00f0a8a374ead374ec0888e4e875b50243aa8a2023c6c5cb3ed322a0b791d0ec5b576dfef9202a5f25a1a5e1b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'DownloadVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      version: 'v1',
+      nonce: 'e123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0x9888f432d732e8f387134c340f101ef54617bd9c3dc34c5cc3a589161d101f3d',
+    signature:
+      '0x05973fbf29984b10aca1b1002dcc3964c199b7c5291b727c87654208a94436122f5d101896797d092aa70d31208b494174e643b66cfc6453027549ef48a024e31c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'ImportVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      zipBytes: 2896,
+      zipSha256: '2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae',
+      replace: '',
+      nonce: 'f123456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xdaed6cee11f52b3e439b09500d772a9daaed999c506cfed1597dc31cc48b24bc',
+    signature:
+      '0x23b8f65b7adb89749b2b59ca69f29da20b0a02b7599546fb975c10d45efcf87475a9a4c640a40eae8a4f4f1852e323d29934e96ba509335a4d15d74593ea13401c',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
+  },
+  {
+    type: 'ImportVersion',
+    message: {
+      machine: 'open-1',
+      world: 'plaza',
+      zipBytes: 50331648,
+      zipSha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      replace: 'v2',
+      nonce: '0a23456789abcdef0123456789abcdef',
+      expires: 1893456000,
+    },
+    digest: '0xc3e639a81190c9f90d4d7d04e705473ce61d8b45c2c3e9fd2556b4da189f1171',
+    signature:
+      '0xc8aea1aed891841338ba21d1cd60e015e51b97f96e8070537a99492de8fa365f638458f54de155980340a2c68c3a3dde24e1bbc29f04ab117de9181f9bdfea5a1b',
+    signer: '0xfd36aa363e8f90303165b67ab03efb1bfb870e22',
   },
 ] as const;
 const STRANGER = {
@@ -281,18 +373,12 @@ const STRANGER = {
     expires: 1893456000,
   },
   signature:
-    '0x66890d42dd4578c060169ed144d005d349ccebc169a08536b1612f8b941e446b3f3223b3f65a53bc62ad95977f87e3ead9779e94c7afb85cb0e5cc22a1b78dff1c',
-  signer: '0x6be737acfd99e343797611a8d7365919ea575e9a',
+    '0x80106580ce7005d1ba2dc50341c5416dda5fc9b033257650dee49b1ea4828d666ae90abef934798d22b6bed34e01a9578fcee7fb862b126266b1a1d7b8ebb5be1c',
+  signer: '0xfe10a3f6a57fb674186895913553b44e9ec74063',
 } as const;
 const KECCAK = [
-  {
-    input: '',
-    hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
-  },
-  {
-    input: 'abc',
-    hex: '0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45',
-  },
+  { input: '', hex: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470' },
+  { input: 'abc', hex: '0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45' },
   {
     input: 'Numinia Fleet',
     hex: '0xb16b402dbf9c3f6bbba1d461e221c2198f91541497686217ec102aaa34590238',
@@ -303,6 +389,85 @@ const KECCAK = [
     hex: '0x3c3800defb6a25a70a2737e0716eeb5d270559ad3cad8f6abddac58802d7158e',
   },
 ] as const;
+/**
+ * The house's signed list (GET /fleet/signers.json): signed by a fixed TEST
+ * key that is public on purpose and holds nothing. `signed` is what the
+ * wallet signs (the wallets joined with a comma); `wire` is what the
+ * endpoint answers. Verbatim from the same file.
+ */
+const HOUSE = {
+  $comment:
+    'The house\'s signed list of Oracles and Archons (GET /fleet/signers.json), made with viem 2.x signTypedData by a fixed TEST key that is public on purpose and holds nothing: its address is the house in tests, never a real wallet. `wire` is the JSON the endpoint answers ({message:{signers:[…],seq,issuedAt},signature}); `signed` is what the wallet signs (signers joined with ","). `main` is the list; `fewer` is a newer list that drops the 3rd wallet; `older` is a validly signed list with a lower seq (replay).',
+  privateKey: '0x1111111111111111111111111111111111111111111111111111111111111111',
+  signer: '0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a',
+  records: {
+    main: {
+      wire: {
+        message: {
+          signers: [
+            '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
+            '0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2',
+            '0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3',
+          ],
+          seq: 1893456000,
+          issuedAt: 1893456000,
+        },
+        signature:
+          '0x90d1cce697d61ec624a5463375e276dbb02a6857c3f59e81c9cd95c910cc16e6064ae321c5bc1288ba514ac7224b668c755341ca5f693ff0f23a694c1bbff5131b',
+      },
+      signed: {
+        signers:
+          '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1,0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2,0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3',
+        seq: 1893456000,
+        issuedAt: 1893456000,
+      },
+      digest: '0x9e6e3e77e9b6e4fb6e7496b64d805054ce65f1fdea959768535f4c3dfaf631bd',
+    },
+    fewer: {
+      wire: {
+        message: {
+          signers: [
+            '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
+            '0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2',
+          ],
+          seq: 1893456600,
+          issuedAt: 1893456600,
+        },
+        signature:
+          '0x332a0d67da522cabd3446936b9d6bbdb47edfd0b62271b5acca805e50bfbfa2702649f225c1875802476a56b7c21370530dc899b502ff3607dba572d15631ca91b',
+      },
+      signed: {
+        signers:
+          '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1,0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2',
+        seq: 1893456600,
+        issuedAt: 1893456600,
+      },
+      digest: '0x857eeb81b86b7317b5caf17dfe9a59901ed8b0cd87dfa4c0978c8cb4e3245ff5',
+    },
+    older: {
+      wire: {
+        message: {
+          signers: [
+            '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1',
+            '0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2',
+            '0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3',
+          ],
+          seq: 1893455000,
+          issuedAt: 1893455000,
+        },
+        signature:
+          '0xe443903856b211b0cf25f4c41c35d782891219e2961305c029c8797cf5802c463b561bb3393b5d8e41a5a9a0549ce5bbbf9ded959382b2e0c6cfef3345d2f8321c',
+      },
+      signed: {
+        signers:
+          '0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1,0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2,0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3',
+        seq: 1893455000,
+        issuedAt: 1893455000,
+      },
+      digest: '0x5c6d282f28024ebc11d2a6d22b69817de3ae17bdd783dd061e94cecc48bdde8f',
+    },
+  },
+} as const;
 
 const NOW_MS = (EXPIRES - REQUEST_SECONDS) * 1000;
 
@@ -471,7 +636,7 @@ describe('addresses and small words', () => {
   });
 
   it('shortens a wallet, leaves a short text alone, and sizes files', () => {
-    expect(shortWallet(ORACLE)).toBe('0xf688…b489');
+    expect(shortWallet(ORACLE)).toBe('0xfd36…0e22');
     expect(shortWallet('0x1234')).toBe('0x1234');
     expect(formatBytes(840)).toBe('840 B');
     expect(formatBytes(12_700)).toBe('12.4 KB');
@@ -562,11 +727,15 @@ describe('what the door answers, checked before it is believed', () => {
       state: 'done',
       rule: null,
       entry: null,
+      version: null,
+      made: null,
     });
     expect(readRequestResult({ state: 'failed', rule: 'expired' })).toEqual({
       state: 'failed',
       rule: 'expired',
       entry: null,
+      version: null,
+      made: null,
     });
     expect(readRequestResult({ state: 'lost' })).toBeNull();
     expect(readRequestResult({ state: 3 })).toBeNull();
@@ -576,18 +745,27 @@ describe('what the door answers, checked before it is believed', () => {
       state: 'uploading',
       rule: null,
       entry: null,
+      version: null,
+      made: null,
     });
     // The zip entry that broke a rule travels beside it, printable and short, or not at all.
     expect(
       readRequestResult({ state: 'failed', rule: 'unexpected', entry: 'world/notes.txt' }),
-    ).toEqual({ state: 'failed', rule: 'unexpected', entry: 'world/notes.txt' });
+    ).toEqual({
+      state: 'failed',
+      rule: 'unexpected',
+      entry: 'world/notes.txt',
+      version: null,
+      made: null,
+    });
     for (const entry of ['', 'a\nb', 'x'.repeat(201), 7, null]) {
       expect(readRequestResult({ state: 'failed', rule: 'unexpected', entry })?.entry).toBeNull();
     }
-    expect(settled({ state: 'uploading', rule: null, entry: null })).toBe(false);
-    expect(settled({ state: 'done', rule: null, entry: null })).toBe(true);
-    expect(settled({ state: 'failed', rule: 'x', entry: null })).toBe(true);
-    expect(settled({ state: 'working', rule: null, entry: null })).toBe(false);
+    const bare = { rule: null, entry: null, version: null, made: null };
+    expect(settled({ ...bare, state: 'uploading' })).toBe(false);
+    expect(settled({ ...bare, state: 'done' })).toBe(true);
+    expect(settled({ ...bare, state: 'failed', rule: 'x' })).toBe(true);
+    expect(settled({ ...bare, state: 'working' })).toBe(false);
   });
 
   it('reads a copy, keeping only what has its shape', () => {
@@ -924,6 +1102,7 @@ describe('reading a machine', () => {
       imports: null,
       engines: null,
       updates: false,
+      versions: null,
     });
   });
 
@@ -1040,6 +1219,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         imports: { zipMaxBytes: 2147483648 },
         engines: ['numinia-hyperfy2', 'numinia-engine'],
         updates: true,
+        versions: { max: 2 },
       },
       {
         alias: 'open-2',
@@ -1082,6 +1262,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         imports: { zipMaxBytes: 2147483648 },
         engines: ['numinia-hyperfy2', 'numinia-engine'],
         updates: true,
+        versions: { max: 2 },
       },
       {
         alias: 'open-2',
@@ -1093,6 +1274,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         imports: null,
         engines: null,
         updates: false,
+        versions: null,
       },
       {
         alias: 'open-3',
@@ -1104,6 +1286,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         imports: null,
         engines: null,
         updates: false,
+        versions: null,
       },
       {
         alias: 'open-4',
@@ -1115,6 +1298,7 @@ describe('gatherFleet — several doors, one fleet', () => {
         imports: null,
         engines: null,
         updates: false,
+        versions: null,
       },
     ]);
     // A name belongs to the first machine that holds it.
@@ -1194,6 +1378,8 @@ describe('the calls', () => {
       state: 'working',
       rule: null,
       entry: null,
+      version: null,
+      made: null,
     });
     expect(await readCopy(door.fetch, 'open-1', 'c'.repeat(32))).toMatchObject({
       state: 'preparing',
@@ -1870,5 +2056,409 @@ describe('a world from its zip — sizes, the doors that take zips, the upload, 
       { ...TICKET, name: 7 },
     ];
     expect(readTickets({ worldsImports: [...odd, TICKET] })).toEqual([TICKET]);
+  });
+});
+
+describe('a world’s versions — the five requests and the vectors they share', () => {
+  /** A vector's message, with the fields of every version type (the ones its type lacks are absent). */
+  type VersionMessage = {
+    readonly machine: string;
+    readonly world: string;
+    readonly version: string;
+    readonly zipBytes: number;
+    readonly zipSha256: string;
+    readonly replace: string;
+    readonly nonce: string;
+    readonly expires: number;
+  };
+  const at = (type: string, nth = 0): { readonly message: VersionMessage } => {
+    const found = VECTORS.filter((vector) => vector.type === type)[nth];
+    if (found === undefined) throw new Error(`no ${type} vector`);
+    return found as unknown as { readonly message: VersionMessage };
+  };
+
+  it('writes each version request with the machine’s fields, in the type’s order', () => {
+    for (const kind of [
+      'DuplicateVersion',
+      'PublishVersion',
+      'DeleteVersion',
+      'DownloadVersion',
+    ] as const) {
+      const vector = at(kind);
+      const request = buildRequest(
+        { kind, machine: 'open-1', world: 'plaza', version: vector.message.version },
+        vector.message.nonce,
+        NOW_MS,
+      );
+      expect(request).toEqual({ type: kind, message: vector.message });
+      expect(Object.keys(request.message)).toEqual([
+        'machine',
+        'world',
+        'version',
+        'nonce',
+        'expires',
+      ]);
+      expect(REQUEST_TYPES[kind].map((field) => field.name)).toEqual(Object.keys(request.message));
+    }
+  });
+
+  it('writes a zip as a version: the world, the zip, and the version it replaces — no image, memory or address', () => {
+    for (const [nth, replace] of [
+      [0, ''],
+      [1, 'v2'],
+    ] as const) {
+      const vector = at('ImportVersion', nth);
+      expect(vector.message.replace).toBe(replace);
+      const request = buildRequest(
+        {
+          kind: 'ImportVersion',
+          machine: 'open-1',
+          world: 'plaza',
+          zipBytes: vector.message.zipBytes,
+          zipSha256: vector.message.zipSha256,
+          replace,
+        },
+        vector.message.nonce,
+        NOW_MS,
+      );
+      expect(request).toEqual({ type: 'ImportVersion', message: vector.message });
+      expect(Object.keys(request.message)).toEqual([
+        'machine',
+        'world',
+        'zipBytes',
+        'zipSha256',
+        'replace',
+        'nonce',
+        'expires',
+      ]);
+      const data = typedData(request);
+      expect(data.message['zipBytes']).toBe(BigInt(vector.message.zipBytes));
+      expect(data.message['replace']).toBe(replace);
+      expect(Object.keys(data.types)).toEqual(['ImportVersion']);
+    }
+  });
+
+  it('hands the wallet a version as text and the expiry as a bigint', () => {
+    const data = typedData({ type: 'PublishVersion', message: at('PublishVersion').message });
+    expect(data.primaryType).toBe('PublishVersion');
+    expect(data.message['version']).toBe('v2');
+    expect(data.message['expires']).toBe(BigInt(EXPIRES));
+  });
+
+  it('recovers the house’s signed list — all three records — to the house, never to an Oracle', async () => {
+    const types = {
+      FleetSigners: [
+        { name: 'signers', type: 'string' },
+        { name: 'seq', type: 'uint256' },
+        { name: 'issuedAt', type: 'uint256' },
+      ],
+    } as const;
+    for (const record of Object.values(HOUSE.records)) {
+      const message = {
+        signers: record.signed.signers,
+        seq: BigInt(record.signed.seq),
+        issuedAt: BigInt(record.signed.issuedAt),
+      };
+      // The wire carries the wallets as a list; the wallet signs them joined with a comma.
+      expect(record.wire.message.signers.join(',')).toBe(record.signed.signers);
+      const data = {
+        domain: { ...FLEET_DOMAIN },
+        types,
+        primaryType: 'FleetSigners',
+        message,
+      } as const;
+      expect(hashTypedData(data)).toBe(record.digest);
+      const signer = await recoverTypedDataAddress({ ...data, signature: record.wire.signature });
+      expect(signer.toLowerCase()).toBe(HOUSE.signer);
+      expect(signer.toLowerCase()).not.toBe(ORACLE);
+    }
+  });
+
+  it('knows every rule a machine names for a version as a refusal, and keeps the old ones', () => {
+    for (const rule of VERSION_RULES) expect(DOOR_ERRORS).toContain(rule);
+    expect(VERSION_RULES).toHaveLength(10);
+    for (const error of ['busy', 'missing', 'still-deleting', 'zip-too-big', 'no-room']) {
+      expect(DOOR_ERRORS).toContain(error);
+    }
+    expect(readAccepted(409, { error: 'full' })).toEqual({ ok: false, error: 'full', status: 409 });
+  });
+
+  it('takes a download of a version with its copy, and a zip as a version with its slot and no code', () => {
+    const request = 'a'.repeat(32);
+    expect(readAccepted(202, { request, copy: 'b'.repeat(32) })).toEqual({
+      ok: true,
+      request,
+      adminCode: null,
+      copy: 'b'.repeat(32),
+      upload: null,
+    });
+    expect(readAccepted(202, { request, upload: `uploads/${request}` })).toEqual({
+      ok: true,
+      request,
+      adminCode: null,
+      copy: null,
+      upload: `uploads/${request}`,
+    });
+  });
+
+  it('reads which version a request was about and which one it made', () => {
+    const done = { state: 'done', rule: null, at: '2026-10-22T09:00:00Z' };
+    expect(
+      readRequestResult({ ...done, type: 'DuplicateVersion', version: 'v1', made: 'v2' }),
+    ).toEqual({ state: 'done', rule: null, entry: null, version: 'v1', made: 'v2' });
+    expect(readRequestResult({ ...done, version: 'v2' })).toMatchObject({
+      version: 'v2',
+      made: null,
+    });
+    // A name that is not a version's is nothing.
+    for (const odd of ['v0', 'v10000', 'V1', '../v1', 'v01', 2, null, '']) {
+      expect(readRequestResult({ ...done, version: odd, made: odd })).toMatchObject({
+        version: null,
+        made: null,
+      });
+    }
+    expect(readVersionId('v1')).toBe('v1');
+    expect(readVersionId('v9999')).toBe('v9999');
+    expect(readVersionId(undefined)).toBeNull();
+    expect(VERSION_ID.test('v12')).toBe(true);
+  });
+});
+
+describe('what a door says about versions', () => {
+  const INFO = (id: string, published: boolean | string, extra: Record<string, unknown> = {}) => ({
+    id,
+    published,
+    bytes: 1048576,
+    createdAt: '2026-10-22T08:00:00Z',
+    origin: 'created',
+    ...extra,
+  });
+
+  it('reads whether a machine keeps versions, and how many; nothing from an older door', () => {
+    expect(readVersionsSupport({ versions: { max: 2 } })).toEqual({ max: 2 });
+    expect(readVersionsSupport({ versions: { max: 2, later: true }, other: 1 })).toEqual({
+      max: 2,
+    });
+    for (const odd of [
+      {},
+      null,
+      'versions',
+      { versions: 2 },
+      { versions: null },
+      { versions: {} },
+      { versions: { max: 0 } },
+      { versions: { max: -1 } },
+      { versions: { max: 1.5 } },
+      { versions: { max: '2' } },
+      { versions: { max: 2 ** 60 } },
+    ]) {
+      expect(readVersionsSupport(odd)).toBeNull();
+    }
+  });
+
+  it('reads the versions of a world by number, dropping any entry it cannot trust', () => {
+    const list = readVersions([
+      INFO('v10', false, { origin: 'copy:v2', bytes: null, createdAt: null }),
+      INFO('v2', false, { origin: 'zip' }),
+      INFO('v1', true, { unknown: 'key' }),
+      INFO('v2', true), // the same name twice: the first stays
+      INFO('v3', false, { origin: 'copy:' }),
+      INFO('v4', false, { origin: 7 }),
+      INFO('v5', 'yes'),
+      INFO('x6', false),
+      { ...INFO('v7', false), id: 7 },
+      INFO('v8', false, { bytes: -1, createdAt: 'a\nb' }),
+      INFO('v9', false, { bytes: 1.5, createdAt: 12 }),
+      'junk',
+      null,
+    ]);
+    expect(list).toEqual([
+      {
+        id: 'v1',
+        published: true,
+        bytes: 1048576,
+        createdAt: '2026-10-22T08:00:00Z',
+        origin: 'created',
+      },
+      {
+        id: 'v2',
+        published: false,
+        bytes: 1048576,
+        createdAt: '2026-10-22T08:00:00Z',
+        origin: 'zip',
+      },
+      { id: 'v8', published: false, bytes: null, createdAt: null, origin: 'created' },
+      { id: 'v9', published: false, bytes: null, createdAt: null, origin: 'created' },
+      { id: 'v10', published: false, bytes: null, createdAt: null, origin: 'copy:v2' },
+    ]);
+    // A machine that could not read its metadata sends none: the room gets an empty list, not a guess.
+    expect(readVersions([])).toEqual([]);
+    for (const odd of [undefined, null, 'v1', {}, 3]) expect(readVersions(odd)).toBeNull();
+  });
+
+  it('reads the version on its way: what kind, how far, and how much of its zip has arrived', () => {
+    expect(readVersionComing({ kind: 'duplicate', state: 'waiting' })).toEqual({
+      kind: 'duplicate',
+      state: 'waiting',
+    });
+    expect(readVersionComing({ kind: 'import', state: 'working', future: 1 })).toEqual({
+      kind: 'import',
+      state: 'working',
+    });
+    expect(readVersionComing({ kind: 'import', state: 'uploading', bytes: 10, of: 100 })).toEqual({
+      kind: 'import',
+      state: 'uploading',
+      bytes: 10,
+      of: 100,
+    });
+    // Progress that does not add up is left out; the state stays.
+    for (const progress of [
+      { bytes: 5 },
+      { bytes: 200, of: 100 },
+      { bytes: 1, of: 0 },
+      { bytes: -1, of: 3 },
+    ]) {
+      expect(readVersionComing({ kind: 'import', state: 'uploading', ...progress })).toEqual({
+        kind: 'import',
+        state: 'uploading',
+      });
+    }
+    for (const odd of [
+      undefined,
+      null,
+      'import',
+      {},
+      { kind: 'import' },
+      { state: 'working' },
+      { kind: 'delete', state: 'working' },
+      { kind: 'import', state: 'done' },
+    ]) {
+      expect(readVersionComing(odd)).toBeNull();
+    }
+  });
+
+  it('reads the versions and the version coming in a world’s listing, and the phase `switching`', () => {
+    const worlds = readDoorWorlds(
+      {
+        worlds: [
+          listed('plaza', 'running', {
+            versions: [INFO('v1', true), INFO('v2', false, { origin: 'copy:v1' })],
+            versionComing: { kind: 'import', state: 'uploading', bytes: 1, of: 2 },
+          }),
+          listed('foro', 'switching', { versions: [INFO('v2', true), INFO('v1', false)] }),
+          // An older door: neither key.
+          listed('vieja', 'stopped'),
+          // Unreadable metadata: an empty list is kept as the door's word; a bad coming is dropped.
+          listed('rota', 'running', { versions: [], versionComing: { kind: 'x' } }),
+          // Born, importing and deleting worlds have neither, whatever they carry.
+          {
+            id: 'otra',
+            domain: 'otra.numinia.com',
+            phase: 'importing',
+            versions: [INFO('v1', true)],
+          },
+          { id: 'ida', domain: 'ida.numinia.com', phase: 'deleting', versions: [INFO('v1', true)] },
+        ],
+      },
+      'open-1',
+    );
+    expect(worlds?.map((world) => world.id)).toEqual([
+      'plaza',
+      'foro',
+      'vieja',
+      'rota',
+      'otra',
+      'ida',
+    ]);
+    const byId = Object.fromEntries((worlds ?? []).map((world) => [world.id, world]));
+    expect(byId['plaza']?.versions?.map((version) => version.id)).toEqual(['v1', 'v2']);
+    expect(byId['plaza']?.versionComing).toEqual({
+      kind: 'import',
+      state: 'uploading',
+      bytes: 1,
+      of: 2,
+    });
+    expect(byId['foro']?.phase).toBe('switching');
+    expect(byId['foro']?.versions?.map((version) => version.id)).toEqual(['v1', 'v2']);
+    expect(byId['vieja']).not.toHaveProperty('versions');
+    expect(byId['vieja']).not.toHaveProperty('versionComing');
+    expect(byId['rota']?.versions).toEqual([]);
+    expect(byId['rota']).not.toHaveProperty('versionComing');
+    expect(byId['otra']).not.toHaveProperty('versions');
+    expect(byId['ida']).not.toHaveProperty('versions');
+  });
+
+  it('reads a machine’s versions.max through its door, and none from a door that says nothing', async () => {
+    const MACHINE = 'https://open-1.numinia.com/fleet/v1/machine';
+    const WORLDS = 'https://open-1.numinia.com/fleet/v1/worlds';
+    const said = fakeFetch((url) => {
+      if (url === WORLDS) return json({ worlds: [] });
+      if (url === MACHINE) return json({ versions: { max: 2 } });
+      return json({ entries: [] });
+    });
+    const view = await readMachine(said.fetch, 'open-1');
+    expect(view.open && view.versions).toEqual({ max: 2 });
+    const silent = fakeFetch((url) => (url === WORLDS ? json({ worlds: [] }) : json({})));
+    const older = await readMachine(silent.fetch, 'open-1');
+    expect(older.open && older.versions).toBeNull();
+  });
+
+  it('gathers the versions and the version coming by world, from the first machine that holds it', () => {
+    const versions: VersionInfo[] = [
+      { id: 'v1', published: true, bytes: 10, createdAt: null, origin: 'created' },
+      { id: 'v2', published: false, bytes: null, createdAt: null, origin: 'copy:v1' },
+    ];
+    const view = (
+      alias: string,
+      more: Partial<Extract<MachineView, { open: true }>>,
+    ): MachineView => ({
+      alias,
+      open: true,
+      worlds: [],
+      log: [],
+      heartbeat: null,
+      listens: [],
+      recipe: null,
+      imports: null,
+      ...more,
+    });
+    const fleet = gatherFleet([
+      view('open-1', {
+        versions: { max: 2 },
+        worlds: [
+          {
+            id: 'plaza',
+            phase: 'running',
+            order: order('plaza'),
+            domain: 'plaza.numinia.com',
+            upload: null,
+            versions,
+            versionComing: { kind: 'duplicate', state: 'waiting' },
+          },
+          {
+            id: 'foro',
+            phase: 'running',
+            order: order('foro'),
+            domain: 'foro.numinia.com',
+            upload: null,
+          },
+        ],
+      }),
+      view('open-2', {
+        worlds: [
+          {
+            id: 'plaza',
+            phase: 'running',
+            order: order('plaza', { server: 'open-2' }),
+            domain: 'plaza.numinia.com',
+            upload: null,
+            versions: [],
+          },
+        ],
+      }),
+    ]);
+    expect(fleet.versions).toEqual({ plaza: versions });
+    expect(fleet.versionComing).toEqual({ plaza: { kind: 'duplicate', state: 'waiting' } });
+    expect(fleet.machines.map((machine) => machine.versions)).toEqual([{ max: 2 }, null]);
   });
 });

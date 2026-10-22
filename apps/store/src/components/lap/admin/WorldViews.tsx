@@ -188,7 +188,8 @@ function StatusPill({
       phase === 'deleting' ||
       phase === 'uploading' ||
       phase === 'importing' ||
-      phase === 'updating')
+      phase === 'updating' ||
+      phase === 'switching')
       ? room.phases[phase]
       : null;
   return (

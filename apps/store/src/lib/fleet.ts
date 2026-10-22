@@ -121,6 +121,52 @@ export const REQUEST_TYPES = {
     text('nonce'),
     whole('expires'),
   ],
+  /**
+   * A world's versions (ADR: a world keeps two, one published). Never new
+   * fields on an old type: each is a type of its own, so every old digest
+   * stays byte-identical. `version` is `v1`, `v2`… (VERSION_ID).
+   */
+  /** One version copied into a new, unpublished one. */
+  DuplicateVersion: [
+    text('machine'),
+    text('world'),
+    text('version'),
+    text('nonce'),
+    whole('expires'),
+  ],
+  /** Another version made the published one: the world is down for a few seconds. */
+  PublishVersion: [
+    text('machine'),
+    text('world'),
+    text('version'),
+    text('nonce'),
+    whole('expires'),
+  ],
+  /** One unpublished version removed. */
+  DeleteVersion: [text('machine'), text('world'), text('version'), text('nonce'), whole('expires')],
+  /** A zip of any version; the door's 202 carries the copy's number, as DownloadWorld. */
+  DownloadVersion: [
+    text('machine'),
+    text('world'),
+    text('version'),
+    text('nonce'),
+    whole('expires'),
+  ],
+  /**
+   * A zip brought in as a new version of a world that is here: no image,
+   * memory, cpus or address, those are the world's own. `replace` is empty
+   * when the world has one version, else the unpublished version that goes
+   * once the new one is whole.
+   */
+  ImportVersion: [
+    text('machine'),
+    text('world'),
+    whole('zipBytes'),
+    text('zipSha256'),
+    text('replace'),
+    text('nonce'),
+    whole('expires'),
+  ],
 } as const satisfies Readonly<Record<string, readonly TypeField[]>>;
 
 export type RequestKind = keyof typeof REQUEST_TYPES;
@@ -178,6 +224,23 @@ export type Ask =
       readonly image: string;
       /** Why, in one line (1 to 200 characters): written in the signed request. */
       readonly reason: string;
+    }
+  | {
+      readonly kind: 'DuplicateVersion' | 'PublishVersion' | 'DeleteVersion' | 'DownloadVersion';
+      readonly machine: string;
+      readonly world: string;
+      /** The version asked about: `v1`, `v2`… (VERSION_ID). */
+      readonly version: string;
+    }
+  | {
+      readonly kind: 'ImportVersion';
+      readonly machine: string;
+      readonly world: string;
+      /** The zip's exact size in bytes, and its SHA-256 (64 lowercase hex). */
+      readonly zipBytes: number;
+      readonly zipSha256: string;
+      /** Empty when the world has one version; else the unpublished version the new one replaces. */
+      readonly replace: string;
     };
 
 /** The requests whose answer is an admin code, the one thing the Oracle asked for. */
@@ -384,6 +447,17 @@ export const DOOR_ERRORS = [
   'db-foreign',
   // A Numinia Engine world's zip: its own engine's tools would not read it.
   'engine-refused',
+  // A world's versions: what its reconciler names when it cannot do what was signed.
+  'no-version',
+  'published',
+  'already-published',
+  'only-version',
+  'full',
+  'switch-stuck',
+  'not-a-folder',
+  'versions-unreadable',
+  'versions-unwritable',
+  'not-removed',
 ] as const;
 
 /** A refusal, or one of the two ways the room meets on the road: no answer, or an answer it cannot read. */
@@ -415,6 +489,27 @@ export const IMPORT_RULES = [
 ] as const satisfies readonly DoorError[];
 
 export type ImportRule = (typeof IMPORT_RULES)[number];
+
+/**
+ * The rules a request about a world's versions can break once its machine
+ * tries it (they come back in the request's result; `no-room` and
+ * `engine-refused` are import rules too, and a zip as a version can break
+ * any of those).
+ */
+export const VERSION_RULES = [
+  'no-version',
+  'published',
+  'already-published',
+  'only-version',
+  'full',
+  'switch-stuck',
+  'not-a-folder',
+  'versions-unreadable',
+  'versions-unwritable',
+  'not-removed',
+] as const satisfies readonly DoorError[];
+
+export type VersionRule = (typeof VERSION_RULES)[number];
 
 /**
  * A machine's rule, as it logs it (`zip-slip`, or `unexpected: world/notes.txt`)
@@ -489,11 +584,23 @@ export interface RequestResult {
   readonly rule: string | null;
   /** The zip entry that broke it, when the machine names one (`world/notes.txt`). */
   readonly entry: string | null;
+  /** The version a version request was about (`v2`); null for any other request. */
+  readonly version: string | null;
+  /** The version a DuplicateVersion or ImportVersion made (`v3`); null until it exists. */
+  readonly made: string | null;
 }
 
 const REQUEST_STATES: readonly string[] = ['uploading', 'pending', 'working', 'done', 'failed'];
 /** A zip entry's name as a machine reports it: printable, at most 200 characters. */
 const ENTRY = /^[^\p{Cc}]{1,200}$/u;
+
+/** A version's name as the machine makes it: `v1`, `v2`… never reused within a world. */
+export const VERSION_ID = /^v[1-9][0-9]{0,3}$/;
+
+/** A door's version name → the name; null when it is none. */
+export function readVersionId(value: unknown): string | null {
+  return typeof value === 'string' && VERSION_ID.test(value) ? value : null;
+}
 
 export function readRequestResult(body: unknown): RequestResult | null {
   if (!isObj(body)) return null;
@@ -505,6 +612,8 @@ export function readRequestResult(body: unknown): RequestResult | null {
     state: state as RequestState,
     rule: typeof rule === 'string' ? rule : null,
     entry: typeof entry === 'string' && ENTRY.test(entry) ? entry : null,
+    version: readVersionId(body['version']),
+    made: readVersionId(body['made']),
   };
 }
 
@@ -905,6 +1014,22 @@ export function readImports(body: unknown): Imports | null {
     : null;
 }
 
+/** What a door says about versions of a world: how many a world keeps at most. */
+export interface VersionsSupport {
+  readonly max: number;
+}
+
+/**
+ * A door's `/machine` → whether its machine keeps versions of a world
+ * (`versions: {max}`); null when it says nothing, so the room offers none:
+ * a machine older than the versions.
+ */
+export function readVersionsSupport(body: unknown): VersionsSupport | null {
+  if (!isObj(body) || !isObj(body['versions'])) return null;
+  const max = body['versions']['max'];
+  return typeof max === 'number' && Number.isSafeInteger(max) && max > 0 ? { max } : null;
+}
+
 /**
  * A door's `/machine` → the engines its machine runs (`engines: [...]`, those
  * the room knows, in the room's order); null when it names none — a machine
@@ -966,7 +1091,9 @@ export type DoorPhase =
   /** …or the machine is checking and unpacking it. */
   | 'importing'
   /** A world moved to another build of its engine, until its machine has started it. */
-  | 'updating';
+  | 'updating'
+  /** A version being published: the world is down while its machine swaps the folders. */
+  | 'switching';
 
 const PHASES: readonly string[] = [
   'running',
@@ -978,6 +1105,7 @@ const PHASES: readonly string[] = [
   'uploading',
   'importing',
   'updating',
+  'switching',
 ];
 
 /** How much of a zip its machine has: `bytes` of `of`. */
@@ -998,6 +1126,76 @@ export interface DoorWorld {
   readonly pin?: WorldPin;
   /** Why its last move to a new build failed; absent unless its door says so (readUpdateError). */
   readonly updateError?: string;
+  /** Its versions, by number; absent unless its door lists them (readVersions). Empty: it could not read them. */
+  readonly versions?: readonly VersionInfo[];
+  /** The version being made for it; absent unless its door says one is (readVersionComing). */
+  readonly versionComing?: VersionComing;
+}
+
+/** How a version came to be: made with the world, from a zip, or copied from another version. */
+export type VersionOrigin = 'created' | 'zip' | `copy:${string}`;
+
+export interface VersionInfo {
+  /** `v1`, `v2`… */
+  readonly id: string;
+  /** The one people visit; exactly one version of a world is. */
+  readonly published: boolean;
+  /** Its size, measured when it was made and when a publication swapped it; null when never measured. */
+  readonly bytes: number | null;
+  readonly createdAt: string | null;
+  readonly origin: VersionOrigin;
+}
+
+/** A version on its way: a zip arriving or being opened (`import`), or a copy being made (`duplicate`). */
+export interface VersionComing {
+  readonly kind: 'import' | 'duplicate';
+  readonly state: 'uploading' | 'waiting' | 'working';
+  /** While the zip arrives: how much of it the machine has. */
+  readonly bytes?: number;
+  readonly of?: number;
+}
+
+const VERSION_ORIGIN = /^(?:created|zip|copy:v[1-9][0-9]{0,3})$/;
+const versionNumber = (id: string): number => Number(id.slice(1));
+
+/**
+ * A door's `versions` → the list: each entry checked, any other dropped (a
+ * duplicate name too), sorted by number. Null when the door sends none, an
+ * older door; the list may be empty when its machine could not read them.
+ */
+export function readVersions(value: unknown): VersionInfo[] | null {
+  if (!Array.isArray(value)) return null;
+  const seen = new Set<string>();
+  const versions: VersionInfo[] = [];
+  for (const item of value as readonly unknown[]) {
+    if (!isObj(item)) continue;
+    const id = readVersionId(item['id']);
+    const origin = item['origin'];
+    const bytes = item['bytes'];
+    const createdAt = item['createdAt'];
+    if (id === null || seen.has(id) || typeof item['published'] !== 'boolean') continue;
+    if (typeof origin !== 'string' || !VERSION_ORIGIN.test(origin)) continue;
+    seen.add(id);
+    versions.push({
+      id,
+      published: item['published'],
+      bytes: isCount(bytes) ? bytes : null,
+      createdAt: typeof createdAt === 'string' && ONE_LINE.test(createdAt) ? createdAt : null,
+      origin: origin as VersionOrigin,
+    });
+  }
+  return versions.sort((a, b) => versionNumber(a.id) - versionNumber(b.id));
+}
+
+/** A door's `versionComing` → the version on its way; null when none is, or it cannot be read. */
+export function readVersionComing(value: unknown): VersionComing | null {
+  if (!isObj(value)) return null;
+  const kind = value['kind'];
+  const state = value['state'];
+  if (kind !== 'import' && kind !== 'duplicate') return null;
+  if (state !== 'uploading' && state !== 'waiting' && state !== 'working') return null;
+  const progress = readProgress(value);
+  return progress === null ? { kind, state } : { kind, state, ...progress };
 }
 
 const isCount = (value: unknown): value is number =>
@@ -1052,6 +1250,8 @@ export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null
       const order = JSON.parse(source) as WorldOrder;
       const pin = readPin(item['pin']);
       const updateError = readUpdateError(item['updateError']);
+      const versions = readVersions(item['versions']);
+      const versionComing = readVersionComing(item['versionComing']);
       worlds.push({
         id,
         phase: phase as DoorPhase,
@@ -1060,6 +1260,8 @@ export function readDoorWorlds(body: unknown, alias: string): DoorWorld[] | null
         upload: null,
         ...(pin === null ? {} : { pin }),
         ...(updateError === null ? {} : { updateError }),
+        ...(versions === null ? {} : { versions }),
+        ...(versionComing === null ? {} : { versionComing }),
       });
     } else if (phase === 'deleting') {
       worlds.push({ id, phase, order: null, domain: host, upload: null });
@@ -1167,6 +1369,8 @@ export type MachineView =
       readonly engines?: readonly Engine[] | null;
       /** Whether it moves a world to another build of its engine (readUpdates). */
       readonly updates?: boolean;
+      /** Whether it keeps versions of a world, and how many (readVersionsSupport); null when it says nothing. */
+      readonly versions?: VersionsSupport | null;
       /** What its self-updating pass is doing (readRelease); null when its door says nothing. */
       readonly release?: ReleaseState | null;
       /** What its recipe updater is doing (readRecipeUpdate); null when its door says nothing. */
@@ -1210,6 +1414,7 @@ export async function readMachine(
     imports: machine.ok ? readImports(machine.body) : null,
     engines: machine.ok ? readEngines(machine.body) : null,
     updates: machine.ok && readUpdates(machine.body),
+    versions: machine.ok ? readVersionsSupport(machine.body) : null,
     ...(machine.ok && release !== null ? { release } : {}),
     ...(recipeUpdate !== null ? { recipeUpdate } : {}),
   };
@@ -1228,6 +1433,10 @@ export interface GatheredFleet {
   readonly pins: Readonly<Record<string, WorldPin>>;
   /** Why a world's last move to a new build failed, by id. */
   readonly updateErrors: Readonly<Record<string, string>>;
+  /** The versions of the worlds whose door lists them, by id (an older door lists none). */
+  readonly versions: Readonly<Record<string, readonly VersionInfo[]>>;
+  /** The version being made for a world, by id. */
+  readonly versionComing: Readonly<Record<string, VersionComing>>;
 }
 
 /**
@@ -1241,6 +1450,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
   const phases: Record<string, DoorPhase> = {};
   const pins: Record<string, WorldPin> = {};
   const updateErrors: Record<string, string> = {};
+  const versions: Record<string, readonly VersionInfo[]> = {};
+  const versionComing: Record<string, VersionComing> = {};
   const leaving: LeavingWorld[] = [];
   const arriving: ArrivingWorld[] = [];
   const taken = new Set<string>();
@@ -1254,6 +1465,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
         phases[world.id] = world.phase;
         if (world.pin !== undefined) pins[world.id] = world.pin;
         if (world.updateError !== undefined) updateErrors[world.id] = world.updateError;
+        if (world.versions !== undefined) versions[world.id] = world.versions;
+        if (world.versionComing !== undefined) versionComing[world.id] = world.versionComing;
       } else if (world.phase === 'uploading' || world.phase === 'importing') {
         arriving.push({
           id: world.id,
@@ -1283,6 +1496,7 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
       imports: view.open ? (view.imports ?? null) : null,
       engines: view.open ? (view.engines ?? null) : null,
       updates: view.open && view.updates === true,
+      versions: view.open ? (view.versions ?? null) : null,
       ...(view.open && view.release ? { release: view.release } : {}),
       ...(view.open && view.recipeUpdate ? { recipeUpdate: view.recipeUpdate } : {}),
     })),
@@ -1290,6 +1504,8 @@ export function gatherFleet(views: readonly MachineView[], historyLines = 30): G
     phases,
     pins,
     updateErrors,
+    versions,
+    versionComing,
     leaving,
     arriving,
     history: mergeLogs(

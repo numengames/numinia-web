@@ -66,7 +66,7 @@ export interface WorldCard {
 /** The index's filters, in the order the chips show them. */
 export type WorldFilter = 'all' | 'people' | 'city' | 'communities';
 
-const WORKS: readonly DoorPhase[] = ['creating', 'importing', 'uploading', 'updating'];
+const WORKS: readonly DoorPhase[] = ['creating', 'importing', 'uploading', 'updating', 'switching'];
 
 /**
  * The state a card says. A world run by hand names no phase: it is «on» only

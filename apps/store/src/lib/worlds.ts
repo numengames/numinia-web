@@ -25,6 +25,9 @@ import type {
   RecipeUpdate,
   ReleaseState,
   UploadProgress,
+  VersionComing,
+  VersionInfo,
+  VersionsSupport,
   WorldPin,
 } from './fleet';
 import type { SummaCard } from './summa';
@@ -333,6 +336,12 @@ export interface MachineSummary {
   readonly engines?: readonly Engine[] | null;
   /** Whether its door says it moves a world to another build of its engine (`updates`). */
   readonly updates?: boolean;
+  /**
+   * Whether its door says it keeps versions of a world, and how many at most
+   * (`versions.max`); absent or null when it says nothing — an older machine,
+   * for which the room offers no version (versionsSupported).
+   */
+  readonly versions?: VersionsSupport | null;
   /** What its self-updating pass is doing, as its door says (`release`); absent when it says nothing. */
   readonly release?: ReleaseState;
   /**
@@ -346,6 +355,19 @@ export interface MachineSummary {
 /** The engines a machine runs: those its door names, or Hyperfy alone when it names none. */
 export function machineEngines(machine: Pick<MachineSummary, 'engines'> | undefined): Engine[] {
   return machine?.engines ? [...machine.engines] : ['numinia-hyperfy2'];
+}
+
+/** Whether a machine's door says it keeps versions of a world (an older door says nothing: no button). */
+export function versionsSupported(
+  machine: Pick<MachineSummary, 'versions'> | undefined,
+): machine is Pick<MachineSummary, 'versions'> & { readonly versions: VersionsSupport } {
+  return machine?.versions !== undefined && machine.versions !== null;
+}
+
+/** How many versions a world of `server` may keep, as its machine's door says; null when it says none. */
+export function versionsMax(machines: readonly MachineSummary[], server: string): number | null {
+  const machine = machines.find((candidate) => candidate.alias === server && candidate.open);
+  return versionsSupported(machine) ? machine.versions.max : null;
 }
 
 /**
@@ -435,6 +457,102 @@ export function replaceTargets(
       )
     );
   });
+}
+
+// ---------------------------------------------------------------------------
+// Versions: what a card may offer, from what its machine's door lists
+// ---------------------------------------------------------------------------
+
+/** The published version of a world: the one people visit; undefined when its door lists none. */
+export function publishedVersion(row: Pick<WorldRow, 'versions'>): VersionInfo | undefined {
+  return row.versions?.find((version) => version.published);
+}
+
+/** The version that waits beside the published one; undefined when there is none. */
+export function unpublishedVersion(row: Pick<WorldRow, 'versions'>): VersionInfo | undefined {
+  return row.versions?.find((version) => !version.published);
+}
+
+/**
+ * Whether a world sits still enough to change its versions: one of the fleet
+ * (never a watched legacy world), settled (running or stopped — publishing
+ * works on a stopped world), and with no version already on its way, since
+ * its machine makes one at a time and answers `busy` to the rest. A world
+ * being published (`switching`) is none of these.
+ */
+function versionsOpen(
+  row: Pick<WorldRow, 'legacy' | 'order' | 'phase' | 'versionComing'>,
+): boolean {
+  return (
+    row.legacy === null &&
+    row.order !== null &&
+    (row.phase === 'running' || row.phase === 'stopped') &&
+    row.versionComing === undefined
+  );
+}
+
+/**
+ * «Duplicar»: the world has exactly one version, nothing is being made or
+ * published, and its machine's door keeps versions (`max`, from versionsMax:
+ * null when it says none) and room for another.
+ */
+export function canDuplicate(row: WorldRow, max: number | null): boolean {
+  return max !== null && max > 1 && versionsOpen(row) && row.versions?.length === 1;
+}
+
+/**
+ * What `replace` must be in an ImportVersion for this world: `""` while it has
+ * one version (the zip becomes the second), the unpublished version's name when
+ * it has two (the zip takes its place, once whole); null when no zip can be
+ * brought in as a version of it now.
+ */
+export function importReplace(row: WorldRow, max: number | null): string | null {
+  const versions = row.versions;
+  if (max === null || versions === undefined || !versionsOpen(row)) return null;
+  if (publishedVersion(row) === undefined) return null;
+  if (versions.length < max) return '';
+  return unpublishedVersion(row)?.id ?? null;
+}
+
+/** «Subir un zip como versión»: a zip can be brought in as a version of this world now (importReplace). */
+export function canImportVersion(row: WorldRow, max: number | null): boolean {
+  return importReplace(row, max) !== null;
+}
+
+/** «Publicar»: a version waits beside the published one, and nothing else is being done to the world. */
+export function canPublish(row: WorldRow): boolean {
+  return (
+    versionsOpen(row) &&
+    publishedVersion(row) !== undefined &&
+    unpublishedVersion(row) !== undefined
+  );
+}
+
+/**
+ * «Borrar esta versión»: only the unpublished one, and only while the world
+ * keeps another (the published one is never deleted, nor the only one).
+ */
+export function canDeleteVersion(row: WorldRow, vid: string): boolean {
+  const version = row.versions?.find((candidate) => candidate.id === vid);
+  return (
+    versionsOpen(row) &&
+    version !== undefined &&
+    !version.published &&
+    publishedVersion(row) !== undefined
+  );
+}
+
+/** How a version came to be, as a key for the texts and, for a copy, the version it was copied from. */
+export interface OriginLabel {
+  readonly key: 'created' | 'zip' | 'copy';
+  /** The version a copy was made from (`v1`); null otherwise. */
+  readonly from: string | null;
+}
+
+/** A version's `created`, `zip` or `copy:v1` → the key to say it with, and the version a copy comes from. */
+export function originLabel(origin: VersionInfo['origin']): OriginLabel {
+  if (origin === 'created' || origin === 'zip') return { key: origin, from: null };
+  return { key: 'copy', from: origin.slice('copy:'.length) };
 }
 
 /**
@@ -866,6 +984,14 @@ export interface WorldRow {
   readonly updateError?: string;
   /** Its machine's door says it takes a pin: «Fijar a otra versión» is offered (machineTakesPin). */
   readonly canPin?: boolean;
+  /**
+   * Its versions, by number, as its machine's door lists them; absent when the
+   * door lists none (an older machine, or a world that is not settled on one).
+   * Empty: the machine could not read them, so nothing is offered.
+   */
+  readonly versions?: readonly VersionInfo[];
+  /** The version being made for it (a zip arriving, a copy under way); absent when none is. */
+  readonly versionComing?: VersionComing;
 }
 
 /** A world its machine is deleting after its order already went. */
@@ -892,6 +1018,10 @@ export interface RowsInput {
   readonly pins?: Readonly<Record<string, WorldPin>>;
   /** Why a world's last move to a new build failed, by id (gatherFleet). */
   readonly updateErrors?: Readonly<Record<string, string>>;
+  /** The versions each world's door lists, by id (gatherFleet). */
+  readonly versions?: Readonly<Record<string, readonly VersionInfo[]>>;
+  /** The version being made for a world, by id (gatherFleet). */
+  readonly versionComing?: Readonly<Record<string, VersionComing>>;
   readonly leaving?: readonly LeavingWorld[];
   readonly arriving?: readonly ArrivingWorld[];
   readonly cards: readonly WorldCardInfo[];
@@ -940,6 +1070,8 @@ export function buildRows(input: RowsInput): WorldRow[] {
   const phases = input.phases ?? {};
   const pins = input.pins ?? {};
   const updateErrors = input.updateErrors ?? {};
+  const versions = input.versions ?? {};
+  const versionComing = input.versionComing ?? {};
   const machines = input.machines ?? [];
   const engine = input.engine ?? null;
   const rows: WorldRow[] = input.orders.map((order) => {
@@ -963,6 +1095,8 @@ export function buildRows(input: RowsInput): WorldRow[] {
       ...(pins[order.id] === undefined ? {} : { pin: pins[order.id] }),
       ...(updateErrors[order.id] === undefined ? {} : { updateError: updateErrors[order.id] }),
       ...(machineTakesPin(machines, order.server) ? { canPin: true } : {}),
+      ...(versions[order.id] === undefined ? {} : { versions: versions[order.id] }),
+      ...(versionComing[order.id] === undefined ? {} : { versionComing: versionComing[order.id] }),
     };
   });
   const taken = new Set(input.orders.map((order) => order.id));
@@ -1047,7 +1181,7 @@ export function listedRows(rows: readonly WorldRow[]): WorldRow[] {
 }
 
 /** The phases after which a world still needs a moment to answer: it is booting, not broken. */
-const SETTLING_PHASES: readonly DoorPhase[] = ['creating', 'starting', 'updating'];
+const SETTLING_PHASES: readonly DoorPhase[] = ['creating', 'starting', 'updating', 'switching'];
 
 /** What the room remembers, per world, of a boot it saw begin: the phase it saw, and when (ms). */
 export type Settling = Readonly<
@@ -1330,6 +1464,8 @@ export interface ReasonWords {
   readonly importing: string;
   /** A world moving to another build of its engine. */
   readonly updating: string;
+  /** A version being published: the world is down for a few seconds. */
+  readonly switching: string;
   readonly unknown: string;
 }
 
@@ -1352,7 +1488,12 @@ export function describeStatus(row: WorldRow, words: ReasonWords): string {
   if (row.status === 'changing') {
     const phase = row.phase;
     if (phase === 'creating' || phase === 'stopping' || phase === 'starting') return words[phase];
-    if (phase === 'uploading' || phase === 'importing' || phase === 'updating') {
+    if (
+      phase === 'uploading' ||
+      phase === 'importing' ||
+      phase === 'updating' ||
+      phase === 'switching'
+    ) {
       return words[phase];
     }
     return words.deleting;
