@@ -333,3 +333,37 @@ describe('mutation-hardening — the details that carry doctrine', () => {
     );
   });
 });
+
+describe('list — the files of a directory, one call', () => {
+  it('lists file names only, from the configured branch', async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(200, [
+        { type: 'file', name: 'a.json' },
+        { type: 'dir', name: 'sub' },
+        { type: 'file' },
+        { type: 'file', name: 'b.json' },
+      ]),
+    );
+    const names = await storeWith(fetchImpl as unknown as typeof fetch).list('census');
+    expect(names).toEqual(['a.json', 'b.json']);
+    expect(String((fetchImpl.mock.calls as unknown as [string][])[0]![0])).toBe(
+      'https://api.github.com/repos/numengames/numinia-state/contents/census?ref=main',
+    );
+  });
+
+  it('answers [] for a directory that does not exist yet', async () => {
+    const store = storeWith((async () => jsonResponse(404, {})) as unknown as typeof fetch);
+    expect(await store.list('census')).toEqual([]);
+  });
+
+  it('throws loudly on any other status, and on a file where a directory was asked', async () => {
+    await expect(
+      storeWith((async () => jsonResponse(500, {})) as unknown as typeof fetch).list('census'),
+    ).rejects.toThrowError(StateHttpError);
+    await expect(
+      storeWith((async () => jsonResponse(200, { type: 'file' })) as unknown as typeof fetch).list(
+        'census',
+      ),
+    ).rejects.toThrowError(/not a directory/);
+  });
+});

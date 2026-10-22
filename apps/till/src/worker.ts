@@ -177,6 +177,7 @@ import {
   type DnsRefusal,
   type Fetcher as DnsFetcher,
 } from './lib/fleet-dns';
+import { signSigners } from './lib/fleet-signers';
 import type { DeskCheck } from './lib/tariff';
 import { FakeMeter, NoMeter, parseMeterReadings, type Meter } from './meter';
 
@@ -198,6 +199,12 @@ export interface Env {
    * `not-configured` and the room asks for the record by hand.
    */
   readonly CLOUDFLARE_DNS_TOKEN?: string;
+  /**
+   * Secret: the house wallet's private key (0x and 64 hex), which signs the
+   * fleet's list of Oracles and Archons. Only this Worker holds it (ADR-069).
+   * Without it `FleetDesk.signSigners` answers `not-configured`.
+   */
+  readonly FLEET_HOUSE_KEY?: string;
 }
 
 /** The nightly close: 00:30 UTC (wrangler.jsonc). */
@@ -1069,6 +1076,15 @@ export class FleetDesk extends WorkerEntrypoint<Env> {
   /** The house stores a record an Oracle signed; an old `seq` or a stranger's signature is refused. */
   async publish(wallet: unknown, house: unknown, record: unknown): Promise<PublishAnswer> {
     return publishRelease(this.env.TILL_DB, wallet, house, record, new Date());
+  }
+
+  /**
+   * The house signs the list of Oracles and Archons numinia.com assembled
+   * (public: the list is public, the key never leaves). `not-configured`
+   * without `FLEET_HOUSE_KEY`.
+   */
+  async signSigners(wallets: unknown): ReturnType<typeof signSigners> {
+    return signSigners(this.env.FLEET_HOUSE_KEY, wallets, Date.now() / 1000);
   }
 }
 

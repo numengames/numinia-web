@@ -163,6 +163,11 @@ export function rankForAddress(address: string): Rank {
   return config?.oracles.has(address.toLowerCase()) ? 'oracle' : 'nomad';
 }
 
+/** Every Oracle wallet of the env allowlist (lower case); empty when auth is not configured. */
+export function oracleWallets(): string[] {
+  return [...(loadConfig()?.oracles ?? [])];
+}
+
 /**
  * Full rank resolution: the allowlist Oracle wins; otherwise the
  * public census remembers what the city granted. Fail closed in privilege

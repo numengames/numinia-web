@@ -77,6 +77,26 @@ export class GitStateStore {
     return { record: schema.parse(record), sha: body.sha };
   }
 
+  /**
+   * The file names directly inside a directory, [] when it does not exist
+   * (a 404 is an answer). GitHub's contents API lists a directory in one
+   * call, at most 1000 entries; the store never pages, so a larger one
+   * answers its first thousand.
+   */
+  async list(dir: string): Promise<string[]> {
+    const response = await this.fetchImpl(`${this.url(dir)}?ref=${this.env.branch}`, {
+      headers: this.headers(),
+    });
+    if (response.status === 404) return [];
+    if (!response.ok) throw new StateHttpError(response.status, `GET ${dir}`);
+    const body = (await response.json()) as unknown;
+    if (!Array.isArray(body))
+      throw new StateHttpError(response.status, `${dir} is not a directory`);
+    return (body as { type?: unknown; name?: unknown }[]).flatMap((entry) =>
+      entry.type === 'file' && typeof entry.name === 'string' ? [entry.name] : [],
+    );
+  }
+
   /** Returns the new file sha. Conflicts (409/422) are typed for retry. */
   async write(path: string, record: unknown, options: WriteOptions): Promise<string> {
     const content = toBase64(new TextEncoder().encode(JSON.stringify(record, null, 2)));
