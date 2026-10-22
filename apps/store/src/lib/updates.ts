@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.166.0',
+    date: '2026-10-22 06:40',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'Every list of worlds puts the ones that are on first — the worlds page, «Tus mundos», the worlds room — and a world’s card now wears its state as a frame: sea-green when it is on, red when it is off, amber while it is under works.',
+      },
+    ],
+  },
+  {
     version: 'v0.165.0',
     date: '2026-10-22 03:00',
     entries: [

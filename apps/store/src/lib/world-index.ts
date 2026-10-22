@@ -79,6 +79,38 @@ export function worldState(phase: DoorPhase | null, inside: number | null): Worl
   return phase === null && inside !== null ? 'on' : null;
 }
 
+/**
+ * Where a state sits in every list of worlds: the ones that are on come
+ * first, then the ones under works, then the ones whose state nobody said,
+ * and the ones that are off last. One rule for every screen that lists worlds.
+ */
+export function stateRank(state: WorldState | null): number {
+  if (state === 'on') return 0;
+  if (state === 'works') return 1;
+  if (state === null) return 2;
+  return 3;
+}
+
+/** A copy of the cards with the ones that are on first; equals keep their order. */
+export function onFirst(cards: readonly WorldCard[]): readonly WorldCard[] {
+  return [...cards].sort((a, b) => stateRank(a.state) - stateRank(b.state));
+}
+
+/**
+ * Groups of cards (a person's communities) with the ones holding a world
+ * that is on first; inside each group the worlds that are on come first
+ * too. A group with no world at all goes last. Equals keep their order.
+ */
+export function groupsOnFirst<T extends { readonly cards: readonly WorldCard[] }>(
+  groups: readonly T[],
+): T[] {
+  const best = (group: T): number =>
+    group.cards.length === 0 ? 4 : Math.min(...group.cards.map((card) => stateRank(card.state)));
+  return groups
+    .map((group) => ({ ...group, cards: onFirst(group.cards) }))
+    .sort((a, b) => best(a) - best(b));
+}
+
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 const isText = (value: unknown): value is string => typeof value === 'string' && value !== '';
@@ -187,7 +219,7 @@ export function worldCards(input: {
   }
   return cards.sort(
     (a, b) =>
-      Number(a.state === 'off') - Number(b.state === 'off') ||
+      stateRank(a.state) - stateRank(b.state) ||
       (b.inside ?? 0) - (a.inside ?? 0) ||
       Number(b.city) - Number(a.city) ||
       a.name.localeCompare(b.name, 'es'),

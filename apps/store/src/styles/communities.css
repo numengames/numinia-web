@@ -32,6 +32,19 @@
   color: var(--enlace);
   border-color: color-mix(in srgb, var(--enlace) 45%, transparent);
 }
+.chip.encendido {
+  /* The kit's sea-green: the same one the worlds room paints a running world with. */
+  color: var(--verdemar);
+  border-color: color-mix(in srgb, var(--verdemar) 60%, transparent);
+}
+.chip.apagado {
+  color: var(--coral);
+  border-color: color-mix(in srgb, var(--coral) 55%, transparent);
+}
+[data-modo='diurno'] .chip.apagado {
+  color: var(--grana);
+  border-color: color-mix(in srgb, var(--grana) 55%, transparent);
+}
 .chip.ambar {
   color: var(--ambar);
   border-color: color-mix(in srgb, var(--ambar) 45%, transparent);

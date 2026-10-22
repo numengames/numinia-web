@@ -146,7 +146,11 @@ const pageUrl = new URL(localeHref(locale, `/mundos/${worldId}/`), Astro.site ??
           state && card && (
             <span class="mundo-tip" data-tip>
               <span
-                class:list={['chip', { vivo: card.state === 'on', ambar: card.state === 'works' }]}
+                class:list={['chip', {
+          encendido: card.state === 'on',
+          apagado: card.state === 'off',
+          ambar: card.state === 'works',
+        }]}
                 tabindex="0"
                 aria-describedby={`estado-${worldId}`}
                 data-world-state={card.state}
