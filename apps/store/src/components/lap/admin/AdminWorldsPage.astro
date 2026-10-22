@@ -1069,6 +1069,10 @@ const covers = Object.fromEntries(
     outline-offset: 4px;
     border-radius: var(--radio-control);
   }
+  /* «≈ 40 MB» never breaks in the middle of its figure. */
+  [data-worlds-panel] [data-version-size] {
+    white-space: nowrap;
+  }
   [data-worlds-panel] .version-nombre {
     display: flex;
     flex-wrap: wrap;
