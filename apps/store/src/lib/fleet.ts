@@ -558,10 +558,14 @@ export function readVersionProblem(rule: string | null): VersionProblem | null {
   return name !== undefined && isVersionProblem(name) ? name : null;
 }
 
+/** The version requests the room follows once the machine took them (a download waits in its dialog). */
+export type FollowedVersionKind =
+  'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion' | 'ImportVersion';
+
 /** The words a finished version request is told in. */
 export interface VersionOutcomeWords {
   /** `{w}` the world, `{n}` the version's number. */
-  readonly done: Readonly<Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>>;
+  readonly done: Readonly<Record<FollowedVersionKind, string>>;
   /** A rule the room has no words for: `{m}` the machine, `{rule}`. */
   readonly failed: string;
   /** `{m}` the machine, `{n}` the version's number. */
@@ -572,36 +576,43 @@ export interface VersionOutcomeWords {
 export interface VersionOutcome {
   readonly ok: boolean;
   readonly text: string;
-  /** The version a duplicate made (`v2`); null otherwise. */
+  /** The version a duplicate or a zip made (`v2`); null otherwise. */
   readonly made: string | null;
 }
 
 /**
  * A version request the machine took, now settled: its outcome in the room's
  * words; null while it is still on its way (or its answer could not be read).
- * A duplicate speaks of the version it made, the others of the one asked about.
+ * A duplicate or a zip speaks of the version it made, the others of the one
+ * asked about. `explain` may find better words for a refusal (a zip's own
+ * rule, with the entry that broke it); without them the version words speak.
  */
 export function versionOutcome(
   job: {
-    readonly kind: 'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion';
+    readonly kind: FollowedVersionKind;
     readonly world: string;
     readonly version: string;
     readonly machine: string;
   },
   result: RequestResult | null,
   words: VersionOutcomeWords,
+  explain?: (result: RequestResult) => string | null,
 ): VersionOutcome | null {
   if (result === null || !settled(result)) return null;
   if (result.state === 'failed') {
     const problem = readVersionProblem(result.rule);
+    const told = explain?.(result) ?? null;
     const text =
-      problem === null
+      told ??
+      (problem === null
         ? fill(words.failed, { m: job.machine, rule: result.rule ?? '?' })
-        : fill(words.problems[problem], { m: job.machine, n: versionNumber(job.version) });
+        : fill(words.problems[problem], { m: job.machine, n: versionNumber(job.version) }));
     return { ok: false, text, made: null };
   }
-  const made = job.kind === 'DuplicateVersion' ? result.made : null;
-  const n = versionNumber(made ?? job.version);
+  const made = job.kind === 'DuplicateVersion' || job.kind === 'ImportVersion' ? result.made : null;
+  // A zip's version is told by its own number: a door that did not say it has none to give.
+  const n =
+    made === null && job.kind === 'ImportVersion' ? '?' : versionNumber(made ?? job.version);
   return { ok: true, text: fill(words.done[job.kind], { w: job.world, n }), made };
 }
 
@@ -1746,6 +1757,8 @@ export interface ImportTicket {
   readonly sha256: string;
   /** The zip's file name, to ask for the same one again. */
   readonly name: string;
+  /** The zip is a new version of a world that is here (ImportVersion), not a world of its own. */
+  readonly asVersion?: true;
 }
 
 /** The field of the tab's history entry that holds the room's unfinished uploads. */
@@ -1756,7 +1769,7 @@ export function readTickets(state: unknown): ImportTicket[] {
   if (!isObj(state) || !Array.isArray(state[TICKETS_FIELD])) return [];
   return (state[TICKETS_FIELD] as readonly unknown[]).flatMap((item) => {
     if (!isObj(item)) return [];
-    const { machine, world, domain, nonce, bytes, sha256, name } = item;
+    const { machine, world, domain, nonce, bytes, sha256, name, asVersion } = item;
     if (typeof machine !== 'string' || !SLUG.test(machine)) return [];
     if (typeof world !== 'string' || !SLUG.test(world)) return [];
     if (typeof domain !== 'string' || !HOST.test(domain)) return [];
@@ -1764,7 +1777,18 @@ export function readTickets(state: unknown): ImportTicket[] {
     if (!isCount(bytes) || bytes === 0) return [];
     if (typeof sha256 !== 'string' || !SHA256.test(sha256)) return [];
     if (typeof name !== 'string' || name.length > 255) return [];
-    return [{ machine, world, domain, nonce, bytes, sha256, name }];
+    return [
+      {
+        machine,
+        world,
+        domain,
+        nonce,
+        bytes,
+        sha256,
+        name,
+        ...(asVersion === true ? { asVersion } : {}),
+      },
+    ];
   });
 }
 

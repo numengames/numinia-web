@@ -37,13 +37,16 @@ import { WorldVersions, type VersionsView } from './WorldVersions';
  * `unpin`: let it follow the fleet again (both PinWorld).
  */
 export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update' | 'pin' | 'unpin';
-/** What a card's buttons ask: a world action, or a zip to take the world's place (the room opens the picker). */
-export type CardAction = WorldAction | 'replace';
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
-/** A zip this tab is bringing back as a world, as its card shows it. */
+/**
+ * A zip this tab is bringing back as a world — or into a world that is here as
+ * a version, which keeps running and keeps its own state — as its card shows it.
+ */
 export interface TransferView {
+  /** The zip goes into a world that is here as a new version: the world's own state stands. */
+  readonly version: boolean;
   /**
    * `sending` its bytes, the machine `checking` it, `cut` or `stopped` on the
    * way, `failed` (a refusal), `half` done before a reload, `matching` a zip
@@ -95,7 +98,7 @@ function rowCover(row: WorldRow, placement: PlacementView | undefined): string |
 interface ViewProps {
   readonly rows: readonly WorldRow[];
   readonly room: WorldsRoomMessages;
-  readonly onAction: (row: WorldRow, action: CardAction) => void;
+  readonly onAction: (row: WorldRow, action: WorldAction) => void;
   readonly onCode: (row: WorldRow, mode: CodeMode) => void;
   /** Card t_a856c570 (2026-10-18): renames an existing world (or server). */
   readonly onRename: (row: WorldRow) => void;
@@ -147,16 +150,22 @@ export function CodeBox({
   );
 }
 
+/** The upload that is about the world itself (a world from its zip); none for a zip that is a version of it. */
+const ofItself = (transfer: TransferView | undefined): TransferView | undefined =>
+  transfer?.version === true ? undefined : transfer;
+
 /** What a world is doing, in one verb: the settled states as they are, a change as what is happening now. */
 function StatusPill({
   row,
   room,
-  transfer,
+  transfer: sent,
 }: {
   row: WorldRow;
   room: WorldsRoomMessages;
   transfer: TransferView | undefined;
 }) {
+  // A zip on its way as a version leaves the world as it is: running, or stopped.
+  const transfer = ofItself(sent);
   // An upload this tab runs says its own state: on its way, cut, or refused.
   const stuck =
     transfer?.state === 'failed'
@@ -471,19 +480,6 @@ function Actions({
           <WorldGlyph name="x" />
         </button>
       )}
-      {/* A zip that takes this world's place: only for a settled world, and the dialog says if no machine can take one. */}
-      {order && (row.phase === 'running' || row.phase === 'stopped') && (
-        <button
-          type="button"
-          className="btn btn-fantasma btn-icono"
-          onClick={() => onAction(row, 'replace')}
-          aria-label={room.actions.replace}
-          data-tip={room.actions.replace}
-          data-metric="worlds-replace"
-        >
-          <WorldGlyph name="package" />
-        </button>
-      )}
       {order && (
         <button
           type="button"
@@ -630,9 +626,10 @@ function NewCode({ row, code, room }: { row: WorldRow; code: string; room: World
  */
 function reasonOf(
   row: WorldRow,
-  transfer: TransferView | undefined,
+  sent: TransferView | undefined,
   room: WorldsRoomMessages,
 ): string | null {
+  const transfer = ofItself(sent);
   if (transfer?.state === 'landed' && row.status === 'stopped') return room.import.fromZip;
   const stuck = transfer?.state;
   if (stuck === 'cut' || stuck === 'stopped' || stuck === 'half' || stuck === 'failed') return null;
@@ -641,7 +638,9 @@ function reasonOf(
 
 /** A code for a world its machine will never make (refused, or its slot gone) is not shown. */
 const codeOf = (transfer: TransferView | undefined): string | null =>
-  transfer === undefined || (transfer.state === 'failed' && !transfer.retry) ? null : transfer.code;
+  transfer === undefined || transfer.version || (transfer.state === 'failed' && !transfer.retry)
+    ? null
+    : transfer.code;
 
 /** A world's organization, its page, and what the house does with it: choose it, or assign it. */
 function HomeLine({ row, placement }: { row: WorldRow; placement: PlacementView }) {

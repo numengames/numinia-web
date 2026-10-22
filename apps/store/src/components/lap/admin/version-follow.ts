@@ -9,7 +9,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorldsRoomMessages } from '../../../i18n/worlds';
-import { readRequest, settled, versionOutcome, waitFor } from '../../../lib/fleet';
+import {
+  readRequest,
+  settled,
+  versionOutcome,
+  waitFor,
+  type RequestResult,
+} from '../../../lib/fleet';
 import type { FollowedKind, VersionJob } from './WorldVersions';
 
 /** How often the room asks a machine how a version request goes, and for how long at most. */
@@ -23,7 +29,12 @@ export interface VersionNote {
   readonly text: string;
 }
 
-export function useVersionJobs(load: () => void, room: WorldsRoomMessages) {
+export function useVersionJobs(
+  load: () => void,
+  room: WorldsRoomMessages,
+  /** Better words for what a machine refused after taking the request (a zip's own rule); null: the version words. */
+  explain?: (job: VersionJob, result: RequestResult) => string | null,
+) {
   const [jobs, setJobs] = useState<readonly VersionJob[]>([]);
   const [note, setNote] = useState<VersionNote | null>(null);
   const [made, setMade] = useState<{ readonly world: string; readonly version: string } | null>(
@@ -37,8 +48,8 @@ export function useVersionJobs(load: () => void, room: WorldsRoomMessages) {
     };
   }, []);
   // The latest of each, for a follow that outlives the render that began it.
-  const latest = useRef({ load, room });
-  latest.current = { load, room };
+  const latest = useRef({ load, room, explain });
+  latest.current = { load, room, explain };
 
   const follow = useCallback((job: VersionJob): void => {
     setJobs((current) => [...current, job]);
@@ -51,7 +62,13 @@ export function useVersionJobs(load: () => void, room: WorldsRoomMessages) {
       });
       if (!alive.current) return;
       setJobs((current) => current.filter((candidate) => candidate.request !== job.request));
-      const outcome = versionOutcome(job, result, latest.current.room.versions);
+      const explain = latest.current.explain;
+      const outcome = versionOutcome(
+        job,
+        result,
+        latest.current.room.versions,
+        explain === undefined ? undefined : (found) => explain(job, found),
+      );
       if (outcome !== null) {
         setNote({ ok: outcome.ok, text: outcome.text });
         if (outcome.made !== null) setMade({ world: job.world, version: outcome.made });

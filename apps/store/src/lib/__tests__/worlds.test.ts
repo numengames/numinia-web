@@ -24,6 +24,7 @@ import {
   describeComing,
   formatVersionDate,
   versionBlock,
+  versionTargets,
   versionNo,
   type ComingWords,
   canImportVersion,
@@ -73,7 +74,6 @@ import {
   readEngineRelease,
   readProbe,
   renderOrder,
-  replaceTargets,
   rowPlace,
   rowsOnFirst,
   statusRank,
@@ -780,27 +780,6 @@ describe('the place: machine, address and whether it is free', () => {
     expect(nameOwner('vic', rows)).toBeNull();
     expect(nameOwner('new-one', rows)).toBeNull();
     expect(nameOwner('  ', rows)).toBeNull();
-  });
-
-  it('offers to replace only settled worlds of the fleet, on a machine that runs the zip’s engine', () => {
-    const importers = [
-      { alias: 'open-1', engines: ['numinia-hyperfy2'] as const },
-      { alias: 'open-2', engines: ['numinia-hyperfy2', 'numinia-engine'] as const },
-    ];
-    const ids = (engine: 'numinia-hyperfy2' | 'numinia-engine') =>
-      replaceTargets(rows, importers, engine).map((row) => row.id);
-    // agora and again sit on open-1, forge on open-2; gone/circle/old are leaving, vic is legacy.
-    expect(ids('numinia-hyperfy2')).toEqual(['again', 'agora', 'forge']);
-    // Only open-2 runs the Numinia Engine: a zip of that engine can take forge's place alone.
-    expect(ids('numinia-engine')).toEqual(['forge']);
-    // A machine that takes no zips offers nothing; neither does a world on its way somewhere.
-    expect(replaceTargets(rows, [], 'numinia-hyperfy2')).toEqual([]);
-    const busy = rows.map((row) =>
-      row.id === 'agora' ? { ...row, phase: 'updating' as const } : row,
-    );
-    expect(replaceTargets(busy, importers, 'numinia-hyperfy2').map((row) => row.id)).not.toContain(
-      'agora',
-    );
   });
 
   it('lists every world but those being deleted', () => {
@@ -1538,6 +1517,46 @@ describe('a world’s versions — what a card may offer', () => {
     expect(canImportVersion(rowWith({ versions: TWO }, 'updating'), 2)).toBe(false);
   });
 
+  it('offers a zip only the worlds that can take it as a version, of its engine, on a machine that takes zips', () => {
+    const named = (id: string, extra: Partial<WorldRow>, orderExtra: Partial<WorldOrder> = {}) => {
+      const [row] = buildRows({
+        orders: [order(id, orderExtra)],
+        phases: { [id]: 'running' },
+        cards: [],
+        probes: {},
+      });
+      return { ...(row as WorldRow), ...extra };
+    };
+    const rows = [
+      named('plain', { versions: ONE }),
+      named('pair', { versions: TWO }),
+      named('engine', { versions: ONE }, { image: ENGINE_OLD, server: 'open-2' }),
+      named('older', {}),
+      named('full', { versions: [v('v1', true), v('v2', true)] }),
+      named('busy', { versions: ONE, versionComing: COMING }),
+      named('away', { versions: ONE }, { server: 'open-3' }),
+    ];
+    const importers = [{ alias: 'open-1' }, { alias: 'open-2' }];
+    const max = (row: WorldRow): number | null => (row.id === 'older' ? null : 2);
+    const ids = (engine: 'numinia-hyperfy2' | 'numinia-engine') =>
+      versionTargets(rows, importers, engine, max).map((row) => row.id);
+    // Hyperfy zips: the worlds with room for a version on a machine that takes zips (not `away`).
+    expect(ids('numinia-hyperfy2')).toEqual(['plain', 'pair']);
+    // A zip of the Numinia Engine goes to a world of that engine only.
+    expect(ids('numinia-engine')).toEqual(['engine']);
+    // No machine that takes zips: nothing to offer.
+    expect(versionTargets(rows, [], 'numinia-hyperfy2', max)).toEqual([]);
+    // A world whose order is gone, or that no machine places, has nothing to take it.
+    expect(
+      versionTargets(
+        [{ ...(rows[0] as WorldRow), place: null }],
+        importers,
+        'numinia-hyperfy2',
+        max,
+      ),
+    ).toEqual([]);
+  });
+
   it('offers to publish only when a version waits beside the published one and nothing else is happening', () => {
     expect(canPublish(rowWith({ versions: TWO }))).toBe(true);
     expect(canPublish(rowWith({ versions: TWO }, 'stopped'))).toBe(true);
@@ -1652,6 +1671,18 @@ describe('a world’s versions — what a card may offer', () => {
     expect(quiet(coming)).toBe(true);
     expect(coming?.coming).toEqual(COMING);
     expect(quiet(versionBlock(rowWith({ versions: TWO }, 'switching'), 2, false))).toBe(true);
+  });
+
+  it('offers «subir un zip como versión» while the world can take one and nothing is on its way', () => {
+    expect(versionBlock(rowWith({ versions: ONE }), 2, false)?.canImport).toBe(true);
+    expect(versionBlock(rowWith({ versions: TWO }), 2, false)?.canImport).toBe(true);
+    // Full of published versions, a version coming, a request of this tab, the world switching.
+    expect(versionBlock(rowWith({ versions: ONE }), 1, false)?.canImport).toBe(false);
+    expect(
+      versionBlock(rowWith({ versions: ONE, versionComing: COMING }), 2, false)?.canImport,
+    ).toBe(false);
+    expect(versionBlock(rowWith({ versions: ONE }), 2, true)?.canImport).toBe(false);
+    expect(versionBlock(rowWith({ versions: TWO }, 'switching'), 2, false)?.canImport).toBe(false);
   });
 
   it('writes the note only where it helps: one version on a door that keeps two, or two', () => {

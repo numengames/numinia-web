@@ -151,8 +151,11 @@ export function useFleetAction(sessionWallet: string | null, listens: (alias: st
           }
           return;
         }
-        // A world from its zip: a door that took it must say where the zip goes.
-        if (ask.kind === 'ImportWorld' && accepted.upload === null) {
+        // A world or a version from its zip: a door that took it must say where the zip goes.
+        if (
+          (ask.kind === 'ImportWorld' || ask.kind === 'ImportVersion') &&
+          accepted.upload === null
+        ) {
           note('refused', 'unexpected');
           set({ at: 'failed', problem: 'unexpected', detail: '202' });
           return;

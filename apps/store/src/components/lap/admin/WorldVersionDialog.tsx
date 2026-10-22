@@ -22,7 +22,7 @@ export interface VersionAsk {
   readonly version: string;
 }
 
-const KINDS: Readonly<Record<VersionAsk['action'], FollowedKind>> = {
+const KINDS: Readonly<Record<VersionAsk['action'], Exclude<FollowedKind, 'ImportVersion'>>> = {
   publish: 'PublishVersion',
   delete: 'DeleteVersion',
   duplicate: 'DuplicateVersion',

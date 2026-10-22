@@ -435,30 +435,6 @@ export function nameOwner(
   return row ? { id: row.id, leaving: row.phase === 'deleting' } : null;
 }
 
-/**
- * The worlds a zip can take the place of: worlds of the fleet that sit settled
- * (running or stopped) on a machine that takes zips and runs the zip's engine.
- * A legacy world is only watched, and one on its way somewhere is busy.
- */
-export function replaceTargets(
-  rows: readonly WorldRow[],
-  importers: readonly { readonly alias: string; readonly engines: readonly Engine[] }[],
-  engine: Engine,
-): WorldRow[] {
-  return rows.filter((row) => {
-    const place = rowPlace(row);
-    return (
-      row.legacy === null &&
-      row.order !== null &&
-      place !== null &&
-      (row.phase === 'running' || row.phase === 'stopped') &&
-      importers.some(
-        (importer) => importer.alias === place.server && importer.engines.includes(engine),
-      )
-    );
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Versions: what a card may offer, from what its machine's door lists
 // ---------------------------------------------------------------------------
@@ -517,6 +493,30 @@ export function importReplace(row: WorldRow, max: number | null): string | null 
 /** «Subir un zip como versión»: a zip can be brought in as a version of this world now (importReplace). */
 export function canImportVersion(row: WorldRow, max: number | null): boolean {
   return importReplace(row, max) !== null;
+}
+
+/**
+ * The worlds a zip can be brought into as a version: those that can take one
+ * now (canImportVersion, with the room each machine's door allows: `max`), on
+ * a machine whose door takes zips, and of the zip's own engine — a zip of the
+ * other engine fails that engine's checks, so it is not offered.
+ */
+export function versionTargets(
+  rows: readonly WorldRow[],
+  importers: readonly { readonly alias: string }[],
+  engine: Engine,
+  max: (row: WorldRow) => number | null,
+): WorldRow[] {
+  return rows.filter((row) => {
+    const place = rowPlace(row);
+    return (
+      canImportVersion(row, max(row)) &&
+      place !== null &&
+      row.order !== null &&
+      engineOf(row.order.image) === engine &&
+      importers.some((importer) => importer.alias === place.server)
+    );
+  });
 }
 
 /** «Publicar»: a version waits beside the published one, and nothing else is being done to the world. */
@@ -587,6 +587,8 @@ export interface VersionBlock {
   readonly lines: readonly VersionLine[];
   readonly note: 'one' | 'two' | null;
   readonly coming: VersionComing | null;
+  /** «Subir un zip como versión» may be offered (canImportVersion), and nothing of this tab is on its way. */
+  readonly canImport: boolean;
 }
 
 /**
@@ -616,7 +618,12 @@ export function versionBlock(
     canDelete: !locked && canDeleteVersion(row, version.id),
   }));
   const note = lines.length === 1 && max > 1 ? 'one' : lines.length === 2 ? 'two' : null;
-  return { lines, note, coming: row.versionComing ?? null };
+  return {
+    lines,
+    note,
+    coming: row.versionComing ?? null,
+    canImport: !locked && canImportVersion(row, max),
+  };
 }
 
 /** How much of a zip arriving as a version its machine has, in whole per cent; null when it does not say. */

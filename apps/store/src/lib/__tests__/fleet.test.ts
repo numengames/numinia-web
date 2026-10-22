@@ -2065,6 +2065,14 @@ describe('a world from its zip — sizes, the doors that take zips, the upload, 
     ];
     expect(readTickets({ worldsImports: [...odd, TICKET] })).toEqual([TICKET]);
   });
+
+  it('remembers which unfinished upload is a zip for a world that is here (a version), and only that', () => {
+    const version = { ...TICKET, asVersion: true } as const;
+    expect(readTickets(withTickets(null, [version]))).toEqual([version]);
+    // Anything but `true` is a world of its own.
+    expect(readTickets({ worldsImports: [{ ...TICKET, asVersion: 'yes' }] })).toEqual([TICKET]);
+    expect(readTickets({ worldsImports: [{ ...TICKET, asVersion: false }] })).toEqual([TICKET]);
+  });
 });
 
 describe('a world’s versions — the five requests and the vectors they share', () => {
@@ -2269,6 +2277,7 @@ describe('a world’s versions — the five requests and the vectors they share'
         PublishVersion: 'published {n} of {w}',
         DuplicateVersion: 'copy of {w} is {n}',
         DeleteVersion: 'deleted {n} of {w}',
+        ImportVersion: 'zip of {w} is {n}',
       },
       failed: '{m} failed ({rule})',
       problems: Object.fromEntries(VERSION_PROBLEMS.map((p) => [p, `${p} on {m} v{n}`])) as Record<
@@ -2322,6 +2331,23 @@ describe('a world’s versions — the five requests and the vectors they share'
     );
     expect(versionOutcome(duplicate, result('failed', null), words)?.text).toBe(
       'open-1 failed (?)',
+    );
+    // A zip speaks of the version it made; a door that did not say which leaves a question mark.
+    const zip = { ...job, kind: 'ImportVersion', version: '' } as const;
+    expect(versionOutcome(zip, result('done', null, 'v2'), words)).toEqual({
+      ok: true,
+      text: 'zip of plaza is 2',
+      made: 'v2',
+    });
+    expect(versionOutcome(zip, result('done', null), words)?.text).toBe('zip of plaza is ?');
+    // Better words for a refusal win; when they have none, the version words speak.
+    const explain = (found: { rule: string | null }): string | null =>
+      found.rule === 'zip-slip' ? 'a path leaves the world' : null;
+    expect(versionOutcome(zip, result('failed', 'zip-slip'), words, explain)?.text).toBe(
+      'a path leaves the world',
+    );
+    expect(versionOutcome(zip, result('failed', 'full'), words, explain)?.text).toBe(
+      'full on open-1 v0',
     );
     // Not finished, or not read: nothing to tell yet.
     expect(versionOutcome(publish, result('working', null), words)).toBeNull();

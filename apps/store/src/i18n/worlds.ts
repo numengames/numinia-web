@@ -7,7 +7,7 @@
  */
 
 import type { SupportedLocale } from '@numinia/domain';
-import type { ImportRule, RequestKind, VersionProblem } from '../lib/fleet';
+import type { FollowedVersionKind, ImportRule, RequestKind, VersionProblem } from '../lib/fleet';
 import type { ComingWords } from '../lib/worlds';
 
 export interface WorldsRoomMessages {
@@ -106,8 +106,6 @@ export interface WorldsRoomMessages {
     readonly update: string;
     /** Holds a world on another build, with a reason; the machine's updates leave it alone. */
     readonly pin: string;
-    /** Opens the file picker for a zip that takes this world’s place. */
-    readonly replace: string;
     /** Lets a held world follow the fleet's build again. */
     readonly unpin: string;
     readonly more: string;
@@ -472,28 +470,24 @@ export interface WorldsRoomMessages {
     readonly rules: Readonly<Record<ImportRule, string>>;
     /** After a machine's rule, the zip entry it names: `{f}`. */
     readonly entry: string;
-    /** What to do with a zip when a world of the fleet could take its place. */
-    readonly replaceLabel: string;
+    /** The dialog's title when the zip goes into a world that is here as a version. */
+    readonly versionTitle: string;
+    /** What to do with a zip when a world of the fleet could take it as a version. */
+    readonly versionLabel: string;
     /** The choice that brings the zip as a world of its own. */
-    readonly replaceNew: string;
-    /** The choice to take an existing world’s place: `{t}` its name, `{d}` its address. */
-    readonly replaceOption: string;
-    /** What replacing does: `{t}` the world, `{d}` its address. */
-    readonly replaceWarning: string;
-    /** How to keep the world that goes away. */
-    readonly replaceKeep: string;
-    /** The two signatures: `{w}` the world that goes, `{m}` its machine. */
-    readonly replaceSignNote: string;
-    /** The button that signs the delete, the first of the two. */
-    readonly replaceSign: string;
-    /** The button that signs the zip, once the old world is gone. */
-    readonly replaceSignImport: string;
-    /** While the machine deletes the old world: `{m}`, `{w}`. */
-    readonly replaceDeleting: string;
-    /** The old world is gone and the zip is not yet signed: `{w}`. */
-    readonly replaceDeleted: string;
-    /** The machine took too long to delete: `{m}`, `{w}`. */
-    readonly replaceLate: string;
+    readonly versionNew: string;
+    /** The choice to bring it into an existing world: `{t}` its name, `{d}` its address. */
+    readonly versionOption: string;
+    /** What the zip does not choose: the machine, the address and the limits are the world's. */
+    readonly versionOwn: string;
+    /** The world has one version: the zip becomes the second. */
+    readonly versionOne: string;
+    /** The world has two: `{n}` the unpublished version's number, which the zip's replaces. */
+    readonly versionTwo: string;
+    /** The one signature: `{m}` the machine, `{w}` the world. */
+    readonly versionSignNote: string;
+    /** The button that signs it. */
+    readonly versionSign: string;
   };
   /**
    * A world's versions on its card (ADR: one is published, one may wait beside it).
@@ -514,19 +508,17 @@ export interface WorldsRoomMessages {
     readonly duplicate: string;
     readonly publish: string;
     readonly delete: string;
+    /** Opens the zip dialog with this world chosen: the zip becomes a version of it. */
+    readonly importZip: string;
     /** Under the block: with one version, and with two. */
     readonly noteOne: string;
     readonly noteTwo: string;
     /** A version on its way (describeComing): `{state}` is one of the three below, `{p}` per cent. */
     readonly coming: ComingWords;
     /** A request of this tab the machine took and has not finished. */
-    readonly following: Readonly<
-      Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>
-    >;
+    readonly following: Readonly<Record<FollowedVersionKind, string>>;
     /** The notice when it finished. */
-    readonly done: Readonly<
-      Record<'PublishVersion' | 'DuplicateVersion' | 'DeleteVersion', string>
-    >;
+    readonly done: Readonly<Record<FollowedVersionKind, string>>;
     /** A machine failed after taking the request, with a rule the room has no words for. */
     readonly failed: string;
     readonly close: string;
@@ -650,7 +642,6 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       importZip: 'Traer de un zip',
       update: 'Actualizar',
       pin: 'Fijar a otra versión',
-      replace: 'Reemplazar con un zip',
       unpin: 'Quitar el fijado',
       more: 'Ver {n} más',
       less: 'Ver menos',
@@ -941,19 +932,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Elegir el zip',
       notSame: 'Ese no es el mismo zip: su huella no coincide.',
       entry: 'Archivo: {f}.',
-      replaceLabel: 'Qué hacer con este zip',
-      replaceNew: 'Traerlo como un mundo nuevo',
-      replaceOption: 'Reemplazar {t} ({d})',
-      replaceWarning:
-        'Se borra {t} ({d}) con todo lo que tiene dentro y este zip entra en su lugar, con la misma dirección. No se puede deshacer.',
-      replaceKeep: 'Si quieres conservar el actual, descárgalo antes desde su tarjeta.',
-      replaceSignNote:
-        'Tu cartera te pedirá dos firmas: primero borrar {w}, después traer el zip. Entre las dos, {m} termina de borrar el anterior (menos de un minuto). No cierres esta ventana. El mundo nuevo llega parado.',
-      replaceSign: 'Firmar y reemplazar',
-      replaceSignImport: 'Firmar y traer el zip',
-      replaceDeleting: '{m} está borrando {w}…',
-      replaceDeleted: '{w} ya está borrado: falta firmar la entrada del zip.',
-      replaceLate: '{m} aún no ha terminado de borrar {w}. Pulsa otra vez en un minuto.',
+      versionTitle: 'Subir un zip como versión',
+      versionLabel: 'Qué hacer con este zip',
+      versionNew: 'Traerlo como un mundo nuevo',
+      versionOption: 'Subirlo como versión nueva de {t} ({d})',
+      versionOwn:
+        'La máquina, la dirección y los límites son los del mundo: el zip solo trae una versión.',
+      versionOne: 'El mundo sigue como está; el zip llega como segunda versión, sin publicar.',
+      versionTwo:
+        'La versión {n} (la no publicada) se sustituye por la del zip cuando el zip esté comprobado. La publicada no se toca.',
+      versionSignNote:
+        'Una sola firma: {m} guarda el zip como versión nueva de {w}. El mundo sigue encendido; para que la gente la visite, la publicas luego desde su tarjeta.',
+      versionSign: 'Firmar y subir el zip',
       elsewhere:
         'Lo está subiendo otra pestaña, o la subida quedó a medias: si nadie la termina, {m} la descarta en menos de una hora.',
       failedPill: 'No se pudo traer',
@@ -1018,6 +1008,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       duplicate: 'Duplicar',
       publish: 'Publicar esta',
       delete: 'Borrar',
+      importZip: 'Subir un zip como versión',
       noteOne:
         'Puedes tener dos versiones: duplica esta para probar cambios sin tocar la publicada.',
       noteTwo: 'La gente solo entra en la publicada. La otra espera aquí.',
@@ -1032,12 +1023,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         PublishVersion: 'Publicando… el mundo se apaga unos segundos y vuelve solo.',
         DuplicateVersion: 'Duplicando…',
         DeleteVersion: 'Borrando…',
+        ImportVersion: 'Llegando el zip como versión nueva… el mundo sigue encendido.',
       },
       done: {
         PublishVersion: 'Ya está publicada la versión {n} de {w}.',
         DuplicateVersion:
           'Hecha la copia de {w}: es la versión {n}. Para que la gente la visite, publícala.',
         DeleteVersion: 'Borrada la versión {n} de {w}.',
+        ImportVersion:
+          'La versión {n} ya está en el mundo, sin publicar. Públicala desde su tarjeta cuando quieras.',
       },
       failed: 'La máquina {m} no pudo terminar el cambio de versión ({rule}).',
       close: 'Cerrar',
@@ -1197,7 +1191,6 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       importZip: 'Bring from a zip',
       update: 'Update',
       pin: 'Pin to another version',
-      replace: 'Replace with a zip',
       unpin: 'Remove the pin',
       more: 'Show {n} more',
       less: 'Show less',
@@ -1491,19 +1484,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Choose the zip',
       notSame: 'That is not the same zip: its fingerprint does not match.',
       entry: 'File: {f}.',
-      replaceLabel: 'What to do with this zip',
-      replaceNew: 'Bring it as a new world',
-      replaceOption: 'Replace {t} ({d})',
-      replaceWarning:
-        '{t} ({d}) is deleted with everything inside it, and this zip takes its place at the same address. This cannot be undone.',
-      replaceKeep: 'To keep the current one, download it first from its card.',
-      replaceSignNote:
-        'Your wallet will ask for two signatures: first to delete {w}, then to bring the zip. In between, {m} finishes deleting the old one (under a minute). Do not close this window. The new world arrives stopped.',
-      replaceSign: 'Sign and replace',
-      replaceSignImport: 'Sign and bring the zip',
-      replaceDeleting: '{m} is deleting {w}…',
-      replaceDeleted: '{w} is deleted: only the signature for the zip is left.',
-      replaceLate: '{m} has not finished deleting {w} yet. Press again in a minute.',
+      versionTitle: 'Upload a zip as a version',
+      versionLabel: 'What to do with this zip',
+      versionNew: 'Bring it as a new world',
+      versionOption: 'Upload it as a new version of {t} ({d})',
+      versionOwn:
+        'The machine, the address and the limits are the world’s: the zip only brings a version.',
+      versionOne: 'The world stays as it is; the zip arrives as a second version, unpublished.',
+      versionTwo:
+        'Version {n} (the unpublished one) is replaced by the zip’s once the zip has been checked. The published one is not touched.',
+      versionSignNote:
+        'One signature: {m} stores the zip as a new version of {w}. The world keeps running; to let people visit it, you publish it later from its card.',
+      versionSign: 'Sign and upload the zip',
       elsewhere:
         'Another tab is uploading it, or it was left half done: if nobody finishes it, {m} drops it within the hour.',
       failedPill: 'Could not bring it back',
@@ -1570,6 +1562,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       duplicate: 'Duplicate',
       publish: 'Publish this one',
       delete: 'Delete',
+      importZip: 'Upload a zip as a version',
       noteOne:
         'You can keep two versions: duplicate this one to try changes without touching the published one.',
       noteTwo: 'People only enter the published one. The other waits here.',
@@ -1585,12 +1578,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'Publishing… the world goes off for a few seconds and comes back by itself.',
         DuplicateVersion: 'Duplicating…',
         DeleteVersion: 'Deleting…',
+        ImportVersion: 'The zip is arriving as a new version… the world keeps running.',
       },
       done: {
         PublishVersion: 'Version {n} of {w} is now published.',
         DuplicateVersion:
           'The copy of {w} is made: it is version {n}. Publish it for people to visit it.',
         DeleteVersion: 'Version {n} of {w} is deleted.',
+        ImportVersion:
+          'Version {n} is now in the world, unpublished. Publish it from its card whenever you like.',
       },
       failed: 'Machine {m} could not finish the version change ({rule}).',
       close: 'Close',
@@ -1749,7 +1745,6 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       importZip: 'zip から戻す',
       update: '更新',
       pin: '別のバージョンに固定',
-      replace: 'zip で置き換える',
       unpin: '固定を解除',
       more: 'さらに {n} 件',
       less: '表示を減らす',
@@ -2040,20 +2035,18 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'zip を選ぶ',
       notSame: '同じ zip ではありません。フィンガープリントが一致しません。',
       entry: 'ファイル：{f}',
-      replaceLabel: 'この zip をどうしますか',
-      replaceNew: '新しいワールドとして持ってくる',
-      replaceOption: '{t}（{d}）を置き換える',
-      replaceWarning:
-        '{t}（{d}）は中身ごと削除され、この zip が同じアドレスでその場所に入ります。元に戻せません。',
-      replaceKeep: '今のワールドを残したい場合は、先にそのカードからダウンロードしてください。',
-      replaceSignNote:
-        'ウォレットが 2 回署名を求めます。まず {w} の削除、次に zip の取り込みです。その間に {m} が前のワールドを削除し終えます（1 分もかかりません）。このウィンドウは閉じないでください。新しいワールドは停止した状態で届きます。',
-      replaceSign: '署名して置き換える',
-      replaceSignImport: '署名して zip を持ってくる',
-      replaceDeleting: '{m} が {w} を削除しています…',
-      replaceDeleted: '{w} は削除されました。あとは zip の取り込みに署名するだけです。',
-      replaceLate:
-        '{m} は {w} の削除をまだ終えていません。1 分ほどしてからもう一度押してください。',
+      versionTitle: 'zip をバージョンとして追加',
+      versionLabel: 'この zip をどうしますか',
+      versionNew: '新しいワールドとして持ってくる',
+      versionOption: '{t}（{d}）の新しいバージョンとして追加する',
+      versionOwn:
+        'マシン、アドレス、上限はワールドのものです。zip が持ってくるのはバージョンだけです。',
+      versionOne: 'ワールドはそのままです。zip は 2 つ目のバージョンとして、未公開のまま届きます。',
+      versionTwo:
+        'zip の確認が済むと、バージョン {n}（未公開のほう）が zip の内容に置き換わります。公開中のバージョンには触れません。',
+      versionSignNote:
+        '署名は 1 回だけです。{m} が zip を {w} の新しいバージョンとして保管します。ワールドは動いたままです。みんなが訪れられるようにするには、あとでカードから公開してください。',
+      versionSign: '署名して zip を追加',
       elsewhere:
         '別のタブがアップロード中か、途中で止まっています。誰も終えなければ、{m} が 1 時間以内に破棄します。',
       failedPill: '戻せませんでした',
@@ -2121,6 +2114,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       duplicate: '複製',
       publish: 'これを公開',
       delete: '削除',
+      importZip: 'zip をバージョンとして追加',
       noteOne:
         'バージョンは 2 つまで持てます。公開中のものに触れずに変更を試すには、これを複製してください。',
       noteTwo: '人が入れるのは公開中のバージョンだけです。もう一方はここで待機します。',
@@ -2135,12 +2129,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         PublishVersion: '公開中… ワールドは数秒間停止し、自動で戻ります。',
         DuplicateVersion: '複製中…',
         DeleteVersion: '削除中…',
+        ImportVersion: 'zip を新しいバージョンとして受け取っています…ワールドは動いたままです。',
       },
       done: {
         PublishVersion: '{w} のバージョン {n} を公開しました。',
         DuplicateVersion:
           '{w} のコピーができました（バージョン {n}）。人が訪れるには公開してください。',
         DeleteVersion: '{w} のバージョン {n} を削除しました。',
+        ImportVersion:
+          'バージョン {n} がワールドに入りました（未公開）。好きなときにカードから公開してください。',
       },
       failed: 'マシン {m} はバージョンの切り替えを完了できませんでした（{rule}）。',
       close: '閉じる',
@@ -2302,7 +2299,6 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       importZip: 'zip에서 가져오기',
       update: '업데이트',
       pin: '다른 버전으로 고정',
-      replace: 'zip으로 교체',
       unpin: '고정 해제',
       more: '{n}개 더 보기',
       less: '접기',
@@ -2591,19 +2587,17 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'zip 선택',
       notSame: '같은 zip이 아닙니다. 지문이 일치하지 않습니다.',
       entry: '파일: {f}',
-      replaceLabel: '이 zip을 어떻게 할까요',
-      replaceNew: '새 월드로 가져오기',
-      replaceOption: '{t}({d}) 교체',
-      replaceWarning:
-        '{t}({d})은(는) 안에 있는 모든 것과 함께 삭제되고, 이 zip이 같은 주소로 그 자리에 들어갑니다. 되돌릴 수 없습니다.',
-      replaceKeep: '지금 월드를 보관하고 싶다면 먼저 해당 카드에서 다운로드하세요.',
-      replaceSignNote:
-        '지갑이 서명을 두 번 요청합니다. 먼저 {w} 삭제, 다음으로 zip 가져오기입니다. 그 사이 {m}이(가) 이전 월드 삭제를 마칩니다(1분 미만). 이 창을 닫지 마세요. 새 월드는 정지된 상태로 도착합니다.',
-      replaceSign: '서명하고 교체',
-      replaceSignImport: '서명하고 zip 가져오기',
-      replaceDeleting: '{m}이(가) {w}을(를) 삭제하는 중…',
-      replaceDeleted: '{w} 삭제가 끝났습니다. zip 가져오기에 서명하는 일만 남았습니다.',
-      replaceLate: '{m}이(가) 아직 {w} 삭제를 끝내지 못했습니다. 1분 뒤에 다시 눌러 주세요.',
+      versionTitle: 'zip을 버전으로 올리기',
+      versionLabel: '이 zip을 어떻게 할까요',
+      versionNew: '새 월드로 가져오기',
+      versionOption: '{t}({d})의 새 버전으로 올리기',
+      versionOwn: '머신, 주소, 한도는 월드의 것입니다. zip은 버전만 가져옵니다.',
+      versionOne: '월드는 그대로 두고, zip은 공개하지 않은 두 번째 버전으로 들어옵니다.',
+      versionTwo:
+        'zip 확인이 끝나면 버전 {n}(공개되지 않은 버전)이 zip의 내용으로 바뀝니다. 공개된 버전은 건드리지 않습니다.',
+      versionSignNote:
+        '서명은 한 번뿐입니다. {m}이(가) zip을 {w}의 새 버전으로 보관합니다. 월드는 계속 켜져 있습니다. 사람들이 방문하게 하려면 나중에 카드에서 공개하세요.',
+      versionSign: '서명하고 zip 올리기',
       elsewhere:
         '다른 탭에서 업로드하는 중이거나 중간에 멈췄습니다. 아무도 끝내지 않으면 {m}이(가) 1시간 안에 버립니다.',
       failedPill: '가져오지 못함',
@@ -2667,6 +2661,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       duplicate: '복제',
       publish: '이 버전 게시',
       delete: '삭제',
+      importZip: 'zip을 버전으로 올리기',
       noteOne:
         '버전은 두 개까지 둘 수 있습니다. 게시된 버전을 건드리지 않고 변경을 시험하려면 이것을 복제하세요.',
       noteTwo: '사람들은 게시된 버전에만 들어옵니다. 다른 버전은 여기서 기다립니다.',
@@ -2681,11 +2676,13 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         PublishVersion: '게시하는 중… 월드가 몇 초간 꺼졌다가 저절로 돌아옵니다.',
         DuplicateVersion: '복제하는 중…',
         DeleteVersion: '삭제하는 중…',
+        ImportVersion: 'zip이 새 버전으로 도착하는 중… 월드는 계속 켜져 있습니다.',
       },
       done: {
         PublishVersion: '{w}의 버전 {n}을(를) 게시했습니다.',
         DuplicateVersion: '{w}의 사본이 만들어졌습니다(버전 {n}). 사람들이 방문하려면 게시하세요.',
         DeleteVersion: '{w}의 버전 {n}을(를) 삭제했습니다.',
+        ImportVersion: '버전 {n}이(가) 월드에 들어왔습니다(공개 전). 원할 때 카드에서 공개하세요.',
       },
       failed: '머신 {m}이(가) 버전 전환을 끝내지 못했습니다({rule}).',
       close: '닫기',
@@ -2850,7 +2847,6 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       importZip: 'Trazer de um zip',
       update: 'Atualizar',
       pin: 'Fixar noutra versão',
-      replace: 'Substituir por um zip',
       unpin: 'Tirar a fixação',
       more: 'Ver mais {n}',
       less: 'Ver menos',
@@ -3139,19 +3135,17 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       pickSame: 'Escolher o zip',
       notSame: 'Esse não é o mesmo zip: a impressão não confere.',
       entry: 'Arquivo: {f}.',
-      replaceLabel: 'O que fazer com este zip',
-      replaceNew: 'Trazer como um mundo novo',
-      replaceOption: 'Substituir {t} ({d})',
-      replaceWarning:
-        '{t} ({d}) será apagado com tudo o que tem dentro e este zip entra no lugar, com o mesmo endereço. Não dá para desfazer.',
-      replaceKeep: 'Se quiser guardar o atual, baixe-o antes pelo cartão dele.',
-      replaceSignNote:
-        'Sua carteira vai pedir duas assinaturas: primeiro apagar {w}, depois trazer o zip. Entre as duas, {m} termina de apagar o anterior (menos de um minuto). Não feche esta janela. O mundo novo chega parado.',
-      replaceSign: 'Assinar e substituir',
-      replaceSignImport: 'Assinar e trazer o zip',
-      replaceDeleting: '{m} está apagando {w}…',
-      replaceDeleted: '{w} já foi apagado: falta assinar a entrada do zip.',
-      replaceLate: '{m} ainda não terminou de apagar {w}. Aperte de novo daqui a um minuto.',
+      versionTitle: 'Subir um zip como versão',
+      versionLabel: 'O que fazer com este zip',
+      versionNew: 'Trazer como um mundo novo',
+      versionOption: 'Subir como versão nova de {t} ({d})',
+      versionOwn: 'A máquina, o endereço e os limites são os do mundo: o zip traz só uma versão.',
+      versionOne: 'O mundo continua como está; o zip chega como segunda versão, sem publicar.',
+      versionTwo:
+        'A versão {n} (a não publicada) é substituída pela do zip quando o zip for verificado. A publicada não é tocada.',
+      versionSignNote:
+        'Uma só assinatura: {m} guarda o zip como versão nova de {w}. O mundo continua ligado; para a galera visitar, você publica depois pelo cartão dele.',
+      versionSign: 'Assinar e subir o zip',
       elsewhere:
         'Outra aba está enviando, ou o envio ficou pela metade: se ninguém o terminar, {m} o descarta em menos de uma hora.',
       failedPill: 'Não foi possível trazer',
@@ -3218,6 +3212,7 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
       duplicate: 'Duplicar',
       publish: 'Publicar esta',
       delete: 'Apagar',
+      importZip: 'Subir um zip como versão',
       noteOne:
         'Você pode ter duas versões: duplique esta para testar mudanças sem mexer na publicada.',
       noteTwo: 'As pessoas só entram na publicada. A outra espera aqui.',
@@ -3232,12 +3227,15 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         PublishVersion: 'Publicando… o mundo desliga por alguns segundos e volta sozinho.',
         DuplicateVersion: 'Duplicando…',
         DeleteVersion: 'Apagando…',
+        ImportVersion: 'O zip está chegando como versão nova… o mundo continua ligado.',
       },
       done: {
         PublishVersion: 'A versão {n} de {w} já está publicada.',
         DuplicateVersion:
           'A cópia de {w} está pronta: é a versão {n}. Para as pessoas a visitarem, publique-a.',
         DeleteVersion: 'A versão {n} de {w} foi apagada.',
+        ImportVersion:
+          'A versão {n} já está no mundo, sem publicar. Publique pelo cartão dela quando quiser.',
       },
       failed: 'A máquina {m} não conseguiu terminar a troca de versão ({rule}).',
       close: 'Fechar',
