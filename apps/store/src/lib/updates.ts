@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.165.0',
+    date: '2026-10-22 03:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'Every machine of the fleet can now follow one list of Oracles and Archons that the house signs: numinia.com serves it at /fleet/signers.json — the Oracles of the allowlist plus the Archons of the census — signed by the till with a key only the till holds. Until that key is set the address answers «not configured» and nothing else changes.',
+      },
+    ],
+  },
+  {
     version: 'v0.164.0',
     date: '2026-10-21 23:40',
     entries: [
