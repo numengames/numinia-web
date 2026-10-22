@@ -7,8 +7,11 @@ import { describe, expect, it } from 'vitest';
 import {
   communityCover,
   filtersOf,
+  groupsOnFirst,
+  onFirst,
   readableWorldName,
   readOwner,
+  stateRank,
   worldCards,
   worldFilters,
   worldName,
@@ -315,5 +318,57 @@ describe('withAis — «3 dentro · 1 IA»', () => {
   it('leaves the line as it was with none, or when the world did not say', () => {
     expect(withAis('3 dentro ahora', 0, words)).toBe('3 dentro ahora');
     expect(withAis('3 dentro ahora', null, words)).toBe('3 dentro ahora');
+  });
+});
+
+describe('the ones that are on come first', () => {
+  const card = (id: string, state: 'on' | 'off' | 'works' | null) => ({
+    id,
+    name: id,
+    state,
+    inside: null,
+    ais: null,
+    cover: null,
+    url: null,
+    community: { id: 'reset', name: 'Reset' },
+    city: false,
+  });
+
+  it('ranks on, under works, unsaid and off in that order', () => {
+    expect(['off', null, 'works', 'on'].map((s) => stateRank(s as 'on' | 'off' | 'works' | null))).toEqual([3, 2, 1, 0]);
+  });
+
+  it('orders a list of cards without touching the original and keeps equals in place', () => {
+    const list = [card('a', 'off'), card('b', 'on'), card('c', null), card('d', 'works'), card('e', 'on')];
+    expect(onFirst(list).map((c) => c.id)).toEqual(['b', 'e', 'd', 'c', 'a']);
+    expect(list.map((c) => c.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('puts the groups holding a world that is on first, an empty group last', () => {
+    const groups = [
+      { name: 'empty', cards: [] as ReturnType<typeof card>[] },
+      { name: 'off', cards: [card('x', 'off')] },
+      { name: 'mixed', cards: [card('y', 'off'), card('z', 'on')] },
+    ];
+    const ordered = groupsOnFirst(groups);
+    expect(ordered.map((g) => g.name)).toEqual(['mixed', 'off', 'empty']);
+    expect(ordered[0]?.cards.map((c) => c.id)).toEqual(['z', 'y']);
+  });
+
+  it('puts a world under works before one whose state nobody said, in the index too', () => {
+    const cards = worldCards({
+      fleet: [
+        { id: 'off-1', phase: 'stopped', domain: 'o.numinia.com' },
+        { id: 'works-1', phase: 'creating', domain: 'w.numinia.com' },
+        { id: 'on-1', phase: 'running', domain: 'n.numinia.com' },
+      ],
+      owners: new Map([
+        ['off-1', owner('acc_t_reset')],
+        ['works-1', owner('acc_t_reset')],
+        ['on-1', owner('acc_t_reset')],
+      ]),
+      communities: [HOUSE, RESET],
+    });
+    expect(cards.map((c) => c.id)).toEqual(['on-1', 'works-1', 'off-1']);
   });
 });

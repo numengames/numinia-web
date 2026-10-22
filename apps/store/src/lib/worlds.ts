@@ -778,6 +778,19 @@ export function pinImage(order: Pick<WorldOrder, 'image'>, typed: string): strin
 export type WorldStatus = 'running' | 'stopped' | 'unreachable' | 'unknown' | 'changing';
 
 /**
+ * Where a status sits in the room's lists: the worlds that are on first,
+ * then the ones being changed, the ones nobody could read, the ones that
+ * should be on and do not answer, and the stopped ones last.
+ */
+export function statusRank(status: WorldStatus): number {
+  if (status === 'running') return 0;
+  if (status === 'changing') return 1;
+  if (status === 'unknown') return 2;
+  if (status === 'unreachable') return 3;
+  return 4;
+}
+
+/**
  * A world that runs outside the fleet: set up by hand on the old machine,
  * before the fleet existed. The room watches it (the Tower's "legacy"
  * mark) and never changes it; once a world of the fleet takes its id or its
@@ -988,6 +1001,11 @@ export function buildRows(input: RowsInput): WorldRow[] {
     });
   }
   return rows.sort((a, b) => a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
+}
+
+/** A copy of the rows with the worlds that are on first; equals keep the order they came in. */
+export function rowsOnFirst(rows: readonly WorldRow[]): WorldRow[] {
+  return [...rows].sort((a, b) => statusRank(a.status) - statusRank(b.status));
 }
 
 /** Where a row's world lives; null when not even its address is known any more. */

@@ -50,6 +50,7 @@ import {
   ENGINE_NAMES,
   fill,
   filterRows,
+  rowsOnFirst,
   fleetHomes,
   fleetServers,
   fleetEngine,
@@ -686,7 +687,7 @@ export function WorldsPanel({
     [panel],
   );
   const visible = useMemo(
-    () => filterRows(rows, { query, status, server, home }, homes),
+    () => rowsOnFirst(filterRows(rows, { query, status, server, home }, homes)),
     [rows, query, status, server, home, homes],
   );
   const present = STATUS_ORDER.filter((candidate) => rows.some((row) => row.status === candidate));

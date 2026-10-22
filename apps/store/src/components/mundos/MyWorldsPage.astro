@@ -21,7 +21,7 @@ import { MY_WORLDS_PATH, localeHref, signInHref } from '../../lib/app-nav';
 import { SESSION_COOKIE } from '../../lib/auth/server';
 import { sessionWallet } from '../../lib/auth/session-wallet';
 import { myWorlds, type MyCommunityWorlds } from '../../lib/my-worlds';
-import type { WorldCard as Card } from '../../lib/world-index';
+import { groupsOnFirst, type WorldCard as Card } from '../../lib/world-index';
 import Icon from '../chrome/Icon.astro';
 import { desk } from '../../pages/api/mundos/_fleet';
 import { loadWorldIndex } from './world-index-data';
@@ -59,13 +59,15 @@ if (wallet !== null) {
   const index = mine === null ? null : await loadWorldIndex();
   if (mine !== null && index !== null && index.ok) {
     const byId = new Map(index.cards.map((card) => [card.id, card] as const));
-    groups = mine.communities.map((community) => {
-      const cards = community.worldIds.flatMap((id) => {
-        const card = byId.get(id);
-        return card === undefined ? [] : [card];
-      });
-      return { community, cards, pageId: cards[0]?.community.id ?? null };
-    });
+    groups = groupsOnFirst(
+      mine.communities.map((community) => {
+        const cards = community.worldIds.flatMap((id) => {
+          const card = byId.get(id);
+          return card === undefined ? [] : [card];
+        });
+        return { community, cards, pageId: cards[0]?.community.id ?? null };
+      }),
+    );
     state = 'ok';
   }
 }

@@ -57,6 +57,8 @@ import {
   readProbe,
   renderOrder,
   rowPlace,
+  rowsOnFirst,
+  statusRank,
   slot,
   slugify,
   fleetEngine,
@@ -1300,5 +1302,32 @@ describe('a world that is booting is not «not answering»', () => {
       probes: { old: DOWN },
     });
     expect(settleMemory(legacy, {}, 0)).toEqual({});
+  });
+});
+
+describe('the room lists the worlds that are on first', () => {
+  it('ranks running, changing, unknown, unreachable and stopped in that order', () => {
+    const order = ['stopped', 'unreachable', 'unknown', 'changing', 'running'] as const;
+    expect(order.map((status) => statusRank(status))).toEqual([4, 3, 2, 1, 0]);
+  });
+
+  it('puts the rows that are on first, keeping the order of equals', () => {
+    const rows = buildRows({
+      orders: [],
+      cards: [],
+      probes: {
+        zeta: { ok: true, users: 0, ais: null, uptime: 60, commit: null },
+        alfa: { ok: false, reason: 'timeout' },
+        beta: { ok: true, users: 1, ais: null, uptime: 60, commit: null },
+      },
+      legacy: [
+        { id: 'alfa', domain: 'alfa.numen.games', server: 'old-1' },
+        { id: 'beta', domain: 'beta.numen.games', server: 'old-1' },
+        { id: 'zeta', domain: 'zeta.numen.games', server: 'old-1' },
+      ],
+      faces: {},
+    });
+    expect(rows.map((row) => row.id)).toEqual(['alfa', 'beta', 'zeta']);
+    expect(rowsOnFirst(rows).map((row) => row.id)).toEqual(['beta', 'zeta', 'alfa']);
   });
 });
