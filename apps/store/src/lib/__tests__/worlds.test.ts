@@ -56,6 +56,7 @@ import {
   readEngineRelease,
   readProbe,
   renderOrder,
+  replaceTargets,
   rowPlace,
   rowsOnFirst,
   statusRank,
@@ -761,6 +762,27 @@ describe('the place: machine, address and whether it is free', () => {
     expect(nameOwner('vic', rows)).toBeNull();
     expect(nameOwner('new-one', rows)).toBeNull();
     expect(nameOwner('  ', rows)).toBeNull();
+  });
+
+  it('offers to replace only settled worlds of the fleet, on a machine that runs the zip’s engine', () => {
+    const importers = [
+      { alias: 'open-1', engines: ['numinia-hyperfy2'] as const },
+      { alias: 'open-2', engines: ['numinia-hyperfy2', 'numinia-engine'] as const },
+    ];
+    const ids = (engine: 'numinia-hyperfy2' | 'numinia-engine') =>
+      replaceTargets(rows, importers, engine).map((row) => row.id);
+    // agora and again sit on open-1, forge on open-2; gone/circle/old are leaving, vic is legacy.
+    expect(ids('numinia-hyperfy2')).toEqual(['again', 'agora', 'forge']);
+    // Only open-2 runs the Numinia Engine: a zip of that engine can take forge's place alone.
+    expect(ids('numinia-engine')).toEqual(['forge']);
+    // A machine that takes no zips offers nothing; neither does a world on its way somewhere.
+    expect(replaceTargets(rows, [], 'numinia-hyperfy2')).toEqual([]);
+    const busy = rows.map((row) =>
+      row.id === 'agora' ? { ...row, phase: 'updating' as const } : row,
+    );
+    expect(replaceTargets(busy, importers, 'numinia-hyperfy2').map((row) => row.id)).not.toContain(
+      'agora',
+    );
   });
 
   it('lists every world but those being deleted', () => {

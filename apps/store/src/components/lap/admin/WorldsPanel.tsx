@@ -88,6 +88,7 @@ import {
   type PlacementView,
   type TransferAction,
   type TransferView,
+  type CardAction,
   type WorldAction,
 } from './WorldViews';
 import { hashZip } from './zip-hash';
@@ -588,6 +589,8 @@ export function WorldsPanel({
   const [change, setChange] = useState<{ row: WorldRow; action: WorldAction } | null>(null);
   const [codeAsk, setCodeAsk] = useState<{ row: WorldRow; mode: CodeMode } | null>(null);
   const [source, setSource] = useState<ImportSource | null>(null);
+  // The world whose card asked for the zip in `source`: the one it takes the place of.
+  const [replaceId, setReplaceId] = useState<string | null>(null);
   const [transfers, setTransfers] = useState<readonly Transfer[]>([]);
   // How many files are dragged over the room (the overlay), or null.
   const [drag, setDrag] = useState<number | null>(null);
@@ -595,6 +598,7 @@ export function WorldsPanel({
   const picker = useRef<HTMLInputElement>(null);
   // Which upload a picked zip is for: null = a new one (the dialog).
   const pickFor = useRef<string | null>(null);
+  const pickReplace = useRef<string | null>(null);
   const controllers = useRef(new Map<string, AbortController>());
   const tracked = useRef<readonly Transfer[]>([]);
   tracked.current = transfers;
@@ -1001,7 +1005,9 @@ export function WorldsPanel({
       setDrag(null);
       if (!canImport || dialogOpen()) return;
       const dropped = readDrop(event.dataTransfer);
-      if (dropped !== null) setSource(dropped);
+      if (dropped === null) return;
+      setReplaceId(null);
+      setSource(dropped);
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragover', over);
@@ -1061,7 +1067,12 @@ export function WorldsPanel({
   const refresh = (): void => {
     load();
   };
-  const onAction = (row: WorldRow, action: WorldAction): void => setChange({ row, action });
+  const onAction = (row: WorldRow, action: CardAction): void => {
+    if (action === 'replace') {
+      pickReplace.current = row.id;
+      picker.current?.click();
+    } else setChange({ row, action });
+  };
   const onCode = (row: WorldRow, mode: CodeMode): void => setCodeAsk({ row, mode });
   const onRename = (row: WorldRow): void => setRenaming({ id: row.id, title: row.title });
   const viewName: Readonly<Record<View, string>> = {
@@ -1123,6 +1134,7 @@ export function WorldsPanel({
       if (transfer.file !== null) void send(transfer.ticket, transfer.file);
     } else if (action === 'pick') {
       pickFor.current = row.id;
+      pickReplace.current = null;
       picker.current?.click();
     } else {
       const running = controllers.current.get(row.id);
@@ -1137,6 +1149,8 @@ export function WorldsPanel({
     if (file === undefined) return;
     const world = pickFor.current;
     pickFor.current = null;
+    setReplaceId(pickReplace.current);
+    pickReplace.current = null;
     if (world === null) setSource({ kind: 'file', file });
     else void resume(world, file);
   };
@@ -1185,6 +1199,7 @@ export function WorldsPanel({
             disabled={importers.length === 0}
             onClick={() => {
               pickFor.current = null;
+              pickReplace.current = null;
               picker.current?.click();
             }}
             data-metric="worlds-import"
@@ -1542,6 +1557,7 @@ export function WorldsPanel({
         sessionHref={sessionHref}
         listens={listens}
         release={fleet.engine}
+        replaceId={replaceId}
         onClose={() => setSource(null)}
         onFile={(file) => setSource({ kind: 'file', file })}
         onHandover={handover}

@@ -28,8 +28,10 @@ import {
   placeAllowed,
   problemFields,
   proposeName,
+  replaceTargets,
   type Engine,
   type EngineRelease,
+  type WorldLimits,
   type WorldRow,
 } from '../../../lib/worlds';
 import { askAddress } from '../../../lib/worlds-source';
@@ -76,6 +78,21 @@ export interface Handover {
 }
 
 const STEPS = ['stepPlace', 'stepSign'] as const;
+
+/** How long the machine has to finish deleting the old world before the dialog says it is late. */
+const DELETE_LATE_MS = 120_000;
+
+/** The world a zip takes the place of, and everything the new one inherits from it. */
+interface Aim {
+  readonly id: string;
+  readonly title: string;
+  readonly server: string;
+  readonly domain: string;
+  readonly limits: WorldLimits;
+}
+
+/** Where a replacement is: the old world's delete to sign, the machine deleting it, the zip to sign. */
+type Stage = 'delete' | 'deleting' | 'import';
 
 /** What the system's picker offers: zips, by name and by both types systems give them. */
 export const ZIP_ACCEPT = '.zip,application/zip,application/x-zip-compressed';
@@ -137,6 +154,7 @@ export function ImportDialog({
   sessionHref,
   listens,
   release,
+  replaceId,
   onClose,
   onFile,
   onHandover,
@@ -153,6 +171,8 @@ export function ImportDialog({
   readonly listens: (alias: string) => boolean;
   /** The Numinia Engine's newest published build: what one of its worlds comes back with. */
   readonly release: EngineRelease | null;
+  /** The world whose card asked for this zip: it starts chosen as the world to take the place of. */
+  readonly replaceId: string | null;
   readonly onClose: () => void;
   /** Another zip, picked from the dialog itself (a picker outside an open modal is inert). */
   readonly onFile: (file: File) => void;
@@ -172,6 +192,10 @@ export function ImportDialog({
   const [label, setLabel] = useState<string | null>(null);
   const [zone, setZone] = useState<string>(WORLD_ZONES[0]);
   const [dns, setDns] = useState<DnsState>('checking');
+  const [pick, setPick] = useState<string | null>(replaceId);
+  const [stage, setStage] = useState<Stage>('delete');
+  const [locked, setLocked] = useState<Aim | null>(null);
+  const [late, setLate] = useState(false);
   const { step: flow, run, reset } = useFleetAction(wallet, listens);
   const { dnsStep, prepare, resetDns } = useDnsWrite();
   const lang = pageLang();
@@ -186,6 +210,9 @@ export function ImportDialog({
     setHashed(0);
     setUnreadable(false);
     setLabel(null);
+    setStage('delete');
+    setLocked(null);
+    setLate(false);
     reset();
     if (file === null) return;
     let alive = true;
@@ -217,23 +244,50 @@ export function ImportDialog({
     };
   }, [file, reset]);
 
+  // The card that asked for the zip chooses the world to replace; another zip keeps the choice.
+  useEffect(() => setPick(replaceId), [replaceId, source]);
+
   const read = reading?.ok ? reading.reading : null;
   // A zip goes to a machine that runs its engine, ordered with that engine's build.
   const engine: Engine = read?.engine ?? 'numinia-hyperfy2';
   const fits = importers.filter((candidate) => candidate.engines.includes(engine));
   const image = engine === 'numinia-engine' ? (release?.image ?? null) : DEFAULT_IMAGE;
-  const importer = fits.find((candidate) => candidate.alias === machine) ?? fits[0];
+  // A world to take the place of: it keeps its name, its machine, its address and its limits.
+  const targets = read === null ? [] : replaceTargets(rows, importers, engine);
+  const chosen = targets.find((row) => row.id === pick)?.order ?? null;
+  const aim: Aim | null =
+    locked ??
+    (chosen === null
+      ? null
+      : {
+          id: chosen.id,
+          title: targets.find((row) => row.id === chosen.id)?.title ?? chosen.id,
+          server: chosen.server,
+          domain: chosen.domain,
+          limits: chosen.limits,
+        });
+  const importer =
+    aim === null
+      ? (fits.find((candidate) => candidate.alias === machine) ?? fits[0])
+      : fits.find((candidate) => candidate.alias === aim.server);
   const alias = importer?.alias ?? '';
-  const name = id.trim().toLowerCase();
-  const domain = joinDomain(label ?? name, zone);
-  const owner = addressOwner(domain, rows);
-  const taken = nameOwner(name, rows);
+  const name = aim === null ? id.trim().toLowerCase() : aim.id;
+  const domain = aim === null ? joinDomain(label ?? name, zone) : aim.domain;
+  const owner = aim === null ? addressOwner(domain, rows) : null;
+  const taken = aim === null ? nameOwner(name, rows) : null;
   const result = draftToOrder({
     ...emptyDraft(alias),
     image: image ?? '',
     id: name,
     card: name,
     domain,
+    ...(aim === null
+      ? {}
+      : {
+          memory: aim.limits.memory,
+          cpus: aim.limits.cpus,
+          maxUploadMb: String(aim.limits.maxUploadMb),
+        }),
   });
   const order = 'order' in result ? result.order : null;
   const badName =
@@ -255,7 +309,8 @@ export function ImportDialog({
 
   // Where the address points, asked of public DNS a moment after the last keystroke.
   useEffect(() => {
-    if (step !== 0 || read === null || !inHouseZone(domain) || (owner && !owner.legacy)) return;
+    if (aim !== null || step !== 0 || read === null || !inHouseZone(domain)) return;
+    if (owner && !owner.legacy) return;
     let alive = true;
     setDns('checking');
     const timer = setTimeout(() => {
@@ -267,7 +322,7 @@ export function ImportDialog({
       alive = false;
       clearTimeout(timer);
     };
-  }, [step, domain, alias, owner?.id, owner?.legacy, read === null]);
+  }, [step, domain, alias, owner?.id, owner?.legacy, read === null, aim === null]);
 
   const close = (): void => {
     reset();
@@ -281,6 +336,13 @@ export function ImportDialog({
   const signed = useRef<{ order: typeof order; sha: string | null }>({ order: null, sha: null });
   useEffect(() => {
     if (flow.at !== 'accepted' || file === null) return;
+    // The old world's delete was taken: the machine now deletes it, and the zip waits.
+    if (locked !== null && stage === 'delete') {
+      setStage('deleting');
+      reset();
+      return;
+    }
+    if (locked !== null && stage !== 'import') return;
     const { order: taken, sha: digest } = signed.current;
     if (taken === null || digest === null) return;
     handover.current({
@@ -296,10 +358,28 @@ export function ImportDialog({
       file,
       code: flow.code,
     });
-  }, [flow, file]);
+  }, [flow, file, locked, stage, reset]);
+
+  // The old world is gone when the room no longer sees it: now the zip can be signed.
+  useEffect(() => {
+    if (stage !== 'deleting' || locked === null) return;
+    if (!rows.some((row) => row.id === locked.id)) setStage('import');
+  }, [stage, locked, rows]);
+  useEffect(() => {
+    if (stage !== 'deleting') return;
+    const timer = setTimeout(() => setLate(true), DELETE_LATE_MS);
+    return () => clearTimeout(timer);
+  }, [stage]);
 
   const sign = async (): Promise<void> => {
-    if (order === null || sha === null || file === null) return;
+    if (order === null || file === null) return;
+    // A replacement signs twice: the old world's delete first, then the zip.
+    if (aim !== null && stage === 'delete') {
+      setLocked(aim);
+      void run({ kind: 'DeleteWorld', machine: aim.server, world: aim.id, domain: aim.domain });
+      return;
+    }
+    if (sha === null) return;
     signed.current = { order, sha };
     // The address first: a world whose record the room writes gets it before the wallet signs.
     if (!(await prepare(dns, order.domain, order.server))) return;
@@ -323,7 +403,7 @@ export function ImportDialog({
     order !== null &&
     taken === null &&
     !tooBig &&
-    placeAllowed(domain, owner, dns) &&
+    (aim !== null || placeAllowed(domain, owner, dns)) &&
     alias !== '';
 
   // What the zip is, in one line, once the room has read it.
@@ -410,26 +490,63 @@ export function ImportDialog({
                 {unplaceable}
               </p>
             )}
-            <p className="nota">
-              {fill(read.engine === 'numinia-engine' ? words.engineKeysNote : words.keysNote, {
-                m: alias,
-              })}
-            </p>
-            <Field
-              id="importar-nombre"
-              label={room.wizard.idLabel}
-              value={id}
-              invalid={badName || taken !== null}
-              onChange={setId}
-            />
-            {taken !== null && (
-              <p className="linea-dns" data-tono={taken.leaving ? 'aviso' : 'mal'} role="alert">
-                {fill(taken.leaving ? room.wizard.nameFreeing : room.wizard.nameTaken, {
-                  w: taken.id,
+            {targets.length > 0 && (
+              <label className="campo" htmlFor="importar-reemplazo">
+                <span className="etiqueta">{words.replaceLabel}</span>
+                <select
+                  id="importar-reemplazo"
+                  value={aim?.id ?? ''}
+                  onChange={(event) =>
+                    setPick(event.target.value === '' ? null : event.target.value)
+                  }
+                  data-metric="worlds-field"
+                >
+                  <option value="">{words.replaceNew}</option>
+                  {targets.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {fill(words.replaceOption, {
+                        t: row.title,
+                        d: row.order?.domain ?? row.id,
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {aim !== null && (
+              <>
+                <p className="linea-dns" data-tono="aviso" role="alert" data-replace-warning>
+                  {fill(words.replaceWarning, { t: aim.title, d: aim.domain })}
+                </p>
+                <p className="nota">{words.replaceKeep}</p>
+              </>
+            )}
+            {aim === null && (
+              <p className="nota">
+                {fill(read.engine === 'numinia-engine' ? words.engineKeysNote : words.keysNote, {
+                  m: alias,
                 })}
               </p>
             )}
-            {fits.length > 1 ? (
+            {aim === null && (
+              <>
+                <Field
+                  id="importar-nombre"
+                  label={room.wizard.idLabel}
+                  value={id}
+                  invalid={badName || taken !== null}
+                  onChange={setId}
+                />
+                {taken !== null && (
+                  <p className="linea-dns" data-tono={taken.leaving ? 'aviso' : 'mal'} role="alert">
+                    {fill(taken.leaving ? room.wizard.nameFreeing : room.wizard.nameTaken, {
+                      w: taken.id,
+                    })}
+                  </p>
+                )}
+              </>
+            )}
+            {fits.length > 1 && aim === null ? (
               <label className="campo" htmlFor="importar-maquina">
                 <span className="etiqueta">{words.machineLabel}</span>
                 <select
@@ -462,40 +579,49 @@ export function ImportDialog({
                 })}
               </p>
             )}
-            <div className="campo">
-              <label className="etiqueta" htmlFor="importar-dominio">
-                {room.wizard.domainLabel}
-              </label>
-              <div className="direccion-campo">
-                <input
-                  id="importar-dominio"
-                  className="mono"
-                  value={label ?? name}
-                  aria-invalid={domain !== '' && !inHouseZone(domain)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  onChange={(event) => setLabel(event.target.value)}
-                  data-metric="worlds-field"
-                />
-                <span className="mono zona-punto" aria-hidden="true">
-                  .
+            {aim !== null ? (
+              <div className="campo">
+                <span className="etiqueta">{room.wizard.domainLabel}</span>
+                <span className="mono" data-address-choice>
+                  {aim.domain}
                 </span>
-                <select
-                  aria-label={room.wizard.zoneLabel}
-                  className="mono"
-                  value={zone}
-                  onChange={(event) => setZone(event.target.value)}
-                  data-metric="worlds-field"
-                >
-                  {WORLD_ZONES.map((candidate) => (
-                    <option key={candidate} value={candidate}>
-                      {candidate}
-                    </option>
-                  ))}
-                </select>
               </div>
-              <AddressLine domain={domain} machine={alias} owner={owner} dns={dns} room={room} />
-            </div>
+            ) : (
+              <div className="campo">
+                <label className="etiqueta" htmlFor="importar-dominio">
+                  {room.wizard.domainLabel}
+                </label>
+                <div className="direccion-campo">
+                  <input
+                    id="importar-dominio"
+                    className="mono"
+                    value={label ?? name}
+                    aria-invalid={domain !== '' && !inHouseZone(domain)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    onChange={(event) => setLabel(event.target.value)}
+                    data-metric="worlds-field"
+                  />
+                  <span className="mono zona-punto" aria-hidden="true">
+                    .
+                  </span>
+                  <select
+                    aria-label={room.wizard.zoneLabel}
+                    className="mono"
+                    value={zone}
+                    onChange={(event) => setZone(event.target.value)}
+                    data-metric="worlds-field"
+                  >
+                    {WORLD_ZONES.map((candidate) => (
+                      <option key={candidate} value={candidate}>
+                        {candidate}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <AddressLine domain={domain} machine={alias} owner={owner} dns={dns} room={room} />
+              </div>
+            )}
             <div className="campo">
               <span className="etiqueta">{room.fields.build}</span>
               <span className="mono" title={image ?? undefined} data-engine={engine}>
@@ -552,7 +678,22 @@ export function ImportDialog({
                 </p>
               )
             )}
-            <p className="nota">{fill(words.signNote, { m: order.server })}</p>
+            {aim !== null && stage === 'deleting' && (
+              <p className="estado" aria-live="polite" data-replace-deleting>
+                <LunaEspera />{' '}
+                {fill(late ? words.replaceLate : words.replaceDeleting, { m: alias, w: aim.id })}
+              </p>
+            )}
+            {aim !== null && stage === 'import' && (
+              <p className="linea-dns" data-tono="aviso" data-replace-deleted>
+                {fill(words.replaceDeleted, { w: aim.id })}
+              </p>
+            )}
+            <p className="nota">
+              {aim === null
+                ? fill(words.signNote, { m: order.server })
+                : fill(words.replaceSignNote, { m: order.server, w: aim.id })}
+            </p>
             <DnsWriteLine step={dnsStep} domain={order.domain} machine={order.server} room={room} />
             <StepLine
               step={flow}
@@ -586,12 +727,13 @@ export function ImportDialog({
               {words.pickAnother}
             </button>
           )}
-          {step > 0 && !sending && (
+          {step > 0 && !sending && stage === 'delete' && (
             <button
               type="button"
               className="btn btn-fantasma"
               onClick={() => {
                 reset();
+                setLocked(null);
                 setStep(0);
               }}
               data-metric="worlds-import-back"
@@ -614,11 +756,20 @@ export function ImportDialog({
             <button
               type="button"
               className="btn btn-primario"
-              disabled={order === null || sha === null || sending}
+              disabled={
+                order === null ||
+                sending ||
+                stage === 'deleting' ||
+                (sha === null && (aim === null || stage === 'import'))
+              }
               onClick={() => void sign()}
               data-metric="worlds-import-sign"
             >
-              {words.sign}
+              {aim === null
+                ? words.sign
+                : stage === 'delete'
+                  ? words.replaceSign
+                  : words.replaceSignImport}
             </button>
           )}
         </div>

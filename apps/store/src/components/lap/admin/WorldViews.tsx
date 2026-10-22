@@ -36,6 +36,8 @@ import { WorldGlyph } from './WorldGlyph';
  * `unpin`: let it follow the fleet again (both PinWorld).
  */
 export type WorldAction = 'stop' | 'start' | 'delete' | 'download' | 'update' | 'pin' | 'unpin';
+/** What a card's buttons ask: a world action, or a zip to take the world's place (the room opens the picker). */
+export type CardAction = WorldAction | 'replace';
 /** What the Oracle asks of a world's own admin code: to see it, or to change it. */
 export type CodeMode = 'show' | 'rotate';
 
@@ -92,7 +94,7 @@ function rowCover(row: WorldRow, placement: PlacementView | undefined): string |
 interface ViewProps {
   readonly rows: readonly WorldRow[];
   readonly room: WorldsRoomMessages;
-  readonly onAction: (row: WorldRow, action: WorldAction) => void;
+  readonly onAction: (row: WorldRow, action: CardAction) => void;
   readonly onCode: (row: WorldRow, mode: CodeMode) => void;
   /** Card t_a856c570 (2026-10-18): renames an existing world (or server). */
   readonly onRename: (row: WorldRow) => void;
@@ -463,6 +465,19 @@ function Actions({
           data-metric="worlds-unpin"
         >
           <WorldGlyph name="x" />
+        </button>
+      )}
+      {/* A zip that takes this world's place: only for a settled world, and the dialog says if no machine can take one. */}
+      {order && (row.phase === 'running' || row.phase === 'stopped') && (
+        <button
+          type="button"
+          className="btn btn-fantasma btn-icono"
+          onClick={() => onAction(row, 'replace')}
+          aria-label={room.actions.replace}
+          data-tip={room.actions.replace}
+          data-metric="worlds-replace"
+        >
+          <WorldGlyph name="package" />
         </button>
       )}
       {order && (

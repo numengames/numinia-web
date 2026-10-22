@@ -15,6 +15,7 @@ import arrowsClockwise from '../../../../../../packages/ui/src/icons/arrows-cloc
 import downloadSimple from '../../../../../../packages/ui/src/icons/download-simple.svg?raw';
 import eye from '../../../../../../packages/ui/src/icons/eye.svg?raw';
 import mapPin from '../../../../../../packages/ui/src/icons/map-pin.svg?raw';
+import packageGlyph from '../../../../../../packages/ui/src/icons/package.svg?raw';
 import play from '../../../../../../packages/ui/src/icons/play.svg?raw';
 import stop from '../../../../../../packages/ui/src/icons/stop.svg?raw';
 import trash from '../../../../../../packages/ui/src/icons/trash.svg?raw';
@@ -27,6 +28,7 @@ const GLYPHS = {
   'download-simple': downloadSimple,
   eye,
   'map-pin': mapPin,
+  package: packageGlyph,
   play,
   stop,
   trash,

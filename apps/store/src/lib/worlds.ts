@@ -414,6 +414,30 @@ export function nameOwner(
 }
 
 /**
+ * The worlds a zip can take the place of: worlds of the fleet that sit settled
+ * (running or stopped) on a machine that takes zips and runs the zip's engine.
+ * A legacy world is only watched, and one on its way somewhere is busy.
+ */
+export function replaceTargets(
+  rows: readonly WorldRow[],
+  importers: readonly { readonly alias: string; readonly engines: readonly Engine[] }[],
+  engine: Engine,
+): WorldRow[] {
+  return rows.filter((row) => {
+    const place = rowPlace(row);
+    return (
+      row.legacy === null &&
+      row.order !== null &&
+      place !== null &&
+      (row.phase === 'running' || row.phase === 'stopped') &&
+      importers.some(
+        (importer) => importer.alias === place.server && importer.engines.includes(engine),
+      )
+    );
+  });
+}
+
+/**
  * A name made from any text (a zip's `world.json`, its file name):
  * lowercase letters, digits and single hyphens, as an order's id must be, at
  * most 40 characters; '' when nothing is left.
