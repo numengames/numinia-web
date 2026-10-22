@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AGENT_KEY_SHAPE,
   NAME_MAX,
+  FUNCTION_IDS,
   RENEW_AFTER_MS,
   abilityOf,
   agentIdFrom,
@@ -13,6 +14,7 @@ import {
   newAgentCommand,
   passFromAddress,
   readAgents,
+  readFunctions,
   type DoorAgent,
 } from '../world-door';
 
@@ -291,5 +293,159 @@ describe('createDoor', () => {
     });
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(keeper.renew).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('readFunctions', () => {
+  it('reads the world functions the panel knows', () => {
+    expect(FUNCTION_IDS).toEqual(['puerta', 'dardos', 'pesca']);
+    expect(
+      readFunctions({
+        funciones: [
+          { id: 'puerta', activa: true, fija: false },
+          { id: 'dardos', activa: false, fija: true },
+        ],
+      }),
+    ).toEqual([
+      { id: 'puerta', active: true, fixed: false },
+      { id: 'dardos', active: false, fixed: true },
+    ]);
+  });
+
+  it('leaves out a function a newer engine adds, so it never breaks this panel', () => {
+    expect(
+      readFunctions({
+        funciones: [
+          { id: 'vuelo', activa: true, fija: false },
+          { id: 'pesca', activa: true, fija: false },
+        ],
+      }),
+    ).toEqual([{ id: 'pesca', active: true, fixed: false }]);
+  });
+
+  it('is null for anything else', () => {
+    expect(readFunctions(null)).toBeNull();
+    expect(readFunctions([])).toBeNull();
+    expect(readFunctions({})).toBeNull();
+    expect(readFunctions({ funciones: 'x' })).toBeNull();
+    expect(readFunctions({ funciones: [null] })).toBeNull();
+    expect(readFunctions({ funciones: [{ id: 5, activa: true, fija: false }] })).toBeNull();
+    expect(readFunctions({ funciones: [{ id: 'pesca', activa: 'si', fija: false }] })).toBeNull();
+    expect(readFunctions({ funciones: [{ id: 'pesca', activa: true }] })).toBeNull();
+  });
+});
+
+describe('createDoor functions', () => {
+  const world = 'https://w.example/#pass=zzz.zzz.zzz';
+  const keeper = { get: async () => 'p', renew: async () => 'p' };
+  const list = [
+    { id: 'puerta', activa: true, fija: false },
+    { id: 'dardos', activa: true, fija: false },
+    { id: 'pesca', activa: false, fija: true },
+  ];
+
+  it('reads /funciones with the pass', async () => {
+    const fetcher = vi.fn(async () => json(200, { funciones: list }));
+    const door = createDoor({ fetch: fetcher, worldUrl: world, keeper });
+    expect(await door.functions()).toEqual({
+      ok: true,
+      value: [
+        { id: 'puerta', active: true, fixed: false },
+        { id: 'dardos', active: true, fixed: false },
+        { id: 'pesca', active: false, fixed: true },
+      ],
+    });
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://w.example/funciones');
+    expect(init.headers).toMatchObject({ authorization: 'Bearer p' });
+  });
+
+  it('says other when a good answer is not the list', async () => {
+    const door = createDoor({ fetch: async () => json(200, { nope: 1 }), worldUrl: world, keeper });
+    expect(await door.functions()).toEqual({ ok: false, failure: 'other', detail: null });
+  });
+
+  it('posts { funcion, activa } and shows the state the world answers', async () => {
+    const after = list.map((f) => (f.id === 'dardos' ? { ...f, activa: false } : f));
+    const fetcher = vi.fn(async () => json(200, { ok: true, funciones: after }));
+    const door = createDoor({ fetch: fetcher, worldUrl: world, keeper });
+    expect(await door.setFunction('dardos', false)).toMatchObject({
+      ok: true,
+      value: [{}, { id: 'dardos', active: false, fixed: false }, {}],
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://w.example/funciones');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string)).toEqual({ funcion: 'dardos', activa: false });
+    expect(init.headers).toMatchObject({ 'content-type': 'application/json' });
+  });
+
+  it('reads the list again when the world answers a write without it', async () => {
+    const fetcher = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === 'POST'
+        ? json(200, { ok: true, texto: 'Hecho.' })
+        : json(200, { funciones: list }),
+    );
+    const door = createDoor({ fetch: fetcher, worldUrl: world, keeper });
+    expect(await door.setFunction('puerta', true)).toMatchObject({ ok: true });
+    expect(
+      fetcher.mock.calls.map((c) => (c as unknown as [string, RequestInit])[1].method),
+    ).toEqual(['POST', 'GET']);
+  });
+
+  it.each([
+    [400, { error: 'invalido', texto: 'T' }, 'invalid', 'T'],
+    [403, { error: 'sin-permiso' }, 'forbidden', null],
+    [404, { error: 'funciones-desactivado' }, 'unsupported', null],
+    [404, 'Cannot POST', 'unsupported', null],
+    [
+      409,
+      { error: 'fija', texto: 'Esa función la fija el servidor.' },
+      'fixed',
+      'Esa función la fija el servidor.',
+    ],
+    [413, { error: 'grande' }, 'too-big', null],
+    [503, { error: 'arrancando' }, 'starting', null],
+    [500, { error: 'servidor' }, 'other', null],
+  ])('maps %i on a write to %s', async (status, body, failure, detail) => {
+    const response = typeof body === 'string' ? new Response(body, { status }) : json(status, body);
+    const door = createDoor({ fetch: async () => response, worldUrl: world, keeper });
+    expect(await door.setFunction('pesca', true)).toEqual({ ok: false, failure, detail });
+  });
+
+  it('an old engine (404) on the read says unsupported', async () => {
+    const door = createDoor({
+      fetch: async () => json(404, { error: 'no-hay' }),
+      worldUrl: world,
+      keeper,
+    });
+    expect(await door.functions()).toEqual({ ok: false, failure: 'unsupported', detail: null });
+  });
+
+  it('renews the pass once on a 401 and is unreachable when the fetch fails', async () => {
+    const calls: string[] = [];
+    const fetcher = async (_url: string, init?: RequestInit) => {
+      const auth = (init?.headers as Record<string, string>).authorization ?? '';
+      calls.push(auth);
+      return auth === 'Bearer new'
+        ? json(200, { funciones: list })
+        : json(401, { error: 'caducado' });
+    };
+    const held = { get: async () => 'old', renew: async () => 'new' };
+    expect(
+      await createDoor({ fetch: fetcher, worldUrl: world, keeper: held }).functions(),
+    ).toMatchObject({ ok: true });
+    expect(calls).toEqual(['Bearer old', 'Bearer new']);
+    const down = async () => {
+      throw new TypeError('Failed to fetch');
+    };
+    expect(
+      await createDoor({ fetch: down, worldUrl: world, keeper }).setFunction('pesca', true),
+    ).toEqual({
+      ok: false,
+      failure: 'unreachable',
+      detail: null,
+    });
   });
 });

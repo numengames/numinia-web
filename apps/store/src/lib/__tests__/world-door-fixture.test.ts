@@ -92,4 +92,66 @@ describe('the fixture door', () => {
       value: [{ id: 'ana', role: 'Administración', present: false }],
     });
   });
+
+  it('keeps the world functions: reads, switches one, refuses what the server fixes or does not know', async () => {
+    const door = createFixtureDoor();
+    const before = (await call(door, 'funciones')).body.funciones as {
+      id: string;
+      activa: boolean;
+      fija: boolean;
+    }[];
+    expect(before.map((f) => [f.id, f.activa, f.fija])).toEqual([
+      ['puerta', true, false],
+      ['dardos', true, false],
+      ['pesca', false, true],
+    ]);
+    const post = (body: unknown) => call(door, 'funciones', { method: 'POST', body });
+    const done = await post({ funcion: 'dardos', activa: false });
+    expect(done.status).toBe(200);
+    expect(
+      (done.body.funciones as { id: string; activa: boolean }[]).find((f) => f.id === 'dardos')
+        ?.activa,
+    ).toBe(false);
+    const again = (await call(door, 'funciones')).body.funciones as {
+      id: string;
+      activa: boolean;
+    }[];
+    expect(again.find((f) => f.id === 'dardos')?.activa).toBe(false);
+    expect((await post({ funcion: 'pesca', activa: true })).status).toBe(409);
+    expect((await post({ funcion: 'vuelo', activa: true })).status).toBe(400);
+    expect((await post({ funcion: 'puerta', activa: 'si' })).status).toBe(400);
+    expect((await post(null)).status).toBe(400);
+    expect((await post('{nope')).body.error).toBe('json');
+    expect((await call(door, 'funciones', { method: 'POST', body: '' })).status).toBe(400);
+  });
+
+  it('can be a world whose engine has no /funciones yet', async () => {
+    const door = createFixtureDoor({ functions: false });
+    expect((await call(door, 'funciones')).status).toBe(404);
+    expect((await call(door, 'funciones', { method: 'POST', body: {} })).status).toBe(404);
+    expect((await call(door, 'agentes')).status).toBe(200);
+    const through = createDoor({
+      fetch: door,
+      worldUrl: WORLD,
+      keeper: { get: async () => FIXTURE_PASS, renew: async () => FIXTURE_PASS },
+    });
+    expect(await through.functions()).toMatchObject({ ok: false, failure: 'unsupported' });
+  });
+
+  it('works through createDoor for the functions', async () => {
+    const through = createDoor({
+      fetch: createFixtureDoor(),
+      worldUrl: WORLD,
+      keeper: { get: async () => FIXTURE_PASS, renew: async () => FIXTURE_PASS },
+    });
+    expect(await through.setFunction('dardos', false)).toMatchObject({
+      ok: true,
+      value: [
+        { id: 'puerta', active: true },
+        { id: 'dardos', active: false },
+        { id: 'pesca', fixed: true },
+      ],
+    });
+    expect(await through.setFunction('pesca', true)).toMatchObject({ ok: false, failure: 'fixed' });
+  });
 });

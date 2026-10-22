@@ -402,7 +402,107 @@ test.describe('the «IA» section of a world’s page', () => {
     await page.goto(worldPage('agora-plaza'));
     await expect(page.locator('[data-world-org]')).toHaveText('Numen Games');
     await expect(page.locator('[data-world-ai]')).toHaveCount(0);
+    await expect(page.locator('[data-world-functions]')).toHaveCount(0);
     await stranger.close();
+  });
+});
+
+test.describe('the «Funciones de este mundo» block of a world’s page', () => {
+  const shot = async (page: Page, name: string): Promise<void> => {
+    const dir = process.env.IA_SHOTS_DIR;
+    if (dir) await page.screenshot({ path: `${dir}/funciones-${name}.png`, fullPage: true });
+  };
+
+  test('the people who manage a world switch what it offers, and see what the server fixes', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    await page.goto(worldPage('agora-plaza'));
+    const section = page.locator('[data-world-functions]');
+    await expect(section.getByRole('heading', { name: 'Funciones de este mundo' })).toBeVisible();
+    const rows = section.locator('[data-world-function]');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toHaveAttribute('data-world-function', 'puerta');
+    await expect(rows.nth(0)).toContainText('Normas de entrada');
+    await expect(rows.nth(0)).toContainText(
+      'Términos de Numinia y normas de la comunidad: quien entra las acepta antes de moverse',
+    );
+    await expect(rows.nth(1)).toContainText('Dardos');
+    await expect(rows.nth(2)).toContainText('Pesca');
+    await shot(page, '01-read');
+
+    const entry = section.getByRole('switch', { name: 'Normas de entrada' });
+    await expect(entry).toBeChecked();
+    const darts = section.getByRole('switch', { name: 'Dardos' });
+    await expect(darts).toBeChecked();
+    await darts.click();
+    await expect(darts).not.toBeChecked();
+    await expect(section.locator('[data-world-functions-notice="status"]')).toHaveText(
+      'Dardos: apagada.',
+    );
+    await expect(section.locator('[data-world-function="dardos"]')).toHaveAttribute(
+      'data-world-function-on',
+      'off',
+    );
+    // The other switches did not move.
+    await expect(entry).toBeChecked();
+    await shot(page, '02-darts-off');
+    await darts.click();
+    await expect(darts).toBeChecked();
+    await expect(section.locator('[data-world-functions-notice]')).toHaveText('Dardos: encendida.');
+
+    // Fishing is fixed by the server: off, disabled, and it says so.
+    const fishing = section.getByRole('switch', { name: 'Pesca' });
+    await expect(fishing).toBeDisabled();
+    await expect(fishing).not.toBeChecked();
+    await expect(section.locator('[data-world-function="pesca"]')).toContainText(
+      'Lo fija el servidor',
+    );
+    await shot(page, '03-fixed');
+  });
+
+  test('a world without the door says so in one line and the rest of the page works', async ({
+    page,
+    context,
+  }) => {
+    await signIn(context, ADMIN, 'nomad');
+    await page.goto(`${worldPage('agora-plaza')}?motor=viejo`);
+    const section = page.locator('[data-world-functions]');
+    await expect(section).toHaveAttribute('data-world-functions', 'unsupported');
+    await expect(section).toContainText(
+      'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.4x o más)',
+    );
+    await expect(section.getByRole('switch')).toHaveCount(0);
+    await shot(page, '04-old-engine');
+    // The «IA» section, same door, keeps working.
+    await expect(page.locator('[data-world-ai]')).toHaveAttribute('data-world-ai', 'ready');
+  });
+
+  test('fits a phone and is clean for axe, in every language', async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await signIn(context, ADMIN, 'nomad');
+    for (const [prefix, title, entry] of [
+      ['/es', 'Funciones de este mundo', 'Normas de entrada'],
+      ['', 'Features of this world', 'Conditions of entry'],
+      ['/ja', 'このワールドの機能', '入場ルール'],
+      ['/ko', '이 월드의 기능', '입장 규칙'],
+      ['/pt-br', 'Funções deste mundo', 'Normas de entrada'],
+    ] as const) {
+      await page.goto(worldPage('agora-plaza', prefix));
+      const section = page.locator('[data-world-functions]');
+      await expect(section.getByRole('heading', { name: title })).toBeVisible();
+      await expect(section.getByRole('switch', { name: entry })).toBeVisible();
+      await settle(page);
+      expect(await overflow(page)).toBeLessThanOrEqual(0);
+      if (prefix === '/es') {
+        await shot(page, '05-phone');
+        const found = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(found.violations.map((v) => v.id)).toEqual([]);
+      }
+    }
   });
 });
 

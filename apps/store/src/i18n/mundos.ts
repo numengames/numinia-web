@@ -150,6 +150,34 @@ export interface WorldAiMessages {
   };
 }
 
+/**
+ * The «Funciones de este mundo» block of a world's page (w7): the world's own words
+ * (numinia-engine features/funciones/frases.es.ts) in the panel's five locales; ja, ko and pt-br
+ * are working translations that still want a native reading. `{name}` is the function's name.
+ */
+export interface WorldFunctionsMessages {
+  readonly title: string;
+  readonly note: string;
+  readonly loading: string;
+  /** «Normas de entrada» is the engine's `puerta`: Numinia's terms and the community's rules, one door. */
+  readonly names: Readonly<Record<'puerta' | 'dardos' | 'pesca', string>>;
+  readonly helps: Readonly<Record<'puerta' | 'dardos' | 'pesca', string>>;
+  readonly on: string;
+  readonly off: string;
+  /** The server fixes the function: the switch is disabled and says this. */
+  readonly fixed: string;
+  readonly saving: string;
+  readonly doneOn: string;
+  readonly doneOff: string;
+  /** What only this block can say; the rest of the failures are the «IA» section's own sentences. */
+  readonly failures: {
+    /** The world answers 404 on `/funciones`: an engine from before the door. */
+    readonly unsupported: string;
+    readonly fixed: string;
+    readonly forbidden: string;
+  };
+}
+
 /** A world's own page. */
 export interface WorldPageMessages {
   readonly loading: string;
@@ -190,6 +218,8 @@ export interface WorldPageMessages {
   readonly enterFailed: string;
   /** «IA», for whoever manages the world: the AIs that come in through the world's door. */
   readonly ai: WorldAiMessages;
+  /** «Funciones de este mundo», for whoever manages the world: switches that talk to the world's `/funciones` door (w7). */
+  readonly functions: WorldFunctionsMessages;
   /** The world's own page as the wireframe draws it (cut K): hero, lead, facts, encounters, machine, community. */
   readonly own: WorldOwnMessages;
 }
@@ -403,6 +433,31 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
           other: 'Algo ha salido mal. Inténtalo de nuevo.',
         },
       },
+      functions: {
+        title: 'Funciones de este mundo',
+        note: 'Lo que se puede hacer en este mundo. Solo ves esta sección porque puedes administrarlo; el cambio se guarda en el mundo y llega a quien está dentro.',
+        loading: 'Leyendo las funciones…',
+        names: { puerta: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
+        helps: {
+          puerta:
+            'Términos de Numinia y normas de la comunidad: quien entra las acepta antes de moverse',
+          dardos: 'Apagados, nadie tira y las dianas desaparecen.',
+          pesca: 'Apagada, nadie pesca y no se ve el agua de pesca.',
+        },
+        on: 'encendida',
+        off: 'apagada',
+        fixed: 'Lo fija el servidor',
+        saving: 'Cambiando…',
+        doneOn: '{name}: encendida.',
+        doneOff: '{name}: apagada.',
+        failures: {
+          unsupported:
+            'Este mundo aún no permite cambiarlo desde aquí (necesita el motor 0.4x o más)',
+          fixed: '{name}: la fija el servidor, el interruptor no la cambia.',
+          forbidden:
+            'Tu permiso no deja cambiar las funciones de este mundo: hace falta poder administrar la organización.',
+        },
+      },
     },
   },
   en: {
@@ -571,6 +626,30 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
           invalid: 'The world does not accept that data.',
           'not-found': 'That AI is no longer in this world.',
           other: 'Something went wrong. Try again.',
+        },
+      },
+      functions: {
+        title: 'Features of this world',
+        note: 'What can be done in this world. You only see this section because you can manage it; the change is saved in the world and reaches whoever is inside.',
+        loading: 'Reading the features…',
+        names: { puerta: 'Conditions of entry', dardos: 'Darts', pesca: 'Fishing' },
+        helps: {
+          puerta:
+            "Numinia's terms and the community's rules: whoever enters accepts them before moving",
+          dardos: 'When off, nobody throws and the boards go.',
+          pesca: 'When off, nobody fishes and the ponds go.',
+        },
+        on: 'on',
+        off: 'off',
+        fixed: 'Set by the server',
+        saving: 'Changing…',
+        doneOn: '{name}: on.',
+        doneOff: '{name}: off.',
+        failures: {
+          unsupported: 'This world cannot be changed from here yet (it needs engine 0.4x or later)',
+          fixed: '{name}: set by the server, the switch does not change it.',
+          forbidden:
+            'Your permission does not let you change this world’s features: you need to be able to manage the organization.',
         },
       },
     },
@@ -743,6 +822,29 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
           other: '問題が起きました。もう一度お試しください。',
         },
       },
+      functions: {
+        title: 'このワールドの機能',
+        note: 'このワールドでできることです。管理できる人にだけ、このセクションが表示されます。変更はワールドに保存され、中にいる人にも届きます。',
+        loading: '機能を読み込み中…',
+        names: { puerta: '入場ルール', dardos: 'ダーツ', pesca: '釣り' },
+        helps: {
+          puerta: 'Numiniaの規約とコミュニティのルール：入る人は、動く前にそれらに同意します',
+          dardos: 'オフにすると、誰も投げられず、的も消えます。',
+          pesca: 'オフにすると、誰も釣りができず、釣り用の水辺も見えなくなります。',
+        },
+        on: 'オン',
+        off: 'オフ',
+        fixed: 'サーバーが固定しています',
+        saving: '変更中…',
+        doneOn: '{name}：オン。',
+        doneOff: '{name}：オフ。',
+        failures: {
+          unsupported: 'このワールドは、まだここから変更できません（エンジン0.4x以降が必要です）',
+          fixed: '{name}：サーバーが固定しているため、スイッチでは変更できません。',
+          forbidden:
+            'このワールドの機能を変更する権限がありません。組織を管理できる必要があります。',
+        },
+      },
     },
   },
   ko: {
@@ -907,6 +1009,28 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
           invalid: '월드가 그 데이터를 받아들이지 않습니다.',
           'not-found': '그 AI는 더 이상 이 월드에 없습니다.',
           other: '문제가 생겼습니다. 다시 시도하세요.',
+        },
+      },
+      functions: {
+        title: '이 월드의 기능',
+        note: '이 월드에서 할 수 있는 것들입니다. 이 월드를 관리할 수 있는 사람에게만 이 섹션이 보입니다. 변경 사항은 월드에 저장되고 안에 있는 사람에게도 전달됩니다.',
+        loading: '기능을 읽는 중…',
+        names: { puerta: '입장 규칙', dardos: '다트', pesca: '낚시' },
+        helps: {
+          puerta: 'Numinia의 약관과 커뮤니티 규칙: 들어오는 사람은 움직이기 전에 이를 수락합니다',
+          dardos: '끄면 아무도 던질 수 없고 과녁도 사라집니다.',
+          pesca: '끄면 아무도 낚시할 수 없고 낚시용 물도 보이지 않습니다.',
+        },
+        on: '켜짐',
+        off: '꺼짐',
+        fixed: '서버가 고정함',
+        saving: '변경하는 중…',
+        doneOn: '{name}: 켜짐.',
+        doneOff: '{name}: 꺼짐.',
+        failures: {
+          unsupported: '이 월드는 아직 여기에서 바꿀 수 없습니다(엔진 0.4x 이상이 필요합니다)',
+          fixed: '{name}: 서버가 고정해 두어 스위치로 바꿀 수 없습니다.',
+          forbidden: '이 월드의 기능을 바꿀 권한이 없습니다. 조직을 관리할 수 있어야 합니다.',
         },
       },
     },
@@ -1077,6 +1201,31 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
           invalid: 'O mundo não aceita esses dados.',
           'not-found': 'Essa IA não está mais neste mundo.',
           other: 'Algo deu errado. Tente de novo.',
+        },
+      },
+      functions: {
+        title: 'Funções deste mundo',
+        note: 'O que se pode fazer neste mundo. Você vê esta seção porque pode administrá-lo; a mudança fica salva no mundo e chega a quem está dentro.',
+        loading: 'Lendo as funções…',
+        names: { puerta: 'Normas de entrada', dardos: 'Dardos', pesca: 'Pesca' },
+        helps: {
+          puerta:
+            'Termos da Numinia e normas da comunidade: quem entra as aceita antes de se mover',
+          dardos: 'Desligados, ninguém joga e os alvos somem.',
+          pesca: 'Desligada, ninguém pesca e a água de pesca some.',
+        },
+        on: 'ligada',
+        off: 'desligada',
+        fixed: 'Fixada pelo servidor',
+        saving: 'Mudando…',
+        doneOn: '{name}: ligada.',
+        doneOff: '{name}: desligada.',
+        failures: {
+          unsupported:
+            'Este mundo ainda não permite mudar isso por aqui (precisa do motor 0.4x ou mais novo)',
+          fixed: '{name}: fixada pelo servidor, o interruptor não a muda.',
+          forbidden:
+            'Sua permissão não deixa mudar as funções deste mundo: é preciso poder administrar a organização.',
         },
       },
     },
