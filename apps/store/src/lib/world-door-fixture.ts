@@ -6,10 +6,18 @@
  * same refusals — a missing or wrong pass is 401, a bad key 400, a repeated
  * id 409, an unknown id 404 — and an agent that was just added shows as
  * connected from the second time the list is read, as an agent that dials in
- * would.
+ * would. It also keeps the world's functions (`/funciones`): conditions of
+ * entry on, darts on, fishing off and fixed by the «server», so both the
+ * switch and the fixed state can be walked.
  */
 
-import { AGENT_ID_SHAPE, AGENT_KEY_SHAPE, BUILD_PERMISSION, BUILD_ROLE } from './world-door';
+import {
+  AGENT_ID_SHAPE,
+  AGENT_KEY_SHAPE,
+  BUILD_PERMISSION,
+  BUILD_ROLE,
+  FUNCTION_IDS,
+} from './world-door';
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -35,9 +43,18 @@ const reply = (status: number, body: unknown): Response =>
 const refusal = (status: number, error: string, texto: string): Response =>
   reply(status, { error, texto });
 
-/** A fresh fixture world with no agents; the returned fetch is the door. */
-export function createFixtureDoor(): Fetch {
+/**
+ * A fresh fixture world with no agents; the returned fetch is the door. `functions: false` is a world whose
+ * engine has no `/funciones` yet (404), to walk the «cannot be changed from here» state.
+ */
+export function createFixtureDoor(options: { readonly functions?: boolean } = {}): Fetch {
+  const hasFunctions = options.functions !== false;
   const held: Held[] = [];
+  const functions = [
+    { id: 'normas', activa: true, fija: false },
+    { id: 'dardos', activa: true, fija: false },
+    { id: 'pesca', activa: false, fija: true },
+  ];
 
   const view = (agent: Held) => ({
     id: agent.id,
@@ -100,6 +117,36 @@ export function createFixtureDoor(): Fetch {
         texto: `Hecho: «${nombre} · IA» puede entrar.`,
         agente: view(agent),
       });
+    }
+
+    // An engine from before the door: a plain 404, as it answers any address it does not know.
+    if (path === '/funciones' && !hasFunctions) {
+      return refusal(404, 'no-hay', 'No existe esa dirección.');
+    }
+
+    if (path === '/funciones' && method === 'GET') return reply(200, { funciones: functions });
+
+    if (path === '/funciones' && method === 'POST') {
+      let body: unknown;
+      try {
+        body = JSON.parse(typeof init?.body === 'string' ? init.body : '');
+      } catch {
+        return refusal(400, 'json', 'El cuerpo no es JSON.');
+      }
+      const { funcion, activa } = (body ?? {}) as Record<string, unknown>;
+      const target = functions.find((entry) => entry.id === funcion);
+      if (target === undefined || typeof activa !== 'boolean') {
+        return refusal(
+          400,
+          'invalido',
+          `¿Qué función? Las de este mundo: ${FUNCTION_IDS.join(', ')}.`,
+        );
+      }
+      if (target.fija) {
+        return refusal(409, 'fija', 'Esa función la fija el servidor.');
+      }
+      target.activa = activa;
+      return reply(200, { ok: true, texto: 'Hecho.', funciones: functions });
     }
 
     const one = /^\/agentes\/([^/]+)$/.exec(path)?.[1];
