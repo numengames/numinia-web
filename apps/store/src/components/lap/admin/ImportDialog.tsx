@@ -143,6 +143,18 @@ export function zipProblemText(
       });
     case 'unexpected':
       return fill(words.before.unexpected, { f: problem.entry ?? '?' });
+    case 'mundo-unreadable':
+      return words.before.mundoUnreadable;
+    case 'mundo-schema':
+      return problem.entry === null
+        ? words.before.mundoSchemaNone
+        : fill(words.before.mundoSchema, { s: problem.entry });
+    case 'mundo-no-files':
+      return words.before.mundoNoFiles;
+    case 'mundo-several':
+      return fill(words.before.mundoSeveral, {
+        n: problem.amount === null ? '?' : formatCount(problem.amount, lang),
+      });
     default:
       return fill(words.rules[problem.rule], { f: file, m: machine });
   }

@@ -8,6 +8,7 @@
 
 import { deflateRawSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
+import { WORLDS_UI } from '../../i18n/worlds';
 import {
   ENGINE_SCHEMAS,
   HASH_CHUNK,
@@ -697,38 +698,130 @@ describe('a Numinia Engine world’s zip — the rules every zip keeps, then its
     expect(await inspectZip(undated)).toMatchObject({ ok: true, reading: { copiedAt: null } });
   });
 
-  it('is not a world without exactly one manifest the engine reads', async () => {
+  it('is not a world when no mundo.json sits where the engine looks', async () => {
     const notAWorld = { ok: false, problem: { rule: 'not-a-world', entry: null, amount: null } };
     const cases: Spec[][] = [
       [{ name: 'datos/objetos.json', data: '[]' }],
-      [
-        { name: 'a/mundo.json', data: MUNDO2 },
-        { name: 'b/mundo.json', data: MUNDO2 },
-      ],
       [{ name: 'a/b/mundo.json', data: MUNDO2 }],
-      [{ name: 'mundo.json', data: 'not json' }],
-      [{ name: 'mundo.json', data: '[]' }],
-      [
-        {
-          name: 'mundo.json',
-          data: JSON.stringify({ esquema: 'numinia-engine/mundo@3', ficheros: [] }),
-        },
-      ],
-      [{ name: 'mundo.json', data: JSON.stringify({ esquema: 'numinia-engine/mundo@2' }) }],
-      [
-        {
-          name: 'mundo.json',
-          data: JSON.stringify({ schema: 'numinia-engine/mundo@2', ficheros: [] }),
-        },
-      ],
-      // A manifest that claims more than it holds is not read.
-      [{ name: 'mundo.json', data: MUNDO2, size: 17 * 1024 ** 2, compressed: 17 * 1024 ** 2 }],
     ];
     for (const specs of cases) expect(await inspectZip(makeZip(specs))).toEqual(notAWorld);
     expect(engineRoot([{ name: 'mundo.json' }])).toBe('');
     expect(engineRoot([{ name: 'x/mundo.json' }, { name: 'x/datos/a.json' }])).toBe('x/');
     expect(engineRoot([{ name: 'mundo.json' }, { name: 'x/mundo.json' }])).toBeNull();
     expect(ENGINE_SCHEMAS).toEqual(['numinia-engine/mundo@1', 'numinia-engine/mundo@2']);
+  });
+
+  it('says there are several mundo.json when the zip carries more than one', async () => {
+    const two = makeZip([
+      { name: 'a/mundo.json', data: MUNDO2 },
+      { name: 'b/mundo.json', data: MUNDO2 },
+    ]);
+    expect(await inspectZip(two)).toEqual({
+      ok: false,
+      problem: { rule: 'mundo-several', entry: null, amount: 2 },
+    });
+    const three = makeZip([
+      { name: 'mundo.json', data: MUNDO2 },
+      { name: 'a/mundo.json', data: MUNDO2 },
+      { name: 'b/mundo.json', data: MUNDO2 },
+    ]);
+    expect(await inspectZip(three)).toMatchObject({
+      problem: { rule: 'mundo-several', amount: 3 },
+    });
+  });
+
+  it('says a mundo.json that is not JSON, or not an object, cannot be read', async () => {
+    const unreadable = (entryName: string) => ({
+      ok: false,
+      problem: { rule: 'mundo-unreadable', entry: entryName, amount: null },
+    });
+    const cases: [Spec, string][] = [
+      [{ name: 'mundo.json', data: 'not json' }, 'mundo.json'],
+      [{ name: 'copia/mundo.json', data: '[]', deflate: true }, 'copia/mundo.json'],
+      [{ name: 'mundo.json', data: 'null' }, 'mundo.json'],
+      // A manifest that claims more than it holds is not read.
+      [
+        { name: 'mundo.json', data: MUNDO2, size: 17 * 1024 ** 2, compressed: 17 * 1024 ** 2 },
+        'mundo.json',
+      ],
+    ];
+    for (const [spec, name] of cases) {
+      expect(await inspectZip(makeZip([spec]))).toEqual(unreadable(name));
+    }
+  });
+
+  it('says which schema a mundo.json declared when the engine does not read it', async () => {
+    const schema = (said: unknown) =>
+      inspectZip(makeZip([{ name: 'mundo.json', data: JSON.stringify(said) }]));
+    const other = (entryName: string | null) => ({
+      ok: false,
+      problem: { rule: 'mundo-schema', entry: entryName, amount: null },
+    });
+    expect(await schema({ esquema: 'numinia-engine/mundo@3', ficheros: [] })).toEqual(
+      other('numinia-engine/mundo@3'),
+    );
+    expect(await schema({ schema: ' hyperfy/world@9 ', ficheros: [] })).toEqual(
+      other('hyperfy/world@9'),
+    );
+    // `schema` only counts at @1, and `esquema` only at @2.
+    expect(await schema({ schema: 'numinia-engine/mundo@2', ficheros: [] })).toEqual(
+      other('numinia-engine/mundo@2'),
+    );
+    // Nothing declared, blank, not a string, or too long to quote: no name is given.
+    expect(await schema({ ficheros: [] })).toEqual(other(null));
+    expect(await schema({ esquema: '  ', ficheros: [] })).toEqual(other(null));
+    expect(await schema({ esquema: 7, ficheros: [] })).toEqual(other(null));
+    expect(await schema({ esquema: 'x'.repeat(61), ficheros: [] })).toEqual(other(null));
+  });
+
+  it('says a mundo.json without the list of files is not an export of the engine', async () => {
+    // The fleet’s nightly copy: the live folder’s own 278-byte file, no `ficheros`.
+    const live = JSON.stringify({
+      esquema: 'numinia-engine/mundo@2',
+      motor: { build: 'c57dbb7 2026-10-16', commit: null, imagen: null },
+      creado: '2026-10-26T03:00:00Z',
+    });
+    const expected = {
+      ok: false,
+      problem: { rule: 'mundo-no-files', entry: 'mundo.json', amount: null },
+    };
+    expect(await inspectZip(makeZip([{ name: 'mundo.json', data: live }]))).toEqual(expected);
+    const notList = JSON.stringify({ ...JSON.parse(MUNDO2), ficheros: {} });
+    expect(await inspectZip(makeZip([{ name: 'mundo.json', data: notList }]))).toEqual(expected);
+    const inFolder = makeZip([
+      { name: 'copia/mundo.json', data: MUNDO1.replace(',"ficheros":[]', '') },
+    ]);
+    expect(await inspectZip(inFolder)).toMatchObject({
+      problem: { rule: 'mundo-no-files', entry: 'copia/mundo.json' },
+    });
+  });
+
+  it('has the words for each of these problems in all five languages', () => {
+    for (const [locale, room] of Object.entries(WORLDS_UI)) {
+      const { before } = room.import;
+      for (const key of [
+        'mundoUnreadable',
+        'mundoSchema',
+        'mundoSchemaNone',
+        'mundoNoFiles',
+        'mundoSeveral',
+      ] as const) {
+        expect(before[key].length, `${locale} ${key}`).toBeGreaterThan(20);
+      }
+      expect(before.mundoSchema).toContain('{s}');
+      expect(before.mundoSchemaNone).not.toContain('{s}');
+      expect(before.mundoSeveral).toContain('{n}');
+      // Each says what to bring instead.
+      for (const key of [
+        'mundoUnreadable',
+        'mundoSchema',
+        'mundoSchemaNone',
+        'mundoNoFiles',
+      ] as const) {
+        expect(before[key], `${locale} ${key}`).toContain('`copia`');
+      }
+    }
+    expect(Object.keys(WORLDS_UI)).toHaveLength(5);
   });
 
   it('keeps the rules every zip keeps before the manifest, and leaves the engine’s own to its engine', async () => {
