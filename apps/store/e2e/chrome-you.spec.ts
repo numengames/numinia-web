@@ -18,8 +18,8 @@ const sha = async (text: string): Promise<string> =>
   createHash('sha256').update(text).digest('hex');
 
 const WALLET = '0x42e6000000000000000000000000000000ca26';
-/** An encounter still to come when this spec was written (the register's). */
-const TRG = 'trg26';
+/** The furthest encounter in the register: the clock of the day must not decide this spec (TRG26 ended on 2026-10-24). */
+const TRG = 'merge-buenos-aires-2027';
 /** One already held: never counted. */
 const HELD = 'commit-conf-2026';
 

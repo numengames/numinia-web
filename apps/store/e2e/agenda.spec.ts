@@ -21,8 +21,8 @@ import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 const PABLO = `0x${'ab'.repeat(20)}`;
 const MARIA = `0x${'cd'.repeat(20)}`;
 const LUIS = `0x${'ef'.repeat(20)}`;
-/** Encounters still to come when this spec was written (the register's). */
-const TRG = 'trg26';
+/** The furthest encounter in the register: the clock of the day must not decide this spec (TRG26 ended on 2026-10-24). */
+const TRG = 'merge-buenos-aires-2027';
 const MERGE = 'merge-madrid-2026';
 /** One already held: its page offers the calendar, never «Me apunto». */
 const HELD = 'commit-conf-2026';
@@ -175,7 +175,7 @@ test.describe('signed in', () => {
     await expect(page.locator('[data-agenda="upcoming"] [data-metric="ritual-card"]')).toHaveCount(
       1,
     );
-    await expect(page.locator('[data-agenda="upcoming"]')).toContainText('TRG26');
+    await expect(page.locator('[data-agenda="upcoming"]')).toContainText('MERGE Buenos Aires');
     await expect(page.locator('[data-agenda="past"]')).toHaveCount(0);
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);
