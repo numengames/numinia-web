@@ -71,8 +71,25 @@ describe('one wallet’s rank', () => {
     expect(await rankOf(STRANGER, sources())).toBe('nomad');
   });
 
-  it('a census never makes an Oracle: only the allowlist does', async () => {
-    expect(await rankOf(STRANGER, sources(recorded({ [STRANGER]: 'oracle' })))).toBe('nomad');
+  it('a census Oracle is what censusOf says: an owner stands behind it or it is a Nomad', async () => {
+    const record = (appointedBy?: string) => ({
+      record: {
+        wallet: STRANGER,
+        rank: 'oracle',
+        since: 's',
+        updatedAt: 's',
+        actor: ORACLE,
+        appointedBy,
+      },
+      sha: 'x',
+    });
+    const read = vi
+      .fn()
+      .mockResolvedValueOnce(record(ORACLE))
+      .mockResolvedValueOnce(record(CITIZEN));
+    const census = censusOf({ read } as never, new Set([ORACLE]));
+    expect(await rankOf(STRANGER, sources(census))).toBe('oracle');
+    expect(await rankOf(STRANGER, sources(census))).toBe('nomad');
   });
 
   it('with no census here everyone but an Oracle is a Nomad, as the sign-in says', async () => {

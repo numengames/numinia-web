@@ -75,6 +75,7 @@ export interface LapMessages {
     readonly updatedBy: string;
     readonly grant: string;
     readonly granted: string;
+    readonly signing: string;
     readonly failed: string;
   };
   readonly citizen: {
@@ -363,6 +364,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       updatedBy: 'Última pluma',
       grant: 'Conceder',
       granted: 'Concedido — escrito en la historia.',
+      signing: 'Firma en tu cartera para confirmar: es un acto de Oráculo.',
       failed: 'No se pudo. Revisa e inténtalo de nuevo.',
     },
     citizen: {
@@ -585,6 +587,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       updatedBy: 'Last pen',
       grant: 'Grant',
       granted: 'Granted — written into history.',
+      signing: 'Sign in your wallet to confirm: it is an Oracle act.',
       failed: 'It failed. Check and retry.',
     },
     citizen: {
@@ -803,6 +806,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       updatedBy: '最後の筆',
       grant: '授与',
       granted: '授与 — 歴史に記録された。',
+      signing: 'これはオラクルの行為です。ウォレットで署名して確認してください。',
       failed: '失敗。確認して再試行してください。',
     },
     citizen: {
@@ -1012,6 +1016,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       updatedBy: '마지막 펜',
       grant: '부여',
       granted: '부여됨 — 역사에 기록되었습니다.',
+      signing: '오라클의 행위입니다. 지갑에서 서명해 확인하세요.',
       failed: '실패했습니다. 확인 후 다시 시도하세요.',
     },
     citizen: {
@@ -1261,6 +1266,7 @@ export const LAP_UI: Readonly<Record<SupportedLocale, LapMessages>> = {
       updatedBy: 'Última pena',
       grant: 'Conceder',
       granted: 'Concedido — escrito na história.',
+      signing: 'É um ato de Oráculo: assine na sua carteira para confirmar.',
       failed: 'Falhou. Verifique e tente de novo.',
     },
     citizen: {

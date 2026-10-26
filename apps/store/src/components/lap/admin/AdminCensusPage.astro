@@ -43,6 +43,7 @@ const labels = {
   forbidden: t.admin.forbidden,
   forbiddenNote: t.admin.forbiddenNote,
   loading: t.admin.loading,
+  oracle: RANK_DEFINITIONS.find((rank) => rank.id === 'oracle')?.name[locale] ?? 'Oracle',
 };
 ---
 

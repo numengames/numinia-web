@@ -17,13 +17,17 @@ import { fileURLToPath } from 'node:url';
 import { createSessionToken } from '@numinia/auth';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
+import { aheadRituals } from './support/ahead';
 
 const PABLO = `0x${'ab'.repeat(20)}`;
 const MARIA = `0x${'cd'.repeat(20)}`;
 const LUIS = `0x${'ef'.repeat(20)}`;
-/** Encounters still to come when this spec was written (the register's). */
-const TRG = 'trg26';
-const MERGE = 'merge-madrid-2026';
+/** Two encounters still to come TODAY, read from the register (never named: they end). */
+const ahead = aheadRituals();
+const TRG = ahead[0]?.id ?? '';
+const TRG_TITLE = ahead[0]?.title ?? '';
+const MERGE = ahead[1]?.id ?? '';
+test.skip(ahead.length < 2, 'the register needs two encounters still ahead');
 /** One already held: its page offers the calendar, never «Me apunto». */
 const HELD = 'commit-conf-2026';
 
@@ -175,7 +179,7 @@ test.describe('signed in', () => {
     await expect(page.locator('[data-agenda="upcoming"] [data-metric="ritual-card"]')).toHaveCount(
       1,
     );
-    await expect(page.locator('[data-agenda="upcoming"]')).toContainText('TRG26');
+    await expect(page.locator('[data-agenda="upcoming"]')).toContainText(TRG_TITLE);
     await expect(page.locator('[data-agenda="past"]')).toHaveCount(0);
     const scan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     expect(scan.violations).toEqual([]);

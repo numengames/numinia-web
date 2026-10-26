@@ -8,7 +8,7 @@
  * `members`, asked as the session — the till refuses a stranger), never from
  * the request. Each rank is worked out as the sign-in does (lib/auth/server.ts
  * `resolveRank`): an Oracle is the allowlist's word, with no I/O; anyone else
- * is what the census remembers — a census never makes an Oracle — and a
+ * is what the census remembers — a census Oracle counts only while an owner stands behind it — and a
  * Nomad when it remembers nothing or there is no census here. The census is
  * git-backed, so every read is a network call: they go in parallel, a
  * hundred at most, three seconds each, and a read that fails or takes longer
@@ -21,6 +21,7 @@
 import type { Rank } from '@numinia/domain';
 import { CensusRecordSchema, censusPath, type GitStateStore } from '@numinia/state';
 import type { AccountDesk, Asker } from './accounts';
+import { rankFromRecord } from './census-rules';
 import { logEvent } from './telemetry';
 
 /** The most members whose ranks one answer reads. */
@@ -46,10 +47,11 @@ const ID_MAX = 100;
 /** The census as the state store keeps it: one file per wallet. */
 export function censusOf(
   store: Pick<GitStateStore, 'read'>,
+  owners: ReadonlySet<string> = new Set(),
 ): (wallet: string) => Promise<Rank | null> {
   return async (wallet) => {
     const found = await store.read(censusPath(wallet), CensusRecordSchema);
-    return found?.record.rank ?? null;
+    return found === null ? null : rankFromRecord(found.record, owners);
   };
 }
 
@@ -68,7 +70,7 @@ export async function rankOf(wallet: string, sources: RankSources): Promise<Rank
   if (sources.census === null) return 'nomad';
   try {
     const recorded = await within(sources.census(wallet), sources.readMs ?? RANK_READ_MS);
-    return recorded === null || recorded === 'oracle' ? 'nomad' : recorded;
+    return recorded ?? 'nomad';
   } catch {
     return null;
   }
