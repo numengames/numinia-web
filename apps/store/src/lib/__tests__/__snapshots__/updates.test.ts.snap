@@ -10,6 +10,20 @@ exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must upd
         "type": "NEW",
       },
     ],
+    "version": "v0.169.0",
+  },
+  {
+    "date": "2026-10-26 12:00",
+    "entries": [
+      {
+        "text": "An owner can now appoint the other Oracles from the census desk, with no one entering a machine: paste a wallet, choose Oracle, and sign in your wallet to confirm. Four Oracles at most, owners included; an appointed Oracle holds the rank only while the owner who appointed them is still an owner.",
+        "type": "NEW",
+      },
+      {
+        "text": "An Archon can no longer lower another Archon, nor an Oracle, nor change their own rank from the census: nobody acts upward (STD-003).",
+        "type": "FIX",
+      },
+    ],
     "version": "v0.168.0",
   },
   {

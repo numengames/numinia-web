@@ -26,12 +26,26 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
-    version: 'v0.168.0',
+    version: 'v0.169.0',
     date: '2026-10-22 11:10',
     entries: [
       {
         type: 'NEW',
         text: 'A world’s page now has a «Features of this world» block for whoever manages the world, next to the AIs: three switches — Conditions of entry (Numinia’s terms and the community’s rules, one door), Darts and Fishing — that talk to the world’s own door with the same pass the AIs use, so a community can turn them on or off without going into the world. Each switch shows the state the world answers; one the server fixes stays disabled with «Set by the server»; a world with an older engine says it cannot be changed from here yet and the rest of the page works as before. In five languages (Japanese, Korean and Brazilian Portuguese still want a native reading).',
+      },
+    ],
+  },
+  {
+    version: 'v0.168.0',
+    date: '2026-10-26 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'An owner can now appoint the other Oracles from the census desk, with no one entering a machine: paste a wallet, choose Oracle, and sign in your wallet to confirm. Four Oracles at most, owners included; an appointed Oracle holds the rank only while the owner who appointed them is still an owner.',
+      },
+      {
+        type: 'FIX',
+        text: 'An Archon can no longer lower another Archon, nor an Oracle, nor change their own rank from the census: nobody acts upward (STD-003).',
       },
     ],
   },

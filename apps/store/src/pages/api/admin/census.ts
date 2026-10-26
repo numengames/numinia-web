@@ -6,16 +6,24 @@
  *
  * Governance rules encoded here, not in the UI:
  *  - `manage-users` opens the census; granting ARCHON needs `promote-archon`.
- *  - The census can never mint an Oracle — that rank lives only in the
- *    ADMIN_WALLET_ADDRESSES allowlist.
+ *  - Only an owner (ADMIN_WALLET_ADDRESSES) appoints or removes an Oracle,
+ *    with a fresh wallet signature; nobody acts upward (lib/census-rules.ts).
  *  - Without the state repo configured (D23 pending), everything is 503.
  */
 
 import type { APIRoute } from 'astro';
-import { hasPermission, RANKS, type Rank } from '@numinia/domain';
-import { censusPath, CensusRecordSchema, StateConflictError } from '@numinia/state';
-import { z } from 'zod';
-import { authConfigured, SESSION_COOKIE, verifySession } from '../../../lib/auth/server';
+import { hasPermission, type Rank } from '@numinia/domain';
+import { censusPath, CensusRecordSchema } from '@numinia/state';
+import {
+  authConfigured,
+  freshSignatureDeps,
+  oracleWallets,
+  SESSION_COOKIE,
+  verifySession,
+} from '../../../lib/auth/server';
+import { answerGrant } from '../../../lib/census-desk';
+import { rankFromRecord } from '../../../lib/census-rules';
+import { logEvent } from '../../../lib/telemetry';
 import { getStateStore } from '../../../lib/state/server';
 
 export const prerender = false;
@@ -47,16 +55,15 @@ export const GET: APIRoute = async ({ cookies, url }) => {
     return Response.json({ error: 'wallet must be a 0x-prefixed address' }, { status: 400 });
   }
   const found = await store.read(censusPath(wallet.toLowerCase()), CensusRecordSchema);
-  return Response.json({ record: found?.record ?? null });
+  const owners = new Set(oracleWallets());
+  return Response.json({
+    // An Oracle of the census is shown for what it is worth now (RNK-009).
+    record: found ? { ...found.record, rank: rankFromRecord(found.record, owners) } : null,
+    owner: owners.has(session.wallet.toLowerCase()),
+  });
 };
 
-const grantSchema = z.object({
-  wallet: z.string().regex(WALLET, 'wallet must be a 0x-prefixed address'),
-  // 'oracle' is deliberately not grantable here.
-  rank: z.enum(RANKS.filter((rank) => rank !== 'oracle') as [Rank, ...Rank[]]),
-});
-
-export const POST: APIRoute = async ({ cookies, request }) => {
+export const POST: APIRoute = async ({ cookies, request, url }) => {
   const session = await sessionOf(cookies.get(SESSION_COOKIE)?.value);
   if (!session || !hasPermission(session.rank, 'manage-users')) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -66,40 +73,17 @@ export const POST: APIRoute = async ({ cookies, request }) => {
     return Response.json({ error: 'The census is not configured yet (D23)' }, { status: 503 });
   }
   const body: unknown = await request.json().catch(() => null);
-  const parsed = grantSchema.safeParse(body);
-  if (!parsed.success) {
-    return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid' }, { status: 400 });
-  }
-  if (parsed.data.rank === 'archon' && !hasPermission(session.rank, 'promote-archon')) {
-    return Response.json({ error: 'Promoting an Archon takes an Oracle' }, { status: 403 });
-  }
-
-  const wallet = parsed.data.wallet.toLowerCase();
-  const actor = session.wallet.toLowerCase();
-  const path = censusPath(wallet);
-  const now = new Date().toISOString();
-
-  // Read-modify-write with one retry: a concurrent grant re-reads the sha.
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const existing = await store.read(path, CensusRecordSchema);
-    const record = CensusRecordSchema.parse({
-      wallet,
-      rank: parsed.data.rank,
-      since: existing?.record.since ?? now,
-      updatedAt: now,
-      actor,
-    });
-    try {
-      await store.write(path, record, {
-        message: `census: ${wallet} becomes ${parsed.data.rank}`,
-        actor,
-        ...(existing ? { sha: existing.sha } : {}),
-      });
-      return Response.json({ record }, { status: existing ? 200 : 201 });
-    } catch (error) {
-      if (!(error instanceof StateConflictError) || attempt === 1) throw error;
-    }
-  }
-  // Unreachable: the loop returns or throws. TypeScript wants an ending.
-  return Response.json({ error: 'Conflict' }, { status: 409 });
+  const chain = Number(url.searchParams.get('chain'));
+  return answerGrant(
+    {
+      store,
+      owners: new Set(oracleWallets()),
+      fresh: freshSignatureDeps(),
+      now: () => Date.now(),
+      log: logEvent,
+    },
+    session,
+    body,
+    Number.isInteger(chain) && chain > 0 ? chain : null,
+  );
 };

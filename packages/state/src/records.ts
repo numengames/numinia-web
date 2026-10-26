@@ -22,6 +22,11 @@ export const CensusRecordSchema = z
     updatedAt: isoDate,
     /** The wallet whose session performed the last change — the pen. */
     actor: wallet,
+    /**
+     * Oracle records only: the owner who appointed them (STD-003, RNK-009).
+     * The platform honours the rank only while this wallet is still an owner.
+     */
+    appointedBy: wallet.optional(),
   })
   .strict();
 
