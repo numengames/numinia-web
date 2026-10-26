@@ -939,6 +939,27 @@ export function firstMonth(
   return { year: start.getUTCFullYear(), month: start.getUTCMonth() + 1 };
 }
 
+/**
+ * How many grid months run from `from` through the month that holds the last
+ * day of the latest upcoming ritual, and never fewer than `minimum`. Without
+ * this the grid stopped at a fixed count and cut off scheduled rituals (MIS-268:
+ * March 2027 was missing while it held a ritual).
+ */
+export function monthsToCover(
+  from: { readonly year: number; readonly month: number },
+  rituals: readonly Ritual[],
+  minimum: number,
+): number {
+  const latest = upcoming(rituals).reduce(
+    (last, ritual) => Math.max(last, dayOf(ritual, 'end').getTime()),
+    0,
+  );
+  const lastDay = new Date(latest);
+  const span =
+    (lastDay.getUTCFullYear() - from.year) * 12 + (lastDay.getUTCMonth() + 1 - from.month) + 1;
+  return Math.max(minimum, span);
+}
+
 // ---------------------------------------------------------------------------
 // iCalendar (RFC 5545): the feed a reader subscribes to. Whole-day rituals
 // travel as dates (the same day everywhere); timed ones as UTC instants.

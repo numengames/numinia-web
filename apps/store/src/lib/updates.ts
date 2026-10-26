@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.172.0',
+    date: '2026-10-27 08:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The encounters calendar showed four months from the first one, so March 2027 (MERGE Buenos Aires) was cut off although it is scheduled. The grid now runs through the month of the latest upcoming encounter.',
+      },
+    ],
+  },
+  {
     version: 'v0.171.0',
     date: '2026-10-27 03:10',
     entries: [

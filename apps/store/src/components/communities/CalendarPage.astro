@@ -8,7 +8,13 @@
 import type { SupportedLocale } from '@numinia/domain';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { COMMUNITIES_UI, fill } from '../../i18n/communities';
-import { calendarMonths, firstMonth, pick, upcoming } from '../../lib/communities';
+import {
+  calendarMonths,
+  firstMonth,
+  monthsToCover,
+  pick,
+  upcoming,
+} from '../../lib/communities';
 import { RITUALS } from './register';
 import Icon from '../chrome/Icon.astro';
 import '../../styles/communities.css';
@@ -21,7 +27,8 @@ const { locale } = Astro.props;
 const ui = COMMUNITIES_UI[locale];
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const coming = upcoming(RITUALS);
-const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, coming, locale);
+const from = firstMonth(coming, { year: 2026, month: 10 });
+const months = calendarMonths(from, monthsToCover(from, coming, 4), coming, locale);
 ---
 
 <BaseLayout locale={locale} title={`${ui.calendarTitle} — Numinia`} description={ui.calendarLead}>
