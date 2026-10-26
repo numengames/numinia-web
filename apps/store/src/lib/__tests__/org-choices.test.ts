@@ -9,7 +9,7 @@ import {
   COMMUNITIES_API,
   COMMUNITY_TEAM_API,
   accountOf,
-  choicesToJoin,
+  choicesNotJoined,
   loadCommunities,
   openAllCommunities,
   orgChoices,
@@ -202,60 +202,27 @@ describe('opening every community at once', () => {
 });
 
 describe('leaving out the organizations a person is already in', () => {
-  const WHO = `0x${'ab'.repeat(20)}`;
   const choice = (key: string, accountId: string | null): OrgChoice => ({
     key,
     label: key,
     accountId,
     community: null,
   });
-  const roles = (wallets: string[]): Response =>
-    answer(200, {
-      roles: {
-        ok: true,
-        accountId: 'x',
-        as: 'house',
-        roles: [],
-        members: wallets.map((wallet) => ({
-          wallet,
-          owner: false,
-          addedAt: '2026-10-16T00:00:00.000Z',
-          roleIds: [],
-          assignable: [],
-        })),
-      },
-    });
 
-  it('drops the ones that list the wallet (any letter case), keeps the rest', async () => {
-    const fetcher = vi.fn(async (url: string) =>
-      url.includes('mine') ? roles([WHO.toUpperCase().replace('0X', '0x')]) : roles([]),
-    );
-    const left = await choicesToJoin(
-      fetcher,
+  it('drops the ones the census lists the person in, keeps the rest', () => {
+    const left = choicesNotJoined(
       [choice('a', 'mine'), choice('b', 'other'), choice('c', null)],
-      WHO,
+      ['mine'],
     );
     expect(left.map((c) => c.key)).toEqual(['b', 'c']);
-    expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(fetcher).toHaveBeenCalledWith('/api/saldo/roles?cuenta=mine', {
-      headers: { accept: 'application/json' },
-    });
   });
 
-  it('keeps an organization the till would not read — it decides on save', async () => {
-    const left = await choicesToJoin(
-      async (url) => {
-        if (url.includes('down')) throw new Error('offline');
-        if (url.includes('bad')) return answer(500, {});
-        return url.includes('odd') ? answer(200, { nope: true }) : answer(200, 'not json');
-      },
-      [choice('a', 'down'), choice('b', 'bad'), choice('c', 'odd'), choice('d', 'text')],
-      WHO,
-    );
-    expect(left.map((c) => c.key)).toEqual(['a', 'b', 'c', 'd']);
+  it('keeps every one when the census lists none, and one with no account yet', () => {
+    const all = [choice('a', 'x'), choice('b', null)];
+    expect(choicesNotJoined(all, [])).toEqual(all);
   });
 
-  it('is empty when the person is in every one', async () => {
-    expect(await choicesToJoin(async () => roles([WHO]), [choice('a', 'x')], WHO)).toEqual([]);
+  it('is empty when the person is in every one', () => {
+    expect(choicesNotJoined([choice('a', 'x')], ['x', 'y'])).toEqual([]);
   });
 });
