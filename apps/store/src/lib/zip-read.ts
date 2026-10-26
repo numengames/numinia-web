@@ -59,14 +59,19 @@ export type ZipRule =
   | 'ratio'
   | 'unpacked-too-big'
   | 'not-a-world'
+  // A Numinia Engine zip whose mundo.json is not the engine's export manifest (the room's own reading).
+  | 'mundo-unreadable'
+  | 'mundo-schema'
+  | 'mundo-no-files'
+  | 'mundo-several'
   | 'db-open'
   | 'unexpected';
 
 export interface ZipProblem {
   readonly rule: ZipRule;
-  /** The entry that broke it, when one did. */
+  /** The entry that broke it, when one did; for `mundo-schema`, the `esquema` the manifest declared, when it is a short string. */
   readonly entry: string | null;
-  /** What the rule measured: a count of entries, a size in bytes, or a ratio. */
+  /** What the rule measured: a count of entries (or of `mundo.json`), a size in bytes, or a ratio. */
   readonly amount: number | null;
 }
 
@@ -394,15 +399,20 @@ const ENGINE_MANIFEST = 'mundo.json';
 export const ENGINE_SCHEMAS = ['numinia-engine/mundo@1', 'numinia-engine/mundo@2'] as const;
 export type EngineSchema = (typeof ENGINE_SCHEMAS)[number];
 
+/** Every `mundo.json` the engine would look at: one at the zip's root or one per top folder. */
+function engineManifests(entries: readonly Pick<ZipEntry, 'name'>[]): string[] {
+  return entries
+    .map((entry) => entry.name)
+    .filter((name) => name === ENGINE_MANIFEST || /^[^/]+\/mundo\.json$/.test(name));
+}
+
 /**
  * Where a Numinia Engine world sits in its zip, as the engine finds it: its
  * one `mundo.json` at the zip's root ('') or in exactly one top folder
  * (`<folder>/`). Null: none, or more than one.
  */
 export function engineRoot(entries: readonly Pick<ZipEntry, 'name'>[]): string | null {
-  const found = entries
-    .map((entry) => entry.name)
-    .filter((name) => name === ENGINE_MANIFEST || /^[^/]+\/mundo\.json$/.test(name));
+  const found = engineManifests(entries);
   return found.length === 1 ? (found[0] as string).slice(0, -ENGINE_MANIFEST.length) : null;
 }
 
@@ -461,31 +471,55 @@ async function readManifest(
   };
 }
 
+/** What the room found in a `mundo.json`: the export's version and date, or exactly why it is not one. */
+type EngineManifest =
+  | {
+      readonly ok: true;
+      readonly schema: EngineSchema;
+      readonly copiedAt: string | null;
+    }
+  | { readonly ok: false; readonly problem: ZipProblem };
+
+/** The `esquema` (or first version's `schema`) a manifest declared, when it is a short plain string. */
+function declaredSchema(said: Readonly<Record<string, unknown>>): string | null {
+  const value = said['esquema'] ?? said['schema'];
+  return typeof value === 'string' && value.trim() !== '' && value.length <= 60
+    ? value.trim()
+    : null;
+}
+
 /**
  * A Numinia Engine world's `mundo.json` → its zip's version and when it was
- * made; null when it is not one the engine reads (`esquema` @2, or the first
- * version's `schema` @1). The engine's own tools judge the rest, on its machine.
+ * made, or the precise reason it is not the engine's export manifest: not
+ * readable JSON, another schema (`esquema` @2, or the first version's
+ * `schema` @1), or no list of files (`ficheros`). The engine's own tools
+ * judge the rest, on its machine.
  */
-async function readEngineManifest(
-  blob: Blob,
-  entry: ZipEntry,
-): Promise<{ readonly schema: EngineSchema; readonly copiedAt: string | null } | null> {
+async function readEngineManifest(blob: Blob, entry: ZipEntry): Promise<EngineManifest> {
+  const unreadable = { ok: false, problem: problem('mundo-unreadable', entry.name) } as const;
   // It lists every file of the world: allowed more than world.json's megabyte.
   const bytes = await readEntry(blob, entry, 16 * 1024 ** 2);
-  if (bytes === null) return null;
+  if (bytes === null) return unreadable;
   let manifest: unknown;
   try {
     manifest = JSON.parse(utf8.decode(bytes));
   } catch {
-    return null;
+    return unreadable;
   }
-  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) return null;
+  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) {
+    return unreadable;
+  }
   const said = manifest as Readonly<Record<string, unknown>>;
   const [first, second] = ENGINE_SCHEMAS;
   const schema = said['esquema'] === second ? second : said['schema'] === first ? first : null;
-  if (schema === null || !Array.isArray(said['ficheros'])) return null;
+  if (schema === null) {
+    return { ok: false, problem: problem('mundo-schema', declaredSchema(said)) };
+  }
+  if (!Array.isArray(said['ficheros'])) {
+    return { ok: false, problem: problem('mundo-no-files', entry.name) };
+  }
   const at = schema === second ? said['creado'] : said['hecho'];
-  return { schema, copiedAt: typeof at === 'string' && ISO.test(at) ? at : null };
+  return { ok: true, schema, copiedAt: typeof at === 'string' && ISO.test(at) ? at : null };
 }
 
 /**
@@ -505,12 +539,18 @@ export async function inspectZip(blob: Blob, caps: ZipCaps = ZIP_CAPS): Promise<
       const broken = checkEntries(index.entries, caps);
       if (broken) return { ok: false, problem: broken };
       const root = engineRoot(index.entries);
-      if (root === null) return { ok: false, problem: problem('not-a-world') };
+      if (root === null) {
+        const several = engineManifests(index.entries).length;
+        return {
+          ok: false,
+          problem: several > 1 ? problem('mundo-several', null, several) : problem('not-a-world'),
+        };
+      }
       const manifest = index.entries.find(
         (entry) => entry.name === `${root}mundo.json`,
       ) as ZipEntry;
       const said = await readEngineManifest(blob, manifest);
-      if (said === null) return { ok: false, problem: problem('not-a-world') };
+      if (!said.ok) return said;
       const files = index.entries.filter(
         (entry) => entry.name.startsWith(root) && !entry.name.endsWith('/'),
       ).length;

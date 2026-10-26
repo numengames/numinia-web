@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.170.0',
+    date: '2026-10-26 13:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'The Worlds room now says exactly why it refuses a Numinia Engine zip whose mundo.json is not the engine’s export: it cannot be read, it declares another schema (and says which), it has no list of files, or the zip carries more than one. Before, every case read “There is no world in the zip”. Each says what to bring instead, in the five languages.',
+      },
+    ],
+  },
+  {
     version: 'v0.169.0',
     date: '2026-10-22 11:10',
     entries: [
