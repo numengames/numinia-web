@@ -88,5 +88,5 @@ people:
 # The organization whose people this page lists. This id is the fixture
 # desk's (DATA_SOURCE=fixture): in production the till has no such account,
 # so the list stays hidden until the real id of Numen Games is written here.
-team: acc_team_numen_games
+team: acc_t_2e2dd18c880ba974da1512dc7cde2431
 ---
