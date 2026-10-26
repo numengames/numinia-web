@@ -33,6 +33,7 @@ import {
   icsFeed,
   idFromPath,
   monogram,
+  monthsToCover,
   nextRitualOf,
   parseCommunity,
   parseRitual,
@@ -867,6 +868,27 @@ describe('the calendar', () => {
       year: 2026,
       month: 1,
     });
+  });
+
+  it('runs the grid through the month of the latest upcoming ritual (MIS-268: March 2027)', () => {
+    const from = { year: 2026, month: 10 };
+    const buenosAires = parseRitual('merge-buenos-aires-2027', {
+      ...RITUAL,
+      community: 'merge',
+      title: 'MERGE Buenos Aires 2027',
+      start: '2027-03-08',
+      end: '2027-03-10',
+    });
+    const held2028 = ritual({ status: 'held', start: '2028-01-15', end: '2028-01-15' });
+    const jan2028 = ritual({ start: '2028-01-15', end: '2028-01-15' });
+    // Oct 2026 … Mar 2027 is six months, so March stays on the page.
+    expect(monthsToCover(from, [buenosAires], 4)).toBe(6);
+    // A held ritual never extends the grid.
+    expect(monthsToCover(from, [buenosAires, held2028], 4)).toBe(6);
+    expect(monthsToCover(from, [jan2028], 4)).toBe(16);
+    // Never fewer than the minimum: a ritual in the first month, or none.
+    expect(monthsToCover(from, [ritual()], 4)).toBe(4);
+    expect(monthsToCover(from, [], 4)).toBe(4);
   });
 });
 
