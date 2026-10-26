@@ -13,13 +13,14 @@
 
 import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
+import { aheadRituals } from './support/ahead';
 
 const sha = async (text: string): Promise<string> =>
   createHash('sha256').update(text).digest('hex');
 
 const WALLET = '0x42e6000000000000000000000000000000ca26';
-/** An encounter still to come when this spec was written (the register's). */
-const TRG = 'trg26';
+/** An encounter still to come TODAY, read from the register (never named: they end). */
+const TRG = aheadRituals()[0]?.id ?? '';
 /** One already held: never counted. */
 const HELD = 'commit-conf-2026';
 
@@ -156,6 +157,7 @@ test.describe('the counters', () => {
   test('signed in, each read once; the figures say what is ahead and what your communities have', async ({
     page,
   }) => {
+    test.skip(TRG === '', 'the register needs an encounter still ahead');
     // The till's id for the community «trgcon» (lib/you-counts.ts derives it the same way):
     // belonging to it and following it count as one.
     const trgcon = 'acc_t_' + (await sha('numinia-till community trgcon')).slice(0, 32);
