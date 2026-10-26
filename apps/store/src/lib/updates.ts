@@ -26,6 +26,20 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.168.0',
+    date: '2026-10-26 12:00',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'An owner can now appoint the other Oracles from the census desk, with no one entering a machine: paste a wallet, choose Oracle, and sign in your wallet to confirm. Four Oracles at most, owners included; an appointed Oracle holds the rank only while the owner who appointed them is still an owner.',
+      },
+      {
+        type: 'FIX',
+        text: 'An Archon can no longer lower another Archon, nor an Oracle, nor change their own rank from the census: nobody acts upward (STD-003).',
+      },
+    ],
+  },
+  {
     version: 'v0.167.0',
     date: '2026-10-22 08:54',
     entries: [

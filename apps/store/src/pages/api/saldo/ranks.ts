@@ -7,7 +7,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { SESSION_COOKIE, rankForAddress } from '../../../lib/auth/server';
+import { SESSION_COOKIE, oracleWallets, rankForAddress } from '../../../lib/auth/server';
 import { sessionAsker } from '../../../lib/auth/session-wallet';
 import { accountsFrom } from '../../../lib/accounts-source';
 import { answerRanks, censusOf } from '../../../lib/member-ranks';
@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ cookies, url }) => {
     url,
     {
       isOracle: (wallet) => rankForAddress(wallet) === 'oracle',
-      census: store === null ? null : censusOf(store),
+      census: store === null ? null : censusOf(store, new Set(oracleWallets())),
     },
   );
 };

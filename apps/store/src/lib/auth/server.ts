@@ -23,6 +23,7 @@ import {
   type VerifyResult,
 } from '@numinia/auth';
 import type { FreshDeps, SignatureCheck } from '../fresh-signature';
+import { rankFromRecord } from '../census-rules';
 import { runtimeEnv } from '../runtime-env';
 
 const envSchema = z.object({
@@ -172,7 +173,8 @@ export function oracleWallets(): string[] {
  * Full rank resolution: the allowlist Oracle wins; otherwise the
  * public census remembers what the city granted. Fail closed in privilege
  * terms — a census outage or absent record grants nothing above Nomad, and
- * a census can never mint an Oracle (that stays in the env allowlist).
+ * a census Oracle counts only while an owner of the env allowlist stands
+ * behind it (STD-003 RNK-009).
  */
 export async function resolveRank(address: string): Promise<Rank> {
   if (rankForAddress(address) === 'oracle') return 'oracle';
@@ -182,8 +184,9 @@ export async function resolveRank(address: string): Promise<Rank> {
   try {
     const { censusPath, CensusRecordSchema } = await import('@numinia/state');
     const found = await store.read(censusPath(address.toLowerCase()), CensusRecordSchema);
-    if (!found || found.record.rank === 'oracle') return 'nomad';
-    return found.record.rank;
+    if (!found) return 'nomad';
+    // An Oracle of the census counts only while its appointing owner is one (RNK-009).
+    return rankFromRecord(found.record, new Set(oracleWallets()));
   } catch {
     return 'nomad';
   }

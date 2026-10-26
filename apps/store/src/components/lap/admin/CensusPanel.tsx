@@ -16,6 +16,7 @@
 
 import { useEffect, useState } from 'react';
 import { LunaEspera } from '../../chrome/LunaEspera';
+import { signLines } from '../../saldo/wallet-signature';
 
 interface RankOption {
   readonly id: string;
@@ -37,6 +38,9 @@ export interface CensusLabels {
   readonly grant: string;
   readonly granted: string;
   readonly failed: string;
+  /** The Oracle option, offered to an owner only; asking for the wallet's signature. */
+  readonly oracle: string;
+  readonly signing: string;
 }
 
 interface CensusRecord {
@@ -56,7 +60,7 @@ type Panel =
   | { at: 'forbidden' }
   | { at: 'unconfigured' }
   | { at: 'invalid' }
-  | { at: 'ready'; record: CensusRecord | null }
+  | { at: 'ready'; record: CensusRecord | null; owner: boolean }
   | { at: 'error' };
 
 export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: RankOption[] }) {
@@ -106,8 +110,8 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
       if (response.status === 403) return setPanel({ at: 'forbidden' });
       if (response.status === 503) return setPanel({ at: 'unconfigured' });
       if (!response.ok) return setPanel({ at: 'error' });
-      const data = (await response.json()) as { record: CensusRecord | null };
-      setPanel({ at: 'ready', record: data.record });
+      const data = (await response.json()) as { record: CensusRecord | null; owner?: boolean };
+      setPanel({ at: 'ready', record: data.record, owner: data.owner === true });
     } catch {
       setPanel({ at: 'error' });
     } finally {
@@ -115,20 +119,38 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
     }
   };
 
-  const grant = async (): Promise<void> => {
+  const grant = async (owner: boolean): Promise<void> => {
     setNote('');
     setBusy('grant');
-    try {
-      const response = await fetch('/api/admin/census', {
+    const post = (fresh?: { token: string; signature: string }): Promise<Response> =>
+      fetch('/api/admin/census', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ wallet: wallet.trim().toLowerCase(), rank }),
+        body: JSON.stringify({
+          wallet: wallet.trim().toLowerCase(),
+          rank,
+          ...(fresh ? { fresh } : {}),
+        }),
       });
-      if (response.status === 403) return setPanel({ at: 'forbidden' });
+    try {
+      let response = await post();
+      // An Oracle act: the owner's wallet signs the lines the server worded, then it is sent again.
+      if (response.status === 428) {
+        const json = (await response.json().catch(() => null)) as {
+          sign?: { message: string; token: string };
+        } | null;
+        if (!json?.sign) return setNote(labels.failed);
+        setNote(labels.signing);
+        const signed = await signLines(json.sign);
+        if (!signed.ok) return setNote(labels.failed);
+        response = await post(signed.proof);
+      }
+      if (response.status === 403 && rank !== 'oracle' && !owner)
+        return setPanel({ at: 'forbidden' });
       if (response.status === 503) return setPanel({ at: 'unconfigured' });
       if (!response.ok) return setNote(labels.failed);
       const data = (await response.json()) as { record: CensusRecord };
-      setPanel({ at: 'ready', record: data.record });
+      setPanel({ at: 'ready', record: data.record, owner });
       setNote(labels.granted);
     } catch {
       setNote(labels.failed);
@@ -233,11 +255,12 @@ export function CensusPanel({ labels, ranks }: { labels: CensusLabels; ranks: Ra
                   {option.name}
                 </option>
               ))}
+              {panel.owner && <option value="oracle">{labels.oracle}</option>}
             </select>
             <button
               type="button"
               className="btn btn-primario"
-              onClick={() => void grant()}
+              onClick={() => void grant(panel.owner)}
               data-metric="census-grant"
               data-espera={busy === 'grant' ? '' : undefined}
               disabled={busy !== null}

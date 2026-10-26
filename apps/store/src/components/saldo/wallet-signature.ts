@@ -90,3 +90,31 @@ export async function signAct(
     return { ok: false, problem: 'declined' };
   }
 }
+
+/**
+ * Have the connected wallet sign lines the server already worded (the census
+ * desk's Oracle acts answer 428 with them, STD-003 RNK-009): the same wallet
+ * lookup as `signAct`, without asking /api/saldo/signature.
+ */
+export async function signLines(sign: {
+  readonly message: string;
+  readonly token: string;
+}): Promise<Signed> {
+  const clientId = import.meta.env.PUBLIC_THIRDWEB_CLIENT_ID as string | undefined;
+  if (!clientId) return { ok: false, problem: 'no-wallet' };
+  let wallet: Wallet | null;
+  try {
+    const { rememberedWallet } = await import('../auth/remembered-wallet');
+    wallet = await rememberedWallet(clientId);
+  } catch {
+    return { ok: false, problem: 'no-wallet' };
+  }
+  const account = wallet?.getAccount();
+  if (!account) return { ok: false, problem: 'no-wallet' };
+  try {
+    const signature = await account.signMessage({ message: sign.message });
+    return { ok: true, proof: { token: sign.token, signature } };
+  } catch {
+    return { ok: false, problem: 'declined' };
+  }
+}

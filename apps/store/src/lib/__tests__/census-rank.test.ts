@@ -67,9 +67,19 @@ describe('resolveRank', () => {
     expect(await resolveRank(CITIZEN)).toBe('nomad');
   });
 
-  it('a poisoned census can never mint an Oracle', async () => {
+  it('a census Oracle with no owner behind it is a Nomad', async () => {
     readMock.mockResolvedValueOnce(censusRecord('oracle'));
     const { resolveRank } = await import('../auth/server');
     expect(await resolveRank(CITIZEN)).toBe('nomad');
+  });
+
+  it('a census Oracle appointed by an owner of the allowlist is an Oracle', async () => {
+    const found = censusRecord('oracle');
+    readMock.mockResolvedValueOnce({
+      ...found,
+      record: { ...found.record, appointedBy: ORACLE.toLowerCase() },
+    });
+    const { resolveRank } = await import('../auth/server');
+    expect(await resolveRank(CITIZEN)).toBe('oracle');
   });
 });
