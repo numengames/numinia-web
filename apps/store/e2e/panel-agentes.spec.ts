@@ -708,6 +708,11 @@ test.describe('Agentes — «En el mundo»: body and bubble (S21)', () => {
     await expect(slider).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(hermes.locator('.agentes-radio-valor')).toHaveText('6 m');
+    // the 6 must be on its way back before the next move: a fill into the disabled card is lost
+    await expect
+      .poll(() => stand.calls.at(-1)?.body)
+      .toMatchObject({ presence: { burbuja: { radio: 6 } } });
+    await expect(slider).toBeEnabled();
     await slider.fill('9');
     await expect(hermes.locator('.agentes-radio-valor')).toHaveText('9 m');
     await expect

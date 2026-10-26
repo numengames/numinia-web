@@ -19,6 +19,8 @@ import { enterWorldInTab, loadWorldPage, type PageSheet } from '../../lib/mundos
 import { PIECES, pieceHref } from '../../lib/panel';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { AiSection } from './AiSection';
+import { FunctionsSection } from './FunctionsSection';
+import { useWorldDoor } from './use-world-door';
 
 type Read = { readonly at: 'loading' } | PageSheet;
 
@@ -169,6 +171,8 @@ export function WorldView({
   const page = read.at === 'ready' ? read.page : null;
   const home = page?.home ?? null;
   const manages = page !== null && page.manage && home !== null;
+  // One door for the blocks that manage the world: one pass asked for, one pass renewed.
+  const door = useWorldDoor(worldId, page?.url ?? null, fixture);
 
   /**
    * Opens a new tab (card t_677de28a) on the click, works out the address
@@ -271,13 +275,13 @@ export function WorldView({
         </section>
       )}
       {manages && <Enters org={home.accountId} words={words} />}
+      {manages && <AiSection door={door} words={words.ai} retryLabel={words.retry} />}
       {manages && (
-        <AiSection
-          worldId={worldId}
-          worldUrl={page.url}
-          words={words.ai}
+        <FunctionsSection
+          door={door}
+          words={words.functions}
+          aiFailures={words.ai.failures}
           retryLabel={words.retry}
-          fixture={fixture}
         />
       )}
       {manages && (

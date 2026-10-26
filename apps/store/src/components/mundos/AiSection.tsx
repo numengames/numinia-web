@@ -9,30 +9,26 @@
  * every 15 s while the tab is visible.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { WorldAiMessages } from '../../i18n/mundos';
 import { fill } from '../../lib/accounts';
 import {
   NAME_MAX,
   abilityOf,
   agentIdFrom,
-  askPass,
-  createDoor,
-  createPassKeeper,
   isAgentKey,
   nameProblem,
   newAgentCommand,
   type Ability,
+  type Door,
   type DoorAgent,
   type DoorFailure,
   type DoorResult,
 } from '../../lib/world-door';
-import { FIXTURE_PASS, createFixtureDoor } from '../../lib/world-door-fixture';
 import { LunaEspera } from '../chrome/LunaEspera';
 
 /** How often the list is read again while the tab is visible. */
 const POLL_MS = 15_000;
-const FIXTURE_WORLD = 'https://fixture.world.invalid/';
 
 type Draft = { name: string; ability: Ability; key: string };
 const EMPTY_DRAFT: Draft = { name: '', ability: 'talk', key: '' };
@@ -278,32 +274,15 @@ function InviteDialog({
 }
 
 export function AiSection({
-  worldId,
-  worldUrl,
+  door,
   words,
   retryLabel,
-  fixture,
 }: {
-  readonly worldId: string;
-  /** The world's own address, from the world's data. */
-  readonly worldUrl: string | null;
+  /** The world's door, shared with the other blocks of the page (./use-world-door.ts). */
+  readonly door: Door;
   readonly words: WorldAiMessages;
   readonly retryLabel: string;
-  /** DATA_SOURCE=fixture: the door is an in-memory stand-in. */
-  readonly fixture: boolean;
 }) {
-  const door = useMemo(() => {
-    const keeper = createPassKeeper(
-      fixture ? async () => FIXTURE_PASS : () => askPass(fetch, worldId),
-      Date.now,
-    );
-    return createDoor({
-      fetch: fixture ? createFixtureDoor() : (input, init) => fetch(input, init),
-      worldUrl: fixture ? FIXTURE_WORLD : worldUrl,
-      keeper,
-    });
-  }, [fixture, worldId, worldUrl]);
-
   const [agents, setAgents] = useState<readonly DoorAgent[] | null>(null);
   const [failure, setFailure] = useState<DoorFailure | null>(null);
   const [inviting, setInviting] = useState(false);
