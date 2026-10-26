@@ -22,6 +22,7 @@
  */
 
 import { CensusRecordSchema, censusPath, type GitStateStore } from '@numinia/state';
+import { rankFromRecord } from './census-rules';
 import { logEvent } from './telemetry';
 
 /** What the route needs of the till's `FleetDesk.signSigners` (apps/till/src/lib/fleet-signers.ts). */
@@ -104,8 +105,16 @@ export const CENSUS_READ_MAX = 1_000;
 /** How long the census read as a whole may take. */
 export const CENSUS_READ_MS = 8_000;
 
-/** The wallets (lower case) the census holds with rank `archon`; throws if any read fails. */
-export async function archonsOf(census: SignersSources['census'], ms: number): Promise<string[]> {
+/**
+ * The wallets (lower case) the census holds with rank `archon`, plus the
+ * Oracles an owner appointed from the census desk (STD-003 RNK-009), who sign
+ * for the fleet like any Oracle; throws if any read fails.
+ */
+export async function archonsOf(
+  census: SignersSources['census'],
+  ms: number,
+  owners: ReadonlySet<string> = new Set(),
+): Promise<string[]> {
   if (census === null) return [];
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, reject) => {
@@ -117,7 +126,9 @@ export async function archonsOf(census: SignersSources['census'], ms: number): P
     const found = await Promise.all(
       wallets.map(async (wallet) => {
         const record = await census.read(censusPath(wallet), CensusRecordSchema);
-        return record?.record.rank === 'archon' ? [wallet] : [];
+        if (record === null) return [];
+        const rank = rankFromRecord(record.record, owners);
+        return rank === 'archon' || rank === 'oracle' ? [wallet] : [];
       }),
     );
     return found.flat();
@@ -191,7 +202,7 @@ export async function answerSigners(
   if (memo !== null && now() - memo.at < MEMO_MS) return Response.json(memo.body, { headers });
   let archons: string[];
   try {
-    archons = await archonsOf(sources.census, censusMs);
+    archons = await archonsOf(sources.census, censusMs, new Set(sources.oracles()));
   } catch {
     logEvent({ event: 'fleet.signers.failed', act: 'census' });
     return failure(503, 'census-unavailable');

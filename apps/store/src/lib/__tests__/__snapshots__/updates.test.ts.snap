@@ -3,6 +3,16 @@
 exports[`REBUILD_UPDATES (pinned data) > is pinned exactly — any edit must update this snapshot deliberately 1`] = `
 [
   {
+    "date": "2026-10-26 15:00",
+    "entries": [
+      {
+        "text": "An Oracle appointed from the census desk now signs for the fleet like any other Oracle: the signed list every machine reads includes them, so they can create, duplicate and delete worlds, not only enter the pages.",
+        "type": "FIX",
+      },
+    ],
+    "version": "v0.170.0",
+  },
+  {
     "date": "2026-10-26 12:00",
     "entries": [
       {

@@ -26,6 +26,16 @@ export interface UpdateVersion {
 /** Rebuild-era versions — newest first, prepended to the legacy timeline. */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.170.0',
+    date: '2026-10-26 15:00',
+    entries: [
+      {
+        type: 'FIX',
+        text: 'An Oracle appointed from the census desk now signs for the fleet like any other Oracle: the signed list every machine reads includes them, so they can create, duplicate and delete worlds, not only enter the pages.',
+      },
+    ],
+  },
+  {
     version: 'v0.168.0',
     date: '2026-10-26 12:00',
     entries: [
