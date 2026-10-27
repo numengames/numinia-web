@@ -62,10 +62,10 @@ function formatDate(date: string): string {
             </li>
           ))}
         </ul>
-        {mergeUrl(update.version) && (
+        {mergeUrl(update.version, update.source) && (
           <p class="fusion">
             <a
-              href={mergeUrl(update.version)}
+              href={mergeUrl(update.version, update.source)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${t.mergeLink} · ${update.version}`}

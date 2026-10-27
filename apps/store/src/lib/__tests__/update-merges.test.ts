@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { REPO_URL } from '../build-info';
 import { LAST_LEGACY_MINOR, MERGED_PRS, isLegacyVersion, mergeUrl } from '../update-merges';
-import { REBUILD_UPDATES } from '../updates';
+import { ALL_REBUILD_UPDATES, REBUILD_UPDATES } from '../updates';
 
 describe('MERGED_PRS', () => {
   it('maps versions to pull request numbers, newest first, v0.89.0 to #122', () => {
@@ -61,10 +61,24 @@ describe('mergeUrl', () => {
   });
 
   it('links every rebuild version the timeline shows', () => {
-    for (const update of REBUILD_UPDATES) {
-      const url = mergeUrl(update.version);
+    for (const update of ALL_REBUILD_UPDATES) {
+      const url = mergeUrl(update.version, update.source);
       expect(url, update.version).not.toBeNull();
       expect(new URL(url ?? '').origin).toBe('https://github.com');
+    }
+  });
+
+  it('sends a version made by a note file to the history of that file', () => {
+    expect(mergeUrl('v0.172.0', '2026-10-27-2200-a-note.md')).toBe(
+      `${REPO_URL}/commits/main/apps/store/src/content/updates/2026-10-27-2200-a-note.md`,
+    );
+    // A known pull request still wins over the file.
+    expect(mergeUrl('v0.89.0', '2026-10-27-2200-a-note.md')).toBe(`${REPO_URL}/pull/122`);
+  });
+
+  it('ignores a source that is not a note file name', () => {
+    for (const hostile of ['', '../x.md', 'a.md?x=1', '2026-10-27-2200-a"><b.md']) {
+      expect(mergeUrl('v0.172.0', hostile), hostile).toBe(mergeUrl('v0.172.0'));
     }
   });
 });
