@@ -5,6 +5,9 @@
 # Grouping (2026-10-20): each ecosystem sends ONE pull request with all its updates
 # (group `all-dependencies`), so there is never a pile of separate ones. Dependabot cannot
 # group across ecosystems, so npm / github-actions / pip each still open their own.
+# Cooldown (2026-10-15): a version is proposed only after it has been public
+# for 7 days, so a hijacked or broken release is usually flagged by others
+# before it reaches this repository. Security updates ignore the cooldown.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -14,6 +17,8 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
     groups:
       all-dependencies:
         patterns: ["*"]
@@ -28,6 +33,8 @@ updates:
       interval: daily
     commit-message:
       prefix: "ci(deps)"
+    cooldown:
+      default-days: 7
     groups:
       all-dependencies:
         patterns: ["*"]
