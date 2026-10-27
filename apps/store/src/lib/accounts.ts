@@ -1756,6 +1756,8 @@ export interface DeskCitizen {
   /** The Bazar avatar's id: the store turns it into `face` and never hands it on. */
   avatar?: string | null;
   organizations: number;
+  /** The ids of those organizations (the till's account ids). */
+  organizationIds: string[];
 }
 
 export type DeskCitizensAnswer =
@@ -1771,6 +1773,8 @@ export interface Citizen {
   readonly name: string | null;
   readonly face: string | null;
   readonly organizations: number;
+  /** The ids of those organizations: the dialog leaves them out without reading their members. */
+  readonly organizationIds: readonly string[];
 }
 
 /** A page of the list as the browser reads it. */
@@ -1782,14 +1786,16 @@ export interface CitizensPage {
 
 function readCitizen(value: unknown): Citizen | null {
   if (!isRecord(value)) return null;
-  const { wallet, firstSeenAt, lastSeenAt, name, face, organizations } = value;
+  const { wallet, firstSeenAt, lastSeenAt, name, face, organizations, organizationIds } = value;
   return typeof wallet === 'string' &&
     typeof firstSeenAt === 'string' &&
     typeof lastSeenAt === 'string' &&
     isTextOrNull(name) &&
     isTextOrNull(face) &&
-    typeof organizations === 'number'
-    ? { wallet, firstSeenAt, lastSeenAt, name, face, organizations }
+    typeof organizations === 'number' &&
+    Array.isArray(organizationIds) &&
+    organizationIds.every((id): id is string => typeof id === 'string')
+    ? { wallet, firstSeenAt, lastSeenAt, name, face, organizations, organizationIds }
     : null;
 }
 
