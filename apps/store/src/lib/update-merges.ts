@@ -63,6 +63,8 @@ export const MERGED_PRS: Readonly<Record<string, number>> = {
 export const LAST_LEGACY_MINOR = 15;
 
 const SEMVER = /^v(\d+)\.(\d+)\.(\d+)$/;
+/** A note file's name (content/updates/): only characters that cannot break out of a URL. */
+const NOTE_FILE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{4}-[a-z0-9-]+\.md$/;
 
 /** Whether a version belongs to the legacy line (v0.1.0–v0.15.0). */
 export function isLegacyVersion(version: string): boolean {
@@ -72,14 +74,19 @@ export function isLegacyVersion(version: string): boolean {
 
 /**
  * The GitHub address of a version's merge: its pull request when known,
- * else the search of merged pull requests whose title carries the version.
- * Null for the legacy line and for anything that is not a version.
+ * else — for a version made by a note file — the history of that file, whose
+ * one commit is the merge, else the search of merged pull requests whose
+ * title carries the version. Null for the legacy line and for anything that
+ * is not a version.
  */
-export function mergeUrl(version: string): string | null {
+export function mergeUrl(version: string, source?: string): string | null {
   if (!SEMVER.test(version) || isLegacyVersion(version)) return null;
   // The regex admits only «vX.Y.Z», so no lookup can land on an Object.prototype name.
   const pr = MERGED_PRS[version];
   if (pr !== undefined) return `${REPO_URL}/pull/${pr}`;
+  if (source !== undefined && NOTE_FILE.test(source)) {
+    return `${REPO_URL}/commits/main/apps/store/src/content/updates/${source}`;
+  }
   const query = encodeURIComponent(`is:pr is:merged in:title "${version}"`).replace(/%20/g, '+');
   return `${REPO_URL}/pulls?q=${query}`;
 }
