@@ -40,9 +40,13 @@ keeps it hermetic). Env vars reach the build only if listed in `turbo.json`
 ## Gates that bite (beyond a green `test`)
 
 - `scripts/check-version-bump.mjs`: any change under `apps/store/src/**`
-  needs a new entry in `apps/store/src/lib/updates.ts` `REBUILD_UPDATES`
-  and a raised version; the pinned test (`updates.test.ts`) asserts the
-  literal `CURRENT_VERSION` — bump both deliberately.
+  needs ONE new note file in `apps/store/src/content/updates/`, named
+  `YYYY-MM-DD-HHMM-slug.md` (UTC), with lines `- NEW|FIX|UPD — text` and an
+  optional `missions: MIS-123` front matter. Nobody writes a version: the Nth
+  file by name is the Nth release after the frozen table in `updates.ts`
+  (v0.171.0), so PR titles and tests carry no version number. A note may not
+  be deleted, and a new one must sort after every note on `main` (a stale
+  branch renames its file to a later time).
 - Per-file coverage on every `src/lib/*.ts`: 100 % lines/functions/
   statements, 95 % branches. A new lib file needs its test.
 - `scripts/link-check.mjs` crawls `apps/store/dist/client`: no internal
