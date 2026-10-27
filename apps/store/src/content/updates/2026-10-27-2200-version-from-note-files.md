@@ -1,0 +1,1 @@
+- UPD — Each release note is now its own small file, and a release’s number is worked out from how many notes there are. Two changes prepared at the same time no longer fight over the same line, so they reach you sooner. On this page, the merge link of a new card opens the history of its note on GitHub.
