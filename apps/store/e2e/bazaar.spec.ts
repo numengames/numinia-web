@@ -68,6 +68,33 @@ test.describe('the Bazaar', () => {
     await expect(cards).toHaveCount(total);
   });
 
+  test('the chosen kind and format are in the address; opening it repaints them', async ({
+    page,
+    context,
+  }) => {
+    await page.locator('[data-metric="bazaar-collection"][data-category="avatars"]').click();
+    const chip = page.locator('[data-metric="bazaar-format"]').first();
+    const format = await chip.getAttribute('data-format');
+    await chip.click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    const shared = page.url();
+    expect(shared).toContain('category=avatars');
+    expect(shared).toContain(`format=${format}`);
+    const cards = await page.locator('[data-metric="bazaar-card"]').count();
+
+    const other = await context.newPage();
+    await other.goto(shared);
+    await other.waitForSelector('[data-bazaar][data-hydrated]');
+    await expect(
+      other.locator('[data-metric="bazaar-collection"][data-category="avatars"]'),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      other.locator(`[data-metric="bazaar-format"][data-format="${format}"]`),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(other.locator('[data-metric="bazaar-card"]')).toHaveCount(cards);
+    await other.close();
+  });
+
   test('a chosen good fills the preview, which opens its page; the page leads back', async ({
     page,
   }) => {
