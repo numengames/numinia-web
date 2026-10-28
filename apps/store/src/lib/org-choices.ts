@@ -13,8 +13,6 @@
  * readers only keep a wrong body from breaking a screen.
  */
 
-import { readRoles } from './accounts';
-
 /** The register for the house: its communities, with the account the till opens for each. */
 export const COMMUNITIES_API = '/api/admin/communities';
 /** Where the house has the till open a community's account. */
@@ -161,36 +159,17 @@ export async function openAllCommunities(fetcher: Fetch): Promise<OpenedAll> {
   }
 }
 
-/** The members' wallets of one organization, lowercase, or null when the till would not say. */
-async function membersOf(fetcher: Fetch, accountId: string): Promise<readonly string[] | null> {
-  try {
-    const response = await fetcher(`/api/saldo/roles?cuenta=${encodeURIComponent(accountId)}`, {
-      headers: { accept: 'application/json' },
-    });
-    const read = response.ok ? readRoles(await response.json().catch(() => null)) : null;
-    return read === null ? null : read.roles.members.map((member) => member.wallet.toLowerCase());
-  } catch {
-    return null;
-  }
-}
-
 /**
- * The choices the person is not yet in: each organization that exists is
- * asked who its members are, and the ones that list the wallet are left out.
- * An organization the till would not read stays in the list (the till decides
- * on save anyway), and a community with no account yet has no member.
+ * The choices the person is not yet in: the ones whose account is not among
+ * the organizations the census lists for them (`organizationIds`). Read from
+ * the census row, never by asking each organization's members: that read
+ * writes a `house-read` line per organization (STD-053), and opening the
+ * dialog must write none. A community with no account yet is in none.
  */
-export async function choicesToJoin(
-  fetcher: Fetch,
+export function choicesNotJoined(
   choices: readonly OrgChoice[],
-  wallet: string,
-): Promise<readonly OrgChoice[]> {
-  const who = wallet.toLowerCase();
-  const joined = await Promise.all(
-    choices.map(async (choice) => {
-      const members = choice.accountId === null ? [] : await membersOf(fetcher, choice.accountId);
-      return members !== null && members.includes(who);
-    }),
-  );
-  return choices.filter((_, index) => !joined[index]);
+  organizationIds: readonly string[],
+): readonly OrgChoice[] {
+  const joined = new Set(organizationIds);
+  return choices.filter((choice) => choice.accountId === null || !joined.has(choice.accountId));
 }

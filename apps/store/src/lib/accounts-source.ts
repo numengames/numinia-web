@@ -620,6 +620,7 @@ function buildSchemas() {
             name: z.string().optional(),
             avatar: z.string().nullable().optional(),
             organizations: z.number().int().nonnegative(),
+            organizationIds: z.array(z.string()),
           })
           .transform(({ name, avatar, ...person }): Citizen => ({
             ...person,

@@ -223,12 +223,15 @@ describe('the account desk: a sign-in recorded', () => {
 });
 
 /** Pablo founds Estudio Lucía with María in it; María and Ana found one more each. */
-async function city(desk: AccountDesk): Promise<void> {
+async function city(
+  desk: AccountDesk,
+): Promise<{ readonly lucia: string; readonly taller: string }> {
   const lucia = await desk.createTeam(PABLO, 'Estudio Lucía');
   if (!lucia.ok) throw new Error(lucia.problems.join());
   const added = await desk.setMember(PABLO, lucia.account.id, MARIA, 'member');
   if (!added.ok) throw new Error(added.problems.join());
-  await desk.createTeam(MARIA, 'Taller');
+  const taller = await desk.createTeam(MARIA, 'Taller');
+  if (!taller.ok) throw new Error(taller.problems.join());
   await signInAt(desk, PABLO, '2026-10-12T10:00:00.000Z');
   await signInAt(desk, MARIA, '2026-10-14T10:00:00.000Z');
   await signInAt(desk, ANA, '2026-10-15T10:00:00.000Z');
@@ -236,12 +239,13 @@ async function city(desk: AccountDesk): Promise<void> {
   const named = await desk.setProfile(MARIA, { name: 'María Ferrán', avatar: ARLA });
   if (!named.ok) throw new Error(named.problems.join());
   vi.setSystemTime(NOW);
+  return { lucia: lucia.account.id, taller: taller.account.id };
 }
 
 describe('the account desk: the list of who has signed in', () => {
   it('answers the house everyone, newest last time first, with names and how many organizations', async () => {
     const { desk } = scene();
-    await city(desk);
+    const { lucia, taller } = await city(desk);
     expect(await desk.citizens(HOUSE, true)).toEqual({
       ok: true,
       people: [
@@ -250,12 +254,14 @@ describe('the account desk: the list of who has signed in', () => {
           firstSeenAt: '2026-10-12T10:00:00.000Z',
           lastSeenAt: '2026-10-16T08:00:00.000Z',
           organizations: 1,
+          organizationIds: [lucia],
         },
         {
           wallet: ANA,
           firstSeenAt: '2026-10-15T10:00:00.000Z',
           lastSeenAt: '2026-10-15T10:00:00.000Z',
           organizations: 0,
+          organizationIds: [],
         },
         {
           wallet: MARIA,
@@ -264,6 +270,7 @@ describe('the account desk: the list of who has signed in', () => {
           name: 'María Ferrán',
           avatar: ARLA,
           organizations: 2,
+          organizationIds: [lucia, taller].sort(),
         },
       ],
       total: 3,
@@ -365,7 +372,7 @@ describe('the account desk: the list of who has signed in', () => {
 
   it('follows the person: a name removed leaves the list at once', async () => {
     const { desk } = scene();
-    await city(desk);
+    const { lucia, taller } = await city(desk);
     await desk.setProfile(MARIA, null);
     const maria = listOf(await desk.citizens(HOUSE, true)).people.find(
       (person) => person.wallet === MARIA,
@@ -375,6 +382,7 @@ describe('the account desk: the list of who has signed in', () => {
       firstSeenAt: '2026-10-14T10:00:00.000Z',
       lastSeenAt: '2026-10-14T10:00:00.000Z',
       organizations: 2,
+      organizationIds: [lucia, taller].sort(),
     });
   });
 });
