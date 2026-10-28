@@ -18,7 +18,7 @@ permissions:
 jobs:
   regenerate:
     name: Redraw the baselines (chromium, CI image)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       # Same as ci.yml: the build validates these.
