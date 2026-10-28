@@ -31,7 +31,7 @@ import {
 import { pageSessionClient } from '../../../lib/island-session';
 import { LunaEspera } from '../../chrome/LunaEspera';
 import { PeopleGlyph } from '../../panel/PeopleGlyph';
-import { accountOf, choicesToJoin } from '../../../lib/org-choices';
+import { accountOf, choicesNotJoined } from '../../../lib/org-choices';
 import { OrgOptions } from './OrgOptions';
 import { readTeams, type Teams } from './org-teams';
 
@@ -166,16 +166,16 @@ export function CitizensList({
     setStatus('');
     dialog.current?.showModal();
     // Each opening reads the list again: a community may have got its organization since.
-    // The ones the person already belongs to are left out of it.
+    // The ones the person already belongs to (the census row says which) are left out of it.
     setTeams({ at: 'loading' });
     const mine = ++opening.current;
-    void readTeams().then(async (read) => {
+    void readTeams().then((read) => {
+      if (mine !== opening.current) return;
       if (read.at !== 'ready') {
-        if (mine === opening.current) setTeams(read);
+        setTeams(read);
         return;
       }
-      const left = await choicesToJoin(fetch, read.choices, person.wallet);
-      if (mine !== opening.current) return;
+      const left = choicesNotJoined(read.choices, person.organizationIds);
       setAllJoined(read.choices.length > 0 && left.length === 0);
       setTeams({ at: 'ready', choices: left });
     });
@@ -211,13 +211,21 @@ export function CitizensList({
     setStatus(fill(words.added, { who: personLines(adding).title, org: choice.label }));
     // The list says it at once: the person is in one organization more.
     const wallet = adding.wallet;
+    const joined = account.ok ? account.accountId : null;
     setSheet((now) =>
       now.at === 'ready'
         ? {
             ...now,
             people: now.people.map((person) =>
               person.wallet === wallet
-                ? { ...person, organizations: person.organizations + 1 }
+                ? {
+                    ...person,
+                    organizations: person.organizations + 1,
+                    organizationIds:
+                      joined === null
+                        ? person.organizationIds
+                        : [...person.organizationIds, joined],
+                  }
                 : person,
             ),
           }

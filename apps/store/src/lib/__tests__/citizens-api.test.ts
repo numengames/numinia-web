@@ -38,6 +38,7 @@ const TILL_LIST = {
       name: 'Lucía',
       avatar: ARLA,
       organizations: 2,
+      organizationIds: ['acc_t_1', 'acc_t_2'],
     },
     {
       wallet: MARCO,
@@ -46,6 +47,7 @@ const TILL_LIST = {
       name: 'Marco',
       avatar: null,
       organizations: 1,
+      organizationIds: ['acc_t_1'],
     },
     // An avatar this build did not bake: the person keeps their name, and no face.
     {
@@ -55,8 +57,15 @@ const TILL_LIST = {
       name: 'Ana',
       avatar: 'avatar-not-baked-here',
       organizations: 0,
+      organizationIds: [],
     },
-    { wallet: HOUSE.wallet, firstSeenAt: FIRST, lastSeenAt: FIRST, organizations: 0 },
+    {
+      wallet: HOUSE.wallet,
+      firstSeenAt: FIRST,
+      lastSeenAt: FIRST,
+      organizations: 0,
+      organizationIds: [],
+    },
   ],
   total: 9,
   next: `${FIRST}~${HOUSE.wallet}`,
@@ -143,6 +152,7 @@ describe('GET /api/admin/citizens: everyone who has signed in, to the house alon
           name: 'Lucía',
           face: ARLA_FACE,
           organizations: 2,
+          organizationIds: ['acc_t_1', 'acc_t_2'],
         },
         {
           wallet: MARCO,
@@ -151,6 +161,7 @@ describe('GET /api/admin/citizens: everyone who has signed in, to the house alon
           name: 'Marco',
           face: null,
           organizations: 1,
+          organizationIds: ['acc_t_1'],
         },
         {
           wallet: ANA,
@@ -159,6 +170,7 @@ describe('GET /api/admin/citizens: everyone who has signed in, to the house alon
           name: 'Ana',
           face: null,
           organizations: 0,
+          organizationIds: [],
         },
         {
           wallet: HOUSE.wallet,
@@ -167,6 +179,7 @@ describe('GET /api/admin/citizens: everyone who has signed in, to the house alon
           name: null,
           face: null,
           organizations: 0,
+          organizationIds: [],
         },
       ],
       total: 9,

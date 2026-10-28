@@ -1644,6 +1644,9 @@ export function createAccountsFixtureDesk(
             organizations: teams.filter((book) =>
               book.members.some((member) => member.wallet === who),
             ).length,
+            organizationIds: teams
+              .filter((book) => book.members.some((member) => member.wallet === who))
+              .map((book) => book.id),
           };
         })
         .filter(
