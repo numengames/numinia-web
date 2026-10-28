@@ -308,6 +308,21 @@ test.describe('the «IA» section of a world’s page', () => {
     await section.locator('[data-metric="ai-invite"]').click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
+    // «Add an AI» opens on the fork: A, an AI that lives here, is the default.
+    await expect(dialog.locator('[data-world-ai-fork]')).toBeVisible();
+    await expect(dialog.locator('[data-metric="ai-add-here"]')).toBeChecked();
+    await shot(page, '01b-fork');
+    await dialog.locator('[data-metric="ai-add-next"]').click();
+    // A shows only whether the machine can think, never a key.
+    await expect(dialog.locator('[data-world-ai-thinking]')).toContainText(
+      'Esta máquina puede pensar:',
+    );
+    await expect(dialog.locator('input')).toHaveCount(0);
+    await shot(page, '01c-here');
+    await dialog.locator('[data-metric="ai-add-back"]').click();
+    // B, your own agent: the three steps, as they were.
+    await dialog.locator('[data-metric="ai-add-own"]').check();
+    await dialog.locator('[data-metric="ai-add-next"]').click();
     await dialog.locator('[data-metric="ai-invite-name"]').fill('Hermes Pablo');
     await dialog.locator('[data-metric="ai-invite-ability-build"]').check();
     await shot(page, '02-step-1');
@@ -335,6 +350,8 @@ test.describe('the «IA» section of a world’s page', () => {
 
     // Asking again for the same name is refused in plain words, before any call.
     await section.locator('[data-metric="ai-invite"]').click();
+    await dialog.locator('[data-metric="ai-add-own"]').check();
+    await dialog.locator('[data-metric="ai-add-next"]').click();
     await dialog.locator('[data-metric="ai-invite-name"]').fill('Hermes Pablo');
     await dialog.locator('[data-metric="ai-invite-next"]').click();
     await expect(dialog.getByText('Ya hay una IA con ese nombre')).toBeVisible();
@@ -359,18 +376,19 @@ test.describe('the «IA» section of a world’s page', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     await signIn(context, ADMIN, 'nomad');
-    for (const [prefix, title, invite] of [
-      ['/es', 'IA', 'Invitar a una IA'],
-      ['', 'AI', 'Invite an AI'],
-      ['/ja', 'AI', 'AIを招待する'],
-      ['/ko', 'AI', 'AI 초대하기'],
-      ['/pt-br', 'IA', 'Convidar uma IA'],
+    for (const [prefix, title, invite, here] of [
+      ['/es', 'IA', 'Añadir una IA', 'Darle una mente aquí'],
+      ['', 'AI', 'Add an AI', 'Give it a mind here'],
+      ['/ja', 'AI', 'AIを追加する', 'ここで心を与える'],
+      ['/ko', 'AI', 'AI 추가하기', '여기에서 마음을 주기'],
+      ['/pt-br', 'IA', 'Adicionar uma IA', 'Dar a ela uma mente aqui'],
     ] as const) {
       await page.goto(worldPage('agora-plaza', prefix));
       const section = page.locator('[data-world-ai]');
       await expect(section.getByRole('heading', { name: title, exact: true })).toBeVisible();
       await section.getByRole('button', { name: invite }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByRole('dialog', { name: invite })).toBeVisible();
+      await expect(page.getByRole('radio', { name: here })).toBeChecked();
       await settle(page);
       expect(await overflow(page)).toBeLessThanOrEqual(0);
       const dialog = page.locator('dialog[open]');
@@ -379,6 +397,19 @@ test.describe('the «IA» section of a world’s page', () => {
       ).toBeLessThanOrEqual(0);
       if (prefix === '/es') {
         await shot(page, '09-phone-dialog');
+        const found = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(found.violations.map((v) => v.id)).toEqual([]);
+      }
+      // Path A, in this language too: it fits and says whether the machine thinks.
+      await page.locator('[data-metric="ai-add-next"]').click();
+      await expect(dialog.locator('[data-world-ai-thinking]')).toBeVisible();
+      expect(
+        await dialog.evaluate((element) => element.scrollWidth - element.clientWidth),
+      ).toBeLessThanOrEqual(0);
+      if (prefix === '/es') {
+        await shot(page, '09b-phone-here');
         const found = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();

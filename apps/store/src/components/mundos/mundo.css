@@ -550,6 +550,59 @@
   align-items: center;
   gap: var(--s2);
 }
+/* «Add an AI»: the two paths, as two tiles a finger can hit; the chosen one
+   wears the amber edge the presence dot uses. */
+.mundo-ia-caminos {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.mundo-ia-caminos legend {
+  margin-bottom: var(--s2);
+  padding: 0;
+}
+.mundo-ia-camino {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-height: 44px;
+  padding: var(--s3);
+  background: var(--fondo);
+  border: 1px solid var(--linea-f);
+  border-radius: var(--radio-control);
+  cursor: pointer;
+}
+.mundo-ia-camino:has(input:checked) {
+  border-color: var(--ambar);
+}
+.mundo-ia-camino input {
+  margin-top: 0.3rem;
+  flex: none;
+}
+.mundo-ia-camino > span {
+  display: grid;
+  gap: var(--s1);
+  min-width: 0;
+}
+.mundo-ia-aqui {
+  display: grid;
+  gap: var(--s3);
+}
+.mundo-ia-piensa {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+.mundo-ia-piensa .mundo-ia-punto {
+  flex: none;
+  margin-top: 0.45em;
+}
+.mundo-ia-piensa[data-world-ai-thinking='yes'] .mundo-ia-punto {
+  background: var(--ambar);
+}
 .mundo-ia-linea {
   display: flex;
   flex-wrap: wrap;
