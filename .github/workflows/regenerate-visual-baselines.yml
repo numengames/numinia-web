@@ -1,0 +1,62 @@
+# Regenerate the visual baselines inside the CI image, by hand.
+#
+# Why: the PNGs in apps/store/e2e/visual.spec.ts-snapshots are drawn in the
+# Playwright "noble" image; drawn anywhere else they differ in fonts and
+# antialiasing. Any chrome change needs them redrawn there (see CLAUDE.md).
+#
+# Safe by construction: read-only token, started by a person (Actions → Run
+# workflow, pick the PR's branch), it never pushes. It uploads the PNGs as an
+# artifact; a person reviews them by eye and commits them to the PR.
+name: Regenerate visual baselines
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regenerate:
+    name: Redraw the baselines (chromium, CI image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      # Keep in step with @playwright/test in apps/store (the image carries
+      # the browsers of that exact version).
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install (reproducible)
+        run: npm ci
+      - name: Check the image matches the installed Playwright
+        run: |
+          installed="$(node -p "require('@playwright/test/package.json').version")"
+          test "$installed" = "1.62.1" || { echo "::error::Playwright is $installed but the image is v1.62.1: update the image tag in this workflow"; exit 1; }
+        working-directory: apps/store
+      - name: Build store (hermetic catalog)
+        run: npx turbo run build --filter=@numinia/store
+        env:
+          DATA_SOURCE: fixture
+          PUBLIC_THIRDWEB_CLIENT_ID: e2e-placeholder-client-id
+      - name: Redraw the baselines
+        run: npx playwright test visual --update-snapshots --project=chromium
+        working-directory: apps/store
+        env:
+          DATA_SOURCE: fixture
+          PUBLIC_THIRDWEB_CLIENT_ID: e2e-placeholder-client-id
+          HOME: /root
+      - name: Upload the PNGs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-baselines
+          path: apps/store/e2e/visual.spec.ts-snapshots/
+          if-no-files-found: error
+          retention-days: 7
