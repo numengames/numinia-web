@@ -144,6 +144,23 @@ describe('the list', () => {
     expect(await archonsOf(null, 1000)).toEqual([]);
   });
 
+  it('adds the Oracles an owner appointed, and only while that owner is one', async () => {
+    const appointed = `0x${'77'.repeat(20)}`;
+    const orphan = `0x${'88'.repeat(20)}`;
+    const records: Record<string, { rank: string; appointedBy?: string }> = {
+      [appointed]: { rank: 'oracle', appointedBy: lower(ORACLE) },
+      [orphan]: { rank: 'oracle', appointedBy: `0x${'99'.repeat(20)}` },
+    };
+    const census = {
+      list: async () => Object.keys(records).map((wallet) => `${wallet}.json`),
+      read: async (path: string) => {
+        const wallet = path.slice('census/'.length, -'.json'.length);
+        return { record: { wallet, ...records[wallet] }, sha: 's' };
+      },
+    } as unknown as Census;
+    expect(await archonsOf(census, 1000, new Set([lower(ORACLE)]))).toEqual([appointed]);
+  });
+
   it('fails (never answers short) when a read fails, the listing fails, or it takes too long', async () => {
     const broken = censusOf({
       read: (async () => Promise.reject(new Error('503'))) as Census['read'],
