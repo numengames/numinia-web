@@ -69,8 +69,6 @@ export interface AppShellMessages {
   readonly createItems: Readonly<
     Record<CreateId, { readonly title: string; readonly what: string; readonly tile: string }>
   >;
-  /** What is not built yet, said as plain text. */
-  readonly createSoon: string;
   /** The right rail's foot. */
   readonly settings: string;
   readonly appearance: string;
@@ -150,8 +148,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
         what: 'Para una comunidad que llevas: día, sitio, en persona o en su mundo.',
         tile: 'Encuentro',
       },
+      world: {
+        title: 'Un mundo',
+        what: 'En la sala de mundos del LAP; hoy la abre un Oráculo.',
+        tile: 'Mundo',
+      },
     },
-    createSoon: 'Pronto: mundos',
     settings: 'Ajustes',
     appearance: 'Aspecto',
     system: 'Sistema',
@@ -228,8 +230,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
         what: 'For a community you run: day, place, in person or in its world.',
         tile: 'Gathering',
       },
+      world: {
+        title: 'A world',
+        what: 'In the LAP’s worlds room; for now an Oracle opens it.',
+        tile: 'World',
+      },
     },
-    createSoon: 'Coming: worlds',
     settings: 'Settings',
     appearance: 'Appearance',
     system: 'System',
@@ -306,8 +312,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
         what: 'あなたが運営するコミュニティのために：日付、場所、対面かそのワールドで。',
         tile: '集まり',
       },
+      world: {
+        title: 'ワールド',
+        what: 'LAPのワールドの部屋で。今はオラクルが開きます。',
+        tile: 'ワールド',
+      },
     },
-    createSoon: '近日：ワールド',
     settings: '設定',
     appearance: '外観',
     system: 'システム',
@@ -378,8 +388,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
         what: '내가 운영하는 커뮤니티를 위해: 날짜, 장소, 대면 또는 그 월드에서.',
         tile: '모임',
       },
+      world: {
+        title: '월드',
+        what: 'LAP의 월드 방에서. 지금은 오라클이 엽니다.',
+        tile: '월드',
+      },
     },
-    createSoon: '곧: 월드',
     settings: '설정',
     appearance: '화면',
     system: '시스템',
@@ -456,8 +470,12 @@ export const APP_SHELL_UI: Readonly<Record<SupportedLocale, AppShellMessages>> =
         what: 'Para uma comunidade que você lidera: dia, lugar, presencial ou no mundo dela.',
         tile: 'Encontro',
       },
+      world: {
+        title: 'Um mundo',
+        what: 'Na sala de mundos do LAP; por enquanto, quem a abre é um Oráculo.',
+        tile: 'Mundo',
+      },
     },
-    createSoon: 'Em breve: mundos',
     settings: 'Configurações',
     appearance: 'Aparência',
     system: 'Sistema',
