@@ -207,7 +207,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ env.ImageOS }}-${{ steps.playwright-version.outputs.version }}
       - name: Install browsers (chromium + firefox + webkit — the CI config enables all three)
         if: steps.browser-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium firefox webkit
