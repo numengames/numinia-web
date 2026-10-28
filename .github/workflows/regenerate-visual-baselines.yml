@@ -20,6 +20,10 @@ jobs:
     name: Redraw the baselines (chromium, CI image)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Same as ci.yml: the build validates these.
+      GITHUB_REPO_OWNER: PabloFMM
+      GITHUB_REPO_NAME: numinia-digital-goods-data
     container:
       # Keep in step with @playwright/test in apps/store (the image carries
       # the browsers of that exact version).
