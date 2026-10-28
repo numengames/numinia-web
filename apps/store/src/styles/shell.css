@@ -788,12 +788,6 @@ html[data-js='on'] .pop-fijo:not([data-placed]) {
   color: var(--texto-2);
   font-size: 0.78rem;
 }
-.crear-pronto {
-  margin: 6px 10px 4px;
-  color: var(--texto-2);
-  font-size: 0.82rem;
-}
-
 /* ---- The folded footer ------------------------------------------------- */
 .pie-app {
   display: flex;
@@ -1284,13 +1278,6 @@ html[data-js='on'] .bocadillo:not([data-placed]) {
 }
 .ht-crear a .icono {
   color: var(--enlace);
-}
-.ht-pronto {
-  grid-column: span 2;
-  align-self: center;
-  margin: 0;
-  color: var(--texto-2);
-  font-size: 0.82rem;
 }
 .ht-pie {
   display: flex;

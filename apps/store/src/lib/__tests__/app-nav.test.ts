@@ -94,10 +94,11 @@ describe('the places', () => {
     ]);
   });
 
-  it('«Crear» offers only what exists: a community', () => {
+  it('«Crear» offers only what exists: a community, an encounter, a world', () => {
     expect(CREATE_ITEMS).toEqual([
       { id: 'community', path: '/how-it-works/#open', icon: 'house' },
       { id: 'encounter', path: '/crear/encuentro/', icon: 'calendar-plus' },
+      { id: 'world', path: '/lap/admin/worlds/', icon: 'planet' },
     ]);
   });
 
