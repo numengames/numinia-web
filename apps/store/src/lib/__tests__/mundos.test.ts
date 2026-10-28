@@ -86,8 +86,35 @@ describe('the readers', () => {
   });
 
   it('read an organization’s worlds', () => {
-    expect(readOrgWorlds({ worlds: [{ worldId: 'w', accountId: 'a' }] })).toEqual([
-      { worldId: 'w', accountId: 'a' },
+    // An older answer, with no name: the id read as words, and no picture.
+    expect(readOrgWorlds({ worlds: [{ worldId: 'agora-plaza', accountId: 'a' }] })).toEqual([
+      { worldId: 'agora-plaza', accountId: 'a', name: 'Agora Plaza', cover: null },
+    ]);
+    // MIS-265: the name and picture the API adds; a picture from elsewhere is dropped.
+    expect(
+      readOrgWorlds({
+        worlds: [
+          {
+            worldId: 'w',
+            accountId: 'a',
+            name: 'Plaza del Ágora',
+            cover: 'https://w.numinia.com/p.webp',
+          },
+          { worldId: 'x', accountId: 'a', name: 'X', cover: '/images/art/city.webp' },
+          { worldId: 'y', accountId: 'a', name: '', cover: 'javascript:alert(1)' },
+          { worldId: 'z', accountId: 'a', cover: '//evil.example/p.png' },
+        ],
+      }),
+    ).toEqual([
+      {
+        worldId: 'w',
+        accountId: 'a',
+        name: 'Plaza del Ágora',
+        cover: 'https://w.numinia.com/p.webp',
+      },
+      { worldId: 'x', accountId: 'a', name: 'X', cover: '/images/art/city.webp' },
+      { worldId: 'y', accountId: 'a', name: 'Y', cover: null },
+      { worldId: 'z', accountId: 'a', name: 'Z', cover: null },
     ]);
     expect(readOrgWorlds({ worlds: [] })).toEqual([]);
     expect(readOrgWorlds({})).toBeNull();
@@ -196,7 +223,7 @@ describe('the loads', () => {
     const ok = vi.fn(async () => answer(200, { worlds: [{ worldId: 'w', accountId: 'a' }] }));
     expect(await loadOrgWorlds(ok, 'acc_1')).toEqual({
       at: 'ready',
-      items: [{ worldId: 'w', accountId: 'a' }],
+      items: [{ worldId: 'w', accountId: 'a', name: 'W', cover: null }],
     });
     expect(ok).toHaveBeenCalledWith('/api/mundos?org=acc_1', expect.anything());
     expect(await loadOrgWorlds(async () => answer(403, {}), 'acc_1')).toEqual({ at: 'forbidden' });
