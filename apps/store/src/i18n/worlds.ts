@@ -465,6 +465,16 @@ export interface WorldsRoomMessages {
       readonly ratio: string;
       readonly unpackedTooBig: string;
       readonly unexpected: string;
+      /** A Numinia Engine zip whose `mundo.json` is not the engine's export manifest: not JSON… */
+      readonly mundoUnreadable: string;
+      /** …another schema (`{s}` the `esquema` it declared)… */
+      readonly mundoSchema: string;
+      /** …another schema, none declared… */
+      readonly mundoSchemaNone: string;
+      /** …no list of files… */
+      readonly mundoNoFiles: string;
+      /** …or `{n}` of them. */
+      readonly mundoSeveral: string;
     };
     /** Each rule a machine names, in Pablo's words: `{m}`, `{f}` the zip's name, `{s}` its size, `{max}` its machine's cap. */
     readonly rules: Readonly<Record<ImportRule, string>>;
@@ -966,6 +976,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ratio: 'El zip crecería demasiado al abrirlo (×{r}): así son las «bombas zip». No se abre.',
         unpackedTooBig: 'Abierto ocuparía {s}, más de lo que {m} acepta ({max}).',
         unexpected: 'El zip trae algo que un mundo no lleva: {f}.',
+        mundoUnreadable:
+          'El mundo.json de este zip no se puede leer: no es un JSON válido. Descarga el zip del mundo desde la sala (o ejecuta la `copia` del motor) y trae ese.',
+        mundoSchema:
+          'El mundo.json de este zip declara «{s}», un esquema que el motor no lee (numinia-engine/mundo@1 o @2). Descarga el zip del mundo desde la sala (o ejecuta la `copia` del motor) y trae ese.',
+        mundoSchemaNone:
+          'El mundo.json de este zip no declara ningún esquema del motor (numinia-engine/mundo@1 o @2). Descarga el zip del mundo desde la sala (o ejecuta la `copia` del motor) y trae ese.',
+        mundoNoFiles:
+          'El mundo.json de este zip no es una exportación del motor: no trae la lista de ficheros. Descarga el zip del mundo desde la sala (o ejecuta la `copia` del motor) y trae ese.',
+        mundoSeveral:
+          'El zip trae {n} mundo.json y el motor lee uno solo. Deja un mundo por zip y vuelve a comprimirlo.',
       },
       rules: {
         'zip-too-big': 'El zip pesa {s} y {m} acepta hasta {max}.',
@@ -1519,6 +1539,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'The zip would grow too much when opened (×{r}): that is what “zip bombs” do. It is not opened.',
         unpackedTooBig: 'Opened, it would take {s}, more than {m} accepts ({max}).',
         unexpected: 'The zip carries something a world does not: {f}.',
+        mundoUnreadable:
+          'This zip’s mundo.json cannot be read: it is not valid JSON. Download the world’s zip from the room (or run the engine’s `copia`) and bring that one.',
+        mundoSchema:
+          'This zip’s mundo.json declares “{s}”, a schema the engine does not read (numinia-engine/mundo@1 or @2). Download the world’s zip from the room (or run the engine’s `copia`) and bring that one.',
+        mundoSchemaNone:
+          'This zip’s mundo.json declares no engine schema (numinia-engine/mundo@1 or @2). Download the world’s zip from the room (or run the engine’s `copia`) and bring that one.',
+        mundoNoFiles:
+          'This zip’s mundo.json is not an export of the engine: it has no list of files. Download the world’s zip from the room (or run the engine’s `copia`) and bring that one.',
+        mundoSeveral:
+          'The zip carries {n} mundo.json files and the engine reads just one. Keep one world per zip and zip it again.',
       },
       rules: {
         'zip-too-big': 'The zip weighs {s} and {m} takes up to {max}.',
@@ -2068,6 +2098,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ratio: '展開すると大きくなりすぎます（×{r}）。「zip 爆弾」の手口です。開きません。',
         unpackedTooBig: '展開すると {s} になり、{m} が受け付ける {max} を超えます。',
         unexpected: 'zip にワールドには含まれないものがあります：{f}',
+        mundoUnreadable:
+          'この zip の mundo.json は読めません。有効な JSON ではありません。ルームからワールドの zip をダウンロードする（またはエンジンの `copia` を実行する）ことで得た zip を使ってください。',
+        mundoSchema:
+          'この zip の mundo.json は「{s}」を宣言していますが、エンジンはこのスキーマを読めません（numinia-engine/mundo@1 または @2）。ルームからワールドの zip をダウンロードする（またはエンジンの `copia` を実行する）ことで得た zip を使ってください。',
+        mundoSchemaNone:
+          'この zip の mundo.json にはエンジンのスキーマが宣言されていません（numinia-engine/mundo@1 または @2）。ルームからワールドの zip をダウンロードする（またはエンジンの `copia` を実行する）ことで得た zip を使ってください。',
+        mundoNoFiles:
+          'この zip の mundo.json はエンジンのエクスポートではありません。ファイルの一覧がありません。ルームからワールドの zip をダウンロードする（またはエンジンの `copia` を実行する）ことで得た zip を使ってください。',
+        mundoSeveral:
+          'zip に mundo.json が {n} 個あります。エンジンが読めるのは 1 つだけです。zip 1 つにつきワールドは 1 つにして、圧縮し直してください。',
       },
       rules: {
         'zip-too-big': 'zip は {s} で、{m} が受け付けるのは {max} までです。',
@@ -2619,6 +2659,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
         ratio: '열면 너무 커집니다(×{r}). “zip 폭탄”의 방식입니다. 열지 않습니다.',
         unpackedTooBig: '열면 {s}가 되어 {m}이(가) 받는 {max}를 넘습니다.',
         unexpected: 'zip에 월드에 없는 것이 들어 있습니다: {f}',
+        mundoUnreadable:
+          '이 zip의 mundo.json을 읽을 수 없습니다. 올바른 JSON이 아닙니다. 룸에서 월드의 zip을 내려받거나(또는 엔진의 `copia`를 실행해) 그 zip을 가져오세요.',
+        mundoSchema:
+          '이 zip의 mundo.json은 “{s}”을(를) 선언하는데, 엔진이 읽지 못하는 스키마입니다(numinia-engine/mundo@1 또는 @2). 룸에서 월드의 zip을 내려받거나(또는 엔진의 `copia`를 실행해) 그 zip을 가져오세요.',
+        mundoSchemaNone:
+          '이 zip의 mundo.json에는 엔진의 스키마가 선언되어 있지 않습니다(numinia-engine/mundo@1 또는 @2). 룸에서 월드의 zip을 내려받거나(또는 엔진의 `copia`를 실행해) 그 zip을 가져오세요.',
+        mundoNoFiles:
+          '이 zip의 mundo.json은 엔진의 내보내기가 아닙니다. 파일 목록이 없습니다. 룸에서 월드의 zip을 내려받거나(또는 엔진의 `copia`를 실행해) 그 zip을 가져오세요.',
+        mundoSeveral:
+          'zip에 mundo.json이 {n}개 있는데, 엔진은 하나만 읽습니다. zip 하나에 월드 하나만 담아 다시 압축하세요.',
       },
       rules: {
         'zip-too-big': 'zip은 {s}이고, {m}은(는) {max}까지 받습니다.',
@@ -3169,6 +3219,16 @@ export const WORLDS_UI: Readonly<Record<SupportedLocale, WorldsRoomMessages>> = 
           'O zip cresceria demais ao ser aberto (×{r}): é assim que funcionam as “bombas zip”. Não é aberto.',
         unpackedTooBig: 'Aberto, ocuparia {s}, mais do que {m} aceita ({max}).',
         unexpected: 'O zip traz algo que um mundo não leva: {f}.',
+        mundoUnreadable:
+          'O mundo.json deste zip não pode ser lido: não é um JSON válido. Baixe o zip do mundo na sala (ou rode a `copia` do motor) e traga esse.',
+        mundoSchema:
+          'O mundo.json deste zip declara “{s}”, um esquema que o motor não lê (numinia-engine/mundo@1 ou @2). Baixe o zip do mundo na sala (ou rode a `copia` do motor) e traga esse.',
+        mundoSchemaNone:
+          'O mundo.json deste zip não declara nenhum esquema do motor (numinia-engine/mundo@1 ou @2). Baixe o zip do mundo na sala (ou rode a `copia` do motor) e traga esse.',
+        mundoNoFiles:
+          'O mundo.json deste zip não é uma exportação do motor: não traz a lista de ficheiros. Baixe o zip do mundo na sala (ou rode a `copia` do motor) e traga esse.',
+        mundoSeveral:
+          'O zip traz {n} mundo.json e o motor lê só um. Deixe um mundo por zip e compacte de novo.',
       },
       rules: {
         'zip-too-big': 'O zip pesa {s} e {m} aceita até {max}.',

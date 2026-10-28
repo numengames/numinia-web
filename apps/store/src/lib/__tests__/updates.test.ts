@@ -10,7 +10,9 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  ALL_REBUILD_UPDATES,
   CURRENT_VERSION,
+  FRAGMENT_UPDATES,
   newestVersion,
   loadRoadmap,
   loadUpdates,
@@ -72,8 +74,8 @@ describe('loadUpdates', () => {
   it('prepends rebuild versions to all fifteen legacy versions, newest first', async () => {
     const updates = await loadUpdates();
     const versions = updates.map((update) => update.version);
-    expect(versions.slice(0, REBUILD_UPDATES.length)).toEqual(
-      REBUILD_UPDATES.map((update) => update.version),
+    expect(versions.slice(0, ALL_REBUILD_UPDATES.length)).toEqual(
+      ALL_REBUILD_UPDATES.map((update) => update.version),
     );
     for (let major = 1; major <= 15; major += 1) {
       expect(versions).toContain(`v0.${major}.0`);
@@ -126,10 +128,20 @@ describe('loadRoadmap / CURRENT_VERSION', () => {
     expect(first?.item).toMatch(/no machine translation/);
   });
 
-  it('advertises the newest rebuild version', () => {
-    expect(CURRENT_VERSION).toBe('v0.170.0');
+  it('advertises the newest rebuild version, counted from the frozen table and the note files', () => {
     expect(newestVersion([])).toBe('v0.0.0');
-    expect(CURRENT_VERSION).toBe(REBUILD_UPDATES[0]!.version);
+    expect(CURRENT_VERSION).toBe(ALL_REBUILD_UPDATES[0]!.version);
     expect(CURRENT_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);
+    // The frozen table ends at v0.171.0; each note file is the next minor.
+    expect(REBUILD_UPDATES[0]!.version).toBe('v0.171.0');
+    expect(CURRENT_VERSION).toBe(`v0.${171 + FRAGMENT_UPDATES.length}.0`);
+  });
+
+  it('numbers the real note files one after another, with no gap and no repeat', () => {
+    expect(FRAGMENT_UPDATES.length).toBeGreaterThan(0);
+    FRAGMENT_UPDATES.forEach((update, index) => {
+      expect(update.version).toBe(`v0.${171 + FRAGMENT_UPDATES.length - index}.0`);
+      expect(update.source).toMatch(/^\d{4}-\d{2}-\d{2}-\d{4}-[a-z0-9-]+\.md$/);
+    });
   });
 });

@@ -8,6 +8,8 @@
  *   GET    <world>/agentes       -> { agentes: [{ id, nombre, rol, permisos, presente }] }
  *   POST   <world>/agentes       -> body { id, nombre, clave, rol? }
  *   DELETE <world>/agentes/<id>
+ *   GET    <world>/funciones     -> { funciones: [{ id: "normas"|"dardos"|"pesca", activa, fija }] }
+ *   POST   <world>/funciones     -> body { funcion, activa } (w7: the «Funciones de este mundo» block)
  *
  * with `Authorization: Bearer <world pass>`. The pass is the one numinia.com
  * signs for «Entrar» (POST /api/mundos/<id>/pass answers the world's address
@@ -64,14 +66,42 @@ export type DoorFailure =
   | 'not-found'
   | 'other';
 
-export type DoorResult<T> =
+export type DoorResult<T, F extends string = DoorFailure> =
   | { readonly ok: true; readonly value: T }
   | {
       readonly ok: false;
-      readonly failure: DoorFailure;
+      readonly failure: F;
       /** The world's own `texto` (Spanish), when it said one. */
       readonly detail: string | null;
     };
+
+/** The ways a call can fail whatever the path: the world is down, the pass cannot be had or renewed. */
+type CallFailure = 'unreachable' | 'expired' | 'no-pass';
+
+/** The world's switchable functions, in the engine's own ids (features/funciones). */
+export const FUNCTION_IDS = ['normas', 'dardos', 'pesca'] as const;
+export type FunctionId = (typeof FUNCTION_IDS)[number];
+
+/** One function of the world: on or off, and whether the server fixes it (the switch cannot change it). */
+export interface DoorFunction {
+  readonly id: FunctionId;
+  readonly active: boolean;
+  readonly fixed: boolean;
+}
+
+/**
+ * Why a call to `/funciones` did not work. `unsupported`: the world answers 404 (an older engine, or one with no
+ * pass configured: both mean «not from here»); `fixed`: 409, the server fixes that function.
+ */
+export type FunctionsFailure =
+  | CallFailure
+  | 'unsupported'
+  | 'fixed'
+  | 'forbidden'
+  | 'invalid'
+  | 'too-big'
+  | 'starting'
+  | 'other';
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -129,6 +159,33 @@ export function createPassKeeper(ask: () => Promise<string | null>, now: () => n
       held !== null && now() - held.at < RENEW_AFTER_MS ? Promise.resolve(held.token) : renew(),
     renew,
   };
+}
+
+const isFunctionId = (value: unknown): value is FunctionId =>
+  FUNCTION_IDS.some((id) => id === value);
+
+/** One `{ id, activa, fija }` of the door read; null when it is not that. */
+function readFunction(entry: unknown): DoorFunction | null {
+  if (!isRecord(entry) || !isFunctionId(entry.id)) return null;
+  if (typeof entry.activa !== 'boolean' || typeof entry.fija !== 'boolean') return null;
+  return { id: entry.id, active: entry.activa, fixed: entry.fija };
+}
+
+/**
+ * The door's list of functions, read into the ones this panel knows; null when the body is not that.
+ * A function the engine adds later (an id not in FUNCTION_IDS) is left out, so a newer engine never
+ * breaks an older panel.
+ */
+export function readFunctions(json: unknown): readonly DoorFunction[] | null {
+  if (!isRecord(json) || !Array.isArray(json.funciones)) return null;
+  const known: DoorFunction[] = [];
+  for (const entry of json.funciones) {
+    if (isRecord(entry) && typeof entry.id === 'string' && !isFunctionId(entry.id)) continue;
+    const one = readFunction(entry);
+    if (one === null) return null;
+    known.push(one);
+  }
+  return known;
 }
 
 /** A name for the invitation: null when it is fine, else why not. */
@@ -214,6 +271,19 @@ function failureOf(status: number, error: unknown): DoorFailure {
   return FAILURES[status] ?? 'other';
 }
 
+const FUNCTION_FAILURES: Readonly<Record<number, FunctionsFailure>> = {
+  400: 'invalid',
+  403: 'forbidden',
+  404: 'unsupported',
+  409: 'fixed',
+  413: 'too-big',
+  503: 'starting',
+};
+
+function functionsFailureOf(status: number): FunctionsFailure {
+  return FUNCTION_FAILURES[status] ?? 'other';
+}
+
 /** A call to the door, with the pass; `expired` only after the pass was renewed once. */
 export interface Door {
   list(): Promise<DoorResult<readonly DoorAgent[]>>;
@@ -224,6 +294,16 @@ export interface Door {
     readonly ability: Ability;
   }): Promise<DoorResult<null>>;
   remove(id: string): Promise<DoorResult<null>>;
+  /** The world's functions as it reports them now. */
+  functions(): Promise<DoorResult<readonly DoorFunction[], FunctionsFailure>>;
+  /**
+   * Turns one function on or off and answers the state the world reports afterwards (all of them: the world's
+   * own answer when it carries the list, else the list read again).
+   */
+  setFunction(
+    id: FunctionId,
+    active: boolean,
+  ): Promise<DoorResult<readonly DoorFunction[], FunctionsFailure>>;
 }
 
 export function createDoor(options: {
@@ -251,11 +331,12 @@ export function createDoor(options: {
     });
   }
 
-  async function call<T>(
+  async function call<T, F extends string>(
     path: string,
     init: { readonly method: string; readonly body?: string },
     read: (json: unknown) => { readonly value: T } | null,
-  ): Promise<DoorResult<T>> {
+    why: (status: number, error: unknown) => F,
+  ): Promise<DoorResult<T, F | CallFailure | 'other'>> {
     const url = worldUrl === null ? null : doorUrl(worldUrl, path);
     if (url === null) return { ok: false, failure: 'unreachable', detail: null };
     let token = await keeper.get();
@@ -280,17 +361,33 @@ export function createDoor(options: {
       }
       const error = isRecord(json) ? json.error : undefined;
       const detail = isRecord(json) && typeof json.texto === 'string' ? json.texto : null;
-      return { ok: false, failure: failureOf(response.status, error), detail };
+      return { ok: false, failure: why(response.status, error), detail };
     }
     return { ok: false, failure: 'expired', detail: null };
   }
 
+  const readState = (): Promise<DoorResult<readonly DoorFunction[], FunctionsFailure>> =>
+    call(
+      '/funciones',
+      { method: 'GET' },
+      (json) => {
+        const functions = readFunctions(json);
+        return functions === null ? null : { value: functions };
+      },
+      functionsFailureOf,
+    );
+
   return {
     list: () =>
-      call('/agentes', { method: 'GET' }, (json) => {
-        const agents = readAgents(json);
-        return agents === null ? null : { value: agents };
-      }),
+      call(
+        '/agentes',
+        { method: 'GET' },
+        (json) => {
+          const agents = readAgents(json);
+          return agents === null ? null : { value: agents };
+        },
+        failureOf,
+      ),
     add: (agent) =>
       call(
         '/agentes',
@@ -304,8 +401,27 @@ export function createDoor(options: {
           }),
         },
         () => ({ value: null }),
+        failureOf,
       ),
     remove: (id) =>
-      call(`/agentes/${encodeURIComponent(id)}`, { method: 'DELETE' }, () => ({ value: null })),
+      call(
+        `/agentes/${encodeURIComponent(id)}`,
+        { method: 'DELETE' },
+        () => ({ value: null }),
+        failureOf,
+      ),
+    functions: readState,
+    setFunction: async (id, active) => {
+      const wrote = await call(
+        '/funciones',
+        { method: 'POST', body: JSON.stringify({ funcion: id, activa: active }) },
+        (json) => ({ value: json }),
+        functionsFailureOf,
+      );
+      if (!wrote.ok) return wrote;
+      // The world's own answer when it carries the list; otherwise ask it again, never guess.
+      const said = readFunctions(wrote.value);
+      return said === null ? readState() : { ok: true, value: said };
+    },
   };
 }

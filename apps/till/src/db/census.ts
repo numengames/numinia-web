@@ -33,6 +33,12 @@ interface Citizen {
   readonly avatar?: string | null;
   /** How many organizations they are a member or an owner of. */
   readonly organizations: number;
+  /**
+   * The ids of those organizations, so the house's dialog can leave them out
+   * without reading each organization's members (which writes a `house-read`
+   * line per organization, STD-053).
+   */
+  readonly organizationIds: readonly string[];
 }
 
 export interface CitizensList {
@@ -63,7 +69,9 @@ const MATCHES = `
 
 const SELECT_CITIZENS = `
   SELECT s.wallet, s.first_seen_at, s.last_seen_at, p.name, p.avatar,
-         (SELECT COUNT(*) FROM team_members AS m WHERE m.wallet = s.wallet) AS organizations
+         (SELECT json_group_array(account_id) FROM (
+            SELECT m.account_id FROM team_members AS m
+             WHERE m.wallet = s.wallet ORDER BY m.account_id)) AS organization_ids
     FROM wallet_sign_ins AS s
     LEFT JOIN wallet_profiles AS p ON p.wallet = s.wallet
    WHERE ${MATCHES}
@@ -91,6 +99,7 @@ export async function recordSignIn(
 
 function citizenOf(row: Row): Citizen {
   const name = column(row, 'name');
+  const organizationIds = organizationIdsOf(text(row, 'organization_ids'));
   return {
     wallet: text(row, 'wallet'),
     firstSeenAt: instant(row, 'first_seen_at'),
@@ -101,8 +110,15 @@ function citizenOf(row: Row): Citizen {
           name: text(row, 'name'),
           avatar: column(row, 'avatar') === null ? null : text(row, 'avatar'),
         }),
-    organizations: cents(row, 'organizations'),
+    organizations: organizationIds.length,
+    organizationIds,
   };
+}
+
+/** The JSON array the query built, read as text ids; anything else is none. */
+function organizationIdsOf(json: string): readonly string[] {
+  const parsed: unknown = JSON.parse(json);
+  return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
 }
 
 /**

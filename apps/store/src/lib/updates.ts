@@ -6,6 +6,7 @@
 
 // Committed record: imported, not read from disk (runtime-portable).
 import legacyChangelog from '../content/legacy-changelog.md?raw';
+import { buildFragmentUpdates } from './update-fragments';
 
 type UpdateEntryType = 'NEW' | 'FIX' | 'UPD';
 
@@ -21,17 +22,44 @@ export interface UpdateVersion {
   /** Mission/ADR ids sealed by this version, shown as chips on the card. */
   readonly missions?: readonly string[];
   readonly entries: readonly UpdateEntry[];
+  /** Note file under content/updates/ that made this version (absent on the frozen table). */
+  readonly source?: string;
 }
 
-/** Rebuild-era versions — newest first, prepended to the legacy timeline. */
+/**
+ * Rebuild-era versions written by hand — FROZEN at v0.171.0 (2026-10-27).
+ * Never add here: a new change adds one file to content/updates/ (see
+ * update-fragments.ts) and its version is worked out from the file count.
+ * The pinned snapshot fails on any edit to this table.
+ */
 export const REBUILD_UPDATES: readonly UpdateVersion[] = [
   {
+    version: 'v0.171.0',
+    date: '2026-10-27 03:10',
+    entries: [
+      {
+        type: 'UPD',
+        text: 'The fingerprint of an uploaded zip is made by the newest version of the hashing library (@noble/hashes 2.4), which asks for the file name with its «.js» ending. Nothing changes for you: the same file gives the same SHA-256 as before, read in the same 8 MiB slices off the page’s thread.',
+      },
+    ],
+  },
+  {
     version: 'v0.170.0',
-    date: '2026-10-26 15:00',
+    date: '2026-10-26 13:00',
     entries: [
       {
         type: 'FIX',
-        text: 'An Oracle appointed from the census desk now signs for the fleet like any other Oracle: the signed list every machine reads includes them, so they can create, duplicate and delete worlds, not only enter the pages.',
+        text: 'The Worlds room now says exactly why it refuses a Numinia Engine zip whose mundo.json is not the engine’s export: it cannot be read, it declares another schema (and says which), it has no list of files, or the zip carries more than one. Before, every case read “There is no world in the zip”. Each says what to bring instead, in the five languages.',
+      },
+    ],
+  },
+  {
+    version: 'v0.169.0',
+    date: '2026-10-22 11:10',
+    entries: [
+      {
+        type: 'NEW',
+        text: 'A world’s page now has a «Features of this world» block for whoever manages the world, next to the AIs: three switches — Conditions of entry (Numinia’s terms and the community’s rules, one door), Darts and Fishing — that talk to the world’s own door with the same pass the AIs use, so a community can turn them on or off without going into the world. Each switch shows the state the world answers; one the server fixes stays disabled with «Set by the server»; a world with an older engine says it cannot be changed from here yet and the rest of the page works as before. In five languages (Japanese, Korean and Brazilian Portuguese still want a native reading).',
       },
     ],
   },
@@ -2348,8 +2376,24 @@ export function newestVersion(updates: readonly UpdateVersion[]): string {
   return first ? first.version : 'v0.0.0';
 }
 
+/** The release notes made by files, newest first, numbered after the frozen table. */
+export const FRAGMENT_UPDATES: readonly UpdateVersion[] = buildFragmentUpdates(
+  import.meta.glob<string>('../content/updates/*.md', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  }),
+  newestVersion(REBUILD_UPDATES),
+);
+
+/** Every rebuild-era version, newest first: the files, then the frozen table. */
+export const ALL_REBUILD_UPDATES: readonly UpdateVersion[] = [
+  ...FRAGMENT_UPDATES,
+  ...REBUILD_UPDATES,
+];
+
 /** The version the site footer advertises — always the newest timeline entry. */
-export const CURRENT_VERSION: string = newestVersion(REBUILD_UPDATES);
+export const CURRENT_VERSION: string = newestVersion(ALL_REBUILD_UPDATES);
 
 type RoadmapStatus = 'planned' | 'research';
 
@@ -2418,5 +2462,5 @@ export function parseLegacyChangelog(markdown: string): readonly UpdateVersion[]
 
 /** Full timeline, newest first: rebuild versions then the legacy record. */
 export async function loadUpdates(): Promise<readonly UpdateVersion[]> {
-  return [...REBUILD_UPDATES, ...parseLegacyChangelog(await readRecord())];
+  return [...ALL_REBUILD_UPDATES, ...parseLegacyChangelog(await readRecord())];
 }

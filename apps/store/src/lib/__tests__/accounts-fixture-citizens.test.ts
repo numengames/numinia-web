@@ -146,6 +146,7 @@ describe('a sign-in', () => {
       lastSeenAt: NOW.toISOString(),
       // The seed's «self» is whoever asks — here the house — so ME is in none.
       organizations: 0,
+      organizationIds: [],
     });
     now = new Date('2026-10-17T09:30:00.000Z');
     await on.signedIn(LUCIA);
@@ -170,5 +171,7 @@ describe('adding someone of the list to an organization', () => {
     expect(added).toMatchObject({ ok: true });
     const list = await people(on);
     expect(list.find((person) => person.wallet === NUEVA)?.organizations).toBe(1);
+    // The census row names the organization, so the dialog leaves it out with no member read.
+    expect(list.find((person) => person.wallet === NUEVA)?.organizationIds).toEqual([NUMEN]);
   });
 });

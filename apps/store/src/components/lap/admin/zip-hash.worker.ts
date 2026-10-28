@@ -6,8 +6,8 @@
  * reading of the zip passes, and the Oracle signs only once it has answered.
  */
 
-import { sha256 } from '@noble/hashes/sha2';
-import { bytesToHex } from '@noble/hashes/utils';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 import { digestChunks } from '../../../lib/zip-read';
 
 /** What the worker says: how far it got, the fingerprint, or that the file could not be read. */

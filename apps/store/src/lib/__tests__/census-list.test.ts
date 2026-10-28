@@ -32,6 +32,7 @@ const LUCIA: Citizen = {
   name: 'Lucía Vidal',
   face: '/thumbs/1x/avatar-arla-mncdhz3l.webp',
   organizations: 2,
+  organizationIds: ['acc_t_1', 'acc_t_2'],
 };
 const NAMELESS: Citizen = { ...LUCIA, wallet: `0x${'b2'.repeat(20)}`, name: null, face: null };
 

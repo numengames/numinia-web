@@ -200,6 +200,7 @@ describe('reading /api/admin/citizens in the browser (cut «El censo»)', () => 
     name: 'Lucía Vidal',
     face,
     organizations: 2,
+    organizationIds: ['acc_t_1', 'acc_t_2'],
   };
   const nameless = { ...lucia, wallet: `0x${'b2'.repeat(20)}`, name: null, face: null };
 
