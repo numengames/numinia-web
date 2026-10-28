@@ -498,7 +498,10 @@ Then(
       const where = `${prefix}/panel/encuentros/`;
       const html = await panelPage(this.distDir, locale.prefix, 'encuentros/');
       // The island's props: Numen Games by its `team:`, with its encounter's page in this locale.
-      assert.ok(html.includes('acc_team_numen_games'), `${where}: Numen Games is not reached`);
+      assert.ok(
+        html.includes('acc_t_2e2dd18c880ba974da1512dc7cde2431'),
+        `${where}: Numen Games is not reached`,
+      );
       assert.ok(
         html.includes(`${prefix}/rituals/numinia-anniversary-2026/`),
         `${where}: its encounter has no page in «${locale.prefix || 'en'}»`,
