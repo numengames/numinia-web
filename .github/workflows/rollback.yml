@@ -40,10 +40,19 @@ jobs:
         run: npx --yes wrangler@4 versions list --name numinia-web
       - name: Pick target version
         id: target
+        env:
+          # Untrusted input: it reaches the shell only as an env var, never
+          # interpolated into `run:`. Cloudflare version IDs are UUIDs.
+          VERSION_ID: ${{ inputs.version_id }}
         run: |
-          if [ -n "${{ inputs.version_id }}" ]; then
-            echo "id=${{ inputs.version_id }}" >> "$GITHUB_OUTPUT"
-            echo "Restoring explicitly requested version: ${{ inputs.version_id }}"
+          if [ -n "$VERSION_ID" ]; then
+            re='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            if [[ ! "$VERSION_ID" =~ $re ]]; then
+              echo "::error::version_id must be a Worker version UUID (copy it from the list above)."
+              exit 1
+            fi
+            echo "id=$VERSION_ID" >> "$GITHUB_OUTPUT"
+            echo "Restoring explicitly requested version: $VERSION_ID"
           else
             id=$(npx --yes wrangler@4 versions list --name numinia-web --json | jq -r '.[1].id // empty')
             if [ -z "$id" ]; then
@@ -54,7 +63,9 @@ jobs:
             echo "Restoring previous version: $id"
           fi
       - name: Restore (100% of traffic)
-        run: npx --yes wrangler@4 versions deploy "${{ steps.target.outputs.id }}@100%" --name numinia-web --yes
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: npx --yes wrangler@4 versions deploy "${TARGET_ID}@100%" --name numinia-web --yes
       - name: Verify the live site answers
         run: |
           set -e
@@ -67,11 +78,13 @@ jobs:
           echo "Live commit now: $(curl -s --max-time 20 https://numinia.com/version.json || echo 'pre-version.json build')"
       - name: Summary
         if: always()
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
         run: |
           {
             echo "## Rollback — ${{ job.status }}"
             echo ""
-            echo "- Restored version: \`${{ steps.target.outputs.id }}\`"
+            echo "- Restored version: \`${TARGET_ID}\`"
             echo "- Live: https://numinia.com · https://numinia.com/version.json"
             echo "- Remember: main still holds the code that was rolled away — revert or fix it, or the next green CI ships it again."
           } >> "$GITHUB_STEP_SUMMARY"
