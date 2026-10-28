@@ -17,14 +17,14 @@ import {
   loadOrgWorlds,
   worldHref,
   type Sheet,
+  type Venue,
 } from '../../lib/mundos';
 import { enterCount, enterersOf } from '../../lib/world-people';
-import type { OrgWorld } from '../../lib/worlds-homes';
 import { LunaEspera } from '../chrome/LunaEspera';
 import { PanelFrame } from './PanelFrame';
 import { PanelGlyph } from './PanelGlyph';
 
-type Read = { readonly at: 'loading' } | Sheet<OrgWorld>;
+type Read = { readonly at: 'loading' } | Sheet<Venue>;
 
 function Venues({
   org,
@@ -115,12 +115,25 @@ function Venues({
           <ul className="sedes-lista">
             {read.items.map((world) => (
               <li key={world.worldId} className="tarjeta sedes-ficha" data-venue={world.worldId}>
-                <span className="sedes-icono" aria-hidden="true">
-                  <PanelGlyph name="buildings" size={18} />
-                </span>
+                {/* Its picture, the one its card wears in /mundos/; the glyph when it has none (MIS-265). */}
+                <a
+                  className="sedes-portada"
+                  href={worldHref(locale, world.worldId)}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  data-venue-cover={world.cover === null ? 'none' : 'picture'}
+                >
+                  {world.cover === null ? (
+                    <PanelGlyph name="buildings" size={32} />
+                  ) : (
+                    <img src={world.cover} alt="" loading="lazy" decoding="async" />
+                  )}
+                </a>
                 <span className="sedes-cuerpo">
                   <span className="etiqueta">{words.address}</span>
-                  <strong className="mono sedes-nombre">{world.worldId}</strong>
+                  <strong className="sedes-nombre" data-venue-name>
+                    {world.name}
+                  </strong>
                   {mayEnter !== null && (
                     <span className="sedes-entran" data-venue-enterers>
                       {enterCount(mayEnter, words.enterers)}
@@ -130,7 +143,7 @@ function Venues({
                 <a
                   className="btn btn-primario"
                   href={worldHref(locale, world.worldId)}
-                  aria-label={fill(words.enterLabel, { w: world.worldId })}
+                  aria-label={fill(words.enterLabel, { w: world.name })}
                   onClick={(event) => {
                     event.preventDefault();
                     void enter(world.worldId);
@@ -142,7 +155,7 @@ function Venues({
                 <a
                   className="btn btn-fantasma"
                   href={worldHref(locale, world.worldId)}
-                  aria-label={fill(words.openLabel, { w: world.worldId })}
+                  aria-label={fill(words.openLabel, { w: world.name })}
                   data-metric="panel-venue-open"
                 >
                   {words.open}

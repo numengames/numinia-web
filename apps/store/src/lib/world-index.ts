@@ -172,6 +172,25 @@ export function worldName(title: string | null, id: string): string {
   return title ?? readableWorldName(id);
 }
 
+/** How a world of «Sedes» shows itself: its name and its picture, as the index's card says them. */
+export interface VenueFace {
+  readonly name: string;
+  /** The world's own picture, else its community's; null when neither: the card draws its glyph. */
+  readonly cover: string | null;
+}
+
+/**
+ * A world of an organization's «Sedes» with the same name and picture its
+ * card has in the index (MIS-265: the panel printed only the id). A world the
+ * index does not list (one whose organization is no community of the
+ * register, or an index that could not be read) keeps its id read as words
+ * and no picture — never an invented one.
+ */
+export function venueFace(worldId: string, cards: readonly WorldCard[]): VenueFace {
+  const card = cards.find((candidate) => candidate.id === worldId);
+  return { name: card?.name ?? readableWorldName(worldId), cover: card?.cover ?? null };
+}
+
 /**
  * The cards of the index: every placed world the fleet has (once each, the
  * first listing wins), never one being deleted — the ones that are off go

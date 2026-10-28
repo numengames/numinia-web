@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import { NOT_IMPLEMENTED, type AccountDesk, type Asker } from './accounts';
 import { logEvent } from './telemetry';
+import { venueFace, type WorldCard } from './world-index';
 
 /** Where one world stands: its organization, by name, and since when (the contract with the screens). */
 export interface WorldHome {
@@ -366,6 +367,7 @@ export async function answerOrgWorlds(
   asker: Asker | null,
   url: URL,
   log: Log = logEvent,
+  index: () => Promise<readonly WorldCard[]> = () => Promise.resolve([]),
 ): Promise<Response> {
   if (asker === null) return forbidden();
   const org = readAccountId(url.searchParams.get('org') ?? '');
@@ -378,9 +380,12 @@ export async function answerOrgWorlds(
     SHAPES.worldsOf,
   );
   if (!asked.ok) return asked.response;
-  return 'problems' in asked.value
-    ? refused(asked.value.problems)
-    : answer({ worlds: asked.value.worlds });
+  if ('problems' in asked.value) return refused(asked.value.problems);
+  // Each world with the name and picture its card has in the index (MIS-265); an index that fails names them by id.
+  const cards = await index().catch((): readonly WorldCard[] => []);
+  return answer({
+    worlds: asked.value.worlds.map((world) => ({ ...world, ...venueFace(world.worldId, cards) })),
+  });
 }
 
 /**

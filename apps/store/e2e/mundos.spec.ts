@@ -217,6 +217,9 @@ test.describe('the house places worlds', () => {
     const card = page.locator(`[data-venue="${world}"]`);
     await expect(card).toBeVisible();
     await expect(page.locator('[data-venues-count]')).toContainText('sede');
+    // MIS-265: the card names the world (its card's name, else its id read as words), never the raw id.
+    await expect(card.locator('[data-venue-name]')).toHaveText(asWords(world));
+    await expect(card.locator('[data-venue-cover]')).toBeVisible();
     await expect(card.locator('[data-venue-enterers]')).toContainText(
       /Pued(e|en) entrar \d+ person/,
     );

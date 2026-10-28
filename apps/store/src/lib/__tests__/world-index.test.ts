@@ -12,6 +12,7 @@ import {
   readableWorldName,
   readOwner,
   stateRank,
+  venueFace,
   worldCards,
   worldFilters,
   worldName,
@@ -55,6 +56,22 @@ describe('worldState', () => {
     expect(worldState('deleting', null)).toBeNull();
     expect(worldState(null, null)).toBeNull();
     expect(worldState(null, 0)).toBe('on');
+  });
+});
+
+describe('venueFace (MIS-265: «Sedes» names its worlds)', () => {
+  it('takes the name and picture of the world’s card, else its id read as words and no picture', () => {
+    const cards = worldCards({
+      fleet: [{ id: 'agora-plaza', phase: 'running', domain: 'agora.numinia.com' }],
+      owners: new Map([['agora-plaza', { accountId: 'acc_1', accountName: 'Numen' }]]),
+      communities: [
+        { id: 'numen', name: 'Numen', founder: true, accounts: ['acc_1'], image: '/c.webp' },
+      ],
+      faces: { 'agora-plaza': { title: 'Plaza del Ágora', image: null } },
+    });
+    expect(venueFace('agora-plaza', cards)).toEqual({ name: 'Plaza del Ágora', cover: '/c.webp' });
+    expect(venueFace('pablofm-2', cards)).toEqual({ name: 'Pablofm 2', cover: null });
+    expect(venueFace('bosque', [])).toEqual({ name: 'Bosque', cover: null });
   });
 });
 
