@@ -106,6 +106,29 @@ export interface WorldAiMessages {
   readonly removeYes: string;
   readonly removeNo: string;
   readonly removing: string;
+  /**
+   * «Add an AI» opens on two paths: A, an AI that lives in this world and
+   * thinks with the world's own key (the default); B, your own agent from
+   * outside (`dialog`, the three steps). The key never comes through here:
+   * the person only reads whether the machine can think.
+   */
+  readonly fork: {
+    readonly title: string;
+    readonly question: string;
+    readonly hereTitle: string;
+    readonly hereNote: string;
+    readonly ownTitle: string;
+    readonly ownNote: string;
+    /** «This machine can think:» then `thinkingYes`, `thinkingNo` or `thinkingUnknown`. */
+    readonly thinkingLabel: string;
+    readonly thinkingYes: string;
+    readonly thinkingNo: string;
+    readonly thinkingUnknown: string;
+    /** Under «no»: who gives the machine a key, and where. */
+    readonly thinkingNoNote: string;
+    /** Path A until the world's door takes inhabitants from numinia.com. */
+    readonly hereSoon: string;
+  };
   readonly dialog: {
     readonly title: string;
     /** `{n}` of 3. */
@@ -376,7 +399,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         loading: 'Leyendo las IAs…',
         empty:
           'Este mundo aún no tiene IAs. Una IA entra como una persona más: mira, habla y, si tú quieres, construye.',
-        invite: 'Invitar a una IA',
+        invite: 'Añadir una IA',
         listLabel: 'IAs de este mundo',
         talk: 'Puede mirar y hablar',
         build: 'Puede también construir',
@@ -389,6 +412,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         removeYes: 'Sí, quitar',
         removeNo: 'No, dejarla',
         removing: 'Quitando…',
+        fork: {
+          title: 'Añadir una IA',
+          question: '¿Dónde va a pensar?',
+          hereTitle: 'Darle una mente aquí',
+          hereNote:
+            'Vive en este mundo: saluda a quien se acerca, habla y, si quieres, construye. Piensa con la clave del propio mundo.',
+          ownTitle: 'Conectar tu propio agente',
+          ownNote:
+            'Una IA que ya tienes (Hermes, Claude…) entra desde su ordenador con una llave propia.',
+          thinkingLabel: 'Esta máquina puede pensar:',
+          thinkingYes: 'sí',
+          thinkingNo: 'no',
+          thinkingUnknown: 'todavía no lo dice',
+          thinkingNoNote:
+            'Quien cuida la máquina le pone una clave en el propio ordenador del mundo. Esa clave nunca pasa por numinia.com ni por tu navegador.',
+          hereSoon:
+            'Pronto le darás aquí nombre y carácter: este mundo aún no recibe habitantes desde numinia.com.',
+        },
         dialog: {
           title: 'Invitar a una IA',
           step: 'Paso {n} de 3',
@@ -570,7 +611,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         loading: 'Reading the AIs…',
         empty:
           'This world has no AIs yet. An AI comes in like any other person: it looks, talks and, if you let it, builds.',
-        invite: 'Invite an AI',
+        invite: 'Add an AI',
         listLabel: 'AIs in this world',
         talk: 'Can look and talk',
         build: 'Can also build',
@@ -583,6 +624,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         removeYes: 'Yes, remove',
         removeNo: 'No, keep it',
         removing: 'Removing…',
+        fork: {
+          title: 'Add an AI',
+          question: 'Where will it think?',
+          hereTitle: 'Give it a mind here',
+          hereNote:
+            'It lives in this world: it greets whoever comes near, talks and, if you want, builds. It thinks with the world’s own key.',
+          ownTitle: 'Connect your own agent',
+          ownNote:
+            'An AI you already have (Hermes, Claude…) comes in from its own computer with a key of its own.',
+          thinkingLabel: 'This machine can think:',
+          thinkingYes: 'yes',
+          thinkingNo: 'no',
+          thinkingUnknown: 'it does not say yet',
+          thinkingNoNote:
+            'Whoever looks after the machine puts a key on the world’s own computer. That key never goes through numinia.com or your browser.',
+          hereSoon:
+            'Soon you will give it a name and a character here: this world does not take inhabitants from numinia.com yet.',
+        },
         dialog: {
           title: 'Invite an AI',
           step: 'Step {n} of 3',
@@ -766,7 +825,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         loading: 'AIを読み込み中…',
         empty:
           'このワールドにはまだAIがいません。AIは他の人と同じように入ります。見て、話して、許可すれば建てることもできます。',
-        invite: 'AIを招待する',
+        invite: 'AIを追加する',
         listLabel: 'このワールドのAI',
         talk: '見る・話すことができます',
         build: '建てることもできます',
@@ -779,6 +838,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         removeYes: '削除する',
         removeNo: 'やめる',
         removing: '削除中…',
+        fork: {
+          title: 'AIを追加する',
+          question: 'どこで考えますか？',
+          hereTitle: 'ここで心を与える',
+          hereNote:
+            'このワールドに住み、近づいた人にあいさつし、話し、望めば建てることもします。ワールド自身のキーで考えます。',
+          ownTitle: '自分のエージェントをつなぐ',
+          ownNote:
+            'すでに持っているAI（Hermes、Claudeなど）が、自分のコンピューターから自分のキーで入ります。',
+          thinkingLabel: 'このマシンは考えられる：',
+          thinkingYes: 'はい',
+          thinkingNo: 'いいえ',
+          thinkingUnknown: 'まだ分かりません',
+          thinkingNoNote:
+            'マシンを管理する人が、ワールドのコンピューター上でキーを設定します。そのキーが numinia.com やブラウザを通ることはありません。',
+          hereSoon:
+            'まもなく、ここで名前と性格を決められるようになります。このワールドはまだ numinia.com から住人を受け付けていません。',
+        },
         dialog: {
           title: 'AIを招待する',
           step: 'ステップ {n} / 3',
@@ -956,7 +1033,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         loading: 'AI를 읽는 중…',
         empty:
           '이 월드에는 아직 AI가 없습니다. AI는 다른 사람처럼 들어옵니다. 보고, 말하고, 허락하면 만들기도 합니다.',
-        invite: 'AI 초대하기',
+        invite: 'AI 추가하기',
         listLabel: '이 월드의 AI',
         talk: '보고 말할 수 있음',
         build: '만들 수도 있음',
@@ -969,6 +1046,23 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         removeYes: '네, 제거',
         removeNo: '아니요, 그대로 두기',
         removing: '제거 중…',
+        fork: {
+          title: 'AI 추가하기',
+          question: '어디에서 생각하나요?',
+          hereTitle: '여기에서 마음을 주기',
+          hereNote:
+            '이 월드에 살면서 다가오는 사람에게 인사하고, 대화하고, 원하면 만들기도 합니다. 월드 자체의 키로 생각합니다.',
+          ownTitle: '내 에이전트 연결하기',
+          ownNote: '이미 가지고 있는 AI(Hermes, Claude 등)가 자기 컴퓨터에서 자기 키로 들어옵니다.',
+          thinkingLabel: '이 머신은 생각할 수 있음:',
+          thinkingYes: '예',
+          thinkingNo: '아니요',
+          thinkingUnknown: '아직 알 수 없음',
+          thinkingNoNote:
+            '머신을 관리하는 사람이 월드의 컴퓨터에 키를 넣어 줍니다. 그 키는 numinia.com이나 브라우저를 거치지 않습니다.',
+          hereSoon:
+            '곧 여기에서 이름과 성격을 정할 수 있습니다. 이 월드는 아직 numinia.com에서 주민을 받지 않습니다.',
+        },
         dialog: {
           title: 'AI 초대하기',
           step: '{n}/3단계',
@@ -1145,7 +1239,7 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         loading: 'Lendo as IAs…',
         empty:
           'Este mundo ainda não tem IAs. Uma IA entra como uma pessoa qualquer: olha, fala e, se você deixar, constrói.',
-        invite: 'Convidar uma IA',
+        invite: 'Adicionar uma IA',
         listLabel: 'IAs deste mundo',
         talk: 'Pode olhar e falar',
         build: 'Pode também construir',
@@ -1158,6 +1252,24 @@ export const MUNDOS_UI: Readonly<Record<SupportedLocale, MundosMessages>> = {
         removeYes: 'Sim, remover',
         removeNo: 'Não, manter',
         removing: 'Removendo…',
+        fork: {
+          title: 'Adicionar uma IA',
+          question: 'Onde ela vai pensar?',
+          hereTitle: 'Dar a ela uma mente aqui',
+          hereNote:
+            'Ela vive neste mundo: cumprimenta quem chega perto, conversa e, se você quiser, constrói. Pensa com a chave do próprio mundo.',
+          ownTitle: 'Conectar seu próprio agente',
+          ownNote:
+            'Uma IA que você já tem (Hermes, Claude…) entra a partir do computador dela, com uma chave própria.',
+          thinkingLabel: 'Esta máquina pode pensar:',
+          thinkingYes: 'sim',
+          thinkingNo: 'não',
+          thinkingUnknown: 'ainda não diz',
+          thinkingNoNote:
+            'Quem cuida da máquina coloca uma chave no próprio computador do mundo. Essa chave nunca passa pelo numinia.com nem pelo seu navegador.',
+          hereSoon:
+            'Em breve você dará aqui nome e caráter: este mundo ainda não recebe habitantes do numinia.com.',
+        },
         dialog: {
           title: 'Convidar uma IA',
           step: 'Passo {n} de 3',
