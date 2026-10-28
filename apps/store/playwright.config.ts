@@ -6,6 +6,7 @@ export default defineConfig({
   // plenty; CI keeps Playwright's own core-based default.
   workers: process.env['CI'] ? undefined : 8,
   testDir: './e2e',
+  reporter: [['list']],
   timeout: 120_000,
   /**
    * Engines: the suite runs on Chromium; the cross-browser gate ALSO runs on
