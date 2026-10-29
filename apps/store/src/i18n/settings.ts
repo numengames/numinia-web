@@ -39,6 +39,24 @@ export interface SettingsMessages {
   readonly sourceData: string;
   /** The sign-in door's meta description (SessionPage.astro). */
   readonly sessionIntro: string;
+  /**
+   * The five parts of personal settings (wireframe v3, «Tus ajustes»): the
+   * side navigation's label and each part's name, in the design's words.
+   * Notices and balance live on their own pages today: their part says so
+   * and links there (MIS-268, first story: anchors only, no logic moved).
+   */
+  readonly parts: {
+    readonly nav: string;
+    readonly account: string;
+    readonly notices: string;
+    readonly look: string;
+    readonly balance: string;
+    readonly data: string;
+  };
+  readonly noticesNote: string;
+  readonly noticesLink: string;
+  readonly balanceNote: string;
+  readonly balanceLink: string;
 }
 
 export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = {
@@ -78,6 +96,18 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     sourceData: 'Repositorio de datos',
     sessionIntro:
       'Entra con lo que ya tienes: una cuenta de Google, tu correo, una passkey o tu propia cartera.',
+    parts: {
+      nav: 'Tus ajustes',
+      account: 'Cuenta',
+      notices: 'Avisos',
+      look: 'Aspecto e idioma',
+      balance: 'Saldo y consumo',
+      data: 'Tus datos',
+    },
+    noticesNote: 'Lo que te ha llegado, con su punto en la campana, está en Avisos.',
+    noticesLink: 'Ir a Avisos',
+    balanceNote: 'Tu saldo, las recargas y lo que gasta cada cosa están en Tu saldo.',
+    balanceLink: 'Ir a Tu saldo',
   },
   en: {
     title: 'Settings',
@@ -114,6 +144,18 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     sourceData: 'Data repository',
     sessionIntro:
       'Enter with what you already have: a Google account, your email, a passkey, or your own wallet.',
+    parts: {
+      nav: 'Your settings',
+      account: 'Account',
+      notices: 'Notices',
+      look: 'Appearance and language',
+      balance: 'Balance and usage',
+      data: 'Your data',
+    },
+    noticesNote: 'What has reached you, with its dot on the bell, is in Notices.',
+    noticesLink: 'Go to Notices',
+    balanceNote: 'Your balance, top-ups and what each thing spends are in Your balance.',
+    balanceLink: 'Go to Your balance',
   },
   ja: {
     title: '設定',
@@ -150,6 +192,18 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     sourceData: 'データリポジトリ',
     sessionIntro:
       'すでにお持ちのもので入れます:Googleアカウント、メール、パスキー、またはご自身のウォレット。',
+    parts: {
+      nav: 'あなたの設定',
+      account: 'アカウント',
+      notices: 'お知らせ',
+      look: '外観と言語',
+      balance: '残高と利用',
+      data: 'あなたのデータ',
+    },
+    noticesNote: '届いたものは、ベルの点とともに「お知らせ」にあります。',
+    noticesLink: 'お知らせへ',
+    balanceNote: '残高、チャージ、それぞれの利用額は「残高」にあります。',
+    balanceLink: '残高へ',
   },
   ko: {
     title: '설정',
@@ -185,6 +239,18 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     designSystem: '디자인 시스템',
     sourceData: '데이터 저장소',
     sessionIntro: '이미 가진 것으로 들어오세요: Google 계정, 이메일, 패스키, 또는 당신의 지갑.',
+    parts: {
+      nav: '내 설정',
+      account: '계정',
+      notices: '알림',
+      look: '외관과 언어',
+      balance: '잔액과 사용량',
+      data: '당신의 데이터',
+    },
+    noticesNote: '받은 것은 종의 점과 함께 「알림」에 있어요.',
+    noticesLink: '알림으로 가기',
+    balanceNote: '잔액, 충전, 각각의 사용량은 「내 잔액」에 있어요.',
+    balanceLink: '내 잔액으로 가기',
   },
   'pt-br': {
     title: 'Configurações',
@@ -221,5 +287,17 @@ export const SETTINGS_UI: Readonly<Record<SupportedLocale, SettingsMessages>> = 
     sourceData: 'Repositório de dados',
     sessionIntro:
       'Entre com o que já tem: uma conta Google, seu e-mail, uma passkey ou sua própria carteira.',
+    parts: {
+      nav: 'Suas configurações',
+      account: 'Conta',
+      notices: 'Avisos',
+      look: 'Aparência e idioma',
+      balance: 'Saldo e consumo',
+      data: 'Seus dados',
+    },
+    noticesNote: 'O que chegou para você, com o ponto no sino, está em Avisos.',
+    noticesLink: 'Ir para Avisos',
+    balanceNote: 'Seu saldo, as recargas e o que cada coisa gasta estão em Seu saldo.',
+    balanceLink: 'Ir para Seu saldo',
   },
 };

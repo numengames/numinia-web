@@ -50,19 +50,58 @@ function failureText(
   );
 }
 
+/**
+ * «Add an AI» opens on a fork: `here` (A, an inhabitant that lives in the
+ * world and thinks with the world's own key; the default) or `own` (B, your
+ * own agent from outside: the three steps below, unchanged).
+ */
+type AiPath = 'here' | 'own';
+
+/** «This machine can think: yes / no», never the key itself. */
+function ThinkingLine({
+  words,
+  canThink,
+}: {
+  readonly words: WorldAiMessages;
+  readonly canThink: boolean | null;
+}) {
+  const fork = words.fork;
+  const state = canThink === null ? 'unknown' : canThink ? 'yes' : 'no';
+  const answer =
+    state === 'yes' ? fork.thinkingYes : state === 'no' ? fork.thinkingNo : fork.thinkingUnknown;
+  return (
+    <>
+      <p className="mundo-ia-piensa" data-world-ai-thinking={state}>
+        <span className="mundo-ia-punto" aria-hidden="true" />
+        <span>
+          {fork.thinkingLabel} <strong>{answer}</strong>
+        </span>
+      </p>
+      {state !== 'yes' && <p className="saldo-nota">{fork.thinkingNoNote}</p>}
+    </>
+  );
+}
+
 function InviteDialog({
   words,
   existing,
+  canThink,
   onClose,
   onAdd,
 }: {
   readonly words: WorldAiMessages;
   readonly existing: readonly DoorAgent[];
+  /** Whether the world's machine has a model key; null while the world does not say. */
+  readonly canThink: boolean | null;
   readonly onClose: () => void;
   readonly onAdd: (draft: Draft) => Promise<DoorResult<null>>;
 }) {
   const dialog = words.dialog;
+  const fork = words.fork;
   const ref = useRef<HTMLDialogElement>(null);
+  /** null: still at the fork. */
+  const [path, setPath] = useState<AiPath | null>(null);
+  const [choice, setChoice] = useState<AiPath>('here');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [touched, setTouched] = useState(false);
@@ -106,23 +145,57 @@ function InviteDialog({
     if (!result.ok) setFailed({ failure: result.failure, detail: result.detail });
   };
 
+  const title = path === null ? fork.title : path === 'here' ? fork.hereTitle : dialog.title;
+
   return (
     <dialog
       ref={ref}
       className="mundo-ia-dialogo"
-      aria-label={dialog.title}
+      aria-label={title}
       onClose={onClose}
       onCancel={(event) => {
         if (busy) event.preventDefault();
       }}
-      data-world-ai-dialog={step}
+      data-world-ai-dialog={path === 'own' ? step : (path ?? 'fork')}
     >
       <div className="mundo-ia-cabeza">
-        <h2>{dialog.title}</h2>
-        <p className="saldo-nota">{fill(dialog.step, { n: step })}</p>
+        <h2>{title}</h2>
+        {path === 'own' && <p className="saldo-nota">{fill(dialog.step, { n: step })}</p>}
       </div>
       <div className="mundo-ia-cuerpo">
-        {step === 1 && (
+        {path === null && (
+          <fieldset className="mundo-ia-caminos" data-world-ai-fork>
+            <legend>{fork.question}</legend>
+            {(['here', 'own'] as const).map((way) => (
+              <label key={way} className="mundo-ia-camino" data-world-ai-way={way}>
+                <input
+                  type="radio"
+                  name="mundo-ia-camino"
+                  checked={choice === way}
+                  onChange={() => setChoice(way)}
+                  aria-describedby={`mundo-ia-camino-${way}`}
+                  data-metric={`ai-add-${way}`}
+                />
+                <span>
+                  <strong>{way === 'here' ? fork.hereTitle : fork.ownTitle}</strong>
+                  <span className="saldo-nota" id={`mundo-ia-camino-${way}`}>
+                    {way === 'here' ? fork.hereNote : fork.ownNote}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {path === 'here' && (
+          <div className="mundo-ia-aqui" data-world-ai-here>
+            <p className="saldo-nota">{fork.hereNote}</p>
+            <ThinkingLine words={words} canThink={canThink} />
+            <p className="saldo-nota" data-world-ai-here-soon>
+              {fork.hereSoon}
+            </p>
+          </div>
+        )}
+        {path === 'own' && step === 1 && (
           <>
             <label className="mundo-ia-campo">
               <span>{dialog.nameLabel}</span>
@@ -158,7 +231,7 @@ function InviteDialog({
             </fieldset>
           </>
         )}
-        {step === 2 && (
+        {path === 'own' && step === 2 && (
           <>
             <h3 className="etiqueta">{dialog.commandTitle}</h3>
             <p className="saldo-nota">{dialog.commandNote}</p>
@@ -194,7 +267,7 @@ function InviteDialog({
             </label>
           </>
         )}
-        {step === 3 && (
+        {path === 'own' && step === 3 && (
           <dl className="mundo-ia-resumen">
             <dt>{dialog.nameLabel}</dt>
             <dd data-world-ai-summary-name>{draft.name.trim()}</dd>
@@ -218,7 +291,30 @@ function InviteDialog({
         >
           {dialog.cancel}
         </button>
-        {step > 1 && (
+        {(path === 'here' || (path === 'own' && step === 1)) && (
+          <button
+            type="button"
+            className="btn btn-fantasma"
+            onClick={() => {
+              setFailed(null);
+              setPath(null);
+            }}
+            data-metric="ai-add-back"
+          >
+            {dialog.back}
+          </button>
+        )}
+        {path === null && (
+          <button
+            type="button"
+            className="btn btn-primario"
+            onClick={() => setPath(choice)}
+            data-metric="ai-add-next"
+          >
+            {dialog.next}
+          </button>
+        )}
+        {path === 'own' && step > 1 && (
           <button
             type="button"
             className="btn btn-fantasma"
@@ -232,7 +328,7 @@ function InviteDialog({
             {dialog.back}
           </button>
         )}
-        {step === 1 && (
+        {path === 'own' && step === 1 && (
           <button
             type="button"
             className="btn btn-primario"
@@ -245,7 +341,7 @@ function InviteDialog({
             {dialog.next}
           </button>
         )}
-        {step === 2 && (
+        {path === 'own' && step === 2 && (
           <button
             type="button"
             className="btn btn-primario"
@@ -256,7 +352,7 @@ function InviteDialog({
             {dialog.next}
           </button>
         )}
-        {step === 3 && (
+        {path === 'own' && step === 3 && (
           <button
             type="button"
             className="btn btn-primario"
@@ -464,6 +560,10 @@ export function AiSection({
         <InviteDialog
           words={words}
           existing={agents ?? []}
+          // Whether the machine can think comes from the world's status
+          // (engine /status `cerebro.pensar`, story 2 of «Add an AI»); until
+          // the door says it, the dialog says it does not know.
+          canThink={null}
           onClose={() => setInviting(false)}
           onAdd={add}
         />

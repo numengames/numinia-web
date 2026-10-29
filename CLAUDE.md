@@ -5,6 +5,8 @@ vocabulary and the architecture of Numen Games live in one place,
 `numengames/numinia-archive` (numinia.org): read its `AGENTS.md` first,
 transition regime included. This file only says what is specific here.
 
+Thread handoff skill for numinia.com: `numinia-organizations-platform` (its «Where we left off» section holds the thread's current state).
+
 ## What this is
 
 A Turborepo monorepo. `apps/store` is the site in production at

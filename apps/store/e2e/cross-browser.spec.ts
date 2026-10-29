@@ -11,6 +11,13 @@
 
 import { expect, test } from '@playwright/test';
 
+// A layout gate must not depend on the internet: the VRM page's viewer fetches
+// its model from the public R2 host, and `networkidle` waited on that download
+// (a slow runner timed out); the overflow checks now wait for the page's <main>. Anything off-host fails at once instead.
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, (route) => route.abort());
+});
+
 const PAGES = [
   '/es/lap/',
   '/es/lap/character/',
@@ -38,7 +45,7 @@ for (const viewport of VIEWPORTS) {
     test(`${viewport.name} · no horizontal overflow: ${path}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto(path);
-      await page.waitForLoadState('networkidle');
+      await expect(page.locator('main').first()).toBeVisible();
       const overflow = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,
         client: document.documentElement.clientWidth,
@@ -66,7 +73,7 @@ for (const viewport of VIEWPORTS) {
     expect(chapters.length).toBeGreaterThan(0);
     for (const href of chapters) {
       await page.goto(href);
-      await page.waitForLoadState('networkidle');
+      await expect(page.locator('main').first()).toBeVisible();
       const overflow = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,
         client: document.documentElement.clientWidth,

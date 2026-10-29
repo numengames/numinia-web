@@ -19,22 +19,14 @@
 
 import { z } from 'zod';
 import type { AccountDesk, Asker } from './accounts';
-import type { Community } from './communities';
+import { communityAccountId, type Community } from './communities';
 import { logEvent } from './telemetry';
 import { answer, ask, bodyOf, forbidden, lowercase, notBound, type Log } from './worlds-homes';
 
 /** A community's id as the register writes it (and the till reads it): lowercase letters, digits and hyphens. */
 const COMMUNITY_ID = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
-/** The id of the till account of a community: `acc_t_` and 32 hex, like every organization's. */
-export async function communityAccountId(communityId: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(`numinia-till community ${communityId}`),
-  );
-  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0'));
-  return `acc_t_${hex.join('').slice(0, 32)}`;
-}
+export { communityAccountId };
 
 /** A community id as the register writes it, or undefined. */
 export function readCommunityId(value: unknown): string | undefined {

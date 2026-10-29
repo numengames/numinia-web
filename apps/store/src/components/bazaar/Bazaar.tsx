@@ -19,6 +19,8 @@ import {
   NO_FILTER,
   categoryFacets,
   countLabel,
+  filterFromSearch,
+  filterToSearch,
   formatFacets,
   matches,
   sortItems,
@@ -63,6 +65,14 @@ function useWide(): boolean {
   return wide;
 }
 
+/** Writes the chips into the address bar (MIS-268), replacing the entry, so
+    the address can be copied and opened elsewhere with the same filters. */
+function reflectInAddress(next: BazaarFilter): void {
+  const url = new URL(window.location.href);
+  url.search = filterToSearch(next);
+  window.history.replaceState(window.history.state, '', url);
+}
+
 export function Bazaar({ items, labels, viewerLabels, locale }: BazaarProps) {
   const [filter, setFilter] = useState<BazaarFilter>(NO_FILTER);
   const [sort, setSort] = useState<BazaarSort>('recent');
@@ -71,7 +81,16 @@ export function Bazaar({ items, labels, viewerLabels, locale }: BazaarProps) {
   // Hydration beacon: a click before the handlers attach falls into the
   // void, so the e2e suite waits for data-hydrated.
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  // The build renders no chips (it cannot know the address): the chips
+  // come from the address once the page is in the browser.
+  useEffect(() => {
+    setFilter(filterFromSearch(window.location.search));
+    setHydrated(true);
+  }, []);
+  const choose = (next: BazaarFilter): void => {
+    setFilter(next);
+    reflectInAddress(next);
+  };
   const wide = useWide();
   const sheet = useRef<HTMLDialogElement>(null);
 
@@ -146,10 +165,10 @@ export function Bazaar({ items, labels, viewerLabels, locale }: BazaarProps) {
         filter={filter}
         labels={labels}
         onKind={(category: AssetCategory | null, collection: string | null) =>
-          setFilter((current) => ({ ...current, category, collection }))
+          choose({ ...filter, category, collection })
         }
         onFormat={(format: AssetFormat) =>
-          setFilter((current) => ({ ...current, formats: toggleFormat(current.formats, format) }))
+          choose({ ...filter, formats: toggleFormat(filter.formats, format) })
         }
       />
       <div className="centro">
@@ -202,7 +221,7 @@ export function Bazaar({ items, labels, viewerLabels, locale }: BazaarProps) {
                 type="button"
                 className="btn btn-silencioso"
                 data-metric="bazaar-clear"
-                onClick={() => setFilter(NO_FILTER)}
+                onClick={() => choose(NO_FILTER)}
               >
                 {labels.clearFilters}
               </button>

@@ -485,9 +485,28 @@ export function published(communities: readonly Community[]): readonly Community
   return communities.filter((community) => community.visibility === 'public');
 }
 
-/** The organization the page of a published community lists the people of, or null. */
-export function teamOf(communities: readonly Community[], id: string | null): string | null {
-  return published(communities).find((community) => community.id === id)?.team ?? null;
+/** The id of the till account of a community: `acc_t_` and 32 hex, derived from the community's id. */
+export async function communityAccountId(communityId: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`numinia-till community ${communityId}`),
+  );
+  const hex = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0'));
+  return `acc_t_${hex.join('').slice(0, 32)}`;
+}
+
+/**
+ * The organization the page of a published community lists the people of: the
+ * one its file links (`team:`), else the account the till derives from its id
+ * (the same one the till opens), or null for an unknown or house-only community.
+ */
+export async function teamOf(
+  communities: readonly Community[],
+  id: string | null,
+): Promise<string | null> {
+  const community = published(communities).find((entry) => entry.id === id);
+  if (community === undefined) return null;
+  return community.team ?? (await communityAccountId(community.id));
 }
 
 /**

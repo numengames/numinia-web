@@ -1179,8 +1179,10 @@
 }
 
 /* ---- «Sedes»: the organization's worlds (cut 4) ------------------------ */
-/* One card per world: the glyph, its name in mono and the way to its page.
-   Secondary words are --texto-2 (AA on a card); every grid child may shrink. */
+/* One card per world: its picture (the one its card wears in /mundos/, or the
+   glyph on a plain scene), its name and the way to its page (MIS-265: the
+   name, never the raw id). Secondary words are --texto-2 (AA on a card);
+   every grid child may shrink. */
 .sedes {
   display: flex;
   flex-direction: column;
@@ -1197,7 +1199,7 @@
   padding: 0;
   display: grid;
   gap: var(--s3);
-  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
 }
 .sedes-ficha {
   display: flex;
@@ -1205,18 +1207,30 @@
   align-items: center;
   gap: var(--s3);
   min-width: 0;
-  padding: var(--s4);
+  padding: 0 var(--s4) var(--s4);
+  overflow: hidden;
   color: var(--texto-2);
 }
-.sedes-icono {
+/* The picture runs edge to edge on top of the card, 16:9 like the index's. */
+.sedes-portada {
   display: grid;
-  flex: none;
+  position: relative;
+  flex: 1 1 100%;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  color: var(--texto);
+  aspect-ratio: 16 / 9;
+  margin: 0 calc(-1 * var(--s4));
+  color: var(--texto-2);
   background: var(--elevada);
-  border-radius: var(--radio-control);
+  border-bottom: 1px solid var(--linea);
+  overflow: hidden;
+}
+.sedes-portada img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .sedes-cuerpo {
   display: flex;
@@ -1233,6 +1247,7 @@
 .sedes-ficha .btn {
   flex: 1 1 100%;
   text-decoration: none;
+  justify-content: center;
   text-align: center;
 }
 

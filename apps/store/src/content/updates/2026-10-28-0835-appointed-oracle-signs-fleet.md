@@ -1,0 +1,1 @@
+- FIX — An Oracle appointed from the census desk now signs for the fleet like any other Oracle: they can create, duplicate and delete worlds, not only enter the pages.

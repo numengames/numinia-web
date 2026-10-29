@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 /**
  * Communities and rituals: the pure model behind the home, /communities/,
  * each community's page, each ritual's page, the calendar and the .ics feed.
@@ -22,6 +23,7 @@ import {
   REGISTER_REPO,
   sedeDomain,
   teamOf,
+  communityAccountId,
   featuredSlides,
   firstMonth,
   foldLine,
@@ -287,15 +289,20 @@ describe('teamOf: the organization of a published community', () => {
     team: 'acc_t_hidden',
   });
 
-  it('gives the id the file names, for a community the site shows', () => {
-    expect(teamOf([linked, plain, hidden], 'numen-games')).toBe('acc_t_0123abcd');
+  it('gives the id the file names, for a community the site shows', async () => {
+    expect(await teamOf([linked, plain, hidden], 'numen-games')).toBe('acc_t_0123abcd');
   });
 
-  it('gives nothing for a community with no organization, one on file only, or one unknown', () => {
-    expect(teamOf([linked, plain, hidden], 'merge')).toBeNull();
-    expect(teamOf([linked, plain, hidden], 'cps')).toBeNull();
-    expect(teamOf([linked, plain, hidden], 'atlantis')).toBeNull();
-    expect(teamOf([linked], null)).toBeNull();
+  it('derives the till account from the id when the file has no team', async () => {
+    const expected = `acc_t_${createHash('sha256').update('numinia-till community merge').digest('hex').slice(0, 32)}`;
+    expect(await teamOf([linked, plain, hidden], 'merge')).toBe(expected);
+    expect(await communityAccountId('merge')).toBe(expected);
+  });
+
+  it('gives nothing for a community on file only, one unknown, or none', async () => {
+    expect(await teamOf([linked, plain, hidden], 'cps')).toBeNull();
+    expect(await teamOf([linked, plain, hidden], 'atlantis')).toBeNull();
+    expect(await teamOf([linked], null)).toBeNull();
   });
 });
 

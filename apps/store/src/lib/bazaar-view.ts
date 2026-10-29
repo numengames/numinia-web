@@ -61,6 +61,34 @@ export interface BazaarFilter {
 
 export const NO_FILTER: BazaarFilter = { category: null, collection: null, formats: [], query: '' };
 
+/**
+ * The chips as a query string (MIS-268): ?category=, ?collection=, and one
+ * ?format= per format, so a copied address repaints the same filters. The
+ * search words stay out: they are typed, not chosen.
+ */
+export function filterToSearch(filter: BazaarFilter): string {
+  const params = new URLSearchParams();
+  if (filter.category !== null) params.set('category', filter.category);
+  if (filter.collection !== null) params.set('collection', filter.collection);
+  for (const format of filter.formats) params.append('format', format);
+  const text = params.toString();
+  return text === '' ? '' : `?${text}`;
+}
+
+/**
+ * The chips from a query string. Unknown kinds and formats are dropped, a
+ * collection without a kind is ignored, and the formats keep the domain's
+ * order whatever order the address gives them.
+ */
+export function filterFromSearch(search: string): BazaarFilter {
+  const params = new URLSearchParams(search);
+  const category = BAZAAR_CATEGORIES.find((c) => c === params.get('category')) ?? null;
+  const collection = category === null ? null : params.get('collection') || null;
+  const asked = params.getAll('format');
+  const formats = BAZAAR_FORMATS.filter((format) => asked.includes(format));
+  return { category, collection, formats, query: '' };
+}
+
 /** Lower case with the accents folded: «imágenes» finds «Imagenes», and the reverse. */
 export function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();

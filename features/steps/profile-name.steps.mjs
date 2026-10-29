@@ -72,9 +72,10 @@ Then(
       const html = await settingsHtml(this.distDir, prefix);
       const where = `${prefix || 'en'}/lap/settings/`;
       const { open, start } = sectionOf(html, where);
-      assert.equal(attr(open, 'aria-labelledby'), 's-nombre', `${where}: not labelled by its h2`);
+      assert.equal(attr(open, 'aria-labelledby'), 's-nombre', `${where}: not labelled by its h3`);
       const heading = tagWith(html, 'id="s-nombre"');
-      assert.ok(heading?.startsWith('<h2'), `${where}: the label is not an h2`);
+      // An h3 since MIS-268: the section sits inside the «Cuenta» part (h2).
+      assert.ok(heading?.startsWith('<h3'), `${where}: the label is not an h3`);
       const after = html.slice(html.indexOf(heading) + heading.length);
       assert.ok(after.startsWith(`${title}<`), `${where}: the title is not «${title}»`);
       // Right after «Sesión»: the session's section ends, and this one is the next.

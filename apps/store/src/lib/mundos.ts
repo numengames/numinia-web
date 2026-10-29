@@ -12,7 +12,16 @@
 
 import type { SupportedLocale } from '@numinia/domain';
 import type { Counted } from '../i18n/mundos';
+import { readableWorldName, type VenueFace } from './world-index';
 import type { OrgWorld, WorldHome } from './worlds-homes';
+
+/** A world of «Sedes» as the panel draws it: the placement, with its name and picture (MIS-265). */
+export type Venue = OrgWorld & VenueFace;
+
+/** A picture a card may draw: one of this site (`/…`) or https; anything else is dropped. */
+const isPicture = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  ((value.startsWith('/') && !value.startsWith('//')) || value.startsWith('https://'));
 
 /** The house's placements: who each world belongs to (an Oracle's session). */
 export const HOMES_API = '/api/admin/worlds/homes';
@@ -112,13 +121,22 @@ export function readNames(json: unknown): readonly WorldName[] | null {
   return names.every((entry): entry is WorldName => entry !== null) ? names : null;
 }
 
-/** An organization's worlds as the API answers them; null when the body is not that. */
-export function readOrgWorlds(json: unknown): readonly OrgWorld[] | null {
+/**
+ * An organization's worlds as the API answers them; null when the body is not
+ * that. A world without a name (an older answer) is called by its id read as
+ * words; a picture that is not this site's or https is dropped.
+ */
+export function readOrgWorlds(json: unknown): readonly Venue[] | null {
   if (!isRecord(json) || !Array.isArray(json.worlds)) return null;
-  const worlds: OrgWorld[] = [];
+  const worlds: Venue[] = [];
   for (const entry of json.worlds) {
     if (!isRecord(entry) || !isText(entry.worldId) || !isText(entry.accountId)) return null;
-    worlds.push({ worldId: entry.worldId, accountId: entry.accountId });
+    worlds.push({
+      worldId: entry.worldId,
+      accountId: entry.accountId,
+      name: isText(entry.name) ? entry.name : readableWorldName(entry.worldId),
+      cover: isPicture(entry.cover) ? entry.cover : null,
+    });
   }
   return worlds;
 }
@@ -318,7 +336,7 @@ export async function loadHomes(fetcher: Fetch): Promise<{
 }
 
 /** The worlds an organization has; never throws. */
-export function loadOrgWorlds(fetcher: Fetch, org: string): Promise<Sheet<OrgWorld>> {
+export function loadOrgWorlds(fetcher: Fetch, org: string): Promise<Sheet<Venue>> {
   return loadSheet(fetcher, orgWorldsUrl(org), readOrgWorlds);
 }
 
