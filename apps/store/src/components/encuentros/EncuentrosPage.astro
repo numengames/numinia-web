@@ -25,6 +25,7 @@ import {
   calendarMonths,
   dayAndMonth,
   firstMonth,
+  monthsToCover,
   pick,
   upcoming,
 } from '../../lib/communities';
@@ -46,7 +47,8 @@ const live = CREAR_ENCUENTRO_UI[locale].liveHeading;
 const prefix = locale === 'en' ? '' : `/${locale}`;
 const coming = upcoming(RITUALS);
 const groups = byMonth(coming, locale);
-const months = calendarMonths(firstMonth(coming, { year: 2026, month: 10 }), 4, coming, locale);
+const from = firstMonth(coming, { year: 2026, month: 10 });
+const months = calendarMonths(from, monthsToCover(from, coming, 4), coming, locale);
 ---
 
 <BaseLayout locale={locale} title={`${t.title} — Numinia`} description={t.lead}>
