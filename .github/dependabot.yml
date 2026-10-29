@@ -30,6 +30,9 @@ updates:
         patterns: ["playwright", "playwright-core", "@playwright/*", "@axe-core/playwright"]
       minor-and-patch:
         update-types: ["minor", "patch"]
+        # The same names as the group above, kept out explicitly: Dependabot let
+        # @playwright/test into this group in #292 although the pattern above lists it.
+        exclude-patterns: ["playwright", "playwright-core", "@playwright/*", "@axe-core/playwright"]
     ignore:
       # astro check and typescript-eslint do not support TypeScript 7 yet;
       # remove when they do.
