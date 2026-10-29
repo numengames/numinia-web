@@ -74,7 +74,7 @@ describe("the till's words and limits", () => {
 
 describe('reading', () => {
   it('knows an account, an agent and a world', () => {
-    expect(isAccountId('acc_team_numen_games')).toBe(true);
+    expect(isAccountId('acc_t_2e2dd18c880ba974da1512dc7cde2431')).toBe(true);
     for (const value of ['', 'a b', 'a:b', 'x'.repeat(65), 3])
       expect(isAccountId(value)).toBe(false);
     expect(isAudience('agora-plaza')).toBe(true);

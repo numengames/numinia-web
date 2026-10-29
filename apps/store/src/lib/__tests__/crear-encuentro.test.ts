@@ -20,7 +20,7 @@ const account = (id: string, role: DeskAccount['role'], kind: DeskAccount['kind'
   ({ id, kind, name: id, role, balanceCents: 0 }) as DeskAccount;
 
 const register = [
-  { id: 'numen-games', name: 'Numen Games', team: 'acc_team_numen_games' },
+  { id: 'numen-games', name: 'Numen Games', team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431' },
   { id: 'reset', name: 'Reset', team: undefined },
   { id: 'merge', name: 'MERGE', team: undefined },
 ] as unknown as readonly Community[];
@@ -34,7 +34,7 @@ describe('administered', () => {
     const mine = administered(
       [
         account('acc_personal', 'owner', 'personal'),
-        account('acc_team_numen_games', 'admin'),
+        account('acc_t_2e2dd18c880ba974da1512dc7cde2431', 'admin'),
         account('acc_t_reset', 'owner'),
         account('acc_t_merge', 'member'),
       ],
@@ -42,7 +42,7 @@ describe('administered', () => {
       derived,
     );
     expect(mine).toEqual([
-      { id: 'numen-games', name: 'Numen Games', accountId: 'acc_team_numen_games' },
+      { id: 'numen-games', name: 'Numen Games', accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431' },
       { id: 'reset', name: 'Reset', accountId: 'acc_t_reset' },
     ]);
     expect(administered([], register, derived)).toEqual([]);

@@ -37,7 +37,7 @@ const numen = parseCommunity('numen-games', {
   summary: { en: 'The founder.', es: 'La fundadora.' },
   links: [],
   state: 'founder',
-  team: 'acc_team_numen_games',
+  team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
 });
 const vic = parseCommunity('vic', {
   name: 'VIC',
@@ -88,7 +88,7 @@ describe('belongFacts', () => {
     });
     expect(baked[1]).toMatchObject({
       cover: null,
-      accountIds: ['acc_team_numen_games', 'acc_t_numen-games'],
+      accountIds: ['acc_t_2e2dd18c880ba974da1512dc7cde2431', 'acc_t_numen-games'],
       world: COMMONS,
       counted: false,
       next: null,
@@ -150,7 +150,7 @@ describe('groupBelong', () => {
     const baked = await facts();
     const groups = groupBelong(
       [
-        { id: 'acc_team_numen_games', name: 'Numen Games (till)', role: 'admin' },
+        { id: 'acc_t_2e2dd18c880ba974da1512dc7cde2431', name: 'Numen Games (till)', role: 'admin' },
         { id: 'acc_t_vic', name: 'VIC', role: 'member' },
         { id: 'acc_team_other', name: 'Zeta', role: 'admin' },
         { id: 'acc_team_alpha', name: 'Alpha', role: 'admin' },
@@ -158,7 +158,7 @@ describe('groupBelong', () => {
         { id: 'acc_t_numen-games', name: 'Numen twice', role: 'member' },
       ],
       ['vic', 'trgcon', 'numen-games', 'unknown'],
-      new Map([['acc_team_numen_games', ['agora', 'forest']]]),
+      new Map([['acc_t_2e2dd18c880ba974da1512dc7cde2431', ['agora', 'forest']]]),
       baked,
     );
     const brief = (card: BelongCard) => [card.key, card.name, card.worldIds];
@@ -169,7 +169,7 @@ describe('groupBelong', () => {
     ]);
     expect(groups.lead[1]).toMatchObject({
       role: 'admin',
-      accountId: 'acc_team_numen_games',
+      accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
       community: { id: 'numen-games' },
     });
     expect(groups.lead[0]?.community).toBeNull();

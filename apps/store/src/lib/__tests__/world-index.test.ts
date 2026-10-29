@@ -27,7 +27,7 @@ const HOUSE: CommunityAccounts = {
   id: 'numen-games',
   name: 'Numen Games',
   founder: true,
-  accounts: ['acc_team_numen_games', 'acc_t_house'],
+  accounts: ['acc_t_2e2dd18c880ba974da1512dc7cde2431', 'acc_t_house'],
 };
 const RESET: CommunityAccounts = {
   id: 'reset',
@@ -141,7 +141,7 @@ describe('worldCards', () => {
     { id: 'lost', phase: 'running', domain: 'lost.numinia.com' },
   ];
   const owners = new Map<string, WorldOwner | null>([
-    ['agora-plaza', owner('acc_team_numen_games', 'Numen Games')],
+    ['agora-plaza', owner('acc_t_2e2dd18c880ba974da1512dc7cde2431', 'Numen Games')],
     ['bosque', owner('acc_t_reset', 'Reset')],
     ['old-plaza', owner('acc_t_reset', 'Reset')],
     ['tower', owner('acc_t_house', 'Numen Games')],

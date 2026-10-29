@@ -225,7 +225,7 @@ describe('the house adding itself (the case behind «No se ha podido añadir»)'
   it('still refuses to change one’s own roles as a plain member, and a non-house self-add', async () => {
     const d = desk();
     const B2 = '0x00000000000000000000000000000000000000b2';
-    expect(problems(await d.setMember(B2, 'acc_team_numen_games', B2, 'admin', true))).toEqual([
+    expect(problems(await d.setMember(B2, 'acc_t_2e2dd18c880ba974da1512dc7cde2431', B2, 'admin', true))).toEqual([
       OWN_ROLES,
     ]);
     const mine = await d.createTeam(ME, 'Mine');

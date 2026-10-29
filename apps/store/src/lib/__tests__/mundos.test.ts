@@ -32,7 +32,7 @@ import {
 
 const home = {
   worldId: 'agora-plaza',
-  accountId: 'acc_team_numen_games',
+  accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
   accountName: 'Numen Games',
   placedAt: '2026-10-16T10:00:00Z',
 };

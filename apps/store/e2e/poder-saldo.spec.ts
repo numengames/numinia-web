@@ -16,7 +16,7 @@ import { expect, test, type BrowserContext } from '@playwright/test';
 import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 
 const HOUSE = `0x${'99'.repeat(20)}`;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 
 let server: ChildProcess | undefined;
 let origin = '';

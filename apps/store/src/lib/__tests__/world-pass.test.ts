@@ -34,6 +34,8 @@ async function keyPair(): Promise<{ privateKey: string; publicKey: string }> {
 }
 
 const SECRET = 'a'.repeat(40);
+/** Numen Games' till account: a public identifier, kept apart from SECRET. */
+const NUMEN = 'acc_t_' + '2e2dd18c880ba974da1512dc7cde2431';
 const WALLET = `0x${'AB'.repeat(20)}`;
 const NOW = 1_800_000_000;
 
@@ -42,7 +44,7 @@ const payloadOf = (extra: Partial<PassPayload> = {}): PassPayload => ({
   iss: 'numinia.com',
   aud: 'agora-plaza',
   sub: 'p_00000000000000000000000000000000',
-  org: 'acc_team_numen_games',
+  org: NUMEN,
   perm: ['enter-worlds'],
   height: 3,
   roles: [],
@@ -249,7 +251,7 @@ describe('the key fails closed', () => {
 describe('buildPassPayload', () => {
   const base = {
     aud: 'agora-plaza',
-    org: 'acc_team_numen_games',
+    org: NUMEN,
     secret: SECRET,
     wallet: WALLET,
     now: NOW,
@@ -300,7 +302,7 @@ describe('buildPassPayload', () => {
       iss: 'numinia.com',
       aud: 'agora-plaza',
       sub: await personSub(SECRET, WALLET),
-      org: 'acc_team_numen_games',
+      org: NUMEN,
       perm: ['enter-worlds', 'ban-members'],
       height: 3,
       roles: [
@@ -382,7 +384,7 @@ describe("a person's pass stays byte for byte what it was", () => {
   it('writes the fields in the same order, with no kind and no state', async () => {
     const payload = await buildPassPayload({
       aud: 'agora-plaza',
-      org: 'acc_team_numen_games',
+      org: NUMEN,
       secret: SECRET,
       wallet: WALLET,
       now: NOW,
@@ -402,32 +404,32 @@ describe("a person's pass stays byte for byte what it was", () => {
       },
     });
     expect(JSON.stringify(payload)).toBe(
-      `{"v":1,"iss":"numinia.com","aud":"agora-plaza","sub":"${await personSub(SECRET, WALLET)}","org":"acc_team_numen_games","perm":["enter-worlds"],"height":0,"roles":[],"name":"Ada","iat":${NOW},"exp":${NOW + 600}}`,
+      `{"v":1,"iss":"numinia.com","aud":"agora-plaza","sub":"${await personSub(SECRET, WALLET)}","org":"${NUMEN}","perm":["enter-worlds"],"height":0,"roles":[],"name":"Ada","iat":${NOW},"exp":${NOW + 600}}`,
     );
   });
 });
 
 describe('agentSub', () => {
   it('is a_ + 32 hex, the first 16 bytes of the HMAC of org and agent, and never says either', async () => {
-    const sub = await agentSub(SECRET, 'acc_team_numen_games', 'hermes-1');
+    const sub = await agentSub(SECRET, NUMEN, 'hermes-1');
     const expected = createHmac('sha256', SECRET)
-      .update('world-pass-agent:acc_team_numen_games:hermes-1')
+      .update(`world-pass-agent:${NUMEN}:hermes-1`)
       .digest('hex')
       .slice(0, 32);
     expect(sub).toBe(`a_${expected}`);
     expect(sub).toMatch(/^a_[0-9a-f]{32}$/);
-    expect(await agentSub(SECRET, 'acc_team_numen_games', 'hermes-2')).not.toBe(sub);
+    expect(await agentSub(SECRET, NUMEN, 'hermes-2')).not.toBe(sub);
     expect(await agentSub(SECRET, 'acc_other', 'hermes-1')).not.toBe(sub);
-    expect(await agentSub('b'.repeat(40), 'acc_team_numen_games', 'hermes-1')).not.toBe(sub);
+    expect(await agentSub('b'.repeat(40), NUMEN, 'hermes-1')).not.toBe(sub);
     // Not the id of a person: a different prefix and a different message.
-    expect(sub).not.toBe(await personSub(SECRET, 'acc_team_numen_games'));
+    expect(sub).not.toBe(await personSub(SECRET, NUMEN));
   });
 });
 
 describe('buildAgentPassPayload', () => {
   const base = {
     aud: 'agora-plaza',
-    org: 'acc_team_numen_games',
+    org: NUMEN,
     secret: SECRET,
     agent: 'hermes-1',
     name: 'Hermes',
@@ -446,8 +448,8 @@ describe('buildAgentPassPayload', () => {
       v: 1,
       iss: 'numinia.com',
       aud: 'agora-plaza',
-      sub: await agentSub(SECRET, 'acc_team_numen_games', 'hermes-1'),
-      org: 'acc_team_numen_games',
+      sub: await agentSub(SECRET, NUMEN, 'hermes-1'),
+      org: NUMEN,
       perm: ['enter-worlds', 'build-in-worlds'],
       height: 2,
       roles: [{ name: 'Builders', color: '#112233' }],

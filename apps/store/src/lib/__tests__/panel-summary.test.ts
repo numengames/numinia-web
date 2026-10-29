@@ -6,7 +6,7 @@ const NOW = new Date('2026-10-16T12:00:00.000Z');
 
 describe('the next encounter of the organization’s community', () => {
   const map: EncounterMap = {
-    acc_team_numen_games: [
+    acc_t_2e2dd18c880ba974da1512dc7cde2431: [
       {
         title: 'Aniversario',
         href: '/es/rituals/a/',
@@ -29,26 +29,26 @@ describe('the next encounter of the organization’s community', () => {
   };
 
   it('skips the ones already over, and says when the next one starts', () => {
-    expect(nextEncounter(map, 'acc_team_numen_games', NOW)).toEqual({
-      encounter: map['acc_team_numen_games']?.[1],
+    expect(nextEncounter(map, 'acc_t_2e2dd18c880ba974da1512dc7cde2431', NOW)).toEqual({
+      encounter: map['acc_t_2e2dd18c880ba974da1512dc7cde2431']?.[1],
       when: 'now',
     });
     expect(
-      nextEncounter(map, 'acc_team_numen_games', new Date('2026-10-17T00:00:00.000Z')),
+      nextEncounter(map, 'acc_t_2e2dd18c880ba974da1512dc7cde2431', new Date('2026-10-17T00:00:00.000Z')),
     ).toEqual({
-      encounter: map['acc_team_numen_games']?.[2],
+      encounter: map['acc_t_2e2dd18c880ba974da1512dc7cde2431']?.[2],
       when: 'soon',
       days: 76,
     });
     // Starting later today is «in 1 day» at the most, never «in 0 days».
     expect(
-      nextEncounter(map, 'acc_team_numen_games', new Date('2026-10-16T08:00:00.000Z')),
+      nextEncounter(map, 'acc_t_2e2dd18c880ba974da1512dc7cde2431', new Date('2026-10-16T08:00:00.000Z')),
     ).toMatchObject({ when: 'soon', days: 1 });
   });
 
   it('is nothing when every one is over, or the organization has no community', () => {
     expect(
-      nextEncounter(map, 'acc_team_numen_games', new Date('2027-02-01T00:00:00.000Z')),
+      nextEncounter(map, 'acc_t_2e2dd18c880ba974da1512dc7cde2431', new Date('2027-02-01T00:00:00.000Z')),
     ).toBeNull();
     expect(nextEncounter(map, 'acc_team_la_tarugo', NOW)).toBeNull();
   });
