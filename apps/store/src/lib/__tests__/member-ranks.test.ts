@@ -27,7 +27,7 @@ const ORACLE = wallet('ab');
 const CITIZEN = wallet('c1');
 const PILGRIM = wallet('d2');
 const STRANGER = wallet('e3');
-const ACCOUNT = 'acc_team_numen_games';
+const ACCOUNT = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 
 /** The allowlist names ORACLE; the census knows CITIZEN and PILGRIM. */
 function sources(census: RankSources['census'] = recorded()): RankSources {

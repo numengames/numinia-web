@@ -418,7 +418,7 @@ describe('the roles view: a face instead of the avatar’s id, wherever it is an
       ok: true,
       profile: { name: 'Rima', avatar: ARLA, face: ARLA_FACE },
     });
-    const url = new URL('https://numinia.com/api/saldo/roles?cuenta=acc_team_numen_games');
+    const url = new URL('https://numinia.com/api/saldo/roles?cuenta=acc_t_2e2dd18c880ba974da1512dc7cde2431');
     const seen = (await json(await answerRoles(desk, asker, url, quiet))) as {
       roles: { members: Record<string, unknown>[] };
     };

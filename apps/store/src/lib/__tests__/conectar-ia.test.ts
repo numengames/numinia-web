@@ -21,7 +21,7 @@ import {
   type ViewAgent,
 } from '../conectar-ia';
 
-const ORG = 'acc_team_numen_games';
+const ORG = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const OTHER = 'acc_team_reset';
 const BUILD = `role_${(2).toString(16).padStart(16, '0')}`;
 const MEMBER_ROLE = `role_${(3).toString(16).padStart(16, '0')}`;

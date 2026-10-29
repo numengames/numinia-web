@@ -98,7 +98,7 @@ describe('publishing', () => {
       end: '2026-11-05T20:00:00.000Z',
       worldId: 'sede-numen-games',
     });
-    expect(acts(await d.log(PABLO, 'acc_team_numen_games')).slice(-2)).toEqual([
+    expect(acts(await d.log(PABLO, 'acc_t_2e2dd18c880ba974da1512dc7cde2431')).slice(-2)).toEqual([
       'ritual-created',
       'ritual-created',
     ]);
@@ -163,7 +163,7 @@ describe('listing and cancelling', () => {
       ok: false,
       problems: [RITUAL_PROBLEMS.cancelled],
     });
-    expect(acts(await d.log(PABLO, 'acc_team_numen_games')).slice(-2)).toEqual([
+    expect(acts(await d.log(PABLO, 'acc_t_2e2dd18c880ba974da1512dc7cde2431')).slice(-2)).toEqual([
       'ritual-created',
       'ritual-cancelled',
     ]);

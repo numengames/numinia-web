@@ -28,7 +28,7 @@ import {
 
 const NOW_MS = Date.parse('2026-10-19T19:00:00.000Z');
 const NOW = NOW_MS / 1000;
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const RESET = 'acc_team_reset';
 const quiet = vi.fn();
 

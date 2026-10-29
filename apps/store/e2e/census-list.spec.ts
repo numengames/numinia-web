@@ -26,7 +26,7 @@ const ADMIN = `0x${'ab'.repeat(20)}`;
 const LUCIA = '0x00000000000000000000000000000000000000a1';
 const NUEVA = '0x0000000000000000000000000000000000000a07';
 const D4 = '0x00000000000000000000000000000000000000d4';
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 const TARUGO = 'acc_team_la_tarugo';
 
 /** The till account of a community: derived from its id, as the till and the store derive it. */

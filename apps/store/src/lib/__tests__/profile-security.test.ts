@@ -25,7 +25,7 @@ const STRANGER = `0x${'ef'.repeat(20)}`;
 const ARLA = 'avatar-arla-mncdhz3l';
 const NOW = Math.floor(Date.now() / 1000);
 /** The organization the community `numen-games` links (components/communities/register.ts). */
-const NUMEN = 'acc_team_numen_games';
+const NUMEN = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 
 /** The desk the routes find bound, per test; undefined leaves the fixture desk. */
 let bound: AccountDesk | undefined;

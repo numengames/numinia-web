@@ -22,7 +22,7 @@ import { LEGAL_CORPUS_VERSION } from '../src/lib/legal';
 
 const PABLO = `0x${'ab'.repeat(20)}`;
 const MARIA = `0x${'cd'.repeat(20)}`;
-const GAMES = 'acc_team_numen_games';
+const GAMES = 'acc_t_2e2dd18c880ba974da1512dc7cde2431';
 
 let server: ChildProcess | undefined;
 let origin = '';

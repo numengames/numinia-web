@@ -151,7 +151,7 @@ test.describe('signed in', () => {
     await expect(leading.locator('[data-line]')).toHaveText(/^Titular · en /);
     await expect(leading.locator('[data-metric="belong-panel"]')).toHaveAttribute(
       'href',
-      '/es/panel/?org=acc_team_numen_games',
+      '/es/panel/?org=acc_t_2e2dd18c880ba974da1512dc7cde2431',
     );
     await expect(leading.locator('[data-world-enter]')).toBeVisible();
     await expect(leading.locator('[data-world-enter]')).toBeEnabled();

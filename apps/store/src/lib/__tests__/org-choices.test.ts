@@ -21,7 +21,7 @@ import {
 const numen: CommunityEntry = {
   id: 'numen-games',
   name: 'Numen Games',
-  team: 'acc_team_numen_games',
+  team: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
   account: 'acc_t_aaaa',
 };
 const reset: CommunityEntry = { id: 'reset', name: 'Reset', team: null, account: 'acc_t_bbbb' };
@@ -65,7 +65,7 @@ describe('the list of a dialog', () => {
       [reset, numen],
       [
         { id: 'acc_team_zeta', name: 'Zeta' },
-        { id: 'acc_team_numen_games', name: 'Numen Games' },
+        { id: 'acc_t_2e2dd18c880ba974da1512dc7cde2431', name: 'Numen Games' },
         { id: 'acc_team_alfa', name: 'Alfa' },
       ],
     );
@@ -73,7 +73,7 @@ describe('the list of a dialog', () => {
       {
         key: 'c:numen-games',
         label: 'Numen Games',
-        accountId: 'acc_team_numen_games',
+        accountId: 'acc_t_2e2dd18c880ba974da1512dc7cde2431',
         community: 'numen-games',
       },
       { key: 'c:reset', label: 'Reset', accountId: null, community: 'reset' },
