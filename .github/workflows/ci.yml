@@ -65,7 +65,7 @@ jobs:
   # goes missing and a skipped gate can never hide a real failure.
   changes:
     name: Does the browser gate apply?
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       e2e: ${{ steps.route.outputs.e2e }}
     steps:
@@ -109,7 +109,7 @@ jobs:
   # has: REUSE, Gherkin acceptance, the licence guard over dist/.
   quality:
     name: Pipeline + acceptance
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # Checkout of the PR head, pinned by SHA.
       - name: Checkout
@@ -185,7 +185,7 @@ jobs:
     name: DECISION GATE e2e (VRM island)
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # A hung apt mirror once ate 20+ minutes of private-repo quota. Die loudly.
     timeout-minutes: 25
     steps:
@@ -265,7 +265,7 @@ jobs:
 
   licenses:
     name: License gate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -281,7 +281,7 @@ jobs:
 
   audit:
     name: Dependency audit (advisory)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -324,7 +324,7 @@ jobs:
   # rule on, not as an error.
   checklist:
     name: Repository checklist (reports, does not block)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -390,7 +390,7 @@ jobs:
   # not block.
   build:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [changes, quality, e2e, licenses]
     if: always()
     steps:
