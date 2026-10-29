@@ -7,6 +7,7 @@
 # major that breaks the build holds back only itself, not the safe updates. Dependabot
 # cannot group across ecosystems, so npm / github-actions each still open their own.
 # (Before, 2026-10-20: one group `all-dependencies` with majors inside.)
+# Playwright group (2026-10-29): see the comment on the npm group.
 # Cooldown (2026-10-15): a version is proposed only after it has been public
 # for 7 days, so a hijacked or broken release is usually flagged by others
 # before it reaches this repository. Security updates ignore the cooldown.
@@ -22,6 +23,11 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # Playwright and its axe wrapper move together and apart from the rest: a new Playwright
+      # needs the visual-baselines image changed and the screenshots redrawn, and a new axe-core
+      # can add accessibility rules. Listed first, so these names never fall into minor-and-patch.
+      playwright:
+        patterns: ["playwright", "playwright-core", "@playwright/*", "@axe-core/playwright"]
       minor-and-patch:
         update-types: ["minor", "patch"]
     ignore:
