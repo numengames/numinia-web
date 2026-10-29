@@ -136,9 +136,11 @@ test.describe('desktop', () => {
     await expect(menu).toBeVisible();
     await expect(button).toHaveAttribute('aria-expanded', 'true');
     const links = menu.locator('a');
-    await expect(links).toHaveCount(2);
+    await expect(links).toHaveCount(3);
     await expect(links.first()).toHaveAttribute('href', '/es/how-it-works/#open');
     await expect(links.nth(1)).toHaveAttribute('href', '/es/crear/encuentro/');
+    await expect(links.nth(2)).toHaveAttribute('href', '/es/lap/admin/worlds/');
+    await expect(menu).not.toContainText('Pronto');
     const menuBox = await menu.boundingBox();
     const rail = await box(page, 'aside.rail-tu');
     expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(rail.x + rail.width);

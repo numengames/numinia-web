@@ -16,6 +16,8 @@ import {
   categoryFacets,
   countLabel,
   fetchUrlFor,
+  filterFromSearch,
+  filterToSearch,
   fill,
   fold,
   formatFacets,
@@ -398,5 +400,44 @@ describe('fill', () => {
     expect(fill('{n} de {total}…', { n: 2, total: 5 })).toBe('2 de 5…');
     expect(fill('Descargar {format}', { format: 'VRM' })).toBe('Descargar VRM');
     expect(fill('sin {names} ni {constructor}', {})).toBe('sin {names} ni {constructor}');
+  });
+});
+
+describe('the chips in the address (MIS-268)', () => {
+  it('writes the chosen kind, collection and formats, and nothing for no filter', () => {
+    expect(filterToSearch(NO_FILTER)).toBe('');
+    expect(
+      filterToSearch({
+        category: 'avatars',
+        collection: 'arla',
+        formats: ['vrm', 'glb'],
+        query: 'x',
+      }),
+    ).toBe('?category=avatars&collection=arla&format=vrm&format=glb');
+    expect(filterToSearch({ ...NO_FILTER, category: 'models' })).toBe('?category=models');
+  });
+
+  it('reads the same chips back, whatever order the formats come in', () => {
+    const filter = {
+      category: 'avatars' as const,
+      collection: 'arla',
+      formats: ['glb' as const, 'vrm' as const],
+      query: '',
+    };
+    expect(filterFromSearch(filterToSearch(filter))).toEqual(filter);
+    expect(filterFromSearch('?format=vrm&format=glb').formats).toEqual(['glb', 'vrm']);
+  });
+
+  it('drops unknown kinds and formats, and a collection without a kind', () => {
+    expect(filterFromSearch('?category=nope&collection=arla&format=exe')).toEqual(NO_FILTER);
+    expect(filterFromSearch('?collection=arla&format=png')).toEqual({
+      ...NO_FILTER,
+      formats: ['png'],
+    });
+    expect(filterFromSearch('?category=audio&collection=')).toEqual({
+      ...NO_FILTER,
+      category: 'audio',
+    });
+    expect(filterFromSearch('')).toEqual(NO_FILTER);
   });
 });

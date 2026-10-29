@@ -14,7 +14,13 @@ import {
 } from '@numinia/domain';
 import { SETTINGS_UI } from '../../i18n/settings';
 import { LAP_UI } from '../../i18n/lap';
-import { SETTINGS_PATH, signInHref, signOutHref } from '../../lib/app-nav';
+import {
+  NOTIFICATIONS_PATH,
+  SETTINGS_PATH,
+  localeHref,
+  signInHref,
+  signOutHref,
+} from '../../lib/app-nav';
 import { DEFAULT_HIDDEN, HIDEABLE_SECTIONS, isUnderConstruction } from '../../lib/lap-sections';
 import { CURRENT_VERSION } from '../../lib/updates';
 import Icon from '../chrome/Icon.astro';
@@ -46,6 +52,21 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   ko: '한국어',
   'pt-br': 'Português',
 };
+
+/**
+ * Wireframe v3 splits personal settings in five (cuenta / avisos / aspecto /
+ * saldo / datos). First story (MIS-268): the five live as parts of this one
+ * page, reached from a side navigation of anchors; no logic moved yet. The
+ * anchors are the design's own slugs, so a later split into pages can keep
+ * them as paths.
+ */
+const PARTS = [
+  { id: 'cuenta', key: 'account', icon: 'user-circle' },
+  { id: 'avisos', key: 'notices', icon: 'bell' },
+  { id: 'aspecto', key: 'look', icon: 'palette' },
+  { id: 'saldo', key: 'balance', icon: 'coins' },
+  { id: 'datos', key: 'data', icon: 'archive' },
+] as const;
 ---
 
 <LapShell locale={locale} current="settings" title={`${t.title} — LAP — Numinia`} description={t.intro}>
@@ -53,201 +74,255 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
     <h1>{t.title}</h1>
     <p class="intro">{t.intro}</p>
 
-    <!-- Session: the login lives here, contextual, never a wall (D16). -->
-    <section aria-labelledby="s-session">
-      <h2 id="s-session" class="etiqueta">{t.session}</h2>
-      <div class="tarjeta sesion" data-session-card>
-        <p data-session-out>{t.signedOut}</p>
-        <p data-session-in hidden>{t.signedIn}</p>
-        <dl data-session-in hidden>
-          <div>
-            <dt>{t.rank}</dt>
-            <dd>
-              {
-                RANK_DEFINITIONS.map((rank) => (
-                  <span data-rank-name={rank.id} hidden>
-                    {rank.name[locale]}
-                  </span>
-                ))
-              }
-            </dd>
-          </div>
-          <div>
-            <dt>{t.address}</dt>
-            <dd class="mono" data-session-short>—</dd>
-          </div>
-        </dl>
-        <div class="acciones">
-          <a
-            href={signInHref(locale, SETTINGS_PATH)}
-            class="btn btn-primario"
-            data-session-out
-            data-metric="settings-sign-in"
-          >
-            {t.signIn}
-          </a>
-          <a
-            href={signOutHref(locale)}
-            class="btn btn-fantasma"
-            data-session-in
-            hidden
-            data-metric="settings-sign-out"
-          >
-            {t.signOut}
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- «Tu nombre en la ciudad» (cut «Tu nombre y tu cara», 2026-10-16): only with a session. -->
-    <ProfileNameSection locale={locale} />
-
-    <section aria-labelledby="s-appearance">
-      <h2 id="s-appearance" class="etiqueta">{t.appearance}</h2>
-      <div class="tarjeta">
-        <div class="fila">
-          <span>{t.mode}</span>
-          <div class="segmento" role="group" aria-label={t.mode}>
-            <button type="button" data-set-mode="diurno" data-metric="settings-mode-diurno">
-              <Icon name="sun" size={16} />
-              {t.modeDiurno}
-            </button>
-            <button type="button" data-set-mode="nocturno" data-metric="settings-mode-nocturno">
-              <Icon name="moon-stars" size={16} />
-              {t.modeNocturno}
-            </button>
-          </div>
-        </div>
-        <p class="nota">
-          <strong>{t.motion}.</strong>
-          {t.motionNote}
-        </p>
-      </div>
-    </section>
-
-    <section aria-labelledby="s-language">
-      <h2 id="s-language" class="etiqueta">{t.language}</h2>
-      <div class="tarjeta">
-        <div class="idiomas">
+    <div class="ajustes">
+      <nav class="partes" aria-labelledby="partes-titulo">
+        <p id="partes-titulo" class="etiqueta">{t.parts.nav}</p>
+        <ul>
           {
-            (Object.keys(LANGUAGE_NAMES) as SupportedLocale[]).map((code) => (
-              <a
-                href={`${code === 'en' ? '' : `/${code}`}/lap/settings/`}
-                lang={code}
-                aria-current={code === locale ? 'true' : undefined}
-                data-metric={`settings-lang-${code}`}
-              >
-                {LANGUAGE_NAMES[code]}
-              </a>
-            ))
-          }
-        </div>
-        <p class="nota">{t.languageNote}</p>
-      </div>
-    </section>
-
-    <section aria-labelledby="s-sidebar">
-      <h2 id="s-sidebar" class="etiqueta">{t.sidebar}</h2>
-      <div class="tarjeta">
-        <ul class="interruptores">
-          {
-            HIDEABLE.map((section) => (
+            PARTS.map((part) => (
               <li>
-                <label>
-                  <span class="seccion">
-                    {lap.sections[section]}
-                    {isUnderConstruction(section) && (
-                      <span class="obra">
-                        <Icon name="crane-tower" size={14} />
-                        {lap.building.label}
-                      </span>
-                    )}
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={!DEFAULT_HIDDEN.includes(section)}
-                    data-section-toggle={section}
-                    data-metric="settings-section-toggle"
-                  />
-                  <span class="pista" aria-hidden="true" />
-                </label>
+                <a href={`#${part.id}`} data-metric={`settings-part-${part.id}`}>
+                  <Icon name={part.icon} size={18} />
+                  {t.parts[part.key]}
+                </a>
               </li>
             ))
           }
         </ul>
-        <p class="nota">{lap.quietPanel.replace('{list}', quietList)}</p>
-        <p class="nota">{t.sidebarNote}</p>
-      </div>
-    </section>
+      </nav>
+      <div class="partes-cuerpo">
 
-    <section aria-labelledby="s-permissions">
-      <h2 id="s-permissions" class="etiqueta">{t.permissions}</h2>
-      <div class="tarjeta">
-        <p class="nota">{t.permissionsNote}</p>
-        <ol class="rangos" data-rank-ladder>
-          {
-            RANK_DEFINITIONS.map((rank, index) => (
-              <li data-rank-level={index} data-rank={rank.id}>
-                <span class="mono nivel">{index}</span>
+        <section id="cuenta" class="parte" aria-labelledby="p-cuenta">
+          <h2 id="p-cuenta">{t.parts.account}</h2>
+
+          <!-- Session: the login lives here, contextual, never a wall (D16). -->
+          <section aria-labelledby="s-session">
+            <h3 id="s-session" class="etiqueta">{t.session}</h3>
+            <div class="tarjeta sesion" data-session-card>
+              <p data-session-out>{t.signedOut}</p>
+              <p data-session-in hidden>{t.signedIn}</p>
+              <dl data-session-in hidden>
                 <div>
-                  <p class="nombre">{rank.name[locale]}</p>
-                  <p class="grupo mono">{PERMISSION_GROUPS[index]?.toUpperCase()}</p>
+                  <dt>{t.rank}</dt>
+                  <dd>
+                    {
+                      RANK_DEFINITIONS.map((rank) => (
+                        <span data-rank-name={rank.id} hidden>
+                          {rank.name[locale]}
+                        </span>
+                      ))
+                    }
+                  </dd>
                 </div>
-                <span
-                  class="pildora"
-                  data-estado="locked"
-                  data-granted={t.granted}
-                  data-locked={t.locked}
+                <div>
+                  <dt>{t.address}</dt>
+                  <dd class="mono" data-session-short>—</dd>
+                </div>
+              </dl>
+              <div class="acciones">
+                <a
+                  href={signInHref(locale, SETTINGS_PATH)}
+                  class="btn btn-primario"
+                  data-session-out
+                  data-metric="settings-sign-in"
                 >
-                  {t.locked}
-                </span>
-              </li>
-            ))
-          }
-        </ol>
-        <p class="nota mono">
-          {nomadGrants.size}/{PERMISSIONS.length} · {[...nomadGrants].join(' · ')}
-        </p>
-      </div>
-    </section>
+                  {t.signIn}
+                </a>
+                <a
+                  href={signOutHref(locale)}
+                  class="btn btn-fantasma"
+                  data-session-in
+                  hidden
+                  data-metric="settings-sign-out"
+                >
+                  {t.signOut}
+                </a>
+              </div>
+            </div>
+          </section>
 
-    <section aria-labelledby="s-data">
-      <h2 id="s-data" class="etiqueta">{t.data}</h2>
-      <div class="tarjeta">
-        <p>{t.dataNote}</p>
-      </div>
-    </section>
+          <!-- «Tu nombre en la ciudad» (cut «Tu nombre y tu cara», 2026-10-16): only with a session. -->
+          <ProfileNameSection locale={locale} />
 
-    <section aria-labelledby="s-about">
-      <h2 id="s-about" class="etiqueta">{t.about}</h2>
-      <div class="tarjeta">
-        <dl class="acerca">
-          <div>
-            <dt>{t.version}</dt>
-            <dd class="mono">
-              <a href={`${prefix}/updates/`} data-metric="settings-version">{CURRENT_VERSION}</a>
-            </dd>
+          <section aria-labelledby="s-permissions">
+            <h3 id="s-permissions" class="etiqueta">{t.permissions}</h3>
+            <div class="tarjeta">
+              <p class="nota">{t.permissionsNote}</p>
+              <ol class="rangos" data-rank-ladder>
+                {
+                  RANK_DEFINITIONS.map((rank, index) => (
+                    <li data-rank-level={index} data-rank={rank.id}>
+                      <span class="mono nivel">{index}</span>
+                      <div>
+                        <p class="nombre">{rank.name[locale]}</p>
+                        <p class="grupo mono">{PERMISSION_GROUPS[index]?.toUpperCase()}</p>
+                      </div>
+                      <span
+                        class="pildora"
+                        data-estado="locked"
+                        data-granted={t.granted}
+                        data-locked={t.locked}
+                      >
+                        {t.locked}
+                      </span>
+                    </li>
+                  ))
+                }
+              </ol>
+              <p class="nota mono">
+                {nomadGrants.size}/{PERMISSIONS.length} · {[...nomadGrants].join(' · ')}
+              </p>
+            </div>
+          </section>
+        </section>
+
+        <section id="avisos" class="parte" aria-labelledby="p-avisos">
+          <h2 id="p-avisos">{t.parts.notices}</h2>
+          <div class="tarjeta">
+            <p>{t.noticesNote}</p>
+            <a
+              class="ir"
+              href={localeHref(locale, NOTIFICATIONS_PATH)}
+              data-metric="settings-part-avisos-go"
+            >
+              <Icon name="arrow-right" size={16} />
+              {t.noticesLink}
+            </a>
           </div>
-          <div>
-            <dt>{t.designSystem}</dt>
-            <dd class="mono">Sistema de Diseño v5.0.0</dd>
+        </section>
+
+        <section id="aspecto" class="parte" aria-labelledby="p-aspecto">
+          <h2 id="p-aspecto">{t.parts.look}</h2>
+
+          <section aria-labelledby="s-appearance">
+            <h3 id="s-appearance" class="etiqueta">{t.appearance}</h3>
+            <div class="tarjeta">
+              <div class="fila">
+                <span>{t.mode}</span>
+                <div class="segmento" role="group" aria-label={t.mode}>
+                  <button type="button" data-set-mode="diurno" data-metric="settings-mode-diurno">
+                    <Icon name="sun" size={16} />
+                    {t.modeDiurno}
+                  </button>
+                  <button type="button" data-set-mode="nocturno" data-metric="settings-mode-nocturno">
+                    <Icon name="moon-stars" size={16} />
+                    {t.modeNocturno}
+                  </button>
+                </div>
+              </div>
+              <p class="nota">
+                <strong>{t.motion}.</strong>
+                {t.motionNote}
+              </p>
+            </div>
+          </section>
+
+          <section aria-labelledby="s-language">
+            <h3 id="s-language" class="etiqueta">{t.language}</h3>
+            <div class="tarjeta">
+              <div class="idiomas">
+                {
+                  (Object.keys(LANGUAGE_NAMES) as SupportedLocale[]).map((code) => (
+                    <a
+                      href={`${code === 'en' ? '' : `/${code}`}/lap/settings/`}
+                      lang={code}
+                      aria-current={code === locale ? 'true' : undefined}
+                      data-metric={`settings-lang-${code}`}
+                    >
+                      {LANGUAGE_NAMES[code]}
+                    </a>
+                  ))
+                }
+              </div>
+              <p class="nota">{t.languageNote}</p>
+            </div>
+          </section>
+
+          <section aria-labelledby="s-sidebar">
+            <h3 id="s-sidebar" class="etiqueta">{t.sidebar}</h3>
+            <div class="tarjeta">
+              <ul class="interruptores">
+                {
+                  HIDEABLE.map((section) => (
+                    <li>
+                      <label>
+                        <span class="seccion">
+                          {lap.sections[section]}
+                          {isUnderConstruction(section) && (
+                            <span class="obra">
+                              <Icon name="crane-tower" size={14} />
+                              {lap.building.label}
+                            </span>
+                          )}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={!DEFAULT_HIDDEN.includes(section)}
+                          data-section-toggle={section}
+                          data-metric="settings-section-toggle"
+                        />
+                        <span class="pista" aria-hidden="true" />
+                      </label>
+                    </li>
+                  ))
+                }
+              </ul>
+              <p class="nota">{lap.quietPanel.replace('{list}', quietList)}</p>
+              <p class="nota">{t.sidebarNote}</p>
+            </div>
+          </section>
+        </section>
+
+        <section id="saldo" class="parte" aria-labelledby="p-saldo">
+          <h2 id="p-saldo">{t.parts.balance}</h2>
+          <div class="tarjeta">
+            <p>{t.balanceNote}</p>
+            <a class="ir" href={localeHref(locale, '/saldo/')} data-metric="settings-part-saldo-go">
+              <Icon name="arrow-right" size={16} />
+              {t.balanceLink}
+            </a>
           </div>
-          <div>
-            <dt>{t.sourceData}</dt>
-            <dd class="mono">
-              <a
-                href="https://github.com/PabloFMM/numinia-digital-goods-data"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-metric="settings-data-repo"
-              >
-                numinia-digital-goods-data
-              </a>
-            </dd>
+        </section>
+
+        <section id="datos" class="parte" aria-labelledby="p-datos">
+          <h2 id="p-datos">{t.parts.data}</h2>
+          <div class="tarjeta">
+            <p>{t.dataNote}</p>
           </div>
-        </dl>
+
+          <section aria-labelledby="s-about">
+            <h3 id="s-about" class="etiqueta">{t.about}</h3>
+            <div class="tarjeta">
+              <dl class="acerca">
+                <div>
+                  <dt>{t.version}</dt>
+                  <dd class="mono">
+                    <a href={`${prefix}/updates/`} data-metric="settings-version">{CURRENT_VERSION}</a>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{t.designSystem}</dt>
+                  <dd class="mono">Sistema de Diseño v5.0.0</dd>
+                </div>
+                <div>
+                  <dt>{t.sourceData}</dt>
+                  <dd class="mono">
+                    <a
+                      href="https://github.com/PabloFMM/numinia-digital-goods-data"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-metric="settings-data-repo"
+                    >
+                      numinia-digital-goods-data
+                    </a>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </section>
+        </section>
       </div>
-    </section>
+    </div>
   </article>
 </LapShell>
 
@@ -349,9 +424,102 @@ const LANGUAGE_NAMES: Record<SupportedLocale, string> = {
   section {
     margin-top: var(--s6);
   }
-  h2 {
+  h3 {
     margin: 0 0 var(--s3);
     font-weight: 500;
+  }
+  /* The five parts (wireframe v3 «Tus ajustes»): a side navigation of
+     anchors beside the parts on a wide screen, a wrapping row above them
+     on a narrow one. Rows mirror the panel's own side navigation (40px,
+     icon 18, ink on hover); the part you jump to clears the phone header. */
+  .ajustes {
+    margin-top: var(--s5);
+  }
+  .partes ul {
+    list-style: none;
+    margin: var(--s2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s2);
+  }
+  .partes a {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 0 var(--s3);
+    border-radius: var(--radio-control);
+    color: var(--texto-2);
+    text-decoration: none;
+    transition:
+      color 120ms var(--ciclo),
+      background 120ms var(--ciclo);
+  }
+  .partes a:hover,
+  .partes a:focus-visible {
+    color: var(--texto);
+    background: var(--elevada);
+  }
+  .parte {
+    scroll-margin-top: var(--s5);
+  }
+  .parte:first-child {
+    margin-top: var(--s5);
+  }
+  .parte > h2 {
+    margin: 0 0 var(--s4);
+    font-size: 1.44rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .parte > section {
+    margin-top: var(--s5);
+  }
+  .parte > h2 + section,
+  .parte > h2 + :global(section) {
+    margin-top: 0;
+  }
+  .ir {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    min-height: 44px;
+    margin-top: var(--s2);
+    color: var(--enlace);
+    text-decoration: none;
+  }
+  .ir:hover,
+  .ir:focus-visible {
+    text-decoration: underline;
+  }
+  @media (min-width: 64rem) {
+    .ajustes {
+      display: grid;
+      grid-template-columns: 13rem minmax(0, 1fr);
+      gap: var(--s6);
+      align-items: start;
+    }
+    .partes {
+      position: sticky;
+      top: var(--s5);
+    }
+    .partes ul {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 2px;
+    }
+    .partes a {
+      min-height: 40px;
+    }
+    .parte:first-child {
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 767px) and (min-height: 541px) {
+    .parte {
+      scroll-margin-top: calc(56px + var(--s3));
+    }
   }
   .tarjeta {
     max-width: 46rem;

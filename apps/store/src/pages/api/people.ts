@@ -20,5 +20,5 @@ export const GET: APIRoute = async ({ cookies, url }) =>
   answerPeople(
     accountsFrom({ binding: runtimeBinding('TILL_ACCOUNTS'), dataSource: process.env.DATA_SOURCE }),
     await sessionWallet(cookies.get(SESSION_COOKIE)?.value),
-    teamOf(REGISTER, url.searchParams.get('comunidad')),
+    await teamOf(REGISTER, url.searchParams.get('comunidad')),
   );

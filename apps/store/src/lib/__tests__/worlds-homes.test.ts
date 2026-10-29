@@ -444,10 +444,47 @@ describe('GET /api/mundos?org=: the worlds of one organization, to its members a
     const out = await answerOrgWorlds(desk, ADMIN, url(`?org=${RESET}&house=true`), quiet);
     expect(out.status).toBe(200);
     expect(out.headers.get('cache-control')).toBe('private, no-store');
-    expect(await json(out)).toEqual({ worlds: [{ worldId: 'bosque', accountId: RESET }] });
+    // No index handed in: the world is named by its id read as words, with no picture.
+    expect(await json(out)).toEqual({
+      worlds: [{ worldId: 'bosque', accountId: RESET, name: 'Bosque', cover: null }],
+    });
     expect(desk.worldsOf).toHaveBeenCalledWith(ADMIN.wallet.toLowerCase(), false, RESET);
     await answerOrgWorlds(desk, HOUSE, url(`?org=${RESET}`), quiet);
     expect(desk.worldsOf).toHaveBeenLastCalledWith(HOUSE.wallet, true, RESET);
+  });
+
+  it('MIS-265: wears each world’s name and picture from the index, and survives an index that fails', async () => {
+    const card = {
+      id: 'bosque',
+      name: 'El Bosque Sereno',
+      state: 'on' as const,
+      inside: null,
+      ais: null,
+      cover: 'https://bosque.numinia.com/portada.webp',
+      url: 'https://bosque.numinia.com/',
+      community: { id: 'reset', name: 'Reset' },
+      city: false,
+    };
+    const named = await answerOrgWorlds(fakeDesk(), HOUSE, url(`?org=${RESET}`), quiet, () =>
+      Promise.resolve([card]),
+    );
+    expect(await json(named)).toEqual({
+      worlds: [
+        {
+          worldId: 'bosque',
+          accountId: RESET,
+          name: 'El Bosque Sereno',
+          cover: 'https://bosque.numinia.com/portada.webp',
+        },
+      ],
+    });
+    const failing = await answerOrgWorlds(fakeDesk(), HOUSE, url(`?org=${RESET}`), quiet, () =>
+      Promise.reject(new Error('index down')),
+    );
+    expect(failing.status).toBe(200);
+    expect(await json(failing)).toEqual({
+      worlds: [{ worldId: 'bosque', accountId: RESET, name: 'Bosque', cover: null }],
+    });
   });
 
   it('answers 400 without an organization or with one out of shape', async () => {

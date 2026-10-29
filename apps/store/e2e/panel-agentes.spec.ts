@@ -883,6 +883,9 @@ test.describe('Agentes — «En el mundo»: how it is called and what it hears (
     await open(page);
     const hermes = row(page, 'hermes');
     const box = hermes.getByRole('checkbox', { name: /Frase clave/ });
+    // The list is fetched after the page is «ready»: count the calls only once the
+    // card is drawn, or that first GET lands inside the count (the flake).
+    await expect(box).toBeVisible();
     const calls = stand.calls.length;
     await box.click();
     const text = hermes.getByRole('textbox', { name: 'Frase clave de Hermes' });
