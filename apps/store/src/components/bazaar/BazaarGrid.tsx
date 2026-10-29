@@ -8,7 +8,6 @@
  * choice lives in the root.
  */
 
-import { useId } from 'react';
 import type { BazaarMessages } from '../../i18n/messages';
 import type { BazaarItem } from '../../lib/bazaar';
 import { Glyph, KIND_GLYPH } from './glyphs';
@@ -30,9 +29,9 @@ interface BazaarCardProps {
 }
 
 function BazaarCard({ item, selected, queued, labels, onSelect }: BazaarCardProps) {
-  // The card is named by its words (name, kind, licence), not twice by the
-  // picture's alt: one id per card for aria-labelledby.
-  const id = useId();
+  // The button is named by what it shows, all of it (name, kind, licence, "in the
+  // queue"): a name that leaves out visible words fails WCAG 2.5.3 (label in name).
+  // The picture is decoration here, so its alt is empty and the name is not said twice.
   const format = item.format.toUpperCase();
   const cc0 = item.license === 'CC0';
   return (
@@ -40,7 +39,6 @@ function BazaarCard({ item, selected, queued, labels, onSelect }: BazaarCardProp
       type="button"
       className="bazaar-card"
       aria-pressed={selected}
-      aria-labelledby={`${id}-n ${id}-t ${id}-l`}
       data-metric="bazaar-card"
       data-item={item.id}
       onClick={() => onSelect(item.id)}
@@ -50,7 +48,7 @@ function BazaarCard({ item, selected, queued, labels, onSelect }: BazaarCardProp
           <img
             src={item.thumbnailUrl}
             srcSet={item.thumbnailSrcSet ?? undefined}
-            alt={item.name}
+            alt=""
             loading="lazy"
             decoding="async"
             width={480}
@@ -70,16 +68,15 @@ function BazaarCard({ item, selected, queued, labels, onSelect }: BazaarCardProp
         )}
       </span>
       <span className="cuerpo">
-        <span className="nombre" id={`${id}-n`}>
+        <span className="nombre">
           {item.name}
         </span>
         <span className="pie">
-          <span className="tipo" id={`${id}-t`}>
+          <span className="tipo">
             {labels.kinds[item.category]} · {format}
           </span>
           <span
             className={cc0 ? 'chip vivo' : 'chip'}
-            id={`${id}-l`}
             title={cc0 ? labels.cardLicence : undefined}
           >
             {item.license}
